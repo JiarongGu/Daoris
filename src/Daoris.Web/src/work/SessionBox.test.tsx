@@ -34,6 +34,21 @@ describe('SessionBox', () => {
     expect(onSendNow).toHaveBeenCalled();
   });
 
+  /** STEER2b (D136): with words in the box, *Send now* sends them in the running turn; Enter and *Queue* stay the default. */
+  it('sends the typed words now beside Queue on the running door', async () => {
+    const onSend = vi.fn();
+    const onSayNow = vi.fn();
+    const onSendNow = vi.fn();
+    show({ box: { kind: 'steer' }, held: { queued: [{ text: 'cap it', files: [] }], taking: true }, onSend, onSayNow, onSendNow });
+
+    await userEvent.type(screen.getByLabelText('Message'), 'use the blue one');
+    expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    expect(onSayNow).toHaveBeenCalledWith('use the blue one');
+    expect(onSend).not.toHaveBeenCalled();
+    expect(onSendNow).not.toHaveBeenCalled();
+  });
+
   /** QUEUEEDIT1b: a held word with an id can be taken back out, or reworded, on the running door's box. */
   it('lets a held word be removed or reworded by its id', async () => {
     const onRemove = vi.fn().mockResolvedValue({ done: true });

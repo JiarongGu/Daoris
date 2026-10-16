@@ -312,9 +312,9 @@ describe('a start held on signed-out accounts with none cooling (UX6d2)', () => 
   });
 
   /** The tool's own sign-in read signed out, which this machine's empty list runs on, is its own row: the wait never names it. */
-  it('leaves the tool’s own signed-out sign-in its own row', () => {
+  it('gives the tool’s own signed-out sign-in no row: nothing runs on it (OWNSPACE1b-A)', () => {
     const rows = derive(facts({ ownLogin: 'out', ownRead: READ }));
-    expect(rows.map(({ id }) => id)).toEqual(['wait:claude-code/:signed-out', 'signed-out:claude-code/']);
+    expect(rows.map(({ id }) => id)).toEqual(['wait:claude-code/:signed-out']);
   });
 
   /** A cool-off of the tool's own sign-in names no account either: the two waits of one agent are two rows, two keys. */
@@ -340,6 +340,58 @@ describe('a start held on signed-out accounts with none cooling (UX6d2)', () => 
     };
     const rows = derive({ ...facts(), waits: [{ ...HELD_SIGNED_OUT, quests: ['q1'], asks: [] }] }, [held], [quest()], []);
     expect(rows.map(({ id, title }) => [id, title])).toEqual([['wait:claude-code/:signed-out', 'Expose a streaming budget']]);
+  });
+});
+
+/**
+ * OWNSPACE1b-B (D175 point 3): a start held because no Daoris account of the agent's is signed in. The page learns it from the
+ * `noAccount` fact the tick carries, never from an empty list; its row names no account and offers *Sign in for Daoris*.
+ */
+describe('a start held with no Daoris account signed in (OWNSPACE1b-B)', () => {
+  const NO_ACCOUNT: AccountWaitTick = {
+    agent: 'claude-code', account: null, name: null, workspace: 'work', until: null, stated: false,
+    quests: [], asks: ['a1'], signedOut: [], noAccount: true,
+  };
+  const none = (over: Partial<AccountsKnown> = {}) => known({ tools: byTool([door({ profiles: [] })]), use: answer([scope()]), waits: [NO_ACCOUNT], ...over });
+
+  it('is a row keyed apart, naming no account, saying why and offering Sign in for Daoris', () => {
+    const [row, ...rest] = derive(none());
+
+    expect(rest).toEqual([]);
+    expect(row).toMatchObject({
+      id: 'wait:claude-code:no-account', kind: 'account-wait', title: 'Intake for ask #a1', where: 'work', circle: true,
+      detail: 'No Daoris account is signed in for Claude Code, so its starts wait until you sign in.',
+    });
+    expect(row!.account).toMatchObject({ noAccount: true, signsIn: true, harness: 'claude-code' });
+    expect(row!.account!.named).toEqual([]);
+    expect(attentionOffers(row!)).toEqual([{ act: 'sign-in-new' }]);
+  });
+
+  /** The tick's own fact, not an empty `signedOut`: a wait without it is the older wait on none cooling, however empty. */
+  it('is read from the fact, never from an empty list of accounts', () => {
+    const [row] = derive(none({ waits: [{ ...NO_ACCOUNT, noAccount: false }] }));
+    expect(row!.id).toBe('wait:claude-code/:signed-out');
+    expect(row!.account!.noAccount ?? false).toBe(false);
+  });
+
+  it('is read from a held quest’s consideration where the tick carries no wait', () => {
+    const held: Consideration = {
+      quest: 'q1', repository: 'engine', verdict: 'Blocked', reason: 'No account.',
+      signedOut: { agent: 'claude-code', accounts: [], noAccount: true },
+    };
+
+    const rows = derive(none({ waits: [] }), [held, { ...held, quest: 'q2' }], [quest(), quest({ id: 'q2' })], []);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ kind: 'account-wait', title: '2 quests', where: 'engine' });
+    expect(rows[0]!.account!.noAccount).toBe(true);
+    expect(attentionOffers(rows[0]!)).toEqual([{ act: 'sign-in-new' }]);
+  });
+
+  /** The one place the tool's own sign-in is said is its read-only row (D175 point 1): the hold never falls back to it. */
+  it('never names the tool’s own sign-in as what would serve it', () => {
+    const [row] = derive(none({ tools: byTool([door({ profiles: [], ownLogin: 'out', ownRead: READ })]) }));
+    expect(row!.account!.named).toEqual([]);
   });
 });
 
@@ -399,13 +451,10 @@ describe('a signed-out account a list holds', () => {
   });
 
   /** The tool's own sign-in holds the starts where no account is named (D125 §3.7), so reading signed out it needs the person. */
-  it('includes the tool’s own sign-in while the starts run on it', () => {
+  /** OWNSPACE1b-A (D175 point 1): the own sign-in holds no work, so it is never listed; the hold for no account is B's row. */
+  it('leaves out the tool’s own sign-in, which no start runs on', () => {
     const tools = byTool([door({ profiles: [], ownLogin: 'out', ownRead: READ })]);
-    const [row] = derive({ tools, use: answer([scope()]), waits: [] });
-    expect(row).toMatchObject({
-      id: 'signed-out:claude-code/', kind: 'signed-out', title: 'Your own sign-in', where: 'Claude Code', since: null,
-      read: READ, detail: "Daoris's starts run on it, since no account is named.",
-    });
+    expect(derive({ tools, use: answer([scope()]), waits: [] })).toEqual([]);
   });
 });
 

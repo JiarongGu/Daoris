@@ -109,7 +109,7 @@ const answeredByAct = { done: expect.any(Function), refused: expect.any(Function
 const everyAct = (): Required<AttentionActs> => ({
   publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
-  signIn: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
+  signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
   opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(),
 });
 
@@ -548,6 +548,17 @@ describe('an account’s row', () => {
   it('says no time at all where the reading is undated', () => {
     render(<AttentionRow item={{ ...SIGNED_OUT, read: null }} />);
     expect(screen.queryByText(/^read |waiting/)).not.toBeInTheDocument();
+  });
+
+  /** OWNSPACE1b-B (D175 point 6): the hold for no Daoris account presses a label that names no account. */
+  it('signs in for Daoris from a start held for no account, a label naming nobody', async () => {
+    const acts = everyAct();
+    const none = { ...ACCOUNT_WAIT, account: { ...ACCOUNT_WAIT.account!, named: [], noAccount: true } };
+    render(<AttentionRow item={none} acts={acts} onOpen={vi.fn()} />);
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Sign in for Daoris', 'Claude Code']);
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in for Daoris' }));
+    expect(acts.signInNew).toHaveBeenCalledWith(none);
   });
 
   it('signs a signed-out account in from its own row, named by the account', async () => {

@@ -68,6 +68,37 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// FABRIC-EVENT5a: the moment the driver takes a conversation's words up, its record moving to <c>working</c>, the windows are told
+    /// <c>sessions</c> for it, so Ask Daoris's list needs no 1.5 s read while words wait. The move out of it is told too: the
+    /// restore of an ended record where every word was withdrawn announces no end, so a page that read <c>working</c> would stay there.
+    /// </summary>
+    [Fact]
+    public async Task Taking_words_up_and_each_move_out_of_working_publish_the_sessions()
+    {
+        var root = Path.Combine(Home, "engine");
+        Directory.CreateDirectory(root);
+        var service = new StandIn(root);
+        service.Chat("c1", root, ("w1", "Also log the port."));
+        new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
+        var loop = Loop();
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
+        using var chat = new ChatRunner(
+            client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
+
+        await loop.ComeUpAsync(client, chat);
+
+        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
+        Assert.Equal(["working", "failed"], service.Moves("c1"));
+        // One per move, `working` and the ending, each for its record alone: a move back out of `working` is told too, so a page that read
+        // `working` is never left there (a rollback announces no end).
+        await UntilAsync(() => Raised.Count(m => m.Type == StatePublisher.Type) == 2);
+        Assert.All(Raised.Where(m => m.Type == StatePublisher.Type), told => Assert.Equal(
+            """{"scopes":["sessions"],"sessions":["c1"]}""",
+            JsonSerializer.Serialize(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })));
+    }
+
+    /// <summary>
     /// A start's end and a chat taken up by itself reach the page in one shape, written in one place: the routes that start
     /// a conversation hand their runs the loop's announcement rather than spelling the event again.
     /// </summary>

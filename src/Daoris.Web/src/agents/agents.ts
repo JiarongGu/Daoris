@@ -66,9 +66,13 @@ export function heldBy(tool: Tool, use: AgentAccounts | null | undefined, name: 
   return (use?.scopes ?? []).some((scope) => scope.default === name || scope.list.includes(name));
 }
 
-/** Whether the starts run on the tool's own sign-in: no machine default and no list name an account (D125 §3.7). */
-export function sharesOwn(tool: Tool, use: AgentAccounts | null | undefined): boolean {
-  return tool.present && tool.machineDefault === null && (use ? machineScope(use).list.length === 0 : true);
+/**
+ * Whether any start runs on the tool's own sign-in: never, for a real agent (D175 point 1, OWNSPACE1b-A). Where nothing names an
+ * account Daoris's own accounts are taken in turn, or the start waits for a sign-in; the own sign-in is shown read-only, holds no
+ * work and is never loud. A test double that runs in its own home is the driver's concern, and says so by `inherited: false`.
+ */
+export function sharesOwn(_tool: Tool, _use: AgentAccounts | null | undefined): boolean {
+  return false;
 }
 
 /** The tool's own sign-in's state: its word only at a person's press (TOOL6g), its cool-off where it cools. */
@@ -97,12 +101,10 @@ export function accountStates(tool: Tool, use: AgentAccounts | null | undefined)
 
 /**
  * The accounts the person must act on (D150 §2.1, the activity bar's badge): each signed out or with its key refused where it
- * holds work, the tool's own sign-in among them while the starts run on it.
+ * holds work. The tool's own sign-in is never among them: no start runs on it (D175 point 1).
  */
 export function signedOutHeld(tool: Tool, use: AgentAccounts | null | undefined): number {
-  const named = [...accountStates(tool, use).values()].filter((state) => waitsOnPerson(state) && state.holdsWork).length;
-  const own = ownState(tool, use);
-  return named + (own.state === 'out' && own.holdsWork ? 1 : 0);
+  return [...accountStates(tool, use).values()].filter((state) => waitsOnPerson(state) && state.holdsWork).length;
 }
 
 /** A state's word and its pill's tone (§5.3): open's hue only for an account that waits on the person and holds work. */
@@ -353,17 +355,6 @@ export function runsFor(tool: Tool, use: AgentAccounts | null | undefined, name:
 }
 
 /**
- * Where your own sign-in runs (D152 §4.3): while this machine names no account, each workspace that names none of its own
- * starts on it, or this machine where every workspace has its own; once this machine names one, none does.
- */
-export function ownRunsFor(tool: Tool, use: AgentAccounts | null | undefined, workspaces: readonly string[]): RunsFor[] {
-  if (!sharesOwn(tool, use)) return [];
-  const own = ownScopes(tool, use);
-  const plain = workspaces.filter((workspace) => !own.has(workspace));
-  return plain.length > 0 ? plain.map((workspace) => ({ workspace, first: false })) : [{ workspace: null, first: false }];
-}
-
-/**
  * *Runs for*, in words: *this machine · work (first)*, and *no workspace* where nothing runs on it, said rather than left blank.
  * The mark is said where it runs in one place too (ACCTUX4b): it says that scope's next start takes it, a fact of the row
  * whatever its other places, and the account the sentence above the list names would otherwise go unmarked.
@@ -455,7 +446,7 @@ export function accountAct(
 /**
  * One list an account may join (D152 §4.5): a workspace with a list or a default of its own, or this machine's (null); who
  * it holds now, by name; whether that is a list or a default alone; the workspaces this machine's runs; and whether joining
- * moves where its starts begin, which is only where it names nobody and so runs on your own sign-in.
+ * moves where its starts begin, which is only where it names nobody and so takes Daoris's accounts in turn.
  */
 export type JoinChoice = { workspace: string | null; holds: string[]; listed: boolean; usedBy: string[]; moves: boolean };
 

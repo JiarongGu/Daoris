@@ -28,7 +28,8 @@ using ModelContextProtocol.Server;
 //                          D48 §5; DAORIS_REMOTE_URL/_KEY/_WORKSPACE override it whole). Read when a
 //                          take claims by push and when a chain is composed.
 //   DAORIS_KNOWLEDGE_REPOSITORY  the one checkout served, for a workspace's own server (ORIENT1c):
-//                          registered alone, and re-read once its reading is a minute old
+//                          registered alone, watched at its refs and knowledge folders, and re-read once it
+//                          moved or its reading is five minutes old (a minute, where nothing could be watched)
 //   DAORIS_KNOWLEDGE_DOCUMENTS / _INDEX  repository-relative folders read in each registered checkout:
 //                          documents a section each, a generated index a row each (ORIENT1c)
 

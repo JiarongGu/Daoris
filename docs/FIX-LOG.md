@@ -5,7 +5,178 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The node contract let a late outcome land on the wrong attempt and a dispatch be duplicated (FABRIC-NODE1c)
+
+- **Symptom:** a second maker's review of FABRIC-NODE1, before any wire read it: a failure of attempt 1 arriving during attempt 2
+  failed attempt 2; a dispatched attempt stopped while its answer was pending let attempt 2 start at once; a reach with an old
+  graph, revision or node version, or no evidence, was accepted; mutating a dictionary handed to an acceptance changed its issued
+  id; an observed built-in's acceptance could not carry its prerequisite receipts, so invalidating a QA wired before `handed`
+  missed `handed`.
+- **Root cause:** the lifecycle judged an outcome by the status's state alone. A failure carried no attempt; a reach was checked
+  for unit, node and attempt only, since the status held no expected binding; `Unreconciled` was set only on entering *unknown*,
+  so an attempt moved off *active* by a stop, a skip, a rejection or an invalidation was forgotten. `NodeAcceptance` kept the
+  caller's collections, and `Observe` built its acceptance from a graph digest and an attempt alone.
+- **Fix:** D173's FABRIC-NODE1c note: every outcome names its attempt; the start carries the evaluated binding and a reach must be
+  it, whole, with its kind's evidence; a dispatching kind's start sets `Unreconciled` until its authority's outcome or a
+  reconciliation; acceptances copy their collections; `Keep` refuses a second result per binding; `Apply` returns what it cleared;
+  `Observe` takes the evaluated binding.
+- **Verification:** each defect's test failed on the contract's surface without the behaviour, then passed; the three node suites
+  pass (55), and the driver's fast half.
+
+
+- **Symptom:** the merge gate's deployment rehearsal failed at its first check, `publish:desktop --service exits 0`, on main
+  3b2e1fbc5, and again when re-run alone; the rehearsal keeps only the publish's last 12 lines, a stack's tail, so the cause
+  showed only in a publish run by hand: `StagedBuild.cs(439,9): error CS0103: The name 'HomeWrites' does not exist` in
+  `Daoris.Desktop.Launcher.csproj`.
+- **Root cause:** the launcher references nothing and compiles a few driver files in by link (`StagedBuild.cs`, `InstallSwap.cs`,
+  the home's lease). FABRIC-EVENT4 made `StagedBuild` mark the journal it writes with `HomeWrites.Mine`, a class then inside
+  `HomeWatch.cs`, which the launcher does not link. No light gate builds the launcher (the driver's and the modules' suites build
+  their own projects), so only the publish, inside the deployment rehearsal, compiled it.
+- **Fix:** `HomeWrites` moved, unchanged, into its own `Platform/HomeWrites.cs`, using the base library alone, and linked into the
+  launcher beside `StagedBuild.cs`, with the reason in the project file.
+- **Verification:** the launcher builds in Release with no warning; `HomeWatchTests`, `StagedBuildTests` and `StructureTests` pass
+  (57); the deployment gate re-run on the fix. The gap that let it through is a row: a light gate builds the launcher.
+
+## 2026-10-16 — A content proof git could not read said the work was held nowhere (PROOF-UNREAD1)
+
+- **Symptom:** none seen on an install; found reading the fabric events design §B7 against the code. `ContentHolds.HeldByContentAsync`
+  returned null both for "no branch holds this work" and for "git could not answer", so a missing git, a timeout or a ref git
+  could not read looked like the work was held nowhere, a finding the callers worded as one ("holds commits no branch of yours
+  holds"), not as a read that was not made.
+- **Root cause:** every read in the proof's chain (the line's forms, the tip's tree, each merge base, the changed files, the
+  branch list, each holder's comparison) turned a git failure into "continue" or `null`, and `LineFormsAsync` read any failure of
+  `rev-parse --verify --quiet` as "no such ref", so a git that never ran left a line with no forms and the proof returned
+  before a single comparison. "Absent is never zero" (D57) was not kept.
+- **Fix:** the proof returns a `ContentProof`: held (`Hold`), not held (both null) or unread (`Unread`, git's words). Exit 1 of
+  `rev-parse --verify --quiet` and of `merge-base` is git's answer (no such ref, no common commit); any other failure marks the
+  proof unread unless another read found the work held. `LandedProofs.ReadLineFormsAsync` says what it could not read. Callers:
+  the sweep keeps the row unread (as its own git failures already do), the branch tidy's and the tree's unforced removal refuse
+  saying git could not tell (and `--force` stays the door), the head's discard offer offers none. `LandedProofs.ProveAsync` had no
+  such gap: a failed read ends as `Unknown`, never `OnLine` or `Merged`. A test seam, `WorkingTree.Answered`, scripts git's answer.
+- **Verification:** `ContentHoldsUnreadTests` (the driver's fast half): git missing, each git ask failing in turn (tree, commit,
+  merge base, diff, log, branch list), a timeout, each reading as unread; no common ancestor and a clean find-nothing reading as
+  not held; `ProveAsync` reading unknown. Written with the code, so the red was a build that failed for want of the type.
+
+## 2026-10-16 — Accept named a conversation's branch from the person's opening words (ACCEPTFOOT2)
+
+- **Symptom:** on the installed Daoris, a conversation's *Accept* put its one commit on a branch made from a slug of the
+  person's first sentence and the session's id, under a repository whose landing pattern is `feature/<KEY>-<words>`. Nothing in
+  the name said what the work was.
+- **Root cause:** a conversation's landing subject is its opening (`LandingRules.SubjectAsync` with no quest): PROCESS1b-i
+  searched it for a ticket and `{slug}` was made of it, as PROCESS1d-ii's note said (*made at Accept from its opening*). The
+  opening is the person's chat, worn by the page as the conversation's name only because it has no title (RAIL1).
+- **Fix:** a subject whose title is a conversation's opening (`LandingSubject.NamedByOpening`) is named for its work: `ForWork`
+  sets its name to the oldest commit's subject beyond the line, the subject PROCESS1b-ii already names a squash by where there is
+  no title; the opening stays its title and is searched for a ticket after that subject. The plan and the press read it alike
+  (`TreeLands.ForWorkAsync`), only under a pattern that reads words, each commit kept by its boundary (`%x1f%s`) so an empty
+  oldest message names `work`; an entry is named for its first part's work when its subject is made (`EntryForWorkAsync`), so its
+  parts join one branch. A second maker's review found the entry's split, the empty message and the needless read in the first
+  build. D164's ACCEPTFOOT2 note.
+- **Verification:** `QuestNameTests` (the driver's fast half: the opening never named, a ticket in the commit or the opening,
+  none found, no commit read, the oldest subject's boundary, the patterns that read words); `LandingTests`' real-git cases (plan
+  and press naming one branch, seen red with the opening's slug; an empty oldest message, seen red naming the next commit) and
+  `EntryLandingTests`' (two parts' different oldest commits land on the first's branch, seen red naming the second's).
+
+## 2026-10-16 — A conversation whose turn ended with work offered Accept only in the review's side bar (ACCEPTFOOT1)
+
+- **Symptom:** on the installed Daoris, an open conversation in a tree of its own ended its turn with a commit beyond the line
+  and its agent said so; the chat showed no *Accept* at its foot or its head, and the person found it only in the review's side
+  bar.
+- **Root cause:** the head and the foot draw the work's wait from `SESSION_GROUPS`' `lands` (LAND4), which the driver's look
+  gives only a session that is not live (`SessionGroups.Place`, `LandableTree`). An open conversation's record stays `working`
+  between turns, so it never had an offer; the review's side bar asks its own plan from `SESSION_DIFF`, so it did.
+- **Fix:** `SESSION_DIFF` carries the driver's own offer for a tree (LAND4's, with D88's proof and the content hold), and the
+  frame offers an open conversation exactly that once the driver says its turn has ended (`conversationOffer`, `work/waits.ts`),
+  from a review read after it saw the turn end: none while a turn runs or words wait, none for a detached tree, none where
+  nothing is beyond the line (REVIEWBASE4); the same *Accept…* and press (D56). A second maker's review found the first build
+  counting by ancestry alone (work held by content offered), reusing a review read before the turn's last commit, and naming a
+  detached tree's branch. D164's ACCEPTFOOT1 note.
+- **Verification:** `waits.test.ts` (the offer and each case of none), `WorkFrame.test.tsx` (*Accept…* at the foot and the head
+  once the turn ends, none while it runs, none with nothing beyond the line or held by content, the review read again for the
+  turn that ended and no offer from the turn before's answer) and `DriverModuleTreesTests` (the answer's `offer`), each seen red
+  first.
+
+## 2026-10-16 — The merge gate's note named tests that passed alone as failed again
+
+- **Symptom:** after a Process gate's full run failed four tests and two of them failed again alone, the note read
+  "failed again alone: <all four>". The parent briefed a worker to find the cause of three tests that had passed when re-run.
+- **Root cause:** `rerunAlone` returned only whether every re-run passed, so the note listed every re-run test under the
+  failing verdict.
+- **Fix:** `rerunAlone` returns the tests that failed again; the note names those as failed again alone, and the rest as
+  passed alone.
+- **Verification:** `merge-branch.test.ts`, the re-run case: two failed in the full run, one passing alone, the note naming
+  only the other as failed again (seen red with the old note).
+
+## 2026-10-16 — The plugin skills spawn tests started Claude Code with no Daoris account (HELPPLUG1c beside OWNSPACE1a)
+
+- **Symptom:** the merge gate at OWNSPACE1a, WIRING1c-i, HELPPLUG1c and STEER2a's merge: `IntakeTests`' and
+  `HelperProcessTests`' *handed a plugin's skills on either door* failed on both doors with `Assert.Single()` on an empty
+  collection, and again when run alone.
+- **Root cause:** HELPPLUG1c's two spawn tests were written beside OWNSPACE1a, so they start the real `claude-code` and
+  `claude-code-acp` adapters in a home with no Daoris account. Since OWNSPACE1a such a start walks the agent's Daoris accounts
+  and, with none, is held (`held.no-account`) before anything spawns: the tick's events said so for each door, and the stand-in
+  harness never ran. The reviewer's test of the same family is handed its selection and never walks, so it passed.
+- **Fix:** `SkillsSpawnProbe.SignIn` seeds the `claude-code/daoris` account in the test home, as OWNSPACE1a's chat classes
+  (`TurnStopTests`, `ChatAttachmentTests`) do; both tests call it. No product change.
+- **Verification:** each test red alone on both doors (the intake's with its events surfaced, naming the hold), then green;
+  `IntakeTests` 37 and `HelperProcessTests` 4 green as classes.
+
+## 2026-10-16 — A start with no account named ran in the person's own tool home (OWNSPACE1a)
+
+- **Symptom:** the owner, 2026-10-16: the person's own Claude Code home held 28 project folders the install's sessions wrote
+  (Ask Daoris's room, an intake, the session trees), beside their own work.
+- **Root cause:** the roster's walk read a scope naming no default and no list as the tool's own sign-in (`order` of `[null]`),
+  and the spawn then set no configuration-home variable, so every such start ran in the person's home (D125 point 5). Beside it,
+  the trust hold read the own home's `.claude.json` from the profile folder whatever the configuration-home variable said, and
+  its sentence sent a person on a Daoris account to run `claude` at their terminal, which trusts their own home and never the
+  account's.
+- **Fix:** with nothing named, the walk goes over the agent's Daoris accounts, and with none signed in holds with
+  `held.no-account` as a wait for a sign-in; a record that began in the own home resumes there; a test double declares
+  `RunsInOwnHome`. `ClaudeTrust.PathFor` reads the file the session's harness reads, and a hold on an account names Daoris's
+  door alone. A second maker's review found two gaps, closed before the merge: an own-home resume whose words fell back to a
+  new record opened it in the person's home (now `CarriedOnAsync`, the walk, before the record opens), and the page's next
+  start, asked by the owner (`codex`), found no adapter of that name and skipped the rule (now the owner's toolchain through
+  its doors). D175's OWNSPACE1a note.
+- **Verification:** `OwnSpaceTests` (red as it could not compile: each start kind's selection applied to a spawn sets the
+  variable to a Daoris account; none signed in holds with the sentence; an own-home resume stays; the stub exempt; the next
+  start; and, red then green, an own-home resume's words carried to a new record take the walk, and Codex's next start by its
+  owner waits or takes its one account), `SignedOutWaitTests`' no-account wait said once, `WorkspaceTrustTests`' path and sentence, and the account tests
+  that pinned D125 point 5 rewritten to D175 (`AccountNextStartTests`, `AccountRotationTests`, `AccountRotationGoalTests`,
+  `StartWiringTests`).
+
 ## 2026-10-16 — A terminal's discovery would take another install's service (HOMEID1)
+## 2026-10-16 — *Send now* could cut the words' own turn, stop a turn with a word on its way, or close a finished call as cut (STEER2a)
+
+- **Symptom:** a second maker reviewed the unmerged branch and found three defects; the coordinator checked each against the
+  code. None ran on the install.
+  - A stop arriving late could cancel the turn of the very words it was kept for, and that answer was lost.
+  - A press on Claude Code's door could send `session/cancel` while an earlier word was on its way.
+  - A call that had finished could be closed as `cut`.
+- **Root cause:**
+  - **The late stop.** `ChatTurns.TakeNowAsync`/`StopKeepingAsync` and `DrivenInbox` decided the stop under their lock but
+    sent it after releasing the lock. In that gap the turn could end and the pump or the run could send the kept words as the
+    next turn. The inbox also stopped once per press, not once per turn.
+  - **The cancel with a word on its way.** The steer's guard `open` failed whenever anything waited, for instance a helper's
+    answer. The press then queued the words and stopped the turn even on the next-step door, which D136 point 4 forbids
+    while a word is on its way.
+  - **The finished call closed as cut.** `AcpSession.Track` treated an update with no status as open.
+- **Fix:**
+  - **A stop is tied to its turn.** Each turn is counted. A stop is decided for one turn and dropped if that turn has ended.
+    The next turn waits until the stop is on the wire or dropped: `PumpAsync` awaits it, and `NextOrClose` hands back a
+    `Waits`. The inbox asks a turn to stop once.
+  - **The next-step door is never stopped.** That holds while a word is on its way, or wherever the door takes words at
+    its next step. Where the agent steers, the press steers past what is ahead: a steer is no stop (D136's STEER2a note).
+    Where it cannot steer, the words go behind, answered `now: false` with `why: "behind"`.
+  - **A finished call stays finished.** It is kept finished through any update without a status. Only `pending` or
+    `in_progress` opens a call, or an announcement with no status, which the protocol reads as `pending`.
+- **Verification:**
+  - `ChatTurnsTests`: a slow stop holding the kept words' turn until it landed on the turn before; on a door that cannot
+    steer, the helper-waiting case and the word-on-its-way case; on one that steers, past both with nothing stopped.
+  - `DrivenInboxTests`: one stop per turn; no held word taken while a stop is on its way; past a word on its way, or
+    behind it where the agent cannot steer.
+  - `AcpSteerTests`: completed, then a statusless update, then a steer, with no cut.
+  - Each was seen failing behaviourally once its surface compiled.
+
 
 - **Symptom:** found by a second agent's review of the terminal RPC plan, checked against the code, not met on the install:
   `daoris-driver` and `daoris` with no `DAORIS_SERVICE_URL` would act on whatever Daoris host answered at the address in

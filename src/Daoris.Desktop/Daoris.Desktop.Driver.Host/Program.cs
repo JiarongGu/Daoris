@@ -135,7 +135,7 @@ using Daoris.Driver;
 //                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
 //                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
 //                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
-//   sessions say <id> "…" [--file <path>]…
+//   sessions say <id> "…" [--file <path>]… [--now]
 //                 say something to a session of this machine's (MSG1e, D137 §5.2): a say request in the same folder,
 //                 which the loop that runs it holds at its door, and any loop keeps on the record of one nothing here
 //                 runs, answering beside it. What never goes on is refused first, exit 1. Where no loop drives the
@@ -174,6 +174,10 @@ using Daoris.Driver;
 //                 or accept a session's work as the review's Accept does, by the workspace's rule (D87),
 //                 or bring each repository up to date after its pull request merged (WSR6, D109). The clean-up
 //                 and bringing up to date take one workspace's checkouts with --workspace (BRSCOPE1a).
+//
+//   work state [<unit>] [--entries]
+//                 each unit of work's milestone (FABRIC-MILESTONE1a): its end reached, the result kept, the cleanup pending or
+//                 completed, the recovery retained, derived read-only from the tree lifecycle's records; `trees state` says the same.
 //
 //   sync [status | dismiss <quest>] [--workspace <name>]
 //                 one pass now, the tick's own, for every circle with a remote or the one named; with
@@ -483,6 +487,12 @@ try
         return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs, log);
     }
 
+    // Each unit of work's milestone (FABRIC-MILESTONE1a, D50): a look, read from the records and changing nothing.
+    if (args is ["work", "state", .. var stateArgs])
+    {
+        return await Daoris.Driver.Host.WorkConsole.MilestonesAsync(stateArgs);
+    }
+
     // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.
     if (args is ["sync", .. var syncArgs])
     {
@@ -603,9 +613,11 @@ try
     // record of it, and the look nudged.
     await using var requests = new SessionRequestWatch(home, processes, () => service)
     {
-        Say = new LoopWords(processes, () => service) { Events = events, Nudge = () => watching?.Nudge() }.HoldAsync,
+        Say = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session) }.HoldAsync,
         // SAIDBACK1c: a terminal's `sessions take-back` settles the word in this host's own record of the conversation.
-        TakeBack = new LoopWords(processes, () => service) { Events = events, Nudge = () => watching?.Nudge() }.TakeBackAsync,
+        TakeBack = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session) }.TakeBackAsync,
+        // FABRIC-EVENT2: each look the folder woke, with its ms and why.
+        Log = log,
     };
 
     // The machine's remotes, one per workspace that has one ($DAORIS_HOME/remotes.json, environment

@@ -52,11 +52,15 @@ internal sealed class RecordList<T>(
         AtomicFile.WriteText(path, toJson(entries));
     }
 
-    /// <summary>Read everything, change it, bound it and write it, under the gate.</summary>
-    public void Edit(string path, Func<IReadOnlyList<T>, IReadOnlyList<T>> change)
+    /// <summary>
+    /// Read everything, change it, bound it and write it, under the gate, and under the record's lock across processes where the store
+    /// names one (<paramref name="across"/>, FABRIC-END2): the gate first, so a process's writers queue on it rather than on the file.
+    /// </summary>
+    public void Edit(string path, Func<IReadOnlyList<T>, IReadOnlyList<T>> change, string? across = null)
     {
         lock (gate)
         {
+            using var held = across is null ? null : RecordLock.Take(across);
             var changed = change(Read(path));
             Write(path, bound is null ? changed : bound(changed));
         }

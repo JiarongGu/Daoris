@@ -167,7 +167,8 @@ public sealed class OpinionLookTests : IDisposable
             var real = AdapterSet.Built().Resolve(name).Toolchain!;
             adapters[name] = new Adapter(name, new HarnessToolchain(
                 Binary: [Command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
-                Product: real.Product, Maker: real.Maker));
+                // A test double whose own home is nobody's (OWNSPACE1a): the look's pass is this file's subject, not the account.
+                Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
         var set = new AdapterSet(adapters);

@@ -267,18 +267,20 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(("account-3", (RotatedStart?)null), (selection.Profile, selection.Rotated));
     }
 
+    /// <summary>
+    /// OWNSPACE1a (D175 point 2, amending D125 point 5): where no default and no list name an account, the agent's Daoris accounts
+    /// carry the start, so the tool's own home cooling holds nothing.
+    /// </summary>
     [Fact]
-    public async Task The_tool_s_own_home_cooling_waits_where_no_default_and_no_list_name_an_account()
+    public async Task The_tool_s_own_home_cooling_holds_nothing_where_Daoris_accounts_carry_the_start()
     {
         Accounts("account-1", "account-2");
-        var own = Cool(account: null);
+        Cool(account: null);
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
-        Assert.False(selection.Allowed);
-        Assert.Null(selection.Rotated);
-        Assert.Equal(CoolingWords.Hold(own, Zone), selection.Refusal);
-        Assert.Equal(own, selection.Cooling);
+        Assert.True(selection.Allowed, selection.Refusal);
+        Assert.Equal(("account-1", (CoolingEntry?)null), (selection.Profile, selection.Cooling));
     }
 
     /// <summary>

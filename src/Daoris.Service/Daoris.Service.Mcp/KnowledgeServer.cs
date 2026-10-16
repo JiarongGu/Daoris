@@ -94,7 +94,8 @@ public static class KnowledgeServer
                 .Append("a key, a fixture, a method) lands on the row that names its file and line");
         }
         text.Append(". Ask `knowledge_search` before searching the files, and `knowledge_get` reads an entry whole, ")
-            .Append("or only the lines a hit names. A reading older than a minute is read again at the next search.");
+            .Append("or only the lines a hit names. A reading of a checkout that has moved, or older than ")
+            .Append($"{(int)Knowledge.CheckoutFreshness.Deadline.TotalMinutes} minutes, is read again at the next search.");
         text.Append(semantic
             ? " Answers match by words and by meaning."
             : " Answers match by words only: no model is named here, so use the words the repository would use.");

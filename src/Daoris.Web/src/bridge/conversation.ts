@@ -289,8 +289,11 @@ export type TurnStop = { cancelled: boolean; withdrawn: ChatMessage[] };
  */
 export const useCancelTurn = () =>
   useMutation({
-    mutationFn: async (id: string): Promise<TurnStop> => {
-      const answer = await call<{ cancelled?: unknown; withdrawn?: unknown }>('CANCEL_TURN', { id });
+    // `keep` (STEER2b, D136) stops the turn and keeps its waiting words, so they go next: *Send now* on a turn-end door.
+    // The id alone is the withdrawal; `withdrawn` then comes back empty under `keep`.
+    mutationFn: async (stop: string | { id: string; keep?: boolean }): Promise<TurnStop> => {
+      const { id, keep } = typeof stop === 'string' ? { id: stop, keep: false } : stop;
+      const answer = await call<{ cancelled?: unknown; withdrawn?: unknown }>('CANCEL_TURN', { id, ...(keep ? { keep: true } : {}) });
       return { cancelled: answer?.cancelled === true, withdrawn: messagesOf(answer?.withdrawn) };
     },
   });
@@ -369,6 +372,12 @@ export type WordsAnswer = {
   sent: boolean; reaches: string | null; why: string | null;
   /** The conversation a `continued` one went on in (HANDWORDS1); present only then. */
   to?: string;
+  /**
+   * For a *Send now* (STEER2b, D136): whether the press was carried out. True with `reaches: "now"` is the words taken at
+   * once in the running turn, and with `turn-end` the turn stopping so they go next. False carries a coded `why` and the
+   * words stay held. Absent from an answer to a plain send.
+   */
+  now?: boolean;
 };
 
 /**
@@ -376,12 +385,13 @@ export type WordsAnswer = {
  * not one sent nothing.
  */
 const wordsOf = (answer: unknown): WordsAnswer => {
-  const said = answer as { sent?: unknown; reaches?: unknown; why?: unknown; to?: unknown } | null | undefined;
+  const said = answer as { sent?: unknown; reaches?: unknown; why?: unknown; to?: unknown; now?: unknown } | null | undefined;
   return {
     sent: said?.sent === true,
     reaches: typeof said?.reaches === 'string' && said.reaches ? said.reaches : null,
     why: typeof said?.why === 'string' && said.why ? said.why : null,
     ...(typeof said?.to === 'string' && said.to ? { to: said.to } : {}),
+    ...(typeof said?.now === 'boolean' ? { now: said.now } : {}),
   };
 };
 
@@ -462,11 +472,13 @@ export const useSessionReach = (session: { id: string; state: string } | null, l
 export const useSendMessage = () =>
   useMutation({
     // A preface (HELP1b) is where the person is, handed to the agent ahead of the words; absent for most.
-    mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string }) => {
+    // `now` (STEER2b, D136) is *Send now*: the words go in the running turn by the door it has, never the queue.
+    mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string; now?: boolean }) => {
       const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
       return wordsOf(await call<unknown>('SESSION_INPUT', {
         id: message.id, text: message.text, ...(files.length > 0 ? { files } : {}),
         ...(message.preface ? { preface: message.preface } : {}),
+        ...(message.now ? { now: true } : {}),
       }));
     },
   });
@@ -481,8 +493,8 @@ export const useSendMessage = () =>
  */
 export const useSay = () =>
   useMutation({
-    mutationFn: async (words: { id: string; text: string }) =>
-      wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text })),
+    mutationFn: async (words: { id: string; text: string; now?: boolean }) =>
+      wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text, ...(words.now ? { now: true } : {}) })),
   });
 
 /**

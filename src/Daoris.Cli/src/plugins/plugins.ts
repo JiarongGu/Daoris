@@ -45,6 +45,11 @@
 //
 //   9. A declared harness may say its `product` and `maker`: text, trimmed, with blank or not text read as none and never
 //      a refusal. A maker is the plugin's word, by which `opinions.ts` judges its agent's family.
+//
+// And since OWNSPACE1c (D175), `PluginCatalogTests` holding the row:
+//
+//  10. A declared harness may say `ownHome`: only JSON `true` says its agent's own home is nobody's (a sandboxed tool), so the
+//      driver starts it with no Daoris account. Absent or anything else is false; never a refusal. This side only reads it.
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
@@ -150,6 +155,11 @@ export interface PluginHarness {
    * maker's for a second opinion (the second-agent design §3.1). Null is a maker not declared, never taken as independent.
    */
   maker: string | null;
+  /**
+   * Whether the plugin says its agent's own home is nobody's, a sandboxed tool (OWNSPACE1c, D175): the agent that names a
+   * `profileVariable` otherwise always takes a Daoris account. Only JSON `true` says it; the plugin's own word, never a refusal.
+   */
+  ownHome: boolean;
 }
 
 export interface PluginHooks { command: string[]; points: string[] }
@@ -447,6 +457,8 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
         // The plugin's word for its tool and its maker; a manifest written before says neither.
         product: ownWord(row, 'product'),
         maker: ownWord(row, 'maker'),
+        // OWNSPACE1c: only JSON true; the plugin's word that its agent's own home is nobody's.
+        ownHome: (row as Record<string, unknown>).ownHome === true,
       });
     }
   }

@@ -66,9 +66,11 @@ public sealed class ReviewerChoiceTests : IDisposable
     private static HarnessToolchain Like(string name, string binary)
     {
         var real = AdapterSet.Built().Resolve(name).Toolchain!;
+        // A test double whose own home is nobody's (OWNSPACE1a): the reviewer walk is this file's subject, and its holds are read
+        // off the own home's cool-off; a real agent's start in a Daoris account is OwnSpaceTests'.
         return new HarnessToolchain(
             Binary: [binary], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf,
-            ProbeByPresence: true, Product: real.Product, Maker: real.Maker);
+            ProbeByPresence: true, Product: real.Product, Maker: real.Maker, RunsInOwnHome: true);
     }
 
     private static readonly string[] Agents = ["claude-code", "claude-code-acp", "codex-acp", "dsh", "stub"];

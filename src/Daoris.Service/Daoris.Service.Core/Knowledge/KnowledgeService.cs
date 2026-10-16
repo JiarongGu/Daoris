@@ -148,7 +148,10 @@ public sealed class KnowledgeService(
     // only into an empty index, as before; set, the first use re-reads whatever the store already held.
     TimeSpan? rereadAfter = null,
     // The clock the window is measured on; the system's unless a test moves one by hand.
-    TimeProvider? time = null)
+    TimeProvider? time = null,
+    // The watch of that checkout (FABRIC-EVENT6): while it is in service, a reading is read again when it has been marked
+    // stale or has reached the watch's deadline, and the minute above is the fallback of a checkout nothing watches.
+    CheckoutFreshness? freshness = null)
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -837,8 +840,40 @@ public sealed class KnowledgeService(
         await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (freshFor is { } window && _everRefreshed && _time.GetUtcNow() - _refreshedAt < window) return null;
+            if (freshFor is { } window && _everRefreshed)
+            {
+                var age = _time.GetUtcNow() - _refreshedAt;
+                // A watch in service marks what moved and the deadline reconciles what it missed; a checkout nobody
+                // watches is read again by the window it was handed.
+                var fresh = freshness is { Watching: true }
+                    ? !freshness.IsStale && age < CheckoutFreshness.Deadline
+                    : age < window;
+                if (fresh) return null;
+            }
 
+            // Taken as the read begins, so what moves during it marks the next one; given back if the read fails.
+            var marked = freshness?.Take() ?? false;
+            try
+            {
+                return await RefreshReadingAsync(ct).ConfigureAwait(false);
+            }
+            catch
+            {
+                if (marked) freshness!.MarkStale();
+                throw;
+            }
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
+    }
+
+    /// <summary>One read of every repository into the index, under <see cref="_refreshLock"/>.</summary>
+    private async Task<IndexReport> RefreshReadingAsync(CancellationToken ct)
+    {
+        // (The body keeps the block it had inside the lock, so the change to the lock's shape is the whole diff.)
+        {
             await ReloadRegistryAsync(ct).ConfigureAwait(false);
 
             // The wiring, read once per refresh rather than once per entry: it is a small table and the
@@ -886,10 +921,6 @@ public sealed class KnowledgeService(
             _everRefreshed = true;
             _refreshedAt = _time.GetUtcNow();
             return report with { SemanticError = semanticError, Embedded = embedded };
-        }
-        finally
-        {
-            _refreshLock.Release();
         }
     }
 

@@ -48,6 +48,7 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/opinions/{id}", Open),
         ("GET", "/api/confirmations", Open),
         ("GET", "/api/confirmations/{id}", Open),
+        ("GET", "/api/changes", Open),
 
         ("POST", "/api/quests/{id}/respond", Agent),
         ("POST", "/api/quests", Agent),
@@ -122,8 +123,9 @@ public sealed class PersonDoorTableTests
         // driver's naming a session and the person's own with where to look, and the confirmation's two reads, its ask and
         // the person's two answers (PERSONDOOR1b), an ask's kind and workflow, the person's (WORKFLOW1e), and an ask's channel: a read, the
         // person's post (which an agent makes through the connector's tool instead) and an entry's read mark (SESSONE2a), and the list of
-        // the asks held elsewhere (SESSONE2h), and the person's taking back of words a session has not taken (SAIDBACK1a).
-        Assert.Equal(24,Routes.Count(route => route.Class == Open));
+        // the asks held elsewhere (SESSONE2h), and the person's taking back of words a session has not taken (SAIDBACK1a), and the
+        // change stream (FABRIC-EVENT3b), a read of which families moved.
+        Assert.Equal(25, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(16, Routes.Count(route => route.Class == Driver));
         Assert.Equal(25, Routes.Count(route => route.Class == Person));

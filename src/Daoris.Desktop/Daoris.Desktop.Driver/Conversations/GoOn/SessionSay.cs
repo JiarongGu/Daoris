@@ -154,7 +154,7 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
     public SessionEvents? Events { get; init; }
 
     /// <summary>The loop's nudge, so its look takes kept words up now rather than at its next interval; null waits for that.</summary>
-    public Action? Nudge { get; init; }
+    public Action<string>? Nudge { get; init; }
 
     public async Task<WordsHeld> HoldAsync(SessionRequest request, CancellationToken ct)
     {
@@ -163,10 +163,20 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
 
         // A driven session this loop runs, on the protocol door or the native door's run (MSG1b): its inbox holds them, and
         // they are the person's words on its ask (D133 §1), which the headless loop missed until MSG1e4.
-        if (processes.InboxOf(id) is { } inbox && inbox.Hold(new ChatMessage(text, [])))
+        if (processes.InboxOf(id) is { } inbox)
         {
-            _ = WordsOnAsk.Keep(service(), id, text);
-            return new WordsHeld(true, Spelled(inbox.Reach), null);
+            // The terminal's *Send now* (STEER2c) goes by the door it has, as the screen's press does (DrivenInbox.HoldNowAsync).
+            if (request.Now && await inbox.HoldNowAsync(new ChatMessage(text, [])).ConfigureAwait(false) is { } sentNow)
+            {
+                _ = WordsOnAsk.Keep(service(), id, text);
+                return new WordsHeld(true, sentNow.Reaches, sentNow.Why) { Now = sentNow.Now };
+            }
+
+            if (!request.Now && inbox.Hold(new ChatMessage(text, [])))
+            {
+                _ = WordsOnAsk.Keep(service(), id, text);
+                return new WordsHeld(true, Spelled(inbox.Reach), null);
+            }
         }
 
         if (processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && processes.RefusesInput(id) is null)
@@ -183,7 +193,7 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
         if (said.Kept)
         {
             if (said.Word is { } kept) Events?.Keep(id, Shown(kept, request.By), null);
-            Nudge?.Invoke();
+            Nudge?.Invoke(id);
             return new WordsHeld(true, "resume", null) { Word = said.Word?.Id };
         }
 
@@ -215,7 +225,7 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
 
         Events?.Keep(id, SessionNotes.Withdrawn(word), null);
         if (back.Word is { } kept) Events?.Keep(id, Shown(kept, request.By), null);
-        Nudge?.Invoke();
+        Nudge?.Invoke(id);
         return new WordsHeld(true, null, null) { Word = back.Word?.Id, Message = back.Message };
     }
 

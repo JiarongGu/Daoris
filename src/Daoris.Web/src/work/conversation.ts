@@ -59,7 +59,8 @@ export type SessionEvent = {
    * For the person's words to a working driven session (STEER1, D136): when they reach it, `next-step` or `turn-end`, on
    * the event that shows them the moment they are said. The same words come again, under the same `id` and without
    * this, where the session took them. `resume` (MSG1d, D137 §3.1) is words to a session that parked or ended, which
-   * its record keeps until the same session goes on with them.
+   * its record keeps until the same session goes on with them. `now` (STEER2b) is words *Send now* steered into the running
+   * turn: they come again under the same `id` as the ask of the turn that goes on, or a note settles them.
    */
   reaches?: string | null;
   /** For the person's words shown the moment they are said (MSG1d): the door they were said at, `screen` or `terminal`. */
@@ -197,7 +198,7 @@ export type Block = {
   at: string;
   text?: string | null;
   id?: string | null;
-  /** For `held`: when the words reach the session, `next-step`, `turn-end` or `resume` (MSG1f). */
+  /** For `held`: when the words reach the session, `next-step`, `turn-end` or `resume` (MSG1f); `now` is taken already (STEER2b). */
   reaches?: string | null;
   /** For `held`: the names of what the person attached. */
   files?: string[];
@@ -402,6 +403,8 @@ export function toTurns(
             ...(event.files?.length ? { files: event.files } : {}),
           };
           turn.items.push(block);
+          // Words sent now (STEER2b, D136) are taken where the steer is answered `injected`: the same words come again under
+          // the same id as the ask of the turn that goes on. A refused or unreached steer is settled by its note instead.
           if (event.id) waiting.set(event.id, { turn, key, seq: event.seq, block });
           where[event.seq] = key;
           break;
@@ -439,7 +442,7 @@ export function toTurns(
             const item = turn.items[at]!;
             // The calls at the turn's end, run side by side: a finished one among them hides nothing.
             if (item.kind !== 'tool') break;
-            if (item.status !== 'completed') item.stopped = true;
+            if (item.status !== 'completed' && item.status !== 'cut') item.stopped = true;
           }
         }
         current = null;
@@ -464,7 +467,15 @@ export function toTurns(
       }
       case 'tool': {
         const turn = here(key);
-        const card = event.id ? turn.items.find((b) => b.kind === 'tool' && b.id === event.id) : undefined;
+        let card = event.id ? turn.items.find((b) => b.kind === 'tool' && b.id === event.id) : undefined;
+        // The close of a call a steer cut (STEER2b, D136) is written when the turn's prompt is answered, after the steered
+        // words were taken as the ask of the turn that goes on: so it finds its card by id in an earlier turn and closes it
+        // there. Only `cut` does; any other late update keeps showing as a continued card, as it always has.
+        if (!card && event.id && event.status === 'cut') {
+          for (let at = turns.length - 1; at >= 0 && !card; at -= 1) {
+            card = turns[at]!.items.find((b) => b.kind === 'tool' && b.id === event.id);
+          }
+        }
         if (card) {
           for (const field of ['title', 'toolKind', 'status', 'locations', 'content', 'input', 'output'] as const) {
             if (event[field] != null) (card as Record<string, unknown>)[field] = event[field];
@@ -472,7 +483,7 @@ export function toTurns(
           // A line is said of the locations it came with (LEFT2): ACP replaces a present list whole, and a line
           // kept past its list would mark a place in a file nobody named it of.
           if (event.locations != null) card.line = event.line ?? null;
-          if (event.status === 'completed' || event.status === 'failed') card.finished = event.at;
+          if (event.status === 'completed' || event.status === 'failed' || event.status === 'cut') card.finished = event.at;
           where[event.seq] = card.key;
         } else {
           where[event.seq] = key;
@@ -626,8 +637,8 @@ export function settle(turns: Turn[], live: boolean): Turn[] {
     ...last,
     cut: true,
     waitingSince: undefined,
-    items: last.items.map((item) => (item.kind === 'tool' && item.status !== 'completed' && item.status !== 'failed'
-      ? { ...item, stopped: true }
+    items: last.items.map((item) => (item.kind === 'tool' && item.status !== 'completed' && item.status !== 'failed' && item.status !== 'cut'
+      ?{ ...item, stopped: true }
       : item)),
   };
   return [...settled.slice(0, at), cut, ...settled.slice(at + 1)];

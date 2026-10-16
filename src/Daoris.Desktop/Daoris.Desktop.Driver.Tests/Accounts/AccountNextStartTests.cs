@@ -157,20 +157,22 @@ public sealed class AccountNextStartTests : IDisposable
         Assert.Equal("account-1=Refused", Holds(next));
     }
 
+    /// <summary>
+    /// OWNSPACE1a (D175 point 2, amending D125 point 5): nothing named takes the agent's Daoris account, never the tool's own
+    /// sign-in, whose cool-off then holds nothing; the rule's own cases are <c>OwnSpaceTests</c>'.
+    /// </summary>
     [Fact]
-    public void Nothing_named_runs_on_the_tool_s_own_sign_in_and_waits_out_its_cool_off()
+    public void Nothing_named_takes_the_agent_s_Daoris_account_never_the_tool_s_own_sign_in()
     {
         Accounts("account-1");
         var roster = Roster();
 
-        var own = roster.Next("fake", null);
-        Assert.Equal(((string?)null, NextReason.Own), (own.Account, own.Reason));
-        Assert.Equal("account-1=Outside", Holds(own));
+        var next = roster.Next("fake", null);
+        Assert.Equal(("account-1", NextReason.Named), (next.Account, next.Reason));
+        Assert.Empty(next.Others);
 
         Cool(null, Until);
-        var waits = roster.Next("fake", null);
-        Assert.Equal(((string?)null, NextReason.Waits, (DateTimeOffset?)Until), (waits.Account, waits.Reason, waits.When));
-        Assert.Equal("own=Cooling account-1=Outside", Holds(waits));
+        Assert.Equal(("account-1", NextReason.Named), roster.Next("fake", null) is var cooled ? (cooled.Account, cooled.Reason) : default);
     }
 
     /// <summary>Two answers are one when they take the same account for the same reason, holding the others alike.</summary>

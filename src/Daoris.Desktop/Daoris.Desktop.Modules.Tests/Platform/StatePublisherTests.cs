@@ -357,6 +357,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SWEEP_PLAN", "", null)]
     [InlineData("TREES_SYNC_PLAN", "", null)]
     [InlineData("TREES_SYNC_SCOPE", "", null)]
+    [InlineData("WORK_STATE", "", null)]
     public void The_landing_family_declares_what_it_changes(string route, string scopes, string? session)
     {
         var declared = DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route });
@@ -532,8 +533,26 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
             "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
-            + "tools,help,browser",
+            + "tools,help,browser,wiring",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
+
+    /// <summary>
+    /// FABRIC-EVENT5: a change the driver itself makes, with no press behind it (words taken up, a proposal written, a size landed), is
+    /// told to every window as a press's is: the scopes in the page's words, and the one session it was about where there is one.
+    /// </summary>
+    [Fact]
+    public async Task A_change_the_driver_makes_is_told_in_the_same_words_a_press_is()
+    {
+        StatePublisher.Publish(Bus, StateScopes.Help);
+        StatePublisher.Publish(Bus, StateScopes.Wiring);
+        StatePublisher.Publish(Bus, StateScopes.Sessions, "s1a2b3c4");
+
+        await UntilAsync(() => Changed().Count == 3);
+        Assert.Equal(
+            new[] { """{"scopes":["help"]}""", """{"scopes":["wiring"]}""", """{"scopes":["sessions"],"sessions":["s1a2b3c4"]}""" }
+                .Order(StringComparer.Ordinal),
+            Changed().Select(message => Shape(message)).Order(StringComparer.Ordinal));
+    }
 
     /// <summary>
     /// BROWSERPUBLISH1: the browser module's edits declare the browser, so every window's Settings → Browser and link opener ask it

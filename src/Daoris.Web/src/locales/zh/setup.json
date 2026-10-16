@@ -8,7 +8,7 @@
   "setup.state.todo": "待完成",
   "setup.state.optional": "可选",
   "setup.step.agent.title": "智能体",
-  "setup.step.agent.when": "某个工具已安装、且它的某个账户已登录时即完成。",
+  "setup.step.agent.when": "某个工具已安装、且 Daoris 为它保存的某个账户已登录时即完成。",
   "setup.step.helper.title": "问道衍的智能体",
   "setup.step.helper.when": "问道衍有了可运行的智能体时即完成。受理请求的智能体在它旁边选择。",
   "setup.step.repositories.title": "工作区与仓库",

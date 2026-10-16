@@ -17,6 +17,11 @@ namespace Daoris.Driver;
 /// as another maker's for a second opinion (the second-agent design §3.1). Null is a maker not declared, which is never taken
 /// as independent.
 /// </param>
+/// <param name="OwnHome">
+/// The plugin's word that its agent's own home is nobody's, a sandboxed tool (OWNSPACE1c, D175): the agent that names a
+/// <paramref name="ProfileVariable"/> otherwise always takes a Daoris account. Only JSON <c>true</c> says it; never a reason to
+/// refuse the plugin. A built-in harness never reads it. Twin: the CLI's <c>ownHome</c>.
+/// </param>
 public sealed record PluginHarness(
     string Name,
     IReadOnlyList<string> Command,
@@ -27,7 +32,8 @@ public sealed record PluginHarness(
     IReadOnlyList<string>? VersionArguments = null,
     string? AccountOf = null,
     string? Product = null,
-    string? Maker = null);
+    string? Maker = null,
+    bool OwnHome = false);
 
 /// <summary>What a plugin speaks (D64 §4): the process, and the points it listens on.</summary>
 public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);

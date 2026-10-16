@@ -109,7 +109,8 @@ public static class TidyCause
 /// clean-up (<see cref="LandedCleanups"/>, AUTOTIDY2b).
 /// </summary>
 internal sealed class AutoTidies(
-    TreeContext context, TreeFollows follows, BranchReplays replays, TreeSweeps sweeps, TreeSetAside setAside, LandedCleanups cleanups)
+    TreeContext context, TreeFollows follows, BranchReplays replays, TreeSweeps sweeps, TreeSetAside setAside, LandedCleanups cleanups,
+    EndKeeping ends)
 {
     /// <summary>
     /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a): every session branch, judged as the press's
@@ -177,6 +178,9 @@ internal sealed class AutoTidies(
         // The branches the repository's landings made and recorded (AUTOTIDY2b, D102's group), which the look takes after them.
         var entries = LandedProofs.EntriesOf(context.Recorded.All(), repository);
         if (branches.Count == 0 && entries.Count == 0) return Pass([]);
+        // FABRIC-END2: what the line holds is kept on the entries before anything goes, so an ended entry outlives its branch as a
+        // trace. The end judgement's own writer, in the lease's process only; the tidy's judgement below is unchanged (END4a moves it).
+        await ends.KeepAsync(root, repository, space, line, ct, refs).ConfigureAwait(false);
 
         // A list of the working trees git could not give is never "no tree here": nothing in the repository is judged this look.
         if (await context.Worktrees.ListAsync(root, ct, refs).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);

@@ -433,6 +433,8 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC", new { only = new[] { "engine:main" } }));
         // Which repositories a look would take (WSR7, D112) is read off the registry's checkouts too.
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_SCOPE"));
+        // Each unit's milestone (FABRIC-MILESTONE1a) is read off the same checkouts and sessions.
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "WORK_STATE"));
     }
 
     /// <summary>

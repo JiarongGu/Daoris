@@ -51,10 +51,11 @@ public sealed record ServiceOptions(
     public const string IndexVariable = "DAORIS_KNOWLEDGE_INDEX";
 
     /// <summary>
-    /// How old a reading of the one checkout may be before an answer re-reads it (ORIENT1c). A minute: a
-    /// session's server lives as long as the session, the checkout is merged into meanwhile, and one
-    /// repository re-read costs a second or two (1.2 to 1.7 s for this repository's 7,724 entries, measured),
-    /// paid at most once a minute by the search that finds it stale.
+    /// How old a reading of the one checkout may be before an answer re-reads it (ORIENT1c), when no watch of it is in
+    /// service (FABRIC-EVENT6: a watched checkout is marked stale by what moves and reconciled at
+    /// <see cref="CheckoutFreshness.Deadline"/>). A minute: a session's server lives as long as the session, the checkout is
+    /// merged into meanwhile, and one repository re-read costs a second or two (1.2 to 1.7 s for this repository's 7,724
+    /// entries, measured), paid at most once a minute by the search that finds it stale.
     /// </summary>
     public static readonly TimeSpan CheckoutRereadAfter = TimeSpan.FromMinutes(1);
 
@@ -148,6 +149,9 @@ public sealed record ComposedService(
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
+    /// <summary>The watch of the one checkout a deployment serves (FABRIC-EVENT6); null when it serves none, and disposed with the service.</summary>
+    internal CheckoutFreshness? Freshness { get; init; }
+
     /// <summary>
     /// Why the index answers nothing on this host, or null when it answers (KSCHEMA1): a newer Daoris wrote it. The
     /// host still starts, and what is not derived works; a host says this once, at its start.
@@ -187,7 +191,11 @@ public sealed record ComposedService(
     /// <summary>The channel's messages themselves (SESSONE2d): what the sync and a shared host's two channel doors read and keep.</summary>
     public ChannelStore Messages { get; init; } = null!;
 
-    public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        Freshness?.Dispose();
+        return Store?.DisposeAsync() ?? ValueTask.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -330,11 +338,16 @@ public static class ServiceFactory
             vectors = null;
         }
 
+        // One checkout moves under a persisted index (ORIENT1c): a watch of its refs and knowledge folders marks it stale
+        // (FABRIC-EVENT6), and the minute below is what a checkout nothing could watch falls back to.
+        var freshness = options.Repository is { } served && readsLocalCheckouts
+            ? new CheckoutFreshness(served, options.Documents, options.Index)
+            : null;
         var service = new KnowledgeService(
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
             registry, registrations, readsRegisteredRoots: readsLocalCheckouts, embedWindow: options.EmbedWindow,
-            // One checkout moves under a persisted index (ORIENT1c): re-read it as it goes stale.
-            rereadAfter: options.Repository is null ? null : ServiceOptions.CheckoutRereadAfter);
+            rereadAfter: options.Repository is null ? null : ServiceOptions.CheckoutRereadAfter,
+            freshness: freshness);
 
         // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come
@@ -373,6 +386,7 @@ public static class ServiceFactory
             sessions, ledger, keys, service.SemanticEnabled)
         {
             Store = store,
+            Freshness = freshness,
             Files = files,
             Remotes = remotes,
             // An ask's quests go through the same exchange every other door uses (D65 §1a).

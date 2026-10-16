@@ -555,9 +555,23 @@ internal static class TreesConsole
             // branch's plugin is asked about its pull request whatever the kept answer's age, the answer kept, and what it proves here
             // said. Named by the session that landed it or by the branch, standing or a trace. It removes nothing: the clean-up and
             // bringing up to date act on what it kept. Exempt from Ask Daoris as a read (D110 §4).
+            // The milestone of every unit (FABRIC-MILESTONE1a, D50): end reached, result kept, cleanup pending or completed, recovery retained,
+            // derived read-only from the records the tree lifecycle already keeps. Before the plugin's ask below, which takes a name.
+            case ["state"] or ["state", "--entries"]:
+            {
+                var (units, unread) = await WorkConsole.ReadAsync(home).ConfigureAwait(false);
+                foreach (var line in unread) Console.Error.WriteLine($"trees: {line}");
+                foreach (var line in WorkWords.All(units, args.Contains("--entries"))) Console.WriteLine(line);
+                return 0;
+            }
+
             case ["state", var named, ..]:
             {
                 var repository = Option(args, "--repository");
+                // The milestone of the unit it names, before the plugin is asked (FABRIC-MILESTONE1a); a name no unit has is said by the ask's own words.
+                var (milestones, notRead) = await WorkConsole.ReadAsync(home).ConfigureAwait(false);
+                foreach (var line in notRead) Console.Error.WriteLine($"trees: {line}");
+                foreach (var unit in WorkInventories.Named(milestones, named)) foreach (var line in WorkWords.Milestone(unit)) Console.WriteLine(line);
                 var found = trees.Recorded.FindAll(named, repository);
                 if (found.Count == 0)
                 {
@@ -603,6 +617,7 @@ internal static class TreesConsole
         Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]");
         Console.Error.WriteLine("                           | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]");
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
+        Console.Error.WriteLine("                           | state [--entries]");
         Console.Error.WriteLine("                           | state <session|branch> [--repository <name>]");
         Console.Error.WriteLine("                           | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]");
         Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
@@ -625,6 +640,9 @@ internal static class TreesConsole
         Console.Error.WriteLine("  redid, which --plan says (D167's 2026-10-15 amendment). An ask lands each repository's line of work.");
         Console.Error.WriteLine("  hand gives a branch a landing made to a landing plugin afterwards — the one");
         Console.Error.WriteLine("  --plugin names, else the rule's — to push and open the pull request (WSR5).");
+        Console.Error.WriteLine("  state alone says each unit of work's milestone: whether its end was reached, the result kept, the");
+        Console.Error.WriteLine("  cleanup pending (what waits and why) or completed, and the recovery retained; --entries lists the");
+        Console.Error.WriteLine("  inventory it is read from. It changes nothing (FABRIC-MILESTONE1a); `work state` says the same.");
         Console.Error.WriteLine("  state asks the plugin that pushed a landed branch, else the rule's, again whether");
         Console.Error.WriteLine("  its pull request completed, keeps the answer, and says what it proves here; the");
         Console.Error.WriteLine("  clean-up and sync act on what it kept, and ask too where git cannot tell (D148).");

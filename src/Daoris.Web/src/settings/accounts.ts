@@ -61,11 +61,13 @@ export type AccountFacts = {
 
 /**
  * Why the next start takes its account (TOOL6e, D130 §3–§4 as §16.3 amends them): the driver's `NextReason`, a closed set.
- * `own` and `named` are a scope's one account, chosen by no step; `waits` is no account ready.
+ * `own` and `named` are a scope's one account, chosen by no step; `waits` is no account ready; `noAccount` is no Daoris account
+ * signed in at all (D175 point 2, OWNSPACE1b): said apart from `waits`, which is an account that comes ready by itself. The
+ * driver answers it from OWNSPACE1b-B; until then the line is drawn only when the reason arrives.
  */
 export type NextReason =
   | 'own' | 'named' | 'onlyReady' | 'kept' | 'near' | 'fewest' | 'lapsing' | 'pace' | 'leastRecent' | 'notStarted' | 'list'
-  | 'waits';
+  | 'waits' | 'noAccount';
 
 /** What keeps the next start off an account (TOOL6e), or `ready` where nothing does and it is merely ranked after. */
 export type NextHold = 'ready' | 'near' | 'cooling' | 'refused' | 'signedOut' | 'kept' | 'missing' | 'outside';
@@ -113,6 +115,12 @@ export type AccountScope = {
   list: string[];
   /** Where its starts begin: its default where its list holds it, else its list's first; with no list, its default. */
   begins?: string | null;
+  /**
+   * Whether it names nothing, so Daoris's accounts on this machine are its list, in turn (OWNSPACE1b-A, D175 point 2): the page
+   * says that where it said the tool's own sign-in. False for a test double that runs in its own home; absent from a shell older
+   * than that.
+   */
+  inherited?: boolean;
   use: ScopeUse;
   /** Settings it holds that this build does not know, by name. */
   unknown: string[];
@@ -377,6 +385,7 @@ export function nextLine(
   next: NextStart, scope: AccountScope, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
 ): string {
   if (next.reason === 'own') return i18n.t('harness.next.own');
+  if (next.reason === 'noAccount') return i18n.t('harness.next.noAccount');
   if (next.reason === 'waits' || !next.account) {
     const waits = next.when ? i18n.t('harness.next.waitsUntil', { when: moment(next.when) }) : i18n.t('harness.next.waits');
     // TOOL6g: an account not signed in waits for a person, never for the reset, so a wait says a sign-in frees it.
@@ -431,7 +440,10 @@ export function offeredLine(offered: string): string {
   return i18n.t('harness.next.offered', { when: moment(offered) });
 }
 
-/** The tool's own sign-in's line (D125 §3.7), when a start would run on it, with its cool-off where it cools. */
+/**
+ * The tool's own sign-in's line (D175 point 1, settlement 1 of OWNSPACE1b): who it is, that Daoris starts no session in it and
+ * conversations begun there go on there, and an old cool-off where it holds one. Read-only: nothing waits on it.
+ */
 export function ownLine(who: string | null | undefined, cooling: AccountCooling | null | undefined): string {
   const shared = who ? i18n.t('harness.own.shared', { who }) : i18n.t('harness.own.sharedUnknown');
   return cooling ? `${shared}${i18n.t('harness.said.sentences')}${i18n.t('harness.own.cooling', { when: moment(cooling.until) })}` : shared;

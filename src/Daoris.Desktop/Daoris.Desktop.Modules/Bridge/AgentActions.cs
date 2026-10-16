@@ -322,9 +322,21 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
 
         var shown = AccountNames.Shown(_loop.Harnesses.Home, owner, account);
-        stream(places.Count > 0
-            ? $"`{shown}` runs work in {string.Join(", ", places.Select(PlaceWords))}."
-            : $"no list and no default holds `{shown}`, so no start runs on it — put it in a workspace's list from its row.");
+        stream(PlacesSaid(_loop.Harnesses.Settings, owner, shown, places));
+    }
+
+    /// <summary>
+    /// Where an account runs, said at a sign-in's end. A scope that names no account takes all of Daoris's accounts in turn
+    /// (OWNSPACE1a, D175), so where this machine names nothing an account no list holds is still taken, and "no start runs on
+    /// it" is said only where the machine's own list or default names others (OWNSPACE1b-B).
+    /// </summary>
+    public static string PlacesSaid(HarnessSettings settings, string owner, string shown, IReadOnlyList<AccountPlace> places)
+    {
+        if (places.Count > 0) return $"`{shown}` runs work in {string.Join(", ", places.Select(PlaceWords))}.";
+        var machine = settings.ResolveScope(owner, null);
+        return machine.List.Count == 0 && machine.Begins is null
+            ? $"no list and no default names `{shown}`, and none names another, so Daoris takes its accounts in turn."
+            : $"no list and no default holds `{shown}`, so no start runs on it — put it in a workspace's list from its row.";
     }
 
     /// <summary>One scope an account runs in, as a person reads it: <c>this machine's list, as its default</c>.</summary>

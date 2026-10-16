@@ -75,7 +75,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         SessionProcesses processes, ServiceClient service, SessionEvents? events = null, Action? nudge = null, TimeSpan? every = null) =>
         new(_home, processes, () => service, every: every ?? TimeSpan.FromMilliseconds(20))
         {
-            Say = new LoopWords(processes, () => service) { Events = events, Nudge = nudge }.HoldAsync,
+            Say = new LoopWords(processes, () => service) { Events = events, Nudge = nudge is null ? null : _ => nudge() }.HoldAsync,
         };
 
     /// <summary>A live process for <paramref name="id"/>, as any driver sharing the home marks one: this test's own.</summary>
@@ -143,6 +143,91 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Null(problem);
         Assert.Equal(("say", "d0ne0000", "also the changelog"), (ask!.Verb, ask.Ids[0], ask.Text));
         Assert.Equal(["notes.md", "b.txt"], ask.Files);
+    }
+
+    /// <summary>STEER2c: <c>--now</c> is the terminal's twin of *Send now*, a flag anywhere after the id, and no part of the words.</summary>
+    [Fact]
+    public void Now_is_a_flag_beside_the_words_and_not_one_of_them()
+    {
+        var now = SessionsCommand.Read(["say", "d0ne0000", "also", "--now", "the", "changelog"], out var problem);
+        var plain = SessionsCommand.Read(["say", "d0ne0000", "also the changelog"], out _);
+
+        Assert.Null(problem);
+        Assert.Equal(("also the changelog", true), (now!.Text, now.Now));
+        Assert.False(plain!.Now);
+        Assert.Null(SessionsCommand.Read(["say", "d0ne0000", "--now"], out var bare));
+        Assert.False(string.IsNullOrWhiteSpace(bare));
+        Assert.Contains("--now", SessionsCommand.Usage);
+    }
+
+    /// <summary>The answer a loop gives to a say with <c>--now</c> reads back whole, by the request's file.</summary>
+    [Fact]
+    public void A_nows_request_and_answer_carry_it_through_the_request_folder()
+    {
+        var requests = new SessionRequests(_home);
+        var request = new SessionRequest("w0rk1ng0", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "hi", Key = SessionRequests.NewKey(), Now = true };
+        requests.Write(request);
+
+        Assert.True(Assert.Single(requests.Pending(DateTimeOffset.UtcNow)).Now);
+        requests.Answer(request, new WordsHeld(true, "now", null) { Now = true });
+        Assert.Equal(new WordsHeld(true, "now", null) { Now = true }, requests.AnswerOf(request));
+    }
+
+    /// <summary>
+    /// STEER2c: the verb says what the door did, in its own words, from the answer { sent, reaches, why, now }: taken at once, the
+    /// turn stopping so the words go next, or not now with the reason. Its clock is held until the loop took the words (FLAKE5).
+    /// </summary>
+    [Theory]
+    [InlineData("steers", "sessions: sent now: it took this at once, cutting its step in flight.\n")]
+    [InlineData("stops", "sessions: sent now: its turn is stopping, so this goes next.\n")]
+    [InlineData("no-interrupt", "sessions: not sent now: it cannot be interrupted; it reads this when its turn ends.\n")]
+    [InlineData("opening", "sessions: not sent now: its first prompt has not left yet; it reads this at its next step.\n")]
+    [InlineData("behind", "sessions: not sent now: words ahead of these are still on their way; it reads this at its next step.\n")]
+    public async Task Now_says_what_the_door_did(string door, string line)
+    {
+        var room = Running();
+        using var service = room.Client();
+        var processes = new SessionProcesses(Sessions);
+        var inbox = processes.OpenInbox("w0rk1ng0");
+        switch (door)
+        {
+            case "steers":
+                inbox.Attach(interrupt: null, deliver: _ => Task.FromResult(""), steer: _ => Task.FromResult("injected"));
+                inbox.Flow();
+                break;
+            case "stops":
+                inbox.Attach(interrupt: () => Task.CompletedTask);
+                break;
+            case "no-interrupt":
+                inbox.Attach(interrupt: null);
+                break;
+            case "opening":
+                inbox.Attach(interrupt: null, deliver: _ => Task.FromResult(""));
+                break;
+            default:
+                inbox.Attach(interrupt: null, deliver: _ => new TaskCompletionSource<string>().Task);
+                inbox.Flow();
+                Assert.True(inbox.Hold(new ChatMessage("one before", [])));
+                break;
+        }
+
+        Alive("w0rk1ng0");
+        var clock = new HeldClock();
+        var world = World(service) with { Clock = clock };
+        var words = new LoopWords(processes, () => service);
+        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
+        {
+            Say = (request, ct) =>
+            {
+                clock.Run();
+                return words.HoldAsync(request, ct);
+            },
+        };
+
+        var (exit, said) = await SayAsync(room, ["w0rk1ng0", "use the cache", "--now"], world);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(line, said);
     }
 
     private static Room Nevers() => new(
@@ -415,7 +500,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var processes = new SessionProcesses(Sessions);
         var clock = new HeldClock();
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
-        var words = new LoopWords(processes, () => service) { Nudge = () => room.GoOn("d0ne0000") };
+        var words = new LoopWords(processes, () => service) { Nudge = _ => room.GoOn("d0ne0000") };
         await using var loop = new SessionRequestWatch(_home, processes, () => service, every: Late(world))
         {
             // Its pass is late: the words are kept, and its look nudged, only once the verb's wait is over.

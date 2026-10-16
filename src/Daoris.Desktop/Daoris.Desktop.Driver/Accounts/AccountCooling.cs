@@ -430,6 +430,13 @@ public sealed record AccountWait(
     public IReadOnlyList<string> SignedOut { get; init; } = [];
 
     /// <summary>
+    /// True where the starts were held by OWNSPACE1a's no-account hold (D175): no Daoris account of the agent's is signed in.
+    /// A fact the page says the hold from and offers <i>Sign in for Daoris</i> by, never read off an empty
+    /// <see cref="SignedOut"/> (OWNSPACE1b-B).
+    /// </summary>
+    public bool NoAccount { get; init; }
+
+    /// <summary>
     /// The name the person gave <see cref="Account"/> (ACCT2b), read when the look said the wait; null where it has none, and
     /// for the tool's own home. The page says the wait by it, and the log keeps <see cref="Account"/>.
     /// </summary>

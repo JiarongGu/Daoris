@@ -89,7 +89,9 @@ node tools/merge-branch.mjs --full
 ```
 
 The last form runs the full set on the current checkout, including the long gates. The gates that
-start no real process run beside the serial Process lane (GATELANES1); add `--one-at-a-time` on a
+start no real process run beside the serial Process lane (GATELANES1), but a Process half starts only
+once the heavy light gates (the CLI, .NET and web suites) have ended, so its timing tests run with no
+suite loading the CPU (GATEORDER1); add `--one-at-a-time` on a
 loaded machine to run every gate in turn. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 

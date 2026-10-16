@@ -26,6 +26,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     {
         _root = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_root);
+        // A Daoris account for Claude Code's doors, where every start now runs (OWNSPACE1a): never the person's own home.
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
     }
 
     public void Dispose()

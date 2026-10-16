@@ -58,6 +58,12 @@ export const keys = {
   /** How each repository's checkout stands for reading and writing across (D107) — shell-only, like the lines. */
   across: ['driver', 'across'] as const,
   allLandings: ['driver', 'landing'] as const,
+  /**
+   * Each unit of work's milestone (FABRIC-MILESTONE1b), derived by the driver from the landing, session-branch and tree records:
+   * asked again with the landings, the sweep and the sessions, which are what move it. Null is every unit's.
+   */
+  allWorkState: ['driver', 'work-state'] as const,
+  workState: (unit: string | null) => ['driver', 'work-state', unit] as const,
   sweep: ['driver', 'sweep'] as const,
   landing: (session: string) => ['driver', 'landing', session] as const,
   /**
@@ -340,7 +346,8 @@ export const useOpinions = (enabled: boolean) => useQuery({
 export const useHelpSessions = (
   /**
    * How often to ask again while a conversation the person wrote to is still to go on (ASKHIST1): its record moves to working
-   * as the driver takes the words up, and no event says so to the list. False asks only when the list is stale.
+   * as the driver takes the words up, which a desktop window is told as `sessions` (FABRIC-EVENT5a), so the caller gives it only
+   * to a window with no bus. False asks only when the list is stale.
    */
   refetchInterval: number | false = false,
 ) =>
