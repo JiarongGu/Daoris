@@ -124,9 +124,10 @@ public static class SendNowWhy
     public const string Opening = "opening";
 
     /// <summary>
-    /// On a next-step door, other words wait before these or are on their way to the agent (a word sent at its next step, a
-    /// helper's answer waiting as its own turn): the words go behind them, at the next step or as the next turn, and nothing is
-    /// stopped, since a stop would answer a word on its way cancelled while the agent may still act on it (D136 point 4).
+    /// On a next-step door whose agent cannot steer, other words wait before these or are on their way to the agent (a word sent
+    /// at its next step, a helper's answer waiting as its own turn): the words go behind them, at the next step or as the next
+    /// turn, and nothing is stopped, since a stop would answer a word on its way cancelled while the agent may still act on it
+    /// (D136 point 4). Where the agent steers, the words are steered past them instead.
     /// </summary>
     public const string Behind = "behind";
 

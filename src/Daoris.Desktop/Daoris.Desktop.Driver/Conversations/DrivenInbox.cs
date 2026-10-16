@@ -217,8 +217,10 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// <para>The steer is answered by the run (<see cref="NextOrClose"/>), which closes nothing while one is on its way. The stop
     /// is asked once per turn, once the words are held, as <see cref="SendNowAsync"/> asks it.</para>
     ///
-    /// <para>🔴 <b>Behind a word on its way, nothing is steered past it</b> (D136 point 4): the agent would read the later words
-    /// first. These go at its next step behind it, said <see cref="SendNowWhy.Behind"/>; that door is never stopped.</para>
+    /// <para>🔴 <b>A steer goes past a word on its way; a stop never does</b> (D136 point 4): the steer cuts the step in flight,
+    /// not the prompt the word is queued as, which is still taken at its next step, and the person chose to go first. Where the
+    /// agent cannot steer, these go at its next step behind it, said <see cref="SendNowWhy.Behind"/>; that door is never
+    /// stopped.</para>
     /// </remarks>
     public async Task<SentNow?> HoldNowAsync(ChatMessage message)
     {
@@ -228,7 +230,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         {
             if (_closed) return null;
             var onTheirWay = _sent.Any(answer => !answer.IsCompleted);
-            if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer && !onTheirWay)
+            if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
             {
                 var said = message with { Id = $"said-{++_said}" };
                 Tell(said, DrivenReach.Steered);
@@ -245,8 +247,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             }
             else if (reach == DrivenReach.NextStep)
             {
-                now = new SentNow(
-                    SendNowWhy.Spelled(reach), Now: false, _steer is not null && onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt);
+                now = new SentNow(SendNowWhy.Spelled(reach), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt);
             }
             else if (_interrupt is not null)
             {

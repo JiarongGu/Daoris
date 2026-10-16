@@ -252,9 +252,10 @@ internal sealed class ChatTurns(
     /// (<see cref="StopKeepingAsync"/>), so they are the next turn (D90). Null once the conversation is finishing, held or gone.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>On a next-step door nothing is stopped and nothing overtaken</b> (D136 point 4): with a word on its way, a stop
-    /// would answer it cancelled while the agent may still act on it (evidence §3), and a steer would have the agent read the
-    /// later words first. Behind words on their way or waiting, the words go behind them, said <see cref="SendNowWhy.Behind"/>.</para>
+    /// <para>🔴 <b>On a next-step door nothing is stopped</b> (D136 point 4): with a word on its way, a stop would answer it
+    /// cancelled while the agent may still act on it (evidence §3). A steer is no stop: it goes past words on their way and
+    /// waiting, the person's choice to go first, and they keep their places. Where the agent cannot steer, the words go behind
+    /// what is ahead, said <see cref="SendNowWhy.Behind"/>.</para>
     ///
     /// <para>Judged and done under one lock while a turn is in flight: queued and stopped in two steps, a turn ending between
     /// them would hand the words their own turn, and the stop would cut it.</para>
@@ -273,7 +274,9 @@ internal sealed class ChatTurns(
                 var onTheirWay = OnTheirWay();
                 var behind = onTheirWay || _holding is not null || _waiting.Count > 0;
                 var running = _sent && !_stopped && !_stopPending;
-                if (running && !behind && steerNow?.Invoke(message) is { } steered)
+                // 🔴 Steered past whatever is ahead (the owner's case): the steer cuts the step in flight, not the prompt a word on
+                // its way is queued as, which is still taken at its next step; what waits keeps its place. The person chose now.
+                if (running && steerNow?.Invoke(message) is { } steered)
                 {
                     _steered.Add(steered);
                     return new SentNow(SendNowWhy.Spelled(TurnReach.Steered), Now: true, Why: null);

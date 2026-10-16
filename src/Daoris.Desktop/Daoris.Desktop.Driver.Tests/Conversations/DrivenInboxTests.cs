@@ -340,28 +340,38 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (D136 point 4): on a door that steers, words pressed while an earlier word is on its way are neither steered
-    /// past it nor sent with a stop: they go at the next step behind it, and the answer says <c>behind</c>.
+    /// 🔴 STEER2a (the owner's case): on a door that steers, words pressed while an earlier word is on its way are steered past
+    /// it, the person's choice to go first; the earlier word stays on its way, and nothing is stopped. Where the agent cannot
+    /// steer they go at the next step behind it, and the answer says <c>behind</c>.
     /// </summary>
     [Fact]
-    public async Task Sending_now_behind_a_word_on_its_way_sends_it_at_the_next_step_and_says_so()
+    public async Task Sending_now_past_a_word_on_its_way_steers_where_the_agent_steers_and_goes_behind_where_it_cannot()
     {
         var sent = new List<string>();
-        var steered = 0;
+        var steered = new List<string>();
         var stopped = 0;
-        var inbox = new DrivenInbox(_ => { });
-        inbox.Attach(
+        var steering = new DrivenInbox(_ => { });
+        steering.Attach(
             () => { stopped++; return Task.CompletedTask; },
             message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; },
-            _ => { steered++; return Task.FromResult("injected"); });
-        inbox.Flow();
-        inbox.Hold(Said("put PINEAPPLE after the words"));
+            message => { steered.Add(message.Text); return Task.FromResult("injected"); });
+        steering.Flow();
+        steering.Hold(Said("put PINEAPPLE after the words"));
 
-        var now = await inbox.HoldNowAsync(Said("and MANGO"));
+        Assert.Equal(new SentNow("now", true, null), await steering.HoldNowAsync(Said("stop: the tests are in /spec")));
+        Assert.Equal(["put PINEAPPLE after the words"], sent);
+        Assert.Equal(["stop: the tests are in /spec"], steered);
 
-        Assert.Equal(new SentNow("next-step", false, SendNowWhy.Behind), now);
-        Assert.Equal(["put PINEAPPLE after the words", "and MANGO"], sent);
-        Assert.Equal((0, 0), (steered, stopped));
+        var stepping = new DrivenInbox(_ => { });
+        stepping.Attach(
+            () => { stopped++; return Task.CompletedTask; },
+            message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
+        stepping.Flow();
+        stepping.Hold(Said("one more thing"));
+
+        Assert.Equal(new SentNow("next-step", false, SendNowWhy.Behind), await stepping.HoldNowAsync(Said("and MANGO")));
+        Assert.Equal(["put PINEAPPLE after the words", "one more thing", "and MANGO"], sent);
+        Assert.Equal(0, stopped);
     }
 
     /// <summary>

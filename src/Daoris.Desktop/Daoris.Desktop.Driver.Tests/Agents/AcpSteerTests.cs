@@ -682,6 +682,73 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
+    /// 🔴 STEER2a (the owner's case): a word queued at the next step is on its way when the person, finding it urgent, presses
+    /// *Send now* with new words. Those are steered past it, the person's choice to go first; nothing is stopped, the queued
+    /// word is still taken at its next step, and the record reads in the wire's order.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_past_a_word_on_its_way_steers_and_the_word_is_still_taken_at_its_next_step()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    // The queued word: on its way, taken at the next step.
+                    second.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "_session/steering":
+                    self.Push(Ok(frame, """{"outcome":"injected"}"""));
+                    self.Push(Said("MANGO"));
+                    // The next step: the task's prompt handed off to the queued word, which the agent works on to the end.
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    self.Push(Said("PINEAPPLE"));
+                    self.Push(Answer(second.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid(record.SaidTo);
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(inbox.Hold(new ChatMessage("put PINEAPPLE after the words", [])));
+        await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var now = await inbox.HoldNowAsync(new ChatMessage("stop: the tests are in /spec", []));
+        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(new SentNow("now", true, null), now);
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "_session/steering", "session/close"], agent.Methods);
+        Assert.Equal(
+            [
+                "said:said-1:NextStep:put PINEAPPLE after the words",
+                "said:said-2:Steered:stop: the tests are in /spec",
+                "taken:said-2:stop: the tests are in /spec",
+                "message:MANGO",
+                "turn:end_turn",
+                "taken:said-1:put PINEAPPLE after the words",
+                "message:PINEAPPLE",
+                "turn:end_turn",
+            ],
+            record.Lines);
+    }
+
+    /// <summary>
     /// 🔴 STEER2a (a second maker's review): a call that finished stays finished through an update that says no status, so a
     /// later steer never closes it as cut.
     /// </summary>
