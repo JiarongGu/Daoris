@@ -13,7 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// A lease naming THIS test process is a live holder as far as any taker can tell — which is what a holder elsewhere on the
 /// machine looks like, without starting one. A gone one is a process id no process has. The rows that start a process (an
-/// exited one's id, a junction) are <see cref="HomeLeaseProcessTests"/>'.
+/// exited one's id, a junction) are <see cref="HomeLeaseProcessTests"/>'; the launcher's swap holding it is read off the
+/// launcher's source by the modules' <c>InstallHomeTests</c>, whose gate a change to the launcher reaches.
 /// </remarks>
 public sealed class HomeLeaseTests : IDisposable
 {
@@ -246,29 +247,6 @@ public sealed class HomeLeaseTests : IDisposable
         using var held = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _);
         Assert.NotNull(held);
         Assert.True(File.Exists(Path.Combine(_home, HomeLease.LegacyFileName)));
-    }
-
-    /// <summary>
-    /// 🔴 The launcher's swap holds the home's lease (§5, D139 §5): it compiles this file and the home's id in, as it does the
-    /// swap, and takes the lease as a swap before the swap's first move, refusing to replace anything while an act holds it.
-    /// Read off its source, as <c>TaskbarIdentityTests</c> reads its names: the launcher's <c>Main</c> starts processes.
-    /// </summary>
-    [Fact]
-    public void The_launchers_swap_holds_the_homes_lease()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json"))) directory = directory.Parent;
-        var launcher = Path.Combine(directory!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Launcher");
-
-        var project = File.ReadAllText(Path.Combine(launcher, "Daoris.Desktop.Launcher.csproj"));
-        Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeLease.cs""", project);
-        Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs""", project);
-
-        var program = File.ReadAllText(Path.Combine(launcher, "Program.cs"));
-        var leased = program.IndexOf("HomeLease.Await(", StringComparison.Ordinal);
-        Assert.True(leased > 0, "the launcher takes no lease");
-        Assert.Contains("LeaseKind.Swap", program[leased..]);
-        Assert.True(leased < program.IndexOf("swap.Run(rest)", StringComparison.Ordinal), "the swap runs before the lease is taken");
     }
 
     /// <summary>A release takes away only the lease it wrote — never one another holder has written since.</summary>

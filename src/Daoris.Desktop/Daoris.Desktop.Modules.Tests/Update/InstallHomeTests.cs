@@ -278,6 +278,30 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 HOMELEASE1: the launcher's swap of <c>app/</c> holds the install's home's lease (the terminal RPC design §5, D139 §5): it
+    /// compiles the lease and the home's id in, as it does the swap, and takes the lease as a swap before the swap's first move,
+    /// replacing nothing while an act holds it. Read off its source, as <c>TaskbarIdentityTests</c> reads its names: the
+    /// launcher's <c>Main</c> starts processes.
+    /// </summary>
+    [Fact]
+    public void The_launchers_swap_holds_the_installs_home_lease()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json"))) directory = directory.Parent;
+        var launcher = Path.Combine(directory!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Launcher");
+
+        var project = File.ReadAllText(Path.Combine(launcher, "Daoris.Desktop.Launcher.csproj"));
+        Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeLease.cs""", project);
+        Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs""", project);
+
+        var program = File.ReadAllText(Path.Combine(launcher, "Program.cs"));
+        var leased = program.IndexOf("HomeLease.Await(", StringComparison.Ordinal);
+        Assert.True(leased > 0, "the launcher takes no lease");
+        Assert.Contains($"Path.Combine(root, \"{InstallHome.Folder}\"), LeaseKind.Swap", program[leased..]);
+        Assert.True(leased < program.IndexOf("swap.Run(rest)", StringComparison.Ordinal), "the swap runs before the lease is taken");
+    }
+
+    /// <summary>
     /// 🔴 HOMELEASE1: the first-start move holds the home's lease while it moves, so it never moves files under a verb acting
     /// alone. A verb holding the home for the whole of its wait: nothing moves, the older home stays where it was, and the notice
     /// says which act held it; the next start moves it.
