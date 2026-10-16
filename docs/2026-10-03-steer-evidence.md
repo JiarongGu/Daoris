@@ -70,6 +70,7 @@ in §0. It is a record of those versions, not a contract: a harness that moves i
 | "Pre-empting means ABORTING: the interrupted cycle emits a `result` of its own and the steered message runs as a second one" | `acp-agent.js:2052-2054` | read |
 | Claude Code aborts the running drain with `interrupt` the moment a command at `now` is queued | `claude.exe` @228189598, @228189641 | read |
 | With no turn running it starts a detached turn and answers `startedNewTurn`, unless the request's `_meta.steering.idleBehavior` is `promptRequired`, when it answers `promptRequired` and leaves the words to the client | `acp-agent.js:2078-2101`, `:226-232` | read |
+| The request's parameters are `{ sessionId, prompt, _meta? }`, where `prompt` is a non-empty array of the content blocks `session/prompt` carries and `idleBehavior` takes `promptRequired` alone; the priority is the adapter's, never the client's (read 2026-10-16, STEER2a) | `acp-agent.js:187`, `:215-238`, `:8186` | read |
 
 ## 3. A stop while words are on their way
 
