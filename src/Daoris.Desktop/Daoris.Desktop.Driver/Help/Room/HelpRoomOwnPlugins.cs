@@ -48,8 +48,11 @@ internal sealed class HelpRoomOwnPlugins : IHelpRoomSection
 
         if (offer.Harnesses.Count > 0) parts.Add($"declares {string.Join(", ", offer.Harnesses.Select(name => $"`{name}`"))}");
         if (offer.Servers.Count > 0) parts.Add($"hands every session {string.Join(", ", offer.Servers.Select(name => $"`{name}`"))}");
-        // HELPPLUG1a (D170 point 3): what it would hand Ask Daoris itself, once installed.
-        if (offer.HelpServers.Count > 0) parts.Add($"hands you {string.Join(", ", offer.HelpServers.Select(name => $"`{name}`"))}");
+        // HELPPLUG1a (D170 point 3 and its note): what it would offer Ask Daoris itself, once installed and approved.
+        if (offer.HelpServers.Count > 0)
+        {
+            parts.Add($"offers you {string.Join(", ", offer.HelpServers.Select(name => $"`{name}`"))} once the person approves it on its page");
+        }
         if (offer.Needs.Count > 0) parts.Add($"needs: {string.Join("; ", offer.Needs)}");
         return $"`{offer.Id}`{(titled.Length > 0 ? $" ({titled})" : "")}: {string.Join("; ", parts)}";
     }

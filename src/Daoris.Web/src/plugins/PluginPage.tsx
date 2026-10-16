@@ -161,7 +161,7 @@ export function NameRows({ names }: { names: string[] }) {
 
 /**
  * **A plugin's page** (D119 §3.2) on today's answers (PLUGUI1b): a header with its switch, *Try*, *Update…* and
- * *Remove…*, then Points, Agents, Tests, Data folder and Source, and its terminal twins at its foot.
+ * *Remove…*, then Points, Agents, Ask Daoris and Skills (D170), Tests, Data folder and Source, and its terminal twins at its foot.
  *
  * @remarks
  * **A molecule**: every state is reached by its props, the ask and the plan included, and every press goes out.

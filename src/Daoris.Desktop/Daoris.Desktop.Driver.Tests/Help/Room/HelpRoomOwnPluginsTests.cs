@@ -65,7 +65,8 @@ public sealed class HelpRoomOwnPluginsTests
             Assert.Equal(["work/land"], machine.Offers[0].Points);
             Assert.Equal(["docs"], machine.Offers[1].Servers);
             Assert.Equal(["tickets"], machine.Offers[1].HelpServers);
-            Assert.Contains("- `tickets`: hands every session `docs`; hands you `tickets`", HelpRoom.Render(machine));
+            Assert.Contains(
+                "- `tickets`: hands every session `docs`; offers you `tickets` once the person approves it on its page", HelpRoom.Render(machine));
             Assert.Equal("offer", Assert.Single(machine.Plugins).Source);
             Assert.DoesNotContain(root, HelpRoom.Render(machine));
         }

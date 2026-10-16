@@ -5,6 +5,19 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris says when it has no door for what you asked: it names the terminal command, and says the door is one Daoris
+  still owes, not a limit of its own. It does this for registering a repository, setting a workspace up, checking evidence
+  again, an ask's review or kind, a workflow's file, import or kind, a tool's version or location, and clearing an
+  account's default.
+- A plugin's `plugin.json` can offer Ask Daoris an MCP server (`"to": ["help"]`, or both with `"sessions"`). It lists the
+  tools that read (`allow`) and those that write outside Daoris (`writes`). Ask Daoris gets the server only once you approve
+  its exact tools on the plugin's page, or with `daoris-driver plugins approve <id> <server> [--reads-only]`. You can take
+  that back (`withdraw`), and an update that adds a tool asks again. A write you did not accept is refused. A tool whose
+  name says it runs commands is never offered to Ask Daoris. The page says plainly that a plugin is code that runs as you.
+- A plugin can carry skills (`"skills": [{ "name": …, "to": [...] }]`, each a `skills/<name>/SKILL.md`). Sessions, Ask
+  Daoris or both get them as they start, by Claude Code's session-only plugin door. Nothing is written into a repository,
+  and a skill that would allow itself tools is handed nowhere. The plugin's page lists each skill and who it goes to.
+
 - `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
   holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the
