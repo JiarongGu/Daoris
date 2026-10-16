@@ -620,6 +620,9 @@ export const REACH = Object.freeze([
     gates: DRIVER_READERS,
     why: 'the modules build on it, the family rehearsal drives its headless host, and the deployed shell runs its loop (D60): ServiceHostLocator, the staged build, a session',
   },
+  // LAUNCHGATE1: the driver's tests project builds the launcher (it compiles driver files in by link), so a launcher change
+  // is compiled by the driver gate as well as by the publish. A path rule replaces its lane's, so the modules' readers stay.
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Launcher/**'], gates: [...MODULES_READERS, 'driver'], why: 'the modules lane\'s own, and the driver gate builds the launcher, which links driver files (LAUNCHGATE1)' },
   { lane: 'modules', gates: MODULES_READERS, why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
   {
     lane: 'service',
