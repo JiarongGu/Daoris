@@ -1904,6 +1904,17 @@ test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a se
   assert.equal(result.verdict, 'FAIL');
   assert.match(result.note, /failed again alone/);
 
+  // Two failed in the full run, one of them passing alone: the note names only the one that failed again, and says the
+  // other passed alone, so a reader chases the right test (a parent once briefed a worker on three that had passed).
+  const second = 'Daoris.Desktop.Driver.Tests.StopHoldTickTests.A_take_the_person_stopped_is_held';
+  const twoFailed = PROCESS_FAILURE.replace('Failed!  - Failed:     1', `  Failed ${second} [9 s]\r\nFailed!  - Failed:     2`);
+  fake = fakeStep((command) => (!command.includes('--filter') ? { out: twoFailed, code: 1 }
+    : command.includes('StopHoldTickTests') ? { out: alone, code: 0 } : { out: PROCESS_FAILURE, code: 1 }));
+  result = await tool.runGate(fx.root, driver, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FAIL');
+  assert.match(result.note, /failed again alone: ProcessJobTests\.A_child[^;]*; passed alone: StopHoldTickTests\.A_take/);
+  assert.doesNotMatch(result.note, /failed again alone: [^;]*StopHoldTickTests/);
+
   // A re-run whose filter matched nothing exits 0, and is still not a pass.
   fake = fakeStep((command) => (command.includes('--filter')
     ? { out: 'No test matches the given testcase filter\n', code: 0 } : { out: PROCESS_FAILURE, code: 1 }));

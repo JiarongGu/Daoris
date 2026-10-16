@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — The merge gate's note named tests that passed alone as failed again
+
+- **Symptom:** after a Process gate's full run failed four tests and two of them failed again alone, the note read
+  "failed again alone: <all four>". The parent briefed a worker to find the cause of three tests that had passed when re-run.
+- **Root cause:** `rerunAlone` returned only whether every re-run passed, so the note listed every re-run test under the
+  failing verdict.
+- **Fix:** `rerunAlone` returns the tests that failed again; the note names those as failed again alone, and the rest as
+  passed alone.
+- **Verification:** `merge-branch.test.ts`, the re-run case: two failed in the full run, one passing alone, the note naming
+  only the other as failed again (seen red with the old note).
+
 ## 2026-10-16 — A start with no account named ran in the person's own tool home (OWNSPACE1a)
 
 - **Symptom:** the owner, 2026-10-16: the person's own Claude Code home held 28 project folders the install's sessions wrote
