@@ -302,21 +302,26 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, others[1].GetProperty("until").ValueKind);
     }
 
-    /// <summary>D125 §3.7 as TOOL6e says it: a scope that names no account runs on the tool's own sign-in, and waits out its cool-off.</summary>
+    /// <summary>
+    /// OWNSPACE1a (D175 point 2, amending D125 §3.7): a scope that names no account answers the agent's Daoris account, never the
+    /// tool's own sign-in, whose cool-off holds nothing; with no Daoris account, the next start waits for a sign-in.
+    /// </summary>
     [Fact]
-    public async Task A_scope_naming_no_account_answers_the_tool_s_own_sign_in_and_its_wait()
+    public async Task A_scope_naming_no_account_answers_the_agent_s_Daoris_account_and_with_none_a_wait()
     {
-        Accounts("claude-code", "account-1");
         AccountCooling.Cool(Home, new CoolingEntry("claude-code", null, Now.AddMinutes(45), false, null, Now, null), Now);
+        var none = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null).GetProperty("next");
 
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("account").ValueKind);
+        Assert.Equal("waits", none.GetProperty("reason").GetString());
+        Assert.Empty(none.GetProperty("others").EnumerateArray());
+
+        Accounts("claude-code", "account-1");
         var next = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null).GetProperty("next");
 
-        Assert.Equal(JsonValueKind.Null, next.GetProperty("account").ValueKind);
-        Assert.Equal("waits", next.GetProperty("reason").GetString());
-        Assert.True(next.GetProperty("when").GetDateTimeOffset() > Now.AddMinutes(44));
-        Assert.Equal(
-            [JsonValueKind.Null, JsonValueKind.String],
-            next.GetProperty("others").EnumerateArray().Select(each => each.GetProperty("account").ValueKind));
+        Assert.Equal("account-1", next.GetProperty("account").GetString());
+        Assert.Equal("named", next.GetProperty("reason").GetString());
+        Assert.Empty(next.GetProperty("others").EnumerateArray());
     }
 
     /// <summary>

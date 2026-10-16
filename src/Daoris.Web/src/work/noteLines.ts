@@ -267,6 +267,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.cooling-account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
   'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
+  // OWNSPACE1a: no Daoris account of the agent's is signed in, and its own home is never a start's.
+  'held.no-account': { values: ['owner'] },
   'held.not-installed': { values: ['agent'] },
   'held.pin-not-installed': { values: ['agent', 'version'] },
   // The roster's other refusals (ROSTERREFUSE2): a wait over a list is its lead, a clause for each account, the first reset and

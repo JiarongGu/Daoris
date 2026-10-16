@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Daoris's sessions no longer run in your own agent sign-in. Where nothing names an account, a start takes one of the agent's
+  Daoris accounts; with none signed in, it waits and says so once (*No `claude-code` account of Daoris's own is signed in…*),
+  in English and 中文, until you sign one in for Daoris. A conversation begun in your own sign-in still goes on there. A
+  folder-trust hold on a Daoris account names Daoris's own command, since trusting the folder at your terminal would not
+  reach that account.
 - `daoris-driver wiring` says how this Daoris is wired: its folder and each top folder as it runs (with what is still at an
   old place and why), the service (its address and where it came from, its tier and version), who holds the home, each
   settings file (whether it reads, what overrides it), every variable Daoris reads with where it came from, the versions,

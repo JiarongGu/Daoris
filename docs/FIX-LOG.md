@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A start with no account named ran in the person's own tool home (OWNSPACE1a)
+
+- **Symptom:** the owner, 2026-10-16: the person's own Claude Code home held 28 project folders the install's sessions wrote
+  (Ask Daoris's room, an intake, the session trees), beside their own work.
+- **Root cause:** the roster's walk read a scope naming no default and no list as the tool's own sign-in (`order` of `[null]`),
+  and the spawn then set no configuration-home variable, so every such start ran in the person's home (D125 point 5). Beside it,
+  the trust hold read the own home's `.claude.json` from the profile folder whatever the configuration-home variable said, and
+  its sentence sent a person on a Daoris account to run `claude` at their terminal, which trusts their own home and never the
+  account's.
+- **Fix:** with nothing named, the walk goes over the agent's Daoris accounts, and with none signed in holds with
+  `held.no-account` as a wait for a sign-in; a record that began in the own home resumes there; a test double declares
+  `RunsInOwnHome`. `ClaudeTrust.PathFor` reads the file the session's harness reads, and a hold on an account names Daoris's
+  door alone. A second maker's review found two gaps, closed before the merge: an own-home resume whose words fell back to a
+  new record opened it in the person's home (now `CarriedOnAsync`, the walk, before the record opens), and the page's next
+  start, asked by the owner (`codex`), found no adapter of that name and skipped the rule (now the owner's toolchain through
+  its doors). D175's OWNSPACE1a note.
+- **Verification:** `OwnSpaceTests` (red as it could not compile: each start kind's selection applied to a spawn sets the
+  variable to a Daoris account; none signed in holds with the sentence; an own-home resume stays; the stub exempt; the next
+  start; and, red then green, an own-home resume's words carried to a new record take the walk, and Codex's next start by its
+  owner waits or takes its one account), `SignedOutWaitTests`' no-account wait said once, `WorkspaceTrustTests`' path and sentence, and the account tests
+  that pinned D125 point 5 rewritten to D175 (`AccountNextStartTests`, `AccountRotationTests`, `AccountRotationGoalTests`,
+  `StartWiringTests`).
+
 ## 2026-10-16 — A terminal's discovery would take another install's service (HOMEID1)
 
 - **Symptom:** found by a second agent's review of the terminal RPC plan, checked against the code, not met on the install:

@@ -154,8 +154,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         if (adapter.Toolchain is { TrustFile: { Length: > 0 } trustFile }
             && !_driver.HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
         {
-            var configHome = selection.ProfileHome ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var trustPath = Path.Combine(configHome, trustFile);
+            var trustPath = ClaudeTrust.PathFor(trustFile, selection.ProfileHome, adapter.Toolchain.ProfileVariable);
             if (ClaudeTrust.Accepted(trustPath, room) == false)
             {
                 // The room is Daoris's own folder under the home, and trusting it is still the person's

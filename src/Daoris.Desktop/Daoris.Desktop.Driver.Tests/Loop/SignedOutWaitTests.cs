@@ -156,6 +156,33 @@ public sealed class SignedOutWaitTests : IDisposable
             (data["adapter"], data["account"], data["workspace"], data["until"], data["quests"], data["signedOut"]));
     }
 
+    /// <summary>
+    /// OWNSPACE1a (D175 point 2): with no Daoris account at all, a start waits for a sign-in as one held on signed-out accounts
+    /// does, naming none, so the look reports it as a wait and the log says it once; the tool's own home is never the fallback.
+    /// </summary>
+    [Fact]
+    public async Task With_no_Daoris_account_an_intake_waits_for_a_sign_in_said_once_and_nothing_starts()
+    {
+        new HarnessSettings().Save(Settings);
+        foreach (var account in new[] { "account-1", "account-2" }) Directory.Delete(HarnessSettings.ProfileHome(_home, "fake", account));
+        using var service = _ledger.Client();
+        var lines = new List<AccountLine>();
+        service.AccountLined += lines.Add;
+        var roster = new HarnessRoster(_adapters, Settings) { Clock = () => Now, Zone = Zone };
+        _ledger.Ask("a1");
+
+        var looks = new List<TickReport>();
+        for (var look = 0; look < 3; look++) looks.Add(await Driver(service, roster).TickAsync().WaitAsync(Bound));
+
+        Assert.Empty(_ledger.Sessions);
+        var wait = Assert.Single(looks[^1].Waits);
+        Assert.Equal(((DateTimeOffset?)null, (string?)null), (wait.Until, wait.Account));
+        Assert.Equal(["a1"], wait.Asks);
+        Assert.Empty(wait.SignedOut);
+        Assert.StartsWith("No `fake` account of Daoris's own is signed in", wait.Sentence);
+        Assert.Single(lines, l => l.Event == "starts.waiting");
+    }
+
     // ——— What reads a wait tells a signed-out one from a cool-off.
 
     private static AccountWait Waiting(params string[] signedOut) =>
