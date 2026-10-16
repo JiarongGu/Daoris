@@ -1322,7 +1322,7 @@ This replaces the row table under **Canaries and proof, and the rows** for every
 | 7 | FABRIC-MILESTONE1a | driver | 5 | **new** | the default inventory **derived** (§D3's rows for the branch adapter, read-only) and the milestone's answer; `trees state`, `work state` |
 | 8 | FABRIC-MILESTONE1b | web-shell, modules | 7 | **new**, from the default parts of END4b and END5 | the milestone on the work's foot, What needs you, Branches and WorkspaceTidied, and Ask Daoris |
 | 9 | FABRIC-END4a | driver | 6, 7 | survives, **default only** | the safe cleanup at *held*, acting on the derived inventory; a branch's removal kept apart from the unit's retirement |
-| 10 | FABRIC-EVENT3a | driver | 1, 4 | survives, **moved forward** | the look's topics |
+| 10 | FABRIC-EVENT3a | driver | 1, 4 | **built** (2026-10-17) | the look's topics |
 | 11 | FABRIC-EVENT3b | service, driver | 10 | survives, **moved forward** | the change stream |
 | 12 | FABRIC-EVENT4 | driver, modules | 1, 4 | survives, **moved forward** | the home's record files |
 | 13 | FABRIC-END7 | driver | 6, 11, 12 | survives | auto-landing on its wakes |
