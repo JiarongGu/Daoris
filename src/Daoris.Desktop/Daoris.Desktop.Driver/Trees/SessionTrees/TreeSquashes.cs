@@ -103,7 +103,7 @@ internal sealed class TreeSquashes(TreeContext context)
         }
 
         var adds = Commits(added);
-        var (made, why) = await SquashAsync(root, head, standsAt, SquashMessage.Of(squash.Title, adds, squash.Session), ct).ConfigureAwait(false);
+        var (made, why) = await SquashAsync(root, head, standsAt, SquashMessage.Of(squash.SquashTitle, adds, squash.Session), ct).ConfigureAwait(false);
         if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was changed.");
 
         // Compare-and-swap from the tip judged: git refuses where the branch moved since, and nothing is forced.
@@ -122,7 +122,7 @@ internal sealed class TreeSquashes(TreeContext context)
             : await WorkingTree.GitAsync(root, ["log", "--reverse", "--format=%H%x09%s", $"{against}..{made}"], ct).ConfigureAwait(false);
         IReadOnlyList<LandingCommit> carried = heldCode == 0 && Commits(held) is { Count: > 0 } all
             ? all
-            : [new LandingCommit(made, SquashMessage.Subject(squash.Title, adds, squash.Session))];
+            : [new LandingCommit(made, SquashMessage.Subject(squash.SquashTitle, adds, squash.Session))];
 
         var pushIt = handedOn ? "" : $" Push it to grow its pull request: `git push origin {name}`.";
         return new Branched(

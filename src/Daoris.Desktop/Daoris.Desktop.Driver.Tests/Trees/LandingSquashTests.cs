@@ -80,6 +80,35 @@ public sealed class LandingSquashTests : IDisposable
     }
 
     /// <summary>
+    /// ACCEPTFOOT2b (D164's 2026-10-16 notes): a conversation's squash is subjected by its work, the oldest commit's subject beyond
+    /// the line, never its opening; a quest's stays its title, under a pattern that reads words and one that does not.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_conversations_squash_is_subjected_by_its_work_and_a_quests_by_its_title(bool conversation)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{session}-{slug}", Squash: true));
+        var trees = new SessionTrees(_home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "first.txt", "the first step", "Add the first step");
+        await CommitAsync(tree.Path, "second.txt", "the second step", "Add the second step");
+        var subject = conversation
+            ? new LandingSubject("s1", null, "please could you fix the gap in the login screen")
+            : new LandingSubject("s1", "0fda18", "Fix the gap");
+
+        var landed = await trees.LandAsync(tree.Path, subject, inUse: NoneRunning);
+
+        Assert.True(landed.Landed, landed.Message);
+        var branch = (await GitAsync(root, "for-each-ref", "--format=%(refname:short)", "refs/heads/feature/")).Trim();
+        Assert.DoesNotContain('\n', branch);
+        var message = (await GitAsync(root, "log", "-1", "--format=%B", branch)).Replace("\r\n", "\n");
+        Assert.Equal(conversation ? "Add the first step" : "Fix the gap", message.Split('\n')[0]);
+        Assert.Contains("- Add the second step", message);
+    }
+
+    /// <summary>
     /// The record's squashed tip proves the session landed (point 3): its head counts nothing unlanded and offers no Discard of
     /// work held elsewhere, and its tree and branch go on an unforced removal, as a branch the landing made by ancestry lets them,
     /// keeping no recovery ref, since the record is Daoris's own word of what it squashed.

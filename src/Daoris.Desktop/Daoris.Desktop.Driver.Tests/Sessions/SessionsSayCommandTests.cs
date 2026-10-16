@@ -75,7 +75,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         SessionProcesses processes, ServiceClient service, SessionEvents? events = null, Action? nudge = null, TimeSpan? every = null) =>
         new(_home, processes, () => service, every: every ?? TimeSpan.FromMilliseconds(20))
         {
-            Say = new LoopWords(processes, () => service) { Events = events, Nudge = nudge }.HoldAsync,
+            Say = new LoopWords(processes, () => service) { Events = events, Nudge = nudge is null ? null : _ => nudge() }.HoldAsync,
         };
 
     /// <summary>A live process for <paramref name="id"/>, as any driver sharing the home marks one: this test's own.</summary>
@@ -500,7 +500,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         var processes = new SessionProcesses(Sessions);
         var clock = new HeldClock();
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
-        var words = new LoopWords(processes, () => service) { Nudge = () => room.GoOn("d0ne0000") };
+        var words = new LoopWords(processes, () => service) { Nudge = _ => room.GoOn("d0ne0000") };
         await using var loop = new SessionRequestWatch(_home, processes, () => service, every: Late(world))
         {
             // Its pass is late: the words are kept, and its look nudged, only once the verb's wait is over.

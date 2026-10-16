@@ -1313,10 +1313,10 @@ This replaces the row table under **Canaries and proof, and the rows** for every
 
 | Order | Row | Lanes | After | Fate | Builds |
 |---|---|---|---|---|---|
-| 1 | FABRIC-EVENT2 | driver | - | survives (in flight) | the change watch (§A3, §A4.1) |
-| 2 | FABRIC-END2a | driver | - | survives (in flight) | the end judgement, extracted, the cycle an input |
-| 3 | FABRIC-EVENT2b, 2c, 2d | driver; modules | 1 | survive | the watch's follow-ups |
-| 4 | FABRIC-CHAIN2a | driver | 1 | **split** from CHAIN2 | the minimal chain: fact links, the tidy as a pending effect, topic deadlines as `timer` events |
+| 1 | FABRIC-EVENT2 | driver | - | **built** (2026-10-17) | the change watch (§A3, §A4.1) |
+| 2 | FABRIC-END2a | driver | - | **built** (2026-10-17) | the end judgement, extracted, the cycle an input |
+| 3 | FABRIC-EVENT2b, 2c, 2d | driver; modules | 1 | **built** (2026-10-17) | the watch's follow-ups |
+| 4 | FABRIC-CHAIN2 | driver | 1 | **built** (2026-10-17), whole | the chains: fact links, effect links pending until done, topic deadlines as `timer` events, the ranked table. The menu stays CHAIN3's |
 | 5 | FABRIC-END2 | driver | 2, 4; **the cross-process writer chosen first** (RPC1's pipe for the verbs that write these records, or a lock on the two files) | **merges** END2b and END2c, default cycle only | `Held` with `Since`, traces never pruning an open unit, the branch unit's id, lapse on standing branches |
 | 6 | FABRIC-END3 | driver | 1, 5 | survives | the ref watcher |
 | 7 | FABRIC-MILESTONE1a | driver | 5 | **new** | the default inventory **derived** (§D3's rows for the branch adapter, read-only) and the milestone's answer; `trees state`, `work state` |
@@ -1342,7 +1342,7 @@ This replaces the row table under **Canaries and proof, and the rows** for every
 | 27 | FABRIC-END4b | driver, web-shell | 8, 24, 25 | survives, **configured part only** | the page draws configured cycles, tasks and performed steps |
 | 28 | FABRIC-CHAIN3 | driver, cli, web-shell | 4, 26 | survives, **specified** | §D8: transitions, the four effects, *Event responses*, `work responses` |
 | 29 | FABRIC-END5 | driver, modules | 27 | survives, **configured part only** | the CLI and Ask Daoris read configured cycles |
-| 30 | FABRIC-EVENT5a, 5b, EVENT6, C1b, PROOF-UNREAD1 | as their rows | as their rows | survive | focused integrations and correctness |
+| 30 | FABRIC-EVENT5a, 5b, EVENT6, C1b | as their rows | as their rows | survive | focused integrations (PROOF-UNREAD1 is built) |
 | 31 | FABRIC-EVENT7 | driver, cli | 6, 11, 12, 13 | survives, measurement-gated | the clocks as deadlines |
 
 FABRIC-ISOLATE1 (§D6's trust model) is named and not scheduled.
@@ -1352,7 +1352,7 @@ FABRIC-ISOLATE1 (§D6's trust model) is named and not scheduled.
 - **CYCLE0**, done: its amendments are in §C2 and §C3, and part D supersedes the human press.
 - **CYCLE1a**, now UNIT1c; **PLUGSTEP1a**, now UNIT1d.
 - **PLUGSTEP1b-1f**, now PERFORM1a-e.
-- **CHAIN2**, split: its minimal part is CHAIN2a, and the rest is CHAIN3's.
+- **CHAIN2**: built whole (2026-10-17), so no CHAIN2a; the menu is CHAIN3's.
 - **END2b and END2c**, merged into END2.
 - **END4a**, split into its default part and END4c.
 - **MILESTONE1**, split into 1a and 1b.
