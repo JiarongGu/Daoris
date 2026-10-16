@@ -12,6 +12,8 @@ import type { AccountNamer } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { WaitEvents } from './anchors';
+import type { MilestoneUnit } from './milestone';
+import { WorkMilestone } from './WorkMilestone';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import type { SessionEntry } from './entries';
@@ -61,7 +63,7 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers,
+  opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, milestone,
 }: {
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
   process?: SessionProcess | null;
@@ -135,6 +137,11 @@ export function AttendedSession({
    * holds the fold and the read. Absent where nothing can read the trace: a browser, which has no driver.
    */
   trace?: TraceDoor & { onSession?: (id: string) => void; onQuest?: (id: string) => void; onAsk?: (id: string) => void };
+  /**
+   * Where its work stands (FABRIC-MILESTONE1b, the fabric events design §D0), at the foot of its record: the end reached, the result
+   * kept, the clean-up and the recovery. Absent where the driver names no unit for it: a browser, a teammate's, or an older shell.
+   */
+  milestone?: MilestoneUnit | null;
   /** The go-aheads it asked on its quest's ask, shown in the head while it is parked (KNOWUSE1a2). */
   goAheads?: GoAhead[];
   /** Passed straight through to the head: one of them answered, the park with it once none is open (KNOWUSE1a2, GOAHEAD2b). */
@@ -273,6 +280,8 @@ export function AttendedSession({
       {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
       {channel && <ChannelPanel {...channel} />}
+      {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver. */}
+      {milestone && <WorkMilestone unit={milestone} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
       {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
