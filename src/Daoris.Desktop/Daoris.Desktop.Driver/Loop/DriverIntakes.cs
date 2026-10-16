@@ -219,11 +219,15 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? servers : [connector, .. servers]);
             }
 
+            // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, composed under the home, gone with the session.
+            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
             // ask, and belongs to no repository. Its tree is its room, which the guard holds it to.
             var rules = _driver.HandRules(
                 adapter, info, sessionId, ask.Workspace, repository: null, tree: room, kept: target.AttachmentsDirectory,
-                job: IntakeRoom.Allowed);
+                job: IntakeRoom.Allowed, plugins: skillPlugins);
 
             return await _driver.HoldAsync(
                 adapter, info, target, sessionId, transcript, room, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
