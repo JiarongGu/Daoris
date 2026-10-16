@@ -172,6 +172,7 @@
   "work.sitting.waitsForSignedOut": "{{why}}",
   "work.sitting.waitsForOwnSignedOut": "{{why}}",
   "work.sitting.signedOut": "{{why}}",
+  "work.sitting.noAccount": "{{why}}",
   "work.sitting.signedOutJoin": ", ",
   "work.waitsForAccount": "waits for an account",
   "work.frame.attending": "Attending {{title}}",

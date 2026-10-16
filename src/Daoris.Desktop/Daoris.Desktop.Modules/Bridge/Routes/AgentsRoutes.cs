@@ -180,7 +180,8 @@ public sealed class AgentsRoutes(DriverContext context)
         profile.Name,
         profile.DisplayName,
         // Where it runs (ACCT1): each scope whose own list holds it or whose own default names it, this machine (a null
-        // workspace) first; `Nowhere` where none does, so no start runs on it, which the page says as *no workspace*.
+        // workspace) first; `Nowhere` where none does. That is a fact about lists, not a claim that no start runs on it:
+        // a scope naming nothing takes Daoris's accounts in turn (OWNSPACE1b-A's `inherited`), which the page says beside it.
         Places = PlacesShown(places),
         Nowhere = places.Count == 0,
         // The profile HOME is a machine path, and this bridge is the one surface allowed to carry one (D47 §4) — the page

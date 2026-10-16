@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { THREE } from '../settings/accountsFixtures';
-import type { Tool } from '../agents/tools';
+import { byTool, type Tool, type ToolDoor } from '../agents/tools';
 import { accountsHere, hostOf } from './workspace';
 
 // What a workspace's page works out from answers it already holds (UX6g, D150 §4.3).
@@ -26,10 +26,20 @@ describe('the accounts each agent may run in a workspace', () => {
     }]);
   });
 
-  it("names the agent's own sign-in where nothing is named anywhere, and leaves out an agent not installed", () => {
+  /** OWNSPACE1b-A (D175): nothing named means Daoris's accounts in turn, or the wait; never the tool's own sign-in. */
+  it("says Daoris's accounts, in turn, where nothing is named anywhere, or the wait with none, and leaves out an agent not installed", () => {
     expect(accountsHere([tool(), tool({ name: 'codex', product: null, present: false })], { agents: [] }, 'forge', named)).toEqual([
-      { agent: 'claude-code', product: 'Claude Code', own: false, accounts: ['own@claude-code'] },
+      {
+        agent: 'claude-code', product: 'Claude Code', own: false,
+        accounts: ['No Daoris account is signed in for it; its starts wait until you sign in.'],
+      },
     ]);
+    const [signedIn] = byTool([{
+      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4', wire: 'pipe', signsIn: true,
+      installs: true, takesRules: true, ownLogin: 'in', ownAccount: null, ownRead: null,
+      profiles: [{ name: 'acct-1', home: 'h/1', login: 'in' }], workspaceDefaults: [], machineDefault: null,
+    } as unknown as ToolDoor]);
+    expect(accountsHere([signedIn!], { agents: [] }, 'forge', named)[0]!.accounts).toEqual(["Daoris's accounts, in turn"]);
   });
 
   /** A shell older than the accounts' answer still carries a workspace's default on the roster (D49 §4). */
