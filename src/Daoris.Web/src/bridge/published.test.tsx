@@ -30,21 +30,21 @@ describe('reading what the driver publishes', () => {
     vi.useRealTimers();
   });
 
-  it('keeps the interval where no bus tells, and drops it where one does', () => {
+  it('keeps the interval where no bus tells, and only the slow reconciliation where one does', () => {
     expect(pollUnlessTold(false, 1_500)).toBe(1_500);
-    expect(pollUnlessTold(true, 1_500)).toBe(false);
+    expect(pollUnlessTold(true, 1_500)).toBe(30_000);
   });
 
   it('is the desktop window that hears: a plain browser has no bus and polls as before', () => {
     shell.available = true;
-    expect(renderHook(() => usePollUnlessTold(4_000), { wrapper: wrapper(fresh()) }).result.current).toBe(false);
+    expect(renderHook(() => usePollUnlessTold(4_000), { wrapper: wrapper(fresh()) }).result.current).toBe(30_000);
 
     shell.available = false;
     expect(renderHook(() => usePollUnlessTold(4_000), { wrapper: wrapper(fresh()) }).result.current).toBe(4_000);
   });
 
-  /** Ask Daoris's proposals (row 24): a live conversation no longer reads its folder every 4 s in a window that is told. */
-  it('does not read a live conversation’s proposals again by the clock in a desktop window', async () => {
+  /** Ask Daoris's proposals (row 24): a live conversation no longer reads its folder every 4 s in a window that is told, only every 30 s. */
+  it('reads a live conversation’s proposals only slowly by the clock in a desktop window', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     invoke.mockImplementation(async () => ({ proposals: [] }));
 
@@ -57,5 +57,10 @@ describe('reading what the driver publishes', () => {
     });
 
     expect(invoke).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(22_000);
+    });
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
   });
 });

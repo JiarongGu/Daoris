@@ -154,13 +154,8 @@ public sealed class HomeWatch : IAsyncDisposable
     /// The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, wherever the config's own resolution put it),
     /// the plugins folder, <c>lines-moved.json</c> and the held words, each its topic (<see cref="ChangeTopics"/>).
     /// </summary>
-    /// <param name="proposals">
-    /// Whether Ask Daoris's proposals folder is heard too (<see cref="ChangeTopics.Help"/>, FABRIC-EVENT5a): the shell's, which has a window
-    /// to tell; the headless host has none.
-    /// </param>
     public static HomeWatch ForDriver(
-        string home, string configPath, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null,
-        bool proposals = false)
+        string home, string configPath, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
     {
         var watch = new HomeWatch(wake, every, source) { Log = log };
         watch.Topic(ChangeTopics.Config, Path.GetFileName(configPath), HomePart.File(configPath));
@@ -169,7 +164,19 @@ public sealed class HomeWatch : IAsyncDisposable
         watch.Topic(ChangeTopics.Lines, Path.GetFileName(lines), HomePart.File(lines));
         var words = HeldWordsFile.PathOf(home);
         watch.Topic(ChangeTopics.Words, Path.GetFileName(words), HomePart.File(words));
-        if (proposals) watch.Topic(ChangeTopics.Help, "proposals", HomePart.Named(HelpProposals.FolderOf(home)));
+        return watch;
+    }
+
+    /// <summary>
+    /// Ask Daoris's proposals folder alone (<see cref="ChangeTopics.Help"/>, FABRIC-EVENT5a): the window's own process watches it, whoever
+    /// holds the home's lease, since the connector writes there whichever loop drives. Not started: the caller starts it, and tells its
+    /// windows once at the start, since a proposal that arrived before the watch opened is in its first read.
+    /// </summary>
+    public static HomeWatch ForProposals(
+        string home, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
+    {
+        var watch = new HomeWatch(wake, every, source) { Log = log };
+        watch.Topic(ChangeTopics.Help, "proposals", HomePart.Named(HelpProposals.FolderOf(home)));
         return watch;
     }
 

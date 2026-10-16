@@ -38,7 +38,10 @@ public sealed class HomeWatchTests : IDisposable
 
     private HomeWatch Watching(TimeSpan every, bool proposals = false)
     {
-        var watch = HomeWatch.ForDriver(_home, Config, (topic, subject) => _woken.Enqueue((topic, subject)), every, _source, proposals: proposals);
+        void Wake(string topic, string subject) => _woken.Enqueue((topic, subject));
+        var watch = proposals
+            ? HomeWatch.ForProposals(_home, Wake, every, _source)
+            : HomeWatch.ForDriver(_home, Config, Wake, every, _source);
         watch.Start();
         return watch;
     }
@@ -184,7 +187,7 @@ public sealed class HomeWatchTests : IDisposable
         await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the proposal was never found at its deadline");
     }
 
-    /// <summary>The headless host, which has no window to tell, watches no proposals folder.</summary>
+    /// <summary>The driving loop's watch hears no proposals folder: the window's own process watches it, whoever holds the lease.</summary>
     [Fact]
     public async Task The_proposals_folder_is_watched_only_where_asked()
     {

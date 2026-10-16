@@ -183,6 +183,36 @@ describe('the state hub (STATE_CHANGED)', () => {
 
     await waitFor(() => expect(asked()).toBe(2));
   });
+
+  /**
+   * FABRIC-EVENT5: a change told while a view's first read is on its way must not be lost to it. The query has no data yet, so an
+   * invalidation would reuse the read in flight, whose answer pre-dates the change; the hub asks once more after it.
+   */
+  it('a change told during a first read asks once more after it, whatever scope', async () => {
+    let first: (answer: unknown) => void = () => undefined;
+    let reads = 0;
+    invoke.mockReset();
+    invoke.mockImplementation(async (_module: string, route: string) => {
+      if (route !== 'RULES') return {};
+      reads += 1;
+      if (reads === 1) return new Promise((resolve) => { first = resolve; });
+      return { reads };
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function View() {
+      useStateHub();
+      useRules();
+      return null;
+    }
+    render(<QueryClientProvider client={client}><View /></QueryClientProvider>);
+    await waitFor(() => expect(reads).toBe(1));
+
+    act(() => changed({ scopes: ['rules'] }));
+    await act(async () => first({ reads: 'stale' }));
+
+    await waitFor(() => expect(reads).toBe(2));
+    await waitFor(() => expect(client.getQueryData(keys.rules)).toEqual({ reads: 2 }));
+  });
 });
 
 /**

@@ -69,12 +69,32 @@ describe('the system domain', () => {
     expect(client.getQueryData<SystemWiring>(keys.systemWiring)?.measuring).toBe(true);
   });
 
+  /** A measure's answer that was read while the walk ran must not restore `measuring` over the read that found it ended. */
+  it('keeps a newer read over a late measure answer', async () => {
+    let answerMeasure: (answer: SystemWiring) => void = () => undefined;
+    invoke.mockImplementation(async (_module: string, _route: string, request?: { payload?: { measure?: boolean } }) =>
+      request?.payload?.measure ? new Promise<SystemWiring>((resolve) => { answerMeasure = resolve; }) : wiring(false));
+    const client = fresh();
+    const { result } = renderHook(() => useSystemWiring(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(result.current.query.data).toBeDefined());
+
+    let measured: Promise<SystemWiring> = Promise.resolve(wiring(false));
+    act(() => { measured = result.current.measure(); });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    // The walk ended and was told: the read that found it so lands before the measure's own answer.
+    await act(async () => { await client.invalidateQueries({ queryKey: keys.systemWiring }); });
+    await act(async () => { answerMeasure(wiring(true)); await measured; });
+
+    expect(client.getQueryData<SystemWiring>(keys.systemWiring)?.measuring).toBe(false);
+  });
+
   /** FABRIC-EVENT5b: a window that hears the driver waits for its `wiring` event; one with no bus reads on the clock as before. */
   it('reads again every two seconds while a walk is under way only where no event tells it', () => {
     expect(wiringAgainIn(wiring(true), false)).toBe(2_000);
     expect(wiringAgainIn(wiring(false), false)).toBe(false);
     expect(wiringAgainIn(undefined, false)).toBe(false);
-    expect(wiringAgainIn(wiring(true), true)).toBe(false);
+    expect(wiringAgainIn(wiring(true), true)).toBe(30_000);
+    expect(wiringAgainIn(wiring(false), true)).toBe(false);
   });
 
   it('does not read a walk again by the clock in a desktop window, and reads it when told', async () => {

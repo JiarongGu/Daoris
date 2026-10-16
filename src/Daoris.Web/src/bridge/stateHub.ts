@@ -60,6 +60,23 @@ const words = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string' && each.length > 0) : [];
 
 /**
+ * Ask the queries under `queryKey` again, and once more after any read already on its way (FABRIC-EVENT5). A query with no data yet
+ * has nothing to cancel, so an invalidation reuses the read in flight, whose answer pre-dates the change and whose success clears
+ * the invalidation: a proposal written, or a walk ended, while a first read is out would be lost to it.
+ */
+function askAgain(client: QueryClient, queryKey: QueryKey) {
+  const cache = client.getQueryCache();
+  const inFlight = cache.findAll({ queryKey }).filter((query) => query.state.fetchStatus === 'fetching');
+  void client.invalidateQueries({ queryKey });
+  if (inFlight.length === 0) return;
+  const stop = cache.subscribe(() => {
+    if (inFlight.some((query) => query.state.fetchStatus === 'fetching')) return;
+    stop();
+    void client.invalidateQueries({ queryKey });
+  });
+}
+
+/**
  * Ask again what `change` names. A scope this page does not know is no change here (a wire's words are added to, D169 point 3),
  * and an event of any other shape is none.
  */
@@ -67,7 +84,7 @@ export function stateChanged(client: QueryClient, change: StateChanged | null | 
   const sessions = words(change?.sessions);
   for (const scope of words(change?.scopes)) {
     for (const queryKey of scopes.get(scope)?.(sessions.length > 0 ? sessions : null) ?? []) {
-      void client.invalidateQueries({ queryKey });
+      askAgain(client, queryKey);
     }
   }
 }

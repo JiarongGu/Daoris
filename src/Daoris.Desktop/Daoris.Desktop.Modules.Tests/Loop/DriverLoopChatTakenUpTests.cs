@@ -69,11 +69,11 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
 
     /// <summary>
     /// FABRIC-EVENT5a: the moment the driver takes a conversation's words up, its record moving to <c>working</c>, the windows are told
-    /// <c>sessions</c> for it, so Ask Daoris's list needs no 1.5 s read while words wait. Only that move: the end it came to reaches
-    /// the page as <c>SESSION_ENDED</c> already, and the route that moved a record publishes its own.
+    /// <c>sessions</c> for it, so Ask Daoris's list needs no 1.5 s read while words wait. The move out of it is told too: the
+    /// restore of an ended record where every word was withdrawn announces no end, so a page that read <c>working</c> would stay there.
     /// </summary>
     [Fact]
-    public async Task Taking_words_up_publishes_the_sessions_and_an_ending_publishes_nothing_more()
+    public async Task Taking_words_up_and_each_move_out_of_working_publish_the_sessions()
     {
         var root = Path.Combine(Home, "engine");
         Directory.CreateDirectory(root);
@@ -90,8 +90,12 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
 
         await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
         Assert.Equal(["working", "failed"], service.Moves("c1"));
-        var told = Assert.Single(Raised, m => m.Type == StatePublisher.Type);
-        Assert.Equal("""{"scopes":["sessions"],"sessions":["c1"]}""", JsonSerializer.Serialize(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+        // One per move, `working` and the ending, each for its record alone: a move back out of `working` is told too, so a page that read
+        // `working` is never left there (a rollback announces no end).
+        await UntilAsync(() => Raised.Count(m => m.Type == StatePublisher.Type) == 2);
+        Assert.All(Raised.Where(m => m.Type == StatePublisher.Type), told => Assert.Equal(
+            """{"scopes":["sessions"],"sessions":["c1"]}""",
+            JsonSerializer.Serialize(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })));
     }
 
     /// <summary>
