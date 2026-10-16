@@ -99,7 +99,7 @@
         "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "asks.record.kind", "opinion.title", "opinion.recheckTitle",
         "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
-        "workflow.step.pullRequest", "workflow.repositories.title"
+        "workflow.step.pullRequest", "workflow.repositories.title", "settings.daoris.card.*"
       ]
     },
     "field": {
@@ -108,7 +108,7 @@
       "budget": { "en": 36, "zh": 14 },
       "case": "sentence",
       "keys": [
-        "about.index", "about.surface", "asks.channel.compose.to", "asks.channel.compose.reply", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
+        "settings.daoris.label.*", "about.index", "about.surface", "asks.channel.compose.to", "asks.channel.compose.reply", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
         "agents.col.account", "agents.col.state", "agents.col.runs", "agents.col.now", "agents.add.name", "agents.add.machine",
         "asks.record.abandonedAt", "asks.record.asked", "asks.record.asker", "asks.record.circle", "asks.record.closedBecause",
         "quests.detail.abandonedAt",
@@ -236,7 +236,7 @@
         "settings.across.stopWriting", "settings.browser.driving.open", "settings.browser.favorites.add",
         "settings.browser.favorites.remove", "settings.commits.save", "settings.helpers.save", "settings.landing.clear", "settings.landing.set",
         "settings.lines.clear", "settings.lines.set", "settings.list.close", "settings.list.open",
-        "settings.logs.open", "settings.logs.refresh",
+        "settings.logs.open", "settings.logs.refresh", "settings.daoris.button.*",
         "settings.rules.add", "settings.rules.proposals.accept", "settings.rules.proposals.decline",
         "settings.sweep.clean", "settings.sweep.discard", "settings.sweep.discardMeanIt", "settings.sweep.look",
         "settings.sync.apart.include", "settings.sync.apply",
@@ -282,7 +282,7 @@
       "budget": { "en": 16, "zh": 5 },
       "case": "lower",
       "keys": [
-        "agents.read.at", "agents.read.never", "help.history.current", "help.history.saving", "agents.state.*", "agents.runs.machine", "agents.runs.first", "agents.runs.none",
+        "settings.daoris.pill.*","agents.read.at", "agents.read.never", "help.history.current", "help.history.saving", "agents.state.*", "agents.runs.machine", "agents.runs.first", "agents.runs.none",
         "agents.now.sessions", "projects.tidied.why.*", "projects.tidied.cause.*", "projects.git.branch.kind.*",
         "asks.goAhead.state.*", "asks.record.paused", "asks.state.*", "chain.ask", "chain.attempt", "chain.current", "chain.thisSession",
         "work.head.copied",
@@ -596,7 +596,7 @@
     { "term": "Ask Daoris", "en": "Ask Daoris", "zh": "问道衍", "means": "A conversation about Daoris itself, which reads, explains and proposes.", "why": "问道 is to ask after the Way, and 道衍 is Daoris's own name. *helper* was its old word, set aside until a helper became its own term (MIXAGENT3a-i).", "match": "\\bAsk Daoris\\b", "avoid": { "en": [], "zh": ["Ask Daoris", "道衍助手"] } },
     { "term": "Quick Ask", "en": "Quick Ask", "zh": "快速提问", "means": "One question to Ask Daoris from the palette, without opening the side bar.", "match": "\\bQuick Ask\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "Daoris", "en": "Daoris", "zh": "Daoris", "means": "The product, said so in running text; 道衍 is its wordmark, its menu, and Ask Daoris's name (问道衍).", "match": "\\bDaoris\\b", "pair": false, "avoid": { "en": [], "zh": [] } },
-    { "term": "this machine", "en": "this machine", "zh": "本机", "means": "The computer this window runs on.", "match": "\\bthis machine\\b", "avoid": { "en": [], "zh": ["这台电脑", "这台机器"] } },
+    { "term": "this machine", "en": "this machine", "zh": "本机", "means": "The computer this window runs on. Also the name of Settings' page *This Daoris*, which shows how this install is set up on it: the window's own place for this install, against the computer it runs on.", "why": "Both say 本机, and the glossary holds one Chinese name once (WIRING1c).", "match": "\\bthis machine\\b|\\bThis Daoris\\b", "avoid": { "en": [], "zh": ["这台电脑", "这台机器"] } },
     { "term": "machine log", "en": "machine log", "zh": "本机日志", "zhForms": ["日志"], "means": "What happens on this machine, a line an event, without anyone's words.", "match": "\\b(machine )?logs?\\b(?![ -]?in)", "avoid": { "en": [], "zh": [] } },
     { "term": "Daoris home", "en": "Daoris home", "zh": "Daoris 主目录", "means": "The folder that holds everything Daoris keeps on this machine.", "match": "\\bDaoris home\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "side bar", "en": "side bar", "zh": "侧栏", "means": "The region at the window's right, holding Ask Daoris and the attended session's views.", "match": "\\bside bar\\b", "avoid": { "en": ["dock", "right dock"], "zh": [] } },

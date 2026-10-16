@@ -51,5 +51,14 @@ export const toolLookBound = (locations: number) => Math.max(1, locations) * hos
  */
 export const refusedNotReady = (error: unknown) => (error as { code?: unknown } | null)?.code === 'DRIVER_NOT_READY';
 
+/**
+ * Whether the shell does not know the route (the kit's `NO_ROUTE`, `DriverModule.UnknownType`): an application older than
+ * the page. The bridge rejects with an error carrying the code, and some paths carry it as the message alone, so both are read.
+ */
+export const refusedNoRoute = (error: unknown) => {
+  const refusal = error as { code?: unknown; message?: unknown } | null;
+  return refusal?.code === 'NO_ROUTE' || refusal?.message === 'NO_ROUTE';
+};
+
 /** Whether a call ended because the page stopped waiting (the bridge's `TIMEOUT`), rather than by the host's answer. */
 export const stoppedWaiting = (error: unknown) => (error as { code?: unknown } | null)?.code === 'TIMEOUT';

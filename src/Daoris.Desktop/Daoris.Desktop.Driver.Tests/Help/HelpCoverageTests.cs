@@ -790,6 +790,9 @@ public sealed partial class HelpCoverageTests
     private static readonly (string Domain, string Control, string Mentions, Answer Answer)[] Local =
     [
         ("start", "a step's door", "onGo", new Door("go", "go")),
+        ("wiring", "Measure again", "measure", new Exempt(
+            "it asks the shell to count the folders' sizes again and changes nothing; the page shows what is true of this install, "
+            + "and a go reaches Settings → This Daoris (WIRING1c).")),
         ("appearance", "theme", "useThemeChoice", new Exempt(
             "a viewer's own look, kept by this window and never the machine's (D66); Ask Daoris proposes what the machine does.")),
         ("appearance", "language", "changeLanguage", new Exempt(

@@ -9,6 +9,7 @@ import { BrowserDomain } from './BrowserDomain';
 import { DriverDomain } from './DriverDomain';
 import { LogsDomain } from './LogsDomain';
 import { ToolsDomain } from './ToolsDomain';
+import { WiringDomain } from './WiringDomain';
 
 /**
  * What the frame hands every domain; each takes the part it uses. `attached` is the frame's one answer
@@ -41,7 +42,7 @@ type SettingsDomain = {
  * (MOD4). A domain is a `settings/<Name>Domain.tsx` and a row here; the frame renders whichever row is
  * chosen and names none itself, and `domains.test.ts` holds both.
  *
- * Seven since UX6j (D150 §2.3): what is the machine's or the person's. Every other setting lives on its thing.
+ * Eight since WIRING1c (seven since UX6j, D150 §2.3): what is the machine's or the person's. Every other setting lives on its thing.
  */
 export const SETTINGS_DOMAINS = [
   // The setup guide leads (SETUP1a, D97), named Get started again since Setup names a repository's and a workspace's tab
@@ -49,6 +50,9 @@ export const SETTINGS_DOMAINS = [
   { id: 'start', label: 'settings.domain.start', machine: false, component: GetStartedDomain },
   { id: 'appearance', label: 'settings.domain.appearance', machine: false, component: AppearanceDomain },
   { id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain },
+  // How this install is set up here (WIRING1c, the this-Daoris design §2): the first of the machine domains. It shows what is
+  // true about this machine's paths, service and loop; the domain that sets a thing keeps its control. A browser is offered none.
+  { id: 'wiring', label: 'settings.domain.wiring', machine: true, component: WiringDomain },
   // Workspace left for a workspace's page and each repository's (UX6g, D150 §3.1): its list is Repositories' list, its
   // wiring, defaults and clean-up the workspace's page, its rows per repository the repository's Setup.
   { id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain },
