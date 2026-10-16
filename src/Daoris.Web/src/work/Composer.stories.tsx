@@ -52,6 +52,24 @@ export const TurnRunning: Story = {
   },
 };
 
+/**
+ * STEER2b (D136): words typed while a turn runs offer *Send now* beside *Queue*. With the box empty it presses what waits
+ * (a stop that keeps it), so the waiting words are shown here with an empty box.
+ */
+export const SendNowOfferedWithWords: Story = {
+  args: {
+    taking: true, stoppable: true, onStopTurn: () => {}, onSendNow: () => {}, onSendHeld: () => {},
+    draft: 'use the blue one instead', onDraft: () => {},
+  },
+};
+
+export const SendNowOfWaitingWords: Story = {
+  args: {
+    taking: true, stoppable: true, onStopTurn: () => {}, onSendNow: () => {}, onSendHeld: () => {},
+    queued: [{ id: 'a1', text: 'and then run the streaming tests', files: [] }],
+  },
+};
+
 /** QUEUEEDIT1b: each waiting message that has an id can be taken back out or reworded; one without shows no controls. */
 export const WaitingWithControls: Story = {
   args: {

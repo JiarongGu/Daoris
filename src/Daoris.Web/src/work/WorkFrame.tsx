@@ -649,7 +649,21 @@ export function WorkFrame({
     return true;
   };
 
-  const onSend = (text: string, files: File[] = []) => {
+  // What a *Send now* came to (STEER2b, D136), said where the person pressed it: the turn stopping so the words go next, or one
+  // line that the door could not and the words are held as a queue's are. Taken at once in the running turn says nothing here,
+  // since the conversation shows the words where they were taken.
+  // `now: false` carries one of two codes (STEER2a): `no-interrupt`, said by where the words go instead, and `opening`. A code
+  // not known here gets the generic line. `now: true` with no reach is an ordinary send (no turn was running): no toast.
+  const nowSaid = (result: WordsAnswer) => {
+    if (result.now === false) {
+      notify(t(result.why === 'opening' ? 'work.steer.notNowOpening'
+        : result.why === 'behind' ? 'work.steer.notNowBehind'
+        : result.why === 'no-interrupt' ? (result.reaches === 'next-step' ? 'work.steer.notNowNextStep' : 'work.steer.notNowTurnEnd')
+          : 'work.steer.notNow'));
+    } else if (result.now && result.reaches === 'turn-end') notify(t('work.steer.sending'));
+  };
+
+  const onSend = (text: string, files: File[] = [], now = false) => {
     if (!attended) return;
     const session = attended.id;
     // 🔴 The composer lets go of the words when it sends; a send that did not arrive hands them back,
@@ -663,7 +677,7 @@ export function WorkFrame({
     };
     // Shown at once, as sending, until the answer says what came of them (SENDLOST1b).
     const n = sending.begin(session, { text, files: files.map((file) => file.name) });
-    send.mutate({ id: session, text, files }, {
+    send.mutate({ id: session, text, files, ...(now ? { now: true } : {}) }, {
       // False is an answer: the session ended while they were typing. It lands on the composer
       // rather than in a toast, because that is where the person is looking — on THAT session's.
       onSuccess: (result) => {
@@ -671,6 +685,7 @@ export function WorkFrame({
         if (result.sent) {
           counted(session, 'chat', text, files.length, result);
           setRefusal(null);
+          if (now) nowSaid(result);
           return;
         }
         giveBack();
@@ -700,14 +715,14 @@ export function WorkFrame({
   // ones are a wait where the person talks to it (PROPOSEHERE1b, D168 point 2). The machine's file, so a browser has none.
   const ruleState = useRules();
   const ruleAnswer = useRuleAnswer({ notify });
-  const onSay = (text: string) => {
+  const onSay = (text: string, now = false) => {
     if (!attended || !text || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
     const session = attended.id;
     const kind = box.kind === 'steer' ? 'steer' : box.mode === 'answer' ? 'answer' : 'say';
     const winding = box.kind === 'say' && box.mode === 'ending';
     const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
     const n = sending.begin(session, { text, files: [] });
-    say.mutate({ id: session, text }, {
+    say.mutate({ id: session, text, ...(now ? { now: true } : {}) }, {
       onSuccess: (result) => {
         sending.answered(n);
         if (!result.sent) {
@@ -717,6 +732,7 @@ export function WorkFrame({
         }
         counted(session, kind, text, 0, result);
         setRefusal(null);
+        if (now) nowSaid(result);
         if (kind === 'answer') notify(t('work.awaiting.answered'));
         // Held until its record ends, and shown above the box meanwhile: the conversation shows them once kept.
         if (winding) setEnding((was) => ({ session, words: [...(was?.session === session ? was.words : []), text] }));
@@ -768,6 +784,16 @@ export function WorkFrame({
     if (!attended) return;
     cancelTurn.mutate(attended.id, {
       onSuccess: ({ cancelled }: TurnStop) => { if (cancelled) notify(t('work.steer.sending')); },
+      onError: failure(notify),
+    });
+  };
+
+  // A conversation's *Send now* with the box empty and words waiting (STEER2b, D136 point 4): the turn stops and keeps them, so
+  // they go next. Nothing comes back to the box: the stop withdraws nothing.
+  const onSendHeld = () => {
+    if (!attended) return;
+    cancelTurn.mutate({ id: attended.id, keep: true }, {
+      onSuccess: ({ cancelled }: TurnStop) => notify(cancelled ? t('work.steer.sending') : t('work.composer.noTurn')),
       onError: failure(notify),
     });
   };
@@ -2046,6 +2072,8 @@ export function WorkFrame({
             stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
             stopping={cancelTurn.isPending}
             onStopTurn={onStopTurn}
+            onSendNow={(text, files) => onSend(text, files, true)}
+            onSendHeld={onSendHeld}
             onRemove={editQueued.remove}
             onEdit={editQueued.reword}
             mentions={{
@@ -2092,6 +2120,7 @@ export function WorkFrame({
             accepts={accepts}
             onSend={onSay}
             onSendNow={onSteerNow}
+            onSayNow={(text) => onSay(text, true)}
             onRemove={editQueued.remove}
             onEdit={editQueued.reword}
             // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.

@@ -27,6 +27,14 @@ type Story = StoryObj<typeof SessionBox>;
  */
 export const RunningNextStep: Story = { args: { box: { kind: 'steer' }, held: { queued: [], taking: true } } };
 
+/** STEER2b (D136): words typed while its turn runs offer *Send now* beside *Queue*, sending them in the running turn. */
+export const RunningSendNow: Story = {
+  args: {
+    box: { kind: 'steer' }, held: { queued: [], taking: true }, onSayNow: () => {},
+    draft: 'use the blue one instead', onDraft: () => {},
+  },
+};
+
 /** Its turn running, on a door that hears words when its turn ends (D90): what it holds waits, and *Send now* sends it. */
 export const RunningTurnEnd: Story = {
   args: {
