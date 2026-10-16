@@ -1,12 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
-import { refusedNoRoute, useSystemWiring } from '../bridge/shell';
+import { useTranslation } from 'react-i18next';
+import { refusedNoRoute, useOpenLogFolder, useSystemWiring, useUpdateState } from '../bridge/shell';
 import { failure, useErrorNotify } from '../design/ui';
+import type { StarterDoor } from '../help/starters';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
+import { WiringFiles } from './WiringFiles';
 import { WiringFolders } from './WiringFolders';
 import { WiringHead, WiringOlder } from './WiringHead';
+import { WiringKnowledge } from './WiringKnowledge';
+import { WiringLogs } from './WiringLogs';
 import { WiringLoop } from './WiringLoop';
 import { WiringService } from './WiringService';
+import { WiringTerminal } from './WiringTerminal';
+import { WiringVariablesCard } from './WiringVariables';
+import { WiringVersions } from './WiringVersions';
+
+/** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
+const FILE_DOORS: Record<string, StarterDoor> = {
+  driver: { view: 'settings', section: 'driver' },
+  tools: { view: 'settings', section: 'tools' },
+  browser: { view: 'settings', section: 'browser' },
+  agents: { view: 'agents' },
+  plugins: { view: 'plugins' },
+  workspace: { view: 'projects', workspaceTab: 'setup', workspaceSection: 'remote' },
+};
 
 /**
  * Settings → This Daoris (WIRING1c, the this-Daoris design §2): how this install is set up here, read from the shell's one
@@ -22,7 +40,12 @@ import { WiringService } from './WiringService';
  * The cards are molecules over props; this holds the hooks (`presentational.test.ts`).
  */
 export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
+  const { t } = useTranslation();
   const { query, measure } = useSystemWiring();
+  // The update is the shell's own state, not the wiring's (UPDATE1b): the Versions card's line.
+  const update = useUpdateState();
+  // The one press of this page that opens a folder, the Machine log's own (LOG1c); the rest are WIRING1e's.
+  const openLogs = useOpenLogFolder();
   const [busy, setBusy] = useState(false);
   const asked = useRef(false);
   const older = query.isError && refusedNoRoute(query.error);
@@ -53,6 +76,32 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       <WiringFolders wiring={wiring} busy={busy} onMeasure={ask} />
       <WiringService wiring={wiring} />
       <WiringLoop loop={wiring.loop} onDriver={() => onGo({ view: 'settings', section: 'driver' })} />
+      <WiringFiles files={wiring.files} onDoor={(door) => onGo(FILE_DOORS[door] ?? { view: 'settings', section: 'driver' })} />
+      <WiringVariablesCard variables={wiring.variables} />
+      <WiringVersions
+        versions={wiring.versions}
+        update={update.data}
+        development={wiring.folder.kind === 'development'}
+        onTools={() => onGo({ view: 'settings', section: 'tools' })}
+        onDriver={() => onGo({ view: 'settings', section: 'driver' })}
+      />
+      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} />
+      <WiringKnowledge
+        knowledge={wiring.knowledge}
+        tier={wiring.service.tier}
+        tierWhy={wiring.service.tierWhy}
+        onAi={() => onGo({ view: 'settings', section: 'ai' })}
+      />
+      <WiringLogs
+        logs={wiring.logs}
+        onOpenFolder={() => openLogs.mutate(undefined, {
+          onSuccess: (answer) => {
+            if (!answer.opened && answer.folder) notify(t('settings.logs.notOpened', { folder: answer.folder }));
+          },
+          onError: failure(notify),
+        })}
+        onLog={() => onGo({ view: 'settings', section: 'logs' })}
+      />
     </>
   );
 }

@@ -332,8 +332,10 @@ test('`agent list` says when starts run on the person\'s own sign-in, and how to
   const said = (agent: string, at: HarnessReport) =>
     accountLines(agent, TOOLCHAINS[agent]!, at, settings, fx.root, new Date(), 'UTC').join('\n');
 
-  assert.match(said('claude-code', report(null)), /starts run on your own sign-in, the account `claude-code` uses at your own terminal \(outside work\):/);
-  assert.match(said('claude-code', report(null)), /`daoris agent login claude-code --new` gives Daoris an account of its own/);
+  // OWNSPACE1d (D175): Daoris never starts in the person's own sign-in; it says so, and that what began there goes on there.
+  assert.match(said('claude-code', report(null)), /Daoris starts no session on your own sign-in, the account `claude-code` uses at your own terminal \(outside work\)/);
+  assert.match(said('claude-code', report(null)), /a conversation begun there goes on there/);
+  assert.doesNotMatch(said('claude-code', report(null)), /starts run on your own sign-in/);
   // A default named, an agent not here, and a door onto another agent's accounts say nothing of it.
   assert.doesNotMatch(said('claude-code', report('account-1')), /own sign-in/);
   assert.doesNotMatch(said('claude-code', { ...report(null), present: false }), /own sign-in/);

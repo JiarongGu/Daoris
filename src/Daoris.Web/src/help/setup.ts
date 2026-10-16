@@ -20,11 +20,12 @@ const REQUIRED = 5;
 const FIRST: readonly SetupStepId[] = ['agent', 'helper', 'repositories'];
 
 /**
- * An agent this machine can run a session on: installed, and not definitely signed out. The roster's
- * rule (SES3), which the starters use too: an `unknown` sign-in is not a lack anyone can act on.
+ * An agent this machine can run a session on: installed, with some account of Daoris's not definitely signed
+ * out. The roster's rule (SES3), which the starters use too: an `unknown` sign-in is not a lack anyone can act
+ * on. The tool's own sign-in is no account of Daoris's and counts for nothing (D175, OWNSPACE1b-C).
  */
 const signedIn = (machine: Machine) => machine.tools.some((tool) =>
-  tool.present && (tool.ownLogin !== 'out' || tool.accounts.some((account) => account.login === 'in')));
+  tool.present && tool.accounts.some((account) => account.login !== 'out'));
 
 /**
  * The setup guide's steps (SETUP1a, D97): each with its state read off the machine, the screens that

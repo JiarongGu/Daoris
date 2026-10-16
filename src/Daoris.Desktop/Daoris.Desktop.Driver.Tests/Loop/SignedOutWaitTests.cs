@@ -112,6 +112,7 @@ public sealed class SignedOutWaitTests : IDisposable
         Assert.Equal(["a1"], wait.Asks);
         Assert.Equal(["ask #a1"], wait.Repositories);
         Assert.Equal(["account-1", "account-2"], wait.SignedOut);
+        Assert.False(wait.NoAccount);
         Assert.StartsWith(NoneReady, wait.Sentence);
     }
 
@@ -179,6 +180,8 @@ public sealed class SignedOutWaitTests : IDisposable
         Assert.Equal(((DateTimeOffset?)null, (string?)null), (wait.Until, wait.Account));
         Assert.Equal(["a1"], wait.Asks);
         Assert.Empty(wait.SignedOut);
+        // OWNSPACE1b-B: a fact the page says the hold from, never an empty list.
+        Assert.True(wait.NoAccount);
         Assert.StartsWith("No `fake` account of Daoris's own is signed in", wait.Sentence);
         Assert.Single(lines, l => l.Event == "starts.waiting");
     }

@@ -945,6 +945,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
+    /// Whether a scope's accounts are inherited (OWNSPACE1b-A, D175 settlement 5): it names no account, and the agent never starts
+    /// in the person's own home, so the agent's Daoris accounts are its list, in turn, or the wait where it has none.
+    /// </summary>
+    public bool InheritsDaorisAccounts(string agent, string? workspace)
+    {
+        var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
+        var scope = Settings.ResolveScope(agent, circle);
+        return OwnersToolchain(agent) is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null;
+    }
+
+    /// <summary>
     /// The hold of a start with no Daoris account of the agent's signed in (OWNSPACE1a, D175 point 2): one sentence, and a wait
     /// for a sign-in naming the accounts it passed signed out, none where the agent has none, so a look reports it as a wait and
     /// says it once (D125 point 6).
@@ -952,7 +963,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     private static HarnessSelection NoAccount(string owner, IReadOnlyList<string> signedOut, IReadOnlyDictionary<string, string> names)
     {
         var note = RotationWords.NoAccountOf(owner);
-        return new HarnessSelection(note.Note) { SignedOut = SignedOutAccounts.Of(owner, signedOut, names), RefusalNote = note };
+        return new HarnessSelection(note.Note) { SignedOut = SignedOutAccounts.Of(owner, signedOut, names) with { NoAccount = true }, RefusalNote = note };
     }
 
     private async Task<HarnessSelection> WalkAsync(
@@ -1223,7 +1234,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var scope = Settings.ResolveScope(agent, circle);
         var toolchain = OwnersToolchain(agent);
         if (toolchain is not null) scope = Walked(scope, agent, toolchain);
-        if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.Waits, []);
+        if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []);
 
         var now = Clock();
         IReadOnlyList<string> present;

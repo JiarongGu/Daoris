@@ -265,6 +265,23 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// Words the agent answered <c>promptRequired</c> (STEER2d): the turn ended between the press and the steer, and the adapter
+    /// left them to the client. They go to the front of what is held, since the person chose to go first, and the run prompts
+    /// them next. Not told again, since they were said once; the run's prompt takes them. Called while the run waits on the
+    /// steer, so nothing has closed; false once it has, and the caller says they never reached the agent.
+    /// </summary>
+    public bool HandBack(ChatMessage message)
+    {
+        lock (_gate)
+        {
+            if (_closed) return false;
+            _held.Insert(0, message);
+            Publish();
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Take another agent's words only where they reach the running turn (SESSONE2b, D155): on the door that takes words during
     /// a turn (STEER1), as <see cref="Hold"/> takes them. False on a door that holds words for the turn's end, where they would be
     /// prompted after it and extend the run, before the door is known, and once the session has stopped taking any.

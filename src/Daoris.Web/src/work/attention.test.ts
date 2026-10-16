@@ -837,6 +837,19 @@ describe('what an account’s row offers', () => {
     expect(attentionOffers(row('account-wait', facts({ signsIn: false, named: [named('account-1', 'out')] })))).toEqual([]);
   });
 
+  /**
+   * OWNSPACE1b-B (D175 points 6-7): the hold for no Daoris account names no account, so its press is *Sign in for Daoris*, which
+   * runs `login-new` in place; with accounts it passed signed out, their sign-ins follow it, two acts at most.
+   */
+  it('signs in for Daoris where no Daoris account is signed in, first, and nowhere Daoris runs no sign-in', () => {
+    expect(attentionOffers(row('account-wait', facts({ noAccount: true })))).toEqual([{ act: 'sign-in-new' }]);
+    expect(attentionActs(row('account-wait', facts({ noAccount: true })))).toEqual(['sign-in-new']);
+    expect(attentionOffers(row('account-wait', facts({ noAccount: true, named: [named('account-1', 'out'), named('account-3', 'out')] }))))
+      .toEqual([{ act: 'sign-in-new' }, { act: 'sign-in', account: 'account-1' }]);
+    expect(attentionOffers(row('account-wait', facts({ noAccount: true, signsIn: false })))).toEqual([]);
+    expect(attentionOffers(row('account-wait', facts({ named: [named('account-2', 'cooling')] })))).toEqual([]);
+  });
+
   it('signs a signed-out account in, and never the tool’s own sign-in, which is the person’s', () => {
     expect(attentionOffers(row('signed-out', facts({ named: [named('account-1', 'out')] }))))
       .toEqual([{ act: 'sign-in', account: 'account-1' }]);

@@ -174,7 +174,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     /// words. A door's default is its owner's (AGT7), so the command and the sentence name the owner.
     /// </summary>
     /// <remarks>
-    /// The screen can also clear a default back to the tool's own home, which no terminal verb does; that stays the
+    /// The screen can also clear a default back to Daoris's accounts, which no terminal verb does; that stays the
     /// screen's press, so a default here always names an account.
     /// </remarks>
     private static HelpPlan Default(HelpProposal proposal, HelpMachineFacts facts)
@@ -193,8 +193,8 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
         if (account.Length == 0)
         {
-            return Refused($"a default names the account `{owner}` runs as — one the room lists under it; the tool's own home "
-                + "is chosen on the screen.");
+            return Refused($"a default names the account `{owner}` runs as — one the room lists under it; clearing it, so Daoris's "
+                + "accounts serve again, is done on the screen.");
         }
 
         if (!door.Accounts.Contains(account, StringComparer.Ordinal))
@@ -459,9 +459,12 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
                     : $"no account of `{owner}` is cooling."));
         }
 
+        // The tool's own sign-in is read-only (D175): only an old cool-off of it ends, and no start runs on it.
         return new HelpPlan(null,
-            $"Try {(own ? $"`{owner}`'s own sign-in" : $"`{account}`")} now: its cool-off ends, so starts may run on it again. If the limit "
-            + "still holds, the agent refuses the next start at once and the account cools again.",
+            own
+                ? $"End the old cool-off of `{owner}`'s own sign-in. Daoris starts no session in it; this only clears what was recorded."
+                : $"Try `{account}` now: its cool-off ends, so starts may run on it again. If the limit "
+                    + "still holds, the agent refuses the next start at once and the account cools again.",
             terminal, null);
     }
 

@@ -172,6 +172,7 @@
   "work.sitting.waitsForSignedOut": "{{agent}} 的账户 {{account}} 冷却至 {{when}}（{{because}}），在此之前 Daoris 不会在它上面启动。{{accounts}} 未登录，登录后这个委托能更早开始：{{logins}}，或在「智能体」中登录。",
   "work.sitting.waitsForOwnSignedOut": "{{agent}} 自己的登录冷却至 {{when}}（{{because}}），在此之前 Daoris 不会在它上面启动。{{accounts}} 未登录，登录后这个委托能更早开始：{{logins}}，或在「智能体」中登录。",
   "work.sitting.signedOut": "这条委托能用的 {{agent}} 账户都没有就绪，也没有一个在冷却：{{accounts}} 未登录，登录后它就会开始：{{logins}}，或在「智能体」中登录。",
+  "work.sitting.noAccount": "没有为 {{agent}} 登录任何 Daoris 账户，Daoris 也不会在你自己的 {{agent}} 登录里启动会话：登录一个后它就会开始，运行 `daoris agent login {{agent}} --new`，或在「智能体」中为 Daoris 登录。",
   "work.sitting.signedOutJoin": "、",
   "work.waitsForAccount": "等待账户",
   "work.frame.attending": "正在查看：{{title}}",

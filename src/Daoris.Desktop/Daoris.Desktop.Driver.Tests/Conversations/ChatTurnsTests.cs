@@ -199,6 +199,43 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
+    /// STEER2d: the steer found no turn running (<c>promptRequired</c>), so the door hands the words back: they are the next turn,
+    /// ahead of what waits, and the first turn lasts until the steer is answered so nothing closes before they go.
+    /// </summary>
+    [Fact]
+    public async Task Words_handed_back_after_a_steer_found_no_turn_are_the_next_turn()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+        await turns.TakeNowAsync(new ChatMessage("put MANGO after the words", []));
+
+        door.EndTurn(0);
+        Assert.True(turns.HandBack(new ChatMessage("put MANGO after the words", []) { Id = "said-c1" }));
+        door.Now.SetResult();
+
+        await Poll.Until(() => door.Took.Count == 2, () => "the handed-back words never became the next turn");
+        Assert.Equal(["read the five files", "put MANGO after the words"], door.Took);
+        Assert.Empty(turns.State.Queued);
+        door.EndTurn(1);
+        await Poll.Until(() => !turns.Running, () => "the turns never ended");
+    }
+
+    /// <summary>STEER2d: handed-back words are recorded only as taken under their own id, never said or told again.</summary>
+    [Fact]
+    public void Handed_back_words_are_recorded_only_as_taken_under_their_id()
+    {
+        var back = new ChatMessage("put MANGO after the words", []) { Id = "said-c1", Preface = "on the Agents page", Said = true };
+
+        var recorded = Assert.Single(ChatRunner.Recorded(back));
+
+        Assert.Equal("said-c1", recorded.Id);
+        Assert.Equal(SessionEventKind.User, recorded.Kind);
+        Assert.True(back.OnRecord);
+    }
+
+    /// <summary>
     /// STEER2a (D90): where the door steers nothing and takes no word mid-turn, *Send now* queues the words and stops the turn
     /// keeping them, so they are the next turn; with no turn running they are that turn at once.
     /// </summary>

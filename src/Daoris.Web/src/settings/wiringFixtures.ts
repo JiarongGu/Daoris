@@ -1,4 +1,4 @@
-import type { SystemWiring, WiringFolder } from '../data/wiring';
+import type { SystemWiring, WiringFile, WiringFolder, WiringVariable } from '../data/wiring';
 
 // What the wiring reads back, for the stories and the tests of This Daoris (WIRING1c): neutral paths by convention, like the
 // driver's fixtures, so a tracked file carries no machine path.
@@ -10,6 +10,18 @@ const MEASURED = '2026-10-16T10:42:00Z';
 export const folder = (id: WiringFolder['id'], extra: Partial<WiringFolder> = {}): WiringFolder => ({
   id, path: `${HOME}/${id === 'app' ? 'app' : id}`, pathWhy: null, present: true, bytes: 2_400_000, bytesWhy: null,
   measured: MEASURED, old: [], ...extra,
+});
+
+/** One settings file or record, there and reading by default. */
+export const file = (id: string, extra: Partial<WiringFile> = {}): WiringFile => ({
+  id, folder: 'data', path: `${HOME}/data/${id}.json`, pathWhy: null, present: true, bytes: 1_000, bytesWhy: null,
+  written: '2026-10-15T18:00:00Z', reads: true, readsWhy: null, overriddenBy: null, door: null, record: false, ...extra,
+});
+
+/** One variable, not set by default. */
+export const variable = (name: string, extra: Partial<WiringVariable> = {}): WiringVariable => ({
+  name, set: false, value: null, valueWhy: 'not-set', secret: false, prefix: null, from: 'not-set',
+  account: null, accountSet: false, machine: null, machineSet: false, instead: null, readBy: ['desktop', 'cli'], ...extra,
 });
 
 /** A whole read of an installed Daoris whose window hosts the service, sizes counted. */
@@ -54,18 +66,42 @@ export const WIRED: SystemWiring = {
     looked: '2026-10-16T10:41:58Z', lookedWhy: null, ready: true, readyWhy: null, draining: false, drainingWhy: null,
     holds: 0, holdsWhy: null, pollSeconds: 30, pollSecondsWhy: null,
   },
-  files: [],
-  variables: [],
+  files: [
+    file('driver', { bytes: 1_200, door: 'driver' }),
+    file('harnesses', { bytes: 640, overriddenBy: 'DAORIS_HARNESS_FILE', door: 'agents' }),
+    file('tools', { bytes: 90, reads: false, readsWhy: 'unparsed', door: 'tools' }),
+    file('remotes', { folder: 'profiles', bytes: 230, door: 'workspace' }),
+    file('browser-settings', { present: false, bytes: null, bytesWhy: 'absent', written: null, reads: null, readsWhy: 'absent', door: 'browser' }),
+    file('usage', { bytes: 48_000, reads: null, readsWhy: 'record', record: true }),
+    file('knowledge', { bytes: 9_400_000, reads: null, readsWhy: 'record', record: true }),
+  ],
+  variables: [
+    variable('DAORIS_HOME', { set: true, value: HOME, from: 'set-by-daoris', account: 'D:/somewhere/first/data', accountSet: true, instead: null }),
+    variable('DAORIS_SERVICE_URL', { set: true, value: 'http://localhost:5177', from: 'inherited', account: 'http://localhost:5177', accountSet: true, instead: null }),
+    variable('DAORIS_SERVICE_KEY', { set: true, value: null, valueWhy: 'secret', secret: true, prefix: 'dk_abcd1234', from: 'this-start', instead: null }),
+    variable('DAORIS_REMOTE_KEY', { secret: true, instead: 'remotes-file' }),
+    variable('DAORIS_EMBED_MODEL', { instead: 'lexical' }),
+    variable('DAORIS_EMBED_WINDOW', { instead: '2000' }),
+  ],
   versions: {
-    program: '0.21.0', build: 'abc1234', kit: null, cli: null, driver: null, service: null, connector: null, dotnet: null, node: null,
+    program: '0.21.0', build: 'abc1234', kit: 'Shenora 0.21.1', cli: '0.21.0', driver: '0.21.0', service: '0.21.0', connector: '0.21.0',
+    dotnet: '10.0.1', node: null, nodeWhy: 'tools',
   },
   terminal: {
-    launchers: [], launchersWhy: null, onAccountPath: null, onAccountPathWhy: null, onMachinePath: null, onMachinePathWhy: null,
-    firstDaoris: { is: 'none', path: null }, firstDriver: { is: 'none', path: null },
-    address: { present: false, url: null, pid: null, since: null, taken: null, why: null },
+    launchers: [
+      { name: 'daoris', present: true }, { name: 'daoris.cmd', present: true },
+      { name: 'daoris-driver', present: true }, { name: 'daoris-driver.cmd', present: false },
+    ],
+    launchersWhy: null, onAccountPath: true, onAccountPathWhy: null, onMachinePath: false, onMachinePathWhy: null,
+    firstDaoris: { is: 'this', path: `${HOME}/app/bin/daoris.cmd` },
+    firstDriver: { is: 'another', path: 'D:/somewhere/else/bin/daoris-driver.cmd' },
+    address: { present: true, url: 'http://localhost:5177', pid: 4242, since: '2026-10-16T09:00:00Z', taken: true, why: null },
   },
-  knowledge: { path: null, pathWhy: null, from: null, bytes: null, bytesWhy: null, familyRoot: null, familyRootWhy: null },
-  logs: { path: null, pathWhy: null, bytes: null, bytesWhy: null, days: 0, newest: null, newestWhy: null, engineLog: false },
+  knowledge: {
+    path: `${HOME}/data/knowledge.db`, pathWhy: null, from: 'home', bytes: 9_400_000, bytesWhy: null,
+    familyRoot: 'D:/somewhere/family', familyRootWhy: null,
+  },
+  logs: { path: `${HOME}/logs`, pathWhy: null, bytes: 96_000, bytesWhy: null, days: 30, newest: '2026-10-16T10:40:00Z', newestWhy: null, engineLog: true },
 };
 
 /** The same read while a walk is under way: no size yet. */
@@ -91,6 +127,29 @@ export const DEVELOPMENT: SystemWiring = {
     host: { path: null, pathWhy: 'not-found', from: null }, connector: { path: null, pathWhy: 'not-found', from: null },
   },
   remotes: [],
+  files: [
+    ...WIRED.files.slice(0, 2),
+    file('tools', { bytes: 90, reads: false, readsWhy: 'unreadable', door: 'tools' }),
+    file('plugin-state', { present: false, bytes: null, bytesWhy: 'absent', written: null, reads: null, readsWhy: 'absent', door: 'plugins' }),
+  ],
+  variables: [
+    variable('DAORIS_KNOWLEDGE_ROOT', { valueWhy: 'adopted', from: 'unknown', accountSet: null, machineSet: null }),
+    variable('DAORIS_SERVICE_URL', { set: true, value: 'http://localhost:5177', from: 'this-start', account: 'http://localhost:6000', accountSet: true, instead: null }),
+  ],
+  versions: {
+    ...WIRED.versions, kit: null, kitWhy: 'window', cli: null, cliWhy: 'development', driver: null, driverWhy: 'development',
+    service: null, serviceWhy: 'not-asked', connector: null, connectorWhy: 'not-found',
+  },
+  terminal: {
+    launchers: [], launchersWhy: 'development', onAccountPath: null, onAccountPathWhy: 'development', onMachinePath: null, onMachinePathWhy: 'development',
+    firstDaoris: { is: 'none', path: null }, firstDriver: { is: 'none', path: null },
+    address: { present: true, url: 'http://localhost:5177', pid: 31, since: '2026-10-16T08:00:00Z', taken: false, why: 'ended' },
+  },
+  knowledge: {
+    path: 'D:/somewhere/elsewhere/knowledge.db', pathWhy: null, from: 'variable', bytes: null, bytesWhy: 'absent',
+    familyRoot: null, familyRootWhy: 'adopted',
+  },
+  logs: { ...WIRED.logs, bytes: null, bytesWhy: 'not-measured', newest: null, newestWhy: 'absent', engineLog: false },
   loop: {
     ...WIRED.loop, holder: { kind: 'headless', pid: 777, since: '2026-10-16T08:00:00Z', thisWindow: false },
     draining: true, holds: 2,

@@ -31,6 +31,12 @@ public sealed record SignedOutAccounts(string Agent, IReadOnlyList<string> Accou
     /// </summary>
     public IReadOnlyList<string?> Names { get; init; } = [];
 
+    /// <summary>
+    /// True where this is OWNSPACE1a's no-account hold (D175): no Daoris account of the agent's is signed in, so a start waits
+    /// for a sign-in. The page says that hold from this fact, never from <see cref="Accounts"/> being empty (OWNSPACE1b-B).
+    /// </summary>
+    public bool NoAccount { get; init; }
+
     /// <summary>The accounts, each with the name the person gave it where <paramref name="names"/> holds one.</summary>
     public static SignedOutAccounts Of(string agent, IReadOnlyList<string> accounts, IReadOnlyDictionary<string, string>? names) =>
         new(agent, accounts)
@@ -161,6 +167,9 @@ public enum NextReason
 
     /// <summary>No account the scope may use is ready: the start waits (D125 §4).</summary>
     Waits,
+
+    /// <summary>No Daoris account of the agent's exists for the scope to take: its starts wait until a sign-in (D175, OWNSPACE1b-B).</summary>
+    NoAccount,
 }
 
 /// <summary>What keeps the next start off an account of the agent's (TOOL6e), or that nothing does.</summary>

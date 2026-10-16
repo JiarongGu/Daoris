@@ -401,7 +401,10 @@ public sealed class PluginCatalog
                         AccountOf: Text(row, "accountOf"),
                         // XAGENT1b: the plugin's word for its tool and its maker; a manifest written before says neither.
                         Product: Text(row, "product")?.Trim() is { Length: > 0 } product ? product : null,
-                        Maker: Text(row, "maker")?.Trim() is { Length: > 0 } maker ? maker : null));
+                        Maker: Text(row, "maker")?.Trim() is { Length: > 0 } maker ? maker : null,
+                        // OWNSPACE1c (D175): only JSON true says the agent's own home is nobody's; the CLI reads it the same.
+                        OwnHome: row.ValueKind == JsonValueKind.Object
+                            && row.TryGetProperty("ownHome", out var ownHome) && ownHome.ValueKind == JsonValueKind.True));
                 }
             }
 

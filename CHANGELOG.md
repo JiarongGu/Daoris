@@ -8,6 +8,14 @@ with the version and date at release.
 - A conversation whose turn ends with commits beyond its line now offers *Accept…* (采纳…) at the foot of the chat and in its
   head, as a driven session does, not only in the review's side bar; none is offered while a turn runs. Its *Accept* names the
   branch for the work's first commit, never for your opening words; a ticket you named in those words still names it.
+- Where an agent has no Daoris account signed in, *What needs you* says its starts wait and offers *Sign in for Daoris*
+  (为 Daoris 登录) right there; the agent's page heads with the same press. Your own sign-in stays listed, read-only: Daoris
+  starts no session in it, and a conversation begun there goes on there. Ask Daoris and the setup guide count only Daoris's
+  accounts as signed in, and the terminal says the same.
+- A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
+- `daoris-driver sessions say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
+- *This Daoris* also shows the settings files, the variables Daoris reads, the versions, the terminal's wiring, the
+  knowledge store and the logs.
 - *Send now* (立即发送) sits beside *Queue* while an agent works. On Claude Code it steers your words into the running turn
   at once, cutting the step in flight while earlier queued words keep their places; on an agent that takes words only when
   its turn ends, it stops the turn and keeps your words, so they go next. Where the agent can do neither, it says why in

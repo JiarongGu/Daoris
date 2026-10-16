@@ -124,6 +124,8 @@ public sealed class OwnSpaceTests : IDisposable
         Assert.Equal("held.no-account", part.Code);
         Assert.Equal("fake", part.Value("owner"));
         Assert.Equal(("fake", 0), (selection.SignedOut!.Agent, selection.SignedOut.Accounts.Count));
+        // OWNSPACE1b-B (D175 point 3): the page learns "no account" from this fact, never from the empty list.
+        Assert.True(selection.SignedOut.NoAccount);
     }
 
     [Fact]
@@ -140,6 +142,7 @@ public sealed class OwnSpaceTests : IDisposable
         Assert.False(selection.Allowed);
         Assert.StartsWith(NoAccount, selection.Refusal);
         Assert.Equal(["daoris-1", "daoris-2"], selection.SignedOut!.Accounts);
+        Assert.True(selection.SignedOut.NoAccount);
     }
 
     [Fact]
@@ -247,7 +250,7 @@ public sealed class OwnSpaceTests : IDisposable
     {
         var roster = new HarnessRoster(AdapterSet.Built(), Settings);
 
-        Assert.Equal(((string?)null, NextReason.Waits), roster.Next("codex", null) is var waits ? (waits.Account, waits.Reason) : default);
+        Assert.Equal(((string?)null, NextReason.NoAccount), roster.Next("codex", null) is var waits ? (waits.Account, waits.Reason) : default);
 
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "codex", "daoris-1"));
 
@@ -257,7 +260,7 @@ public sealed class OwnSpaceTests : IDisposable
     [Fact]
     public void The_next_start_with_no_Daoris_account_waits_and_with_one_takes_it()
     {
-        Assert.Equal((null, NextReason.Waits), (Roster().Next("fake", "aurora") is var waits ? (waits.Account, waits.Reason) : default));
+        Assert.Equal((null, NextReason.NoAccount), (Roster().Next("fake", "aurora") is var waits ? (waits.Account, waits.Reason) : default));
 
         Account("daoris-1");
 

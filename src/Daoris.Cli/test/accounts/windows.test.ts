@@ -200,7 +200,7 @@ test('`agent list` says what the tool\'s own sign-in last said beneath its agent
   assert.equal(own.length, 1, lines.join('\n'));
   assert.match(own[0]!, /^\s+its own sign-in: said 3 h ago: 1% of its session limit used, resetting .* \(UTC\); 15% of its weekly limit used, resetting .* \(UTC\)$/);
   // It is no account: the agent still has none, and its starts still run on the own sign-in by no list.
-  assert.ok(lines.some((line) => /no accounts — sessions run in the agent's own configuration home/.test(line)), lines.join('\n'));
+  assert.ok(lines.some((line) => /no accounts — Daoris's sessions wait until you sign in: `daoris agent login codex --new`/.test(line)), lines.join('\n'));
   assert.ok(!lines.some((line) => /rotation/.test(line)), lines.join('\n'));
   fx.cleanup();
 });

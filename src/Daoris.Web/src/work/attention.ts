@@ -89,7 +89,7 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
-  | 'sign-in' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
+  | 'sign-in' | 'sign-in-new' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
   | 'let-ask' | 'not-now';
 
 /** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
@@ -117,13 +117,17 @@ const ACCOUNT_ACTS = 2;
  * place *Read* for one there never read (UXFIX3), since letting run an account nobody looked at widens what Daoris may spend
  * on a guess; and *Read* for one it names that no read answered (§5.3: a reading only on the press). A signed-out account's
  * own row signs it in. Never the tool's own sign-in, which is the person's, nor where Daoris runs no sign-in for the agent.
- * Two at most: the rest are on the agent's page, the row's door, and its line says them.
+ * Where no Daoris account is signed in, *Sign in for Daoris* leads (OWNSPACE1b-B, D175 point 7): it names no account, and runs
+ * the add flow's sign-in in place. Two at most: the rest are on the agent's page, the row's door, and its line says them.
  */
 function accountOffers(item: Attention): AttentionOffer[] {
   const facts = item.account;
   if (!facts) return [];
   const signIns: AttentionOffer[] = facts.signsIn
-    ? facts.named.filter((one) => one.state === 'out' && one.id).map((one) => ({ act: 'sign-in', account: one.id! }))
+    ? [
+      ...(facts.noAccount ? [{ act: 'sign-in-new' } as const] : []),
+      ...facts.named.filter((one) => one.state === 'out' && one.id).map((one) => ({ act: 'sign-in' as const, account: one.id! })),
+    ]
     : [];
   if (item.kind === 'signed-out') return signIns.slice(0, 1);
   const outside: AttentionOffer[] = facts.outside

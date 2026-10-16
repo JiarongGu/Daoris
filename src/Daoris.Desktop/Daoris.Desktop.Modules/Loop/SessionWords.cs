@@ -560,10 +560,13 @@ public sealed class SessionWords : IDisposable
     public async Task<WordsHeld> HoldAsync(SessionRequest request, CancellationToken ct)
     {
         var text = request.Text ?? "";
-        var said = await SayAsync(request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct)
+        var said = await SayAsync(
+                request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct, request.Now)
             .ConfigureAwait(false);
         if (said is null) return WordsHeld.Failed(NotUp);
         if (said.Running) KeepOnAsk(request.Session, text);
+        // A *Send now* is answered whole (STEER2c): what the door did, and why where it did not; any other say as it always was.
+        if (said.Sent && request.Now) return new WordsHeld(true, said.Reaches, said.Why) { Word = said.Word, Now = said.Now };
         if (said.Sent) return new WordsHeld(true, said.Reaches, null) { Word = said.Word };
         return said.Why is { } why ? WordsHeld.Refused(why, said.Message) : WordsHeld.Failed(said.Message ?? NotUp);
     }
