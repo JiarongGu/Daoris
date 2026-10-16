@@ -172,10 +172,10 @@ public sealed class LandingWakes
     }
 
     /// <summary>
-    /// What a look of <paramref name="part"/> lands on: every due entry (null) for the whole look; the wakes heard since the last look
-    /// for a plan, or a session's end where none was. Either way the wakes are taken.
+    /// What a look lands on: every due entry (null) for the <paramref name="whole"/> look; the wakes heard since the last look for a
+    /// plan, or a session's end where none was. Either way the wakes are taken.
     /// </summary>
-    public IReadOnlyCollection<LandingWake>? For(LookPart part)
+    public IReadOnlyCollection<LandingWake>? For(bool whole)
     {
         List<LandingWake> taken;
         lock (_gate)
@@ -184,7 +184,7 @@ public sealed class LandingWakes
             _heard = [];
         }
 
-        if (part == LookPart.Look) return null;
+        if (whole) return null;
         return taken.Count == 0 ? [Ended] : taken;
     }
 

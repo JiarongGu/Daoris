@@ -165,12 +165,12 @@ public sealed class LandingWakesTests : IDisposable
         wakes.Hear(ChangeTopics.Refs, "engine");
         wakes.Hear(ChangeTopics.Ledger, "quests");
 
-        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "quests"), new LandingWake(ChangeTopics.Refs, "engine")], wakes.For(LookPart.Plan)!);
-        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "sessions")], wakes.For(LookPart.Plan)!);
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "quests"), new LandingWake(ChangeTopics.Refs, "engine")], wakes.For(whole: false)!);
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "sessions")], wakes.For(whole: false)!);
 
         wakes.Hear(ChangeTopics.Config, "driver.json");
-        Assert.Null(wakes.For(LookPart.Look));
-        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "sessions")], wakes.For(LookPart.Plan)!);
+        Assert.Null(wakes.For(whole: true));
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "sessions")], wakes.For(whole: false)!);
     }
 
     // ——— the refs' wake, found without git

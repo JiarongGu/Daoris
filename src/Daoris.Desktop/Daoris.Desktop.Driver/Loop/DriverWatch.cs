@@ -277,7 +277,7 @@ public sealed class DriverWatch(
             var report = await new Driver(
                     service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
-                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part, Woke = _landing.For(part) }
+                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part, Woke = _landing.For(whole: part == LookPart.Look) }
                 .TickAsync(token, failed: said =>
                 {
                     carried.AddRange(said.Events);
