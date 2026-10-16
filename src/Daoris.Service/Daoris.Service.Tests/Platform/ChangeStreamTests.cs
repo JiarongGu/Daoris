@@ -261,6 +261,94 @@ public sealed class ChangeStreamTests : IAsyncLifetime
         Assert.NotEqual(since.Split('.')[0], answer.Since.Split('.')[0]);
     }
 
+    /// <summary>
+    /// Review of FABRIC-EVENT3b: an observer that could not open at the start still issues cursors; once it opens, the epoch is new,
+    /// so what moved meanwhile is answered every family and never taken as the baseline.
+    /// </summary>
+    [Fact]
+    public async Task A_first_open_that_failed_begins_a_new_epoch_once_it_opens()
+    {
+        var later = Path.Combine(Path.GetTempPath(), "daoris-changes-" + Guid.NewGuid().ToString("N")[..8] + ".db");
+        await using var stream = await ChangeStream.OpenAsync(
+            later, pace: TimeSpan.FromMilliseconds(20), reopenAfter: TimeSpan.FromMilliseconds(20));
+        try
+        {
+            var since = (await stream.WaitAsync(null, TimeSpan.Zero)).Since;
+
+            // The store comes up, and a session is recorded, while the observer has not yet read anything.
+            await using (var store = new SqliteConnection($"Data Source={later};Pooling=False"))
+            {
+                await store.OpenAsync();
+                await QuestStore.OpenAsync(store);
+                var sessions = await SessionStore.OpenAsync(store);
+                await sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+            }
+
+            var answer = await stream.WaitAsync(since, Long);
+
+            Assert.Equal(ChangeFamilies.All, answer.Moved);
+            Assert.NotEqual(since.Split('.')[0], answer.Since.Split('.')[0]);
+        }
+        finally
+        {
+            await stream.DisposeAsync();
+            if (File.Exists(later)) File.Delete(later);
+        }
+    }
+
+    /// <summary>
+    /// Review of FABRIC-EVENT3b: a wait refused a slot is answered at once, never queued behind a sample a writer's lock holds.
+    /// </summary>
+    [Fact]
+    public async Task A_ninth_wait_never_queues_behind_the_sampler()
+    {
+        var since = await Bootstrap();
+        var held = Enumerable.Range(0, ChangeStream.MostWaits).Select(_ => _stream.WaitAsync(since, Long)).ToList();
+        await Task.Delay(100);
+
+        // A writer holds the file: every read the sampler makes waits for it, up to its own timeout.
+        await Execute("BEGIN EXCLUSIVE;");
+        try
+        {
+            await Task.Delay(100);
+            var clock = Stopwatch.StartNew();
+            var ninth = await _stream.WaitAsync(since, Long);
+
+            Assert.True(clock.Elapsed < TimeSpan.FromMilliseconds(500), $"{clock.Elapsed}");
+            Assert.Empty(ninth.Moved);
+        }
+        finally
+        {
+            await Execute("ROLLBACK;");
+        }
+
+        await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        Assert.All(await Task.WhenAll(held).WaitAsync(Long), answer => Assert.Equal([ChangeFamilies.Sessions], answer.Moved));
+    }
+
+    /// <summary>
+    /// Review of FABRIC-EVENT3b: where a replacement can happen under an open handle, a copy carries the stamp, so the path is
+    /// another database also when its revisions differ from the observer's while the observer's held still around the read.
+    /// </summary>
+    [Theory]
+    // The same file: the stamp and the revisions agree.
+    [InlineData("a", "1,5", "a", "1,5", "1,5", false)]
+    // A write between the reads: the observer moved, so nothing can be told this time.
+    [InlineData("a", "1,5", "a", "1,6", "1,6", false)]
+    // Another stamp: another database.
+    [InlineData("a", "1,5", "b", "1,5", "1,5", true)]
+    // No stamp there: not the database observed.
+    [InlineData("a", "1,5", null, null, "1,5", true)]
+    // A copy of an earlier state: the stamp agrees, the revisions do not, and the observer held still.
+    [InlineData("a", "1,5", "a", "1,3", "1,5", true)]
+    public void A_copy_at_the_path_is_another_database(
+        string observed, string before, string? stamp, string? atPath, string after, bool another)
+    {
+        static long[] Of(string revisions) => [.. revisions.Split(',').Select(long.Parse)];
+
+        Assert.Equal(another, ChangeStream.IsAnother(observed, Of(before), stamp, atPath is null ? null : Of(atPath), Of(after)));
+    }
+
     /// <summary>A write that moves no family's revision wakes nobody, though the observer sees it.</summary>
     [Fact]
     public async Task A_write_outside_every_family_wakes_nobody()

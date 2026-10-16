@@ -54,16 +54,18 @@ public sealed record ChangesAnswer(string Since, IReadOnlyList<string> Moved);
 ///
 /// <para><b>The cursor</b> is <c>&lt;epoch&gt;.&lt;n&gt;</c>: <c>n</c> counts the samples that moved a family, and each family keeps
 /// the last <c>n</c> it moved at, so a family that moved several times since a cursor is answered once and nothing is replayed.
-/// The epoch is new when the host starts, when the observer reconnects after its read failed, and when the database at the path
-/// is another one (its identity, a stamp kept in the file, changed). A missing, malformed, stale or future cursor is answered at
+/// The epoch is new when the host starts, when the observer opens after its read failed (or after a cursor went out before its
+/// first open), and when the database at the path is another one. A missing, malformed, stale or future cursor is answered at
 /// once with every family and the current cursor: never an error its caller must handle apart.</para>
 ///
-/// <para><b>Bounded.</b> At most <see cref="MostWaits"/> waits are held at once, a ninth answered at once with the current
-/// cursor; a wait lasts <see cref="LongestWait"/> at most; and the sampler runs only while a wait is held.</para>
+/// <para><b>Bounded.</b> At most <see cref="MostWaits"/> waits are held at once, a ninth answered at once with what the last sample
+/// counted, never sampling itself; a wait lasts <see cref="LongestWait"/> at most from its arrival; and the sampler runs only
+/// while a wait is held.</para>
 ///
 /// <para><b>A replaced file.</b> On Windows the observer's open handle keeps a replacement out (SQLite shares no delete), so a
-/// different database can arrive only across a reconnection, which begins an epoch already; elsewhere the path's stamp is read
-/// apart, every <see cref="IdentityPace"/> while waits are held, and a different one reconnects the observer.</para>
+/// different database can arrive only across a reconnection, which begins an epoch already. Elsewhere the path is read apart,
+/// every <see cref="IdentityPace"/> while waits are held: another stamp (written once into the file), or, since a copy carries
+/// the stamp, other revisions than the observer's, reconnects the observer (<see cref="IsAnother"/>).</para>
 /// </remarks>
 public sealed class ChangeStream : IAsyncDisposable
 {
@@ -113,6 +115,7 @@ public sealed class ChangeStream : IAsyncDisposable
     private readonly Dictionary<string, long> _movedAt = new(StringComparer.Ordinal);
     private string _epoch = NewEpoch();
     private long _count;
+    private bool _issued;
     private int _waits;
     private Task? _pump;
     private TaskCompletionSource _moved = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -147,7 +150,11 @@ public sealed class ChangeStream : IAsyncDisposable
     {
         get
         {
-            lock (_gate) return CursorOf();
+            lock (_gate)
+            {
+                _issued = true;
+                return CursorOf();
+            }
         }
     }
 
@@ -163,34 +170,37 @@ public sealed class ChangeStream : IAsyncDisposable
         if (wait < TimeSpan.Zero) wait = TimeSpan.Zero;
         if (wait > LongestWait) wait = LongestWait;
 
-        bool held;
+        // The wait is counted from its arrival, whatever a sample ahead of it takes.
+        var until = Stopwatch.GetTimestamp() + Ticks(wait);
         lock (_gate)
         {
-            held = _waits < MostWaits;
-            if (held)
-            {
-                _waits++;
-                _pump ??= Task.Run(PumpAsync);
-            }
+            // A wait past the bound is answered at once with what the last sample counted, and never samples itself: it never
+            // queues behind a sample a writer's lock holds, so the bound bounds the work too.
+            if (_waits >= MostWaits) return Judged(since).Answer;
+            _waits++;
+            _pump ??= Task.Run(PumpAsync);
         }
 
         try
         {
-            try
+            // A sample at once, unless one is under way: what moved while nobody waited is counted now, as the observer kept its
+            // place meanwhile. One under way is followed by the pump's next, which this wait now keeps running.
+            if (await _sampling.WaitAsync(TimeSpan.Zero, CancellationToken.None).ConfigureAwait(false))
             {
-                // A sample at once: what moved while nobody waited is counted now, and the observer kept its place meanwhile.
-                await SampleAsync(ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                return Judged(since).Answer;
+                try
+                {
+                    if (!_disposed) await SampleHeldAsync().ConfigureAwait(false);
+                }
+                finally
+                {
+                    _sampling.Release();
+                }
             }
 
-            var until = Stopwatch.GetTimestamp() + (long)(wait.TotalSeconds * Stopwatch.Frequency);
             while (true)
             {
                 var (answer, moved) = Judged(since);
-                var left = held ? Stopwatch.GetElapsedTime(Stopwatch.GetTimestamp(), until) : TimeSpan.Zero;
+                var left = Stopwatch.GetElapsedTime(Stopwatch.GetTimestamp(), until);
                 if (answer.Moved.Count > 0 || left <= TimeSpan.Zero || ct.IsCancellationRequested) return answer;
 
                 try
@@ -207,10 +217,7 @@ public sealed class ChangeStream : IAsyncDisposable
         }
         finally
         {
-            if (held)
-            {
-                lock (_gate) _waits--;
-            }
+            lock (_gate) _waits--;
         }
     }
 
@@ -237,6 +244,7 @@ public sealed class ChangeStream : IAsyncDisposable
     {
         lock (_gate)
         {
+            _issued = true;
             var current = CursorOf();
             if (!TryParse(since, out var epoch, out var n) || epoch != _epoch || n > _count)
             {
@@ -318,8 +326,12 @@ public sealed class ChangeStream : IAsyncDisposable
             if (_identityPace is { } identityPace && now >= _identityAt)
             {
                 _identityAt = now + Ticks(identityPace);
-                if (await IdentityAtPathAsync().ConfigureAwait(false) is { Known: true } found
-                    && !string.Equals(found.Id, _identity, StringComparison.Ordinal))
+                // The path's read sits between two of the observer's, so a write to the same file between them cannot pass for
+                // another database: where the observer held still, the path's revisions are its own.
+                var before = await GatedAsync(observer, Revisions).ConfigureAwait(false);
+                var found = await IdentityAtPathAsync().ConfigureAwait(false);
+                var after = await GatedAsync(observer, Revisions).ConfigureAwait(false);
+                if (found.Known && IsAnother(_identity, before, found.Id, found.Revisions, after))
                 {
                     Close();
                     await ReopenAsync(now, "replaced").ConfigureAwait(false);
@@ -384,17 +396,19 @@ public sealed class ChangeStream : IAsyncDisposable
             _identityAt = now + Ticks(_identityPace ?? TimeSpan.Zero);
             var first = !_opened;
             _opened = true;
-            if (first) return;
 
             lock (_gate)
             {
+                // The start's own open keeps the epoch only while no cursor went out: one issued before the observer could read
+                // anything holds no baseline, and what moved since it would otherwise be taken as the baseline and never answered.
+                if (first && !_issued) return;
                 _epoch = NewEpoch();
                 _count = 0;
                 _movedAt.Clear();
                 Signal();
             }
 
-            _log?.Info("changes.epoch", ("why", why));
+            _log?.Info("changes.epoch", ("why", first ? "opened" : why));
         }
         catch (Exception failed) when (failed is SqliteException or InvalidOperationException or IOException)
         {
@@ -441,8 +455,11 @@ public sealed class ChangeStream : IAsyncDisposable
         }
     }
 
-    /// <summary>The stamp of the database at the path now, read apart from the observer; unknown where a writer held it.</summary>
-    private async Task<(bool Known, string? Id)> IdentityAtPathAsync()
+    /// <summary>
+    /// The stamp and the families' revisions of the database at the path now, read apart from the observer; unknown where a
+    /// writer held it.
+    /// </summary>
+    private async Task<(bool Known, string? Id, long[]? Revisions)> IdentityAtPathAsync()
     {
         try
         {
@@ -454,18 +471,44 @@ public sealed class ChangeStream : IAsyncDisposable
                 DefaultTimeout = 2,
             }.ToString());
             probe.Open();
-            return (true, await GatedAsync(probe, StampOf).ConfigureAwait(false));
+            var (stamp, revisions) = await GatedAsync(probe, gate => (StampOf(gate), RevisionsIfAny(gate))).ConfigureAwait(false);
+            return (true, stamp, revisions);
         }
         catch (SqliteException held) when (held.SqliteErrorCode is Busy or Locked)
         {
-            return (false, null);
+            return (false, null, null);
         }
         catch (SqliteException)
         {
             // No database there to read: not the one observed.
-            return (true, null);
+            return (true, null, null);
         }
     }
+
+    private static long[]? RevisionsIfAny(ConnectionGate probe)
+    {
+        try
+        {
+            return Revisions(probe);
+        }
+        catch (SqliteException none) when (none.SqliteErrorCode == 1)
+        {
+            // SQLITE_ERROR: no family's table there.
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Whether the database at the path is another than the one observed (FABRIC-EVENT3b's review): another stamp or none; no
+    /// family's revisions; or, since a copy of the file carries the stamp, revisions that differ from the observer's while the
+    /// observer's held still around the path's read (<paramref name="before"/>, <paramref name="after"/>). Where the observer
+    /// moved between, nothing is told this time. A copy of the current state with nothing written since is told by the first
+    /// write that reaches only one of the two.
+    /// </summary>
+    internal static bool IsAnother(string? observed, long[] before, string? stamp, long[]? atPath, long[] after) =>
+        !string.Equals(stamp, observed, StringComparison.Ordinal)
+        || atPath is null
+        || (before.SequenceEqual(after) && !atPath.SequenceEqual(before));
 
     private static long[] Revisions(ConnectionGate observer)
     {
