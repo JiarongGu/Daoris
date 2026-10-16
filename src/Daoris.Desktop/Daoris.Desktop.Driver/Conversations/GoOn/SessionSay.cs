@@ -163,10 +163,20 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
 
         // A driven session this loop runs, on the protocol door or the native door's run (MSG1b): its inbox holds them, and
         // they are the person's words on its ask (D133 §1), which the headless loop missed until MSG1e4.
-        if (processes.InboxOf(id) is { } inbox && inbox.Hold(new ChatMessage(text, [])))
+        if (processes.InboxOf(id) is { } inbox)
         {
-            _ = WordsOnAsk.Keep(service(), id, text);
-            return new WordsHeld(true, Spelled(inbox.Reach), null);
+            // The terminal's *Send now* (STEER2c) goes by the door it has, as the screen's press does (DrivenInbox.HoldNowAsync).
+            if (request.Now && await inbox.HoldNowAsync(new ChatMessage(text, [])).ConfigureAwait(false) is { } sentNow)
+            {
+                _ = WordsOnAsk.Keep(service(), id, text);
+                return new WordsHeld(true, sentNow.Reaches, sentNow.Why) { Now = sentNow.Now };
+            }
+
+            if (!request.Now && inbox.Hold(new ChatMessage(text, [])))
+            {
+                _ = WordsOnAsk.Keep(service(), id, text);
+                return new WordsHeld(true, Spelled(inbox.Reach), null);
+            }
         }
 
         if (processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && processes.RefusesInput(id) is null)
