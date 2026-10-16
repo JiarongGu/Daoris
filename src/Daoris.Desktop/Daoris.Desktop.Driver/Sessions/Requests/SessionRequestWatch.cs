@@ -109,12 +109,18 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         var words = new LoopWords(processes, service);
         Say = words.HoldAsync;
         TakeBack = words.TakeBackAsync;
+        // FABRIC-EVENT2c: made before the watch starts, so its watcher opens at once and the first request after an install is
+        // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
+        Directory.CreateDirectory(_requests.Folder);
         Changes = new ChangeWatch(source);
         Chain = new Chain(Changes).Bind(ChainRanks.Read, ReadAsync);
         Chain.Topic(ChangeTopics.Requests, ChainEvents.Home, every ?? Listing);
         Changes.Watch(ChangeTopics.Requests, ChangeTopics.Requests, _requests.Folder, Hears);
         Changes.Start();
     }
+
+    /// <summary>The machine resumed, as its shell heard (FABRIC-EVENT2d): the folder's watcher is reopened and the requests judged now.</summary>
+    public void Resumed() => Changes?.Resumed();
 
     /// <summary>
     /// The test seam: what this loop runs, and how it stops one, in place of a registry of real processes. It looks only when

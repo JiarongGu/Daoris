@@ -49,6 +49,8 @@ public sealed class DriverWatchLookTests : IDisposable
                     {
                         case 1: watch.Nudge(ChangeTopics.Requests, "requests"); break;
                         case 2: watch.Nudge(); break;
+                        // FABRIC-EVENT2b: a terminal's words kept by a loop wake it by their topic, the session as the subject.
+                        case 3: watch.Said("s1"); break;
                         default: stop.Cancel(); break;
                     }
 
@@ -64,9 +66,9 @@ public sealed class DriverWatchLookTests : IDisposable
             .Select(line => line.GetProperty("data"))
             .ToArray();
 
-        Assert.Equal(["start", "nudge", "nudge"], looks.Select(data => data.GetProperty("by").GetString()));
-        Assert.Equal([null, "requests", null], looks.Select(data => data.GetProperty("topic").GetString()));
-        Assert.Equal([null, "requests", null], looks.Select(data => data.GetProperty("subject").GetString()));
+        Assert.Equal(["start", "nudge", "nudge", "nudge"], looks.Select(data => data.GetProperty("by").GetString()));
+        Assert.Equal([null, "requests", null, "requests"], looks.Select(data => data.GetProperty("topic").GetString()));
+        Assert.Equal([null, "requests", null, "s1"], looks.Select(data => data.GetProperty("subject").GetString()));
         Assert.All(looks, data =>
         {
             Assert.True(data.GetProperty("failed").GetBoolean());
