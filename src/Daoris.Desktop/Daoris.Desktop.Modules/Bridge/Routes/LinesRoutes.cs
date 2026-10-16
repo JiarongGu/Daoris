@@ -386,6 +386,42 @@ public sealed class LinesRoutes(DriverContext context)
         return new { Repositories = known.Select(each => new { each.Repository, each.Workspace, each.Holds }).ToArray() };
     }
 
+    /// <summary>
+    /// Each unit of work's milestone (FABRIC-MILESTONE1a, the fabric events design §D0, §D3), the page's read of what
+    /// `daoris-driver work state` says (D50): whether its end was reached, the result kept, the cleanup pending (what waits and
+    /// why) or completed (what went), and the recovery retained until its date, each with the inventory entries it is read from.
+    /// Derived at each read from the records the tree lifecycle keeps, never stored; a look that changes nothing, so it declares
+    /// nothing (D169 point 2). With `unit`, the units that name picks (its id, session or branch).
+    /// </summary>
+    [DriverRoute("WORK_STATE")]
+    private async Task<object?> WorkStateAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
+        var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (repository, _, root) in repositories)
+        {
+            if (!string.IsNullOrWhiteSpace(root)) roots.TryAdd(repository, root);
+        }
+
+        var unread = new List<string>();
+        var units = await WorkInventories.MilestonesAsync(_loop.Home, roots, inUse, unread, cancellationToken);
+        if (Optional(request, "unit") is { } named) units = WorkInventories.Named(units, named);
+        static object Entry(InventoryEntry each) => new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof };
+        return new
+        {
+            Units = units.Select(unit => new
+            {
+                unit.Unit, unit.Repository, unit.Branch, unit.Session,
+                End = new { unit.End.State, unit.End.By, unit.End.On, unit.End.Revision, unit.End.At, unit.End.Said },
+                Result = unit.Result.Select(Entry).ToArray(),
+                Cleanup = new { unit.Cleanup.State, Waits = unit.Cleanup.Waits.Select(Entry).ToArray(), Gone = unit.Cleanup.Gone.Select(Entry).ToArray() },
+                Recovery = unit.Recovery.Select(Entry).ToArray(),
+                Entries = unit.Entries.Select(Entry).ToArray(),
+            }).ToArray(),
+            Unread = unread.ToArray(),
+        };
+    }
+
     /// <summary>The strings of a payload's array field, or none where it has no such array.</summary>
     private static HashSet<string> Names(IpcRequest request, string field) =>
         request.Payload is { } payload && payload.TryGetProperty(field, out var names) && names.ValueKind == JsonValueKind.Array

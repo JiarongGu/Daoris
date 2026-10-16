@@ -490,7 +490,7 @@ try
     // Each unit of work's milestone (FABRIC-MILESTONE1a, D50): a look, read from the records and changing nothing.
     if (args is ["work", "state", .. var stateArgs])
     {
-        return await Daoris.Driver.Host.WorkConsole.StateAsync(stateArgs);
+        return await Daoris.Driver.Host.WorkConsole.MilestonesAsync(stateArgs);
     }
 
     // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.

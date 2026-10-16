@@ -46,7 +46,7 @@ internal static class WorkConsole
     /// records derive; a unit named by its id, its session or its branch. A look: it changes nothing and tells no window. The page's
     /// is MILESTONE1b's. Exit 0 clean; 1 where the unit named is none; 2 for words not understood.
     /// </summary>
-    public static async Task<int> StateAsync(string[] args)
+    public static async Task<int> MilestonesAsync(string[] args)
     {
         var entries = args.Contains("--entries");
         var words = args.Where(word => word != "--entries").ToList();

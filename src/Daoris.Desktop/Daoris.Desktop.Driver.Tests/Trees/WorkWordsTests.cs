@@ -104,7 +104,7 @@ public sealed class WorkWordsTests : IDisposable
         Assert.Contains("| state [--entries]", DriverCommand.Usage);
         Assert.Contains("WorkConsole.ReadAsync(home)", console);
         Assert.Contains("args is [\"work\", \"state\", ..", program);
-        Assert.Contains("WorkConsole.StateAsync(", program);
+        Assert.Contains("WorkConsole.MilestonesAsync(", program);
         Assert.Contains("WorkInventories.MilestonesAsync(", work);
         Assert.Contains("work state [<unit>]", DriverCommand.Usage);
         Assert.Contains("work state [<unit>]", program);
