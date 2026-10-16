@@ -409,17 +409,34 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     public async Task Browse_answers_the_pickers_choice_and_says_when_this_host_has_no_picker()
     {
         string? asked = null;
-        var picking = new DriverModule(Bus, Loop(), pickFile: title => { asked = title; return @"C:\Tools\git\cmd\git.exe"; });
+        string? from = "unset";
+        var picking = new DriverModule(Bus, Loop(), pickFile: (title, window) => { asked = title; from = window; return @"C:\Tools\git\cmd\git.exe"; });
         var picked = await AnswerAsync(picking, "TOOLS_PICK", new { title = "Choose Git" });
         Assert.Equal(@"C:\Tools\git\cmd\git.exe", picked.GetProperty("file").GetString());
         Assert.True(picked.GetProperty("can").GetBoolean());
         Assert.Equal("Choose Git", asked);
+        // A page that names no window is the first main window's (MAINWINDOWS2c).
+        Assert.Null(from);
 
-        var cancelled = await AnswerAsync(new DriverModule(Bus, Loop(), pickFile: _ => null), "TOOLS_PICK", new { title = "Choose Git" });
+        var cancelled = await AnswerAsync(new DriverModule(Bus, Loop(), pickFile: (_, _) => null), "TOOLS_PICK", new { title = "Choose Git" });
         Assert.True(cancelled.GetProperty("file").ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
 
         var none = await AnswerAsync(Module(), "TOOLS_PICK", new { title = "Choose Git" });
         Assert.False(none.GetProperty("can").GetBoolean());
+    }
+
+    /// <summary>MAINWINDOWS2c: the file picker is owned by the window whose page asked, which the page names.</summary>
+    [Theory]
+    [InlineData("main:2")]
+    [InlineData("monitor")]
+    public async Task Browse_hands_the_picker_the_window_that_asked(string window)
+    {
+        string? from = null;
+        var picking = new DriverModule(Bus, Loop(), pickFile: (_, named) => { from = named; return null; });
+
+        await AnswerAsync(picking, "TOOLS_PICK", new { title = "Choose Git", window });
+
+        Assert.Equal(window, from);
     }
 
     /// <summary>A version is read off whatever the program says, as each declared tool says it (§2.1's version question).</summary>

@@ -50,6 +50,20 @@ public sealed class SecondaryWindowHost(
     private readonly Dictionary<string, SecondaryForm> _forms = new(StringComparer.Ordinal);
 
     /// <summary>
+    /// The other main windows now open (MAINWINDOWS2c), for the picker's owner where the page that asked has none: any thread.
+    /// </summary>
+    public IReadOnlyList<Form> MainForms()
+    {
+        lock (_forms) return [.. _forms.Where(entry => SecondaryWindow.IsMain(entry.Key)).OrderBy(entry => entry.Key, StringComparer.Ordinal).Select(entry => (Form)entry.Value)];
+    }
+
+    /// <summary>The open window opened under <paramref name="name"/> (a picker's owner, MAINWINDOWS2c), or null: any thread.</summary>
+    public Form? FormNamed(string name)
+    {
+        lock (_forms) return _forms.TryGetValue(name, out var form) ? form : null;
+    }
+
+    /// <summary>
     /// Tell each other main window what to show of the taskbar's count (MAINWINDOWS2b): the count while the first is put away and
     /// its button is gone, nothing while it is shown. Any thread; each window draws on its own.
     /// </summary>

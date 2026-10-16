@@ -13,8 +13,27 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class RegistryModuleTests : Bridge
 {
     private string? _picked;
+    private string? _pickedFor = "unset";
 
-    private RegistryModule Module() => new(Bus, () => _picked);
+    private RegistryModule Module() => new(Bus, window =>
+    {
+        _pickedFor = window;
+        return _picked;
+    });
+
+    /// <summary>MAINWINDOWS2c: the folder dialog is owned by the window whose page asked, which the page names.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("main:2")]
+    [InlineData("session:a1b2c3d4")]
+    public async Task The_folder_dialog_is_handed_the_window_that_asked(string? window)
+    {
+        _picked = null;
+
+        await AnswerAsync(Module(), "PICK_FOLDER", window is null ? null : new { window });
+
+        Assert.Equal(window, _pickedFor);
+    }
 
     /// <summary>A checkout in this test's own scratch — never a real repository on this machine.</summary>
     private string Repository(string name, object? manifest = null)

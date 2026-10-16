@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anotherMainWindow, secondaryWindow, sessionWindowName, WINDOW_PARAMETER } from './window';
+import { anotherMainWindow, ownWindowName, secondaryWindow, sessionWindowName, WINDOW_PARAMETER } from './window';
 
 /**
  * The window a page is (SURF8). Three readers agree on this string — a URL, an IPC payload and a
@@ -71,6 +71,17 @@ describe('another main window', () => {
     expect(secondaryWindow('?window=main%3A2')).toBeNull();
     expect(anotherMainWindow('?window=main%3A2&host=http%3A%2F%2Flocalhost%3A5177')).toBe('main:2');
     expect(anotherMainWindow('window=main:12')).toBe('main:12');
+  });
+
+  // MAINWINDOWS2c: a picker is owned by the window whose page asked, so the page names its own window to the host.
+  it('names itself to the host for a picker it asks, the application\'s own window naming none', () => {
+    expect(ownWindowName('')).toBeNull();
+    expect(ownWindowName('?host=http%3A%2F%2Flocalhost%3A5177')).toBeNull();
+    expect(ownWindowName('?window=main%3A2')).toBe('main:2');
+    expect(ownWindowName('?window=monitor')).toBe('monitor');
+    expect(ownWindowName(`?window=${encodeURIComponent(sessionWindowName('a1b2c3d4'))}`)).toBe('session:a1b2c3d4');
+    expect(ownWindowName('?window=main:1')).toBeNull();
+    expect(ownWindowName('?window=session:../x')).toBeNull();
   });
 
   it('is not the application\'s own window, another kind, or a name that is not one', () => {
