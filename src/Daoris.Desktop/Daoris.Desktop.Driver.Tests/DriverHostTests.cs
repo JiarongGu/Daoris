@@ -22,7 +22,7 @@ public sealed class DriverHostTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-driver-host-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string LockFile => Path.Combine(_home, "driver.lock");
+    private string LockFile => DaorisHome.Entry(_home, HomeEntry.DriverLock);
 
     public DriverHostTests() => Directory.CreateDirectory(_home);
 

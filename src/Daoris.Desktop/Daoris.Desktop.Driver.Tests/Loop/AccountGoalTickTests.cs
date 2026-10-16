@@ -43,7 +43,7 @@ public sealed class AccountGoalTickTests : IDisposable
         Directory.CreateDirectory(_home);
         foreach (var repository in Repositories) _ledger.Register(repository, Repository(repository));
         foreach (var account in Accounts) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
-        new HarnessSettings().WithRotation("stub", Accounts).Save(Path.Combine(_home, "harnesses.json"));
+        new HarnessSettings().WithRotation("stub", Accounts).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
     }
 
     public void Dispose()
@@ -59,7 +59,7 @@ public sealed class AccountGoalTickTests : IDisposable
     {
         var processes = new SessionProcesses();
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         using var service = _ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += line => { lock (lines) lines.Add(line); };
@@ -89,7 +89,7 @@ public sealed class AccountGoalTickTests : IDisposable
         // Each record opens naming the step that chose its account, and that no account has said what it has left. The look
         // returns once its starts' records are open, and each start keeps its opening note on its own path after that, so the
         // read waits for the note rather than racing it (FLAKE1).
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         foreach (var record in records)
         {
             var id = record["id"]!.GetValue<string>();

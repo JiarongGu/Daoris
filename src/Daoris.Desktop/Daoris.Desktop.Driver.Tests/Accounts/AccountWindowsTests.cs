@@ -237,7 +237,7 @@ public sealed class AccountWindowsTests : IDisposable
     [Fact]
     public void A_frame_on_a_door_is_kept_for_the_account_it_ran_as_by_its_owner_s_table_and_never_for_the_own_sign_in()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => Said, Zone = Zone };
+        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Said, Zone = Zone };
         var frame = System.Text.Json.JsonDocument.Parse(AccountReadingsTests.Recorded(Said)).RootElement.Clone();
 
         Assert.NotNull(roster.Said("claude-code-acp", "account-2", frame, "s4"));
@@ -269,7 +269,7 @@ public sealed class AccountWindowsTests : IDisposable
             ["fake"] = new Adapter("fake", new HarnessToolchain(
                 Binary: ["fake"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", Limits: ClaudeLimits.Words,
                 WeekFixed: true)),
-        }), Path.Combine(_home, "harnesses.json"))
+        }), DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => Seen,
             Zone = Zone,

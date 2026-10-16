@@ -34,7 +34,7 @@ public sealed class CurveMoveProcessTests : IDisposable
             Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
         }
 
-        new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).Save(Path.Combine(_home, "harnesses.json"));
+        new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
     }
 
     public void Dispose()
@@ -44,7 +44,7 @@ public sealed class CurveMoveProcessTests : IDisposable
 
     private string Heard => Path.Combine(_home, "heard.txt");
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>The protocol stand-in's command, and the stub's, which answers the sign-in question for the stub's accounts.</summary>
     private DriverConfig Config()
@@ -57,7 +57,7 @@ public sealed class CurveMoveProcessTests : IDisposable
                 ["stub"] = ["node", TextAgent()],
             },
         };
-        config.Save(Path.Combine(_home, "driver.json"));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         return config;
     }
 
@@ -91,9 +91,9 @@ public sealed class CurveMoveProcessTests : IDisposable
         var events = Events;
         using var client = ledger.Client();
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Now };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Now };
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events, harnesses: roster);
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events, harnesses: roster);
         var judged = new List<(string Session, SwitchChoice Choice)>();
         runner.CurveJudged += (session, choice) =>
         {

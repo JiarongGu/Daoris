@@ -17,7 +17,7 @@ public sealed class HarnessSettingsTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-harness-tests", Guid.NewGuid().ToString("N")[..8]);
 
-    private string Path_ => System.IO.Path.Combine(_home, "harnesses.json");
+    private string Path_ => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     public void Dispose()
     {
@@ -78,7 +78,7 @@ public sealed class HarnessSettingsTests : IDisposable
         var home = HarnessSettings.ProfileHome(_home, "claude-code", "work");
 
         Assert.Equal(
-            System.IO.Path.Combine(_home, "harnesses", "claude-code", "work"),
+            DaorisHome.Entry(_home, HomeEntry.AgentHomes, "claude-code", "work"),
             home);
     }
 

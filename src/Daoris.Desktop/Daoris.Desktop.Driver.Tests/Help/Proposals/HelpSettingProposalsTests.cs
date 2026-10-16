@@ -247,7 +247,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     {
         foreach (var (id, harness, maker) in new[] { ("acme.agent", "acme-agent", "Acme"), ("acme.other", "acme-other", "ACME") })
         {
-            var folder = Path.Combine(_home, PluginCatalog.Folder, id);
+            var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
             Directory.CreateDirectory(folder);
             System.IO.File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
                 $$"""{ "id": "{{id}}", "harnesses": [ { "name": "{{harness}}", "command": ["{{harness}}"], "maker": "{{maker}}" } ] }""");

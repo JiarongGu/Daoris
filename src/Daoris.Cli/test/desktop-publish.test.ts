@@ -845,7 +845,8 @@ test('a terminal’s programs find the install and the running Daoris where the 
   assert.ok(home.includes(`InstallMarker = "${MARKER}"`), 'DaorisHome.InstallMarker');
   assert.ok(home.includes(`InstallApp = "${SHELL_HOME[0]}"`), 'DaorisHome.InstallApp');
   assert.ok(home.includes(`InstallData = "${HOME}"`), 'DaorisHome.InstallData');
-  assert.ok(readFileSync(driverFile('RunningAddress.cs'), 'utf8').includes(`FileName = "${RUNNING_FILE}"`), 'RunningAddress.FileName');
+  // The address file is the home's `running` entry, its place in the driver's table (HOMELAYOUT2).
+  assert.ok(home.includes(`new("running", HomeCategory.Run, "${RUNNING_FILE}", "${RUNNING_FILE}")`), 'HomeEntry.Running');
 
   // The CLI as an install carries it, and the driver host, each find the install above them.
   const install = folder();

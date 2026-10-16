@@ -17,7 +17,7 @@ public sealed class GoOnNewTests : IDisposable
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-go-on-new-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public GoOnNewTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public GoOnNewTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
@@ -126,7 +126,7 @@ public sealed class GoOnNewTests : IDisposable
         var answer = await AskAsync(room, id);
 
         Assert.Equal((false, why, message), (answer.Sent, answer.Why, answer.Message));
-        Assert.Empty(Directory.EnumerateFiles(Path.Combine(_home, "sessions"), "*" + NewSessionChoices.Suffix));
+        Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*" + NewSessionChoices.Suffix));
     }
 
     /// <summary>

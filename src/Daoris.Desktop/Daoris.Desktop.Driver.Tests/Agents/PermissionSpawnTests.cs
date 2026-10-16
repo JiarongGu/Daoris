@@ -209,7 +209,7 @@ public sealed class PermissionSpawnTests : IDisposable
     public async Task A_narrowing_proposed_before_a_tick_is_in_the_rules_its_session_is_handed()
     {
         Rules();
-        var proposals = Path.Combine(_home, RuleProposals.Folder);
+        var proposals = DaorisHome.Entry(_home, HomeEntry.RuleProposals);
         Directory.CreateDirectory(proposals);
         File.WriteAllText(Path.Combine(proposals, "p1a2b3c4.json"), """
             {
@@ -303,7 +303,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [adapter.Name] = adapter });
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>A pipe-door harness that takes a settings file, and remembers what it was handed.</summary>

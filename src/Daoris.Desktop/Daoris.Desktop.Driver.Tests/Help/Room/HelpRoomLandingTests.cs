@@ -32,7 +32,7 @@ public sealed class HelpRoomLandingTests
         {
             void Install(string id, string points)
             {
-                var folder = Path.Combine(home, PluginCatalog.Folder, id);
+                var folder = DaorisHome.Entry(home, HomeEntry.Plugins,id);
                 Directory.CreateDirectory(folder);
                 File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
                     $$"""{ "id": "{{id}}", "hooks": { "command": ["node", "${plugin}/h.mjs"], "points": [{{points}}] } }""");

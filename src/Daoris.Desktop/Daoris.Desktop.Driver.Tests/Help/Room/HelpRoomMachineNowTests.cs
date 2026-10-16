@@ -39,7 +39,7 @@ public sealed class HelpRoomMachineNowTests
         var home = Path.Combine(Path.GetTempPath(), "daoris-help-installed-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            var folder = Path.Combine(home, PluginCatalog.Folder, "example.lands");
+            var folder = DaorisHome.Entry(home, HomeEntry.Plugins,"example.lands");
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
                 """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/h.mjs"], "points": ["work/land"] } }""");

@@ -34,7 +34,7 @@ public sealed class KeyReplaceTests : IDisposable
         Assert.Equal(2, HarnessSettings.Profiles(_home, "claude-code").Count);
         Assert.False(AccountReads.Of(_home, "claude-code").Accounts.TryGetValue(first, out var read) && read.Login == LoginState.Out);
         Assert.Null(AccountCooling.Of(_home, "claude-code", first, now));
-        Assert.DoesNotContain("sk-first-1111", File.ReadAllText(Path.Combine(_home, HarnessKeys.FileName)));
+        Assert.DoesNotContain("sk-first-1111", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Keys)));
     }
 
     [Fact]

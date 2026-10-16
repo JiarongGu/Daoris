@@ -50,8 +50,8 @@ public sealed class HandOverRunnerTests : IDisposable
             ["other"] = new Talk("other"),
         });
         return new ChatRunner(
-            ledger.Client(), adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     private Task<HandedOver> HandAsync(ChatRunner runner, string id, string agent) =>

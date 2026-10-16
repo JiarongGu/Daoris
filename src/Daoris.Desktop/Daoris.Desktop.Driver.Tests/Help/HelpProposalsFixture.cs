@@ -147,7 +147,7 @@ public abstract class HelpProposalsFixture : IDisposable
     /// <summary>A plugin installed under the test's home, as `daoris plugin add` leaves one (D64).</summary>
     protected HelpMachineFacts WithPlugin(string id, string points = "\"work/land\"", bool enabled = true)
     {
-        var folder = Path.Combine(_home, PluginCatalog.Folder, id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         System.IO.File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
             $$"""{ "id": "{{id}}", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": [{{points}}] } }""");

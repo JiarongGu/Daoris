@@ -31,7 +31,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         Directory.CreateDirectory(_home);
         _ledger.Register("engine", Path.Combine(_home, "engine"));
         _ledger.Publish("q1", "engine");
-        _ledger.Park("s1", "q1", Path.Combine(_home, "trees", "s-1"));
+        _ledger.Park("s1", "q1", DaorisHome.Entry(_home, HomeEntry.Trees,"s-1"));
     }
 
     public void Dispose()

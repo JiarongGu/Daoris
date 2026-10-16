@@ -131,8 +131,8 @@ public sealed class ToolActionsTests : IDisposable
         Assert.Equal(-1, end.ExitCode);
         Assert.Null(actions.Running("gh"));
         Assert.False(actions.Cancel("gh"), "nothing runs to stop");
-        Assert.False(Directory.Exists(Path.Combine(Home, Tools.Folder, "gh")), "a stop leaves nothing under tools/gh");
-        Assert.False(File.Exists(Path.Combine(Home, Tools.FileName)), "nothing switches");
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh")), "a stop leaves nothing under tools/gh");
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Tools)), "nothing switches");
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public sealed class ToolActionsTests : IDisposable
         var end = await actions.Start("gh", "use", "2.62.0", _ => { }).Ended.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal((1, "hash", false), (end.ExitCode, end.Check, end.Stopped));
         Assert.Contains("served bytes whose SHA-256 is", end.Problem);
-        Assert.False(File.Exists(Path.Combine(Home, Tools.FileName)));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Tools)));
     }
 
     [Fact]
@@ -207,7 +207,7 @@ public sealed class ToolActionsTests : IDisposable
         await actions.Start("gh", "download", null, _ => { }).Ended.WaitAsync(TimeSpan.FromSeconds(10));
         log.Dispose();
 
-        var text = string.Concat(Directory.EnumerateFiles(Path.Combine(Home, MachineLog.Folder)).Select(File.ReadAllText));
+        var text = string.Concat(Directory.EnumerateFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).Select(File.ReadAllText));
         Assert.Contains("\"tool.download.started\"", text);
         Assert.Contains("\"tool.download.verified\"", text);
         Assert.Contains("\"gh\"", text);
