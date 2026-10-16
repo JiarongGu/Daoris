@@ -30,8 +30,12 @@ public sealed class SecondaryWindowHost(
     IColorScheme colorScheme,
     Microsoft.Extensions.Logging.ILogger<ChromiumView>? log = null,
     // Each window's showing and closing, by its name, so the last main window ends the application (MAINWINDOWS2).
-    MainWindows? mains = null) : ISecondaryWindows, IDisposable
+    MainWindows? mains = null,
+    // The taskbar's count, worn by each other main window while the first is put away (MAINWINDOWS2b).
+    WaitingCount? waiting = null) : ISecondaryWindows, IDisposable
 {
+    private bool _hooked;
+
     /// <summary>
     /// Every name asked for so far. <see cref="SecondaryWindows"/> answers whether a name is open but
     /// does not enumerate, so the names have to be remembered to be reported — and one whose window
@@ -45,9 +49,34 @@ public sealed class SecondaryWindowHost(
     /// </summary>
     private readonly Dictionary<string, SecondaryForm> _forms = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Tell each other main window what to show of the taskbar's count (MAINWINDOWS2b): the count while the first is put away and
+    /// its button is gone, nothing while it is shown. Any thread; each window draws on its own.
+    /// </summary>
+    public void ShowWaiting()
+    {
+        if (waiting is null) return;
+        SecondaryForm[] forms;
+        lock (_forms) forms = [.. _forms.Where(entry => SecondaryWindow.IsMain(entry.Key)).Select(entry => entry.Value)];
+        foreach (var form in forms)
+        {
+            var (count, description) = waiting.For(form.WindowName);
+            form.ShowWaiting(count, description);
+        }
+    }
+
     public bool Open(string name, string address)
     {
-        lock (_asked) _asked.Add(name);
+        lock (_asked)
+        {
+            _asked.Add(name);
+            // The first going away or coming back moves the count between buttons, so each other main window is told again.
+            if (mains is not null && waiting is not null && !_hooked)
+            {
+                _hooked = true;
+                mains.AwayChanged += ShowWaiting;
+            }
+        }
 
         return windows.Open(name, new SecondaryWindowOptions
         {
@@ -62,7 +91,12 @@ public sealed class SecondaryWindowHost(
                 lock (_forms) _forms[name] = form;
                 // Counted once it is on the screen, since only a window that loaded is ever told closed: one whose making
                 // failed would otherwise keep a put-away first main window hidden with nothing else open (MAINWINDOWS2).
-                form.Load += (_, _) => mains?.Opened(name);
+                form.Load += (_, _) =>
+                {
+                    mains?.Opened(name);
+                    // A window opened while the first is put away wears the count at once (MAINWINDOWS2b).
+                    ShowWaiting();
+                };
                 form.FormClosed += (_, _) =>
                 {
                     lock (_forms)

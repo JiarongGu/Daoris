@@ -193,8 +193,14 @@ internal static class Program
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         // The main window's taskbar count (NOTIFY1b): the window is resolved as the page tells it, never as the module
         // is made, since the window is made after the modules and maps one of its own.
+        // And, while the first is put away and its button is gone, each other main window's (MAINWINDOWS2b).
+        builder.Services.AddSingleton(sp => new WaitingCount(sp.GetRequiredService<MainWindows>()));
         builder.Services.AddSingleton<ShowWaiting>(sp => (count, description) =>
-            sp.GetRequiredService<MainForm>().ShowWaiting(count, description));
+        {
+            sp.GetRequiredService<WaitingCount>().Told(count, description);
+            sp.GetRequiredService<MainForm>().ShowWaiting(count, description);
+            sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting();
+        });
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And
