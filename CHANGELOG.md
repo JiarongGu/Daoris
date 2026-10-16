@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- The wire test the plugin kit writes beside a new plugin (`plugin.test.mjs`) now ends as soon as the plugin leaves at
+  `shutdown`, where it waited out the whole two seconds of grace first. A test written by an earlier kit keeps the wait until
+  it is made again.
 - `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
   holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the

@@ -2116,6 +2116,33 @@ three seconds of patience, is `LandingPluginPatienceTests`, run one at a time. L
 `LandingPluginPatienceTests` 21 s in the serial half. The serial half's wall fell from 15 m 15 s (`000b5d9`) to 11 m 55 s, and
 the git half's went from 17 m 24 s to 16 m 9 s holding 25 more tests.
 
+**PROC1g (2026-10-16): the serial half's slowest classes made shorter.** Ranked by summed test time in the serial half's trx on
+`c7ed4c6` (708 s, its wall 11 m 48 s) and on `85020d0` (2126 s, 35 m 28 s under a full set's load): `BranchTidyingProcessTests`
+211 s and 1141 s (30 tests), `PluginKitTests` 106 s and 179 s, then classes under 25 s and 85 s. *`BranchTidyingProcessTests`*
+started git and nothing else but one watch case, so it is four classes over `BranchTidyingFixture`, every test line kept: the
+look's judgements (13 tests) and the folders (13) carry `Parallel=Git`; the watch's case, whose watch ticks, is
+`BranchTidyingWatchTests`, serial; and the landings' three, `BranchTidyingLandingTests`, stay serial too. Run alone with the gate
+set beside them, a landing look passed the fixture's four-minute bound once (306 s for a test of 31.5 s on `c7ed4c6`) and took
+250 s on its rerun, which four at once would break; the other two classes' slowest tests took 87 s at most. *`PluginKitTests`*
+waited on the product: the wire test the kit writes raced the plugin's exit against a timer of the two-second grace and left the
+timer running, so each `node --test` run whose plugin got through `shutdown` stayed open for the whole grace (24 of the class's
+runs, about 48 s a class run at any load, and the same two seconds for every plugin author). The timer is cleared once the race
+is decided (`plugin.test.mjs.template`); `A_wire_test_ends_once_its_plugin_leaves_not_when_the_grace_runs_out`, a minute's
+grace, took 60.7 s before and 1 s after. In the class's own runs a row whose plugin passed now takes what a refused row takes
+(1.73 against 1.79 s, and 5.67 against 6.07 s), where on `c7ed4c6` it took 1.29 s longer and on `85020d0` 2.91 s.
+*`RemoteSyncRunTests`* (17 tests, 13 s and 50 s) starts only git under an in-process transport and waits on no clock: it carries
+`Parallel=Git`. Listed: the serial half 540 tests (582 before), the git half 429 (386). Each changed class ran three times by
+class, one at a time, all while the parent's gate set, its family rehearsal, another worktree's tests, the installed Daoris's
+sessions and other repositories' builds held the machine at 28-100% CPU before each run, so these are no quiet times; seconds of
+test time, CPU before the run: `BranchTidyingProcessTests` 232 (28%), 268 (54%), 244 (29%); `BranchTidyingFolderTests` 258
+(11%), 392 (57%), 177 (68%); `BranchTidyingLandingTests` 131 (46%), 289 (48%), 643 failed at the bound (46%), its rerun alone
+441 (76%); `BranchTidyingWatchTests` 14, 13, 26; `PluginKitTests` 262 (71%), 283 (1%), 209 (91%); `RemoteSyncRunTests` 240
+(100%), 317 (87%), 85 (77%). Two of `PluginKitTests`' runs failed `A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`,
+whose one-second patience covers node's start and the handshake, and passed alone at 94%; the first also failed a sample-frame
+wire test's two seconds to leave after `shutdown`, green in the next two: FLAKE1's load, not the change. Projected from the same
+trx sums, the serial half goes from 708 to about 520 s quiet and from 2126 to about 1270 s under that load, and the git half,
+four at once, gains about 70 s and 6 minutes; the next full set measures it.
+
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
 **Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no
