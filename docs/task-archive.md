@@ -15675,3 +15675,51 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-CHAIN1 — event chains, a defined end per workspace and repository, and plugin-contributed steps: the design's part C** (design; D173's acceptance note, the owner's three amendments). The accepted design derives a workspace's end from its landing rule and keeps fixed clocks as reconciliation; the owner asked instead for an end each workspace and repository defines (its cycle's steps, which one ends the work), for plugins to contribute a step or an end and learn it their own way, and for events with chains in place of fixed clocks. Design the event types and their chains (what each leads to, configured per workspace), the cycle's definition (its key, its inheritance, its CLI twin and Setup row), a plugin's point for events and ends (manifest, wire, evidence), and how a timer becomes one source among others; re-cut the remaining FABRIC rows on it. A second maker's opinion. Proof: the design's part C and its rows, the owner's yes.
 
 **Outcome** 2026-10-16: part C written and twice revised on a second maker's opinion (pending, unreadable and unreachable ends; effect links that stay pending until done; traces never judged again; the plugin wire's identity, bounds and replay), then accepted by the owner with their answers: the wait and the end's cleanup configured per cycle, everything but the result going at a true end, human steps in a cycle, a bounded chain menu, the plugin's new moments. Its rows are in TASKS.md. On Opus: about 175 tool calls over four rounds. Detail: docs/2026-10-16-fabric-events-design.md part C; D173's notes of 2026-10-16.
+
+## FABRIC-EVENT2 — the change watch, first on the request folders (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2 — the change watch, first on the request folders** (driver; the fabric events design §A3, §A4.1). Nothing in Daoris hears a file change; every wait is a timer. Build `ChangeWatch` in the driver library's `Platform/`: a path filter, a per-key debounce (250 ms, 2 s cap), a topic queue drained in one step with one judgement per subject and a deadline per topic, recovery (generations, reopen with back-off, an absent or replaced root, a resume) and a fake-source seam; `DriverWatch.Nudge` gains a topic and a subject; `SessionRequestWatch`'s 1 s timer becomes the watch with a 3 s listing behind it, inside the caller's 10 s (`SessionsCommand.cs`:68, 885); the watch's look writes a machine-log line with its ms and what woke it. Proof: canaries 1-3 on the fake source; a Process class with a real watcher on a scratch folder, handles measured; a request answered within the debounce, and inside 10 s with the source silenced.
+
+**Outcome** 2026-10-17: `ChangeWatch` in the driver's `Platform/`: a per-key debounce (250 ms, 2 s cap), a topic queue drained in one step with one judgement per subject, a deadline per topic, recovery (generations, reopen with back-off, an absent or replaced root by file id, a resume inferred from a 30 s overrun), at most 32 roots, and a fake-source seam; the requests folder is its first source, with a 3 s listing in place of the 1 s timer; `DriverWatch.Nudge` takes a topic and a subject, and each look writes `watch.looked`. Measured once here: one handle and about 1.3 KB nonpaged per watcher; a say answered in 333 ms. On Opus: about 158 tool calls. Detail: D173's FABRIC-EVENT2 note; the machine log design §4.
+
+## FABRIC-END2a — the end judgement, extracted (2026-10-17, D173)
+
+> - [ ] **FABRIC-END2a — the end judgement, extracted** (driver; the design §B3). Four places judge an end alone, each with its own proofs: gather §B3's cycles and proofs into one pure judgement over a `RefSnapshot`, its cycle resolved as *Accept* resolves it (`TreeLands.cs`:346-350) or from the landing's recorded rule and workflow; no store or reader changes, and the judgement takes the cycle as an input so FABRIC-CHAIN1's defined cycles plug in. Proof: canary 6; a fast test per cycle, a named workflow's landing included; the Trees suites unchanged.
+
+**Outcome** 2026-10-17: the end judgement extracted: `EndJudgement` answers claim, handed, ended or unknown with the proof named, over a `RefSnapshot`, its cycle an input (`EndCycle.Accepts` as *Accept* resolves it, `EndCycle.Recorded` from the landing's rule and workflow); no store, reader or caller changed; 28 tests. On Sonnet: about 56 tool calls. Detail: D173's FABRIC-END2a note; `Trees/SessionTrees/EndJudgement.cs`.
+
+## FABRIC-CHAIN2 — the chains (2026-10-17, D173)
+
+> - [ ] **FABRIC-CHAIN2 — the chains** (driver; after EVENT2; §C5, §C6). Fact links fire on a change; effect links stay pending until done, retried on their unblocking wakes and recovered at start; each topic's deadline a `timer` event; ranked links, `chain.*` log lines. Proof: canaries 4, 11, 12, 16, 17, 18; a link to a lower rank fails a test.
+
+**Outcome** 2026-10-17: the chains run on the change watch: a ranked link table that refuses a link to its own or a lower rank, fact links emitting only on a change, the tidy's effect seam pending until done and tried on its unblocking wakes, recovered at start, each topic's deadline a timer event, and `chain.fired/pending/dropped`; link 7 wired on the requests folder, links 1-6 unbound for the rows that feed them. Part D later split the row: this is its minimal part (CHAIN2a), the menu is CHAIN3's. On Opus: about 86 tool calls. Detail: D173's FABRIC-CHAIN2 note; `ChainTests`.
+
+## FABRIC-EVENT2b — the terminal's words wake by their topic (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2b — the terminal's words wake by their topic** (driver; after EVENT2). `LoopWords.Nudge` and the shell's `Words` call `Nudge(ChangeTopics.Requests, <session>)` so `watch.looked` says the words woke it. Proof: a `DriverWatchLookTests` case.
+
+**Outcome** 2026-10-17: a terminal's kept words wake the look by `Nudge(requests, <session>)` through `DriverWatch.Said`, from the headless host's `LoopWords` and the shell's `Words`, so `watch.looked` names the words. On Sonnet, with EVENT2c and 2d: about 70 tool calls. Detail: D173's EVENT2b-2d note.
+
+## FABRIC-EVENT2c — the requests folder made at a loop's start (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2c — the requests folder made at a loop's start** (driver; after EVENT2). Create `sessions/requests/` before `Changes.Start()` so the first request after an install is heard at once. Proof: `SessionRequestChangeTests` with no folder, answered within the debounce.
+
+**Outcome** 2026-10-17: `SessionRequestWatch` makes `sessions/requests/` before its watch starts, so the first request after an install is heard by the watcher, on both loops. Detail: D173's EVENT2b-2d note; `SessionRequestChangeTests`.
+
+## FABRIC-EVENT2d — a resume heard from the shell's power events (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2d — a resume heard from the shell's power events** (modules; after EVENT2). The shell hears `PowerModeChanged` and calls `ChangeWatch.Resumed()`. Proof: a modules fast test with a stand-in power event.
+
+**Outcome** 2026-10-17: the desktop shell raises `PowerResume` from `SystemEvents` and the requests watch reopens and judges its roots; the 30 s overrun stays the fallback (the headless host has only it). Detail: D173's EVENT2b-2d note; `PowerResumeTests`.
+
+## PROOF-UNREAD1 — a proof that could not read git says so (2026-10-17, D57)
+
+> - [ ] **PROOF-UNREAD1 — a proof that could not read git says so** (driver; design §B7, D57). `ContentHolds.HeldByContentAsync` (and `LandedProofs.ProveAsync` if it shares it) tell "not held" from "could not read". Proof: a fast test per failed read.
+
+**Outcome** 2026-10-17: the content proof returns held, not held or unread (git's words): a git missing, timed out or unable to read a ref no longer reads as held nowhere; the sweep keeps such a row unread, the branch tidy and the tree's removal refuse saying git could not tell, and `LandedProofs.ReadLineFormsAsync` reports the line's unread forms. On Sonnet, with ACCEPTFOOT2b: about 74 tool calls. Detail: FIX-LOG (PROOF-UNREAD1); `ContentHoldsUnreadTests`.
+
+## ACCEPTFOOT2b — a conversation's squash subject is its work's, not its opening (2026-10-17, D164)
+
+> - [ ] **ACCEPTFOOT2b — a conversation's squash subject is its work's, not its opening** (driver; D164's PROCESS1b-ii and ACCEPTFOOT2 notes). A squash still names its one commit by a conversation's opening; by ACCEPTFOOT2's reading it takes the oldest commit's subject. Proof: a `LandingSquashTests` case.
+
+**Outcome** 2026-10-17: a conversation's squash commit takes the oldest commit's subject beyond the line, not its opening, read once with the branch's name; a quest's squash and the body are unchanged. Detail: D164's ACCEPTFOOT2b note; `LandingSquashTests`.
