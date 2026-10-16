@@ -2554,10 +2554,14 @@ public sealed class Driver(
                 // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b).
                 Line(message.Channel is { Person: false } claim
                     ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
-                    : reach == DrivenReach.NextStep
-                    ? $"— the person added, which reaches the session at its next step: {message.Text}"
-                    : $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                Event(ChatMessage.Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
+                    : reach switch
+                    {
+                        DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",
+                        // The person's *Send now* (STEER2a): steered into the running turn, cutting the step in flight.
+                        DrivenReach.Steered => $"— the person sent now, which the session takes at once: {message.Text}",
+                        _ => $"— the person added, which reaches the session when its turn ends: {message.Text}",
+                    });
+                Event(ChatMessage.Words(message) with { Reaches = SendNowWhy.Spelled(reach) });
             });
             // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
             inbox?.OnWithdrawn(message =>
