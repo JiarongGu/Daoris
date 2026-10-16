@@ -147,9 +147,9 @@ public sealed class PipeCensus
             "STATE", "SWEEP_PLAN", "TAIL_SESSION", "TOOLS_GIT", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN",
             // The driver's own (D156 §3: sync, refresh, a process it starts on the person's press): a look now, a sync pass,
-            // the registry and the roster read again, the tools' locations looked at, a second opinion started, and Daoris's
-            // own branches brought up to date with their lines.
-            "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "HARNESSES_REFRESH", "TOOLS_LOOK", "ASK_OPINION", "TREES_SYNC");
+            // the registry, the roster and the accounts' use read again, the tools' locations looked at, a second opinion
+            // started, and Daoris's own branches brought up to date with their lines.
+            "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "HARNESSES_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK", "ASK_OPINION", "TREES_SYNC");
         Add(PipeClass.Person,
             // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
             "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
