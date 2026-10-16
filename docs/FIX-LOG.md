@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
+
+- **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node
+  never declared, a declared output at another schema, or none of a declared output, and `Apply` kept it. WIRE1a's save-time check
+  that a `data` wire's output schema is its input's would then say nothing about what a consumer received.
+- **Root cause:** `NodeLifecycle.Apply` judged a reach's evidence against the declaration (`no-evidence`) but compared its outputs
+  with nothing; NODE1d checked only the acceptance each port names.
+- **Fix:** D173's FABRIC-WIRE1b note, its NODE1e point: a reach exposes exactly its declared outputs, each at its declared schema;
+  an undeclared output (`undeclared-output`), another schema (`output-schema`) and a declared output missing (`no-output`) are
+  refused. NODE1d's own test now declares the output it reaches with.
+- **Verification:** the new test failed at run time on the three codes added without behaviour (an undeclared output was
+  accepted), then passed; the node suites pass, and the driver's fast half.
+
 ## 2026-10-17 — A node declaration moved with its caller's collections, and a reach's ports could name another acceptance (FABRIC-NODE1d)
 
 - **Symptom:** found by FABRIC-NODE1c's hand-back before GRAPH1 digests declarations: a caller mutating the dictionaries or the
