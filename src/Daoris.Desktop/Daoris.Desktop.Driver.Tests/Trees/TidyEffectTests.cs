@@ -214,6 +214,31 @@ public sealed class TidyEffectTests : IDisposable
         Assert.Equal(SessionBranches.TracesKept + 1, Grown.Entries().Count);
     }
 
+    /// <summary>
+    /// 🔴 The third review's P2 (SessionBranches.cs:248): one name recorded and removed again and again leaves one trace that follows its
+    /// tree, the newest; the older traces of that name are retired traces like any other, pruned beyond the bound.
+    /// </summary>
+    [Fact]
+    public void Repeated_re_record_and_removal_of_one_name_keeps_one_trace()
+    {
+        File.WriteAllText(Path.Combine(TreeOf("live"), ".git"), "gitdir: elsewhere\n");
+        for (var each = 0; each < 5; each++)
+        {
+            Grown.Record(new GrownBranch("engine", "default", "daoris/live", "main", "base", null, _now, Now: $"feature/{each}") { Unit = "unit-live" });
+            Grown.Hold("engine", "daoris/live", Held($"tip-live-{each}"));
+            Grown.Gone("engine", ["daoris/live"]);
+        }
+
+        for (var each = 0; each < SessionBranches.TracesKept; each++)
+        {
+            Record($"t{each}", Held($"tip-{each}"));
+            Grown.Forget("engine", [$"daoris/t{each}"]);
+        }
+
+        var live = Assert.Single(Grown.Entries(), entry => entry.Branch == "daoris/live");
+        Assert.Equal("feature/4", live.Now);
+    }
+
     /// <summary>🔴 The review's P2: a removed branch whose tree moved onto a branch of its own is a trace at once, keeping where it went, and no longer pending.</summary>
     [Fact]
     public void A_removed_branch_whose_tree_moved_on_is_a_trace_at_once()
