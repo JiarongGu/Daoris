@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs';
+import { existsSync, linkSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DaorisError } from './errors.ts';
@@ -56,6 +57,51 @@ export function daorisHome(env: Env = process.env, install: string | null = THIS
   const home = env[HOME_VARIABLE]?.trim();
   if (home) return home;
   return install ? join(install, INSTALL_DATA) : null;
+}
+
+/**
+ * A home's identity (HOMEID1, the terminal RPC design §3.1): `<home>/home.json`, `{ "id": "<32 lower-case hex>", "minted": "…" }`,
+ * which every path to the folder reads alike, so a running service is told to be this home's by it and never by a path. The
+ * driver's and the service's `HomeIdentity` hold the same file in C# and share no code (`twins.md`).
+ */
+export const HOME_ID_FILE = 'home.json';
+
+/** Whether a value is an id as `home.json` holds one. */
+export function isHomeId(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{32}$/.test(value);
+}
+
+/** The home's id, or null where it has none or its file does not read. A read: discovery mints nothing. */
+export function homeId(home: string): string | null {
+  try {
+    const file: unknown = JSON.parse(readFileSync(join(home, HOME_ID_FILE), 'utf8'));
+    const id = typeof file === 'object' && file !== null ? (file as Record<string, unknown>).id : null;
+    return isHomeId(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The home's id, minted where it has none (HOMELEASE1: a lease records it): written beside, then linked into place, which
+ * refuses where a file is, so of two minting at once one stands and both read it. Null where its file does not read, which is
+ * never replaced, or none could be written.
+ */
+export function ensureHomeId(home: string): string | null {
+  const path = join(home, HOME_ID_FILE);
+  if (existsSync(path)) return homeId(home);
+  const beside = `${path}.${randomBytes(8).toString('hex')}.writing`;
+  try {
+    mkdirSync(home, { recursive: true });
+    const minted = { id: randomBytes(16).toString('hex'), minted: new Date().toISOString() };
+    writeFileSync(beside, `${JSON.stringify(minted, null, 2)}\n`, 'utf8');
+    linkSync(beside, path);
+  } catch {
+    // Almost always: another process minted it first. Its file is the home's id, read below like any other.
+  } finally {
+    try { unlinkSync(beside); } catch { /* never written */ }
+  }
+  return homeId(home);
 }
 
 /** A file under the home, or null when there is no home. */

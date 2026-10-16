@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A terminal's discovery would take another install's service (HOMEID1)
+
+- **Symptom:** found by a second agent's review of the terminal RPC plan, checked against the code, not met on the install:
+  `daoris-driver` and `daoris` with no `DAORIS_SERVICE_URL` would act on whatever Daoris host answered at the address in
+  `<home>/running.json`, whichever home that host served.
+- **Root cause:** FINDDAORIS1 took the address where its process lived and `/api/status` named a `tier`, the test the supervisor
+  adopts a host by. Every Daoris host answers that: another install's service on the port this home's desktop once held passed,
+  as did one a process id reused by the system led to, since the CLI checks the id alone; and the status was asked with
+  redirects followed, so an address could send the asker to another host.
+- **Fix:** a home has an id, `<home>/home.json` (`HomeIdentity`, three twins); a local host answers it at `/api/status` as
+  `home`, `running.json` keeps it, and both discoveries take an address only where the status, asked with redirects off,
+  answers this home's id. D171's HOMEID1 note.
+- **Verification:** `RunningServiceTests` (red as they could not compile: another home's id, no id, a home with none, a reused
+  process id, a redirect between two real loopback listeners), `RunningAddressTests`, the driver's and the service's
+  `HomeIdentityTests`, the HTTP tests' `HomeStatusTests` and `PersonDoorHostTests`' status shape; the CLI's `running.test.ts`
+  (red on the missing export: another id, none, a reused pid, a redirect between two real `node:http` servers) and
+  `home.test.ts`.
+
 ## 2026-10-16 — *Bring up to date* counted and replayed commits the line already held (LANDSYNC3)
 
 - **Symptom:** on the install, WSR6's plan said *replays 3 commit(s)* of a session branch whose first commit a pull request had

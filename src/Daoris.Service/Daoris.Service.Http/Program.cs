@@ -120,6 +120,16 @@ var started = DateTimeOffset.UtcNow;
 // MCP connector shares (HOSTSTART2), takes that line with a writer of its own.
 var entryPoint = log.WatchEntryPoint();
 
+// HOMEID1 (D171, the terminal RPC design §3.2): a local host answers its home's id at /api/status, minted there where it has
+// none, so a terminal that found an address takes it only where it is this home's service, never another install's. A file that
+// does not read is said and left as it is, and the host answers none. A shared host serves a team, not a home (D47): none.
+string? homeId = null;
+if (mode == ServiceMode.Local && DaorisHome.Resolve() is { } idHome)
+{
+    homeId = HomeIdentity.Ensure(idHome, out var idUnread);
+    if (idUnread is not null) log.Warn("home.unread", ("why", idUnread));
+}
+
 // The bundle travels beside the executable. In development the SDK serves wwwroot from the project
 // directory — the default content root — but a PUBLISHED host is launched from anywhere, so when the
 // working directory has no bundle and the binary's directory does, the binary's wins. Without this
@@ -432,7 +442,8 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
           + "repositories that reached the same conclusion in different words.",
     // The proof of possession (PERSONDOOR1a, design §2.3): the shell hands its modules and the page the key only once the
     // host it started proves it holds it, so a process that took the port first never learns it. None without a key.
-    Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove)));
+    Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove),
+    Home: homeId));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local

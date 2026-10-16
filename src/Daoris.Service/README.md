@@ -489,7 +489,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 
 | Endpoint | |
 |---|---|
-| `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
+| `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's; a local host's status also answers `home`, its home's id (`HomeIdentity`, HOMEID1), which a terminal checks before it takes the address |
 | `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands, with the words of the lanes it declares (`lanes`: id, title, summary, steward; absent keeps the row's, D115). A shared deployment orders a checkout's declaration by the commit it names, as it orders knowledge: a declaration from an older commit, another line, or no commit where one is held is not taken, as information (SYNC5b) |
 | `DELETE /api/registry/{repository}` | take a repository off the map; nothing on disk is touched. At a shared deployment it is how a machine's retire reaches the circle (SYNC5b) |
 | `GET /api/registry/retired?workspace=` · `DELETE /api/registry/retired/{repository}?workspace=` | local mode only: the retires this machine's checkouts owe a circle, written by the store as a joined checkout's row leaves it (retired, re-wired, or re-registered unjoined), and cleared once the driver's pass has carried them (SYNC5b) |

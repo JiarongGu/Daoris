@@ -132,8 +132,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 106 | 1855 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 52 | 627 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 138 | 2362 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 52 | 629 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 138 | 2373 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 47 | 817 |
@@ -177,7 +177,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 79 | 141 |
+| `.claude/knowledge/twins.md` | 80 | 142 |
 | `docs/2026-09-19-platform-ux.md` | 64 | 675 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
@@ -205,4 +205,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 81 | 463 |
+| `src/Daoris.Desktop/README.md` | 81 | 465 |

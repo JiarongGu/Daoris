@@ -7,7 +7,8 @@ with the version and date at release.
 
 - `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
-  holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the
+  holds, by the address it leaves in that home, and only where the service there answers as that home's: another install's
+  Daoris at that address is never used. With Daoris not running, a verb that needs its service says so and names the
   `Daoris.exe` to start. The variables still win. The install's knowledge connector (`app/daoris-knowledge/`), named in your
   own agent's `.mcp.json` with no `DAORIS_HOME`, and its HTTP host started from a terminal, now take the same home instead
   of refusing to start. Opening Daoris again while it runs now opens another main window of the

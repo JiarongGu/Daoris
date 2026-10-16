@@ -30,7 +30,7 @@ public sealed class ServiceHttp : IServiceDoors
 
     /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b) — for this process.</summary>
     public static ServiceHttp FromEnvironment() =>
-        FromEnvironment(Environment.GetEnvironmentVariable, AppContext.BaseDirectory, url => RunningService.AnswersAsDaoris(url));
+        FromEnvironment(Environment.GetEnvironmentVariable, AppContext.BaseDirectory, url => RunningService.Status(url));
 
     /// <summary>
     /// The service, in the order a terminal finds it (FINDDAORIS1, D171 point 1): the variable, which still wins; else, for a
@@ -43,8 +43,8 @@ public sealed class ServiceHttp : IServiceDoors
     /// install's running service and act on it. The dev loop and every gate name the service themselves.
     /// </remarks>
     /// <param name="baseDirectory">Where this program runs from, which says whether an install carries it.</param>
-    /// <param name="answers">Whether an address answers as a Daoris host.</param>
-    public static ServiceHttp FromEnvironment(Func<string, string?> environment, string baseDirectory, Func<string, bool> answers)
+    /// <param name="answers">What an address's status door answers as a Daoris host, or null (HOMEID1: its home is checked).</param>
+    public static ServiceHttp FromEnvironment(Func<string, string?> environment, string baseDirectory, Func<string, ServiceStatus?> answers)
     {
         var url = environment(ServiceClient.UrlVariable);
         if (string.IsNullOrWhiteSpace(url))

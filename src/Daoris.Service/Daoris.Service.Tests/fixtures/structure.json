@@ -10,6 +10,7 @@
     "ClipTests.cs": "Platform",
     "ConnectionGateTests.cs": "Platform",
     "DaorisHomeTests.cs": "Platform",
+    "HomeIdentityTests.cs": "Platform",
     "MachineLogTests.cs": "Platform",
     "MomentsTests.cs": "Platform",
     "SchemaRebuildTests.cs": "Platform",

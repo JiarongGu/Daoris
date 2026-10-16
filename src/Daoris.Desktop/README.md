@@ -226,9 +226,11 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   drive` does. Where a headless loop holds it, the window says so once on `DRIVER_ERROR` and its loop
   starts the moment that lock frees; the host, the page and the conversations carry on meanwhile.
 - **A terminal finds it** (FINDDAORIS1, D171 point 1). Once the service answers, held or adopted, the loop leaves
-  `<home>/running.json` (`RunningAddress`: the address, its process id and start time), and takes it away first thing at
-  the close. A `daoris-driver` or `daoris` the install carries reads it where no `DAORIS_SERVICE_URL` is set
-  (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is.
+  `<home>/running.json` (`RunningAddress`: the address, its process id and start time, and the home's id), and takes it away
+  first thing at the close. A `daoris-driver` or `daoris` the install carries reads it where no `DAORIS_SERVICE_URL` is set
+  (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is. It takes the address only where its
+  `/api/status`, asked with redirects off, answers this home's id (HOMEID1: `<home>/home.json`, `HomeIdentity`, which every
+  path to the folder reads alike), so another install's service at that address is never used.
 - **One instance per install, and a second launch is another main window** (ONEINSTANCE1, D171 point 2). The kit's
   single-instance guard keeps a second process from starting and hands its launch over; `SecondLaunch` opens `main:<n>`
   once the service answers, frameless as the main window is, and its page tells its frame the theme by that name.
