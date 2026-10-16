@@ -59,8 +59,8 @@ export type SessionEvent = {
    * For the person's words to a working driven session (STEER1, D136): when they reach it, `next-step` or `turn-end`, on
    * the event that shows them the moment they are said. The same words come again, under the same `id` and without
    * this, where the session took them. `resume` (MSG1d, D137 §3.1) is words to a session that parked or ended, which
-   * its record keeps until the same session goes on with them. `now` (STEER2b) is words *Send now* put into the running
-   * turn: taken where they were said, so they come again as no ask and are never waiting.
+   * its record keeps until the same session goes on with them. `now` (STEER2b) is words *Send now* steered into the running
+   * turn: they come again under the same `id` as the ask of the turn that goes on, or a note settles them.
    */
   reaches?: string | null;
   /** For the person's words shown the moment they are said (MSG1d): the door they were said at, `screen` or `terminal`. */
@@ -403,8 +403,9 @@ export function toTurns(
             ...(event.files?.length ? { files: event.files } : {}),
           };
           turn.items.push(block);
-          // Words sent now were taken where they were said (STEER2b, D136): there is no ask of a later turn to take them.
-          if (event.id && event.reaches !== 'now') waiting.set(event.id, { turn, key, seq: event.seq, block });
+          // Words sent now (STEER2b, D136) are taken where the steer is answered `injected`: the same words come again under
+          // the same id as the ask of the turn that goes on. A refused or unreached steer is settled by its note instead.
+          if (event.id) waiting.set(event.id, { turn, key, seq: event.seq, block });
           where[event.seq] = key;
           break;
         }
@@ -466,7 +467,15 @@ export function toTurns(
       }
       case 'tool': {
         const turn = here(key);
-        const card = event.id ? turn.items.find((b) => b.kind === 'tool' && b.id === event.id) : undefined;
+        let card = event.id ? turn.items.find((b) => b.kind === 'tool' && b.id === event.id) : undefined;
+        // The close of a call a steer cut (STEER2b, D136) is written when the turn's prompt is answered, after the steered
+        // words were taken as the ask of the turn that goes on: so it finds its card by id in an earlier turn and closes it
+        // there. Only `cut` does; any other late update keeps showing as a continued card, as it always has.
+        if (!card && event.id && event.status === 'cut') {
+          for (let at = turns.length - 1; at >= 0 && !card; at -= 1) {
+            card = turns[at]!.items.find((b) => b.kind === 'tool' && b.id === event.id);
+          }
+        }
         if (card) {
           for (const field of ['title', 'toolKind', 'status', 'locations', 'content', 'input', 'output'] as const) {
             if (event[field] != null) (card as Record<string, unknown>)[field] = event[field];
@@ -615,7 +624,7 @@ export function lastWords(turns: readonly Turn[]): string | undefined {
  */
 export function settle(turns: Turn[], live: boolean): Turn[] {
   if (live) return turns;
-  const missed = (item: Block) => item.kind === 'held' && item.reaches !== 'resume' && item.reaches !== 'now' && !item.settled;
+  const missed = (item: Block) => item.kind === 'held' && item.reaches !== 'resume' && !item.settled;
   const unreached = (turn: Turn): Turn => (turn.items.some(missed)
     ? { ...turn, items: turn.items.map((item) => (missed(item) ? { ...item, unreached: true } : item)) }
     : turn);

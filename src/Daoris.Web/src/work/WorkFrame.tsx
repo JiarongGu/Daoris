@@ -652,9 +652,15 @@ export function WorkFrame({
   // What a *Send now* came to (STEER2b, D136), said where the person pressed it: the turn stopping so the words go next, or one
   // line that the door could not and the words are held as a queue's are. Taken at once in the running turn says nothing here,
   // since the conversation shows the words where they were taken.
+  // `now: false` carries one of two codes (STEER2a): `no-interrupt`, said by where the words go instead, and `opening`. A code
+  // not known here gets the generic line. `now: true` with no reach is an ordinary send (no turn was running): no toast.
   const nowSaid = (result: WordsAnswer) => {
-    if (result.now === false) notify(t('work.steer.notNow'));
-    else if (result.now && result.reaches === 'turn-end') notify(t('work.steer.sending'));
+    if (result.now === false) {
+      notify(t(result.why === 'opening' ? 'work.steer.notNowOpening'
+        : result.why === 'behind' ? 'work.steer.notNowBehind'
+        : result.why === 'no-interrupt' ? (result.reaches === 'next-step' ? 'work.steer.notNowNextStep' : 'work.steer.notNowTurnEnd')
+          : 'work.steer.notNow'));
+    } else if (result.now && result.reaches === 'turn-end') notify(t('work.steer.sending'));
   };
 
   const onSend = (text: string, files: File[] = [], now = false) => {

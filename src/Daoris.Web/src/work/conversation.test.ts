@@ -164,27 +164,40 @@ describe('toTurns', () => {
    * cut is closed by the record as `cut`, which the session's end does not turn into a stop.
    */
   it('shows words sent now where they were taken, never as waiting, and a call the steer cut as cut', () => {
-    const events = [
+    // The driver's order: the words said, taken as the ask of the turn that goes on, and only then the cut call's close,
+    // written when the prompt is answered, just before the turn's end.
+    const said = [
       e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),
       e(2, { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' }),
       e(3, { kind: 'user', origin: 'person', id: 'said-1', reaches: 'now', text: 'stop, use the blue one' }),
-      e(4, { kind: 'tool', id: 'c1', status: 'cut' }),
-      e(5, { kind: 'message', text: 'Blue it is.' }),
     ];
-    const going = toTurns(events);
+    const waiting = toTurns(said);
+    expect(waiting.turns[0]!.items.map((b) => b.kind)).toEqual(['tool', 'held']);
+    expect(waiting.turns[0]!.items[1]).toMatchObject({ reaches: 'now' });
 
-    expect(going.turns).toHaveLength(1);
-    expect(going.turns[0]!.items.map((b) => b.kind)).toEqual(['tool', 'held', 'message']);
-    expect(going.turns[0]!.items[1]).toMatchObject({ kind: 'held', reaches: 'now', text: 'stop, use the blue one' });
-    expect(going.turns[0]!.items[0]).toMatchObject({ status: 'cut' });
+    const events = [
+      ...said,
+      e(4, { kind: 'user', origin: 'person', id: 'said-1', text: 'stop, use the blue one' }),
+      e(5, { kind: 'message', text: 'Blue it is.' }),
+      e(6, { kind: 'tool', id: 'c1', status: 'cut' }),
+      e(7, { kind: 'turn', stopReason: 'end_turn' }),
+    ];
+    const taken = toTurns(events);
 
-    const over = settle(toTurns([...events, e(6, { kind: 'turn', stopReason: 'end_turn' })]).turns, false);
-    expect(over[0]!.items[1]!.unreached).toBeUndefined();
-    expect(over[0]!.items[0]!.stopped).toBeUndefined();
-    // A session that ended with the call still cut leaves it cut.
-    const ended = settle(toTurns(events).turns, false);
-    expect(ended[0]!.items[1]!.unreached).toBeUndefined();
-    expect(ended[0]!.items[0]!.stopped).toBeUndefined();
+    // The first card reads cut, and no second card appears for the close.
+    expect(taken.turns).toHaveLength(2);
+    expect(taken.turns[0]!.items.map((b) => b.kind)).toEqual(['tool']);
+    expect(taken.turns[0]!.items[0]).toMatchObject({ status: 'cut' });
+    expect(taken.turns[1]!.items.map((b) => b.kind)).toEqual(['message']);
+    expect(taken.turns[1]!.ask).toMatchObject({ text: 'stop, use the blue one' });
+    expect(settle(taken.turns, false)[0]!.items[0]!.stopped).toBeUndefined();
+
+    // A steer refused or not reached is settled by its note (it names the word), and waits no longer.
+    const refused = toTurns([...said, e(4, { kind: 'note', text: 'refused', words: ['said-1'], code: 'refused' })]);
+    expect(refused.turns[0]!.items[1]).toMatchObject({ kind: 'held', settled: true });
+    expect(settle(refused.turns, false)[0]!.items[1]!.unreached).toBeUndefined();
+    // Not settled and the session over: never read.
+    expect(settle(waiting.turns, false)[0]!.items[1]!.unreached).toBe(true);
   });
 
   /**

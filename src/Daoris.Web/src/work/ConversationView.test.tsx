@@ -469,7 +469,6 @@ describe('ConversationView', () => {
       ev({ kind: 'user', origin: 'target', text: 'go' }),
       ev({ kind: 'tool', id: 'h1', title: 'npm run gates', toolKind: 'execute', status: 'in_progress' }),
       ev({ kind: 'user', origin: 'person', id: 'said-1', reaches: 'now', text: 'use the blue one' }),
-      ev({ kind: 'tool', id: 'h1', status: 'cut' }),
     ];
     const { unmount } = view(going);
 
@@ -478,9 +477,14 @@ describe('ConversationView', () => {
     expect(screen.queryByText(/Held:/)).toBeNull();
     unmount();
 
-    render(<Tooltip.Provider><ConversationView turns={settle(toTurns(going).turns, false)} /></Tooltip.Provider>);
-    expect(screen.getByText('Sent now: it took this at once, in the turn it was on.')).toBeTruthy();
-    expect(screen.queryByText('It ended before reading this.')).toBeNull();
+    // Taken as the ask of the turn that goes on, with the cut call closed in the turn it began in.
+    render(<Tooltip.Provider><ConversationView turns={toTurns([
+      ...going,
+      ev({ kind: 'user', origin: 'person', id: 'said-1', text: 'use the blue one' }),
+      ev({ kind: 'tool', id: 'h1', status: 'cut' }),
+    ]).turns} /></Tooltip.Provider>);
+    expect(screen.queryByText('Sent now: it took this at once, in the turn it was on.')).toBeNull();
+    expect(screen.getAllByText('use the blue one')).toHaveLength(1);
   });
 
   /**
