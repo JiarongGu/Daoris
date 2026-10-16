@@ -234,6 +234,11 @@ public sealed class DriverWatch(
         await using var files = HomeWatch.ForDriver(home, configPath, Nudge, source: Source, log: Log);
         _files = files;
         files.Start();
+
+        // The ledger heard, not found at the pace (FABRIC-EVENT3b, §A4.2): one wait on the service's change stream for the loop's life,
+        // each family that moved waking the local plan by the `ledger` topic, as a quest an agent published, and the pace its deadline.
+        using var listening = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var ledger = LedgerChanges.RunAsync(service, Nudge, Log, listening.Token);
         TickReport? looked = null;
         chain.Bind(ChainRanks.Plan, async (heard, token) =>
         {
@@ -390,6 +395,9 @@ public sealed class DriverWatch(
         }
         finally
         {
+            // The change stream's wait ends with the loop, and is waited for, so no ask outlives it.
+            await listening.CancelAsync().ConfigureAwait(false);
+            await ledger.ConfigureAwait(false);
             await Running.SettledAsync().ConfigureAwait(false);
             // The start's pass ends on the loop's own token; waited for, so nothing it writes outlives the loop.
             if (following is not null) await following.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
