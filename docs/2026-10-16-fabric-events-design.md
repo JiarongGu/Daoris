@@ -9,7 +9,11 @@ clocks into events with chains; §C1 says what it changes in A and B. Part C was
 **Part D** (proposed, pending a second maker's read and the owner's yes) sets the design under the owner's goal: a
 system easier to extend with plugins and new steps, maximizing automation. It adds the work unit, one step contract,
 human tasks, performed plugin steps, the ownership inventory and the completed menu; where it conflicts with A-C it
-governs (§D1), and its row order (§D12) replaces the earlier table. The design builds nothing; the rows do.
+governs (§D1), and its row order (§D12) replaces the earlier table. Part D was accepted with the owner's amendments.
+**Part E** (proposed, pending a second maker's read and the owner's yes) makes every step a **node** with one state
+model, joins nodes with typed **wires**, makes the quest's close and waiting on other work nodes, and turns D157's
+workflows into graphs; it governs where it conflicts (§E1), and its rows (§E10) replace §D12's. The design builds
+nothing; the rows do.
 
 The owner, in order:
 
@@ -1299,7 +1303,7 @@ plugin that echoes every delivered event, and one that alternates *reached* and 
 
 ## D12. The rows, re-cut toward what the person feels first
 
-This replaces the row table under **Canaries and proof, and the rows** for every row not yet built.
+*Superseded by §E10 for every row not yet built.* This replaced the row table under **Canaries and proof, and the rows**.
 
 **The collaboration gate runs in parallel, from now**, in its own lane, apart from the order below:
 
@@ -1378,6 +1382,9 @@ FABRIC-ISOLATE1 (§D6's trust model) is named and not scheduled.
 
 ## D13. Questions for the owner
 
+*Answered at part D's acceptance:* the quest's close is a node to set (§E5), and waiting on another task is a node
+(§E6). The text below is kept as asked.
+
 1. **Should reaching the end close the quest by itself?** Today only the person's own done (`POST /api/quests/{id}/done`)
    or the agent's done closes one.
    - (a) Offer it: `offerPersonAction` puts the quest's done in front of the person.
@@ -1394,6 +1401,312 @@ FABRIC-ISOLATE1 (§D6's trust model) is named and not scheduled.
 
    *Recommendation:* (a). It is the collaboration the fabric exists for, and its gate is already on the way. (b) follows
    with question 1's answer.
+
+---
+
+# Part E — nodes and wires
+
+**Proposed, 2026-10-17, pending a second maker's read and the owner's yes.** The owner accepted part D (D173's note
+*"part D accepted, with the owner's amendments: nodes and wires"*) and amended it:
+
+- *"each step can have its own state, so we don't have any difference between different types of steps, so they can link
+  and communicate normally; and I think the rest is fine"*
+- *"close automatically can be a step to set"*
+- *"waiting for another task can be a step too (and we can name those steps better, more like nodes? and we have
+  different ways to wire them)"*
+
+Codex proposed this part. It is taken here with each claim checked against D157's workflow code and design,
+`QuestExchange`, the done judgement and D69's claims. Where it conflicts with parts A-D, part E governs (§E1).
+
+## E1. What part E changes
+
+| Where | Change |
+|---|---|
+| §D4, the step contract | Renamed **node**. Every kind shares one state table (§E2), and `reach` gains `waited` |
+| §C2, §D7, the cycle | The cycle is a **graph** of nodes joined by **wires** (§E3, §E7). Its end, cleanup wait and result stay the graph's |
+| §D5, §D6 | Human tasks are `pressed` nodes, and plugin steps are `observed` or `performed` nodes. Their contracts stand |
+| D157, workflows | Workflows **become graphs**: one definition and one evaluation model (§E7) |
+| §D8, the menu | Unchanged. Its responses are subscriptions, never wires (§E8) |
+| §D13 | Both questions are answered: closing the quest is a node, `quest.close` (§E5), and waiting on other work is a node, `wait.unit` (§E6) |
+| §D12, the rows | Re-cut (§E10) |
+
+## E2. One node contract, one state table
+
+A node is `{ id, kind, version, reach, inputs, outputs, evidence, retry?, timeoutSeconds?, options? }`. Its `kind`
+chooses an adapter; its `reach` chooses how it progresses: `observed`, `performed`, `pressed` or `waited`. Every
+adapter, of whatever kind, has the same states:
+
+| From → to | Which reach | When |
+|---|---|---|
+| blocked → ready | all | its wires, inputs and authority are satisfied |
+| ready → blocked | all | that stops being true before it starts |
+| ready → active | all | it starts: observing, dispatching, offering the task, or waiting |
+| active → reached | all | the adapter accepts bound evidence |
+| active → failed | observed, performed, waited | an authoritative negative outcome. Silence never counts |
+| active → rejected | pressed | the person rejects, with a reason |
+| active → unknown | all | the outcome cannot be established now |
+| unknown → active, reached or failed | all | reconciliation establishes it |
+| any live state → stopped | all | the person stops this node |
+| any bound state → invalidated | all | its binding changed. History is kept, and unresolved attempts are superseded (§D3) |
+| invalidated → blocked or ready | all | it is judged again on a fresh binding |
+
+- **Retries** follow §D6's declared policy only. Reopening rejected or stopped work needs the person. An unknown outcome
+  is reconciled before any new attempt.
+- **An acceptance binds** `{ unit, subjectRevision, graphDigest, nodeVersion, inputs, prerequisiteReceipts, attempt }`. A
+  branch's revision is its repository's identity and its full tip.
+- **A changed dependency invalidates every acceptance downstream, transitively.** Old answers and resource receipts stay
+  accountable (§D3). Invalidation never reverses an external effect, and never reopens a closed quest by itself.
+- **Ports are references.** A reached node exposes an immutable `evidence` reference and its declared outputs, each
+  `{ schema, ref, revision, acceptance }`. A consumer receives references, never copied payloads or file paths, and a
+  resolver checks permission for itself. Human attachments, plugin artifacts and built-in proofs use the same ports.
+- **Reporting:** adapters write through their canonical writers. An accepted change emits `work.node` (it replaces §D8's
+  `work.step`). Source events stay wakes, except §D4 and §D6's validated evidence frames. §C4's sender checks,
+  generations, `resync` and bounds stand.
+
+`line`, a human QA, a plugin's deploy, `wait.unit` and `quest.close` all use this table. Their evidence differs; their
+scheduling and how they connect do not.
+
+## E3. Wires
+
+A wire is `{ id, kind, from, to, group? }`, with no expressions, scripts or commands.
+
+| Kind | Meaning |
+|---|---|
+| `after` | the target becomes eligible when the source has a current `reached` acceptance |
+| `data` | names a source output and a target input. Needs a current `reached`, compatible schemas and an immutable output reference |
+| `wait` | gives a `wait.unit` node what it waits for: another unit's named node or end, at an agreed revision (§E6) |
+| `trigger` | an accepted, typed transition receipt starts the target once for that receipt and binding. A raw source hint only asks for reconciliation |
+| `failed` | the path taken once the source's declared retries are exhausted |
+| `rejected` | the path taken on the person's recorded rejection |
+
+- **Unknown, invalidated and stopped satisfy no wire.**
+- **Groups:** a node's incoming eligibility wires form `allOf` or `anyOf` groups, and groups combine by all.
+  - An `anyOf` records **one witness**, by wire-id order when several qualify at once, and cancels nothing. Losing the
+    witness invalidates its consumers; switching to another witness takes a fresh binding.
+  - A fork starts every eligible target, within the local concurrency limits (§A3).
+- **Data inputs stay mandatory** whatever the groups say. Alternative producers need an explicitly typed choice input.
+- **Refused when saved:**
+  - a local dependency cycle, a node's own `trigger` loop included;
+  - a missing reference, or an incompatible schema;
+  - a wire to a node another repository owns. A cross-repository dependency ends at a local `wait.unit`, through a
+    commitment (§E6).
+
+## E4. The built-in nodes
+
+- **Observed:** `claimed`, `handed`, `pushed`, `pull-request` and `line` (§C2's proofs). `claimed` can never be the end.
+- **Pressed:** `human` (§D5), a task at D156's doors.
+- **Performed:** a plugin's (§D6), and Daoris's own `quest.close` (§E5).
+- **Waited:** `wait.unit` (§E6).
+- **D157's kinds** map onto nodes:
+  - `work` is the quest's done or `ready` (§E5), observed;
+  - `opinion` and `look` are their gates as observed nodes, before the landing, in D157 §2.2's fixed order;
+  - `landing` is `handed`;
+  - `pull-request` stays itself;
+  - `check` and `stage` are performed or observed plugin nodes (D157 §3.5-§3.6, WORKFLOW1k-1l's work, now on the PERFORM
+    rows);
+  - `go-ahead` is a pressed node on D135's answer;
+  - `all` is an `allOf` group.
+
+## E5. `quest.close`, the quest's close as a node
+
+The owner: *"close automatically can be a step to set"*. Where a workspace's graph holds it, and only there, the quest
+closes as a node.
+
+- **The executor is Daoris's own**, a performed built-in. Its wires dispatch it automatically.
+- **It takes the worker's recorded result:** note, requirement answers, commit and proof references. It never invents
+  "met".
+- **Its door is new:** `POST /api/quests/{id}/close`, a local `Driver` door in `PersonDoors`, not mapped in shared mode.
+  - It goes through `QuestExchange` and the ordinary done judgement (`RespondAsync`'s `done`, with the requirement
+    answers, DRIFT1d).
+  - It is scoped to the configured graph, node, unit, revision and take it names.
+  - Its invocation key is persisted before dispatch, and deduplicated atomically with the quest's write.
+  - It appends the ordinary Done operation, with the graph as provenance.
+  - Requirement rules still produce Done-and-held (D133, D144). The existing evidence door still appends `Evidenced`.
+    The node is reached only when Done is not held.
+- **D69 stands:** a lost or unconfirmed take is refused, and the node fails authoritatively, naming the claim. No
+  authority to take, decline or reopen is added.
+- **The hidden cycle, and `ready`.** Today automatic landing starts at the quest's done (D145), so a graph that closes the
+  quest after the landing would wait on itself. In a graph that holds `quest.close`:
+  - the agent's `quest_respond` takes a new action, `ready`, which records its result submission (note, answers, commit)
+    and leaves the quest taken. It is not a status;
+  - the landing and its gates consume `ready` instead of Done, and every hold, opinion and look still applies;
+  - a graph that needs the quest's own Done before its `quest.close` is refused when saved.
+
+  This amends D46 and D144's timing of the done, **only in graphs that hold `quest.close`**. Everywhere else the agent's
+  done is as today.
+
+## E6. `wait.unit`, waiting on other work as a node
+
+The owner: *"waiting for another task can be a step too"*.
+
+- **A waited node.** A `wait` wire names what it waits for: a unit's node or its end, at a revision.
+- **Local targets** (this repository's units) are read through their canonical adapter.
+- **Foreign targets** (another repository's work) need an **accepted quest commitment** naming
+  `{ unit, revision, graphDigest, node | end, outputs }`.
+  - The receiving repository publishes the receipts it permits through the commitment (the quest's operations, D68).
+  - The waiter reads its own local projection, never the other repository's files (repository owns its work).
+- **D79's `wait`**, a session parked on a quest it asked another repository, stays the session's verb. `wait.unit` is the
+  same need at the graph's level, and a session's `wait` may resolve through one.
+- **D69's unconfirmed and lost claims stay explicit.**
+  - Unavailable evidence is *unknown*.
+  - A revoked or superseded commitment invalidates the wait.
+  - A newer revision is never followed silently.
+  - A commitment dependency cycle that is known is refused, and partial visibility is shown honestly.
+- **It is built after the delegated task** (FABRIC-DELEGATE1), since the commitment is that adapter's.
+
+## E7. Graphs, and D157's workflows
+
+**One model.** A graph is `{ schemaVersion, nodes, wires, entries, end, cleanup }`, bounded to 24 nodes (D157's
+`WorkflowKindTable.MaxSteps`) and 96 wires. It is validated before saving:
+
+- acyclic;
+- every node reachable from an entry, and the end reachable;
+- typed ports, and supported adapters;
+- D157 §2.2's protected order before the landing (holds, opinion, look, landing).
+
+A failure sink may end without reaching the end.
+
+**Its homes are D157's split, never two models:**
+
+- **Current's graph** is derived from the rules, with the landing rule's `cycle` (§C2) now a graph fragment
+  (`{ nodes, wires, end, cleanup }`) after the landing.
+- **A named graph** is a named workflow's version in `<home>/workflows/<id>.json` (D157 §2.4), chosen by workspace,
+  repository, kind and task (D157 §4.1), whole-rule replacement under D164 kept.
+- **One governs a run, by its binding.** Named versions stay immutable and bound at the first start, and Current stays
+  live.
+
+**D157's versions decoded, never rewritten:**
+
+| D157 | Graph |
+|---|---|
+| step order | `after` wires |
+| a step's inputs | `data` wires |
+| an `all` group | an `allOf` group |
+| `failed: stop` | a `failed` wire to a sink |
+| `failed: wait` | a `failed` wire to a person's task |
+| `failed: send-back` | the adapter's bounded return (D157 §3.7), never a backward wire |
+
+Step ids, digests (`WorkflowNamed.Digest`) and authorized skips are preserved. The facts stay where they are: run files
+keep their bindings and run-only decisions (D157 §5.1), and unit records keep §D6's attempts. Anything that overlaps
+moves once, with one writer, and no engine runs beside the old one.
+
+An example graph fragment for a branch's cycle, closing the quest once a deploy and a dependency are done:
+
+```json
+{ "schemaVersion": 2, "entries": ["line", "dependency"], "end": "close", "cleanup": { "until": "end" },
+  "nodes": [
+    { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
+    { "id": "qa", "kind": "human", "version": 1, "reach": "pressed",
+      "options": { "brief": "Verify the release", "attachmentSchema": "qa-proof@1" } },
+    { "id": "dependency", "kind": "wait.unit", "version": 1, "reach": "waited" },
+    { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" },
+    { "id": "close", "kind": "quest.close", "version": 1, "reach": "performed" } ],
+  "wires": [
+    { "id": "a", "kind": "after", "from": "line", "to": "qa" },
+    { "id": "b", "kind": "wait", "from": { "commitment": "q2/take-7", "unit": "u2", "revision": "r2", "end": true },
+      "to": "dependency" },
+    { "id": "c", "kind": "after", "from": "dependency", "to": "deploy" },
+    { "id": "d", "kind": "data", "from": "qa.evidence", "to": "deploy.approval" },
+    { "id": "e", "kind": "data", "from": "deploy.evidence", "to": "close.delivery" } ] }
+```
+
+## E8. Chains, configuration and the views
+
+- **Chains are not wires.** Chains route wakes to judges and recover pending effects (§C6). CHAIN3's responses stay
+  subscriptions with §D8's four effects, none of which writes. A `trigger` wire starts a node inside a graph.
+- **One editor.** Setup's *Work* pages become the graph editor: laid out automatically, a drawer per node, typed wire
+  selectors. D157's planned editor (WORKFLOW1g) is the same editor; there is never a second one.
+- **The terminal:** `daoris-driver workflow` manages named graphs, and `work` inspects units and acts on tasks.
+- **The running view** shows each node's state, each wire's condition, the revision, the evidence references, any
+  authority missing, and any commitment waited on. It keeps §D0's milestone: the end, the result, the cleanup and the
+  recovery.
+- **Words:** chrome in English and Chinese, through the glossary's new names for *node* and *wire* (§Q2); authored
+  content stays as written.
+- **With nothing configured,** today exactly: the live rules, the existing gates, the end at `line`, the cleanup at
+  *held*, no added task and no automatic closure.
+
+## E9. Rejected, in part E
+
+| Shape | Why not |
+|---|---|
+| **An expression engine, or conditions on wires** | D65's no engine and D157 §2.1's no expressions; wires are typed |
+| **A central scheduler** | ADR-A; graphs stay optional routines over units |
+| **A wire into another repository's node** | Repository owns its work; a cross-repository dependency is a local `wait.unit` through a commitment |
+| **A second store or engine beside D157's workflows** | One model, decoded from the old versions, never run beside them |
+| **A plugin closing a quest, or a person's press impersonated** | `quest.close` is Daoris's executor at a scoped `Driver` door; a person's doors stay D156's |
+| **Unknown counted as failed** | Silence never counts (§E2) |
+| **Authority for production granted by a graph** | D157 §3.6; a node grants no authority (§D7) |
+| **Deletion driven by a graph** | §D3's inventory and the fresh proofs of removal govern cleanup; no node removes anything |
+| **`quest.close` everywhere by default** | The owner: a step *to set*. Absent configuration, closure stays the agent's or the person's done |
+| **Reusing the row name QUESTCLOSE1** | It is already the person's own done (Program.cs:679); the node's row is FABRIC-CLOSE1 |
+
+## E10. The rows, re-cut on part E
+
+This replaces §D12's lifecycle table for every row not yet built. The parallel gate and the first rows stand.
+
+**The parallel gate:**
+
+| Gate | Row | Lanes | After |
+|---|---|---|---|
+| G1 | FABRIC-ACP1 → FABRIC-C2a → FABRIC-C2b | parent; service | as their rows |
+| G2 | FABRIC-COLLAB1 | service, driver | G1 |
+| G3 | FABRIC-DELEGATE1 | service, driver | G2, FABRIC-NODE1 |
+| G4 | FABRIC-WAITUNIT1 | service, driver | G3, FABRIC-WIRE1 (not the archived WIRE1, a terminal door) |
+
+**Built:** EVENT2, END2a, EVENT2b-2d, CHAIN2, PROOF-UNREAD1.
+
+| Order | Row | Lanes | After | Fate |
+|---|---|---|---|---|
+| 1 | FABRIC-END2 | driver | the cross-process writer chosen first | as §D12 |
+| 2 | FABRIC-END3 | driver | 1 | as §D12 |
+| 3 | FABRIC-MILESTONE1a | driver | 1 | as §D12 |
+| 4 | FABRIC-MILESTONE1b | web-shell, modules | 3 | as §D12 |
+| 5 | FABRIC-END4a | driver | 2, 3 | as §D12 |
+| 6-10 | FABRIC-EVENT3a, EVENT3b, EVENT4, END7, END6 | as §D12 | as §D12 | as §D12 |
+| 11 | FABRIC-UNIT1a | driver | 1 | as §D12 |
+| 12 | FABRIC-NODE1 | driver | 11 | **renames** UNIT1b: the node contract and its state table (§E2) |
+| 13 | FABRIC-WIRE1 | driver | 12 | **new**: wire kinds, groups and witnesses, validation and evaluation (§E3) |
+| 14 | FABRIC-GRAPH1 | driver, cli | 13 | **renames** UNIT1c: the graph schema and its homes, both twins (§E7) |
+| 15 | FABRIC-WORKFLOW2 | driver, cli | 14 | **new** (Codex's WORKFLOW-MIGRATE1): D157's versions decoded as graphs, equivalence held |
+| 16 | FABRIC-UNIT1d | driver, cli | 12 | as §D12: the manifest twins, now node declarations |
+| 17-21 | FABRIC-PERFORM1a-e | as §D12 | as §D12, with NODE1 and WIRE1 for UNIT1b | as §D12 |
+| 22 | FABRIC-END4c | driver | 5, 14, PERFORM1d | as §D12 |
+| 23 | FABRIC-HUMAN1 | driver, modules | 12, 14; RPC1d and D156 §4.2's confirmation | as §D12, a pressed node |
+| 24 | FABRIC-CLOSE1 | service, driver | 12, 14 | **new** (Codex's QUESTCLOSE1, renamed): `ready`, the scoped close door, `quest.close` (§E5) |
+| 25 | FABRIC-GRAPHEDIT1 | web-shell, modules | 14, 15, 23 | **merges** CYCLE1b and D157's editor (WORKFLOW1g): the graph editor |
+| 26 | FABRIC-GRAPHVIEW1 | driver, web-shell | 4, 22, 23 | **merges** the configured END4b: the running view |
+| 27 | FABRIC-CHAIN3 | driver, cli, web-shell | CHAIN2, 25 | as §D12 |
+| 28 | FABRIC-END5 | driver, modules | 26 | as §D12 |
+| 29 | FABRIC-EVENT5a, 5b, EVENT6, C1b | as their rows | as their rows | as §D12 |
+| 30 | FABRIC-EVENT7 | driver, cli | 2, 7, 8, 9 | as §D12 |
+
+**D157's open rows affected** (the steward's to re-cut):
+
+- WORKFLOW1g becomes GRAPHEDIT1.
+- WORKFLOW1j-1l become node kinds on the PERFORM rows, with D157's semantics.
+- WORKFLOW1m and 1n stand, over graphs.
+
+**Canaries for part E:**
+
+38. **Migration equivalence:** every stored named version decodes to a graph whose evaluation equals the old run's on
+    recorded fixtures, with its digest unchanged.
+39. **Lost claims:** `quest.close` and `wait.unit` on a lost or unconfirmed take are refused or unknown, never Done or
+    reached.
+40. **Closure deadlocks:** a graph needing its own Done before `quest.close` is refused when saved, and a landing in a
+    closure graph runs on `ready`.
+41. **Witness invalidation:** an `anyOf` witness lost invalidates its consumers, and no other witness is taken silently.
+42. **Restart de-duplication:** a `quest.close` invocation and a `wait.unit` receipt replayed after a crash write the quest
+    once and record the receipt once.
+43. **One state table:** every node kind passes the same transition tests.
+44. **No silent revision:** a `wait.unit` never follows a newer revision of the unit it waits on.
+
+## E11. Questions for the owner
+
+1. **In a graph that closes the quest itself, what does the asker see while the work moves from the agent's result to
+   the close?** *Recommendation:* a visible *ready* (the work is submitted, its quest still open), then *done* when
+   `quest.close` is reached, so the asker never reads *done* before the graph's end.
+2. **The names on the page.** *Recommendation:* *node* and *wire* in English, and 节点 and 连线 in Chinese, added to the
+   glossary; *step* stays only in D157's older words until the editor replaces them.
 
 ---
 
