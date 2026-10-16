@@ -152,7 +152,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 101 | 1936 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 61 | 1091 |
-| `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 834 |
+| `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 839 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 133 | 2446 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 205 | 3158 |
