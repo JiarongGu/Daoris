@@ -13,6 +13,7 @@ import { WiringLogs } from './WiringLogs';
 import { WiringLoop } from './WiringLoop';
 import { WiringService } from './WiringService';
 import { WiringTerminal } from './WiringTerminal';
+import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
 
@@ -102,6 +103,7 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         })}
         onLog={() => onGo({ view: 'settings', section: 'logs' })}
       />
+      {wiring.toolHome && <WiringToolHome toolHome={wiring.toolHome} measuring={wiring.measuring} />}
     </>
   );
 }

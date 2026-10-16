@@ -8,7 +8,7 @@ import { call, refusedNoRoute } from './call';
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
 // The shape is a wire shape (`data/wiring.ts`, where the cards that draw it can name it): a field is added, never renamed.
 export type {
-  SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringVariable,
+  SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringToolFolder, WiringVariable,
 } from '../data/wiring';
 // The page tells a shell older than it by this refusal, and reaches the route helper through the domain, not around it.
 export { refusedNoRoute } from './call';

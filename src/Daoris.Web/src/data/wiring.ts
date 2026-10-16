@@ -28,6 +28,17 @@ export interface WiringVariable {
 
 export interface WiringLocated { path: string | null; pathWhy: Why; from: 'variable' | 'beside' | 'home' | 'workspace' | null }
 
+/** A project folder Daoris's sessions left in the person's own tool home (OWNSPACE2): its name there, its size and newest file once measured. */
+export interface WiringToolFolder {
+  name: string; path: string; bytes: number | null; bytesWhy: Why; partial: boolean; newest: string | null; newestWhy: Why;
+  /** Which kind of Daoris's working directory it was keyed by: `tree`, `help` or `intake`. */
+  source: string;
+  /** The session records that name it: why it is listed as Daoris's. */
+  by: string[];
+  /** What would keep it from any removal: `session` (live or waiting), `resumable` (a conversation that goes on in this home), `record-unread`; null otherwise. */
+  keeps: string | null;
+}
+
 export interface SystemWiring {
   schema: number;
   reader: 'window' | 'terminal';
@@ -70,4 +81,13 @@ export interface SystemWiring {
   };
   knowledge: { path: string | null; pathWhy: Why; from: 'variable' | 'home' | null; bytes: number | null; bytesWhy: Why; familyRoot: string | null; familyRootWhy: Why };
   logs: { path: string | null; pathWhy: Why; bytes: number | null; bytesWhy: Why; days: number; newest: string | null; newestWhy: Why; engineLog: boolean };
+  // What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3). Added after the first shape: a shell
+  // older than it sends none, so the page reads it as absent.
+  toolHome?: {
+    path: string | null; pathWhy: Why; from: 'process' | 'account' | 'default' | 'named' | null; present: boolean;
+    // Why nothing is listed where nothing can be (`linked`, `no-tool-home`, …), the file system's case rule, the folders left out
+    // because their name is not proven Daoris's. A list only: Daoris removes nothing here (OWNSPACE2e).
+    why: string | null; caseInsensitive: boolean; ambiguous: number; uncertain: number;
+    folders: WiringToolFolder[];
+  };
 }

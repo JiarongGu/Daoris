@@ -102,6 +102,22 @@ export const WIRED: SystemWiring = {
     familyRoot: 'D:/somewhere/family', familyRootWhy: null,
   },
   logs: { path: `${HOME}/logs`, pathWhy: null, bytes: 96_000, bytesWhy: null, days: 30, newest: '2026-10-16T10:40:00Z', newestWhy: null, engineLog: true },
+  toolHome: {
+    path: 'D:/somewhere/person/.claude', pathWhy: null, from: 'default', present: true,
+    why: null, caseInsensitive: true, ambiguous: 0, uncertain: 0,
+    folders: [
+      {
+        name: 'D--somewhere-Daoris-trees-main-repo-s-1a2b3c4d', path: 'D:/somewhere/person/.claude/projects/D--somewhere-Daoris-trees-main-repo-s-1a2b3c4d',
+        bytes: 2_400_000, bytesWhy: null, partial: false, newest: '2026-10-15T18:00:00Z', newestWhy: null,
+        source: 'tree', by: ['q-1-s-1a2b3c4d'], keeps: null,
+      },
+      {
+        name: 'D--somewhere-Daoris-help', path: 'D:/somewhere/person/.claude/projects/D--somewhere-Daoris-help',
+        bytes: 90_000, bytesWhy: null, partial: false, newest: '2026-10-14T09:30:00Z', newestWhy: null,
+        source: 'help', by: ['help-1', 'help-2'], keeps: 'resumable',
+      },
+    ],
+  },
 };
 
 /** The same read while a walk is under way: no size yet. */
@@ -111,6 +127,10 @@ export const MEASURING: SystemWiring = {
   measured: null,
   folders: WIRED.folders.map((each) => ({ ...each, bytes: null, bytesWhy: 'measuring', measured: null })),
   leftOver: WIRED.leftOver.map((each) => ({ ...each, bytes: null })),
+  toolHome: {
+    ...WIRED.toolHome!,
+    folders: WIRED.toolHome!.folders.map((each) => ({ ...each, bytes: null, bytesWhy: 'measuring', newest: null, newestWhy: 'not-measured' })),
+  },
 };
 
 /** A development run: the home named for this start, an account that names another, the notices, a service not answering. */
@@ -150,6 +170,8 @@ export const DEVELOPMENT: SystemWiring = {
     familyRoot: null, familyRootWhy: 'adopted',
   },
   logs: { ...WIRED.logs, bytes: null, bytesWhy: 'not-measured', newest: null, newestWhy: 'absent', engineLog: false },
+  // The person's own tool home, with nothing of Daoris's in it (D175: new sessions run in Daoris's own space).
+  toolHome: { ...WIRED.toolHome!, from: 'process', folders: [] },
   loop: {
     ...WIRED.loop, holder: { kind: 'headless', pid: 777, since: '2026-10-16T08:00:00Z', thisWindow: false },
     draining: true, holds: 2,

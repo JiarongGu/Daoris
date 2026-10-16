@@ -399,6 +399,62 @@ describe('Settings → This Daoris', () => {
     expect(pressed.filter((name) => /^(Open folder|Copy terminal line|Put on my PATH|Change address)/.test(name ?? ''))).toEqual([]);
   });
 
+  // OWNSPACE2 (D175 point 3, D88): what Daoris's sessions left in the person's own tool home, listed and nothing more (the press is OWNSPACE2e).
+  it('lists the folders Daoris left in the person\'s own tool home, read-only, with the records that name them', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    for (const each of WIRED.toolHome!.folders) expect(card.getByText(each.name)).toBeTruthy();
+    expect(card.getByText('2.3 MB')).toBeTruthy();
+    expect(card.getByText('D:/somewhere/person/.claude')).toBeTruthy();
+    // Why each is Daoris's (the records that name it) and what would keep it; a folder a conversation may go on in says so.
+    expect(card.getByText('named by q-1-s-1a2b3c4d')).toBeTruthy();
+    expect(card.getByText('named by help-1, help-2')).toBeTruthy();
+    expect(card.getByText('still in use: a conversation that began here goes on here')).toBeTruthy();
+    expect(card.getByText(/named by CLAUDE_CONFIG_DIR|its usual place/)).toBeTruthy();
+    // Read-only: they can be removed by hand, and nothing here is a press that sends or changes anything.
+    expect(card.getByText(/does not remove these yet\. You can delete one by hand/)).toBeTruthy();
+    expect(card.queryAllByRole('button')).toEqual([]);
+    expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_TOOL_CLEAR')).toBe(false);
+  });
+
+  it('says Daoris\'s session records could not be read, and lists nothing, when there is no record of use', async () => {
+    invoke.mockImplementation(shell({ ...WIRED, toolHome: { ...WIRED.toolHome!, why: 'records-unread', folders: [] } }));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    expect(card.getByText(/session records could not be read/)).toBeTruthy();
+    expect(card.queryByText(WIRED.toolHome!.folders[0]!.name)).toBeNull();
+  });
+
+  it('lists nothing and says why where the home named is not the person\'s own', async () => {
+    const refused = { ...WIRED.toolHome!, path: null, pathWhy: 'inside-daoris', from: 'process' as const, why: 'no-tool-home', folders: [] };
+    invoke.mockImplementation(shell({ ...WIRED, toolHome: refused }));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    expect(card.getByText("Inside Daoris's own folder")).toBeTruthy();
+    expect(card.getByText(/No own home is named here/)).toBeTruthy();
+  });
+
+  it('says there is nothing left where the tool home holds none of Daoris\'s', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    expect(card.getByText(/nothing of Daoris's is left/i)).toBeTruthy();
+    expect(card.queryAllByRole('button')).toEqual([]);
+  });
+
+  it('draws no card from a shell older than the list', async () => {
+    invoke.mockImplementation(shell({ ...WIRED, toolHome: undefined }));
+    open();
+    await screen.findByRole('region', { name: 'Folders' });
+
+    expect(screen.queryByRole('region', { name: 'Left in your own tool home' })).toBeNull();
+  });
+
   it('a shell older than the page: one line saying so, and no card', async () => {
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_WIRING') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
@@ -419,6 +475,6 @@ describe('Settings → This Daoris', () => {
     expect(screen.getByRole('region', { name: '服务' })).toBeTruthy();
     expect(screen.getByRole('region', { name: '驱动循环' })).toBeTruthy();
     expect(screen.getAllByText('开发运行').length).toBeGreaterThan(0);
-    for (const name of ['设置文件', '环境变量', '版本', '终端', '知识库', '日志']) expect(screen.getByRole('region', { name })).toBeTruthy();
+    for (const name of ['设置文件', '环境变量', '版本', '终端', '知识库', '日志', '留在你自己工具主目录里']) expect(screen.getByRole('region', { name })).toBeTruthy();
   });
 });
