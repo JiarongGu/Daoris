@@ -19,8 +19,7 @@ namespace Daoris.Driver;
 /// anew, or cleared, which a reader reads as not known. A trace is never judged again. A fact that still holds is not written again, so a
 /// look that changes nothing writes nothing.</para>
 ///
-/// <para><b>Nothing is removed here</b> (§B8): the look's tidy takes its candidates from what is kept (FABRIC-END4a), and the
-/// inventory reads it (MILESTONE1a). <i>Ended</i> is derived at read from the
+/// <para><b>Nothing is removed here</b> (§B8), and no reader reads it yet (MILESTONE1a does). <i>Ended</i> is derived at read from the
 /// kept fact and the effective cycle, never stored.</para>
 /// </remarks>
 internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)

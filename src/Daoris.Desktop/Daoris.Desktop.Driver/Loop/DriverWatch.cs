@@ -158,10 +158,6 @@ public sealed class DriverWatch(
     {
         if (wake is null) Interlocked.Exchange(ref _everything, 1);
         Volatile.Write(ref _woke, wake);
-        // FABRIC-END4a: what can unblock a refused tidy wakes link 2 too: a press (a plain nudge), the home's files, a ledger family.
-        _refs?.Unblocked(wake is null ? ChainEvents.Press
-            : wake.Topic is ChangeTopics.Ledger or ChangeTopics.Requests ? ChainEvents.Ledger
-            : ChainEvents.Home);
         Interlocked.Increment(ref _nudges);
 
         // Swap first, atomically, so two racing nudges each cancel a source that is no longer current
@@ -253,23 +249,7 @@ public sealed class DriverWatch(
 
         // The refs heard on each repository's common git dir (FABRIC-END3, §B4, link 1): a ref move judges that repository's ends on its
         // own, never the look and never the remote sync, and the tidy's pass below stays the reconciliation at its pace.
-        // Link 2 on the same chain (FABRIC-END4a, §C3, §C6): the tidy as an effect, tried where link 1 found a repository held, on the
-        // wakes that can unblock it, at the `refs` deadline and at the start; what it says joins the next look's report.
-        var effected = new List<string>();
-        var effect = new TidyEffect(
-            home,
-            async (name, token) => (await RefWatch.RepositoriesAsync(home, service.RegistryAsync, token).ConfigureAwait(false))
-                .FirstOrDefault(each => string.Equals(each.Repository, name, StringComparison.OrdinalIgnoreCase)),
-            token => BranchTidying.InUseAsync(home, service, asked => BranchTidying.ReviewingAsync(Reviews, service, asked), token))
-        {
-            Saying = tidy,
-            Log = Log,
-            Said = lines =>
-            {
-                lock (effected) effected.AddRange(lines);
-            },
-        };
-        await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log, tidy: effect);
+        await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log);
         _refs = refs;
         refs.Start();
 
@@ -277,23 +257,6 @@ public sealed class DriverWatch(
         // each family that moved waking the local plan by the `ledger` topic, as a quest an agent published, and the pace its deadline.
         using var listening = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var ledger = LedgerChanges.RunAsync(service, Nudge, Log, listening.Token);
-
-        // The start's reconciliation (canary 16): every pending tidy found from the persisted facts and tried once, beside the first looks.
-        var recovering = Task.Run(async () =>
-        {
-            try
-            {
-                await refs.RecoverAsync(ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                // The loop closed before the start's reconciliation ended: the next start finds what is still pending.
-            }
-            catch (Exception error) when (error is not OperationCanceledException)
-            {
-                Log?.Failed("the start's reconciliation of the tidy", error);
-            }
-        }, CancellationToken.None);
         TickReport? looked = null;
         chain.Bind(ChainRanks.Plan, async (heard, token) =>
         {
@@ -384,13 +347,6 @@ public sealed class DriverWatch(
                         if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
                     }
 
-                    // What link 2 removed or kept since the last look (FABRIC-END4a).
-                    lock (effected)
-                    {
-                        if (effected.Count > 0) report = report with { Events = [.. report.Events, .. effected] };
-                        effected.Clear();
-                    }
-
                     if (tidying is null && tidy.Due) tidying = TidyAsync(tidy, ct);
 
                     Looked(by, woke, part, nudges, began, failed: false);
@@ -445,8 +401,6 @@ public sealed class DriverWatch(
                     by = Volatile.Read(ref _nudges) != nudged ? "nudge"
                         : failed || Due(whole, config) ? "pace"
                         : "ended";
-                    // A session ending may free the tree a refused tidy waits on (FABRIC-END4a, canary 17).
-                    if (by == "ended") refs.Unblocked(ChainEvents.Ledger);
                 }
             }
         }
@@ -467,7 +421,6 @@ public sealed class DriverWatch(
             if (following is not null) await following.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             // The tidy's too: a removal half done when the loop closed is git's to finish, never left running unwatched.
             if (tidying is not null) await tidying.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-            await recovering.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
 

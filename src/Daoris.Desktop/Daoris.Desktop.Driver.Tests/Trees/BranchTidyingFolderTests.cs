@@ -343,9 +343,8 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     /// <summary>
     /// 🔴 AUTOTIDY2c, the owner's install of 2026-10-15: folders under a repository's trees that git lists no tree for (an empty
     /// one a removed tree left, with its branch still here, and folders a session wrote beside its tree) are moved aside whole
-    /// once left quiet, said and logged, and the trees list names them moved aside. The branch whose folder that was is never kept
-    /// as unreadable; made by hand, with no record of Daoris's, its owner is unknown and it stays for the press (FABRIC-END4a, the
-    /// design §C3 and §D3). A tree stays, and so does a folder a running session names.
+    /// once left quiet, said and logged, and the trees list names them moved aside. The branch whose folder that was goes in the
+    /// same look, never kept as unreadable. A tree stays, and so does a folder a running session names.
     /// </summary>
     [Fact]
     public async Task Folders_under_the_trees_that_are_no_tree_are_moved_aside_and_listed_so()
@@ -376,14 +375,15 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         Assert.Equal(
             new[] { "s-1f315a22", "devtools", ".tmp" }.Select(name =>
                 $"tidy  engine: `{name}`, a folder under its trees that git knows no tree in, was moved aside to {Aside(name)}, and goes once it is left untouched for 14 days.")
+            .Append("tidy  engine: removed `daoris/s-1f315a22`, which held nothing beyond `main`.")
             .Order(StringComparer.Ordinal),
             said.Order(StringComparer.Ordinal));
         Assert.Equal([working.Path, named], Directory.GetDirectories(engine).Order(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
         var branches = await GitAsync(root, "branch", "--list", "daoris/*");
-        Assert.Contains("daoris/s-1f315a22", branches, StringComparison.Ordinal);
+        Assert.DoesNotContain("daoris/s-1f315a22", branches, StringComparison.Ordinal);
         Assert.Contains(working.Branch, branches, StringComparison.Ordinal);
         var tidied = Events("branch.tidied");
-        Assert.Equal(3, tidied.Length);
+        Assert.Equal(4, tidied.Length);
         var strays = tidied.Where(data => data.GetProperty("kind").GetString() == StrayKind.Folder).ToList();
         Assert.Equal(3, strays.Count);
         Assert.All(strays, data =>

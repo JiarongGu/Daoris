@@ -134,13 +134,6 @@ internal sealed class TreeSweeps(
 
             var worktrees = ByBranch(listed);
             var line = (await context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
-            // FABRIC-END4a review: each form of the line at the commit this judgement reads, looked at again once the branch went.
-            var lineAt = new List<(string Ref, string Commit)>();
-            foreach (var form in await LandedProofs.LineFormsAsync(root, line, ct, fresh).ConfigureAwait(false))
-            {
-                if (await TreeRefs.CommitOfAsync(root, form.Ref, ct, fresh).ConfigureAwait(false) is { } at) lineAt.Add((form.Ref, at));
-            }
-
             var carriers = item.Kind == SweepKind.Carried ? await asks.CarriersAsync(root, item.Repository, line, ct, fresh).ConfigureAwait(false) : [];
             // The commit it was judged at (SQUASHTIDY1c): the one its delete must still find, and the one a pull request's answer
             // removed, for the record of it (PLUGHOOK1a, design §2.5).
@@ -214,7 +207,7 @@ internal sealed class TreeSweeps(
             }
 
             // Only while it is still the commit judged (SQUASHTIDY1c); git's own -d asks only about the checkout's HEAD.
-            var stays = await content.DeleteJudgedAsync(root, now.Branch, judged, done, lineAt).ConfigureAwait(false);
+            var stays = await content.DeleteJudgedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
             if (stays is not null)
             {
                 await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);

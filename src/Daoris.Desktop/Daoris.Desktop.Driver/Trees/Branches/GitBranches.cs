@@ -242,8 +242,7 @@ public static class GitBranches
         IReadOnlyList<SessionRecord>? sessions, SyncScope? scope = null, CancellationToken ct = default)
     {
         var landings = new LandedBranches(home).All();
-        // FABRIC-END4a review: a removed branch's trace that still says where its tree moved onto is read with the standing entries.
-        var grown = new SessionBranches(home).Entries().Where(each => each.GoneAt is null || each.Now is not null).ToList();
+        var grown = new SessionBranches(home).All();
         var present = repositories.Where(each => !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root)).ToList();
         var read = await TreeRefs.AtMostAsync(present, ReadsAtOnce, async (each, token) =>
         {

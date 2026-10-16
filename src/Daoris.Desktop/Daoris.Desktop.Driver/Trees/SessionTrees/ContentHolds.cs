@@ -237,15 +237,7 @@ internal sealed class ContentHolds(TreeContext context)
     /// branch is gone already, nothing is left to delete.
     /// </summary>
     /// <returns>Null where it is deleted; otherwise why it is kept, in a clause.</returns>
-    /// <remarks>
-    /// 🔴 <b>The compare-and-swap covers the branch alone</b>, so what the proof rested on is looked at again once it went (FABRIC-END4a
-    /// review): where a form of the line in <paramref name="line"/> no longer holds the commit it held when judged (rewound or replaced),
-    /// or a tree checked the branch out after the trees were read, the branch is put back at the commit judged, and kept, saying why.
-    /// Its commits never left the object store between the two, so nothing is lost.
-    /// </remarks>
-    /// <param name="line">Each form of the line the proof read and its commit then; empty where the proof was no line's.</param>
-    internal async Task<string?> DeleteJudgedAsync(
-        string root, string branch, string judged, CancellationToken ct, IReadOnlyList<(string Ref, string Commit)>? line = null)
+    internal async Task<string?> DeleteJudgedAsync(string root, string branch, string judged, CancellationToken ct)
     {
         if (context.BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
         // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
@@ -260,7 +252,6 @@ internal sealed class ContentHolds(TreeContext context)
             return $"it is checked out at {checkedOut}";
         }
 
-        if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
         var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "-d", $"refs/heads/{branch}", judged], ct).ConfigureAwait(false);
         if (code != 0)
         {
@@ -270,44 +261,9 @@ internal sealed class ContentHolds(TreeContext context)
             return now.Trim() != judged ? MovedSince : $"git would not delete it: {FirstLine(err)}";
         }
 
-        // What the proof rested on, looked at again now the branch is gone: never cancelled, since a branch put back is a removal undone.
-        if (await MovedUnderAsync(root, branch, judged, line ?? []).ConfigureAwait(false) is { } undone) return undone;
-
         // What git branch -D also removes: the branch's own section of the config, its upstream where it had one.
         await WorkingTree.GitAsync(root, ["config", "--remove-section", $"branch.{branch}"], ct).ConfigureAwait(false);
         return null;
-    }
-
-    /// <summary>
-    /// Whether what the delete's proof rested on moved as it went (FABRIC-END4a review): a form of the line no longer at or past the
-    /// commit it was judged at, or a tree that checked the branch out once the trees were read. Then the branch is made again at the
-    /// commit judged, only where nothing stands at its name, and why it is kept comes back; null where the delete stands.
-    /// </summary>
-    private async Task<string?> MovedUnderAsync(string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> line)
-    {
-        var none = CancellationToken.None;
-        string? why = null;
-        foreach (var (reference, commit) in line)
-        {
-            var (code, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], none).ConfigureAwait(false);
-            if (code == 0 && now.Trim() == commit) continue;
-            var (on, _, _) = code == 0
-                ? await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, now.Trim()], none).ConfigureAwait(false)
-                : (1, "", "");
-            if (on == 0) continue;
-            why = $"`{reference.Replace("refs/heads/", "").Replace("refs/remotes/", "")}` moved back under it as it went, so it was put back where it was";
-            break;
-        }
-
-        if (why is null && await context.Worktrees.ReadAsync(root, none).ConfigureAwait(false) is { } trees && trees.GetValueOrDefault(branch) is { } path)
-        {
-            why = $"it was checked out at {path} as it went, so it was put back where it was";
-        }
-
-        if (why is null) return null;
-        // Made again only where nothing stands at its name: the empty old value is git's "must not exist".
-        await WorkingTree.GitAsync(root, ["update-ref", $"refs/heads/{branch}", judged, ""], none).ConfigureAwait(false);
-        return why;
     }
 
     /// <summary>

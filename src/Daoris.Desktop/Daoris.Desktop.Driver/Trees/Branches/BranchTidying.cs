@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>The press's path, not a second one.</b> Each repository is tidied by <see cref="SessionTrees.TidyEmptyAsync"/>,
-/// which judges each session branch the line is kept holding (FABRIC-END4a) as the press's list does and runs the clean-up's own path over those the look takes
+/// which judges every session branch as the press's list does and runs the clean-up's own path over those the look takes
 /// (<see cref="SessionTrees.GoesByItself"/>). Every guard is the press's: judged again right before it goes, deleted only
 /// while it is the commit judged, never forced. The look adds its last guards, and never deletes a tree's folder: it moves it
 /// aside, and a later look deletes it only once it has waited <see cref="SetAsideFor"/> with nothing written in it since.</para>
@@ -120,23 +120,17 @@ public sealed class BranchTidying(string home)
             }
         }
 
-        Task<IReadOnlySet<string>> InUseAsync(CancellationToken token) => BranchTidying.InUseAsync(home, service, reviewing, token);
-    }
-
-    /// <summary>
-    /// The trees the look's tidy keeps whatever they hold: a session running or waiting holds its tree; so does one that ended with the
-    /// person's words waiting on its record, which the next loop goes on with there (AUTOTIDY2d, D137 §2.2); and a review step in
-    /// progress, by the folder it shows from. The pass's and link 2's (FABRIC-END4a) alike.
-    /// </summary>
-    public static async Task<IReadOnlySet<string>> InUseAsync(
-        string home, ServiceClient service, Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing, CancellationToken ct)
-    {
-        var held = (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
-            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        held.UnionWith(await service.WaitingTreesAsync(ct).ConfigureAwait(false));
-        if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(ct).ConfigureAwait(false)));
-        return held;
+        // A session running or waiting holds its tree; so does one that ended with the person's words waiting on its record, which
+        // the next loop goes on with there (AUTOTIDY2d, D137 §2.2); and a review step in progress, by the folder it shows from.
+        async Task<IReadOnlySet<string>> InUseAsync(CancellationToken token)
+        {
+            var held = (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
+                .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            held.UnionWith(await service.WaitingTreesAsync(token).ConfigureAwait(false));
+            if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(token).ConfigureAwait(false)));
+            return held;
+        }
     }
 
     /// <summary>How long a folder the look moved aside waits before a later look deletes it, where nothing was written in it since.</summary>

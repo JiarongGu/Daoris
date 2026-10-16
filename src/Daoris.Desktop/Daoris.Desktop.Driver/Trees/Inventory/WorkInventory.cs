@@ -328,12 +328,8 @@ public static partial class WorkInventory
             entries.Add(branch.GoneAt is { } gone
                 ? new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Removed,
                     $"went {Minute(gone)} UTC") { Proof = branch.Held is { } held ? ProofSaid(held.By, held.On) : null }
-                // FABRIC-END4a: a guard that kept it at the tidy's last try is the record's, so it reads as blocked, saying why.
-                : ended && branch.Blocked is { } blocked
-                    ? new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Blocked,
-                        $"the look's tidy kept it at {Minute(blocked.At)} UTC, since {KeptSaid(blocked.Why)}; it is tried again when that frees")
-                    : new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Pending,
-                        ended ? "the look's tidy removes it, with fresh proof" : "waits for the work to end"));
+                : new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Pending,
+                    ended ? "the look's tidy removes it, with fresh proof" : "waits for the work to end"));
         }
 
         foreach (var landing in draft.Landings)
@@ -419,22 +415,6 @@ public static partial class WorkInventory
             held ? "a session still running or waiting holds it, so its folder is not moved aside yet"
                 : ended ? "the look's tidy moves its folder aside once nothing holds it" : "waits for the work to end");
     }
-
-    /// <summary>A guard's code, as a clause after "since" (FABRIC-END4a): the look's tidy's codes, and the press's two kinds that keep a tree.</summary>
-    internal static string KeptSaid(string why) => why switch
-    {
-        SweepKind.InUse => "a session running or waiting holds its tree",
-        SweepKind.Dirty => "its tree holds uncommitted or untracked work",
-        TidyKept.Busy => "something on this machine holds its tree's folder open",
-        TidyKept.Hidden => "a tracked path in its tree hides its changes",
-        TidyKept.Nested => "its tree holds another repository",
-        TidyKept.Linked => "its tree is reached through a link",
-        TidyKept.Refused => "its removal did not happen: its tree is locked, git would not let its record go, or the branch moved",
-        TidyKept.Unread => "git could not read one of its guards",
-        TidyKept.Starting => "a session was starting in one of the repository's trees",
-        TidyKept.Sessions => "the service did not say which sessions run",
-        _ => $"the press's judgement keeps it ({why})",
-    };
 
     private static MilestoneEnd End(Draft draft)
     {

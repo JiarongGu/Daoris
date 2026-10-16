@@ -29,16 +29,10 @@ public abstract class BranchTidyingFixture : IDisposable
         _scratch = Path.Combine(RepoRoot(), "_fixtures", "autotidy", Guid.NewGuid().ToString("N")[..8]);
         _home = Path.Combine(_scratch, "daoris-home");
         Directory.CreateDirectory(_home);
-        // FABRIC-END4a: the look's tidy takes only what the end's keeper wrote the line holds, and the keeper writes in the process
-        // holding the home's lease alone (FABRIC-END2), as the instance's loop does.
-        _lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
     }
-
-    private readonly IDisposable? _lease;
 
     public void Dispose()
     {
-        _lease?.Dispose();
         _closing.Cancel();
         _closing.Dispose();
         _ledger.Dispose();

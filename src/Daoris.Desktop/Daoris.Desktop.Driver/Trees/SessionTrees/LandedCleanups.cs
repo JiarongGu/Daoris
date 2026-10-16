@@ -283,15 +283,7 @@ internal sealed class LandedCleanups(
                     keptAt = reference;
                 }
 
-                // FABRIC-END4a review: each form of the line at the commit the judgement read, looked at again once the branch went.
-                var lineAt = new List<(string Ref, string Commit)>();
-                var lineNamed = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-                foreach (var form in await LandedProofs.LineFormsAsync(root, lineNamed, ct, fresh).ConfigureAwait(false))
-                {
-                    if (await TreeRefs.CommitOfAsync(root, form.Ref, ct, fresh).ConfigureAwait(false) is { } at) lineAt.Add((form.Ref, at));
-                }
-
-                var kept = await content.DeleteJudgedAsync(root, item.Branch, now.Tip, ct, lineAt).ConfigureAwait(false);
+                var kept = await content.DeleteJudgedAsync(root, item.Branch, now.Tip, ct).ConfigureAwait(false);
                 if (kept is null)
                 {
                     removed.Add(item.Branch);
