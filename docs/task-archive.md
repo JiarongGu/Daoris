@@ -15501,3 +15501,63 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGKIT2 — the silent plugin's trial patience covers its start** (found and built in the same round; see the outcome).
 
 **Outcome** 2026-10-17: a trial's handshake waits its points' own patience; a given patience is the points' calls'; the silent case's plugin answers its handshake after 1.5 s and still fails its silent `work/land`. Its Process runs are the merge gate's. On Opus, with FLAKE5. Detail: FIX-LOG FLAKE1's PLUGKIT2 paragraph.
+
+## WIRING1b — what the page reads (2026-10-17, D171)
+
+> - [ ] **WIRING1b — what the page reads** (modules/driver/service; after 1a, FINDDAORIS1). A read route (`SYSTEM_WIRING`, BRIDGE-PRESSES' read places) answering the design's facts with their sources, and its terminal twin (`daoris-driver wiring`, D50). Proof: modules and host tests per fact and source; a secret never in the answer.
+
+**Outcome** 2026-10-17: `SYSTEM_WIRING` (a new `system` domain) and `daoris-driver wiring [--json] [--measure]` read through one driver-library reader (`SystemWiring`, `WiringSizes`, `WiringRedact`, `WiringVariables`), built to a second opinion's four points: redaction at the reader (URLs, notices, keys as *set*), an adopted service's environment said unknown, sizes measured only when asked (in the background, cached, budgeted, partial), the layout reported as it runs; `/api/status` answers `version` beside `home`. On Opus: 248 tool calls, then a merge of main. Detail: D171's WIRING1b note.
+
+## WEBWAIT1 — the page's tests wait on what they wait for, under load (2026-10-17, FLAKE1)
+
+> - [ ] **WEBWAIT1 — the page's tests wait on what they wait for, under load** (web tests). The web gate failed once on `df95f79` (2026-10-17) in `WorkFrame.test.tsx` *asks the plan again with an entered branch name…*: a `vi.waitFor` with its default 1 s patience gave up at 2993 ms under four workers' load; alone it passes. A fast-suite failure fails the gate and is never re-run. Find the page tests whose `vi.waitFor`/`findBy*` rely on the default patience while a mocked call or a timer stands between, and make each wait on its condition with a patience a loaded machine meets (one shared setting, not per-test widening), as FLAKE5 did for the driver. Proof: the class of failure named in FLAKE1's FIX-LOG entry; the web suite green beside a plain build of another project.
+
+**Outcome** 2026-10-17: `vi.waitFor` in the page tests waits 5 s by default, set once in `src/test/setup.tsx`, as `findBy` already did; its 47 uses had waited 1 s, so a loaded machine failed them. On Sonnet: 63 tool calls. Detail: FIX-LOG FLAKE1's WEBWAIT1 paragraph; `src/test/waitPatience.test.ts`.
+
+## SWITCHCLI1 — the terminal says the switch as the page does (2026-10-17, D165)
+
+> - [ ] **SWITCHCLI1 — the terminal says the switch as the page does** (cli). `profile use` still says *switch before the limit* and only what passes an account at a start (`toolchain.ts` `useLines`). D165's SWITCH1d-c note. Proof: `toolchain.test.ts`' use lines in the new words.
+
+**Outcome** 2026-10-17: `profile use` says *Switch accounts* with Smart, My own curve and Off, and the move at a turn's end, as the page does. On Sonnet, with CURVETERM1: 71 tool calls. Detail: D165's SWITCH1d-c note.
+
+## CURVETERM1 — the usage curve in the glossary (2026-10-17, D165)
+
+> - [ ] **CURVETERM1 — the usage curve in the glossary** (web). *curve*/曲线 has no glossary term, and "point" is a plugin's 挂点. D165's SWITCH1d-c note. Proof: `names:check --strict` holds the term.
+
+**Outcome** 2026-10-17: the glossary holds `curve` / 曲线, kept apart from a plugin's 挂点; the curve editor's lines are rows (行). The refusals' own "point" stays for CURVETERM2. On Sonnet, with SWITCHCLI1. Detail: `locales/glossary.json`.
+
+## HELPAPPLY1 — Apply lands what the card showed, once (2026-10-17, D170)
+
+> - [ ] **HELPAPPLY1 — Apply lands what the card showed, once** (driver/modules; a design review's finding, 2026-10-16). `HELP_APPLY` reads and plans again before it applies (`HelpRoutes.cs` ~332), so a card can apply something other than what it showed, and two windows can apply one proposal together. Bind Apply to the shown plan's revision (a material change asks again, said on the card) and claim the proposal atomically. D89, D170. Proof: modules tests: a plan changed between card and Apply asks again; two Applies at once, one wins.
+
+**Outcome** 2026-10-17: each card carries a revision of the plan it shows and Apply sends it; a plan changed since asks again (said above the cards) and applies nothing; the proposal is claimed with a file made only if none is there, so two Applies at once run it once. On Sonnet, with MAINWINDOWS2b and 2c: 186 tool calls. Detail: D170's HELPAPPLY1 note.
+
+## MAINWINDOWS2b — the taskbar's count on every main window (2026-10-17, D171)
+
+> - [ ] **MAINWINDOWS2b — the taskbar's count on every main window** (desktop). While the first main window is put away its button is gone, so the count shows on none; each `main:<n>` wears it. D171's MAINWINDOWS2 note. Proof: a modules test; on the install, the count on the second window with the first put away.
+
+**Outcome** 2026-10-17: while the first main window is put away, each `main:<n>` wears *What needs you*'s count on its taskbar button and title. On Sonnet, with HELPAPPLY1. Detail: D171's MAINWINDOWS2b note. The install's look is owed.
+
+## MAINWINDOWS2c — a picker owned by the window whose page asked (2026-10-17, D171)
+
+> - [ ] **MAINWINDOWS2c — a picker owned by the window whose page asked** (desktop). `PickFolder` and `PickFile` are owned by the first main window, hidden when put away; own the dialog by the asking window. D171's MAINWINDOWS2 note. Proof: a test per route caller; on the install, *Add repository* from `main:2` with the first put away.
+
+**Outcome** 2026-10-17: a picker is owned by the window whose page asked (`AskingWindow.Owner`, the page naming its window on `PICK_FOLDER` and `TOOLS_PICK`). On Sonnet, with HELPAPPLY1. Detail: D171's MAINWINDOWS2c note. The install's look is owed.
+
+## FABRIC-PROBE1 — the harness probe kit as a tracked tool (2026-10-17, D173)
+
+> - [ ] **FABRIC-PROBE1 — the harness probe kit as a tracked tool** (tools; before C2b). C0's stand-in MCP server (it logs every message), its hook logger and its launchers (each process its own `DAORIS_HOME`, the parent session's `CLAUDE*` variables removed) are scratch; C2b repeats the measurements. Keep them as `tools/` scripts guarded by `isMain`, with the receipt summariser. Proof: one plain run reproduces the audit's run A receipt on a scratch home.
+
+**Outcome** 2026-10-17: the C0 probe kit is tracked as `tools/fabric-probe/` (stand-in server, hook logger, Claude Code and Codex launchers each with its own `DAORIS_HOME`, the receipt), held in verify; a plain run reproduced the audit's run A. On Opus, with FABRIC-C1a: 272 tool calls. Detail: D173's FABRIC-PROBE1 note.
+
+## FABRIC-C1a — a native child bound to its session part, from the harness's own lineage (2026-10-17, D173)
+
+> - [ ] **FABRIC-C1a — a native child bound to its session part, from the harness's own lineage** (service/driver; after C0). Both harnesses name a child's lineage without Daoris's help (Claude: the `PreToolUse` hook's `agent_id` joined to `_meta`'s `claudecode/toolUseId` and its stream's `task_started`; Codex: `_meta`'s `x-codex-turn-metadata`), and neither gives the connector a child identity in its environment (the C0 audit §2). The connector reads each call's `_meta` and the driver records an observed binding (harness, native id, parent id, provenance) against the existing part, never a new session; it ends with the part; unsupported signals stay unknown; `_meta`'s paths are never stored or sent. D173's guards; proposal §3-§4, §11. Proof: real child calls on both harnesses tell a child, a grandchild and two siblings apart; a killed root marks its children's bindings lost; canaries 1, 2 and 9.
+
+**Outcome** 2026-10-17: the connector records each call's `_meta` lineage (ids only) to the session's `lineage.jsonl`; the driver hands Claude Code a lineage hook, records the stream's subagent starts and the part's end, and `ChildBindings` binds each native child to its part (harness, native id, parent, depth, provenance, state). Real runs on both harnesses told a child, a grandchild and two siblings apart, and a killed root left its child lost (canaries 1, 2, 9). On Opus, with FABRIC-PROBE1. Detail: D173's FABRIC-C1a note.
+
+## RPC1a — the running Daoris answers on a pipe (2026-10-17, D171)
+
+> - [ ] **RPC1a — the running Daoris answers on a pipe** (designed in RPC1; built in the same round; see the outcome).
+
+**Outcome** 2026-10-17: the desktop serves `daoris-<home id>-<session>` once its loop holds the home (`InstancePipe`), carrying the kit's envelopes into its own dispatcher; `PipeCensus` classes the driver's routes (60 open, 79 person refused `confirm-in-window`, 6 window, `TOOLS_GIT` and `PLUGIN_UPDATE` by payload) after a second opinion moved `TREES_SYNC`, `ASK_OPINION` and `HARNESSES_REFRESH` to person; each id is journaled a day under the home's `pipe` entry, bound to its route, payload and the sender's key (`id-taken`, `unrecorded`), `RESULT` answering only that key; connections bounded; `running.json` names the pipe; the stop drains before the address and lease go. On Opus: about 320 tool calls over three rounds. Detail: D171's RPC1a note and its review paragraph.
