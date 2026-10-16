@@ -180,18 +180,27 @@ public sealed class InstancePipeTests : Bridge
         var lost = await PipeClient.ConnectAsync(name);
         await lost.HelloAsync(HomeId);
         var id = await lost.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
+        var key = lost.KeyOf(id)!;
         await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await lost.DisposeAsync();
 
+        // Asked again from another connection, with the key only its sender holds.
         await using var again = await PipeClient.ConnectAsync(name);
         await again.HelloAsync(HomeId);
-        Assert.Equal("running", (await again.ResultAsync(id)).GetProperty("state").GetString());
-        Assert.Equal("unknown", (await again.ResultAsync("never-sent")).GetProperty("state").GetString());
+        Assert.Equal("running", (await again.ResultAsync(id, key)).GetProperty("state").GetString());
+        Assert.Equal("unknown", (await again.ResultAsync("never-sent", "0123456789abcdef0123456789abcdef")).GetProperty("state").GetString());
 
         // The press runs on with nobody to hear it: the connection's life is not the press's (§6.1).
         press.Let.SetResult();
         await UntilAsync(() => underWay.Now().Presses.Count == 0);
-        var ended = await again.ResultAsync(id);
+        // The press leaves the under-way list inside the dispatch, a moment before its answer's line is kept.
+        var ended = await again.ResultAsync(id, key);
+        for (var asked = 0; ended.GetProperty("state").GetString() == "running" && asked < 200; asked++)
+        {
+            await Task.Delay(25);
+            ended = await again.ResultAsync(id, key);
+        }
+
         Assert.Equal("answered", ended.GetProperty("state").GetString());
         var answer = ended.GetProperty("answer");
         Assert.Equal(id, answer.GetProperty("id").GetString());
@@ -210,6 +219,7 @@ public sealed class InstancePipeTests : Bridge
         using var __ = services;
         string first;
         string id;
+        string key;
         using (var pipe = Pipe(dispatcher, log))
         {
             var name = pipe.Serve()!;
@@ -221,7 +231,8 @@ public sealed class InstancePipeTests : Bridge
             // Sent again while the first is under way, from another connection: it waits for the one press.
             id = await one.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
             await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            await two.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, id);
+            key = one.KeyOf(id)!;
+            await two.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, id, key);
             press.Let.SetResult();
             first = (await one.AnswerAsync(id)).GetRawText();
             Assert.Equal(first, (await two.AnswerAsync(id)).GetRawText());
@@ -236,7 +247,7 @@ public sealed class InstancePipeTests : Bridge
         using var next = Pipe(dispatcher, log);
         await using var three = await PipeClient.ConnectAsync(next.Serve()!);
         await three.HelloAsync(HomeId);
-        await three.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, id);
+        await three.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, id, key);
         Assert.Equal(first, (await three.AnswerAsync(id)).GetRawText());
         Assert.Equal(first, (await three.ResultAsync(id)).GetProperty("answer").GetRawText());
         Assert.Equal(1, press.Ran);
@@ -258,22 +269,25 @@ public sealed class InstancePipeTests : Bridge
         var journal = Path.Combine(Home, InstancePipe.JournalFolder);
         Directory.CreateDirectory(journal);
         var now = DateTimeOffset.UtcNow;
+        // Each id's line binds it to its request, a fingerprint of its payload and one of its sender's key (SHA-256, hex).
+        const string key = "begun-before-key-0123456789";
+        var bound = $"\"request\":\"TEST.PRESS.MOVE\",\"payload\":\"{Fingerprint("""{"id":"s1a2b3c4"}""")}\",\"key\":\"{Fingerprint(key)}\"";
         File.WriteAllText(Path.Combine(journal, $"{now:yyyy-MM-dd}.jsonl"),
-            $"{{\"id\":\"begun-before\",\"at\":\"{now.AddMinutes(-5):O}\",\"state\":\"running\",\"request\":\"TEST.PRESS.MOVE\"}}\n"
-            + $"{{\"id\":\"long-ago\",\"at\":\"{now.AddHours(-25):O}\",\"state\":\"running\",\"request\":\"TEST.PRESS.MOVE\"}}\n"
+            $"{{\"id\":\"begun-before\",\"at\":\"{now.AddMinutes(-5):O}\",\"state\":\"running\",{bound}}}\n"
+            + $"{{\"id\":\"long-ago\",\"at\":\"{now.AddHours(-25):O}\",\"state\":\"running\",{bound}}}\n"
             + "not a line\n");
 
         using var pipe = Pipe(dispatcher, log);
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
-        Assert.Equal("unknown", (await client.ResultAsync("begun-before")).GetProperty("state").GetString());
-        await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, "begun-before");
+        Assert.Equal("unknown", (await client.ResultAsync("begun-before", key)).GetProperty("state").GetString());
+        await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, "begun-before", key);
         Assert.Equal(InstancePipe.Interrupted, Code(await client.AnswerAsync("begun-before")));
         Assert.Equal(0, press.Ran);
 
         // A line older than a day is forgotten: that id runs as a new one.
-        await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, "long-ago");
+        await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, "long-ago", key);
         Assert.True((await client.AnswerAsync("long-ago")).GetProperty("success").GetBoolean());
         Assert.Equal(1, press.Ran);
     }
@@ -455,6 +469,182 @@ public sealed class InstancePipeTests : Bridge
 
     private static string? Code(JsonElement answer) =>
         answer.TryGetProperty("error", out var error) ? error.GetProperty("code").GetString() : null;
+
+    private static string Fingerprint(string text) =>
+        Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
+
+    /// <summary>
+    /// An id is bound to the request it was first sent with: its module and route, its payload and its sender's key. Sent again
+    /// with any of them changed it is refused, never answered with another request's answer, and <c>RESULT</c> answers only the key
+    /// that sent it, whichever connection asks; across a restart too (a second agent's review of RPC1a).
+    /// </summary>
+    [Fact]
+    public async Task An_id_bound_to_another_request_is_refused_and_never_answered_for_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var press = new HeldModule("TEST.PRESS");
+        press.Let.SetResult();
+        var (dispatcher, _, services) = Compose(log, press);
+        using var __ = services;
+        string id;
+        string key;
+        using (var pipe = Pipe(dispatcher, log))
+        {
+            await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+            await client.HelloAsync(HomeId);
+            id = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
+            key = client.KeyOf(id)!;
+            Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+
+            await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s5e6f7a8" }, id, key);
+            Assert.Equal(InstancePipe.IdTaken, Code(await client.AnswerAsync(id)));
+            await client.SendAsync("TEST.PRESS", "PROGRESS", new { id = "s1a2b3c4" }, id, key);
+            Assert.Equal(InstancePipe.IdTaken, Code(await client.AnswerAsync(id)));
+            await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, id, "another-key-0123456789abcdef");
+            Assert.Equal(InstancePipe.IdTaken, Code(await client.AnswerAsync(id)));
+
+            Assert.Equal(InstancePipe.IdTaken, Code(await client.ResultAnswerAsync(id, "another-key-0123456789abcdef")));
+            Assert.Equal(InstancePipe.KeyMissing, Code(await client.ResultAnswerAsync(id, "")));
+            Assert.Equal("answered", (await client.ResultAsync(id, key)).GetProperty("state").GetString());
+        }
+
+        using var next = Pipe(dispatcher, log);
+        await using var later = await PipeClient.ConnectAsync(next.Serve()!);
+        await later.HelloAsync(HomeId);
+        await later.SendAsync("TEST.PRESS", "MOVE", new { id = "s5e6f7a8" }, id, key);
+        Assert.Equal(InstancePipe.IdTaken, Code(await later.AnswerAsync(id)));
+        Assert.Equal(InstancePipe.IdTaken, Code(await later.ResultAnswerAsync(id, "another-key-0123456789abcdef")));
+        Assert.Equal("answered", (await later.ResultAsync(id, key)).GetProperty("state").GetString());
+        Assert.Equal(1, press.Ran);
+    }
+
+    /// <summary>A request sent with no key, or one too short to be a secret, is refused before anything runs.</summary>
+    [Fact]
+    public async Task A_request_without_its_key_is_refused()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var press = new HeldModule("TEST.PRESS");
+        press.Let.SetResult();
+        var (dispatcher, _, services) = Compose(log, press);
+        using var __ = services;
+        using var pipe = Pipe(dispatcher, log);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        await client.SendLineAsync("""{"id":"keyless-1","module":"TEST.PRESS","type":"MOVE","payload":{"id":"s1a2b3c4"}}""");
+        Assert.Equal(InstancePipe.KeyMissing, Code(await client.AnswerAsync("keyless-1")));
+        await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, "short-key-1", "short");
+        Assert.Equal(InstancePipe.KeyMissing, Code(await client.AnswerAsync("short-key-1")));
+        Assert.Equal(0, press.Ran);
+    }
+
+    /// <summary>
+    /// "Never twice" holds across a restart only for an id the journal holds, so a request whose line cannot be written is
+    /// refused and never dispatched (a second agent's review of RPC1a).
+    /// </summary>
+    [Fact]
+    public async Task A_request_the_journal_cannot_hold_is_refused_and_never_run()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var press = new HeldModule("TEST.PRESS");
+        press.Let.SetResult();
+        var (dispatcher, _, services) = Compose(log, press);
+        using var __ = services;
+        // A file where the journal's folder goes: no line can be written under it.
+        File.WriteAllText(Path.Combine(Home, InstancePipe.JournalFolder), "not a folder");
+        using var pipe = Pipe(dispatcher, log);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        var id = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
+
+        Assert.Equal(InstancePipe.Unrecorded, Code(await client.AnswerAsync(id)));
+        Assert.Equal(0, press.Ran);
+        Assert.Equal("unknown", (await client.ResultAsync(id)).GetProperty("state").GetString());
+    }
+
+    /// <summary>A route that is a look in one form and a press in another runs over the pipe only in its open form.</summary>
+    [Fact]
+    public async Task A_route_classed_by_its_payload_runs_only_in_its_open_form()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, _, services) = Compose(log, driver);
+        using var __ = services;
+        using var pipe = Pipe(dispatcher, log);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        var file = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "TOOLS_GIT", new { way = "file", file = "C:/elsewhere/git.exe" }));
+        Assert.Equal(InstancePipe.ConfirmInWindow, Code(file));
+        Assert.Equal(0, driver.Ran);
+
+        var system = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "TOOLS_GIT", new { way = "system" }));
+        Assert.True(system.GetProperty("success").GetBoolean(), system.GetRawText());
+        var apply = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "PLUGIN_UPDATE", new { id = "acme.watch", apply = true }));
+        Assert.Equal(InstancePipe.ConfirmInWindow, Code(apply));
+        var preview = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "PLUGIN_UPDATE", new { id = "acme.watch" }));
+        Assert.True(preview.GetProperty("success").GetBoolean(), preview.GetRawText());
+        Assert.Equal(2, driver.Ran);
+    }
+
+    /// <summary>A connection's requests under way are bounded: past the bound, one is answered busy and never run.</summary>
+    [Fact]
+    public async Task Past_its_requests_in_flight_a_connection_is_answered_busy()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var press = new HeldModule("TEST.PRESS");
+        var (dispatcher, _, services) = Compose(log, press);
+        using var __ = services;
+        using var pipe = Pipe(dispatcher, log, new PipeLimits { InFlight = 2 });
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        var first = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
+        var second = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s5e6f7a8" });
+        await UntilAsync(() => press.Ran == 2);
+        var third = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s9a0b1c2" });
+
+        Assert.Equal(InstancePipe.Busy, Code(await client.AnswerAsync(third)));
+        press.Let.SetResult();
+        Assert.True((await client.AnswerAsync(first)).GetProperty("success").GetBoolean());
+        Assert.True((await client.AnswerAsync(second)).GetProperty("success").GetBoolean());
+        Assert.Equal(2, press.Ran);
+
+        // Its place free again, a request runs.
+        Assert.True((await client.AnswerAsync(await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s9a0b1c2" }))).GetProperty("success").GetBoolean());
+    }
+
+    /// <summary>
+    /// The lines a connection sends ahead of what it has read are bounded too: one that sends far past its answers without
+    /// reading them is closed, so its lines never pile up in the instance.
+    /// </summary>
+    [Fact]
+    public async Task A_connection_that_runs_far_ahead_of_its_answers_is_closed()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var (dispatcher, _, services) = Compose(log);
+        using var __ = services;
+        using var pipe = Pipe(dispatcher, log, new PipeLimits { Queued = 4 });
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        // Two hundred asks of the census, each answered with every route, sent before one answer is read.
+        var asks = string.Join("\n", Enumerable.Range(0, 200).Select(at =>
+            $$"""{"id":"ask-{{at}}","module":"{{InstancePipe.Module}}","type":"ROUTES","key":"0123456789abcdef0123"}"""));
+        await client.SendLineAsync(asks);
+
+        var read = 0;
+        while (await client.ReadLineAsync() is not null) read++;
+        Assert.True(read < 200, $"{read} answers came, and the connection was never closed");
+    }
 
     private List<JsonElement> Lines()
     {

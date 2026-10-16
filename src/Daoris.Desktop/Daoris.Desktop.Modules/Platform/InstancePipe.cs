@@ -29,6 +29,15 @@ public sealed class PipeLimits
 
     /// <summary>How long a request's lines are kept (§6.1).</summary>
     public TimeSpan Kept { get; init; } = TimeSpan.FromHours(24);
+
+    /// <summary>How many of a connection's requests may be under way at once: past it, one is answered <see cref="InstancePipe.Busy"/>.</summary>
+    public int InFlight { get; init; } = 16;
+
+    /// <summary>
+    /// How many lines a connection may send ahead of the instance's taking them: past it the connection is closed, since lines
+    /// pile up only where a terminal sends on without reading what it was answered, and an answer to them could not be read either.
+    /// </summary>
+    public int Queued { get; init; } = 64;
 }
 
 /// <summary>
@@ -54,7 +63,13 @@ public sealed class PipeLimits
 ///
 /// <para><b>A request's id is durable</b> (§6.1, <see cref="PipeJournal"/>): a press runs on the instance's lifetime, not the
 /// connection's, so a lost terminal cancels nothing; an id seen before is answered from its line and never run twice, and
-/// <c>RESULT</c> says <c>running</c>, <c>answered</c> with the answer, or <c>unknown</c>.</para>
+/// <c>RESULT</c> says <c>running</c>, <c>answered</c> with the answer, or <c>unknown</c>. Each id is bound to its route, its payload
+/// and the <c>key</c> its sender sent beside the envelope (<see cref="PipeBinding"/>): sent again with any of them changed it is
+/// refused <see cref="IdTaken"/>, and <c>RESULT</c> answers only that key. A press whose first line the journal cannot write is
+/// refused <see cref="Unrecorded"/> and never dispatched.</para>
+///
+/// <para><b>Each connection is bounded</b> (<see cref="PipeLimits"/>): presses under way past <see cref="PipeLimits.InFlight"/> are
+/// answered <see cref="Busy"/>, and lines sent past <see cref="PipeLimits.Queued"/> ahead of the instance close it.</para>
 ///
 /// <para><b>Stopping</b> (§6.3): from <see cref="BeginStopping"/>, or while the update drains (<see cref="Draining"/>), every new
 /// hello and every new press is refused <see cref="Stopping"/>, and <see cref="Drain"/> lets the presses under way answer; the
@@ -95,6 +110,18 @@ public sealed class InstancePipe : IDisposable
     /// <summary>An id begun by an instance that stopped before it ended: what it did is not known, so it is not run again.</summary>
     public const string Interrupted = "interrupted";
 
+    /// <summary>An id already bound to another request (another route, payload or key): refused, never answered for it.</summary>
+    public const string IdTaken = "id-taken";
+
+    /// <summary>A request, or a <c>RESULT</c>, sent without its key (16 to 128 characters), the secret only its sender holds.</summary>
+    public const string KeyMissing = "key";
+
+    /// <summary>A request whose first line the journal could not write: never run, so it is never run twice.</summary>
+    public const string Unrecorded = "unrecorded";
+
+    /// <summary>A connection with as many requests under way as it may have (<see cref="PipeLimits.InFlight"/>).</summary>
+    public const string Busy = "busy";
+
     private readonly IMessageDispatcher _dispatcher;
     private readonly IEventBus _bus;
     private readonly string _home;
@@ -104,7 +131,7 @@ public sealed class InstancePipe : IDisposable
     private readonly PipeLimits _limits;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly Lock _gate = new();
-    private readonly Dictionary<string, Task<string>> _running = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (PipeBinding Binding, Task<string> Answer)> _running = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Connection> _owners = new(StringComparer.Ordinal);
     private readonly HashSet<Connection> _connections = [];
     private SemaphoreSlim? _slots;
@@ -198,7 +225,7 @@ public sealed class InstancePipe : IDisposable
         Task[] running;
         lock (_gate)
         {
-            running = [.. _running.Values];
+            running = [.. _running.Values.Select(each => each.Answer)];
         }
 
         try
@@ -392,88 +419,120 @@ public sealed class InstancePipe : IDisposable
         return IpcResponse.CreateSuccess(hello.Id, new { protocol = Protocol, home = _homeId, version = _version, pid = Environment.ProcessId });
     }
 
-    /// <summary>A request on a connection that said its hello: the pipe's own, or a route the census lets run.</summary>
-    private async Task<string> AnswerAsync(IpcRequest request, Connection connection)
+    /// <summary>
+    /// A request on a connection that said its hello: answered now (the pipe's own, a refusal, an id answered before), or later,
+    /// once the press it begins or joins answers. A press is admitted only where the connection has room for one more under way.
+    /// </summary>
+    private (string? Now, Task<string>? Later) Accept(IpcRequest request, string? key, Connection connection)
     {
         if (string.Equals(request.Module, Module, StringComparison.OrdinalIgnoreCase))
         {
-            return IpcJson.Serialize(request.Type switch
+            return (IpcJson.Serialize(request.Type switch
             {
                 "HELLO" => Hello(request),
-                "ROUTES" => IpcResponse.CreateSuccess(request.Id, new
-                {
-                    routes = _census.Routes.Select(route => new { module = route.Module, route = route.Route, @class = route.Class }),
-                }),
+                "ROUTES" => IpcResponse.CreateSuccess(request.Id, new { routes = _census.Routes.Select(Listed) }),
                 "RESULT" => Result(request),
                 _ => IpcResponse.CreateError(request.Id, IpcErrorCodes.NoRoute, null, $"the pipe has no route {request.Type}."),
-            });
+            }), null);
         }
 
-        if (IsStopping) return IpcJson.Serialize(RefuseStopping(request));
-        switch (_census.Of(request.Module, request.Type))
+        if (IsStopping) return (IpcJson.Serialize(RefuseStopping(request)), null);
+        switch (_census.Of(request.Module, request.Type, request.Payload))
         {
             case null:
-                return IpcJson.Serialize(Refuse(request, Unclassed, "this route is not answered over the pipe."));
+                return (IpcJson.Serialize(Refuse(request, Unclassed, "this route is not answered over the pipe.")), null);
             case PipeClass.Person:
-                return IpcJson.Serialize(Refuse(request, ConfirmInWindow,
-                    "this is the person's to do, and Daoris cannot tell whether a person or an agent ran this: do it in Daoris's window."));
+                return (IpcJson.Serialize(Refuse(request, ConfirmInWindow,
+                    "this is the person's to do, and Daoris cannot tell whether a person or an agent ran this: do it in Daoris's window.")), null);
             case PipeClass.Window:
-                return IpcJson.Serialize(Refuse(request, WindowOnly, "only Daoris's window does this."));
+                return (IpcJson.Serialize(Refuse(request, WindowOnly, "only Daoris's window does this.")), null);
         }
 
         if (request.Id is not { Length: > 0 and <= 128 } id)
         {
-            return IpcJson.Serialize(IpcResponse.CreateError(request.Id ?? "", IpcErrorCodes.InvalidPayloadValue, null, "a request names its id."));
+            return (IpcJson.Serialize(IpcResponse.CreateError(request.Id ?? "", IpcErrorCodes.InvalidPayloadValue, null, "a request names its id.")), null);
         }
 
+        if (!IsKey(key)) return (IpcJson.Serialize(Refuse(request, KeyMissing, "a request carries a key of its own, 16 to 128 characters.")), null);
+        if (!connection.HasRoom) return (IpcJson.Serialize(Refuse(request, Busy, "this terminal has as much under way as Daoris takes from one; send it again once one answers.")), null);
+
+        var binding = new PipeBinding(
+            $"{request.Module}.{request.Type}",
+            PipeBinding.Fingerprint(request.Payload is { ValueKind: not JsonValueKind.Undefined } payload ? payload.GetRawText() : ""),
+            PipeBinding.Fingerprint(key!));
         Task<string> answer;
         TaskCompletionSource<string>? mine = null;
         lock (_gate)
         {
             if (_running.TryGetValue(id, out var running))
             {
-                // Sent again while it runs: the one press's answer, to the connection that asked last.
+                if (running.Binding != binding) return (IpcJson.Serialize(RefuseTaken(request)), null);
+                // Sent again while it runs, by the key that sent it: the one press's answer, and its progress to this connection.
                 _owners[id] = connection;
-                answer = running;
+                answer = running.Answer;
             }
             else if (_journal!.Find(id) is { } seen)
             {
-                return seen.State == PipeJournal.Seen.Answered
+                if (seen.Binding != binding) return (IpcJson.Serialize(RefuseTaken(request)), null);
+                return (seen.State == PipeJournal.Seen.Answered
                     ? seen.Answer!
                     : IpcJson.Serialize(IpcResponse.CreateError(id, Interrupted, null,
-                        "Daoris stopped while this request was under way, so whether it was done is not known; it was not run again."));
+                        "Daoris stopped while this request was under way, so whether it was done is not known; it was not run again.")), null);
             }
             else
             {
                 mine = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _running[id] = answer = mine.Task;
+                answer = mine.Task;
+                _running[id] = (binding, answer);
                 _owners[id] = connection;
             }
         }
 
-        if (mine is not null) _ = RunAsync(request, id, mine);
-        return await answer.ConfigureAwait(false);
+        if (mine is not null) _ = RunAsync(request, id, binding, mine);
+        return (null, answer);
     }
 
-    /// <summary>A press, run on the instance's lifetime and never the connection's (§6.1), its lines kept either side.</summary>
-    private async Task RunAsync(IpcRequest request, string id, TaskCompletionSource<string> answered)
+    /// <summary>A route as <c>ROUTES</c> lists it: a route classed by its payload says its rule beside its class.</summary>
+    private static object Listed(PipeRoute route) => new
+    {
+        module = route.Module,
+        route = route.Route,
+        @class = route.Class,
+        when = route.When is { } rule ? new { field = rule.Field, values = rule.Values, @class = rule.Class } : null,
+    };
+
+    /// <summary>A key as a request carries it: a secret of 16 to 128 characters only its sender holds.</summary>
+    private static bool IsKey(string? key) => key is { Length: >= 16 and <= 128 };
+
+    /// <summary>
+    /// A press, run on the instance's lifetime and never the connection's (§6.1), its lines kept either side. One whose first
+    /// line cannot be written is refused and never dispatched, so no id runs that the journal does not hold.
+    /// </summary>
+    private async Task RunAsync(IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered)
     {
         string text;
         try
         {
-            _journal!.Begin(id, $"{request.Module}.{request.Type}");
-            IpcResponse response;
-            using (PipeDoor.Enter())
+            if (!_journal!.Begin(id, binding))
             {
-                response = await _dispatcher.DispatchAsync(request, _lifetime.Token).ConfigureAwait(false);
+                text = IpcJson.Serialize(Refuse(request, Unrecorded,
+                    "Daoris could not keep this request in its journal, so it was not run; run it again."));
             }
+            else
+            {
+                IpcResponse response;
+                using (PipeDoor.Enter())
+                {
+                    response = await _dispatcher.DispatchAsync(request, _lifetime.Token).ConfigureAwait(false);
+                }
 
-            text = IpcJson.Serialize(response);
-            _journal.End(id, text);
+                text = IpcJson.Serialize(response);
+                _journal.End(id, binding, text);
+            }
         }
         catch (Exception error)
         {
-            // The dispatcher never throws; a journal that could not be kept must not leave the press unanswered.
+            // The dispatcher never throws; nothing here may leave the press unanswered.
             text = IpcJson.Serialize(IpcResponse.CreateError(id, IpcErrorCodes.UnknownError, null, error.GetType().Name));
         }
 
@@ -486,19 +545,37 @@ public sealed class InstancePipe : IDisposable
         answered.SetResult(text);
     }
 
+    /// <summary><c>RESULT { id, key }</c>: how the press ended, told only to the key that sent it, whichever connection asks.</summary>
     private IpcResponse Result(IpcRequest request)
     {
-        var id = request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty("id", out var named)
-            && named.ValueKind == JsonValueKind.String ? named.GetString() : null;
+        var id = Field(request, "id");
         if (string.IsNullOrEmpty(id)) return IpcResponse.CreateError(request.Id, IpcErrorCodes.MissingPayloadValue, null, "RESULT names the request's id.");
+        var key = Field(request, "key");
+        if (!IsKey(key)) return Refuse(request, KeyMissing, "RESULT carries the key its request was sent with.");
+        var holder = PipeBinding.Fingerprint(key!);
         lock (_gate)
         {
-            if (_running.ContainsKey(id)) return IpcResponse.CreateSuccess(request.Id, new { state = "running" });
-            return _journal!.Find(id) is { State: PipeJournal.Seen.Answered, Answer: { } answer }
-                ? IpcResponse.CreateSuccess(request.Id, new { state = "answered", answer = JsonDocument.Parse(answer).RootElement.Clone() })
-                : IpcResponse.CreateSuccess(request.Id, new { state = "unknown" });
+            if (_running.TryGetValue(id, out var running))
+            {
+                return running.Binding.Key == holder ? IpcResponse.CreateSuccess(request.Id, new { state = "running" }) : RefuseTaken(request);
+            }
+
+            return _journal!.Find(id) switch
+            {
+                { } seen when seen.Binding.Key != holder => RefuseTaken(request),
+                { State: PipeJournal.Seen.Answered, Answer: { } answer } =>
+                    IpcResponse.CreateSuccess(request.Id, new { state = "answered", answer = JsonDocument.Parse(answer).RootElement.Clone() }),
+                _ => IpcResponse.CreateSuccess(request.Id, new { state = "unknown" }),
+            };
         }
     }
+
+    private static string? Field(IpcRequest request, string name) =>
+        request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty(name, out var named)
+        && named.ValueKind == JsonValueKind.String ? named.GetString() : null;
+
+    private IpcResponse RefuseTaken(IpcRequest request) =>
+        Refuse(request, IdTaken, "this id was sent with another request or another key; send yours with an id of its own.");
 
     private IpcResponse RefuseStopping(IpcRequest request) =>
         Refuse(request, Stopping, "Daoris is closing; run this again once it is back.",
@@ -512,17 +589,29 @@ public sealed class InstancePipe : IDisposable
             request.Id, code, parameters.Length == 0 ? null : parameters.ToDictionary(each => each.Key, each => each.Value), message);
     }
 
-    /// <summary>One terminal's connection: its hello, then its requests, each answered as it ends.</summary>
+    /// <summary>
+    /// One terminal's connection: its hello, then its requests. What is answered at once is written in order before the next line
+    /// is taken, so a terminal that sends on without reading holds its own lines back; a press is answered as it ends, at most
+    /// <see cref="PipeLimits.InFlight"/> at once, and lines sent past <see cref="PipeLimits.Queued"/> close the connection.
+    /// </summary>
     private sealed class Connection(InstancePipe pipe, NamedPipeServerStream stream)
     {
         private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
         private readonly SemaphoreSlim _writing = new(1, 1);
-        private readonly Channel<string?> _lines = Channel.CreateUnbounded<string?>(new UnboundedChannelOptions { SingleReader = true });
+        private readonly Channel<string> _lines = Channel.CreateBounded<string>(new BoundedChannelOptions(Math.Max(1, pipe._limits.Queued))
+        {
+            SingleReader = true,
+            SingleWriter = true,
+        });
+
         private int _underWay;
         private int _closed;
 
-        /// <summary>Whether a request on this connection has not been answered yet.</summary>
+        /// <summary>Whether a press this connection sent has not been answered yet.</summary>
         public bool Answering => Volatile.Read(ref _underWay) > 0;
+
+        /// <summary>Whether this connection may have one more press under way.</summary>
+        public bool HasRoom => Volatile.Read(ref _underWay) < pipe._limits.InFlight;
 
         public async Task RunAsync()
         {
@@ -531,7 +620,7 @@ public sealed class InstancePipe : IDisposable
                 _ = ReadAsync();
                 // The hello first, within its bound: anything else closes the connection unanswered (§6).
                 if (await NextAsync(pipe._limits.Hello, waitWhileBusy: false).ConfigureAwait(false) is not { } first
-                    || Parse(first) is not { } hello
+                    || Parse(first) is not ({ } hello, _)
                     || !string.Equals(hello.Module, Module, StringComparison.OrdinalIgnoreCase) || hello.Type != "HELLO")
                 {
                     return;
@@ -543,8 +632,18 @@ public sealed class InstancePipe : IDisposable
 
                 while (await NextAsync(pipe._limits.Idle, waitWhileBusy: true).ConfigureAwait(false) is { } line)
                 {
-                    if (Parse(line) is not { } request) return;
-                    _ = AnswerAsync(request);
+                    if (Parse(line) is not ({ } request, var key)) return;
+                    var (now, later) = pipe.Accept(request, key, this);
+                    if (now is not null)
+                    {
+                        await WriteAsync(now).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // Counted from here, on this loop alone, so the room asked above is the room taken.
+                        Interlocked.Increment(ref _underWay);
+                        _ = AnswerLaterAsync(later!);
+                    }
                 }
             }
             finally
@@ -554,12 +653,11 @@ public sealed class InstancePipe : IDisposable
             }
         }
 
-        private async Task AnswerAsync(IpcRequest request)
+        private async Task AnswerLaterAsync(Task<string> answer)
         {
-            Interlocked.Increment(ref _underWay);
             try
             {
-                await WriteAsync(await pipe.AnswerAsync(request, this).ConfigureAwait(false)).ConfigureAwait(false);
+                await WriteAsync(await answer.ConfigureAwait(false)).ConfigureAwait(false);
             }
             finally
             {
@@ -572,6 +670,8 @@ public sealed class InstancePipe : IDisposable
         {
             while (true)
             {
+                // A connection closed under it (it ran past its lines' bound, or the instance ends) takes no more of them.
+                if (Volatile.Read(ref _closed) == 1) return null;
                 using var bound = CancellationTokenSource.CreateLinkedTokenSource(pipe._lifetime.Token);
                 bound.CancelAfter(within);
                 try
@@ -613,7 +713,13 @@ public sealed class InstancePipe : IDisposable
                         line.Write(buffer, start, at - start);
                         start = at + 1;
                         if (line.Length > pipe._limits.LineBytes) return;
-                        _lines.Writer.TryWrite(Utf8.GetString(line.GetBuffer(), 0, (int)line.Length).TrimEnd('\r'));
+                        // Lines past the bound pile up only where nothing it was answered is read: the connection ends.
+                        if (!_lines.Writer.TryWrite(Utf8.GetString(line.GetBuffer(), 0, (int)line.Length).TrimEnd('\r')))
+                        {
+                            Close();
+                            return;
+                        }
+
                         line.SetLength(0);
                     }
 
@@ -631,13 +737,22 @@ public sealed class InstancePipe : IDisposable
             }
         }
 
-        private static IpcRequest? Parse(string line)
+        /// <summary>
+        /// The kit's envelope on a line, and the <c>key</c> beside it (its sender's secret, which binds the id, a second agent's
+        /// review of RPC1a); null where the line is no request.
+        /// </summary>
+        private static (IpcRequest Request, string? Key)? Parse(string line)
         {
             try
             {
-                return IpcJson.Deserialize<IpcRequest>(line) is { Module: { Length: > 0 }, Type: { Length: > 0 } } request ? request : null;
+                if (IpcJson.Deserialize<IpcRequest>(line) is not { Module: { Length: > 0 }, Type: { Length: > 0 } } request) return null;
+                using var document = JsonDocument.Parse(line);
+                var key = document.RootElement.TryGetProperty("key", out var named) && named.ValueKind == JsonValueKind.String
+                    ? named.GetString()
+                    : null;
+                return (request, key);
             }
-            catch (Exception error) when (error is JsonException or NotSupportedException or ArgumentException)
+            catch (Exception error) when (error is JsonException or NotSupportedException or ArgumentException or InvalidOperationException)
             {
                 return null;
             }

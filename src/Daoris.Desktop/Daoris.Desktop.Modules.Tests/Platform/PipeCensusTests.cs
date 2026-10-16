@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -50,8 +51,13 @@ public sealed class PipeCensusTests
     // Reads, and what D156 §3 leaves to the driver: run as asked.
     [InlineData("DAORIS.DRIVER", "SESSION_GROUPS", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "UNDER_WAY", PipeClass.Open)]
-    [InlineData("DAORIS.DRIVER", "TREES_SYNC", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "SYNC_NOW", PipeClass.Open)]
+    [InlineData("DAORIS.DRIVER", "ACCOUNTS_READ", PipeClass.Open)]
+    // Changed after a second agent's review: a trees sync fast-forwards lines and deletes branches, a second opinion runs on an
+    // account, and Read again lets a refused account through and ends a cool-off; each is the person's.
+    [InlineData("DAORIS.DRIVER", "TREES_SYNC", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "ASK_OPINION", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "HARNESSES_REFRESH", PipeClass.Person)]
     // The person's alone: a yes, a delete, a clear, their words, a standing choice.
     [InlineData("DAORIS.DRIVER", "LAND_SESSION_TREE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "DISCARD_SESSION_TREE", PipeClass.Person)]
@@ -78,6 +84,39 @@ public sealed class PipeCensusTests
     public void A_route_is_classed_as_D156_classes_its_door(string module, string route, PipeClass expected) =>
         Assert.Equal(expected, PipeCensus.Daoris.Of(module, route));
 
+    /// <summary>
+    /// One route that is a look in one form and a press in another is classed by its payload: a comparison of gits Daoris already
+    /// knows is a look, and of a file named by its path runs that file; an update's preview is a look, and its <c>apply</c> the
+    /// update. Every spelling of the field counts, and the stricter class wins, so no casing or repeat of a name opens a press;
+    /// a payload naming no form the rule opens is the stricter.
+    /// </summary>
+    [Theory]
+    [InlineData("TOOLS_GIT", """{"way":"system"}""", PipeClass.Open)]
+    [InlineData("TOOLS_GIT", """{"way":"managed","version":"2.47.1"}""", PipeClass.Open)]
+    [InlineData("TOOLS_GIT", """{"way":"file","file":"C:/elsewhere/git.exe"}""", PipeClass.Person)]
+    [InlineData("TOOLS_GIT", """{"way":"system","Way":"file"}""", PipeClass.Person)]
+    [InlineData("TOOLS_GIT", """{"way":"sys\u0074em"}""", PipeClass.Open)]
+    [InlineData("TOOLS_GIT", """{"way":7}""", PipeClass.Person)]
+    [InlineData("TOOLS_GIT", """{}""", PipeClass.Person)]
+    [InlineData("TOOLS_GIT", "null", PipeClass.Person)]
+    [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch"}""", PipeClass.Open)]
+    [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","apply":false}""", PipeClass.Open)]
+    [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","apply":true}""", PipeClass.Person)]
+    [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","apply":false,"Apply":true}""", PipeClass.Person)]
+    public void A_route_that_is_a_look_and_a_press_is_classed_by_its_payload(string route, string payload, PipeClass expected)
+    {
+        using var document = JsonDocument.Parse(payload);
+        Assert.Equal(expected, PipeCensus.Daoris.Of(DriverModule.Name, route, document.RootElement));
+    }
+
+    /// <summary>With no payload at all, a route classed by its payload takes the class it gives a payload naming no form.</summary>
+    [Fact]
+    public void A_route_classed_by_its_payload_with_none_takes_its_otherwise()
+    {
+        Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, "TOOLS_GIT"));
+        Assert.Equal(PipeClass.Open, PipeCensus.Daoris.Of(DriverModule.Name, "PLUGIN_UPDATE"));
+    }
+
     [Fact]
     public void A_module_the_census_does_not_name_is_classed_nothing_and_so_refused()
     {
@@ -94,7 +133,11 @@ public sealed class PipeCensusTests
         Assert.Equal(DriverModule.Routes.Count, routes.Count(each => each.Module == DriverModule.Name));
         Assert.Contains(new PipeRoute(DriverModule.Name, "LAND_SESSION_TREE", PipeClass.Person), routes);
         Assert.Contains(new PipeRoute("DAORIS.WINDOWS", null, PipeClass.Window), routes);
-        Assert.Equal(routes.Count, routes.Distinct().Count());
+        Assert.Equal(routes.Count, routes.Select(each => (each.Module, each.Route)).Distinct().Count());
+        var git = Assert.Single(routes, each => each.Route == "TOOLS_GIT");
+        Assert.Equal(PipeClass.Person, git.Class);
+        Assert.Equal("way", git.When!.Field);
+        Assert.Equal(PipeClass.Open, git.When.Class);
     }
 
     /// <summary>A test's census classes a route of its own beside the desktop's, and changes none of them.</summary>

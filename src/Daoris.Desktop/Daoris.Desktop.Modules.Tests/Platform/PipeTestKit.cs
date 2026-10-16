@@ -39,6 +39,8 @@ internal sealed class PipeClient : IAsyncDisposable
     private readonly NamedPipeClientStream _stream;
     private readonly StreamReader _reader;
     private readonly List<JsonElement> _notifications = [];
+    private readonly Dictionary<string, string> _keys = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, JsonElement> _answers = new(StringComparer.Ordinal);
 
     private PipeClient(NamedPipeClientStream stream)
     {
@@ -59,18 +61,45 @@ internal sealed class PipeClient : IAsyncDisposable
         return await AnswerAsync(id);
     }
 
-    public async Task<JsonElement> ResultAsync(string id)
+    /// <summary><c>RESULT</c> for <paramref name="id"/>, with the key it was sent with (this client's, unless one is named), answered.</summary>
+    public async Task<JsonElement> ResultAsync(string id, string? key = null)
     {
-        var answer = await AnswerAsync(await SendAsync(InstancePipe.Module, "RESULT", new { id }));
+        var answer = await ResultAnswerAsync(id, key);
         Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
         return answer.GetProperty("data");
     }
 
-    public async Task<string> SendAsync(string module, string type, object? payload = null, string? id = null)
+    /// <summary><c>RESULT</c>'s whole answer, a refusal included.</summary>
+    public async Task<JsonElement> ResultAnswerAsync(string id, string? key = null) =>
+        await AnswerAsync(await SendAsync(InstancePipe.Module, "RESULT", new { id, key = key ?? KeyOf(id) }));
+
+    /// <summary>
+    /// One request, as RPC1b's client sends it: the kit's envelope with a fresh id, and beside it the key only its sender holds,
+    /// the one an id sent again carries again (this client's for that id, unless one is named).
+    /// </summary>
+    public async Task<string> SendAsync(string module, string type, object? payload = null, string? id = null, string? key = null)
     {
         id ??= Guid.NewGuid().ToString();
-        await SendLineAsync(JsonSerializer.Serialize(new { id, module, type, payload }, Wire));
+        key ??= _keys.TryGetValue(id, out var kept) ? kept : Guid.NewGuid().ToString("N");
+        _keys[id] = key;
+        await SendLineAsync(JsonSerializer.Serialize(new { id, module, type, payload, key }, Wire));
         return id;
+    }
+
+    /// <summary>The key this client sent <paramref name="id"/> with, or null where it sent none.</summary>
+    public string? KeyOf(string id) => _keys.GetValueOrDefault(id);
+
+    /// <summary>The next line as text, or null once the far end has closed: for a test that counts what came.</summary>
+    public async Task<string?> ReadLineAsync()
+    {
+        try
+        {
+            return await _reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15));
+        }
+        catch (IOException)
+        {
+            return null;
+        }
     }
 
     public async Task SendLineAsync(string line, bool end = true)
@@ -101,9 +130,10 @@ internal sealed class PipeClient : IAsyncDisposable
         }
     }
 
-    /// <summary>The answer to <paramref name="id"/>, keeping what was told on the way.</summary>
+    /// <summary>The answer to <paramref name="id"/>, keeping what was told on the way and the answers to other ids, which come in any order.</summary>
     public async Task<JsonElement> AnswerAsync(string id)
     {
+        if (_answers.Remove(id, out var kept)) return kept;
         while (true)
         {
             var line = await ReadAsync() ?? throw new InvalidOperationException($"the pipe closed before it answered {id}");
@@ -113,7 +143,9 @@ internal sealed class PipeClient : IAsyncDisposable
                 continue;
             }
 
-            if (line.GetProperty("id").GetString() == id) return line;
+            var answered = line.GetProperty("id").GetString()!;
+            if (answered == id) return line;
+            _answers[answered] = line;
         }
     }
 
