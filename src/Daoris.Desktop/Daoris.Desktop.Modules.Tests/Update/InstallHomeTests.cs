@@ -32,7 +32,7 @@ public sealed class InstallHomeTests : IDisposable
         return install;
     }
 
-    private HomeEstablished? Establish(string install, string? legacy = null, string? already = null)
+    private HomeEstablished? Establish(string install, string? legacy = null, string? already = null, TimeSpan? leaseWait = null)
     {
         if (already is not null) _process[DaorisHome.Variable] = already;
         return InstallHome.Establish(
@@ -41,7 +41,8 @@ public sealed class InstallHomeTests : IDisposable
             (name, value) => _process[name] = value,
             () => _user,
             value => _user = value,
-            legacy ?? Path.Combine(_root, "no-legacy"));
+            legacy ?? Path.Combine(_root, "no-legacy"),
+            leaseWait);
     }
 
     /// <summary>A workspace build is not an install: the dev loop names the home itself, and nothing here applies.</summary>
@@ -253,6 +254,61 @@ public sealed class InstallHomeTests : IDisposable
         Directory.CreateDirectory(legacy);
         File.WriteAllText(Path.Combine(legacy, "driver.json"), "{}");
 
+        Assert.Equal(["driver.json"], Establish(install, legacy)!.Moved);
+    }
+
+    /// <summary>
+    /// HOMELEASE1: a verb the install carries may have run before the first start, minting the home's id or leaving a lease of
+    /// its own; neither is state, and neither stops the move. The move leaves no lease behind.
+    /// </summary>
+    [Fact]
+    public void The_homes_id_and_lease_are_not_state()
+    {
+        var install = Install();
+        var data = Path.Combine(install, "data");
+        HomeIdentity.Ensure(data);
+        File.WriteAllText(HomeLease.PathIn(data), "{ \"kind\": \"verb\", \"pid\": 2147483644, \"started\": 1 }");
+        var legacy = Path.Combine(_root, "legacy");
+        Directory.CreateDirectory(legacy);
+        File.WriteAllText(Path.Combine(legacy, "driver.json"), "{}");
+
+        Assert.Equal(["driver.json"], Establish(install, legacy)!.Moved);
+        Assert.Null(HomeLease.HeldBy(data));
+        Assert.False(File.Exists(HomeLease.PathIn(data)));
+    }
+
+    /// <summary>
+    /// 🔴 HOMELEASE1: the first-start move holds the home's lease while it moves, so it never moves files under a verb acting
+    /// alone. A verb holding the home for the whole of its wait: nothing moves, the older home stays where it was, and the notice
+    /// says which act held it; the next start moves it.
+    /// </summary>
+    [Fact]
+    public void The_move_waits_on_a_verbs_hold_and_moves_nothing_under_it()
+    {
+        var install = Install();
+        var data = Path.Combine(install, "data");
+        Directory.CreateDirectory(data);
+        using var self = System.Diagnostics.Process.GetCurrentProcess();
+        File.WriteAllText(HomeLease.PathIn(data), new System.Text.Json.Nodes.JsonObject
+        {
+            ["kind"] = "verb", ["pid"] = Environment.ProcessId, ["started"] = self.StartTime.ToUniversalTime().Ticks,
+            ["since"] = "2026-10-16T08:00:00+00:00", ["what"] = "daoris-driver trees sync",
+        }.ToJsonString());
+        var legacy = Path.Combine(_root, "legacy");
+        Directory.CreateDirectory(legacy);
+        File.WriteAllText(Path.Combine(legacy, "driver.json"), "{}");
+
+        var established = Establish(install, legacy, leaseWait: TimeSpan.FromMilliseconds(300));
+
+        Assert.Empty(established!.Moved);
+        Assert.True(established.Worth);
+        Assert.True(File.Exists(Path.Combine(legacy, "driver.json")));
+        Assert.Contains("could not move anything, since a terminal's `daoris-driver trees sync` (pid", established.Notice);
+        Assert.Contains($"held this home; the next start moves it; still at {legacy}", established.Notice);
+
+        // The verb ends; the next start moves it.
+        File.Delete(HomeLease.PathIn(data));
+        _process.Clear();
         Assert.Equal(["driver.json"], Establish(install, legacy)!.Moved);
     }
 

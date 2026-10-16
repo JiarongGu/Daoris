@@ -17,7 +17,7 @@ public sealed record RunningEntry(string Url, int Pid, long Started, string? Hom
 /// </summary>
 /// <remarks>
 /// <para><b>Written whole, once the service answers</b>, held or adopted, naming the address and the process, as the driver
-/// lock names its holder (<see cref="DriverLock"/>): a reader never meets half of it, and a process id used again by another
+/// lease names its holder (<see cref="HomeLease"/>): a reader never meets half of it, and a process id used again by another
 /// program is told apart by its start time.</para>
 ///
 /// <para><b>Removed by its writer at a clean exit, and only while it still says what that writer wrote</b>, so a second Daoris

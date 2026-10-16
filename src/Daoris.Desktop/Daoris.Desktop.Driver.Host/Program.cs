@@ -21,8 +21,13 @@ using Daoris.Driver;
 //                 the loop, asked for by name (DRV8a, D104): watch, ticking pollSeconds apart until
 //                 Ctrl+C; --once ticks once; --until-idle ticks until nothing starts, the deterministic
 //                 mode a gate drives. A bare --once or --until-idle is the same ask. It takes the home's
-//                 driver lock first, and a home another live driver holds is refused, naming it (exit 1)
-//                 — unless --share, which runs beside it on purpose.
+//                 lease first (home.lease, HOMELEASE1), and a home another live driver holds is refused, naming it
+//                 (exit 1) — unless --share, which runs beside it on purpose. A verb, the first-start move or an
+//                 update's swap holding it is waited for up to thirty seconds first.
+//
+// Every verb that changes the home while acting alone holds the same lease for its run (VerbLeases), and waits up
+// to thirty seconds where another such act holds it, then is refused naming it (exit 1); beside a running Daoris it
+// acts as it always did.
 //   (no verb)     the usage, exit 2 — never a loop: run to read its usage, a bare invocation used to
 //                 start one beside the desktop's.
 //
@@ -245,6 +250,32 @@ if (OperatingSystem.IsWindows())
 // reads one. The service is found where a door asks for it (`ServiceHttp.FromEnvironment`): the variable, else the address the
 // running desktop left in this home. A workspace build is no install, and keeps needing both named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
+
+// One writer per home (HOMELEASE1, the terminal RPC design §5): a verb acting alone holds the home's lease for its mutation,
+// never for a read (`VerbLeases` says which). Beside a running instance it acts as it always did, holding nothing, until RPC1's
+// pipe makes it that instance's client; where another verb, the first-start move or the launcher's swap holds the home, it
+// waits up to thirty seconds and is then refused, exit 1, naming which. A home named nowhere takes none: the verb refuses as
+// it always did. The lease is let go as the verb ends.
+HomeLease? verbLease = null;
+if (VerbLeases.Holds(args) && DaorisHome.Resolve() is { } leaseHome)
+{
+    try
+    {
+        verbLease = HomeLease.ForVerb(leaseHome, VerbLeases.Name(args), out var leaseRefused);
+        if (verbLease is null)
+        {
+            Console.Error.WriteLine($"daoris-driver: {leaseRefused}");
+            return 1;
+        }
+    }
+    catch (HomeLeaseException error)
+    {
+        Console.Error.WriteLine($"daoris-driver: {error.Message}");
+        return 2;
+    }
+}
+
+using var verbHolds = verbLease;
 
 // One read from a commit, a session or a quest back to its ask (TRACE1, D143, D50). Routed before the machine log opens,
 // since that open prunes old files and the trace writes nothing anywhere; it keeps its own catch for the same reason.
@@ -512,16 +543,24 @@ try
 
     // One live driver per home (DRV8a, D104), taken before anything reaches the service: a second loop
     // races the first for the same quests, so it is refused naming the first — a refusal, exit 1, not a
-    // tool error — unless it was asked to share.
-    DriverHolder? holder = null;
-    using var held = loop.Share
-        ? DriverLock.Share(home, DriverKind.Headless)
-        : DriverLock.TryAcquire(home, DriverKind.Headless, out holder);
+    // tool error — unless it was asked to share. The lock is the home's lease now (HOMELEASE1): an act holding it
+    // (a terminal's verb, the first-start move, the launcher's swap) is waited for up to thirty seconds, as a verb waits,
+    // and only then refused; `--share` runs beside an instance, never beside an act.
+    var held = loop.Share
+        ? HomeLease.Share(home, LeaseKind.Headless, out var holder)
+        : HomeLease.TryAcquire(home, LeaseKind.Headless, out holder);
+    if (held is null && holder is { IsInstance: false })
+    {
+        held = HomeLease.Await(home, LeaseKind.Headless, null, HomeLease.Wait, out holder, besideInstance: loop.Share);
+    }
+
     if (held is null)
     {
-        Console.Error.WriteLine($"driver: {DriverLock.Refusal(home, holder!)}");
+        Console.Error.WriteLine($"driver: {(holder!.IsInstance ? HomeLease.Refusal(home, holder) : HomeLease.WaitRefusal(home, holder))}");
         return 1;
     }
+
+    using var leaseHeld = held;
 
     if (held.Beside is { } beside)
     {
@@ -649,6 +688,13 @@ catch (DriverException error)
 {
     Console.Error.WriteLine($"driver: {error.Message}");
     log.Failed("the headless driver", error);
+    return 2;
+}
+catch (HomeLeaseException error)
+{
+    // The home's lease changed under every attempt, or would not be written (HOMELEASE1): a sentence, never a stack trace.
+    Console.Error.WriteLine($"driver: {error.Message}");
+    log.Failed("the headless driver, taking the home", error);
     return 2;
 }
 catch (HttpRequestException error)

@@ -72,7 +72,7 @@ public static class RunningService
         return entry.Url;
     }
 
-    /// <summary>Whether the process an address names still runs as the process it named: the driver lock's test.</summary>
+    /// <summary>Whether the process an address names still runs as the process it named: the home lease's test.</summary>
     public static bool Lives(int pid, long started)
     {
         try
