@@ -254,6 +254,35 @@ public sealed class HelperLookTests : IDisposable
         Assert.Single(pass.Asked);
     }
 
+    /// <summary>
+    /// HELPERYES1 (D163 point 3): the person's yes outlives a full cap. The look that finds no slot leaves the ask `approved`
+    /// (not `waiting/cap`, which the next look's judge would put back to waiting for a yes), and a look with a slot starts it
+    /// without a second yes.
+    /// </summary>
+    [Fact]
+    public async Task An_approved_ask_keeps_its_yes_through_a_full_cap_and_starts_once_a_slot_frees()
+    {
+        Ask("a1");
+        var approved = new HelperState("a1", HelperStates.Approved, null, null, At);
+        Files.WriteState(approved);
+        var host = Host();
+        var pass = new Pass(Files) { Answer = "Line 42." };
+        var driver = Driver(host, pass, rule: new HelperRule(HelperRules.Ask, []), cap: 1);
+        var full = new[] { new SessionView("w1", "q9", "reports", "working") };
+
+        var first = await Look(driver, active: full);
+        var second = await Look(driver, active: full);
+
+        Assert.Equal(approved, Files.ReadState("a1"));
+        Assert.Empty(first);
+        Assert.Empty(second);
+        Assert.Empty(pass.Asked);
+
+        await Look(driver);
+        await Until(() => host.HelperHands.Count == 1);
+        Assert.Single(pass.Asked);
+    }
+
     /// <summary>No agent ready: the ask waits and the state says why (the walk's code); nothing starts and nothing is refused.</summary>
     [Fact]
     public async Task With_no_agent_ready_the_ask_waits_and_the_state_says_why()

@@ -1965,6 +1965,7 @@ export function WorkFrame({
                   waits={waits ? {
                     waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
                     proposals: rulesAsked(waits.rules?.proposals, attended.id),
+                    helpers: waits.helpers?.asks,
                   } : undefined}
                   onAnchors={(session, state) => setAnchored({ session, ...state })}
                   onToWait={(wait) => {

@@ -219,28 +219,10 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
-        var files = new HelperFiles(_loop.Home);
-        var ask = files.Asks().FirstOrDefault(each => each.Id == askId && string.Equals(each.Asker, session, StringComparison.Ordinal));
-        var state = ask is null ? null : files.ReadState(ask.Id);
-
-        static object Answer(bool approved, string? why, string message) => new { Approved = approved, Why = why, Message = message };
-        object answer = (ask, state) switch
-        {
-            (null, _) => Answer(false, HelperAskWhy.Gone, $"Session {session} holds no ask #{askId} for a helper."),
-            ({ AskedBy: HelperAsk.ByPerson }, _) => Answer(false, HelperAskWhy.Person, $"#{askId} is your own ask, which needs no yes."),
-            (_, { State: HelperStates.Approved }) => Answer(true, null, $"#{askId} has your yes."),
-            (_, null) or (_, { State: HelperStates.Waiting, Code: null }) => Approve(files, askId),
-            (_, { State: HelperStates.Waiting }) => Answer(false, HelperAskWhy.Waits, $"#{askId} waits on {state!.Code}, not on your yes."),
-            _ => Answer(false, HelperAskWhy.Past, $"#{askId} is past its start: {state!.State}."),
-        };
-        return Task.FromResult<object?>(answer);
-
-        object Approve(HelperFiles helpers, string id)
-        {
-            helpers.WriteState(new HelperState(id, HelperStates.Approved, null, null, DateTimeOffset.UtcNow));
-            _loop.Nudge();
-            return Answer(true, null, $"#{id} has your yes: the driver starts a helper at its next look, within the limits.");
-        }
+        // The judge is the library's, which the terminal's `sessions helper --approve` shares (HELPERTERM1).
+        var answer = HelperPersonWord.Approve(new HelperFiles(_loop.Home), session, askId);
+        if (answer.Wrote) _loop.Nudge();
+        return Task.FromResult<object?>(new { Approved = answer.Stands, answer.Why, answer.Message });
     }
 
     // The person's no to an agent's ask under the `helpers` rule's `ask` (HELPERNO1, D163 point 3; design §5), beside the yes: the ask
@@ -256,55 +238,9 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
-        var files = new HelperFiles(_loop.Home);
-        var ask = files.Asks().FirstOrDefault(each => each.Id == askId && string.Equals(each.Asker, session, StringComparison.Ordinal));
-        var state = ask is null ? null : files.ReadState(ask.Id);
-
-        static object Answer(bool declined, string? why, string message) => new { Declined = declined, Why = why, Message = message };
-        object answer = (ask, state) switch
-        {
-            (null, _) => Answer(false, HelperAskWhy.Gone, $"Session {session} holds no ask #{askId} for a helper."),
-            ({ AskedBy: HelperAsk.ByPerson }, _) => Answer(false, HelperAskWhy.Person, $"#{askId} is your own ask, which needs no word of yours."),
-            (_, { State: HelperStates.Refused, Code: HelperWhy.Declined }) => Answer(true, null, $"#{askId} has your no."),
-            (_, null) => Answer(false, HelperAskWhy.Unread, $"#{askId} is not read by the driver yet: say no once it waits on your word."),
-            (_, { State: HelperStates.Approved }) => Answer(false, HelperAskWhy.Approved, $"#{askId} has your yes, and starts at the driver's next look."),
-            ({ } waits, { State: HelperStates.Waiting, Code: null }) => Decline(files, waits),
-            (_, { State: HelperStates.Waiting }) => Answer(false, HelperAskWhy.Waits, $"#{askId} waits on {state!.Code}, not on your word."),
-            _ => Answer(false, HelperAskWhy.Past, $"#{askId} is past its start: {state!.State}."),
-        };
-        return Task.FromResult<object?>(answer);
-
-        // The look's own refusal, as `DriverHelpers.RefuseAsync` writes it: the state, then the note on the asker's record.
-        object Decline(HelperFiles helpers, HelperAsk declined)
-        {
-            helpers.WriteState(new HelperState(declined.Id, HelperStates.Refused, HelperWhy.Declined, null, DateTimeOffset.UtcNow));
-            var note = HelperNotes.Refused(HelperWhy.Declined);
-            _loop.Output.Append(declined.Asker, $"— {note.Note}");
-            _loop.Events.Keep(declined.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
-            return Answer(true, null, $"#{declined.Id} has your no: no helper is started for it, and its session's timeline says so.");
-        }
-    }
-
-    /// <summary>Why a person's ask of a helper, or their yes or no to an agent's, did nothing: the codes the page words (MIXAGENT2b, HELPERNO1).</summary>
-    internal static class HelperAskWhy
-    {
-        public const string Blank = "blank";
-        public const string TooLong = "too-long";
-        public const string Agent = "agent";
-        public const string NotHeld = "not-held";
-        public const string Helper = "helper";
-        public const string Reviewer = "reviewer";
-        public const string Intake = "intake";
-        public const string Gone = "gone";
-        public const string Person = "person";
-        public const string Waits = "waits";
-        public const string Past = "past";
-
-        /// <summary>A no to an ask that has the person's yes already (HELPERNO1).</summary>
-        public const string Approved = "approved";
-
-        /// <summary>A no to an ask the driver's look has not read yet (HELPERNO1).</summary>
-        public const string Unread = "unread";
+        // The judge is the library's, which the terminal's `sessions helper --decline` shares (HELPERTERM1).
+        var answer = HelperPersonWord.Decline(new HelperFiles(_loop.Home), _loop.Events, _loop.Output, session, askId);
+        return Task.FromResult<object?>(new { Declined = answer.Stands, answer.Why, answer.Message });
     }
 
     private const string PersonMoves =

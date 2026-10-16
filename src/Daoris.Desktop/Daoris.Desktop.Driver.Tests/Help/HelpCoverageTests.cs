@@ -238,10 +238,12 @@ public sealed partial class HelpCoverageTests
     /// MIXAGENT2b's *Let it ask* (<c>useApproveHelper</c>) and HELPERNO1's *Not now* (<c>useDeclineHelper</c>): the person's yes
     /// or no to an agent's ask for a helper that waits on it under the <c>helpers</c> rule's <c>ask</c> (D163 point 3). Exempt,
     /// since it is their word on that one ask, given where it waits; what an agent's ask does at all is the rule, a door already.
+    /// HELPERTERM1's <c>daoris-driver sessions helper --approve|--decline</c> is the same word at a terminal.
     /// </summary>
     private static readonly Exempt HelperAnswerDoor = new(
         "a yes or a no to an agent's ask for a helper is the person's word on that one ask, which spends another agent's "
-        + "allowance or does not (D163 point 3), given where it waits, on the session's page or What needs you; what an agent's ask "
+        + "allowance or does not (D163 point 3), given where it waits, on the session's page or What needs you, or at a terminal "
+        + "with `daoris-driver sessions helper --approve|--decline`; what an agent's ask "
         + "does at all is the person's `helpers` rule, the `setting` kind's `helpers` door, so Ask Daoris proposes no single answer.");
 
     /// <summary>
@@ -1138,6 +1140,18 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("helper"));
         Assert.Contains("D163", HelperAskDoor.Reason);
         Assert.Contains("D133", HelperAskDoor.Reason);
+    }
+
+    /// <summary>
+    /// HELPERTERM1: the headless host's <c>sessions helper --approve|--decline</c> is exempt from Ask Daoris while its usage spells
+    /// it, as the page's *Let it ask* and *Not now* are: the person's word on one ask, which no kind of that name takes.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_helper_yes_and_no_are_exempt_as_the_persons_word_on_one_ask()
+    {
+        Assert.Contains("sessions helper --approve|--decline <ask>", DriverCommand.Usage);
+        Assert.Contains("sessions helper --approve|--decline", HelperAnswerDoor.Reason);
+        Assert.Contains("D163", HelperAnswerDoor.Reason);
     }
 
     /// <summary>

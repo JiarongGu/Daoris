@@ -23,6 +23,10 @@ function lineOf(box: HTMLElement | null, wait: AnchorWait): HTMLElement | null |
     const id = wait.slice('rule:'.length);
     return [...(box?.querySelectorAll<HTMLElement>('[data-rule]') ?? [])].find((each) => each.dataset.rule === id);
   }
+  if (wait.startsWith('helper:')) {
+    const id = wait.slice('helper:'.length);
+    return [...(box?.querySelectorAll<HTMLElement>('[data-helper]') ?? [])].find((each) => each.dataset.helper === id);
+  }
   return box?.querySelector<HTMLElement>(wait.startsWith('goAhead:')
     ? `[data-go-ahead="${wait.slice('goAhead:'.length)}"]`
     : `[data-wait="${wait === 'opinion' ? 'work' : wait}"]`);
