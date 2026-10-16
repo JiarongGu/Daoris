@@ -126,7 +126,8 @@ internal sealed class TreeLands(
                 { Own = true };
             }
 
-            var name = BranchNamed(subject, landing.Rule, repository);
+            // A conversation's for its work, never its opening (ACCEPTFOOT2), as the press names it.
+            var name = BranchNamed(await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct).ConfigureAwait(false), landing.Rule, repository);
             // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
                 : plugin is null ? null : context.Plugins.Problem(plugin);
@@ -406,7 +407,8 @@ internal sealed class TreeLands(
         else
         {
             var branched = await BranchAsync(full, workspace, repository,
-                BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
+                BranchNamed(await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct).ConfigureAwait(false), landing.Rule, repository),
+                handedOn: plugin is not null, ct,
                 entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying,
                 join: joins ? sync : null).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
@@ -935,4 +937,45 @@ internal sealed class TreeLands(
     /// </summary>
     private static string BranchNamed(LandingSubject subject, LandingRule rule, string repository) =>
         subject.EnteredName ?? subject.EntryBranch ?? LandingRules.Branch(subject, rule, repository);
+
+    /// <summary>
+    /// The subject a conversation's branch is named for (ACCEPTFOOT2, D164's 2026-10-16 note): <see cref="LandingSubject.ForWork"/>
+    /// with the oldest commit subject its work holds beyond the line, as the press's own log reads it. Git is asked only where the rule
+    /// would read a conversation's words (<see cref="LandingRules.ReadsWords"/>), so a quest's plan, an entered name, an entry's branch
+    /// and a pattern of ids alone start none.
+    /// </summary>
+    /// <param name="full">A tree of the repository the work is in; its HEAD is the work unless <paramref name="tip"/> names it.</param>
+    /// <param name="tip">The work's tip where it is not that tree's HEAD: an entry's first part landed from a tree since gone.</param>
+    internal async Task<LandingSubject> ForWorkAsync(
+        string full, string workspace, string repository, LandingRule rule, LandingSubject subject, CancellationToken ct, string? tip = null)
+    {
+        if (!subject.NamedByOpening || subject.EnteredName is not null || subject.EntryBranch is not null || !LandingRules.ReadsWords(rule)) return subject;
+        var here = Directory.Exists(full) ? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) : null;
+        if (here is not { Code: 0 }) return subject.ForWork(null);
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
+        var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        if (line is null) return subject.ForWork(null);
+        var against = await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
+        var (code, log, _) = await WorkingTree.GitAsync(
+            full, ["log", "--reverse", LandingRules.SubjectsFormat, $"{against}..{tip ?? "HEAD"}"], ct).ConfigureAwait(false);
+        return subject.ForWork(code == 0 ? LandingRules.OldestSubject(log) : null);
+    }
+
+    /// <summary>
+    /// An entry's subject named for its first part's work (ACCEPTFOOT2): read from that part's tree where it is here, else from the tip
+    /// its landing recorded, in <paramref name="anyTree"/>, a tree of the same repository; so the press, the plan and each part's own
+    /// Accept name the entry's one branch alike, whichever part's tree they are pressed in.
+    /// </summary>
+    internal async Task<LandingSubject> EntryForWorkAsync(LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct)
+    {
+        if (!entry.NamedByOpening) return entry;
+        var lead = leadTree is { Length: > 0 } && Directory.Exists(leadTree) ? Path.GetFullPath(leadTree) : null;
+        var full = lead ?? Path.GetFullPath(anyTree);
+        var (workspace, repository) = context.OwnerOf(full);
+        var landing = LandingRules.Choose(context.Config(), repository, workspace);
+        if (lead is not null) return await ForWorkAsync(lead, workspace, repository, landing.Rule, entry, ct).ConfigureAwait(false);
+        return context.Recorded.Landing(entry.Session) is { } landed
+            ? await ForWorkAsync(full, workspace, repository, landing.Rule, entry, ct, landed.Tip).ConfigureAwait(false)
+            : LandingRules.ReadsWords(landing.Rule) ? entry.ForWork(null) : entry;
+    }
 }

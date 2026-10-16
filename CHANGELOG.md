@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation whose turn ends with commits beyond its line now offers *Accept…* (采纳…) at the foot of the chat and in its
+  head, as a driven session does, not only in the review's side bar; none is offered while a turn runs. Its *Accept* names the
+  branch for the work's first commit, never for your opening words; a ticket you named in those words still names it.
 - Where an agent has no Daoris account signed in, *What needs you* says its starts wait and offers *Sign in for Daoris*
   (为 Daoris 登录) right there; the agent's page heads with the same press. Your own sign-in stays listed, read-only: Daoris
   starts no session in it, and a conversation begun there goes on there. Ask Daoris and the setup guide count only Daoris's

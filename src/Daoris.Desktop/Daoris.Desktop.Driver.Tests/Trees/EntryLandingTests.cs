@@ -230,6 +230,41 @@ public sealed class EntryLandingTests : LandedFixture
     }
 
     /// <summary>
+    /// ACCEPTFOOT2 (D164's 2026-10-16 note): a conversation's entry is named for its first part's work, never for the tree a part's own
+    /// Accept is pressed in, so parts whose oldest commits differ still land on the entry's one branch, in either order.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_parts_land_on_the_branch_named_for_its_first_parts_work()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "Fix parser");
+        await CommitAsync(second.Path, "b.txt", "b\n", "Fix renderer");
+        IReadOnlyList<SessionRecord> records =
+        [
+            new("s5e6f7a8", "engine", "working") { Entry = "chat:c1/engine", Kind = "chat", Tree = second.Path, Created = At(2) },
+            new("s1a2b3c4", "engine", "working") { Entry = "chat:c1/engine", Kind = "chat", Tree = first.Path, Created = At(1) },
+        ];
+        Task<LandingSubject> OwnAsync(string tree, string session) => trees.OwnSubjectAsync(
+            tree, session, null, records, _ => Task.FromResult<QuestView?>(null), _ => "ok so that is merged now", process: null);
+        const string named = "feature/s1a2b3c4-fix-parser";
+
+        var later = await OwnAsync(second.Path, "s5e6f7a8");
+        Assert.Equal(named, (await trees.PlanAsync(second.Path, later)).Target);
+        var once = await trees.LandAsync(second.Path, later, joins: later.Joins);
+        Assert.True(once.Landed, once.Message);
+        Assert.Equal(named, once.Branch);
+
+        var lead = await OwnAsync(first.Path, "s1a2b3c4");
+        var landed = await trees.LandAsync(first.Path, lead, joins: lead.Joins);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(named, landed.Branch);
+    }
+
+    /// <summary>
     /// TREEFOLLOWNAME1 (D167's note): a part whose tree is on a branch of its own lands as that branch, so its landing record carries
     /// its own quest and title, at the entry's press and at the part's own door alike; the entry's other part keeps the entry's.
     /// </summary>
