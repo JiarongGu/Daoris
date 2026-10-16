@@ -1193,9 +1193,7 @@ public sealed class Driver(
         if (preflight is { Toolchain.TrustFile: { Length: > 0 } trustFile }
             && !HandedConnector(preflight, start.Workspace, quest.To, "quest_respond"))
         {
-            var configHome = selection.ProfileHome
-                ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var trustPath = Path.Combine(configHome, trustFile);
+            var trustPath = ClaudeTrust.PathFor(trustFile, selection.ProfileHome, preflight.Toolchain!.ProfileVariable);
             if (ClaudeTrust.Accepted(trustPath, workTree) == false)
             {
                 // Said twice, on purpose: the sentence for a person, the fact for a screen (D73).

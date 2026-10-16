@@ -1347,7 +1347,10 @@ public sealed class StubAdapter : ISessionAdapter
         // And its words for an account's windows (TOOL6c), mirrored so a frame replayed on its doors is read as Claude Code's.
         Windows: ClaudeWindows.Words,
         // And its words for a start refused for its sign-in (ROSTER1b), mirrored so a tick can gate one with no account.
-        SignIn: ClaudeSignIn.Words);
+        SignIn: ClaudeSignIn.Words,
+        // Its own home is nobody's, so a start that names no account still runs there (OWNSPACE1a): the rehearsal's no-account
+        // starts keep running as they did.
+        RunsInOwnHome: true);
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -1403,7 +1406,8 @@ public sealed class AcpStubAdapter : ISessionAdapter
         VersionArguments: [],
         ProfileVariable: StubAdapter.ConfigVariable,
         AccountOf: "stub",
-        ProbeByPresence: true);
+        ProbeByPresence: true,
+        RunsInOwnHome: true);
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
