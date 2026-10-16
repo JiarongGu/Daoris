@@ -12,7 +12,9 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { HOOK, SERVER, childEnvironment, claudeLaunch, codexLaunch, parseArguments, prompt, runFiles, toml } from './fabric-probe/launch.mjs';
+import {
+  HOOK, SERVER, childEnvironment, claudeLaunch, codexLaunch, connectorSession, lineageFile, parseArguments, prompt, runFiles, toml,
+} from './fabric-probe/launch.mjs';
 import { callLineage, receipt, receiptText, withoutPaths } from './fabric-probe/receipt.mjs';
 import { TOKEN, answer } from './fabric-probe/server.mjs';
 
@@ -119,6 +121,29 @@ test('the Codex launch sets the stand-in by -c with its write disabled and its t
   assert.equal(toml(['a', 1]), '["a", 1]');
 });
 
+test('with Daoris\'s connector, each launch hands it as the driver does, and Claude Code the driver\'s lineage hook', () => {
+  const files = runFiles(join('runs', 'r3'));
+  const { mcp, settings } = claudeLaunch({ files, run: 'r3', text: 'go', node: 'node', connector: 'daoris-knowledge.exe', lineageHook: 'lineage-hook.mjs' });
+  const entry = mcp.mcpServers['daoris-knowledge'];
+  assert.equal(entry.command, 'daoris-knowledge.exe');
+  assert.deepEqual(entry.env, {
+    DAORIS_HOME: files.home, DAORIS_RULES_HOME: files.home, DAORIS_SESSION_ID: 'probe-r3',
+    DAORIS_KNOWLEDGE_REPOSITORY: files.repo, DAORIS_KNOWLEDGE_DB: join(files.home, 'knowledge.db'),
+  });
+  assert.ok(settings.permissions.allow.includes('mcp__daoris-knowledge__knowledge_search'));
+  const lineage = { type: 'command', command: 'node', args: ['lineage-hook.mjs', lineageFile(files, 'r3')], timeout: 10 };
+  assert.deepEqual(settings.hooks.PreToolUse[1], { matcher: 'mcp__daoris-knowledge__.*', hooks: [lineage] });
+  assert.deepEqual(settings.hooks.SubagentStart[1], { hooks: [lineage] });
+  assert.deepEqual(settings.hooks.SubagentStop[1], { hooks: [lineage] });
+  assert.equal(lineageFile(files, 'r3'), join(files.home, 'sessions', 'probe-r3', 'lineage.jsonl'));
+  assert.equal(connectorSession('a.b c'), 'probe-a-b-c', 'a session id names no folder but its own');
+
+  const { args } = codexLaunch({ files, run: 'r3', text: 'go', node: 'node', connector: 'daoris-knowledge.exe' });
+  assert.ok(args.includes('mcp_servers.daoris-knowledge.default_tools_approval_mode="approve"'));
+  assert.ok(args.includes('mcp_servers.daoris-knowledge.command="daoris-knowledge.exe"'));
+  assert.match(prompt('family', 'claude', { knowledge: true }), /mcp__daoris-knowledge__knowledge_search once with query "grandchild"/);
+});
+
 test('each scenario asks in its harness\'s words, and an unknown one is refused', () => {
   assert.match(prompt('child', 'claude'), /Agent tool.*mcp__probe__probe_read once with note "child"/s);
   assert.match(prompt('family', 'codex'), /sibling-a.*grandchild.*sibling-b/s);
@@ -161,6 +186,10 @@ test('the receipt reproduces run A: one connection served the root and its subag
   const text = receiptText(seen);
   assert.match(text, /4 turns, 0\.125 USD/);
   assert.match(text, /task_started local_agent task t1 depth 1/);
+
+  // A run whose root called only Daoris's connector compares nothing at the stand-in, and says so.
+  writeFileSync(join(folder, 'server.log'), [server[0], server[1], server[3]].map((line) => JSON.stringify(line)).join('\n'));
+  assert.ok(receipt(folder).verdicts.includes('children\'s calls reached 1 server process(es), and no root call reached this server to compare with'));
 });
 
 test('Codex\'s turn metadata gives the thread and its parent, and the workspace\'s path never reaches a receipt', () => {
@@ -173,5 +202,5 @@ test('Codex\'s turn metadata gives the thread and its parent, and the workspace\
   const lineage = callLineage(meta);
   assert.deepEqual([lineage.thread, lineage.parent, lineage.kind, lineage.source, lineage.root], ['th-2', 'th-1', 'thread_spawn', 'subagent', 'root-1']);
   assert.equal(lineage.dropped, 1, 'the cwd value; a path used as a key is a key, and keys are not printed');
-  assert.deepEqual(withoutPaths({ a: '/home/x/y', b: 'plain', c: ['D:/x', 'z'] }), { value: { b: 'plain', c: ['z'] }, dropped: 2 });
+  assert.deepEqual(withoutPaths({ a: '/srv/x/y', b: 'plain', c: ['D:/x', 'z'] }), { value: { b: 'plain', c: ['z'] }, dropped: 2 });
 });

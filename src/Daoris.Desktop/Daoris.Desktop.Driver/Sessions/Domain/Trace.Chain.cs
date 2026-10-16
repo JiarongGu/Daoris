@@ -589,6 +589,18 @@ public sealed record TraceRules
 
     /// <summary>The tree guard holds it to its tree (PERM3).</summary>
     public bool Guarded { get; init; }
+
+    /// <summary>
+    /// Whether a handed settings file carries the tree guard: a <c>PreToolUse</c> entry on the guard's own matcher. Not any
+    /// <c>PreToolUse</c> hook, since the lineage hook (FABRIC-C1a) is one too and guards nothing.
+    /// </summary>
+    public static bool HandsTreeGuard(System.Text.Json.JsonElement settings) =>
+        settings.ValueKind == System.Text.Json.JsonValueKind.Object
+        && settings.TryGetProperty("hooks", out var hooks) && hooks.ValueKind == System.Text.Json.JsonValueKind.Object
+        && hooks.TryGetProperty("PreToolUse", out var before) && before.ValueKind == System.Text.Json.JsonValueKind.Array
+        && before.EnumerateArray().Any(entry => entry.ValueKind == System.Text.Json.JsonValueKind.Object
+            && entry.TryGetProperty("matcher", out var matcher) && matcher.ValueKind == System.Text.Json.JsonValueKind.String
+            && matcher.GetString() == TreeGuard.Matcher);
 }
 
 /// <summary>Where a session's work landed (WSR5): each branch a landing made of it, or why none is named.</summary>
@@ -1109,8 +1121,7 @@ internal static partial class TraceChains
                 Asked = Listed(permissions, "ask"),
                 Denied = Listed(permissions, "deny"),
                 Hard = hard,
-                Guarded = root.TryGetProperty("hooks", out var hooks) && hooks.ValueKind == System.Text.Json.JsonValueKind.Object
-                          && hooks.TryGetProperty("PreToolUse", out _),
+                Guarded = TraceRules.HandsTreeGuard(root),
             };
         }
         catch (Exception error) when (error is System.Text.Json.JsonException or InvalidOperationException)

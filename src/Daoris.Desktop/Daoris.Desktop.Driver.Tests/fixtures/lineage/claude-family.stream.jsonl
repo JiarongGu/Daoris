@@ -1,0 +1,6 @@
+{"type":"system","subtype":"task_started","task_id":"a9b1456decf181940","task_type":"local_agent","spawn_depth":1,"tool_use_id":"toolu_01Ve1SdfhbHQzgFDSCu3ruVT","subagent_type":"general-purpose"}
+{"type":"system","subtype":"task_started","task_id":"af7e45b4d6f2967a9","task_type":"local_agent","spawn_depth":2,"parent_task_id":"a9b1456decf181940","tool_use_id":"toolu_01VWHzpGu43DRBXQwDoj6f7Z","subagent_type":"general-purpose"}
+{"type":"system","subtype":"task_notification","task_id":"af7e45b4d6f2967a9","tool_use_id":"toolu_01VWHzpGu43DRBXQwDoj6f7Z","status":"completed"}
+{"type":"system","subtype":"task_notification","task_id":"a9b1456decf181940","tool_use_id":"toolu_01Ve1SdfhbHQzgFDSCu3ruVT","status":"completed"}
+{"type":"system","subtype":"task_started","task_id":"a24ebe27d77bec19f","task_type":"local_agent","spawn_depth":1,"tool_use_id":"toolu_01S7UGDsG67Pe7izoronZZ2E","subagent_type":"general-purpose"}
+{"type":"system","subtype":"task_notification","task_id":"a24ebe27d77bec19f","tool_use_id":"toolu_01S7UGDsG67Pe7izoronZZ2E","status":"completed"}

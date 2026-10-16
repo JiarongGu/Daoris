@@ -157,9 +157,20 @@ export function receipt(folder) {
       }
       : null;
 
+  // What Daoris's own connector and the driver's lineage hook wrote, where the run had them (FABRIC-C1a): lines by writer.
+  const lineage = run.lineageSession
+    ? jsonLines(join(folder, 'home', 'sessions', run.lineageSession, 'lineage.jsonl'))
+    : [];
+  const lineageBy = {};
+  for (const line of lineage) {
+    const name = `${line.by}${line.event ? ` ${line.event}` : ''}`;
+    lineageBy[name] = (lineageBy[name] ?? 0) + 1;
+  }
+
   return {
     harness: run.harness ?? null, version: run.version ?? null, scenario: run.scenario ?? null, model: run.model ?? null,
     seconds: run.seconds ?? null, exit: run.exit ?? null, killed: run.killed ?? null, usage,
+    lineage: run.lineageSession ? lineageBy : null,
     servers: [...servers.values()], calls, hooks: { counted, keys, agents }, tasks, denied,
     verdicts: verdicts([...servers.values()], calls, agents),
   };
@@ -173,10 +184,12 @@ function verdicts(servers, calls, agents) {
   if (children.length === 0) {
     said.push('no child call reached the server');
   } else {
-    const shared = root && children.every((call) => call.pid === root.pid);
-    said.push(shared
-      ? `a child's call reached the root's own server process (pid ${root.pid}): the same connection`
-      : `children's calls reached ${new Set(children.map((call) => call.pid)).size} server process(es) of their own`);
+    const processes = new Set(children.map((call) => call.pid)).size;
+    said.push(!root
+      ? `children's calls reached ${processes} server process(es), and no root call reached this server to compare with`
+      : children.every((call) => call.pid === root.pid)
+        ? `a child's call reached the root's own server process (pid ${root.pid}): the same connection`
+        : `children's calls reached ${processes} server process(es) of their own`);
     const sessions = new Set(calls.map((call) => call.session));
     said.push(`the server's session was ${[...sessions].join(', ')} for every call: the environment does not tell a child apart`);
   }
@@ -232,6 +245,10 @@ export function receiptText(seen) {
     lines.push(`stream: task_started ${task.type} task ${task.task} depth ${task.depth ?? '-'} parent ${task.parent ?? '-'} tool ${task.toolUseId ?? '-'}`);
   }
   for (const denial of seen.denied) lines.push(`stream: permission_denied ${denial.tool} agent ${denial.agent ?? '-'}`);
+  if (seen.lineage) {
+    const written = Object.entries(seen.lineage).map(([name, count]) => `${name} ${count}`).join(', ');
+    lines.push(`lineage file: ${written || 'nothing written'}`);
+  }
   for (const verdict of seen.verdicts) lines.push(`verdict: ${verdict}`);
   return `${lines.join('\n')}\n`;
 }

@@ -722,7 +722,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var capture = adapter.StructuredOutput() is { } mapper
                 ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                     process.StandardOutput, process.StandardError, transcript, sessionId, _context.Output, _context.Events, mapper,
-                    prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own),
+                    prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own,
+                    lineageHome: _context.Home),
                     sessionId, adapter.Name, resume: null)
                 : null;
             exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);

@@ -92,14 +92,19 @@ internal static class HarnessCapture
     /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null where none was.</param>
     /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c), begun again here; null keeps none.</param>
+    /// <param name="lineageHome">
+    /// The home whose session lineage file is told each subagent's start and end the stream says (FABRIC-C1a,
+    /// <see cref="ChildLineage.Watch"/>); null tells none.
+    /// </param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
         Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
-        Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null)
+        Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null, string? lineageHome = null)
     {
         own?.Begin();
+        var lineage = lineageHome is null ? null : ChildLineage.Watch(lineageHome, sessionId);
         await using var file = TranscriptFile.Open(transcript, append);
         // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
         // before it ends, as the protocol door keeps `session/new`'s id.
@@ -127,6 +132,8 @@ internal static class HarnessCapture
         var beside = output is null ? null : mapper.Beside(new SessionStreams(output, sessionId), Line);
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
+            // Before the streams beside take it: a subagent's start is theirs too, and its lineage is the part's (FABRIC-C1a).
+            lineage?.Invoke(line);
             if (beside?.Take(line) == true) continue;
             var mapped = mapper.Read(line);
             if (own is not null)

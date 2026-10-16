@@ -745,7 +745,9 @@ public sealed class ChatRunner : IDisposable
                 var file = PermissionRules.Load(_home);
                 rules = SpawnSettings.Write(
                     _home, sessionId, place.Rules(file, sessionId), PermissionRules.HardDeny(file),
-                    PermissionRules.GuardsTree(file) ? TreeGuard.For(_home, workTree, place.Also) : null);
+                    PermissionRules.GuardsTree(file) ? TreeGuard.For(_home, workTree, place.Also) : null,
+                    // Which agent made each call, and each subagent's start and stop (FABRIC-C1a).
+                    ChildLineage.HookFor(_home, sessionId));
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
                 else if (rules is not null) meta = resolved.AcpSessionMeta(rules, skillPlugins);
             }
@@ -1382,7 +1384,8 @@ public sealed class ChatRunner : IDisposable
                             keep?.Invoke(conversation);
                             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
                             if (goOn is not null && goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, watched.Adapter);
-                        })
+                        },
+                        lineageHome: _home)
                     : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None));
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
@@ -1446,6 +1449,21 @@ public sealed class ChatRunner : IDisposable
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
             SpawnSkills.Remove(watched.Skills);
+            // Its native children end with this run (FABRIC-C1a): lost where it was stopped or failed, ended where it ended clean.
+            ChildLineage.End(_home, sessionId, clean: EndedClean(process) && !_processes.WasStopRequested(sessionId), DateTimeOffset.UtcNow);
+        }
+    }
+
+    /// <summary>Whether a run's process ended on its own with exit 0 (FABRIC-C1a); one still running, or that cannot say, did not.</summary>
+    private static bool EndedClean(Process process)
+    {
+        try
+        {
+            return process.HasExited && process.ExitCode == 0;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
         }
     }
 
