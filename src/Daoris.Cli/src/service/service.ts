@@ -28,7 +28,7 @@ import { once } from 'node:events';
 import { join } from 'node:path';
 import { finished } from 'node:stream/promises';
 import { DaorisError, RefusalError } from '../platform/errors.ts';
-import { daorisHome, homeId, isHomeId, THIS_INSTALL } from '../platform/home.ts';
+import { daorisHome, homeEntry, homeId, isHomeId, THIS_INSTALL } from '../platform/home.ts';
 import type { Fetcher } from '../agents/channels.ts';
 
 const NO_SERVICE =
@@ -114,7 +114,7 @@ export async function runningService(
 /** What a home's address file names, or null when there is none or it does not read. */
 function runningEntry(home: string): { url: string; pid: number } | null {
   try {
-    const entry: unknown = JSON.parse(readFileSync(join(home, RUNNING_FILE), 'utf8'));
+    const entry: unknown = JSON.parse(readFileSync(homeEntry(home, 'running'), 'utf8'));
     if (typeof entry !== 'object' || entry === null) return null;
     const { url, pid } = entry as Record<string, unknown>;
     return typeof url === 'string' && url.length > 0 && Number.isInteger(pid) ? { url: url.replace(/\/+$/, ''), pid: pid as number } : null;

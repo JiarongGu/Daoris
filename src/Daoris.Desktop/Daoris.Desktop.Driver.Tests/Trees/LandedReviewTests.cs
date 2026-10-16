@@ -15,7 +15,7 @@ public sealed class LandedReviewTests : LandedFixture
     /// <summary>A branch rule that tidies: the landing takes the tree away, as on the installed window.</summary>
     private void Tidies() =>
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     private static readonly LandingSubject Subject = new("s1a2b3c4", "0fda18", "Fix the API gap");
 

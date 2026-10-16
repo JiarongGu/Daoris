@@ -53,7 +53,7 @@ public sealed class CallLineageFilterTests : IDisposable
             new JsonObject { ["name"] = "echo" });
 
         Assert.Equal(["echo hi", "echo ", "echo "], answers);
-        var lines = File.ReadAllLines(Path.Combine(_home, "sessions", "s1", LineageFile.FileName)).Select(line => JsonNode.Parse(line)!).ToList();
+        var lines = File.ReadAllLines(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1", LineageFile.FileName)).Select(line => JsonNode.Parse(line)!).ToList();
         Assert.Equal(3, lines.Count);
         Assert.Equal(("claude-code", "toolu_child"), ((string)lines[0]["harness"]!, (string)lines[0]["toolUse"]!));
         // An id in the arguments is the model's, never the harness's: it is not read.

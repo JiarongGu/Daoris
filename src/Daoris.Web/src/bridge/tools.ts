@@ -4,6 +4,7 @@ import type {
   GitSwitchShown, ToolEndShown, ToolLookShown, ToolsShown, ToolWay,
 } from '../settings/Tools';
 import { call, toolLookBound } from './call';
+import { ownWindowName } from '../work/window';
 
 // The programs Daoris runs beside its agents (MOD3, TOOLS7): how each is run, a version downloaded and followed, a
 // delete, the resource locations, and what a switch of git changes (D121 §4.1). The same `tools.json` the terminal's
@@ -119,8 +120,11 @@ export const useToolGit = (target: GitTarget | null) => {
  */
 export const useToolPick = () =>
   useMutation({
-    mutationFn: (title: string) =>
-      call<{ can: boolean; file?: string | null }>('TOOLS_PICK', { title }, { timeoutMs: Infinity }),
+    mutationFn: (title: string) => {
+      // The dialog is owned by the window this page is in (MAINWINDOWS2c); the first main window names none.
+      const window = ownWindowName(globalThis.location?.search ?? '');
+      return call<{ can: boolean; file?: string | null }>('TOOLS_PICK', window === null ? { title } : { title, window }, { timeoutMs: Infinity });
+    },
   });
 
 /** A tool's action ended (§3.6): the list is asked again, and the handler says how it ended. */

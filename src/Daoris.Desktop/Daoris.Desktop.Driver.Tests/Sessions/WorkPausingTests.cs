@@ -24,14 +24,14 @@ public sealed class WorkPausingTests : IDisposable
 
     private static readonly DateTimeOffset Now = new(2026, 10, 3, 14, 2, 11, TimeSpan.Zero);
 
-    public WorkPausingTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public WorkPausingTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string ConfigPath => Path.Combine(_home, "driver.json");
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private static JsonObject Record(string id, string state, string? quest = null, string repository = "engine", string? ask = null, int minutes = 0) => new()
     {
@@ -72,7 +72,7 @@ public sealed class WorkPausingTests : IDisposable
         ["a1", "b2"]);
 
     private WorkWorld World(ServiceClient service, MachineLog? log = null) =>
-        new(service, _home, ConfigPath, new SessionProcesses(Path.Combine(_home, "sessions")))
+        new(service, _home, ConfigPath, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)))
         {
             Log = log,
             Clock = () => Now,
@@ -84,7 +84,7 @@ public sealed class WorkPausingTests : IDisposable
     private void Alive(string id)
     {
         using var self = Process.GetCurrentProcess();
-        File.WriteAllText(Path.Combine(_home, "sessions", $"{id}.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionPids, id), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
     }
 
     private static readonly IReadOnlyDictionary<string, string> NoStops = new Dictionary<string, string>();
@@ -215,7 +215,7 @@ public sealed class WorkPausingTests : IDisposable
         Assert.Equal(2, exit);
         Assert.Contains("could not stop w0rk1ng0 on #q2", output.ToString());
         Assert.Equal("working", ledger.State("w0rk1ng0"));
-        Assert.False(File.Exists(Path.Combine(_home, "sessions", "requests", "w0rk1ng0.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Requests, "w0rk1ng0.json")));
         var pause = DriverConfig.Load(ConfigPath).PausedAsk("a1")!;
         Assert.Empty(pause.Stopped);
     }
@@ -432,7 +432,7 @@ public sealed class WorkPausingTests : IDisposable
         await WorkPausing.ResumeAsync(World(service, log), WorkScope.Ask, "a1", PluginEvents.Screen);
         log.Dispose();
 
-        var lines = Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(File.ReadAllLines).ToList();
+        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines).ToList();
         var paused = Assert.Single(lines, line => line.Contains("\"work.paused\"", StringComparison.Ordinal));
         var resumed = Assert.Single(lines, line => line.Contains("\"work.resumed\"", StringComparison.Ordinal));
         Assert.Contains("\"scope\":\"ask\"", paused);

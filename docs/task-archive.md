@@ -15459,3 +15459,45 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DIRECTIONS1 — the owner's unified collaboration proposal routed, and the old future-directions file retired** (found and built in the same round; see the outcome).
 
 **Outcome** 2026-10-16: `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` is routed as a proposal (accepted as written in D173); `DAORIS_FUTURE_DIRECTIONS.md` is retired, its text being the proposal's Appendix A word for word; live links repointed; D143, D144 and D169 each carry a dated note. On Sonnet: 21 tool calls. Detail: its commit.
+
+## HOMELAYOUT1 — the install's folders: the decision and design (2026-10-17, D172)
+
+> - [ ] **HOMELAYOUT1 — the install's folders: the decision and design** (design; amends D63). Separate by what a thing is and who may lose it: the program (`app/`, replaced by updates), the person's own (settings, records, the knowledge store, sign-ins and profile homes), the work (session trees, kept files), what can be fetched again (`res/` or a cache: toolchain, Chromium, WebView2, installed plugins' packages, `bin`), what a run holds (locks, spawn files, starts, salvage) and the logs. Say what each category's backup, move and clean-up mean, which variables still win (`DAORIS_HOME` and the dev loop's `--app-root`), and how a published install and a dev home share one shape. Proof: the decision and design document, every current path placed in it, reviewed against `DaorisHome`'s callers.
+
+**Outcome** 2026-10-17: D172 lays the Daoris folder out as `app/`, `data/`, `profiles/`, `work/`, `cache/`, `run/`, `logs/`; `DAORIS_HOME` names the folder (an install's `data/` read as it); `data/` holds no secret once moved; an entry is read where it is, and only what Daoris alone names moves; the downloads folder is `cache/`, not `res/` (the kit's `res/` means bundled resources). On Opus, with WIRING1a: 164 tool calls. Detail: D172; `docs/2026-10-16-install-layout-design.md`.
+
+## WIRING1a — the page that shows how this Daoris is wired: the design (2026-10-17, D171)
+
+> - [ ] **WIRING1a — the page that shows how this Daoris is wired: the design** (design; D171's companion). One place, Settings → *This Daoris* (本机), with every wire and its source: the folders and their sizes (HOMELAYOUT1's categories), the service (its address, hosted or adopted, version, whether it answers), the driver loop (who holds the home, its last tick), each settings file and what it holds, the variables in effect and where each came from (environment, file, default), the program's and the kit's versions, the update's state, the terminal launchers and whether they are on PATH, the knowledge store, the logs. Secrets never shown (a key's audit prefix at most). Contracts: platform UX, the translation contract. Proof: the design document with its screen states.
+
+**Outcome** 2026-10-17: Settings → *This Daoris* (本机) designed: every wire with its source, folder sizes by D172, *Every setting* searchable in both languages, the setup presses, what is never shown, `SYSTEM_WIRING` and `daoris-driver wiring`. On Opus, with HOMELAYOUT1. Detail: `docs/2026-10-16-this-daoris-design.md`; D171's note.
+
+## HOMELAYOUT2 — the code asks for a category, never a hand-made path (2026-10-17, D172)
+
+> - [ ] **HOMELAYOUT2 — the code asks for a category, never a hand-made path** (driver/modules/desktop/service; after 1). `DaorisHome` gains the categories and every caller (`DaorisHome.Require("…json")` and the folders) asks by category, so a later move is one table. No path changes yet. Proof: a census test that no code joins a home path by hand outside `DaorisHome`.
+
+**Outcome** 2026-10-17: the three home twins hold D172's table (62 entries after the integration added `home-id`, `home-lease` and `plugin-approvals`; every new place still the old one) and resolve an entry by point 5 with a second opinion's rule (a new place taken only where it holds the entry; both held refused, naming both); the driver, modules, host, service, launcher and CLI code and about 900 test fixtures ask for entries by name; `home-census.test.ts` fails a home joined by hand. On Opus: 1423 tool calls, then 218 for the integration with main. Detail: D172's HOMELAYOUT2 note; the design's §3 and §6.2.
+
+## FLAKE5 — `SessionsSayCommandTests` holds under load (2026-10-17, FLAKE1)
+
+> - [ ] **FLAKE5 — `SessionsSayCommandTests` holds under load** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-17: the say verb's waits read off `SessionsWorld.Clock`; the four loop-took-the-words tests hand it a clock held until the take and keep their loop late: red before, 57/57 after, twelve class runs green. On Opus, with TERMSTART1, UPDATERELAUNCH1 and PLUGKIT2: 273 tool calls. Detail: FIX-LOG FLAKE1's FLAKE5 paragraph.
+
+## TERMSTART1 — a terminal's shell started off the window's thread (2026-10-17, D56)
+
+> - [ ] **TERMSTART1 — a terminal's shell started off the window's thread** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-17: `OPEN` starts the shell through `ProcessStarts`' `RunAsync`; a shell started after its terminal ended is ended; the census counts `CreateProcessW`. On Opus, with FLAKE5. Detail: D56's TERMSTART1 note; FIX-LOG UIFREEZE1.
+
+## UPDATERELAUNCH1 — the update's relaunch through the gate (2026-10-17, D139)
+
+> - [ ] **UPDATERELAUNCH1 — the update's relaunch through the gate** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-17: the updater's look is async, the launcher started by `UpdateLauncher` through the gate, one relaunch per moment, `Program.cs` off the census's allowed list. On Opus, with FLAKE5. Detail: D139's and D56's UPDATERELAUNCH1 notes.
+
+## PLUGKIT2 — the silent plugin's trial patience covers its start (2026-10-17, FLAKE1)
+
+> - [ ] **PLUGKIT2 — the silent plugin's trial patience covers its start** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-17: a trial's handshake waits its points' own patience; a given patience is the points' calls'; the silent case's plugin answers its handshake after 1.5 s and still fails its silent `work/land`. Its Process runs are the merge gate's. On Opus, with FLAKE5. Detail: FIX-LOG FLAKE1's PLUGKIT2 paragraph.

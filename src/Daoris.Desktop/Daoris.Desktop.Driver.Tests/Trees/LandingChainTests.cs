@@ -291,7 +291,7 @@ public sealed class LandingChainTests : IDisposable
         Assert.Equal(AcceptedBy.Person, entry.AcceptedByOf("s1"));
         Assert.Equal("feature/q1-fix-the-gap", Assert.Single(landings.Find("s2")).Branch);
 
-        var text = File.ReadAllText(Path.Combine(_home, LandedBranches.FileName));
+        var text = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings));
         Assert.Contains("\"advances\"", text);
         Assert.Contains("\"session\": \"s2\"", text);
     }

@@ -25,7 +25,8 @@ public sealed class ChildLineageTests : IDisposable
     public void The_file_is_the_session_s_own_in_its_folder_named_as_the_connector_names_it()
     {
         Assert.Equal("lineage.jsonl", ChildLineage.FileName);
-        Assert.Equal(Path.Combine(_home, "sessions", "s1", "lineage.jsonl"), ChildLineage.PathOf(_home, "s1"));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1", "lineage.jsonl"), ChildLineage.PathOf(_home, "s1"));
+        Assert.Equal(["sessions", "s1", "lineage.jsonl"], Path.GetRelativePath(_home, ChildLineage.PathOf(_home, "s1")).Split(Path.DirectorySeparatorChar));
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public sealed class ChildLineageTests : IDisposable
         ChildLineage.Append(_home, "..", """{"by":"hook","event":"started","agent":"a1"}""");
         ChildLineage.End(_home, "a/b", clean: true, DateTimeOffset.UnixEpoch);
 
-        Assert.False(Directory.Exists(Path.Combine(_home, "sessions")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions)));
         Assert.Empty(ChildLineage.Read(_home, "..").Children);
     }
 
@@ -94,7 +95,7 @@ public sealed class ChildLineageTests : IDisposable
         var hook = ChildLineage.HookFor(_home, "s1");
 
         Assert.NotNull(hook);
-        Assert.Equal(Path.Combine(_home, "hooks", "lineage-hook.mjs"), hook.Script);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Hooks, "lineage-hook.mjs"), hook.Script);
         Assert.Equal(ChildLineage.Source, File.ReadAllText(hook.Script));
         Assert.Equal(ChildLineage.PathOf(_home, "s1"), hook.File);
         Assert.DoesNotContain("\r", ChildLineage.Source, StringComparison.Ordinal);

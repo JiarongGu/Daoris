@@ -407,49 +407,5 @@ public sealed class MainForm : OptimizedForm
         _trouble.BringToFront();
     }
 
-    /// <summary>
-    /// The native folder dialog, for adding a repository (D48 §7). Null is the person cancelling.
-    /// </summary>
-    /// <remarks>
-    /// <para>This is the ONE thing the page cannot do for itself: a browser may never learn a path on
-    /// this machine (D46/D47 §4), so the shell picks and the page registers what it was handed.</para>
-    ///
-    /// <para>Marshalled onto the UI thread, because an IPC request arrives on whatever thread the
-    /// bridge dispatched it on and a dialog shown from anywhere else either throws or opens with no
-    /// owner — a modal floating free of its window, which is the shape of a hang. Owned by this form
-    /// for the same reason, so it cannot end up behind it.</para>
-    /// </remarks>
-    public string? PickFolder()
-    {
-        if (InvokeRequired) return (string?)Invoke(PickFolder);
-
-        using var dialog = new FolderBrowserDialog
-        {
-            Description = "Choose a repository to add to this machine's registry",
-            UseDescriptionForTitle = true,
-            ShowNewFolderButton = false,
-        };
-
-        return dialog.ShowDialog(this) == DialogResult.OK ? dialog.SelectedPath : null;
-    }
-
-    /// <summary>
-    /// The system's file picker, for a tool named as a file (TOOLS7, D121 §4.1 *Browse…*): the program the person
-    /// chose, or null when they cancelled. Marshalled and owned as <see cref="PickFolder"/> is, for the same reasons.
-    /// </summary>
-    /// <param name="title">The dialog's title, in the page's language.</param>
-    public string? PickFile(string? title)
-    {
-        if (InvokeRequired) return (string?)Invoke(() => PickFile(title));
-
-        using var dialog = new OpenFileDialog
-        {
-            Title = string.IsNullOrWhiteSpace(title) ? "Choose a program" : title,
-            Filter = "Programs (*.exe;*.cmd;*.bat)|*.exe;*.cmd;*.bat|All files (*.*)|*.*",
-            CheckFileExists = true,
-            Multiselect = false,
-        };
-
-        return dialog.ShowDialog(this) == DialogResult.OK ? dialog.FileName : null;
-    }
+    // The folder and file pickers are `Pickers`', owned by the window whose page asked (MAINWINDOWS2c), not this one's alone.
 }

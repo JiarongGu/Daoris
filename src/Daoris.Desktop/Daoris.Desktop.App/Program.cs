@@ -142,21 +142,23 @@ internal static class Program
             Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!,
             log,
             work: () => sp.GetRequiredService<DriverLoop>().Work(),
-            relaunch: () => Relaunch(installRoot),
+            relaunch: ct => UpdateLauncher.StartAsync(installRoot, Environment.ProcessId, ct),
             // For good (MAINWINDOWS2): a close from code reads as the person's, which only puts the first away while another
             // main window is open, and an update has to end the application whatever is open.
             close: () => sp.GetRequiredService<MainForm>().CloseForGood(),
             bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
         builder.Services.AddIpcModule<UpdateModule>();
         builder.Services.AddSingleton<MainForm>();
-        // A tool named as a file (TOOLS7): the system's file picker, owned by the window, as the folder picker is.
-        builder.Services.AddSingleton<PickFile>(sp => title => sp.GetRequiredService<MainForm>().PickFile(title));
+        // A tool named as a file (TOOLS7): the system's file picker, owned by the window whose page asked (MAINWINDOWS2c), as the
+        // folder picker is: the first main window is hidden while put away, and a dialog owned by it would open behind nobody.
+        builder.Services.AddSingleton<PickFile>(sp => (title, window) => Pickers.File(
+            Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window), title));
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();
         // The one thing a page cannot do: name a directory on this machine (D48 §7). Everything else
         // about managing a repository is an ordinary call to the loopback host.
-        builder.Services.AddSingleton<Func<string?>>(sp => () =>
-            sp.GetRequiredService<MainForm>().PickFolder());
+        builder.Services.AddSingleton<PickFolder>(sp => window => Pickers.Folder(
+            Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window)));
         builder.Services.AddIpcModule<RegistryModule>();
         // The machine's wiring — which deployment serves each workspace (D48 §5, D50). The same file
         // `daoris remote` edits; the service has no door onto it, deliberately.
@@ -193,8 +195,14 @@ internal static class Program
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         // The main window's taskbar count (NOTIFY1b): the window is resolved as the page tells it, never as the module
         // is made, since the window is made after the modules and maps one of its own.
+        // And, while the first is put away and its button is gone, each other main window's (MAINWINDOWS2b).
+        builder.Services.AddSingleton(sp => new WaitingCount(sp.GetRequiredService<MainWindows>()));
         builder.Services.AddSingleton<ShowWaiting>(sp => (count, description) =>
-            sp.GetRequiredService<MainForm>().ShowWaiting(count, description));
+        {
+            sp.GetRequiredService<WaitingCount>().Told(count, description);
+            sp.GetRequiredService<MainForm>().ShowWaiting(count, description);
+            sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting();
+        });
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And
@@ -240,7 +248,12 @@ internal static class Program
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();
             loop.Draining = () => updater.Draining;
-            updater.Started();
+            // Its look may start the launcher for a build said *now*: through the start gate, off this thread
+            // (UPDATERELAUNCH1). The drain is set before that wait, so before the loop starts; a failed look is said as the
+            // updater's own loop says one.
+            _ = updater.StartedAsync().ContinueWith(
+                look => log.Warn("update.look", ("message", look.Exception!.GetBaseException().Message)),
+                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
             updater.Start();
             loop.Start();
         });
@@ -286,39 +299,5 @@ internal static class Program
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
         app.Run();
-    }
-
-    /// <summary>
-    /// Start the launcher at the install's root with <c>--update --after &lt;this process&gt;</c> (UPDATE1, D139 §5): it waits
-    /// for this application to close, then swaps <c>app/</c>. False when it could not be started, and the application stays.
-    /// </summary>
-    private static bool Relaunch(string installRoot)
-    {
-        var launcher = Path.Combine(installRoot, Daoris.Driver.StagedBuild.Launcher);
-        if (!File.Exists(launcher)) return false;
-
-        // Not the tools' environment (TOOLS5): the launcher is Daoris's own program, and it hands this process's environment,
-        // its home included, to the application it starts, which hands every child the tools' environment there.
-        // Through the shell (UPDATE1): a start that does not go through it hands the launcher every inheritable handle this
-        // process holds, the engine's DevTools socket among them, and the launcher hands them on to the application it starts,
-        // so a build started after a swap found its port held by the builds before it. The shell's start inherits none and
-        // still hands this process's environment.
-        var start = new System.Diagnostics.ProcessStartInfo(launcher)
-        {
-            UseShellExecute = true,
-            WorkingDirectory = installRoot,
-        };
-        start.ArgumentList.Add("--update");
-        start.ArgumentList.Add("--after");
-        start.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        try
-        {
-            using var started = System.Diagnostics.Process.Start(start);
-            return started is not null;
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            return false;
-        }
     }
 }

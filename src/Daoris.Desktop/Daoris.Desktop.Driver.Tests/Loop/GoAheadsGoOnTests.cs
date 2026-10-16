@@ -30,7 +30,7 @@ public sealed class GoAheadsGoOnTests : IDisposable
         Directory.CreateDirectory(_home);
         _ledger.Register("engine", Path.Combine(_home, "engine"));
         _ledger.Publish("q1", "engine", from: "ask #a1");
-        _ledger.Park("s1", "q1", Path.Combine(_home, "trees", "s-1"));
+        _ledger.Park("s1", "q1", DaorisHome.Entry(_home, HomeEntry.Trees,"s-1"));
         _ledger.GoAheadAsked("a1", "s1", "write", "production", "dashboard configuration");
         _ledger.GoAheadAsked("a1", "s1", "release", "production", "comparison report");
     }
@@ -120,7 +120,7 @@ public sealed class GoAheadsGoOnTests : IDisposable
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] };
         var driver = new Daoris.Driver.Driver(
-            service, config, adapters, _home, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+            service, config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
         };

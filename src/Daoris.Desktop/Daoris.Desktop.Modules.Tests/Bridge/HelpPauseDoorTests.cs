@@ -113,7 +113,7 @@ public sealed class HelpPauseDoorTests : DriverModuleBridge
         File.WriteAllText(Path.Combine(folder, "p1a2b3c4.json"),
             """{"id":"p1a2b3c4","kind":"pause","door":"pause","target":"#a1","why":"hold it","state":"proposed","by":{"session":"h1"}}""");
 
-        var answer = await AnswerAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" });
+        var answer = await ApplyShownAsync(module, "h1", "p1a2b3c4");
 
         Assert.True(answer.GetProperty("applied").GetBoolean());
         Assert.Equal("w0rk1ng0", DriverConfig.Load(DriverConfigPath).PausedAsk("a1")!.Stopped["q2"]);
@@ -134,7 +134,7 @@ public sealed class HelpPauseDoorTests : DriverModuleBridge
         return new DriverModule(Bus, loop).HelpDoors(service);
     }
 
-    private string TreeOf(string name) => Path.Combine(Home, "trees", "aurora", "engine", name).Replace('\\', '/');
+    private string TreeOf(string name) => DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine", name).Replace('\\', '/');
 
     /// <summary>Ask <c>a1</c>'s work: <c>q1</c> open; <c>q2</c> taken, worked by a session nothing here runs; <c>q3</c> taken, its session waiting on you.</summary>
     private LoopbackHost Ledger()

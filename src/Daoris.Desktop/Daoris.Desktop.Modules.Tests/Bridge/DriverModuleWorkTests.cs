@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// the working session is ended as an orphan is, the person's stop.</remarks>
 public sealed class DriverModuleWorkTests : DriverModuleBridge
 {
-    private string TreeOf(string name) => Path.Combine(Home, "trees", "aurora", "engine", name).Replace('\\', '/');
+    private string TreeOf(string name) => DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine", name).Replace('\\', '/');
 
     /// <summary>
     /// Ask <c>a1</c>'s work: <c>q1</c> open; <c>q2</c> taken, worked by a session nothing here runs, after an earlier one
@@ -99,7 +99,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         Assert.All(plan.GetProperty("quests").EnumerateArray(), q => Assert.Equal("a1", q.GetProperty("pausedBy").GetProperty("id").GetString()));
 
         log.Dispose();
-        var line = Assert.Single(Directory.GetFiles(Path.Combine(Home, MachineLog.Folder)).SelectMany(File.ReadAllLines),
+        var line = Assert.Single(Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).SelectMany(File.ReadAllLines),
             each => each.Contains("\"work.paused\"", StringComparison.Ordinal));
         Assert.Contains("\"door\":\"screen\"", line);
         Assert.Contains("\"stopped\":1", line);
@@ -376,7 +376,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         Assert.Null(DriverConfig.Load(DriverConfigPath).PausedAsk("a1"));
 
         log.Dispose();
-        var line = Assert.Single(Directory.GetFiles(Path.Combine(Home, MachineLog.Folder)).SelectMany(File.ReadAllLines),
+        var line = Assert.Single(Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).SelectMany(File.ReadAllLines),
             each => each.Contains("\"work.abandoned\"", StringComparison.Ordinal));
         Assert.Contains("\"door\":\"screen\"", line);
         Assert.Contains("\"declined\":1", line);

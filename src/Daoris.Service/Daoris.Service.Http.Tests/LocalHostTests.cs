@@ -1490,7 +1490,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     {
         if (!OperatingSystem.IsWindows()) return;
         var quest = await ClosedAsync("A quest whose kept file is held open");
-        var kept = Path.Combine(host.Home, QuestFiles.Folder, quest, "attachments", "held.txt");
+        var kept = DaorisHome.Entry(host.Home, HomeEntry.QuestFiles, quest, "attachments", "held.txt");
         Directory.CreateDirectory(Path.GetDirectoryName(kept)!);
         await File.WriteAllTextAsync(kept, "held open");
 
@@ -1507,7 +1507,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Empty(outcome.GetProperty("failed").GetProperty("asks").EnumerateArray());
         Assert.True(File.Exists(kept));
         Assert.False(await HeldAsync(quest));
-        Directory.Delete(Path.Combine(host.Home, QuestFiles.Folder, quest), recursive: true);
+        Directory.Delete(DaorisHome.Entry(host.Home, HomeEntry.QuestFiles, quest), recursive: true);
     }
 
     /// <summary>

@@ -34,7 +34,7 @@ public static class ChatFiles
     /// <summary>The folder a session's attached files are kept in, and the one its agent may read.</summary>
     public static string Folder(string home, string sessionId) =>
         SessionEventText.IsLocalId(sessionId)
-            ? Path.Combine(home, "sessions", sessionId, "files")
+            ? DaorisHome.Entry(home, HomeEntry.SessionFiles, sessionId)
             : throw new DriverException($"`{sessionId}` is not a session id, so it names no folder.");
 
     /// <summary>

@@ -13,7 +13,7 @@ internal static class TraceReads
 
     private static TraceEventsRead Events(string home, string sessionId)
     {
-        var events = new SessionEvents(Path.Combine(home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
         try
         {
             return File.Exists(events.PathOf(sessionId))
@@ -28,7 +28,7 @@ internal static class TraceReads
 
     private static TraceRulesRead Rules(string home, string sessionId)
     {
-        var path = Path.Combine(home, SpawnServers.Folder, $"{sessionId}.settings.json");
+        var path = DaorisHome.Entry(home, HomeEntry.Spawn, $"{sessionId}.settings.json");
         if (!File.Exists(path)) return new TraceRulesRead(null);
 
         try

@@ -53,7 +53,7 @@ public sealed class OpinionResumeTickTests : IDisposable
 
     private JsonObject[] Heard() => [.. StubFile.Lines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
-    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events;
+    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     /// <summary>
     /// 🔴 The protocol door: the findings go on in the same record's own conversation as their own block, unchanged; the stub
@@ -101,9 +101,9 @@ public sealed class OpinionResumeTickTests : IDisposable
     [Fact]
     public async Task Findings_go_on_in_the_kept_conversation_on_the_native_door_with_the_tool_that_answers_them()
     {
-        var profile = Path.Combine(_home, "harnesses", "claude-code", "work");
+        var profile = DaorisHome.Entry(_home, HomeEntry.AgentHomes, "claude-code", "work");
         Directory.CreateDirectory(profile);
-        File.WriteAllText(Path.Combine(_home, "harnesses.json"), """{"defaults":{"claude-code":"work"}}""");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
         await using var service = OpinionTickStandIn.Start(_repository);
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with
@@ -116,7 +116,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         };
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         var tip = Head(service.Tree("s1")!);
@@ -171,7 +171,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         };
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>

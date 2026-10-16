@@ -128,7 +128,7 @@ public sealed class StartWithTests : IDisposable
 
         Assert.False(ran);
         Assert.Equal(("c1", false, "opened, not taken."), (again.SessionId, again.Sent, again.Message));
-        Assert.True(File.Exists(Path.Combine(_home, "starts", "req-2.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Starts,"req-2.json")));
     }
 
     /// <summary>A start remembered more than a day ago is a new start.</summary>
@@ -153,7 +153,7 @@ public sealed class StartWithTests : IDisposable
         var again = await requests.RunAsync("req-4", () => Task.FromResult(Said("c1")));
 
         Assert.Equal("c1", again.SessionId);
-        Assert.False(Directory.Exists(Path.Combine(_home, "starts")) && !File.Exists(Path.Combine(_home, "starts", "req-4.json")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Starts)) && !File.Exists(DaorisHome.Entry(_home, HomeEntry.Starts,"req-4.json")));
     }
 
     /// <summary>An id is one word of letters, digits and dashes, at most 64; another is refused in a sentence.</summary>

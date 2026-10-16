@@ -20,7 +20,7 @@ public sealed class TraceTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-trace-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public TraceTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public TraceTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
@@ -111,7 +111,7 @@ public sealed class TraceTests : IDisposable
     /// <summary>This machine's half, by the driver's own writers: each session's events, the live session's rules, a landing.</summary>
     private void Machine()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Note, Text = "opened on `personal`: the list begins there.", At = At(9, 5) });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = new string('x', 1234), At = At(9, 5) });
         events.Append("s2", new SessionEvent
@@ -278,7 +278,7 @@ public sealed class TraceTests : IDisposable
     [Fact]
     public async Task A_merge_into_the_line_is_read_from_the_acceptance_its_record_keeps()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s4", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest", At = At(9, 5) });
         events.Append("s4", LandingRules.Note(new TreeLanding(true, "merged `daoris/s4` into `main` — 2 commit(s).")) with { At = At(11, 0) });
         JsonArray sessions = [Record("s4", "completed", "q1", 5, 15, evidence: "commits landed:\n7c7c7c7 Read through v3")];
@@ -297,7 +297,7 @@ public sealed class TraceTests : IDisposable
     [Fact]
     public async Task An_instruction_is_read_by_the_sections_its_account_keeps_and_one_from_before_says_not_kept()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest, from before", At = At(9, 5) });
         var composed = TargetPrompt.Composed(TargetPromptGoldenTests.Full with
         {
@@ -344,7 +344,7 @@ public sealed class TraceTests : IDisposable
     [Fact]
     public async Task A_departure_its_hold_and_a_cut_instruction_are_read_as_kept()
     {
-        new SessionEvents(Path.Combine(_home, "sessions")).Append(
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
             "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = new string('z', 70_000) });
         var quest = Quest("q1", "ask #a1", "Fix the dashboard figure", "Done",
             [new JsonObject { ["quote"] = "use the v3 bridge", ["check"] = "the report reads through bridge v3" }],
@@ -562,7 +562,7 @@ public sealed class TraceTests : IDisposable
     [Fact]
     public async Task An_automatic_acceptance_reads_back_with_its_rule_its_note_and_each_try()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest", At = At(9, 40) });
         var landed = new TreeLanding(true, "put the work on `feature/q1-fix-the-dashboard-figure` — 2 commit(s) from `main`.",
             "feature/q1-fix-the-dashboard-figure");

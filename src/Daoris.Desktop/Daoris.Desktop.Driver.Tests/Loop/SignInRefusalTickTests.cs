@@ -46,7 +46,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
-            .Save(Path.Combine(_home, "harnesses.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
     }
 
     public void Dispose()
@@ -61,7 +61,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
         {
@@ -113,7 +113,7 @@ public sealed class SignInRefusalTickTests : IDisposable
 
         // Its conversation record opens saying why it ran on account-2: the quest was never taken, so this is a start, not a
         // carry-on, and the step that passed account-1 is its sign-in.
-        var opening = new SessionEvents(Path.Combine(_home, "sessions")).After("s2", 0).Events[0];
+        var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events[0];
         Assert.StartsWith("opened on `account-2`: the `stub` account `account-1` is not signed in", opening.Text);
     }
 
@@ -128,7 +128,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
         {

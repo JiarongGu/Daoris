@@ -18,7 +18,7 @@ public sealed class HandOverTests : IDisposable
 
     public HandOverTests()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
         Directory.CreateDirectory(Path.Combine(_home, "tree"));
     }
 
@@ -89,7 +89,7 @@ public sealed class HandOverTests : IDisposable
         var answer = await AskAsync(room, id, agent, account);
 
         Assert.Equal((false, why, message), (answer.Kept, answer.Why, answer.Message));
-        Assert.Empty(Directory.EnumerateFiles(Path.Combine(_home, "sessions"), "*" + HandOverBox.Suffix));
+        Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*" + HandOverBox.Suffix));
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public sealed class HandOverTests : IDisposable
 
     // ——— Taking the box (D163 §3): end the old conversation, start the new in its tree, brief it, say where it went.
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     private sealed class Taken
     {
@@ -569,7 +569,7 @@ public sealed class HandOverTests : IDisposable
         var answer = await AskQuestAsync(room, id, agent, account);
 
         Assert.Equal((false, why, message), (answer.Kept, answer.Why, answer.Message));
-        Assert.Empty(Directory.EnumerateFiles(Path.Combine(_home, "sessions"), "*" + HandOverBox.Suffix));
+        Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*" + HandOverBox.Suffix));
     }
 
     [Fact]
@@ -594,7 +594,7 @@ public sealed class HandOverTests : IDisposable
         store.Write("q1", handed);
 
         var bytes = File.ReadAllBytes(store.PathOf("q1"));
-        Assert.Equal(Path.Combine(_home, "handed", "q1.json"), store.PathOf("q1"));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Handed, "q1.json"), store.PathOf("q1"));
         Assert.NotEqual(0xEF, bytes[0]);
         Assert.DoesNotContain((byte)'\r', bytes);
         Assert.Equal(handed, store.Read("q1"));
@@ -609,7 +609,7 @@ public sealed class HandOverTests : IDisposable
     public void A_handed_file_that_does_not_read_or_a_quest_id_that_is_no_name_is_none()
     {
         var store = new HandedQuests(_home);
-        Directory.CreateDirectory(Path.Combine(_home, "handed"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Handed));
         File.WriteAllText(store.PathOf("q1"), "{ not json");
 
         Assert.Null(store.Read("q1"));

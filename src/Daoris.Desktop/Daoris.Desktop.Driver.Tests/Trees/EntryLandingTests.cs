@@ -365,5 +365,5 @@ public sealed class EntryLandingTests : LandedFixture
     /// <summary>The repository's rule squashes each landing into one commit (PROCESS1b-ii), named as the default rule names it.</summary>
     private void Squashing() =>
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 }

@@ -168,7 +168,7 @@ public static class PermissionRules
     /// </summary>
     private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?\z", RegexOptions.CultureInvariant);
 
-    public static string PathOf(string home) => Path.Combine(home, FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Permissions);
 
     /// <summary>
     /// What the harness's auto-mode classifier is told as hard denials (UNBLOCK4, D122 §3.7): the sentence
@@ -479,7 +479,7 @@ public static class SpawnSettings
         var told = hardDeny.Where(entry => entry != HarnessDefaults).Distinct(StringComparer.Ordinal).ToList();
         if (rules.IsEmpty && guard is null && lineage is null && told.Count == 0) return null;
 
-        var folder = Path.Combine(home, SpawnServers.Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Spawn);
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, $"{sessionId}.settings.json");
 

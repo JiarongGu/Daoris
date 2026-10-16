@@ -44,7 +44,7 @@ public sealed class AccountRotationTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     /// <summary>A file that is there, so the harness is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
@@ -602,7 +602,7 @@ public sealed class AccountRotationTests : IDisposable
         using var service = ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         RotatedOpening.Say(service, events, "c7", "claude-code-acp", RotatedSelection(), carried: null);
 
@@ -622,7 +622,7 @@ public sealed class AccountRotationTests : IDisposable
         using var service = ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         RotatedOpening.Say(service, events, "s2", "claude-code-acp", RotatedSelection(), new RotatedOpening.Carried("s1", Turn: 3, Used: 370_104));
 
@@ -639,7 +639,7 @@ public sealed class AccountRotationTests : IDisposable
         using var service = ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         RotatedOpening.Say(service, events, "s2", "claude-code-acp", new HarnessSelection(null, "account-1"), new RotatedOpening.Carried("s1", null, null));
 
@@ -650,7 +650,7 @@ public sealed class AccountRotationTests : IDisposable
     [Fact]
     public void The_cut_off_session_s_context_is_its_usage_high_water_from_the_record_where_no_usage_was_kept()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Usage, Used = 120_000, Size = 1_000_000 });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Usage, Used = 370_104, Size = 1_000_000 });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Usage, Used = 2_000, Size = 1_000_000 });
@@ -703,11 +703,11 @@ public sealed class AccountRotationTests : IDisposable
         using var log = new MachineLog(_home, "desktop", () => _now);
         using var ledger = new StandInLedger();
         using var service = ledger.Client();
-        using var watch = new SessionLog(log, service, new SessionEvents(Path.Combine(_home, "sessions")), () => _now);
+        using var watch = new SessionLog(log, service, new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), () => _now);
 
         service.AccountSaid(AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", "s1", WalkStep.LeastRecent, null));
 
-        var line = Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines)
+        var line = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines)
             .Select(text => JsonDocument.Parse(text).RootElement.Clone())
             .Single(entry => entry.GetProperty("event").GetString() == "account.rotated");
         Assert.Equal(

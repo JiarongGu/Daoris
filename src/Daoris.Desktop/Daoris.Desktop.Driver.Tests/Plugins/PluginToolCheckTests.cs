@@ -134,7 +134,7 @@ public sealed class PluginToolCheckTests : IDisposable
     public async Task A_managed_version_nobody_downloaded_is_refused_and_the_paths_is_never_taken()
     {
         OnPath("az");
-        File.WriteAllText(Path.Combine(Home, Tools.FileName), """{ "tools": { "az": { "use": "managed", "version": "2.66.0" } } }""");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), """{ "tools": { "az": { "use": "managed", "version": "2.66.0" } } }""");
         var runner = new Runner(_ => throw new InvalidOperationException("nothing is started for a way that cannot run"));
 
         var found = await CheckAsync(Tool("""{ "id": "az", "versions": ">=2.60" }"""), runner);
@@ -276,7 +276,7 @@ public sealed class PluginToolCheckTests : IDisposable
     {
         OnPath("git");
         var runner = new Runner(info => info.ArgumentList is ["--version"] ? Said("git version 2.53.0") : new CheckRun(true, 2, "", "nope"));
-        var folder = Path.Combine(Home, PluginCatalog.Folder, "acme.lands");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.lands");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
             { "id": "acme.lands", "hooks": { "command": ["node", "lands.mjs"], "points": ["work/land"] }, "tools": [

@@ -372,7 +372,7 @@ public sealed class NewerIndexTests : IDisposable
 
     private static IReadOnlyList<string> McpLogLines(string home)
     {
-        var folder = Path.Combine(home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return Directory.EnumerateFiles(folder, "*.mcp.jsonl")
             .SelectMany(path =>

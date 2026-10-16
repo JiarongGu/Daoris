@@ -170,7 +170,7 @@ public sealed class HelpDoorsTests : Bridge
 
             var entry = Assert.Single(PluginCatalog.Load(Home).Plugins);
             Assert.Equal(("acme.quiet-hours", true, (string?)null), (entry.Manifest.Id, entry.Enabled, entry.Problem));
-            Assert.True(File.Exists(Path.Combine(Home, PluginCatalog.Folder, "acme.quiet-hours", "hooks.mjs")));
+            Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.quiet-hours", "hooks.mjs")));
             Assert.False(File.Exists(mark));
             // Never a replace from here: that stays `daoris plugin add` at a terminal.
             Assert.Contains("already installed", Assert.Throws<DriverException>(() => doors.AddPlugin(source)).Message);
@@ -185,7 +185,7 @@ public sealed class HelpDoorsTests : Bridge
     [Fact]
     public void A_plugin_is_switched_as_the_plugins_screens_route_switches_it()
     {
-        var folder = Path.Combine(Home, PluginCatalog.Folder, "acme.gate");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """{ "id": "acme.gate" }""");
         var doors = Module().HelpDoors(null);
@@ -239,12 +239,12 @@ public sealed class HelpDoorsTests : Bridge
 
             doors.AddOffer("acme.quiet-hours");
 
-            var installed = Path.Combine(Home, PluginCatalog.Folder, "acme.quiet-hours");
+            var installed = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.quiet-hours");
             Assert.Equal(PluginSource.FromOffer("acme.quiet-hours"), PluginSource.Read(installed).Source);
             Assert.Contains("already installed", Assert.Throws<DriverException>(() => doors.AddOffer("acme.quiet-hours")).Message);
 
             File.WriteAllText(Path.Combine(offer, "hooks.mjs"), "// v2");
-            var kept = Path.Combine(Home, PluginCatalog.Folder, PluginCatalog.DataFolder, "acme.quiet-hours");
+            var kept = DaorisHome.Entry(Home, HomeEntry.Plugins,PluginCatalog.DataFolder, "acme.quiet-hours");
             Directory.CreateDirectory(kept);
 
             await doors.UpdatePluginAsync("acme.quiet-hours", CancellationToken.None);

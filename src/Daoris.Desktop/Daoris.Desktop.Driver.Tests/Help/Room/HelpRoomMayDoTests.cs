@@ -122,7 +122,7 @@ public sealed class HelpRoomMayDoTests
         var home = Path.Combine(Path.GetTempPath(), "daoris-help-skills-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            var folder = Path.Combine(home, PluginCatalog.Folder, "acme.tickets");
+            var folder = DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tickets");
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
                 { "id": "acme.tickets", "skills": [ { "name": "triage", "to": ["help"] }, { "name": "write-up" },
@@ -162,8 +162,8 @@ public sealed class HelpRoomMayDoTests
         var home = Path.Combine(Path.GetTempPath(), "daoris-help-servers-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            Directory.CreateDirectory(Path.Combine(home, PluginCatalog.Folder, "acme.tools"));
-            File.WriteAllText(Path.Combine(home, PluginCatalog.Folder, "acme.tools", PluginCatalog.ManifestName), """
+            Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools"));
+            File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools", PluginCatalog.ManifestName), """
                 { "id": "acme.tools", "servers": [
                     { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
                     { "name": "wiki", "command": ["wiki"], "to": ["help"], "allow": ["lookup"] },

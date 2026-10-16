@@ -49,12 +49,12 @@ public static class ChildLineage
     public static string Source { get; } = ReadSource();
 
     /// <summary>Where one session's lineage is kept.</summary>
-    public static string PathOf(string home, string sessionId) => Path.Combine(home, "sessions", sessionId, FileName);
+    public static string PathOf(string home, string sessionId) => DaorisHome.Entry(home, HomeEntry.Sessions, sessionId, FileName);
 
     /// <summary>The script under the home, written if absent or not as shipped; answers its path.</summary>
     public static string Install(string home)
     {
-        var folder = Path.Combine(home, TreeGuard.Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Hooks);
         var path = Path.Combine(folder, ScriptName);
         if (File.Exists(path) && File.ReadAllText(path) == Source) return path;
 

@@ -173,7 +173,7 @@ public sealed class AccountNamesTwinTests : IDisposable
     public void A_sign_in_reaches_the_account_the_cli_reaches(string why, string accounts, string? file, string wiring, string agent, string? given, string reached)
     {
         Holding(file);
-        var path = Path.Combine(_home, "harnesses.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         File.WriteAllText(path, wiring);
 
         var target = AccountNames.SignInTarget(Names(accounts), AccountNames.Of(_home, agent), HarnessSettings.Load(path), agent, given);
@@ -223,7 +223,7 @@ public sealed class AccountNamesTwinTests : IDisposable
     {
         var now = DateTimeOffset.UtcNow;
         foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", account));
-        var wiring = Path.Combine(_home, "harnesses.json");
+        var wiring = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         File.WriteAllText(wiring, """
             { "defaults": { "claude-code": "account-1" }, "workspaces": { "work": { "claude-code": "account-1" } },
               "rotation": { "claude-code": ["account-1", "account-2"] }, "workspaceRotation": { "work": { "claude-code": ["account-1"] } } }

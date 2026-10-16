@@ -576,13 +576,13 @@ try
     var started = DateTimeOffset.UtcNow;
     log.Info("app.started", ("mode", once ? "once" : untilIdle ? "until-idle" : "watch"));
     // Marked under the home, so the desktop sharing it can tell this host's sessions from orphans.
-    var processes = new SessionProcesses(Path.Combine(home, "sessions"));
+    var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids));
 
     using var service = ServiceClient.FromEnvironment();
 
     // What this host runs and how long each part takes, into its log (LOG1b): the watcher hears the
     // client's opens and moves and the record's events, so the record is handed to every driver below.
-    var events = new SessionEvents(Path.Combine(home, "sessions"));
+    var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
     using var sessionLog = new SessionLog(log, service, events);
 
     // The watch, once it runs, so a terminal's words a loop keeps are taken up at once rather than at its next look (MSG1e).

@@ -21,7 +21,7 @@ public sealed class LogModuleTests : Bridge
 
     private string[] Lines()
     {
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return Directory.GetFiles(folder).SelectMany(path =>
         {
@@ -207,7 +207,7 @@ public sealed class LogModuleTests : Bridge
 
     private void Logged(string name, params string[] lines)
     {
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, name), string.Join("\n", lines) + "\n");
     }
@@ -244,7 +244,7 @@ public sealed class LogModuleTests : Bridge
 
         var answer = await AnswerAsync(Reader(log), "LINES");
 
-        Assert.Equal(Path.Combine(Home, MachineLog.Folder), answer.GetProperty("folder").GetString());
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Logs), answer.GetProperty("folder").GetString());
         Assert.Equal(["page.error", "request.failed", "app.started", "refused", "view.opened", "app.started"], Events(answer));
         var first = answer.GetProperty("lines")[0];
         Assert.Equal("2026-09-30T11:30:00.000Z", first.GetProperty("time").GetString());
@@ -373,7 +373,7 @@ public sealed class LogModuleTests : Bridge
 
         var answer = await AnswerAsync(Reader(log, opened.Add), "OPEN_FOLDER", new { path = "C:/elsewhere" });
 
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         Assert.Equal([folder], opened);
         Assert.True(Directory.Exists(folder));
         Assert.True(answer.GetProperty("opened").GetBoolean());

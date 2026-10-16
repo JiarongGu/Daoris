@@ -18,7 +18,7 @@ public sealed class HelpGrantsTests : IDisposable
 
     private PluginCatalog Tickets(string allow = """["search", "get_issue"]""", string writes = """["create_issue"]""")
     {
-        var folder = Path.Combine(_home, PluginCatalog.Folder, "acme.tickets");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tickets");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), $$"""
             { "id": "acme.tickets", "servers": [
@@ -52,7 +52,7 @@ public sealed class HelpGrantsTests : IDisposable
         Assert.Equal(["tickets"], grants.Servers.Select(server => server.Name));
         Assert.Equal(["mcp__tickets__search", "mcp__tickets__get_issue", "mcp__tickets__create_issue"], grants.Allow);
         Assert.Empty(grants.Ask);
-        Assert.True(File.Exists(Path.Combine(_home, HelpGrants.FileName)));
+        Assert.True(File.Exists(HelpGrants.PathIn(_home)));
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public sealed class HelpGrantsTests : IDisposable
         Assert.Equal(HelpGrants.Waits, Assert.Single(HelpGrants.Read(_home, catalog).All).State);
 
         HelpGrants.Approve(_home, catalog, "acme.tickets", "tickets", readsOnly: false);
-        File.WriteAllText(Path.Combine(_home, HelpGrants.FileName), "{ torn");
+        File.WriteAllText(HelpGrants.PathIn(_home), "{ torn");
         Assert.Empty(HelpGrants.Read(_home, catalog).Servers);
         Assert.Throws<DriverException>(() => HelpGrants.Approve(_home, catalog, "acme.none", "tickets", readsOnly: false));
     }

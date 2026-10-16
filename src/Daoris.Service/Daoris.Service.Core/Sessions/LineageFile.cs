@@ -41,7 +41,7 @@ public sealed class LineageFile
     {
         var id = session?.Trim();
         Path = !string.IsNullOrWhiteSpace(home) && id is not null && SessionShape.IsMatch(id)
-            ? System.IO.Path.Combine(home.Trim(), "sessions", id, FileName)
+            ? DaorisHome.Entry(home.Trim(), HomeEntry.Sessions, id, FileName)
             : null;
     }
 

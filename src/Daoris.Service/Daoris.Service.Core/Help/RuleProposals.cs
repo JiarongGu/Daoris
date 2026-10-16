@@ -46,9 +46,6 @@ public sealed class RuleProposalBox(string? home)
     /// <summary>The home the driver names on the connector it offers — the one its rules live in.</summary>
     public const string HomeVariable = "DAORIS_RULES_HOME";
 
-    /// <summary>The folder under the home that holds one file per proposal.</summary>
-    public const string Folder = "proposals";
-
     /// <summary>
     /// The same shape the driver's and the CLI's rules hold — judged again when a proposal is applied. <c>\z</c>, since
     /// .NET's <c>$</c> also passes a final line break the CLI's refuses, and the connector hands the rule untrimmed
@@ -122,7 +119,7 @@ public sealed class RuleProposalBox(string? home)
         if (Home is null) return (null, $"{Capital(DaorisHome.Sentence)} Nothing was proposed.");
 
         var id = Guid.NewGuid().ToString("N")[..8];
-        var directory = Path.Combine(Home, Folder);
+        var directory = DaorisHome.Entry(Home, HomeEntry.RuleProposals);
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, $"{id}.json");
         AtomicFile.WriteText(path, Json(id, change, why.Trim(), session, ask, folder, at));
@@ -141,7 +138,7 @@ public sealed class RuleProposalBox(string? home)
     /// </summary>
     public IReadOnlyList<RuleProposalNote> Notes()
     {
-        var directory = Home is null ? null : Path.Combine(Home, Folder);
+        var directory = Home is null ? null : DaorisHome.Entry(Home, HomeEntry.RuleProposals);
         if (directory is null || !Directory.Exists(directory)) return [];
 
         var notes = new List<RuleProposalNote>();
@@ -177,7 +174,7 @@ public sealed class RuleProposalBox(string? home)
 
         try
         {
-            File.Delete(Path.Combine(Home, Folder, $"{id}.json"));
+            File.Delete(DaorisHome.Entry(Home, HomeEntry.RuleProposals, $"{id}.json"));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

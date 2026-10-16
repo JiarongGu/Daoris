@@ -17,21 +17,21 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     [Fact]
     public async Task The_plugin_catalogue_is_answered_and_the_switch_edits_the_same_row_a_terminal_does()
     {
-        var folder = Path.Combine(Home, "plugins", "acme.gate");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """
             { "id": "acme.gate", "name": "Acme gate", "version": "1.2.0", "description": "Holds quests overnight.",
               "harnesses": [ { "name": "acme-agent", "command": ["${plugin}/agent.mjs"] } ],
               "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider"] } }
             """);
-        var broken = Path.Combine(Home, "plugins", "future");
+        var broken = DaorisHome.Entry(Home, HomeEntry.Plugins,"future");
         Directory.CreateDirectory(broken);
         File.WriteAllText(Path.Combine(broken, "plugin.json"), """{ "id": "future", "apiVersion": 99 }""");
         var module = Module();
 
         var answered = await AnswerAsync(module, "PLUGINS");
 
-        Assert.Equal(Path.Combine(Home, "plugins"), answered.GetProperty("folder").GetString());
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Plugins), answered.GetProperty("folder").GetString());
         var plugins = answered.GetProperty("plugins").EnumerateArray().ToList();
         Assert.Equal(2, plugins.Count);
         var gate = plugins.Single(p => p.GetProperty("id").GetString() == "acme.gate");
@@ -52,17 +52,17 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
         // The switch: a row in the same file `daoris plugin disable` writes, never a rename.
         var off = await AnswerAsync(module, "PLUGIN_ACTION", new { id = "acme.gate", action = "disable" });
         Assert.Equal("disable", off.GetProperty("action").GetString());
-        Assert.Contains("acme.gate", File.ReadAllText(Path.Combine(Home, "plugins.json")));
+        Assert.Contains("acme.gate", File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.PluginState)));
         Assert.True(Directory.Exists(folder));
         var again = await AnswerAsync(module, "PLUGINS");
         Assert.False(again.GetProperty("plugins").EnumerateArray()
             .Single(p => p.GetProperty("id").GetString() == "acme.gate").GetProperty("enabled").GetBoolean());
 
         await AnswerAsync(module, "PLUGIN_ACTION", new { id = "acme.gate", action = "enable" });
-        Assert.DoesNotContain("acme.gate", File.ReadAllText(Path.Combine(Home, "plugins.json")));
+        Assert.DoesNotContain("acme.gate", File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.PluginState)));
 
         // Remove takes the install folder and NAMES the data folder, which stays.
-        var data = Path.Combine(Home, "plugins", ".data", "acme.gate");
+        var data = DaorisHome.Entry(Home, HomeEntry.Plugins,".data", "acme.gate");
         Directory.CreateDirectory(data);
         var removed = await AnswerAsync(module, "PLUGIN_ACTION", new { id = "acme.gate", action = "remove" });
         Assert.Equal(data, removed.GetProperty("data").GetString());
@@ -83,7 +83,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     [Fact]
     public async Task A_plugin_whose_folder_is_held_is_refused_whole_and_left_intact()
     {
-        var folder = Path.Combine(Home, "plugins", "acme.held");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.held");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """{ "id": "acme.held", "harnesses": [] }""");
         File.WriteAllText(Path.Combine(folder, "hooks.mjs"), "// a hook the plugin ships");
@@ -98,7 +98,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
         Assert.Contains("PLUGIN_BUSY", refusal);
         Assert.True(File.Exists(Path.Combine(folder, "plugin.json")), "the removal took the manifest and stranded the plugin");
         Assert.True(File.Exists(Path.Combine(folder, "hooks.mjs")));
-        Assert.Empty(Directory.GetDirectories(Path.Combine(Home, "plugins"), ".removing-*"));
+        Assert.Empty(Directory.GetDirectories(DaorisHome.Entry(Home, HomeEntry.Plugins), ".removing-*"));
     }
 
     /// <summary>
@@ -118,10 +118,10 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
                 """);
             File.WriteAllText(Path.Combine(checkout, "gate.mjs"), "// v1");
             PluginInstall.Add(Home, checkout, AdapterSet.Built().Names);
-            var bare = Path.Combine(Home, "plugins", "acme.bare");
+            var bare = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.bare");
             Directory.CreateDirectory(bare);
             File.WriteAllText(Path.Combine(bare, "plugin.json"), """{ "id": "acme.bare" }""");
-            var kept = Path.Combine(Home, "plugins", ".data", "acme.gate");
+            var kept = DaorisHome.Entry(Home, HomeEntry.Plugins,".data", "acme.gate");
             Directory.CreateDirectory(kept);
             var module = new DriverModule(Bus, Loop()) { Offers = Path.Combine(Home, "no-offers") };
 
@@ -138,11 +138,11 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
             Assert.Equal(JsonValueKind.Null, asked.GetProperty("refusal").ValueKind);
             var change = Assert.Single(asked.GetProperty("changes").EnumerateArray());
             Assert.Equal(("version", "1.0.0", "1.1.0"), (change.GetProperty("what").GetString(), change.GetProperty("was").GetString(), change.GetProperty("now").GetString()));
-            Assert.Equal("// v1", File.ReadAllText(Path.Combine(Home, "plugins", "acme.gate", "gate.mjs")));
+            Assert.Equal("// v1", File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate", "gate.mjs")));
 
             var done = await AnswerAsync(module, "PLUGIN_UPDATE", new { id = "acme.gate", apply = true });
             Assert.True(done.GetProperty("applied").GetBoolean());
-            Assert.Equal("// v2", File.ReadAllText(Path.Combine(Home, "plugins", "acme.gate", "gate.mjs")));
+            Assert.Equal("// v2", File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate", "gate.mjs")));
             Assert.True(Directory.Exists(kept));
 
             // No record: asked, the row is told why in the driver's words; pressed, the same refusal.
@@ -188,7 +188,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
 
             var installed = await AnswerAsync(module, "PLUGIN_INSTALL", new { offer = "github-pull-request" });
             Assert.Equal("github-pull-request", installed.GetProperty("id").GetString());
-            Assert.True(File.Exists(Path.Combine(Home, "plugins", "github-pull-request", "land.mjs")));
+            Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Plugins,"github-pull-request", "land.mjs")));
             Assert.False(File.Exists(mark));
             var again = await AnswerAsync(module, "PLUGINS");
             Assert.True(Assert.Single(again.GetProperty("offers").EnumerateArray()).GetProperty("installed").GetBoolean());
@@ -238,7 +238,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
         Assert.False(Directory.Exists(Path.Combine(repository, "acme.other")));
 
         // Installed, it is tried by its id, from its own folder under the home.
-        var installed = Path.Combine(Home, "plugins", "acme.gate");
+        var installed = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");
         Directory.CreateDirectory(installed);
         foreach (var file in Directory.GetFiles(folder)) File.Copy(file, Path.Combine(installed, Path.GetFileName(file)));
         var byId = await AnswerAsync(module, "PLUGIN_TRY", new { id = "acme.gate" });

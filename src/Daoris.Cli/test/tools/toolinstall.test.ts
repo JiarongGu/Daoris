@@ -13,7 +13,8 @@ import {
   LOOK_BOUND_MS, RECORD_KEYS, REDIRECTS, STAGING, commandTool, deleteVersion, downloadVersion, downloadedVersions, lookLocations,
   planTool, unpackPackage, versionFolder, type ToolAction,
 } from '../../src/tools/toolinstall.ts';
-import { TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, isAddress, readTools } from '../../src/tools/tools.ts';
+import { TOOL_PACKAGE, TOOL_RECORD, isAddress, readTools } from '../../src/tools/tools.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { buildArchive } from '../_archives.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
@@ -231,7 +232,7 @@ const PLAN_ROWS: [string, string | null, string, string, string, string | null, 
 test('a plan says which version, and whether it is fetched, as the driver plans it (§3.7)', () => {
   for (const [index, [name, tools, lists, has, action, version, planned, fetch, nothing, check]] of PLAN_ROWS.entries()) {
     const { fx, home, whole } = scratch(`toolinstall-plan-${index}`);
-    if (tools !== null) writeFileSync(join(home, TOOLS_FILE), tools.replace(WHOLE, JSON.stringify(whole).slice(1, -1)));
+    if (tools !== null) writeFileSync(homeEntry(home, 'tools'), tools.replace(WHOLE, JSON.stringify(whole).slice(1, -1)));
     for (const each of has.split(',').filter(Boolean)) downloaded(home, 'gh', each);
 
     const plan = planTool(home, mergedOf(lists), 'gh', action as ToolAction, version);
@@ -328,11 +329,11 @@ test('a download is verified, staged and laid out, or refused leaving nothing, a
       const record = JSON.parse(readFileSync(join(folder, TOOL_RECORD), 'utf8')) as Record<string, unknown>;
       assert.equal(new URL(record.url as string).host, servedBy, name);
       assert.equal(readFileSync(join(folder, TOOL_PACKAGE, ...offered.exe.split('/')), 'utf8'), 'gh', name);
-      assert.equal(existsSync(join(home, TOOLS_FILE)), false, `${name}: nothing switches`);
+      assert.equal(existsSync(homeEntry(home, 'tools')), false, `${name}: nothing switches`);
     } else {
       assert.ok(refused instanceof RefusalError, `${name}: ${String(refused)}`);
       assert.equal(refused.check, check, `${name}: ${refused.message}`);
-      const tool = join(home, TOOLS_FOLDER, 'gh');
+      const tool = homeEntry(home, 'tool-versions', 'gh');
       assert.deepEqual(existsSync(tool) ? readdirSync(tool) : [], [], `${name}: nothing under tools/gh`);
     }
     assert.equal(existsSync(`${folder}${STAGING}`), false, `${name}: no staging is left`);
@@ -398,7 +399,7 @@ const DELETE_ROWS: [string, string | null, boolean, string, string | null][] = [
 test('a version is deleted only when nothing uses it, as the driver deletes it', () => {
   for (const [index, [name, tools, has, version, check]] of DELETE_ROWS.entries()) {
     const { fx, home } = scratch(`toolinstall-delete-${index}`);
-    if (tools !== null) writeFileSync(join(home, TOOLS_FILE), tools);
+    if (tools !== null) writeFileSync(homeEntry(home, 'tools'), tools);
     if (has) downloaded(home, 'gh', '2.62.0');
 
     let refused: unknown = null;
@@ -443,7 +444,7 @@ const LOOK_ROWS: [string, string, boolean, string, string][] = [
 test('a location is looked at as the driver looks: a list that reads is kept, anything else keeps the last copy', async () => {
   for (const [index, [name, answers, before, outcome, after]] of LOOK_ROWS.entries()) {
     const { fx, home } = scratch(`toolinstall-look-${index}`);
-    writeFileSync(join(home, TOOLS_FILE), JSON.stringify({ locations: [LOCATION] }));
+    writeFileSync(homeEntry(home, 'tools'), JSON.stringify({ locations: [LOCATION] }));
     const copy = locationCopy(home, LOCATION);
     if (before) {
       mkdirSync(dirname(copy), { recursive: true });
@@ -465,7 +466,7 @@ test('a location is looked at as the driver looks: a list that reads is kept, an
 
 test('a look says what a list added and dropped, and the age of a copy it kept', async () => {
   const { fx, home } = scratch('toolinstall-look-words');
-  writeFileSync(join(home, TOOLS_FILE), JSON.stringify({ locations: [LOCATION] }));
+  writeFileSync(homeEntry(home, 'tools'), JSON.stringify({ locations: [LOCATION] }));
   const copy = locationCopy(home, LOCATION);
   mkdirSync(dirname(copy), { recursive: true });
   writeFileSync(copy, OLD_LIST);
@@ -578,19 +579,19 @@ test('a download whose bytes are not the list’s is exit 1, and writes nothing'
     return;
   }
   const { fx, home } = scratch('toolinstall-verb-refused');
-  writeFileSync(join(home, TOOLS_FILE), JSON.stringify({ locations: [LOCATION] }));
+  writeFileSync(homeEntry(home, 'tools'), JSON.stringify({ locations: [LOCATION] }));
   mkdirSync(dirname(locationCopy(home, LOCATION)), { recursive: true });
   writeFileSync(locationCopy(home, LOCATION), JSON.stringify({
     schema: 1,
     tools: { gh: { versions: { '2.62.0': { files: { [platform]: { url: 'https://maker.example/gh.zip', sha256: 'a'.repeat(64), size: 3, archive: 'zip', exe: 'bin/gh.exe' } } } } } },
   }));
-  const before = readFileSync(join(home, TOOLS_FILE), 'utf8');
+  const before = readFileSync(homeEntry(home, 'tools'), 'utf8');
 
   const result = await verb(['use', 'gh', 'managed', '2.62.0'], home, host(new Map([['https://maker.example/gh.zip', Buffer.from('abc')]])));
   assert.equal(result.code, 1, result.out.join('\n'));
   assert.match(result.out.at(-1)!, /^daoris: GitHub CLI 2\.62\.0 was not downloaded: https:\/\/maker\.example\/gh\.zip served bytes whose SHA-256 is [0-9a-f]{64}, and the list says a{64}\. Nothing was kept$/);
-  assert.equal(readFileSync(join(home, TOOLS_FILE), 'utf8'), before, 'nothing was written');
-  assert.deepEqual(readdirSync(join(home, TOOLS_FOLDER)).sort(), ['locations'], 'nothing under tools/gh');
+  assert.equal(readFileSync(homeEntry(home, 'tools'), 'utf8'), before, 'nothing was written');
+  assert.deepEqual(readdirSync(homeEntry(home, 'tool-versions')).sort(), ['locations'], 'nothing under tools/gh');
   fx.cleanup();
 });
 

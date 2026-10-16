@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join, sep } from 'node:path';
 import {
-  PATH_VARIABLE, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, childEnvironment, childPath,
+  PATH_VARIABLE, TOOLS, TOOL_PACKAGE, TOOL_RECORD, childEnvironment, childPath,
   commandOnTheSystem, commandThroughTools, handTools, installBin, readTools, resolveCommand,
 } from '../../src/tools/tools.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { probe, readHarnessSettings } from '../../src/agents/toolchain.ts';
 import type { Toolchain } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
@@ -50,12 +51,12 @@ function laidOut(name: string) {
   const home = join(root, 'data');
   mkdirSync(home, { recursive: true });
   for (const [tool, version, exe, paths] of LAID) {
-    const folder = join(home, TOOLS_FOLDER, tool, version);
+    const folder = homeEntry(home, 'tool-versions',tool, version);
     mkdirSync(folder, { recursive: true });
     writeFileSync(join(folder, TOOL_RECORD), paths === null ? `{"exe":"${exe}"}` : `{"exe":"${exe}","paths":${paths}}`);
     touch(join(folder, TOOL_PACKAGE, ...exe.split('/')));
   }
-  const managedNode = join(home, TOOLS_FOLDER, 'node', '22.20.0', TOOL_PACKAGE, 'node-v22.20.0-win-x64');
+  const managedNode = homeEntry(home, 'tool-versions','node', '22.20.0', TOOL_PACKAGE, 'node-v22.20.0-win-x64');
   touch(join(managedNode, program('npm')));
   touch(join(managedNode, program('npx')));
   const named = (tool: string) => join(root, 'named', tool, program(tool));
@@ -78,7 +79,7 @@ function laidOut(name: string) {
         : each === 'lonely' ? join(root, 'named', 'lonely', program('node')) : named(each);
       text = text.replaceAll(`"@${each}"`, JSON.stringify(file));
     }
-    writeFileSync(join(home, TOOLS_FILE), text);
+    writeFileSync(homeEntry(home, 'tools'), text);
   };
 
   /**
@@ -106,7 +107,7 @@ function laidOut(name: string) {
     const slash = token.indexOf('/');
     const tool = token.slice(8, slash);
     const path = token.slice(slash + 1);
-    const pkg = join(home, TOOLS_FOLDER, tool, LAID.find(([id]) => id === tool)![1], TOOL_PACKAGE);
+    const pkg = homeEntry(home, 'tool-versions',tool, LAID.find(([id]) => id === tool)![1], TOOL_PACKAGE);
     return path === '.' ? pkg : join(pkg, ...path.split('/'));
   };
 

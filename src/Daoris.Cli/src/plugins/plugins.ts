@@ -52,7 +52,7 @@ import { foldName, sameName } from '../platform/casefold.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { onPath, readJsonObject, readText, renameHeld, writeJsonAtomic } from '../platform/fsx.ts';
 import type { ExitCode } from '../platform/errors.ts';
-import { daorisHome, HOME_SENTENCE } from '../platform/home.ts';
+import { daorisHome, HOME_SENTENCE, homeEntry } from '../platform/home.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
 import { TOOLS, isAddress } from '../tools/tools.ts';
 import type { CommandArgs } from '../platform/types.ts';
@@ -272,7 +272,7 @@ export interface PluginCatalog {
 }
 
 export function pluginsRoot(home: string): string {
-  return join(home, PLUGINS_DIR);
+  return homeEntry(home, 'plugins');
 }
 
 /**
@@ -321,7 +321,7 @@ function destinations(declared: unknown): string[] | null {
 
 /** `plugins.json`: which plugins are disabled. An unreadable file disables nothing — the safe direction. */
 export function readPluginState(home: string): { disabled: string[] } {
-  const { value: parsed } = readJsonObject(join(home, STATE_FILE));
+  const { value: parsed } = readJsonObject(homeEntry(home, 'plugin-state'));
   const rows = Array.isArray(parsed?.disabled) ? parsed.disabled : [];
   return { disabled: rows.filter((row): row is string => typeof row === 'string' && row.length > 0) };
 }
@@ -332,7 +332,7 @@ export function readPluginState(home: string): { disabled: string[] } {
  */
 export function writePluginState(home: string, state: { disabled: string[] }): void {
   const disabled = [...new Set(state.disabled)].sort();
-  writeJsonAtomic(join(home, STATE_FILE), { disabled });
+  writeJsonAtomic(homeEntry(home, 'plugin-state'), { disabled });
 }
 
 // An id or a name compares as the driver's `PluginCatalog.Same` compares it, by `OrdinalIgnoreCase` (CASEFOLD1).

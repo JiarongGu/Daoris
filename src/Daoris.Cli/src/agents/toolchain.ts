@@ -49,7 +49,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { daorisHome, requireHomeFile } from '../platform/home.ts';
+import { daorisHome, homeEntry, homePlaces, requireHomeFile } from '../platform/home.ts';
 import { commandOnTheSystem, commandThroughTools, handTools } from '../tools/tools.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -145,7 +145,7 @@ export const PATH_VARIABLE = 'DAORIS_HARNESS_CONFIG';
 
 /** Where the wiring lives; the profile tree sits beside it. */
 export function harnessesPath(env: Record<string, string | undefined> = process.env): string {
-  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'harnesses.json');
+  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'harnesses');
 }
 
 /** The directory profiles live under — the Daoris home (D63). */
@@ -543,7 +543,7 @@ export function withDefault(
 
 /** Where a named profile's configuration home is. Daoris owns this location and nothing inside it. */
 export function profileHome(home: string, harness: string, profile: string): string {
-  return join(home, 'harnesses', safeName(harness, 'agent name'), safeName(profile, 'profile name'));
+  return homeEntry(home, 'agent-homes', safeName(harness, 'agent name'), safeName(profile, 'profile name'));
 }
 
 /**
@@ -570,7 +570,7 @@ export function resolveVersion(
 
 /** Where a managed version of a harness lives. Daoris owns this location, binary and all. */
 export function managedHome(home: string, harness: string, version: string): string {
-  return join(home, 'toolchain', safeName(harness, 'agent name'), safeName(version, 'version'));
+  return homeEntry(home, 'toolchain', safeName(harness, 'agent name'), safeName(version, 'version'));
 }
 
 /**
@@ -617,15 +617,17 @@ export function ownerOf(harness: string): string {
   return TOOLCHAINS[harness]?.accountOf ?? harness;
 }
 
-/** The profiles that exist — the directories that exist, sorted. There is no second register. */
+/**
+ * The profiles that exist — the directories that exist, sorted. There is no second register. Both places of the account homes
+ * are read, as a list of an entry's items is (D172 point 5, HOMELAYOUT2).
+ */
 export function profiles(home: string, harness: string): string[] {
-  const root = join(home, 'harnesses', safeName(harness, 'agent name'));
-  if (!existsSync(root)) return [];
-
-  return readdirSync(root, { withFileTypes: true })
+  const names = homePlaces(home, 'agent-homes', safeName(harness, 'agent name'))
+    .filter((root) => existsSync(root))
+    .flatMap((root) => readdirSync(root, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
+    .map((entry) => entry.name);
+  return [...new Set(names)].sort();
 }
 
 /**
@@ -672,7 +674,7 @@ export function removeProfile(home: string, harness: string, profile: string): b
 type Keys = Record<string, Record<string, string>>;
 
 function keysPath(home: string): string {
-  return join(home, 'keys.json');
+  return homeEntry(home, 'keys');
 }
 
 function readKeys(home: string): Keys {

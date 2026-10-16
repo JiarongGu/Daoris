@@ -63,8 +63,8 @@ public sealed class RegistryFollowingTests : IDisposable
     public void A_record_that_does_not_read_is_none_and_never_a_failure()
     {
         Directory.CreateDirectory(_home);
-        File.WriteAllText(Path.Combine(_home, RegistryFollowing.MovedFile), "not json");
-        File.WriteAllText(Path.Combine(_home, RegistryFollowing.FollowedFile), "{\"repositories\":[]}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.LinesMoved), "not json");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.RegistryFollowed), "{\"repositories\":[]}");
 
         Assert.Empty(RegistryFollowing.Due(_home));
         Assert.Empty(RegistryFollowing.Read(_home));
@@ -79,10 +79,10 @@ public sealed class RegistryFollowingTests : IDisposable
         RegistryFollowing.Moved(_home, "game", Noon);
         RegistryFollowing.Remember(_home, Followed("game"), Noon);
 
-        foreach (var file in new[] { RegistryFollowing.MovedFile, RegistryFollowing.FollowedFile })
+        foreach (var entry in new[] { HomeEntry.LinesMoved, HomeEntry.RegistryFollowed })
         {
-            var bytes = File.ReadAllBytes(Path.Combine(_home, file));
-            Assert.False(bytes is [0xEF, 0xBB, 0xBF, ..], $"{file} starts with a byte-order mark");
+            var bytes = File.ReadAllBytes(DaorisHome.Entry(_home, entry));
+            Assert.False(bytes is [0xEF, 0xBB, 0xBF, ..], $"{entry.New} starts with a byte-order mark");
             Assert.DoesNotContain((byte)'\r', bytes);
             Assert.Equal((byte)'\n', bytes[^1]);
         }

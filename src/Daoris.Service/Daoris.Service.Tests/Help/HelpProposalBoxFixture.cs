@@ -19,7 +19,7 @@ public abstract class HelpProposalBoxFixture : IDisposable
 
     protected JsonElement Written(string id)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(_home, "help", "proposals", $"{id}.json")));
+        using var document = JsonDocument.Parse(File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.HelpProposals, $"{id}.json")));
         return document.RootElement.Clone();
     }
 

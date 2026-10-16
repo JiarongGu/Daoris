@@ -36,8 +36,6 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// </remarks>
 public static class AccountReads
 {
-    public const string FileName = "reads.json";
-
     private const string Own = "own";
     private const string AccountsKey = "accounts";
 
@@ -48,7 +46,7 @@ public static class AccountReads
     private static readonly AgentReads Nothing = new(null, new Dictionary<string, AccountRead>(StringComparer.OrdinalIgnoreCase));
 
     /// <summary>Where the file is: beside <c>cooling.json</c>, under the home.</summary>
-    public static string PathOf(string home) => Path.Combine(home, FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Reads);
 
     /// <summary>What was last read of <paramref name="agent"/>'s accounts and its own sign-in; nothing where nothing was.</summary>
     public static AgentReads Of(string home, string agent)

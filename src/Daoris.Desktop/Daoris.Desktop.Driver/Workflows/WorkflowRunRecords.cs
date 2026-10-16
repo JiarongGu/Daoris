@@ -20,7 +20,7 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
     public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions)
     {
         var accepted = new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase);
-        var events = new SessionEvents(Path.Combine(home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
         foreach (var session in sessions.Where(session => !session.Teammate && SessionEventText.IsId(session.Id)))
         {
             try

@@ -26,7 +26,7 @@ public sealed class ProbeLockTests : IDisposable
         var path = ProbeLock.PathOf(_home, owner, profile);
 
         Assert.Equal(relative, Path.GetRelativePath(_home, path).Replace('\\', '/'));
-        Assert.False(path.StartsWith(Path.Combine(_home, "harnesses", owner) + Path.DirectorySeparatorChar, StringComparison.Ordinal));
+        Assert.False(path.StartsWith(DaorisHome.Entry(_home, HomeEntry.AgentHomes, owner) + Path.DirectorySeparatorChar, StringComparison.Ordinal));
     }
 
     /// <summary>Where a sign-in or a key into an account is marked: the twin's <c>MARK_ROWS</c> reads these.</summary>

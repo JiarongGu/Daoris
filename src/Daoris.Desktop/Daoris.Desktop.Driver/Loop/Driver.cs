@@ -1424,7 +1424,7 @@ public sealed class Driver(
                 Context.Events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
             }
 
-            var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
+            var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
             // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed

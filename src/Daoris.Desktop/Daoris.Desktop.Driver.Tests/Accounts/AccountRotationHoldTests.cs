@@ -38,7 +38,7 @@ public sealed class AccountRotationHoldTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
-            .Save(Path.Combine(_home, "harnesses.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
     }
 
     public void Dispose()
@@ -48,7 +48,7 @@ public sealed class AccountRotationHoldTests : IDisposable
     }
 
     private HarnessRoster Roster() =>
-        new(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
+        new(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
 
     private static DriverConfig Config => DriverConfig.Empty with
     {

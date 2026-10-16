@@ -26,8 +26,8 @@
 // It holds no words of the agent's, no key and nobody's name. No HTTP route reaches it (D47 §4), and this module opens no
 // socket and spawns nothing.
 
-import { join } from 'node:path';
 import { findName } from '../platform/casefold.ts';
+import { homeEntry } from '../platform/home.ts';
 import { coolingWhen, isoMoment } from './cooling.ts';
 import { readJsonObject } from '../platform/fsx.ts';
 import { tightestSaid, wholePoints } from './usagecurves.ts';
@@ -59,7 +59,7 @@ export interface WindowSaid {
 
 /** Where the file is: beside `cooling.json`, under the home. */
 export function windowsPath(home: string): string {
-  return join(home, WINDOWS_FILE);
+  return homeEntry(home, 'windows');
 }
 
 /** What an account's agent last said about its windows, as of `now`: each window still said, or null where none is. */

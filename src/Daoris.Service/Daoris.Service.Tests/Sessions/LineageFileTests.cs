@@ -19,7 +19,7 @@ public sealed class LineageFileTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Written(string session) => Path.Combine(_home, "sessions", session, LineageFile.FileName);
+    private string Written(string session) => DaorisHome.Entry(_home, HomeEntry.Sessions, session, LineageFile.FileName);
 
     [Fact]
     public void A_call_is_appended_under_the_named_session_in_utf8_with_no_bom_and_lf()
@@ -51,7 +51,7 @@ public sealed class LineageFileTests : IDisposable
         file.Call("knowledge_search", null, DateTimeOffset.UnixEpoch);
 
         Assert.Null(file.Path);
-        Assert.False(Directory.Exists(Path.Combine(_home, "sessions")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions)));
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class LineageFileTests : IDisposable
         var home = LineageFile.FromEnvironment(name => name switch { "DAORIS_HOME" => _home, "DAORIS_SESSION_ID" => "s1", _ => null });
         var none = LineageFile.FromEnvironment(name => name switch { "DAORIS_HOME" => _home, _ => null });
 
-        Assert.Equal(Path.Combine(rules, "sessions", "s1", LineageFile.FileName), named.Path);
+        Assert.Equal(DaorisHome.Entry(rules, HomeEntry.Sessions, "s1", LineageFile.FileName), named.Path);
         Assert.Equal(Written("s1"), home.Path);
         Assert.Null(none.Path);
     }

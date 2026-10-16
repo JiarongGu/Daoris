@@ -172,7 +172,7 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
     /// <summary>Every line the host's machine log holds, across its files.</summary>
     public IReadOnlyList<string> LogLines()
     {
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return Directory.EnumerateFiles(folder, "*.host.jsonl")
             .SelectMany(path =>

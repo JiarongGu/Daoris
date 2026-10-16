@@ -28,9 +28,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class TreeLock : IDisposable
 {
-    /// <summary>The folder under the home.</summary>
-    public const string Folder = "locks";
-
     private readonly FileStream _file;
 
     private TreeLock(FileStream file) => _file = file;
@@ -39,8 +36,8 @@ public sealed class TreeLock : IDisposable
     /// Where a repository's lock is. One file whatever the name's case, since a registry names a repository without
     /// regard to it, and a workspace left unnamed is the default one.
     /// </summary>
-    public static string PathOf(string home, string? workspace, string repository) => Path.Combine(
-        home, Folder, "trees", RemoteTarget.Workspace(workspace).ToLowerInvariant(), $"{repository.Trim().ToLowerInvariant()}.lock");
+    public static string PathOf(string home, string? workspace, string repository) => DaorisHome.Entry(
+        home, HomeEntry.Locks, "trees", RemoteTarget.Workspace(workspace).ToLowerInvariant(), $"{repository.Trim().ToLowerInvariant()}.lock");
 
     /// <summary>
     /// Hold the repository for a session starting in one of its trees, beside any other start — or null while a

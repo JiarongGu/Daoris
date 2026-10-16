@@ -22,7 +22,7 @@ public sealed class HarnessConversations(string home)
     public const string Suffix = ".harness.json";
 
     /// <summary>Where a session's conversation id is kept.</summary>
-    public string PathOf(string session) => Path.Combine(home, "sessions", session + Suffix);
+    public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);
 
     /// <summary>
     /// Keep what the wire named this session's conversation, replacing what was kept. An id that is not a session's, or a

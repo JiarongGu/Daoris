@@ -39,7 +39,7 @@ public sealed class HelpProposalsTests : HelpProposalsFixture
     [Fact]
     public void The_folder_is_the_services_twin()
     {
-        Assert.Equal(Path.Combine(_home, "help", "proposals"), HelpProposals.FolderOf(_home));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.HelpProposals), HelpProposals.FolderOf(_home));
     }
 
     /// <summary>A kind no class judges is refused in the words it always was, and never shown (MOD6 kept them word for word).</summary>

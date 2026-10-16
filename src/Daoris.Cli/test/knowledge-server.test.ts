@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, type Fixture } from './_fixture.ts';
+import { homeEntry } from '../src/platform/home.ts';
 
 // ORIENT1c: `tools/knowledge-server.mjs` is what `.mcp.json` starts. It runs a build of the MCP host the
 // workspace keeps under `local/` and never builds at a session's start; a worktree reaches its main checkout's
@@ -157,7 +158,7 @@ test('a workspace session runs the workspace\'s build; a driven one the machine\
   const home = join(fx.root, 'data');
   fx.write('data/bin/daoris-knowledge.exe', '');
   assert.equal(tool.serverCommand('driven', { DAORIS_MCP_HOST: explicit, DAORIS_HOME: home }, located, 'win32')?.command, explicit);
-  assert.equal(tool.serverCommand('driven', { DAORIS_HOME: home }, located, 'win32')?.command, join(home, 'bin', 'daoris-knowledge.exe'));
+  assert.equal(tool.serverCommand('driven', { DAORIS_HOME: home }, located, 'win32')?.command, homeEntry(home, 'bin', 'daoris-knowledge.exe'));
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: join(fx.root, 'empty') }, located, 'win32')?.command, 'dotnet');
   assert.equal(tool.serverCommand('driven', {}, null, 'win32'), null);
   assert.equal(tool.serverCommand('workspace', {}, null), null);

@@ -25,7 +25,7 @@ public static class SpawnServers
     {
         if (servers.Count == 0) return null;
 
-        var path = Path.Combine(home, Folder, $"{sessionId}.mcp.json");
+        var path = DaorisHome.Entry(home, HomeEntry.Spawn, $"{sessionId}.mcp.json");
 
         // By name, so a name given twice is refused as it always was (the writer is reflection-free: JsonFile).
         var byName = servers.ToDictionary(server => server.Name, StringComparer.Ordinal);

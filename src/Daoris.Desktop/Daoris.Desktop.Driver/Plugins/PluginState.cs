@@ -10,7 +10,7 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
 {
     public const string FileName = "plugins.json";
 
-    public static string PathIn(string home) => System.IO.Path.Combine(home, FileName);
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.PluginState);
 
     public static PluginState Load(string home)
     {

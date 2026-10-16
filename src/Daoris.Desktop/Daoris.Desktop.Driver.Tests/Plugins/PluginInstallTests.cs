@@ -38,14 +38,14 @@ public sealed class PluginInstallTests : IDisposable
         File.WriteAllText(Path.Combine(source, "a.mjs"), "// v1");
         Directory.CreateDirectory(Path.Combine(source, "lib"));
         File.WriteAllText(Path.Combine(source, "lib", "b.mjs"), "// b");
-        var kept = Path.Combine(Home, PluginCatalog.Folder, PluginCatalog.DataFolder, "acme.agent");
+        var kept = DaorisHome.Entry(Home, HomeEntry.Plugins,PluginCatalog.DataFolder, "acme.agent");
         Directory.CreateDirectory(kept);
         File.WriteAllText(Path.Combine(kept, "kept.json"), "{}");
 
         var added = PluginInstall.Add(Home, source, Reserved);
 
         Assert.Equal("acme.agent", added.Id);
-        var installed = Path.Combine(Home, PluginCatalog.Folder, "acme.agent");
+        var installed = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.agent");
         Assert.Equal("// v1", File.ReadAllText(Path.Combine(installed, "a.mjs")));
         Assert.Equal("// b", File.ReadAllText(Path.Combine(installed, "lib", "b.mjs")));
         Assert.True(File.Exists(Path.Combine(kept, "kept.json")));
@@ -53,7 +53,7 @@ public sealed class PluginInstallTests : IDisposable
         // The catalogue reads it with the placeholder expanded to where it LANDED, not where it came from.
         Assert.Equal(Path.Combine(installed, "a.mjs"), Assert.Single(PluginCatalog.Load(Home).Plugins).Manifest.Harnesses[0].Command[0]);
         // Staged beside and renamed in: nothing but the plugin and its data is left under plugins/.
-        Assert.Equal([".data", "acme.agent"], Directory.GetDirectories(Path.Combine(Home, PluginCatalog.Folder)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Equal([".data", "acme.agent"], Directory.GetDirectories(DaorisHome.Entry(Home, HomeEntry.Plugins)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
     }
 
     /// <summary>What `plugin add` refuses, refused in the same words, with nothing copied.</summary>
@@ -70,7 +70,7 @@ public sealed class PluginInstallTests : IDisposable
 
         Assert.Contains(says, refused.Message);
         Assert.Contains("Nothing was copied", refused.Message);
-        Assert.False(Directory.Exists(Path.Combine(Home, PluginCatalog.Folder)));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Plugins)));
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public sealed class PluginInstallTests : IDisposable
 
         Assert.Contains("already installed", refused.Message);
         Assert.Contains("daoris plugin add", refused.Message);
-        Assert.Equal("// v1", File.ReadAllText(Path.Combine(Home, PluginCatalog.Folder, "acme.agent", "a.mjs")));
+        Assert.Equal("// v1", File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.agent", "a.mjs")));
     }
 
     /// <summary>A folder inside the home is Daoris's own, and one holding the home would copy it into itself.</summary>
@@ -112,7 +112,7 @@ public sealed class PluginInstallTests : IDisposable
 
         Assert.Contains("inside Daoris's home", Assert.Throws<DriverException>(() => PluginInstall.Add(Home, inside, Reserved)).Message);
         Assert.Contains("holds Daoris's home", Assert.Throws<DriverException>(() => PluginInstall.Add(Home, _root, Reserved)).Message);
-        Assert.False(Directory.Exists(Path.Combine(Home, PluginCatalog.Folder)));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Plugins)));
     }
 
     /// <summary>🔴 The copy starts nothing the plugin declares: its hook writes a mark when it runs, and there is none.</summary>

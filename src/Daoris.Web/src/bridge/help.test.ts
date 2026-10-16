@@ -106,6 +106,23 @@ describe('what settling a proposal writes to the machine log', () => {
   });
 });
 
+/** HELPAPPLY1: an Apply stands for the card the person saw, so it carries that card's revision to the host. */
+describe('what an Apply carries', () => {
+  it('sends the revision of the card the conversation holds for the proposal', async () => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
+    const client = new QueryClient();
+    client.setQueryData(['help-proposals', 's1'], [{ id: 'p13', kind: 'setting', revision: 'abc123' }]);
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+
+    await act(async () => { await result.current.mutateAsync({ id: 'p13', apply: true }); });
+
+    const sent = invoke.mock.calls.find(([, type]) => type === 'HELP_APPLY');
+    expect((sent?.[2] as { payload?: unknown } | undefined)?.payload).toEqual({ id: 'p13', revision: 'abc123' });
+  });
+});
+
 /**
  * What an Apply or a Not now changed is published by its route (STATEHUB1h, D169), and the window's state hub asks it again, as
  * every other window's does; the hook asks nothing again itself. Each family below is one the hook used to ask by hand.

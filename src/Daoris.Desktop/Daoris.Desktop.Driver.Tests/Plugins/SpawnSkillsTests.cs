@@ -21,7 +21,7 @@ public sealed class SpawnSkillsTests : IDisposable
 
     private string Plugin(string id, string manifest, params (string Skill, string Text)[] skills)
     {
-        var folder = Path.Combine(_home, PluginCatalog.Folder, id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), manifest);
         foreach (var (skill, text) in skills)
@@ -47,7 +47,7 @@ public sealed class SpawnSkillsTests : IDisposable
 
         var (spawn, plugins) = SpawnSkills.Write(_home, "s1a2b3c4", PluginCatalog.Load(_home), PluginServerTo.Help);
 
-        Assert.Equal(Path.Combine(_home, SpawnServers.Folder, "s1a2b3c4.plugins"), spawn);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s1a2b3c4.plugins"), spawn);
         var handed = Assert.Single(plugins);
         Assert.Equal(Path.Combine(spawn!, "acme.tickets"), handed);
         using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(handed, ".claude-plugin", "plugin.json"))))
@@ -101,9 +101,9 @@ public sealed class SpawnSkillsTests : IDisposable
     public void The_pipe_takes_a_plugin_dir_each_and_the_protocol_door_the_sdks_plugins_option()
     {
         // Paths in pieces under the test's own home, never a literal machine path (the merge's universal gate).
-        var tickets = Path.Combine(_home, SpawnServers.Folder, "s1.plugins", "acme.tickets");
-        var docs = Path.Combine(_home, SpawnServers.Folder, "s1.plugins", "acme.docs");
-        var settings = Path.Combine(_home, SpawnServers.Folder, "s1.settings.json");
+        var tickets = DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.plugins", "acme.tickets");
+        var docs = DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.plugins", "acme.docs");
+        var settings = DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.settings.json");
         var info = new ProcessStartInfo();
         AdapterSet.Built().Resolve("claude-code").HandPlugins(info, [tickets, docs]);
         Assert.Equal(["--plugin-dir", tickets, "--plugin-dir", docs], info.ArgumentList);
