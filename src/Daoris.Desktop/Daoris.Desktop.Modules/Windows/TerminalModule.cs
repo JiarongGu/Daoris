@@ -31,6 +31,9 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Every terminal ends when the application does</b>: the container that made this disposes it,
 /// and each shell's job object ends with this process besides.</para>
+///
+/// <para><b>A shell starts through the start gate</b> (<see cref="ProcessStarts"/>, TERMSTART1), never on the window's
+/// thread; one whose terminal was ended while it waited there is ended as it starts.</para>
 /// </remarks>
 public sealed class TerminalModule : ModuleBase, IDisposable
 {
@@ -65,13 +68,26 @@ public sealed class TerminalModule : ModuleBase, IDisposable
     private sealed class Open(string id) : IDisposable
     {
         private int _quiet;
+        private int _ended;
+        private ITerminal? _terminal;
 
         public string Id { get; } = id;
-        public ITerminal? Terminal { get; set; }
+        public ITerminal? Terminal => Volatile.Read(ref _terminal);
         public BatchRelay<string>? Relay { get; set; }
         public Action<string, string>? Sink { get; set; }
 
         public void Say(string data) => Sink?.Invoke(Id, data);
+
+        /// <summary>
+        /// The shell, once started: ended at once where the terminal was ended while its start waited at the gate
+        /// (TERMSTART1), so a shell never runs on with no tab and no module to close it. Each side writes with a full fence
+        /// before it reads the other's, so one of them always sees the other.
+        /// </summary>
+        public void Hold(ITerminal terminal)
+        {
+            Interlocked.Exchange(ref _terminal, terminal);
+            if (Volatile.Read(ref _ended) != 0) terminal.Dispose();
+        }
 
         /// <summary>Send what is left and stop: once, whether the shell ended or the tab closed first.</summary>
         public void Quiet()
@@ -81,6 +97,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
 
         public void Dispose()
         {
+            Interlocked.Exchange(ref _ended, 1);
             Terminal?.Dispose();
             Quiet();
         }
@@ -101,11 +118,12 @@ public sealed class TerminalModule : ModuleBase, IDisposable
             }
 
             case "OPEN":
-                return Task.FromResult<object?>(Start(
+                return StartAsync(
                     PayloadHelper.GetOptionalValue<string>(request.Payload, "shell"),
                     PayloadHelper.GetOptionalValue<string>(request.Payload, "cwd"),
                     PayloadHelper.GetOptionalValue<int>(request.Payload, "cols"),
-                    PayloadHelper.GetOptionalValue<int>(request.Payload, "rows")));
+                    PayloadHelper.GetOptionalValue<int>(request.Payload, "rows"),
+                    cancellationToken);
 
             case "INPUT":
             {
@@ -140,7 +158,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
         }
     }
 
-    private object Start(string? named, string? cwd, int columns, int rows)
+    private async Task<object?> StartAsync(string? named, string? cwd, int columns, int rows, CancellationToken ct)
     {
         var available = _terminals.Shells();
         TerminalShell shell;
@@ -180,11 +198,15 @@ public sealed class TerminalModule : ModuleBase, IDisposable
             (id, items) => _events.EmitAsync("DAORIS", "TERMINAL_OUTPUT", new { Id = id, Data = string.Concat(items) }),
             OutputWindow);
         _open[open.Id] = open;
+        var launch = new TerminalLaunch(shell, directory, environment, columns > 0 ? columns : 80, rows > 0 ? rows : 24);
         try
         {
-            open.Terminal = _terminals.Start(
-                new TerminalLaunch(shell, directory, environment, columns > 0 ? columns : 80, rows > 0 ? rows : 24),
-                open.Say, code => Ended(open, code));
+            // 🔴 TERMSTART1: through the start gate, on the thread pool. The pseudo-console's CreateProcessW ran in this route's
+            // synchronous part, on the window's thread, where an antivirus hook on process creation held the window.
+            ITerminal? started = null;
+            await ProcessStarts.Shared.RunAsync(() => started = _terminals.Start(launch, open.Say, code => Ended(open, code)), ct)
+                .ConfigureAwait(false);
+            open.Hold(started!);
         }
         catch (Exception error) when (error is Win32Exception or IOException or PlatformNotSupportedException)
         {
@@ -194,6 +216,13 @@ public sealed class TerminalModule : ModuleBase, IDisposable
                 Refusals.TerminalNotStarted,
                 $"`{shell.Id}` would not start: {error.Message}",
                 ("shell", shell.Id), ("problem", error.Message));
+        }
+        catch (OperationCanceledException)
+        {
+            // Given up while it waited for a place: nothing started.
+            _open.TryRemove(open.Id, out _);
+            open.Quiet();
+            throw;
         }
 
         return new { open.Id, Shell = shell.Id, Cwd = directory };

@@ -5,7 +5,10 @@ namespace Daoris.Driver;
 /// <summary>What a trial is asked to do beyond its defaults.</summary>
 /// <param name="Point">One point to try; absent, every point the manifest declares.</param>
 /// <param name="Frame">The frame to send at <paramref name="Point"/> instead of the sample — the person's, root and all.</param>
-/// <param name="Patience">How long each call waits; absent, as long as the driver waits at the points tried.</param>
+/// <param name="Patience">
+/// How long each point's call waits; absent, as long as the driver waits at the points tried. The handshake always waits
+/// that long, as the driver's does (PLUGKIT2).
+/// </param>
 public sealed record TrialOptions(string? Point = null, JsonObject? Frame = null, TimeSpan? Patience = null);
 
 /// <summary>

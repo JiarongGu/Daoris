@@ -336,15 +336,23 @@ public sealed class PluginKitTests : IDisposable
         Assert.True(trial.Steps.Single(s => s.Name == "shutdown").Ok);
     }
 
+    /// <remarks>
+    /// 🔴 PLUGKIT2: the one second was the whole trial's, so node's start and the handshake outlasted it under load and
+    /// `work/land` was never asked. The second is the point's call's now, the handshake waits the point's own patience, and
+    /// this plugin's handshake comes later than the second, as a loaded machine's did.
+    /// </remarks>
     [Fact]
     public async Task A_silent_plugin_is_still_running_and_said_nothing_within_the_patience()
     {
         var folder = New("acme.silent", [HookPoints.Land]);
         // It takes the frame and never answers it.
         Replace(folder, "      send({ jsonrpc: '2.0', id: frame.id, result: await points[frame.method.slice(5)](frame.params ?? {}) });", "      // silence");
+        Replace(folder, "    const declared = frame.params?.points ?? [];",
+            "    await new Promise((resolve) => setTimeout(resolve, 1500));\n    const declared = frame.params?.points ?? [];");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Patience: TimeSpan.FromSeconds(1)));
 
+        Assert.True(trial.Steps.Single(s => s.Name == "handshake").Ok, trial.Steps.Single(s => s.Name == "handshake").Sentence);
         var step = Failed(trial, HookPoints.Land);
         Assert.Contains("is running and did not answer `hook/work/land` within 1s", step.Sentence);
         Assert.Contains("the landing would say the plugin's step failed", step.Sentence);

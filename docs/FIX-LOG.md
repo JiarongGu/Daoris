@@ -254,6 +254,14 @@ repository.
   `DriverModuleOneFlightTests` (two asks read the registry twice before, once after; the next ask reads again),
   `RouteFlightsTests`, `ProcessStartsCensusTests` (red with nine files starting directly and three bare folder doors),
   `GatedStartsTests` and `OpenFolderGateTests` (each start seen nowhere, or on the caller's thread, before; off it after).
+- **And the terminal's shell (TERMSTART1, 2026-10-16):** `DAORIS.TERMINAL`'s `OPEN` started the shell with the pseudo-console's
+  `CreateProcessW`, which no census of .NET's starts saw, in its synchronous part; it now runs that start through the gate's
+  `RunAsync`, and a shell whose terminal was ended while it waited there is ended as it starts. The census counts
+  `CreateProcessW` too. Verify: `TerminalOpenGateTests` (the start on the caller's thread before, off it after).
+- **And the update's relaunch (UPDATERELAUNCH1, 2026-10-16):** *Update now*'s `SET` looked, applied and started the launcher
+  synchronously; the look is awaited now and the launcher started through the gate (`UpdateLauncher`), and `App/Program.cs`
+  is off the census's list. Verify: `UpdateRelaunchGateTests` (the launcher started on the caller's thread before, off it
+  after), the census (red with `Program.cs` off its list before the move).
 
 ## 2026-10-15 — The person-door host missed its 15-second stop once under load: not reproduced, its one long wait bounded (FLAKE2)
 
@@ -2160,6 +2168,31 @@ whose one-second patience covers node's start and the handshake, and passed alon
 wire test's two seconds to leave after `shutdown`, green in the next two: FLAKE1's load, not the change. Projected from the same
 trx sums, the serial half goes from 708 to about 520 s quiet and from 2126 to about 1270 s under that load, and the git half,
 four at once, gains about 70 s and 6 minutes; the next full set measures it.
+
+**FLAKE5 (2026-10-16): `SessionsSayCommandTests` waited on the machine's clock for a loop the load made late.** Three of its cases
+failed under four workers' load that day and passed alone. Each gave the verb a 300 or 400 ms `Wait`, read off the machine's clock
+from the verb's start, within which a real `SessionRequestWatch`, ticking every 20 ms on a `PeriodicTimer`, had to take the say; a
+loaded pool ran the tick late. *`A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for`*: nothing had taken the say
+when the wait ended, so the verb withdrew it and kept the words on the record itself, and said `held: … at the driver's next look`
+where `going on: the same session took it` was asserted. *`A_loop_that_took_the_words_and_never_answers_is_said_after_its_bound`*:
+the same withdrawal, exit 0 where 2 (*took your words, and gave no answer*) was asserted. *`A_session_still_winding_up_after_the_wait_could_not_take_them`*:
+the loop had not answered `running` once within the 400 ms, so the verb held no winding answer, withdrew the say and kept the
+words as if no loop had taken them: no *still winding up*. The sightings' messages were not kept; each shape is reproduced by a
+loop that first looks after twice the wait, which fails those three and `…went_away_unanswered_is_said_at_once` (the same
+shape, exit 0 where 2) on the machine's clock. Fixed by the condition, not a wider window: every wait the verb measures is read off
+`SessionsWorld.Clock` (a `TimeProvider`, the machine's in production), and these four tests hand it a clock that stands still until
+the loop has entered its say (the winding case: until the say door has heard the verb's second ask) and then runs, with their loop
+kept late (`Late(world)`) so each run is the load's shape. Red with the late loop before, 57/57 after; the class ran green twelve
+times, five of them beside one plain `dotnet build --no-incremental` of another project (the service's HTTP tests, the desktop
+application, the service's solution: each lasted 16-27 s, so the other seven ran after it), while the parent's gates ran.
+
+**PLUGKIT2 (2026-10-16): the silent plugin's one second covered its start.** PROC1g's two failures of
+`A_silent_plugin_is_still_running_and_said_nothing_within_the_patience` had one cause: `TrialOptions.Patience`, which only
+tests set, was the peer's for every call, so the case's one second was the handshake's too, and node's start and the
+handshake outlasted it under load; the trial said the handshake had not answered and never asked `work/land`. The handshake
+now waits the points' own patience, as the driver's does (`HookPeer.InitializeAsync`'s patience), and a given patience is
+the points' calls'. The case's plugin answers its handshake after 1.5 s, the load's shape every run, and still fails its
+silent `work/land` within the second.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
