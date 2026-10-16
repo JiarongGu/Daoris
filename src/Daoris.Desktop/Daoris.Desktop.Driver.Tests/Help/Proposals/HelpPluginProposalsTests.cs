@@ -164,7 +164,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         var facts = PluginMachine();
 
         Assert.Contains("inside Daoris's home",
-            HelpProposals.Plan(PluginAdd(null, Path.Combine(_home, PluginCatalog.Folder, "example.lands")), DriverConfig.Empty, facts).Refusal);
+            HelpProposals.Plan(PluginAdd(null, DaorisHome.Entry(_home, HomeEntry.Plugins,"example.lands")), DriverConfig.Empty, facts).Refusal);
         Assert.Contains("holds Daoris's home",
             HelpProposals.Plan(PluginAdd(null, Path.GetDirectoryName(_home)), DriverConfig.Empty, facts).Refusal);
     }

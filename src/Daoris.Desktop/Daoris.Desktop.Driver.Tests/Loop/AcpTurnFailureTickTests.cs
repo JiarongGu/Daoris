@@ -55,7 +55,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
             + "until",
             note);
         Assert.DoesNotContain("spend limit", note);
-        Assert.Contains("spend limit", File.ReadAllText(Path.Combine(_home, "sessions", "s1.log")));
+        Assert.Contains("spend limit", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log")));
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>

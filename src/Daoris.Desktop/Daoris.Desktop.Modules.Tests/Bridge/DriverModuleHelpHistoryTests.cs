@@ -144,7 +144,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         var refusal = await RefusalAsync(module, route, new { id, name = "x", pinned = true });
 
         Assert.Contains(why, refusal);
-        var sessions = Path.Combine(loop.Home, "sessions");
+        var sessions = DaorisHome.Entry(loop.Home, HomeEntry.Sessions);
         Assert.True(!Directory.Exists(sessions) || !Directory.EnumerateFiles(sessions, "*" + HelpConversations.Suffix).Any());
     }
 

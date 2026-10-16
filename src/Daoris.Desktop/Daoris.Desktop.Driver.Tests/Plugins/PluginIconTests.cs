@@ -25,7 +25,7 @@ public sealed class PluginIconTests : IDisposable
 
     private string Plugin(string id, string? icon)
     {
-        var folder = Path.Combine(_home, PluginCatalog.Folder, id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         var field = icon is null ? "" : $", \"icon\": {icon}";
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
@@ -212,7 +212,7 @@ public sealed class PluginIconTests : IDisposable
     [Fact]
     public void A_refused_plugin_keeps_its_icon()
     {
-        var other = Path.Combine(_home, PluginCatalog.Folder, "acme.later");
+        var other = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.later");
         Directory.CreateDirectory(other);
         File.WriteAllText(Path.Combine(other, PluginCatalog.ManifestName), """
             { "id": "acme.later", "icon": "icon.svg", "harnesses": [ { "name": "claude-code", "command": ["claude"] } ] }

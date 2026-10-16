@@ -18,7 +18,7 @@ public sealed class OpinionDues(string home)
     // One writer at a time in this process: the look and a conclusion may write at once.
     private static readonly object Gate = new();
 
-    public string FilePath => Path.Combine(home, "opinions", FileName);
+    public string FilePath => DaorisHome.Entry(home, HomeEntry.OpinionDues);
 
     /// <summary>Every entry, in the order they became due.</summary>
     public IReadOnlyList<OpinionDue> All() => OpinionGateFiles.ReadDues(FilePath);

@@ -98,10 +98,10 @@ public sealed class HookChangedTests : IDisposable
 
     private PluginCatalog Catalog(params (string Id, string[] Points)[] plugins)
     {
-        Directory.CreateDirectory(Path.Combine(_home, "plugins"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins));
         foreach (var (id, points) in plugins)
         {
-            var folder = Path.Combine(_home, "plugins", id);
+            var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
             {

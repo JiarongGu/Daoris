@@ -110,7 +110,7 @@ public sealed class PluginOfferTests : IDisposable
     public void An_offer_installed_here_is_marked_installed()
     {
         Folder(Path.Combine(Offers, "github-pull-request"), Offered);
-        Folder(Path.Combine(Home, PluginCatalog.Folder, "github-pull-request"), Offered);
+        Folder(DaorisHome.Entry(Home, HomeEntry.Plugins,"github-pull-request"), Offered);
 
         Assert.True(Assert.Single(PluginOffers.Load(Offers, Home, Reserved)).Installed);
     }

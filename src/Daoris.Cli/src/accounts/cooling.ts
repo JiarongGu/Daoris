@@ -21,8 +21,8 @@
 // It holds no words of the agent's, no key and nobody's name: the session id points at the record, which holds them.
 // No HTTP route reaches it (D47 §4), and this module opens no socket and spawns nothing.
 
-import { join } from 'node:path';
 import { compareNames, findName, sameName } from '../platform/casefold.ts';
+import { homeEntry } from '../platform/home.ts';
 import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
 import { shellWord } from '../platform/shellword.ts';
 
@@ -48,7 +48,7 @@ export interface CoolingEntry {
 
 /** Where the file is: beside `harnesses.json` and the accounts, under the home. */
 export function coolingPath(home: string): string {
-  return join(home, COOLING_FILE);
+  return homeEntry(home, 'cooling');
 }
 
 /** Every account cooling at `now`, by agent and then account, as the driver orders them. */

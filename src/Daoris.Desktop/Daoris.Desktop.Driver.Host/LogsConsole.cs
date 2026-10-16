@@ -27,7 +27,7 @@ internal static class LogsConsole
             return 2;
         }
 
-        var folder = DaorisHome.Require(MachineLog.Folder);
+        var folder = DaorisHome.Require(HomeEntry.Logs);
         var read = MachineLogReader.Read(folder, parsed.Filter);
         foreach (var line in read.Lines)
         {

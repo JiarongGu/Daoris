@@ -29,15 +29,6 @@ public sealed class DaorisHomeTests
         Assert.Contains("DAORIS_HOME", DaorisHome.Sentence);
     }
 
-    [Fact]
-    public void A_file_under_the_home_is_the_home_joined_or_null_when_there_is_none()
-    {
-        Assert.Equal(
-            Path.Combine("D:/somewhere/data", "driver.json"),
-            DaorisHome.File(Env(("DAORIS_HOME", "D:/somewhere/data")), "driver.json"));
-        Assert.Null(DaorisHome.File(Env(), "driver.json"));
-    }
-
     /// <summary>
     /// The management class REFUSES rather than guessing: a driver with no home and no per-file
     /// override names what to set, in one sentence, instead of writing somewhere nobody pointed it.
@@ -45,7 +36,7 @@ public sealed class DaorisHomeTests
     [Fact]
     public void Requiring_a_file_with_no_home_is_a_refusal_that_names_the_variable()
     {
-        var error = Assert.Throws<DriverException>(() => DaorisHome.Require(Env(), "driver.json"));
+        var error = Assert.Throws<DriverException>(() => DaorisHome.Require(Env(), HomeEntry.DriverConfig));
         Assert.Contains("DAORIS_HOME", error.Message);
         Assert.Contains("driver.json", error.Message);
     }
@@ -113,6 +104,140 @@ public sealed class DaorisHomeTests
         {
             Directory.Delete(install, recursive: true);
         }
+    }
+
+    /// <summary>
+    /// 🔴 D172 point 5 (HOMELAYOUT2, the install layout design §6.2) with its review note: an entry is read and written at its new
+    /// place if that holds what the entry is, else at its old place if that is there, else at its new place; where both hold it,
+    /// neither is chosen, and the refusal names both. What a place holds: a file that is not empty and, for JSON, parses; a folder
+    /// that is not empty; or, for an entry whose place is known by the names it holds, one of those names. So an empty or
+    /// half-made new place never shadows a populated old one, and an old one that does not read is still read where it is, for
+    /// its reader to say so. A row is an entry's new and old place, its names, what is on the disk (a file holds <c>{}</c> for
+    /// JSON and a letter otherwise, what follows <c>=</c> where one is written; a trailing <c>/</c> is an empty folder), what is
+    /// asked, and where that is (empty: the home itself), or <c>refused</c>. A <c>*</c> is an item, filled from what is asked one
+    /// part each; what is asked beyond the items is joined under the item found, and asked short of them is the folder holding
+    /// them, never refused since both places hold items by design. The CLI's <c>home.test.ts</c> holds these rows and the
+    /// service's to its own, cell for cell.
+    /// </summary>
+    [Theory]
+    [InlineData("a.json", "a.json", "", "", "", "a.json")]
+    [InlineData("a.json", "a.json", "", "a.json", "", "a.json")]
+    [InlineData("data/a.json", "a.json", "", "", "", "data/a.json")]
+    [InlineData("data/a.json", "a.json", "", "a.json", "", "a.json")]
+    [InlineData("data/a.json", "a.json", "", "data/a.json", "", "data/a.json")]
+    [InlineData("data/a.json", "a.json", "", "a.json,data/a.json", "", "refused")]
+    [InlineData("data/a.json", "a.json", "", "a.json,data/a.json=torn", "", "a.json")]
+    [InlineData("data/a.json", "a.json", "", "a.json=torn,data/a.json", "", "data/a.json")]
+    [InlineData("data/a.json", "a.json", "", "a.json=torn", "", "a.json")]
+    [InlineData("data/k.db", "k.db", "", "k.db,data/k.db=", "", "k.db")]
+    [InlineData("data/s", "s", "", "s/x.log", "x.log", "s/x.log")]
+    [InlineData("data/s", "s", "", "s/x.log", "y.log", "s/y.log")]
+    [InlineData("data/s", "s", "", "s/x.log,data/s/", "y.log", "s/y.log")]
+    [InlineData("data/s", "s", "", "s/x.log,data/s/z.log", "", "refused")]
+    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/one", "t/a/one")]
+    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/two", "work/t/a/two")]
+    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD,work/t/a/one/HEAD", "a/one", "refused")]
+    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/one/notes.md", "t/a/one/notes.md")]
+    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a", "t/a")]
+    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD,work/t/a/two/HEAD", "a", "work/t/a")]
+    [InlineData("work/f/*", "s/*/files", "", "s/one/files/a.png", "one/b.png", "s/one/files/b.png")]
+    [InlineData("work/f/*", "s/*/files", "", "", "one", "work/f/one")]
+    [InlineData("run/s/*.pid", "s/*.pid", "", "s/one.pid", "one", "s/one.pid")]
+    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/proposals/p.json", "", "work/rooms/help")]
+    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/CLAUDE.md", "", "help")]
+    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/CLAUDE.md,work/rooms/help/notes.md", "", "help")]
+    [InlineData("profiles/window", "", "chromium|config", "config/window-state.json", "", "")]
+    [InlineData("profiles/window", "", "chromium|config", "", "", "profiles/window")]
+    public void An_entry_is_where_it_is(string next, string old, string holds, string present, string asked, string expected)
+    {
+        var home = Scratch();
+        try
+        {
+            foreach (var item in present.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var (file, text) = item.IndexOf('=') is var at and >= 0
+                    ? (item[..at], item[(at + 1)..])
+                    : (item, item.EndsWith(".json", StringComparison.Ordinal) ? "{}" : "x");
+                var path = Path.Combine([home, .. file.Split('/', StringSplitOptions.RemoveEmptyEntries)]);
+                if (file.EndsWith('/'))
+                {
+                    Directory.CreateDirectory(path);
+                    continue;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.WriteAllText(path, text);
+            }
+
+            var entry = new HomeEntry("probe", HomeCategory.Data, next, old, holds.Split('|', StringSplitOptions.RemoveEmptyEntries));
+            var asking = asked.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (expected == "refused")
+            {
+                var refusal = Assert.Throws<HomeEntryTwiceException>(() => DaorisHome.Entry(home, entry, asking));
+                Assert.Equal(DaorisHome.Places(home, entry, asking), [refusal.New, refusal.Old]);
+                Assert.Equal(string.Format(DaorisHome.Twice, "probe", refusal.New, refusal.Old), refusal.Message);
+                return;
+            }
+
+            Assert.Equal(
+                Path.Combine([home, .. expected.Split('/', StringSplitOptions.RemoveEmptyEntries)]),
+                DaorisHome.Entry(home, entry, asking));
+        }
+        finally
+        {
+            Directory.Delete(home, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// A list of an entry's items reads both places (the design §6.2): the new place first, then the old, once each, asked
+    /// without the disk. The CLI's <c>home.test.ts</c> holds these rows and the service's to its own, cell for cell.
+    /// </summary>
+    [Theory]
+    [InlineData("a.json", "a.json", "", "a.json")]
+    [InlineData("data/a.json", "a.json", "", "data/a.json|a.json")]
+    [InlineData("work/t/*/*", "t/*/*", "", "work/t|t")]
+    [InlineData("work/t/*/*", "t/*/*", "a", "work/t/a|t/a")]
+    [InlineData("work/f/*", "s/*/files", "one", "work/f/one|s/one/files")]
+    [InlineData("run/s/*.pid", "s/*.pid", "", "run/s|s")]
+    public void A_list_reads_both_places(string next, string old, string asked, string expected)
+    {
+        var home = Path.Combine(AppContext.BaseDirectory, "places");
+        var entry = new HomeEntry("probe", HomeCategory.Data, next, old);
+        Assert.Equal(
+            expected.Split('|').Select(place => Path.Combine([home, .. place.Split('/')])),
+            DaorisHome.Places(home, entry, asked.Split('/', StringSplitOptions.RemoveEmptyEntries)));
+    }
+
+    /// <summary>
+    /// D172's table, one entry each, held cell for cell by the CLI's <c>home.test.ts</c> against the service's and its own. Here:
+    /// a name says one entry, and an entry is found by it.
+    /// </summary>
+    [Fact]
+    public void Each_entry_is_named_once_and_found_by_its_name()
+    {
+        Assert.Equal(HomeEntry.Table.Count, HomeEntry.Table.Select(entry => entry.Name).Distinct(StringComparer.Ordinal).Count());
+        Assert.All(HomeEntry.Table, entry => Assert.Same(entry, HomeEntry.Named(entry.Name)));
+        Assert.Null(HomeEntry.Named("nothing"));
+    }
+
+    /// <summary>A file asked of the environment's home is the entry, by D172 point 5, or nothing with no home.</summary>
+    [Fact]
+    public void An_entry_asked_of_the_environment_is_the_entry_or_none_with_no_home()
+    {
+        Assert.Equal(
+            Path.Combine("D:/somewhere/data", "driver.json"),
+            DaorisHome.File(Env(("DAORIS_HOME", "D:/somewhere/data")), HomeEntry.DriverConfig));
+        Assert.Null(DaorisHome.File(Env(), HomeEntry.DriverConfig));
+        var error = Assert.Throws<DriverException>(() => DaorisHome.Require(Env(), HomeEntry.Harnesses));
+        Assert.Contains("harnesses.json", error.Message);
+    }
+
+    private static string Scratch()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        return home;
     }
 
     /// <summary>An install's shape on disk (D93): the marker at its root, and the application under <c>app/</c>.</summary>

@@ -141,13 +141,13 @@ public sealed class PullRequestAskTests : IDisposable
             await plugins.AskStatesAsync([Ask(Entry("feature/a", "s1"))]);
         }
 
-        var lines = MachineLogReader.Read(Path.Combine(_home, MachineLog.Folder), new LogFilter()).Lines;
+        var lines = MachineLogReader.Read(DaorisHome.Entry(_home, HomeEntry.Logs), new LogFilter()).Lines;
         Assert.Equal([PluginEvents.Started, PluginEvents.Called, PluginEvents.Stopped], lines.Select(line => line.Event));
         Assert.All(lines.Where(line => line.Event != PluginEvents.Called), line => Assert.Equal(PluginEvents.ByState, line.Data.GetProperty("by").GetString()));
         var called = lines.Single(line => line.Event == PluginEvents.Called);
         Assert.Equal(HookPoints.State, called.Data.GetProperty("point").GetString());
         Assert.Equal(PullRequestStates.Completed, called.Data.GetProperty("answer").GetString());
-        var raw = File.ReadAllText(Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).Single());
+        var raw = File.ReadAllText(Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).Single());
         Assert.DoesNotContain("example.test", raw);
         Assert.DoesNotContain("the plugin says", raw);
     }
@@ -177,7 +177,7 @@ public sealed class PullRequestAskTests : IDisposable
 
     private void Install(string id, IReadOnlyList<string> points)
     {
-        var folder = Path.Combine(_home, "plugins", id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
         {

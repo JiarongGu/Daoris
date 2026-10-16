@@ -336,15 +336,23 @@ public sealed class PluginKitTests : IDisposable
         Assert.True(trial.Steps.Single(s => s.Name == "shutdown").Ok);
     }
 
+    /// <remarks>
+    /// 🔴 PLUGKIT2: the one second was the whole trial's, so node's start and the handshake outlasted it under load and
+    /// `work/land` was never asked. The second is the point's call's now, the handshake waits the point's own patience, and
+    /// this plugin's handshake comes later than the second, as a loaded machine's did.
+    /// </remarks>
     [Fact]
     public async Task A_silent_plugin_is_still_running_and_said_nothing_within_the_patience()
     {
         var folder = New("acme.silent", [HookPoints.Land]);
         // It takes the frame and never answers it.
         Replace(folder, "      send({ jsonrpc: '2.0', id: frame.id, result: await points[frame.method.slice(5)](frame.params ?? {}) });", "      // silence");
+        Replace(folder, "    const declared = frame.params?.points ?? [];",
+            "    await new Promise((resolve) => setTimeout(resolve, 1500));\n    const declared = frame.params?.points ?? [];");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Patience: TimeSpan.FromSeconds(1)));
 
+        Assert.True(trial.Steps.Single(s => s.Name == "handshake").Ok, trial.Steps.Single(s => s.Name == "handshake").Sentence);
         var step = Failed(trial, HookPoints.Land);
         Assert.Contains("is running and did not answer `hook/work/land` within 1s", step.Sentence);
         Assert.Contains("the landing would say the plugin's step failed", step.Sentence);
@@ -553,13 +561,13 @@ public sealed class PluginKitTests : IDisposable
     public async Task An_installed_plugin_is_tried_by_its_id_with_its_own_data_folder()
     {
         var home = Path.Combine(_scratch, "home");
-        Directory.CreateDirectory(Path.Combine(home, "plugins"));
-        PluginKit.Write(PluginKit.Plan("acme.installed", [HookPoints.SessionEnded], Path.Combine(home, "plugins")));
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins));
+        PluginKit.Write(PluginKit.Plan("acme.installed", [HookPoints.SessionEnded], DaorisHome.Entry(home, HomeEntry.Plugins)));
 
         var trial = await PluginTrials.TryInstalledAsync(home, "acme.installed");
 
         Assert.True(trial.Passed, Describe(trial));
-        Assert.True(Directory.Exists(Path.Combine(home, "plugins", ".data", "acme.installed")));
+        Assert.True(Directory.Exists(DaorisHome.Entry(home, HomeEntry.Plugins,".data", "acme.installed")));
         Assert.Contains("no plugin `acme.nobody`",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryInstalledAsync(home, "acme.nobody"))).Message);
     }
@@ -844,8 +852,8 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task The_terminals_trial_of_an_installed_plugin_is_one_line_in_the_machine_log_and_a_folders_is_none()
     {
-        Directory.CreateDirectory(Path.Combine(Home, "plugins"));
-        PluginKit.Write(PluginKit.Plan("acme.logged", [HookPoints.SessionEnded], Path.Combine(Home, "plugins")));
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Plugins));
+        PluginKit.Write(PluginKit.Plan("acme.logged", [HookPoints.SessionEnded], DaorisHome.Entry(Home, HomeEntry.Plugins)));
         var folder = New("acme.loose", [HookPoints.SessionEnded]);
         using (var log = new MachineLog(Home, "driver"))
         {
@@ -853,7 +861,7 @@ public sealed class PluginKitTests : IDisposable
             Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder], new StringWriter(), Home, log: log));
         }
 
-        var line = Assert.Single(MachineLogReader.Read(Path.Combine(Home, MachineLog.Folder), new LogFilter()).Lines);
+        var line = Assert.Single(MachineLogReader.Read(DaorisHome.Entry(Home, HomeEntry.Logs), new LogFilter()).Lines);
         Assert.Equal("plugin.tried", line.Event);
         Assert.Equal("acme.logged", line.Data.GetProperty("plugin").GetString());
         Assert.True(line.Data.GetProperty("passed").GetBoolean());
@@ -903,7 +911,7 @@ public sealed class PluginKitTests : IDisposable
 
     private static void InstallManifest(string home, string id, IReadOnlyList<string> points)
     {
-        var folder = Path.Combine(home, "plugins", id);
+        var folder = DaorisHome.Entry(home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
         {

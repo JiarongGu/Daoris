@@ -35,8 +35,8 @@ public static class OpinionTree
 
     /// <summary>A new copy's folder for <paramref name="repository"/> in <paramref name="workspace"/>, the default one where none is named.</summary>
     public static string PathFor(string home, string? workspace, string repository) =>
-        Path.Combine(
-            home, "trees", workspace is { } named && !string.IsNullOrWhiteSpace(named) ? named.Trim() : RemoteTarget.DefaultWorkspace,
+        DaorisHome.Entry(
+            home, HomeEntry.Trees, workspace is { } named && !string.IsNullOrWhiteSpace(named) ? named.Trim() : RemoteTarget.DefaultWorkspace,
             repository.Trim(), Prefix + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>
@@ -127,7 +127,7 @@ public static class OpinionTree
             return $"{path} is not a second opinion's copy: {error.Message}";
         }
 
-        var trees = Path.GetFullPath(Path.Combine(home, "trees")) + Path.DirectorySeparatorChar;
+        var trees = Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.Trees)) + Path.DirectorySeparatorChar;
         if (!full.StartsWith(trees, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(full).StartsWith(Prefix, StringComparison.Ordinal))
         {
             return $"{path} is not a second opinion's copy under {trees}, so it was not removed.";

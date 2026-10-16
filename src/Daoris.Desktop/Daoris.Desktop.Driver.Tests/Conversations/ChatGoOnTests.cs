@@ -30,7 +30,7 @@ public sealed class ChatGoOnTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed.</summary>
     private sealed class Talk : ISessionAdapter
@@ -58,8 +58,8 @@ public sealed class ChatGoOnTests : IDisposable
         var client = ledger.Client();
         if (lines is not null) client.AccountLined += line => { lock (lines) lines.Add(line); };
         return new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>The person's words as the say door's door shows them (MSG1d): theirs, under the record's id, reaching it on resume.</summary>
@@ -106,7 +106,7 @@ public sealed class ChatGoOnTests : IDisposable
     [Fact]
     public async Task A_chat_whose_tree_is_gone_cannot_go_on()
     {
-        var gone = Path.Combine(_home, "trees", "chat-1");
+        var gone = DaorisHome.Entry(_home, HomeEntry.Trees, "chat-1");
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c1", "stopped", "talk", gone).Say("w1", "Also log the port.");
         new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
@@ -209,7 +209,7 @@ public sealed class ChatGoOnTests : IDisposable
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
         new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
-        File.WriteAllText(Path.Combine(_home, "driver.json"), """{ "adapter": "talk", "commands": """);
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig), """{ "adapter": "talk", "commands": """);
         var events = Events;
         using var runner = Runner(ledger, events);
 
@@ -533,8 +533,8 @@ public sealed class ChatGoOnTests : IDisposable
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(ChatLedger.Url, null, new HttpClient(new Refusing()));
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: Events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         Assert.Empty(await runner.TakeUpAsync());
     }

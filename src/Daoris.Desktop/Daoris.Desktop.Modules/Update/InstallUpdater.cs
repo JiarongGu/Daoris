@@ -57,6 +57,10 @@ public static class UpdateStates
 /// scratch install and close nothing. The loop looks every <see cref="Pace"/> and at every word, and the page hears each
 /// change once as <c>UPDATE_STATE</c>.</para>
 ///
+/// <para><b>A look is awaited</b> (UPDATERELAUNCH1): the launcher it may start goes through the start gate, off the thread
+/// that asked, the window's for *Update now*. What it decides, the drain and *applying* included, is decided before its
+/// first wait, and one relaunch is asked however many looks meet the moment.</para>
+///
 /// <para><b>Said in the window and the machine log</b> (D139 §2): <c>update.staged</c>, <c>update.draining</c>,
 /// <c>update.requested</c>, <c>update.applying</c>, <c>update.refused</c>, and at the next start <c>update.installed</c> or
 /// <c>update.rolled-back</c>. A name or a count each, never a path: the launcher writes no log, so its journal is turned into
@@ -69,8 +73,8 @@ public sealed class InstallUpdater(
     string home,
     MachineLog log,
     Func<UpdateWork> work,
-    // Starts the launcher with `--update --after <pid>`: false when it could not be started.
-    Func<bool> relaunch,
+    // Starts the launcher with `--update --after <pid>`, through the start gate: false when it could not be started.
+    Func<CancellationToken, Task<bool>> relaunch,
     // Closes the application as the person's close does: each driven session recorded stopped and interrupted (D104).
     Action close,
     IEventBus? bus = null,
@@ -118,9 +122,9 @@ public sealed class InstallUpdater(
     /// <summary>
     /// At the application's start (D139 §5, §6): a swap waiting for this start is confirmed, and said once as installed; a
     /// swap the launcher rolled back or refused, or one it finished without a word from the application, is said once and
-    /// marked told.
+    /// marked told. Then it looks, as <see cref="LookAsync"/>: the confirmation and the drain are done before its first wait.
     /// </summary>
-    public void Started()
+    public async Task StartedAsync()
     {
         if (install is null) return;
         UpdateOutcome? outcome = null;
@@ -154,11 +158,14 @@ public sealed class InstallUpdater(
         }
 
         lock (_gate) _outcome = outcome;
-        Look();
+        await LookAsync().ConfigureAwait(false);
     }
 
-    /// <summary>One look: what is staged, what holds for it, what runs — and the update applied when its moment has come.</summary>
-    public UpdateState Look()
+    /// <summary>
+    /// One look: what is staged, what holds for it, what runs — and the update applied when its moment has come, its launcher
+    /// started through the start gate (UPDATERELAUNCH1).
+    /// </summary>
+    public async Task<UpdateState> LookAsync()
     {
         if (install is null) return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome(), Last()));
 
@@ -216,7 +223,7 @@ public sealed class InstallUpdater(
         }
 
         var now = work();
-        if (mode == UpdateMode.Now) return Apply(id, staged, mode, now, "now");
+        if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, now, "now").ConfigureAwait(false);
 
         lock (_gate)
         {
@@ -229,7 +236,7 @@ public sealed class InstallUpdater(
         }
 
         return InstallUpdate.Idle(now.Driven, now.Turns)
-            ? Apply(id, staged, mode, now, "idle")
+            ? await ApplyAsync(id, staged, mode, now, "idle").ConfigureAwait(false)
             : Publish(new UpdateState(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last()));
     }
 
@@ -241,7 +248,7 @@ public sealed class InstallUpdater(
     /// <see cref="Refusals.UpdateModeUnknown"/> for a mode this build does not take; <see cref="Refusals.UpdateNothingStaged"/>
     /// when there is no install or nothing staged to say it of.
     /// </exception>
-    public UpdateState Say(string? mode, string door)
+    public async Task<UpdateState> SayAsync(string? mode, string door)
     {
         if (install is null || !StagedBuild.IsStaged(install))
         {
@@ -258,14 +265,14 @@ public sealed class InstallUpdater(
         var build = StagedBuild.Read(install, out _)?.Id;
         InstallUpdate.Write(home, new UpdateRequest(mode, build, Now));
         log.Info("update.requested", ("mode", mode), ("door", door), ("build", build));
-        return Look();
+        return await LookAsync().ConfigureAwait(false);
     }
 
     /// <summary>The outcome the banner shows, said and put away; the last swap stays, as the journal keeps it (UPDATE1d).</summary>
-    public UpdateState Dismiss()
+    public Task<UpdateState> DismissAsync()
     {
         lock (_gate) _outcome = null;
-        return Look();
+        return LookAsync();
     }
 
     /// <summary>Look at the loop's pace, and at once when poked, until stopped.</summary>
@@ -278,7 +285,7 @@ public sealed class InstallUpdater(
             {
                 try
                 {
-                    Look();
+                    await LookAsync().ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
                 {
@@ -316,7 +323,7 @@ public sealed class InstallUpdater(
         _poke.Dispose();
     }
 
-    private UpdateState Apply(string id, UpdateBuild? staged, string mode, UpdateWork now, string by)
+    private async Task<UpdateState> ApplyAsync(string id, UpdateBuild? staged, string mode, UpdateWork now, string by)
     {
         // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
         if (StagedBuild.Check(install!) is { } problem)
@@ -327,12 +334,27 @@ public sealed class InstallUpdater(
         double waited;
         lock (_gate)
         {
+            // Another look met the moment first, and its relaunch is under way: one launcher, however many looks.
+            if (_applying) return _state;
             _applying = true;
             waited = _drainSince is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
         }
 
         var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome(), Last()));
-        if (!relaunch())
+        bool started;
+        try
+        {
+            // 🔴 UPDATERELAUNCH1: awaited through the start gate. *Update now*'s SET started it in its synchronous part, on the
+            // window's thread. Given up only as the application stops.
+            started = await relaunch(_stopping.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            lock (_gate) _applying = false;
+            throw;
+        }
+
+        if (!started)
         {
             lock (_gate) _applying = false;
             return Refuse(id, staged, mode, new UpdateProblem(

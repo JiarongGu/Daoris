@@ -37,7 +37,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
 
     private string Home => Path.Combine(_root, "install", "data");
 
-    private string HomeCopy => Path.Combine(Home, "bin", KnowledgeConnector.ExecutableName);
+    private string HomeCopy => DaorisHome.Entry(Home, HomeEntry.Bin, KnowledgeConnector.ExecutableName);
 
     [Fact]
     public void What_the_person_said_comes_first_then_the_shells_own_copy_then_the_homes_bin()

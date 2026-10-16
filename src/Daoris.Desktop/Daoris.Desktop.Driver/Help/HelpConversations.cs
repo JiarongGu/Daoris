@@ -119,7 +119,7 @@ public sealed class HelpConversations(string home)
     private static readonly object Gate = new();
 
     /// <summary>Where a conversation's file is kept, beside its transcript and its harness conversation's id.</summary>
-    public string PathOf(string session) => Path.Combine(home, "sessions", Checked(session) + Suffix);
+    public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, Checked(session) + Suffix);
 
     /// <summary>What the person keeps of a conversation; <see cref="HelpKept.None"/> for nothing, or a file that does not read.</summary>
     public HelpKept Read(string session)

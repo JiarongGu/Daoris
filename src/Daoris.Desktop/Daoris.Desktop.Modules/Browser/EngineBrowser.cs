@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net.WebSockets;
 using System.Text.Json;
+using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
@@ -45,7 +46,7 @@ public static class EngineBrowser
     /// Its profile, under the home (D63). Not the WebView2 window's `browser/profile`: a different
     /// engine's files, and the person signs in here once more.
     /// </summary>
-    public static string ProfileFolder(string home) => Path.Combine(home, "browser", "engine");
+    public static string ProfileFolder(string home) => DaorisHome.Entry(home, HomeEntry.BrowserEngine);
 
     /// <summary>
     /// The profile the engine's windows actually use, inside <see cref="ProfileFolder"/>: its

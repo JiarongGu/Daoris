@@ -80,7 +80,7 @@ public sealed class StateObservedTests : DriverModuleBridge
     /// <summary>The loop's set, with one plugin listening at <c>state/changed</c>, its channel <paramref name="plugin"/>.</summary>
     private async Task<HookSet> PluginAsync(IHookChannel plugin)
     {
-        var folder = Path.Combine(Home, "plugins", "acme.watch");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.watch");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
         {

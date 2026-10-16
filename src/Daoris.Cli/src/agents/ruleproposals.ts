@@ -17,15 +17,13 @@
 // It opens no socket and spawns nothing: it reads and writes files under the home.
 
 import { existsSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { flagValue } from '../platform/args.ts';
 import { DaorisError } from '../platform/errors.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
-import { requireHomeFile } from '../platform/home.ts';
-import {
-  PERMISSIONS_FILE, addRule, readPermissions, removeRule, switchDefault, writePermissions,
-} from './permissions.ts';
+import { daorisHome, homeEntry, requireHomeFile } from '../platform/home.ts';
+import { addRule, readPermissions, removeRule, switchDefault, writePermissions } from './permissions.ts';
 import type { PermissionFile, RuleList, RuleScope } from './permissions.ts';
 import type { CommandArgs } from '../platform/types.ts';
 
@@ -96,7 +94,7 @@ export function authorOf(proposal: RuleProposal): string {
  */
 export function answerProposal(home: string, id: string, accept: boolean, note: string | null, at: string): RuleProposal {
   const key = id.trim().replace(/^#/, '');
-  const path = join(home, PROPOSALS_FOLDER, `${key}.json`);
+  const path = homeEntry(home, 'rule-proposals', `${key}.json`);
   // An id names a file in the folder, and a path is not an id.
   const proposal = ID_SHAPE.test(key) && existsSync(path) ? parse(path) : null;
   if (!proposal) {
@@ -107,7 +105,7 @@ export function answerProposal(home: string, id: string, accept: boolean, note: 
   }
 
   if (accept) {
-    const rulesPath = join(home, PERMISSIONS_FILE);
+    const rulesPath = homeEntry(home, 'permissions');
     writePermissions(rulesPath, apply(readPermissions(rulesPath), proposal.change));
   }
 
@@ -120,8 +118,8 @@ export function answerProposal(home: string, id: string, accept: boolean, note: 
 /** `daoris agent rules proposals | accept <id> | decline <id> [--note "…"]`. */
 export function commandProposals({ argv, write }: CommandArgs): ExitCode {
   const verb = argv[0] ?? 'proposals';
-  const folder = requireHomeFile(process.env, PROPOSALS_FOLDER);
-  const home = dirname(folder);
+  const folder = requireHomeFile(process.env, 'rule-proposals');
+  const home = daorisHome(process.env)!;
 
   if (verb === 'proposals') return list();
 

@@ -53,7 +53,7 @@ public sealed class OpinionRecheckTests : IDisposable
         }
 
         var set = new AdapterSet(adapters);
-        return (set, new HarnessRoster(set, Path.Combine(_home, "harnesses.json")));
+        return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     private static readonly OpinionRule Rule = new(["codex-acp"], [OpinionRules.Landing]);

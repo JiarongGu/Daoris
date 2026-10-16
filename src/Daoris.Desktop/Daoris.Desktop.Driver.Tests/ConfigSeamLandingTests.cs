@@ -50,7 +50,7 @@ public sealed class ConfigSeamLandingTests : IDisposable
     public async Task The_plan_the_gate_and_the_landing_read_the_file_the_override_names()
     {
         // The home's own driver.json says nothing: a merge, and no review. Read, it would merge into the line at once.
-        DriverConfig.Empty.Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var rule = new ReviewRule([new ReviewEnvironment("local", "local", "README.md", "http://localhost:4200")], Required: true);
         (DriverConfig.Empty with
         {

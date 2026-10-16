@@ -54,7 +54,7 @@ public sealed class AccountLimitTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var now = Seen;
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => now, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var lines = new List<AccountLine>();
         client.AccountLined += line => { lock (lines) lines.Add(line); };
@@ -86,7 +86,7 @@ public sealed class AccountLimitTickTests : IDisposable
         Assert.True(refused["limit"]!.GetValue<bool>());
         // The note travels, so it carries the facts and never the agent's sentence, which its transcript keeps (AGT3c).
         Assert.DoesNotContain("You've hit your individual spend limit", refused["note"]!.GetValue<string>());
-        Assert.Contains("You've hit your individual spend limit", File.ReadAllText(Path.Combine(_home, "sessions", "s2.log")));
+        Assert.Contains("You've hit your individual spend limit", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s2.log")));
         // Whose accounts and the kind of limit, never which account (AGT3d).
         Assert.Contains(
             $"The `stub` account it ran on hit its weekly limit and is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said",

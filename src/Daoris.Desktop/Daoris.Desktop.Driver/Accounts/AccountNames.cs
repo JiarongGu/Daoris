@@ -77,7 +77,7 @@ public static class AccountNames
 
 
     /// <summary>Where the file is: beside <c>reads.json</c>, under the home.</summary>
-    public static string PathOf(string home) => Path.Combine(home, FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Accounts);
 
     /// <summary>The name the person gave an account, trimmed, or null where none.</summary>
     public static string? NameOf(string home, string agent, string account) =>

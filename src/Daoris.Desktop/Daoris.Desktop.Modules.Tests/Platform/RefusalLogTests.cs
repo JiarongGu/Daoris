@@ -62,7 +62,7 @@ public sealed class RefusalLogTests : Bridge
 
     private List<JsonElement> Lines()
     {
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return
         [

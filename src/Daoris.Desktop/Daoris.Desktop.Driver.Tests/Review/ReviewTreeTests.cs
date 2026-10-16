@@ -64,7 +64,7 @@ public sealed class ReviewTreeTests : IDisposable
     {
         var opened = await OpinionTree.OpenAsync(_home, _repository.Root, "reports", "work", _tip);
 
-        Assert.Equal(Path.Combine(_home, "trees", "work", "reports"), Path.GetDirectoryName(opened.Path));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Trees,"work", "reports"), Path.GetDirectoryName(opened.Path));
         Assert.StartsWith(OpinionTree.Prefix, Path.GetFileName(opened.Path), StringComparison.Ordinal);
         Assert.Equal(_tip, In(opened.Path, "rev-parse HEAD"));
         Assert.Equal("HEAD", In(opened.Path, "rev-parse --abbrev-ref HEAD"));
@@ -113,8 +113,8 @@ public sealed class ReviewTreeTests : IDisposable
             () => OpinionTree.OpenAsync(_home, _repository.Root, "reports", "work", new string('9', 40)));
 
         Assert.Contains("`reports`", error.Message);
-        Assert.Empty(Directory.Exists(Path.Combine(_home, "trees", "work", "reports"))
-            ? Directory.EnumerateFileSystemEntries(Path.Combine(_home, "trees", "work", "reports"))
+        Assert.Empty(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Trees,"work", "reports"))
+            ? Directory.EnumerateFileSystemEntries(DaorisHome.Entry(_home, HomeEntry.Trees,"work", "reports"))
             : []);
     }
 
@@ -174,7 +174,7 @@ public sealed class ReviewTreeTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         };
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json"));
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
         var rule = new OpinionRule(["stub"], [OpinionRules.Landing], Minutes: 30);
         var choice = await ReviewerChoice.ChooseAsync(roster, rule, ["claude-code"], config, "work");
@@ -208,7 +208,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Equal(OpinionPosture.CopyAlone, asked["posture"]!.GetValue<string>());
         Assert.Equal(30, asked["minutes"]!.GetValue<int>());
         var tree = asked["tree"]!.GetValue<string>();
-        Assert.Equal(Path.Combine(_home, "trees", "work", "reports"), Path.GetDirectoryName(tree));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Trees,"work", "reports"), Path.GetDirectoryName(tree));
         Assert.Equal("stub-harness 1.0.0", asked["harnessVersion"]!.GetValue<string>());
 
         // It ran in its copy as its own session, on no quest, handed the reviewer's instruction.
@@ -223,7 +223,7 @@ public sealed class ReviewTreeTests : IDisposable
         // The copy is gone, nothing it wrote reached the repository, and the diff it was handed stays with the opinion.
         Assert.False(Directory.Exists(tree));
         Assert.Equal(before, Refs());
-        Assert.Contains("stub: wrote and committed in its copy", File.ReadAllText(Path.Combine(_home, "sessions", "r1.log")));
+        Assert.Contains("stub: wrote and committed in its copy", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"r1.log")));
         Assert.True(File.Exists(Path.Combine(OpinionPackets.Folder(_home, "op1"), OpinionPackets.DiffName)));
     }
 
@@ -251,7 +251,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.False(run.Opened);
         Assert.Contains("a pass reads the work of a session in the candidate's repository", run.Line);
         Assert.False(File.Exists(Path.Combine(_home, "saw.json")));
-        Assert.Empty(Directory.EnumerateDirectories(Path.Combine(_home, "trees", "default", "reports")));
+        Assert.Empty(Directory.EnumerateDirectories(DaorisHome.Entry(_home, HomeEntry.Trees,"default", "reports")));
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ public sealed record RemoteConfig(string Url, string Key)
     /// The map's conventional home — under the Daoris home (D63), and null where there is none: a
     /// machine with no home has no remotes, which is the documented default anyway.
     /// </summary>
-    public static string? DefaultPath => DaorisHome.File("remotes.json");
+    public static string? DefaultPath => DaorisHome.File(HomeEntry.Remotes);
 
     /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
     public static IReadOnlyDictionary<string, RemoteConfig> Load() => Load(

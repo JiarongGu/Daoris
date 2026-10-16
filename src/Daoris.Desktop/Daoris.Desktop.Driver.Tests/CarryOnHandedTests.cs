@@ -11,7 +11,7 @@ public sealed class CarryOnHandedTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-carry-on-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public CarryOnHandedTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public CarryOnHandedTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
@@ -136,7 +136,7 @@ public sealed class CarryOnHandedTests : IDisposable
     [Fact]
     public void The_plan_handed_on_is_the_record_s_last_and_the_words_its_last_message()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Plan, Entries = [new("an older plan", "pending")] });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "The column " });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "is in." });
@@ -152,8 +152,8 @@ public sealed class CarryOnHandedTests : IDisposable
     [Fact]
     public void A_session_whose_record_kept_no_words_hands_on_its_transcript_s_last_plain_lines()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
-        File.WriteAllText(Path.Combine(_home, "sessions", "s1.log"), "→ a tool ran\n    its output\nI changed the column.\n— the driver's line\n");
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log"), "→ a tool ran\n    its output\nI changed the column.\n— the driver's line\n");
 
         var (plan, words) = SessionLastWords.CarriedFrom(events, _home, "s1");
 
@@ -167,7 +167,7 @@ public sealed class CarryOnHandedTests : IDisposable
     [InlineData("")]
     public void A_session_with_no_record_here_or_no_id_hands_on_nothing(string session)
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         var (plan, words) = SessionLastWords.CarriedFrom(events, _home, session);
 
@@ -179,7 +179,7 @@ public sealed class CarryOnHandedTests : IDisposable
     [Fact]
     public void The_last_words_handed_on_are_bounded_from_the_end()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = new string('a', 6000) + "the end." });
 
         var (_, words) = SessionLastWords.CarriedFrom(events, _home, "s1");

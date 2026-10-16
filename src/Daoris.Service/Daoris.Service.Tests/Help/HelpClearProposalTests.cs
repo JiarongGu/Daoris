@@ -1,3 +1,5 @@
+using Daoris.Knowledge;
+
 namespace Daoris.Service.Tests;
 
 /// <summary>
@@ -43,6 +45,6 @@ public sealed class HelpClearProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 }

@@ -44,7 +44,7 @@ public sealed class AccountCoolingTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private static CoolingEntry Entry(
         string agent = "claude-code", string? account = "account-1", DateTimeOffset? until = null, bool stated = true,
@@ -61,7 +61,7 @@ public sealed class AccountCoolingTests : IDisposable
         AccountCooling.Cool(_home, Entry(), _now);
         AccountCooling.Cool(_home, Entry(account: null, stated: false, window: null), _now);
 
-        Assert.Equal(Path.Combine(_home, "cooling.json"), AccountCooling.PathOf(_home));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Cooling), AccountCooling.PathOf(_home));
         var written = File();
         var named = written["claude-code"]!["account-1"]!.AsObject();
         Assert.Equal("2026-10-03T10:17:00Z", named["until"]!.GetValue<string>());

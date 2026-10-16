@@ -353,7 +353,7 @@ public sealed class DriverWatch(
             // WORKFLOW1f: its run's named workflow, where it has one, says whether it lands with no press.
             var process = await AutoLander.ProcessAsync(home, config, new ServiceReviewWorld(service), quest, ended.Tree!, quest.Workspace, ct)
                 .ConfigureAwait(false);
-            AutoLander.Concluded(home, config, events ?? new SessionEvents(Path.Combine(home, "sessions")), ended.Id, quest, quest.Status,
+            AutoLander.Concluded(home, config, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), ended.Id, quest, quest.Status,
                 "stopped", ended.Tree!, quest.Workspace, process: process);
         }
     }

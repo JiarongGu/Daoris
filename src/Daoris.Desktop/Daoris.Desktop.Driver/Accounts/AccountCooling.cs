@@ -45,13 +45,11 @@ public sealed record CoolingEntry(
 /// </remarks>
 public static class AccountCooling
 {
-    public const string FileName = "cooling.json";
-
     // One writer at a time in this process: the conclusions of sessions side by side, and a screen's early end.
     private static readonly object Gate = new();
 
     /// <summary>Where the file is: beside <c>harnesses.json</c> and the accounts, under the home.</summary>
-    public static string PathOf(string home) => Path.Combine(home, FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Cooling);
 
     /// <summary>Every account cooling at <paramref name="now"/>, by agent and account.</summary>
     public static IReadOnlyList<CoolingEntry> Read(string home, DateTimeOffset now) =>

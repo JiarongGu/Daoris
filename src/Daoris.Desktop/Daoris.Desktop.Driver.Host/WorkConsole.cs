@@ -26,7 +26,7 @@ internal static class WorkConsole
         // The machine's remotes, re-read as every pass reads them (SYNC0d): a workspace with none answers null, and its
         // declines travel nowhere.
         using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
-        var world = new WorkWorld(service, home, configPath, new SessionProcesses(Path.Combine(home, "sessions")))
+        var world = new WorkWorld(service, home, configPath, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)))
         {
             Door = SessionsConsole.Wire(config),
             Log = log,

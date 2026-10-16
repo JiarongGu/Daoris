@@ -55,7 +55,7 @@ public sealed class SessionTreesTests : IDisposable
 
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
-        Assert.StartsWith(Path.Combine(_home, "trees", "aurora", "engine"), opened.Path);
+        Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine"), opened.Path);
         Assert.StartsWith("daoris/", opened.Branch);
         // WSP4's resolution: the canonical line where one is declared — and a fresh `git init` fixture
         // HAS one (its own main/master, found by the local-branch fallback) — and it SAYS which it
@@ -403,7 +403,7 @@ public sealed class SessionTreesTests : IDisposable
     private async Task AssertNothingLeftAsync(string root)
     {
         Assert.Equal("", (await GitAsync(root, "branch", "--list", "daoris/*")).Trim());
-        var folder = Path.Combine(_home, "trees", "aurora", "engine");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine");
         Assert.True(!Directory.Exists(folder) || Directory.GetFileSystemEntries(folder).Length == 0, "a folder is left under the trees");
         Assert.Single((await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n'), line => line.StartsWith("worktree ", StringComparison.Ordinal));
         Assert.False(Directory.Exists(Path.Combine(root, ".git", "worktrees")) && Directory.GetDirectories(Path.Combine(root, ".git", "worktrees")).Length > 0,

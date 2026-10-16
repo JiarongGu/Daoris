@@ -25,8 +25,8 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         var linked = await LandedTreeAsync(new SessionTrees(_home), root);
         var elsewhere = Path.Combine(_scratch, "elsewhere");
         Directory.CreateDirectory(elsewhere);
-        Directory.Move(Path.Combine(_home, "trees", "default", "engine"), Path.Combine(elsewhere, "engine"));
-        await JunctionAsync(Path.Combine(_home, "trees", "default", "engine"), Path.Combine(elsewhere, "engine"));
+        Directory.Move(DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine"), Path.Combine(elsewhere, "engine"));
+        await JunctionAsync(DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine"), Path.Combine(elsewhere, "engine"));
         _ledger.Register("engine", root);
 
         var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
@@ -46,7 +46,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         var root = await RepositoryAsync("engine");
         var elsewhere = Path.Combine(_scratch, "elsewhere");
         Directory.CreateDirectory(elsewhere);
-        await JunctionAsync(Path.Combine(_home, "trees", "default", "engine"), elsewhere);
+        await JunctionAsync(DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine"), elsewhere);
         var trees = new SessionTrees(_home);
         var linked = await LandedTreeAsync(trees, root);
 
@@ -69,7 +69,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
 
         var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
 
-        var aside = Assert.Single(Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine")));
+        var aside = Assert.Single(Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")));
         Assert.Equal([$"{Removed(landed)}{aside}, and goes once it is left untouched for 14 days."], said);
         Assert.False(Directory.Exists(landed.Path));
         Assert.All(held, file => Assert.True(File.Exists(Path.Combine(aside, file)), file));
@@ -171,7 +171,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         var touched = await LandedTreeAsync(trees, root);
         _ledger.Register("engine", root);
         await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
-        var asides = Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine"));
+        var asides = Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine"));
         var quiet = asides.Single(folder => Path.GetFileName(folder).StartsWith(Path.GetFileName(untouched.Path) + "-", StringComparison.Ordinal));
         var written = asides.Single(folder => Path.GetFileName(folder).StartsWith(Path.GetFileName(touched.Path) + "-", StringComparison.Ordinal));
         await File.WriteAllTextAsync(Path.Combine(written, "late.db"), "a write that came after the move\n");
@@ -204,7 +204,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     [Fact]
     public async Task The_purge_takes_a_link_under_a_build_folder_as_a_link_and_keeps_a_folder_with_one_elsewhere()
     {
-        var engine = Path.Combine(_home, "trees", ".tidied", "default", "engine");
+        var engine = DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine");
         var moved = DateTimeOffset.UtcNow.AddMinutes(1);
         var stamp = moved.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture);
         var outside = Path.Combine(_scratch, "elsewhere", "web");
@@ -266,7 +266,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         Assert.StartsWith(Removed(landed), Assert.Single(said), StringComparison.Ordinal);
-        var aside = Assert.Single(Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine")));
+        var aside = Assert.Single(Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")));
         Assert.False(Directory.Exists(landed.Path));
         Assert.True(File.Exists(Path.Combine(aside, Path.GetRelativePath(landed.Path, file))));
         Assert.DoesNotContain(Path.GetFileName(landed.Path), await GitAsync(root, "worktree", "list", "--porcelain"), StringComparison.Ordinal);
@@ -352,7 +352,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
         var working = await TreeWithWorkAsync(trees, root);
-        var engine = Path.Combine(_home, "trees", "default", "engine");
+        var engine = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine");
         var leftover = Path.Combine(engine, "s-1f315a22");
         Directory.CreateDirectory(leftover);
         await GitAsync(root, "branch", "daoris/s-1f315a22");
@@ -368,7 +368,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         var said = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddHours(1) }
             .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
-        var asides = Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine"));
+        var asides = Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine"));
         string Aside(string name) => asides.Single(folder => Path.GetFileName(folder).StartsWith(name + "-", StringComparison.Ordinal));
         Assert.Equal(3, asides.Length);
         Assert.Equal("export {};\n", await File.ReadAllTextAsync(Path.Combine(Aside("devtools"), "tool.mjs")));
@@ -411,7 +411,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     public async Task A_folder_written_in_lately_waits_for_a_later_look()
     {
         var root = await RepositoryAsync("engine");
-        var devtools = Path.Combine(_home, "trees", "default", "engine", "devtools");
+        var devtools = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "devtools");
         Directory.CreateDirectory(devtools);
         await File.WriteAllTextAsync(Path.Combine(devtools, "tool.mjs"), "export {};\n");
         _ledger.Register("engine", root);
@@ -438,7 +438,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
     public async Task A_tree_whose_opening_a_kill_cut_off_is_moved_aside_with_its_branch()
     {
         var root = await RepositoryAsync("engine");
-        var engine = Path.Combine(_home, "trees", "default", "engine");
+        var engine = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine");
         var cut = Path.Combine(engine, "s-0031408d");
         await GitAsync(root, "worktree", "add", "--quiet", "-b", "daoris/s-0031408d", cut, "main");
         await GitAsync(root, "worktree", "lock", "--reason", TreeOpenings.GitsOwn, cut);
@@ -454,7 +454,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
 
         var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
-        var asides = Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine"));
+        var asides = Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine"));
         string Aside(string name) => asides.Single(folder => Path.GetFileName(folder).StartsWith(name + "-", StringComparison.Ordinal));
         Assert.Equal(2, asides.Length);
         Assert.True(File.Exists(Path.Combine(Aside("s-0031408d"), "README.md")));

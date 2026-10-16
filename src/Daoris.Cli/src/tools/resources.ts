@@ -27,6 +27,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { homeEntry } from '../platform/home.ts';
 import {
   TOOLS, TOOLS_FOLDER, declaredTool, isAddress, isExactVersion, isInsidePath, isLoopbackHost, readTools, type ToolsRead,
 } from './tools.ts';
@@ -368,7 +369,7 @@ export function builtInList(home: string): string {
 
 /** Where a location's fetched copy is kept: named by the sha256 of its address as written. */
 export function locationCopy(home: string, address: string): string {
-  return join(home, ...LOCATIONS_FOLDER, `${createHash('sha256').update(address, 'utf8').digest('hex')}.json`);
+  return homeEntry(home, 'tool-versions', ...LOCATIONS_FOLDER.slice(1), `${createHash('sha256').update(address, 'utf8').digest('hex')}.json`);
 }
 
 /**

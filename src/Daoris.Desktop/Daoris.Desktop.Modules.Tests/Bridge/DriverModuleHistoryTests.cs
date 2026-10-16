@@ -44,10 +44,10 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
 
     private void Kept(string id)
     {
-        Directory.CreateDirectory(Path.Combine(Home, "sessions", id, "files"));
-        File.WriteAllText(Path.Combine(Home, "sessions", $"{id}.events.jsonl"), "{\"seq\":1,\"kind\":\"user\",\"text\":\"a secret plan\"}\n");
-        File.WriteAllText(Path.Combine(Home, "sessions", $"{id}.log"), "the transcript");
-        File.WriteAllText(Path.Combine(Home, "sessions", id, "files", "shot.png"), "png");
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.SessionFiles, id));
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions,$"{id}.events.jsonl"), "{\"seq\":1,\"kind\":\"user\",\"text\":\"a secret plan\"}\n");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions,$"{id}.log"), "the transcript");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.SessionFiles, id,"shot.png"), "png");
     }
 
     /// <summary>Before the driver's service answers, both presses say the cold-start sentence.</summary>
@@ -234,7 +234,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
 
         Assert.Contains(code, refused);
         Assert.Contains(fact, refused);
-        Assert.True(File.Exists(Path.Combine(Home, "sessions", "s1.log")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
     }
 
     /// <summary>This machine's half, said in the catalogue's words: a tree still here, and a landing's branch still standing.</summary>
@@ -285,8 +285,8 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
         Assert.Equal((1, 1), (answer.GetProperty("quests").GetInt32(), answer.GetProperty("sessions").GetInt32()));
         Assert.True(answer.GetProperty("bytes").GetInt64() > 0);
         Assert.Empty(answer.GetProperty("changed").EnumerateArray());
-        Assert.False(File.Exists(Path.Combine(Home, "sessions", "s1.log")));
-        Assert.True(File.Exists(Path.Combine(Home, "sessions", "c1.log")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"c1.log")));
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 }

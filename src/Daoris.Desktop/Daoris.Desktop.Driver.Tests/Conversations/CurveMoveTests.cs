@@ -45,7 +45,7 @@ public sealed class CurveMoveTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private string Command => Path.Combine(_home, "talk-agent");
 
@@ -162,7 +162,7 @@ public sealed class CurveMoveTests : IDisposable
     }
 
     private ChatRunner Runner(ChatLedger ledger, HarnessRoster roster) =>
-        new(ledger.Client(), roster.Adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), harnesses: roster);
+        new(ledger.Client(), roster.Adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), harnesses: roster);
 
     /// <summary>The conversation, on `account-1` of the stand-in agent, its record made ten minutes before now.</summary>
     private ChatLedger Ledger(ContinuedFrom? from = null)
@@ -174,7 +174,7 @@ public sealed class CurveMoveTests : IDisposable
 
     private Task<SwitchChoice?> JudgeAsync(ChatRunner runner) => runner.MoveByCurveAsync("c0nv0001", DriverConfig.Empty, onEnded: null);
 
-    private IReadOnlyList<SessionEvent> Record(string id) => new SessionEvents(Path.Combine(_home, "sessions")).After(id, 0).Events;
+    private IReadOnlyList<SessionEvent> Record(string id) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(id, 0).Events;
 
     /// <summary>
     /// 🔴 Over its curve, with another account of the agent that has room (the switch design §4): the conversation goes on there,

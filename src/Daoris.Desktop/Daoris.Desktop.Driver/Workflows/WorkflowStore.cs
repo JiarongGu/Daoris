@@ -24,7 +24,7 @@ public static class WorkflowStore
     public const string Folder = "workflows";
 
     /// <summary>The folder of a home's workflows.</summary>
-    public static string FolderOf(string home) => Path.Combine(home, Folder);
+    public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows);
 
     /// <summary>A workflow's file: its id, which <see cref="WorkflowNamed.IsId"/> has passed, so it names no path.</summary>
     public static string PathOf(string home, string id) =>

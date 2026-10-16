@@ -190,14 +190,14 @@ public sealed class WorkflowNamedTests
             Assert.Equal(2, WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-09T09:20:00Z",
                 JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"branch","accept":"you","plugin":"none"}]"""))));
 
-            var path = Path.Combine(home, "workflows", "docs-to-pr.json");
+            var path = DaorisHome.Entry(home, HomeEntry.Workflows,"docs-to-pr.json");
             var bytes = File.ReadAllBytes(path);
             Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF, "no BOM");
             var text = Encoding.UTF8.GetString(bytes);
             Assert.DoesNotContain("\r", text, StringComparison.Ordinal);
             Assert.EndsWith("}\n", text, StringComparison.Ordinal);
             Assert.Contains("文档直接开拉取请求", text, StringComparison.Ordinal);
-            Assert.Empty(Directory.GetFiles(Path.Combine(home, "workflows"), "*.writing"));
+            Assert.Empty(Directory.GetFiles(DaorisHome.Entry(home, HomeEntry.Workflows), "*.writing"));
 
             var found = Assert.Single(WorkflowStore.List(home));
             Assert.Null(found.Read.Problem);
@@ -226,7 +226,7 @@ public sealed class WorkflowNamedTests
         var home = Path.Combine(Path.GetTempPath(), "daoris-workflow-unread-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            var folder = Path.Combine(home, "workflows");
+            var folder = DaorisHome.Entry(home, HomeEntry.Workflows);
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "broken.json"), "{ not json");
             File.WriteAllText(Path.Combine(folder, "misnamed.json"),

@@ -25,7 +25,7 @@ public sealed class ToolsChildrenTests : IDisposable
 
     private string Home => Path.Combine(_root, "data");
 
-    private string ToolsFile => Path.Combine(Home, Tools.FileName);
+    private string ToolsFile => DaorisHome.Entry(Home, HomeEntry.Tools);
 
     private static readonly bool Windows = OperatingSystem.IsWindows();
 
@@ -47,14 +47,14 @@ public sealed class ToolsChildrenTests : IDisposable
         Directory.CreateDirectory(Home);
         foreach (var (tool, version, exe, paths) in Laid)
         {
-            var folder = Path.Combine(Home, Tools.Folder, tool, version);
+            var folder = DaorisHome.Entry(Home, HomeEntry.ToolVersions,tool, version);
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, Tools.Record), paths is null ? $$"""{"exe":"{{exe}}"}""" : $$"""{"exe":"{{exe}}","paths":{{paths}}}""");
             Touch(Path.Combine([folder, Tools.Package, .. exe.Split('/')]));
         }
 
         // npm and npx beside the managed node, as its archive carries them; and beside the named node.
-        var managedNode = Path.Combine(Home, Tools.Folder, "node", "22.20.0", Tools.Package, "node-v22.20.0-win-x64");
+        var managedNode = DaorisHome.Entry(Home, HomeEntry.ToolVersions,"node", "22.20.0", Tools.Package, "node-v22.20.0-win-x64");
         Touch(Path.Combine(managedNode, Program("npm")));
         Touch(Path.Combine(managedNode, Program("npx")));
         foreach (var tool in Tools.Declared) Touch(Named(tool.Id));
@@ -120,7 +120,7 @@ public sealed class ToolsChildrenTests : IDisposable
         if (token.StartsWith("file:", StringComparison.Ordinal)) return Path.GetDirectoryName(Named(token[5..]))!;
         var (tool, path) = (token[8..token.IndexOf('/')], token[(token.IndexOf('/') + 1)..]);
         var version = Laid.Single(each => each.Tool == tool).Version;
-        var package = Path.Combine(Home, Tools.Folder, tool, version, Tools.Package);
+        var package = DaorisHome.Entry(Home, HomeEntry.ToolVersions,tool, version, Tools.Package);
         return path == "." ? package : Path.Combine([package, .. path.Split('/')]);
     }
 
@@ -356,7 +356,7 @@ public sealed class ToolsChildrenTests : IDisposable
 
     private PluginEntry Plugin(params string[] command) =>
         new(new PluginManifest("probe", 1, "probe", "1.0.0", "", [], new PluginHooks(command, ["quest/consider"]), []),
-            Path.Combine(Home, "plugins", "probe"), Path.Combine(Home, "plugins", ".data", "probe"), Enabled: true, Problem: null);
+            DaorisHome.Entry(Home, HomeEntry.Plugins,"probe"), DaorisHome.Entry(Home, HomeEntry.Plugins,".data", "probe"), Enabled: true, Problem: null);
 
     [Fact]
     public void A_hooks_first_word_a_tool_answers_for_is_that_tools_file()

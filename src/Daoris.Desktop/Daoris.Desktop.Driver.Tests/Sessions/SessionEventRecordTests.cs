@@ -41,14 +41,14 @@ public sealed class SessionEventRecordTests : IDisposable
     public async Task A_protocol_door_session_leaves_its_conversation_beside_its_transcript()
     {
         await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var live = new List<SessionEvent>();
         events.Evented += (_, e) => { lock (live) live.Add(e); };
 
         await Driver(service, events).RunOnceAsync();
 
         // Read back by a NEW instance, the way a page opened after a restart reads it.
-        var page = new SessionEvents(Path.Combine(_home, "sessions")).Page("s1");
+        var page = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Page("s1");
         var kinds = page.Events.Select(e => e.Kind).ToList();
 
         var target = page.Events[0];
@@ -70,7 +70,7 @@ public sealed class SessionEventRecordTests : IDisposable
         lock (live) Assert.Equal(page.Events.Select(e => e.Seq), live.Select(e => e.Seq));
 
         // And the transcript is still the verbatim text it always was.
-        Assert.Contains("looking at the budget", File.ReadAllText(Path.Combine(_home, "sessions", "s1.log")));
+        Assert.Contains("looking at the budget", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log")));
     }
 
     private Daoris.Driver.Driver Driver(DrivenSessionInputTests.StandInService service, SessionEvents events)
@@ -85,7 +85,7 @@ public sealed class SessionEventRecordTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), events: events);
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), events: events);
     }
 
     /// <summary>A protocol agent that says one thing, ends its turn, and exits when its input closes.</summary>

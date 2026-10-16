@@ -115,7 +115,7 @@ public static class SessionsHelperCommand
         {
             var answer = ask.Verb == "helper-approve"
                 ? HelperPersonWord.Approve(files, null, id)
-                : HelperPersonWord.Decline(files, new SessionEvents(Path.Combine(world.Home, "sessions")), null, null, id);
+                : HelperPersonWord.Decline(files, new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)), null, null, id);
             output.WriteLine($"sessions: {answer.Message}{(answer.Stands ? "" : " Nothing was changed.")}");
             return Task.FromResult(answer.Stands ? 0 : 1);
         }

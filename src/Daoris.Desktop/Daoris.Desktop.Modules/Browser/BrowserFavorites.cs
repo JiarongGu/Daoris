@@ -26,7 +26,7 @@ public sealed record FavoritesRead(IReadOnlyList<Favorite> Favorites, string? Pr
 /// </remarks>
 public static class BrowserFavorites
 {
-    public static string FilePath(string home) => Path.Combine(home, "browser", "favorites.json");
+    public static string FilePath(string home) => DaorisHome.Entry(home, HomeEntry.BrowserFavorites);
 
     /// <summary>
     /// A page's address as a favorite keeps it — the bar's rule (<see cref="InAppBrowser.Address"/>) —

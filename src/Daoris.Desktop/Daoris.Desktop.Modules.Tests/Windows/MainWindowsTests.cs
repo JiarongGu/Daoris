@@ -217,7 +217,7 @@ public sealed class MainWindowsTests : IDisposable
             Assert.True(windows.Closed("main:2"));
         }
 
-        var lines = Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(File.ReadAllLines).ToArray();
+        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines).ToArray();
         Assert.Contains(lines, line => line.Contains("\"event\":\"window.away\"") && line.Contains("\"others\":1"));
         Assert.Contains(lines, line => line.Contains("\"event\":\"window.last\"") && line.Contains("\"window\":\"main:2\""));
     }

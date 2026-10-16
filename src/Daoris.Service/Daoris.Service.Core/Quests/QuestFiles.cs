@@ -24,10 +24,10 @@ public sealed record QuestUpload(string Name, byte[] Content);
 /// called <c>image.png</c> — two files, and the same file dropped twice one; the name after it is what
 /// lets a session know which file is the screenshot.</para>
 /// </remarks>
-public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
+public sealed class QuestFiles(string home, HomeEntry? entry = null)
 {
-    /// <summary>The folder under the home that holds every quest's own.</summary>
-    public const string Folder = "quests";
+    /// <summary>The home's entry that holds every record's own, one per record: a quest's (<see cref="HomeEntry.QuestFiles"/>) unless told.</summary>
+    private readonly HomeEntry _entry = entry ?? HomeEntry.QuestFiles;
 
     /// <summary>How a record's folder is removed whole: from the disk, unless a test hands one that refuses (HIST1j).</summary>
     private readonly Action<string> _remove = path => Directory.Delete(path, recursive: true);
@@ -36,13 +36,13 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
     /// A keeper whose removals go through <paramref name="remove"/>: a test's disk that will not let go of a file, as a process
     /// holding one makes the real disk refuse, so a refused removal is held on every platform (HIST1j).
     /// </summary>
-    internal QuestFiles(string home, string folder, Action<string> remove) : this(home, folder) => _remove = remove;
+    internal QuestFiles(string home, HomeEntry entry, Action<string> remove) : this(home, entry) => _remove = remove;
 
     /// <summary>
     /// The same keeper for another kind of record under the same home — an ask keeps its files beside
     /// the quests it may become (D65 §1a), with the same layout and the same naming rules.
     /// </summary>
-    public QuestFiles For(string otherFolder) => new(home, otherFolder, _remove);
+    public QuestFiles For(HomeEntry other) => new(home, other, _remove);
 
     /// <summary>A kept name's longest — a path under a deep home still has to open on Windows.</summary>
     public const int MaxNameLength = 100;
@@ -55,7 +55,7 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
         DaorisHome.Resolve() is { } home ? new QuestFiles(home) : null;
 
     /// <summary>The directory a session is handed for one quest.</summary>
-    public string DirectoryOf(string questId) => Path.Combine(home, folder, questId, "attachments");
+    public string DirectoryOf(string questId) => DaorisHome.Entry(home, _entry, questId, "attachments");
 
     /// <summary>Where one attachment of one quest lies, whether or not it is there.</summary>
     public string PathOf(string questId, QuestAttachment attachment) =>
@@ -75,7 +75,7 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
     /// <returns>True where its folder is gone or was never here; false where the disk kept any of it.</returns>
     public bool Forget(string id)
     {
-        var directory = Path.Combine(home, folder, id);
+        var directory = DaorisHome.Entry(home, _entry, id);
         try
         {
             if (Directory.Exists(directory)) _remove(directory);

@@ -21,7 +21,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-key-tests", Guid.NewGuid().ToString("N")[..8]);
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     public void Dispose()
     {
@@ -75,7 +75,7 @@ public sealed class ApiKeyAccountTests : IDisposable
         // The directory is the TOOL's (D49 §4): Daoris made it and put nothing in it.
         Assert.Empty(Directory.EnumerateFileSystemEntries(directory));
         Assert.Equal("sk-test-0000-wxyz", HarnessKeys.Of(_home, "fake", account));
-        Assert.True(File.Exists(Path.Combine(_home, "keys.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Keys)));
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     public void The_key_file_the_CLI_writes_is_the_file_the_driver_reads()
     {
         Directory.CreateDirectory(_home);
-        File.WriteAllText(Path.Combine(_home, HarnessKeys.FileName), """
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Keys), """
             { "claude-code": { "account-1": "sk-ant-api03-cli-test-wxyz" } }
             """);
 
@@ -119,7 +119,7 @@ public sealed class ApiKeyAccountTests : IDisposable
 
         Assert.Null(HarnessKeys.Of(_home, "fake", first));
         Assert.Equal("sk-second-2222", HarnessKeys.Of(_home, "fake", second));
-        Assert.DoesNotContain("sk-first-1111", File.ReadAllText(Path.Combine(_home, "keys.json")));
+        Assert.DoesNotContain("sk-first-1111", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Keys)));
     }
 
     /// <summary>The key reaches the agent through the tool's own variable, on the one line both doors take.</summary>

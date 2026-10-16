@@ -186,7 +186,7 @@ public sealed class HookSetLogTests : IDisposable
                 ("e.ended", ["session/ended"], "1.0.0")), CancellationToken.None);
 
             PluginState.Disable(_home, "a.off");
-            Directory.Delete(Path.Combine(_home, "plugins", "b.removed"), recursive: true);
+            Directory.Delete(DaorisHome.Entry(_home, HomeEntry.Plugins,"b.removed"), recursive: true);
             Catalog(("c.updated", ["quest/consider"], "1.1.0"), ("d.changed", ["quest/consider", "session/ended"], "1.0.0"));
             await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
         }
@@ -216,7 +216,7 @@ public sealed class HookSetLogTests : IDisposable
         Assert.True(await set.StopAsync("b.newer"));
         Assert.DoesNotContain(Lines(), l => l.Event == "plugin.stopped");
 
-        Directory.Delete(Path.Combine(_home, "plugins", "a.gone"), recursive: true);
+        Directory.Delete(DaorisHome.Entry(_home, HomeEntry.Plugins,"a.gone"), recursive: true);
         Catalog(("b.newer", ["quest/consider"], "2.0.0"));
         await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
 
@@ -292,8 +292,8 @@ public sealed class HookSetLogTests : IDisposable
     [Fact]
     public void Each_server_a_session_is_handed_or_withheld_is_a_line_naming_its_plugin()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "plugins", "acme.tools"));
-        File.WriteAllText(Path.Combine(_home, "plugins", "acme.tools", "plugin.json"), $$"""
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.tools"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.tools", "plugin.json"), $$"""
             { "id": "acme.tools", "servers": [
                 { "name": "tickets", "command": ["node", "tickets.mjs"], "env": { "TICKETS_TOKEN": "{{Words}}" } },
                 { "name": "browser", "command": ["node", "drive.mjs", "${browser}"] } ] }
@@ -322,8 +322,8 @@ public sealed class HookSetLogTests : IDisposable
     [InlineData(false)]
     public async Task A_conversation_is_handed_its_servers_with_a_line_for_each_handed_or_withheld(bool shell)
     {
-        Directory.CreateDirectory(Path.Combine(_home, "plugins", "acme.tools"));
-        File.WriteAllText(Path.Combine(_home, "plugins", "acme.tools", "plugin.json"), $$"""
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.tools"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.tools", "plugin.json"), $$"""
             { "id": "acme.tools", "servers": [
                 { "name": "tickets", "command": ["node", "tickets.mjs"], "env": { "TICKETS_TOKEN": "{{Words}}" } },
                 { "name": "browser", "command": ["node", "drive.mjs", "${browser}"] } ] }
@@ -349,8 +349,8 @@ public sealed class HookSetLogTests : IDisposable
     [Fact]
     public async Task Ask_daoris_is_handed_only_the_servers_declared_for_it_and_a_session_only_its_own()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "plugins", "acme.tools"));
-        File.WriteAllText(Path.Combine(_home, "plugins", "acme.tools", "plugin.json"), """
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools", "plugin.json"), """
             { "id": "acme.tools", "servers": [
                 { "name": "tickets", "command": ["node", "tickets.mjs"], "to": ["help"], "allow": ["search"] },
                 { "name": "docs", "command": ["node", "docs.mjs"] } ] }
@@ -467,7 +467,7 @@ public sealed class HookSetLogTests : IDisposable
     {
         foreach (var (id, points, version) in plugins)
         {
-            var folder = Path.Combine(_home, "plugins", id);
+            var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
             {
@@ -493,11 +493,11 @@ public sealed class HookSetLogTests : IDisposable
         new("engine", "default", "D:/fam/engine", "feature/q1-fix", "main", "Fix", "q1", "s1", []);
 
     private List<LogLine> Lines() =>
-        [.. MachineLogReader.Read(Path.Combine(_home, MachineLog.Folder), new LogFilter()).Lines];
+        [.. MachineLogReader.Read(DaorisHome.Entry(_home, HomeEntry.Logs), new LogFilter()).Lines];
 
     private string Raw()
     {
-        var folder = Path.Combine(_home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         return Directory.Exists(folder) ? string.Join("\n", Directory.GetFiles(folder).Select(StubFile.Text)) : "";
     }
 

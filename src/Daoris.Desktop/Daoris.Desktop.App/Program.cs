@@ -142,7 +142,7 @@ internal static class Program
             Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!,
             log,
             work: () => sp.GetRequiredService<DriverLoop>().Work(),
-            relaunch: () => Relaunch(installRoot),
+            relaunch: ct => UpdateLauncher.StartAsync(installRoot, Environment.ProcessId, ct),
             // For good (MAINWINDOWS2): a close from code reads as the person's, which only puts the first away while another
             // main window is open, and an update has to end the application whatever is open.
             close: () => sp.GetRequiredService<MainForm>().CloseForGood(),
@@ -248,7 +248,12 @@ internal static class Program
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();
             loop.Draining = () => updater.Draining;
-            updater.Started();
+            // Its look may start the launcher for a build said *now*: through the start gate, off this thread
+            // (UPDATERELAUNCH1). The drain is set before that wait, so before the loop starts; a failed look is said as the
+            // updater's own loop says one.
+            _ = updater.StartedAsync().ContinueWith(
+                look => log.Warn("update.look", ("message", look.Exception!.GetBaseException().Message)),
+                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
             updater.Start();
             loop.Start();
         });
@@ -294,39 +299,5 @@ internal static class Program
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
         app.Run();
-    }
-
-    /// <summary>
-    /// Start the launcher at the install's root with <c>--update --after &lt;this process&gt;</c> (UPDATE1, D139 §5): it waits
-    /// for this application to close, then swaps <c>app/</c>. False when it could not be started, and the application stays.
-    /// </summary>
-    private static bool Relaunch(string installRoot)
-    {
-        var launcher = Path.Combine(installRoot, Daoris.Driver.StagedBuild.Launcher);
-        if (!File.Exists(launcher)) return false;
-
-        // Not the tools' environment (TOOLS5): the launcher is Daoris's own program, and it hands this process's environment,
-        // its home included, to the application it starts, which hands every child the tools' environment there.
-        // Through the shell (UPDATE1): a start that does not go through it hands the launcher every inheritable handle this
-        // process holds, the engine's DevTools socket among them, and the launcher hands them on to the application it starts,
-        // so a build started after a swap found its port held by the builds before it. The shell's start inherits none and
-        // still hands this process's environment.
-        var start = new System.Diagnostics.ProcessStartInfo(launcher)
-        {
-            UseShellExecute = true,
-            WorkingDirectory = installRoot,
-        };
-        start.ArgumentList.Add("--update");
-        start.ArgumentList.Add("--after");
-        start.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        try
-        {
-            using var started = System.Diagnostics.Process.Start(start);
-            return started is not null;
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            return false;
-        }
     }
 }

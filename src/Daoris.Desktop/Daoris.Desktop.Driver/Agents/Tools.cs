@@ -133,7 +133,7 @@ public static class Tools
     /// </summary>
     public static ToolsRead Read(string home)
     {
-        var path = Path.Combine(home, FileName);
+        var path = DaorisHome.Entry(home, HomeEntry.Tools);
         var exists = File.Exists(path);
         var entries = new Dictionary<string, ToolEntry>(StringComparer.Ordinal);
         var unknown = new List<string>();
@@ -336,7 +336,7 @@ public static class Tools
         if (ManagedFile(home, declared, version).File is null)
         {
             throw new DriverException(
-                $"{declared.Name} {version} is not downloaded ({Path.Combine(home, Folder, tool, version)}), so nothing was written: a "
+                $"{declared.Name} {version} is not downloaded ({DaorisHome.Entry(home, HomeEntry.ToolVersions, tool, version)}), so nothing was written: a "
                 + $"managed version nobody downloaded would refuse every start. `daoris tool use {tool} managed {version}` downloads it, "
                 + "then uses it");
         }
@@ -377,7 +377,7 @@ public static class Tools
     /// <returns>False when it was not listed, and nothing is written.</returns>
     public static bool RemoveLocation(string home, string address)
     {
-        if (!File.Exists(Path.Combine(home, FileName))) return false;
+        if (!File.Exists(DaorisHome.Entry(home, HomeEntry.Tools))) return false;
         var (path, root, locations) = WritableLocations(home);
         var removed = false;
         for (var at = locations.Count - 1; at >= 0; at--)
@@ -395,7 +395,7 @@ public static class Tools
     /// <summary>The file and its <c>locations</c> to write over, or the refusal that leaves it as it is.</summary>
     private static (string Path, JsonObject Root, JsonArray Locations) WritableLocations(string home)
     {
-        var path = Path.Combine(home, FileName);
+        var path = DaorisHome.Entry(home, HomeEntry.Tools);
         var (root, problem) = Load(path);
         if (problem is not null) throw new DriverException($"{problem}. Fix it, or delete it to start from nothing — nothing was written.");
 
@@ -422,7 +422,7 @@ public static class Tools
     private static void SetWay(string home, string id, string way, string? version, string? file)
     {
         if (Find(id) is null) throw new DriverException(Undeclared(id));
-        var path = Path.Combine(home, FileName);
+        var path = DaorisHome.Entry(home, HomeEntry.Tools);
         var (root, problem) = Load(path);
         if (problem is not null) throw new DriverException($"{problem}. Fix it, or delete it to start from nothing — nothing was written.");
 
@@ -458,7 +458,7 @@ public static class Tools
     /// <summary>A downloaded version's executable, or why there is none (§3.6's layout).</summary>
     private static (string? File, string? Problem) ManagedFile(string home, ToolDeclaration tool, string version)
     {
-        var folder = Path.Combine(home, Folder, tool.Id, version);
+        var folder = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool.Id, version);
         var back = $"— {Never}. `daoris tool use {tool.Id} managed {version}` downloads it, and `daoris tool use {tool.Id} system` "
             + "runs the one on PATH";
         var record = Path.Combine(folder, Record);
@@ -598,7 +598,7 @@ public static class Tools
         var (file, _) = ManagedFile(home, declared, entry.Version!);
         if (file is null) return [];
 
-        var version = Path.Combine(home, Folder, tool, entry.Version!);
+        var version = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool, entry.Version!);
         var package = Path.Combine(version, Package);
         return [.. RecordPaths(Path.Combine(version, Record)).Select(path => path == "." ? package : Path.Combine([package, .. path.Split('/')]))];
     }

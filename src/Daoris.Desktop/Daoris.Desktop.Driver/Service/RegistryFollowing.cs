@@ -27,9 +27,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class RegistryFollowing
 {
-    public const string MovedFile = "lines-moved.json";
-
-    public const string FollowedFile = "registry-followed.json";
 
     // One writer at a time in this process, per file: two presses in one shell would otherwise drop each other's entry.
     private static readonly object Gate = new();
@@ -48,7 +45,7 @@ public static class RegistryFollowing
                     ["moved"] = new JsonObject(moved.OrderBy(pair => pair.Key, StringComparer.Ordinal)
                         .Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)Stamp(pair.Value)))),
                 };
-                JsonFile.Write(Path.Combine(home, MovedFile), file);
+                JsonFile.Write(DaorisHome.Entry(home, HomeEntry.LinesMoved), file);
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -92,7 +89,7 @@ public static class RegistryFollowing
                     };
                 }
 
-                JsonFile.Write(Path.Combine(home, FollowedFile), new JsonObject { ["repositories"] = repositories });
+                JsonFile.Write(DaorisHome.Entry(home, HomeEntry.RegistryFollowed),new JsonObject { ["repositories"] = repositories });
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -105,7 +102,7 @@ public static class RegistryFollowing
     public static Dictionary<string, FollowedEntry> Read(string home)
     {
         var entries = new Dictionary<string, FollowedEntry>(StringComparer.OrdinalIgnoreCase);
-        if (Load(Path.Combine(home, FollowedFile))?["repositories"] is not JsonObject repositories) return entries;
+        if (Load(DaorisHome.Entry(home, HomeEntry.RegistryFollowed))?["repositories"] is not JsonObject repositories) return entries;
         foreach (var (name, value) in repositories)
         {
             if (value is not JsonObject entry || When(entry["at"]) is not { } at || Text(entry["outcome"]) is not { } outcome) continue;
@@ -118,7 +115,7 @@ public static class RegistryFollowing
     private static Dictionary<string, DateTimeOffset> ReadMoved(string home)
     {
         var moved = new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase);
-        if (Load(Path.Combine(home, MovedFile))?["moved"] is not JsonObject lines) return moved;
+        if (Load(DaorisHome.Entry(home, HomeEntry.LinesMoved))?["moved"] is not JsonObject lines) return moved;
         foreach (var (name, value) in lines)
         {
             if (When(value) is { } at) moved[name] = at;

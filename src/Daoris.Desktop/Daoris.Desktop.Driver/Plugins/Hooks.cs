@@ -90,15 +90,17 @@ public sealed class HookPeer(
     /// plugin answers with its version and the points it actually listens on — a subset of what its
     /// manifest declared, because a manifest is a claim and the process is the fact.
     /// </summary>
+    /// <param name="patience">How long the handshake waits, where it is not the peer's: the kit's trial waits its points' own
+    /// patience here, however short a patience it gives the points' calls (PLUGKIT2).</param>
     public async Task InitializeAsync(
-        string home, string data, IReadOnlyList<string> declared, CancellationToken ct)
+        string home, string data, IReadOnlyList<string> declared, CancellationToken ct, TimeSpan? patience = null)
     {
         _pump ??= PumpAsync(_stopping.Token);
 
         var answer = await RequestAsync(
             "initialize",
             new { protocolVersion = ProtocolVersion, plugin, home, data, points = declared },
-            ct).ConfigureAwait(false);
+            ct, patience).ConfigureAwait(false);
 
         // 🔴 Every read checks the shape first (REV3): a property read on the wrong kind throws
         // InvalidOperationException, which is not a DriverException, so it escaped the tick's catch and
@@ -254,9 +256,10 @@ public sealed class HookPeer(
         if (_pump is { } pump) _ = pump.ContinueWith(static t => t.Exception, TaskScheduler.Default);
     }
 
-    private async Task<JsonElement> RequestAsync(string method, object? parameters, CancellationToken ct)
+    private async Task<JsonElement> RequestAsync(string method, object? parameters, CancellationToken ct, TimeSpan? patience = null)
     {
         if (!_alive) throw Marked($"plugin `{plugin}` is not running.", PluginEvents.Exited);
+        var waits = patience ?? _patience;
 
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -266,7 +269,7 @@ public sealed class HookPeer(
         if (parameters is not null) frame["params"] = JsonSerializer.SerializeToNode(parameters);
 
         using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        bounded.CancelAfter(_patience);
+        bounded.CancelAfter(waits);
         try
         {
             await SendAsync(frame, bounded.Token).ConfigureAwait(false);
@@ -275,7 +278,7 @@ public sealed class HookPeer(
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             _pending.TryRemove(id, out _);
-            throw Marked($"plugin `{plugin}` did not answer `{method}` within {_patience.TotalSeconds:0}s.", PluginEvents.Late);
+            throw Marked($"plugin `{plugin}` did not answer `{method}` within {waits.TotalSeconds:0}s.", PluginEvents.Late);
         }
         catch (IOException error)
         {

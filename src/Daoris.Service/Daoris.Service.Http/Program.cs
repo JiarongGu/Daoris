@@ -2193,7 +2193,7 @@ static ChannelResponse ToChannel(string ask, string entry, ChannelRead read) =>
 
 static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
 {
-    var kept = files?.For(AskDesk.Folder);
+    var kept = files?.For(HomeEntry.AskFiles);
     return new(
         a.Id, a.Workspace, a.Sentence, a.State.ToString(), a.Tier, a.Asked, a.Updated, a.Asker, a.Note, a.Links,
         a.Attachments.Select(f => new QuestAttachmentResponse(
