@@ -47,10 +47,12 @@ public sealed class SessionRequestChangeTests : IDisposable
 
         var asked = Stopwatch.StartNew();
         _source.On(Requests.Folder)!.Raise(Path.GetFileName(Requests.PathOf(request)), ChangeKind.Renamed);
-        await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the words were never taken", TimeSpan.FromSeconds(30));
+        // The answer is written beside the request once the words are held, so it is what is waited for, read once.
+        WordsHeld? answer = null;
+        await Poll.Until(() => (answer = Requests.AnswerOf(request)) is not null, () => "the words were never answered", TimeSpan.FromSeconds(30));
 
+        Assert.True(answer!.Sent);
         Assert.Equal("also the changelog; 中文 too.", Assert.Single(inbox.State.Queued).Text);
-        Assert.NotNull(Requests.AnswerOf(request));
         Assert.True(asked.Elapsed < TimeSpan.FromHours(1), $"{asked.Elapsed}");
     }
 
