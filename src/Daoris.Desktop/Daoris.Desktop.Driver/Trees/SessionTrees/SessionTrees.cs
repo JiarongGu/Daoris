@@ -207,6 +207,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     public string TreesRoot => _context.TreesRoot;
 
+    /// <inheritdoc cref="TreeContext.OneLook"/>
+    internal IDisposable OneLook() => _context.OneLook();
+
     /// <summary>
     /// Open a fresh tree for a session in <paramref name="root"/>. Throws <see cref="DriverException"/>
     /// with git's own words when it cannot — before any record exists, which is the caller's contract.
@@ -494,10 +497,12 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// </summary>
     private static async Task<string> StartOfAsync(string root, string branch, Line line, string repository, CancellationToken ct)
     {
+        // STARTGIT1: the checkout's own guess is the branch either way (its answer is the same where it stands or not), so git is
+        // not asked whether it does; a line the person set is the one checked.
+        if (line.Source == LineSource.Checkout) return branch;
         var (local, _, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
         if (local == 0) return branch;
-        if (line.Source == LineSource.Checkout) return branch;
 
         var (remote, _, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{branch}"], ct).ConfigureAwait(false);
