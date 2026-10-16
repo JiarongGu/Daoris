@@ -76,6 +76,11 @@ each is still held:
 5. **The index regenerated** (`node tools/orient-index.mjs`, row 10). A read is no coverage row (row 7): it changes nothing.
 6. **Its class in the pipe's census** (row 11): `Open`, since a read changes nothing.
 
+A read whose shape keeps a `null` as a field (a fact not read, beside its `…Why`) cannot answer an object: the bridge leaves a
+null out of what it serializes. Answer the reader's own JSON as a `JsonElement`, which is written as it is (`SystemRoutes`'
+`SYSTEM_WIRING`, WIRING1b; `WorkflowRoutes`' steps). A read that looks at files leaves the window's thread first
+(`Task.Run`), since a route's part before its first wait runs there (UIFREEZE1).
+
 ### Check before saying done
 
 1. `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process`, which holds rows 1 to 5, 8 and 11.

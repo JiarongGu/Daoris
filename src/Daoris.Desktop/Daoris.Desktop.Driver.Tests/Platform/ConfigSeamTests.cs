@@ -101,6 +101,10 @@ public sealed partial class ConfigSeamTests
                 // The home's table, the driver's one copy of D172's (HOMELAYOUT2), names the file as an entry's place.
                 if (project == "Daoris.Desktop.Driver" && Path.GetFileName(file) == "DaorisHome.cs") continue;
 
+                // The list of every variable Daoris reads (WIRING1b) names the variable to show it, and This Daoris's reader
+                // finds the file through FindPath like every other door.
+                if (project == "Daoris.Desktop.Driver" && Path.GetFileName(file) == "WiringVariables.cs") continue;
+
                 foreach (Match bypass in Bypass().Matches(source))
                 {
                     var line = source[..bypass.Index].Count(c => c == '\n') + 1;

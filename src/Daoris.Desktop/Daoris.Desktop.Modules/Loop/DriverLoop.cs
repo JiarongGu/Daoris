@@ -154,6 +154,18 @@ public sealed class DriverLoop(
     public string? HostNotice => supervisor.Notice;
 
     /// <summary>
+    /// The host this window's supervisor started or adopted, and what its last probe heard (WIRING1b): This Daoris reads them
+    /// rather than asking the service again on the page's open.
+    /// </summary>
+    public HostSupervisor Host => supervisor;
+
+    /// <summary>The address this loop's service is at, as the window was handed it (<c>DAORIS_SERVICE_URL</c> or the default).</summary>
+    public string ServiceUrl => serviceUrl;
+
+    /// <summary>Whether this window set its own home on this start (D63's establishing): This Daoris says the variable's source is Daoris.</summary>
+    public bool HomeSetByDaoris => home is not null;
+
+    /// <summary>
     /// This machine's harnesses and the accounts they run as (D49 §4) — the roster surface reads it,
     /// and both spawn doors ask it the same question before starting anything.
     /// </summary>

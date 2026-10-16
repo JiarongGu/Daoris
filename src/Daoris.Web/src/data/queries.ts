@@ -100,6 +100,11 @@ export const keys = {
   /** How a session or a quest came to be (TRACE1b) — shell-only: it reads this machine's records of its sessions. */
   trace: (kind: string, id: string) => ['trace', kind, id] as const,
   /**
+   * How this Daoris is wired (WIRING1b) — shell-only: this machine's folders, variables and service. Keyed under `system`, the
+   * family the design gives WIRING1e's presses' scope (§6); until that scope is declared, read again by its stale time and a focus.
+   */
+  systemWiring: ['system', 'wiring'] as const,
+  /**
    * Git's reads (GIT1d-b, D147) — shell-only: they read this machine's checkouts. The branch list moves, so it is keyed by its
    * scope alone; every other read is named by whole commit ids (D147 §4.2), so a commit is cached by its commit and never changes.
    */
