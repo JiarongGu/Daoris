@@ -154,6 +154,18 @@ public sealed class DriverLoop(
     public string? HostNotice => supervisor.Notice;
 
     /// <summary>
+    /// The host this window's supervisor started or adopted, and what its last probe heard (WIRING1b): This Daoris reads them
+    /// rather than asking the service again on the page's open.
+    /// </summary>
+    public HostSupervisor Host => supervisor;
+
+    /// <summary>The address this loop's service is at, as the window was handed it (<c>DAORIS_SERVICE_URL</c> or the default).</summary>
+    public string ServiceUrl => serviceUrl;
+
+    /// <summary>Whether this window set its own home on this start (D63's establishing): This Daoris says the variable's source is Daoris.</summary>
+    public bool HomeSetByDaoris => home is not null;
+
+    /// <summary>
     /// This machine's harnesses and the accounts they run as (D49 §4) — the roster surface reads it,
     /// and both spawn doors ask it the same question before starting anything.
     /// </summary>
@@ -415,7 +427,34 @@ public sealed class DriverLoop(
         lock (_announcing)
         {
             if (_address is not null || _stopping.IsCancellationRequested) return;
-            _address = RunningAddress.Write(Home, serviceUrl);
+            _address = RunningAddress.Write(Home, serviceUrl, _pipe);
+        }
+    }
+
+    /// <summary>
+    /// The pipe a terminal reaches this Daoris on (RPC1a, D171 point 3): the shell hands its own in, the loop serves it once it
+    /// holds the home and takes it down at its stop (<see cref="Stop"/>). None in a headless loop or a test that hands none.
+    /// </summary>
+    public InstancePipe? Pipe { get; set; }
+
+    /// <summary>How long a stop lets the presses the pipe runs answer before it goes on (the terminal RPC design §6.3).</summary>
+    public TimeSpan PipeDrain { get; init; } = TimeSpan.FromSeconds(15);
+
+    /// <summary>The pipe served, named in the address beside the service, or null before.</summary>
+    private string? _pipe;
+
+    /// <summary>
+    /// Name the pipe this Daoris now serves in its address (RPC1a, the terminal RPC design §6.3): written only once it is served,
+    /// so a terminal that reads it finds it served. The address is written again whole; the one before it no longer says what it
+    /// wrote, so only the new one is taken away at the stop.
+    /// </summary>
+    public void AnnouncePipe(string pipe)
+    {
+        lock (_announcing)
+        {
+            if (_stopping.IsCancellationRequested) return;
+            _pipe = pipe;
+            _address = RunningAddress.Write(Home, serviceUrl, pipe) ?? _address;
         }
     }
 
@@ -546,6 +585,10 @@ public sealed class DriverLoop(
         // holds it, and everything above — the host, the page, the conversations — carries on meanwhile.
         using var held = await HoldHomeAsync(ct).ConfigureAwait(false);
         if (held is null) return;
+
+        // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
+        // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
+        if (Pipe?.Serve() is { } pipe) AnnouncePipe(pipe);
 
         var attention = new AttentionWatch();
         // A quest's park is said with its last session's facts, and Overview's row waits from its end (SESSUX1i).
@@ -951,13 +994,26 @@ public sealed class DriverLoop(
     /// </summary>
     public void Stop()
     {
-        // The address first, so a terminal stops finding a service this Daoris is about to let go (FINDDAORIS1).
+        // The pipe first (RPC1a, the terminal RPC design §6.3): every new hello is answered `stopping` from here, and the presses
+        // it runs answer within the drain, while the address still names this Daoris, so no terminal finds the home without one
+        // and acts alone beside a press still under way.
+        var pipe = Pipe;
+        if (pipe is not null)
+        {
+            pipe.BeginStopping();
+            pipe.Drain(PipeDrain);
+        }
+
+        // Then the address, so a terminal stops finding a service this Daoris is about to let go (FINDDAORIS1), and the lease
+        // after it, which the loop lets go as it ends.
         lock (_announcing)
         {
-            _stopping.Cancel();
             _address?.Dispose();
             _address = null;
+            _stopping.Cancel();
         }
+
+        pipe?.Dispose();
 
         _words?.Dispose();
         try

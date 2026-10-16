@@ -1230,6 +1230,9 @@ function endLines(
   return lines;
 }
 
+/** The switch's values as the page names them (`harness.use.switch.*`), for the terminal to say the same. */
+const SWITCH_WORDS: Record<RotationUse['switch'], string> = { smart: 'Smart', curve: 'My own curve', off: 'Off' };
+
 /**
  * How a scope's list is used, in the terminal's words (TOOL6a; D130 §3.2, §6, §16.6): each setting's label and value,
  * and a note for each thing the person should know — a default outside the list, a kept account that leaves driven work
@@ -1238,7 +1241,7 @@ function endLines(
  *
  * @remarks
  * 🔴 It states each setting as chosen, and claims nothing about the walk that reads it: *make the most of them* is §16.3's
- * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* says what passes an
+ * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch accounts* says what passes an
  * account at a start (D165 point 2, the switch design §3, SWITCH1b-iii): its limit reached, usage credits, or its use over
  * its curve, the scope's own under `curve` and Daoris's smart curve otherwise, `off` included. Only where the agent says how
  * much of each window is used, on its door or asked of its own server (`windows`, TOOL6c, CODEXUSE1b); for any other agent
@@ -1256,9 +1259,12 @@ export function useLines(
     ['kept for conversations', use.keep === null ? 'none' : shown(use.keep)],
     // What passes an account at a start since SWITCH1b-ii's walk (the switch design §3): the words say what it does today,
     // never the agent's own pace warning (USAGEREAD3a) or one fixed percentage.
-    ['switch before the limit', !says
-      ? `${use.switch} — ${product}'s sessions here do not say how much of each window is used, so a start passes no account by its use`
-      : `${use.switch} — a start ${use.switch === 'off' ? 'still ' : ''}passes an account whose limit is reached, that draws on usage `
+    // SWITCHCLI1: the page's words (D165's SWITCH1d-c note): *Switch accounts*, with Smart, My own curve and Off, and the move
+    // a session makes at a turn's end.
+    ['switch accounts', !says
+      ? `${SWITCH_WORDS[use.switch]} — ${product}'s sessions here do not say how much of each window is used, so a start passes no account by its use`
+      : `${SWITCH_WORDS[use.switch]} — ${use.switch === 'off' ? 'no session moves at a turn\'s end; ' : 'a session moves at a turn\'s end when its use is over the curve; '}`
+        + `a start ${use.switch === 'off' ? 'still ' : ''}passes an account whose limit is reached, that draws on usage `
         + `credits, or whose use is over ${use.switch === 'curve' ? 'your curve, Daoris\'s smart curve on a window yours leaves out' : 'Daoris\'s smart curve'}`],
   ];
   const curve = curveLine(use);

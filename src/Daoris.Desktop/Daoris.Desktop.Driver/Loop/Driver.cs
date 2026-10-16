@@ -1757,7 +1757,9 @@ public sealed class Driver(
             home, sessionId, composed,
             helper ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HelperHardDeny]
             : opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : PermissionRules.HardDeny(rules),
-            PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null);
+            PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
+            // Which agent made each call, and each subagent's start and stop (FABRIC-C1a): the part's children bound by its lineage.
+            ChildLineage.HookFor(home, sessionId));
         var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
         if (file is null) return (null, null, handed);
 
@@ -2282,6 +2284,10 @@ public sealed class Driver(
         var concluded = await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
             .ConfigureAwait(false);
 
+        // The part's native children end with it (FABRIC-C1a): a run killed, stopped or failed says nothing of theirs, so each its
+        // harness did not see stop is lost; a clean end ends them with it.
+        ChildLineage.End(home, sessionId, clean: exitCode == 0 && Context.Processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow);
+
         // The words its failed door never delivered wait on its ended record to go again (TURNFAIL1, USERSHOWN1): kept once the
         // conclusion moved it, since the say door refuses a running record.
         if (left.Count > 0) await WordsLeft.KeepAsync(service, Context.Events, sessionId, left, CancellationToken.None).ConfigureAwait(false);
@@ -2396,7 +2402,8 @@ public sealed class Driver(
             ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, Context.Events, mapper,
                 resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
-                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own), sessionId, keepAs, resume)
+                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own, lineageHome: home),
+                sessionId, keepAs, resume)
             : null;
 
     /// <summary>

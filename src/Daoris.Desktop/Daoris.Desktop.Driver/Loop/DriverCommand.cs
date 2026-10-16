@@ -173,6 +173,10 @@ public static class DriverCommand
           update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]
               what is staged beside the install and how the last swap ended; or install it when idle (the
               default), now (ending what runs as a close does), or not now, as the window's banner does.
+          wiring [--json] [--measure]
+              how this Daoris is wired, Settings → This Daoris's twin: its folders, service, loop, settings files,
+              variables and where each came from, versions and what a new terminal finds; what only the window
+              knows says so. --measure walks the folders' sizes first. Never a key's value. Reads only.
           plugins install <file.nupkg>
               install a plugin package's plugin, checked first; nothing reaches a network.
           plugins new <id> --point <point>… [--in <folder>]  ·  plugins try <folder|id> [--point <point>]

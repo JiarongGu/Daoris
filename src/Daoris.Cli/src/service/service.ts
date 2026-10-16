@@ -71,7 +71,7 @@ export const RUNNING_FILE = 'running.json';
  */
 export async function runningService(
   home: string, install: string, get: Get = fetch, lives: (pid: number) => boolean = processLives,
-): Promise<{ url: string } | { why: string }> {
+): Promise<{ url: string; pipe?: string } | { why: string }> {
   const start = join(install, 'Daoris.exe');
   const entry = runningEntry(home);
   if (!entry || !lives(entry.pid)) return { why: `Daoris is not running on ${home}: start it (${start}), and run this again once its window is up.` };
@@ -103,7 +103,7 @@ export async function runningService(
 
   const mine = homeId(home);
   return mine && answered.home === mine
-    ? { url: entry.url }
+    ? { url: entry.url, ...(entry.pipe && entry.home === mine ? { pipe: entry.pipe } : {}) }
     : {
       why: `Daoris is running on ${home} (pid ${entry.pid}), and the service at ${entry.url} answered as `
         + `${answered.home ? "another Daoris home's" : "no Daoris home's"}, so nothing was sent to it: start Daoris on this home `
@@ -111,13 +111,35 @@ export async function runningService(
     };
 }
 
-/** What a home's address file names, or null when there is none or it does not read. */
-function runningEntry(home: string): { url: string; pid: number } | null {
+/**
+ * What every Daoris pipe's name begins with (RPC1a, the terminal RPC design §4.1): `daoris-<the home's id>-<the Windows
+ * session's id>`. The driver's `PipeName.Prefix` is its copy; the two share no code (`twins.md`).
+ */
+export const PIPE_PREFIX = 'daoris-';
+
+/** Whether `name` is the pipe of the home whose id is `id`: the prefix, that id and a session's number, nothing else (the driver's `PipeName.IsOf`). */
+export function isPipeOf(name: unknown, id: unknown): name is string {
+  if (typeof name !== 'string' || !isHomeId(id)) return false;
+  const start = `${PIPE_PREFIX}${id}-`;
+  return name.startsWith(start) && /^[0-9]{1,10}$/.test(name.slice(start.length));
+}
+
+/**
+ * What a home's address file names, or null when there is none or it does not read. Its `pipe` (RPC1a) is read only where it
+ * is the pipe of the home the file names, as the driver's `RunningAddress.Read` reads it.
+ */
+function runningEntry(home: string): { url: string; pid: number; home?: string; pipe?: string } | null {
   try {
     const entry: unknown = JSON.parse(readFileSync(homeEntry(home, 'running'), 'utf8'));
     if (typeof entry !== 'object' || entry === null) return null;
-    const { url, pid } = entry as Record<string, unknown>;
-    return typeof url === 'string' && url.length > 0 && Number.isInteger(pid) ? { url: url.replace(/\/+$/, ''), pid: pid as number } : null;
+    const { url, pid, home: named, pipe } = entry as Record<string, unknown>;
+    if (typeof url !== 'string' || url.length === 0 || !Number.isInteger(pid)) return null;
+    return {
+      url: url.replace(/\/+$/, ''),
+      pid: pid as number,
+      ...(isHomeId(named) ? { home: named } : {}),
+      ...(isPipeOf(pipe, named) ? { pipe } : {}),
+    };
   } catch {
     return null;
   }

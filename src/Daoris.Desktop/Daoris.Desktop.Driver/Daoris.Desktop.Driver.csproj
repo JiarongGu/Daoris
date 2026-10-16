@@ -16,6 +16,7 @@
        publish layout. -->
   <ItemGroup>
     <EmbeddedResource Include="Trees\hooks\tree-guard.mjs" LogicalName="Daoris.Driver.tree-guard.mjs" />
+    <EmbeddedResource Include="Sessions\hooks\lineage-hook.mjs" LogicalName="Daoris.Driver.lineage-hook.mjs" />
   </ItemGroup>
 
   <!-- The list built in (TOOLS3, D121 §3.1): where each tool's versions download from. A file beside the

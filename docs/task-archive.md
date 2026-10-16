@@ -15440,7 +15440,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **FABRIC-C0 — the contract audit, with the harnesses measured** (design/evidence; no dependency; the owner approved small probes on 2026-10-16). One two-page matrix of at most twelve rows (an ask's origin, entry and part; a quest and its take; chain and workflow; hand-over; a helper's ask, state and answer; a channel's records, replies and read marks; knowledge search, get and disclosure; the connector's configuration and tools; native identity and events; grants and cancellation; the person, plugin, state and terminal boundaries), each with its key, authoritative store and writer, permitted caller and scope, restart behaviour, deciding code or test, and the fabric primitive it maps to (D173's guards); evidence labelled implemented, tested with stand-ins, observed on the harness, or unknown. One page of probe receipts: Claude Code and Codex, each version, door and configuration source recorded, whether a native subagent inherits MCP servers and allow/deny rules, whether its calls carry an identifier distinct from its parent's, nesting, and what a parent's stop does, from real child-originated calls in a scratch repository with its own home. Ends with C1/C2 go or no-go. Proof: the matrix and receipts as a design document in the router; a D173 note.
 
-**Outcome** 2026-10-16: the contract audit (`docs/2026-10-17-fabric-contract-audit.md`) maps twelve collaboration concepts onto their stores, writers and fabric primitives, and measures Claude Code 2.1.299's and Codex 0.160.0's native children against a stand-in server in scratch: both call with the parent's identity and session id, both expose a lineage the harness writes (Claude's hook `agent_id`, Codex's turn metadata), rules are inherited; C1 and C2 go, reshaped. On Opus: 152 tool calls. Detail: the audit; D173's FABRIC-C0 note.
+**Outcome** 2026-10-16: the contract audit (`docs/2026-10-16-fabric-contract-audit.md`) maps twelve collaboration concepts onto their stores, writers and fabric primitives, and measures Claude Code 2.1.299's and Codex 0.160.0's native children against a stand-in server in scratch: both call with the parent's identity and session id, both expose a lineage the harness writes (Claude's hook `agent_id`, Codex's turn metadata), rules are inherited; C1 and C2 go, reshaped. On Opus: 152 tool calls. Detail: the audit; D173's FABRIC-C0 note.
 
 ## HOMEID1 — the home has an identity, and finding the running Daoris checks it (2026-10-16, D171)
 
@@ -15460,44 +15460,104 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 **Outcome** 2026-10-16: `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` is routed as a proposal (accepted as written in D173); `DAORIS_FUTURE_DIRECTIONS.md` is retired, its text being the proposal's Appendix A word for word; live links repointed; D143, D144 and D169 each carry a dated note. On Sonnet: 21 tool calls. Detail: its commit.
 
-## HOMELAYOUT1 — the install's folders: the decision and design (2026-10-17, D172)
+## HOMELAYOUT1 — the install's folders: the decision and design (2026-10-16, D172)
 
 > - [ ] **HOMELAYOUT1 — the install's folders: the decision and design** (design; amends D63). Separate by what a thing is and who may lose it: the program (`app/`, replaced by updates), the person's own (settings, records, the knowledge store, sign-ins and profile homes), the work (session trees, kept files), what can be fetched again (`res/` or a cache: toolchain, Chromium, WebView2, installed plugins' packages, `bin`), what a run holds (locks, spawn files, starts, salvage) and the logs. Say what each category's backup, move and clean-up mean, which variables still win (`DAORIS_HOME` and the dev loop's `--app-root`), and how a published install and a dev home share one shape. Proof: the decision and design document, every current path placed in it, reviewed against `DaorisHome`'s callers.
 
-**Outcome** 2026-10-17: D172 lays the Daoris folder out as `app/`, `data/`, `profiles/`, `work/`, `cache/`, `run/`, `logs/`; `DAORIS_HOME` names the folder (an install's `data/` read as it); `data/` holds no secret once moved; an entry is read where it is, and only what Daoris alone names moves; the downloads folder is `cache/`, not `res/` (the kit's `res/` means bundled resources). On Opus, with WIRING1a: 164 tool calls. Detail: D172; `docs/2026-10-16-install-layout-design.md`.
+**Outcome** 2026-10-16: D172 lays the Daoris folder out as `app/`, `data/`, `profiles/`, `work/`, `cache/`, `run/`, `logs/`; `DAORIS_HOME` names the folder (an install's `data/` read as it); `data/` holds no secret once moved; an entry is read where it is, and only what Daoris alone names moves; the downloads folder is `cache/`, not `res/` (the kit's `res/` means bundled resources). On Opus, with WIRING1a: 164 tool calls. Detail: D172; `docs/2026-10-16-install-layout-design.md`.
 
-## WIRING1a — the page that shows how this Daoris is wired: the design (2026-10-17, D171)
+## WIRING1a — the page that shows how this Daoris is wired: the design (2026-10-16, D171)
 
 > - [ ] **WIRING1a — the page that shows how this Daoris is wired: the design** (design; D171's companion). One place, Settings → *This Daoris* (本机), with every wire and its source: the folders and their sizes (HOMELAYOUT1's categories), the service (its address, hosted or adopted, version, whether it answers), the driver loop (who holds the home, its last tick), each settings file and what it holds, the variables in effect and where each came from (environment, file, default), the program's and the kit's versions, the update's state, the terminal launchers and whether they are on PATH, the knowledge store, the logs. Secrets never shown (a key's audit prefix at most). Contracts: platform UX, the translation contract. Proof: the design document with its screen states.
 
-**Outcome** 2026-10-17: Settings → *This Daoris* (本机) designed: every wire with its source, folder sizes by D172, *Every setting* searchable in both languages, the setup presses, what is never shown, `SYSTEM_WIRING` and `daoris-driver wiring`. On Opus, with HOMELAYOUT1. Detail: `docs/2026-10-16-this-daoris-design.md`; D171's note.
+**Outcome** 2026-10-16: Settings → *This Daoris* (本机) designed: every wire with its source, folder sizes by D172, *Every setting* searchable in both languages, the setup presses, what is never shown, `SYSTEM_WIRING` and `daoris-driver wiring`. On Opus, with HOMELAYOUT1. Detail: `docs/2026-10-16-this-daoris-design.md`; D171's note.
 
-## HOMELAYOUT2 — the code asks for a category, never a hand-made path (2026-10-17, D172)
+## HOMELAYOUT2 — the code asks for a category, never a hand-made path (2026-10-16, D172)
 
 > - [ ] **HOMELAYOUT2 — the code asks for a category, never a hand-made path** (driver/modules/desktop/service; after 1). `DaorisHome` gains the categories and every caller (`DaorisHome.Require("…json")` and the folders) asks by category, so a later move is one table. No path changes yet. Proof: a census test that no code joins a home path by hand outside `DaorisHome`.
 
-**Outcome** 2026-10-17: the three home twins hold D172's table (62 entries after the integration added `home-id`, `home-lease` and `plugin-approvals`; every new place still the old one) and resolve an entry by point 5 with a second opinion's rule (a new place taken only where it holds the entry; both held refused, naming both); the driver, modules, host, service, launcher and CLI code and about 900 test fixtures ask for entries by name; `home-census.test.ts` fails a home joined by hand. On Opus: 1423 tool calls, then 218 for the integration with main. Detail: D172's HOMELAYOUT2 note; the design's §3 and §6.2.
+**Outcome** 2026-10-16: the three home twins hold D172's table (62 entries after the integration added `home-id`, `home-lease` and `plugin-approvals`; every new place still the old one) and resolve an entry by point 5 with a second opinion's rule (a new place taken only where it holds the entry; both held refused, naming both); the driver, modules, host, service, launcher and CLI code and about 900 test fixtures ask for entries by name; `home-census.test.ts` fails a home joined by hand. On Opus: 1423 tool calls, then 218 for the integration with main. Detail: D172's HOMELAYOUT2 note; the design's §3 and §6.2.
 
-## FLAKE5 — `SessionsSayCommandTests` holds under load (2026-10-17, FLAKE1)
+## FLAKE5 — `SessionsSayCommandTests` holds under load (2026-10-16, FLAKE1)
 
 > - [ ] **FLAKE5 — `SessionsSayCommandTests` holds under load** (found and built in the same round; see the outcome).
 
-**Outcome** 2026-10-17: the say verb's waits read off `SessionsWorld.Clock`; the four loop-took-the-words tests hand it a clock held until the take and keep their loop late: red before, 57/57 after, twelve class runs green. On Opus, with TERMSTART1, UPDATERELAUNCH1 and PLUGKIT2: 273 tool calls. Detail: FIX-LOG FLAKE1's FLAKE5 paragraph.
+**Outcome** 2026-10-16: the say verb's waits read off `SessionsWorld.Clock`; the four loop-took-the-words tests hand it a clock held until the take and keep their loop late: red before, 57/57 after, twelve class runs green. On Opus, with TERMSTART1, UPDATERELAUNCH1 and PLUGKIT2: 273 tool calls. Detail: FIX-LOG FLAKE1's FLAKE5 paragraph.
 
-## TERMSTART1 — a terminal's shell started off the window's thread (2026-10-17, D56)
+## TERMSTART1 — a terminal's shell started off the window's thread (2026-10-16, D56)
 
 > - [ ] **TERMSTART1 — a terminal's shell started off the window's thread** (found and built in the same round; see the outcome).
 
-**Outcome** 2026-10-17: `OPEN` starts the shell through `ProcessStarts`' `RunAsync`; a shell started after its terminal ended is ended; the census counts `CreateProcessW`. On Opus, with FLAKE5. Detail: D56's TERMSTART1 note; FIX-LOG UIFREEZE1.
+**Outcome** 2026-10-16: `OPEN` starts the shell through `ProcessStarts`' `RunAsync`; a shell started after its terminal ended is ended; the census counts `CreateProcessW`. On Opus, with FLAKE5. Detail: D56's TERMSTART1 note; FIX-LOG UIFREEZE1.
 
-## UPDATERELAUNCH1 — the update's relaunch through the gate (2026-10-17, D139)
+## UPDATERELAUNCH1 — the update's relaunch through the gate (2026-10-16, D139)
 
 > - [ ] **UPDATERELAUNCH1 — the update's relaunch through the gate** (found and built in the same round; see the outcome).
 
-**Outcome** 2026-10-17: the updater's look is async, the launcher started by `UpdateLauncher` through the gate, one relaunch per moment, `Program.cs` off the census's allowed list. On Opus, with FLAKE5. Detail: D139's and D56's UPDATERELAUNCH1 notes.
+**Outcome** 2026-10-16: the updater's look is async, the launcher started by `UpdateLauncher` through the gate, one relaunch per moment, `Program.cs` off the census's allowed list. On Opus, with FLAKE5. Detail: D139's and D56's UPDATERELAUNCH1 notes.
 
-## PLUGKIT2 — the silent plugin's trial patience covers its start (2026-10-17, FLAKE1)
+## PLUGKIT2 — the silent plugin's trial patience covers its start (2026-10-16, FLAKE1)
 
 > - [ ] **PLUGKIT2 — the silent plugin's trial patience covers its start** (found and built in the same round; see the outcome).
 
-**Outcome** 2026-10-17: a trial's handshake waits its points' own patience; a given patience is the points' calls'; the silent case's plugin answers its handshake after 1.5 s and still fails its silent `work/land`. Its Process runs are the merge gate's. On Opus, with FLAKE5. Detail: FIX-LOG FLAKE1's PLUGKIT2 paragraph.
+**Outcome** 2026-10-16: a trial's handshake waits its points' own patience; a given patience is the points' calls'; the silent case's plugin answers its handshake after 1.5 s and still fails its silent `work/land`. Its Process runs are the merge gate's. On Opus, with FLAKE5. Detail: FIX-LOG FLAKE1's PLUGKIT2 paragraph.
+
+## WIRING1b — what the page reads (2026-10-16, D171)
+
+> - [ ] **WIRING1b — what the page reads** (modules/driver/service; after 1a, FINDDAORIS1). A read route (`SYSTEM_WIRING`, BRIDGE-PRESSES' read places) answering the design's facts with their sources, and its terminal twin (`daoris-driver wiring`, D50). Proof: modules and host tests per fact and source; a secret never in the answer.
+
+**Outcome** 2026-10-16: `SYSTEM_WIRING` (a new `system` domain) and `daoris-driver wiring [--json] [--measure]` read through one driver-library reader (`SystemWiring`, `WiringSizes`, `WiringRedact`, `WiringVariables`), built to a second opinion's four points: redaction at the reader (URLs, notices, keys as *set*), an adopted service's environment said unknown, sizes measured only when asked (in the background, cached, budgeted, partial), the layout reported as it runs; `/api/status` answers `version` beside `home`. On Opus: 248 tool calls, then a merge of main. Detail: D171's WIRING1b note.
+
+## WEBWAIT1 — the page's tests wait on what they wait for, under load (2026-10-16, FLAKE1)
+
+> - [ ] **WEBWAIT1 — the page's tests wait on what they wait for, under load** (web tests). The web gate failed once on `df95f79` (2026-10-16) in `WorkFrame.test.tsx` *asks the plan again with an entered branch name…*: a `vi.waitFor` with its default 1 s patience gave up at 2993 ms under four workers' load; alone it passes. A fast-suite failure fails the gate and is never re-run. Find the page tests whose `vi.waitFor`/`findBy*` rely on the default patience while a mocked call or a timer stands between, and make each wait on its condition with a patience a loaded machine meets (one shared setting, not per-test widening), as FLAKE5 did for the driver. Proof: the class of failure named in FLAKE1's FIX-LOG entry; the web suite green beside a plain build of another project.
+
+**Outcome** 2026-10-16: `vi.waitFor` in the page tests waits 5 s by default, set once in `src/test/setup.tsx`, as `findBy` already did; its 47 uses had waited 1 s, so a loaded machine failed them. On Sonnet: 63 tool calls. Detail: FIX-LOG FLAKE1's WEBWAIT1 paragraph; `src/test/waitPatience.test.ts`.
+
+## SWITCHCLI1 — the terminal says the switch as the page does (2026-10-16, D165)
+
+> - [ ] **SWITCHCLI1 — the terminal says the switch as the page does** (cli). `profile use` still says *switch before the limit* and only what passes an account at a start (`toolchain.ts` `useLines`). D165's SWITCH1d-c note. Proof: `toolchain.test.ts`' use lines in the new words.
+
+**Outcome** 2026-10-16: `profile use` says *Switch accounts* with Smart, My own curve and Off, and the move at a turn's end, as the page does. On Sonnet, with CURVETERM1: 71 tool calls. Detail: D165's SWITCH1d-c note.
+
+## CURVETERM1 — the usage curve in the glossary (2026-10-16, D165)
+
+> - [ ] **CURVETERM1 — the usage curve in the glossary** (web). *curve*/曲线 has no glossary term, and "point" is a plugin's 挂点. D165's SWITCH1d-c note. Proof: `names:check --strict` holds the term.
+
+**Outcome** 2026-10-16: the glossary holds `curve` / 曲线, kept apart from a plugin's 挂点; the curve editor's lines are rows (行). The refusals' own "point" stays for CURVETERM2. On Sonnet, with SWITCHCLI1. Detail: `locales/glossary.json`.
+
+## HELPAPPLY1 — Apply lands what the card showed, once (2026-10-16, D170)
+
+> - [ ] **HELPAPPLY1 — Apply lands what the card showed, once** (driver/modules; a design review's finding, 2026-10-16). `HELP_APPLY` reads and plans again before it applies (`HelpRoutes.cs` ~332), so a card can apply something other than what it showed, and two windows can apply one proposal together. Bind Apply to the shown plan's revision (a material change asks again, said on the card) and claim the proposal atomically. D89, D170. Proof: modules tests: a plan changed between card and Apply asks again; two Applies at once, one wins.
+
+**Outcome** 2026-10-16: each card carries a revision of the plan it shows and Apply sends it; a plan changed since asks again (said above the cards) and applies nothing; the proposal is claimed with a file made only if none is there, so two Applies at once run it once. On Sonnet, with MAINWINDOWS2b and 2c: 186 tool calls. Detail: D170's HELPAPPLY1 note.
+
+## MAINWINDOWS2b — the taskbar's count on every main window (2026-10-16, D171)
+
+> - [ ] **MAINWINDOWS2b — the taskbar's count on every main window** (desktop). While the first main window is put away its button is gone, so the count shows on none; each `main:<n>` wears it. D171's MAINWINDOWS2 note. Proof: a modules test; on the install, the count on the second window with the first put away.
+
+**Outcome** 2026-10-16: while the first main window is put away, each `main:<n>` wears *What needs you*'s count on its taskbar button and title. On Sonnet, with HELPAPPLY1. Detail: D171's MAINWINDOWS2b note. The install's look is owed.
+
+## MAINWINDOWS2c — a picker owned by the window whose page asked (2026-10-16, D171)
+
+> - [ ] **MAINWINDOWS2c — a picker owned by the window whose page asked** (desktop). `PickFolder` and `PickFile` are owned by the first main window, hidden when put away; own the dialog by the asking window. D171's MAINWINDOWS2 note. Proof: a test per route caller; on the install, *Add repository* from `main:2` with the first put away.
+
+**Outcome** 2026-10-16: a picker is owned by the window whose page asked (`AskingWindow.Owner`, the page naming its window on `PICK_FOLDER` and `TOOLS_PICK`). On Sonnet, with HELPAPPLY1. Detail: D171's MAINWINDOWS2c note. The install's look is owed.
+
+## FABRIC-PROBE1 — the harness probe kit as a tracked tool (2026-10-16, D173)
+
+> - [ ] **FABRIC-PROBE1 — the harness probe kit as a tracked tool** (tools; before C2b). C0's stand-in MCP server (it logs every message), its hook logger and its launchers (each process its own `DAORIS_HOME`, the parent session's `CLAUDE*` variables removed) are scratch; C2b repeats the measurements. Keep them as `tools/` scripts guarded by `isMain`, with the receipt summariser. Proof: one plain run reproduces the audit's run A receipt on a scratch home.
+
+**Outcome** 2026-10-16: the C0 probe kit is tracked as `tools/fabric-probe/` (stand-in server, hook logger, Claude Code and Codex launchers each with its own `DAORIS_HOME`, the receipt), held in verify; a plain run reproduced the audit's run A. On Opus, with FABRIC-C1a: 272 tool calls. Detail: D173's FABRIC-PROBE1 note.
+
+## FABRIC-C1a — a native child bound to its session part, from the harness's own lineage (2026-10-16, D173)
+
+> - [ ] **FABRIC-C1a — a native child bound to its session part, from the harness's own lineage** (service/driver; after C0). Both harnesses name a child's lineage without Daoris's help (Claude: the `PreToolUse` hook's `agent_id` joined to `_meta`'s `claudecode/toolUseId` and its stream's `task_started`; Codex: `_meta`'s `x-codex-turn-metadata`), and neither gives the connector a child identity in its environment (the C0 audit §2). The connector reads each call's `_meta` and the driver records an observed binding (harness, native id, parent id, provenance) against the existing part, never a new session; it ends with the part; unsupported signals stay unknown; `_meta`'s paths are never stored or sent. D173's guards; proposal §3-§4, §11. Proof: real child calls on both harnesses tell a child, a grandchild and two siblings apart; a killed root marks its children's bindings lost; canaries 1, 2 and 9.
+
+**Outcome** 2026-10-16: the connector records each call's `_meta` lineage (ids only) to the session's `lineage.jsonl`; the driver hands Claude Code a lineage hook, records the stream's subagent starts and the part's end, and `ChildBindings` binds each native child to its part (harness, native id, parent, depth, provenance, state). Real runs on both harnesses told a child, a grandchild and two siblings apart, and a killed root left its child lost (canaries 1, 2, 9). On Opus, with FABRIC-PROBE1. Detail: D173's FABRIC-C1a note.
+
+## RPC1a — the running Daoris answers on a pipe (2026-10-16, D171)
+
+> - [ ] **RPC1a — the running Daoris answers on a pipe** (designed in RPC1; built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: the desktop serves `daoris-<home id>-<session>` once its loop holds the home (`InstancePipe`), carrying the kit's envelopes into its own dispatcher; `PipeCensus` classes the driver's routes (60 open, 79 person refused `confirm-in-window`, 6 window, `TOOLS_GIT` and `PLUGIN_UPDATE` by payload) after a second opinion moved `TREES_SYNC`, `ASK_OPINION` and `HARNESSES_REFRESH` to person; each id is journaled a day under the home's `pipe` entry, bound to its route, payload and the sender's key (`id-taken`, `unrecorded`), `RESULT` answering only that key; connections bounded; `running.json` names the pipe; the stop drains before the address and lease go. On Opus: about 320 tool calls over three rounds. Detail: D171's RPC1a note and its review paragraph.

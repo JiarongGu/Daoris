@@ -229,7 +229,7 @@ public sealed record HarnessToolchain(
     // two doors onto different tools never share one. Declared by the harness, never derived from its name; null declares
     // none and the page derives its own. Page-only: the CLI prints no strip, so there is no twin.
     string? Mark = null,
-    // Whether a start that names no account may run in this tool's own home (OWNSPACE1a, D175's 2026-10-17 note): true only
+    // Whether a start that names no account may run in this tool's own home (OWNSPACE1a, D175's OWNSPACE1a note): true only
     // for a test double whose own home is nobody's, the stub, its protocol twin and a test's fake. Every real agent leaves it
     // false, since its own home is the person's and never Daoris's working space (D175 point 1). Not a twin: the CLI starts
     // no session.

@@ -5,7 +5,7 @@ each choice, what is on trial, and when an agent of another maker is asked for a
 dispatch reads it in place of fixed names; Daoris's own sessions take the same roles through MODELROLE1. Change it when a
 batch's measurements or a new model version say so, and date the change.
 
-Reviewed **2026-10-17**.
+Reviewed **2026-10-16**.
 
 ## The roles
 
@@ -38,7 +38,7 @@ gates.
 |---|---|---|---|
 | Claude Haiku 5.5 | orient | packs as exact as Sonnet's at lower cost, over two batches | not yet tried |
 | Claude Fable 5.1 | build-judgement | a judgement row's merge as clean as Opus's at lower cost | not yet measured |
-| Claude Sonnet 5.5 | build-judgement on a well-scouted UI row | a scouted UI row merged green near a hundred turns | per D160's earlier batches, promising |
+| Claude Sonnet 5.5 | build-judgement on a row whose design is settled before dispatch | a scouted UI row merged green near a hundred turns | 2026-10-16: HELPAPPLY1 with MAINWINDOWS2b and 2c merged at 111 turns (first sample); STEER2b and WIRING1c-i dispatched as the second and third (D160's note of that date) |
 
 A candidate is tried on one or two rows of its role in a batch, measured with `tools/subagent-usage.mjs`, and its merge
 judged (gates on the first run, review findings, the window). Promote it here with the date and the batch; retire a

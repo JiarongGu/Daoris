@@ -917,7 +917,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
-    /// The scope a start walks (OWNSPACE1a, D175 points 1-2 and its 2026-10-17 note): <paramref name="scope"/>, unless it names no
+    /// The scope a start walks (OWNSPACE1a, D175 points 1-2 and its OWNSPACE1a note): <paramref name="scope"/>, unless it names no
     /// account and the agent's own home is the person's. Then the agent's Daoris accounts on this machine are the start's: one is
     /// the scope's one account, more its list, walked by the rotation's own order and allowance rules; none leaves it naming
     /// nothing, which a start holds on (<see cref="RotationWords.NoAccountOf"/>), never running in the person's own tool home.

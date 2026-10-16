@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// OWNSPACE1a (D175 points 1-3 and its 2026-10-17 note): every start Daoris makes runs in a configuration home Daoris owns. Where
+/// OWNSPACE1a (D175 points 1-3 and its OWNSPACE1a note): every start Daoris makes runs in a configuration home Daoris owns. Where
 /// a start's scope names no account, the agent's Daoris accounts on this machine are its list; with none signed in it waits, with
 /// one sentence, and nothing is spawned; a record that began in the person's own tool home resumes there; a test double, whose own
 /// home is nobody's, is exempt.

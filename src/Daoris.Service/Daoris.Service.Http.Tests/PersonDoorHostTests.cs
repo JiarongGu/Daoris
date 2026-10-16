@@ -369,10 +369,11 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
         Assert.Equal("gQMDWolsIQRnw-_d19k3A1c9E6ey2aP9-8RL_n_pJ50", proved.Json.GetProperty("proof").GetString());
         Assert.DoesNotContain(Key, proved.Body);
 
-        // No `proof` unasked. `home`, the home's id, is HOMEID1's (`HomeStatusTests`), on every local host's status.
+        // No `proof` unasked. `home`, the home's id, is HOMEID1's (`HomeStatusTests`), on every local host's status; `version`,
+        // the host's own, WIRING1b's.
         var plain = await host.GetAsync("/api/status");
         Assert.Equal(
-            new[] { "semantic", "tier", "note", "home" },
+            new[] { "semantic", "tier", "note", "home", "version" },
             plain.Json.EnumerateObject().Select(field => field.Name).ToArray());
     }
 

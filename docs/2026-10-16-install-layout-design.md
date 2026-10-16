@@ -136,6 +136,7 @@ where it is, while one made after the change is made at its new place (D172 poin
 | `harnesses/.probing/`, the usage read's locks | `ProbeLock.cs:29, 44-53`; the CLI's `probelock.ts:41-50` | `run/probing/` |
 | `sessions/<id>.pid`, `sessions/requests/` | `SessionProcesses.cs:389`, `SessionRequests.cs:140` | `run/sessions/<id>.pid`, `run/requests/` |
 | `browser/edge.json`, what Daoris started its Edge with | `EdgeBrowser.cs:26` | `run/edge.json` |
+| `pipe/`, the running Daoris's request journal, a file per UTC day kept a day (RPC1a, D171; placed by its merge after HOMELAYOUT2) | `PipeJournal.cs`, through `InstancePipe.cs` | `run/pipe/` |
 
 Each moves at a start where nothing holds it (§7); one held is read where it is.
 

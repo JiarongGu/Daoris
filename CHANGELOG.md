@@ -10,6 +10,12 @@ with the version and date at release.
   in English and 中文, until you sign one in for Daoris. A conversation begun in your own sign-in still goes on there. A
   folder-trust hold on a Daoris account names Daoris's own command, since trusting the folder at your terminal would not
   reach that account.
+- `daoris-driver wiring` says how this Daoris is wired: its folder and each top folder as it runs (with what is still at an
+  old place and why), the service (its address and where it came from, its tier and version), who holds the home, each
+  settings file (whether it reads, what overrides it), every variable Daoris reads with where it came from, the versions,
+  and whether a new terminal finds this install's `daoris` and `daoris-driver`. `--measure` counts the folders' sizes first,
+  and `--json` prints it whole. A key is only ever *set*, or a deployment key's short prefix; never its value. The service's
+  status now names its version.
 - Switching accounts is in view on an agent's page. Each account's five-hour and weekly window says its use against its usage
   curve now (*its curve allows 45% now*, or *over its curve's 45% now*) and whether it was read from the agent or said by a
   session, and how long ago; the page reads each account's use as it opens where a reading is older than a minute, and at

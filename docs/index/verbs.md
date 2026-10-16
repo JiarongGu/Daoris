@@ -21,7 +21,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `wire` | management | `cli/wire.ts:5` | `service/manage.ts:58` commandWire | <repo> --workspace W |
 | `import` | management | `cli/import.ts:5` | `service/manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `remote` | management | `cli/remote.ts:5` | `service/remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:6` | `agents/toolchain.ts:1522` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `agent` | management | `cli/agent.ts:6` | `agents/toolchain.ts:1528` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
 | `driver` | management | `cli/driver.ts:7` | `driver/driverconfig.ts:718` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:5` | `plugins/plugins.ts:1270` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser/browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
@@ -50,9 +50,10 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `sync` | `Program.cs:487` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:30` · dismiss `SyncConsole.cs:31` |
 | `plugins install` | `Program.cs:494` | `Daoris.Desktop.Driver/Plugins/PluginPackage.cs:134` PluginPackageCommand | — |
 | `update` | `Program.cs:501` | `Daoris.Desktop.Driver/Setup/UpdateCommand.cs:19` UpdateCommand | — |
-| `logs` | `Program.cs:511` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
-| `plugins` | `Program.cs:518` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:494` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:56` · withdraw `PluginsCommand.cs:68` |
-| `drive` | `Program.cs:315` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:206` DriverCommand.Read | — |
+| `wiring` | `Program.cs:512` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
+| `logs` | `Program.cs:520` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
+| `plugins` | `Program.cs:527` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:494` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:56` · withdraw `PluginsCommand.cs:68` |
+| `drive` | `Program.cs:315` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:210` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

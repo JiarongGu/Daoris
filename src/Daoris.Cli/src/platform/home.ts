@@ -156,6 +156,7 @@ export const HOME_ENTRIES = [
   row('session-pids', 'run', 'sessions/*.pid', 'sessions/*.pid'),
   row('requests', 'run', 'sessions/requests', 'sessions/requests'),
   row('edge-record', 'run', 'browser/edge.json', 'browser/edge.json'),
+  row('pipe', 'run', 'pipe', 'pipe'),
   row('logs', 'logs', 'logs', 'logs'),
 ] as const;
 

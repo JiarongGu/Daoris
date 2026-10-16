@@ -763,7 +763,7 @@ public sealed record HarnessSettings(
 
     /// <summary>
     /// This machine's scope for <paramref name="agent"/> with <paramref name="accounts"/> as its list (OWNSPACE1a, D175's
-    /// 2026-10-17 note): what a start walks where neither the machine nor the workspace names an account, the agent's Daoris
+    /// OWNSPACE1a note): what a start walks where neither the machine nor the workspace names an account, the agent's Daoris
     /// accounts on this machine, begun at the first and used as the machine's use for the agent says.
     /// </summary>
     public RotationScope Over(string agent, IReadOnlyList<string> accounts) =>

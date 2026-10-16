@@ -513,6 +513,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("STOP_TASK", "", null)]
     [InlineData("TAIL_SESSION", "", null)]
     [InlineData("TRACE", "", null)]
+    // WIRING1b: This Daoris's read; asking it to measure starts a walk and moves no state a window shows.
+    [InlineData("SYSTEM_WIRING", "", null)]
     public void The_remaining_presses_declare_what_they_change(string route, string scopes, string? session)
     {
         Assert.Contains(route, DriverModule.Routes);
