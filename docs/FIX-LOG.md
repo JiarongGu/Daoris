@@ -5,7 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## 2026-10-16 — A terminal's discovery would take another install's service (HOMEID1)
+## 2026-10-16 — *Send now* could cut the words' own turn, stop a turn with a word on its way, or close a finished call as cut (STEER2a)
+
+- **Symptom:** a second maker reviewed the unmerged branch and found three defects; the coordinator checked each against the
+  code. None ran on the install.
+  - A stop arriving late could cancel the turn of the very words it was kept for, and that answer was lost.
+  - A press on Claude Code's door could send `session/cancel` while an earlier word was on its way.
+  - A call that had finished could be closed as `cut`.
+- **Root cause:**
+  - **The late stop.** `ChatTurns.TakeNowAsync`/`StopKeepingAsync` and `DrivenInbox` decided the stop under their lock but
+    sent it after releasing the lock. In that gap the turn could end and the pump or the run could send the kept words as the
+    next turn. The inbox also stopped once per press, not once per turn.
+  - **The cancel with a word on its way.** The steer's guard `open` failed whenever anything waited, for instance a helper's
+    answer. The press then queued the words and stopped the turn even on the next-step door, which D136 point 4 forbids
+    while a word is on its way.
+  - **The finished call closed as cut.** `AcpSession.Track` treated an update with no status as open.
+- **Fix:**
+  - **A stop is tied to its turn.** Each turn is counted. A stop is decided for one turn and dropped if that turn has ended.
+    The next turn waits until the stop is on the wire or dropped: `PumpAsync` awaits it, and `NextOrClose` hands back a
+    `Waits`. The inbox asks a turn to stop once.
+  - **The next-step door is never stopped.** That holds while a word is on its way, or wherever the door takes words at
+    its next step. Words behind others go behind them, answered `now: false` with `why: "behind"`, and nothing is
+    steered past a word on its way.
+  - **A finished call stays finished.** It is kept finished through any update without a status. Only `pending` or
+    `in_progress` opens a call, or an announcement with no status, which the protocol reads as `pending`.
+- **Verification:**
+  - `ChatTurnsTests`: a slow stop holding the kept words' turn until it landed on the turn before; the helper-waiting case
+    and the word-on-its-way case.
+  - `DrivenInboxTests`: one stop per turn; no held word taken while a stop is on its way; behind a word on its way.
+  - `AcpSteerTests`: completed, then a statusless update, then a steer, with no cut.
+  - Each was seen failing behaviourally once its surface compiled.
+
 
 - **Symptom:** found by a second agent's review of the terminal RPC plan, checked against the code, not met on the install:
   `daoris-driver` and `daoris` with no `DAORIS_SERVICE_URL` would act on whatever Daoris host answered at the address in
