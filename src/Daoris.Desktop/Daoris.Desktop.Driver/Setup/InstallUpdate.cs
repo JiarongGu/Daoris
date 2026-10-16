@@ -92,6 +92,8 @@ public static class InstallUpdate
             ["at"] = (request.At ?? DateTimeOffset.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
         };
         JsonFile.Write(PathOf(home), root);
+        // The shell's own write, said to its watch of the file (FABRIC-EVENT4): its look follows this call directly.
+        HomeWrites.Mine(PathOf(home));
     }
 
     /// <summary>The request said and done with: removed as the application closes for the update, so it never outlives its build.</summary>

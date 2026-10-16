@@ -55,6 +55,21 @@ public static class ChangeTopics
     /// sync left to the <see cref="Look"/> topic's deadline (FABRIC-EVENT3a).
     /// </summary>
     public const string Ledger = "ledger";
+
+    /// <summary>The driver's configuration file (<c>driver.json</c>), heard moving; the loop reads it afresh at each look (FABRIC-EVENT4, link 7).</summary>
+    public const string Config = "config";
+
+    /// <summary>The plugins folder, heard when a plugin arrives, leaves or changes its manifest (FABRIC-EVENT4, link 7).</summary>
+    public const string Plugins = "plugins";
+
+    /// <summary><c>lines-moved.json</c>, which says a repository's line moved and is to be followed (FABRIC-EVENT4, link 7).</summary>
+    public const string Lines = "lines";
+
+    /// <summary>The held words' file under the sessions folder, which another process or a clear may change (FABRIC-EVENT4, link 7).</summary>
+    public const string Words = "words";
+
+    /// <summary>The staged update's folder and the person's request, the installing shell's alone (FABRIC-EVENT4, link 7).</summary>
+    public const string Update = "update";
 }
 
 /// <summary>One judgement asked: of which topic's subject, and why. A subject is a name, never a path.</summary>

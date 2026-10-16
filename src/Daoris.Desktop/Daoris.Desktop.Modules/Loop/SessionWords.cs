@@ -834,6 +834,7 @@ public sealed class SessionWords : IDisposable
             if (held.Count == 0)
             {
                 if (File.Exists(path)) File.Delete(path);
+                HomeWrites.Mine(path);
                 return;
             }
 
@@ -856,6 +857,8 @@ public sealed class SessionWords : IDisposable
                 writer.WriteEndArray();
                 writer.WriteEndObject();
             });
+            // The loop's own write: its watch of the file hears it and wakes no look (FABRIC-EVENT4).
+            HomeWrites.Mine(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

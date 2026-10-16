@@ -119,6 +119,14 @@ public sealed class DriverWatch(
     /// </summary>
     public void Nudge(string topic, string subject) => Woken(new Wake(topic, subject));
 
+    /// <summary>What watches the home's record files (<see cref="HomeWatch"/>): the machine's watchers unless a test hands its fake.</summary>
+    internal IChangeSource? Source { get; init; }
+
+    private HomeWatch? _files;
+
+    /// <summary>The machine resumed from sleep (FABRIC-EVENT4): the record files' watchers are reopened and each file judged now.</summary>
+    public void Resumed() => _files?.Resumed();
+
     /// <summary>
     /// Look now, because a terminal's words for <paramref name="session"/> were kept (FABRIC-EVENT2b): the requests topic's wake,
     /// so <c>watch.looked</c> says the words woke it, not that something nudged.
@@ -219,6 +227,13 @@ public sealed class DriverWatch(
         // session's end, which a change watch's pump does not, so the watch under the chain is never started.
         await using var queue = new ChangeWatch();
         var chain = new Chain(queue) { Log = Log };
+
+        // The home's record files heard, not found at the pace (FABRIC-EVENT4, §A4.1, link 7): the configuration, the plugins folder,
+        // the moved lines and the held words each wake the local plan by their topic, and the pace stays their deadline. Both
+        // loops run this one watch, so the headless host and the shell hear the same files.
+        await using var files = HomeWatch.ForDriver(home, configPath, Nudge, source: Source, log: Log);
+        _files = files;
+        files.Start();
         TickReport? looked = null;
         chain.Bind(ChainRanks.Plan, async (heard, token) =>
         {
