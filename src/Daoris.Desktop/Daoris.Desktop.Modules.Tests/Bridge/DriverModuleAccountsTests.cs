@@ -325,6 +325,24 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// OWNSPACE1b-A (D175 settlement 5): a scope naming nothing says <c>inherited</c>, since the agent's Daoris accounts are its
+    /// list, with one account or none; a scope that names its own account does not.
+    /// </summary>
+    [Fact]
+    public async Task A_scope_naming_nothing_answers_that_Daoris_accounts_are_inherited()
+    {
+        var bare = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null);
+        Assert.True(bare.GetProperty("inherited").GetBoolean());
+
+        Accounts("claude-code", "account-1", "account-2");
+        Wiring("""{ "workspaces": { "work": { "claude-code": "account-2" } } }""");
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        Assert.True(Scope(claude, null).GetProperty("inherited").GetBoolean());
+        Assert.False(Scope(claude, "work").GetProperty("inherited").GetBoolean());
+    }
+
+    /// <summary>
     /// TOOL6e: an account whose cool-off ended within the day, which the file still holds, answers when it was offered again,
     /// and so does the tool's own sign-in; one still cooling, or never cooled, answers none.
     /// </summary>

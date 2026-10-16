@@ -945,6 +945,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
+    /// Whether a scope's accounts are inherited (OWNSPACE1b-A, D175 settlement 5): it names no account, and the agent never starts
+    /// in the person's own home, so the agent's Daoris accounts are its list, in turn, or the wait where it has none.
+    /// </summary>
+    public bool InheritsDaorisAccounts(string agent, string? workspace)
+    {
+        var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
+        var scope = Settings.ResolveScope(agent, circle);
+        return OwnersToolchain(agent) is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null;
+    }
+
+    /// <summary>
     /// The hold of a start with no Daoris account of the agent's signed in (OWNSPACE1a, D175 point 2): one sentence, and a wait
     /// for a sign-in naming the accounts it passed signed out, none where the agent has none, so a look reports it as a wait and
     /// says it once (D125 point 6).
