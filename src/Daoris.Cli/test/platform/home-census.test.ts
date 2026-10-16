@@ -33,6 +33,11 @@ const OWED: readonly { readonly file: string; readonly join: string; readonly wh
     why: 'D63’s move-in lays each name of a `~/.daoris` from before D63 at the old home, name for name, before any table is read (the design §7.6)',
   },
   {
+    file: 'EngineBrowserTests.cs',
+    join: 'Path.Combine(Home, "browser", "profile")',
+    why: 'an earlier build’s profile, no entry of the table (the design §3.6: stays as found); the test holds that the engine’s is not it',
+  },
+  {
     file: 'AgentsRoutes.cs',
     join: 'Path.Combine(profile.Home, settingsFile)',
     why: 'an account’s own home, the item `HomeEntry.AgentHomes` answered: the agent’s settings file is the agent’s, under the item',

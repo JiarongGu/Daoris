@@ -304,7 +304,7 @@ public sealed class TerminalModuleTests : Bridge
         await Dispatch(dispatcher, "OPEN", new { shell = "secret-shell" });
         await UntilAsync(() => RaisedOf("TERMINAL_OUTPUT").Count > 0, "the output event");
 
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         var written = Directory.Exists(folder)
             ? string.Join('\n', Directory.GetFiles(folder).Select(path =>
             {

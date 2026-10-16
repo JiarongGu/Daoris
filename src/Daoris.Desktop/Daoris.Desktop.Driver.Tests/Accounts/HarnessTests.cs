@@ -446,7 +446,7 @@ public sealed class HarnessProbeTests : IDisposable
             {
                 ["stub"] = new StubAdapter(),
             }),
-            Path.Combine(_home, "harnesses.json"));
+            DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
         Assert.Empty(await roster.RosterAsync(DriverConfig.Empty));
 
@@ -695,7 +695,7 @@ public sealed class HarnessSelectionTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-selection-tests", Guid.NewGuid().ToString("N")[..8]);
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     public void Dispose()
     {

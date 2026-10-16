@@ -75,7 +75,7 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
     /// <summary>This machine's half, by the driver's own writers: the events, a landing, a rules file that does not read, a standing answer.</summary>
     private void Machine()
     {
-        var events = new SessionEvents(Path.Combine(Home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(Home, HomeEntry.Sessions));
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.Note, Text = "carried on from session `s1` on `work`.", At = At(9, 40) });
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = new string('y', 2000), At = At(9, 40) });
         new LandedBranches(Home).Record(new LandedBranch(
@@ -88,8 +88,8 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
         due.Due(new AutoLanding("s2", "q1", "dashboards", "work", Tree, At(10, 40)));
         due.Tried("s2", new AutoTry(At(10, 41), AutoLandingCode.Uncommitted) { Uncommitted = 2, Tip = "9f8e7d6c5b4a", Status = "sha256:abcd" }, close: false);
         due.Tried("s2", new AutoTry(At(10, 45), AutoLandingCode.Landed) { Branch = "feature/q1-fix", Commits = 1, Tip = "1a2b3c4d5e6f" }, close: true);
-        Directory.CreateDirectory(Path.Combine(Home, SpawnServers.Folder));
-        File.WriteAllText(Path.Combine(Home, SpawnServers.Folder, "s1.settings.json"), "{not json");
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Spawn));
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Spawn,"s1.settings.json"), "{not json");
         DriverConfig.Empty.WithStanding("dashboards", "test on dev first", At(9, 20)).Save(DriverConfigPath);
     }
 

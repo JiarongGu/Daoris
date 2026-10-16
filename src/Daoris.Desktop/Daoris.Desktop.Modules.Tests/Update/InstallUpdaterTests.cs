@@ -385,7 +385,7 @@ public sealed class InstallUpdaterTests : Bridge
 
     private List<JsonObject> Logged(string name, string level = "info")
     {
-        var folder = Path.Combine(DataHome, MachineLog.Folder);
+        var folder = DaorisHome.Entry(DataHome, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return Directory.GetFiles(folder).SelectMany(path =>
             {
