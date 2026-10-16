@@ -578,7 +578,8 @@ public sealed class SessionsRoutes(DriverContext context)
         if (_openFolder is null) return new { Opened = false };
         try
         {
-            _openFolder(folder);
+            // Through the start gate (PROCSTART2): the launcher starts the file manager's process.
+            await _openFolder.OpenAsync(folder, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException
             or System.ComponentModel.Win32Exception or InvalidOperationException)

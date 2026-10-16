@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>
 /// <para><b>Handed</b> is a call to <c>Tools.Hand(</c> after the initializer, before the start's first
-/// <c>return</c> or <c>Process.Start(</c>. <b>Why not</b> is a comment directly above the statement that says
+/// <c>return</c>, <c>Process.Start(</c> or start through the gate (<c>ProcessStarts.Shared.StartAsync(</c>, PROCSTART2). <b>Why not</b> is a comment directly above the statement that says
 /// <c>Not the tools' environment (TOOLS5):</c> and gives the reason: today, the host and the application are
 /// Daoris's own programs, and Edge is the system's.</para>
 /// <para>A source scan, as <c>NoConsoleWindowTests</c> holds <c>CreateNoWindow</c>: the next start written will not
@@ -45,7 +45,7 @@ public sealed class EveryModuleChildIsHandedTheToolsTests
                     spawns++;
                     // Comments out first: a call commented out, or a sentence naming it, is not a call.
                     var after = Regex.Replace(source[spawn.Index..], @"//[^\n]*", "");
-                    var end = Regex.Match(after, @"\breturn\b|Process\.Start\(");
+                    var end = Regex.Match(after, @"\breturn\b|Process\.Start\(|ProcessStarts\.Shared\.StartAsync\(");
                     var handed = (end.Success ? after[..end.Index] : after).Contains("Tools.Hand(", StringComparison.Ordinal);
                     if (!handed && !Excused(source, spawn.Index)) missing.Add($"{Path.GetRelativePath(root, file)} at offset {spawn.Index}");
                 }
