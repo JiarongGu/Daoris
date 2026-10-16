@@ -84,6 +84,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-09-workflow-design.md` | Contract: choices, versions and gates | D157 |
 | `2026-10-14-co-working-design.md` | Contract: one session per line of work, its records its parts; an ask's channel | D167; SESSONE rows in TASKS |
 | `2026-10-16-install-layout-design.md` | Contract: the Daoris folder's top folders, every home path placed, and the move into them | D172; HOMELAYOUT rows in TASKS |
+| `2026-10-16-terminal-rpc-design.md` | Contract: the running Daoris answers the terminal's verbs over a pipe into its own dispatcher; the census of what acts outside the loop; a home's identity and its one lease | D171 point 3; HOMEID1, HOMELEASE1 and RPC1 rows in TASKS |
 
 ## UI, browser, tools and plugin contracts
 
@@ -145,7 +146,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-02-ask-drift-evidence.md` | Evidence: requirements lost across runs | D133 |
 | `2026-10-03-steer-evidence.md` | Evidence: live steering boundaries | D136 |
 | `2026-10-03-knowledge-use-evidence.md` | Evidence: questions and owner-only answers | D135 |
-| `DAORIS_FUTURE_DIRECTIONS.md` | Proposal: outside suggestions, preserved | Future-directions review; no implicit adoption |
+| `DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | Proposal: unified collaboration plan (ADR-A to F asked of the owner, §12; Appendix A holds the 2026-10-03 outside suggestions), preserved | Future-directions review; no implicit adoption |
 | `2026-10-03-future-directions-review.md` | Study: proposal weighed against record | ROADMAP horizon |
 | `2026-10-05-integration-review.md` | Evidence: earlier recovery and integration | Archive receipts; remaining proof in TASKS |
 | `2026-10-07-second-opinion-review.md` | Evidence: code/UI findings | Archive outcomes; remaining work in TASKS |
@@ -160,6 +161,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-12-code-structure-design.md` | Contract: domain modules, a Domain for each one's model and rules (amended 2026-10-14), the structure gate and the moves | D166; STRUCT and FLAT rows in TASKS |
 | `2026-10-14-duplication-survey.md` | Evidence: duplicated code across the .NET modules, by cluster, with its drift | D166's note of 2026-10-14; DEDUP rows in TASKS |
 | `2026-10-14-partial-types-survey.md` | Evidence: the types split by hand across files, by shape, and the gate that holds them | D166's partial-type note; PART rows in TASKS |
+| `2026-10-17-fabric-contract-audit.md` | Evidence: each collaboration concept's store, writer and fabric primitive; Claude Code's and Codex's native children measured against a server | D173's FABRIC-C0 note; FABRIC rows in TASKS |
 
 ## Records and generated indexes
 

@@ -77,9 +77,22 @@ public static class Launcher
             }
             else if (!running && StagedBuild.IsStaged(root) && (updating || Wanted(root)))
             {
+                // The swap holds the home's lease (HOMELEASE1, the terminal RPC design §5) from before its first move until the
+                // new application has confirmed, so no verb the install carries acts alone from a folder being replaced; the new
+                // application's loop takes it once the swap lets go. Where an act holds the home for the whole of the wait (a
+                // verb, a migration), nothing is replaced, as when something still runs from `app/`.
+                using var lease = HomeLease.Await(
+                    Path.Combine(root, "data"), LeaseKind.Swap, null, HomeLease.Wait, out var holder);
+                if (lease is null)
+                {
+                    swap.Held($"{holder!.Named} held the home, so nothing was replaced.");
+                }
                 // Installed: the new application is running, started by the swap. Anything else: the one in `app/` is the
                 // build before it, and is started below as on any start.
-                if (!swap.Run(rest).StartOld) return 0;
+                else if (!swap.Run(rest).StartOld)
+                {
+                    return 0;
+                }
             }
         }
         catch (Exception)

@@ -92,7 +92,7 @@ public sealed class LogModule(
                 return Task.FromResult<object?>(Lines(request.Payload));
 
             case "OPEN_FOLDER":
-                return Task.FromResult<object?>(Open());
+                return OpenAsync(cancellationToken);
 
             default:
                 throw UnknownType(request);
@@ -220,8 +220,11 @@ public sealed class LogModule(
                 ("filter", name), ("value", value));
     }
 
-    /// <summary>The log's own folder in the file manager, made first if nothing has written to it yet.</summary>
-    private object Open()
+    /// <summary>
+    /// The log's own folder in the file manager, made first if nothing has written to it yet: opened through the start gate,
+    /// off the window's thread, since the launcher starts the file manager's process (PROCSTART2).
+    /// </summary>
+    private async Task<object?> OpenAsync(CancellationToken cancellationToken)
     {
         var folder = log.Location;
         if (folder is null || openFolder is null) return new { Opened = false, Folder = folder };
@@ -229,7 +232,7 @@ public sealed class LogModule(
         try
         {
             Directory.CreateDirectory(folder);
-            openFolder(folder);
+            await openFolder.OpenAsync(folder, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException
             or System.ComponentModel.Win32Exception or InvalidOperationException)

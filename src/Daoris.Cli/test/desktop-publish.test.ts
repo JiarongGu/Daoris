@@ -847,12 +847,19 @@ test('a terminal’s programs find the install and the running Daoris where the 
   assert.ok(home.includes(`InstallData = "${HOME}"`), 'DaorisHome.InstallData');
   // The address file is the home's `running` entry, its place in the driver's table (HOMELAYOUT2).
   assert.ok(home.includes(`new("running", HomeCategory.Run, "${RUNNING_FILE}", "${RUNNING_FILE}")`), 'HomeEntry.Running');
+  // SERVICEHOME2: the service's hosts find it by the same three spellings, in the service's own copy.
+  const serviceHome = readFileSync(join(here, '..', '..', 'Daoris.Service', 'Daoris.Service.Core', 'Platform', 'DaorisHome.cs'), 'utf8');
+  assert.ok(serviceHome.includes(`InstallMarker = "${MARKER}"`), 'the service’s DaorisHome.InstallMarker');
+  assert.ok(serviceHome.includes(`InstallApp = "${SHELL_HOME[0]}"`), 'the service’s DaorisHome.InstallApp');
+  assert.ok(serviceHome.includes(`InstallData = "${HOME}"`), 'the service’s DaorisHome.InstallData');
 
-  // The CLI as an install carries it, and the driver host, each find the install above them.
+  // The CLI as an install carries it, the driver host and the service's two hosts, each find the install above them.
   const install = folder();
   markInstalled(install);
   assert.equal(installOf(join(install, ...CLI_PACKAGE, 'src', 'platform')), install);
   assert.equal(installOf(join(install, ...DRIVER_HOME)), install);
+  assert.equal(installOf(join(install, ...CONNECTOR_HOME)), install);
+  assert.equal(installOf(join(install, ...HOST_HOME)), install);
 });
 
 /**

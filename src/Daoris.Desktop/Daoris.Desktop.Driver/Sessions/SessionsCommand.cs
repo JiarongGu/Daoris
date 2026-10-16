@@ -78,10 +78,11 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public TimeSpan Answer { get; init; } = DriverHttp.Timeout;
 
     /// <summary>
-    /// Whether a driver loop holds this home (DRV8a, <see cref="DriverLock.HeldBy"/>): where none does, nothing would take a
-    /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2).
+    /// Whether a driver loop holds this home (DRV8a, <see cref="HomeLease.HeldBy"/>): where none does, nothing would take a
+    /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2). A verb's or a migration's hold is no loop
+    /// (HOMELEASE1): only an instance's counts, and this verb's own lease among them never does.
     /// </summary>
-    public Func<bool> LoopRuns { get; init; } = () => DriverLock.HeldBy(Home) is not null;
+    public Func<bool> LoopRuns { get; init; } = () => HomeLease.HeldBy(Home) is { IsInstance: true };
 
     /// <summary>
     /// The cool-off a start on an adapter would read for an account, or null where it is ready (MSG1g's <c>go-on-new</c>): read
@@ -148,6 +149,7 @@ public static class SessionsCommand
                daoris-driver sessions start-from <id>
                daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]
                daoris-driver sessions helper <id> "<question>" [--agent <name>]
+               daoris-driver sessions helper --approve|--decline <ask>
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -304,6 +306,7 @@ public static class SessionsCommand
             "start-from" => await StartFromAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "hand-over" => await HandOverAsync(world, ask, output, ct).ConfigureAwait(false),
             "helper" => await SessionsHelperCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
+            "helper-approve" or "helper-decline" => await SessionsHelperCommand.RunWordAsync(world, ask, output).ConfigureAwait(false),
             "stop" => await StopAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),

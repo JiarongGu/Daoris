@@ -552,9 +552,9 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/vendor/**'], gates: ['driver', 'driver-process'], why: "the driver's release-channel tests read the vendor's files" },
   { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/account-reads.json'], gates: ['driver'], why: "the driver's AccountReads twin reads the shared reads table (AGENTREAD1b)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/rotation-use.json'], gates: ['driver'], why: "the driver's RotationUseTwinTests read the shared rotation-use table (SWITCH1a)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/rotation-use.json'], gates: ['driver', 'web'], why: "the driver's RotationUseTwinTests and the page's curve rules read the shared rotation-use table (SWITCH1a, SWITCH1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/landing-says.json'], gates: ['driver'], why: "the driver's LandingSaysTwinTests read the shared landing, helpers and commits sentences (TWINWORDS1)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/usage-curves.json'], gates: ['driver'], why: "the driver's UsageCurvesTwinTests read the shared usage curve table (SWITCH1b-iii)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/usage-curves.json'], gates: ['driver', 'web'], why: "the driver's UsageCurvesTwinTests and the page's usageCurves twin read the shared usage curve table (SWITCH1b-iii, SWITCH1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/fence-cases.json'],

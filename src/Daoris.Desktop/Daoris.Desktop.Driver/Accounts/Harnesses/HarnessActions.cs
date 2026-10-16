@@ -493,7 +493,9 @@ public static class HarnessActions
         Process process;
         try
         {
-            process = Process.Start(info) ?? throw new DriverException($"`{command[0]}` did not start");
+            // Through the start gate (PROCSTART2): an agent's install or sign-in is a press.
+            process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
+                ?? throw new DriverException($"`{command[0]}` did not start");
         }
         catch (System.ComponentModel.Win32Exception)
         {

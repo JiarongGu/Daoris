@@ -6,7 +6,8 @@ namespace Daoris.Knowledge;
 /// Where every machine-local file Daoris owns lives (D63): one home, named by <c>DAORIS_HOME</c>, and
 /// <b>no default under the user profile</b>. The application's own folder is the home — the installed
 /// desktop sets the variable for itself and everything it spawns — and a terminal or a session's MCP
-/// host reads the same variable from the user's environment. Absent, there is no home: a host refuses
+/// host reads the same variable from the user's environment. A host the install carries, started with none named, takes
+/// the install's own <c>data/</c> (<see cref="Adopt(string)"/>, SERVICEHOME2). Absent both, there is no home: a host refuses
 /// to start with <see cref="Sentence"/> rather than writing somewhere nobody pointed it.
 /// </summary>
 /// <remarks>
@@ -44,6 +45,67 @@ public static class DaorisHome
 
     /// <summary>The home from the process environment, or null.</summary>
     public static string? Resolve() => Resolve(Environment.GetEnvironmentVariable);
+
+    /// <summary>
+    /// The file `desktop-publish` writes at an install's root, and nothing else does: the driver's
+    /// <c>DaorisHome.InstallMarker</c> and the CLI's <c>INSTALL_MARKER</c>, duplicated deliberately (twins).
+    /// </summary>
+    public const string InstallMarker = "INSTALLED.md";
+
+    /// <summary>The folder the install's programs run from (D93), beside <see cref="InstallData"/>.</summary>
+    public const string InstallApp = "app";
+
+    /// <summary>The install's own home (D63), beside <see cref="InstallApp"/>.</summary>
+    public const string InstallData = "data";
+
+    /// <summary>
+    /// The install a program runs from (SERVICEHOME2, D171 point 1, as the driver's FINDDAORIS1): the folder above the
+    /// <c>app/</c> it runs in, however deep (the connector is <c>app/daoris-knowledge/</c>, the HTTP host
+    /// <c>app/daoris-knowledge-http/</c>), where that folder holds the marker. Null for a workspace build, which is no install.
+    /// </summary>
+    public static string? InstallOf(string baseDirectory)
+    {
+        for (var directory = new DirectoryInfo(Path.TrimEndingDirectorySeparator(Path.GetFullPath(baseDirectory)));
+             directory?.Parent is { } parent;
+             directory = parent)
+        {
+            if (string.Equals(directory.Name, InstallApp, StringComparison.OrdinalIgnoreCase)
+                && System.IO.File.Exists(Path.Combine(parent.FullName, InstallMarker)))
+            {
+                return parent.FullName;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The install's own <c>data/</c> for a program it carries, or null for a workspace build.</summary>
+    public static string? OfInstall(string baseDirectory) =>
+        InstallOf(baseDirectory) is { } install ? Path.Combine(install, InstallData) : null;
+
+    /// <summary>
+    /// The home a host finds with nobody to tell it (SERVICEHOME2): the variable, which still wins (the desktop names it for
+    /// the hosts it starts, as do the dev loop, a rehearsal and a second home), else its install's own <c>data/</c>, else none.
+    /// </summary>
+    public static string? Resolve(Func<string, string?> environment, string baseDirectory) =>
+        Resolve(environment) ?? OfInstall(baseDirectory);
+
+    /// <summary>
+    /// Take the install's home as this process's <c>DAORIS_HOME</c> where none is named (SERVICEHOME2), as the desktop does
+    /// for itself (D63): a connector a person's own agent starts from its <c>.mcp.json</c>, or a host started from a
+    /// terminal, then keeps its index, its machine log and its quest files on the install's machine. The home it set, or
+    /// null when one was named or this is no install.
+    /// </summary>
+    public static string? Adopt(Func<string, string?> environment, Action<string, string> setProcess, string baseDirectory)
+    {
+        if (Resolve(environment) is not null || OfInstall(baseDirectory) is not { } home) return null;
+        setProcess(Variable, home);
+        return home;
+    }
+
+    /// <summary>The same, on this process.</summary>
+    public static string? Adopt(string baseDirectory) =>
+        Adopt(Environment.GetEnvironmentVariable, (name, value) => Environment.SetEnvironmentVariable(name, value), baseDirectory);
 
     /// <summary>
     /// Where an entry is in a home, by D172 point 5 and its review note (the install layout design §6.2): its new place where
@@ -202,6 +264,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry OpinionDues = new("opinion-dues", HomeCategory.Data, "opinions/due.json", "opinions/due.json");
     public static readonly HomeEntry BrowserSettings = new("browser-settings", HomeCategory.Data, "browser/settings.json", "browser/settings.json");
     public static readonly HomeEntry BrowserFavorites = new("browser-favorites", HomeCategory.Data, "browser/favorites.json", "browser/favorites.json");
+    public static readonly HomeEntry HomeId = new("home-id", HomeCategory.Data, "home.json", "home.json");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "harnesses/*/*", "harnesses/*/*");
@@ -221,6 +284,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "bin", "bin");
+    public static readonly HomeEntry HomeLease = new("home-lease", HomeCategory.Run, "home.lease", "home.lease");
     public static readonly HomeEntry DriverLock = new("driver-lock", HomeCategory.Run, "driver.lock", "driver.lock");
     public static readonly HomeEntry Running = new("running", HomeCategory.Run, "running.json", "running.json");
     public static readonly HomeEntry Locks = new("locks", HomeCategory.Run, "locks", "locks");
@@ -238,11 +302,11 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     [
         DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
-        Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites,
+        Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
         Trees, HelpRoom, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead,
         Toolchain, ToolVersions, Bin,
-        DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord,
+        HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord,
         Logs,
     ];
 

@@ -309,7 +309,125 @@ test('a server without a command is a malformed manifest naming the server', () 
   fx.cleanup();
 });
 
-// ——— Twin rule 4: disabled is a row, never a rename.
+// ——— Who a server is handed to (HELPPLUG1a, D170 point 3): sessions by default, Ask Daoris only where declared.
+
+const TO_PROBLEM = "server `tickets`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+const ALLOW_PROBLEM = "server `tickets`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
+const WRITES_PROBLEM = "server `tickets`'s `writes` must list the tools that change something outside Daoris, once each, by name: letters, digits, `_` and `-`.";
+const ALLOW_NOT_HANDED = 'server `tickets` names tools for Ask Daoris but is not handed to it: its `to` must name `help`.';
+const READS_AND_WRITES = 'server `tickets` names `search` in both `allow` and `writes`: a tool it hands Ask Daoris reads, or writes, never both.';
+
+/**
+ * The rules, in order, for a server's `to`, `allow` (tools that read) and `writes` (tools that change something outside Daoris);
+ * a problem refuses the plugin, as a server's other problems do. A wildcard is no tool's name. Twin: the driver's
+ * `PluginCatalogTests.ServerDestinations` holds the same rows, the same words, in the same order.
+ */
+const SERVER_DESTINATIONS: Array<[declared: string, problem: string | null, to: string[], allow: string[], writes: string[]]> = [
+  ['', null, ['sessions'], [], []],
+  [', "to": ["help"], "allow": ["search", "get_issue"] ', null, ['help'], ['search', 'get_issue'], []],
+  [', "to": ["sessions", "help"] ', null, ['sessions', 'help'], [], []],
+  [', "to": ["sessions"] ', null, ['sessions'], [], []],
+  [', "to": ["help"], "allow": ["search"], "writes": ["create_issue"] ', null, ['help'], ['search'], ['create_issue']],
+  [', "to": "help" ', TO_PROBLEM, [], [], []],
+  [', "to": [] ', TO_PROBLEM, [], [], []],
+  [', "to": ["everyone"] ', TO_PROBLEM, [], [], []],
+  [', "to": ["help", "help"] ', TO_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": "search" ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": ["Bash(rm:*)"] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": ["*"] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": ["search", "search"] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": [""] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "writes": "create_issue" ', WRITES_PROBLEM, [], [], []],
+  [', "to": ["help"], "writes": ["create_*"] ', WRITES_PROBLEM, [], [], []],
+  [', "allow": ["search"] ', ALLOW_NOT_HANDED, [], [], []],
+  [', "to": ["sessions"], "allow": ["search"] ', ALLOW_NOT_HANDED, [], [], []],
+  [', "writes": ["create_issue"] ', ALLOW_NOT_HANDED, [], [], []],
+  [', "to": ["help"], "allow": ["search"], "writes": ["search"] ', READS_AND_WRITES, [], [], []],
+];
+
+test('a server\'s destination and the tools it allows are read by the twins\' rules (HELPPLUG1a)', () => {
+  for (const [declared, problem, to, allow, writes] of SERVER_DESTINATIONS) {
+    const fx = makeFixture('plugins-server-to');
+    plugin(fx.root, 'acme.tickets', `{ "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"]${declared} } ] }`);
+
+    const [entry] = readPlugins(fx.root).plugins;
+    assert.equal(entry!.problem, problem, declared);
+    if (problem !== null) {
+      assert.deepEqual(entry!.manifest.servers, [], declared);
+    } else {
+      const [server] = entry!.manifest.servers;
+      assert.deepEqual([server!.to, server!.allow, server!.writes], [to, allow, writes], declared);
+    }
+    fx.cleanup();
+  }
+});
+
+// ——— A plugin's skills (HELPPLUG1b, D170 point 4): each a folder `skills/<name>` beside its manifest.
+
+const SKILL_NAME = 'a declared skill needs a `name` — lowercase letters, digits and dashes; its folder is `skills/<name>` beside the manifest.';
+const SKILL_TO = "skill `triage`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+
+/**
+ * The rules, in order, for a manifest's `skills`; a problem refuses the plugin, as a server's do. Twin: the driver's
+ * `PluginCatalogTests.SkillDeclarations` holds the same rows, the same words, in the same order.
+ */
+const SKILL_DECLARATIONS: Array<[declared: string, problem: string | null, skills: string[]]> = [
+  ['', null, []],
+  [', "skills": [] ', null, []],
+  [', "skills": [ { "name": "triage" } ] ', null, ['triage:sessions']],
+  [', "skills": [ { "name": "triage", "to": ["help"] }, { "name": "write-up", "to": ["sessions", "help"] } ] ', null, ['triage:help', 'write-up:sessions+help']],
+  [', "skills": { "name": "triage" } ', '`skills` must be an array.', []],
+  [', "skills": [ "triage" ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "Triage" } ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "acme.triage" } ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "../up" } ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "triage" }, { "name": "triage", "to": ["help"] } ] ', 'skill `triage` is declared twice.', []],
+  [', "skills": [ { "name": "triage", "to": ["anyone"] } ] ', SKILL_TO, []],
+  [', "skills": [ { "name": "triage", "to": [] } ] ', SKILL_TO, []],
+];
+
+test('a plugin\'s skills are read by the twins\' rules (HELPPLUG1b)', () => {
+  for (const [declared, problem, skills] of SKILL_DECLARATIONS) {
+    const fx = makeFixture('plugins-skills');
+    plugin(fx.root, 'acme.skills', `{ "id": "acme.skills"${declared} }`);
+
+    const [entry] = readPlugins(fx.root).plugins;
+    assert.equal(entry!.problem, problem, declared);
+    assert.deepEqual(entry!.manifest.skills.map((skill) => `${skill.name}:${skill.to.join('+')}`), skills, declared);
+    fx.cleanup();
+  }
+});
+
+test('the list says which skills a plugin hands sessions and Ask Daoris (HELPPLUG1b)', () => {
+  const fx = makeFixture('plugins-skills-list');
+  plugin(fx.root, 'acme.skills', JSON.stringify({
+    id: 'acme.skills', skills: [{ name: 'triage', to: ['help'] }, { name: 'write-up', to: ['sessions', 'help'] }],
+  }));
+
+  const { code, out } = run(['list'], fx.root);
+  assert.equal(code, 0);
+  assert.match(out, /hands sessions skill write-up/);
+  assert.match(out, /hands Ask Daoris skills triage, write-up/);
+  fx.cleanup();
+});
+
+test('the list says what a plugin hands Ask Daoris beside what it hands sessions (HELPPLUG1a)', () => {
+  const fx = makeFixture('plugins-server-to-list');
+  plugin(fx.root, 'acme.tickets', JSON.stringify({
+    id: 'acme.tickets',
+    servers: [
+      { name: 'tickets', command: ['tickets'], to: ['help'], allow: ['search'] },
+      { name: 'docs', command: ['docs'] },
+    ],
+  }));
+
+  const { code, out } = run(['list'], fx.root);
+  assert.equal(code, 0);
+  assert.match(out, /hands sessions docs/);
+  // Offered: its tools reach Ask Daoris only once the person approves them (D170's note).
+  assert.match(out, /offers Ask Daoris tickets \(search\)/);
+  fx.cleanup();
+});
 
 test('disabled is a row in plugins.json that stays one row per id', () => {
   const fx = makeFixture('plugins-state');

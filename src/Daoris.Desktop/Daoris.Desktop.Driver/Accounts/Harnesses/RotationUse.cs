@@ -351,35 +351,77 @@ public sealed record UseCurve
     /// order written, then point by point: its shape, elapsed from 0 to 100, used from 0 to 100, elapsed rising, used never
     /// falling — the CLI's <c>curveProblem</c>.
     /// </summary>
-    public static string? Problem(JsonElement raw)
+    public static string? Problem(JsonElement raw) => ProblemOf(raw)?.Sentence;
+
+    /// <summary>
+    /// The first problem with a curve a door is handed, as <see cref="Problem"/> finds it, with the rule it breaks and the
+    /// window, point and numbers it names (SWITCH1d), so a door that refuses it in a code says it in the reader's language.
+    /// </summary>
+    public static CurveProblem? ProblemOf(JsonElement raw)
     {
-        if (raw.ValueKind != JsonValueKind.Object) return "A curve is an object of windows, `session` or `weekly`, each a list of points [elapsed, used].";
+        if (raw.ValueKind != JsonValueKind.Object)
+        {
+            return new CurveProblem("shape", "A curve is an object of windows, `session` or `weekly`, each a list of points [elapsed, used].");
+        }
+
         foreach (var window in raw.EnumerateObject())
         {
             var name = window.Name;
-            if (!Windows.Contains(name, StringComparer.Ordinal)) return $"`{name}` is not a window — a curve's windows are `session` and `weekly`.";
-            if (window.Value.ValueKind != JsonValueKind.Array) return $"`{name}` is not a list of points [elapsed, used].";
+            if (!Windows.Contains(name, StringComparer.Ordinal))
+            {
+                return new CurveProblem("window", $"`{name}` is not a window — a curve's windows are `session` and `weekly`.", name);
+            }
+
+            if (window.Value.ValueKind != JsonValueKind.Array)
+            {
+                return new CurveProblem("list", $"`{name}` is not a list of points [elapsed, used].", name);
+            }
+
             var count = window.Value.GetArrayLength();
-            if (count is < 1 or > MostPoints) return $"`{name}` has {count} points — a window's curve has one to twelve.";
+            if (count is < 1 or > MostPoints)
+            {
+                return new CurveProblem("count", $"`{name}` has {count} points — a window's curve has one to twelve.", name, Count: count);
+            }
 
             (double Elapsed, double Used)? before = null;
             var at = 0;
             foreach (var point in window.Value.EnumerateArray())
             {
                 at++;
-                if (PointOf(point) is not { } read) return $"`{name}`'s point {at} is not two whole numbers [elapsed, used].";
+                if (PointOf(point) is not { } read)
+                {
+                    return new CurveProblem("point", $"`{name}`'s point {at} is not two whole numbers [elapsed, used].", name, at);
+                }
+
                 var (elapsed, used) = read;
-                if (elapsed is < 0 or > 100) return $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time — elapsed is from 0 to 100.";
-                if (used is < 0 or > 100) return $"`{name}`'s point {at} has used {Said(used)}% — used is from 0 to 100.";
+                if (elapsed is < 0 or > 100)
+                {
+                    return new CurveProblem(
+                        "elapsed", $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time — elapsed is from 0 to 100.",
+                        name, at, Said(elapsed));
+                }
+
+                if (used is < 0 or > 100)
+                {
+                    return new CurveProblem(
+                        "used", $"`{name}`'s point {at} has used {Said(used)}% — used is from 0 to 100.", name, at, Said(used));
+                }
+
                 if (before is { } earlier && elapsed <= earlier.Elapsed)
                 {
-                    return $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time, not after point {at - 1}'s "
-                        + $"{Said(earlier.Elapsed)}% — elapsed rises from point to point.";
+                    return new CurveProblem(
+                        "rising",
+                        $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time, not after point {at - 1}'s "
+                        + $"{Said(earlier.Elapsed)}% — elapsed rises from point to point.",
+                        name, at, Said(elapsed), Said(earlier.Elapsed));
                 }
 
                 if (before is { } had && used < had.Used)
                 {
-                    return $"`{name}`'s point {at} has used {Said(used)}%, less than point {at - 1}'s {Said(had.Used)}% — used never falls.";
+                    return new CurveProblem(
+                        "falling",
+                        $"`{name}`'s point {at} has used {Said(used)}%, less than point {at - 1}'s {Said(had.Used)}% — used never falls.",
+                        name, at, Said(used), Said(had.Used));
                 }
 
                 before = (elapsed, used);
@@ -433,13 +475,29 @@ public sealed record UseCurve
 }
 
 /// <summary>
+/// What is wrong with a curve a door is handed (SWITCH1d): the rule it breaks, the sentence both twins say, and the window,
+/// point and numbers it names, so a door that refuses it in a code says it in the reader's language (the modules'
+/// <c>ACCOUNT_USE_CURVE</c>, its rule the catalogue's form).
+/// </summary>
+/// <param name="Kind">The rule: <c>shape</c> (not an object of windows), <c>window</c> (a name that is no window), <c>list</c>
+/// (a window that is not a list), <c>count</c> (not one to twelve points), <c>point</c> (not two whole numbers), <c>elapsed</c>
+/// or <c>used</c> (out of 0 to 100), <c>rising</c> (elapsed not after the point before) or <c>falling</c> (used less than it).</param>
+/// <param name="Point">The point, from 1, where the rule is one point's.</param>
+/// <param name="Value">The point's number the rule weighs, as both twins say it.</param>
+/// <param name="Before">The point before's number it is weighed against, for <c>rising</c> and <c>falling</c>.</param>
+/// <param name="Count">How many points the window has, for <c>count</c>.</param>
+public sealed record CurveProblem(
+    string Kind, string Sentence, string? Window = null, int? Point = null, string? Value = null, string? Before = null, int? Count = null);
+
+/// <summary>
 /// A change to one scope's settings: a field null is left as it was; <paramref name="NoKeep"/> keeps none;
 /// <paramref name="Curve"/> sets each window it names, keeping the others, and <paramref name="NoCurve"/> takes the curve
 /// out. A door validates each value first; <see cref="HarnessSettings.WithUse"/> writes it as given.
 /// </summary>
 /// <remarks>
 /// <paramref name="Early"/> and <paramref name="Near"/> are the old names (D165 §6), which the modules' <c>ACCOUNT_USE</c>
-/// and Ask Daoris's <c>use</c> door still take until SWITCH1d: <c>Early</c> false is <c>switch: off</c>, and true is
+/// and Ask Daoris's <c>use</c> door still read beside <c>switch</c> and <c>curve</c> since SWITCH1d, for a page or a proposal
+/// written before it: <c>Early</c> false is <c>switch: off</c>, and true is
 /// <c>smart</c> where it was off; <c>Near</c> other than 90 is the session window flat at it, and <c>switch: curve</c> unless
 /// it is off, and 90 takes the session window back to the smart curve's. They are applied before <paramref name="Switch"/>
 /// and <paramref name="Curve"/>, so a new name beside an old one is the one written — as the CLI's <c>UseChange</c>.

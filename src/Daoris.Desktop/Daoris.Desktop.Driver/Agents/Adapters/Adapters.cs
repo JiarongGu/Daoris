@@ -1095,6 +1095,19 @@ public interface ISessionAdapter
     object? AcpSessionMeta(string settingsFile) => null;
 
     /// <summary>
+    /// What a protocol-door session carries on <c>session/new</c> to take its rules file and the harness plugins a spawn composed
+    /// for it (HELPPLUG1b, <see cref="SpawnSkills"/>). Default: the rules alone, so a harness with no plugin door is handed none.
+    /// </summary>
+    object? AcpSessionMeta(string settingsFile, IReadOnlyList<string> plugins) => AcpSessionMeta(settingsFile);
+
+    /// <summary>
+    /// Hand a pipe-door spawn the harness plugins composed for it (HELPPLUG1b, D170 point 4): folders under Daoris's home, each a
+    /// plugin of the harness's own shape holding skills. Default: nothing, the silence-preserves rule; an adapter opts in when
+    /// its door is measured against the binary.
+    /// </summary>
+    void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) { }
+
+    /// <summary>
     /// What a spawn of this harness carries so a session's tools load with its first request, rather than
     /// behind a search step the agent must take first (HELP5). Empty where the harness has no such switch,
     /// or nobody has read one in its binary.
@@ -1471,6 +1484,22 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         new { claudeCode = new { options = new { settings = settingsFile } } };
 
     /// <summary>
+    /// The rules, and the harness plugins a spawn composed (HELPPLUG1b): the Agent SDK's <c>plugins</c> option, each
+    /// <c>{ type: "local", path }</c>, which the SDK passes to Claude Code as one <c>--plugin-dir</c> each. Read from
+    /// claude-agent-acp 0.91.0 (<c>dist/acp-agent.js</c>, l. 8115–8223: <c>_meta.claudeCode.options</c> spread into the SDK's
+    /// options) and the SDK 0.3.300 (<c>sdk.d.ts</c>, <c>plugins</c>, l. 2036–2049); the pipe door's flag is measured (D170).
+    /// </summary>
+    public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string> plugins) => plugins.Count == 0
+        ? AcpSessionMeta(settingsFile)
+        : new
+        {
+            claudeCode = new
+            {
+                options = new { settings = settingsFile, plugins = plugins.Select(path => new { type = "local", path }).ToArray() },
+            },
+        };
+
+    /// <summary>
     /// The pipe door's switch (HELP5), on this door's spawn: the Agent SDK runs <c>claude</c> with this
     /// process's environment, which is how the pin's own switch reaches it too (AGT2).
     /// </summary>
@@ -1835,6 +1864,20 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         info.ArgumentList.Add("--settings");
         info.ArgumentList.Add(settingsFile);
+    }
+
+    /// <summary>
+    /// `--plugin-dir &lt;path&gt;` — *"Load a plugin from a directory or .zip for this session only"* (`claude --help`, 2.1.299):
+    /// one per plugin a spawn composed (HELPPLUG1b). Measured in an untrusted folder with a fresh config directory (D170's
+    /// note): each plugin's skills load, named <c>&lt;plugin&gt;:&lt;skill&gt;</c>, a dotted plugin name among them.
+    /// </summary>
+    public void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins)
+    {
+        foreach (var plugin in plugins)
+        {
+            info.ArgumentList.Add("--plugin-dir");
+            info.ArgumentList.Add(plugin);
+        }
     }
 
     /// <summary>

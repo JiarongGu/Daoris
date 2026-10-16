@@ -593,6 +593,138 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Empty(entry.Manifest.Servers);
     }
 
+    // ——— Who a server is handed to (HELPPLUG1a, D170 point 3): sessions by default, Ask Daoris only where declared.
+
+    private const string ToProblem =
+        "server `tickets`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+
+    private const string AllowProblem =
+        "server `tickets`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
+
+    private const string WritesProblem =
+        "server `tickets`'s `writes` must list the tools that change something outside Daoris, once each, by name: letters, digits, `_` and `-`.";
+
+    private const string AllowNotHanded =
+        "server `tickets` names tools for Ask Daoris but is not handed to it: its `to` must name `help`.";
+
+    private const string ReadsAndWrites =
+        "server `tickets` names `search` in both `allow` and `writes`: a tool it hands Ask Daoris reads, or writes, never both.";
+
+    /// <summary>
+    /// The rules, in order, for a server's <c>to</c>, <c>allow</c> (tools that read) and <c>writes</c> (tools that change something
+    /// outside Daoris); a problem refuses the plugin, as a server's other problems do. A wildcard is no tool's name. Twin: the
+    /// CLI's <c>plugins.test.ts</c> holds the same rows, the same words, in the same order.
+    /// </summary>
+    public static TheoryData<string, string?, string[], string[], string[]> ServerDestinations => new()
+    {
+        { "", null, ["sessions"], [], [] },
+        { """, "to": ["help"], "allow": ["search", "get_issue"] """, null, ["help"], ["search", "get_issue"], [] },
+        { """, "to": ["sessions", "help"] """, null, ["sessions", "help"], [], [] },
+        { """, "to": ["sessions"] """, null, ["sessions"], [], [] },
+        { """, "to": ["help"], "allow": ["search"], "writes": ["create_issue"] """, null, ["help"], ["search"], ["create_issue"] },
+        { """, "to": "help" """, ToProblem, [], [], [] },
+        { """, "to": [] """, ToProblem, [], [], [] },
+        { """, "to": ["everyone"] """, ToProblem, [], [], [] },
+        { """, "to": ["help", "help"] """, ToProblem, [], [], [] },
+        { """, "to": ["help"], "allow": "search" """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": ["Bash(rm:*)"] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": ["*"] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": ["search", "search"] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": [""] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "writes": "create_issue" """, WritesProblem, [], [], [] },
+        { """, "to": ["help"], "writes": ["create_*"] """, WritesProblem, [], [], [] },
+        { """, "allow": ["search"] """, AllowNotHanded, [], [], [] },
+        { """, "to": ["sessions"], "allow": ["search"] """, AllowNotHanded, [], [], [] },
+        { """, "writes": ["create_issue"] """, AllowNotHanded, [], [], [] },
+        { """, "to": ["help"], "allow": ["search"], "writes": ["search"] """, ReadsAndWrites, [], [], [] },
+    };
+
+    [Theory]
+    [MemberData(nameof(ServerDestinations))]
+    public void A_servers_destination_and_the_tools_it_allows_are_read_by_the_twins_rules(
+        string declared, string? problem, string[] to, string[] allow, string[] writes)
+    {
+        Plugin("acme.tickets", $$"""{ "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"]{{declared}} } ] }""");
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Equal(problem, entry.Problem);
+        if (problem is not null)
+        {
+            Assert.Empty(entry.Manifest.Servers);
+            return;
+        }
+
+        var server = Assert.Single(entry.Manifest.Servers);
+        Assert.Equal(to, server.To);
+        Assert.Equal(allow, server.Allow);
+        Assert.Equal(writes, server.Writes);
+    }
+
+    // ——— A plugin's skills (HELPPLUG1b, D170 point 4): each a folder `skills/<name>` beside its manifest, for sessions,
+    // Ask Daoris, or both.
+
+    private const string SkillName =
+        "a declared skill needs a `name` — lowercase letters, digits and dashes; its folder is `skills/<name>` beside the manifest.";
+
+    /// <summary>
+    /// The rules, in order, for a manifest's <c>skills</c>; a problem refuses the plugin, as a server's do. Twin: the CLI's
+    /// <c>plugins.test.ts</c> holds the same rows, the same words, in the same order.
+    /// </summary>
+    public static TheoryData<string, string?, string[]> SkillDeclarations => new()
+    {
+        { "", null, [] },
+        { """, "skills": [] """, null, [] },
+        { """, "skills": [ { "name": "triage" } ] """, null, ["triage:sessions"] },
+        { """, "skills": [ { "name": "triage", "to": ["help"] }, { "name": "write-up", "to": ["sessions", "help"] } ] """, null, ["triage:help", "write-up:sessions+help"] },
+        { """, "skills": { "name": "triage" } """, "`skills` must be an array.", [] },
+        { """, "skills": [ "triage" ] """, SkillName, [] },
+        { """, "skills": [ { "name": "Triage" } ] """, SkillName, [] },
+        { """, "skills": [ { "name": "acme.triage" } ] """, SkillName, [] },
+        { """, "skills": [ { "name": "../up" } ] """, SkillName, [] },
+        { """, "skills": [ { "name": "triage" }, { "name": "triage", "to": ["help"] } ] """, "skill `triage` is declared twice.", [] },
+        { """, "skills": [ { "name": "triage", "to": ["anyone"] } ] """,
+            "skill `triage`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.", [] },
+        { """, "skills": [ { "name": "triage", "to": [] } ] """,
+            "skill `triage`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.", [] },
+    };
+
+    [Theory]
+    [MemberData(nameof(SkillDeclarations))]
+    public void A_plugins_skills_are_read_by_the_twins_rules(string declared, string? problem, string[] skills)
+    {
+        Plugin("acme.skills", $$"""{ "id": "acme.skills"{{declared}} }""");
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Equal(problem, entry.Problem);
+        Assert.Equal(skills, entry.Manifest.Skills.Select(skill => $"{skill.Name}:{string.Join("+", skill.To)}"));
+    }
+
+    /// <summary>
+    /// What a tick hands every session is the servers declared for sessions; those declared for Ask Daoris are its alone, and
+    /// reach it only once the person approves their tools (<see cref="HelpGrants"/>, D170's note).
+    /// </summary>
+    [Fact]
+    public void Sessions_are_handed_their_servers_and_ask_daoris_only_those_declared_for_it()
+    {
+        Plugin("acme.tools", """
+            { "id": "acme.tools", "servers": [
+                { "name": "browser", "command": ["browser"] },
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search", "get_issue"] },
+                { "name": "docs", "command": ["docs"], "to": ["sessions", "help"] } ] }
+            """);
+        Plugin("acme.off", """{ "id": "acme.off", "servers": [ { "name": "off", "command": ["off"], "to": ["help"], "allow": ["x"] } ] }""");
+        File.WriteAllText(Path.Combine(_home, PluginState.FileName), """{ "disabled": ["acme.off"] }""");
+
+        var catalog = PluginCatalog.Load(_home);
+
+        Assert.Equal(["browser", "docs"], catalog.Servers.Select(server => server.Name));
+        Assert.Equal(["tickets", "docs"], catalog.HelpServers.Select(server => server.Name));
+        Assert.Equal(catalog.Servers.Select(server => server.Name), catalog.ServersTo(PluginServerTo.Sessions).Select(server => server.Name));
+        Assert.Equal(catalog.HelpServers.Select(server => server.Name), catalog.ServersTo(PluginServerTo.Help).Select(server => server.Name));
+    }
+
     /// <summary>
     /// The pipe door's half: a harness that takes a file at spawn is handed one written under the
     /// home, in that harness's own shape — never in the repository, which is the whole reason it is

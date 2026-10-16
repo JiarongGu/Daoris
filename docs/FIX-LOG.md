@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A terminal's discovery would take another install's service (HOMEID1)
+
+- **Symptom:** found by a second agent's review of the terminal RPC plan, checked against the code, not met on the install:
+  `daoris-driver` and `daoris` with no `DAORIS_SERVICE_URL` would act on whatever Daoris host answered at the address in
+  `<home>/running.json`, whichever home that host served.
+- **Root cause:** FINDDAORIS1 took the address where its process lived and `/api/status` named a `tier`, the test the supervisor
+  adopts a host by. Every Daoris host answers that: another install's service on the port this home's desktop once held passed,
+  as did one a process id reused by the system led to, since the CLI checks the id alone; and the status was asked with
+  redirects followed, so an address could send the asker to another host.
+- **Fix:** a home has an id, `<home>/home.json` (`HomeIdentity`, three twins); a local host answers it at `/api/status` as
+  `home`, `running.json` keeps it, and both discoveries take an address only where the status, asked with redirects off,
+  answers this home's id. D171's HOMEID1 note.
+- **Verification:** `RunningServiceTests` (red as they could not compile: another home's id, no id, a home with none, a reused
+  process id, a redirect between two real loopback listeners), `RunningAddressTests`, the driver's and the service's
+  `HomeIdentityTests`, the HTTP tests' `HomeStatusTests` and `PersonDoorHostTests`' status shape; the CLI's `running.test.ts`
+  (red on the missing export: another id, none, a reused pid, a redirect between two real `node:http` servers) and
+  `home.test.ts`.
+
 ## 2026-10-16 — *Bring up to date* counted and replayed commits the line already held (LANDSYNC3)
 
 - **Symptom:** on the install, WSR6's plan said *replays 3 commit(s)* of a session branch whose first commit a pull request had
@@ -229,6 +247,14 @@ repository.
   `SweepLineProcessTests` (the list asked the line 3 times a repository before, once after; the press once; the next look
   asks again). Reasoned from the stack, not reproduced on the owner's machine; the install's `ui.stalled` lines after the
   republish are the field proof.
+- **What it left, done (SWEEPFLIGHT1, PROCSTART2, 2026-10-16):** the stack's 22 `SweepPlanAsync` threads were as many lists
+  asked at once, so identical `LINES` and `SWEEP_PLAN` asks now join the one under way (`[OneFlight]`, `RouteFlights`; a
+  press forgets them as it answers). The starts still made directly (a session's, its going on, a conversation's, a harness
+  action's, a usage read's, a plugin's and its trial, the host, Edge, the file manager) now pass `ProcessStarts`. Verify:
+  `DriverModuleOneFlightTests` (two asks read the registry twice before, once after; the next ask reads again),
+  `RouteFlightsTests`, `ProcessStartsCensusTests` (red with nine files starting directly and three bare folder doors),
+  `GatedStartsTests` and `OpenFolderGateTests` (each start seen nowhere, or on the caller's thread, before; off it after).
+
 ## 2026-10-15 — The person-door host missed its 15-second stop once under load: not reproduced, its one long wait bounded (FLAKE2)
 
 - **Symptom:** `PersonDoorProcessTests.The_real_host_reads_its_key_from_its_input_gates_by_it_and_still_stops_when_the_input_ends`
@@ -2107,6 +2133,33 @@ three seconds of patience, is `LandingPluginPatienceTests`, run one at a time. L
 2026-10-16, passed them: `SessionTreesTests` 45 s and `LandingPluginTests` 102 s of test time in the git half, and
 `LandingPluginPatienceTests` 21 s in the serial half. The serial half's wall fell from 15 m 15 s (`000b5d9`) to 11 m 55 s, and
 the git half's went from 17 m 24 s to 16 m 9 s holding 25 more tests.
+
+**PROC1g (2026-10-16): the serial half's slowest classes made shorter.** Ranked by summed test time in the serial half's trx on
+`c7ed4c6` (708 s, its wall 11 m 48 s) and on `85020d0` (2126 s, 35 m 28 s under a full set's load): `BranchTidyingProcessTests`
+211 s and 1141 s (30 tests), `PluginKitTests` 106 s and 179 s, then classes under 25 s and 85 s. *`BranchTidyingProcessTests`*
+started git and nothing else but one watch case, so it is four classes over `BranchTidyingFixture`, every test line kept: the
+look's judgements (13 tests) and the folders (13) carry `Parallel=Git`; the watch's case, whose watch ticks, is
+`BranchTidyingWatchTests`, serial; and the landings' three, `BranchTidyingLandingTests`, stay serial too. Run alone with the gate
+set beside them, a landing look passed the fixture's four-minute bound once (306 s for a test of 31.5 s on `c7ed4c6`) and took
+250 s on its rerun, which four at once would break; the other two classes' slowest tests took 87 s at most. *`PluginKitTests`*
+waited on the product: the wire test the kit writes raced the plugin's exit against a timer of the two-second grace and left the
+timer running, so each `node --test` run whose plugin got through `shutdown` stayed open for the whole grace (24 of the class's
+runs, about 48 s a class run at any load, and the same two seconds for every plugin author). The timer is cleared once the race
+is decided (`plugin.test.mjs.template`); `A_wire_test_ends_once_its_plugin_leaves_not_when_the_grace_runs_out`, a minute's
+grace, took 60.7 s before and 1 s after. In the class's own runs a row whose plugin passed now takes what a refused row takes
+(1.73 against 1.79 s, and 5.67 against 6.07 s), where on `c7ed4c6` it took 1.29 s longer and on `85020d0` 2.91 s.
+*`RemoteSyncRunTests`* (17 tests, 13 s and 50 s) starts only git under an in-process transport and waits on no clock: it carries
+`Parallel=Git`. Listed: the serial half 540 tests (582 before), the git half 429 (386). Each changed class ran three times by
+class, one at a time, all while the parent's gate set, its family rehearsal, another worktree's tests, the installed Daoris's
+sessions and other repositories' builds held the machine at 28-100% CPU before each run, so these are no quiet times; seconds of
+test time, CPU before the run: `BranchTidyingProcessTests` 232 (28%), 268 (54%), 244 (29%); `BranchTidyingFolderTests` 258
+(11%), 392 (57%), 177 (68%); `BranchTidyingLandingTests` 131 (46%), 289 (48%), 643 failed at the bound (46%), its rerun alone
+441 (76%); `BranchTidyingWatchTests` 14, 13, 26; `PluginKitTests` 262 (71%), 283 (1%), 209 (91%); `RemoteSyncRunTests` 240
+(100%), 317 (87%), 85 (77%). Two of `PluginKitTests`' runs failed `A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`,
+whose one-second patience covers node's start and the handshake, and passed alone at 94%; the first also failed a sample-frame
+wire test's two seconds to leave after `shutdown`, green in the next two: FLAKE1's load, not the change. Projected from the same
+trx sums, the serial half goes from 708 to about 520 s quiet and from 2126 to about 1270 s under that load, and the git half,
+four at once, gains about 70 s and 6 minutes; the next full set measures it.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 

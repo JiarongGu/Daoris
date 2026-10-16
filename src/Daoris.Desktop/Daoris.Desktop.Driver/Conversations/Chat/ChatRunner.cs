@@ -591,18 +591,32 @@ public sealed class ChatRunner : IDisposable
 
     /// <summary>
     /// Where Ask Daoris's conversation runs (HELP1a): its room, the room's allows and a read of its own files folder, and the
-    /// checkouts reading across lets it read (D107); no plugin's server; the agent's own asking mode; its tools up front.
+    /// checkouts reading across lets it read (D107); the agent's own asking mode; its tools up front.
     /// </summary>
     /// <remarks>
-    /// <b>Its conversation is kept</b> (ASKHIST1): the person goes back to an earlier one from its history, and words written to
-    /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.
+    /// <para><b>Its conversation is kept</b> (ASKHIST1): the person goes back to an earlier one from its history, and words written to
+    /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.</para>
+    ///
+    /// <para><b>A plugin's server reaches it only where the plugin declares it for Ask Daoris</b> (HELPPLUG1a, D170 point 3), and
+    /// only once the person approved its exact tools (<see cref="HelpGrants"/>, D170's note): its reads and the writes they
+    /// accepted are allowed, any other write asked, which its mode refuses. HELP1a handed it none, since a browser brought up for
+    /// a tool it may not use is a window for nothing; a server approved for it names the tools it may use.</para>
     /// </remarks>
-    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) =>
+    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) => HelpPlaceIn(_home, room, reads);
+
+    /// <inheritdoc cref="HelpPlace"/>
+    internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads) =>
         new(
-            HelpRoom.Repository, room, (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(_home, id), reads),
-            Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
+            HelpRoom.Repository, room,
+            (file, id) =>
+            {
+                var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
+                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask);
+            },
+            Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
         {
             Keeps = true,
+            ServersTo = PluginServerTo.Help,
         };
 
     /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
@@ -627,6 +641,12 @@ public sealed class ChatRunner : IDisposable
         public IReadOnlyList<string> Also { get; init; } = [];
 
         /// <summary>
+        /// Whose plugins' servers it is handed, where <see cref="Plugins"/> hands any (HELPPLUG1a): a repository's conversation
+        /// those declared for sessions, Ask Daoris's those declared for it.
+        /// </summary>
+        public string ServersTo { get; init; } = PluginServerTo.Sessions;
+
+        /// <summary>
         /// Whether its harness conversation's id is kept for it (MSG1c, D137 §4.2), so the conversation goes on when the
         /// person writes to it after it ended: a repository's conversation, and since ASKHIST1 Ask Daoris's too.
         /// </summary>
@@ -643,12 +663,15 @@ public sealed class ChatRunner : IDisposable
     /// set: that holds the plugins' own agents, so a plugin declaring an agent and a server was refused as one this build
     /// carries, and its servers were withheld from every conversation.
     /// </remarks>
+    /// <param name="to">Whose servers: those declared for sessions, or for Ask Daoris (HELPPLUG1a).</param>
     internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandServersAsync(
-        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct)
+        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions)
     {
         var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
-        var handed = await InAppBrowserServers.HandNotedAsync(catalog.Servers, browser, ct).ConfigureAwait(false);
-        plugins.Served(catalog, sessionId, handed.Handed);
+        // Ask Daoris takes only the servers the person approved for it (HelpGrants, D170's note); a session, its own.
+        var servers = to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);
+        var handed = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
+        plugins.Served(catalog, sessionId, handed.Handed, to);
         return handed;
     }
 
@@ -672,6 +695,7 @@ public sealed class ChatRunner : IDisposable
         Process process;
         string? rules = null;
         string? servers = null;
+        string? skills = null;
         object? meta = null;
         IReadOnlyList<AcpMcpServer> pluginServers = [];
         Noted? browserNotice = null;
@@ -704,6 +728,15 @@ public sealed class ChatRunner : IDisposable
                 foreach (var (name, value) in resolved.ToolsUpFront) info.Environment[name] = value;
             }
 
+            // HELPPLUG1b (D170 point 4): the skills plugins hand this conversation's destination, composed under the home and
+            // handed by the harness's own session-only door; the protocol door carries them beside its rules below.
+            IReadOnlyList<string> skillPlugins = [];
+            if (place.Plugins)
+            {
+                (skills, skillPlugins) = SpawnSkills.Hand(
+                    resolved, info, _home, sessionId, PluginCatalog.Load(_home, AdapterSet.Built().Names), place.ServersTo);
+            }
+
             // What the conversation's agent may do (PERM1, D72), handed by each door's own way: a flag on
             // the pipe, `session/new`'s `_meta` on the protocol door, now that a conversation there opens a
             // session (CONV3b).
@@ -714,7 +747,7 @@ public sealed class ChatRunner : IDisposable
                     _home, sessionId, place.Rules(file, sessionId), PermissionRules.HardDeny(file),
                     PermissionRules.GuardsTree(file) ? TreeGuard.For(_home, workTree, place.Also) : null);
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
-                else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
+                else if (rules is not null) meta = resolved.AcpSessionMeta(rules, skillPlugins);
             }
 
             // The plugins' servers, resolved once for both doors — with Daoris's own browser brought up
@@ -723,7 +756,7 @@ public sealed class ChatRunner : IDisposable
             {
                 IReadOnlyList<string> drivers;
                 (pluginServers, browserNotice, drivesBrowser, drivers) = await HandServersAsync(
-                    _home, _browser, _plugins, sessionId, ct).ConfigureAwait(false);
+                    _home, _browser, _plugins, sessionId, ct, place.ServersTo).ConfigureAwait(false);
                 // A new conversation's agent is told of the browser with its first message (BRWHINT1a); one going on resumes a
                 // conversation already told when it opened, so it is told nothing again.
                 if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) _context.Browsers[sessionId] = line;
@@ -743,7 +776,8 @@ public sealed class ChatRunner : IDisposable
                     resolved, info, _home, sessionId, place.ConnectorOnPipe ? Servers(sessionId, pluginServers) : pluginServers);
             }
 
-            process = Process.Start(info)
+            // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait.
+            process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
         catch (Exception error)
@@ -754,6 +788,7 @@ public sealed class ChatRunner : IDisposable
             // stranded where no stop and no sweep reaches it (REV3).
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
+            SpawnSkills.Remove(skills);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await Conclude(
                 sessionId, "failed",
@@ -858,7 +893,7 @@ public sealed class ChatRunner : IDisposable
 
         var watch = WatchAsync(
             sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said,
-            new Watched(resolved.Name, place.Keeps, goOn));
+            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills });
         _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -1263,7 +1298,11 @@ public sealed class ChatRunner : IDisposable
     /// <param name="Adapter">The adapter it runs on, whose conversation id is kept for it.</param>
     /// <param name="Keeps">Whether its conversation's id is kept, so it can go on once it ended (<see cref="ChatPlace.Keeps"/>).</param>
     /// <param name="GoOn">The ended chat this run goes on with, or null for a new conversation.</param>
-    private sealed record Watched(string Adapter, bool Keeps, GoingOn? GoOn);
+    private sealed record Watched(string Adapter, bool Keeps, GoingOn? GoOn)
+    {
+        /// <summary>The plugins' skills composed for it (HELPPLUG1b, <see cref="SpawnSkills"/>), which go when the conversation does.</summary>
+        public string? Skills { get; init; }
+    }
 
     /// <summary>
     /// What a conversation's ending note adds where Daoris kept no id for its harness conversation (MSG1c, D137 §4.2): words
@@ -1406,6 +1445,7 @@ public sealed class ChatRunner : IDisposable
             _output?.Close(sessionId);
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
+            SpawnSkills.Remove(watched.Skills);
         }
     }
 

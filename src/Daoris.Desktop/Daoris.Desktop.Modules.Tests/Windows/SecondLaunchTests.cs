@@ -86,6 +86,50 @@ public sealed class SecondLaunchTests
         Assert.Empty(_windows.Asked);
     }
 
+    /// <summary>
+    /// MAINWINDOWS2: a launch while the first main window is put away takes that one back rather than opening another, and
+    /// does not wait on the service, whose page that window already holds. The next launch opens a new one again.
+    /// </summary>
+    [Fact]
+    public async Task A_launch_while_the_first_is_put_away_takes_it_back_and_opens_none()
+    {
+        var mains = new MainWindows();
+        var shown = 0;
+        _windows.Open("main:2", "/");
+        mains.Opened("main:2");
+        Assert.True(mains.FirstClosing(byPerson: true));
+        _windows.Asked.Clear();
+
+        var never = new TaskCompletionSource<bool>();
+        var launch = new SecondLaunch(_windows, new PlatformAddress(Service), () => never.Task, mains: mains, showFirst: () => shown++);
+        Assert.Equal(MainWindows.First, await launch.OpenAsync([]));
+        Assert.Equal(1, shown);
+        Assert.Empty(_windows.Asked);
+        Assert.False(mains.FirstAway);
+
+        never.SetResult(true);
+        Assert.Equal("main:3", await launch.OpenAsync([]));
+        Assert.Equal(1, shown);
+    }
+
+    /// <summary>The kit brought the put-away first forward before handing the launch over: that is the launch's window.</summary>
+    [Fact]
+    public async Task A_launch_after_the_kit_showed_the_put_away_first_opens_none()
+    {
+        var mains = new MainWindows();
+        _windows.Open("main:2", "/");
+        mains.Opened("main:2");
+        Assert.True(mains.FirstClosing(byPerson: true));
+        mains.Shown();
+        _windows.Asked.Clear();
+
+        var shown = 0;
+        Assert.Equal(MainWindows.First, await new SecondLaunch(
+            _windows, new PlatformAddress(Service), () => Task.FromResult(true), mains: mains, showFirst: () => shown++).OpenAsync([]));
+        Assert.Equal(1, shown);
+        Assert.Empty(_windows.Asked);
+    }
+
     [Theory]
     [InlineData("main:2", true)]
     [InlineData("main:10", true)]
@@ -117,6 +161,32 @@ public sealed class SecondLaunchTests
         Assert.Contains("SingleInstance = new SingleInstanceHostOptions", program);
         Assert.Contains("OnActivated = ", program);
         Assert.Contains("GetRequiredService<SecondLaunch>().OpenAsync(", program);
+    }
+
+    /// <summary>
+    /// MAINWINDOWS2, held on the application's own source for the same reason: the first main window puts itself away on the
+    /// person's close while another main window is open and closes for good otherwise; every other window's opening and closing
+    /// is told; the update and the last main window close it for good; the tray and a launch take it back.
+    /// </summary>
+    [Fact]
+    public void The_application_ends_with_its_last_main_window()
+    {
+        var app = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App");
+        var program = File.ReadAllText(Path.Combine(app, "Program.cs"));
+        var form = File.ReadAllText(Path.Combine(app, "MainForm.cs"));
+        var host = File.ReadAllText(Path.Combine(app, "SecondaryWindowHost.cs"));
+        var tray = File.ReadAllText(Path.Combine(app, "SessionNotifier.cs"));
+
+        Assert.Contains("new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood()", program);
+        Assert.Contains("close: () => sp.GetRequiredService<MainForm>().CloseForGood()", program);
+        Assert.Contains("showFirst: () => sp.GetRequiredService<MainForm>().TakeBack()", program);
+        Assert.DoesNotContain("form.BeginInvoke(form.Close)", program);
+
+        Assert.Contains("_mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood) == true", form);
+        Assert.Contains("_mains?.Shown()", form);
+        Assert.Contains("mains?.Opened(name)", host);
+        Assert.Contains("mains?.Closed(name)", host);
+        Assert.Contains("_takingBack?.Invoke()", tray);
     }
 
     private static string RepositoryRoot()

@@ -41,7 +41,7 @@ import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '..
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
-  useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
+  useHelperWaits, useOpinionWaits, useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
 import { useSay } from '../bridge/conversation';
@@ -292,6 +292,10 @@ export function App() {
   // Where Sessions' list places each session (D126): Overview's badge counts the work to review the band lists (UX6c).
   // The frame reads the same answer under the same key on every view, so this asks nothing more; a browser has none.
   const sessionGroups = useSessionGroups();
+  // The driver's own lists of what waits on the person, which the band reads too (WAITCOUNT1): an agent's ask for a helper
+  // (MIXAGENT2c) and a second opinion (XAGENT1g), the second asked only while there is work to review, as the band asks it.
+  const opinionWaits = useOpinionWaits((sessionGroups.data ?? []).some((placed) => placed.group === 'review'));
+  const helperWaits = useHelperWaits();
   // The install's update (UPDATE1, D139): what is staged, the drain, and the person's word on it, as the banner's.
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
@@ -445,7 +449,7 @@ export function App() {
   // roster and the accounts' files the Agents badge reads, and the tick's waits.
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
-    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown).length;
+    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown, opinionWaits.data ?? [], helperWaits.data ?? []).length;
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);

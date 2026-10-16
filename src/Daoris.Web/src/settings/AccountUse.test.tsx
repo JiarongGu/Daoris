@@ -155,25 +155,37 @@ describe('a scope\'s list', () => {
     expect(screen.getByRole('checkbox', { name: 'use home@example.invalid for This machine' }).hasAttribute('disabled')).toBe(false);
   });
 
-  /** Where starts begin, the kept account, one near by the scope's own near, and one cooling, each said on its row. */
-  it('marks where starts begin, the kept account, one near its limit and one cooling', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
+  /**
+   * Where starts begin, the kept account, one a start passes, and one cooling, each said on its row; what passes it in the
+   * curve's words (SWITCH1d): over its curve, its limit reached, or on usage credits.
+   */
+  it('marks where starts begin, the kept account, one over its curve and one cooling', () => {
+    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
 
     const rows = within(screen.getByRole('list')).getAllByRole('listitem');
     expect(rows[0]!.textContent).toContain('starts here');
     expect(rows[0]!.textContent).toContain('cooling');
-    expect(rows[1]!.textContent).toContain('near its limit');
+    expect(rows[1]!.textContent).toContain('over its curve');
+    expect(rows[1]!.textContent).not.toContain('near its limit');
     expect(rows[2]!.textContent).toContain('kept for conversations');
+    unmount();
+
+    const passed = (by: 'refused' | 'credits') => ({ ...MACHINE_NEAR, near: [{ account: 'account-2', window: 'session', by }] });
+    const reached = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={passed('refused')} accounts={CHOICES} acts={acts()} />);
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')[1]!.textContent).toContain('limit reached');
+    reached.unmount();
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={passed('credits')} accounts={CHOICES} acts={acts()} />);
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')[1]!.textContent).toContain('on usage credits');
   });
 
-  /** USAGEREAD3b: near is the scope's own (a limit, credits or the number), so a pace warning alone wears no near pill. */
-  it('marks no account near for its agent’s pace warning alone', () => {
+  /** USAGEREAD3b: passed is the scope's own (a limit, credits or the number), so a pace warning alone wears no pill. */
+  it('marks no account passed for its agent’s pace warning alone', () => {
     const agent = { ...THREE, accounts: THREE.accounts.map((account) => (account.name === 'account-3' ? { ...AHEAD, name: 'account-3' } : account)) };
     wrap(<ScopeEditor agent={agent} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
 
     const rows = within(screen.getByRole('list')).getAllByRole('listitem');
-    expect(rows[1]!.textContent).toContain('near its limit');
-    expect(rows[2]!.textContent).not.toContain('near');
+    expect(rows[1]!.textContent).toContain('over its curve');
+    expect(rows[2]!.textContent).not.toContain('over its curve');
   });
 
   /** A scope with no list has no settings: it says where its starts run, and the first Use gives it a list. */
@@ -194,27 +206,74 @@ describe('a scope\'s list', () => {
 });
 
 describe('how a scope\'s list is used', () => {
-  /** D130 §16.6: *Use accounts*, *Keep for conversations*, *Switch before the limit* and its *near*, each one setting. */
+  /**
+   * D130 §16.6 as D165 §6 amends it: *Use accounts*, *Keep for conversations* and *Switch accounts*, each one setting; the switch
+   * *Smart*, *My own curve* or *Off*, as `profile use --switch` writes it (SWITCH1d). *Near at* is gone: the curve is its own.
+   */
   it('changes one setting at a time, as the terminal\'s profile use does', async () => {
     const pressed = acts();
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={pressed} />);
 
     await userEvent.click(screen.getByRole('radio', { name: 'One by one, in order' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Switch before the limit · This machine' }));
-    const near = screen.getByRole('spinbutton', { name: 'Near at · This machine' });
-    await userEvent.clear(near);
-    await userEvent.type(near, '40');
-    await userEvent.tab();
-    await userEvent.clear(near);
-    await userEvent.type(near, '80');
-    await userEvent.tab();
+    const switched = screen.getByRole('radiogroup', { name: 'Switch accounts · This machine' });
+    expect(within(switched).getByRole('radio', { name: 'My own curve' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(within(switched).getByRole('radio', { name: 'Off' }));
+    await userEvent.click(within(switched).getByRole('radio', { name: 'Smart' }));
 
     expect(pressed.calls).toEqual([
       ['use', null, { use: 'order' }],
-      ['use', null, { early: false }],
-      ['use', null, { near: 80 }],
+      ['use', null, { switch: 'off' }],
+      ['use', null, { switch: 'smart' }],
     ]);
     expect(screen.getByText(/^Each start goes to the account running the fewest/)).toBeTruthy();
+    expect(screen.getByText(/^Your own points, a window each; a window you leave out takes Daoris's curve\.$/)).toBeTruthy();
+    expect(screen.queryByText('Near at')).toBeNull();
+    expect(screen.queryByText('Switch before the limit')).toBeNull();
+  });
+
+  /**
+   * SWITCH1d (the switch design §5): each window's curve in effect, drawn with each account of the list where it stands now, the
+   * five-hour window first; under *Smart* no point is anyone's to edit.
+   */
+  it('draws each window’s curve with each account of the list on it', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={THREE.scopes[0]!} accounts={CHOICES} acts={acts()} />);
+
+    const charts = screen.getAllByRole('img');
+    expect(charts.map((chart) => chart.getAttribute('aria-label'))).toEqual([
+      "The five-hour window: its curve, and each account's use now",
+      "The weekly window: its curve, and each account's use now",
+    ]);
+    // account-2 said 88% of its five-hour window: the smart curve's 90% holds it under.
+    const session = charts[0]!.querySelector('[data-account="account-2"]')!;
+    expect(session.querySelector('title')!.textContent).toMatch(/^home@example\.invalid: 88% used, \d+% of the window gone$/);
+    expect(charts[0]!.querySelector('[data-curve]')!.getAttribute('data-curve')).toBe('0:90 100:90');
+    expect(screen.queryByRole('group', { name: /^Your points/ })).toBeNull();
+  });
+
+  /** SWITCH1d (the switch design §5, §6): *My own curve* edits a window's points, saved as `--curve`, and clears them all. */
+  it('edits a window’s own points under My own curve, and clears them as --no-curve does', async () => {
+    const pressed = acts();
+    const scope = { ...MACHINE_NEAR, use: { ...MACHINE_NEAR.use, switch: 'curve' as const, curve: { session: [[0, 80]] as [number, number][] } } };
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scope} accounts={CHOICES} acts={pressed} />);
+
+    expect(screen.getAllByRole('img')[0]!.querySelector('[data-curve]')!.getAttribute('data-curve')).toBe('0:80 100:80');
+    expect(screen.getByText("The weekly window takes Daoris's curve.")).toBeTruthy();
+    const session = screen.getByRole('group', { name: 'Your points for the five-hour window' });
+    const used = within(session).getByRole('spinbutton', { name: 'Used, % · point 1' });
+    await userEvent.clear(used);
+    await userEvent.type(used, '85');
+    await userEvent.click(within(session).getByRole('button', { name: 'Save the curve' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Clear my own curve' }));
+
+    expect(pressed.calls).toEqual([
+      ['use', null, { curve: { session: [[0, 85]] } }],
+      ['use', null, { noCurve: true }],
+    ]);
+    expect(twins()).toEqual(expect.arrayContaining([
+      'daoris agent profile use claude-code --curve session=0:80',
+      'daoris agent profile use claude-code --curve weekly=<elapsed>:<used>,…',
+      'daoris agent profile use claude-code --no-curve',
+    ]));
   });
 
   /** D130 §16.4: with nothing said by any account of the list, the screen says what the walk does instead. */
@@ -245,7 +304,7 @@ describe('how a scope\'s list is used', () => {
     wrap(<ScopeEditor agent={SILENT} product="Codex" scope={SILENT.scopes[0]!} accounts={[]} acts={acts()} />);
 
     expect(screen.getByText("Codex's sessions here do not say how much of each window is used, so a start passes no account by its use.")).toBeTruthy();
-    expect(screen.getByRole('checkbox', { name: 'Switch before the limit · This machine' })).toBeTruthy();
+    expect(screen.getByRole('radiogroup', { name: 'Switch accounts · This machine' })).toBeTruthy();
   });
 
   /**
@@ -255,10 +314,9 @@ describe('how a scope\'s list is used', () => {
   it('says what passes an account: its limit reached, usage credits, or its use over its curve', async () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
 
-    expect(screen.getByRole('note', { name: /^A start passes an account whose limit is reached, that draws on usage credits, or whose use is over its curve, while another account is ready/ })).toBeTruthy();
+    expect(screen.getByRole('note', { name: /^Per window, a curve says the most of it an account should have used by each point of the window's time\. A start passes an account whose limit is reached, that draws on usage credits, or whose use is over its curve, while another account is ready/ })).toBeTruthy();
     expect(screen.getByText(/^Each start goes to [^.]+, and an account whose limit is reached, that draws on usage credits or whose use is over its curve is passed while another is ready\.$/)).toBeTruthy();
-    expect(document.body.textContent).toContain("— your curve's five-hour window, flat at this share: a start passes an account whose use of that window is over it.");
-    expect(document.body.textContent).not.toMatch(/near its limit is passed|at or over this share/);
+    expect(document.body.textContent).not.toMatch(/near its limit|at or over this share|Near at/);
   });
 });
 
@@ -317,7 +375,7 @@ describe('the next start', () => {
     expect(screen.getByRole('note', { name: /^Each start walks this list: .+ whose use is over its curve goes last, the least over first; .+, then the one with the most room under its curve, / })).toBeTruthy();
     unmount();
 
-    const paced = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...work, use: { ...work.use, early: false } }} accounts={CHOICES} workspace="work" acts={acts()} />);
+    const paced = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...work, use: { ...work.use, early: false, switch: 'off' } }} accounts={CHOICES} workspace="work" acts={acts()} />);
     expect(screen.getByRole('note', { name: /^Each start walks this list: .+ whose use is over Daoris's curve goes last, the least over first; .+, then the one furthest behind its week's pace, / })).toBeTruthy();
     paced.unmount();
 
@@ -430,8 +488,7 @@ describe('a scope\'s terminal twins', () => {
     `daoris agent profile order claude-code <account>…${flag}`,
     `daoris agent profile use claude-code goal|order${flag}`,
     `daoris agent profile use claude-code --keep <account>|--no-keep${flag}`,
-    `daoris agent profile use claude-code --early on|off${flag}`,
-    `daoris agent profile use claude-code --near <percent>${flag}`,
+    `daoris agent profile use claude-code --switch smart|curve|off${flag}`,
   ];
 
   it('names no workspace on this machine\'s scope', () => {

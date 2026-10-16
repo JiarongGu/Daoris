@@ -19,7 +19,8 @@ namespace Daoris.Driver;
 /// <c>HARNESS_ACTION</c>'s own <c>profile-default</c>.</para>
 ///
 /// <para>Since TOOL4g the <c>use</c> door's judge (D130 §9, §16.6): how a scope's list is used — <c>use</c> (<c>goal</c> or
-/// <c>order</c>), <c>keep</c> (an account of the list, or JSON null for none), <c>early</c> and <c>near</c>, each a field of
+/// <c>order</c>), <c>keep</c> (an account of the list, or JSON null for none), since SWITCH1d <c>switch</c> and <c>curve</c>
+/// (each window's points, or JSON null for none), and the old <c>early</c> and <c>near</c>, still read, each a field of
 /// the proposal's file beside its target and workspace — judged as <c>daoris agent profile use</c> judges it and applied as
 /// the screen's <c>ACCOUNT_USE</c>. Since TOOL4l-b it is listed in <see cref="Doors"/>, with <c>order</c> (a scope's list written
 /// whole, or a workspace sent back to the machine's accounts) and <c>ready</c> (<i>Try now</i>, an account's cool-off ended),
@@ -66,7 +67,13 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         int? near = file.TryGetProperty("near", out var number) && number.ValueKind == JsonValueKind.Number && number.TryGetInt32(out var whole)
             ? whole
             : null;
-        if (use is null && !keeps && early is null && near is null) return proposal;
+        // SWITCH1d: the switch and the person's curve, a curve of JSON null taking it out; one that breaks a rule is kept as the
+        // twins' sentence, which the plan refuses with.
+        var switched = Json.Text(file, "switch");
+        var curves = file.TryGetProperty("curve", out var curve);
+        var noCurve = curves && curve.ValueKind == JsonValueKind.Null;
+        var problem = curves && !noCurve ? UseCurve.ProblemOf(curve) : null;
+        if (use is null && !keeps && early is null && near is null && switched is null && !curves) return proposal;
 
         return proposal with
         {
@@ -75,7 +82,11 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
                 Keep: keeps && keep.ValueKind == JsonValueKind.String ? keep.GetString() : null,
                 NoKeep: keeps && keep.ValueKind == JsonValueKind.Null,
                 Early: early,
-                Near: near),
+                Near: near,
+                Switch: switched,
+                Curve: curves && !noCurve && problem is null ? UseCurve.Read(curve) : null,
+                NoCurve: noCurve),
+            AccountCurveRefused = problem?.Sentence,
         };
     }
 
@@ -217,9 +228,10 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
     /// <summary>
     /// <c>use</c> (TOOL4g, D130 §16.6): how a scope's list is used, for the machine or one workspace, as
-    /// <c>daoris agent profile use</c> takes it — a scope with a list of its own, a way to use accounts this build knows, a
-    /// near from 50 to 99, and a kept account of the list that leaves driven work another — said in its words. A door's
-    /// accounts are its owner's (AGT7), so the command and the sentence name the owner.
+    /// <c>daoris agent profile use</c> takes it — a scope with a list of its own, a way to use accounts and a switch this build
+    /// knows, a curve that keeps its rules (SWITCH1d), a near from 50 to 99, and a kept account of the list that leaves driven
+    /// work another — said in its words, the switch and the curve in the curve's terms. A door's accounts are its owner's (AGT7),
+    /// so the command and the sentence name the owner.
     /// </summary>
     private static HelpPlan Use(HelpProposal proposal, HelpMachineFacts facts)
     {
@@ -232,11 +244,17 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
         var owner = door.AccountsOf;
         var change = proposal.AccountUse ?? new UseChange();
+        // The person's curve as the terminal spells it, a `--curve <window>=<elapsed>:<used>,…` a window (SWITCH1d).
+        var curve = change.Curve is { } set
+            ? string.Concat(UseCurve.Windows.Where(window => set[window] is not null).Select(window => $" --curve {window}={Spelled(set[window]!, ",")}"))
+            : "";
         var terminal = $"daoris agent profile use {owner}"
             + (change.Use is { Length: > 0 } mode ? $" {mode}" : "")
             + (change.Keep?.Trim() is { Length: > 0 } kept ? $" --keep {ShellWord.Of(kept, ShellWord.Account)}" : change.NoKeep ? " --no-keep" : "")
             + (change.Early is { } early ? $" --early {(early ? "on" : "off")}" : "")
             + (change.Near is { } near ? $" --near {near}" : "")
+            + (change.Switch is { Length: > 0 } switched ? $" --switch {switched}" : "")
+            + (change.NoCurve ? " --no-curve" : curve)
             + Scoped(workspace);
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
@@ -245,10 +263,13 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.");
         }
 
-        if (change.Use is null && change.Keep is null && !change.NoKeep && change.Early is null && change.Near is null)
+        if (proposal.AccountCurveRefused is { } broken) return Refused(broken);
+
+        if (change.Use is null && change.Keep is null && !change.NoKeep && change.Early is null && change.Near is null
+            && change.Switch is null && change.Curve is null && !change.NoCurve)
         {
             return Refused("a use names how the list is used: `use` (goal or order), `keep` (an account of the list, or none), "
-                + "`early` (switch before the limit, or not) or `near` (a whole percent from 50 to 99).");
+                + "`switch` (smart, curve or off) or `curve` (your own points, a window each).");
         }
 
         var list = OwnList(facts.Wiring, owner, workspace);
@@ -264,10 +285,15 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             return Refused($"`{way}` is not a way to use accounts — goal (make the most of them) or order (one by one, in order).");
         }
 
+        if (change.Switch is { } when && !RotationUse.Switches.Contains(when, StringComparer.Ordinal))
+        {
+            return Refused($"`{when}` is not when to switch accounts — smart (Daoris's curve), curve (your own) or off.");
+        }
+
         if (change.Near is { } percent && percent is < RotationUse.NearLowest or > RotationUse.NearHighest)
         {
-            return Refused($"near is a whole percent from {RotationUse.NearLowest} to {RotationUse.NearHighest}, not {percent}: where an "
-                + "agent gives only how much of a window is used, an account at or over it is near its limit.");
+            return Refused($"near is a whole percent from {RotationUse.NearLowest} to {RotationUse.NearHighest}, not {percent}: it holds "
+                + "your own curve's five-hour window at that share.");
         }
 
         if (change.Keep?.Trim() is { Length: > 0 } keep)
@@ -287,11 +313,35 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         if (change.Use is { } chosen) said.Add(chosen == "order" ? "uses its accounts one by one, in order" : "makes the most of its accounts");
         if (change.Keep?.Trim() is { Length: > 0 } held) said.Add($"keeps `{held}` for conversations");
         else if (change.NoKeep) said.Add("keeps no account for conversations");
-        if (change.Early is { } switches) said.Add(switches ? "switches before the limit" : "does not switch before the limit");
-        if (change.Near is { } at) said.Add($"counts an account near its limit at {at}%");
+        // SWITCH1d: in the curve's terms, the old names too, as the file reads them on (D165 §6).
+        if (change.Switch is { } chosenSwitch) said.Add(Switching(chosenSwitch));
+        else if (change.Early is { } switches) said.Add(Switching(switches ? "smart" : "off"));
+        if (change.Near is { } at) said.Add($"holds its own curve's five-hour window at {at}%");
+        if (change.NoCurve) said.Add("clears its own curve, every window back to Daoris's");
+        else if (change.Curve is { } points)
+        {
+            foreach (var window in UseCurve.Windows.Where(window => points[window] is not null))
+            {
+                said.Add($"sets its own curve's {WindowSaid(window)} window to {Spelled(points[window]!, ", ")}");
+            }
+        }
+
         var joined = said.Count == 1 ? said[0] : $"{string.Join(", ", said.Take(said.Count - 1))} and {said[^1]}";
         return new HelpPlan(null, $"{(workspace is null ? "On this machine" : $"In `{workspace}`")}, `{owner}` {joined}.", terminal, null);
+
+        static string Switching(string when) => when switch
+        {
+            "curve" => "switches accounts by its own curve",
+            "off" => "does not switch accounts while a session runs",
+            _ => "switches accounts by Daoris's curve",
+        };
+
+        static string WindowSaid(string window) => window == "session" ? "five-hour" : window;
     }
+
+    /// <summary>A window's points as the terminal spells them, <c>elapsed:used</c>, joined by <paramref name="by"/>.</summary>
+    private static string Spelled(IReadOnlyList<CurvePoint> points, string by) =>
+        string.Join(by, points.Select(point => $"{point.Elapsed}:{point.Used}"));
 
     /// <summary>
     /// <c>order</c> (TOOL4l-b, D130 §9): a scope's list written whole, or a workspace sent back to the machine's accounts, as

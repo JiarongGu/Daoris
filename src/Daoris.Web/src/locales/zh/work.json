@@ -216,6 +216,7 @@
   "work.say.help": "问道衍的对话在它自己的面板里接收消息，那里会开始一个新的对话。",
   "work.say.superseded": "#{{quest}} 已在这里的后续会话中继续，请写给那个会话。",
   "work.say.continued": "它已在对话 {{to}} 中继续；请对那个对话说。",
+  "work.say.continuedIn": "这个对话已在「{{title}}」中继续。",
   "work.say.notFound": "Daoris 已没有这个会话的记录，没有地方能接收写给它的话。",
   "work.say.takesNone": "它现在不接收消息（{{code}}）。",
   "work.say.notTaken": "这些话刚才没有被接收，已放回输入框。",

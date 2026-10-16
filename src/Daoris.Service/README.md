@@ -380,7 +380,7 @@ their verbs take, and a landing's `--key` and `--squash`; the tool says a reposi
 proposal the person applies) and `ask_propose` (something to start, as
 an ask at a workspace; since ENTRY1c with the review choice the person said and their words, as the
 composer sends them, and never a kind or a workflow, which are the person's), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
-version; since HELP10 also the account it runs as by default; since TOOL4l-a also an account's `use`, the walk's `order` and a cool-off's `ready`), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
+version; since HELP10 also the account it runs as by default; since TOOL4l-a also an account's `use`, the walk's `order` and a cool-off's `ready`; since SWITCH1d the `use` door's `switch` and the person's `curve`, a window each as the terminal's `--curve` spells it, or `no_curve`, in place of `early` and `near`), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
 own model and effort) and `go_propose` (a place to open, changing nothing: a view, a Settings domain, or a part
 such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes list them; since D161 the front door's
 way to take a person to the place, and since ENTRY1f1 one quest or ask on Quests as its `item`, which the driver judges
@@ -422,8 +422,10 @@ Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database
 it; the **database** is what persists. Every session in every repository on this machine spawns over
 the same file (`knowledge.db` under the Daoris home — `DAORIS_HOME`, which the installed desktop sets
 for the account, D63), which is how a quest published from one repository's session is waiting when
-another repository's session starts. With no home and no `DAORIS_KNOWLEDGE_DB`, the host says so on
-stderr and exits 2 rather than opening a database under the user profile.
+another repository's session starts. A host the install carries (`app/daoris-knowledge/`,
+`app/daoris-knowledge-http/`), started with no `DAORIS_HOME` — a person's own agent's `.mcp.json`, a terminal — takes the
+install's own `data/` as its home, as the driver host does (SERVICEHOME2, D171 point 1). Elsewhere, with no home and no
+`DAORIS_KNOWLEDGE_DB`, the host says so on stderr and exits 2 rather than opening a database under the user profile.
 
 **An older build never touches a newer index, and works with the rest of the store** (KSCHEMA1). The index's schema has
 a version (`user_version`): an older one is rebuilt when it opens, as before. A newer one, which only a newer Daoris
@@ -487,7 +489,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 
 | Endpoint | |
 |---|---|
-| `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
+| `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's; a local host's status also answers `home`, its home's id (`HomeIdentity`, HOMEID1), which a terminal checks before it takes the address |
 | `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands, with the words of the lanes it declares (`lanes`: id, title, summary, steward; absent keeps the row's, D115). A shared deployment orders a checkout's declaration by the commit it names, as it orders knowledge: a declaration from an older commit, another line, or no commit where one is held is not taken, as information (SYNC5b) |
 | `DELETE /api/registry/{repository}` | take a repository off the map; nothing on disk is touched. At a shared deployment it is how a machine's retire reaches the circle (SYNC5b) |
 | `GET /api/registry/retired?workspace=` · `DELETE /api/registry/retired/{repository}?workspace=` | local mode only: the retires this machine's checkouts owe a circle, written by the store as a joined checkout's row leaves it (retired, re-wired, or re-registered unjoined), and cleared once the driver's pass has carried them (SYNC5b) |
@@ -590,7 +592,7 @@ Configuration is by environment, and every variable is optional — the defaults
 
 | | |
 |---|---|
-| `DAORIS_HOME` | The Daoris home (D63) — every default below that names a file derives from it. Unset, and with the file's own variable unset too, a host refuses rather than defaulting under the profile |
+| `DAORIS_HOME` | The Daoris home (D63) — every default below that names a file derives from it. Unset, a host the install carries takes the install's own `data/` (SERVICEHOME2); elsewhere, with the file's own variable unset too, a host refuses rather than defaulting under the profile |
 | `DAORIS_KNOWLEDGE_ROOT` | Where the repositories are. Default: the folder containing this workspace |
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `$DAORIS_HOME/knowledge.db` |
 | `DAORIS_KNOWLEDGE_REPOSITORY` | The one checkout a workspace's own server serves (ORIENT1c): the bootstrap registers it alone, and each process re-reads it at its first use and once its reading is a minute old. Not a folder, and a host refuses to start. Unset: the folder of repositories, read once |

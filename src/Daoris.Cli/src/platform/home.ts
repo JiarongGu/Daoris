@@ -1,4 +1,5 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DaorisError } from './errors.ts';
@@ -36,7 +37,7 @@ export const HOME_TWICE =
 
 type Env = Record<string, string | undefined>;
 
-/** The file `desktop-publish` writes at an install's root, and nothing else does (the driver's `DaorisHome.InstallMarker`). */
+/** The file `desktop-publish` writes at an install's root, and nothing else does (the driver's and the service's `DaorisHome.InstallMarker`). */
 export const INSTALL_MARKER = 'INSTALLED.md';
 
 /** The folder an install's programs run from (D93), and its home beside it (D63). */
@@ -123,6 +124,7 @@ export const HOME_ENTRIES = [
   row('opinion-dues', 'data', 'opinions/due.json', 'opinions/due.json'),
   row('browser-settings', 'data', 'browser/settings.json', 'browser/settings.json'),
   row('browser-favorites', 'data', 'browser/favorites.json', 'browser/favorites.json'),
+  row('home-id', 'data', 'home.json', 'home.json'),
   row('keys', 'profiles', 'keys.json', 'keys.json'),
   row('remotes', 'profiles', 'remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'harnesses/*/*', 'harnesses/*/*'),
@@ -142,6 +144,7 @@ export const HOME_ENTRIES = [
   row('toolchain', 'cache', 'toolchain', 'toolchain'),
   row('tool-versions', 'cache', 'tools', 'tools'),
   row('bin', 'cache', 'bin', 'bin'),
+  row('home-lease', 'run', 'home.lease', 'home.lease'),
   row('driver-lock', 'run', 'driver.lock', 'driver.lock'),
   row('running', 'run', 'running.json', 'running.json'),
   row('locks', 'run', 'locks', 'locks'),
@@ -263,4 +266,50 @@ export function requireHomeFile(env: Env, name: HomeEntryName, install: string |
   const file = homeFile(env, name, install);
   if (!file) throw new DaorisError(`${HOME_SENTENCE} (wanted: ${entryOf(name).new})`);
   return file;
+}
+
+/**
+ * A home's identity (HOMEID1, the terminal RPC design §3.1): `<home>/home.json`, the entry `home-id`,
+ * `{ "id": "<32 lower-case hex>", "minted": "…" }`, which every path to the folder reads alike, so a running service is told to
+ * be this home's by it and never by a path. The driver's and the service's `HomeIdentity` hold the same file in C# and share no
+ * code (`twins.md`).
+ */
+export const HOME_ID_FILE = 'home.json';
+
+/** Whether a value is an id as `home.json` holds one. */
+export function isHomeId(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{32}$/.test(value);
+}
+
+/** The home's id, or null where it has none or its file does not read. A read: discovery mints nothing. */
+export function homeId(home: string): string | null {
+  try {
+    const file: unknown = JSON.parse(readFileSync(homeEntry(home, 'home-id'), 'utf8'));
+    const id = typeof file === 'object' && file !== null ? (file as Record<string, unknown>).id : null;
+    return isHomeId(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The home's id, minted where it has none (HOMELEASE1: a lease records it): written beside, then linked into place, which
+ * refuses where a file is, so of two minting at once one stands and both read it. Null where its file does not read, which is
+ * never replaced, or none could be written.
+ */
+export function ensureHomeId(home: string): string | null {
+  const path = homeEntry(home, 'home-id');
+  if (existsSync(path)) return homeId(home);
+  const beside = `${path}.${randomBytes(8).toString('hex')}.writing`;
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    const minted = { id: randomBytes(16).toString('hex'), minted: new Date().toISOString() };
+    writeFileSync(beside, `${JSON.stringify(minted, null, 2)}\n`, 'utf8');
+    linkSync(beside, path);
+  } catch {
+    // Almost always: another process minted it first. Its file is the home's id, read below like any other.
+  } finally {
+    try { unlinkSync(beside); } catch { /* never written */ }
+  }
+  return homeId(home);
 }
