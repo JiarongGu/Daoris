@@ -113,6 +113,7 @@ where it is, while one made after the change is made at its new place (D172 poin
 | `quests/<id>/`, `asks/<id>/`, the attachments | the service's `QuestFiles.cs:30, 58` and `Asks.cs:880`; `HistoryHome.cs:13-14` | `work/files/quests/<id>/`, `work/files/asks/<id>/` | stays, per record: handed to sessions as `DAORIS_QUEST_ATTACHMENTS` |
 | `sessions/<id>/files/`, a conversation's attachments | `ChatFiles.cs:37` | `work/files/sessions/<id>/` | stays, per session |
 | `proof/<session>/`, kept proof | the landing design's `${proof}` (`2026-10-04-landing-and-proof-design.md:222, 273`); no writer found in the code at this commit | `work/files/proof/<session>/` | stays, per session |
+| `usage-read/`, where the tool's own sign-in's usage read runs (found by HOMELAYOUT2's census) | `HarnessRoster.cs` (`usage-read` under the home where no account is asked) | `work/usage-read/` | moves: an empty folder an agent runs in |
 
 ### 3.4 `cache/`: what can be fetched again
 
@@ -194,9 +195,14 @@ Each moves at a start where nothing holds it (§7); one held is read where it is
 For each entry the table (§3) holds its category, its new path and its old path. A reader asks for the entry, never for a
 path:
 
-1. its new place, if it is there;
-2. else its old place, if it is there;
+1. its new place, if it holds what the entry is (a file that is not empty and, for JSON, parses; a folder that is not empty;
+   or, for an entry known by the names it holds, one of them), so an empty or half-made new place never shadows a populated
+   old one;
+2. else its old place, if it is there, read even where it does not parse, for its reader to say so;
 3. else its new place, where a writer makes it.
+
+Where both places hold the entry, neither is chosen: the reader is refused with a line naming both, and says so (D172's
+HOMELAYOUT2 note, from a design review).
 
 An entry kept per item (a tree, an account home, a quest's files, a session's files) is asked per item, so an old one is
 read where it is and a new one is made in the new place; a list of them reads both places. The window's memory is one
