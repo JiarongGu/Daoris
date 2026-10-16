@@ -52,6 +52,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['tools', () => [ALL_TOOLS]],
   ['help', () => [HELP_HISTORY, HELP_PROPOSALS]],
   ['browser', () => [keys.browserSettings]],
+  // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends (FABRIC-EVENT5b), no press behind it.
+  ['wiring', () => [keys.systemWiring]],
 ]);
 
 const words = (value: unknown): string[] =>

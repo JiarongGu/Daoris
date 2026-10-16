@@ -340,7 +340,8 @@ export const useOpinions = (enabled: boolean) => useQuery({
 export const useHelpSessions = (
   /**
    * How often to ask again while a conversation the person wrote to is still to go on (ASKHIST1): its record moves to working
-   * as the driver takes the words up, and no event says so to the list. False asks only when the list is stale.
+   * as the driver takes the words up, which a desktop window is told as `sessions` (FABRIC-EVENT5a), so the caller gives it only
+   * to a window with no bus. False asks only when the list is stale.
    */
   refetchInterval: number | false = false,
 ) =>

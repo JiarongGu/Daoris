@@ -26,6 +26,7 @@ const wiring = (measuring: boolean) => ({ schema: 1, reader: 'window', measuring
 
 describe('the system domain', () => {
   afterEach(() => {
+    vi.useRealTimers();
     invoke.mockReset();
     shell.available = true;
   });
@@ -68,9 +69,31 @@ describe('the system domain', () => {
     expect(client.getQueryData<SystemWiring>(keys.systemWiring)?.measuring).toBe(true);
   });
 
-  it('reads again while a walk is under way, and not once it has ended', () => {
-    expect(wiringAgainIn(wiring(true))).toBe(2_000);
-    expect(wiringAgainIn(wiring(false))).toBe(false);
-    expect(wiringAgainIn(undefined)).toBe(false);
+  /** FABRIC-EVENT5b: a window that hears the driver waits for its `wiring` event; one with no bus reads on the clock as before. */
+  it('reads again every two seconds while a walk is under way only where no event tells it', () => {
+    expect(wiringAgainIn(wiring(true), false)).toBe(2_000);
+    expect(wiringAgainIn(wiring(false), false)).toBe(false);
+    expect(wiringAgainIn(undefined, false)).toBe(false);
+    expect(wiringAgainIn(wiring(true), true)).toBe(false);
+  });
+
+  it('does not read a walk again by the clock in a desktop window, and reads it when told', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    invoke.mockImplementation(async () => wiring(true));
+    const client = fresh();
+    const { result } = renderHook(() => useSystemWiring(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(result.current.query.data?.measuring).toBe(true));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(7_000);
+    });
+    expect(invoke).toHaveBeenCalledTimes(1);
+
+    invoke.mockImplementation(async () => wiring(false));
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: keys.systemWiring });
+    });
+    await waitFor(() => expect(result.current.query.data?.measuring).toBe(false));
+    vi.useRealTimers();
   });
 });
