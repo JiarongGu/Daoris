@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using Xunit.Abstractions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -97,7 +98,9 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
 
         // Read beside the D173 note: the starts the tidy makes beyond the keeper's, with one branch and with four.
         output.WriteLine($"END4a git starts beyond the keeper: one branch {overOne}, four branches {overFour}");
-        Assert.True(overFour - overOne < 3, $"the tidy judged branches the line holds none of: {overOne} starts beyond the keeper with one, {overFour} with four");
+        // At most the follow's one read of each tree (TREEFOLLOW1), three here; before FABRIC-END4a the press's list judged each of
+        // them again, nine starts a branch on this machine (16 with one, 43 with four).
+        Assert.True(overFour - overOne <= 3, $"the tidy judged branches the line holds none of: {overOne} starts beyond the keeper with one, {overFour} with four");
     }
 
     /// <summary>The git starts a tidy of <paramref name="root"/> makes, less those its keeper alone makes over the same refs.</summary>

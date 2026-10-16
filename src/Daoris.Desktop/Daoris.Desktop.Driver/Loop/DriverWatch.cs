@@ -260,7 +260,7 @@ public sealed class DriverWatch(
             home,
             async (name, token) => (await RefWatch.RepositoriesAsync(home, service.RegistryAsync, token).ConfigureAwait(false))
                 .FirstOrDefault(each => string.Equals(each.Repository, name, StringComparison.OrdinalIgnoreCase)),
-            token => BranchTidying.InUseAsync(home, service, reviewing => BranchTidying.ReviewingAsync(Reviews, service, reviewing), token))
+            token => BranchTidying.InUseAsync(home, service, asked => BranchTidying.ReviewingAsync(Reviews, service, asked), token))
         {
             Saying = tidy,
             Log = Log,
