@@ -143,7 +143,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-02-ask-drift-evidence.md` | Evidence: requirements lost across runs | D133 |
 | `2026-10-03-steer-evidence.md` | Evidence: live steering boundaries | D136 |
 | `2026-10-03-knowledge-use-evidence.md` | Evidence: questions and owner-only answers | D135 |
-| `DAORIS_FUTURE_DIRECTIONS.md` | Proposal: outside suggestions, preserved | Future-directions review; no implicit adoption |
+| `DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | Proposal: unified collaboration plan (ADR-A to F asked of the owner, §12; Appendix A holds the 2026-10-03 outside suggestions), preserved | Future-directions review; no implicit adoption |
 | `2026-10-03-future-directions-review.md` | Study: proposal weighed against record | ROADMAP horizon |
 | `2026-10-05-integration-review.md` | Evidence: earlier recovery and integration | Archive receipts; remaining proof in TASKS |
 | `2026-10-07-second-opinion-review.md` | Evidence: code/UI findings | Archive outcomes; remaining work in TASKS |
