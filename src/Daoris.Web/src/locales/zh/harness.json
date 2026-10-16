@@ -46,6 +46,7 @@
   "harness.loginNew.nobody": "没有账户登录，所以什么也没有保留。",
   "harness.loginNew.failed": "登录未完成（工具以 {{code}} 退出），所以什么也没有保留。原因见它的输出。",
   "harness.login.action": "登录",
+  "harness.login.forDaoris": "为 Daoris 登录",
   "harness.login.in": "已登录",
   "harness.login.out": "已退出登录",
   "harness.login.unknown": "未知",

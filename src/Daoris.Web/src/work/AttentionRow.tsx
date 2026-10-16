@@ -126,6 +126,8 @@ export type AttentionActs = {
   declineRule?: (item: Attention) => void;
   /** An account's sign-in started (UX6d): the agent's own, through its door, as the agent's page starts it. */
   signIn?: (item: Attention, account: string) => void;
+  /** *Sign in for Daoris* (OWNSPACE1b-B, D175): a new account signed in, the add flow's `login-new` in place, with no step 3. */
+  signInNew?: (item: Attention) => void;
   /** One account read on the press (§5.3, ROSTER1): the one reading a person may ask for, never a look. */
   read?: (item: Attention, account: string) => void;
   /** A ready account let into the list the waiting start reads (D130 §3.3), after its question. */
@@ -156,6 +158,7 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'accept-rule': 'acceptRule',
   'decline-rule': 'declineRule',
   'sign-in': 'signIn',
+  'sign-in-new': 'signInNew',
   read: 'read',
   'let-run': 'letRun',
   reviewed: 'reviewed',
@@ -252,6 +255,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'accept-departure') acts.acceptDeparture?.(item);
     else if (act === 'decline-rule') acts.declineRule?.(item);
     else if (act === 'sign-in' && account) acts.signIn?.(item, account);
+    else if (act === 'sign-in-new') acts.signInNew?.(item);
     else if (act === 'read' && account) acts.read?.(item, account);
     else if (act === 'reviewed') acts.reviewed?.(item);
     else if (act === 'show-again') acts.showAgain?.(item);
@@ -273,6 +277,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'sign-in': return item.kind === 'signed-out'
         ? t('harness.login.action')
         : t('agents.act.signInTo', { account: called(account) });
+      // A static label that names no account: whoever signs in names it (D175 point 6).
+      case 'sign-in-new': return t('harness.login.forDaoris');
       case 'read': return t('agents.act.readFor', { account: called(account) });
       case 'let-run': return t('work.attention.act.letRun', {
         account: item.account?.outside?.label ?? '', workspace: item.account?.outside?.workspace ?? '',

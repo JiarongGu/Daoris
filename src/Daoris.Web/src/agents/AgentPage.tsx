@@ -350,7 +350,8 @@ export function AgentPage({
           {tool.present && signsIn && (
             <Button disabled={busy} onClick={startAdding}>
               <Icon name="plus" size={13} />
-              {t('agents.add.open')}
+              {/* While the agent has no Daoris account the press is the first sign-in, which names no account (D175 point 6). */}
+              {t(tool.accounts.length === 0 ? 'harness.login.forDaoris' : 'agents.add.open')}
             </Button>
           )}
           {tool.present && door.takesKey && !keying && (

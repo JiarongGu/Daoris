@@ -71,8 +71,10 @@ export interface Consideration {
    * For a start held at spawn that passed accounts not signed in (TOOL6g): whose, and which, so the page names each with
    * its sign-in, beside a wait on a cooling account or with none cooling. Absent where it passed none, and on an older shell.
    * `names` (ACCT2b) is the name the person gave each, in the same order, null where one has none; absent on an older shell.
+   * `noAccount` (OWNSPACE1b-B, D175) is true where the hold is the one for no Daoris account signed in: the page says it from
+   * this fact, never from `accounts` being empty.
    */
-  signedOut?: { agent: string; accounts: string[]; names?: (string | null)[] | null } | null;
+  signedOut?: { agent: string; accounts: string[]; names?: (string | null)[] | null; noAccount?: boolean } | null;
   /**
    * For a quest a pause holds (verdict `Paused`, PAUSE1b): whose pause, an ask's or a quest's, which the sentence names and
    * whose *Resume* moves it (D132 §2.3). Absent for every other verdict, and on an older shell.
@@ -131,6 +133,8 @@ export interface AccountWaitTick {
   asks?: string[];
   /** The accounts the held starts passed signed out (TOOL6g), in the order the walk tried them. */
   signedOut?: string[];
+  /** The starts were held because no Daoris account of the agent's is signed in (OWNSPACE1b-B, D175): a fact, never an empty `signedOut`. */
+  noAccount?: boolean;
 }
 
 /** Whether a quest waits for an account (TOOL4g, D125 §4): held at spawn on a cooling account, never parked. */
@@ -229,6 +233,10 @@ export function sittingSentence(sitting: Consideration): string {
   // not carry.
   // Each account by the name the person gave it, which the tick carries beside its id (ACCT2b), else by its id; a sign-in
   // keeps the id, which a terminal takes whatever the account is called by then.
+  // No Daoris account signed in (OWNSPACE1b-B, D175) is a fact the tick carries, said apart from accounts that were passed.
+  if (sitting.verdict === 'Blocked' && sitting.signedOut?.noAccount) {
+    return i18n.t('work.sitting.noAccount', { why: sitting.reason, agent: sitting.signedOut.agent, defaultValue: sitting.reason });
+  }
   const signedOut = sitting.verdict === 'Blocked' && sitting.signedOut?.accounts?.length ? sitting.signedOut : null;
   const signIn = signedOut ? {
     accounts: signedOut.accounts.map((id, at) => signedOut.names?.[at]?.trim() || id).join(i18n.t('work.sitting.signedOutJoin')),

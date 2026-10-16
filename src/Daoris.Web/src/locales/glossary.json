@@ -203,7 +203,7 @@
         "projects.workspace.clearMeanIt", "history.door.*",
         "browser.door.open", "carry.choose", "carry.remove", "chain.hide", "chain.show", "code.back", "projects.git.branch.back",
         "common.*", "convergence.list.close", "convergence.list.open", "convergence.lower", "harness.cooling.tryNow",
-        "harness.install", "harness.login.action", "harness.login.again", "harness.use.down",
+        "harness.install", "harness.login.action", "harness.login.again", "harness.login.forDaoris", "harness.use.down",
         "harness.use.scope.confirmMove", "harness.use.up",
         "harness.pin.action", "harness.pin.open", "harness.pin.unpin", "harness.profile.addKey",
         "harness.profile.keySave", "harness.profile.removeMeanIt",

@@ -458,6 +458,26 @@ describe('the Agents place', () => {
     expect((within(asking).getByRole('textbox', { name: /Its name/ }) as HTMLInputElement).value).toBe('someone@example.invalid');
   });
 
+  /**
+   * OWNSPACE1b-B (D175 point 6): while the agent has no Daoris account, the header's add press is *Sign in for Daoris*, a label
+   * that names no account, and runs the same `login-new` flow, its panel under the header as *Add an account…*'s is.
+   */
+  it('heads with Sign in for Daoris while the agent has no Daoris account, and runs login-new', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      return type === 'HARNESSES' ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [] }] } : WIRING;
+    });
+    place();
+
+    expect(screen.queryByRole('button', { name: 'Add an account…' })).toBeNull();
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign in for Daoris' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'login-new' },
+    });
+    expect(await screen.findByText('Signing in to another Claude Code account')).toBeTruthy();
+  });
+
   /** With no account signed out or unknown there is nobody to bring back: *Add an account…* starts the sign-in at once. */
   it('Add an account… starts the sign-in at once where no account reads signed out or unknown', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {

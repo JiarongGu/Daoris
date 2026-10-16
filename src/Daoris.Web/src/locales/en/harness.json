@@ -46,6 +46,7 @@
   "harness.loginNew.nobody": "Nobody was signed in, so nothing was kept.",
   "harness.loginNew.failed": "Sign-in did not finish (the tool exited {{code}}), so nothing was kept. Its output says why.",
   "harness.login.action": "Sign in",
+  "harness.login.forDaoris": "Sign in for Daoris",
   "harness.login.in": "signed in",
   "harness.login.out": "signed out",
   "harness.login.unknown": "unknown",
