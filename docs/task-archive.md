@@ -15597,3 +15597,57 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - (parent's row) Four driver Process tests failed on main after the OWNSPACE1a, STEER2a, HELPPLUG1c and WIRING1c-i merges.
 
 **Outcome** 2026-10-16: HELPPLUG1c's two spawn tests start Claude Code's doors, which since OWNSPACE1a hold a start with no Daoris account; they now sign one in (`SkillsSpawnProbe.SignIn`). `StopHoldTickTests` and the `ProbeRaceTests` control passed alone and are load flakes, measured: a session's start runs about 18 git commands one after another (STARTGIT1), and the Process half ran beside the heavy gates (GATEORDER1). On Opus: about 79 tool calls. Detail: FIX-LOG 2026-10-16 (the plugin skills spawn tests).
+
+## OWNSPACE1b-A — the Agents and Accounts screens say D175 (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1b-A — the Agents and Accounts screens say D175** (web/modules; after OWNSPACE1a; D175's OWNSPACE1b note, settlements 1, 4, 5 and 8). The own sign-in row stays, read-only and never loud, with no *Runs for* and no work held; with nothing named, the page says *Daoris's accounts, in turn* (`inherited` on the accounts answer); the add flow's toast and the *own sign-in* words that are now false are reworded en and zh. Proof: the agents, accounts and AccountUse tests and stories; i18n and names checks.
+
+**Outcome** 2026-10-16: the own sign-in row is read-only (no *Runs for*, no *Try now*, no work, never loud); the accounts answer carries `inherited` (true wherever the agent never starts in the person's own home and nothing is named) and the page says *Daoris's accounts, in turn*; `NextReason.NoAccount` has its page line; the add flow's toast no longer says no start runs on the account; the false words are reworded en and zh. On Sonnet: about 162 tool calls. Detail: D175's OWNSPACE1b note.
+
+## OWNSPACE1b-B — the hold on the page and *Sign in for Daoris (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1b-B — the hold on the page and *Sign in for Daoris*** (driver/web; after 1b-A; settlements 3, 4, 6 and 7). `AccountWait` and a consideration carry `noAccount`, `NextReason.NoAccount` is said, and *What needs you*'s row runs `login-new` in place (*Sign in for Daoris* / 为 Daoris 登录). Proof: the tick and accounts tests, accountAttention and AttentionBand tests, en and zh.
+
+**Outcome** 2026-10-16: a start held for no Daoris account is a fact on the tick (`noAccount` on the wait and on a consideration's `signedOut`), so *What needs you* lists one row, keyed `wait:<agent>:no-account`, whose *Sign in for Daoris* (为 Daoris 登录) runs `login-new` in place with no step 3; the agent's page heads with the same label while it has no Daoris account; `NextReason.NoAccount` is said apart from `Waits`; the own sign-in's attention row is gone; the add flow says Daoris takes its accounts in turn where the machine names nothing (`PlacesSaid`). On Sonnet: about 162 tool calls. Detail: D175's OWNSPACE1b note.
+
+## OWNSPACE1b-C — Ask Daoris's room and the setup guide (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1b-C — Ask Daoris's room and the setup guide** (driver/web; after OWNSPACE1a, beside 1b-A). The room's Agents section says which Daoris accounts are signed in, or that none is and starts wait; its doors and owed lines stop offering the tool's own home; the setup guide and starters count only Daoris's accounts as signed in. Proof: HelpRoom tests, the three goldens, help setup and starters tests, en and zh.
+
+**Outcome** 2026-10-16: Ask Daoris's room says each Daoris account's sign-in, or that none is and starts wait; `--clear` returns to Daoris's accounts and `--own` only ends an old cool-off; the setup guide and starters count only Daoris's accounts (an `unknown` one still counts as in); the three goldens regenerated and read. On Sonnet: about 57 tool calls. Detail: D175's OWNSPACE1b note.
+
+## OWNSPACE1c — a plugin's agent may say its own home is Daoris's to use (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1c — a plugin's agent may say its own home is Daoris's to use** (driver/CLI; D175's OWNSPACE1a note, settlement 1). A plugin's agent that names a configuration-home variable always takes a Daoris account, and one whose own home is nobody's (a sandboxed tool) has no way to say so: `PluginManifest` gains an optional `ownHome` that sets `HarnessToolchain.RunsInOwnHome` (via `DeclaredAcpAdapter`), with the CLI manifest twin and its `PluginCatalog` read. Proof: a declared plugin with `ownHome` starts with no account and no variable set; one without it holds with `held.no-account`; the twins test holds both readers to the field.
+
+**Outcome** 2026-10-16: a plugin's agent may say its own home is nobody's with `ownHome` (only JSON `true`, default false, never a refusal); it reaches `HarnessToolchain.RunsInOwnHome` through `DeclaredAcpAdapter`, and the CLI twin reads it alike. On Sonnet, with OWNSPACE1d: about 92 tool calls. Detail: D175's OWNSPACE1c note; `PluginCatalogTests` and `plugins.test.ts`.
+
+## OWNSPACE1d — the CLI says D175 (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1d — the CLI says D175** (cli; after OWNSPACE1a). The toolchain's words that say sessions run in the agent's own configuration home (`src/Daoris.Cli/src/agents/toolchain.ts` about 1437, 1950, 2491, 2494, 2591) say Daoris's accounts, or the wait. Proof: `toolchain.test.ts`, `windows.test.ts`.
+
+**Outcome** 2026-10-16: the CLI's words say Daoris's accounts, or the wait (`agent list`, `profile default --clear`, `agent settings`, the own-sign-in block), and the sign-in's end says Daoris takes its accounts in turn where the machine names nothing, the twin of `PlacesSaid`. Detail: D175's OWNSPACE1d note; `toolchain.test.ts`, `windows.test.ts`, `cooling.test.ts`.
+
+## WIRING1c-ii — This Daoris's other cards (2026-10-16, D171)
+
+> - [ ] **WIRING1c-ii — This Daoris's other cards** (web; after 1c-i). Settings files, Variables, Versions, Terminal (read-only), Knowledge store and Logs, as design §3.4-3.9 says, with their `settings.daoris.*` keys en and zh; the window's proof of the whole page (1c-i's cards too) at 1546 and 680 px, both themes and languages. Design §3.4-3.9, §5, §7, §8. Proof: tests, stories, i18n and names checks, the installed window.
+
+**Outcome** 2026-10-16: the Settings files, Variables, Versions, Terminal (read-only), Knowledge store and Logs cards, as molecules over props with en and zh `settings.daoris.*` keys, 25 stories and 15 page tests; the update line comes from the shell's `useUpdateState`, since `SYSTEM_WIRING` carries none; doors go to Driver, Tools, Browser, Agents, Plugins, a workspace's remote and Machine log. The window's proof of the whole page is WIRING1f. On Sonnet: about 82 tool calls. Detail: `docs/2026-10-16-this-daoris-design.md` §3.4-3.9, §7.
+
+## STARTGIT1 — a session's start asks git once per fact (2026-10-16, FLAKE1)
+
+> - [ ] **STARTGIT1 — a session's start asks git once per fact** (driver). Before a session spawns, the tree opener runs about 18 git commands one after another, repeating `symbolic-ref origin/HEAD` three times and `rev-parse --verify refs/heads/<base>` four or five: 8–12 s on this machine, where antivirus makes each process start slow, and past `StopHoldTickTests`' 30 s under the gate's load. Resolve the base once per start and carry it through. Proof: a `ProcessStarts.Within` count of a stub start's git calls, pinned lower; StopHold's start time before and after.
+
+**Outcome** 2026-10-16: a stub driven start's git commands before the spawn fell from 18 to 11: the line's guess is asked once per start through `OneLook`, a guessed line's branch is not re-verified, and a fresh tree is not judged against itself; nothing a start decides changed. `StartGitCountTests` (Process) pins the count. On Sonnet: about 51 tool calls. Detail: commit e9d9d8fc6.
+
+## STEER2c — `sessions say --now` (2026-10-16, D136)
+
+> - [ ] **STEER2c — `sessions say --now`** (CLI/driver host; after STEER2a; D136's STEER2 note, point 5). The terminal's twin of *Send now*, saying what the door did. Proof: the say command's tests.
+
+**Outcome** 2026-10-16: `sessions say --now` sends `now: true` through the request folder to the judge the page's press uses, and prints what the door did: taken at once, the turn stopping so the words go next, or not now with `no-interrupt`, `opening` or `behind`. On Sonnet, with STEER2d: about 104 tool calls. Detail: D136's STEER2c note; `SessionsSayCommandTests`, `SessionWordsTerminalTests`.
+
+## STEER2d — a steer that arrived after the turn ended goes as the next prompt (2026-10-16, D136)
+
+> - [ ] **STEER2d — a steer that arrived after the turn ended goes as the next prompt** (driver; D136's STEER2a note). Where `_session/steering` answers `promptRequired` (the turn ended between the press and the steer), the words are handed back to the held queue and prompted next, not lost with a `words.not-reached` note: the adapter leaves the words to the client for exactly this. Proof: `AcpSteerTests`, the `promptRequired` case asserting the words are prompted next and taken.
+
+**Outcome** 2026-10-16: a steer answered `promptRequired` is handed back to the held queue (`DrivenInbox.HandBack`, `ChatTurns.HandBack`) and prompted next, said once and taken once, with no `words.not-reached` note while the queue is open; a conversation records the handed-back words as taken under their own id (`ChatMessage.Said`). Detail: D136's STEER2d note; `AcpSteerTests`, `ChatTurnsTests`.
