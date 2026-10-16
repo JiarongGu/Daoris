@@ -79,10 +79,10 @@ public sealed class RegistryFollowingTests : IDisposable
         RegistryFollowing.Moved(_home, "game", Noon);
         RegistryFollowing.Remember(_home, Followed("game"), Noon);
 
-        foreach (var file in new[] { RegistryFollowing.MovedFile, RegistryFollowing.FollowedFile })
+        foreach (var entry in new[] { HomeEntry.LinesMoved, HomeEntry.RegistryFollowed })
         {
-            var bytes = File.ReadAllBytes(Path.Combine(_home, file));
-            Assert.False(bytes is [0xEF, 0xBB, 0xBF, ..], $"{file} starts with a byte-order mark");
+            var bytes = File.ReadAllBytes(DaorisHome.Entry(_home, entry));
+            Assert.False(bytes is [0xEF, 0xBB, 0xBF, ..], $"{entry.New} starts with a byte-order mark");
             Assert.DoesNotContain((byte)'\r', bytes);
             Assert.Equal((byte)'\n', bytes[^1]);
         }

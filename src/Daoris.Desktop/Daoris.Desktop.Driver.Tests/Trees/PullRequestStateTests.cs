@@ -30,7 +30,7 @@ public sealed class PullRequestStateTests : LandedFixture
 
     public PullRequestStateTests()
     {
-        var folder = Path.Combine(Home, "plugins", Plugin);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,Plugin);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
         {
@@ -42,7 +42,7 @@ public sealed class PullRequestStateTests : LandedFixture
 
     private void Rule(bool tidy) =>
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: tidy, Plugin: Plugin))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.Driver));
 
     private SessionTrees Trees() => new(Home, new LandingPlugins(
         Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Platform(this)), clock: () => _now));
@@ -344,7 +344,7 @@ public sealed class PullRequestStateTests : LandedFixture
         // The plugin that pushed it is no longer on this machine.
         trees.Recorded.Pushed("engine", gone.Branch!, new PluginLanding("acme.gone", Pushed: true, null, "pushed"), trees.Recorded.Of("engine", gone.Branch!)!.Tip);
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.Driver));
         var unpushed = await LandAsync(trees, root, "unpushed.txt", "unpushed\n", new LandingSubject("s2", "q2", "Unpushed"));
 
         var plan = await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());

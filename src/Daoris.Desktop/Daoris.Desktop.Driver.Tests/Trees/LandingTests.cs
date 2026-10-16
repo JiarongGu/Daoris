@@ -706,14 +706,14 @@ public sealed class LandingTests : IDisposable
 
     private void Plugin(string id, string manifest)
     {
-        var folder = Path.Combine(_home, "plugins", id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
 
     private void Rule(LandingRule rule, bool workspace = false) =>
         (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
-            .Save(Path.Combine(_home, "driver.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
     private async Task<string> RepositoryAsync(string name)
     {

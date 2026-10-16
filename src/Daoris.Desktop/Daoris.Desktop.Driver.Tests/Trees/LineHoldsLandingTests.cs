@@ -202,7 +202,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
     [Fact]
     public async Task The_merge_form_merges_only_what_the_line_lacks()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(Path.Combine(Home, "driver.json"));
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(DaorisHome.Entry(Home, HomeEntry.Driver));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");

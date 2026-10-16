@@ -84,7 +84,7 @@ public sealed class TreeLineLookTests : IDisposable
         using (context.OneLook())
         {
             Assert.Equal(LineSource.Checkout, (await context.LineAsync("one", "engine", "aurora", CancellationToken.None)).Source);
-            DriverConfig.Empty.WithLine("engine", "trunk").Save(Path.Combine(_home, "driver.json"));
+            DriverConfig.Empty.WithLine("engine", "trunk").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
             Assert.Equal(new Line("trunk", LineSource.Repository), await context.LineAsync("one", "engine", "aurora", CancellationToken.None));
         }
 

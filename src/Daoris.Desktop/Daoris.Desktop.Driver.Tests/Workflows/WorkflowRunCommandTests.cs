@@ -264,7 +264,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     /// </summary>
     private string Setup()
     {
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.Driver);
         File.WriteAllText(path, """
             {
               "landings": { "engine": { "form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request" } },
@@ -274,7 +274,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
             }
             """);
 
-        var folder = Path.Combine(_home, "plugins", "example.pull-request");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"example.pull-request");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), JsonSerializer.Serialize(new
         {

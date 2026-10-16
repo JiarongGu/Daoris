@@ -40,7 +40,7 @@ public sealed class TreeGuardTests : IDisposable
         var written = File.GetLastWriteTimeUtc(first);
         var again = TreeGuard.Install(_home);
 
-        Assert.Equal(Path.Combine(_home, TreeGuard.Folder, TreeGuard.ScriptName), first);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Hooks, TreeGuard.ScriptName), first);
         Assert.Equal(first, again);
         Assert.Equal(written, File.GetLastWriteTimeUtc(again));
         var text = File.ReadAllText(first);

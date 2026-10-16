@@ -36,7 +36,7 @@ public sealed class RunningAddressTests : IDisposable
         // One JSON object, BOM-less, beside nothing half-written.
         var text = File.ReadAllText(RunningAddress.PathIn(_home));
         Assert.Equal(JsonValueKind.Object, JsonDocument.Parse(text).RootElement.ValueKind);
-        Assert.Equal([RunningAddress.FileName], Directory.GetFiles(_home).Select(Path.GetFileName));
+        Assert.Equal([RunningAddress.PathIn(_home)], Directory.GetFiles(_home));
     }
 
     [Fact]

@@ -35,7 +35,7 @@ public sealed class SyncRecordsTests : IDisposable
         Assert.Null(game.Line);
         Assert.Equal(At, game.At);
 
-        var text = File.ReadAllText(Path.Combine(_home, SessionBranches.FileName));
+        var text = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.SessionBranches));
         Assert.DoesNotContain("\r", text);
         Assert.EndsWith("\n", text);
     }
@@ -57,10 +57,10 @@ public sealed class SyncRecordsTests : IDisposable
     [Fact]
     public void A_record_that_does_not_read_is_no_record_and_an_entry_without_its_start_is_skipped()
     {
-        File.WriteAllText(Path.Combine(_home, SessionBranches.FileName), "{ not json");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionBranches), "{ not json");
         Assert.Empty(new SessionBranches(_home).All());
 
-        File.WriteAllText(Path.Combine(_home, SessionBranches.FileName), """
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionBranches), """
             { "branches": [ { "repository": "engine", "branch": "daoris/s-1" },
                             { "repository": "engine", "branch": "daoris/s-2", "from": "abcd1234" } ] }
             """);
