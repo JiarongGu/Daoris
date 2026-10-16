@@ -2168,6 +2168,14 @@ kept late (`Late(world)`) so each run is the load's shape. Red with the late loo
 times, five of them beside one plain `dotnet build --no-incremental` of another project (the service's HTTP tests, the desktop
 application, the service's solution: each lasted 16-27 s, so the other seven ran after it), while the parent's gates ran.
 
+**PLUGKIT2 (2026-10-16): the silent plugin's one second covered its start.** PROC1g's two failures of
+`A_silent_plugin_is_still_running_and_said_nothing_within_the_patience` had one cause: `TrialOptions.Patience`, which only
+tests set, was the peer's for every call, so the case's one second was the handshake's too, and node's start and the
+handshake outlasted it under load; the trial said the handshake had not answered and never asked `work/land`. The handshake
+now waits the points' own patience, as the driver's does (`HookPeer.InitializeAsync`'s patience), and a given patience is
+the points' calls'. The case's plugin answers its handshake after 1.5 s, the load's shape every run, and still fails its
+silent `work/land` within the second.
+
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
 **Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no

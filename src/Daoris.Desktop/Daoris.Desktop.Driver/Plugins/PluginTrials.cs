@@ -137,7 +137,10 @@ public static class PluginTrials
         }
 
         var tried = (options.Point is { } one ? [one] : hooks.Points.Distinct(StringComparer.Ordinal)).Select(name => PluginKit.Find(name)!).ToList();
-        var patience = options.Patience ?? tried.Max(kit => kit.Patience);
+        // The handshake waits as the driver's does at these points, whatever patience the points' calls are given: given one
+        // second, node's start and the handshake outlasted it under load, and a silent point was never asked (PLUGKIT2).
+        var handshake = tried.Max(kit => kit.Patience);
+        var patience = options.Patience ?? handshake;
         var root = Path.Combine(scratch, "root");
         PluginFolders.Make(root);
         PluginFolders.Make(entry.Data);
@@ -171,7 +174,7 @@ public static class PluginTrials
 
             // Each call, judged: its sentence when it answered, and when it did not, which of the three
             // ways it did not — the process gone, the process silent, or the process wrong.
-            async Task<bool> StepAsync(string name, string method, string onFailure, Func<Task<string>> call)
+            async Task<bool> StepAsync(string name, string method, string onFailure, Func<Task<string>> call, TimeSpan waits)
             {
                 var clock = Stopwatch.StartNew();
                 try
@@ -191,8 +194,8 @@ public static class PluginTrials
                         return false;
                     }
 
-                    steps.Add(new(name, false, clock.Elapsed >= patience - TimeSpan.FromMilliseconds(100)
-                        ? $"it is running and did not answer `{method}` within {patience.TotalSeconds:0.#}s, so {onFailure}."
+                    steps.Add(new(name, false, clock.Elapsed >= waits - TimeSpan.FromMilliseconds(100)
+                        ? $"it is running and did not answer `{method}` within {waits.TotalSeconds:0.#}s, so {onFailure}."
                         : $"{error.Message} So {onFailure}."));
                     return true;
                 }
@@ -200,9 +203,9 @@ public static class PluginTrials
 
             var alive = await StepAsync("handshake", "initialize", "the driver would not start it", async () =>
             {
-                await peer.InitializeAsync(home, entry.Data, hooks.Points, ct).ConfigureAwait(false);
+                await peer.InitializeAsync(home, entry.Data, hooks.Points, ct, handshake).ConfigureAwait(false);
                 return $"speaks hook wire {HookPeer.ProtocolVersion} and listens on {Listed(peer.Points)}.";
-            }).ConfigureAwait(false);
+            }, handshake).ConfigureAwait(false);
             var shook = steps[^1].Ok;
 
             foreach (var kit in shook ? tried : [])
@@ -218,7 +221,8 @@ public static class PluginTrials
 
                 var frame = (options.Frame ?? kit.Frame).DeepClone().AsObject();
                 if (options.Frame is null && frame.ContainsKey("root")) frame["root"] = root;
-                alive = await StepAsync(kit.Name, $"hook/{kit.Name}", kit.OnFailure, () => AskAsync(peer, kit.Name, frame, ct)).ConfigureAwait(false);
+                alive = await StepAsync(kit.Name, $"hook/{kit.Name}", kit.OnFailure, () => AskAsync(peer, kit.Name, frame, ct), patience)
+                    .ConfigureAwait(false);
             }
 
             // Told to go, and given what the driver gives; a process already gone is not told.
