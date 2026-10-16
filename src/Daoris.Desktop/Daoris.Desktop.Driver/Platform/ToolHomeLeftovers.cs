@@ -52,18 +52,30 @@ public static class ToolHomeLeftovers
     /// <summary>
     /// The person's own tool home and where it was read from: <c>variable</c> where they set <see cref="Variable"/> in their
     /// environment (this process's, else the account's), else <c>default</c>, the <c>.claude</c> folder of their profile, as
-    /// every start that runs in the tool's own home reads it (<see cref="ClaudeTrust.PathFor"/>). A world naming one is read as named.
+    /// every start that runs in the tool's own home reads it (<see cref="ClaudeTrust.PathFor"/>).
     /// </summary>
-    public static (string Path, string From) ToolHomeOf(WiringWorld world)
+    /// <param name="process">This process's variables.</param>
+    /// <param name="account">The account's stored variables, where it keeps any.</param>
+    /// <param name="profile">The person's profile folder.</param>
+    public static (string Path, string From) OwnHome(Func<string, string?> process, Func<string, string?>? account, string profile)
     {
-        if (world.ToolHome is { } named) return (named, "named");
-        foreach (var read in new[] { world.Process, world.Account })
+        foreach (var read in new[] { process, account })
         {
             if (read?.Invoke(Variable) is { } set && !string.IsNullOrWhiteSpace(set)) return (set.Trim(), "variable");
         }
 
-        return (Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude"), "default");
+        return (Path.Combine(profile, ".claude"), "default");
     }
+
+    /// <summary>The own home as a real program reads it: this process's environment, the account's, the user profile.</summary>
+    public static (string Path, string From) OwnHome(WiringWorld world) =>
+        OwnHome(world.Process, world.Account, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+
+    /// <summary>
+    /// The tool home a world reads: the one it was handed, or none. 🔴 A world made by hand names none, so a test that builds one
+    /// reads no machine's tool home; the window's and the terminal's worlds are handed theirs (<see cref="OwnHome(WiringWorld)"/>).
+    /// </summary>
+    public static (string? Path, string From) ToolHomeOf(WiringWorld world) => (world.ToolHome, world.ToolHomeFrom);
 
     /// <summary>Daoris's working roots in a home: each <c>work</c> entry's folder where it holds its items, new place and old.</summary>
     public static IReadOnlyList<string> Roots(string home) =>
@@ -78,7 +90,7 @@ public static class ToolHomeLeftovers
             name.Equals(flat, StringComparison.OrdinalIgnoreCase) || name.StartsWith(flat + "-", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The folder Claude Code keeps its projects in, in the person's tool home.</summary>
-    public static string ProjectsOf(WiringWorld world) => Path.Combine(ToolHomeOf(world).Path, "projects");
+    public static string? ProjectsOf(WiringWorld world) => world.ToolHome is { } tool ? Path.Combine(tool, "projects") : null;
 
     /// <summary>
     /// The project folders that are Daoris's, by name: read from the folder's listing alone, nothing opened. A link is never
@@ -87,8 +99,7 @@ public static class ToolHomeLeftovers
     public static IReadOnlyList<ToolFolder> List(WiringWorld world)
     {
         if (world.Home is not { } home) return [];
-        var projects = ProjectsOf(world);
-        if (!Directory.Exists(projects)) return [];
+        if (ProjectsOf(world) is not { } projects || !Directory.Exists(projects)) return [];
         var roots = Roots(home);
         try
         {

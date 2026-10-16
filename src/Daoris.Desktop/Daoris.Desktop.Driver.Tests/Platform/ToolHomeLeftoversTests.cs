@@ -108,14 +108,43 @@ public sealed class ToolHomeLeftoversTests : IDisposable
     [Fact]
     public void The_tool_home_is_the_variable_the_person_set_else_the_profile_folder()
     {
-        var (home, _, _) = Homes();
         var named = Path.Combine(_root, "named");
-        var world = WorldOf(home, null, name => name == ToolHomeLeftovers.Variable ? named : null);
+        var profile = Path.Combine(_root, "profile");
 
-        Assert.Equal((named, "variable"), ToolHomeLeftovers.ToolHomeOf(world));
-        var fallback = ToolHomeLeftovers.ToolHomeOf(WorldOf(home, null));
-        Assert.Equal("default", fallback.From);
-        Assert.EndsWith(".claude", fallback.Path);
+        Assert.Equal((named, "variable"), ToolHomeLeftovers.OwnHome(name => name == ToolHomeLeftovers.Variable ? named : null, null, profile));
+        // The account's stored variable counts where this process's names none: it is what a new terminal gets.
+        Assert.Equal((named, "variable"), ToolHomeLeftovers.OwnHome(_ => null, name => name == ToolHomeLeftovers.Variable ? named : null, profile));
+        Assert.Equal((Path.Combine(profile, ".claude"), "default"), ToolHomeLeftovers.OwnHome(_ => "  ", null, profile));
+    }
+
+    [Fact]
+    public void A_world_made_by_hand_names_no_tool_home_and_reads_none()
+    {
+        var (home, _, _) = Homes();
+        var world = WorldOf(home, null);
+
+        Assert.Null(ToolHomeLeftovers.ToolHomeOf(world).Path);
+        Assert.Empty(ToolHomeLeftovers.List(world));
+        var read = SystemWiring.Read(world)["toolHome"]!;
+        Assert.Null(read["path"]);
+        Assert.Equal("no-tool-home", (string?)read["pathWhy"]);
+    }
+
+    [Fact]
+    public void The_wiring_answers_the_listed_folders_with_a_size_and_a_time_only_once_measured()
+    {
+        var (world, _, mine, _) = Mixed();
+        world = world with { Sizes = new WiringSizes() };
+
+        var before = SystemWiring.Read(world)["toolHome"]!;
+        var row = before["folders"]!.AsArray().Single(each => (string?)each!["name"] == mine[0])!;
+        Assert.Null(row["bytes"]);
+        Assert.Equal("not-measured", (string?)row["bytesWhy"]);
+
+        world.Sizes.MeasureNow(world.Home!, world.Home, WiringBudget.Default, CancellationToken.None, ToolHomeLeftovers.List(world));
+        var after = SystemWiring.Read(world)["toolHome"]!["folders"]!.AsArray().Single(each => (string?)each!["name"] == mine[0])!;
+        Assert.Equal(10, (long?)after["bytes"]);
+        Assert.NotNull(after["newest"]);
     }
 
     [Fact]

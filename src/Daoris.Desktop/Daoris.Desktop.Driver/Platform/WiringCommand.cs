@@ -36,7 +36,7 @@ public static class WiringCommand
 
         if (measure && world.Home is { } home)
         {
-            world.Sizes.MeasureNow(home, SystemWiring.RootOf(home), WiringBudget.Default, CancellationToken.None);
+            world.Sizes.MeasureNow(home, SystemWiring.RootOf(home), WiringBudget.Default, CancellationToken.None, ToolHomeLeftovers.List(world));
         }
 
         var wiring = SystemWiring.Read(world);

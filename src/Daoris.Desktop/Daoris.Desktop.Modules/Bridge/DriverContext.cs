@@ -73,12 +73,17 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public WiringWorld WiringWorldOf()
     {
         var loop = Loop;
+        var account = WiringWorld.Stored(EnvironmentVariableTarget.User);
+        var (tool, toolFrom) = ToolHomeLeftovers.OwnHome(
+            Environment.GetEnvironmentVariable, account, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
         var world = new WiringWorld
         {
+            ToolHome = tool,
+            ToolHomeFrom = toolFrom,
             Home = loop.Home,
             BaseDirectory = AppContext.BaseDirectory,
             Process = Environment.GetEnvironmentVariable,
-            Account = WiringWorld.Stored(EnvironmentVariableTarget.User),
+            Account = account,
             Machine = WiringWorld.Stored(EnvironmentVariableTarget.Machine),
             Window = new WindowWiring
             {

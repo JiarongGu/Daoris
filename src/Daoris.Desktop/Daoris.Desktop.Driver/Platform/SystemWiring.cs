@@ -145,23 +145,33 @@ public sealed record WiringWorld
     /// <summary>The sizes measured, kept for the process.</summary>
     public WiringSizes Sizes { get; init; } = WiringSizes.Shared;
 
-    /// <summary>The person's own tool home, where a caller names it (a test's scratch one); null reads it from the environment (<see cref="ToolHomeLeftovers.ToolHomeOf"/>, OWNSPACE2).</summary>
+    /// <summary>The person's own tool home (OWNSPACE2); null where none is named: a world made by hand reads no machine's, a test names its scratch one, and the real worlds are handed <see cref="ToolHomeLeftovers.OwnHome(WiringWorld)"/>.</summary>
     public string? ToolHome { get; init; }
+
+    /// <summary>Where <see cref="ToolHome"/> was read from: <c>variable</c> or <c>default</c> as the environment gave it, <c>named</c> where a caller named it.</summary>
+    public string ToolHomeFrom { get; init; } = "named";
 
     /// <summary>The asking terminal's own version, where it is the driver's verbs.</summary>
     public string? DriverVersion { get; init; }
 
     /// <summary>A terminal's world: this process, its account and machine, its status door, its own version.</summary>
-    public static WiringWorld OfThisTerminal(string? home) => new()
+    public static WiringWorld OfThisTerminal(string? home)
     {
-        Home = home,
-        BaseDirectory = AppContext.BaseDirectory,
-        Process = Environment.GetEnvironmentVariable,
-        Account = Stored(EnvironmentVariableTarget.User),
-        Machine = Stored(EnvironmentVariableTarget.Machine),
-        AskStatus = url => ServiceProbe.Ask(url),
-        DriverVersion = SystemWiring.VersionOf(Assembly.GetEntryAssembly()),
-    };
+        var account = Stored(EnvironmentVariableTarget.User);
+        var (tool, from) = ToolHomeLeftovers.OwnHome(Environment.GetEnvironmentVariable, account, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        return new()
+        {
+            Home = home,
+            BaseDirectory = AppContext.BaseDirectory,
+            Process = Environment.GetEnvironmentVariable,
+            Account = account,
+            Machine = Stored(EnvironmentVariableTarget.Machine),
+            AskStatus = url => ServiceProbe.Ask(url),
+            DriverVersion = SystemWiring.VersionOf(Assembly.GetEntryAssembly()),
+            ToolHome = tool,
+            ToolHomeFrom = from,
+        };
+    }
 
     /// <summary>The account's or the machine's stored variables, on Windows, where they are kept; null elsewhere.</summary>
     public static Func<string, string?>? Stored(EnvironmentVariableTarget target) =>
@@ -259,6 +269,7 @@ public static class SystemWiring
         answer["terminal"] = Terminal(world, install ?? runsFrom, address);
         answer["knowledge"] = Knowledge(world, reading);
         answer["logs"] = Logs(world, reading);
+        answer["toolHome"] = ToolHome(world, reading);
 
         WiringRedact.Sweep(answer, secrets);
         return answer;
@@ -969,6 +980,32 @@ public static class SystemWiring
         Fact(logs, "newest", newest, "absent");
         logs["engineLog"] = world.Home is { } h && File.Exists(Path.Combine(DaorisHome.Entry(h, HomeEntry.Window), "chromium", "cef.log"));
         return logs;
+    }
+
+    /// <summary>
+    /// What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3): the project folders its own working
+    /// roots made, by name, each with its size and its newest file's time once measured. Never read inside a folder beyond that.
+    /// </summary>
+    private static JsonObject ToolHome(WiringWorld world, SizeReading? reading)
+    {
+        var (path, from) = ToolHomeLeftovers.ToolHomeOf(world);
+        var folders = new JsonArray();
+        foreach (var folder in ToolHomeLeftovers.List(world))
+        {
+            var row = new JsonObject { ["name"] = folder.Name, ["path"] = folder.Path };
+            var measure = reading?.Tool?.GetValueOrDefault(folder.Name);
+            Fact(row, "bytes", measure?.Bytes, world.Home is { } home && world.Sizes.Measuring(home) ? "measuring" : "not-measured");
+            row["partial"] = measure?.Partial ?? false;
+            Fact(row, "newest", measure?.Newest is { } at ? Moments.Write(at) : null, measure is null ? "not-measured" : "empty");
+            folders.Add(row);
+        }
+
+        var tool = new JsonObject();
+        Fact(tool, "path", path, "no-tool-home");
+        tool["from"] = path is null ? null : from;
+        tool["present"] = ToolHomeLeftovers.ProjectsOf(world) is { } projects && Directory.Exists(projects);
+        tool["folders"] = folders;
+        return tool;
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
