@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — An automatic landing could land on stale facts, from a loop that did not hold the home, and wakes were lost (FABRIC-END7's review)
+
+- **Symptom:** a second maker's review, from source, would not stage END7 with auto-landing on. A look chose two due entries. While
+  the first one's plugin ran, the second's quest could be held again, or its tree could gain commits that needed another review;
+  the second then landed anyway. A `drive --share` loop beside the desktop could land the same due entry. And a quest's release
+  heard while a landing ran waited for the whole look.
+- **Root cause:**
+  - The landing at done is two halves, a look that chooses and a pass beside it that lands. The pass handed `TreeLands` the gate
+    the look had read, and `TreeLands` checks a supplied gate's refusal; it does not read it again. Nothing between the two halves
+    read the quest, the holds or the tree again.
+  - Auto-landing was guarded per process (`RunningSessions`), but the home's lease, which the end keeper checks, was never asked.
+  - END7 took each topic's wakes before the tick and emptied their store whatever followed. A failed tick lost them, and so did a
+    selection skipped because a landing ran.
+- **Fix:**
+  - Each choice is judged again just before its own landing, from a fresh world, and its gate is pinned to the tip read there
+    (`LandingGate.Tip`). The branch is made or advanced to that commit, or refused where the tree moved past it.
+  - Only `HomeLease.HeldHere` selects or launches an automatic landing.
+  - A wake is spent only where a selection judged with it: otherwise it goes back, and a running landing's end offers it again.
+
+  D173's FABRIC-END7 note, *After review*, has the detail.
+- **Verification:** eight new tests, each red against END7 first, then green:
+  - Fast: `AutoLandingLookTests` (2), `LandingWakesTests` (2), `RunningSessionsTests` (1).
+  - Git: `AutoLandingTests` (2), `ReviewLandingTests` (1).
+
+  The landing's Git classes (`AutoLandingTests`, `AutoLandingWakesTests`, `ReviewLandingTests`, `OpinionLandingTests`, 37 tests)
+  pass once, by class.
+
 ## 2026-10-17 — The publish failed: the launcher compiled a driver file that named a type it did not carry (FABRIC-EVENT4)
 
 - **Symptom:** the merge gate's deployment rehearsal failed at its first check, `publish:desktop --service exits 0`, on main
