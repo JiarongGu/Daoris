@@ -148,8 +148,17 @@ public sealed record WiringWorld
     /// <summary>The person's own tool home (OWNSPACE2); null where none is named: a world made by hand reads no machine's, a test names its scratch one, and the real worlds are handed <see cref="ToolHomeLeftovers.OwnHome(WiringWorld)"/>.</summary>
     public string? ToolHome { get; init; }
 
-    /// <summary>Where <see cref="ToolHome"/> was read from: <c>variable</c> or <c>default</c> as the environment gave it, <c>named</c> where a caller named it.</summary>
+    /// <summary>Where <see cref="ToolHome"/> was read from: <c>process</c>, <c>account</c> or <c>default</c> as the environment gave it, <c>named</c> where a caller named it.</summary>
     public string ToolHomeFrom { get; init; } = "named";
+
+    /// <summary>Why no tool home is named though the environment named one: <c>relative</c> or <c>inside-daoris</c>; null otherwise.</summary>
+    public string? ToolHomeWhy { get; init; }
+
+    /// <summary>
+    /// The working directories Daoris's own records hold (<see cref="ToolHomeLeftovers.Origins"/>), read by the window's route
+    /// from the service's records; null where none was read, which lists the rooms with every folder kept <c>records-unread</c>.
+    /// </summary>
+    public IReadOnlyList<ToolOrigin>? ToolOrigins { get; init; }
 
     /// <summary>The asking terminal's own version, where it is the driver's verbs.</summary>
     public string? DriverVersion { get; init; }
@@ -158,7 +167,8 @@ public sealed record WiringWorld
     public static WiringWorld OfThisTerminal(string? home)
     {
         var account = Stored(EnvironmentVariableTarget.User);
-        var (tool, from) = ToolHomeLeftovers.OwnHome(Environment.GetEnvironmentVariable, account, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        var (tool, from, toolWhy) = ToolHomeLeftovers.OwnHome(
+            Environment.GetEnvironmentVariable, account, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), home);
         return new()
         {
             Home = home,
@@ -170,6 +180,7 @@ public sealed record WiringWorld
             DriverVersion = SystemWiring.VersionOf(Assembly.GetEntryAssembly()),
             ToolHome = tool,
             ToolHomeFrom = from,
+            ToolHomeWhy = toolWhy,
         };
     }
 
@@ -988,11 +999,13 @@ public static class SystemWiring
     /// </summary>
     private static JsonObject ToolHome(WiringWorld world, SizeReading? reading)
     {
-        var (path, from) = ToolHomeLeftovers.ToolHomeOf(world);
+        var (path, from, pathWhy) = ToolHomeLeftovers.ToolHomeOf(world);
+        var listing = ToolHomeLeftovers.List(world);
         var folders = new JsonArray();
-        foreach (var folder in ToolHomeLeftovers.List(world))
+        foreach (var folder in listing.Folders)
         {
-            var row = new JsonObject { ["name"] = folder.Name, ["path"] = folder.Path };
+            // The identity is what the press sends back: a folder made anew in the same place is not the one listed.
+            var row = new JsonObject { ["name"] = folder.Name, ["path"] = folder.Path, ["id"] = folder.Id, ["source"] = folder.Source, ["keeps"] = folder.Keeps };
             var measure = reading?.Tool?.GetValueOrDefault(folder.Name);
             Fact(row, "bytes", measure?.Bytes, world.Home is { } home && world.Sizes.Measuring(home) ? "measuring" : "not-measured");
             row["partial"] = measure?.Partial ?? false;
@@ -1001,9 +1014,15 @@ public static class SystemWiring
         }
 
         var tool = new JsonObject();
-        Fact(tool, "path", path, "no-tool-home");
-        tool["from"] = path is null ? null : from;
+        Fact(tool, "path", path, pathWhy ?? "no-tool-home");
+        tool["from"] = from;
         tool["present"] = ToolHomeLeftovers.ProjectsOf(world) is { } projects && Directory.Exists(projects);
+        // Why nothing is listed where nothing can be (a link on the way, a home that is not the person's), and what was left out.
+        tool["why"] = listing.Why;
+        tool["caseInsensitive"] = listing.CaseInsensitive;
+        tool["ambiguous"] = listing.Ambiguous;
+        tool["uncertain"] = listing.Uncertain;
+        tool["recoveryDays"] = ToolHomeLeftovers.RecoveryDays;
         tool["folders"] = folders;
         return tool;
     }

@@ -17,7 +17,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     /// <summary>🔴 A scratch tool home, handed to every world: no test here reads or touches the machine's own.</summary>
     private string ToolHome => Path.Combine(Home, "scratch-person", ".claude");
 
-    private DriverModule WiredModule(WiringSizes sizes) => new(Bus, Loop())
+    private DriverModule WiredModule(WiringSizes sizes, IReadOnlyList<ToolOrigin>? origins = null) => new(Bus, Loop())
     {
         WiringWorlds = world => world with
         {
@@ -25,7 +25,8 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
             Machine = _ => null,
             Sizes = sizes,
             ToolHome = ToolHome,
-            ToolHomeFrom = "variable",
+            ToolHomeFrom = "process",
+            ToolOrigins = origins,
         },
     };
 
@@ -44,25 +45,50 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     [Fact]
     public async Task The_wiring_lists_the_tool_home_s_folders_Daoris_made_and_the_press_removes_only_those()
     {
-        var mine = Project(DaorisHome.Entry(Home, HomeEntry.Trees, "main", "repo", "s-1"));
+        var tree = DaorisHome.Entry(Home, HomeEntry.Trees, "main", "repo", "s-1");
+        var mine = Project(tree);
         var theirs = Project(Path.Combine(Path.GetTempPath(), "somebody", "app"));
-        var module = WiredModule(new WiringSizes());
+        var module = WiredModule(new WiringSizes(), [new ToolOrigin(tree, "tree", null)]);
 
         var listed = (await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("toolHome");
         Assert.Equal(ToolHome, listed.GetProperty("path").GetString());
-        Assert.Equal("variable", listed.GetProperty("from").GetString());
+        Assert.Equal("process", listed.GetProperty("from").GetString());
         var row = Assert.Single(listed.GetProperty("folders").EnumerateArray());
         Assert.Equal(Path.GetFileName(mine), row.GetProperty("name").GetString());
         // Listed by name alone: no size until a measure is asked, and its why is a field, not an absent one.
         Assert.Equal(JsonValueKind.Null, row.GetProperty("bytes").ValueKind);
 
-        var cleared = await AnswerAsync(module, "SYSTEM_TOOL_CLEAR", new { names = new[] { Path.GetFileName(mine), Path.GetFileName(theirs) } });
+        var cleared = await AnswerAsync(module, "SYSTEM_TOOL_CLEAR", new
+        {
+            folders = new[]
+            {
+                new { name = Path.GetFileName(mine), id = row.GetProperty("id").GetString() },
+                new { name = Path.GetFileName(theirs), id = "x" },
+            },
+        });
 
-        Assert.Equal(Path.GetFileName(mine), Assert.Single(cleared.GetProperty("cleared").EnumerateArray()).GetProperty("name").GetString());
+        var moved = Assert.Single(cleared.GetProperty("cleared").EnumerateArray());
+        Assert.Equal(Path.GetFileName(mine), moved.GetProperty("name").GetString());
+        Assert.True(Directory.Exists(moved.GetProperty("to").GetString()));
         var kept = Assert.Single(cleared.GetProperty("kept").EnumerateArray());
         Assert.Equal("not-listed", kept.GetProperty("why").GetString());
         Assert.False(Directory.Exists(mine));
         Assert.True(Directory.Exists(theirs));
+    }
+
+    [Fact]
+    public async Task With_no_service_to_read_the_records_from_every_folder_is_kept_as_unread()
+    {
+        var help = Project(HelpRoom.PathOf(Home));
+        var module = WiredModule(new WiringSizes());
+
+        var row = Assert.Single((await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("toolHome").GetProperty("folders").EnumerateArray());
+        Assert.Equal("records-unread", row.GetProperty("keeps").GetString());
+        var cleared = await AnswerAsync(module, "SYSTEM_TOOL_CLEAR", new { folders = new[] { new { name = Path.GetFileName(help), id = row.GetProperty("id").GetString() } } });
+
+        Assert.Empty(cleared.GetProperty("cleared").EnumerateArray());
+        Assert.Equal("records-unread", Assert.Single(cleared.GetProperty("kept").EnumerateArray()).GetProperty("why").GetString());
+        Assert.True(Directory.Exists(help));
     }
 
     [Fact]

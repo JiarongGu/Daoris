@@ -184,12 +184,14 @@ public sealed class WiringSizes
 
     /// <summary>
     /// One folder's bytes and its newest file's time, walked as the home is (no link followed, the same budget), nothing read
-    /// inside a file (OWNSPACE2). <c>Partial</c> says the walk stopped short, so the bytes are as far as it got.
+    /// inside a file (OWNSPACE2). <c>Partial</c> says any read failed: the walk stopped short, a folder or a file's size or time
+    /// could not be read, so the bytes are as far as it got and the newest time may be older than the truth.
     /// </summary>
     public static (long Bytes, DateTimeOffset? Newest, bool Partial) MeasureFolder(string folder, WiringBudget budget, CancellationToken cancellationToken)
     {
         DateTime? newest = null;
         var bytes = 0L;
+        var failed = false;
         var walk = new Walk(budget, cancellationToken)
         {
             Seen = file =>
@@ -200,12 +202,13 @@ public sealed class WiringSizes
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
-                    // A file whose time cannot be read counts for its size alone.
+                    // Activity it cannot see is activity unknown: the folder counts as not fully read.
+                    failed = true;
                 }
             },
         };
-        walk.Files(folder, (_, size) => bytes += size, _ => { });
-        return (bytes, newest is { } at ? new DateTimeOffset(DateTime.SpecifyKind(at, DateTimeKind.Utc)) : null, walk.Stopped is not null);
+        walk.Files(folder, (_, size) => bytes += size, _ => failed = true);
+        return (bytes, newest is { } at ? new DateTimeOffset(DateTime.SpecifyKind(at, DateTimeKind.Utc)) : null, failed || walk.Stopped is not null);
     }
 
     /// <summary>Whether a name at the home's top is held by an entry of the table: a name that is not is left over.</summary>
