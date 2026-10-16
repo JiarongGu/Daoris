@@ -8,7 +8,8 @@ using Daoris.Knowledge.Http;
 // that, so this exists — the same composed service behind a read-only JSON surface.
 //
 //   DAORIS_HOME            where every machine-local file lives (D63) — the installed desktop's own
-//                          `data/`, set for the account; with neither it nor the DB named, exit 2
+//                          `data/`, which a host the install carries takes where none is named
+//                          (SERVICEHOME2); in a workspace build, with neither it nor the DB named, exit 2
 //   DAORIS_KNOWLEDGE_ROOT  where the repositories are      (default: the parent of this workspace)
 //   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: $DAORIS_HOME/knowledge.db)
 //   DAORIS_EMBED_MODEL     naming one turns semantic on    (absent: lexical only, and it says so)
@@ -74,6 +75,12 @@ if (workspaceError is not null)
     Console.Error.WriteLine(workspaceError);
     return 2;
 }
+
+// A host the install carries finds its home where it runs (SERVICEHOME2, D171 point 1): started from a terminal, where the
+// install's launchers set no variable, it takes the install's own `data/` as this process's home where none is named, as the
+// desktop and the driver host do (D63), before the index, the keys or the log read one. The desktop names the home for the
+// host it starts, and a workspace build is no install, so neither changes.
+DaorisHome.Adopt(AppContext.BaseDirectory);
 
 // The index lives under the Daoris home (D63) unless named directly. No home and no name is a
 // refusal, not a default: an index written somewhere nobody pointed this host is the thing removed.

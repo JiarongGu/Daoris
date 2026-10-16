@@ -232,6 +232,10 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **One instance per install, and a second launch is another main window** (ONEINSTANCE1, D171 point 2). The kit's
   single-instance guard keeps a second process from starting and hands its launch over; `SecondLaunch` opens `main:<n>`
   once the service answers, frameless as the main window is, and its page tells its frame the theme by that name.
+- **It ends with its last main window** (MAINWINDOWS2, D171 point 2). The first main window holds the kit's loop and the
+  services resolved as it (the pickers, the taskbar's count, the tray, the update), so the person's close of it while a
+  `main:<n>` is open hides it (`MainWindows`); the last of those closing closes it for good, and a later launch or the tray
+  shows it again rather than opening another. A close from code is not the person's: the update's is `CloseForGood`.
 - 🔴 **A diff confirms the tree it was given** (`rev-parse --show-toplevel`): git searches upward, and
   would otherwise answer for the repository above it.
 

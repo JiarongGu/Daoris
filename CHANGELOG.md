@@ -8,8 +8,12 @@ with the version and date at release.
 - `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
   holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the
-  `Daoris.exe` to start. The variables still win. Opening Daoris again while it runs now opens another main window of the
-  same Daoris, which hears every press the first one does, rather than only bringing the first one forward.
+  `Daoris.exe` to start. The variables still win. The install's knowledge connector (`app/daoris-knowledge/`), named in your
+  own agent's `.mcp.json` with no `DAORIS_HOME`, and its HTTP host started from a terminal, now take the same home instead
+  of refusing to start. Opening Daoris again while it runs now opens another main window of the
+  same Daoris, which hears every press the first one does, rather than only bringing the first one forward. Closing the
+  first of those windows keeps the others open, and Daoris ends with the last one you close; opening Daoris again, or the
+  tray icon, brings the first one back.
 - Ask Daoris can now set a repository up for you: asked to include a registered repository that has not adopted, it proposes
   the set-up as a card showing what was read on the repository's line, the rule it adds and the quest's whole text, and
   *Apply* publishes that one quest to the repository's own session, as `daoris-driver setup <repository>` does. The same press is
