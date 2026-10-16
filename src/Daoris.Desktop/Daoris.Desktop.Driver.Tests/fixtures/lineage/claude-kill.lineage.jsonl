@@ -1,0 +1,5 @@
+{"at":"2026-10-16T03:23:15.521Z","by":"hook","event":"call","toolUse":"toolu_01MroRM7N6ghTPewQ8d9RKCL","tool":"mcp__daoris-knowledge__knowledge_search","session":"cbea932f-304a-483f-b3bf-4a94c4ebde4a"}
+{"at":"2026-10-16T03:23:15.669Z","by":"call","tool":"knowledge_search","harness":"claude-code","toolUse":"toolu_01MroRM7N6ghTPewQ8d9RKCL"}
+{"at":"2026-10-16T03:23:18.082Z","by":"hook","event":"started","agent":"a47dc441076104543","type":"general-purpose","session":"cbea932f-304a-483f-b3bf-4a94c4ebde4a"}
+{"at":"2026-10-16T03:23:22.754Z","by":"hook","event":"call","agent":"a47dc441076104543","type":"general-purpose","toolUse":"toolu_019N2U7vDG9SyM2rnH7vDxyn","tool":"mcp__daoris-knowledge__knowledge_search","session":"cbea932f-304a-483f-b3bf-4a94c4ebde4a"}
+{"at":"2026-10-16T03:23:22.796Z","by":"call","tool":"knowledge_search","harness":"claude-code","toolUse":"toolu_019N2U7vDG9SyM2rnH7vDxyn"}
