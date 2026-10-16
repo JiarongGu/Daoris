@@ -36,12 +36,14 @@ public sealed class HomeWatchTests : IDisposable
 
     private string Words => HeldWordsFile.PathOf(_home);
 
-    private HomeWatch Watching(TimeSpan every)
+    private HomeWatch Watching(TimeSpan every, bool proposals = false)
     {
-        var watch = HomeWatch.ForDriver(_home, Config, (topic, subject) => _woken.Enqueue((topic, subject)), every, _source);
+        var watch = HomeWatch.ForDriver(_home, Config, (topic, subject) => _woken.Enqueue((topic, subject)), every, _source, proposals: proposals);
         watch.Start();
         return watch;
     }
+
+    private string Proposals => HelpProposals.FolderOf(_home);
 
     /// <summary>What a source says of a name, said on every handle open on its folder, as the system tells each watcher of it.</summary>
     private void Say(string folder, string name, ChangeKind kind = ChangeKind.Changed)
@@ -149,6 +151,47 @@ public sealed class HomeWatchTests : IDisposable
 
         Assert.Empty(_woken);
         Assert.Equal(0, watch.Changes.Judgements);
+    }
+
+    /// <summary>
+    /// FABRIC-EVENT5a: a proposal written to Ask Daoris's folder by another process is heard as the <c>help</c> topic, found by the
+    /// deadline where the source is silent, and a proposal rewritten (settled, a card's units kept) or a claim is no new proposal.
+    /// </summary>
+    [Fact]
+    public async Task A_proposal_written_is_heard_and_found_by_its_deadline_and_a_rewrite_wakes_nothing()
+    {
+        Directory.CreateDirectory(Proposals);
+        await using (var heard = Watching(TimeSpan.FromHours(1), proposals: true))
+        {
+            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{}");
+            Say(Proposals, "p1.json", ChangeKind.Created);
+            await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the proposal was never heard");
+
+            // Settled, or a card's units kept: the same file again, which is no proposal arriving. A claim is no proposal either.
+            _woken.Clear();
+            File.WriteAllText(Path.Combine(Proposals, "p1.json"), "{\"state\":\"applied\"}");
+            File.WriteAllText(Path.Combine(Proposals, "p1.claim"), "");
+            Say(Proposals, "p1.json");
+            Say(Proposals, "p1.claim", ChangeKind.Created);
+            await Settle(heard, 2);
+            await Task.Delay(500);
+            Assert.Empty(_woken);
+        }
+
+        _woken.Clear();
+        await using var silent = Watching(TimeSpan.FromMilliseconds(300), proposals: true);
+        File.WriteAllText(Path.Combine(Proposals, "p2.json"), "{}");
+        await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the proposal was never found at its deadline");
+    }
+
+    /// <summary>The headless host, which has no window to tell, watches no proposals folder.</summary>
+    [Fact]
+    public async Task The_proposals_folder_is_watched_only_where_asked()
+    {
+        Directory.CreateDirectory(Proposals);
+        await using var watch = Watching(TimeSpan.FromHours(1));
+
+        Assert.DoesNotContain(_source.Opened, handle => handle.Folder == Proposals);
     }
 
     /// <summary>A watcher lost its handle: what it missed is unknown, so the topic is judged at once and finds what moved.</summary>

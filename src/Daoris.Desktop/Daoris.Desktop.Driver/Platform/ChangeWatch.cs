@@ -68,6 +68,12 @@ public static class ChangeTopics
     /// <summary>The held words' file under the sessions folder, which another process or a clear may change (FABRIC-EVENT4, link 7).</summary>
     public const string Words = "words";
 
+    /// <summary>
+    /// A proposal arriving in Ask Daoris's folder, written by the connector in another process (FABRIC-EVENT5a): told to the window
+    /// as <c>help</c>, which needs no look, so the shell's watch alone listens for it.
+    /// </summary>
+    public const string Help = "help";
+
     /// <summary>The staged update's folder and the person's request, the installing shell's alone (FABRIC-EVENT4, link 7).</summary>
     public const string Update = "update";
 }

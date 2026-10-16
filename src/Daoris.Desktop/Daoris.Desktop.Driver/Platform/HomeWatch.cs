@@ -58,6 +58,23 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
     }
 
     /// <summary>
+    /// The <c>*.json</c> files of one folder, by their names alone (FABRIC-EVENT5a): a file arriving or leaving moves it, a file written
+    /// again under its name does not, so a proposal settled, or a card's units kept in it, is no new proposal. A claim, a temporary a
+    /// writer renames away and a folder are not heard.
+    /// </summary>
+    public static HomePart Named(string folder)
+    {
+        var full = Path.GetFullPath(folder);
+        return new(
+            full,
+            Subfolders: false,
+            (moved, _) => !moved.Contains('/') && moved.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
+            () => Directory.Exists(full)
+                ? Directory.EnumerateFiles(full, "*.json").Select(file => KeyValuePair.Create(file, "present"))
+                : []);
+    }
+
+    /// <summary>
     /// The files at <paramref name="names"/> under <paramref name="folder"/>, and what is made or removed on the way to them
     /// (<paramref name="ways"/>): a staged build's folder is heard by its manifest and its journal, never by the build's thousand files.
     /// </summary>
@@ -137,8 +154,13 @@ public sealed class HomeWatch : IAsyncDisposable
     /// The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, wherever the config's own resolution put it),
     /// the plugins folder, <c>lines-moved.json</c> and the held words, each its topic (<see cref="ChangeTopics"/>).
     /// </summary>
+    /// <param name="proposals">
+    /// Whether Ask Daoris's proposals folder is heard too (<see cref="ChangeTopics.Help"/>, FABRIC-EVENT5a): the shell's, which has a window
+    /// to tell; the headless host has none.
+    /// </param>
     public static HomeWatch ForDriver(
-        string home, string configPath, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
+        string home, string configPath, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null,
+        bool proposals = false)
     {
         var watch = new HomeWatch(wake, every, source) { Log = log };
         watch.Topic(ChangeTopics.Config, Path.GetFileName(configPath), HomePart.File(configPath));
@@ -147,6 +169,7 @@ public sealed class HomeWatch : IAsyncDisposable
         watch.Topic(ChangeTopics.Lines, Path.GetFileName(lines), HomePart.File(lines));
         var words = HeldWordsFile.PathOf(home);
         watch.Topic(ChangeTopics.Words, Path.GetFileName(words), HomePart.File(words));
+        if (proposals) watch.Topic(ChangeTopics.Help, "proposals", HomePart.Named(HelpProposals.FolderOf(home)));
         return watch;
     }
 

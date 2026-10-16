@@ -625,6 +625,8 @@ public sealed class DriverLoop(
             Log = log,
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
+            // FABRIC-EVENT5a: a proposal arriving in Ask Daoris's folder is told to the windows, which read it through HELP_PROPOSALS.
+            Heard = (_, _) => StatePublisher.Publish(eventBus, StateScopes.Help),
         };
         // FABRIC-EVENT4: and the record files' watchers, reopened at a resume as the requests folder's are.
         using var filesResumed = Power?.Hear(_watch.Resumed);
@@ -811,6 +813,16 @@ public sealed class DriverLoop(
         // would do is told again as a record moves or a later session of its quest opens (MSG1f2).
         service.Moved += Words.OnMoved;
         service.Opened += Words.OnOpened;
+        // FABRIC-EVENT5a: the moment a record moves to `working` here (words taken up on an ended conversation, among them) the
+        // windows are told `sessions` for it, so Ask Daoris's list is not read again every 1.5 s while words wait. An ending is told
+        // as SESSION_ENDED and by the route that moved it, and any other move by its own press.
+        service.Moved += moved =>
+        {
+            if (string.Equals(moved.State, "working", StringComparison.OrdinalIgnoreCase))
+            {
+                StatePublisher.Publish(eventBus, StateScopes.Sessions, moved.Session);
+            }
+        };
         Words.Reached += (session, reach) =>
             _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach));
 

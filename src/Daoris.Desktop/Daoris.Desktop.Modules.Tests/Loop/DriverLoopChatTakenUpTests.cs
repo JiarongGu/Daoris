@@ -68,6 +68,33 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// FABRIC-EVENT5a: the moment the driver takes a conversation's words up, its record moving to <c>working</c>, the windows are told
+    /// <c>sessions</c> for it, so Ask Daoris's list needs no 1.5 s read while words wait. Only that move: the end it came to reaches
+    /// the page as <c>SESSION_ENDED</c> already, and the route that moved a record publishes its own.
+    /// </summary>
+    [Fact]
+    public async Task Taking_words_up_publishes_the_sessions_and_an_ending_publishes_nothing_more()
+    {
+        var root = Path.Combine(Home, "engine");
+        Directory.CreateDirectory(root);
+        var service = new StandIn(root);
+        service.Chat("c1", root, ("w1", "Also log the port."));
+        new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
+        var loop = Loop();
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
+        using var chat = new ChatRunner(
+            client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
+
+        await loop.ComeUpAsync(client, chat);
+
+        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
+        Assert.Equal(["working", "failed"], service.Moves("c1"));
+        var told = Assert.Single(Raised, m => m.Type == StatePublisher.Type);
+        Assert.Equal("""{"scopes":["sessions"],"sessions":["c1"]}""", JsonSerializer.Serialize(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    }
+
+    /// <summary>
     /// A start's end and a chat taken up by itself reach the page in one shape, written in one place: the routes that start
     /// a conversation hand their runs the loop's announcement rather than spelling the event again.
     /// </summary>
