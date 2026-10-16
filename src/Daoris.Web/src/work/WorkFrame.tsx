@@ -12,7 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
-  useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess,
+  useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState,
 } from '../bridge/shell';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -1233,6 +1233,11 @@ export function WorkFrame({
   // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
   // lists those still on their way, with the person's yes to an agent's ask that waits on it and a door to each helper.
   const helperAsks = useSessionHelpers(attended && here ? attended.id : null);
+  // Where its work stands (FABRIC-MILESTONE1b): the driver's derivation for this session, read only for this machine's own record,
+  // whose branch and tree are this machine's. A session no record names a unit for (a chat with no tree) shows none.
+  const milestones = useWorkState(attended && here ? attended.id : null, Boolean(attended && here));
+  const milestoneUnits = milestones.data?.units ?? [];
+  const milestone = (attended && milestoneUnits.length === 1 ? milestoneUnits[0] : milestoneUnits.find((unit) => unit.session === attended?.id)) ?? null;
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
@@ -1976,6 +1981,7 @@ export function WorkFrame({
               })
               : undefined}
             discardingBranch={discardBranch.isPending}
+            milestone={milestone}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),

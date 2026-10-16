@@ -19,7 +19,7 @@ import { TrustAsk } from './TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper';
+  | 'review' | 'opinion' | 'helper' | 'work';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.

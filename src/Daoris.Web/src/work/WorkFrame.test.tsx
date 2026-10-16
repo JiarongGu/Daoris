@@ -3594,6 +3594,42 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
+   * FABRIC-MILESTONE1b (the fabric events design §D0): the attended session's foot says where its work stands, as the driver's
+   * `WORK_STATE` answers for that session: the end, the result, the clean-up and the recovery.
+   */
+  it('says at the foot where the work stands: the end, the result, the clean-up and the recovery, as the driver answers', async () => {
+    const entry = { unit: 'u1', kind: 'tree', resource: 's1a2b3c4', role: 'temporary', disposition: 'blocked', detail: 'a session still holds this tree' };
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'WORK_STATE'
+      ? {
+          units: [{
+            unit: 'u1', repository: 'engine', branch: 'daoris/s1a2b3c4', session: 's1a2b3c4',
+            end: { state: 'ended', by: 'merged', on: 'main', revision: 'a1b2c3d4e5f6', at: '2026-10-17T09:00:00Z', said: 'every commit of it is on `main`' },
+            result: [{ ...entry, kind: 'line', resource: 'main', role: 'result', disposition: 'kept', detail: 'the line holds it' }],
+            cleanup: { state: 'pending', waits: [entry], gone: [] },
+            recovery: [{ ...entry, kind: 'moved-aside', resource: 's1a2b3c4-20261017', role: 'recovery', disposition: 'retained', until: '2026-10-24T09:00:00Z' }],
+            entries: [],
+          }],
+          unread: [],
+        }
+      : DRIVER_STATE));
+    show('s1a2b3c4');
+
+    const foot = await screen.findByRole('region', { name: 'Where this work stands' });
+    expect(foot).toHaveTextContent('Reached: every commit of it is on main');
+    expect(foot).toHaveTextContent('Kept: main');
+    expect(foot).toHaveTextContent('Blocked: tree s1a2b3c4, a session still holds this tree');
+    expect(foot).toHaveTextContent('folder set aside s1a2b3c4-20261017, kept until');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_STATE', expect.objectContaining({ payload: { unit: 's1a2b3c4' } }));
+  });
+
+  it('says nothing at the foot where the driver names no unit for the session', async () => {
+    show('s1a2b3c4');
+
+    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
+    expect(screen.queryByRole('region', { name: 'Where this work stands' })).toBeNull();
+  });
+
+  /**
    * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another says which agent's in its facts, by the roster's
    * name for it, and why in the hand-over's words; its *Details* names that session and attends it on a press.
    */

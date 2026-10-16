@@ -360,6 +360,25 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), `example.off` (off, installed from this install's offer), `example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from), `example.quiet` (on, added from a folder).
 - Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3; its pull request: completed by squash into `main` on 2026-10-04 13:50 UTC, as `example.lands` answered at 2026-10-04 14:02 UTC), `feature/q4-fourth` in `game` (session `s4`, pushed; asking `example.lands` at 2026-10-04 14:30 UTC failed (`late`)).
 
+## Where work has got to
+
+Each unit's milestone is read from this machine's records and never judged again here: whether its end was reached,
+the result kept, its cleanup (pending, with what waits and why, or completed, with what went) and the recovery
+retained and until when. Say it as listed; the terminal's `daoris-driver work state [<unit>]` says the same.
+
+```text
+u-held  console-ui  daoris/s1c2d3e4
+  end       reached: every commit of it is on `feature/app`
+  result    kept: `feature/app` (the line holds it)
+  cleanup   pending:
+              blocked  tree `s1c2d3e4`: a session still holds this tree
+  recovery  moved-aside `s1c2d3e4-20261017`: kept until 2026-10-24 09:00 UTC
+```
+
+1 unit finished its cleanup with nothing retained.
+
+- not read: `reports-db` has no checkout here, so its recovery refs were not read
+
 ### Workspace `default`
 
 | Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |

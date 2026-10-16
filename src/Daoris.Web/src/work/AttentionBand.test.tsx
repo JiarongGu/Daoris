@@ -178,8 +178,9 @@ describe('What needs you on a machine', () => {
 
     // The second opinion's waits (XAGENT1g): the driver's own reading of the work it owes an opinion, asked only while the list
     // places work To review, the only work one is owed on. The agents' asks for a helper waiting on the person (MIXAGENT2c): the
-    // driver's own files. Neither asks an agent.
-    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'HELPER_WAITS', 'OPINION_WAITS', 'RULES', 'SESSION_GROUPS']);
+    // driver's own files. And each unit's milestone (FABRIC-MILESTONE1b), the driver's read of its records, for the unit whose
+    // clean-up waits on the person. None asks an agent.
+    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'HELPER_WAITS', 'OPINION_WAITS', 'RULES', 'SESSION_GROUPS', 'WORK_STATE']);
     const roster = invoke.mock.calls.filter(([, type]) => type === 'HARNESSES');
     expect(roster.every(([, , request]) => !request?.payload?.refresh)).toBe(true);
   });

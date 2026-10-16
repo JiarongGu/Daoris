@@ -10,6 +10,7 @@ import type { SessionGrouping } from './groups';
 import { askName, questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import type { HelperWait } from './HelperAsks';
+import { entryName, type MilestoneUnit, waitsOnPerson } from './milestone';
 import { type OpinionWait, opinionState } from './opinion';
 import { opinionSays } from './OpinionGate';
 import { newestSetUp, setUpRef, waitsForLook } from './review';
@@ -51,6 +52,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c, D163 point 3): the session that asked goes on
   // meanwhile, as one that proposed a rule does, so it holds nothing up.
   helper: 'word',
+  // A unit whose clean-up is blocked on something only the person can settle, or whose owner nothing records (FABRIC-MILESTONE1b,
+  // the fabric events design §D0): nothing running is held by it, and nothing of it is removed until they look.
+  work: 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -318,6 +322,7 @@ export function needsAPerson(
   accounts: AccountsKnown = { tools: [] },
   opinions: readonly OpinionWait[] = [],
   helpers: readonly HelperWait[] = [],
+  works: readonly MilestoneUnit[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -537,6 +542,24 @@ export function needsAPerson(
     };
   });
 
+  // A unit whose clean-up is blocked, or whose owner nothing records (FABRIC-MILESTONE1b): its blocked entries as the driver says
+  // them, its session's page the door, where its foot says the whole milestone. A wait the cycle ends by itself is no row.
+  const blocked = works.flatMap((unit): Attention[] => {
+    const waits = waitsOnPerson(unit);
+    if (waits.length === 0) return [];
+    return [{
+      id: unit.session ?? unit.unit,
+      kind: 'work',
+      title: unit.branch ?? unit.unit,
+      where: unit.repository,
+      since: unit.end.at ?? null,
+      detail: unit.end.state === 'unknown'
+        ? i18n.t('work.milestone.wait.owner')
+        : waits.map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entry.detail })).join(' '),
+      session: unit.session ?? null,
+    }];
+  });
+
   // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
   const accountRows = accountAttention(accounts, considered, quests, asks, registry);
 
@@ -547,7 +570,7 @@ export function needsAPerson(
     (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
   return [
     [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
-    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...helperAsks, ...unanswerable],
+    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...helperAsks, ...blocked, ...unanswerable],
     reviews,
   ].flatMap((group) => group.sort(oldestFirst));
 }

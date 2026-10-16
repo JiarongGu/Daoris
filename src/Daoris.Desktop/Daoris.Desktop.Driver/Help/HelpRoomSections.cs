@@ -38,6 +38,8 @@ internal static class HelpRoomSections
         new HelpRoomPlaces(),
         new HelpRoomWindow(),
         new HelpRoomMachineNow(),
+        // FABRIC-MILESTONE1b: where each unit's work has got to, read beside the machine now.
+        new HelpRoomWork(),
         new HelpRoomWorkspaces(),
         new HelpRoomAgents(),
         new HelpRoomAsks(),
