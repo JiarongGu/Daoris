@@ -404,7 +404,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     public void The_places_are_the_pages_twin()
     {
         Assert.Equal(["overview", "sessions", "quests", "projects", "map", "knowledge", "agents", "plugins", "settings"], HelpPlaces.Views.Select(view => view.Id));
-        Assert.Equal(["start", "appearance", "ai", "driver", "browser", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
+        Assert.Equal(["start", "appearance", "ai", "wiring", "driver", "browser", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
         Assert.Equal(
             [
                 "sessions/waiting", "sessions/review", "sessions/new", "quests/asks", "quests/held",

@@ -121,6 +121,33 @@ describe('the driver domain', () => {
     expect(await hint(undefined, null)).toBe('same');
   });
 
+  /**
+   * WIRING1c (the this-Daoris design §2): where the home lives moved to Settings → This Daoris, and Driver keeps a row whose
+   * control is the door to it. A shell that answers no wiring is older than that page, and its row stays as it was.
+   */
+  it('keeps the Daoris home as a door to This Daoris when the shell answers the wiring, and as it was when it does not', async () => {
+    const home = 'D:/somewhere/Daoris/data';
+    const driver = { ...DRIVER_STATE, home, homeNotice: 'Daoris home: moved in from D:/somewhere/.daoris: driver.json.' };
+    invoke.mockImplementation(async (module: string, type: string) => (module !== 'DAORIS.DRIVER' ? WIRING
+      : type === 'SYSTEM_WIRING' ? { schema: 1 } : driver));
+    const onGo = vi.fn();
+    const { unmount } = show(<SettingsView notify={() => {}} section="driver" onGo={onGo} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Open This Daoris' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'wiring' });
+    // The notices went to the page the door opens.
+    expect(screen.queryByText(/moved in from/)).toBeNull();
+    unmount();
+
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_WIRING') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
+      return module === 'DAORIS.DRIVER' ? driver : WIRING;
+    });
+    show(<SettingsView notify={() => {}} section="driver" onGo={onGo} />);
+    expect(await screen.findByText(/moved in from/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open This Daoris' })).toBeNull();
+  });
+
   it('says nothing about the home on a shell that has never heard of one', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);

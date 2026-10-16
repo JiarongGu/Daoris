@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import { call } from './call';
+import { call, refusedNoRoute } from './call';
 
 // How this Daoris is wired (WIRING1b, the this-Daoris design §6, D50): Settings → This Daoris's read, the screen's door to
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
@@ -56,7 +56,8 @@ export interface SystemWiring {
   remotes: { workspace: string; url: string | null; urlWhy: Why; keySet: boolean; keyPrefix: string | null; from: 'file' | 'environment' }[];
   remotesWhy: Why;
   loop: {
-    holder: { kind: 'desktop' | 'headless'; pid: number; since: string; thisWindow: boolean } | null;
+    // `desktop`, `headless`, `verb`, `migration`, `swap` or `unknown` (HOMELEASE1); a verb says its own word in `what`.
+    holder: { kind: string; instance?: boolean; what?: string | null; pid: number; since: string; thisWindow: boolean } | null;
     looked: string | null; lookedWhy: Why; ready: boolean | null; readyWhy: Why; draining: boolean | null; drainingWhy: Why;
     holds: number | null; holdsWhy: Why; pollSeconds: number | null; pollSecondsWhy: Why;
   };
@@ -89,6 +90,8 @@ export const useSystemWiring = () => {
     queryKey: keys.systemWiring,
     queryFn: () => call<SystemWiring>('SYSTEM_WIRING'),
     enabled: isAvailable,
+    // A shell older than the route answers `NO_ROUTE` every time, so asking again only delays the page saying so.
+    retry: (count, error) => !refusedNoRoute(error) && count < 2,
     refetchInterval: (current) => wiringAgainIn(current.state.data),
   });
   const measure = async () => {
