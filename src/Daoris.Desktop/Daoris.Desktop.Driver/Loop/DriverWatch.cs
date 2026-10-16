@@ -279,6 +279,10 @@ public sealed class DriverWatch(
             {
                 await refs.RecoverAsync(ct).ConfigureAwait(false);
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // The loop closed before the start's reconciliation ended: the next start finds what is still pending.
+            }
             catch (Exception error) when (error is not OperationCanceledException)
             {
                 Log?.Failed("the start's reconciliation of the tidy", error);
@@ -454,7 +458,7 @@ public sealed class DriverWatch(
             if (following is not null) await following.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             // The tidy's too: a removal half done when the loop closed is git's to finish, never left running unwatched.
             if (tidying is not null) await tidying.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-            await recovering.ConfigureAwait(false);
+            await recovering.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
 
