@@ -101,6 +101,15 @@ public sealed record WorkOwner(string? Repository, string Workspace, string? Rec
 /// <param name="Revision">A branch's tip the kept end fact judged; when a quest last moved; none for an ask.</param>
 public sealed record WorkSubject(string? Artifact, string? Revision);
 
+/// <summary>
+/// The record entries a unit was read from (FABRIC-NODE1): a branch unit's session branch entry and the landings that carry it, oldest
+/// first; a quest unit's quest as the service answered it. An ask's are none yet: no node observes an ask.
+/// </summary>
+public sealed record WorkUnitRecords(GrownBranch? Branch, IReadOnlyList<LandedBranch> Landings, QuestView? Quest)
+{
+    public static readonly WorkUnitRecords None = new(null, [], null);
+}
+
 /// <summary>One unit naming another by its id (<see cref="WorkRelation"/>): a link, never a copy of the other's entries.</summary>
 public sealed record WorkLink(string Relation, string Unit);
 
@@ -120,6 +129,12 @@ public sealed record WorkUnit(string Id, string Kind, WorkOwner Owner, WorkSubje
 
     /// <summary>The units it names, by id: what produced it, what it produced, what it waits on, the step it follows.</summary>
     public IReadOnlyList<WorkLink> Links { get; init; } = [];
+
+    /// <summary>
+    /// The canonical record entries its adapter read it from (FABRIC-NODE1): what an observed built-in node reads (<see cref="BuiltInNodes"/>),
+    /// so a node is observed from the unit's own records and never joined to them a second time.
+    /// </summary>
+    public WorkUnitRecords Records { get; init; } = WorkUnitRecords.None;
 
     /// <summary>Whether a record names its owner; an unknown one blocks its cleanup and it never retires (canary 27).</summary>
     public bool OwnerKnown => Owner.Record is not null;

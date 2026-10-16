@@ -378,6 +378,7 @@ public static partial class WorkInventory
         {
             Executors = [.. draft.Sessions],
             Links = quests,
+            Records = new WorkUnitRecords(branch, [.. draft.Landings], null),
         };
     }
 

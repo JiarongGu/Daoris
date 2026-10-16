@@ -36,6 +36,7 @@ public static class QuestUnits
             Executors = [.. sessions.Where(session => string.Equals(session.Quest, quest.Id, StringComparison.Ordinal))
                 .OrderBy(session => session.Created).Select(session => session.Id)],
             Links = links,
+            Records = new WorkUnitRecords(null, [], quest),
         };
     }
 
