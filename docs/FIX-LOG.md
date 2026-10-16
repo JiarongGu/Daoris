@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A node declaration moved with its caller's collections, and a reach's ports could name another acceptance (FABRIC-NODE1d)
+
+- **Symptom:** found by FABRIC-NODE1c's hand-back before GRAPH1 digests declarations: a caller mutating the dictionaries or the
+  delay list it handed a `NodeDeclaration` changed the declaration afterwards, and could turn a declaration that passed its
+  `Problem` into one that would not (a negative delay); a reach whose evidence or output port named another acceptance was kept as
+  it was, so a consumer of that port would rest on, and be invalidated with, the wrong acceptance.
+- **Root cause:** NODE1c copied `NodeAcceptance`'s collections when set but not `NodeDeclaration`'s `Inputs` and `Outputs` or
+  `NodeRetry.DelaysSeconds`; and `Apply` checked a reach's evidence for its presence and schema only, never for the acceptance a
+  port names, which is what `NodeAcceptances.Invalidate` follows downstream.
+- **Fix:** D173's FABRIC-WIRE1a note, its NODE1d point: the declaration copies its inputs and outputs into ordinal-sorted immutable
+  dictionaries and the retry its delays into an immutable array, at construction and at `with`; a reach whose evidence or an output
+  names another acceptance is refused (`other-acceptance`), and a port naming none is kept naming the reach's own.
+- **Verification:** both tests failed at run time on the existing members (the mutated declaration read `acme/other@1`; the foreign
+  port was accepted), then passed; the node suites pass, and the driver's fast half.
+
 ## 2026-10-17 — The node contract let a late outcome land on the wrong attempt and a dispatch be duplicated (FABRIC-NODE1c)
 
 - **Symptom:** a second maker's review of FABRIC-NODE1, before any wire read it: a failure of attempt 1 arriving during attempt 2
