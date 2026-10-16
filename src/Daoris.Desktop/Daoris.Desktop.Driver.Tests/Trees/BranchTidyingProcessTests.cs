@@ -16,12 +16,14 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
     /// <summary>
     /// 🔴 The row's own case, AUTOTIDY1's and AUTOTIDY2a's: every branch the press clears whose work is on the line goes by
     /// itself, each said once in the report and the machine log. A session branch whose work a merge took onto the line goes with
-    /// its tree, and one whose tree was removed by hand; one on the line by content after a squash, its commits kept on a ref of
+    /// its tree; one on the line by content after a squash, its commits kept on a ref of
     /// their own; and, each on a branch the line took, a tree holding an ignored file only it holds and one holding a build's
     /// output the checkout holds too, each folder moved aside whole. Every other branch stays, as the press finds it, and says
     /// nothing: commits beyond the line; commits on a branch of the person's the line does not hold yet, whose session may still
     /// be asked to change them; a tree whose branch never moved, which words to its session go on in; and, each on a branch the
-    /// line took, an uncommitted change, an untracked file, a session working in its tree, and one waiting on the person.
+    /// line took, an uncommitted change, an untracked file, a session working in its tree, and one waiting on the person. A branch
+    /// Daoris did not make and record stays too, with nothing beyond the line: its owner is unknown, so it is the press's
+    /// (FABRIC-END4a, the design §C3 and §D3).
     /// </summary>
     [Fact]
     public async Task The_look_removes_every_branch_the_press_clears_and_keeps_every_other()
@@ -61,7 +63,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var said = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         var branches = await GitAsync(root, "branch", "--list", "daoris/*");
-        Assert.DoesNotContain("daoris/s-treeless", branches, StringComparison.Ordinal);
+        Assert.Contains("daoris/s-treeless", branches, StringComparison.Ordinal);
         var gone = new[] { merged, squashed, ignored, built };
         foreach (var each in gone)
         {
@@ -75,8 +77,8 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
             Assert.True(Directory.Exists(kept.Path), kept.Path);
         }
 
-        Assert.Equal(5, said.Count);
-        Assert.Contains("tidy  engine: removed `daoris/s-treeless`, which held nothing beyond `main`.", said);
+        Assert.Equal(4, said.Count);
+        Assert.DoesNotContain("tidy  engine: removed `daoris/s-treeless`, which held nothing beyond `main`.", said);
         foreach (var each in new[] { merged, ignored, built })
         {
             Assert.Contains(said, line => line.StartsWith(Removed(each), StringComparison.Ordinal));
@@ -99,9 +101,9 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var listed = (await GitAsync(root, "worktree", "list", "--porcelain")).Replace('\\', '/');
         Assert.All(gone, each => Assert.DoesNotContain(each.Path.Replace('\\', '/'), listed, StringComparison.OrdinalIgnoreCase));
         var tidied = Events("branch.tidied");
-        Assert.Equal(5, tidied.Length);
+        Assert.Equal(4, tidied.Length);
         Assert.Equal(
-            [SweepKind.Empty, SweepKind.Empty, SweepKind.Empty, SweepKind.Empty, SweepKind.Landed],
+            [SweepKind.Empty, SweepKind.Empty, SweepKind.Empty, SweepKind.Landed],
             tidied.Select(data => data.GetProperty("kind").GetString()).Order(StringComparer.Ordinal));
         Assert.Empty(Events("branch.kept"));
         // The record of where session branches grew from forgets it, as the press's does.
