@@ -9,6 +9,7 @@
   "work.tool.status.failed": "失败",
   "work.tool.status.refused": "此处不允许",
   "work.tool.status.stopped": "已停止",
+  "work.tool.status.cut": "已中断",
   "work.tool.status.cancelled": "已取消",
   "work.tool.status.disconnected": "已断开",
   "work.tool.status.session-ended": "随会话结束",

@@ -159,6 +159,35 @@ describe('toTurns', () => {
   });
 
   /**
+   * STEER2b (D136): words *Send now* put into the running turn are taken where they were said. They show there as theirs,
+   * never waiting: no waiting entry for a later ask to take, and no "never read" once the session ends. A call the steer
+   * cut is closed by the record as `cut`, which the session's end does not turn into a stop.
+   */
+  it('shows words sent now where they were taken, never as waiting, and a call the steer cut as cut', () => {
+    const events = [
+      e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),
+      e(2, { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' }),
+      e(3, { kind: 'user', origin: 'person', id: 'said-1', reaches: 'now', text: 'stop, use the blue one' }),
+      e(4, { kind: 'tool', id: 'c1', status: 'cut' }),
+      e(5, { kind: 'message', text: 'Blue it is.' }),
+    ];
+    const going = toTurns(events);
+
+    expect(going.turns).toHaveLength(1);
+    expect(going.turns[0]!.items.map((b) => b.kind)).toEqual(['tool', 'held', 'message']);
+    expect(going.turns[0]!.items[1]).toMatchObject({ kind: 'held', reaches: 'now', text: 'stop, use the blue one' });
+    expect(going.turns[0]!.items[0]).toMatchObject({ status: 'cut' });
+
+    const over = settle(toTurns([...events, e(6, { kind: 'turn', stopReason: 'end_turn' })]).turns, false);
+    expect(over[0]!.items[1]!.unreached).toBeUndefined();
+    expect(over[0]!.items[0]!.stopped).toBeUndefined();
+    // A session that ended with the call still cut leaves it cut.
+    const ended = settle(toTurns(events).turns, false);
+    expect(ended[0]!.items[1]!.unreached).toBeUndefined();
+    expect(ended[0]!.items[0]!.stopped).toBeUndefined();
+  });
+
+  /**
    * MSG1f (D137 §3.1): words to a session that parked or ended show at once as a new turn waiting at its foot, never in
    * the run that ended before them. Where the resumed run took them, the same words under the same id are its ask, and
    * the waiting turn goes, keeping the driver's note that the run opened with.

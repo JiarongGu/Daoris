@@ -2182,6 +2182,71 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * STEER2b (D136): *Send now* beside *Queue* sends the typed words with `now: true`. The answer says what came of it: taken
+   * at once in the running turn (nothing to say), the turn stopping so they go next, or that the door could not, the words
+   * held as a queue's are, said in one line.
+   */
+  it('sends typed words to a working driven session now, and says what the door did', async () => {
+    let answer: object = { sent: true, reaches: 'now', why: null, now: true };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+      if (type === 'SESSION_INPUT') return answer;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'drop the cache');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'drop the cache', now: true } });
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalled();
+
+    answer = { sent: true, reaches: 'turn-end', why: null, now: true };
+    await userEvent.type(box, 'then the build');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
+
+    answer = { sent: true, reaches: 'turn-end', why: 'no-interrupt', now: false };
+    await userEvent.type(box, 'and the tests');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Its door cannot take words in a running turn, so these are held for its turn to end.'));
+    // Held, not lost: nothing is put back in the box.
+    expect(box).toHaveValue('');
+  });
+
+  /**
+   * STEER2b (D136): a conversation's *Send now* with words in the box sends them with `now: true`; with the box empty and
+   * words waiting it stops the turn and keeps them (`CANCEL_TURN` with `keep`), which comes back with nothing withdrawn.
+   * *Stop turn* stays the withdrawal.
+   */
+  it('sends a conversation’s words now, and with an empty box stops the turn keeping what waits', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ id: 'q1', text: 'and then test it', files: [] }], taking: true };
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'now', why: null, now: true };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('c0ffee11', notify);
+
+    await screen.findByRole('list', { name: 'waiting for this turn to end' });
+    // Empty box, words waiting: the stop that keeps them.
+    await userEvent.click(await screen.findByRole('button', { name: 'Send now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 'c0ffee11', keep: true } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+
+    await userEvent.type(screen.getByLabelText('Message'), 'use the blue one');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 'c0ffee11', text: 'use the blue one', now: true } });
+  });
+
+  /**
    * SENDLOST1b: words to a working driven session's running door show as sending; a send the page stopped waiting on keeps
    * them, saying the machine has not answered yet, with no error and nothing back in the box, until the driver holds them.
    */
