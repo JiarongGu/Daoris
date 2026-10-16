@@ -83,7 +83,7 @@ export function WorkMilestone({ unit, className }: { unit: MilestoneUnit; classN
               <>
                 <span>{t('work.milestone.cleanup.pending')}</span>
                 {waits.map((entry, index) => (
-                  <span key={`${entry.kind}-${entry.resource}-${index}`} className={entry.disposition === 'blocked' ? 'text-danger' : undefined}>
+                  <span key={`${entry.kind}-${entry.resource}-${index}`} className={entry.disposition === 'blocked' ? 'text-ink-danger' : undefined}>
                     {t(entry.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: what(t, entry), detail: entry.detail })}
                   </span>
                 ))}
