@@ -57,6 +57,28 @@ public sealed class SessionRequestChangeTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-EVENT2c: a home with no <c>sessions/requests/</c> yet still has its folder watched at the loop's start, so the first
+    /// request after an install is taken within the debounce, not at the 3 s listing.
+    /// </summary>
+    [Fact]
+    public async Task A_home_with_no_requests_folder_has_it_made_and_watched_at_the_start()
+    {
+        Assert.False(Directory.Exists(Requests.Folder));
+        var (processes, inbox) = Hearing();
+        await using var watch = new SessionRequestWatch(_home, processes, () => null, every: TimeSpan.FromHours(1), source: _source);
+
+        Assert.True(Directory.Exists(Requests.Folder));
+        var handle = _source.On(Requests.Folder);
+        Assert.NotNull(handle);
+
+        var request = Say("s1");
+        Requests.Write(request);
+        handle!.Raise(Path.GetFileName(Requests.PathOf(request)), ChangeKind.Renamed);
+        await Poll.Until(() => Requests.AnswerOf(request) is not null, () => "the words were never answered", TimeSpan.FromSeconds(30));
+        Assert.Single(inbox.State.Queued);
+    }
+
+    /// <summary>
     /// With the source silenced, the listing behind it takes the request inside the asking door's ten seconds (SessionsCommand's
     /// <see cref="SessionsWorld.Wait"/>): the watch's default, unchanged by the test.
     /// </summary>
