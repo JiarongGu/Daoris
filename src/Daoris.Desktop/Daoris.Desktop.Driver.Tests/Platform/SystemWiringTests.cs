@@ -169,10 +169,10 @@ public sealed class SystemWiringTests : IDisposable
     public void Each_entry_is_shown_where_it_runs_and_an_old_place_says_why_it_stays()
     {
         var (install, home, driver) = Install();
-        File.WriteAllText(Path.Combine(home, "driver.json"), "{}");
-        File.WriteAllText(Path.Combine(home, "keys.json"), "{}");
-        Directory.CreateDirectory(Path.Combine(home, "trees", "a", "b", "c"));
-        Directory.CreateDirectory(Path.Combine(home, "bin"));
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), "{}");
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Keys), "{}");
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Trees, "a", "b", "c"));
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Bin));
 
         var wiring = SystemWiring.Read(Terminal(home, driver));
 
@@ -185,7 +185,7 @@ public sealed class SystemWiringTests : IDisposable
         Assert.Equal(Path.Combine(install, "profiles"), (string?)profiles["path"]);
         Assert.False((bool)profiles["present"]!);
         var keys = profiles["old"]!.AsArray().Single(row => (string?)row!["entry"] == "keys")!;
-        Assert.Equal(Path.Combine(home, "keys.json"), (string?)keys["path"]);
+        Assert.Equal(DaorisHome.Entry(home, HomeEntry.Keys), (string?)keys["path"]);
         Assert.Equal("not-moved", (string?)keys["why"]);
 
         Assert.Equal("resumes", (string?)Folder(wiring, "work")["old"]!.AsArray().Single(row => (string?)row!["entry"] == "trees")!["why"]);
@@ -196,11 +196,11 @@ public sealed class SystemWiringTests : IDisposable
     public void Sizes_are_measured_never_guessed_and_until_then_null()
     {
         var (_, home, driver) = Install();
-        File.WriteAllText(Path.Combine(home, "driver.json"), new string('x', 100));
-        Directory.CreateDirectory(Path.Combine(home, "sessions", "s1", "files"));
-        File.WriteAllText(Path.Combine(home, "sessions", "s1.jsonl"), new string('y', 30));
-        File.WriteAllText(Path.Combine(home, "sessions", "s1", "files", "kept.png"), new string('z', 7));
-        File.WriteAllText(Path.Combine(home, "keys.json"), new string('k', 11));
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), new string('x', 100));
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.SessionFiles, "s1"));
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Sessions, "s1.jsonl"), new string('y', 30));
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.SessionFiles, "s1", "kept.png"), new string('z', 7));
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Keys), new string('k', 11));
         Directory.CreateDirectory(Path.Combine(home, "webview2"));
         File.WriteAllText(Path.Combine(home, "webview2", "old.bin"), new string('w', 5));
         File.WriteAllText(Path.Combine(home, "stranger.txt"), new string('s', 3));
@@ -249,7 +249,7 @@ public sealed class SystemWiringTests : IDisposable
     public async Task A_measure_asked_runs_in_the_background_one_at_a_time_and_is_kept_for_the_next_window()
     {
         var (_, home, _) = Install();
-        File.WriteAllText(Path.Combine(home, "driver.json"), "{}");
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), "{}");
         var sizes = new WiringSizes();
 
         Assert.True(sizes.Start(home, null, WiringBudget.Default));
@@ -384,7 +384,7 @@ public sealed class SystemWiringTests : IDisposable
     public void Each_remote_says_its_address_its_source_and_at_most_a_minted_prefix()
     {
         var (_, home, driver) = Install();
-        File.WriteAllText(Path.Combine(home, "remotes.json"),
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Remotes),
             $$"""{ "team": { "url": "https://team.example/?sig=abc123", "key": "{{Minted}}" }, "lab": { "url": "https://lab.example", "key": "{{Secret}}" } }""");
 
         var fromFile = SystemWiring.Read(Terminal(home, driver));
@@ -430,9 +430,9 @@ public sealed class SystemWiringTests : IDisposable
     public void A_settings_file_says_whether_it_reads_and_what_overrides_it_never_its_contents()
     {
         var (_, home, driver) = Install();
-        File.WriteAllText(Path.Combine(home, "driver.json"), """{ "pollSeconds": 45 }""");
-        File.WriteAllText(Path.Combine(home, "tools.json"), "{ not json: t0psecret");
-        File.WriteAllText(Path.Combine(home, "keys.json"), """{ "claude": "sk-very-secret" }""");
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), """{ "pollSeconds": 45 }""");
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Tools), "{ not json: t0psecret");
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Keys), """{ "claude": "sk-very-secret" }""");
 
         var wiring = SystemWiring.Read(Terminal(home, driver));
 
@@ -472,7 +472,7 @@ public sealed class SystemWiringTests : IDisposable
 
         Assert.Equal("absent", Why((_, _) => true, Answering));
 
-        File.WriteAllText(Path.Combine(home, "running.json"), """{ "url": "http://localhost:5177", "pid": 42, "started": 1 }""");
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Running), """{ "url": "http://localhost:5177", "pid": 42, "started": 1 }""");
         Assert.Equal("ended", Why((_, _) => false, Answering));
         Assert.Equal("not-answering", Why((_, _) => true, _ => new ServiceStatus(false, DateTimeOffset.UtcNow, "no-answer", null, null)));
 
@@ -481,7 +481,7 @@ public sealed class SystemWiringTests : IDisposable
         // With no variable, a terminal an install carries takes the service from the address file (FINDDAORIS1).
         Assert.Equal("address-file", (string?)taken["service"]!["from"]);
 
-        File.WriteAllText(Path.Combine(home, "running.json"), """{ "url": "http://192.0.2.7:5177", "pid": 42, "started": 1 }""");
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Running), """{ "url": "http://192.0.2.7:5177", "pid": 42, "started": 1 }""");
         Assert.Equal("not-loopback", Why((_, _) => true, Answering));
     }
 
@@ -573,7 +573,7 @@ public sealed class SystemWiringTests : IDisposable
     public void The_terminals_measure_walks_the_folder_before_it_answers()
     {
         var (_, home, driver) = Install();
-        File.WriteAllText(Path.Combine(home, "driver.json"), new string('x', 10));
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), new string('x', 10));
 
         Assert.Equal(0, WiringCommand.Run(["--json", "--measure"], Terminal(home, driver), out var json));
 

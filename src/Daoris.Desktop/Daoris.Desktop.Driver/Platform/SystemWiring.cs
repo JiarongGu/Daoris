@@ -398,22 +398,23 @@ public static class SystemWiring
     {
         var rows = new JsonArray();
         if (world.Home is not { } home || !Directory.Exists(home)) return rows;
-        IEnumerable<string> names;
+        // Each as the folder lists it: a name the table does not hold is no entry to ask for by name (HOMELAYOUT2's census).
+        IEnumerable<(string Name, string Path)> found;
         try
         {
-            names = [.. Directory.EnumerateFileSystemEntries(home).Select(Path.GetFileName).OfType<string>()];
+            found = [.. Directory.EnumerateFileSystemEntries(home).Select(path => (Path.GetFileName(path), path))];
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return rows;
         }
 
-        foreach (var name in names.Where(name => !WiringSizes.Held(name)).Order(StringComparer.OrdinalIgnoreCase))
+        foreach (var (name, path) in found.Where(each => !WiringSizes.Held(each.Name)).OrderBy(each => each.Name, StringComparer.OrdinalIgnoreCase))
         {
             rows.Add(new JsonObject
             {
                 ["name"] = name,
-                ["path"] = Path.Combine(home, name),
+                ["path"] = path,
                 ["bytes"] = reading is null ? null : reading.LeftOver.GetValueOrDefault(name),
                 ["why"] = WiringSizes.EarlierBuild.Contains(name) ? "earlier-build" : "not-daoris",
             });

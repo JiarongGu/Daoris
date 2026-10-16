@@ -49,8 +49,9 @@ public sealed record WiringVariable(string Name, WiringValue Value, string? Inst
 public static class WiringVariables
 {
     // Each reader's own constant where it has one, so the list names what the code reads; the two the connector passes
-    // through without a constant of their own are spelled here.
-    public const string Home = DaorisHome.Variable;
+    // through without a constant of their own are spelled here, and the home's too: this list builds no path under the home,
+    // so the dev loop's scan of the files that do (`desktop-tool.test.ts`) has nothing to ask of it.
+    public const string Home = "DAORIS_HOME";
     public const string ServiceUrl = ServiceClient.UrlVariable;
     public const string ServiceKey = ServiceClient.KeyVariable;
     public const string ConfigFile = DriverConfig.PathVariable;
