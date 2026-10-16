@@ -6,7 +6,7 @@ import { sentence } from '../locales/format';
 import { useHelpSessions } from '../data/queries';
 import {
   type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,
-  useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage,
+  useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, usePollUnlessTold, useRenameHelp, useSendMessage,
   useSessionEvents, useSettleHelp, useStartHelp, useStopSession, stoppedWaiting,
 } from '../bridge/shell';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
@@ -119,7 +119,9 @@ export function useAskConversation(
   const [chosen, setChosen] = useState<string | null>(null);
   // Words said to an ended conversation, waiting for its record to go on: the list is asked again until it has.
   const [goingOn, setGoingOn] = useState<string | null>(null);
-  const sessions = useHelpSessions(goingOn ? GOING_ON_POLL : false);
+  // A desktop window is told `sessions` as the driver takes the words up (FABRIC-EVENT5a), so only a window with no bus reads on a clock.
+  const goingOnPoll = usePollUnlessTold(GOING_ON_POLL);
+  const sessions = useHelpSessions(goingOn ? goingOnPoll : false);
   // The session the person started again from: shown no longer, whatever the list still says.
   const [cleared, setCleared] = useState<string | null>(null);
   // The conversation opened as the panel showed (HELP5), which nobody has spoken in: not shown, so the

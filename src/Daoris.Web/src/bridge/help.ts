@@ -7,6 +7,7 @@ import type { HelpPlace } from '../help/places';
 import { call, pressBound } from './call';
 import { syncLookBound } from './lines';
 import { logEvent } from './log';
+import { usePollUnlessTold } from './published';
 
 // Ask Daoris (MOD3): its conversation, the one readied ahead, and what it proposes (D89).
 
@@ -67,10 +68,12 @@ export const HELP_PROPOSALS = ['help-proposals'] as const;
 /**
  * What one conversation of Ask Daoris's proposed that waits for the person (HELP1c, D89), each already
  * judged with the route's own code: one the route would refuse never arrives here, and its agent is told
- * why. Asked again every few seconds while the conversation runs, since a proposal lands mid-turn.
+ * why. A proposal lands mid-turn, written by the connector in another process: the driver tells the windows `help` as it arrives
+ * (FABRIC-EVENT5a), so a desktop window asks no more than that; a window with no bus asks again every few seconds while it runs.
  */
 export const useHelpProposals = (session: string | null, live: boolean) => {
   const { isAvailable } = useShenora();
+  const every = usePollUnlessTold(4000);
   return useQuery({
     queryKey: [...HELP_PROPOSALS, session],
     queryFn: async () => {
@@ -78,7 +81,7 @@ export const useHelpProposals = (session: string | null, live: boolean) => {
       return Array.isArray(answer?.proposals) ? answer.proposals as HelpProposal[] : [];
     },
     enabled: isAvailable && session !== null,
-    refetchInterval: live ? 4000 : false,
+    refetchInterval: live ? every : false,
   });
 };
 

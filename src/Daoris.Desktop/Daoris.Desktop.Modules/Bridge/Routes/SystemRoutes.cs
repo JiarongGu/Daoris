@@ -29,9 +29,16 @@ public sealed class SystemRoutes(DriverContext context)
         var world = await WorldWithOriginsAsync(cancellationToken).ConfigureAwait(false);
         return await Task.Run(() =>
         {
-            if (measure && world.Home is { } home)
+            if (measure && world.Home is { } home
+                && world.Sizes.Start(home, SystemWiring.RootOf(home), WiringBudget.Default, ToolHomeLeftovers.List(world).Folders))
             {
-                world.Sizes.Start(home, SystemWiring.RootOf(home), WiringBudget.Default, ToolHomeLeftovers.List(world).Folders);
+                // FABRIC-EVENT5b: the windows are told a walk is under way, and again once its sizes have landed, in place of the
+                // page reading this every 2 s. The walk keeps one reading, as it ends (`WiringSizes.MeasureNow`), and leaves the home's
+                // walks after it, which `Finished` waits for, so the read this tells is no longer measuring.
+                StatePublisher.Publish(_context.Events, StateScopes.Wiring);
+                var sizes = world.Sizes;
+                _ = sizes.Finished(home).ContinueWith(
+                    _ => StatePublisher.Publish(_context.Events, StateScopes.Wiring), TaskScheduler.Default);
             }
 
             using var answer = JsonDocument.Parse(SystemWiring.Json(SystemWiring.Read(world)));

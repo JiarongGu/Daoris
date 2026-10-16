@@ -110,6 +110,32 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
         Assert.Equal(2, data.GetProperty("bytes").GetInt64());
     }
 
+    /// <summary>
+    /// FABRIC-EVENT5b: a walk that started and a walk that ended each tell the windows <c>wiring</c>, in place of the page's 2 s read: a
+    /// size lands once, as the walk's reading is kept, and the end is told after the walk has left the home, so the read that follows
+    /// says it is no longer measuring. A measure asked while one is under way starts nothing and tells nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_walk_s_start_and_its_end_are_told_as_wiring()
+    {
+        File.WriteAllText(DriverConfigPath, "{}");
+        var sizes = new WiringSizes();
+        var module = WiredModule(sizes);
+
+        await AnswerAsync(module, "SYSTEM_WIRING", new { measure = true });
+        await sizes.Finished(Home);
+
+        await UntilAsync(() => Raised.Count(m => m.Type == StatePublisher.Type) == 2);
+        Assert.All(Raised.Where(m => m.Type == StatePublisher.Type), told =>
+            Assert.Equal("""{"scopes":["wiring"]}""", JsonSerializer.Serialize(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })));
+        Assert.False(sizes.Measuring(Home));
+
+        // A plain read tells nothing: the open walks no folder.
+        await AnswerAsync(module, "SYSTEM_WIRING");
+        await Task.Delay(100);
+        Assert.Equal(2, Raised.Count(m => m.Type == StatePublisher.Type));
+    }
+
     [Fact]
     public async Task No_key_is_in_the_windows_answer()
     {

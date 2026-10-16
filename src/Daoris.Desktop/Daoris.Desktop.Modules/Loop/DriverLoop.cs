@@ -584,6 +584,15 @@ public sealed class DriverLoop(
         // FABRIC-EVENT2d: the shell's power event reopens this watch's roots at a resume; its own overrun rule is the fallback.
         using var resumeHeard = Power?.Hear(requests.Resumed);
 
+        // FABRIC-EVENT5a: Ask Daoris's proposals, heard by this window's process whoever holds the home's lease (a headless loop may
+        // drive while this shell's page and chats are live, and the connector writes there either way). Told once at the start, since
+        // one written before the watch opened is already in its first read, and again at each arrival. Before the lease is waited on.
+        await using var proposals = HomeWatch.ForProposals(
+            homeDirectory, (_, _) => StatePublisher.Publish(eventBus, StateScopes.Help), log: log);
+        proposals.Start();
+        using var proposalsResumed = Power?.Hear(proposals.Resumed);
+        StatePublisher.Publish(eventBus, StateScopes.Help);
+
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
         // What the set does with each plugin goes to the machine log without its words, and into the loop's
@@ -811,6 +820,10 @@ public sealed class DriverLoop(
         // would do is told again as a record moves or a later session of its quest opens (MSG1f2).
         service.Moved += Words.OnMoved;
         service.Opened += Words.OnOpened;
+        // FABRIC-EVENT5a: every move of a record here (words taken up on an ended conversation, among them, and the move back where
+        // the words were withdrawn before the run began, which announces no end) tells the windows `sessions` for it, so Ask Daoris's
+        // list is not read again every 1.5 s while words wait, and a page that read `working` is told the record is not.
+        service.Moved += moved => StatePublisher.Publish(eventBus, StateScopes.Sessions, moved.Session);
         Words.Reached += (session, reach) =>
             _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach));
 
