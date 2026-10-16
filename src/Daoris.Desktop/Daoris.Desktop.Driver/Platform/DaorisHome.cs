@@ -302,6 +302,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry SessionPids = new("session-pids", HomeCategory.Run, "sessions/*.pid", "sessions/*.pid");
     public static readonly HomeEntry Requests = new("requests", HomeCategory.Run, "sessions/requests", "sessions/requests");
     public static readonly HomeEntry EdgeRecord = new("edge-record", HomeCategory.Run, "browser/edge.json", "browser/edge.json");
+    public static readonly HomeEntry Pipe = new("pipe", HomeCategory.Run, "pipe", "pipe");
     public static readonly HomeEntry Logs = new("logs", HomeCategory.Logs, "logs", "logs");
 
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
@@ -314,7 +315,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
         Trees, HelpRoom, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead,
         Toolchain, ToolVersions, Bin,
-        HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord,
+        HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe,
         Logs,
     ];
 

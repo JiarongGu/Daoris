@@ -42,9 +42,39 @@ public static class RefusalLog
         var code = response is null ? IpcErrorCodes.NoHandler : response.Success ? null : response.Error?.Code;
         if (code is null || code == IpcErrorCodes.OperationCancelled) return;
 
-        log.Write(
-            Ours.Contains(code) ? "info" : "warn",
-            "refused",
-            [("code", code), ("request", $"{request.Module}.{request.Type}")]);
+        // A request that came over the pipe is said as the terminal's (RPC1a, the terminal RPC design §8); the page's own stay unmarked.
+        (string, object?)[] said = PipeDoor.Now is { } door
+            ? [("code", code), ("request", $"{request.Module}.{request.Type}"), ("door", door)]
+            : [("code", code), ("request", $"{request.Module}.{request.Type}")];
+        log.Write(Ours.Contains(code) ? "info" : "warn", "refused", said);
+    }
+}
+
+/// <summary>
+/// Which door a request the dispatcher runs came in by (RPC1a, the terminal RPC design §8): <see cref="Terminal"/> for one the
+/// pipe hands it, nothing for the page's own. Found by the flow of the call, as <see cref="PressSteps"/> finds its press, so the
+/// pipeline's middleware reads it without the request carrying it.
+/// </summary>
+public static class PipeDoor
+{
+    /// <summary>The terminal's door: a request that came over the running Daoris's pipe.</summary>
+    public const string Terminal = "terminal";
+
+    private static readonly AsyncLocal<string?> Current = new();
+
+    /// <summary>The door the request this call runs for came in by, or null for the page's.</summary>
+    public static string? Now => Current.Value;
+
+    /// <summary>What the pipe holds around a dispatch: the request came in by the terminal's door until disposed.</summary>
+    internal static IDisposable Enter()
+    {
+        var before = Current.Value;
+        Current.Value = Terminal;
+        return new Restore(before);
+    }
+
+    private sealed class Restore(string? before) : IDisposable
+    {
+        public void Dispose() => Current.Value = before;
     }
 }

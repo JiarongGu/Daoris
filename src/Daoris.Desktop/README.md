@@ -237,6 +237,15 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is. It takes the address only where its
   `/api/status`, asked with redirects off, answers this home's id (HOMEID1: `<home>/home.json`, `HomeIdentity`, which every
   path to the folder reads alike), so another install's service at that address is never used.
+- **A terminal's verb is its client over a pipe** (RPC1a, D171 point 3, `docs/2026-10-16-terminal-rpc-design.md`). Once the
+  loop holds the home it serves `daoris-<home id>-<session>` (`InstancePipe`): this user's alone, the first instance of its
+  name, the kit's request envelopes on lines into the same dispatcher the pages use, so a press over it is the window's press,
+  under way and published in every window. Only a route `PipeCensus` classes `open` runs; a `person` route is refused
+  `confirm-in-window`, a `window` route `window-only`. Each request's id is kept a day under `<home>/pipe/`, bound to its
+  route, its payload and the key its sender sent beside it, so a lost connection cancels nothing, `RESULT` tells the key's
+  holder how a press ended, an id sent twice runs once, and one the journal cannot hold never runs. The address names the pipe as
+  `pipe` once it is served; at the close every new hello is answered `stopping`, the pipe's presses answer, and only then
+  does the address go.
 - **One instance per install, and a second launch is another main window** (ONEINSTANCE1, D171 point 2). The kit's
   single-instance guard keeps a second process from starting and hands its launch over; `SecondLaunch` opens `main:<n>`
   once the service answers, frameless as the main window is, and its page tells its frame the theme by that name.
