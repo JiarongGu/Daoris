@@ -781,6 +781,8 @@ public sealed partial class HelpCoverageTests
 
         ("logs", "useOpenLogFolder", null, new Exempt(
             "it opens the log's folder in the system's file browser and changes nothing; a go reaches Settings → Logs.")),
+        ("wiring", "useOpenLogFolder", null, new Exempt(
+            "This Daoris's Logs card opens the same folder and changes nothing; a go reaches Settings → This Daoris (WIRING1c-ii).")),
     ];
 
     /// <summary>
@@ -790,6 +792,9 @@ public sealed partial class HelpCoverageTests
     private static readonly (string Domain, string Control, string Mentions, Answer Answer)[] Local =
     [
         ("start", "a step's door", "onGo", new Door("go", "go")),
+        ("wiring", "Measure again", "measure", new Exempt(
+            "it asks the shell to count the folders' sizes again and changes nothing; the page shows what is true of this install, "
+            + "and a go reaches Settings → This Daoris (WIRING1c).")),
         ("appearance", "theme", "useThemeChoice", new Exempt(
             "a viewer's own look, kept by this window and never the machine's (D66); Ask Daoris proposes what the machine does.")),
         ("appearance", "language", "changeLanguage", new Exempt(
@@ -803,7 +808,7 @@ public sealed partial class HelpCoverageTests
     private static readonly (string Control, string Form, Answer Answer)[] Forms =
     [
         // LEFT3: the terminal's `--clear` made this the screen's and the terminal's both (D50), and Ask Daoris's next.
-        ("agents: useHarnessAction profile-default", "clearing an account's default back to the tool's own home",
+        ("agents: useHarnessAction profile-default", "clearing an account's default back to Daoris's accounts",
             new Owed(HelpRoomOwed.DefaultClear)),
     ];
 

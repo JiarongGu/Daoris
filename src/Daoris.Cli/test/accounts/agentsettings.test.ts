@@ -283,8 +283,11 @@ test('the tool’s own home is never touched: with no account anywhere, the verb
 
   const error = captureError(() => run(['settings', 'claude-code', 'model', 'opus'], fx.root));
 
+  // OWNSPACE1d (D175): it says Daoris's accounts, and the sign-in that makes one.
+  assert.match(error.message, /has no Daoris account named here/);
   assert.match(error.message, /own configuration home/);
   assert.match(error.message, /--account/);
+  assert.match(error.message, /daoris agent login claude-code --new/);
   fx.cleanup();
 });
 

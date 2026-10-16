@@ -90,7 +90,7 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  focus = 0, accepts, onRemove, onEdit, going, fold = false,
+  onSendNow, onSendHeld, focus = 0, accepts, onRemove, onEdit, going, fold = false,
 }: {
   /**
    * Fold the waiting words to one line with their count, open to the list on a press (WAITFOOT2c): a park's answer box and
@@ -180,6 +180,16 @@ export function Composer({
    */
   onStop?: () => void;
   onStopTurn?: () => void;
+  /**
+   * *Send now* beside *Queue* while a turn runs (STEER2b, D136): the box's words and files go in the running turn. Absent,
+   * none is offered. The driver carries it out by its door; the caller says what it came to.
+   */
+  onSendNow?: (text: string, files: File[]) => void;
+  /**
+   * *Send now* with the box empty and words held: stop the turn so they go next, keeping them. Offered only with
+   * `stoppable`, since a door that cannot stop a turn has no way to send what is held.
+   */
+  onSendHeld?: () => void;
 }) {
   const { t } = useTranslation();
   const waitingLabel = useId();
@@ -353,6 +363,25 @@ export function Composer({
     setText('');
     setCarry(NO_CARRY);
     attach.forget();
+  };
+
+  // *Send now* (STEER2b, D136): the box's words go in the running turn when it holds any; with the box empty it presses what
+  // is held (a stop that keeps it), offered only where the door can stop a turn. Enter stays the queue, and no key twins it:
+  // Ctrl+Enter already queues, as every Enter without Shift does.
+  const hasWords = text.trim() !== '' || files.length > 0;
+  const heldPress = Boolean(onSendHeld) && stoppable && queued.length > 0;
+  const sendNowShown = live && taking && !editing && ((hasWords && Boolean(onSendNow)) || (!hasWords && heldPress));
+  const sendNow = () => {
+    if (hasWords) {
+      const message = text.trim();
+      if (accepts && !accepts(message)) return;
+      onSendNow?.(message, files);
+      setText('');
+      setCarry(NO_CARRY);
+      attach.forget();
+      return;
+    }
+    onSendHeld?.();
   };
 
   return (
@@ -549,6 +578,11 @@ export function Composer({
             </Tip>
             {chooser.input}
           </>
+        )}
+        {sendNowShown && (
+          <Tip content={t('work.steer.nowTip')}>
+            <Button type="button" disabled={stopping || sending} onClick={sendNow}>{t('work.steer.now')}</Button>
+          </Tip>
         )}
         {live && taking && stoppable && onStopTurn && (
           <Tip content={stopTurnTip ?? t('work.composer.stopTurnTip')}>

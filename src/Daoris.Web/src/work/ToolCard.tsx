@@ -58,7 +58,7 @@ const KIND_ICON: Record<string, IconName> = {
  * driver refused (HELP4) is not a failure of the harness's, so it is quiet.
  */
 const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'failed'> = {
-  pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'failed', refused: 'idle',
+  pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'failed', refused: 'idle', cut: 'idle',
 };
 
 /**

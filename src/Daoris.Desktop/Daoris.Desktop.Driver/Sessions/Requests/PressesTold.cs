@@ -16,7 +16,7 @@ public sealed record PressTold(string Route, string? Session, DateTimeOffset At)
 /// <summary>
 /// The presses a terminal tells (STATEHUB1e, D169 point 8): <c>daoris-driver trees land|remove|clean|sync|hand</c> run in a process
 /// with no bus of the desktop's, so each, once it has acted, leaves a note of what it pressed in the request folder every loop on the
-/// home already watches each second (<see cref="SessionRequestWatch"/>), and the shell's loop publishes it as the window's press of
+/// home already watches (<see cref="SessionRequestWatch"/>, woken as the note arrives, FABRIC-EVENT2), and the shell's loop publishes it as the window's press of
 /// that route is published: the same scopes, so a terminal's press reads in an open window as a window's does.
 /// </summary>
 /// <remarks>
@@ -65,7 +65,7 @@ public sealed partial class PressesTold(string home)
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";
 
-    /// <summary>How long a note nobody took stands: the loop looks each second, and a minute is ample, as for a request.</summary>
+    /// <summary>How long a note nobody took stands: the loop looks as it arrives or within a few seconds, and a minute is ample, as for a request.</summary>
     public static readonly TimeSpan Lifetime = SessionRequests.Lifetime;
 
     /// <summary>The request folder every loop watches.</summary>

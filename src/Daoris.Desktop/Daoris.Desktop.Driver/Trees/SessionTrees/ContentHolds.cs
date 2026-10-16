@@ -27,6 +27,25 @@ public sealed record ContentHold(string Where, bool Squash)
 }
 
 /// <summary>
+/// What the content proof found (PROOF-UNREAD1): the work held (<see cref="Hold"/>), not held, or unread (<see cref="Unread"/>, git's
+/// failure in a clause) where a read it needs failed. Unread is never held and never "not held": a caller keeps what it would keep
+/// for either, and says it could not read.
+/// </summary>
+/// <param name="Hold">Where the work is held; null where it is not, or where <paramref name="Unread"/> says git could not tell.</param>
+/// <param name="Unread">Why git could not tell, or null where the proof was read through.</param>
+internal sealed record ContentProof(ContentHold? Hold, string? Unread)
+{
+    /// <summary>The proof read through and found nothing holding the work.</summary>
+    public static readonly ContentProof NotHeld = new(null, null);
+
+    /// <summary>The work is held.</summary>
+    public static ContentProof Of(ContentHold hold) => new(hold, null);
+
+    /// <summary>A read failed, and nothing found the work held.</summary>
+    public static ContentProof UnreadBy(string why) => new(null, why);
+}
+
+/// <summary>
 /// The content proof and what a removal keeps and deletes by it (SQUASHTIDY1, SQUASHTIDY1c; PART10l, out of
 /// <c>SessionTrees.Content.cs</c>): where a branch's work is held by content, what a tree holds that no commit does, the
 /// recovery ref a content-held removal keeps, and the delete at the commit judged. Over the trees' context for the record of
@@ -62,8 +81,8 @@ internal sealed class ContentHolds(TreeContext context)
     /// <para>Failing both, its files read the same on one branch of the person's: a local branch outside <c>daoris/</c>, where a
     /// cherry-pick put them. One holder holds all of them, so the sentence can name it; work split over two is not proven.</para>
     ///
-    /// <para>🔴 <b>Null keeps the refusal</b>: commits that change no file leave nothing to find (D102), and a comparison git could
-    /// not make proves nothing. The paths are <c>--no-renames</c>, so a rename is both its paths and a deletion is a path the
+    /// <para>🔴 <b>Nothing held keeps the refusal</b>: commits that change no file leave nothing to find (D102), and a comparison git
+    /// could not make proves nothing, and says so (<see cref="ContentProof.Unread"/>, PROOF-UNREAD1) rather than reading as not held. The paths are <c>--no-renames</c>, so a rename is both its paths and a deletion is a path the
     /// holder must not have; git compares them as blobs, so the same means byte for byte as the repository stores it.</para>
     ///
     /// <para>🔴 <b>Every comparison is between object ids read once</b> (SQUASHTIDY1c): the tip is the caller's, and its tree is
@@ -76,44 +95,65 @@ internal sealed class ContentHolds(TreeContext context)
     /// <param name="line">The repository's line, or null where none is set and git names none.</param>
     /// <param name="notHolders">The branches that may not hold its work: those a landing made and recorded here.</param>
     /// <param name="refs">The judgement's refs (PROC1d-ii), the repository's whichever tree <paramref name="cwd"/> is; null asks git.</param>
-    internal static async Task<ContentHold?> HeldByContentAsync(
+    internal static async Task<ContentProof> HeldByContentAsync(
         string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct, RefSnapshot? refs = null)
     {
+        // PROOF-UNREAD1: a read git could not make is remembered, so no failure ends as "not held"; a hold found by other
+        // reads still stands, since it is found, not assumed.
+        var (lineForms, unread) = await LandedProofs.ReadLineFormsAsync(cwd, line, ct, refs).ConfigureAwait(false);
         var forms = new List<(string Name, string Id)>();
-        foreach (var form in await LandedProofs.LineFormsAsync(cwd, line, ct, refs).ConfigureAwait(false))
+        foreach (var form in lineForms)
         {
             if (await TreeRefs.CommitOfAsync(cwd, form.Ref, ct, refs).ConfigureAwait(false) is { } formId) forms.Add((form.Name, formId));
+            else unread ??= $"git could not read `{form.Name}`";
         }
 
-        if (forms.Count == 0) return null;
-        var (treeCode, tree, _) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{tip}^{{tree}}"], ct)
+        if (forms.Count == 0) return unread is null ? ContentProof.NotHeld : ContentProof.UnreadBy(unread);
+        var (treeCode, tree, treeErr) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{tip}^{{tree}}"], ct)
             .ConfigureAwait(false);
-        if (treeCode != 0) return null;
+        if (treeCode != 0) return ContentProof.UnreadBy($"git could not read the branch's tree: {Said(treeErr)}");
 
         IReadOnlyList<string>? changed = null;
         foreach (var (form, formId) in forms)
         {
-            var (baseCode, mergeBase, _) = await WorkingTree.GitAsync(cwd, ["merge-base", tip, formId], ct).ConfigureAwait(false);
-            if (baseCode != 0) continue;
-            var paths = await LandedProofs.NamesAsync(cwd, mergeBase.Trim(), tip, ct).ConfigureAwait(false);
-            if (paths is null || paths.Count == 0) continue;
-            changed ??= paths;
-
-            var (logCode, trees, _) = await WorkingTree.GitAsync(cwd, ["log", "--format=%T", $"{mergeBase.Trim()}..{formId}"], ct)
-                .ConfigureAwait(false);
-            if (logCode == 0 && trees.Split('\n', StringSplitOptions.TrimEntries).Contains(tree.Trim(), StringComparer.Ordinal))
+            var (baseCode, mergeBase, baseErr) = await WorkingTree.GitAsync(cwd, ["merge-base", tip, formId], ct).ConfigureAwait(false);
+            if (baseCode != 0)
             {
-                return new ContentHold(form, Squash: true);
+                // Exit 1 is git's answer that they share no commit; anything else is a read that failed.
+                if (baseCode != 1) unread ??= $"git could not find where the branch left `{form}`: {Said(baseErr)}";
+                continue;
             }
 
-            if (await SameFilesAsync(cwd, tip, formId, paths, ct).ConfigureAwait(false)) return new ContentHold(form, Squash: false);
+            var paths = await LandedProofs.NamesAsync(cwd, mergeBase.Trim(), tip, ct).ConfigureAwait(false);
+            if (paths is null)
+            {
+                unread ??= $"git could not list the files the branch changed since it left `{form}`";
+                continue;
+            }
+
+            if (paths.Count == 0) continue;
+            changed ??= paths;
+
+            var (logCode, trees, logErr) = await WorkingTree.GitAsync(cwd, ["log", "--format=%T", $"{mergeBase.Trim()}..{formId}"], ct)
+                .ConfigureAwait(false);
+            if (logCode != 0) unread ??= $"git could not read `{form}`'s commits: {Said(logErr)}";
+            else if (trees.Split('\n', StringSplitOptions.TrimEntries).Contains(tree.Trim(), StringComparer.Ordinal))
+            {
+                return ContentProof.Of(new ContentHold(form, Squash: true));
+            }
+
+            switch (await SameFilesAsync(cwd, tip, formId, paths, ct).ConfigureAwait(false))
+            {
+                case true: return ContentProof.Of(new ContentHold(form, Squash: false));
+                case null: unread ??= $"git could not compare the branch's files with `{form}`"; break;
+            }
         }
 
-        if (changed is null) return null;
+        if (changed is null) return unread is null ? ContentProof.NotHeld : ContentProof.UnreadBy(unread);
         // Newest first: a cherry-pick is a recent commit, so the holder is usually found before the rest are compared.
-        var (refsCode, byDate, _) = await WorkingTree.GitAsync(
+        var (refsCode, byDate, refsErr) = await WorkingTree.GitAsync(
             cwd, ["for-each-ref", "--sort=-committerdate", "--format=%(objectname) %(refname)", "refs/heads/"], ct).ConfigureAwait(false);
-        if (refsCode != 0) return null;
+        if (refsCode != 0) return ContentProof.UnreadBy(unread ?? $"git could not list the branches: {Said(refsErr)}");
         foreach (var row in byDate.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var space = row.IndexOf(' ');
@@ -125,17 +165,24 @@ internal sealed class ContentHolds(TreeContext context)
                 continue;
             }
 
-            if (await SameFilesAsync(cwd, tip, id, changed, ct).ConfigureAwait(false)) return new ContentHold(branch, Squash: false);
+            switch (await SameFilesAsync(cwd, tip, id, changed, ct).ConfigureAwait(false))
+            {
+                case true: return ContentProof.Of(new ContentHold(branch, Squash: false));
+                case null: unread ??= $"git could not compare the branch's files with `{branch}`"; break;
+            }
         }
 
-        return null;
+        return unread is null ? ContentProof.NotHeld : ContentProof.UnreadBy(unread);
     }
 
-    /// <summary>Whether every one of <paramref name="paths"/> reads on <paramref name="holder"/> as on <paramref name="tip"/>; false where git could not say.</summary>
-    private static async Task<bool> SameFilesAsync(string cwd, string tip, string holder, IReadOnlyList<string> paths, CancellationToken ct)
+    /// <summary>Git's own words for a failure, or that it said none.</summary>
+    private static string Said(string error) => string.IsNullOrWhiteSpace(error) ? "git said nothing" : FirstLine(error);
+
+    /// <summary>Whether every one of <paramref name="paths"/> reads on <paramref name="holder"/> as on <paramref name="tip"/>; null where git could not say.</summary>
+    private static async Task<bool?> SameFilesAsync(string cwd, string tip, string holder, IReadOnlyList<string> paths, CancellationToken ct)
     {
         var differing = await LandedProofs.NamesAsync(cwd, tip, holder, ct).ConfigureAwait(false);
-        if (differing is null) return false;
+        if (differing is null) return null;
         var differs = new HashSet<string>(differing, StringComparer.Ordinal);
         return !paths.Any(differs.Contains);
     }

@@ -111,10 +111,11 @@ read for it.
 
 **A person's words are said to a session, whatever its door and its state.** Daoris delivers them at the earliest
 point the session's door allows, the session's record shows them the moment they are said with when they reach it,
-and where it took them is recorded again under the same id (D136 §3). There are three reaches.
+and where it took them is recorded again under the same id (D136 §3). There are four reaches.
 
 | Reach | When | Delivered | The conversation says, while it waits |
 |---|---|---|---|
+| `now` | the person pressed *Send now* while its turn runs, on a door whose agent steers (D136's 2026-10-16 note) | at once by `_session/steering`, cutting the step in flight, and taken where the agent answers `injected` | nothing: taken at once (STEER2a; the page's words, STEER2b) |
 | `next-step` | its turn is running, on a door that takes words during a turn | at once, read at the agent's next step | *Held: it reads this at its next step.* (built) |
 | `turn-end` | its turn is running, on a door that does not | held, then the next prompt of the same conversation when the turn ends | *Held: it reads this when its turn ends.* (built) |
 | `resume` | it is parked or has ended | held; its record reopens and its harness conversation resumes with them as its next prompt | *Held: the same session goes on with this at the driver's next look.* (§5.1) |

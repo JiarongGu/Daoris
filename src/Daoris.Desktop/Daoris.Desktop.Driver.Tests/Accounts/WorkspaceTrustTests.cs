@@ -136,6 +136,40 @@ public sealed class WorkspaceTrustTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 OWNSPACE1a (D175): every new start runs in a Daoris account, whose home a `claude` run at the person's terminal never
+    /// reads. Told to run `claude` in the folder, the person would trust it in their own home and the hold would come straight back,
+    /// so a hold on a Daoris account names Daoris's door alone.
+    /// </summary>
+    [Fact]
+    public void A_hold_on_a_Daoris_account_never_sends_the_person_to_trust_it_in_their_own_home()
+    {
+        var said = ClaudeTrust.Refusal(@"D:\fam\engine", "work");
+
+        Assert.DoesNotContain("Run `claude`", said);
+        Assert.Contains("daoris agent trust claude-code \"D:\\fam\\engine\" --profile work --yes", said);
+        Assert.Contains("Run `claude`", ClaudeTrust.Refusal(@"D:\fam\engine"));
+    }
+
+    /// <summary>
+    /// The file a hold reads is the one the session's harness reads (OWNSPACE1a): its account's home, else the tool's own home as
+    /// the session inherits it, the person's configuration-home variable where they set one, else their profile folder.
+    /// </summary>
+    [Fact]
+    public void The_trust_file_is_read_from_the_home_the_session_runs_in()
+    {
+        var account = Path.Combine(_home, "account");
+        var own = Path.Combine(_home, "own");
+        string? Set(string name) => name == "AGENT_HOME" ? own : null;
+        string? Unset(string name) => null;
+
+        Assert.Equal(Path.Combine(account, ".claude.json"), ClaudeTrust.PathFor(".claude.json", account, "AGENT_HOME", Set));
+        Assert.Equal(Path.Combine(own, ".claude.json"), ClaudeTrust.PathFor(".claude.json", null, "AGENT_HOME", Set));
+        Assert.Equal(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude.json"),
+            ClaudeTrust.PathFor(".claude.json", null, "AGENT_HOME", Unset));
+    }
+
+    /// <summary>
     /// The twin of the CLI's `trustFile` rows (D73): the same two entries on both sides, because both
     /// doors onto Claude Code ignore an untrusted folder's allow-list — measured, not assumed.
     /// </summary>

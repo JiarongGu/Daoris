@@ -340,10 +340,14 @@ public sealed class AccountCoolingTests : IDisposable
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
     }
 
-    /// <summary>A harness whose presence is a PATH look, so asking it starts nothing.</summary>
+    /// <summary>
+    /// A harness whose presence is a PATH look, so asking it starts nothing. A test double whose own home is nobody's
+    /// (<see cref="HarnessToolchain.RunsInOwnHome"/>, OWNSPACE1a): the own home's cool-off is this file's subject, which a real
+    /// agent meets only on a resume begun there.
+    /// </summary>
     private static HarnessToolchain Present(string? accountOf = null, LimitWords? limits = null) => new(
         Binary: [Nowhere], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-        AccountOf: accountOf, Limits: limits);
+        AccountOf: accountOf, Limits: limits, RunsInOwnHome: true);
 
     private HarnessRoster Roster(params ISessionAdapter[] adapters) =>
         new(new AdapterSet(adapters.ToDictionary(a => a.Name, a => a, StringComparer.OrdinalIgnoreCase)), Settings)

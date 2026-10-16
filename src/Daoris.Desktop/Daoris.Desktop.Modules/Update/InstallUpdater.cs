@@ -275,9 +275,38 @@ public sealed class InstallUpdater(
         return LookAsync();
     }
 
-    /// <summary>Look at the loop's pace, and at once when poked, until stopped.</summary>
+    /// <summary>
+    /// How often the loop looks while nothing is staged or draining (FABRIC-EVENT4): the reconciliation behind the watch of the staged
+    /// folder and the request, which wake it at once. A drain looks every <see cref="Pace"/>, since it waits on sessions no file says ended.
+    /// </summary>
+    public TimeSpan Idle { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>What watches the staged folder and the request: the machine's watchers unless a test hands its fake.</summary>
+    public IChangeSource? Source { get; init; }
+
+    /// <summary>The deadline of the staged folder's topic: it finds a folder that did not exist when the watch opened, and what its watcher missed.</summary>
+    public TimeSpan Reconcile { get; init; } = TimeSpan.FromSeconds(5);
+
+    private HomeWatch? _files;
+
+    /// <summary>
+    /// Look at the loop's pace, and at once when poked or when the staged folder or the request moves (FABRIC-EVENT4), until stopped.
+    /// A build staged or a word said by the terminal is heard within the watch's debounce, not at the next pace.
+    /// </summary>
     public void Start()
     {
+        if (install is not null && _files is null)
+        {
+            var folder = Path.Combine(install, StagedBuild.Folder);
+            _files = new HomeWatch((_, _) => Poke(), Reconcile, Source);
+            _files.Topic(
+                ChangeTopics.Update, ChangeTopics.Update,
+                HomePart.File(InstallUpdate.PathOf(home)),
+                HomePart.Files(
+                    folder, [StagedBuild.Journal, $"{StagedBuild.Staged}/{StagedBuild.Manifest}"], [StagedBuild.Staged]));
+            _files.Start();
+        }
+
         _loop ??= Task.Run(async () =>
         {
             var ct = _stopping.Token;
@@ -294,7 +323,7 @@ public sealed class InstallUpdater(
 
                 try
                 {
-                    await _poke.WaitAsync(Pace, ct).ConfigureAwait(false);
+                    await _poke.WaitAsync(Draining || _files is null ? Pace : Idle, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -319,6 +348,7 @@ public sealed class InstallUpdater(
             // Cancellation, as it should surface.
         }
 
+        _files?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _stopping.Dispose();
         _poke.Dispose();
     }

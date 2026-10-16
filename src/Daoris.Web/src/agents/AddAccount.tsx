@@ -65,7 +65,7 @@ export function ReSignIn({ accounts, busy = false, now, onSignIn, onNew, onClose
 
 /**
  * What a list's box says beside its name: who it holds, the workspaces this machine's runs, and, where ticking it moves where
- * a workspace's starts begin, that it does (*used by forge; its starts run on account-3 instead of your own sign-in*).
+ * a workspace's starts begin, that it does (*used by forge; its starts run on account-3 instead of Daoris's accounts, in turn*).
  */
 function choiceDetail(t: ReturnType<typeof useTranslation>['t'], choice: JoinChoice, account: string): string {
   if (choice.moves) {

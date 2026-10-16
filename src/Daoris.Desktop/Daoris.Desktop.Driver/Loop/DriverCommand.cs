@@ -115,9 +115,11 @@ public static class DriverCommand
               decline one that waits on you.
           sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
-          sessions say <id> "…" [--file <path>]…
+          sessions say <id> "…" [--file <path>]… [--now]
               say something to a session of this machine's: read at its next step or when its turn ends while it
-              works, or, parked or ended, the same session goes on with it. Prints where the words stand.
+              works, or, parked or ended, the same session goes on with it. Prints where the words stand. --now is
+              the page's Send now: steered into the running turn where its agent steers, or the turn stopped so they
+              go next; it says what the door did, and why where it could not.
           sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
               take back one of your words waiting on a parked or ended session before it goes on with them, or put
               new words in its place; with no word, list those waiting with their ids.

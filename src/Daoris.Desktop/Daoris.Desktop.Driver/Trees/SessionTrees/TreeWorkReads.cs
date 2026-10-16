@@ -126,7 +126,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
                 notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
             }
 
-            if (await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false) is not { } held) return null;
+            if (await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false) is not { Hold: { } held }) return null;
 
             var holds = await ContentHolds.HoldsAsync(full, root, ct).ConfigureAwait(false);
             var stays = holds is null ? "Daoris cannot tell what it holds beyond its commits"

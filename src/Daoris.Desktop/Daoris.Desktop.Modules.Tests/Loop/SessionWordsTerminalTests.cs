@@ -75,6 +75,24 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// STEER2c: a terminal's *Send now* is carried out by the session's door as the screen's press is, and answered whole: that it
+    /// was (<c>now</c>), and where it was not, why, beside <c>sent</c>. A say with no <c>now</c> keeps its old answer.
+    /// </summary>
+    [Fact]
+    public async Task A_terminals_send_now_is_carried_out_by_the_door_and_answered_whole()
+    {
+        var service = new StandIn();
+        var loop = await UpAsync(service);
+        var inbox = loop.Processes.OpenInbox("s1");
+        inbox.Attach(() => Task.CompletedTask);
+
+        var now = await loop.Words.HoldAsync(Say("s1", "the level file moved") with { Now = true }, CancellationToken.None);
+
+        Assert.Equal((true, "turn-end", (string?)null, true), (now.Sent, now.Reaches, now.Why, now.Now));
+        Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
+    }
+
+    /// <summary>
     /// A driven session running here hears a terminal's words at its door, as the box's (D136): its inbox holds them, the
     /// answer says when they reach it, and once it took them they are kept on its ask as the box's are (DRIFT1a2).
     /// </summary>

@@ -69,7 +69,7 @@ public sealed class HelpRoomPlacesTests
             + "`workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).",
             places);
         Assert.Contains(
-            "- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `driver` (Driver), "
+            "- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `wiring` (This Daoris), `driver` (Driver), "
             + "`browser` (Browser), `logs` (Machine log).",
             places);
         Assert.DoesNotContain("Parts of `workspace`", places);

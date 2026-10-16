@@ -144,6 +144,14 @@ public sealed class EntryAccepts(
         var subject = lead is null ? new LandingSubject(entry.Key, null, null)
             : await LandingRules.SubjectAsync(lead.Session, lead.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
                 events.Openings([lead.Session]).GetValueOrDefault(lead.Session)).ConfigureAwait(false);
+        // ACCEPTFOOT2: a conversation's entry is named for its first part's work, as each part's own Accept names it.
+        if (lead is not null && parts.Count > 0)
+        {
+            var leadTree = parts.FirstOrDefault(part => part.Session == lead.Session)?.Tree;
+            if (leadTree is null) (leadTree, _) = await service.SessionGroundAsync(lead.Session, cancellationToken).ConfigureAwait(false);
+            subject = await trees.EntryForWorkAsync(subject, leadTree, parts[0].Tree, cancellationToken).ConfigureAwait(false);
+        }
+
         return (subject, parts);
     }
 }

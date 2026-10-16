@@ -110,6 +110,10 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeLandSyncs? _syncs;
     private TreeLands? _lands;
     private EntryLands? _entries;
+    private EndKeeping? _keeping;
+
+    /// <summary>The end judgement's one writer (FABRIC-END2): where the look's tidy and <i>Accept</i>'s tidy keep what the line holds.</summary>
+    internal EndKeeping Ends => _keeping ??= new(_context, Asks);
 
     /// <summary>Where each session tree's work is, and the branch the layout names for it (TREEFOLLOW1).</summary>
     private TreeFollows Follows => _follows ??= new(_context);
@@ -148,7 +152,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeSweeps Sweeps => _sweeps ??= new(_context, Asks, Content, Follows, Squashes, SetAsides);
 
     /// <summary>The look's own tidy of one repository (AUTOTIDY1), the landings' branches with it (AUTOTIDY2b).</summary>
-    private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps, SetAsides, Cleanups);
+    private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps, SetAsides, Cleanups, Ends);
 
     /// <summary>The look's own tidy of the folders under a repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1).</summary>
     private TreeStrays Strays => _strays ??= new(_context, SetAsides, Content);
@@ -181,7 +185,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeLandSyncs Syncs => _syncs ??= new(_context, Replays);
 
     /// <summary>The landing: its plan, the merge, the branch form and its advance, and the rule's tidy (WSR1, D87, D100).</summary>
-    private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Removals, Tidies, Syncs);
+    private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Removals, Tidies, Syncs, Ends);
 
     /// <summary>An entry's Accept: its parts' work on one branch, in ledger order (ACCEPTALL1, D167).</summary>
     private EntryLands Entries => _entries ??= new(_context, Lands, Syncs);
@@ -206,6 +210,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     public string TreesRoot => _context.TreesRoot;
+
+    /// <inheritdoc cref="TreeContext.OneLook"/>
+    internal IDisposable OneLook() => _context.OneLook();
 
     /// <summary>
     /// Open a fresh tree for a session in <paramref name="root"/>. Throws <see cref="DriverException"/>
@@ -341,7 +348,11 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
             {
                 try
                 {
-                    Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow));
+                    // The branch work unit's id, written once here (FABRIC-END2, design §D2); every later record of the branch keeps it.
+                    Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow)
+                    {
+                        Unit = GrownBranch.NewUnit(),
+                    });
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
@@ -494,10 +505,12 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// </summary>
     private static async Task<string> StartOfAsync(string root, string branch, Line line, string repository, CancellationToken ct)
     {
+        // STARTGIT1: the checkout's own guess is the branch either way (its answer is the same where it stands or not), so git is
+        // not asked whether it does; a line the person set is the one checked.
+        if (line.Source == LineSource.Checkout) return branch;
         var (local, _, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
         if (local == 0) return branch;
-        if (line.Source == LineSource.Checkout) return branch;
 
         var (remote, _, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{branch}"], ct).ConfigureAwait(false);
@@ -550,11 +563,17 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var named = lead?.Id ?? session;
         var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
         if (lead is null) return subject;
+        // ACCEPTFOOT2: a conversation's entry is named for its first part's work, not for the part pressed here.
+        subject = await Lands.EntryForWorkAsync(subject, lead.Tree, path, ct).ConfigureAwait(false);
         var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
         // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
         if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
         return joined.NamedFor(await LandingRules.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));
     }
+
+    /// <inheritdoc cref="TreeLands.EntryForWorkAsync"/>
+    public Task<LandingSubject> EntryForWorkAsync(LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct = default) =>
+        Lands.EntryForWorkAsync(entry, leadTree, anyTree, ct);
 
     /// <inheritdoc cref="EntryLands.PlanAsync"/>
     public Task<EntryPlan> PlanEntryAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct = default) =>

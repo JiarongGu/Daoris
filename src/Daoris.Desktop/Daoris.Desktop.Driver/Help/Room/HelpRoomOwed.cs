@@ -92,7 +92,7 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
 
     /// <summary>LEFT3's clear of an account's default: the <c>agent</c> kind's <c>default</c> door takes an account and no clear yet.</summary>
     public static readonly HelpOwedDoor DefaultClear = new(
-        "clear an account's default, back to the tool's own home",
+        "clear an account's default, back to Daoris's accounts",
         ["daoris agent profile default <agent> <profile>|--clear"],
         "a cleared default is a setting that undoes itself, so Ask Daoris should propose it; the `agent` kind's "
         + "`default` door takes an account and no clear yet, which waits on the service's `agent_propose` taking "

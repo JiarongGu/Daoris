@@ -3,7 +3,7 @@ import { answeredPark } from '../design/ui';
 import type { RuleProposal } from '../settings/AgentRules';
 import { OPEN_STATES } from '../settings/proposals';
 import { workflowHolds } from '../workflow/gate';
-import type { LineBehind } from './diff';
+import type { LineBehind, SessionDiff } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
 import { heldDiscardable } from './HeldDiscard';
 import { type HelperAskRow, waitsOnWord } from './HelperAsks';
@@ -59,6 +59,33 @@ export function landingStands({ lands, landing, behind }: {
   // words its session is asked to rebase with; *Accept…* comes back once the tree changes and the plan reads it again.
   const conflict = acceptable ? landing?.conflict ?? null : null;
   return { review, workflow, second, opinionWaits, answers, acceptable, conflict };
+}
+
+/**
+ * What an open conversation's own tree offers to land once its turn has ended (ACCEPTFOOT1, D164's notes): the driver's own offer,
+ * LAND4's, which the review's answer carries (`offer`: D88's proof and SQUASHTIDY1b's content hold), so the page offers what a press
+ * would land. Its record stays `working` between turns, so the driver's look, which reads records alone, offers it nothing; the
+ * turn's state is the driver's word the page holds (CONV4a). None while a turn runs or words wait to start one, before that word is
+ * known, until a review read after the turn ended is in (an earlier read is another turn's work), in the person's checkout, where
+ * the tree is detached (`treeBranch` null: no branch for a press to land), where the line was not read or nothing is beyond it
+ * (REVIEWBASE4), once the review reads as landed, or from a host whose answer carries no offer. The press judges again.
+ */
+export function conversationOffer({ tree, turn, review, endedAt, readAt }: {
+  /** Its own tree's name (`ownTree`), null where it works in the person's checkout. */
+  tree: string | null;
+  /** Where its turns stand, as the driver holds them; absent until it answers. */
+  turn?: { taking: boolean; queued: readonly unknown[] } | null;
+  review?: SessionDiff | null;
+  /** When the page saw this turn end (or first saw it at rest); null before. */
+  endedAt?: number | null;
+  /** When the review's answer was read (the query's `dataUpdatedAt`). */
+  readAt?: number;
+}): LandOffer | null {
+  if (!tree || !turn || turn.taking || turn.queued.length > 0) return null;
+  if (endedAt == null || readAt === undefined || readAt < endedAt) return null;
+  if (!review || review.source === 'branch' || review.landed?.asLanded || review.treeBranch === null) return null;
+  if ((review.behind?.ahead ?? 0) <= 0 || !review.offer) return null;
+  return review.offer;
 }
 
 /**
