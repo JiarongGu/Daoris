@@ -43,6 +43,12 @@ public static class ChangeTopics
 {
     /// <summary>The requests and presses a terminal writes into the home's <c>sessions/requests/</c> (row 7).</summary>
     public const string Requests = "requests";
+
+    /// <summary>A repository's refs, heard in its common git dir (§A4.1): the tidy's pace is its deadline (§C5), FABRIC-END3 its root.</summary>
+    public const string Refs = "refs";
+
+    /// <summary>The part of the look no event yet carries, which the ledger wakes: <c>pollSeconds</c> is its deadline (§C5).</summary>
+    public const string Look = "look";
 }
 
 /// <summary>One judgement asked: of which topic's subject, and why. A subject is a name, never a path.</summary>
@@ -196,6 +202,19 @@ public sealed class ChangeWatch : IAsyncDisposable
             _subjects.TryAdd((topic, subject), new SubjectState { Last = _clock() });
             if (root.Capped) SayCapped(root);
             else if (_open) Open(root);
+        }
+    }
+
+    /// <summary>
+    /// A subject judged at its topic's deadline though no root names it (FABRIC-CHAIN2): a topic only hints feed keeps its
+    /// reconciliation, and a chain's topic is judged whole there (§C5's <c>timer</c>).
+    /// </summary>
+    public void Subject(string topic, string subject)
+    {
+        lock (_gate)
+        {
+            if (!_topics.ContainsKey(topic)) throw new ArgumentException($"`{topic}` is no topic of this watch.", nameof(topic));
+            _subjects.TryAdd((topic, subject), new SubjectState { Last = _clock() });
         }
     }
 

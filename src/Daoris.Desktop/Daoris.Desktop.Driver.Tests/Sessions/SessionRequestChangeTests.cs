@@ -57,6 +57,43 @@ public sealed class SessionRequestChangeTests : IDisposable
     }
 
     /// <summary>
+    /// The requests folder is the chain's link 7 (FABRIC-CHAIN2, the design §C6): its wake is a <c>home</c> event and its listing
+    /// the topic's <c>timer</c>, both heard by the folder's reader alone, and a look that took a request writes <c>chain.fired</c>.
+    /// </summary>
+    [Fact]
+    public async Task The_requests_folder_is_the_chains_seventh_link()
+    {
+        var (processes, _) = Hearing();
+        await using var watch = new SessionRequestWatch(_home, processes, () => null, every: TimeSpan.FromHours(1), source: _source)
+        {
+            Log = new MachineLog(_home, "driver"),
+        };
+        var request = Say("s1");
+        Requests.Write(request);
+
+        _source.On(Requests.Folder)!.Raise(Path.GetFileName(Requests.PathOf(request)), ChangeKind.Renamed);
+
+        var logs = DaorisHome.Entry(_home, HomeEntry.Logs);
+        System.Text.Json.JsonElement[] Fired() => Directory.Exists(logs)
+            ?
+            [
+                .. Directory.EnumerateFiles(logs, "*.jsonl")
+                    .SelectMany(StubFile.Lines)
+                    .Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement.Clone())
+                    .Where(line => line.GetProperty("event").GetString() == "chain.fired")
+                    .Select(line => line.GetProperty("data")),
+            ]
+            : [];
+        await Poll.Until(() => Fired().Length > 0, () => "the take was never written as the chain's", TimeSpan.FromSeconds(30));
+
+        var fired = Assert.Single(Fired());
+        Assert.Equal(ChainRanks.Read, fired.GetProperty("link").GetInt32());
+        Assert.Equal(ChangeTopics.Requests, fired.GetProperty("topic").GetString());
+        Assert.Equal(1, fired.GetProperty("count").GetInt32());
+        Assert.Same(ChainTable.Fixed, watch.Chain!.Table);
+    }
+
+    /// <summary>
     /// With the source silenced, the listing behind it takes the request inside the asking door's ten seconds (SessionsCommand's
     /// <see cref="SessionsWorld.Wait"/>): the watch's default, unchanged by the test.
     /// </summary>
