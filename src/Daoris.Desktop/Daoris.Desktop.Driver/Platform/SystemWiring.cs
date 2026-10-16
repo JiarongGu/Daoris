@@ -145,6 +145,9 @@ public sealed record WiringWorld
     /// <summary>The sizes measured, kept for the process.</summary>
     public WiringSizes Sizes { get; init; } = WiringSizes.Shared;
 
+    /// <summary>The person's own tool home, where a caller names it (a test's scratch one); null reads it from the environment (<see cref="ToolHomeLeftovers.ToolHomeOf"/>, OWNSPACE2).</summary>
+    public string? ToolHome { get; init; }
+
     /// <summary>The asking terminal's own version, where it is the driver's verbs.</summary>
     public string? DriverVersion { get; init; }
 

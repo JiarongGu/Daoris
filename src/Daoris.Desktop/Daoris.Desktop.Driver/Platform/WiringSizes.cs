@@ -39,6 +39,9 @@ public sealed class SizeReading
 
     /// <summary>The entries, names and folders a part of which could not be read: their bytes are as far as the walk got.</summary>
     public required IReadOnlySet<string> Unreadable { get; init; }
+
+    /// <summary>Each project folder Daoris left in the person's tool home, by name, measured with the home (OWNSPACE2); null where none was asked.</summary>
+    public IReadOnlyDictionary<string, ToolMeasure>? Tool { get; init; }
 }
 
 /// <summary>
@@ -83,7 +86,8 @@ public sealed class WiringSizes
     /// when it ends.
     /// </summary>
     /// <param name="root">The Daoris folder the home is in, whose other top folders are walked whole; null walks the home alone.</param>
-    public bool Start(string home, string? root, WiringBudget budget)
+    /// <param name="tool">The project folders in the person's tool home to measure with it (OWNSPACE2); none measures none.</param>
+    public bool Start(string home, string? root, WiringBudget budget, IReadOnlyList<ToolFolder>? tool = null)
     {
         var key = Key(home);
         var stop = new CancellationTokenSource();
@@ -98,7 +102,7 @@ public sealed class WiringSizes
         {
             try
             {
-                MeasureNow(home, root, budget, stop.Token);
+                MeasureNow(home, root, budget, stop.Token, tool);
             }
             finally
             {
@@ -130,7 +134,8 @@ public sealed class WiringSizes
     }
 
     /// <summary>Walk now, on this thread, and keep the reading: the terminal's <c>--measure</c>, and what a background walk runs.</summary>
-    public SizeReading MeasureNow(string home, string? root, WiringBudget budget, CancellationToken cancellationToken)
+    public SizeReading MeasureNow(
+        string home, string? root, WiringBudget budget, CancellationToken cancellationToken, IReadOnlyList<ToolFolder>? tool = null)
     {
         var walk = new Walk(budget, cancellationToken);
         var patterns = Patterns();
@@ -171,9 +176,36 @@ public sealed class WiringSizes
             LeftOver = leftOver,
             Folders = folders,
             Unreadable = unreadable,
+            Tool = tool is null ? null : ToolHomeLeftovers.Measure(tool, budget, cancellationToken),
         };
         _readings[Key(home)] = reading;
         return reading;
+    }
+
+    /// <summary>
+    /// One folder's bytes and its newest file's time, walked as the home is (no link followed, the same budget), nothing read
+    /// inside a file (OWNSPACE2). <c>Partial</c> says the walk stopped short, so the bytes are as far as it got.
+    /// </summary>
+    public static (long Bytes, DateTimeOffset? Newest, bool Partial) MeasureFolder(string folder, WiringBudget budget, CancellationToken cancellationToken)
+    {
+        DateTime? newest = null;
+        var bytes = 0L;
+        var walk = new Walk(budget, cancellationToken)
+        {
+            Seen = file =>
+            {
+                try
+                {
+                    if (newest is null || file.LastWriteTimeUtc > newest) newest = file.LastWriteTimeUtc;
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    // A file whose time cannot be read counts for its size alone.
+                }
+            },
+        };
+        walk.Files(folder, (_, size) => bytes += size, _ => { });
+        return (bytes, newest is { } at ? new DateTimeOffset(DateTime.SpecifyKind(at, DateTimeKind.Utc)) : null, walk.Stopped is not null);
     }
 
     /// <summary>Whether a name at the home's top is held by an entry of the table: a name that is not is left over.</summary>
@@ -261,6 +293,9 @@ public sealed class WiringSizes
 
         public string? Stopped { get; private set; }
 
+        /// <summary>Told each file counted, for a walk that wants more of it than its size (OWNSPACE2's newest file).</summary>
+        public Action<FileInfo>? Seen { get; init; }
+
         /// <summary>Each file under <paramref name="folder"/>, by its parts under it; a folder that cannot be read, by its parts.</summary>
         public void Files(string folder, Action<string[], long> file, Action<string[]> unreadable)
         {
@@ -307,6 +342,7 @@ public sealed class WiringSizes
                     }
 
                     Counted++;
+                    Seen?.Invoke((FileInfo)child);
                     file(under, bytes);
                 }
             }
