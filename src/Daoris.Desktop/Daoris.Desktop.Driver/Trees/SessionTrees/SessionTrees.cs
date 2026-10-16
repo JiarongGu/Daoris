@@ -555,11 +555,17 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var named = lead?.Id ?? session;
         var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
         if (lead is null) return subject;
+        // ACCEPTFOOT2: a conversation's entry is named for its first part's work, not for the part pressed here.
+        subject = await Lands.EntryForWorkAsync(subject, lead.Tree, path, ct).ConfigureAwait(false);
         var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
         // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
         if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
         return joined.NamedFor(await LandingRules.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));
     }
+
+    /// <inheritdoc cref="TreeLands.EntryForWorkAsync"/>
+    public Task<LandingSubject> EntryForWorkAsync(LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct = default) =>
+        Lands.EntryForWorkAsync(entry, leadTree, anyTree, ct);
 
     /// <inheritdoc cref="EntryLands.PlanAsync"/>
     public Task<EntryPlan> PlanEntryAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct = default) =>

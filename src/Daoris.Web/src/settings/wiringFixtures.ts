@@ -68,7 +68,7 @@ export const WIRED: SystemWiring = {
   },
   files: [
     file('driver', { bytes: 1_200, door: 'driver' }),
-    file('harnesses', { bytes: 640, overriddenBy: 'DAORIS_HARNESS_FILE', door: 'agents' }),
+    file('harnesses', { bytes: 640, overriddenBy: 'DAORIS_HARNESS_CONFIG', door: 'agents' }),
     file('tools', { bytes: 90, reads: false, readsWhy: 'unparsed', door: 'tools' }),
     file('remotes', { folder: 'profiles', bytes: 230, door: 'workspace' }),
     file('browser-settings', { present: false, bytes: null, bytesWhy: 'absent', written: null, reads: null, readsWhy: 'absent', door: 'browser' }),
