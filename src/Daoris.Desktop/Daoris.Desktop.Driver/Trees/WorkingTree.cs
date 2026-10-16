@@ -947,9 +947,23 @@ public static class WorkingTree
     /// the person, and one that waits on a credential nobody is there to type must end rather than hold a press.
     /// </summary>
     /// <remarks>On the bound, git and whatever it started are stopped, and the answer is a failure that says why.</remarks>
-    internal static async Task<(int Code, string Stdout, string Stderr)> GitAsync(
+    internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
-        CancellationToken ct)
+        CancellationToken ct) =>
+        GitAsync(root, arguments, environment, timeout, input: null, ct);
+
+    /// <summary>
+    /// git reading <paramref name="input"/> as its standard input (FABRIC-END4a, second review): <c>update-ref --stdin</c> takes a
+    /// transaction there, so a branch's delete and the refs its proof rested on are checked together under git's own locks.
+    /// </summary>
+    /// <remarks>Written as BOM-less UTF-8, LF as given: git reads a byte-order mark as part of the first command.</remarks>
+    internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
+        string root, IReadOnlyList<string> arguments, string input, CancellationToken ct) =>
+        GitAsync(root, arguments, environment: null, timeout: null, input, ct);
+
+    private static async Task<(int Code, string Stdout, string Stderr)> GitAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
+        string? input, CancellationToken ct)
     {
         Started.Value?.Invoke(arguments);
         if (Answered.Value?.Invoke(arguments) is { } answered) return answered;
@@ -961,11 +975,19 @@ public static class WorkingTree
             foreach (var (name, value) in environment) info.Environment[name] = value;
         }
 
+        if (input is not null)
+        {
+            info.RedirectStandardInput = true;
+            info.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        }
+
         // DEDUP4b: the run, the wait and the guarded tree kill are ChildProcess's. On the caller's own cancellation it now
         // ends git's tree and throws; git was once left to finish on its own.
         try
         {
-            var run = await ChildProcess.RunAsync(info, timeout ?? Timeout.InfiniteTimeSpan, ct, closeInput: false).ConfigureAwait(false);
+            var run = input is null
+                ? await ChildProcess.RunAsync(info, timeout ?? Timeout.InfiniteTimeSpan, ct, closeInput: false).ConfigureAwait(false)
+                : await ChildProcess.RunAsync(info, timeout ?? Timeout.InfiniteTimeSpan, ct, input, ProcessStarts.Shared).ConfigureAwait(false);
             if (!run.Started) return (-1, "", run.Error?.Message ?? "git did not start");
             if (run.TimedOut) return (-1, "", $"git did not answer within {timeout!.Value.TotalSeconds:0} seconds, and was stopped.");
             return (run.ExitCode!.Value, run.Stdout, run.Stderr);

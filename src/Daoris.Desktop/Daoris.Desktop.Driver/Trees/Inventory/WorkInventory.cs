@@ -331,7 +331,10 @@ public static partial class WorkInventory
                 // FABRIC-END4a: a guard that kept it at the tidy's last try is the record's, so it reads as blocked, saying why.
                 : ended && branch.Blocked is { } blocked
                     ? new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Blocked,
-                        $"the look's tidy kept it at {Minute(blocked.At)} UTC, since {KeptSaid(blocked.Why)}; it is tried again when that frees")
+                        $"the look's tidy kept it at {Minute(blocked.At)} UTC, since {KeptSaid(blocked.Why)}"
+                        // The tidy's own sentence where one was kept (FABRIC-END4a, second review): why, not only which guard.
+                        + (blocked.Reason is { Length: > 0 } reason && reason != "kept" ? $" ({reason})" : "")
+                        + "; it is tried again when that frees")
                     : new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Pending,
                         ended ? "the look's tidy removes it, with fresh proof" : "waits for the work to end"));
         }

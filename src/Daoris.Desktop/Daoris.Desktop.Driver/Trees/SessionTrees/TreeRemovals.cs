@@ -50,6 +50,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         LandedBranch? squashedOn = null;
         string? judged = null;
         string? kept = null;
+        IReadOnlyList<(string Ref, string Commit)> forms = [];
 
         if (!force)
         {
@@ -98,6 +99,15 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 var (workspace, repository) = context.OwnerOf(full);
                 var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
                 var canonical = line ?? "HEAD";
+                // The line's forms at their commits, read before any proof (FABRIC-END4a, second review): the delete verifies them, and the
+                // branch of the person's holding its commits, in one transaction.
+                if (await ContentHolds.LineRefsAsync(root, line, ct).ConfigureAwait(false) is not { } read)
+                {
+                    return new(false, $"Daoris cannot read the line the work on `{branch}` is judged against. "
+                        + "The tree stays; say it again with --force to discard it.");
+                }
+
+                forms = read;
                 // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
                 // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
                 // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
@@ -186,7 +196,10 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             }
             else
             {
-                stays = await content.DeleteJudgedAsync(root, branch, judged, ct).ConfigureAwait(false);
+                var proven = await ContentHolds.ProofRefsAsync(root, branch, judged, forms, ContentHolds.PersonsRef, ct).ConfigureAwait(false);
+                stays = proven is null
+                    ? "Daoris could not read what its proof rests on"
+                    : await content.DeleteJudgedAsync(root, branch, judged, proven, ct).ConfigureAwait(false);
                 if (stays is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
             }
 

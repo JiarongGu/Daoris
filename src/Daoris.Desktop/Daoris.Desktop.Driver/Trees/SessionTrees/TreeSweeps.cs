@@ -134,7 +134,7 @@ internal sealed class TreeSweeps(
 
             var worktrees = ByBranch(listed);
             var line = (await context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
-            // FABRIC-END4a review: each form of the line at the commit this judgement reads, looked at again once the branch went.
+            // FABRIC-END4a review: each form of the line at the commit this judgement reads, verified in the delete's own transaction.
             var lineAt = new List<(string Ref, string Commit)>();
             foreach (var form in await LandedProofs.LineFormsAsync(root, line, ct, fresh).ConfigureAwait(false))
             {
@@ -213,8 +213,12 @@ internal sealed class TreeSweeps(
                 }
             }
 
-            // Only while it is still the commit judged (SQUASHTIDY1c); git's own -d asks only about the checkout's HEAD.
-            var stays = await content.DeleteJudgedAsync(root, now.Branch, judged, done, lineAt).ConfigureAwait(false);
+            // Only while it is still the commit judged (SQUASHTIDY1c), and in one transaction with what its proof rested on (FABRIC-END4a,
+            // second review): the line's forms this judgement read, and a branch of the person's holding it where the line does not.
+            var held = await ContentHolds.ProofRefsAsync(root, now.Branch, judged, lineAt, ContentHolds.PersonsRef, done).ConfigureAwait(false);
+            var stays = held is null
+                ? "Daoris could not read what its proof rested on"
+                : await content.DeleteJudgedAsync(root, now.Branch, judged, held, done).ConfigureAwait(false);
             if (stays is not null)
             {
                 await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);

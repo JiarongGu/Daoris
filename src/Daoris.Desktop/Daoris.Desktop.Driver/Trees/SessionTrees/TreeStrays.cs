@@ -77,7 +77,11 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     private static readonly string[] OthersOwn = [OpinionTree.Prefix, BranchReplays.Prefix];
 
     /// <summary>A folder judged to go: what it is, and for a cut-off opening its branch, the commit judged, its lock's reason and why.</summary>
-    private sealed record Found(string Folder, string Kind, string? Branch = null, string? Tip = null, string? Reason = null, string? Clause = null);
+    private sealed record Found(string Folder, string Kind, string? Branch = null, string? Tip = null, string? Reason = null, string? Clause = null)
+    {
+        /// <summary>The other ref that held the branch's tip when it was judged, at its commit then (FABRIC-END4a, second review): the delete verifies it.</summary>
+        public (string Ref, string Commit)? Holder { get; init; }
+    }
 
     /// <summary>
     /// The look's tidy of the folders under one repository's trees (AUTOTIDY2c, OPENCUT1): what it moved aside and what it kept. A
@@ -189,19 +193,28 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
         var judged = code == 0 ? tip.Trim() : null;
         // An open grows its branch from a branch that stands and makes no commit of its own: one holding a commit no other ref holds
         // is someone's work, and stays the press's.
-        if (judged is not null && !await HeldElsewhereAsync(root, branch, judged, ct).ConfigureAwait(false)) return null;
+        var holder = judged is null ? null : await HeldElsewhereAsync(root, branch, judged, ct).ConfigureAwait(false);
+        if (judged is not null && holder is null) return null;
         var clause = entry.LockReason == TreeOpenings.GitsOwn
             ? "git's own lock from the start of its add was left on it"
             : "the Daoris process that opened it no longer runs";
-        return new Found(folder, StrayKind.Opening, judged is null ? null : branch, judged, entry.LockReason, clause);
+        return new Found(folder, StrayKind.Opening, judged is null ? null : branch, judged, entry.LockReason, clause) { Holder = holder };
     }
 
-    /// <summary>Whether another ref holds <paramref name="tip"/>, and so every commit on <paramref name="branch"/>; false where git could not say.</summary>
-    private static async Task<bool> HeldElsewhereAsync(string root, string branch, string tip, CancellationToken ct)
+    /// <summary>
+    /// The other ref that holds <paramref name="tip"/>, and so every commit on <paramref name="branch"/>, at the commit git found holding it;
+    /// null where none does or git could not say.
+    /// </summary>
+    private static async Task<(string Ref, string Commit)?> HeldElsewhereAsync(string root, string branch, string tip, CancellationToken ct)
     {
-        var (code, refs, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", tip, "--format=%(refname)"], ct).ConfigureAwait(false);
-        return code == 0 && refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Any(reference => reference != $"refs/heads/{branch}");
+        var (code, refs, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", tip, "--format=%(objectname) %(refname)"], ct).ConfigureAwait(false);
+        if (code != 0) return null;
+        foreach (var row in refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (row.Split(' ', 2) is [var commit, var reference] && reference != $"refs/heads/{branch}") return (reference, commit);
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -230,8 +243,9 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
             };
         }
 
-        var branchKept = cut is { Branch: { } branch, Tip: { } tip }
-            ? await content.DeleteJudgedAsync(root, branch, tip, done).ConfigureAwait(false)
+        // In one transaction with the ref that held its tip when judged (FABRIC-END4a, second review).
+        var branchKept = cut is { Branch: { } branch, Tip: { } tip, Holder: { } holder }
+            ? await content.DeleteJudgedAsync(root, branch, tip, [holder], done).ConfigureAwait(false)
             : null;
         return new StrayResult(cut.Folder, StrayKind.Opening, true, cut.Clause ?? "")
         {

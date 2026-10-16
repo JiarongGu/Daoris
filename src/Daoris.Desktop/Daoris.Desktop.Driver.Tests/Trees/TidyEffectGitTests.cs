@@ -79,13 +79,14 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The review's P1: the delete's compare-and-swap covers the branch alone, so the line rewound, or the branch checked out, after
-    /// the last proof and before its ref goes puts the branch back at the commit judged, kept.
+    /// 🔴 The review's P1: the line rewound after the last proof and before its ref goes refuses the delete inside git's own transaction,
+    /// so the branch never leaves (the second review: an absence another look could observe); the branch checked out meanwhile, which
+    /// no ref says, is put back at the commit judged, kept.
     /// </summary>
     [Theory]
-    [InlineData("rewound")]
-    [InlineData("checked-out")]
-    public async Task What_the_proof_rested_on_moving_as_the_branch_goes_puts_it_back(string how)
+    [InlineData("rewound", "moved as it went")]
+    [InlineData("checked-out", "put back where it was")]
+    public async Task What_the_proof_rested_on_moving_as_the_branch_goes_keeps_it(string how, string said)
     {
         var root = await RepositoryAsync("engine");
         var branch = await WorkAsync(new SessionTrees(Home), root, "a.txt", merged: true);
@@ -105,7 +106,31 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
 
         Assert.DoesNotContain(pass.Results, result => result.Removed);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", branch)).Trim());
-        Assert.Contains(pass.Results, result => result.Message.Contains("put back where it was", StringComparison.Ordinal));
+        Assert.Contains(pass.Results, result => result.Message.Contains(said, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// 🔴 The second review's P2 (TreeFollows.cs:82 and :101): a session branch the tidy removed while its tree had moved onto a branch of
+    /// its own leaves a trace, and the live tree it names is still followed: its next switch is learned, and known once the tree is gone.
+    /// </summary>
+    [Fact]
+    public async Task A_removed_branchs_live_tree_is_followed_to_its_next_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await GitAsync(opened.Path, "checkout", "--quiet", "-b", "feature/x");
+        await CommitAsync(opened.Path, "work.txt", "work\n", "the work");
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        await TidyAsync(trees, root);
+        Assert.False(await StandsAsync(root, opened.Branch));
+
+        await GitAsync(opened.Path, "checkout", "--quiet", "-b", "feature/y");
+        await TidyAsync(trees, root);
+
+        Assert.Equal("feature/y", Grown.Entries().Last(entry => entry.Branch == opened.Branch).Now);
+        await GitAsync(root, "worktree", "remove", "--force", opened.Path);
+        Assert.Equal("feature/y", await trees.BranchNowAsync(opened.Path));
     }
 
     /// <summary>
@@ -131,6 +156,28 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         // At most the follow's one read of each tree (TREEFOLLOW1), three here; before FABRIC-END4a the press's list judged each of
         // them again, nine starts a branch on this machine (16 with one, 43 with four).
         Assert.True(overFour - overOne <= 3, $"the tidy judged branches the line holds none of: {overOne} starts beyond the keeper with one, {overFour} with four");
+    }
+
+    /// <summary>
+    /// 🔴 The second review's P2 (AutoTidies.cs:263, :268, :320): a recorded branch the keeper could not prove and the press's judgement kept
+    /// is judged again once the <c>refs</c> deadline passed, with neither its tip nor the line moved, since what kept it (a busy or dirty
+    /// tree, a landing checked out inside another) can clear with neither moving.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_unproven_branch_is_judged_again_once_the_refs_deadline_passed()
+    {
+        var root = await RepositoryAsync("engine");
+        var now = DateTimeOffset.UtcNow;
+        var trees = new SessionTrees(Home) { Clock = () => now };
+        await WorkAsync(trees, root, "a.txt", merged: false);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        await TidyAsync(trees, root);
+
+        var within = await CountedAsync(() => TidyAsync(trees, root));
+        now += RefWatch.Deadline;
+        var after = await CountedAsync(() => TidyAsync(trees, root));
+
+        Assert.True(after > within, $"judged again at the deadline: {within} git starts within it, {after} after");
     }
 
     /// <summary>

@@ -14,8 +14,10 @@ public sealed class TidyEffectTests : IDisposable
     private readonly List<string> _tidied = [];
     private DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
 
-    // Whether the stand-in tidy removes what it is handed, or keeps it as a dirty tree would.
+    // Whether the stand-in tidy removes what it is handed, or keeps it as a dirty tree would, saying so.
     private bool _keeps;
+
+    private const string KeptSaid = "its tree has 2 path(s) uncommitted";
 
     public TidyEffectTests() => Directory.CreateDirectory(_home);
 
@@ -58,7 +60,7 @@ public sealed class TidyEffectTests : IDisposable
             if (_keeps)
             {
                 return Task.FromResult(new TidyPass(
-                    [.. going.Select(branch => new SweepResult(new SweepItem("engine", "default", branch, null, SweepKind.Dirty, 0, "main", null), false, "kept"))]));
+                    [.. going.Select(branch => new SweepResult(new SweepItem("engine", "default", branch, null, SweepKind.Dirty, 0, "main", null), false, KeptSaid))]));
             }
 
             Grown.Forget(repository.Repository, going);
@@ -149,6 +151,67 @@ public sealed class TidyEffectTests : IDisposable
 
         Assert.Equal(["engine", "engine"], _tidied);
         Assert.Equal(SweepKind.Dirty, Grown.Of("engine", "daoris/a")!.Blocked?.Why);
+    }
+
+    /// <summary>🔴 The second review: <c>blocked</c> carries the sentence the tidy kept the branch with, not only its guard's code, and the inventory says it.</summary>
+    [Fact]
+    public async Task Blocked_carries_the_reason_the_tidy_kept_it_with()
+    {
+        Record("a", Held("tip-a"));
+        _keeps = true;
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+
+        await ChainOf(Effect()).FireAsync([new ChainEvent(ChainEvents.Ledger, "sessions", ChangeTopics.Ledger)], CancellationToken.None);
+
+        var blocked = Grown.Of("engine", "daoris/a")!.Blocked!;
+        Assert.Equal((SweepKind.Dirty, KeptSaid), (blocked.Why, blocked.Reason));
+        Assert.Contains(KeptSaid, Milestone("unit-a").Entries.Single(each => each.Kind == InventoryKind.SessionBranch).Detail, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 The second review's P2 (Chain.cs:476): a wake the settle answers with no try never moves the chain's deadline, so the <c>refs</c>
+    /// deadline after the last real try tries again, never one deadline later.
+    /// </summary>
+    [Fact]
+    public async Task A_settled_wake_never_moves_the_deadline()
+    {
+        Record("a", Held("tip-a"));
+        _keeps = true;
+        var chain = ChainOf(Effect());
+        chain.Topic(ChangeTopics.Refs, ChainEvents.Refs, RefWatch.Deadline);
+        var wake = new ChainEvent(ChainEvents.Ledger, "sessions", ChangeTopics.Ledger);
+
+        await chain.FireAsync([wake], CancellationToken.None);
+        _now += TimeSpan.FromMinutes(4);
+        await chain.FireAsync([wake], CancellationToken.None);
+        Assert.Equal(["engine"], _tidied);
+
+        _now += TimeSpan.FromMinutes(1);
+        await chain.FireAsync([ChainEvent.Timer(ChangeTopics.Refs)], CancellationToken.None);
+
+        Assert.Equal(["engine", "engine"], _tidied);
+    }
+
+    /// <summary>
+    /// 🔴 The second review's P2 (SessionBranches.cs:197): a trace whose tree still lives is never pruned with the retired traces, however
+    /// many go after it: the live tree's tracking is kept apart from the branch's disposition.
+    /// </summary>
+    [Fact]
+    public void A_trace_whose_tree_lives_is_never_pruned()
+    {
+        Grown.Record(new GrownBranch("engine", "default", "daoris/live", "main", "base", null, _now, Now: "feature/x") { Unit = "unit-live" });
+        Grown.Hold("engine", "daoris/live", Held("tip-live"));
+        File.WriteAllText(Path.Combine(TreeOf("live"), ".git"), "gitdir: elsewhere\n");
+        Grown.Gone("engine", ["daoris/live"]);
+
+        for (var each = 0; each <= SessionBranches.TracesKept; each++)
+        {
+            Record($"t{each}", Held($"tip-{each}"));
+            Grown.Forget("engine", [$"daoris/t{each}"]);
+        }
+
+        Assert.Equal("feature/x", Grown.Entries().Single(entry => entry.Branch == "daoris/live").Now);
+        Assert.Equal(SessionBranches.TracesKept + 1, Grown.Entries().Count);
     }
 
     /// <summary>🔴 The review's P2: a removed branch whose tree moved onto a branch of its own is a trace at once, keeping where it went, and no longer pending.</summary>

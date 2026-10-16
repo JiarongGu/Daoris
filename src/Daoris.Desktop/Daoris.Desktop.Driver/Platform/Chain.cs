@@ -243,6 +243,12 @@ public enum ChainOutcome
 
     /// <summary>It was refused (the tree busy): not an outcome; the effect stays pending.</summary>
     Refused,
+
+    /// <summary>
+    /// Refused with no try made, since nothing the last refusal rested on changed (FABRIC-END4a, second review): no try, so the unit's
+    /// deadline stays counted from the last real one.
+    /// </summary>
+    Settled,
 }
 
 /// <summary>One try of an effect, and what it emits once done.</summary>
@@ -250,6 +256,9 @@ public sealed record ChainTry(ChainOutcome Outcome, IReadOnlyList<ChainEvent> Em
 {
     /// <summary>Refused: still pending, tried again on an unblocking wake.</summary>
     public static ChainTry Refused { get; } = new(ChainOutcome.Refused, []);
+
+    /// <summary>Settled: still pending, no try made, the deadline unmoved (<see cref="ChainOutcome.Settled"/>).</summary>
+    public static ChainTry Settled { get; } = new(ChainOutcome.Settled, []);
 
     /// <summary>Done, emitting <paramref name="emitted"/>.</summary>
     public static ChainTry Done(params ChainEvent[] emitted) => new(ChainOutcome.Done, emitted);
@@ -263,6 +272,12 @@ public interface IChainEffect
 
     /// <summary>One try on <paramref name="unit"/>, judging again before it acts. A throw leaves it pending, as a refusal does.</summary>
     Task<ChainTry> TryAsync(string unit, CancellationToken ct);
+
+    /// <summary>
+    /// The same, saying whether the unit's deadline is what woke it (FABRIC-END4a, second review): a <paramref name="due"/> try is a real
+    /// one, never answered <see cref="ChainTry.Settled"/>, so a settle can never outlast the deadline.
+    /// </summary>
+    Task<ChainTry> TryAsync(string unit, bool due, CancellationToken ct) => TryAsync(unit, ct);
 }
 
 /// <summary>
@@ -470,16 +485,18 @@ public sealed class Chain
             // Its wait, counted from a persisted fact, has not run out: a restart neither resets nor shortens it.
             if (unit.From is { } from && from > now) continue;
             var key = (link.Rank, unit.Unit);
+            DateTimeOffset? before;
             lock (_gate)
             {
-                if (bound is { } every && _tried.TryGetValue(key, out var last) && now - last < every) continue;
+                before = _tried.TryGetValue(key, out var last) ? last : null;
+                if (bound is { } every && before is { } was && now - was < every) continue;
                 if (!_trying.Add(key)) continue;
                 _tried[key] = now;
             }
 
             try
             {
-                var tried = await effect.TryAsync(unit.Unit, ct).ConfigureAwait(false);
+                var tried = await effect.TryAsync(unit.Unit, due: bound is not null, ct).ConfigureAwait(false);
                 if (tried.Outcome == ChainOutcome.Done)
                 {
                     done++;
@@ -488,6 +505,15 @@ public sealed class Chain
                 else
                 {
                     refused++;
+                    // FABRIC-END4a, second review: a settled answer made no try, so the deadline stays the last real try's.
+                    if (tried.Outcome == ChainOutcome.Settled)
+                    {
+                        lock (_gate)
+                        {
+                            if (before is { } was) _tried[key] = was;
+                            else _tried.Remove(key);
+                        }
+                    }
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)

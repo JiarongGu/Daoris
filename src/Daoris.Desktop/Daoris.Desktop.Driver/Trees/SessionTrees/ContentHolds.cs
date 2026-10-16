@@ -223,13 +223,70 @@ internal sealed class ContentHolds(TreeContext context)
     /// A recovery ref made for a delete that did not happen (SQUASHTIDY1c) goes again, while the branch still holds its commit:
     /// the ref is one per deletion. Where the branch moved off it, the ref stays, since then it alone holds that commit.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Kept until the commit is shown protected</b> (FABRIC-END4a, second review): the branch's commit is read, shown to hold the
+    /// commit judged, and verified at that commit in the same ref transaction that deletes the recovery ref, so a branch gone, never put
+    /// back, or made again elsewhere as the ref goes keeps the ref.
+    /// </remarks>
     internal static async Task DropKeptAsync(string root, string branch, string? reference, string judged, CancellationToken ct)
     {
         if (reference is null) return;
-        var (held, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", judged, $"refs/heads/{branch}"], ct)
+        var (stands, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
+        if (stands != 0) return;
+        var tip = at.Trim();
+        var (held, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", judged, tip], ct).ConfigureAwait(false);
+        if (held != 0) return;
+        await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], $"verify refs/heads/{branch} {tip}\ndelete {reference} {judged}\n", ct)
             .ConfigureAwait(false);
-        if (held == 0) await WorkingTree.GitAsync(root, ["update-ref", "-d", reference, judged], ct).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Each form of <paramref name="line"/> this checkout has, at its commit now (FABRIC-END4a, second review): read before a proof that
+    /// rests on the line, so the delete's transaction verifies the commits the proof saw. Empty where there is no line.
+    /// </summary>
+    /// <returns>Null where git could not read them, and then nothing may be removed.</returns>
+    internal static async Task<IReadOnlyList<(string Ref, string Commit)>?> LineRefsAsync(string root, string? line, CancellationToken ct)
+    {
+        if (line is null) return [];
+        string[] forms = [$"refs/heads/{line}", $"refs/remotes/origin/{line}"];
+        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(objectname) %(refname)", .. forms], ct).ConfigureAwait(false);
+        return code != 0 ? null : [.. Pairs(listed).Where(pair => forms.Contains(pair.Ref, StringComparer.Ordinal))];
+    }
+
+    /// <summary>
+    /// What a removal's proof rested on (FABRIC-END4a, second review), for <see cref="DeleteJudgedAsync"/> to verify in its transaction:
+    /// <paramref name="forms"/>, the line's forms the judgement read, and, where none of them holds <paramref name="judged"/> by ancestry,
+    /// the first other ref <paramref name="holder"/> admits that does, at the commit git found holding it. Ancestry is read by commit, so
+    /// a holder that moves between this read and the delete refuses it.
+    /// </summary>
+    /// <param name="holder">Which ref may stand as the holder by ancestry, by its full name: the proof's own rule (D88's branches of the
+    /// person's, <see cref="PersonsRef"/>, or any ref, <see cref="AnyRef"/>).</param>
+    /// <returns>The refs and their commits; null where git could not read them, and then nothing may be removed.</returns>
+    internal static async Task<IReadOnlyList<(string Ref, string Commit)>?> ProofRefsAsync(
+        string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> forms, Func<string, bool> holder, CancellationToken ct)
+    {
+        var (found, containing, _) = await WorkingTree.GitAsync(
+            root, ["for-each-ref", "--contains", judged, "--format=%(objectname) %(refname)"], ct).ConfigureAwait(false);
+        if (found != 0) return null;
+        var holders = Pairs(containing).Where(pair => pair.Ref != $"refs/heads/{branch}" && !pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal)).ToList();
+        // A form of the line that holds it is the proof's holder already; else the first ref the proof's rule admits.
+        if (holders.Any(forms.Contains)) return forms;
+        return holders.FirstOrDefault(pair => holder(pair.Ref)) is { Ref: not null } first ? [.. forms, first] : forms;
+    }
+
+    private static IEnumerable<(string Ref, string Commit)> Pairs(string listed) =>
+        listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(row => row.Split(' ', 2))
+            .Where(parts => parts.Length == 2)
+            .Select(parts => (parts[1], parts[0]));
+
+    /// <summary>D88's holder: a branch of the person's, local outside <c>daoris/</c> or remote-tracking outside <c>*/daoris/</c>.</summary>
+    internal static bool PersonsRef(string reference) =>
+        (reference.StartsWith("refs/heads/", StringComparison.Ordinal) && !reference.StartsWith($"refs/heads/{TreeFollows.SessionPrefix}", StringComparison.Ordinal))
+        || (reference.StartsWith("refs/remotes/", StringComparison.Ordinal) && !reference.Contains($"/{TreeFollows.SessionPrefix}", StringComparison.Ordinal));
+
+    /// <summary>Any ref but Daoris's own recovery refs, which a delete makes for itself.</summary>
+    internal static bool AnyRef(string reference) => !reference.StartsWith(DiscardedPrefix, StringComparison.Ordinal);
 
     /// <summary>
     /// Delete a branch a judgement cleared, only while it is still the commit judged (SQUASHTIDY1c): <c>git update-ref -d</c>
@@ -238,14 +295,20 @@ internal sealed class ContentHolds(TreeContext context)
     /// </summary>
     /// <returns>Null where it is deleted; otherwise why it is kept, in a clause.</returns>
     /// <remarks>
-    /// 🔴 <b>The compare-and-swap covers the branch alone</b>, so what the proof rested on is looked at again once it went (FABRIC-END4a
-    /// review): where a form of the line in <paramref name="line"/> no longer holds the commit it held when judged (rewound or replaced),
-    /// or a tree checked the branch out after the trees were read, the branch is put back at the commit judged, and kept, saying why.
-    /// Its commits never left the object store between the two, so nothing is lost.
+    /// <para>🔴 <b>One ref transaction</b> (FABRIC-END4a, second review): <c>git update-ref --stdin</c> holds a <c>verify</c> for every ref
+    /// in <paramref name="held"/> at the commit the proof read and the <c>delete</c> at the commit judged, and git checks them all under its
+    /// locks, so a line rewound or replaced as the branch goes refuses the whole: the branch never leaves, and no look, page or session can
+    /// observe it absent. The transaction and what follows it are never cancelled, since a removal stopped halfway is one nobody judged.</para>
+    ///
+    /// <para><b>The one window no ref says: a checkout made after the trees were read.</b> So the trees are read again once it went. A tree
+    /// on the branch, or a list git could not give, puts it back at the commit judged, only where nothing stands at its name; a put-back
+    /// git refuses (a lock, a branch made meanwhile) is said as such, and the caller keeps any recovery ref, since
+    /// <see cref="DropKeptAsync"/> drops one only while the branch is shown to hold the commit.</para>
     /// </remarks>
-    /// <param name="line">Each form of the line the proof read and its commit then; empty where the proof was no line's.</param>
+    /// <param name="held">What the proof rested on (<see cref="ProofRefsAsync"/>, or the line's forms the judgement read), each at its commit
+    /// then. Every caller passes it; empty only where no ref's commit was part of the proof.</param>
     internal async Task<string?> DeleteJudgedAsync(
-        string root, string branch, string judged, CancellationToken ct, IReadOnlyList<(string Ref, string Commit)>? line = null)
+        string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct)
     {
         if (context.BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
         // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
@@ -261,54 +324,67 @@ internal sealed class ContentHolds(TreeContext context)
         }
 
         if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "-d", $"refs/heads/{branch}", judged], ct).ConfigureAwait(false);
-        if (code != 0)
+        var none = CancellationToken.None;
+        var transaction = string.Concat(held.Select(each => $"verify {each.Ref} {each.Commit}\n")) + $"delete refs/heads/{branch} {judged}\n";
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], transaction, none).ConfigureAwait(false);
+        if (code != 0) return await RefusedAsync(root, branch, judged, held, err).ConfigureAwait(false);
+
+        // The late checkout, which no ref says: a tree on the branch, or a list git could not give, is not clear.
+        var trees = await context.Worktrees.ReadAsync(root, none).ConfigureAwait(false);
+        var lateTree = trees?.GetValueOrDefault(branch);
+        if (trees is null || lateTree is not null)
         {
-            var (exists, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
-                .ConfigureAwait(false);
-            if (exists != 0) return null;
-            return now.Trim() != judged ? MovedSince : $"git would not delete it: {FirstLine(err)}";
+            return await PutBackAsync(root, branch, judged, trees is null
+                ? $"{ListUnread} once it went, so whether a tree checked it out as it went is not known"
+                : $"it was checked out at {lateTree} as it went").ConfigureAwait(false);
         }
 
-        // What the proof rested on, looked at again now the branch is gone: never cancelled, since a branch put back is a removal undone.
-        if (await MovedUnderAsync(root, branch, judged, line ?? []).ConfigureAwait(false) is { } undone) return undone;
-
         // What git branch -D also removes: the branch's own section of the config, its upstream where it had one.
-        await WorkingTree.GitAsync(root, ["config", "--remove-section", $"branch.{branch}"], ct).ConfigureAwait(false);
+        await WorkingTree.GitAsync(root, ["config", "--remove-section", $"branch.{branch}"], none).ConfigureAwait(false);
         return null;
     }
 
     /// <summary>
-    /// Whether what the delete's proof rested on moved as it went (FABRIC-END4a review): a form of the line no longer at or past the
-    /// commit it was judged at, or a tree that checked the branch out once the trees were read. Then the branch is made again at the
-    /// commit judged, only where nothing stands at its name, and why it is kept comes back; null where the delete stands.
+    /// Why git refused the transaction (FABRIC-END4a, second review): the branch gone already (nothing left to delete, null), moved since
+    /// it was judged, or a ref the proof rested on no longer at its commit; else git's own words. Nothing was deleted.
     /// </summary>
-    private async Task<string?> MovedUnderAsync(string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> line)
+    private static async Task<string?> RefusedAsync(string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, string err)
     {
         var none = CancellationToken.None;
-        string? why = null;
-        foreach (var (reference, commit) in line)
+        var (exists, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
+        if (exists != 0) return null;
+        if (now.Trim() != judged) return MovedSince;
+        foreach (var (reference, commit) in held)
         {
-            var (code, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], none).ConfigureAwait(false);
-            if (code == 0 && now.Trim() == commit) continue;
-            var (on, _, _) = code == 0
-                ? await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, now.Trim()], none).ConfigureAwait(false)
-                : (1, "", "");
-            if (on == 0) continue;
-            why = $"`{reference.Replace("refs/heads/", "").Replace("refs/remotes/", "")}` moved back under it as it went, so it was put back where it was";
-            break;
+            var (code, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], none).ConfigureAwait(false);
+            if (code != 0 || at.Trim() != commit) return $"`{Named(reference)}` moved as it went, so what its proof rested on no longer stands";
         }
 
-        if (why is null && await context.Worktrees.ReadAsync(root, none).ConfigureAwait(false) is { } trees && trees.GetValueOrDefault(branch) is { } path)
-        {
-            why = $"it was checked out at {path} as it went, so it was put back where it was";
-        }
-
-        if (why is null) return null;
-        // Made again only where nothing stands at its name: the empty old value is git's "must not exist".
-        await WorkingTree.GitAsync(root, ["update-ref", $"refs/heads/{branch}", judged, ""], none).ConfigureAwait(false);
-        return why;
+        return $"git would not delete it: {FirstLine(err)}";
     }
+
+    /// <summary>
+    /// The branch made again at the commit judged after a late checkout (FABRIC-END4a review), only where nothing stands at its name, the
+    /// empty old value being git's "must not exist"; git's answer read, so a lock or a branch made meanwhile is said as such.
+    /// </summary>
+    private static async Task<string> PutBackAsync(string root, string branch, string judged, string why)
+    {
+        var none = CancellationToken.None;
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", $"refs/heads/{branch}", judged, ""], none).ConfigureAwait(false);
+        if (code == 0) return $"{why}, so it was put back where it was";
+        var (exists, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
+        // Another restorer made it at the same commit: it stands where it was.
+        if (exists == 0 && now.Trim() == judged) return $"{why}, so it was put back where it was";
+        var standing = exists == 0 ? $"a branch of that name was made at {Short(now.Trim())} meanwhile" : FirstLine(err);
+        return $"{why}, and Daoris could not put it back at {Short(judged)} ({standing}); its commits stay where its proof found them held";
+    }
+
+    private static string Named(string reference) =>
+        reference.StartsWith("refs/heads/", StringComparison.Ordinal) ? reference["refs/heads/".Length..]
+        : reference.StartsWith("refs/remotes/", StringComparison.Ordinal) ? reference["refs/remotes/".Length..]
+        : reference;
+
+    private static string Short(string commit) => commit.Length > 12 ? commit[..12] : commit;
 
     /// <summary>
     /// What an unforced removal of a tree would take that no commit holds (SQUASHTIDY1c), asked of git so no setting hides it:

@@ -35,6 +35,9 @@ internal sealed class TreeContext
     /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get; set; }
 
+    /// <summary>What time it is (FABRIC-END4a, second review: the look's fallback judges a kept branch again at a bound); the system's unless a test sets it.</summary>
+    internal Func<DateTimeOffset> Clock { get; set; } = () => DateTimeOffset.UtcNow;
+
     /// <summary>The branches this machine's landings made (WSR5) — the only ones the clean-up and the hand-off act on.</summary>
     internal LandedBranches Recorded => new(Home);
 

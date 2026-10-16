@@ -202,6 +202,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get => _context.ListFails; init => _context.ListFails = value; }
 
+    /// <inheritdoc cref="TreeContext.Clock"/>
+    internal Func<DateTimeOffset> Clock { get => _context.Clock; init => _context.Clock = value; }
+
     /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, which a test counts. Production asks git.</summary>
     internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get => _context.CheckoutLine; init => _context.CheckoutLine = value; }
 
