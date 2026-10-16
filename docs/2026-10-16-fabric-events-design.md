@@ -1543,20 +1543,38 @@ closes as a node.
 Closing the quest at a graph's end therefore moves all of that onto a **submission**, in a closure graph only.
 
 **One rule: in a graph that holds `quest.close`, it is the graph's end.** A graph that puts any node after it, or that
-needs the quest's own Done before it, is refused when saved. So the quest is Done exactly when the work's end is
-reached, never before. The asker sees *submitted*, then the current gate or hold (*waiting for your look*, *evidence
-missing*, *deploying*), then *done*.
+needs the quest's own Done before it, is refused when saved. So **Daoris never writes Done before the work's end**. The
+asker sees *submitted*, then the current gate or hold (*waiting for your look*, *evidence missing*, *deploying*), then
+*done*. The two exceptions are modelled, never hidden:
+
+- **The person's override.** The person's own done (`/api/quests/{id}/done`, a `Person` door) stays theirs, at any time.
+  - A quest they close is closed as theirs, and `quest.close` leaves it as it is.
+  - When they have closed every quest the close node would close, the graph's end is reached as **overridden**, never as
+    reached.
+  - Its pending nodes are stopped (no new dispatch). An attempt already in flight is still reconciled and its receipts
+    kept (§D3), and the cleanup follows the cycle, *held* still required.
+  - The milestone says *closed by you before its end*, and names the nodes stopped.
+- **A chain closed only in part**, which only D69 can cause (below).
 
 **The submission.**
 
-- In a closure graph, the agent's `quest_respond` takes a new action, `ready`, carrying exactly what a done carries: its
-  note, an answer to each requirement, and the commit.
-- The service records it as a `Submitted` operation, which travels like every verb (D68). The quest stays taken: a
-  submission is not a status.
-- A later `ready` replaces the submission and is judged again from the start.
+- **Where it applies.** In a closure graph, the agent's `quest_respond` takes a new action, `ready`, carrying exactly
+  what a done carries: its note, an answer to each requirement, and the commit. It applies only to a quest that is
+  taken, in a run bound to a closure graph, from the machine holding the take. Anywhere else it is refused.
+- **Its operation.** The service records it as a `Submitted` operation. The quest stays taken: a submission is not a
+  status.
+- **Take ownership and loss** follow D69's rules for a take's own moves, by adding `Submitted` to the kinds a take owns
+  (`QuestLog.TakersOwn`):
+  - on a take that reads lost, it is refused inside the write (`OnALostTake`, QuestLog.cs:312; WAITCLAIM2);
+  - a remote refuses it as a push arrives (WAITCLAIM3);
+  - a rebase that finds the take lost loses it with the take, and names it on the take's conflict
+    (`QuestStore.RebaseAsync`, Quests.cs:1636-1671; WAITCLAIM1, 4);
+  - a submission on a numbered take reads held, and is never lost.
+- **Replacement order** is the quest's operation order. The latest applied `Submitted` is current, and a later `ready`
+  replaces an earlier one, judged again from the start. **A submission that has published its successor is sealed**
+  (below): a later `ready` on it is refused while the successor stands, naming it.
 - **The agent's `done` is refused there**, with words naming `ready`, so no done slips past the graph. The session's
   prompt says `ready` in such a repository.
-- The person's own done (`/api/quests/{id}/done`) stays theirs. If they close the quest, `quest.close` reads it as reached.
 
 **Submission-bound holds and evidence.** The judgements that hang on a Done today hang, in a closure graph, on the
 current submission instead, unchanged otherwise:
@@ -1568,26 +1586,70 @@ current submission instead, unchanged otherwise:
 - the landing and its gates wait on an **unheld submission**, where today they wait on an unheld Done, with every hold,
   opinion and look still applying.
 
-**Chains.**
+**Chains, and the successor's binding.**
 
-- A chain's next quest in a closure graph is published when the submission is unheld, in the same transaction, as an
-  unheld Done publishes it today.
-- D157's `work` node counts a chain quest finished when its submission is unheld.
-- At the end, `quest.close` closes every quest of the chain in this repository in chain order, each with its own
-  submission.
+- **Publication.** A chain's next quest in a closure graph is published when the submission is unheld, in the same
+  transaction, as an unheld Done publishes it today (Quests.cs:1120-1128). The successor records the submission that
+  published it (`publishedBy: { quest, submission }`), and that submission is **sealed**.
+- **The person's reopen.** Only the person may reopen a sealed submission, at a `Person` door. That changes its
+  successor:
+  - **not yet taken:** it is withdrawn, as a decline that applies while it is open (D132 point 10, `whileOpen`);
+  - **taken or started:** it is held, with the reason *the work it grew from was reopened*, and its session is told at
+    its next step. The person chooses to go on (the successor rebinds to the new submission once that is unheld, its
+    branch brought up to date) or to abandon it.
 
-**The node and its door.**
+  The withdrawal and the hold are operations, so they travel (D68). A teammate's machine that synced or took the
+  successor sees them as this machine does.
+- **Lost with its source.** A successor whose publishing submission is lost on a rebase (above) is lost with it: its
+  publication was pending on the same take. Its session, if one started, is stopped as a lost take's session is today
+  (Driver.cs:335-338). The winner's machine publishes its own successor from its own submission; the step's id is the
+  ask's (D65 §4), so nothing is published twice.
+- **D157's `work` node** counts a chain quest finished when its submission is unheld and sealed.
+- **At the end**, `quest.close` closes every quest of the chain in this repository **in one transaction** (below): all
+  of them or none.
 
-- The executor is Daoris's own, a performed built-in. It takes the recorded submission and never invents "met".
-- `POST /api/quests/{id}/close` is a local `Driver` door in `PersonDoors`, not mapped in shared mode, scoped to the
-  graph, node, unit, revision, take and submission it names.
-- In **one transaction** it checks the claim (D69, as `OnALostTake` does today, Quests.cs:1112), the binding (the
-  submission and revision are still current) and the invocation key. Then it appends the ordinary Done with the
-  submission's answers and the graph's provenance, unheld by construction, since its holds were cleared on the
-  submission.
-- A stale binding, a lost claim or a racing close leaves the quest untouched and answers why. A replayed key answers the
-  first outcome.
-- Its reach and failure authority are §E2's.
+**The node and its door: an explicit fence across two stores.** Closing reads facts held in two places, and no
+distributed transaction is pretended:
+
+| Store | Holds | Fenced by |
+|---|---|---|
+| the driver's records (the unit's entries, §C7) | the node acceptances and prerequisite receipts, the revision, the graph binding | the unit's record lock, taken by the lease's loop (§B5's one writer) and **held across the whole close** |
+| the service's quest store (SQLite) | the claims, the submissions, the holds' inputs (answers, evidence verdicts, the departure's yes, review verdicts), the chain's quests | **one SQLite transaction** in the close door |
+
+1. **The driver, under the unit's lock**, recomputes the close node's eligibility: every prerequisite acceptance still
+   current (none invalidated), the revision current on a fresh `RefSnapshot`, and the graph binding unchanged. It
+   computes a `closeToken` from the unit, revision, graph digest and the prerequisite acceptances' ids, and persists the
+   invocation (key, token) before sending (§D6).
+2. **The door** (`POST /api/quests/{id}/close`, a local `Driver` door, not mapped in shared mode, scoped to the graph,
+   node, unit, take and submissions it names) runs **one SQLite transaction** over every quest of the chain. For each
+   quest it checks, on the quest replayed inside the transaction:
+   - the claim (`OnALostTake`, Quests.cs:1112);
+   - that the named submission is the current one and sealed;
+   - that `Hold` is null: no departure without its yes, the evidence found at the submission's commit, the review's
+     verdict given;
+   - that the key is unused.
+
+   Only then does it append Done to every quest, with its submission's answers and the token as provenance. Any failed
+   check writes nothing, and answers which check, on which quest.
+3. **The driver, still under the lock**, records the close node's outcome with the token. No driver-side fact could
+   change between steps 1 and 3, since the lock's holder is their only writer, and a service-side fact that changed
+   (a review verdict, an evidence verdict, a claim) is caught inside step 2's transaction. A new commit arriving during
+   the call does not undo the close: the quest closed on the submission it judged, and the newer commit invalidates the
+   unit's acceptance as new work (§E2), never reopening the quest.
+4. **A timeout or a lost answer** makes the node *unknown*. It is reconciled by sending the same key again, which
+   answers the first outcome. A stale binding, a lost claim or a racing close leaves every quest untouched and answers
+   why.
+
+**A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
+quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
+
+- The others stay Done: they were this machine's to close.
+- The refused one is lost with its take, named on the take's conflict.
+- The graph reads **partially closed**, naming the quest and why.
+- **Recovery** is the person's: the work on that quest is now the winner's, and the milestone offers to stop the node.
+  It never retries over the winner's take.
+
+The close's reach and failure authority are §E2's.
 
 **Cutover.** A quest follows a closure graph only when the graph was bound at its first start. Quests already in flight
 keep today's done. Removing `quest.close` from a graph changes nothing for runs already bound.
@@ -1759,8 +1821,8 @@ This replaces §D12's lifecycle table for every row not yet built. The parallel 
 | 17-21 | FABRIC-PERFORM1a-e | as §D12 | as §D12, with NODE1 and WIRE1 for UNIT1b | as §D12 |
 | 22 | FABRIC-END4c | driver | 5, 14, PERFORM1d | as §D12 |
 | 23 | FABRIC-HUMAN1 | driver, modules | 12, 14; RPC1d and D156 §4.2's confirmation | as §D12, a pressed node |
-| 24a | FABRIC-CLOSE1a | service | 14, 15 (the cutover: graphs bound at first start) | **new** (Codex's QUESTCLOSE1, renamed and split): the submission, `ready`, `done` refused in a closure graph, submission-bound evidence, holds, departure and review, the chain's advance on an unheld submission, the close door's one transaction (§E5) |
-| 24b | FABRIC-CLOSE1b | driver | 13b, 24a, PERFORM1b | **new**, split: `quest.close`'s execution and recovery, landing on an unheld submission, closing the chain's quests in order, the rule that it is the end (§E5) |
+| 24a | FABRIC-CLOSE1a | service | 14, 15 (the cutover: graphs bound at first start) | **new** (Codex's QUESTCLOSE1, renamed and split): `ready` and `Submitted` as a take's own kind (applicability, replacement order, D69's loss), `done` refused in a closure graph, submission-bound evidence, holds, departure and review, the chain's advance with the successor bound and the submission sealed, the person's reopen, the close door's one transaction over the whole chain (§E5) |
+| 24b | FABRIC-CLOSE1b | driver | 13b, 24a, PERFORM1b | **new**, split: `quest.close`'s execution under the unit's lock (the fence's steps 1, 3 and 4), landing on an unheld submission, the person's override, *partially closed* and its recovery, the rule that it is the end (§E5) |
 | 25 | FABRIC-GRAPHEDIT1 | web-shell, modules | 14, 15, 23 | **merges** CYCLE1b and D157's editor (WORKFLOW1g): the graph editor |
 | 26 | FABRIC-GRAPHVIEW1 | driver, web-shell | 4, 15, 22, 23 | **merges** the configured END4b: the running view, *may be waiting on work Daoris cannot see* included |
 | 27 | FABRIC-CHAIN3 | driver, cli, web-shell | CHAIN2, 25 | as §D12 |
@@ -1807,6 +1869,18 @@ This replaces §D12's lifecycle table for every row not yet built. The parallel 
     as D157's did.
 50. **A maximal and an unreadable version:** a 24-step version with groups and every `failed` policy decodes within its
     synthetic bound; an unreadable one stays unreadable and kept; decoding is identical across runs and processes.
+51. **The person's override:** the person's done on every quest the close would close ends the graph as *overridden*.
+    Pending nodes stop, an in-flight attempt is still reconciled, and the milestone says who closed it.
+52. **An atomic chain close:** a failed check on any one quest of a chain writes no Done on any of them.
+53. **Partially closed:** a remote refusing one quest's Done for a lost take leaves the others Done, the graph *partially
+    closed* with the reason, and no retry over the winner's take.
+54. **`Submitted` on a lost take:** it is refused inside the write, lost on rebase and named on the take's conflict. Its
+    successor's publication is lost with it, and a session started on the successor is stopped.
+55. **A sealed submission:** a later `ready` is refused while its successor stands. The person's reopen withdraws an
+    untaken successor, and holds a started one with its reason.
+56. **The fence:** a review verdict or an evidence verdict changed after the driver's step 1 refuses the close in step
+    2's transaction. A prerequisite cannot be invalidated between steps 1 and 3, because the lock is held. A timeout
+    reconciles by the same key, writing Done once.
 
 ## E11. Questions for the owner
 
