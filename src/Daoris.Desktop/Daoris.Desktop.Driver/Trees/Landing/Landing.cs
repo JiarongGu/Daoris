@@ -932,6 +932,26 @@ public static class LandingRules
         Expand(rule.Pattern ?? "", Names(subject, rule, repository));
 
     /// <summary>
+    /// Whether a rule's pattern reads a subject's words (ACCEPTFOOT2): <c>{slug}</c>, or <c>{ticket}</c>, searched in them. A pattern
+    /// of ids alone names the branch the same whatever the work's words, so nothing need be read for them.
+    /// </summary>
+    public static bool ReadsWords(LandingRule rule) =>
+        (rule.Pattern ?? "").Contains("{slug}", StringComparison.Ordinal) || (rule.Pattern ?? "").Contains("{ticket}", StringComparison.Ordinal);
+
+    /// <summary>The git log format <see cref="OldestSubject"/> reads: each commit's subject after a unit separator, oldest first.</summary>
+    public const string SubjectsFormat = "--format=%x1f%s";
+
+    /// <summary>
+    /// The oldest commit's subject from <c>git log --reverse</c> in <see cref="SubjectsFormat"/> (ACCEPTFOOT2): the first commit's,
+    /// trimmed, empty where its message is, never a later commit's; null where the log names no commit.
+    /// </summary>
+    public static string? OldestSubject(string log)
+    {
+        var commits = log.Split('\u001f');
+        return commits.Length < 2 ? null : commits[1].Trim();
+    }
+
+    /// <summary>
     /// What a landing is named for (WSR5): the session, and the chain's FIRST quest with its title — the
     /// one the ask became — walking up each step's parent; a chat with no quest has its opening line.
     /// </summary>

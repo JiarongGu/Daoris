@@ -131,6 +131,27 @@ public sealed class QuestNameTests
         Assert.Equal(opening, named.Title);
     }
 
+    /// <summary>
+    /// The oldest commit's subject is the first commit's, kept by its boundary (`%x1f%s`), never the first line with words in it: an
+    /// oldest commit with an empty message names the work `work`, not the commit after it.
+    /// </summary>
+    [Theory]
+    [InlineData("\u001fCap the chunk budget\n\u001fAdd tests\n", "Cap the chunk budget")]
+    [InlineData("\u001f\n\u001fAdd tests\n", "")]
+    [InlineData("\u001f  Cap it  \r\n", "Cap it")]
+    [InlineData("", null)]
+    public void The_oldest_subject_is_the_first_commits_even_where_it_is_empty(string log, string? oldest) =>
+        Assert.Equal(oldest, LandingRules.OldestSubject(log));
+
+    /// <summary>Only a pattern that reads the subject's words (`{slug}`, `{ticket}`) is worth a git read for them.</summary>
+    [Theory]
+    [InlineData("feature/{slug}-{session}", true)]
+    [InlineData("feature/{ticket}", true)]
+    [InlineData("feature/{session}", false)]
+    [InlineData("review/{quest}", false)]
+    public void Only_a_pattern_that_says_the_words_reads_them(string pattern, bool reads) =>
+        Assert.Equal(reads, LandingRules.ReadsWords(new LandingRule(LandingForm.Branch, pattern)));
+
     /// <summary>A quest's subject, one already named, and one with no opening are named as they always were.</summary>
     [Fact]
     public void Only_a_conversations_opening_is_set_aside_for_its_work()

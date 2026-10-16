@@ -241,6 +241,24 @@ public sealed class LandingTests : IDisposable
         Assert.Equal(plan.Target, landed.Branch);
     }
 
+    /// <summary>An oldest commit with an empty message names the work `work`, never the commit after it (ACCEPTFOOT2).</summary>
+    [Fact]
+    public async Task A_conversations_oldest_commit_with_no_message_names_it_work()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{slug}-{session}"));
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(opened.Path, "work.txt"), "the conversation's work\n");
+        await GitAsync(opened.Path, "add", "work.txt");
+        await GitAsync(opened.Path, "commit", "--quiet", "--allow-empty-message", "-m", "");
+        await CommitAsync(opened.Path, "more.txt", "and its test", "Add tests");
+
+        var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", null, "ok so that is merged now"));
+
+        Assert.Equal("feature/work-s1a2b3c4", plan.Target);
+    }
+
     [Fact]
     public async Task A_branch_that_exists_is_refused_and_never_moved()
     {
