@@ -175,6 +175,10 @@ using Daoris.Driver;
 //                 or bring each repository up to date after its pull request merged (WSR6, D109). The clean-up
 //                 and bringing up to date take one workspace's checkouts with --workspace (BRSCOPE1a).
 //
+//   work state [<unit>] [--entries]
+//                 each unit of work's milestone (FABRIC-MILESTONE1a): its end reached, the result kept, the cleanup pending or
+//                 completed, the recovery retained, derived read-only from the tree lifecycle's records; `trees state` says the same.
+//
 //   sync [status | dismiss <quest>] [--workspace <name>]
 //                 one pass now, the tick's own, for every circle with a remote or the one named; with
 //                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a);
@@ -481,6 +485,12 @@ try
     if (args is ["trees", .. var treesArgs])
     {
         return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs, log);
+    }
+
+    // Each unit of work's milestone (FABRIC-MILESTONE1a, D50): a look, read from the records and changing nothing.
+    if (args is ["work", "state", .. var stateArgs])
+    {
+        return await Daoris.Driver.Host.WorkConsole.StateAsync(stateArgs);
     }
 
     // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.
