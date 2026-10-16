@@ -16,7 +16,7 @@ internal static class SessionLastWords
     {
         // An id that is not one names no record, and never a path under the home.
         if (!SessionEventText.IsId(session)) return ([], null);
-        return (events.LastPlan(session), ParkedWords(events, session, Path.Combine(home, "sessions", $"{session}.log")));
+        return (events.LastPlan(session), ParkedWords(events, session, DaorisHome.Entry(home, HomeEntry.Sessions, $"{session}.log")));
     }
 
     /// <summary>How much of a parked session's words its card keeps, from the end, where a question list sits (FG5).</summary>

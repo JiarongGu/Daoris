@@ -175,7 +175,7 @@ public sealed class ChatAttachmentTests : IDisposable
     /// <summary>A plugin whose server drives Daoris's browser, under the home the chat's runner reads (D78).</summary>
     private void HandBrowserPlugin()
     {
-        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        var plugin = DaorisHome.Entry(_home, HomeEntry.Plugins,"in-app-browser");
         Directory.CreateDirectory(plugin);
         File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
             { "id": "in-app-browser", "servers": [
@@ -237,11 +237,11 @@ public sealed class ChatAttachmentTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = command },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), browser: browser);
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), browser: browser);
 
         var start = await runner.StartAsync("engine", adapter, config);
         var id = start.SessionId ?? throw new InvalidOperationException(start.Message);

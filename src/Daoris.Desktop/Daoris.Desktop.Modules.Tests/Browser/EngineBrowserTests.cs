@@ -1,3 +1,5 @@
+using Daoris.Driver;
+
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
@@ -18,9 +20,9 @@ public sealed class EngineBrowserTests : Bridge
     [Fact]
     public void Its_profile_is_the_homes_and_not_the_webview_windows()
     {
-        Assert.Equal(Path.Combine(Home, "browser", "engine"), EngineBrowser.ProfileFolder(Home));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.BrowserEngine), EngineBrowser.ProfileFolder(Home));
         Assert.NotEqual(Path.Combine(Home, "browser", "profile"), EngineBrowser.ProfileFolder(Home));
-        Assert.Equal(Path.Combine(Home, "browser", "engine", "Default"),
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.BrowserEngine, "Default"),
             EngineBrowser.ProfileDirectory(EngineBrowser.ProfileFolder(Home)));
     }
 

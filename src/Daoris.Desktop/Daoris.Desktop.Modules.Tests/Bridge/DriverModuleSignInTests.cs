@@ -51,7 +51,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         Assert.Contains("no-codex-here", refusal);
         Assert.Contains("could not be started", refusal);
         Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
-        Assert.False(Directory.Exists(Path.Combine(Home, "harnesses", "codex-acp")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.AgentHomes, "codex-acp")));
         // CODEXACCT2: the console's first line names the sign-in it started, by Codex's device code, which needs no port
         // of this machine, where the browser sign-in's callback port is reserved on some (os error 10013).
         await UntilAsync(() => Raised.Select(Line).Any(line => line.StartsWith("$ ", StringComparison.Ordinal)));

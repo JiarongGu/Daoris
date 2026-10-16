@@ -30,8 +30,8 @@ public sealed class HelperLookTests : IDisposable
     /// <summary>An ask on file as <c>helper_ask</c> writes it.</summary>
     private void Ask(string id, string question = "Why does it drop the last day?", string by = "agent", string? agent = null, string asker = "s1")
     {
-        Directory.CreateDirectory(Path.Combine(_home, "helpers"));
-        File.WriteAllText(Path.Combine(_home, "helpers", $"{id}.ask.json"),
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Helpers,$"{id}.ask.json"),
             new JsonObject
             {
                 ["id"] = id, ["asker"] = asker, ["question"] = question, ["agent"] = agent, ["askedBy"] = by, ["at"] = At.AddMinutes(int.Parse(id[^1..])).ToString("O"),
@@ -93,8 +93,8 @@ public sealed class HelperLookTests : IDisposable
         {
             if (DateTime.UtcNow > until)
             {
-                var held = Directory.Exists(Path.Combine(_home, "helpers"))
-                    ? string.Join(" | ", Directory.GetFiles(Path.Combine(_home, "helpers")).Select(file => $"{Path.GetFileName(file)}: {File.ReadAllText(file).ReplaceLineEndings(" ")}"))
+                var held = Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Helpers))
+                    ? string.Join(" | ", Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Helpers)).Select(file => $"{Path.GetFileName(file)}: {File.ReadAllText(file).ReplaceLineEndings(" ")}"))
                     : "no helpers folder";
                 throw new TimeoutException($"the helper's pass did not settle. {held}");
             }
@@ -177,7 +177,7 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Empty(events);
         Assert.Equal(declined, Files.ReadState("a1"));
-        Assert.DoesNotContain(new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.DoesNotContain(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
     }
 
     [Fact]
@@ -192,7 +192,7 @@ public sealed class HelperLookTests : IDisposable
         var state = Files.ReadState("a1")!;
         Assert.Equal((HelperStates.Refused, HelperWhy.Off), (state.State, state.Code));
         Assert.Contains("refused (off)", Assert.Single(events));
-        var note = Assert.Single(new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
+        var note = Assert.Single(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["helper.refused"], NoteAssert.Codes(note.Parts!));
         Assert.Equal("off", note.Parts![0].Value("why"));
         Assert.DoesNotContain("trees", note.Text);
@@ -301,10 +301,10 @@ public sealed class HelperLookTests : IDisposable
         var word = Assert.Single(host.Said("s1"));
         Assert.Equal((Helper, null), (word!["helper"]!.GetValue<string>(), word["by"]?.GetValue<string>()));
 
-        var notes = new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events.Where(e => e.Kind == SessionEventKind.Note).ToList();
+        var notes = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events.Where(e => e.Kind == SessionEventKind.Note).ToList();
         Assert.Equal(["helper.asked", "helper.answered"], notes.SelectMany(note => NoteAssert.Codes(note.Parts!)));
         Assert.All(notes, note => Assert.DoesNotContain("D:/", note.Text));
-        var helping = Assert.Single(new SessionEvents(Path.Combine(_home, "sessions")).After(Helper, 0).Events, e => e.Kind == SessionEventKind.Note);
+        var helping = Assert.Single(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(Helper, 0).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["helper.helping"], NoteAssert.Codes(helping.Parts!));
         Assert.Empty(events);
     }
@@ -325,7 +325,7 @@ public sealed class HelperLookTests : IDisposable
         var (_, text) = Assert.Single(host.HelperHands);
         Assert.Contains("did not use its answer tool", text);
         Assert.Contains("> Probably the exclusive window.", text);
-        var notes = new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events.Where(e => e.Kind == SessionEventKind.Note).ToList();
+        var notes = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events.Where(e => e.Kind == SessionEventKind.Note).ToList();
         Assert.Equal(["helper.asked", "helper.answered-last-words"], notes.SelectMany(note => NoteAssert.Codes(note.Parts!)));
     }
 
@@ -344,7 +344,7 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Equal(HelperWhy.NoAnswer, Files.ReadState("a1")!.Code);
         Assert.Empty(host.HelperHands);
-        var note = new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events.Last(e => e.Kind == SessionEventKind.Note);
+        var note = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events.Last(e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["helper.refused-by"], NoteAssert.Codes(note.Parts!));
         Assert.Equal(("codex-acp", "no-answer"), (note.Parts![0].Value("agent"), note.Parts[0].Value("why")));
     }
@@ -430,7 +430,7 @@ public sealed class HelperLookTests : IDisposable
         await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered, Handed: not null });
 
         Assert.Single(host.HelperHands);
-        var shown = new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events
+        var shown = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events
             .Single(e => e.Kind == SessionEventKind.User);
         Assert.Equal(("target", "resume", host.Said("s1")[0]!["id"]!.GetValue<string>()), (shown.Origin, shown.Reaches, shown.Id));
         Assert.Equal(host.HelperHands[0].Text, shown.Text);

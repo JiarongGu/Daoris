@@ -1621,7 +1621,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 {
                     // Run in an empty folder of the home's own, never the repository or OS temp: the CLI keys its project
                     // state by its working directory, and a read is no project's.
-                    var folder = Path.Combine(profileHome ?? Home, "usage-read");
+                    var folder = profileHome is null ? DaorisHome.Entry(Home, HomeEntry.UsageRead) : Path.Combine(profileHome, "usage-read");
                     Directory.CreateDirectory(folder);
                     var asking = CodexUsage.Prepare(command.Run, toolchain, profileHome, command.Managed, folder);
                     var at = Clock();

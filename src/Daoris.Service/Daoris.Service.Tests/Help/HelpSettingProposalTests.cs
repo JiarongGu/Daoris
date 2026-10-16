@@ -406,6 +406,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 }

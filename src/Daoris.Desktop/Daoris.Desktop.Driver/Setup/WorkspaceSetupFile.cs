@@ -22,14 +22,12 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class WorkspaceSetupFile
 {
-    public const string Folder = "setup";
-
     // One writer at a time in this process: a tick and a terminal in one shell would otherwise drop each other's change.
     private static readonly object Gate = new();
 
     /// <summary>Where <paramref name="workspace"/>'s plan is kept.</summary>
     public static string PathOf(string home, string workspace) =>
-        Path.Combine(home, Folder, IntakeRoom.SafeName(RemoteTarget.Workspace(workspace)) + ".json");
+        DaorisHome.Entry(home, HomeEntry.Setup, IntakeRoom.SafeName(RemoteTarget.Workspace(workspace)) + ".json");
 
     /// <summary>The workspace's plan, or none; with why, where a file is there and does not read.</summary>
     public static (WorkspaceSetupPlan? Plan, string? Problem) Load(string home, string workspace)
@@ -47,7 +45,7 @@ public static class WorkspaceSetupFile
     /// <summary>Every plan under the home that reads, by its workspace's name; a file that does not read is passed over.</summary>
     public static IReadOnlyList<WorkspaceSetupPlan> All(string home)
     {
-        var folder = Path.Combine(home, Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Setup);
         if (!Directory.Exists(folder)) return [];
         try
         {

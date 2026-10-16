@@ -88,7 +88,7 @@ public sealed class TreeLockTests : IDisposable
     {
         var path = TreeLock.PathOf(_home, "aurora", "engine");
 
-        Assert.StartsWith(Path.Combine(_home, TreeLock.Folder) + Path.DirectorySeparatorChar, path);
+        Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Locks) + Path.DirectorySeparatorChar, path);
         Assert.False(path.StartsWith(new SessionTrees(_home).TreesRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
     }
 }

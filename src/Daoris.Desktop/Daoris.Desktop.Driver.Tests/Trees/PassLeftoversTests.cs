@@ -15,7 +15,7 @@ public sealed class PassLeftoversTests : IDisposable
 
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "pass-leftovers", Guid.NewGuid().ToString("N")[..8]);
     private string Home => Path.Combine(_scratch, "daoris-home");
-    private string Engine => Path.Combine(Home, "trees", "default", "engine");
+    private string Engine => DaorisHome.Entry(Home, HomeEntry.Trees,"default", "engine");
 
     public PassLeftoversTests() => Directory.CreateDirectory(Engine);
 
@@ -56,7 +56,7 @@ public sealed class PassLeftoversTests : IDisposable
 
         var moved = new SessionTrees(Home).ClearPassCopies(Engine, now, process => process == Runs);
 
-        var aside = Path.Combine(Home, "trees", ".tidied", "default", "engine");
+        var aside = DaorisHome.Entry(Home, HomeEntry.Trees,".tidied", "default", "engine");
         Assert.Equal(["o-0de1d002", "o-0dead001"], moved.Select(to => Path.GetFileName(to)[..10]).Order(StringComparer.Ordinal));
         Assert.All(moved, to => Assert.Equal(aside, Path.GetDirectoryName(to)));
         Assert.All(moved, to => Assert.NotNull(TreeSetAside.MovedAt(Path.GetFileName(to))));
@@ -72,9 +72,9 @@ public sealed class PassLeftoversTests : IDisposable
     {
         var trees = new SessionTrees(Home);
 
-        Assert.Empty(trees.ClearPassCopies(Path.Combine(Home, "trees", "default", "absent"), DateTimeOffset.UtcNow.AddHours(1), _ => false));
+        Assert.Empty(trees.ClearPassCopies(DaorisHome.Entry(Home, HomeEntry.Trees,"default", "absent"), DateTimeOffset.UtcNow.AddHours(1), _ => false));
         Assert.Empty(trees.ClearPassCopies(Engine, DateTimeOffset.UtcNow.AddHours(1), _ => false));
-        Assert.False(Directory.Exists(Path.Combine(Home, "trees", ".tidied")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Trees,".tidied")));
     }
 
     /// <summary>A copy's folder as a pass makes one: its files, and the file in its own <c>.git</c> naming who holds it.</summary>

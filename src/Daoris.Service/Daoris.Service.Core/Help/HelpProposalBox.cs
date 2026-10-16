@@ -62,7 +62,7 @@ public sealed class HelpProposalBox(string? home)
     public string? Home => file.Home;
 
     /// <summary>The folder a proposal is written in, under the home.</summary>
-    public static string FolderOf(string home) => Path.Combine(home, "help", "proposals");
+    public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpProposals);
 
     /// <summary>The driver's named home first — where what this would change lives — then the account's (D63).</summary>
     public static HelpProposalBox FromEnvironment() =>

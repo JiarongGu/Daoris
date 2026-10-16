@@ -45,7 +45,7 @@ public sealed class RotationUseTwinTests : IDisposable
 
     public static IEnumerable<object?[]> CurveRefusals => Table("refusal");
 
-    private string Wiring => Path.Combine(_home, "harnesses.json");
+    private string Wiring => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private HarnessSettings Read(string file)
     {

@@ -21,7 +21,7 @@ public sealed class PluginCatalogTests : IDisposable
 
     private string Plugin(string folder, string manifest)
     {
-        var path = Path.Combine(_home, "plugins", folder);
+        var path = DaorisHome.Entry(_home, HomeEntry.Plugins,folder);
         Directory.CreateDirectory(path);
         File.WriteAllText(Path.Combine(path, PluginCatalog.ManifestName), manifest);
         return path;
@@ -63,7 +63,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Null(entry.Problem);
         Assert.Equal(folder, entry.Folder);
         // What it keeps lives BESIDE the install, never inside it — an update replaces the folder wholesale.
-        Assert.Equal(Path.Combine(_home, "plugins", ".data", "acme.agent"), entry.Data);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Plugins,".data", "acme.agent"), entry.Data);
 
         var harness = Assert.Single(entry.Manifest.Harnesses);
         Assert.Equal("acme-agent", harness.Name);
@@ -187,8 +187,8 @@ public sealed class PluginCatalogTests : IDisposable
     [Fact]
     public void A_folder_without_a_manifest_is_not_a_plugin_and_is_not_listed()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "plugins", "notes"));
-        Directory.CreateDirectory(Path.Combine(_home, "plugins", ".data", "gone"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins,"notes"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins,".data", "gone"));
 
         Assert.Empty(PluginCatalog.Load(_home).Plugins);
     }
@@ -205,7 +205,7 @@ public sealed class PluginCatalogTests : IDisposable
         var off = PluginCatalog.Load(_home).Plugins[0];
         Assert.False(off.Enabled);
         Assert.Null(off.Problem);
-        Assert.Contains("acme.agent", File.ReadAllText(Path.Combine(_home, PluginState.FileName)));
+        Assert.Contains("acme.agent", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.PluginState)));
 
         PluginState.Enable(_home, "acme.agent");
         Assert.True(PluginCatalog.Load(_home).Plugins[0].Enabled);
@@ -227,7 +227,7 @@ public sealed class PluginCatalogTests : IDisposable
     {
         var kelvin = $"acme.{(char)0x212A}eep";
         Plugin("acme.keep", """{ "id": "acme.keep", "harnesses": [ { "name": "acme-keep", "command": ["acme"] } ] }""");
-        File.WriteAllText(Path.Combine(_home, PluginState.FileName), JsonSerializer.Serialize(new { disabled = new[] { kelvin } }));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.PluginState), JsonSerializer.Serialize(new { disabled = new[] { kelvin } }));
 
         Assert.True(PluginCatalog.Load(_home).Plugins[0].Enabled);
         PluginState.Disable(_home, "acme.keep");
@@ -243,7 +243,7 @@ public sealed class PluginCatalogTests : IDisposable
     public void An_edit_over_a_state_file_that_could_not_be_read_is_refused_and_the_file_is_kept()
     {
         Directory.CreateDirectory(_home);
-        var file = Path.Combine(_home, PluginState.FileName);
+        var file = DaorisHome.Entry(_home, HomeEntry.PluginState);
         const string held = """{ "disabled": ["acme.noisy"], torn""";
         File.WriteAllText(file, held);
 
@@ -525,7 +525,7 @@ public sealed class PluginCatalogTests : IDisposable
         var entry = Assert.Single(catalog.Plugins);
         var server = Assert.Single(catalog.Servers);
 
-        Assert.Equal(Path.Combine(_home, PluginCatalog.Folder, PluginCatalog.DataFolder, "browser"), entry.Data);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Plugins,PluginCatalog.DataFolder, "browser"), entry.Data);
         Assert.Equal(["@playwright/mcp", "--user-data-dir", Path.Combine(entry.Data, "profile")], server.Arguments);
         Assert.Equal(Path.GetFullPath(entry.Data), server.Environment["BROWSER_STATE"]);
     }
@@ -609,7 +609,7 @@ public sealed class PluginCatalogTests : IDisposable
 
         var path = SpawnServers.Write(_home, "s1", [server]);
         Assert.NotNull(path);
-        Assert.StartsWith(Path.Combine(_home, SpawnServers.Folder), path);
+        Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Spawn), path);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         var written = document.RootElement.GetProperty("mcpServers").GetProperty("browser");

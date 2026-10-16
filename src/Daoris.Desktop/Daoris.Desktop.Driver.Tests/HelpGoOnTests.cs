@@ -23,7 +23,7 @@ public sealed class HelpGoOnTests : IDisposable
 
     private string Room => HelpRoom.PathOf(_home);
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>The native door's shape: a pipe that resumes, which reads the conversation it goes on in from its target.</summary>
     private sealed class Native : ISessionAdapter
@@ -55,8 +55,8 @@ public sealed class HelpGoOnTests : IDisposable
             [native.Name] = native,
         });
         return new ChatRunner(
-            ledger.Client(), adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>The person's words as the say door shows them (MSG1d): theirs, under the record's id, reaching it on resume.</summary>
@@ -139,8 +139,8 @@ public sealed class HelpGoOnTests : IDisposable
         });
         var events = Events;
         using var runner = new ChatRunner(
-            ledger.Client(), adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var answer = await runner.GoOnAsync("h1", DriverConfig.Empty);
 

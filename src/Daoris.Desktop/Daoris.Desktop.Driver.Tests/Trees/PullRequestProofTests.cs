@@ -112,8 +112,8 @@ public sealed class PullRequestProofTests
             Install(home, "acme.asks", [HookPoints.Land, HookPoints.State]);
             Install(home, "acme.lands", [HookPoints.Land]);
             Install(home, "acme.off", [HookPoints.State]);
-            Directory.CreateDirectory(Path.Combine(home, "plugins", "acme.broken"));
-            File.WriteAllText(Path.Combine(home, "plugins", "acme.broken", "plugin.json"), "not json");
+            Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins,"acme.broken"));
+            File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins,"acme.broken", "plugin.json"), "not json");
             PluginState.Disable(home, "acme.off");
             var catalog = PluginCatalog.Load(home);
 
@@ -131,7 +131,7 @@ public sealed class PullRequestProofTests
 
     private static void Install(string home, string id, IReadOnlyList<string> points)
     {
-        var folder = Path.Combine(home, "plugins", id);
+        var folder = DaorisHome.Entry(home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
         {

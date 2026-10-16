@@ -115,7 +115,7 @@ public sealed class PluginPageTests : IDisposable
             .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.lands"))
             .WithLanding("game", new LandingRule(LandingForm.Branch, "fix/{quest}", Plugin: "acme.other"))
             .WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "work/{quest}", Plugin: "acme.lands"))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
         var ready = PluginPage.Read(Home, "acme.lands");
         PluginState.Disable(Home, "acme.lands");
@@ -180,7 +180,7 @@ public sealed class PluginPageTests : IDisposable
         Install("acme.gate", """
             { "id": "acme.gate", "version": "1.0.0", "hooks": { "command": ["node", "hooks.mjs"], "points": ["quest/consider"] } }
             """);
-        var installed = Path.Combine(Home, "plugins", "acme.gate");
+        var installed = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");
         File.WriteAllText(Path.Combine(installed, PluginSource.FileName), JsonSerializer.Serialize(new { folder = source }));
         File.WriteAllText(Path.Combine(installed, "plugin.test.mjs"), "");
         Directory.CreateDirectory(Path.Combine(installed, "test"));
@@ -214,7 +214,7 @@ public sealed class PluginPageTests : IDisposable
 
     private void Install(string id, string manifest)
     {
-        var folder = Path.Combine(Home, "plugins", id);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }

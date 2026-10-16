@@ -146,7 +146,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     /// <summary>The machine log's lines under a home, read while the log may still be writing them.</summary>
     private static string[] LogLines(string home)
     {
-        var folder = Path.Combine(home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return [.. Directory.GetFiles(folder).SelectMany(path =>
         {

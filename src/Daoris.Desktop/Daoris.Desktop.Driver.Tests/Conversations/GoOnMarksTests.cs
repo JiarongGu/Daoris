@@ -32,8 +32,8 @@ public sealed class GoOnMarksTests : IDisposable
         marks.Mark("s1", ["w1", "w2"], ContinueWhy.Of(ContinueWhy.Tree), At);
 
         Assert.Equal(new GoOnMark(["w1", "w2"], ContinueWhy.Tree, At), marks.Read("s1"), new MarkComparer());
-        Assert.True(File.Exists(Path.Combine(_home, "sessions", "s1.cannot.json")));
-        Assert.DoesNotContain("\r\n", File.ReadAllText(Path.Combine(_home, "sessions", "s1.cannot.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.cannot.json")));
+        Assert.DoesNotContain("\r\n", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.cannot.json")));
     }
 
     /// <summary>Judged: every word waiting is among those marked. A word said since is tried again; no words, nothing to try.</summary>
@@ -52,8 +52,8 @@ public sealed class GoOnMarksTests : IDisposable
     [Fact]
     public void A_mark_that_does_not_read_is_none()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
-        File.WriteAllText(Path.Combine(_home, "sessions", "s1.cannot.json"), "{ not json");
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.cannot.json"), "{ not json");
         var marks = new GoOnMarks(_home);
 
         Assert.Null(marks.Read("s1"));

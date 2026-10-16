@@ -264,7 +264,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     [InlineData(false)]
     public async Task A_driven_session_handed_Daoris_browser_is_named_as_driving_it_while_it_runs(bool shell)
     {
-        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        var plugin = DaorisHome.Entry(_home, HomeEntry.Plugins,"in-app-browser");
         Directory.CreateDirectory(plugin);
         File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
             { "id": "in-app-browser", "servers": [
@@ -296,7 +296,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     [InlineData(false)]
     public async Task A_driven_sessions_first_prompt_tells_it_the_browser_it_was_handed(bool shell)
     {
-        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        var plugin = DaorisHome.Entry(_home, HomeEntry.Plugins,"in-app-browser");
         Directory.CreateDirectory(plugin);
         File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
             { "id": "in-app-browser", "servers": [
@@ -378,7 +378,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), configure?.Invoke(config) ?? config, adapters, _home, processes: processes, sync: sync,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), browser: browser);
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), browser: browser);
     }
 
     /// <summary>The pipe door's stand-in: it answers the toolchain's two questions, then holds its turn.</summary>

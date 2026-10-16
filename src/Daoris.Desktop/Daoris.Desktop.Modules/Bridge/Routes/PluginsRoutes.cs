@@ -44,7 +44,7 @@ public sealed class PluginsRoutes(DriverContext context)
         var running = new HashSet<string>(_loop.RunningPlugins, StringComparer.Ordinal);
         return new
         {
-            Folder = Path.Combine(_loop.Home, PluginCatalog.Folder),
+            Folder = DaorisHome.Entry(_loop.Home, HomeEntry.Plugins),
             // Where a new plugin may speak (PLUG8): the kit's points, which are the driver's.
             Kit = new { Points = PluginKit.Points.Select(point => new { point.Name, point.Kind }).ToArray() },
             Plugins = catalog.Plugins.Select(plugin =>
@@ -193,7 +193,7 @@ public sealed class PluginsRoutes(DriverContext context)
         switch (which)
         {
             case "plugins":
-                folder = Path.Combine(_loop.Home, PluginCatalog.Folder);
+                folder = DaorisHome.Entry(_loop.Home, HomeEntry.Plugins);
                 break;
             case "install" or "data":
             {

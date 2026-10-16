@@ -27,7 +27,7 @@ public sealed class ProbeRaceTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-probe-race-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private string Script => Path.Combine(_home, "agent.mjs");
 

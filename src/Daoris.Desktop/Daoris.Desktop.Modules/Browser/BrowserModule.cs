@@ -41,7 +41,7 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
             : null;
 
     /// <summary>The home, resolved per call: the person may edit the files by hand between calls.</summary>
-    public static string Home => Path.GetDirectoryName(DaorisHome.Require("browser"))!;
+    public static string Home => DaorisHome.Resolve() ?? throw new DriverException($"{DaorisHome.Sentence} (wanted: browser)");
 
     protected override Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)

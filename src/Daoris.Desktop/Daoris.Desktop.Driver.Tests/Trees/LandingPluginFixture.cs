@@ -73,7 +73,7 @@ public abstract class LandingPluginFixture : IDisposable
     protected void InstallRealPlugin(bool silent = false)
     {
         InstallManifest();
-        File.WriteAllText(Path.Combine(Home, "plugins", Id, "land.mjs"), $$"""
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Plugins,Id, "land.mjs"), $$"""
             import { spawnSync } from 'node:child_process';
             import { mkdirSync, writeFileSync } from 'node:fs';
             import { join } from 'node:path';
@@ -102,14 +102,14 @@ public abstract class LandingPluginFixture : IDisposable
 
     private void Install(string manifest)
     {
-        var folder = Path.Combine(Home, "plugins", Id);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,Id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
 
     protected void Rule(LandingRule rule, bool workspace = false) =>
         (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     /// <summary>A repository whose `origin` is a bare repository beside it — somewhere a push lands without leaving the machine.</summary>
     protected async Task<(string Root, string Origin)> RepositoryWithOriginAsync(string name)

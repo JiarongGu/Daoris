@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverLoopLockTests : Bridge
 {
-    private string LockFile => Path.Combine(Home, "driver.lock");
+    private string LockFile => DaorisHome.Entry(Home, HomeEntry.DriverLock);
 
     private DriverLoop Loop() =>
         new(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0") { HoldRetry = TimeSpan.FromMilliseconds(100) };

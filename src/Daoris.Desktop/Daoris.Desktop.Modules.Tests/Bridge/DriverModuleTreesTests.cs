@@ -63,7 +63,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public async Task A_file_read_for_its_preview_is_answered_with_its_path_its_size_and_its_text()
     {
-        var tree = Path.Combine(Home, "trees", "engine");
+        var tree = DaorisHome.Entry(Home, HomeEntry.Trees,"engine");
         Directory.CreateDirectory(Path.Combine(tree, "src"));
         File.WriteAllText(Path.Combine(tree, "src", "chunk.ts"), "export const a = 1;\n");
 
@@ -89,10 +89,10 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public async Task Opening_a_preview_is_a_machine_log_line_with_the_session_and_the_path_relative_to_the_tree()
     {
-        var tree = Path.Combine(Home, "trees", "engine");
+        var tree = DaorisHome.Entry(Home, HomeEntry.Trees,"engine");
         Directory.CreateDirectory(Path.Combine(tree, "src"));
         File.WriteAllText(Path.Combine(tree, "src", "chunk.ts"), "export const a = 1;\n");
-        File.WriteAllText(Path.Combine(Home, "driver.json"), "{}");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{}");
         using var log = new MachineLog(Home, "desktop", () => new DateTimeOffset(2026, 9, 30, 7, 10, 0, TimeSpan.Zero));
 
         await TreesRoutes.PreviewAsync("s1a2b3c4", tree, Path.Combine(tree, "src", "chunk.ts"), CancellationToken.None, log);
@@ -101,7 +101,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
             () => TreesRoutes.PreviewAsync("s1a2b3c4", tree, "src/gone.ts", CancellationToken.None, log));
 
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         var lines = Directory.GetFiles(folder).SelectMany(file =>
         {
             using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
@@ -139,10 +139,10 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public async Task A_path_outside_the_tree_or_under_git_is_refused_by_the_route_s_reading()
     {
-        var tree = Path.Combine(Home, "trees", "engine");
+        var tree = DaorisHome.Entry(Home, HomeEntry.Trees,"engine");
         Directory.CreateDirectory(Path.Combine(tree, ".git"));
         File.WriteAllText(Path.Combine(tree, ".git", "config"), "[core]\n");
-        File.WriteAllText(Path.Combine(Home, "driver.json"), "{}");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{}");
 
         var outside = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
             () => TreesRoutes.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None));
@@ -393,7 +393,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void Each_reason_a_review_has_nothing_to_show_is_its_own_code()
     {
-        var tree = Path.Combine(Home, "trees", "aurora", "engine", "s-1");
+        var tree = DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine", "s-1");
 
         Assert.Equal(Refusals.SessionNotReviewable, TreesRoutes.Unreviewable("s1a2b3c4", null, "abc1234").Code);
         Assert.Equal(Refusals.SessionTreeGone, TreesRoutes.Unreviewable("s1a2b3c4", tree, "abc1234").Code);

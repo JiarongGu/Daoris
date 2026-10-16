@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   DEFAULTS, PERMISSIONS_FILE, addRule, commandRules, composeRules, permissionsPath, readPermissions,
   removeRule, ruleRefusal, switchDefault, writePermissions,
 } from '../../src/agents/permissions.ts';
 import { commandHarness } from '../../src/agents/toolchain.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
@@ -55,7 +55,7 @@ function run(argv: string[], home: string): { code: number; out: string } {
 }
 
 function at(home: string): string {
-  return join(home, PERMISSIONS_FILE);
+  return homeEntry(home, 'permissions');
 }
 
 /** What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6). */

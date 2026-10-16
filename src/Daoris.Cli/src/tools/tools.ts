@@ -28,6 +28,7 @@ import { existsSync, statSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { DaorisError } from '../platform/errors.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { homeEntry } from '../platform/home.ts';
 
 type Env = Record<string, string | undefined>;
 
@@ -129,7 +130,7 @@ export function isExactVersion(version: string): boolean {
 }
 
 export function toolsFile(home: string): string {
-  return join(home, TOOLS_FILE);
+  return homeEntry(home, 'tools');
 }
 
 /** A declared tool by its id, or null. */
@@ -324,7 +325,7 @@ export function managedExecutable(home: string, id: string, version: string): { 
 }
 
 function managedFile(home: string, tool: ToolDeclaration, version: string): { file: string | null; problem: string | null } {
-  const folder = join(home, TOOLS_FOLDER, tool.id, version);
+  const folder = homeEntry(home, 'tool-versions', tool.id, version);
   const back = `— ${NEVER}. \`daoris tool use ${tool.id} managed ${version}\` downloads it, and \`daoris tool use ${tool.id} system\` `
     + 'runs the one on PATH';
   const record = join(folder, TOOL_RECORD);
@@ -458,7 +459,7 @@ export function useManaged(home: string, id: string, version: string): void {
     throw new DaorisError(`\`${version}\` is not an exact version — one to four numbers, like 2.51.0 — so nothing was written.`);
   }
   if (managedFile(home, tool, version).file === null) {
-    throw new DaorisError(`${tool.name} ${version} is not downloaded (${join(home, TOOLS_FOLDER, id, version)}), so nothing was `
+    throw new DaorisError(`${tool.name} ${version} is not downloaded (${homeEntry(home, 'tool-versions', id, version)}), so nothing was `
       + `written: a managed version nobody downloaded would refuse every start. \`daoris tool use ${id} managed ${version}\` `
       + 'downloads it, then uses it');
   }
@@ -566,7 +567,7 @@ export function toolFolders(read: ToolsRead, home: string, id: string): string[]
   if (entry.way !== 'managed') return [];
   if (managedFile(home, tool, entry.version!).file === null) return [];
 
-  const version = join(home, TOOLS_FOLDER, id, entry.version!);
+  const version = homeEntry(home, 'tool-versions', id, entry.version!);
   const pkg = join(version, TOOL_PACKAGE);
   return recordPaths(join(version, TOOL_RECORD)).map((path) => (path === '.' ? pkg : join(pkg, ...path.split('/'))));
 }

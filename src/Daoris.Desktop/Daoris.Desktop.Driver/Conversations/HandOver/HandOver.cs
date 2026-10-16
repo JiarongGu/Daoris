@@ -15,7 +15,7 @@ public sealed class HandOverBox(string home)
     public const string Suffix = ".hand-over.json";
 
     /// <summary>Where a session's box is kept.</summary>
-    public string PathOf(string session) => Path.Combine(home, "sessions", session + Suffix);
+    public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);
 
     /// <summary>Keep the ask, replacing any before. An id that is not a session's keeps nothing.</summary>
     /// <exception cref="IOException">The ask could not be written: the asker is told, rather than told it was kept.</exception>
@@ -30,7 +30,7 @@ public sealed class HandOverBox(string home)
 
     /// <summary>The sessions with a box, in the order of their ids: what a shell coming up takes.</summary>
     public IReadOnlyList<string> Pending() =>
-        [.. HandOverFiles.Leaves(Path.Combine(home, "sessions"), "*" + Suffix)
+        [.. HandOverFiles.Leaves(DaorisHome.Entry(home, HomeEntry.Sessions),"*" + Suffix)
             .Select(leaf => leaf[..^Suffix.Length])
             .Where(SessionEventText.IsLocalId)
             .Order(StringComparer.Ordinal)];

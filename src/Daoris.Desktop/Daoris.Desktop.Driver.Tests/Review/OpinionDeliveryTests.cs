@@ -368,7 +368,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         var kept = new OpinionDeliveries(_home).Read("op1");
         Assert.Equal(["unresolved", "rejected"], kept.Answered!.Findings.Select(row => row.Counts));
         Assert.Equal(OpinionRechecks.Off, kept.RecheckWhy);
-        var note = Assert.Single(new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events);
+        var note = Assert.Single(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events);
         Assert.Equal(("op1", SessionEventKind.Note), (note.Opinion, note.Kind));
         Assert.StartsWith("— the answers to Codex (OpenAI)'s 2 findings", note.Text);
     }

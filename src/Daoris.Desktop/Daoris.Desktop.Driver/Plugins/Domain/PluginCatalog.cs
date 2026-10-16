@@ -35,10 +35,7 @@ public sealed class PluginCatalog
 
     public const string ManifestName = "plugin.json";
 
-    /// <summary>The folder under the home.</summary>
-    public const string Folder = "plugins";
-
-    /// <summary>Where a plugin keeps what survives an update: `plugins/.data/&lt;id&gt;`.</summary>
+    /// <summary>Where a plugin keeps what survives an update: `plugins/.data/&lt;id&gt;`, under the home's <see cref="HomeEntry.Plugins"/>.</summary>
     public const string DataFolder = ".data";
 
     /// <summary>
@@ -125,7 +122,7 @@ public sealed class PluginCatalog
     /// </param>
     public static PluginCatalog Load(string home, IEnumerable<string>? reservedHarnesses = null)
     {
-        var root = Path.Combine(home, Folder);
+        var root = DaorisHome.Entry(home, HomeEntry.Plugins);
         if (PluginFolders.WithManifests(root) is not { } folders) return new([]);
 
         var disabled = new HashSet<string>(PluginState.Load(home).Disabled, StringComparer.OrdinalIgnoreCase);

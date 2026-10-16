@@ -571,7 +571,7 @@ public static class WorkAbandoning
         string? workspace = null;
         try
         {
-            var parts = Path.GetRelativePath(Path.Combine(home, "trees"), tree.Path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var parts = Path.GetRelativePath(DaorisHome.Entry(home, HomeEntry.Trees), tree.Path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             if (parts.Length >= 3) workspace = RemoteTarget.Workspace(parts[0]);
         }
         catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)

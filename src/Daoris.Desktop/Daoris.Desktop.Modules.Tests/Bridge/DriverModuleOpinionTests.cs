@@ -114,7 +114,7 @@ public sealed class DriverModuleOpinionTests : DriverModuleBridge
 
     private void Plugin(string id, object manifest)
     {
-        var folder = Path.Combine(Home, "plugins", id);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), JsonSerializer.Serialize(manifest));
     }

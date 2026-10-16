@@ -235,7 +235,7 @@ test('the connector’s home in an install is a path KnowledgeConnector looks in
   assert.ok(connector.includes(`Folder = "${CONNECTOR_HOME[1]}"`),
     `the publish puts the connector in ${CONNECTOR_HOME.join('/')} and KnowledgeConnector names another folder`);
   const own = connector.indexOf(`Path.Combine("${CONNECTOR_HOME[0]}", Folder)`);
-  const home = connector.indexOf('Path.Combine(home, "bin", ExecutableName)');
+  const home = connector.indexOf('DaorisHome.Entry(home, HomeEntry.Bin, ExecutableName)');
   assert.ok(own !== -1, `KnowledgeConnector does not look in ${CONNECTOR_HOME.join('/')}`);
   assert.ok(home !== -1 && own < home, 'KnowledgeConnector looks in the home’s bin/ before the install’s own connector');
   assert.ok(connector.includes(`"${CONNECTOR_EXE}"`), `KnowledgeConnector does not look for ${CONNECTOR_EXE}`);

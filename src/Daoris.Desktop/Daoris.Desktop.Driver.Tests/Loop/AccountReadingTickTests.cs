@@ -43,7 +43,7 @@ public sealed class AccountReadingTickTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private void Wire(string use) =>
         new HarnessSettings().WithRotation("stub", Accounts).WithUse("stub", new UseChange(Use: use, Near: 85)).Save(Settings);
@@ -74,7 +74,7 @@ public sealed class AccountReadingTickTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Frame()] },
         };
         var driver = new Daoris.Driver.Driver(service, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         // The first start runs where the list begins, as nothing has been said; its agent replays the recorded frame.
         _ledger.Publish("q1", "engine");

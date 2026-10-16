@@ -48,9 +48,9 @@ public sealed class HelpRoomOwnPluginsTests
             Offer("github-pull-request", """{ "id": "github-pull-request", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
             Offer("installed.one", """{ "id": "installed.one" }""");
             Offer("future", """{ "id": "future", "apiVersion": 99 }""");
-            Directory.CreateDirectory(Path.Combine(home, PluginCatalog.Folder, "installed.one"));
-            File.WriteAllText(Path.Combine(home, PluginCatalog.Folder, "installed.one", PluginCatalog.ManifestName), """{ "id": "installed.one" }""");
-            File.WriteAllText(Path.Combine(home, PluginCatalog.Folder, "installed.one", PluginSource.FileName), """{ "offer": "installed.one" }""");
+            Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins,"installed.one"));
+            File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins,"installed.one", PluginCatalog.ManifestName), """{ "id": "installed.one" }""");
+            File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins,"installed.one", PluginSource.FileName), """{ "offer": "installed.one" }""");
 
             var machine = HelpRoom.Describe(
                 DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0,

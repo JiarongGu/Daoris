@@ -44,7 +44,7 @@ public sealed class ToolsChildProcessTests : IDisposable
             File.SetUnixFileMode(_git, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         }
 
-        File.WriteAllText(Path.Combine(Home, Tools.FileName), """{"tools":{"git":{"use":"file","file":""" + JsonSerializer.Serialize(_git) + "}}}");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), """{"tools":{"git":{"use":"file","file":""" + JsonSerializer.Serialize(_git) + "}}}");
     }
 
     public void Dispose()

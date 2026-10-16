@@ -32,7 +32,7 @@ public sealed class HelpRoomTests : IDisposable
     {
         var room = HelpRoom.Prepare(_home, Machine);
 
-        Assert.Equal(Path.Combine(_home, HelpRoom.Folder), room);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.HelpRoom), room);
         var agents = File.ReadAllText(Path.Combine(room, "AGENTS.md"));
         // The circles and their repositories, each with how it is driven, its line and how its work lands.
         Assert.Contains("### Workspace `work`", agents);

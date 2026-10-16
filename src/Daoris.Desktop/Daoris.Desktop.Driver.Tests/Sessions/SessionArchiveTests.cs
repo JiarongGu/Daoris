@@ -40,7 +40,7 @@ public sealed class SessionArchiveTests : IDisposable
     [Fact]
     public void The_marks_are_the_homes_own_file_beside_the_sessions()
     {
-        Assert.Equal(Path.Combine(_home, "sessions", "archived.json"), new SessionArchive(_home).FilePath);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions, "archived.json"), new SessionArchive(_home).FilePath);
     }
 
     [Fact]

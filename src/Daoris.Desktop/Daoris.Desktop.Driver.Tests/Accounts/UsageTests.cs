@@ -132,11 +132,11 @@ public sealed class UsageTests : IDisposable
     public void An_unreadable_file_is_a_machine_that_measured_nothing()
     {
         Directory.CreateDirectory(_home);
-        File.WriteAllText(Path.Combine(_home, "usage.json"), "{ not json at all");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Usage), "{ not json at all");
 
         Assert.Empty(Store().Sessions);
         // And it is not overwritten by the act of reading it, which would destroy what was being typed.
-        Assert.Equal("{ not json at all", File.ReadAllText(Path.Combine(_home, "usage.json")));
+        Assert.Equal("{ not json at all", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Usage)));
     }
 
     private static DateTimeOffset Now() => DateTimeOffset.UtcNow;

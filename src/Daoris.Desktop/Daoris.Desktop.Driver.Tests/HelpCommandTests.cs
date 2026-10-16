@@ -13,14 +13,14 @@ public sealed class HelpCommandTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-verb-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public HelpCommandTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public HelpCommandTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     private string Room => HelpRoom.PathOf(_home);
 

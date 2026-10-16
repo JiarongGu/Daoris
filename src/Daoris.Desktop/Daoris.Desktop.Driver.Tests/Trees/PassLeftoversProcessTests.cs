@@ -30,7 +30,7 @@ public sealed class PassLeftoversProcessTests : TreeSyncFixture
 
         var next = await OpinionTree.OpenAsync(Home, root, "engine", "aurora", tip);
 
-        var aside = Path.Combine(Home, "trees", ".tidied", "aurora", "engine");
+        var aside = DaorisHome.Entry(Home, HomeEntry.Trees,".tidied", "aurora", "engine");
         var asides = Directory.GetDirectories(aside);
         Assert.Equal(
             new[] { killed, older }.Select(Path.GetFileName).Order(StringComparer.Ordinal),
@@ -62,7 +62,7 @@ public sealed class PassLeftoversProcessTests : TreeSyncFixture
         // Its tree removed, its branch kept: bringing it up to date replays it in a tree made for it.
         await GitAsync(root, "worktree", "remove", session.Path);
         await PlatformCommitAsync(origin, "other.txt", "other\n", "Someone else's (#8)");
-        var engine = Path.Combine(Home, "trees", "aurora", "engine");
+        var engine = DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine");
         var ended = await EndedProcessAsync();
         var killed = await ReplayTreeAsync(root, engine, "r-0dead001", PassLeftovers.HeldBy(ended), quiet: true);
         var older = await ReplayTreeAsync(root, engine, "r-0de1d002", reason: null, quiet: true);
@@ -80,7 +80,7 @@ public sealed class PassLeftoversProcessTests : TreeSyncFixture
 
         var replayed = done.Rebases.Single(result => result.Item.Branch == session.Branch);
         Assert.True(replayed.Replayed, replayed.Message);
-        var asides = Directory.GetDirectories(Path.Combine(Home, "trees", ".tidied", "aurora", "engine"));
+        var asides = Directory.GetDirectories(DaorisHome.Entry(Home, HomeEntry.Trees,".tidied", "aurora", "engine"));
         Assert.Equal(
             new[] { "r-0dead001", "r-0de1d002", "r-0f01d006" }.Order(StringComparer.Ordinal),
             asides.Select(each => Path.GetFileName(each)[.."r-0dead001".Length]).Order(StringComparer.Ordinal));

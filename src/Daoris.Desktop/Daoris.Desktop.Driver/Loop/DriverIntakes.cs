@@ -203,7 +203,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
 
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
-            var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
+            var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
             // 🔴 The connector is handed, never assumed (§1b's first trap): a chat is given none, and

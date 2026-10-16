@@ -346,7 +346,7 @@ internal static class TreesConsole
                 var accepts = new EntryAccepts(
                     service, home,
                     new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log)),
-                    new SessionEvents(Path.Combine(home, "sessions")), (_, line) => Console.Error.WriteLine($"trees: {line}"),
+                    new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), (_, line) => Console.Error.WriteLine($"trees: {line}"),
                     async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase),
                     log, ReviewDoors.Terminal);
@@ -445,7 +445,7 @@ internal static class TreesConsole
                 }
 
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
-                var events = new SessionEvents(Path.Combine(home, "sessions"));
+                var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
                 var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
@@ -543,7 +543,7 @@ internal static class TreesConsole
                 // Kept where the conversation is kept, as the review's press keeps it (D100).
                 if (handed.Plugin is not null)
                 {
-                    new SessionEvents(Path.Combine(home, "sessions"))
+                    new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions))
                         .Keep(entry.Session, LandingRules.HandNote(handed), line => Console.Error.WriteLine($"trees: {line}"));
                 }
 

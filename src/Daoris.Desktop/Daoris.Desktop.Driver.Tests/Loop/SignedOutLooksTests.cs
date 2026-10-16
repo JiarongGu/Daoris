@@ -41,7 +41,7 @@ public sealed class SignedOutLooksTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2", "gmail"])
-            .Save(Path.Combine(_home, "harnesses.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
         AccountCooling.Cool(_home, new CoolingEntry("stub", "gmail", _now.AddDays(2), true, "weekly", _now, "s0"), _now);
         // What the person's last press read (ROSTER1), at the test's moment, so the hour's backstop is not due.
         foreach (var account in new[] { "account-1", "account-2", "gmail" })
@@ -93,7 +93,7 @@ public sealed class SignedOutLooksTests : IDisposable
     public async Task A_start_held_on_signed_out_accounts_asks_no_account_at_any_look_and_never_the_own_sign_in()
     {
         using var service = _ledger.Client();
-        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         _ledger.Publish("q1", "engine");
 
         TickReport? last = null;
@@ -129,7 +129,7 @@ public sealed class SignedOutLooksTests : IDisposable
         using var service = _ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         _ledger.Publish("q1", "engine");
 
         TickReport? last = null;
@@ -163,7 +163,7 @@ public sealed class SignedOutLooksTests : IDisposable
     public async Task A_sign_in_at_the_terminal_is_asked_about_at_the_next_look_that_account_alone()
     {
         using var service = _ledger.Client();
-        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         _ledger.Publish("q1", "engine");
         await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Bound);
         var before = Asked.Count;

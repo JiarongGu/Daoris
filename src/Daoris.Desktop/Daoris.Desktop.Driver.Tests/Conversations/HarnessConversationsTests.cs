@@ -27,7 +27,7 @@ public sealed class HarnessConversationsTests : IDisposable
         kept.Keep("76cdd5db", "claude-code-acp", "0b5e7c1a-1f6e-4c1d-9e47-3f1c7a2b9d10");
 
         Assert.Equal(new HarnessConversation("claude-code-acp", "0b5e7c1a-1f6e-4c1d-9e47-3f1c7a2b9d10"), kept.Read("76cdd5db"));
-        Assert.Equal(Path.Combine(_home, "sessions", "76cdd5db.harness.json"), kept.PathOf("76cdd5db"));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions,"76cdd5db.harness.json"), kept.PathOf("76cdd5db"));
     }
 
     /// <summary>The file is Daoris's own JSON, BOM-less and LF, as every file under the home is written.</summary>
@@ -36,7 +36,7 @@ public sealed class HarnessConversationsTests : IDisposable
     {
         new HarnessConversations(_home).Keep("s1", "claude-code", "abc");
 
-        var bytes = File.ReadAllBytes(Path.Combine(_home, "sessions", "s1.harness.json"));
+        var bytes = File.ReadAllBytes(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.harness.json"));
         Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
         var text = System.Text.Encoding.UTF8.GetString(bytes);
         Assert.DoesNotContain("\r", text);
@@ -71,7 +71,7 @@ public sealed class HarnessConversationsTests : IDisposable
         var kept = new HarnessConversations(_home);
         if (content is not null)
         {
-            Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+            Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
             File.WriteAllText(kept.PathOf("s1"), content);
         }
 
@@ -91,7 +91,7 @@ public sealed class HarnessConversationsTests : IDisposable
         kept.Keep(session, "claude-code-acp", "abc");
 
         Assert.Null(kept.Read(session));
-        Assert.False(Directory.Exists(Path.Combine(_home, "sessions")) && Directory.EnumerateFiles(Path.Combine(_home, "sessions")).Any());
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions)) && Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions)).Any());
     }
 
     /// <summary>
@@ -109,7 +109,7 @@ public sealed class HarnessConversationsTests : IDisposable
         kept.Keeping("../escape", "claude-code")("abc");
 
         Assert.Equal(new HarnessConversation("claude-code", "0b5e7c1a-1f6e"), kept.Read("c1a2b3c4"));
-        Assert.Equal(["c1a2b3c4.harness.json"], Directory.EnumerateFiles(Path.Combine(_home, "sessions")).Select(Path.GetFileName));
+        Assert.Equal(["c1a2b3c4.harness.json"], Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions)).Select(Path.GetFileName));
     }
 
     /// <summary>A blank conversation id is nothing to keep: the wire said none.</summary>

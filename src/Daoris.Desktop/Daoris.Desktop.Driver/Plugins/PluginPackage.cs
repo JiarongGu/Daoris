@@ -51,7 +51,7 @@ public static class PluginPackage
     public static PluginPackageInstalled Install(string home, string file, IEnumerable<string> reservedHarnesses)
     {
         var reserved = reservedHarnesses.ToList();
-        var root = Path.Combine(home, PluginCatalog.Folder);
+        var root = DaorisHome.Entry(home, HomeEntry.Plugins);
         string? stage = null;
         try
         {
@@ -166,11 +166,11 @@ public static class PluginPackageCommand
 
             var installed = PluginPackage.Install(home, PluginFolders.WholePath(file), reservedHarnesses ?? AdapterSet.Built().Names);
             var manifest = installed.Manifest;
-            var folder = Path.Combine(home, PluginCatalog.Folder, manifest.Id);
+            var folder = DaorisHome.Entry(home, HomeEntry.Plugins, manifest.Id);
             output.WriteLine($"plugins: installed `{manifest.Id}`{(manifest.Version.Length > 0 ? " " + manifest.Version : "")} at {folder}");
             output.WriteLine($"  {Describe(manifest)}.");
             output.WriteLine($"  From {PluginSource.FromPackage(installed.Origin).Said}, sha512 {installed.Origin.Sha512}.");
-            var data = Path.Combine(home, PluginCatalog.Folder, PluginCatalog.DataFolder, manifest.Id);
+            var data = DaorisHome.Entry(home, HomeEntry.Plugins, PluginCatalog.DataFolder, manifest.Id);
             if (PluginFolders.There(data)) output.WriteLine($"  {data} kept, untouched.");
             output.WriteLine("  It takes effect at the driver's next look — a harness on the roster, a hook at the next tick.");
             return 0;

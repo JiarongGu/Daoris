@@ -328,7 +328,7 @@ public sealed class QuestDeleteTests : IAsyncLifetime
                 Uploads = [new QuestUpload("note.txt", Encoding.UTF8.GetBytes("words"))],
             },
             Now)).Ask!;
-        var kept = files.For(AskDesk.Folder);
+        var kept = files.For(HomeEntry.AskFiles);
         Assert.True(kept.Has(asked.Id, Assert.Single(asked.Attachments)));
 
         var deleted = await desk.DeleteAsync(asked.Id, Now.AddMinutes(1));

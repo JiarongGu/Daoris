@@ -15,7 +15,7 @@ public static class PluginTrials
     public const string TrialsFolder = ".trials";
 
     /// <summary>The home's folder of trials' scratch, <c>&lt;home&gt;/plugins/.trials</c>.</summary>
-    public static string TrialsOf(string home) => Path.Combine(home, PluginCatalog.Folder, TrialsFolder);
+    public static string TrialsOf(string home) => DaorisHome.Entry(home, HomeEntry.Plugins, TrialsFolder);
 
     /// <summary>
     /// Try a plugin in a folder anywhere — a plugins repository's, before anything is installed. What it

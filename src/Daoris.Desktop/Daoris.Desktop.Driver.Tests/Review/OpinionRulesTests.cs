@@ -138,7 +138,7 @@ public sealed class OpinionRulesTests
             using var folders = JsonDocument.Parse(plugins);
             foreach (var plugin in folders.RootElement.EnumerateObject())
             {
-                var folder = Path.Combine(home, PluginCatalog.Folder, plugin.Name);
+                var folder = DaorisHome.Entry(home, HomeEntry.Plugins,plugin.Name);
                 Directory.CreateDirectory(folder);
                 File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), plugin.Value.GetString());
             }

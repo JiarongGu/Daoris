@@ -99,8 +99,8 @@ public sealed class WorkflowCurrentTests
                 ("example.refused", """{"id":"example.refused","hooks":{"command":["node","x.mjs"]}}"""),
             })
             {
-                Directory.CreateDirectory(Path.Combine(home, PluginCatalog.Folder, folder));
-                File.WriteAllText(Path.Combine(home, PluginCatalog.Folder, folder, PluginCatalog.ManifestName), manifest);
+                Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins,folder));
+                File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins,folder, PluginCatalog.ManifestName), manifest);
             }
 
             var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(home));

@@ -34,7 +34,7 @@ public sealed class HandOverProcessTests : IDisposable
 
     private string Heard => Path.Combine(_home, "heard.txt");
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>The machine's choices, saved where a runner coming up reads them: both stand-ins' commands.</summary>
     private DriverConfig Config()
@@ -47,7 +47,7 @@ public sealed class HandOverProcessTests : IDisposable
                 ["stub"] = ["node", TextAgent()],
             },
         };
-        config.Save(Path.Combine(_home, "driver.json"));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         return config;
     }
 
@@ -55,8 +55,8 @@ public sealed class HandOverProcessTests : IDisposable
     {
         var adapters = AdapterSet.Built();
         return new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     private string Seen(ChatLedger ledger, SessionEvents events, string id) =>
@@ -111,9 +111,9 @@ public sealed class HandOverProcessTests : IDisposable
         var opening = record.First(e => CodeOf(e) == "chat.taken-over").Parts![0];
         Assert.Equal(("acp-stub", old, "press"), (opening.Value("agent"), opening.Value("session"), opening.Value("why")));
         await Poll.Until(
-            () => StubFile.Text(Path.Combine(_home, "sessions", $"{next}.log")).Contains($"heard: You continue the acp-stub conversation `{old}`"),
+            () => StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")).Contains($"heard: You continue the acp-stub conversation `{old}`"),
             () => Seen(ledger, events, next));
-        Assert.Contains("Make the port configurable.", StubFile.Text(Path.Combine(_home, "sessions", $"{next}.log")));
+        Assert.Contains("Make the port configurable.", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
         Assert.Equal(next, NewSessionOf(ledger, old));
         // The take clears the box last, after the old one's last line: poll, as CurveMoveProcessTests does.

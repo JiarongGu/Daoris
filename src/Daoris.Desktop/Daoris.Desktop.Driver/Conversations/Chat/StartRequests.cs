@@ -21,7 +21,7 @@ public sealed class StartRequests(string home)
     public static bool IsId(string? id) =>
         id is { Length: > 0 and <= 64 } && id.All(c => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '-');
 
-    private string PathOf(string id) => Path.Combine(home, "starts", id + ".json");
+    private string PathOf(string id) => DaorisHome.Entry(home, HomeEntry.Starts, id + ".json");
 
     /// <summary>Answer the id from what ran or was kept, or run the start and keep what it opened.</summary>
     /// <param name="at">When a finished start counts as having happened; tests set it, the clock otherwise.</param>
@@ -89,7 +89,7 @@ public sealed class StartRequests(string home)
     {
         try
         {
-            var folder = Path.Combine(home, "starts");
+            var folder = DaorisHome.Entry(home, HomeEntry.Starts);
             JsonFile.Write(PathOf(id), writer =>
             {
                 writer.WriteStartObject();

@@ -25,9 +25,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class ProbeLock
 {
-    /// <summary>The folder under the home's <c>harnesses</c> the locks are kept in; no agent is ever named so.</summary>
-    public const string Folder = ".probing";
-
     /// <summary>How old a lock file may be before it is taken for a holder that died: three times a status question's patience.</summary>
     public static readonly TimeSpan Stale = TimeSpan.FromSeconds(60);
 
@@ -41,8 +38,8 @@ public static class ProbeLock
 
     /// <summary>The lock for one configuration home: an account's, or with <paramref name="profile"/> null the tool's own.</summary>
     public static string PathOf(string home, string owner, string? profile) => profile is null
-        ? Path.Combine(home, "harnesses", Folder, owner + ".lock")
-        : Path.Combine(home, "harnesses", Folder, owner, profile + ".lock");
+        ? DaorisHome.Entry(home, HomeEntry.Probing, owner + ".lock")
+        : DaorisHome.Entry(home, HomeEntry.Probing, owner, profile + ".lock");
 
     /// <summary>
     /// Where a sign-in or a key into an account is marked (TOOL6g), beside its lock: the walk believes the agent's word that
@@ -50,7 +47,7 @@ public static class ProbeLock
     /// never at every look, and a sign-in at the terminal is seen at the next look.
     /// </summary>
     public static string SignedInPathOf(string home, string owner, string profile) =>
-        Path.Combine(home, "harnesses", Folder, owner, profile + ".signed-in");
+        DaorisHome.Entry(home, HomeEntry.Probing, owner, profile + ".signed-in");
 
     /// <summary>When an account was last marked signed in, by the mark's last write; null where it never was.</summary>
     public static DateTimeOffset? SignedIn(string home, string owner, string profile)

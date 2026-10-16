@@ -7,6 +7,7 @@ import {
   isWholePath, locationProblem, readTools, removeLocation, resolveTool, useFile, useManaged, useSystem,
 } from '../../src/tools/tools.ts';
 import { commandTool } from '../../src/tools/toolinstall.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
@@ -43,7 +44,7 @@ function home(name: string) {
 }
 
 function writeFile(home: string, text: string): void {
-  writeFileSync(join(home, TOOLS_FILE), text, 'utf8');
+  writeFileSync(homeEntry(home, 'tools'), text, 'utf8');
 }
 
 /**

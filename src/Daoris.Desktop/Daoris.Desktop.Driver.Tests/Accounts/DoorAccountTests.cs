@@ -23,7 +23,7 @@ public sealed class DoorAccountTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-door-tests", Guid.NewGuid().ToString("N")[..8]);
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     public void Dispose()
     {
@@ -94,7 +94,7 @@ public sealed class DoorAccountTests : IDisposable
         Assert.Equal("work", selection.Profile);
         Assert.Equal(work, selection.ProfileHome);
         // Nothing was made under the door's own name.
-        Assert.False(Directory.Exists(Path.Combine(_home, "harnesses", "owner-acp")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.AgentHomes, "owner-acp")));
     }
 
     /// <summary>A workspace's choice of account is the owner's too — one file, one answer.</summary>

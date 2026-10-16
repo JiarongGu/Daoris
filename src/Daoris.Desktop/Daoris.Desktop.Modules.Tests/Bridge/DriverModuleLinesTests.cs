@@ -81,7 +81,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Contains("not installed", missing);
         Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).WorkspaceLandings.Count > 0);
 
-        var folder = Path.Combine(Home, "plugins", "example.github-pull-request");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"example.github-pull-request");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             """{ "id": "example.github-pull-request", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
@@ -342,7 +342,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     [Fact]
     public async Task A_branch_whose_tree_a_session_still_holds_is_kept_even_forced()
     {
-        var service = new DiscardService(root: Home, live: Path.Combine(Home, "trees", "aurora", "Engine", "s-1a2b3c4d"));
+        var service = new DiscardService(root: Home, live: DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "Engine", "s-1a2b3c4d"));
         var module = await ModuleOverAsync(service);
 
         var answer = await AnswerAsync(module, "DISCARD_SESSION_BRANCH", new { repository = "engine", branch = "daoris/s-1a2b3c4d", force = true });

@@ -99,7 +99,9 @@ test('the driver\'s rows of what does not read are the shared table\'s, cell for
 test('the file, its keys and its words are spelled as the driver spells them', () => {
   const source = readFileSync(driverFile('AccountReads.cs'), 'utf8');
 
-  assert.match(source, new RegExp(`FileName = "${READS_FILE.replace('.', '\\.')}"`));
+  // The file is the home's `reads` entry, by its place in the driver's table (HOMELAYOUT2).
+  assert.match(source, /HomeEntry\.Reads\b/);
+  assert.match(readFileSync(driverFile('DaorisHome.cs'), 'utf8'), new RegExp(`new\\("reads", HomeCategory\\.Data, "${READS_FILE.replace('.', '\\.')}"`));
   assert.match(source, /Own = "own"/);
   assert.match(source, /AccountsKey = "accounts"/);
   for (const word of ['in', 'out', 'unknown'] as const) assert.match(source, new RegExp(`=> "${word}"`), word);

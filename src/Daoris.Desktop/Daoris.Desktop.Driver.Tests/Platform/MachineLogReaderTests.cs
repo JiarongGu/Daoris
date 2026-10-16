@@ -29,7 +29,7 @@ public sealed class MachineLogReaderTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Logs => Path.Combine(_home, MachineLog.Folder);
+    private string Logs => DaorisHome.Entry(_home, HomeEntry.Logs);
 
     private void File(string name, params string[] lines) =>
         System.IO.File.WriteAllText(Path.Combine(Logs, name), string.Join("\n", lines) + "\n");

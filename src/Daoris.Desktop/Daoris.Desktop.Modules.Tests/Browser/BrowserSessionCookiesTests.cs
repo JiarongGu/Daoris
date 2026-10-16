@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Daoris.Driver;
 using System.Text;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -60,7 +61,7 @@ public sealed class BrowserSessionCookiesTests : Bridge
         new BrowserSessionCookies(Home, new StandInSeal()).Save([Session("idsrv.session", "secret-session-value")]);
 
         var file = BrowserSessionCookies.FilePath(Home);
-        Assert.Equal(Path.Combine(Home, "browser", "edge-session-cookies.bin"), file);
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.EdgeCookies), file);
         var bytes = File.ReadAllBytes(file);
         Assert.DoesNotContain("secret-session-value", Encoding.UTF8.GetString(bytes), StringComparison.Ordinal);
         Assert.DoesNotContain(Directory.GetFiles(Path.GetDirectoryName(file)!), path => path != file);

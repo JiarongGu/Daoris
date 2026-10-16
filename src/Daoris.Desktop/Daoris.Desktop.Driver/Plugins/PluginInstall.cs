@@ -99,7 +99,7 @@ public static class PluginInstall
         if (refusal is not null) throw new DriverException($"{refusal} Nothing was copied.");
         var manifest = read!;
 
-        var root = Path.Combine(home, PluginCatalog.Folder);
+        var root = DaorisHome.Entry(home, HomeEntry.Plugins);
         var target = Path.Combine(root, manifest.Id);
         if (PluginFolders.There(target))
         {
@@ -218,7 +218,7 @@ public static class PluginInstall
         var (plan, refusal) = PlanUpdate(home, id, reservedHarnesses, offers);
         if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
 
-        var root = Path.Combine(home, PluginCatalog.Folder);
+        var root = DaorisHome.Entry(home, HomeEntry.Plugins);
         var target = Path.Combine(root, plan.Id);
         var stamp = Guid.NewGuid().ToString("N");
         var staging = Path.Combine(root, $".updating-{plan.Id}-{stamp}");

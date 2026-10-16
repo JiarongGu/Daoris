@@ -26,16 +26,16 @@ public sealed class AbandonTests : IDisposable
 
     private const string Reason = "This went the wrong way; the bridge is v3 and the report is the common one.";
 
-    public AbandonTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public AbandonTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string ConfigPath => Path.Combine(_home, "driver.json");
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
-    private string Tree(string name) => Path.Combine(_home, "trees", "default", "engine", name).Replace('\\', '/');
+    private string Tree(string name) => DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", name).Replace('\\', '/');
 
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, string? baseCommit = null, bool took = false,
@@ -105,7 +105,7 @@ public sealed class AbandonTests : IDisposable
 
     private WorkWorld World(ServiceClient service, FakeTrees trees, List<string> events, MachineLog? log = null,
         Func<string, SyncReport?>? sync = null) =>
-        new(service, _home, ConfigPath, new SessionProcesses(Path.Combine(_home, "sessions")))
+        new(service, _home, ConfigPath, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)))
         {
             Log = log,
             Clock = () => Now,
@@ -261,7 +261,7 @@ public sealed class AbandonTests : IDisposable
         Assert.DoesNotContain("trees/default", written);
         Assert.DoesNotContain("X:/work", written);
 
-        var line = Assert.Single(Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(File.ReadAllLines),
+        var line = Assert.Single(Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines),
             each => each.Contains("\"work.abandoned\"", StringComparison.Ordinal));
         foreach (var said in new[]
                  {
@@ -456,7 +456,7 @@ public sealed class AbandonTests : IDisposable
         var events = new List<string>();
         var ledger = Family();
         using var self = Process.GetCurrentProcess();
-        File.WriteAllText(Path.Combine(_home, "sessions", "w0rk1ng0.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionPids, "w0rk1ng0"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
         using var service = ledger.Client();
         var output = new StringWriter();
         var world = World(service, Trees(events), events) with { Wait = TimeSpan.FromMilliseconds(200) };

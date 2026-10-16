@@ -51,7 +51,7 @@ public sealed class HandedRecordTests : IDisposable
     [Fact]
     public async Task The_structured_capture_opens_its_record_with_the_instruction_and_its_account()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var account = Account();
 
         await HarnessCapture.CaptureStructuredAsync(
