@@ -135,6 +135,13 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
         NamedByOpening ? this with { Name = string.IsNullOrWhiteSpace(oldest) ? "" : oldest.Trim() } : this;
 
     /// <summary>
+    /// The title a squash's subject takes (ACCEPTFOOT2b): a quest's own title, but for a conversation, whose title is its opening, the
+    /// oldest commit's subject <see cref="ForWork"/> named it by, or null where none was read, so the squash's own fallback takes the
+    /// commits' first subject.
+    /// </summary>
+    public string? SquashTitle => Quest is null && Title is not null ? (string.IsNullOrWhiteSpace(Name) ? null : Name) : Title;
+
+    /// <summary>
     /// The subject a quest is landed as: its title for the record, its name for the branch where they differ, and its body and
     /// links for a ticket's key to be found in. Blank and empty are carried as none, so a quest without them is the subject it was.
     /// </summary>

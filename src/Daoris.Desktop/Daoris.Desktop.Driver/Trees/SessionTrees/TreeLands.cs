@@ -406,10 +406,12 @@ internal sealed class TreeLands(
         }
         else
         {
+            // A squash reads the work's subject whatever the pattern reads (ACCEPTFOOT2b): its commit is named by it too.
+            var worked = await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct, always: landing.Rule.Squash).ConfigureAwait(false);
             var branched = await BranchAsync(full, workspace, repository,
-                BranchNamed(await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct).ConfigureAwait(false), landing.Rule, repository),
+                BranchNamed(worked, landing.Rule, repository),
                 handedOn: plugin is not null, ct,
-                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying,
+                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
                 join: joins ? sync : null).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
@@ -785,12 +787,12 @@ internal sealed class TreeLands(
             }
 
             var squashing = replayed?.Landed ?? commits;
-            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.Title, squashing, squash.Session), ct)
+            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session), ct)
                 .ConfigureAwait(false);
             if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");
             start = made;
             squashed = tip;
-            carried = [new LandingCommit(made, SquashMessage.Subject(squash.Title, squashing, squash.Session))];
+            carried = [new LandingCommit(made, SquashMessage.Subject(squash.SquashTitle, squashing, squash.Session))];
         }
 
         var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, start], ct).ConfigureAwait(false);
@@ -947,9 +949,9 @@ internal sealed class TreeLands(
     /// <param name="full">A tree of the repository the work is in; its HEAD is the work unless <paramref name="tip"/> names it.</param>
     /// <param name="tip">The work's tip where it is not that tree's HEAD: an entry's first part landed from a tree since gone.</param>
     internal async Task<LandingSubject> ForWorkAsync(
-        string full, string workspace, string repository, LandingRule rule, LandingSubject subject, CancellationToken ct, string? tip = null)
+        string full, string workspace, string repository, LandingRule rule, LandingSubject subject, CancellationToken ct, string? tip = null, bool always = false)
     {
-        if (!subject.NamedByOpening || subject.EnteredName is not null || subject.EntryBranch is not null || !LandingRules.ReadsWords(rule)) return subject;
+        if (!subject.NamedByOpening || subject.EnteredName is not null || subject.EntryBranch is not null || !(always || LandingRules.ReadsWords(rule))) return subject;
         var here = Directory.Exists(full) ? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) : null;
         if (here is not { Code: 0 }) return subject.ForWork(null);
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
