@@ -78,7 +78,8 @@ use cases keep no forward to them (FLAT1b-i).
 `Trees/Nodes/`, beside the work unit in `Trees/Inventory/`, holds the fabric's node contract (FABRIC-NODE1, D173's note): the
 one lifecycle every kind of node shares (`NodeLifecycle`), who may report each outcome by kind (`NodeAuthorities`), the
 acceptances and their transitive invalidation (`NodeAcceptances`), and the built-ins observed from the records a `WorkUnit` was
-read from (`BuiltInNodes`). It is pure and writes nothing.
+read from (`BuiltInNodes`). It is pure and writes nothing: a move returns what it cleared, and `NodeAcceptances.Keep` judges one
+result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c).
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
 second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,

@@ -5,7 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## 2026-10-17 — The publish failed: the launcher compiled a driver file that named a type it did not carry (FABRIC-EVENT4)
+## 2026-10-17 — The node contract let a late outcome land on the wrong attempt and a dispatch be duplicated (FABRIC-NODE1c)
+
+- **Symptom:** a second maker's review of FABRIC-NODE1, before any wire read it: a failure of attempt 1 arriving during attempt 2
+  failed attempt 2; a dispatched attempt stopped while its answer was pending let attempt 2 start at once; a reach with an old
+  graph, revision or node version, or no evidence, was accepted; mutating a dictionary handed to an acceptance changed its issued
+  id; an observed built-in's acceptance could not carry its prerequisite receipts, so invalidating a QA wired before `handed`
+  missed `handed`.
+- **Root cause:** the lifecycle judged an outcome by the status's state alone. A failure carried no attempt; a reach was checked
+  for unit, node and attempt only, since the status held no expected binding; `Unreconciled` was set only on entering *unknown*,
+  so an attempt moved off *active* by a stop, a skip, a rejection or an invalidation was forgotten. `NodeAcceptance` kept the
+  caller's collections, and `Observe` built its acceptance from a graph digest and an attempt alone.
+- **Fix:** D173's FABRIC-NODE1c note: every outcome names its attempt; the start carries the evaluated binding and a reach must be
+  it, whole, with its kind's evidence; a dispatching kind's start sets `Unreconciled` until its authority's outcome or a
+  reconciliation; acceptances copy their collections; `Keep` refuses a second result per binding; `Apply` returns what it cleared;
+  `Observe` takes the evaluated binding.
+- **Verification:** each defect's test failed on the contract's surface without the behaviour, then passed; the three node suites
+  pass (55), and the driver's fast half.
+
 
 - **Symptom:** the merge gate's deployment rehearsal failed at its first check, `publish:desktop --service exits 0`, on main
   3b2e1fbc5, and again when re-run alone; the rehearsal keeps only the publish's last 12 lines, a stack's tail, so the cause
