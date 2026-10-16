@@ -173,7 +173,7 @@ public sealed class HandOffTests : LandedFixture
             ? throw new DriverException($"plugin `{Id}` did not answer `hook/work/land` within 1s.")
             : new PluginLanding(Id, false, null, "gh is not signed in — run `gh auth login`.")));
         var tip = (await GitAsync(root, "rev-parse", b.Branch!)).Trim();
-        var record = await File.ReadAllTextAsync(Path.Combine(Home, LandedBranches.FileName));
+        var record = await File.ReadAllTextAsync(DaorisHome.Entry(Home, HomeEntry.Landings));
 
         var handed = await trees.HandAsync(root, trees.Recorded.Of("engine", b.Branch!)!);
 
@@ -181,7 +181,7 @@ public sealed class HandOffTests : LandedFixture
         Assert.NotNull(handed.Plugin);
         Assert.Contains($"git push -u origin {b.Branch}", handed.Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", b.Branch!)).Trim());
-        Assert.Equal(record, await File.ReadAllTextAsync(Path.Combine(Home, LandedBranches.FileName)));
+        Assert.Equal(record, await File.ReadAllTextAsync(DaorisHome.Entry(Home, HomeEntry.Landings)));
         Assert.Empty((await GitAsync(origin, "branch", "--list", b.Branch!)).Trim());
     }
 
@@ -238,12 +238,12 @@ public sealed class HandOffTests : LandedFixture
     {
         if (install) InstallManifest();
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
     }
 
     private void InstallManifest(string points = "work/land")
     {
-        var folder = Path.Combine(Home, "plugins", Id);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,Id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             $$"""{ "id": "{{Id}}", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["{{points}}"] } }""");

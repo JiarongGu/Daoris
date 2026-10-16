@@ -18,12 +18,12 @@ public sealed class BranchTidyingWatchTests : BranchTidyingFixture
         var root = await RepositoryAsync("engine");
         var landed = await LandedTreeAsync(new SessionTrees(_home), root);
         _ledger.Register("engine", root);
-        var config = Path.Combine(_home, "driver.json");
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         await File.WriteAllTextAsync(config, """{ "drivable": [], "pollSeconds": 1 }""");
         using var log = Log();
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")))
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Log = log,
             Tidying = new BranchTidying(_home) { Pace = TimeSpan.FromMinutes(5) },

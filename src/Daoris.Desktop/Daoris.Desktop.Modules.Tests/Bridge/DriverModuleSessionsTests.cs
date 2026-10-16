@@ -365,7 +365,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         Assert.Equal(["done1"], archived.GetProperty("archived").EnumerateArray().Select(mark => mark.GetProperty("session").GetString()));
         Assert.Empty(archived.GetProperty("kept").EnumerateArray());
-        Assert.True(File.Exists(Path.Combine(Home, "sessions", "archived.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"archived.json")));
         var row = (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
         Assert.Equal("archived", row.GetProperty("group").GetString());
         Assert.True(row.GetProperty("archived").GetBoolean());
@@ -397,7 +397,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Contains(code, refusal);
         Assert.Contains($"session={session}", refusal);
         Assert.Contains(group, refusal);
-        Assert.False(File.Exists(Path.Combine(Home, "sessions", "archived.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"archived.json")));
     }
 
     /// <summary>The second press of *Archive what ended* judges each again: what may go is archived, and what may not is kept with its code.</summary>
@@ -484,7 +484,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         using var ledger = DeleteLedger(new Dictionary<string, string> { ["chat1"] = """{"deletable":true}""" });
         var loop = await UpAsync(ledger);
         loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "a plan of mine" });
-        File.WriteAllText(Path.Combine(Home, "sessions", "chat1.log"), "the transcript");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions,"chat1.log"), "the transcript");
         var module = new DriverModule(Bus, loop);
 
         var rows = (await AnswerAsync(module, "SESSION_GROUPS", null)).GetProperty("sessions").EnumerateArray()
@@ -496,8 +496,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         Assert.Equal("chat1", deleted.GetProperty("deleted").GetString());
         Assert.Equal(["record", "conversation", "transcript"], deleted.GetProperty("removed").EnumerateArray().Select(each => each.GetString()));
-        Assert.False(File.Exists(Path.Combine(Home, "sessions", "chat1.events.jsonl")));
-        Assert.False(File.Exists(Path.Combine(Home, "sessions", "chat1.log")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"chat1.events.jsonl")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"chat1.log")));
         Assert.Empty(loop.Events.Openings(["chat1"]));
         Assert.Empty(deleted.GetProperty("stayed").EnumerateArray());
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), deleted.GetRawText(), StringComparison.OrdinalIgnoreCase);
@@ -514,7 +514,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         using var ledger = DeleteLedger(new Dictionary<string, string> { ["chat1"] = """{"deletable":true}""" });
         var loop = await UpAsync(ledger);
         loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "a plan of mine" });
-        var transcript = Path.Combine(Home, "sessions", "chat1.log");
+        var transcript = DaorisHome.Entry(Home, HomeEntry.Sessions,"chat1.log");
         File.WriteAllText(transcript, "the transcript");
 
         JsonElement deleted;
@@ -556,7 +556,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Contains(code, refusal);
         Assert.Contains("session=chat1", refusal);
         Assert.Contains(fact, refusal);
-        Assert.True(File.Exists(Path.Combine(Home, "sessions", "chat1.events.jsonl")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"chat1.events.jsonl")));
     }
 
     /// <summary>
@@ -682,7 +682,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         await AnswerAsync(new DriverModule(Bus, loop), "SESSION_ARCHIVE", new { ids = new[] { "done1", "failed1", "running1" }, archived = true });
 
         log.Dispose();
-        var line = Assert.Single(Directory.GetFiles(Path.Combine(Home, MachineLog.Folder)).SelectMany(File.ReadAllLines),
+        var line = Assert.Single(Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).SelectMany(File.ReadAllLines),
             each => each.Contains("\"sessions.archived\"", StringComparison.Ordinal));
         Assert.Contains("\"count\":2", line);
         Assert.Contains("\"door\":\"screen\"", line);

@@ -94,8 +94,8 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         config.WithLanding("engine", new LandingRule("branch", "feature/{ticket}-{slug}", Key: "ENG-\\d+", Squash: true)).Save(DriverConfigPath);
         var sessions = JsonSerializer.Serialize(new object[]
         {
-            new { id = "s1a2b3c4", tree = Path.Combine(Home, "trees", "aurora", "engine", "s-1") },
-            new { id = "s2b3c4d5", tree = Path.Combine(Home, "trees", "default", "tools", "s-2") },
+            new { id = "s1a2b3c4", tree = DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine", "s-1") },
+            new { id = "s2b3c4d5", tree = DaorisHome.Entry(Home, HomeEntry.Trees,"default", "tools", "s-2") },
             new { id = "s3c4d5e6", tree = Path.Combine(Home, "checkouts", "engine") },
             new { id = "s4d5e6f7", tree = (string?)null },
         });

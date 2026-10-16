@@ -47,11 +47,11 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId;
         Assert.NotNull(id);
@@ -102,8 +102,8 @@ public sealed class ProtocolChatTests : IDisposable
         var output = new SessionOutput();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), output,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         bool? liveWhenTold = null;
         var id = (await runner.StartAsync("engine", "acp-stub", config, onEnded: (session, _) =>
@@ -132,12 +132,12 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var usage = new SessionUsage(_home);
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), usage: usage);
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), usage: usage);
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         string Seen() => $"state {service.State(id)}, measured [{string.Join(" | ", usage.Sessions.Select(e => $"{e.Session}:{e.Used}"))}]";
@@ -173,11 +173,11 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         string Seen() => $"record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}"))}]";
@@ -207,11 +207,11 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         string Seen() => $"record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}:{e.Text}"))}]";
@@ -243,11 +243,11 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         string Seen() => $"record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}:{e.Text}"))}]";
@@ -283,8 +283,8 @@ public sealed class ProtocolChatTests : IDisposable
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         string Seen() => $"heard [{string.Join(" | ", HeardLines())}], state {service.State(id)}";
@@ -309,12 +309,12 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
-        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
             client, adapters, _home, processes, events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         string Seen() => $"state {service.State(id)}, record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}:{e.Text}"))}]";
@@ -345,11 +345,11 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard, "numeric"] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         string Seen() => $"state {service.State(id)}, record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.Text}"))}]";
@@ -380,11 +380,11 @@ public sealed class ProtocolChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", echo] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "stub", config)).SessionId!;
         await Until(() => service.State(id) == "working", () => $"state {service.State(id)}");
@@ -393,7 +393,7 @@ public sealed class ProtocolChatTests : IDisposable
         await Until(() => service.State(id) == "completed", () => $"state {service.State(id)}");
 
         Assert.Empty(events.Page(id).Events);
-        Assert.Contains("heard hello", File.ReadAllText(Path.Combine(_home, "sessions", $"{id}.log")));
+        Assert.Contains("heard hello", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{id}.log")));
     }
 
     // ——— One conversation's model and effort (AGT6b, D98), over the stand-in's config options.
@@ -510,11 +510,11 @@ public sealed class ProtocolChatTests : IDisposable
             },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
         await Until(() => service.State(id) == "working", () => $"state {service.State(id)}");
         return new Talking(client, runner, events, id);

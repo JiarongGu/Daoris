@@ -45,7 +45,7 @@ export const PATH_VARIABLE = 'DAORIS_DRIVER_CONFIG';
 
 /** The file's path: the override, or the conventional home beside the remotes map. */
 export function driverConfigPath(env: Record<string, string | undefined> = process.env): string {
-  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'driver.json');
+  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'driver');
 }
 
 /** The choices, plus everything else the file held — this is an editor, not the file's owner. */

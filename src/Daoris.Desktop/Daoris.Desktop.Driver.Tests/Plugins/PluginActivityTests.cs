@@ -90,7 +90,7 @@ public sealed class PluginActivityTests : IDisposable
     {
         Line(-5, "desktop", "plugin.called", new { plugin = Id, point = "quest/consider", answer = "allow", ms = 7 });
         Write();
-        File.AppendAllText(Path.Combine(_home, "logs", "2026-10-01.desktop.jsonl"),
+        File.AppendAllText(DaorisHome.Entry(_home, HomeEntry.Logs,"2026-10-01.desktop.jsonl"),
             """{"time":"2026-10-01T11:59:00.000Z","source":"desktop","level":"info","event":"plugin.cal""" + "\n");
 
         var read = PluginActivity.Read(_home, Id, Now.AddDays(-7));
@@ -169,7 +169,7 @@ public sealed class PluginActivityTests : IDisposable
 
     private void Install(string id, string manifest)
     {
-        var folder = Path.Combine(_home, "plugins", id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
@@ -186,7 +186,7 @@ public sealed class PluginActivityTests : IDisposable
     /// <summary>Each line into its source's file of its day, as the writers lay them out.</summary>
     private void Write()
     {
-        var folder = Path.Combine(_home, "logs");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         Directory.CreateDirectory(folder);
         foreach (var (source, line) in _lines)
         {

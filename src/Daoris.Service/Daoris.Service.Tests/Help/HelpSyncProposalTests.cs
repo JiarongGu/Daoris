@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
@@ -50,7 +51,7 @@ public sealed class HelpSyncProposalTests : HelpProposalBoxFixture
     public void A_workspace_that_is_not_one_word_is_refused_with_nothing_written()
     {
         Assert.Contains("A workspace is one word", Box().ProposeSync(null, "a reason", "h1", Now, "two words").Message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     [Fact]
@@ -58,6 +59,6 @@ public sealed class HelpSyncProposalTests : HelpProposalBoxFixture
     {
         Assert.Contains("A repository is one word", Box().ProposeSync("two words", "a reason", "h1", Now).Message);
         Assert.Null(Box().ProposeSync("engine", " ", "h1", Now).Id);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 }

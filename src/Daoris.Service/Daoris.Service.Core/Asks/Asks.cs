@@ -876,9 +876,6 @@ public sealed record AskOutcome(AskRefusal Refusal, string Message, Ask? Ask, Qu
 /// </remarks>
 public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files)
 {
-    /// <summary>The folder under the home an ask keeps its files in, until it becomes quests.</summary>
-    public const string Folder = "asks";
-
     /// <summary>The tier that answers with no harness at all: the repositories' own declarations.</summary>
     public const string ByDeclarations = "declarations";
 
@@ -894,7 +891,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// <summary>How long a quest's title may be when an ask's first line becomes one.</summary>
     private const int TitleLength = 100;
 
-    private readonly QuestFiles? _askFiles = files?.For(Folder);
+    /// <summary>The files an ask keeps, until it becomes quests: the home's <see cref="HomeEntry.AskFiles"/>.</summary>
+    private readonly QuestFiles? _askFiles = files?.For(HomeEntry.AskFiles);
 
     /// <summary>The sender every quest an ask becomes is published by.</summary>
     public static string SenderOf(string askId) => $"ask #{askId}";

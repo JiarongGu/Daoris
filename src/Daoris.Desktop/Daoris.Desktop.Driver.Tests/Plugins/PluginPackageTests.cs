@@ -27,7 +27,7 @@ public sealed class PluginPackageTests : IDisposable
 
     private string Feed => Path.Combine(_root, "feed");
 
-    private string Plugins => Path.Combine(Home, PluginCatalog.Folder);
+    private string Plugins => DaorisHome.Entry(Home, HomeEntry.Plugins);
 
     private static IReadOnlyCollection<string> Reserved => AdapterSet.Built().Names;
 

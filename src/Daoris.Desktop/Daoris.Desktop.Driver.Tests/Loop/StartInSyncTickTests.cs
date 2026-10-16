@@ -133,7 +133,7 @@ public sealed class StartInSyncTickTests : IDisposable
         };
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
         var parked = service.Session("s1");
@@ -165,7 +165,7 @@ public sealed class StartInSyncTickTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>

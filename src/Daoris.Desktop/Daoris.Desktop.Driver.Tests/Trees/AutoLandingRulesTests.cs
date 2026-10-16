@@ -59,9 +59,9 @@ public sealed class AutoLandingRulesTests : IDisposable
     [Fact]
     public void A_conclusion_under_the_switch_is_due_or_said_and_without_it_writes_nothing()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var quest = new QuestView("q1", "game", "engine", "Fix the gap", "Fix it.", "Done") { Workspace = "aurora" };
-        var tree = Path.Combine(_home, "trees", "aurora", "engine", "s-1a2b3c4d");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-1a2b3c4d");
         var config = DriverConfig.Empty.WithWorkspaceLanding("aurora", Automatic);
 
         Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, config, events, "s1", quest, "Done", "completed", tree, "aurora", At));
@@ -77,7 +77,7 @@ public sealed class AutoLandingRulesTests : IDisposable
         Assert.Single(new AutoLandings(_home).All());
 
         Assert.Null(AutoLander.Concluded(_home, DriverConfig.Empty, events, "s4", quest, "Done", "completed", tree, "aurora"));
-        Assert.False(File.Exists(Path.Combine(_home, "sessions", "s4.events.jsonl")));
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions,"s4.events.jsonl")));
         Assert.Single(new AutoLandings(_home).All());
     }
 
@@ -91,8 +91,8 @@ public sealed class AutoLandingRulesTests : IDisposable
     public async Task A_landing_at_done_under_a_rule_changed_meanwhile_lands_nothing(string form)
     {
         var rule = form == "merge" ? LandingRule.Merge : new LandingRule(LandingForm.Branch, "feature/{quest}");
-        DriverConfig.Empty.WithWorkspaceLanding("aurora", rule).Save(Path.Combine(_home, "driver.json"));
-        var tree = Path.Combine(_home, "trees", "aurora", "engine", "s-1a2b3c4d");
+        DriverConfig.Empty.WithWorkspaceLanding("aurora", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-1a2b3c4d");
 
         var landed = await new SessionTrees(_home).LandAsync(tree, new LandingSubject("s1", "q1", "Fix"), acceptedBy: AcceptedBy.Auto);
 
@@ -204,13 +204,13 @@ public sealed class AutoLandingRulesTests : IDisposable
         due.Tried("s1", new AutoTry(At.AddMinutes(1), AutoLandingCode.Uncommitted) { Tip = "abc1234", Status = "sha256:aaaa", Uncommitted = 2 }, close: false);
         due.Tried("s2", new AutoTry(At.AddMinutes(2), AutoLandingCode.Landed) { Tip = "def5678", Status = "clean", Branch = "feature/q2-fix", Commits = 3 }, close: true);
 
-        var path = Path.Combine(_home, "sessions", AutoLandings.FileName);
+        var path = DaorisHome.Entry(_home, HomeEntry.Sessions,AutoLandings.FileName);
         Assert.Equal(path, due.FilePath);
         var text = File.ReadAllText(path);
         Assert.DoesNotContain("\r", text);
         Assert.False(File.ReadAllBytes(path).AsSpan().StartsWith(new byte[] { 0xEF, 0xBB, 0xBF }));
         Assert.Contains("\"dueAt\"", text);
-        Assert.Empty(Directory.EnumerateFiles(Path.Combine(_home, "sessions"), "*.writing"));
+        Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*.writing"));
 
         var again = new AutoLandings(_home);
         Assert.Equal(["s1"], again.Open().Select(entry => entry.Session));
@@ -245,8 +245,8 @@ public sealed class AutoLandingRulesTests : IDisposable
     [Fact]
     public void A_file_that_does_not_read_is_none_and_closed_entries_are_bounded()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
-        File.WriteAllText(Path.Combine(_home, "sessions", AutoLandings.FileName), "{ not json");
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,AutoLandings.FileName), "{ not json");
         Assert.Empty(new AutoLandings(_home).All());
 
         var due = new AutoLandings(_home);

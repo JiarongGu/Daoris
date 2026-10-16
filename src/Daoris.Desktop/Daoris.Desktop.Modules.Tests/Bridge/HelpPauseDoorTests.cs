@@ -134,7 +134,7 @@ public sealed class HelpPauseDoorTests : DriverModuleBridge
         return new DriverModule(Bus, loop).HelpDoors(service);
     }
 
-    private string TreeOf(string name) => Path.Combine(Home, "trees", "aurora", "engine", name).Replace('\\', '/');
+    private string TreeOf(string name) => DaorisHome.Entry(Home, HomeEntry.Trees,"aurora", "engine", name).Replace('\\', '/');
 
     /// <summary>Ask <c>a1</c>'s work: <c>q1</c> open; <c>q2</c> taken, worked by a session nothing here runs; <c>q3</c> taken, its session waiting on you.</summary>
     private LoopbackHost Ledger()

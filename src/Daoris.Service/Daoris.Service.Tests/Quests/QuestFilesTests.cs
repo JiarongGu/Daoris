@@ -46,15 +46,15 @@ public sealed class QuestFilesTests : IDisposable
     {
         var upload = new QuestUpload("notes.txt", Encoding.UTF8.GetBytes("notes"));
         await new QuestFiles(_home).KeepAsync("a1b2c3", upload);
-        await new QuestFiles(_home).For("asks").KeepAsync("d4e5f6", upload);
-        var held = new QuestFiles(_home, QuestFiles.Folder, remove: path => throw new IOException($"`{path}` is held."));
+        await new QuestFiles(_home).For(HomeEntry.AskFiles).KeepAsync("d4e5f6", upload);
+        var held = new QuestFiles(_home, HomeEntry.QuestFiles, remove: path => throw new IOException($"`{path}` is held."));
 
         Assert.False(held.Forget("a1b2c3"));
-        Assert.False(held.For("asks").Forget("d4e5f6"));
-        Assert.True(Directory.Exists(Path.Combine(_home, "quests", "a1b2c3")));
-        Assert.True(Directory.Exists(Path.Combine(_home, "asks", "d4e5f6")));
+        Assert.False(held.For(HomeEntry.AskFiles).Forget("d4e5f6"));
+        Assert.True(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles, "a1b2c3")));
+        Assert.True(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.AskFiles, "d4e5f6")));
         Assert.True(new QuestFiles(_home).Forget("a1b2c3"));
-        Assert.False(Directory.Exists(Path.Combine(_home, "quests", "a1b2c3")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles, "a1b2c3")));
         Assert.True(new QuestFiles(_home).Forget("f0f0f0"));
     }
 

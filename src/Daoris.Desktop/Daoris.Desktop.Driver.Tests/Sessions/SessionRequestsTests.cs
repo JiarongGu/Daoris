@@ -34,7 +34,7 @@ public sealed class SessionRequestsTests : IDisposable
     {
         Requests.Write(new SessionRequest("s1", SessionMove.Decline, Now) { Note = "Not this way; 中文 too.", Parked = true });
 
-        Assert.True(File.Exists(Path.Combine(_home, "sessions", "requests", "s1.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Requests, "s1.json")));
         var read = Assert.Single(Requests.Pending(Now.AddSeconds(5)));
         Assert.Equal(("s1", SessionMove.Decline, "Not this way; 中文 too.", true, RequestDoor.Terminal, Now),
             (read.Session, read.Move, read.Note, read.Parked, read.By, read.At));
@@ -337,7 +337,7 @@ public sealed class SessionRequestsTests : IDisposable
     [Fact]
     public async Task A_say_for_a_session_this_loop_runs_is_held_at_its_door_and_answered()
     {
-        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var inbox = processes.OpenInbox("s1");
         inbox.Attach(interrupt: null);
         var request = Say("s1");
@@ -355,16 +355,16 @@ public sealed class SessionRequestsTests : IDisposable
     [Fact]
     public async Task A_say_for_a_session_another_process_runs_is_left()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using (var self = System.Diagnostics.Process.GetCurrentProcess())
         {
-            File.WriteAllText(Path.Combine(_home, "sessions", "s1.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+            File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionPids, "s1"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
         }
 
         var ledger = new SayingLedger();
         using var service = ledger.Client();
         Requests.Write(Say("s1"));
-        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => service, every: TimeSpan.FromHours(1), clock: () => Now);
+        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), () => service, every: TimeSpan.FromHours(1), clock: () => Now);
 
         Assert.Empty(await watch.HonourAsync());
         Assert.Single(Requests.Pending(Now));
@@ -383,7 +383,7 @@ public sealed class SessionRequestsTests : IDisposable
         ServiceClient? up = null;
         var request = Say("s1");
         Requests.Write(request);
-        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => up, every: TimeSpan.FromHours(1), clock: () => Now);
+        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), () => up, every: TimeSpan.FromHours(1), clock: () => Now);
 
         Assert.Empty(await watch.HonourAsync());
         Assert.Single(Requests.Pending(Now));

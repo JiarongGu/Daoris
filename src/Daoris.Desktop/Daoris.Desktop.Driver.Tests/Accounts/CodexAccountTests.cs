@@ -24,7 +24,7 @@ public sealed class CodexAccountTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private HarnessRoster Roster() => new(AdapterSet.Built(), Path.Combine(_home, "harnesses.json"));
+    private HarnessRoster Roster() => new(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
     /// <summary>
     /// The door's accounts are asked and signed in by <c>codex</c>, as <c>claude-code-acp</c>'s are by <c>claude-code</c>
@@ -154,7 +154,7 @@ public sealed class CodexAccountTests : IDisposable
         return binary;
     }
 
-    private void Pinned(string version) => new HarnessSettings().WithVersion("codex", version).Save(Path.Combine(_home, "harnesses.json"));
+    private void Pinned(string version) => new HarnessSettings().WithVersion("codex", version).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
     private string Fresh => HarnessSettings.ProfileHome(_home, "codex", "acct-0a1b2c3d");
 
@@ -247,7 +247,7 @@ public sealed class CodexAccountTests : IDisposable
                         Binary: ["fake-agent-never-run"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME",
                         LoginArguments: ["login"], LoginCheck: new LoginQuestion(["login", "status"], "^in", "^out")),
                 }),
-            Path.Combine(_home, "harnesses.json"))
+            DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => Now,
             Asking = (owner, account, _) =>
@@ -273,7 +273,7 @@ public sealed class CodexAccountTests : IDisposable
     public async Task A_start_on_a_door_onto_a_declared_owner_asks_a_signed_out_account_again_through_the_owner()
     {
         HolderAccounts("account-1");
-        new HarnessSettings().WithDefault("fake", "account-1").Save(Path.Combine(_home, "harnesses.json"));
+        new HarnessSettings().WithDefault("fake", "account-1").Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
         AccountReads.Keep(_home, "fake", "account-1", LoginState.Out, Now - HarnessRoster.SignedOutAskedAgain - TimeSpan.FromMinutes(5));
 
         var selection = await HolderRoster().SelectAsync("fake-door", HolderConfig, null, null);

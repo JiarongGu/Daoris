@@ -26,14 +26,14 @@ import { operands } from '../platform/args.ts';
 import type { Fetcher } from '../agents/channels.ts';
 import { DaorisError, RefusalError, type ExitCode } from '../platform/errors.ts';
 import { renameHeld, writeBytesAtomic, writeJsonAtomic } from '../platform/fsx.ts';
-import { HOME_SENTENCE, daorisHome } from '../platform/home.ts';
+import { HOME_SENTENCE, daorisHome, homeEntry } from '../platform/home.ts';
 import {
   ARCHIVES, BUILT_IN, builtInList, compareVersions, currentPlatform, locationCopy, mergeResources, parseResources, readLists,
   readResourceFile, type Licence, type MergedResources, type OfferedVersion, type ResourceList,
 } from './resources.ts';
 import { extractTarGz } from '../platform/tarball.ts';
 import {
-  TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, addLocation, declaredTool, isAddress, isExactVersion, isWholePath,
+  TOOLS, TOOLS_FILE, TOOL_PACKAGE, TOOL_RECORD, addLocation, declaredTool, isAddress, isExactVersion, isWholePath,
   managedExecutable, readTools, removeLocation, resolveFrom, resolveTool, toolsFile, undeclaredTool, useFile, useManaged, useSystem,
   wayWords, type ToolDeclaration, type ToolResolution,
 } from './tools.ts';
@@ -82,14 +82,14 @@ export interface ToolPlan {
 
 /** A version's folder under the home: `<home>/tools/<tool>/<version>`. */
 export function versionFolder(home: string, tool: string, version: string): string {
-  return join(home, TOOLS_FOLDER, tool, version);
+  return homeEntry(home, 'tool-versions', tool, version);
 }
 
 /** The versions of a tool downloaded and verified — a record naming a file that is there — newest first. */
 export function downloadedVersions(home: string, tool: string): string[] {
   let names: string[];
   try {
-    names = readdirSync(join(home, TOOLS_FOLDER, tool));
+    names = readdirSync(homeEntry(home, 'tool-versions', tool));
   } catch {
     return [];
   }
@@ -219,7 +219,7 @@ export async function downloadVersion({ home, tool: id, offered, platform, fetch
   } finally {
     rmSync(staging, { recursive: true, force: true });
     // A refusal leaves nothing under the tool's folder, not even the folder the staging made.
-    const parent = join(home, TOOLS_FOLDER, id);
+    const parent = homeEntry(home, 'tool-versions', id);
     try {
       if (readdirSync(parent).length === 0) rmSync(parent, { recursive: true, force: true });
     } catch {

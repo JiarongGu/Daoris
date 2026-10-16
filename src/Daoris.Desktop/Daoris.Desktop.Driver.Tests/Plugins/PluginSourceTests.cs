@@ -24,7 +24,7 @@ public sealed class PluginSourceTests : IDisposable
 
     private string Offers => Path.Combine(_root, "app", "plugin-offers");
 
-    private string Installed(string id) => Path.Combine(Home, PluginCatalog.Folder, id);
+    private string Installed(string id) => DaorisHome.Entry(Home, HomeEntry.Plugins,id);
 
     private static IReadOnlyCollection<string> Reserved => AdapterSet.Built().Names;
 
@@ -62,7 +62,7 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Equal((PluginSource.FromFolder(source), (string?)null), PluginSource.Read(Installed("acme.gate")));
         Assert.True(File.Exists(Path.Combine(Installed("acme.gate"), PluginSource.FileName)));
         Assert.Null(Assert.Single(PluginCatalog.Load(Home, Reserved).Plugins).Problem);
-        Assert.Equal(["acme.gate"], Directory.GetDirectories(Path.Combine(Home, PluginCatalog.Folder)).Select(Path.GetFileName));
+        Assert.Equal(["acme.gate"], Directory.GetDirectories(DaorisHome.Entry(Home, HomeEntry.Plugins)).Select(Path.GetFileName));
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public sealed class PluginSourceTests : IDisposable
         var source = Checkout();
         PluginInstall.Add(Home, source, Reserved);
         File.WriteAllText(Path.Combine(Installed("acme.gate"), "stale.txt"), "from the install before");
-        var kept = Path.Combine(Home, PluginCatalog.Folder, PluginCatalog.DataFolder, "acme.gate");
+        var kept = DaorisHome.Entry(Home, HomeEntry.Plugins,PluginCatalog.DataFolder, "acme.gate");
         Directory.CreateDirectory(kept);
         File.WriteAllText(Path.Combine(kept, "kept.json"), "{}");
         File.WriteAllText(Path.Combine(source, "gate.mjs"), "// v2");
@@ -242,7 +242,7 @@ public sealed class PluginSourceTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Installed("acme.gate"), "stale.txt")));
         Assert.True(File.Exists(Path.Combine(kept, "kept.json")));
         Assert.Equal(PluginSource.FromFolder(source), PluginSource.Read(Installed("acme.gate")).Source);
-        Assert.Equal([".data", "acme.gate"], Directory.GetDirectories(Path.Combine(Home, PluginCatalog.Folder)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Equal([".data", "acme.gate"], Directory.GetDirectories(DaorisHome.Entry(Home, HomeEntry.Plugins)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
     }
 
     /// <summary>
@@ -316,7 +316,7 @@ public sealed class PluginSourceTests : IDisposable
 
         Assert.Contains("was not updated", message);
         Assert.Equal("// v1", File.ReadAllText(Path.Combine(Installed("acme.gate"), "gate.mjs")));
-        Assert.Equal(["acme.gate"], Directory.GetDirectories(Path.Combine(Home, PluginCatalog.Folder)).Select(Path.GetFileName));
+        Assert.Equal(["acme.gate"], Directory.GetDirectories(DaorisHome.Entry(Home, HomeEntry.Plugins)).Select(Path.GetFileName));
     }
 
     // ── An offer, installed and then updated ───────────────────────────────────────────────────────
@@ -357,7 +357,7 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Contains("this install offers no plugin `acme.nothing`", refused.Message);
         Assert.Contains("github-pull-request", refused.Message);
         Assert.Contains("is not a plugin id", Assert.Throws<DriverException>(() => PluginInstall.AddOffer(Home, Offers, "../x", Reserved)).Message);
-        Assert.False(Directory.Exists(Path.Combine(Home, PluginCatalog.Folder)));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Plugins)));
     }
 
     /// <summary>The driver adds and never replaces (PLUG9's one difference): an installed offer is refused here.</summary>

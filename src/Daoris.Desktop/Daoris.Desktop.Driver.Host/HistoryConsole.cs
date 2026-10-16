@@ -31,7 +31,7 @@ internal static class HistoryConsole
         var configPath = DriverConfig.ResolvePath();
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        var world = new HistoryWorld(service, home, configPath, new SessionProcesses(Path.Combine(home, "sessions"))) { Log = log };
+        var world = new HistoryWorld(service, home, configPath, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids))) { Log = log };
         return await HistoryCommand.RunAsync(ask, world, Console.Out).ConfigureAwait(false);
     }
 }

@@ -266,7 +266,7 @@ public sealed class InstancePipeTests : Bridge
         press.Let.SetResult();
         var (dispatcher, _, services) = Compose(log, press);
         using var __ = services;
-        var journal = Path.Combine(Home, InstancePipe.JournalFolder);
+        var journal = DaorisHome.Entry(Home, HomeEntry.Pipe);
         Directory.CreateDirectory(journal);
         var now = DateTimeOffset.UtcNow;
         // Each id's line binds it to its request, a fingerprint of its payload and one of its sender's key (SHA-256, hex).
@@ -554,7 +554,7 @@ public sealed class InstancePipeTests : Bridge
         var (dispatcher, _, services) = Compose(log, press);
         using var __ = services;
         // A file where the journal's folder goes: no line can be written under it.
-        File.WriteAllText(Path.Combine(Home, InstancePipe.JournalFolder), "not a folder");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Pipe), "not a folder");
         using var pipe = Pipe(dispatcher, log);
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
@@ -648,7 +648,7 @@ public sealed class InstancePipeTests : Bridge
 
     private List<JsonElement> Lines()
     {
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return
         [

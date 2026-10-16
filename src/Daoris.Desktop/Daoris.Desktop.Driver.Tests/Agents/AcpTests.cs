@@ -676,7 +676,7 @@ public sealed class AcpTests
         Directory.CreateDirectory(home);
         try
         {
-            var events = new SessionEvents(Path.Combine(home, "sessions"));
+            var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
             using (var log = new MachineLog(home, "desktop"))
             using (var client = new ServiceClient("http://ledger.test", null, new HttpClient()))
             using (new SessionLog(log, client, events))
@@ -704,7 +704,7 @@ public sealed class AcpTests
                     .RunAsync("D:/fam/Game", "push it", CancellationToken.None);
             }
 
-            var written = string.Join('\n', Directory.GetFiles(Path.Combine(home, MachineLog.Folder)).Select(File.ReadAllText));
+            var written = string.Join('\n', Directory.GetFiles(DaorisHome.Entry(home, HomeEntry.Logs)).Select(File.ReadAllText));
             var asks = written.Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .Select(line => JsonDocument.Parse(line).RootElement)
                 .Where(line => line.GetProperty("event").GetString() == "permission.refused")

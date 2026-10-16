@@ -67,12 +67,12 @@ public static class ToolInstall
     public static readonly TimeSpan LookBound = TimeSpan.FromSeconds(30);
 
     /// <summary>A version's folder under the home: <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;</c>.</summary>
-    public static string VersionFolder(string home, string tool, string version) => Path.Combine(home, Tools.Folder, tool, version);
+    public static string VersionFolder(string home, string tool, string version) => DaorisHome.Entry(home, HomeEntry.ToolVersions, tool, version);
 
     /// <summary>The versions of a tool downloaded and verified — a record naming a file that is there — newest first.</summary>
     public static IReadOnlyList<string> Downloaded(string home, string tool)
     {
-        var folder = Path.Combine(home, Tools.Folder, tool);
+        var folder = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool);
         if (!Directory.Exists(folder)) return [];
         return
         [
@@ -234,7 +234,7 @@ public static class ToolInstall
         {
             if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
             // A refusal leaves nothing under the tool's folder, not even the folder the staging made.
-            var parent = Path.Combine(home, Tools.Folder, tool);
+            var parent = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool);
             if (Directory.Exists(parent) && !Directory.EnumerateFileSystemEntries(parent).Any()) Directory.Delete(parent);
         }
     }

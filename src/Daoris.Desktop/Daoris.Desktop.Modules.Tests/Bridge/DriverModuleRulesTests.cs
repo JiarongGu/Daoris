@@ -97,7 +97,7 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
         string scope = "machine", string? name = null, string? session = "s1a2b3c4", string? ask = null,
         string proposed = "2026-09-24T10:00:00.0000000+00:00")
     {
-        var folder = Path.Combine(Home, RuleProposals.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.RuleProposals);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, $"{id}.json"), JsonSerializer.Serialize(new
         {

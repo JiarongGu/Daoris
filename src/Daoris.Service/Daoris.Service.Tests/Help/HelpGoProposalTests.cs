@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
@@ -83,7 +84,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains("never by a folder", message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     /// <summary>UX6i2b: the texts list the places the frame has (D150's UX6i2a note), never the ones it retired.</summary>
@@ -176,6 +177,6 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 }

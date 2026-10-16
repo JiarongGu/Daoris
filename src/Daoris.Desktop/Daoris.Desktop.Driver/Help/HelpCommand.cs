@@ -167,7 +167,7 @@ public static class HelpCommand
     {
         var json = await world.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var records = SessionRecords.Parse(json);
-        var events = new SessionEvents(Path.Combine(world.Home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
         if (ask.Verb == "list")
         {
             var listing = new HelpConversations(world.Home).List(

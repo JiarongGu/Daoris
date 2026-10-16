@@ -27,7 +27,7 @@ public sealed class SessionArchive(string home)
     private static readonly object Gate = new();
 
     /// <summary>Beside the sessions' transcripts and conversations, which are this machine's by the same rule.</summary>
-    public string FilePath => Path.Combine(home, "sessions", FileName);
+    public string FilePath => DaorisHome.Entry(home, HomeEntry.Sessions, FileName);
 
     /// <summary>Every mark, by session; none when the file is missing or does not read.</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Marks() =>

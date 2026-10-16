@@ -38,8 +38,11 @@ internal sealed class TreeContext
     /// <summary>Where this machine's session branches started (WSR6) — what bringing one up to date cuts at.</summary>
     internal SessionBranches Grown => new(Home);
 
-    /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
-    internal string TreesRoot => Path.Combine(Home, "trees");
+    /// <summary>
+    /// Every tree this machine's Daoris has opened lives under here, and only here: the home's <see cref="HomeEntry.Trees"/>,
+    /// asked short of an item, the folder holding them.
+    /// </summary>
+    internal string TreesRoot => DaorisHome.Entry(Home, HomeEntry.Trees);
 
     /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
     internal bool Holds(string path) =>

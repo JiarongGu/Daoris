@@ -18,7 +18,7 @@ public sealed class PluginsCommandTests : IDisposable
     public PluginsCommandTests()
     {
         Directory.CreateDirectory(_home);
-        var folder = Path.Combine(_home, "plugins", "acme.gate");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.gate");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), $$"""
             { "id": "acme.gate", "name": "Gate", "version": "1.0.0", "description": "Holds a quest whose title asks it to.",
@@ -51,7 +51,7 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Contains("a decision, waits 10 seconds, listening", said);
         Assert.Contains("TICKETS_TOKEN", said);
         Assert.DoesNotContain(Secret, said);
-        Assert.Contains(Path.Combine(_home, "plugins", ".data", "acme.gate"), said);
+        Assert.Contains(DaorisHome.Entry(_home, HomeEntry.Plugins,".data", "acme.gate"), said);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public sealed class PluginsCommandTests : IDisposable
     [Fact]
     public async Task Approve_and_withdraw_are_the_pages_presses_at_a_terminal()
     {
-        var folder = Path.Combine(_home, "plugins", "acme.tickets");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tickets");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """
             { "id": "acme.tickets", "servers": [

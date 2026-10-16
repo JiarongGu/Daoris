@@ -440,7 +440,7 @@ public interface IHelpDoors :
 /// </remarks>
 public static class HelpProposals
 {
-    public static string FolderOf(string home) => Path.Combine(home, "help", "proposals");
+    public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpProposals);
 
     /// <summary>The proposals one conversation made that wait for the person, oldest first. A file that does not read is skipped.</summary>
     public static IReadOnlyList<HelpProposal> Pending(string home, string session)

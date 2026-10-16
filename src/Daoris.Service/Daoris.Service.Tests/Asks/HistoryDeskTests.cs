@@ -172,7 +172,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     public async Task Kept_files_the_disk_will_not_let_go_of_are_named_in_the_answer()
     {
         var quest = await Closed("Finished work whose file is held");
-        var held = new QuestFiles(Home, QuestFiles.Folder, remove: path => throw new IOException($"`{path}` is held."));
+        var held = new QuestFiles(Home, HomeEntry.QuestFiles, remove:path => throw new IOException($"`{path}` is held."));
 
         var cleared = Assert.Single(await Desk(files: held).ClearAsync([QuestUnit(quest.Id)], Now.AddHours(1)));
 
@@ -378,12 +378,12 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.Equal((HistoryRefusal.NeedsYou, session.Id), (pending.Refusal!.Refusal, pending.Refusal.Session));
         Assert.Equal($"A rule proposal from session `{session.Id}` waits on you.", pending.Refusal.Message);
 
-        var path = Path.Combine(Home, RuleProposalBox.Folder, $"{id}.json");
+        var path = DaorisHome.Entry(Home, HomeEntry.RuleProposals,$"{id}.json");
         File.WriteAllText(path, File.ReadAllText(path).Replace("\"state\": \"proposed\"", "\"state\": \"applied\"", StringComparison.Ordinal));
 
         Assert.True(Assert.Single(await Desk().ClearAsync([QuestUnit(quest.Id)], Now.AddHours(1))).Cleared);
         Assert.False(File.Exists(path));
-        Assert.True(File.Exists(Path.Combine(Home, RuleProposalBox.Folder, $"{untouched}.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.RuleProposals,$"{untouched}.json")));
         Assert.NotNull(await _quests.FindAsync(other.Id));
     }
 
@@ -739,7 +739,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(3));
         var work = await Served((await _quests.FindAsync(quest.Id))!);
         await _quests.MoveAsync(quest.Id, QuestStatus.Done, "Faster now.", Now.AddMinutes(4));
-        var kept = _files.For(AskDesk.Folder);
+        var kept = _files.For(HomeEntry.AskFiles);
         Assert.True(kept.Has(ask.Id, ask.Attachments[0]));
 
         var plan = await Desk().PlanAsync(AskUnit(ask.Id));

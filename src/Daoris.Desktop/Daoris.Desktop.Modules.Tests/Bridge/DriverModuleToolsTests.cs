@@ -90,8 +90,8 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
 
     private static JsonElement Payload(Shenora.Core.Events.EventMessage message) => JsonSerializer.SerializeToElement(message.Payload);
 
-    private JsonObject? Written() => System.IO.File.Exists(Path.Combine(Home, Tools.FileName))
-        ? JsonNode.Parse(System.IO.File.ReadAllText(Path.Combine(Home, Tools.FileName)))!.AsObject()
+    private JsonObject? Written() => System.IO.File.Exists(DaorisHome.Entry(Home, HomeEntry.Tools))
+        ? JsonNode.Parse(System.IO.File.ReadAllText(DaorisHome.Entry(Home, HomeEntry.Tools)))!.AsObject()
         : null;
 
     /// <summary>
@@ -114,11 +114,11 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
             Assert.True(tool.GetProperty("running").ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
         });
         Assert.Equal("Git", Tool(answered, "git").GetProperty("name").GetString());
-        Assert.Equal(Path.Combine(Home, Tools.FileName), answered.GetProperty("file").GetString());
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Tools), answered.GetProperty("file").GetString());
         Assert.False(answered.GetProperty("exists").GetBoolean());
         Assert.Empty(answered.GetProperty("locations").EnumerateArray());
         Assert.Equal("built in", answered.GetProperty("builtIn").GetProperty("integrity").GetString());
-        Assert.False(System.IO.File.Exists(Path.Combine(Home, Tools.FileName)), "a list writes nothing");
+        Assert.False(System.IO.File.Exists(DaorisHome.Entry(Home, HomeEntry.Tools)), "a list writes nothing");
     }
 
     /// <summary>
@@ -309,7 +309,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         await UntilAsync(() => Raised.Any(m => m.Type == "TOOLS_ENDED"));
         var ended = Payload(Raised.Single(m => m.Type == "TOOLS_ENDED"));
         Assert.True(ended.GetProperty("Stopped").GetBoolean());
-        Assert.False(Directory.Exists(Path.Combine(Home, Tools.Folder, "gh")), "a stop leaves nothing under tools/gh");
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh")), "a stop leaves nothing under tools/gh");
         Assert.False((await AnswerAsync(module, "TOOLS_STOP", new { tool = "gh" })).GetProperty("stopped").GetBoolean());
     }
 

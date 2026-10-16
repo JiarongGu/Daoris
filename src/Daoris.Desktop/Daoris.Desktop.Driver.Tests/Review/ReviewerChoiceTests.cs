@@ -46,7 +46,7 @@ public sealed class ReviewerChoiceTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private string Command => Path.Combine(_home, "agent-here");
 
@@ -104,7 +104,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     /// <summary>A plugin declaring one agent, with the product and maker it says, if any; present by a file look.</summary>
     private void Plugin(string id, string agent, string? maker = null, string? product = null)
     {
-        var folder = Path.Combine(_home, "plugins", id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "agent.mjs"), "");
         var said = (product is null ? "" : $", \"product\": \"{product}\"") + (maker is null ? "" : $", \"maker\": \"{maker}\"");

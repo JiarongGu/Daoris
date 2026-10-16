@@ -11,7 +11,7 @@ public sealed class HelperBoxShapeTests : IDisposable
 {
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "helper-box-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public HelperBoxShapeTests() => Directory.CreateDirectory(Path.Combine(_home, "helpers"));
+    public HelperBoxShapeTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
 
     public void Dispose()
     {
@@ -25,12 +25,12 @@ public sealed class HelperBoxShapeTests : IDisposable
     [Fact]
     public void The_drivers_state_file_reads_with_its_own_marks_ignored_and_an_unknown_state_is_none()
     {
-        File.WriteAllText(Path.Combine(_home, "helpers", "a1b2c3d4.state.json"),
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Helpers,"a1b2c3d4.state.json"),
             "{\n  \"id\": \"a1b2c3d4\",\n  \"state\": \"answered\",\n  \"code\": null,\n  \"helper\": \"h1a2b3c4\",\n"
             + "  \"at\": \"2026-10-12T10:00:00.0000000+00:00\",\n  \"lastWords\": true,\n  \"handed\": \"w1\",\n  \"agent\": \"codex-acp\",\n  \"words\": \"Probably the window.\"\n}\n");
-        File.WriteAllText(Path.Combine(_home, "helpers", "b1b2c3d4.state.json"),
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Helpers,"b1b2c3d4.state.json"),
             "{\n  \"id\": \"b1b2c3d4\",\n  \"state\": \"waiting\",\n  \"code\": \"cap\",\n  \"helper\": null,\n  \"at\": \"2026-10-12T10:00:00.0000000+00:00\"\n}\n");
-        File.WriteAllText(Path.Combine(_home, "helpers", "c1b2c3d4.state.json"), "{ \"id\": \"c1b2c3d4\", \"state\": \"sleeping\" }");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Helpers,"c1b2c3d4.state.json"), "{ \"id\": \"c1b2c3d4\", \"state\": \"sleeping\" }");
 
         var answered = HelperBox.ReadState(_home, "a1b2c3d4")!;
         Assert.Equal(("answered", null, "h1a2b3c4"), (answered.State, answered.Code, answered.Helper));

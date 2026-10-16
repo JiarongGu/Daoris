@@ -82,7 +82,7 @@ public sealed record HarnessSettings(
     /// The conventional home, beside the driver's own config and the remotes map — under the Daoris
     /// home (D63). A machine with no home and no override is refused, naming what to set.
     /// </summary>
-    public static string DefaultPath => DaorisHome.Require("harnesses.json");
+    public static string DefaultPath => DaorisHome.Require(HomeEntry.Harnesses);
 
     /// <summary>The file every surface reads and writes — the override, or the conventional home.</summary>
     public static string ResolvePath() =>
@@ -444,7 +444,7 @@ public sealed record HarnessSettings(
 
     /// <summary>Where a managed version of a harness lives. Daoris owns this location, binary and all.</summary>
     public static string ManagedHome(string home, string harness, string version) =>
-        Path.Combine(home, "toolchain", Name(harness, "agent name"), Name(version, "version"));
+        DaorisHome.Entry(home, HomeEntry.Toolchain, Name(harness, "agent name"), Name(version, "version"));
 
     /// <summary>
     /// The executable inside a managed install, or null when nothing is pinned or nothing is
@@ -489,23 +489,22 @@ public sealed record HarnessSettings(
     /// inside it.</b>
     /// </summary>
     public static string ProfileHome(string home, string harness, string profile) =>
-        Path.Combine(home, "harnesses", Name(harness, "agent name"), Name(profile, "profile name"));
+        DaorisHome.Entry(home, HomeEntry.AgentHomes, Name(harness, "agent name"), Name(profile, "profile name"));
 
     /// <summary>
     /// The profiles that exist for a harness — <b>the directories that exist</b>, sorted. There is no
     /// register of profiles to disagree with the disk, which is the same reason the registry became
-    /// the authority rather than a view over a scan (D48 §3): one truth, not two.
+    /// the authority rather than a view over a scan (D48 §3): one truth, not two. Both places of the
+    /// account homes are read, as a list of an entry's items is (D172 point 5, HOMELAYOUT2).
     /// </summary>
-    public static IReadOnlyList<string> Profiles(string home, string harness)
-    {
-        var root = Path.Combine(home, "harnesses", Name(harness, "agent name"));
-        if (!Directory.Exists(root)) return [];
-
-        return [.. Directory.EnumerateDirectories(root)
+    public static IReadOnlyList<string> Profiles(string home, string harness) =>
+        [.. DaorisHome.Places(home, HomeEntry.AgentHomes, Name(harness, "agent name"))
+            .Where(Directory.Exists)
+            .SelectMany(Directory.EnumerateDirectories)
             .Select(Path.GetFileName)
             .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
             .OrderBy(name => name, StringComparer.Ordinal)];
-    }
 
     /// <summary>
     /// The id an account made by signing in, or by a key, gets (D66 §3, ACCT2): a fresh one, never reused

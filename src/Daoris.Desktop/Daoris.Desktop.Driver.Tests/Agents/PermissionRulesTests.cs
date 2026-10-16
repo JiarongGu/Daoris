@@ -453,7 +453,7 @@ public sealed class PermissionRulesTests : IDisposable
 
         var path = SpawnSettings.Write(_home, "s1", rules, hardDeny: []);
 
-        Assert.Equal(Path.Combine(_home, SpawnServers.Folder, "s1.settings.json"), path);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.settings.json"), path);
         var text = File.ReadAllText(path!);
         Assert.DoesNotContain("\r", text);
         using var document = JsonDocument.Parse(text);
@@ -656,7 +656,7 @@ public sealed class PermissionRulesTests : IDisposable
     [Fact]
     public void The_spawn_files_hook_names_each_declared_target_after_the_tree()
     {
-        var tree = Path.Combine(_home, "plugins");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Plugins);
         var target = Path.Combine(_home, "engine");
         var guard = TreeGuard.For(_home, tree, [target]);
 

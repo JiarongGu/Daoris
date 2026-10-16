@@ -21,8 +21,9 @@
 // It spawns nothing and opens no socket.
 
 import { closeSync, mkdirSync, openSync, statSync, unlinkSync, writeSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { writeTextAtomic } from '../platform/fsx.ts';
+import { homeEntry } from '../platform/home.ts';
 
 /** The folder under the home's `harnesses` the locks are kept in; no agent is ever named so. */
 export const PROBE_FOLDER = '.probing';
@@ -38,8 +39,8 @@ const POLL_MS = 100;
 /** The lock for one configuration home: an account's, or with `profile` null the tool's own. */
 export function probeLockPath(home: string, owner: string, profile: string | null): string {
   return profile === null
-    ? join(home, 'harnesses', PROBE_FOLDER, `${owner}.lock`)
-    : join(home, 'harnesses', PROBE_FOLDER, owner, `${profile}.lock`);
+    ? homeEntry(home, 'probing', `${owner}.lock`)
+    : homeEntry(home, 'probing', owner, `${profile}.lock`);
 }
 
 /**
@@ -47,7 +48,7 @@ export function probeLockPath(home: string, owner: string, profile: string | nul
  * an account is signed out until a mark is newer than it, so a sign-in at the terminal is seen at its next look.
  */
 export function signedInPath(home: string, owner: string, profile: string): string {
-  return join(home, 'harnesses', PROBE_FOLDER, owner, `${profile}.signed-in`);
+  return homeEntry(home, 'probing', owner, `${profile}.signed-in`);
 }
 
 /** Mark a sign-in or a key into an account. A mark not written costs the desktop one sign-out's backstop, never the sign-in. */

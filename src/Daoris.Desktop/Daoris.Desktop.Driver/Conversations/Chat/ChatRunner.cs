@@ -124,7 +124,7 @@ public sealed class ChatRunner : IDisposable
         _usage = usage ?? new SessionUsage(home);
         _plugins = plugins ?? PluginLog.None;
         _harnesses = harnesses ?? new HarnessRoster(adapters);
-        _events = events ?? new SessionEvents(Path.Combine(home, "sessions"));
+        _events = events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
         _handOver = new ChatHandOver(_context, this);
         _curve = new CurveMove(_context, _handOver);
@@ -689,7 +689,7 @@ public sealed class ChatRunner : IDisposable
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null)
     {
         var workTree = place.Tree;
-        var transcript = Path.Combine(_home, "sessions", $"{sessionId}.log");
+        var transcript = DaorisHome.Entry(_home, HomeEntry.Sessions, $"{sessionId}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
         Process process;

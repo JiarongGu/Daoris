@@ -61,7 +61,7 @@ public static class HelpRoom
         .. HelpProposalKinds.All.Select(kind => $"mcp__{KnowledgeConnector.ServerName}__{kind.Tool}"),
     ];
 
-    public static string PathOf(string home) => Path.Combine(home, Folder);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpRoom);
 
     /// <summary>Write the room from the machine as it stands, and answer where it is.</summary>
     public static string Prepare(string home, HelpMachine machine)

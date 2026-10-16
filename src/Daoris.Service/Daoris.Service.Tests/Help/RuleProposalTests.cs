@@ -31,8 +31,8 @@ public sealed class RuleProposalTests : IDisposable
         new(box, new IntakeScope(ask, session));
 
     private string[] Written() =>
-        Directory.Exists(Path.Combine(Home, RuleProposalBox.Folder))
-            ? Directory.GetFiles(Path.Combine(Home, RuleProposalBox.Folder), "*.json")
+        Directory.Exists(DaorisHome.Entry(Home, HomeEntry.RuleProposals))
+            ? Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.RuleProposals), "*.json")
             : [];
 
     [Fact]

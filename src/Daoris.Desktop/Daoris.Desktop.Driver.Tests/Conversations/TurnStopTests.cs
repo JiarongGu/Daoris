@@ -337,10 +337,10 @@ public sealed class TurnStopTests : IDisposable
             """);
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(service.Url, null);
-        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var runner = new ChatRunner(
             client, adapters, _home, processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         var config = DriverConfig.Empty with
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", script, beat] },
@@ -365,7 +365,7 @@ public sealed class TurnStopTests : IDisposable
     [Fact]
     public async Task A_conversation_on_the_native_door_is_handed_the_plugins_servers()
     {
-        var plugin = Path.Combine(_home, "plugins", "browser");
+        var plugin = DaorisHome.Entry(_home, HomeEntry.Plugins,"browser");
         Directory.CreateDirectory(plugin);
         File.WriteAllText(Path.Combine(plugin, "plugin.json"),
             """{ "id": "browser", "servers": [ { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest"] } ] }""");
@@ -385,8 +385,8 @@ public sealed class TurnStopTests : IDisposable
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         var config = DriverConfig.Empty with
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", script, argvFile] },
@@ -415,7 +415,7 @@ public sealed class TurnStopTests : IDisposable
     [InlineData(false)]
     public async Task A_conversation_is_handed_the_in_app_browsers_endpoint_or_not_that_server_at_all(bool shell)
     {
-        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        var plugin = DaorisHome.Entry(_home, HomeEntry.Plugins,"in-app-browser");
         Directory.CreateDirectory(plugin);
         File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
             { "id": "in-app-browser", "servers": [
@@ -437,10 +437,10 @@ public sealed class TurnStopTests : IDisposable
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(service.Url, null);
-        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var runner = new ChatRunner(
             client, adapters, _home, processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)),
             browser: shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null);
         var config = DriverConfig.Empty with
         {
@@ -503,12 +503,12 @@ public sealed class TurnStopTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = command },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var usage = new SessionUsage(_home);
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), usage: usage);
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), usage: usage);
         var queues = new List<ChatQueue>();
         runner.QueueChanged += (_, queue) => { lock (queues) queues.Add(queue); };
         var answered = new List<AttentionEvent>();

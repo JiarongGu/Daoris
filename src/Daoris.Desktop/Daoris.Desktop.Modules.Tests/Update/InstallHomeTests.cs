@@ -118,7 +118,7 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Equal(before, established.Overrode);
         Assert.Equal(before, _user);
         Assert.False(Directory.Exists(before));
-        Assert.Equal("{}", File.ReadAllText(Path.Combine(established.Home, "driver.json")));
+        Assert.Equal("{}", File.ReadAllText(DaorisHome.Entry(established.Home, HomeEntry.DriverConfig)));
     }
 
     /// <summary>
@@ -201,8 +201,8 @@ public sealed class InstallHomeTests : IDisposable
         var established = Establish(install, legacy);
 
         Assert.Equal(["driver.json", "harnesses", "knowledge.db"], established!.Moved.Order(StringComparer.Ordinal));
-        Assert.True(File.Exists(Path.Combine(established.Home, "driver.json")));
-        Assert.True(Directory.Exists(Path.Combine(established.Home, "harnesses", "claude-code", "work")));
+        Assert.True(File.Exists(DaorisHome.Entry(established.Home, HomeEntry.DriverConfig)));
+        Assert.True(Directory.Exists(DaorisHome.Entry(established.Home, HomeEntry.AgentHomes, "claude-code", "work")));
         Assert.False(File.Exists(Path.Combine(legacy, "driver.json")));
         Assert.True(File.Exists(Path.Combine(legacy, "bin", "daoris-knowledge.exe")));
         Assert.Contains("moved", established.Notice);
@@ -212,7 +212,7 @@ public sealed class InstallHomeTests : IDisposable
         _process.Clear();
         var again = Establish(install, legacy);
         Assert.Empty(again!.Moved);
-        Assert.Equal("{}", File.ReadAllText(Path.Combine(established.Home, "driver.json")));
+        Assert.Equal("{}", File.ReadAllText(DaorisHome.Entry(established.Home, HomeEntry.DriverConfig)));
     }
 
     /// <summary>
@@ -293,6 +293,8 @@ public sealed class InstallHomeTests : IDisposable
         var project = File.ReadAllText(Path.Combine(launcher, "Daoris.Desktop.Launcher.csproj"));
         Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeLease.cs""", project);
         Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs""", project);
+        // The home's table names the lease's place and the id's (HOMELAYOUT2), so the launcher compiles it too.
+        Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\DaorisHome.cs""", project);
 
         var program = File.ReadAllText(Path.Combine(launcher, "Program.cs"));
         var leased = program.IndexOf("HomeLease.Await(", StringComparison.Ordinal);

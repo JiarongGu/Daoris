@@ -49,7 +49,7 @@ public sealed class DriverStartFailureTests : IDisposable
     [Fact]
     public async Task A_loop_whose_choices_do_not_read_says_which_file_and_where_and_writes_it_to_its_log()
     {
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(path, """{ "drivable": [""");
 
         var (code, said) = await RunAsync("drive", "--once");
@@ -120,7 +120,7 @@ public sealed class DriverStartFailureTests : IDisposable
     /// <summary>Every line the driver's machine log holds, across its files.</summary>
     private IReadOnlyList<JsonElement> LogLines()
     {
-        var folder = Path.Combine(_home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return Directory.EnumerateFiles(folder, "*.driver.jsonl")
             .SelectMany(path => File.ReadAllText(path).Split('\n', StringSplitOptions.RemoveEmptyEntries))

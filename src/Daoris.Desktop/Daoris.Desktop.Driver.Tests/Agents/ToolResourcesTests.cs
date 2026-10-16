@@ -468,7 +468,7 @@ public sealed class ToolResourcesTests : IDisposable
     {
         const string first = "https://mirror.example/resources.json";
         const string second = "http://localhost:5177/resources.json";
-        File.WriteAllText(Path.Combine(Home, Tools.FileName), $$"""{"locations":["{{first}}","{{second}}"]}""");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), $$"""{"locations":["{{first}}","{{second}}"]}""");
         var firstText = ListText("gh 2.63.0 win-x64 b mirror.example");
         Directory.CreateDirectory(Path.Combine([Home, .. ToolResources.LocationsFolder]));
         File.WriteAllText(ToolResources.LocationCopy(Home, first), firstText);

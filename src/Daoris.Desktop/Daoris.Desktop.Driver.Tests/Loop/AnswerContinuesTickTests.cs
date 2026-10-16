@@ -45,7 +45,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
     private JsonObject[] Heard() => [.. StubFile.Lines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
-    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events;
+    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     private Daoris.Driver.Driver Driver(ParkStandIn service, string mode, HarnessRoster? roster = null)
     {
@@ -61,7 +61,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         };
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
-            harnesses: roster ?? new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: roster ?? new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>The first look: a session takes the quest, asks which port, and parks with its conversation id kept.</summary>
@@ -119,7 +119,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
             (prompt["conversation"]!.GetValue<string>(), prompt["prompt"]!.GetValue<string>(), prompt["resumed"]!.GetValue<bool>()));
 
         // One conversation, one home: the transcript holds both runs, and the answer is the person's, once.
-        var transcript = File.ReadAllText(Path.Combine(_home, "sessions", "s1.log"));
+        var transcript = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log"));
         Assert.Contains("Which port should it listen on?", transcript);
         Assert.Contains("resumed on `acp-stub`", transcript);
         Assert.Single(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "Port 8080." });
@@ -172,7 +172,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
             Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
         }
 
-        var settings = Path.Combine(_home, "harnesses.json");
+        var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         new HarnessSettings().WithDefault("stub", "account-1").Save(settings);
         await using var service = ParkStandIn.Start(_repository);
         var parked = await ParkedAsync(service, Driver(service, "resumes"));

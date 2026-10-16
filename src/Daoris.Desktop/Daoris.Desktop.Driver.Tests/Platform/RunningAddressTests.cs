@@ -41,7 +41,7 @@ public sealed class RunningAddressTests : IDisposable
         var text = File.ReadAllText(RunningAddress.PathIn(_home));
         Assert.Equal(JsonValueKind.Object, JsonDocument.Parse(text).RootElement.ValueKind);
         Assert.Equal(
-            [HomeIdentity.FileName, RunningAddress.FileName],
+            [HomeIdentity.FileName, Path.GetFileName(RunningAddress.PathIn(_home))],
             Directory.GetFiles(_home).Select(Path.GetFileName).Order(StringComparer.Ordinal));
     }
 

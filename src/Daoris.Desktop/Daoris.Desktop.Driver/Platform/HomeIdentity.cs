@@ -28,8 +28,8 @@ public static class HomeIdentity
 
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
-    /// <summary>Where a home's identity is.</summary>
-    public static string PathIn(string home) => Path.Combine(home, FileName);
+    /// <summary>Where a home's identity is: the home's <c>home-id</c> entry (D172, HOMELAYOUT2).</summary>
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeId);
 
     /// <summary>Whether a value is an id as this file holds one: 32 lower-case hex characters.</summary>
     public static bool IsId(string? value) =>

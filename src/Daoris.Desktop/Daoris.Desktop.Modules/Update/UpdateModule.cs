@@ -23,10 +23,13 @@ public sealed class UpdateModule(InstallUpdater updater) : ModuleBase
         request.Type switch
         {
             "STATE" => Task.FromResult<object?>(updater.State),
-            "SET" => Task.FromResult<object?>(updater.Say(Mode(request.Payload), "screen")),
-            "DISMISS" => Task.FromResult<object?>(updater.Dismiss()),
+            // Awaited (UPDATERELAUNCH1): *Update now* starts the launcher through the start gate, off the window's thread.
+            "SET" => Answer(updater.SayAsync(Mode(request.Payload), "screen")),
+            "DISMISS" => Answer(updater.DismissAsync()),
             _ => throw UnknownType(request),
         };
+
+    private static async Task<object?> Answer(Task<UpdateState> state) => await state.ConfigureAwait(false);
 
     private static string? Mode(JsonElement? payload) =>
         payload is { ValueKind: JsonValueKind.Object } given

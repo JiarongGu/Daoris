@@ -129,7 +129,7 @@ public sealed record RemoteTarget(string Url, string Key)
     /// The map's conventional home, beside the driver's own config under the Daoris home (D63) — and
     /// null where there is none: a machine with no home has no remotes, the documented default anyway.
     /// </summary>
-    public static string? DefaultPath => DaorisHome.File(Environment.GetEnvironmentVariable, FileName);
+    public static string? DefaultPath => DaorisHome.File(HomeEntry.Remotes);
 
     /// <summary>The file every door reads and writes — the override, or the conventional home, as the driver's and the harnesses' are.</summary>
     public static string? ResolvePath() => Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;

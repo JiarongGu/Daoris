@@ -55,12 +55,12 @@ export function normalizeWorkspace(name?: string | null): string {
  * home, which is a machine with no remotes: the documented default, and silent.
  */
 export function remotesPath(env: Env = process.env): string | null {
-  return env[PATH_VARIABLE] ?? homeFile(env, 'remotes.json');
+  return env[PATH_VARIABLE] ?? homeFile(env, 'remotes');
 }
 
 /** The map's path for a verb that EDITS it: the override, or the home's file, or a refusal naming what to set. */
 export function remotesPathRequired(env: Env = process.env): string {
-  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'remotes.json');
+  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'remotes');
 }
 
 /**

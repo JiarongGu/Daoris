@@ -20,7 +20,7 @@ public sealed class NewSessionChoices(string home)
     public const string Suffix = ".new-session.json";
 
     /// <summary>Where a session's choice is kept.</summary>
-    public string PathOf(string session) => Path.Combine(home, "sessions", session + Suffix);
+    public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);
 
     /// <summary>
     /// Keep the choice for these words, replacing any before. An id that is not a session's keeps nothing.

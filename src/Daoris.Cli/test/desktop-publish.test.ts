@@ -845,7 +845,8 @@ test('a terminal’s programs find the install and the running Daoris where the 
   assert.ok(home.includes(`InstallMarker = "${MARKER}"`), 'DaorisHome.InstallMarker');
   assert.ok(home.includes(`InstallApp = "${SHELL_HOME[0]}"`), 'DaorisHome.InstallApp');
   assert.ok(home.includes(`InstallData = "${HOME}"`), 'DaorisHome.InstallData');
-  assert.ok(readFileSync(driverFile('RunningAddress.cs'), 'utf8').includes(`FileName = "${RUNNING_FILE}"`), 'RunningAddress.FileName');
+  // The address file is the home's `running` entry, its place in the driver's table (HOMELAYOUT2).
+  assert.ok(home.includes(`new("running", HomeCategory.Run, "${RUNNING_FILE}", "${RUNNING_FILE}")`), 'HomeEntry.Running');
   // SERVICEHOME2: the service's hosts find it by the same three spellings, in the service's own copy.
   const serviceHome = readFileSync(join(here, '..', '..', 'Daoris.Service', 'Daoris.Service.Core', 'Platform', 'DaorisHome.cs'), 'utf8');
   assert.ok(serviceHome.includes(`InstallMarker = "${MARKER}"`), 'the service’s DaorisHome.InstallMarker');

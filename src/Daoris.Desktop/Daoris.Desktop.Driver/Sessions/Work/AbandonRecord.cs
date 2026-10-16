@@ -21,14 +21,12 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class AbandonRecord(string home)
 {
-    public const string FileName = "abandoned.json";
-
     // One writer at a time in this process: two presses would otherwise read the same file, and the second drop the first.
     private static readonly object Gate = new();
 
     private static readonly RecordList<AbandonEntry> List = new(Gate, "abandoned", Read, ToJson);
 
-    public string FilePath => Path.Combine(home, FileName);
+    public string FilePath => DaorisHome.Entry(home, HomeEntry.Abandoned);
 
     /// <summary>Every entry, oldest first; none when the file is missing or does not read.</summary>
     public IReadOnlyList<AbandonEntry> Entries() => List.Read(FilePath);

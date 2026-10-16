@@ -12,14 +12,14 @@ public sealed class HelperFilesTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-helper-files-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public HelperFilesTests() => Directory.CreateDirectory(Path.Combine(_home, "helpers"));
+    public HelperFilesTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
 
     public void Dispose()
     {
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private void Put(string name, string text) => File.WriteAllText(Path.Combine(_home, "helpers", name), text);
+    private void Put(string name, string text) => File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Helpers,name), text);
 
     /// <summary>An ask as the connector writes it, indented, `agent` null or a word, and the person's door as `person`; oldest first.</summary>
     [Fact]
@@ -47,7 +47,7 @@ public sealed class HelperFilesTests : IDisposable
         files.WriteState(new HelperState("a1", HelperStates.Waiting, "cap", null, at));
         files.WriteState(new HelperState("a2", HelperStates.Answered, null, "h1", at) { LastWords = true, Handed = "w1", Agent = "codex-acp", Words = "Probably." });
 
-        var text = File.ReadAllText(Path.Combine(_home, "helpers", "a1.state.json"));
+        var text = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Helpers,"a1.state.json"));
         Assert.Equal("{\n  \"id\": \"a1\",\n  \"state\": \"waiting\",\n  \"code\": \"cap\",\n  \"helper\": null,\n  \"at\": \"2026-10-12T10:00:00.0000000+00:00\"\n}\n", text);
         Assert.DoesNotContain("\r", text);
         var kept = files.ReadState("a2")!;
@@ -56,7 +56,7 @@ public sealed class HelperFilesTests : IDisposable
 
         Put("a4.state.json", "{ \"id\": \"a4\", \"state\": \"sleeping\" }");
         Assert.Null(files.ReadState("a4"));
-        Assert.Empty(Directory.GetFiles(Path.Combine(_home, "helpers"), "*.writing"));
+        Assert.Empty(Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Helpers), "*.writing"));
     }
 
     [Fact]

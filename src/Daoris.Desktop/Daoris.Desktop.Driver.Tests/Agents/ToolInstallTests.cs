@@ -128,7 +128,7 @@ public sealed class ToolInstallTests : IDisposable
 
     private string WholeFile => Path.Combine(_root, "bin", OperatingSystem.IsWindows() ? "gh.exe" : "gh");
 
-    private string ToolsFile => Path.Combine(Home, Tools.FileName);
+    private string ToolsFile => DaorisHome.Entry(Home, HomeEntry.Tools);
 
     /// <summary>A downloaded version as the resolution finds it: its record, naming an executable that is there.</summary>
     private void Downloaded(string tool, string version)
@@ -315,7 +315,7 @@ public sealed class ToolInstallTests : IDisposable
             var refused = await Assert.ThrowsAsync<ToolRefusal>(() =>
                 ToolInstall.DownloadAsync(Home, "gh", offered, "win-x64", _ => { }, CancellationToken.None, host));
             Assert.True(check == refused.Check, $"{name}: {refused.Check} — {refused.Message}");
-            var tool = Path.Combine(Home, Tools.Folder, "gh");
+            var tool = DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh");
             Assert.True(!Directory.Exists(tool) || !Directory.EnumerateFileSystemEntries(tool).Any(), $"{name}: nothing under tools/gh");
         }
 

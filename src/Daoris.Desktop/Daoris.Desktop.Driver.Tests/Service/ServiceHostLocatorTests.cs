@@ -39,7 +39,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
         var home = Path.Combine(_root, "home");
         var candidates = ServiceHostLocator.Candidates(null, home, _root);
 
-        var bin = Path.Combine(home, "bin");
+        var bin = DaorisHome.Entry(home, HomeEntry.Bin);
         Assert.Equal(
             [
                 Path.Combine(_root, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
@@ -67,7 +67,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     public void The_installed_host_is_found_where_the_installer_puts_it()
     {
         var home = Path.Combine(_root, "home");
-        var nested = Path.Combine(home, "bin", "daoris-knowledge-http");
+        var nested = DaorisHome.Entry(home, HomeEntry.Bin,"daoris-knowledge-http");
         Directory.CreateDirectory(nested);
         var executable = Path.Combine(nested, ServiceHostLocator.ExecutableName);
         File.WriteAllText(executable, "");
@@ -95,7 +95,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     public void A_deployed_shell_prefers_the_host_published_with_it_over_the_machines_installed_home()
     {
         var home = Path.Combine(_root, "home");
-        var installedHome = Path.Combine(home, "bin", "daoris-knowledge-http");
+        var installedHome = DaorisHome.Entry(home, HomeEntry.Bin,"daoris-knowledge-http");
         Directory.CreateDirectory(installedHome);
         File.WriteAllText(Path.Combine(installedHome, ServiceHostLocator.ExecutableName), "");
 
@@ -155,7 +155,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     public void A_hand_placed_flat_binary_still_comes_first()
     {
         var home = Path.Combine(_root, "home");
-        var bin = Path.Combine(home, "bin");
+        var bin = DaorisHome.Entry(home, HomeEntry.Bin);
         Directory.CreateDirectory(Path.Combine(bin, "daoris-knowledge-http"));
         File.WriteAllText(Path.Combine(bin, "daoris-knowledge-http", ServiceHostLocator.ExecutableName), "");
         var flat = Path.Combine(bin, ServiceHostLocator.ExecutableName);

@@ -86,9 +86,6 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The wire's version, which the hello names; another is refused <see cref="WrongProtocol"/>.</summary>
     public const int Protocol = 1;
 
-    /// <summary>Where the request journal is kept under the home.</summary>
-    public const string JournalFolder = "pipe";
-
     /// <summary>The hello named another version of the wire.</summary>
     public const string WrongProtocol = "protocol";
 
@@ -202,7 +199,8 @@ public sealed class InstancePipe : IDisposable
             }
 
             _homeId = id;
-            _journal = new PipeJournal(Path.Combine(_home, JournalFolder), _limits.Kept);
+            // The journal's folder is D172's `pipe` entry, asked of the table as every home path is (HOMELAYOUT2).
+            _journal = new PipeJournal(DaorisHome.Entry(_home, HomeEntry.Pipe), _limits.Kept);
             _slots = new SemaphoreSlim(_limits.Connections - 1, _limits.Connections);
             _progress = _bus.Subscribe("*", IpcRequestEvents.Updated, Progressed);
             Name = name;

@@ -161,7 +161,7 @@ public sealed class UpdateCommandTests : IDisposable
 
     /// <summary>The log's lines, read beside the writer that still holds its file, as a person tails it.</summary>
     private IEnumerable<JsonObject> LogLines() =>
-        Directory.EnumerateFiles(Path.Combine(Home, MachineLog.Folder), "*.jsonl")
+        Directory.EnumerateFiles(DaorisHome.Entry(Home, HomeEntry.Logs), "*.jsonl")
             .SelectMany(path =>
             {
                 using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);

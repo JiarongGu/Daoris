@@ -101,7 +101,7 @@ public abstract class BranchTidyingFixture : IDisposable
     /// <summary>The data of every line of <paramref name="event"/> the machine log holds.</summary>
     protected JsonElement[] Events(string @event)
     {
-        var folder = Path.Combine(_home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return
         [
@@ -131,7 +131,7 @@ public abstract class BranchTidyingFixture : IDisposable
     protected SessionTrees LandingTrees()
     {
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .Save(Path.Combine(_home, "driver.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         return new SessionTrees(_home);
     }
 

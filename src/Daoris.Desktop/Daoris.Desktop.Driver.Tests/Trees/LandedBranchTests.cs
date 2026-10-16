@@ -38,7 +38,7 @@ public sealed class LandedBranchTests : LandedFixture
         Assert.False(entry.Pushed);
         Assert.Null(entry.PullRequest);
         // Machine-local, under the home (D63) — never in the repository.
-        Assert.True(File.Exists(Path.Combine(Home, LandedBranches.FileName)));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Landings)));
         Assert.Empty((await GitAsync(root, "status", "--porcelain")).Trim());
     }
 
@@ -51,7 +51,7 @@ public sealed class LandedBranchTests : LandedFixture
         var refused = await trees.OpenAsync(root, "engine", "aurora");
         Assert.False((await trees.LandAsync(refused.Path, new LandingSubject("s1", "q1", "Nothing"))).Landed);
 
-        DriverConfig.Empty.Save(Path.Combine(Home, "driver.json"));
+        DriverConfig.Empty.Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var merged = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(merged.Path, "work.txt", "work\n", "the work");
         Assert.True((await trees.LandAsync(merged.Path, new LandingSubject("s2", "q2", "Merged"))).Landed);
@@ -63,7 +63,7 @@ public sealed class LandedBranchTests : LandedFixture
     [Fact]
     public void A_record_that_does_not_read_is_empty()
     {
-        File.WriteAllText(Path.Combine(Home, LandedBranches.FileName), "{ not json");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Landings), "{ not json");
 
         Assert.Empty(new LandedBranches(Home).All());
     }
