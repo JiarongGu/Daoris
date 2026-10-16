@@ -218,9 +218,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             browserNotice = Driver.JoinNotices(browserNotice, tabNotice);
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
+            // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, as its first run was handed them, gone with this run.
+            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
             var rules = _driver.HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across,
-                said: SaidFilesFolder(home, sessionId, resume), job: findings ? AnswersFindings : null);
+                said: SaidFilesFolder(home, sessionId, resume), job: findings ? AnswersFindings : null, plugins: skillPlugins);
 
             onOpened();
             var openedAt = DateTimeOffset.UtcNow;
@@ -708,7 +711,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 return (exitCode, used);
             }
 
-            var process = System.Diagnostics.Process.Start(info)
+            // Through the start gate (PROCSTART2), as the first run's start is.
+            var process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             // As the first run's: the process, tracked so a stop reaches it, and a reaper that ends it while still tracked.
             keep.Add(process);

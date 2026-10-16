@@ -215,12 +215,14 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "rotates)", Agent + "How accounts are used → Use, up and down; and Workspaces → Its own accounts",
             "`daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`"),
         // TOOL6a (D130 §16.6): how a list is used, the terminal's door; TOOL4g gave it the screen's controls, and judges Ask
-        // Daoris's `use` door (`use`, `keep`, `early`, `near`), listed since TOOL4l-b.
+        // Daoris's `use` door (`use`, `keep`, since SWITCH1d `switch` and `curve`), listed since TOOL4l-b.
         ("choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one "
-            + "in order (`order`), one kept for conversations, and switching before a limit",
-            Agent + "How accounts are used → Use accounts, Keep for conversations, Switch before the limit",
-            "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
-            + "[--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults)"),
+            + "in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, "
+            + "or not while a session runs",
+            Agent + "How accounts are used → Use accounts, Keep for conversations, Switch accounts",
+            "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
+            + "[--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]` (no flag prints them; `--clear` returns "
+            + "to today's defaults)"),
         ("end an account's cool-off now, after its agent hit a limit", Agent + "the account's Try now",
             "`daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in)"),
         // HELP6: the doors built since, which the helper now proposes too.
@@ -284,6 +286,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("install one of Daoris's own plugins, or update one from where it came from",
             "Plugins → Daoris's own plugins → Install; Plugins → the plugin's page → Update…",
             "`daoris plugin add --offer <id>`, `daoris plugin update <id>`"),
+        // HELPPLUG1a's tightening (D170's note): what a plugin's server offers Ask Daoris reaches it only as the person approved
+        // it, exact; exempt from Ask Daoris (HelpCoverageTests), since it widens what the helper itself may call.
+        ("let Ask Daoris call the exact tools a plugin's server offers it, its reads and its writes outside Daoris or its reads "
+            + "only, or take that back; an update that adds or widens a tool asks again (Ask Daoris never proposes it: what a "
+            + "plugin may do as you is your own trust)",
+            "Plugins → the plugin's page → Ask Daoris → Approve, Approve reads only, Withdraw",
+            "`daoris-driver plugins approve <id> <server> [--reads-only]`, `daoris-driver plugins withdraw <id> <server>`"),
         ("choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites",
             "Settings → Browser",
             "`daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, "

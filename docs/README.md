@@ -159,6 +159,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-12-code-structure-design.md` | Contract: domain modules, a Domain for each one's model and rules (amended 2026-10-14), the structure gate and the moves | D166; STRUCT and FLAT rows in TASKS |
 | `2026-10-14-duplication-survey.md` | Evidence: duplicated code across the .NET modules, by cluster, with its drift | D166's note of 2026-10-14; DEDUP rows in TASKS |
 | `2026-10-14-partial-types-survey.md` | Evidence: the types split by hand across files, by shape, and the gate that holds them | D166's partial-type note; PART rows in TASKS |
+| `2026-10-17-fabric-contract-audit.md` | Evidence: each collaboration concept's store, writer and fabric primitive; Claude Code's and Codex's native children measured against a server | D173's FABRIC-C0 note; FABRIC rows in TASKS |
 
 ## Records and generated indexes
 

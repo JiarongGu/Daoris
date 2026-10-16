@@ -216,6 +216,7 @@
   "work.say.help": "Ask Daoris's conversations take words in its own panel, which starts a new one.",
   "work.say.superseded": "#{{quest}} went on in a later session here, so write to that one.",
   "work.say.continued": "It went on in conversation {{to}}; say it to that one.",
+  "work.say.continuedIn": "This conversation went on in {{title}}.",
   "work.say.notFound": "Daoris no longer has this session's record, so nothing can take words for it.",
   "work.say.takesNone": "It takes no words now ({{code}}).",
   "work.say.notTaken": "Nothing took these words just now, so they are back in the box.",

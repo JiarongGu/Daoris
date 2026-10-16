@@ -154,8 +154,45 @@ export interface PluginHarness {
 
 export interface PluginHooks { command: string[]; points: string[] }
 
-/** An MCP server a plugin hands to every session (D65 §1f) — beside the knowledge host, never in its place. */
-export interface PluginServer { name: string; command: string[]; env: Record<string, string> }
+/**
+ * Who a plugin's server is handed to (HELPPLUG1a, D170 point 3), as a manifest's `to` spells it: every session in a repository,
+ * and Ask Daoris. Twin: the driver's `PluginServerTo`.
+ */
+export const SERVER_TO = Object.freeze({ sessions: 'sessions', help: 'help' } as const);
+
+/**
+ * A tool's name as Ask Daoris's rules may name it (HELPPLUG1a): letters, digits, `_` and `-`, as the harness names a tool, so
+ * a rule made of one is a server's tool and never a command or a path. Twin: the driver's `PluginCatalog.ToolName`.
+ */
+const TOOL_NAME = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * An MCP server a plugin hands to sessions (D65 §1f) — beside the knowledge host, never in its place — and, where it says so,
+ * to Ask Daoris (D170 point 3).
+ */
+export interface PluginServer {
+  name: string;
+  command: string[];
+  env: Record<string, string>;
+  /** Who it is handed to (HELPPLUG1a): `sessions`, `help` or both, as declared; absent is sessions alone, as before. */
+  to: string[];
+  /** The tools of it that read, which Ask Daoris may call once the person approves them; only a server handed to Ask Daoris has any. */
+  allow: string[];
+  /**
+   * The tools of it that change something outside Daoris (HELPPLUG1a's tightening, D170's note): never allowed silently, only
+   * as writes the person accepted. A tool is in `allow` or here, never both.
+   */
+  writes: string[];
+}
+
+/**
+ * A skill a plugin hands (HELPPLUG1b, D170 point 4): its folder `skills/<name>` beside the manifest, holding a `SKILL.md`, and
+ * who it is handed to, as a server's `to` says it. The driver hands it at spawn, never into a repository. Twin: `PluginSkill`.
+ */
+export interface PluginSkill { name: string; to: string[] }
+
+/** A skill's name, which is its folder's (HELPPLUG1b): lowercase letters, digits and dashes, as a harness names a skill. Twin: `PluginSkill.NameShape`. */
+const SKILL_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export interface PluginManifest {
   id: string;
@@ -166,6 +203,8 @@ export interface PluginManifest {
   harnesses: PluginHarness[];
   hooks: PluginHooks | null;
   servers: PluginServer[];
+  /** The skills it hands sessions or Ask Daoris (HELPPLUG1b), each by its folder's name; none for a refused plugin. */
+  skills: PluginSkill[];
   /**
    * Its icon (PLUGUI2, D140 §3.1): a path inside its folder to an SVG or a PNG, as the manifest writes it, once the
    * manifest's rules hold; null with none, and with one they refuse. `readIcon` judges the file.
@@ -255,9 +294,30 @@ export function dataFolder(home: string, id: string): string {
 }
 
 const empty = (id: string): PluginManifest => ({
-  id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [],
+  id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [], skills: [],
   icon: null, iconProblem: null, tools: [], toolsProblem: null,
 });
+
+/** A server's `allow` or `writes` (HELPPLUG1a): absent is none; otherwise tool names, each once; null where it breaks that. */
+function toolNames(declared: unknown): string[] | null {
+  if (declared === undefined) return [];
+  if (!Array.isArray(declared) || new Set(declared).size !== declared.length
+    || !declared.every((tool) => typeof tool === 'string' && TOOL_NAME.test(tool))) {
+    return null;
+  }
+  return declared as string[];
+}
+
+/** Who a declaration is handed to (HELPPLUG1a, HELPPLUG1b): absent is sessions; otherwise each destination once, at least one. */
+function destinations(declared: unknown): string[] | null {
+  const to = declared === undefined ? [SERVER_TO.sessions] : declared;
+  const known: readonly string[] = Object.values(SERVER_TO);
+  if (!Array.isArray(to) || to.length === 0 || new Set(to).size !== to.length
+    || !to.every((each) => typeof each === 'string' && known.includes(each))) {
+    return null;
+  }
+  return to as string[];
+}
 
 /** `plugins.json`: which plugins are disabled. An unreadable file disables nothing — the safe direction. */
 export function readPluginState(home: string): { disabled: string[] } {
@@ -424,7 +484,50 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
         }
         for (const [key, value] of Object.entries(declared as Record<string, string>)) env[key] = expand(value, base);
       }
-      servers.push({ name, command, env });
+      // HELPPLUG1a (D170 point 3): who it is handed to, sessions where it says none, and the tools Ask Daoris may call, only
+      // where it is handed to Ask Daoris. Twin: `PluginCatalog.cs`, the same rules and words in the same order.
+      const fields = row as Record<string, unknown>;
+      const to = destinations(fields.to);
+      if (to === null) {
+        return { manifest: empty(id), problem: `server \`${name}\`'s \`to\` must list who it is handed to, once each: \`sessions\`, \`help\` (Ask Daoris) or both.` };
+      }
+      const allow = toolNames(fields.allow);
+      if (allow === null) {
+        return { manifest: empty(id), problem: `server \`${name}\`'s \`allow\` must list the tools Ask Daoris may call, once each, by name: letters, digits, \`_\` and \`-\`.` };
+      }
+      // HELPPLUG1a's tightening: the tools that change something outside Daoris, which are never allowed silently.
+      const writes = toolNames(fields.writes);
+      if (writes === null) {
+        return { manifest: empty(id), problem: `server \`${name}\`'s \`writes\` must list the tools that change something outside Daoris, once each, by name: letters, digits, \`_\` and \`-\`.` };
+      }
+      if ((allow.length > 0 || writes.length > 0) && !to.includes(SERVER_TO.help)) {
+        return { manifest: empty(id), problem: `server \`${name}\` names tools for Ask Daoris but is not handed to it: its \`to\` must name \`help\`.` };
+      }
+      const both = allow.find((tool) => writes.includes(tool));
+      if (both !== undefined) {
+        return { manifest: empty(id), problem: `server \`${name}\` names \`${both}\` in both \`allow\` and \`writes\`: a tool it hands Ask Daoris reads, or writes, never both.` };
+      }
+      servers.push({ name, command, env, to, allow, writes });
+    }
+  }
+
+  // HELPPLUG1b (D170 point 4): the skills it hands, each a folder `skills/<name>` beside the manifest, and who to. Twin:
+  // `PluginCatalog.cs`, the same rules and words in the same order; a problem refuses the plugin, as a server's does.
+  const skills: PluginSkill[] = [];
+  const carried = (root as Record<string, unknown>).skills;
+  if (carried !== undefined) {
+    if (!Array.isArray(carried)) return { manifest: empty(id), problem: '`skills` must be an array.' };
+    for (const row of carried) {
+      const name = typeof row === 'object' && row !== null ? (row as Record<string, unknown>).name : undefined;
+      if (typeof name !== 'string' || !SKILL_NAME.test(name)) {
+        return { manifest: empty(id), problem: 'a declared skill needs a `name` — lowercase letters, digits and dashes; its folder is `skills/<name>` beside the manifest.' };
+      }
+      if (skills.some((skill) => skill.name === name)) return { manifest: empty(id), problem: `skill \`${name}\` is declared twice.` };
+      const to = destinations((row as Record<string, unknown>).to);
+      if (to === null) {
+        return { manifest: empty(id), problem: `skill \`${name}\`'s \`to\` must list who it is handed to, once each: \`sessions\`, \`help\` (Ask Daoris) or both.` };
+      }
+      skills.push({ name, to });
     }
   }
 
@@ -446,6 +549,7 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
       harnesses,
       hooks,
       servers,
+      skills,
       icon,
       iconProblem,
       tools,
@@ -768,7 +872,7 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
     }
 
     // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run (PLUGTOOL1a).
-    if (problem !== null) manifest = { ...manifest, harnesses: [], hooks: null, servers: [], tools: [], toolsProblem: null };
+    if (problem !== null) manifest = { ...manifest, harnesses: [], hooks: null, servers: [], skills: [], tools: [], toolsProblem: null };
 
     plugins.push({ manifest, folder, data: dataFolder(home, manifest.id), enabled, problem });
   }
@@ -924,7 +1028,7 @@ export function readOffers(home: string, reserved: Iterable<string> = reservedHa
 // ——— Update (PLUG9 c, D103). Twin: `PluginInstall.PlanUpdate` and `PluginInstall.Update`.
 
 /** One thing an update changes, each side said as its manifest writes it; empty is none. */
-export interface PluginChange { what: 'version' | 'command' | 'points' | 'harnesses' | 'servers'; was: string; now: string }
+export interface PluginChange { what: 'version' | 'command' | 'points' | 'harnesses' | 'servers' | 'skills'; was: string; now: string }
 
 export interface UpdatePlan {
   id: string;
@@ -960,6 +1064,15 @@ export function placement(home: string, folder: string): string | null {
 const line = (command: readonly string[] | null | undefined): string =>
   (command ?? []).map((word) => (word.includes(' ') ? `"${word}"` : word)).join(' ');
 
+/**
+ * Who a server is handed to and what it allows Ask Daoris, as an update's change says it (HELPPLUG1a): nothing for a server
+ * handed to sessions alone, as every server was before, so an update that keeps one changes nothing. Twin: `PluginChange.ServerTo`.
+ */
+const serverTo = (server: PluginServer): string =>
+  (server.to.length === 1 && server.to[0] === SERVER_TO.sessions ? '' : ` to ${server.to.join(' and ')}`)
+  + (server.allow.length > 0 ? ` allowing ${server.allow.join(', ')}` : '')
+  + (server.writes.length > 0 ? ` writing with ${server.writes.join(', ')}` : '');
+
 /** What an update changes, from what is installed to what the source now holds, each as written. */
 export function changesBetween(was: PluginManifest, now: PluginManifest): PluginChange[] {
   const said = (manifest: PluginManifest): Record<PluginChange['what'], string> => ({
@@ -967,11 +1080,13 @@ export function changesBetween(was: PluginManifest, now: PluginManifest): Plugin
     command: line(manifest.hooks?.command),
     points: (manifest.hooks?.points ?? []).join(', '),
     harnesses: manifest.harnesses.map((harness) => `${harness.name} (${line(harness.command)})`).join('; '),
-    servers: manifest.servers.map((server) => `${server.name} (${line(server.command)})`).join('; '),
+    servers: manifest.servers.map((server) => `${server.name} (${line(server.command)})${serverTo(server)}`).join('; '),
+    // HELPPLUG1b: each skill and who it is handed to. Twin: `PluginChange.Between`.
+    skills: manifest.skills.map((skill) => `${skill.name} to ${skill.to.join(' and ')}`).join('; '),
   });
   const before = said(was);
   const after = said(now);
-  return (['version', 'command', 'points', 'harnesses', 'servers'] as const)
+  return (['version', 'command', 'points', 'harnesses', 'servers', 'skills'] as const)
     .filter((what) => before[what] !== after[what])
     .map((what) => ({ what, was: before[what], now: after[what] }));
 }
@@ -1113,8 +1228,19 @@ function describe(manifest: PluginManifest): string {
     parts.push(`declares ${manifest.harnesses.map((h) => h.name).join(', ')}`);
   }
   if (manifest.hooks) parts.push(`speaks on ${manifest.hooks.points.join(', ')}`);
-  if (manifest.servers.length > 0) {
-    parts.push(`hands sessions ${manifest.servers.map((s) => s.name).join(', ')}`);
+  const sessions = manifest.servers.filter((s) => s.to.includes(SERVER_TO.sessions));
+  if (sessions.length > 0) parts.push(`hands sessions ${sessions.map((s) => s.name).join(', ')}`);
+  // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it allows it there.
+  const help = manifest.servers.filter((s) => s.to.includes(SERVER_TO.help));
+  if (help.length > 0) {
+    // Offered, since its tools reach Ask Daoris only once the person approves them (D170's note).
+    const tools = (s: PluginServer) => [...s.allow, ...s.writes.map((tool) => `${tool}, writes`)];
+    parts.push(`offers Ask Daoris ${help.map((s) => (tools(s).length > 0 ? `${s.name} (${tools(s).join('; ')})` : s.name)).join(', ')}`);
+  }
+  // HELPPLUG1b (D170 point 4): the skills it hands each. Twin: `PluginPackage.Describe`.
+  for (const [to, who] of [[SERVER_TO.sessions, 'sessions'], [SERVER_TO.help, 'Ask Daoris']] as const) {
+    const skills = manifest.skills.filter((skill) => skill.to.includes(to)).map((skill) => skill.name);
+    if (skills.length > 0) parts.push(`hands ${who} skill${skills.length === 1 ? '' : 's'} ${skills.join(', ')}`);
   }
   return parts.length > 0 ? parts.join('; ') : 'declares nothing and speaks nothing';
 }

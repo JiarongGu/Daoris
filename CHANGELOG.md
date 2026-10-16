@@ -5,6 +5,31 @@ with the version and date at release.
 
 ## Unreleased
 
+- Switching accounts is in view on an agent's page. Each account's five-hour and weekly window says its use against its usage
+  curve now (*its curve allows 45% now*, or *over its curve's 45% now*) and whether it was read from the agent or said by a
+  session, and how long ago; the page reads each account's use as it opens where a reading is older than a minute, and at
+  *Read now*, with no prompt and no model request. *How accounts are used* replaces *Switch before the limit* and *Near at*
+  with *Switch accounts*: *Smart* (Daoris's curve), *My own curve* or *Off*, a chart for each window with each account on it,
+  and under *My own curve* each window's points to edit and *Clear my own curve*, a curve that breaks a rule said in the
+  terminal's words in English and 中文. The list says what passes an account as *over its curve*, *limit reached* or *on usage
+  credits*. Ask Daoris proposes the switch and your own curve. A conversation that went on in another now names that one by
+  its title, with *Open session*.
+- The wire test the plugin kit writes beside a new plugin (`plugin.test.mjs`) now ends as soon as the plugin leaves at
+  `shutdown`, where it waited out the whole two seconds of grace first. A test written by an earlier kit keeps the wait until
+  it is made again.
+- Ask Daoris says when it has no door for what you asked: it names the terminal command, and says the door is one Daoris
+  still owes, not a limit of its own. It does this for registering a repository, setting a workspace up, checking evidence
+  again, an ask's review or kind, a workflow's file, import or kind, a tool's version or location, and clearing an
+  account's default.
+- A plugin's `plugin.json` can offer Ask Daoris an MCP server (`"to": ["help"]`, or both with `"sessions"`). It lists the
+  tools that read (`allow`) and those that write outside Daoris (`writes`). Ask Daoris gets the server only once you approve
+  its exact tools on the plugin's page, or with `daoris-driver plugins approve <id> <server> [--reads-only]`. You can take
+  that back (`withdraw`), and an update that adds a tool asks again. A write you did not accept is refused. A tool whose
+  name says it runs commands is never offered to Ask Daoris. The page says plainly that a plugin is code that runs as you.
+- A plugin can carry skills (`"skills": [{ "name": …, "to": [...] }]`, each a `skills/<name>/SKILL.md`). Sessions, Ask
+  Daoris or both get them as they start, by Claude Code's session-only plugin door. Nothing is written into a repository,
+  and a skill that would allow itself tools is handed nowhere. The plugin's page lists each skill and who it goes to.
+
 - `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
   holds, by the address it leaves in that home, and only where the service there answers as that home's: another install's
@@ -132,7 +157,10 @@ with the version and date at release.
   fails is said, with when origin was last fetched, without stopping the landing. `daoris-driver trees land <session> --plan`
   says the same.
 - The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
-  the window's thread, at most four programs start at once, and each repository's line is asked of git once per list.
+  the window's thread, at most four programs start at once, and each repository's line is asked of git once per list. The
+  clean-up list and the lines asked again while one is still being read wait for that one rather than reading it all again,
+  and every program Daoris starts (an agent, its sign-in or install, a plugin, the file manager) starts away from the
+  window's thread too.
 - Daoris now removes its own session branches by itself wherever *Clean up* would, once their work is on the line: a branch
   whose work was merged into the line or its copy on origin, is on the line by content after a squash merge (its commits kept
   on a ref, which the report names with how to bring the branch back), or was carried by a completed pull request, not only one

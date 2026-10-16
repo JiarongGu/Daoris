@@ -48,6 +48,26 @@ describe('the helpers a session asked for', () => {
     expect(lineOf('Approved.').getByText('The agent asked · you said yes · starts at the driver’s next look')).toBeInTheDocument();
   });
 
+  /** WAITFOOT1e: the way from an ask that waits to its `helper_ask` call, only on the ask the conversation holds the call of. */
+  it('offers the way to its call only on the ask whose call the conversation holds, and outlines the one sought', async () => {
+    const show = vi.fn();
+    render(
+      <HelperAsks
+        nameOf={nameOf}
+        inConversation={{ a1: show }}
+        marked="a1"
+        asks={[row({ id: 'a1', question: 'Is the cap right?', state: 'waiting' }), row({ id: 'a2', question: 'Not found.', state: 'waiting' })]}
+      />,
+    );
+
+    expect(lineOf('Not found.').queryByRole('button', { name: 'In the conversation' })).toBeNull();
+    await userEvent.click(lineOf('Is the cap right?').getByRole('button', { name: 'In the conversation' }));
+    expect(show).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Is the cap right?').closest('li')).toHaveAttribute('data-helper', 'a1');
+    expect(screen.getByText('Is the cap right?').closest('li')!.className).toContain('outline-accent');
+    expect(screen.getByText('Not found.').closest('li')!.className).not.toContain('outline-accent');
+  });
+
   it('offers the person’s yes only on an agent’s ask that waits on it, and tells the press how it ended', async () => {
     const approve = vi.fn();
     render(

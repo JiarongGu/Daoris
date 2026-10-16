@@ -58,15 +58,16 @@ public sealed class PluginLog(MachineLog? log, PluginHealth? health = null)
         log?.Info(PluginEvents.Served, ("plugin", Name(plugin)), ("server", Name(server)), ("session", Name(session)), ("handed", handed));
 
     /// <summary>
-    /// One line per server the contributing plugins declare, for one session: handed if it is among
-    /// <paramref name="handed"/>, withheld if not. Read from the catalogue the session's servers came from.
+    /// One line per server the contributing plugins declare for <paramref name="to"/>, for one session: handed if it is among
+    /// <paramref name="handed"/>, withheld if not. Read from the catalogue the session's servers came from. A server declared
+    /// for the other destination alone is not this session's, so it says nothing here (HELPPLUG1a).
     /// </summary>
-    public void Served(PluginCatalog catalog, string session, IReadOnlyList<AcpMcpServer> handed)
+    public void Served(PluginCatalog catalog, string session, IReadOnlyList<AcpMcpServer> handed, string to = PluginServerTo.Sessions)
     {
         if (log is null) return;
         foreach (var plugin in catalog.Contributing)
         {
-            foreach (var server in plugin.Manifest.Servers)
+            foreach (var server in plugin.Manifest.Servers.Where(server => server.HandedTo(to)))
             {
                 Served(plugin.Manifest.Id, server.Name, session, handed.Any(each => string.Equals(each.Name, server.Name, StringComparison.Ordinal)));
             }

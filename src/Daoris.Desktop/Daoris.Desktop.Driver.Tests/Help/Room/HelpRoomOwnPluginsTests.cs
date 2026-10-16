@@ -46,6 +46,11 @@ public sealed class HelpRoomOwnPluginsTests
             }
 
             Offer("github-pull-request", """{ "id": "github-pull-request", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
+            // HELPPLUG1a: a server declared for Ask Daoris is not one it hands every session.
+            Offer("tickets", """
+                { "id": "tickets", "servers": [
+                    { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] }, { "name": "docs", "command": ["docs"] } ] }
+                """);
             Offer("installed.one", """{ "id": "installed.one" }""");
             Offer("future", """{ "id": "future", "apiVersion": 99 }""");
             Directory.CreateDirectory(Path.Combine(home, PluginCatalog.Folder, "installed.one"));
@@ -56,8 +61,12 @@ public sealed class HelpRoomOwnPluginsTests
                 DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0,
                 plugins: PluginCatalog.Load(home), offers: PluginOffers.Load(offersFolder, home, []));
 
-            Assert.Equal(["github-pull-request"], machine.Offers.Select(offer => offer.Id));
+            Assert.Equal(["github-pull-request", "tickets"], machine.Offers.Select(offer => offer.Id));
             Assert.Equal(["work/land"], machine.Offers[0].Points);
+            Assert.Equal(["docs"], machine.Offers[1].Servers);
+            Assert.Equal(["tickets"], machine.Offers[1].HelpServers);
+            Assert.Contains(
+                "- `tickets`: hands every session `docs`; offers you `tickets` once the person approves it on its page", HelpRoom.Render(machine));
             Assert.Equal("offer", Assert.Single(machine.Plugins).Source);
             Assert.DoesNotContain(root, HelpRoom.Render(machine));
         }

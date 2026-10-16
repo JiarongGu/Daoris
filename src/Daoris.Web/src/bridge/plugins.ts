@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
-import type { PluginOfferShown } from '../plugins/catalog';
+import type { HelpServerShown, PluginOfferShown, SkillShown } from '../plugins/catalog';
 import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
 
@@ -44,6 +44,10 @@ export type PluginEntry = {
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
   iconProblem?: string | null;
+  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a, D170 point 3); an older shell sends none. */
+  helpServers?: HelpServerShown[];
+  /** The skills it hands sessions or Ask Daoris, who each goes to, and why one is not handed (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
 };
 export type PluginCatalog = {
   folder: string;
@@ -73,9 +77,13 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
  * The screen's half of `daoris plugin enable|disable|remove` (D50): a row, or the folder gone with the data named. The
  * catalogue, and the roster, since a declared harness came or went with it, are asked again by the route's `STATE_CHANGED`
  * in every window (STATEHUB1d, D169), as for the update and the install below.
+ *
+ * HELPPLUG1a's tightening (D170's note): `help-approve`, `help-reads` and `help-withdraw`, with the `server`, are the person's
+ * approval of the exact tools a plugin's server offers Ask Daoris, its reads only, or its withdrawal, the page's half of
+ * `daoris-driver plugins approve|withdraw`.
  */
 export const usePluginAction = () => useMutation({
-  mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' }) =>
+  mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' | 'help-approve' | 'help-reads' | 'help-withdraw'; server?: string }) =>
     call<{ id: string; action: string; data: string | null }>('PLUGIN_ACTION', action),
 });
 

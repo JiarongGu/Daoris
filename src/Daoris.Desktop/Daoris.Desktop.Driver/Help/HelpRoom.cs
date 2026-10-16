@@ -84,15 +84,26 @@ public static class HelpRoom
     /// The checkouts reading across lets it read (D107): each a read and two read-only git commands by exact
     /// prefix, and nothing that writes. Anything else is asked in its mode, and refused (D52).
     /// </param>
-    public static RuleLists Rules(PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null)
+    /// <param name="plugins">
+    /// The tools of the servers plugins hand it that it may call, as the person approved them (HELPPLUG1a, D170 point 3 and its
+    /// note): <see cref="HelpGrantSet.Allow"/>, each a server's tool and nothing else. The person's denies still win.
+    /// </param>
+    /// <param name="asked">
+    /// The writes of an approved server the person did not accept (<see cref="HelpGrantSet.Ask"/>): asked, which its asking mode
+    /// refuses, so a write is never made silently (D89).
+    /// </param>
+    public static RuleLists Rules(
+        PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null, IReadOnlyList<string>? plugins = null,
+        IReadOnlyList<string>? asked = null)
     {
         var composed = PermissionRules.Compose(file, workspace: null, repository: null);
         return new RuleLists(
             [
                 .. Allowed, PermissionRules.ReadRule(kept),
                 .. (reads ?? []).SelectMany(read => AcrossRules.ReadOnlyRules(new AcrossCheckout(read.Name, read.Path))),
+                .. plugins ?? [],
             ],
-            [],
+            [.. asked ?? []],
             composed.Deny);
     }
 
@@ -111,17 +122,18 @@ public static class HelpRoom
     /// <param name="held">The quests the loop's last look held by the person's stop (SESSUX1b), which a retry releases.</param>
     /// <param name="history">What each workspace keeps of finished work (HIST1f-b), as <c>HISTORY_PLAN</c> reads it; null where none was read.</param>
     /// <param name="workflows">The named workflows under the home (WORKFLOW1h-b, <see cref="WorkflowStore.List"/>), which name the version each repository follows; null where none were read.</param>
+    /// <param name="grants">The person's approvals of what plugins hand it (<see cref="HelpGrants.Read"/>, HELPPLUG1a); none read, none named.</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
         IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
-        IReadOnlyList<WorkflowFileFound>? workflows = null)
+        IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
-            parked ?? [], browser) { Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows };
+            parked ?? [], browser) { Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
 
@@ -220,6 +232,15 @@ public sealed record HelpMachine
     /// <summary>The checkouts it may read, by name; a path here is one reading across allows, and no other.</summary>
     public IReadOnlyList<HelpRead> Reads { get; init; } = [];
 
+    /// <summary>The servers plugins hand it, as the person approved them, each with the tools it may call there (HELPPLUG1a), in catalogue order.</summary>
+    public IReadOnlyList<HelpPluginServer> PluginServers { get; init; } = [];
+
+    /// <summary>The servers plugins offer it that wait for the person's approval, so it is handed none of them.</summary>
+    public IReadOnlyList<HelpPluginServer> PluginServersWaiting { get; init; } = [];
+
+    /// <summary>The skills plugins hand it (HELPPLUG1b, D170 point 4), as the harness names them, <c>plugin:skill</c>.</summary>
+    public IReadOnlyList<string> PluginSkills { get; init; } = [];
+
     // The own-plugins section's.
 
     /// <summary>The install's own plugins not installed here and sound, which an add may name by id (PLUG9 d).</summary>
@@ -261,4 +282,7 @@ internal sealed record HelpMachineSources(
 
     /// <summary>The named workflows under the home (WORKFLOW1h-b, the workflow design §8.4); null where none were read.</summary>
     public IReadOnlyList<WorkflowFileFound>? Workflows { get; init; }
+
+    /// <summary>The person's approvals of what plugins hand Ask Daoris (HELPPLUG1a's tightening); null where none were read.</summary>
+    public HelpGrantSet? Grants { get; init; }
 }

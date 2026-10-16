@@ -213,7 +213,12 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
             {helping.size > 0 && props.helpers && (
               <div className="grid gap-1">
                 <p className="m-0 text-small text-ink-soft">{t('work.wait.helper.lead')}</p>
-                <HelperAsks {...props.helpers} asks={props.helpers.asks.filter((row) => helping.has(row.id))} />
+                <HelperAsks
+                  {...props.helpers}
+                  asks={props.helpers.asks.filter((row) => helping.has(row.id))}
+                  inConversation={toEvent?.helpers}
+                  marked={sought?.startsWith('helper:') ? sought.slice('helper:'.length) : undefined}
+                />
               </div>
             )}
             {work && props.lands && (

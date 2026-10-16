@@ -5,8 +5,9 @@ import type { AccountsAnswer, AccountUseChange } from '../settings/accounts';
 import { call } from './call';
 
 // How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): each scope's list and how it is
-// used, each account's cool-off, what its agent last said, its learned week and Daoris's sessions on it; and the edits
-// Settings → Agents makes, the terminal's `daoris agent profile order|use|ready` over the same files (D50).
+// used, each account's cool-off, what its agent last said, its learned week and Daoris's sessions on it; each account's use
+// read again (SWITCH1d); and the edits Settings → Agents makes, the terminal's `daoris agent profile order|use|ready` over the
+// same files (D50).
 
 /**
  * How each agent's accounts are used, read from the files and never probed (TOOL4g), so it is asked with the roster and
@@ -20,6 +21,17 @@ export const useAccounts = () => {
     enabled: isAvailable,
   });
 };
+
+/**
+ * Each account's use read again (SWITCH1d; the switch design §1.2): *Read now*, and the read as an agent's page opens. Each of
+ * the agent's accounts whose reading is older than its question's floor is asked by its agent under its own home, with no
+ * prompt and no model request (D165 point 1); the driver skips one cooling, refused, signed out, a key or busy. What it reads
+ * lands in the accounts' files, which the state hub asks again under the roster's key, so this asks nothing again itself.
+ */
+export const useReadAccounts = () =>
+  useMutation({
+    mutationFn: ({ harness }: { harness: string }) => call<{ harness: string }>('ACCOUNTS_READ', { harness }),
+  });
 
 /**
  * The screen's edits to how an agent's accounts are used (TOOL4g), each refused as the terminal refuses it and written to

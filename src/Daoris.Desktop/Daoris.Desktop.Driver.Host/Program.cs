@@ -158,6 +158,7 @@ using Daoris.Driver;
 //                 conversation in its tree on that agent, in this terminal, as start-from does; a conversation that is
 //                 talking keeps the ask until its turn ends. A quest's session, Ask Daoris's and an intake are refused, exit 1.
 //   sessions helper <id> "<question>" [--agent <name>]
+//   sessions helper --approve|--decline <ask>
 //                 the person's own ask for a helper (MIXAGENT2a-ii, D163): the ask `helper_ask` writes, as the person's, under the
 //                 home's `helpers` folder; the driver takes it at its next look and starts a read-only helper on another agent,
 //                 whose answer comes back to that session as its next turn, marked as the helper's. A helper, a reviewer and an
@@ -234,6 +235,10 @@ using Daoris.Driver;
 //                 a plugin's page and what it did (PLUGUI1d, D119 §4.4): what it declares as written, a
 //                 server's environment by name only, its health from the machine log's last word, said with
 //                 when; and its activity from the machine log over the last 7 days, or the span --since names.
+//   plugins approve <id> <server> [--reads-only]
+//   plugins withdraw <id> <server>
+//                 the person's approval of the exact tools a plugin's server offers Ask Daoris (HELPPLUG1a, D170's
+//                 note), its writes outside Daoris too unless --reads-only, or its withdrawal: the page's twin.
 //
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`

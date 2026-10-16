@@ -203,9 +203,10 @@ public sealed class HelpRoutes(DriverContext context)
 
         // The asks by id too (HELP6), so a delete of one made by mistake can name it.
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
+        var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
         return HelpRoom.Describe(
             config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
-            PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), new LandedBranches(_loop.Home).All(),
+            plugins, new LandedBranches(_loop.Home).All(),
             // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
             PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
             // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
@@ -216,7 +217,9 @@ public sealed class HelpRoutes(DriverContext context)
             HeldQuest.From(_loop.Look.Latest),
             sessions, history,
             // The named workflows saved here, so each repository's Workflow column names the version it follows (WORKFLOW1h-c).
-            WorkflowStore.List(_loop.Home));
+            WorkflowStore.List(_loop.Home),
+            // What the person approved of the servers plugins offer it (HELPPLUG1a's tightening, D170's note).
+            HelpGrants.Read(_loop.Home, plugins));
     }
 
     /// <summary>

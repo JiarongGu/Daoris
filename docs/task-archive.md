@@ -15345,3 +15345,117 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ONEINSTANCE1 — a second launch opens a window of the instance that runs** (desktop; D171 point 2). Find what the UI kit's single-instance guard does with a second launch; hand the launch to the running instance and open a new main window there; where the kit cannot, ask its owner. Proof: a desktop test of the hand-over; on the install, a second click on the executable opening a second window that hears the first's presses.
 
 **Outcome** 2026-10-16: the kit's guard already handed a later launch to the running instance; its `OnActivated` now opens another main window (`main:<n>`, frameless, the whole platform) through `SecondLaunch` once the service answers, its page telling its frame the theme; the taskbar count stays the first window's. Nothing was asked of the kit's owner. On Opus, with FINDDAORIS1. Detail: D171's ONEINSTANCE1 note.
+
+## HELPERYES1 — the person's yes to a helper is kept when the cap is full (2026-10-16, D163)
+
+> - [ ] **HELPERYES1 — the person's yes to a helper is kept when the cap is full** (driver; a defect). The look's `Wait(Cap)` writes `waiting/cap` over `approved` (`DriverHelpers.Wait`), and the next look's judge puts it back to waiting for a yes. D163 point 3, its MIXAGENT2a-ii note. Proof: a `HelperLookTests` case with an approved ask, a full cap and two looks, starting without a second yes once a slot frees.
+
+**Outcome** 2026-10-16: the look's `Wait` leaves an `approved` ask as the person left it, so their yes survives a full cap or an agent not ready and the ask starts once a slot frees (`HelperLookTests`, seen failing first). On Sonnet, with HELPERTERM1, WAITCOUNT1 and WAITFOOT1e: 135 tool calls. Detail: D163's HELPERYES1/HELPERTERM1 note.
+
+## HELPERTERM1 — the yes and the no to a helper at a terminal (2026-10-16, D163)
+
+> - [ ] **HELPERTERM1 — the yes and the no to a helper at a terminal** (driver). `daoris-driver sessions helper --approve|--decline <ask>` (D50; the mixed-agents design §7), the same judge as the page's. Proof: a verb test and its coverage rows.
+
+**Outcome** 2026-10-16: `daoris-driver sessions helper --approve|--decline <ask>` over `HelperPersonWord`, the one judge the page's `SESSION_HELPER_APPROVE`/`SESSION_HELPER_DECLINE` now share; usage lines, the exemption row and the README. On Sonnet, with HELPERYES1. Detail: D163's note.
+
+## WAITCOUNT1 — one count of what waits (2026-10-16, D168)
+
+> - [ ] **WAITCOUNT1 — one count of what waits** (web/desktop). Overview's count and the taskbar's (`App.tsx` `needsAPerson`) leave out helper waits and second-opinion waits; count them all once. Proof: an `App`/badge case.
+
+**Outcome** 2026-10-16: Overview's badge and the taskbar count read the band's lists, so helper and second-opinion waits are counted once (`sessionsBadge.test`, seen failing first). On Sonnet, with HELPERYES1. Detail: D168's WAITCOUNT1/WAITFOOT1e note.
+
+## WAITFOOT1e — a helper's wait anchored to its call (2026-10-16, D168)
+
+> - [ ] **WAITFOOT1e — a helper's wait anchored to its call** (web). Point a helper wait at its `helper_ask` call in the conversation, as D168 point 4 does for the other waits. Proof: an `anchors.test` case.
+
+**Outcome** 2026-10-16: a helper wait is anchored to its `helper_ask` call through `helperKey`, with *In the conversation* on the ask's line and *To the wait* on the call (`anchors.test`). On Sonnet, with HELPERYES1. Detail: D168's note.
+
+## HANDWORDS1-ii — the old conversation's line and its door (2026-10-16, D165)
+
+> - [ ] **HANDWORDS1-ii — the old conversation's line and its door** (web). After HANDWORDS1-i the old page says "It went on in conversation {to}; say it to that one." Draw "This conversation went on in {title}" with *Open session* opening it, the title read from the successor's record, in both languages, with stories. Contract: D165's HANDWORDS1-i note; design §4. Proof: the line and door en and zh, a story, and the window after a hand-over and a curve move, a word said during the move shown in the new conversation.
+
+**Outcome** 2026-10-16: the old conversation's line names its successor by its record's title, *This conversation went on in {title}* with *Open session* attending it, en and zh with stories; its id as before where the frame does not hold it. On Opus, with SWITCH1d: 528 tool calls. Detail: D165's HANDWORDS1-ii note.
+
+## SWITCH1d — the switch in view (2026-10-16, D165)
+
+> - [ ] **SWITCH1d — the switch in view** (web/modules; after 1a, USAGEREAD2a). Accounts' windows against the curve with source, age and *Read now*, read as the screen opens where older than a minute; the curve's refusal code and its en/zh sentence; *Smart*, *My own curve* and *Off* with the curve's chart and point editor; Ask Daoris's `use` keys (`switch`, `curve`), its card's words in the curve's terms (today "counts an account near its limit at 85%": `HelpAgentProposals.cs`, the service's `KnowledgeTools.Help.Agent.cs`, `HelpProposalBox.Agent.cs`); the page's said line marks a window over its curve as the terminal's does, held by a page twin of `usage-curves.json`; the *near its limit* pill and *Near at* label in the curve's words. Both languages, stories, installed proof. Design §5.
+
+**Outcome** 2026-10-16: Accounts' window cells against the curve with their source and age, *Read now* and the read as an agent's page opens (`ACCOUNTS_READ`); `ACCOUNT_USE` takes switch, curve and noCurve, a broken curve refused as `ACCOUNT_USE_CURVE` in en and zh by rule; *Switch accounts* (Smart, My own curve, Off) with a chart per window and the point editor replaces *Switch before the limit* and *Near at*; Ask Daoris's `use` door takes switch and curve; the said line marks a window over its curve; the page's `usageCurves.ts` is the third twin of `usage-curves.json`. On Opus, with HANDWORDS1-ii. Detail: D165's SWITCH1d-a to -e notes.
+
+## PROC1g — the slowest serial Process classes made shorter (2026-10-16, no decision)
+
+> - [ ] **PROC1g — the slowest serial Process classes made shorter** (driver/modules tests; the owner, 2026-10-16: *"we kind of need to boost the development speed"*). The serial half is the gate set's long pole (12 min quiet, 35 min under load). Shorten its slowest classes by the trx's sums without losing a case: one fixture repository per class where cases only read it, waits on the condition instead of fixed ones, a git-only class moved to the four-at-once half, a class split where its cases need not share a process. Proof: each class's time before and after, in FLAKE1's PROC1 paragraphs; `CategoryTests` green; three runs of each changed class.
+
+**Outcome** 2026-10-16: `BranchTidyingProcessTests` is four classes over `BranchTidyingFixture` (its judgements and folders four at once; its landings and watch case one at a time); `RemoteSyncRunTests` runs four at once; the wire test the plugin kit writes no longer waits out its 2-second grace after the plugin leaves (a product speed-up, about 48 s per run of `PluginKitTests`). Listed: serial half 540 (582), four-at-once half 429 (386). On Opus: 189 tool calls. Detail: FIX-LOG FLAKE1's PROC1g paragraph.
+
+## SWEEPFLIGHT1 — one look at a time per route (2026-10-16, D56)
+
+> - [ ] **SWEEPFLIGHT1 — one look at a time per route** (modules/driver). The frozen window's stack held at least 17 sweeps and looks at once: a list asked for while the last is still running repeats its whole git fan-out. Concurrent identical `SWEEP_PLAN` / `LINES` asks share the flight under way. Proof: two concurrent plans start one fan-out, counted through the `CheckoutLine` hook. FIX-LOG 2026-10-15 (UIFREEZE1).
+
+**Outcome** 2026-10-16: identical `LINES` and `SWEEP_PLAN` asks share the one under way (`[OneFlight]`, `RouteFlights`): kept for no one past its end, stopped only when no caller waits, forgotten by every press as it answers; a press is never shared (`DriverModuleOneFlightTests`, `RouteFlightsTests`, seen failing first). On Opus, with PROCSTART2: 234 tool calls. Detail: D56's SWEEPFLIGHT1 and PROCSTART2 note; FIX-LOG UIFREEZE1.
+
+## PROCSTART2 — the remaining direct process starts (2026-10-16, D56)
+
+> - [ ] **PROCSTART2 — the remaining direct process starts** (driver/modules). `Process.Start` without `ProcessStarts`' gate remains at `Driver.cs` ~2069, `DriverContinuations.cs` ~613, `ChatRunner.cs` ~655, `HookProcess.cs` ~123, `HarnessActions.cs` ~496, `CodexUsage.cs` ~259, `PluginTrialProcess.cs` ~33, `HostSupervisor.cs` ~100 and open-folder's launcher; a route starting one before its first wait still waits on the lock on the window's thread. Proof: the gated-start test per site. FIX-LOG 2026-10-15 (UIFREEZE1).
+
+**Outcome** 2026-10-16: every process the desktop starts passes `ProcessStarts` (now public): a session's process and its going on, a conversation's, a harness action's, a usage read's, a plugin's hook and trial, the host, Edge, and the file manager through `OpenFolders.OpenAsync`; `ProcessStartsCensusTests` fails on a direct start and names the three that stay, with why. On Opus, with SWEEPFLIGHT1. Detail: D56's note.
+
+## HELPOWED1 — the room says a missing door is owed, not a limit (2026-10-16, D170)
+
+> - [ ] **HELPOWED1 — the room says a missing door is owed, not a limit** (driver). Where Ask Daoris has no door for an act, it names the terminal command and says Daoris still owes that door (D170 point 2), from `HelpCoverageTests`' owed rows rather than a second list. Proof: `HelpRoomTests` and the room's goldens.
+
+**Outcome** 2026-10-16: Ask Daoris's room lists *Doors Daoris still owes* (`HelpRoomOwed`), the one list the coverage test's owed answers hold; the helper names the command and says Daoris owes the door, never a limit of its own. On Opus, with HELPPLUG1a and HELPPLUG1b: 611 tool calls. Detail: D170's HELPOWED1 note.
+
+## HELPPLUG1a — a plugin's server for Ask Daoris (2026-10-16, D170)
+
+> - [ ] **HELPPLUG1a — a plugin's server for Ask Daoris** (driver/modules/web; D170 point 3). The manifest declares a server for sessions (the default, today's), for Ask Daoris, or both; the room's spawn hands the declared ones and allows their tools as the plugin declares them; the plugin's page says what it hands Ask Daoris, en and zh. Both manifest twins. Proof: catalogue and spawn tests, a `HelpRoom` rules test, a plugin page test; a real Ask Daoris turn calling a plugin tool on the install.
+
+**Outcome** 2026-10-16: a plugin's server declares `to` (sessions, help), `allow` (reads) and `writes`; Ask Daoris gets one only once the person approves its exact tools on the plugin's page or with `daoris-driver plugins approve|withdraw`, asked again when an update widens it; unaccepted writes are asked, so refused, and a server with a command-running tool is refused for the helper (a second opinion's tightening). On Opus, with HELPOWED1. Detail: D170's two HELPPLUG1a notes.
+
+## HELPPLUG1b — a plugin's skills for Ask Daoris and sessions (2026-10-16, D170)
+
+> - [ ] **HELPPLUG1b — a plugin's skills for Ask Daoris and sessions** (driver/web; D170 point 4; measure first). Measure which tier the harness reads skills from untrusted (as D107 measured its rules), then hand a plugin's declared skills through it, never into a repository's checkout. Both manifest twins; the plugin page lists them. Proof: the measurement in D170's note; spawn tests; a real turn using a plugin's skill.
+
+**Outcome** 2026-10-16: measured `--plugin-dir` as the session-only tier Claude Code 2.1.299 loads in an untrusted folder; plugins declare `skills`, which `SpawnSkills` copies per spawn under the home's `spawn/` for chats, driven sessions and Ask Daoris, never into a repository; a skill declaring `allowed-tools` is handed nowhere. On Opus, with HELPOWED1. Detail: D170's HELPPLUG1b note.
+
+## SERVICEHOME2 — the service hosts find their install's home (2026-10-16, D171)
+
+> - [ ] **SERVICEHOME2 — the service hosts find their install's home** (service; D171 point 1). The connector and the HTTP host in `app/` refuse with no home when started outside Daoris (a person's own agent's `.mcp.json`); fall back to the install's `data/` as the driver and CLI now do. Proof: the service's `DaorisHomeTests` hold the same install rows as the driver's.
+
+**Outcome** 2026-10-16: the connector and the HTTP host an install carries take the install's `data/` as `DAORIS_HOME` where none is named (`DaorisHome.Adopt` before anything reads a home); the service's `DaorisHomeTests` hold the driver's install rows. On Opus, with MAINWINDOWS2 and RPC1: 234 tool calls. Detail: D171's SERVICEHOME2 note.
+
+## MAINWINDOWS2 — closing the first main window keeps the others (2026-10-16, D171)
+
+> - [ ] **MAINWINDOWS2 — closing the first main window keeps the others** (desktop; D171 point 2). The first main window owns the kit's message loop, so closing it ends Daoris and every `main:<n>` window. The application ends with its last main window. Proof: on the install, close the first of two windows; the second and the loop live on.
+
+**Outcome** 2026-10-16: the person's close of the first main window while a `main:<n>` is open hides it (`MainWindows`), the last main window's close ends the application (`MainForm.CloseForGood`, also the update's close), and a later launch or the tray brings it back rather than opening another; nothing asked of the kit's owner. On Opus, with SERVICEHOME2. Detail: D171's MAINWINDOWS2 note.
+
+## RPC1 — the running instance answers the terminal's verbs: the design (2026-10-16, D171)
+
+> - [ ] **RPC1 — the running instance answers the terminal's verbs: the design** (design; D171 point 3). Which verbs act outside the loop today, the channel (a named pipe the bridge's routes answer over, or the local service), its security to this user, and the order of rows. Proof: the design document and its rows.
+
+**Outcome** 2026-10-16: designed (`docs/2026-10-16-terminal-rpc-design.md`): a named pipe the desktop's own dispatcher answers, secured to this user and classing every route open, person or window; a home identity discovery checks; one lease per home; durable request ids; a timeout never means acting locally; the build as HOMEID1, HOMELEASE1 and RPC1a-g. On Opus, with SERVICEHOME2. Detail: the design; D171's RPC1 note.
+
+## FABRIC-C0 — the contract audit, with the harnesses measured (2026-10-16, D173)
+
+> - [ ] **FABRIC-C0 — the contract audit, with the harnesses measured** (design/evidence; no dependency; the owner approved small probes on 2026-10-16). One two-page matrix of at most twelve rows (an ask's origin, entry and part; a quest and its take; chain and workflow; hand-over; a helper's ask, state and answer; a channel's records, replies and read marks; knowledge search, get and disclosure; the connector's configuration and tools; native identity and events; grants and cancellation; the person, plugin, state and terminal boundaries), each with its key, authoritative store and writer, permitted caller and scope, restart behaviour, deciding code or test, and the fabric primitive it maps to (D173's guards); evidence labelled implemented, tested with stand-ins, observed on the harness, or unknown. One page of probe receipts: Claude Code and Codex, each version, door and configuration source recorded, whether a native subagent inherits MCP servers and allow/deny rules, whether its calls carry an identifier distinct from its parent's, nesting, and what a parent's stop does, from real child-originated calls in a scratch repository with its own home. Ends with C1/C2 go or no-go. Proof: the matrix and receipts as a design document in the router; a D173 note.
+
+**Outcome** 2026-10-16: the contract audit (`docs/2026-10-17-fabric-contract-audit.md`) maps twelve collaboration concepts onto their stores, writers and fabric primitives, and measures Claude Code 2.1.299's and Codex 0.160.0's native children against a stand-in server in scratch: both call with the parent's identity and session id, both expose a lineage the harness writes (Claude's hook `agent_id`, Codex's turn metadata), rules are inherited; C1 and C2 go, reshaped. On Opus: 152 tool calls. Detail: the audit; D173's FABRIC-C0 note.
+
+## HOMEID1 — the home has an identity, and finding the running Daoris checks it (2026-10-16, D171)
+
+> - [ ] **HOMEID1 — the home has an identity, and finding the running Daoris checks it** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: a home's id in its `home.json` (`HomeIdentity` in the driver and the service, `homeId` in the CLI), minted by the desktop's loop and the HTTP host, answered by a local host's `/api/status` and kept in `running.json`; discovery takes an address only where the status, asked with redirects off, answers this home's id. Found by a second opinion on FINDDAORIS1. On Opus, with HOMELEASE1: 289 tool calls. Detail: D171's HOMEID1 note; FIX-LOG (HOMEID1).
+
+## HOMELEASE1 — one writer per home (2026-10-16, D171)
+
+> - [ ] **HOMELEASE1 — one writer per home** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `driver.lock` grew into the home's lease (`HomeLease`, compiled into the launcher): instances hold it for their life; a verb that changes the home (`VerbLeases`), the first-start move and the launcher's swap hold it for their act; a verb waits 30 s on another act, then is refused naming it, and acts beside an instance until RPC1. The CLI holds the twin (`lease.ts`); its verbs take it with RPC1f. On Opus, with HOMEID1. Detail: D171's HOMELEASE1 note; D104's amendment.
+
+## DIRECTIONS1 — the owner's unified collaboration proposal routed, and the old future-directions file retired (2026-10-16, D173)
+
+> - [ ] **DIRECTIONS1 — the owner's unified collaboration proposal routed, and the old future-directions file retired** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` is routed as a proposal (accepted as written in D173); `DAORIS_FUTURE_DIRECTIONS.md` is retired, its text being the proposal's Appendix A word for word; live links repointed; D143, D144 and D169 each carry a dated note. On Sonnet: 21 tool calls. Detail: its commit.

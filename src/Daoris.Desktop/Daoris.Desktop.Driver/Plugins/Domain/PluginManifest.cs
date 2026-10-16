@@ -33,14 +33,71 @@ public sealed record PluginHarness(
 public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
 
 /// <summary>
-/// An MCP server a plugin hands to every session (D65 §1f) — a browser, a ticket system, whatever
-/// the session should be able to reach. Beside the knowledge host, never instead of it.
+/// An MCP server a plugin hands to sessions (D65 §1f) — a browser, a ticket system, whatever the session should be able to
+/// reach — and, where it says so, to Ask Daoris (D170 point 3). Beside the knowledge host, never instead of it.
 /// </summary>
 /// <param name="Name">What the agent calls it — tools arrive as `mcp__&lt;name&gt;__&lt;tool&gt;`. The knowledge host's name is refused.</param>
 /// <param name="Command">The program and its arguments, `${plugin}` already expanded.</param>
 /// <param name="Environment">What the server is started with, as declared.</param>
 public sealed record PluginServer(
-    string Name, IReadOnlyList<string> Command, IReadOnlyDictionary<string, string> Environment);
+    string Name, IReadOnlyList<string> Command, IReadOnlyDictionary<string, string> Environment)
+{
+    /// <summary>
+    /// Who it is handed to (HELPPLUG1a): <see cref="PluginServerTo.Sessions"/>, <see cref="PluginServerTo.Help"/> or both, as
+    /// declared; absent is sessions alone, as every server was before (INT1). Twin: the CLI's <c>PluginServer.to</c>.
+    /// </summary>
+    public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
+
+    /// <summary>
+    /// The tools of it that read, which Ask Daoris may call once the person approves them (D170 point 3 and its note); none
+    /// where it declares none. Only a server handed to Ask Daoris declares any. Twin: the CLI's <c>PluginServer.allow</c>.
+    /// </summary>
+    public IReadOnlyList<string> Allow { get; init; } = [];
+
+    /// <summary>
+    /// The tools of it that change something outside Daoris (HELPPLUG1a's tightening): never allowed silently, only as writes the
+    /// person accepted (<see cref="HelpGrants"/>). A tool is in <see cref="Allow"/> or here, never both. Twin: <c>PluginServer.writes</c>.
+    /// </summary>
+    public IReadOnlyList<string> Writes { get; init; } = [];
+
+    /// <summary>Whether it is handed to <paramref name="to"/>.</summary>
+    public bool HandedTo(string to) => To.Contains(to, StringComparer.Ordinal);
+}
+
+/// <summary>
+/// A skill a plugin hands (HELPPLUG1b, D170 point 4): its folder <c>skills/&lt;name&gt;</c> beside the manifest, holding a
+/// <c>SKILL.md</c>, and who it is handed to, as a server's <c>to</c> says it. Handed at spawn (<see cref="SpawnSkills"/>), never
+/// into a repository. Twin: the CLI's <c>PluginSkill</c>.
+/// </summary>
+/// <param name="Name">Its folder's name, as a harness names a skill: lowercase letters, digits and dashes.</param>
+public sealed record PluginSkill(string Name)
+{
+    /// <summary>A skill's name (HELPPLUG1b): lowercase letters, digits and dashes, at most 64. Twin: the CLI's <c>SKILL_NAME</c>.</summary>
+    public static readonly System.Text.RegularExpressions.Regex NameShape =
+        new(@"^[a-z0-9][a-z0-9-]{0,63}\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>Who it is handed to: <c>sessions</c>, <c>help</c> or both; absent in the manifest is sessions.</summary>
+    public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
+
+    /// <summary>Whether it is handed to <paramref name="to"/>.</summary>
+    public bool HandedTo(string to) => To.Contains(to, StringComparer.Ordinal);
+}
+
+/// <summary>
+/// Who a plugin's server is handed to (HELPPLUG1a, D170 point 3), as a manifest's <c>to</c> spells it. Twin: the CLI's
+/// <c>SERVER_TO</c>.
+/// </summary>
+public static class PluginServerTo
+{
+    /// <summary>Every session in a repository: driven, a conversation, an intake (INT1).</summary>
+    public const string Sessions = "sessions";
+
+    /// <summary>Ask Daoris, in its room (D170 point 3).</summary>
+    public const string Help = "help";
+
+    /// <summary>Each destination a manifest may name, in its order.</summary>
+    public static readonly IReadOnlyList<string> All = [Sessions, Help];
+}
 
 /// <summary>A plugin's manifest, as read — with everything a refused plugin would have contributed already removed.</summary>
 /// <param name="Icon">
@@ -68,6 +125,9 @@ public sealed record PluginManifest(
 
     /// <summary>Why <c>tools</c> as a whole is not read, when it is not an array; never a reason to refuse the plugin.</summary>
     public string? ToolsProblem { get; init; }
+
+    /// <summary>The skills it hands sessions or Ask Daoris (HELPPLUG1b, D170 point 4); none for a refused plugin.</summary>
+    public IReadOnlyList<PluginSkill> Skills { get; init; } = [];
 
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
     public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);

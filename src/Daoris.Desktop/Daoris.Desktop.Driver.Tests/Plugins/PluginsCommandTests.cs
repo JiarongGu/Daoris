@@ -54,6 +54,39 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Contains(Path.Combine(_home, "plugins", ".data", "acme.gate"), said);
     }
 
+    /// <summary>
+    /// HELPPLUG1a's tightening (D170's note): <c>approve</c> and <c>withdraw</c> are the terminal twins of the page's presses
+    /// (D50): the exact tools a server declares for Ask Daoris, its writes too or its reads alone; a generic execution tool is
+    /// refused with its reason, exit 2.
+    /// </summary>
+    [Fact]
+    public async Task Approve_and_withdraw_are_the_pages_presses_at_a_terminal()
+    {
+        var folder = Path.Combine(_home, "plugins", "acme.tickets");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "issues", "command": ["issues"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
+                { "name": "shell", "command": ["shell"], "to": ["help"], "allow": ["run_command"] } ] }
+            """);
+
+        var (approved, said) = await Run("approve", "acme.tickets", "issues", "--reads-only");
+        Assert.Equal(0, approved);
+        Assert.Contains("Ask Daoris may now read with search on `issues`; create_issue stays asked", said);
+        var grants = HelpGrants.Read(_home, PluginCatalog.Load(_home));
+        Assert.Equal(["mcp__issues__search"], grants.Allow);
+        Assert.Equal(["mcp__issues__create_issue"], grants.Ask);
+
+        var (withdrawn, _) = await Run("withdraw", "acme.tickets", "issues");
+        Assert.Equal(0, withdrawn);
+        Assert.Empty(HelpGrants.Read(_home, PluginCatalog.Load(_home)).Allow);
+
+        var (refused, why) = await Run("approve", "acme.tickets", "shell");
+        Assert.Equal(2, refused);
+        Assert.Contains("`run_command`", why);
+        Assert.Contains("plugins approve <id> <server> [--reads-only]", PluginsCommand.Usage);
+    }
+
     [Fact]
     public async Task Show_with_json_is_the_page_as_data_and_still_no_value()
     {
