@@ -35,6 +35,10 @@ with the version and date at release.
   say-so, a commit in its tree, and a change to the landing rule. When a change releases none of the waiting work, the landing
   starts no git for it.
   Daoris still looks at all of it every `pollSeconds`.
+- Done work that lands automatically is checked again just before it lands: its quest, its holds, its review and its tree. A
+  hold, or a commit nobody reviewed, that came after Daoris chose it holds it again, and only the commit it checked lands. Only the
+  loop holding the home lands work automatically: a `daoris-driver drive --share` loop beside it lands none, and says so as it
+  starts.
 - `daoris-driver sessions say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
 - *This Daoris* also shows the settings files, the variables Daoris reads, the versions, the terminal's wiring, the
   knowledge store and the logs.
