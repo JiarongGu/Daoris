@@ -189,15 +189,15 @@ public static class SystemWiring
     /// <summary>The settings files a person's choice lives in (design §3.4), each with the variable that overrides it and the door to where it is edited.</summary>
     private static readonly (HomeEntry Entry, string? Override, string Door)[] SettingsFiles =
     [
-        (HomeEntry.DriverConfig, WiringVariables.DriverConfig, "driver"),
-        (HomeEntry.Harnesses, WiringVariables.HarnessConfig, "agents"),
+        (HomeEntry.DriverConfig, WiringVariables.ConfigFile, "driver"),
+        (HomeEntry.Harnesses, WiringVariables.HarnessFile, "agents"),
         (HomeEntry.Accounts, null, "agents"),
         (HomeEntry.Permissions, null, "agents"),
         (HomeEntry.Tools, null, "tools"),
         (HomeEntry.PluginState, null, "plugins"),
         (HomeEntry.BrowserSettings, null, "browser"),
         (HomeEntry.Update, null, "driver"),
-        (HomeEntry.Remotes, WiringVariables.RemoteConfig, "workspace"),
+        (HomeEntry.Remotes, WiringVariables.RemotesFile, "workspace"),
         (HomeEntry.Keys, null, "agents"),
     ];
 
@@ -535,7 +535,7 @@ public static class SystemWiring
     private static RemotesRead LoadRemotes(WiringWorld world)
     {
         if (RemoteTarget.FromEnvironment(world.Process) is { } fromEnvironment) return new(fromEnvironment, "environment", null);
-        var path = world.Process(WiringVariables.RemoteConfig) is { Length: > 0 } named ? named
+        var path = world.Process(WiringVariables.RemotesFile) is { Length: > 0 } named ? named
             : world.Home is { } home ? DaorisHome.Entry(home, HomeEntry.Remotes) : null;
         if (path is null || !File.Exists(path)) return new(new Dictionary<string, RemoteTarget>(), "file", null);
         try
@@ -615,9 +615,9 @@ public static class SystemWiring
         return loop;
     }
 
+    /// <summary>The person's choices as the one resolution finds them (CONFIGSEAM1): the override where set, else this home's file.</summary>
     private static string? ConfigPath(WiringWorld world) =>
-        world.Process(WiringVariables.DriverConfig) is { Length: > 0 } named ? named
-        : world.Home is { } home ? DaorisHome.Entry(home, HomeEntry.DriverConfig) : null;
+        DriverConfig.FindPath(name => name == DaorisHome.Variable ? world.Home : world.Process(name));
 
     private static JsonArray Files(WiringWorld world, SizeReading? reading, string? remotesWhy)
     {
@@ -633,7 +633,8 @@ public static class SystemWiring
         var named = overrides is null ? null : world.Process(overrides);
         string? path = null;
         string? pathWhy = world.Home is null ? "no-home" : null;
-        if (!string.IsNullOrWhiteSpace(named)) path = named.Trim();
+        if (entry == HomeEntry.DriverConfig) path = ConfigPath(world);
+        else if (!string.IsNullOrWhiteSpace(named)) path = named.Trim();
         else if (world.Home is { } home)
         {
             try

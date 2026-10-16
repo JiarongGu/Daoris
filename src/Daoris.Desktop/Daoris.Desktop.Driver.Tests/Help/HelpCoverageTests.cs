@@ -262,6 +262,15 @@ public sealed partial class HelpCoverageTests
         + "is exempt (D157, D110 §4); each press a waiting step needs is its owner's door, never this read's.");
 
     /// <summary>
+    /// WIRING1b's <c>daoris-driver wiring</c> (D171's WIRING1b note, the this-Daoris design §6), a verb of the headless host:
+    /// exempt, since it reads how this Daoris is wired and changes nothing, as <c>trace</c> is; its <c>--measure</c> counts sizes.
+    /// Settings → This Daoris is the screen's door to the same read, and each setting it shows is changed at its own door.
+    /// </summary>
+    private static readonly Exempt WiringDoor = new(
+        "it reads how this Daoris is wired, its folders, service, files, variables and versions, and changes nothing, so there is "
+        + "nothing to propose, as `trace` is exempt (D171, D110 §4); each setting it shows is changed at its own door.");
+
+    /// <summary>
     /// WORKFLOW1f's <c>daoris-driver workflow keep</c> (D157 point 10, the workflow design §4.4), a verb of the headless host:
     /// exempt, since keeping a workflow that asks less of the person for work outside its kind's paths is their say-so, as going
     /// on without a second opinion is. The screen's press is the editor's row (WORKFLOW1g).
@@ -896,6 +905,7 @@ public sealed partial class HelpCoverageTests
             .Append(HelperAskDoor)
             .Append(TraceDoor)
             .Append(WorkflowRunDoor)
+            .Append(WiringDoor)
             .Append(WorkflowKeepDoor)
             .Append(CheckDoor)
             .Append(GitBranchesDoor)
@@ -1266,6 +1276,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("trace"));
         Assert.Contains("changes nothing", TraceDoor.Reason);
         Assert.Contains("D143", TraceDoor.Reason);
+    }
+
+    /// <summary>
+    /// WIRING1b: the headless host's <c>wiring</c> is exempt from Ask Daoris (D171, D110 §4) while its usage spells it: a read that
+    /// changes nothing, with no kind of that name to take it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_wiring_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("wiring [--json] [--measure]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("wiring"));
+        Assert.Contains("changes nothing", WiringDoor.Reason);
+        Assert.Contains("D171", WiringDoor.Reason);
     }
 
     /// <summary>

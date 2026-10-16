@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver wiring` says how this Daoris is wired: its folder and each top folder as it runs (with what is still at an
+  old place and why), the service (its address and where it came from, its tier and version), who holds the home, each
+  settings file (whether it reads, what overrides it), every variable Daoris reads with where it came from, the versions,
+  and whether a new terminal finds this install's `daoris` and `daoris-driver`. `--measure` counts the folders' sizes first,
+  and `--json` prints it whole. A key is only ever *set*, or a deployment key's short prefix; never its value. The service's
+  status now names its version.
 - `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
   holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the

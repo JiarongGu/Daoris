@@ -4,7 +4,8 @@ namespace Daoris.Driver;
 public static class WiringReaders
 {
     public const string Desktop = "desktop";
-    public const string Driver = "driver";
+    /// <summary>The driver's library: the window's loop and the terminal's verbs.</summary>
+    public const string DriverLibrary = "driver";
     public const string Cli = "cli";
     public const string Service = "service";
 }
@@ -42,24 +43,26 @@ public sealed record WiringVariable(string Name, WiringValue Value, string? Inst
 /// a search of the sources, so a variable a change adds is shown or set aside by the same change.
 /// </summary>
 /// <remarks>
-/// 🔴 This file alone spells the variables it lists; the reader names them through it, so the search reads every other source
-/// for the names Daoris actually reads, and a name listed here that no source reads any more is found too.
+/// 🔴 The search reads every source but this one, so a name listed here that no reader spells any more is found too; a variable
+/// with a reader's constant is named through it, and the wiring reader names each through this list.
 /// </remarks>
 public static class WiringVariables
 {
-    public const string Home = "DAORIS_HOME";
-    public const string ServiceUrl = "DAORIS_SERVICE_URL";
-    public const string ServiceKey = "DAORIS_SERVICE_KEY";
-    public const string DriverConfig = "DAORIS_DRIVER_CONFIG";
-    public const string HarnessConfig = "DAORIS_HARNESS_CONFIG";
-    public const string RemoteConfig = "DAORIS_REMOTE_CONFIG";
+    // Each reader's own constant where it has one, so the list names what the code reads; the two the connector passes
+    // through without a constant of their own are spelled here.
+    public const string Home = DaorisHome.Variable;
+    public const string ServiceUrl = ServiceClient.UrlVariable;
+    public const string ServiceKey = ServiceClient.KeyVariable;
+    public const string ConfigFile = DriverConfig.PathVariable;
+    public const string HarnessFile = HarnessSettings.PathVariable;
+    public const string RemotesFile = RemoteTarget.PathVariable;
     public const string KnowledgeDb = "DAORIS_KNOWLEDGE_DB";
     public const string KnowledgeRoot = "DAORIS_KNOWLEDGE_ROOT";
-    public const string HttpHost = "DAORIS_HTTP_HOST";
-    public const string McpHost = "DAORIS_MCP_HOST";
-    public const string RemoteUrl = "DAORIS_REMOTE_URL";
-    public const string RemoteKey = "DAORIS_REMOTE_KEY";
-    public const string RemoteWorkspace = "DAORIS_REMOTE_WORKSPACE";
+    public const string HttpHost = ServiceHostLocator.PathVariable;
+    public const string McpHost = KnowledgeConnector.PathVariable;
+    public const string RemoteUrl = RemoteTarget.UrlVariable;
+    public const string RemoteKey = RemoteTarget.KeyVariable;
+    public const string RemoteWorkspace = RemoteTarget.WorkspaceVariable;
 
     /// <summary>The address the desktop uses where <see cref="ServiceUrl"/> is not set (the desktop's <c>Program.cs</c>).</summary>
     public const string DefaultServiceUrl = "http://localhost:5177";
@@ -67,18 +70,18 @@ public static class WiringVariables
     /// <summary>The variables a person may set, in the page's order: the home and its per-file overrides, the service, the hosts, the remote trio, the knowledge service's.</summary>
     public static IReadOnlyList<WiringVariable> Shown { get; } =
     [
-        new(Home, WiringValue.Path, "install-data", WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli, WiringReaders.Service),
-        new(DriverConfig, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli),
-        new(HarnessConfig, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli),
-        new(RemoteConfig, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli, WiringReaders.Service),
-        new(KnowledgeDb, WiringValue.Path, "home", WiringReaders.Driver, WiringReaders.Service),
-        new(ServiceUrl, WiringValue.Address, DefaultServiceUrl, WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli),
-        new(ServiceKey, WiringValue.Key, null, WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli),
+        new(Home, WiringValue.Path, "install-data", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli, WiringReaders.Service),
+        new(ConfigFile, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli),
+        new(HarnessFile, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli),
+        new(RemotesFile, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli, WiringReaders.Service),
+        new(KnowledgeDb, WiringValue.Path, "home", WiringReaders.DriverLibrary, WiringReaders.Service),
+        new(ServiceUrl, WiringValue.Address, DefaultServiceUrl, WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli),
+        new(ServiceKey, WiringValue.Key, null, WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli),
         new(HttpHost, WiringValue.Path, "located", WiringReaders.Desktop),
-        new(McpHost, WiringValue.Path, "located", WiringReaders.Driver),
-        new(RemoteUrl, WiringValue.Address, "remotes-file", WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli, WiringReaders.Service),
-        new(RemoteKey, WiringValue.Key, "remotes-file", WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli, WiringReaders.Service),
-        new(RemoteWorkspace, WiringValue.Word, "default", WiringReaders.Desktop, WiringReaders.Driver, WiringReaders.Cli, WiringReaders.Service),
+        new(McpHost, WiringValue.Path, "located", WiringReaders.DriverLibrary),
+        new(RemoteUrl, WiringValue.Address, "remotes-file", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli, WiringReaders.Service),
+        new(RemoteKey, WiringValue.Key, "remotes-file", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli, WiringReaders.Service),
+        new(RemoteWorkspace, WiringValue.Word, "default", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli, WiringReaders.Service),
         new(KnowledgeRoot, WiringValue.Path, "registered", WiringReaders.Service),
         new("DAORIS_KNOWLEDGE_REPOSITORY", WiringValue.Path, null, WiringReaders.Service),
         new("DAORIS_KNOWLEDGE_DOCUMENTS", WiringValue.Word, null, WiringReaders.Service),
