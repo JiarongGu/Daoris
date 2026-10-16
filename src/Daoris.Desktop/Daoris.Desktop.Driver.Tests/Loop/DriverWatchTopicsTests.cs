@@ -119,6 +119,40 @@ public sealed class DriverWatchTopicsTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-EVENT3b: the loop holds one wait on the service's change stream, so a quest an agent published starts at once, with
+    /// no nudge, long before <c>pollSeconds</c>, and without the remote sync.
+    /// </summary>
+    [Fact]
+    public async Task An_agent_s_quest_starts_without_the_poll()
+    {
+        _ledger.Changes = StandInLedger.ChangeDoor.Answers;
+        using var sync = Counted();
+        var (watch, runs) = Watch(sync, pollSeconds: 60);
+        var reports = new List<TickReport>();
+
+        var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
+        try
+        {
+            await Poll.Until(() => Count(reports) >= 1 && _ledger.ChangesHeld == 1, () => "no look, or no wait held", Bound);
+            var synced = Passes();
+
+            _ledger.Publish("q1", "engine", from: "agent");
+            await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
+
+            Assert.Equal(["q1"], runs.Started);
+            Assert.Equal(synced, Passes());
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+
+        // One wait held at a time: the bootstrap, the one the publish answered, and the next.
+        Assert.InRange(_ledger.ChangesAsked, 2, 4);
+    }
+
+    /// <summary>
     /// The <c>look</c> topic's deadline holds under a stream of wakes: <c>pollSeconds</c> after the last whole look the whole look
     /// runs, the remote sync first, whatever woke the looks between, and the wakes between sync nothing.
     /// </summary>
