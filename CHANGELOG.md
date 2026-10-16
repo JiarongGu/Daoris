@@ -19,6 +19,9 @@ with the version and date at release.
 - What wakes the driver between its looks (a terminal's words, a session's end) now plans and starts work at once without
   asking your circles' remotes; the remotes are still synced every `pollSeconds`, after a session ends, and whenever a press
   asks the loop to look. The machine log says which part each look ran.
+- A quest an agent publishes from its session, and a session record another process writes, now start Daoris's work at once,
+  where the driver used to find them at its next look (up to `pollSeconds`, 15 s by default). The local service answers
+  `GET /api/changes`, which says which of its records moved; a sync pass that changes nothing wakes nothing.
 - `daoris-driver sessions say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
 - *This Daoris* also shows the settings files, the variables Daoris reads, the versions, the terminal's wiring, the
   knowledge store and the logs.
