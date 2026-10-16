@@ -210,7 +210,7 @@ describe('Settings → This Daoris', () => {
     expect(files.getByText("The driver's dials: its pace, the starts it holds and its limits.")).toBeTruthy();
     expect(files.getAllByText('1.2 KB').length).toBeGreaterThan(0);
     expect(files.getAllByText('reads').length).toBeGreaterThan(0);
-    expect(files.getByText('named by DAORIS_HARNESS_FILE')).toBeTruthy();
+    expect(files.getByText('named by DAORIS_HARNESS_CONFIG')).toBeTruthy();
     // A file that does not parse says what follows from it; one not there yet says so.
     expect(files.getByText('cannot be read')).toBeTruthy();
     expect(files.getByText(/The screens that edit it refuse until it is fixed/)).toBeTruthy();

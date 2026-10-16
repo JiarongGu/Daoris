@@ -781,6 +781,8 @@ public sealed partial class HelpCoverageTests
 
         ("logs", "useOpenLogFolder", null, new Exempt(
             "it opens the log's folder in the system's file browser and changes nothing; a go reaches Settings → Logs.")),
+        ("wiring", "useOpenLogFolder", null, new Exempt(
+            "This Daoris's Logs card opens the same folder and changes nothing; a go reaches Settings → This Daoris (WIRING1c-ii).")),
     ];
 
     /// <summary>
