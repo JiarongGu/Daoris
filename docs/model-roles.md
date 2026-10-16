@@ -5,7 +5,7 @@ each choice, what is on trial, and when an agent of another maker is asked for a
 dispatch reads it in place of fixed names; Daoris's own sessions take the same roles through MODELROLE1. Change it when a
 batch's measurements or a new model version say so, and date the change.
 
-Reviewed **2026-10-17**.
+Reviewed **2026-10-16**.
 
 ## The roles
 

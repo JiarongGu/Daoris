@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-C1a (D173, its FABRIC-C0 note; <c>docs/2026-10-17-fabric-contract-audit.md</c> §2): a part's native children, bound
+/// FABRIC-C1a (D173, its FABRIC-C0 note; <c>docs/2026-10-16-fabric-contract-audit.md</c> §2): a part's native children, bound
 /// from what the harness itself wrote of their lineage. The fold reads the session's lineage lines: the connector's per call
 /// (<c>by: call</c>), the hook's on Claude Code (<c>by: hook</c>), the driver's off Claude Code's stream (<c>by: stream</c>)
 /// and the part's end (<c>by: end</c>). It binds each child to the part, never to a session of its own, and says what it

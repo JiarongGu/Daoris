@@ -1,5 +1,5 @@
 /**
- * The fabric probe's stand-in MCP server (FABRIC-PROBE1; the C0 audit §2, `docs/2026-10-17-fabric-contract-audit.md`).
+ * The fabric probe's stand-in MCP server (FABRIC-PROBE1; the C0 audit §2, `docs/2026-10-16-fabric-contract-audit.md`).
  *
  *   node tools/fabric-probe/server.mjs --log <file>
  *

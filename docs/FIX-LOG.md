@@ -2186,7 +2186,7 @@ kept late (`Late(world)`) so each run is the load's shape. Red with the late loo
 times, five of them beside one plain `dotnet build --no-incremental` of another project (the service's HTTP tests, the desktop
 application, the service's solution: each lasted 16-27 s, so the other seven ran after it), while the parent's gates ran.
 
-**WEBWAIT1 (2026-10-17): the page tests' `vi.waitFor` kept vitest's one second while testing-library's waits had five.** The web
+**WEBWAIT1 (2026-10-16): the page tests' `vi.waitFor` kept vitest's one second while testing-library's waits had five.** The web
 gate failed once on `df95f79` in `WorkFrame.test.tsx` (*asks the plan again with an entered branch name, and the press sends it*):
 a `vi.waitFor` on a mocked call gave up at 2993 ms under four workers' load; alone it passed. The class: `setup.tsx` had widened
 `findBy*` and testing-library's `waitFor` to 5 s (`asyncUtilTimeout`) since 2026-09-28, but `vi.waitFor` is vitest's own and reads

@@ -1,5 +1,5 @@
 /**
- * The fabric probe's launchers (FABRIC-PROBE1; the C0 audit §2, `docs/2026-10-17-fabric-contract-audit.md`).
+ * The fabric probe's launchers (FABRIC-PROBE1; the C0 audit §2, `docs/2026-10-16-fabric-contract-audit.md`).
  *
  *   node tools/fabric-probe/launch.mjs claude [--scenario child|family|kill] [--run <name>] [--model <id>]
  *   node tools/fabric-probe/launch.mjs codex --codex <codex executable> [--scenario …] [--model <id>] [--effort low]

@@ -11,7 +11,7 @@ import preview from '../../.storybook/preview';
 configure({ asyncUtilTimeout: 5_000 });
 
 // 🔴 WEBWAIT1: `vi.waitFor` is vitest's own and does not read testing-library's setting; its patience is one
-// second. On 2026-10-17 a WorkFrame case waiting on a mocked call gave up at 2993 ms under four workers' load
+// second. On 2026-10-16 a WorkFrame case waiting on a mocked call gave up at 2993 ms under four workers' load
 // and passed alone. Every `vi.waitFor` without its own patience now waits as long as a `findBy` does (the same
 // 5 s, well under `testTimeout`); a call that names a timeout keeps it. The assertion inside is untouched.
 const waitForPatience = 5_000;

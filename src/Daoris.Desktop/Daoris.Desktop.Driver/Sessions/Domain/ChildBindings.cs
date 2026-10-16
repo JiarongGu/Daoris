@@ -38,7 +38,7 @@ public sealed record ChildBinding(string Harness, string Native)
 }
 
 /// <summary>
-/// A part's native children, folded from its lineage lines (FABRIC-C1a, D173; <c>docs/2026-10-17-fabric-contract-audit.md</c>
+/// A part's native children, folded from its lineage lines (FABRIC-C1a, D173; <c>docs/2026-10-16-fabric-contract-audit.md</c>
 /// §2-§3): the connector's line per call (<c>by: call</c>), Claude Code's hook (<c>by: hook</c>), Claude Code's stream as the
 /// driver read it (<c>by: stream</c>) and the part's end (<c>by: end</c>). The lines are the one store; this is their reading,
 /// and the part's record stays canonical (D173's first guard).

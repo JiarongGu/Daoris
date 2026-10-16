@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-C1a (D173, its FABRIC-C0 note; <c>docs/2026-10-17-fabric-contract-audit.md</c> §2): the lineage a call's <c>_meta</c>
+/// FABRIC-C1a (D173, its FABRIC-C0 note; <c>docs/2026-10-16-fabric-contract-audit.md</c> §2): the lineage a call's <c>_meta</c>
 /// carries, as each harness wrote it, read by the connector on every call. Claude Code names the call (<c>claudecode/toolUseId</c>),
 /// which its hook joins to the agent that made it; Codex names the thread, its parent and the spawn kind
 /// (<c>x-codex-turn-metadata</c>, as JSON text or an object). Only ids are kept: the workspace's path Codex sends beside them,
