@@ -7,7 +7,8 @@
 // `workspace` rides every cross-repository shape (D48): it is the unit of sharing, so a view that
 // shows material from more than one must be able to say which is which. Optional on the way in —
 // a host older than workspaces simply does not send it, and nothing here should crash over that.
-export type Status = { semantic: boolean; tier: string; note?: string };
+// `version` (WIRING1b): the host's own, which a host older than it does not send.
+export type Status = { semantic: boolean; tier: string; note?: string; version?: string | null };
 /**
  * Which point in a repository's history a deployment's copy of its knowledge came from (D48 §6).
  *

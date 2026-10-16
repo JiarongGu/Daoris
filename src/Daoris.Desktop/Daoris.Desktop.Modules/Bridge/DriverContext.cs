@@ -60,6 +60,47 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public ISetupWorld SetupWorldOf(ServiceClient service) => SetupWorlds?.Invoke(service) ?? new SetupWorld(service, Loop.Home);
 
     /// <summary>
+    /// What This Daoris's read is handed (WIRING1b), changed: null is the window's own; a test hands the account's and the
+    /// machine's variables of its own and sizes of its own, so it reads nothing of the machine it runs on. Set by
+    /// <see cref="DriverModule"/>'s initializer, as <see cref="SetupWorlds"/> is.
+    /// </summary>
+    public Func<WiringWorld, WiringWorld>? WiringWorlds { get; set; }
+
+    /// <summary>
+    /// This window's wiring world: its process, its account and machine, and what only it knows, from the loop and its
+    /// supervisor. 🔴 No status door is asked: the supervisor's last probe is the service's answer (the second opinion's point 3).
+    /// </summary>
+    public WiringWorld WiringWorldOf()
+    {
+        var loop = Loop;
+        var world = new WiringWorld
+        {
+            Home = loop.Home,
+            BaseDirectory = AppContext.BaseDirectory,
+            Process = Environment.GetEnvironmentVariable,
+            Account = WiringWorld.Stored(EnvironmentVariableTarget.User),
+            Machine = WiringWorld.Stored(EnvironmentVariableTarget.Machine),
+            Window = new WindowWiring
+            {
+                Held = loop.Host.Held,
+                HomeAccount = loop.HomeAccount,
+                HomeSetByDaoris = loop.HomeSetByDaoris,
+                HomeNotice = loop.HomeNotice,
+                HostNotice = loop.HostNotice,
+                ServiceUrl = loop.ServiceUrl,
+                Status = loop.Host.Last,
+                Kit = SystemWiring.VersionOf(typeof(Shenora.Core.Ipc.IpcRequest).Assembly),
+                Program = SystemWiring.VersionOf(System.Reflection.Assembly.GetEntryAssembly()),
+                Looked = loop.Look.At,
+                Ready = loop.Service is not null,
+                Draining = loop.Draining?.Invoke(),
+                ProcessId = Environment.ProcessId,
+            },
+        };
+        return WiringWorlds?.Invoke(world) ?? world;
+    }
+
+    /// <summary>
     /// A standing choice: an edit to <c>driver.json</c> under the home and a nudge, because the file is the truth and the loop
     /// re-reads it every tick, the same file the terminal's verbs edit (D50).
     /// </summary>

@@ -54,6 +54,18 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// </remarks>
     public string? Notice { get; private set; }
 
+    /// <summary>
+    /// Whether this window started its host, adopted one already answering, or has none (WIRING1b, the this-Daoris design
+    /// §3.2): a <see cref="WindowWiring"/> word. An adopted host's environment is its starter's, which This Daoris says.
+    /// </summary>
+    public string Held { get; private set; } = WindowWiring.None;
+
+    /// <summary>
+    /// What the last probe heard, with when (WIRING1b): This Daoris shows it rather than asking again, so the page's open asks
+    /// no network. Null before the first probe.
+    /// </summary>
+    public ServiceStatus? Last { get; private set; }
+
     /// <summary>True when the host answers — found running, or started here and now answering.</summary>
     public async Task<bool> EnsureAsync(CancellationToken ct = default)
     {
@@ -72,6 +84,8 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         if (found == Answer.Daoris)
         {
+            Held = WindowWiring.Adopted;
+
             // 🔴 The notice informs; it never decides (REV3). A throw while reading the install's own
             // page — unreadable, locked — used to escape here, and the loop counted a host that had
             // just answered as down, and never started.
@@ -92,6 +106,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         if (location is null)
         {
             Trouble = NoHost(serviceUrl);
+            Last = Last! with { Why = "no-host" };
             return false;
         }
 
@@ -106,16 +121,23 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             // Located but unstartable — corrupt, blocked, or permissions. An unhandled throw here used
             // to fault the loop's task before HostReady completed, leaving the splash waiting forever.
             Trouble = $"the service host at {location.Executable} could not be started: {error.Message}";
+            Last = Last! with { Why = "unstartable" };
             return false;
         }
 
         for (var attempt = 0; attempt < 100; attempt += 1)
         {
-            if (await ProbeAsync(ct).ConfigureAwait(false) == Answer.Daoris) return true;
+            if (await ProbeAsync(ct).ConfigureAwait(false) == Answer.Daoris)
+            {
+                Held = WindowWiring.Hosted;
+                return true;
+            }
+
             if (_owned is null || _owned.HasExited)
             {
                 Trouble = await WithWhatItSaidAsync(
                     $"the service host at {location.Executable} exited before it answered.", exited: true, ct).ConfigureAwait(false);
+                Last = Last! with { Why = "exited" };
                 return false;
             }
 
@@ -125,6 +147,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         Trouble = await WithWhatItSaidAsync(
             $"the service host was started from {location.Executable} but never answered at {serviceUrl}.", exited: false, ct)
             .ConfigureAwait(false);
+        Last = Last! with { Why = "never-answered" };
         return false;
     }
 
@@ -243,16 +266,25 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// </summary>
     private async Task<Answer> ProbeAsync(CancellationToken ct)
     {
+        var asked = DateTimeOffset.UtcNow;
         try
         {
             using var response = await _probe.GetAsync($"{serviceUrl.TrimEnd('/')}/api/status", ct)
                 .ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode) return Answer.Foreign;
+            if (!response.IsSuccessStatusCode)
+            {
+                Last = new ServiceStatus(false, asked, "foreign", null, null);
+                return Answer.Foreign;
+            }
+
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            // What it said, its tier and version, kept for This Daoris (WIRING1b), read by the same rule as a Daoris host's.
+            Last = ServiceStatus.Of(body, asked);
             return IsDaorisStatus(body) ? Answer.Daoris : Answer.Foreign;
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
         {
+            Last = new ServiceStatus(false, asked, "no-answer", null, null);
             return Answer.None;
         }
     }

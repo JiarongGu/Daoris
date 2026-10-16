@@ -48,6 +48,16 @@ public sealed class DriverModule : ModuleBase
         init => _context.SetupWorlds = value;
     }
 
+    /// <summary>
+    /// What This Daoris's read is handed, changed (WIRING1b): null is the window's own; a test names the account's and the
+    /// machine's variables and sizes of its own. Held by the context, which the system domain reads at each request.
+    /// </summary>
+    public Func<WiringWorld, WiringWorld>? WiringWorlds
+    {
+        get => _context.WiringWorlds;
+        init => _context.WiringWorlds = value;
+    }
+
     // Each domain's handler, built over the context, in the order of Domains: a route's entry names its domain's place.
     private readonly object[] _handlers;
 
@@ -154,6 +164,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new RulesRoutes(context.Loop)),
         Domain.Of(context => new SessionsRoutes(context)),
         Domain.Of(context => new SetupRoutes(context)),
+        Domain.Of(context => new SystemRoutes(context)),
         Domain.Of(context => new ToolsRoutes(context)),
         Domain.Of(context => new TraceRoutes(context.Loop)),
         Domain.Of(context => new TreesRoutes(context.Loop)),

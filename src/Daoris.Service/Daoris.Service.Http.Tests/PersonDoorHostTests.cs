@@ -369,9 +369,10 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
         Assert.Equal("gQMDWolsIQRnw-_d19k3A1c9E6ey2aP9-8RL_n_pJ50", proved.Json.GetProperty("proof").GetString());
         Assert.DoesNotContain(Key, proved.Body);
 
+        // WIRING1b added `version` after the proof's place; asked without a nonce, still no proof.
         var plain = await host.GetAsync("/api/status");
         Assert.Equal(
-            new[] { "semantic", "tier", "note" },
+            new[] { "semantic", "tier", "note", "version" },
             plain.Json.EnumerateObject().Select(field => field.Name).ToArray());
     }
 

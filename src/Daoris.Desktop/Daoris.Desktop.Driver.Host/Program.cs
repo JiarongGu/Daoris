@@ -471,6 +471,15 @@ try
         return exit;
     }
 
+    // How this Daoris is wired, from a terminal (WIRING1b, D50): Settings → This Daoris is the other door to the same reader.
+    // Needs no service: a status door is asked only where an address is named or left in the home's address file.
+    if (args is ["wiring", .. var wiringArgs])
+    {
+        var exit = WiringCommand.Run(wiringArgs, WiringWorld.OfThisTerminal(DaorisHome.Resolve()), out var wiringSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(wiringSaid);
+        return exit;
+    }
+
     // The machine log from a terminal (LOG1c, D50): Settings → Logs is the other door to the same reading.
     if (args is ["logs", .. var logsArgs])
     {

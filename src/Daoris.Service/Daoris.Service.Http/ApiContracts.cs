@@ -10,7 +10,17 @@ namespace Daoris.Knowledge.Http;
 
 // `Proof` (PERSONDOOR1a, the person-door design §2.3): asked with `prove`, a host holding a person key answers the proof of
 // possession its starter checks before it trusts the host; absent otherwise, so the answer is what it always was.
-public sealed record StatusResponse(bool Semantic, string Tier, string? Note, string? Proof = null);
+// `Version` (WIRING1b, the this-Daoris design §3.6): the host's informational version as the release workflow stamped it, which
+// This Daoris shows. Added after the others, a wire shape's field being added and never renamed; a reader older than it skips it.
+public sealed record StatusResponse(bool Semantic, string Tier, string? Note, string? Proof = null, string? Version = null);
+
+/// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
+public static class HostVersion
+{
+    public static string? Stamped { get; } = typeof(StatusResponse).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion;
+}
 // Provenance is SERVED, never implied (D48 §6): the deployment's copy of a repository's knowledge is
 // a claim about a commit, so the answer names the commit, when it was made, which line it came from
 // and which machine fed it. Absent on a deployment that reads its own checkouts — it has no feed, and
