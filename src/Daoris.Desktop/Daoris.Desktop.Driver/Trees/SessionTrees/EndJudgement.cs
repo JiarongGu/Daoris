@@ -308,8 +308,9 @@ internal static class EndJudgement
         }
 
         var content = await ContentHolds.HeldByContentAsync(root, subject.Tip, line, notHolders, ct, refs).ConfigureAwait(false);
-        if (content is not null) facts = facts with { Content = Held.At(content.Where) };
-        // Git's answer collapses "not held" and "could not say" in the content proof, so only the person's branches are read here.
+        // PROOF-UNREAD1: a proof git could not read (`Unread`) is never a hold, so it never ends the work by content; a later row
+        // may carry it as the judgement's unknown.
+        if (content.Hold is { } hold) facts = facts with { Content = Held.At(hold.Where) };
         return facts with { OnPersonsBranch = await TreeFollows.UnlandedAsync(root, subject.Tip, ct).ConfigureAwait(false) is { } unlanded ? unlanded == 0 : null };
     }
 
