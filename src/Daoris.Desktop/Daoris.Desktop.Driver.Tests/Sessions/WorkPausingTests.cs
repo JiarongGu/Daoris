@@ -31,7 +31,7 @@ public sealed class WorkPausingTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.Driver);
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private static JsonObject Record(string id, string state, string? quest = null, string repository = "engine", string? ask = null, int minutes = 0) => new()
     {

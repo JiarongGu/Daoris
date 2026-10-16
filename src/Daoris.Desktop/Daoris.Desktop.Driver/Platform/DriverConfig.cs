@@ -493,10 +493,10 @@ public sealed record DriverConfig(
     /// <summary>
     /// The conventional home, beside the store the driver watches — under the Daoris home (D63). A
     /// machine with no home and no override is refused, naming what to set, rather than written to. The file is the home's
-    /// <see cref="HomeEntry.Driver"/>, asked here alone (CONFIGSEAM1): a reader that joined it to its home itself read another
+    /// <see cref="HomeEntry.DriverConfig"/>, asked here alone (CONFIGSEAM1): a reader that joined it to its home itself read another
     /// file than the loop's wherever the override named one, and so landed without the override's landing and review rules.
     /// </summary>
-    public static string DefaultPath => DaorisHome.Require(HomeEntry.Driver);
+    public static string DefaultPath => DaorisHome.Require(HomeEntry.DriverConfig);
 
     /// <summary>
     /// The one resolution of the person's choices (D63, CONFIGSEAM1): the override where set, the home's <c>driver.json</c>
@@ -504,7 +504,7 @@ public sealed record DriverConfig(
     /// <c>ConfigSeamTests</c> scans for one that does not.
     /// </summary>
     public static string? FindPath(Func<string, string?> environment) =>
-        environment(PathVariable) ?? DaorisHome.File(environment, HomeEntry.Driver);
+        environment(PathVariable) ?? DaorisHome.File(environment, HomeEntry.DriverConfig);
 
     /// <summary>The same, from the process environment: for a reader with no home in hand that reads nothing on a machine with none.</summary>
     public static string? FindPath() => FindPath(Environment.GetEnvironmentVariable);
@@ -522,7 +522,7 @@ public sealed record DriverConfig(
 
     /// <summary>The same, over an environment a test hands in.</summary>
     public static string ResolvePath(Func<string, string?> environment, string home) =>
-        FindPath(environment) is { Length: > 0 } found && SameFolder(HomeOf(found), home) ? found : DaorisHome.Entry(home, HomeEntry.Driver);
+        FindPath(environment) is { Length: > 0 } found && SameFolder(HomeOf(found), home) ? found : DaorisHome.Entry(home, HomeEntry.DriverConfig);
 
     private static bool SameFolder(string left, string right) => string.Equals(
         Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)),

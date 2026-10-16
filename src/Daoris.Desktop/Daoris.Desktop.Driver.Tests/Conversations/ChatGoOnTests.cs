@@ -209,7 +209,7 @@ public sealed class ChatGoOnTests : IDisposable
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
         new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Driver), """{ "adapter": "talk", "commands": """);
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig), """{ "adapter": "talk", "commands": """);
         var events = Events;
         using var runner = Runner(ledger, events);
 

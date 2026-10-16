@@ -209,7 +209,7 @@ public sealed class SweepTests : IDisposable
     {
         var root = await RepositoryAsync("engine");
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}", Tidy: true))
-            .Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var trees = new SessionTrees(_home);
         var tree = await TreeWithWorkAsync(trees, root);
 

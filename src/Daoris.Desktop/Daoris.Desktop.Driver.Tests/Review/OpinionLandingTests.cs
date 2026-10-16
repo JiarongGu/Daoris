@@ -239,7 +239,7 @@ public sealed class OpinionLandingTests : IDisposable
     private void Unavailable(string tip) =>
         new OpinionGates(_home).Asked("q1", "web-app", new OpinionAskKept(DateTimeOffset.UtcNow, "landing", "s1", tip) { Code = ReviewerUnavailable.NoReviewer });
 
-    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>The landing rule, and an opinion rule for the repository that reads before landing.</summary>
     private void Configure(LandingRule? landing, bool required)
@@ -251,7 +251,7 @@ public sealed class OpinionLandingTests : IDisposable
                 ["web-app"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], required),
             },
         };
-        (landing is null ? config : config.WithLanding("web-app", landing)).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        (landing is null ? config : config.WithLanding("web-app", landing)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done; made due as the conclusion makes it, where asked.</summary>

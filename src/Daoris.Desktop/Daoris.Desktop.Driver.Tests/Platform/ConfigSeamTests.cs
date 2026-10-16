@@ -38,16 +38,16 @@ public sealed partial class ConfigSeamTests
     public void An_override_in_another_home_is_never_this_homes_file()
     {
         Assert.Equal(
-            DaorisHome.Entry(Home, HomeEntry.Driver),
+            DaorisHome.Entry(Home, HomeEntry.DriverConfig),
             DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, Path.Combine(Elsewhere, "driver.json"))), Home));
     }
 
     [Fact]
     public void With_no_override_a_home_reads_its_own_driver_json()
     {
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.ResolvePath(Env(), Home));
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.ResolvePath(Env((DaorisHome.Variable, Elsewhere)), Home));
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, "")), Home));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Env(), Home));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Env((DaorisHome.Variable, Elsewhere)), Home));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, "")), Home));
     }
 
     /// <summary>The one resolution, for a door with no home in hand: the override, then the home's file, then nothing to read.</summary>
@@ -57,7 +57,7 @@ public sealed partial class ConfigSeamTests
         var chosen = Path.Combine(Elsewhere, "landing.json");
 
         Assert.Equal(chosen, DriverConfig.FindPath(Env((DriverConfig.PathVariable, chosen), (DaorisHome.Variable, Home))));
-        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.FindPath(Env((DaorisHome.Variable, Home))));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DriverConfig), DriverConfig.FindPath(Env((DaorisHome.Variable, Home))));
         Assert.Null(DriverConfig.FindPath(Env()));
     }
 

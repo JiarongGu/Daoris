@@ -61,7 +61,7 @@ public sealed class ChatGoesOnInSyncProcessTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        config.Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var events = Events;
         using var client = ledger.Client();
         var adapters = AdapterSet.Built();

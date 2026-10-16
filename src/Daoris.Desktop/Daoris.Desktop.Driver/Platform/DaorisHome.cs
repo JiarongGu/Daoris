@@ -241,7 +241,7 @@ public enum HomeCategory
 /// </remarks>
 public sealed record HomeEntry(string Name, HomeCategory Category, string New, string Old, params string[] Holds)
 {
-    public static readonly HomeEntry Driver = new("driver", HomeCategory.Data, "driver.json", "driver.json");
+    public static readonly HomeEntry DriverConfig = new("driver", HomeCategory.Data, "driver.json", "driver.json");
     public static readonly HomeEntry Harnesses = new("harnesses", HomeCategory.Data, "harnesses.json", "harnesses.json");
     public static readonly HomeEntry Accounts = new("accounts", HomeCategory.Data, "accounts.json", "accounts.json");
     public static readonly HomeEntry Cooling = new("cooling", HomeCategory.Data, "cooling.json", "cooling.json");
@@ -304,7 +304,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
     public static IReadOnlyList<HomeEntry> Table { get; } =
     [
-        Driver, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins, Usage,
+        DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
         Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,

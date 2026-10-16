@@ -47,7 +47,7 @@ public sealed class HandOverProcessTests : IDisposable
                 ["stub"] = ["node", TextAgent()],
             },
         };
-        config.Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         return config;
     }
 

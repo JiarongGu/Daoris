@@ -36,7 +36,7 @@ public sealed class DaorisHomeTests
     [Fact]
     public void Requiring_a_file_with_no_home_is_a_refusal_that_names_the_variable()
     {
-        var error = Assert.Throws<DriverException>(() => DaorisHome.Require(Env(), HomeEntry.Driver));
+        var error = Assert.Throws<DriverException>(() => DaorisHome.Require(Env(), HomeEntry.DriverConfig));
         Assert.Contains("DAORIS_HOME", error.Message);
         Assert.Contains("driver.json", error.Message);
     }
@@ -227,8 +227,8 @@ public sealed class DaorisHomeTests
     {
         Assert.Equal(
             Path.Combine("D:/somewhere/data", "driver.json"),
-            DaorisHome.File(Env(("DAORIS_HOME", "D:/somewhere/data")), HomeEntry.Driver));
-        Assert.Null(DaorisHome.File(Env(), HomeEntry.Driver));
+            DaorisHome.File(Env(("DAORIS_HOME", "D:/somewhere/data")), HomeEntry.DriverConfig));
+        Assert.Null(DaorisHome.File(Env(), HomeEntry.DriverConfig));
         var error = Assert.Throws<DriverException>(() => DaorisHome.Require(Env(), HomeEntry.Harnesses));
         Assert.Contains("harnesses.json", error.Message);
     }

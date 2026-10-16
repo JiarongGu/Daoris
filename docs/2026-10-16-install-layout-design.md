@@ -202,7 +202,7 @@ path:
 3. else its new place, where a writer makes it.
 
 Where both places hold the entry, neither is chosen: the reader is refused with a line naming both, and says so (D172's
-HOMELAYOUT2 note, from a design review).
+HOMELAYOUT2 note).
 
 An entry kept per item (a tree, an account home, a quest's files, a session's files) is asked per item, so an old one is
 read where it is and a new one is made in the new place; a list of them reads both places. The window's memory is one

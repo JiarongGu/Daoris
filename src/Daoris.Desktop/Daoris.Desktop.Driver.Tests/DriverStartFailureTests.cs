@@ -49,7 +49,7 @@ public sealed class DriverStartFailureTests : IDisposable
     [Fact]
     public async Task A_loop_whose_choices_do_not_read_says_which_file_and_where_and_writes_it_to_its_log()
     {
-        var path = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(path, """{ "drivable": [""");
 
         var (code, said) = await RunAsync("drive", "--once");

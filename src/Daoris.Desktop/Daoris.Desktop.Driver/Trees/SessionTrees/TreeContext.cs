@@ -40,7 +40,7 @@ internal sealed class TreeContext
 
     /// <summary>
     /// Every tree this machine's Daoris has opened lives under here, and only here: the home's <see cref="HomeEntry.Trees"/>,
-    /// asked short of an item, the folder holding them (HOMELAYOUT2; reading both places per tree is HOMELAYOUT3's).
+    /// asked short of an item, the folder holding them.
     /// </summary>
     internal string TreesRoot => DaorisHome.Entry(Home, HomeEntry.Trees);
 

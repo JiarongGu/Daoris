@@ -443,7 +443,7 @@ public sealed class AutoLandingTests : IDisposable
         (DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true)) with
         {
             Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase) { ["engine"] = new(["codex-acp"], [OpinionRules.Steps]) },
-        }).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         Follow("""[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion","required":true},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""");
         await NamedDoneAsync(root, "s1", "q1");
 
@@ -467,7 +467,7 @@ public sealed class AutoLandingTests : IDisposable
         var config = WorkflowSelection.Apply(
             DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")),
             new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]));
-        config.Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""", kind: "docs");
         var tree = await NamedDoneAsync(root, "s1", "q1");
 
@@ -499,7 +499,7 @@ public sealed class AutoLandingTests : IDisposable
         WorkflowSelection.Apply(
             DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")),
             new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]))
-            .Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""", kind: "docs");
         var tree = await NamedDoneAsync(root, "s1", "q1");
         var binding = WorkflowRunBindings.PathOf(_home, "q1");
@@ -535,7 +535,7 @@ public sealed class AutoLandingTests : IDisposable
         var use = kind is null
             ? new WorkflowUse("docs-to-pr", "engine", null, null)
             : new WorkflowUse("docs-to-pr", null, "aurora", kind);
-        WorkflowSelection.Apply(Config(), use).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        WorkflowSelection.Apply(Config(), use).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var task = kind is null ? null : new WorkflowTaskChoice(kind, null);
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "engine", "aurora", null, task, [], DateTimeOffset.UtcNow)));
     }
@@ -616,7 +616,7 @@ public sealed class AutoLandingTests : IDisposable
         return [.. said, .. await lander.LandAsync(chosen)];
     }
 
-    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done, made due as the driver's conclusion makes it.</summary>
     /// <param name="parent">The quest it follows, where it is a chain's later step.</param>
@@ -655,7 +655,7 @@ public sealed class AutoLandingTests : IDisposable
     private static object? Value(LandingLine line, string key) => line.Data.Single(pair => pair.Key == key).Value;
 
     private void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     private void InstallManifest()
     {

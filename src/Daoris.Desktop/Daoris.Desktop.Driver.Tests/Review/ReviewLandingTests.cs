@@ -333,7 +333,7 @@ public sealed class ReviewLandingTests : IDisposable
             Verdicts = [new QuestReviewVerdictView(ReviewVerdicts.Reviewed) { SetUpMachine = "desk", SetUpSequence = 41, Commit = commit, Words = words, At = Verdicted }],
         };
 
-    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>The landing rule, and a review rule for the workspace and the repository: the repository's own, or its <c>false</c>.</summary>
     private void Configure(LandingRule? landing, bool required, bool repositoryNone = false)
@@ -344,7 +344,7 @@ public sealed class ReviewLandingTests : IDisposable
             Reviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase) { ["web-app"] = repositoryNone ? ReviewRule.None : rule },
             WorkspaceReviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase) { ["aurora"] = rule },
         };
-        (landing is null ? config : config.WithLanding("web-app", landing)).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        (landing is null ? config : config.WithLanding("web-app", landing)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }
 
     /// <summary>
@@ -355,7 +355,7 @@ public sealed class ReviewLandingTests : IDisposable
     {
         WorkflowStore.Add(_home, new WorkflowVersionAdded(
             "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
-        WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "web-app", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "web-app", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "web-app", "aurora", null, null, [], DateTimeOffset.UtcNow)));
     }
 

@@ -146,7 +146,7 @@ public sealed class GitBranchesTests : LandedFixture
         Assert.Empty(row.Commands);
     }
 
-    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.Driver));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     private static async Task<string> RevAsync(string root, string revision) => (await GitAsync(root, "rev-parse", revision)).Trim();
 

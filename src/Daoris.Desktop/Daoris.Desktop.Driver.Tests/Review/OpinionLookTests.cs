@@ -184,7 +184,7 @@ public sealed class OpinionLookTests : IDisposable
         };
     }
 
-    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>
     /// A session that worked in its own tree on `reports` and concluded on its quest's done, owed an opinion as the conclusion makes
@@ -199,7 +199,7 @@ public sealed class OpinionLookTests : IDisposable
             {
                 ["reports"] = new OpinionRule(["codex-acp"], on ?? [OpinionRules.Landing], required),
             },
-        }).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
         var root = Path.Combine(_scratch, "reports");
         Directory.CreateDirectory(root);

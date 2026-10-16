@@ -109,7 +109,7 @@ public abstract class LandingPluginFixture : IDisposable
 
     protected void Rule(LandingRule rule, bool workspace = false) =>
         (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
-            .Save(DaorisHome.Entry(Home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     /// <summary>A repository whose `origin` is a bare repository beside it — somewhere a push lands without leaving the machine.</summary>
     protected async Task<(string Root, string Origin)> RepositoryWithOriginAsync(string name)

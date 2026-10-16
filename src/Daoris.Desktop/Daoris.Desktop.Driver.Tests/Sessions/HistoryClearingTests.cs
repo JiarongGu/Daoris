@@ -26,7 +26,7 @@ public sealed class HistoryClearingTests : IDisposable
 
     private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
-    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.Driver);
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private HistoryWorld World(StandIn service, MachineLog? log = null, Func<DateTimeOffset>? clock = null)
     {

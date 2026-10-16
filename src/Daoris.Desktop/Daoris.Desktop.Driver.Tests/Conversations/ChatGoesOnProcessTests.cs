@@ -43,7 +43,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     private DriverConfig Config(string adapter, params string[] command)
     {
         var config = DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = command } };
-        config.Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         return config;
     }
 

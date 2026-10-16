@@ -92,7 +92,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         var tree = DaorisHome.Entry(Home, HomeEntry.Trees,"engine");
         Directory.CreateDirectory(Path.Combine(tree, "src"));
         File.WriteAllText(Path.Combine(tree, "src", "chunk.ts"), "export const a = 1;\n");
-        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Driver), "{}");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{}");
         using var log = new MachineLog(Home, "desktop", () => new DateTimeOffset(2026, 9, 30, 7, 10, 0, TimeSpan.Zero));
 
         await TreesRoutes.PreviewAsync("s1a2b3c4", tree, Path.Combine(tree, "src", "chunk.ts"), CancellationToken.None, log);
@@ -142,7 +142,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         var tree = DaorisHome.Entry(Home, HomeEntry.Trees,"engine");
         Directory.CreateDirectory(Path.Combine(tree, ".git"));
         File.WriteAllText(Path.Combine(tree, ".git", "config"), "[core]\n");
-        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Driver), "{}");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{}");
 
         var outside = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
             () => TreesRoutes.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None));

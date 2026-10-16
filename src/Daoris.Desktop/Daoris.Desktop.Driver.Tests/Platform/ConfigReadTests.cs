@@ -20,7 +20,7 @@ public sealed class ConfigReadTests : IDisposable
 
     private string Written(string text)
     {
-        var path = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(path, text);
         return path;
     }
@@ -78,7 +78,7 @@ public sealed class ConfigReadTests : IDisposable
     [Fact]
     public void A_missing_file_and_a_good_one_are_not_refused()
     {
-        Assert.Same(DriverConfig.Empty, DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver)));
+        Assert.Same(DriverConfig.Empty, DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig)));
         Assert.Equal(["engine"], DriverConfig.Load(Written("""{ "drivable": ["engine"], "cap": 2 }""")).Drivable);
     }
 }

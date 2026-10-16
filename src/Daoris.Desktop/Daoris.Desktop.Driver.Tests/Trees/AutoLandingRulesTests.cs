@@ -91,7 +91,7 @@ public sealed class AutoLandingRulesTests : IDisposable
     public async Task A_landing_at_done_under_a_rule_changed_meanwhile_lands_nothing(string form)
     {
         var rule = form == "merge" ? LandingRule.Merge : new LandingRule(LandingForm.Branch, "feature/{quest}");
-        DriverConfig.Empty.WithWorkspaceLanding("aurora", rule).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+        DriverConfig.Empty.WithWorkspaceLanding("aurora", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-1a2b3c4d");
 
         var landed = await new SessionTrees(_home).LandAsync(tree, new LandingSubject("s1", "q1", "Fix"), acceptedBy: AcceptedBy.Auto);

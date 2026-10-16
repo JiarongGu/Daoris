@@ -115,7 +115,7 @@ public sealed class PluginPageTests : IDisposable
             .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.lands"))
             .WithLanding("game", new LandingRule(LandingForm.Branch, "fix/{quest}", Plugin: "acme.other"))
             .WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "work/{quest}", Plugin: "acme.lands"))
-            .Save(DaorisHome.Entry(Home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
         var ready = PluginPage.Read(Home, "acme.lands");
         PluginState.Disable(Home, "acme.lands");

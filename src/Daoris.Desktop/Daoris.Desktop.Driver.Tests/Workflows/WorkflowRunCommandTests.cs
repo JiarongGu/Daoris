@@ -264,7 +264,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     /// </summary>
     private string Setup()
     {
-        var path = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(path, """
             {
               "landings": { "engine": { "form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request" } },

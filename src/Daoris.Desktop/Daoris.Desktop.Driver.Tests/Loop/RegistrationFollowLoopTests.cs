@@ -65,7 +65,7 @@ public sealed class RegistrationFollowLoopTests : IDisposable
     [Fact]
     public async Task A_watch_follows_every_line_once_as_it_starts_and_says_it_in_a_looks_report()
     {
-        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1 }""");
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,

@@ -29,7 +29,7 @@ public sealed class HistoryCommandTests : IDisposable
     private HistoryWorld World(HistoryStandIn service, MachineLog? log = null)
     {
         service.Home = _home;
-        return new HistoryWorld(service.Client(), _home, DaorisHome.Entry(_home, HomeEntry.Driver), new SessionProcesses(Sessions)) { Log = log };
+        return new HistoryWorld(service.Client(), _home, DaorisHome.Entry(_home, HomeEntry.DriverConfig), new SessionProcesses(Sessions)) { Log = log };
     }
 
     private async Task<(int Exit, string Said)> RunAsync(HistoryStandIn service, HistoryAsk? ask, MachineLog? log = null)

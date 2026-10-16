@@ -33,7 +33,7 @@ public abstract class Bridge : IDisposable
         // Set BEFORE any module or loop exists — see the remarks above. The home first (D63): every
         // other default derives from it, so a file added under the home later is scratch already.
         Redirect("DAORIS_HOME", Home);
-        Redirect("DAORIS_DRIVER_CONFIG", DaorisHome.Entry(Home, HomeEntry.Driver));
+        Redirect("DAORIS_DRIVER_CONFIG", DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         Redirect("DAORIS_REMOTE_CONFIG", DaorisHome.Entry(Home, HomeEntry.Remotes));
         Redirect("DAORIS_HARNESS_CONFIG", DaorisHome.Entry(Home, HomeEntry.Harnesses));
         // The environment pair outranks the remotes FILE for the whole machine (D48 §5). A developer
@@ -79,7 +79,7 @@ public abstract class Bridge : IDisposable
     /// <summary>This test's own `.daoris` — every file the modules touch lives under it.</summary>
     protected string Home { get; }
 
-    protected string DriverConfigPath => DaorisHome.Entry(Home, HomeEntry.Driver);
+    protected string DriverConfigPath => DaorisHome.Entry(Home, HomeEntry.DriverConfig);
 
     protected string RemotesPath => DaorisHome.Entry(Home, HomeEntry.Remotes);
 

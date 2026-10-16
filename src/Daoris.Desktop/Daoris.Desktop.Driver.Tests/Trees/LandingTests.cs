@@ -713,7 +713,7 @@ public sealed class LandingTests : IDisposable
 
     private void Rule(LandingRule rule, bool workspace = false) =>
         (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
-            .Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     private async Task<string> RepositoryAsync(string name)
     {

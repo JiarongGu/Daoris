@@ -33,7 +33,7 @@ public sealed class AbandonTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.Driver);
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private string Tree(string name) => DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", name).Replace('\\', '/');
 

@@ -238,7 +238,7 @@ public sealed class HandOffTests : LandedFixture
     {
         if (install) InstallManifest();
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id))
-            .Save(DaorisHome.Entry(Home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
     }
 
     private void InstallManifest(string points = "work/land")

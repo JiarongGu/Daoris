@@ -889,7 +889,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(int pollSeconds = 1, RemoteSyncSet? sync = null)
     {
-        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
             { "drivable": ["engine", "tools"], "adapter": "stub", "cap": 3, "pollSeconds": {{pollSeconds}}, "trees": ["engine"] }
             """);

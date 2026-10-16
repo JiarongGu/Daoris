@@ -88,7 +88,7 @@ public sealed class OwnAcceptSubjectTests : IDisposable
             DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "a1b2c3d4"), session, quest, records,
             id => Task.FromResult(_quests.GetValueOrDefault(id)), _ => null, process: null);
 
-    private void Rule(LandingRule rule) => DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+    private void Rule(LandingRule rule) => DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
     private static string RepoRoot()

@@ -54,7 +54,7 @@ public sealed class ChatRunnerTests : IDisposable
         var roster = new HarnessRoster(built, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         using var service = new ServiceClient("http://127.0.0.1:1", null);
         var runner = new ChatRunner(service, built, _home, new SessionProcesses(), harnesses: roster);
-        var config = DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
+        var config = DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
         // Before the tick handed the roster the plugins: the driver's own refusal, naming what exists.
         var unknown = await Assert.ThrowsAsync<DriverException>(() =>

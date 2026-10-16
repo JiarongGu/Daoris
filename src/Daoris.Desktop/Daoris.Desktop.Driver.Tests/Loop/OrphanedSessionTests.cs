@@ -167,14 +167,14 @@ public sealed class OrphanedSessionTests : IDisposable
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
         service.Seed("a1", "working");
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Driver), "{}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig), "{}");
 
         using var client = new ServiceClient(service.Url, null);
         using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var reports = new List<TickReport>();
         var errors = new List<Exception>();
         var watch = new DriverWatch(
-            client, DaorisHome.Entry(_home, HomeEntry.Driver), _home, new SessionProcesses(Markers), sync: null,
+            client, DaorisHome.Entry(_home, HomeEntry.DriverConfig), _home, new SessionProcesses(Markers), sync: null,
             harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         await watch.RunAsync(
@@ -196,7 +196,7 @@ public sealed class OrphanedSessionTests : IDisposable
     public async Task A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop()
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
-        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1, }""");
 
         using var client = new ServiceClient(service.Url, null);

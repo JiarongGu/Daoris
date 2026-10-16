@@ -69,7 +69,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
     public async Task A_shutdown_still_marks_every_running_session_interrupted()
     {
         var processes = new SessionProcesses();
-        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["drivable"] = new[] { "engine", "tools" },

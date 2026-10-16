@@ -168,7 +168,7 @@ public sealed class UpdateDrainTests : IDisposable
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(Func<bool> draining, string holds = "[]")
     {
-        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
             { "drivable": ["engine", "tools"], "holds": {{holds}}, "adapter": "stub", "cap": 3, "pollSeconds": 1, "trees": ["engine", "tools"] }
             """);

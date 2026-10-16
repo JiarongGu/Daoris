@@ -269,7 +269,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
         var root = await RepositoryAsync("engine");
         var landed = await LandedTreeAsync(new SessionTrees(_home), root);
         _ledger.Register("engine", root);
-        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         await File.WriteAllTextAsync(config, """{ "drivable": [], "pollSeconds": 1 }""");
         using var log = Log();
         var watch = new DriverWatch(
@@ -668,7 +668,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
         Assert.Equal(1, work!.Commits);
         Assert.Equal("feature/x", work.Branch);
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: false))
-            .Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var plan = await trees.PlanAsync(moved.Path, new LandingSubject("s1", null, "Fix the gap"));
         Assert.Equal(("branch", "feature/x", true), (plan.Form, plan.Target, plan.Own));
     }
@@ -1241,7 +1241,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
     private SessionTrees LandingTrees()
     {
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .Save(DaorisHome.Entry(_home, HomeEntry.Driver));
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         return new SessionTrees(_home);
     }
 

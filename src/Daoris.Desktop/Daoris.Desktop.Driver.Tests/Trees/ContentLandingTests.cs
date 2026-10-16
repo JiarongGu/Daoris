@@ -49,7 +49,7 @@ public sealed class ContentLandingTests : LandedFixture
     [Fact]
     public async Task A_squash_merged_trees_merge_is_refused_and_the_line_does_not_move()
     {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Tidy: true)).Save(DaorisHome.Entry(Home, HomeEntry.Driver));
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Tidy: true)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");

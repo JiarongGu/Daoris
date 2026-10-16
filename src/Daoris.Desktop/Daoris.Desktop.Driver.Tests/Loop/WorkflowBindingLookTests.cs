@@ -136,7 +136,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(string more)
     {
-        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
             { {{more}} "drivable": ["engine"], "adapter": "stub", "cap": 2, "pollSeconds": 1, "trees": ["engine"] }
             """);
