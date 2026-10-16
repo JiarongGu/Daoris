@@ -38,8 +38,17 @@ internal sealed record ContentProof(ContentHold? Hold, string? Unread)
     /// <summary>The proof read through and found nothing holding the work.</summary>
     public static readonly ContentProof NotHeld = new(null, null);
 
-    /// <summary>The work is held.</summary>
-    public static ContentProof Of(ContentHold hold) => new(hold, null);
+    /// <summary>
+    /// The ref the work was found held on, at the commit the proof compared (FABRIC-END4a, third review): what a removal by this proof rests
+    /// on, and what its delete verifies. Null where the work is not held.
+    /// </summary>
+    internal (string Ref, string Commit)? At { get; init; }
+
+    /// <summary>What a removal by it rests on: <see cref="At"/>, or nothing.</summary>
+    internal IReadOnlyList<(string Ref, string Commit)> Rests => At is { } at ? [at] : [];
+
+    /// <summary>The work is held, on <paramref name="reference"/> at <paramref name="commit"/>.</summary>
+    public static ContentProof Of(ContentHold hold, string reference, string commit) => new(hold, null) { At = (reference, commit) };
 
     /// <summary>A read failed, and nothing found the work held.</summary>
     public static ContentProof UnreadBy(string why) => new(null, why);
@@ -101,10 +110,10 @@ internal sealed class ContentHolds(TreeContext context)
         // PROOF-UNREAD1: a read git could not make is remembered, so no failure ends as "not held"; a hold found by other
         // reads still stands, since it is found, not assumed.
         var (lineForms, unread) = await LandedProofs.ReadLineFormsAsync(cwd, line, ct, refs).ConfigureAwait(false);
-        var forms = new List<(string Name, string Id)>();
+        var forms = new List<(string Name, string Ref, string Id)>();
         foreach (var form in lineForms)
         {
-            if (await TreeRefs.CommitOfAsync(cwd, form.Ref, ct, refs).ConfigureAwait(false) is { } formId) forms.Add((form.Name, formId));
+            if ((form.At ?? await TreeRefs.CommitOfAsync(cwd, form.Ref, ct, refs).ConfigureAwait(false)) is { } formId) forms.Add((form.Name, form.Ref, formId));
             else unread ??= $"git could not read `{form.Name}`";
         }
 
@@ -114,7 +123,7 @@ internal sealed class ContentHolds(TreeContext context)
         if (treeCode != 0) return ContentProof.UnreadBy($"git could not read the branch's tree: {Said(treeErr)}");
 
         IReadOnlyList<string>? changed = null;
-        foreach (var (form, formId) in forms)
+        foreach (var (form, formRef, formId) in forms)
         {
             var (baseCode, mergeBase, baseErr) = await WorkingTree.GitAsync(cwd, ["merge-base", tip, formId], ct).ConfigureAwait(false);
             if (baseCode != 0)
@@ -139,12 +148,12 @@ internal sealed class ContentHolds(TreeContext context)
             if (logCode != 0) unread ??= $"git could not read `{form}`'s commits: {Said(logErr)}";
             else if (trees.Split('\n', StringSplitOptions.TrimEntries).Contains(tree.Trim(), StringComparer.Ordinal))
             {
-                return ContentProof.Of(new ContentHold(form, Squash: true));
+                return ContentProof.Of(new ContentHold(form, Squash: true), formRef, formId);
             }
 
             switch (await SameFilesAsync(cwd, tip, formId, paths, ct).ConfigureAwait(false))
             {
-                case true: return ContentProof.Of(new ContentHold(form, Squash: false));
+                case true: return ContentProof.Of(new ContentHold(form, Squash: false), formRef, formId);
                 case null: unread ??= $"git could not compare the branch's files with `{form}`"; break;
             }
         }
@@ -167,7 +176,7 @@ internal sealed class ContentHolds(TreeContext context)
 
             switch (await SameFilesAsync(cwd, tip, id, changed, ct).ConfigureAwait(false))
             {
-                case true: return ContentProof.Of(new ContentHold(branch, Squash: false));
+                case true: return ContentProof.Of(new ContentHold(branch, Squash: false), $"refs/heads/{branch}", id);
                 case null: unread ??= $"git could not compare the branch's files with `{branch}`"; break;
             }
         }
@@ -241,43 +250,41 @@ internal sealed class ContentHolds(TreeContext context)
     }
 
     /// <summary>
-    /// Each form of <paramref name="line"/> this checkout has, at its commit now (FABRIC-END4a, second review): read before a proof that
-    /// rests on the line, so the delete's transaction verifies the commits the proof saw. Empty where there is no line.
+    /// The refs that hold <paramref name="tip"/> by ancestry, each at the commit this read found it at (FABRIC-END4a, third review): the read
+    /// a proof by ancestry makes, which picks its holder from them (<see cref="HolderOf"/>) and returns it for the delete to verify. Never
+    /// <paramref name="branch"/> itself, a symbolic <c>HEAD</c>, or Daoris's own recovery refs.
     /// </summary>
-    /// <returns>Null where git could not read them, and then nothing may be removed.</returns>
-    internal static async Task<IReadOnlyList<(string Ref, string Commit)>?> LineRefsAsync(string root, string? line, CancellationToken ct)
+    /// <returns>Null where git could not read them, and then nothing is proven.</returns>
+    internal static async Task<IReadOnlyList<(string Ref, string Commit)>?> HoldersAsync(string root, string tip, string branch, CancellationToken ct)
     {
-        if (line is null) return [];
-        string[] forms = [$"refs/heads/{line}", $"refs/remotes/origin/{line}"];
-        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(objectname) %(refname)", .. forms], ct).ConfigureAwait(false);
-        return code != 0 ? null : [.. Pairs(listed).Where(pair => forms.Contains(pair.Ref, StringComparer.Ordinal))];
+        var (code, containing, _) = await WorkingTree.GitAsync(
+            root, ["for-each-ref", "--contains", tip, "--format=%(objectname) %(refname)"], ct).ConfigureAwait(false);
+        return code != 0 ? null
+            : [.. Pairs(containing).Where(pair => pair.Ref != $"refs/heads/{branch}" && !pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal) && AnyRef(pair.Ref))];
     }
 
     /// <summary>
-    /// What a removal's proof rested on (FABRIC-END4a, second review), for <see cref="DeleteJudgedAsync"/> to verify in its transaction:
-    /// <paramref name="forms"/>, the line's forms the judgement read, and, where none of them holds <paramref name="judged"/> by ancestry,
-    /// the first other ref <paramref name="holder"/> admits that does, at the commit git found holding it. Ancestry is read by commit, so
-    /// a holder that moves between this read and the delete refuses it.
+    /// The holder a proof by ancestry rests on (FABRIC-END4a, third review), out of what <see cref="HoldersAsync"/> read: a form of
+    /// <paramref name="line"/> first, its own branch then origin's copy; else the first ref <paramref name="admit"/> takes, a branch of the
+    /// person's before any other, since another session branch may go in the same pass. Null where none holds it: the holder the proof found
+    /// is gone, and that is a refusal, never a fallback to a line that never held the tip.
     /// </summary>
-    /// <param name="holder">Which ref may stand as the holder by ancestry, by its full name: the proof's own rule (D88's branches of the
-    /// person's, <see cref="PersonsRef"/>, or any ref, <see cref="AnyRef"/>).</param>
-    /// <returns>The refs and their commits; null where git could not read them, and then nothing may be removed.</returns>
-    internal static async Task<IReadOnlyList<(string Ref, string Commit)>?> ProofRefsAsync(
-        string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> forms, Func<string, bool> holder, CancellationToken ct)
+    internal static (string Ref, string Commit)? HolderOf(IReadOnlyList<(string Ref, string Commit)> holders, string? line, Func<string, bool> admit)
     {
-        var (found, containing, _) = await WorkingTree.GitAsync(
-            root, ["for-each-ref", "--contains", judged, "--format=%(objectname) %(refname)"], ct).ConfigureAwait(false);
-        if (found != 0) return null;
-        var holders = Pairs(containing).Where(pair => pair.Ref != $"refs/heads/{branch}" && !pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal)).ToList();
-        // A form of the line that holds it is the proof's holder already; else the first ref the proof's rule admits.
-        // A form read at another commit is verified at the one the proof saw, and refuses there: never a second verify of one ref.
-        if (holders.Any(forms.Contains)) return forms;
-        // A branch of the person's first: another session branch may go in the same pass, and the transaction verifies what it names.
-        var admitted = holders.Where(pair => holder(pair.Ref) && !forms.Any(form => form.Ref == pair.Ref)).ToList();
-        return admitted.Where(pair => PersonsRef(pair.Ref)).Concat(admitted).FirstOrDefault() is { Ref: not null } first
-            ? [.. forms, first]
-            : forms;
+        foreach (var form in line is null ? [] : new[] { $"refs/heads/{line}", $"refs/remotes/origin/{line}" })
+        {
+            if (holders.FirstOrDefault(pair => pair.Ref == form) is { Ref: not null } on) return on;
+        }
+
+        var admitted = holders.Where(pair => admit(pair.Ref)).ToList();
+        return admitted.Where(pair => PersonsRef(pair.Ref)).Concat(admitted).FirstOrDefault() is { Ref: not null } first ? first : null;
     }
+
+    /// <summary>A ref as a person names it: a branch's or a remote-tracking branch's short name.</summary>
+    internal static string Named(string reference) =>
+        reference.StartsWith("refs/heads/", StringComparison.Ordinal) ? reference["refs/heads/".Length..]
+        : reference.StartsWith("refs/remotes/", StringComparison.Ordinal) ? reference["refs/remotes/".Length..]
+        : reference;
 
     private static IEnumerable<(string Ref, string Commit)> Pairs(string listed) =>
         listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -310,11 +317,14 @@ internal sealed class ContentHolds(TreeContext context)
     /// git refuses (a lock, a branch made meanwhile) is said as such, and the caller keeps any recovery ref, since
     /// <see cref="DropKeptAsync"/> drops one only while the branch is shown to hold the commit.</para>
     /// </remarks>
-    /// <param name="held">What the proof rested on (<see cref="ProofRefsAsync"/>, or the line's forms the judgement read), each at its commit
-    /// then. Every caller passes it; empty only where no ref's commit was part of the proof.</param>
+    /// <param name="held">What the proof rested on, each ref at the commit the proof read it at, as the proof returned it (FABRIC-END4a, third
+    /// review): the holder by ancestry, the ref holding the work by content, a squashing landing's branch, the landing a landed branch is
+    /// inside and what that one rests on, the form of the line a merge or a pull request's merge was found on. Verified exactly, and never
+    /// looked for again here. Empty is no proof, and keeps the branch.</param>
     internal async Task<string?> DeleteJudgedAsync(
         string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct)
     {
+        if (held.Count == 0) return "nothing its proof rested on was named, so its proof cannot be checked as it goes";
         if (context.BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
         // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
         // not give is no answer to that (AUTOTIDY1).
@@ -330,7 +340,8 @@ internal sealed class ContentHolds(TreeContext context)
 
         if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
         var none = CancellationToken.None;
-        var transaction = string.Concat(held.Select(each => $"verify {each.Ref} {each.Commit}\n")) + $"delete refs/heads/{branch} {judged}\n";
+        // One verify per ref and commit: two parts of a proof resting on the same ref at the same commit name it once.
+        var transaction = string.Concat(held.Distinct().Select(each => $"verify {each.Ref} {each.Commit}\n")) + $"delete refs/heads/{branch} {judged}\n";
         var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], transaction, none).ConfigureAwait(false);
         if (code != 0) return await RefusedAsync(root, branch, judged, held, err).ConfigureAwait(false);
 
@@ -353,11 +364,21 @@ internal sealed class ContentHolds(TreeContext context)
     /// Why git refused the transaction (FABRIC-END4a, second review): the branch gone already (nothing left to delete, null), moved since
     /// it was judged, or a ref the proof rested on no longer at its commit; else git's own words. Nothing was deleted.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Gone only on git's own word</b> (third review): exit 1 from <c>rev-parse --verify --quiet</c> is git's "no such ref". Any other
+    /// failure is a read not made, which is never "gone": the branch is said kept, unread, and the caller keeps any recovery ref, since
+    /// <see cref="DropKeptAsync"/> drops one only where the branch is shown to hold its commit.
+    /// </remarks>
     private static async Task<string?> RefusedAsync(string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, string err)
     {
         var none = CancellationToken.None;
-        var (exists, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
-        if (exists != 0) return null;
+        var (exists, now, readErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
+        if (exists == 1) return null;
+        if (exists != 0)
+        {
+            return $"git would not delete it ({FirstLine(err)}), and could not read whether it still stands ({Said(readErr)}), so it is kept as unread";
+        }
+
         if (now.Trim() != judged) return MovedSince;
         foreach (var (reference, commit) in held)
         {
@@ -383,11 +404,6 @@ internal sealed class ContentHolds(TreeContext context)
         var standing = exists == 0 ? $"a branch of that name was made at {Short(now.Trim())} meanwhile" : FirstLine(err);
         return $"{why}, and Daoris could not put it back at {Short(judged)} ({standing}); its commits stay where its proof found them held";
     }
-
-    private static string Named(string reference) =>
-        reference.StartsWith("refs/heads/", StringComparison.Ordinal) ? reference["refs/heads/".Length..]
-        : reference.StartsWith("refs/remotes/", StringComparison.Ordinal) ? reference["refs/remotes/".Length..]
-        : reference;
 
     private static string Short(string commit) => commit.Length > 12 ? commit[..12] : commit;
 

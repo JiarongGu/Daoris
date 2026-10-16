@@ -227,16 +227,25 @@ public sealed class SessionBranches(string home)
     /// first. An open unit's trace is never dropped nor counted (§D3); the landings are read only where a repository has too many.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Nor is a trace whose tree still lives</b> (FABRIC-END4a, second review): one that names where its tree went (<c>Now</c>)
-    /// while that tree's folder stands is the live tree's tracking, which a branch's removal never retires.
+    /// 🔴 <b>Nor is the trace that follows a live tree</b> (FABRIC-END4a, second review): one that names where its tree went (<c>Now</c>)
+    /// while that tree's folder stands is the live tree's tracking, which a branch's removal never retires. 🔴 <b>Only that one</b> (third
+    /// review): the newest trace of its name where none of that name stands, as <see cref="Following"/> reads; a name recorded and removed
+    /// again and again leaves older traces naming the same folder, and those are retired like any other.
     /// </remarks>
     private IReadOnlyList<GrownBranch> Bounded(IReadOnlyList<GrownBranch> entries)
     {
         var traces = entries.Select((entry, at) => (Entry: entry, At: at)).Where(each => each.Entry.GoneAt is not null).ToList();
         if (!traces.GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > TracesKept)) return entries;
         var open = OpenUnits(home);
+        var following = entries.Select((entry, at) => (Entry: entry, At: at))
+            .GroupBy(each => $"{each.Entry.Repository.ToUpperInvariant()}\n{each.Entry.Branch}", StringComparer.Ordinal)
+            .Where(name => name.All(each => each.Entry.GoneAt is not null))
+            .Select(name => name.MaxBy(each => each.At))
+            .Where(newest => Lives(newest.Entry))
+            .Select(newest => newest.At)
+            .ToHashSet();
         var dropped = traces
-            .Where(each => !Open(each.Entry, open) && !Lives(each.Entry))
+            .Where(each => !Open(each.Entry, open) && !following.Contains(each.At))
             .GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase)
             .SelectMany(group => group.OrderByDescending(each => each.Entry.GoneAt).ThenByDescending(each => each.At).Skip(TracesKept))
             .Select(each => each.At)

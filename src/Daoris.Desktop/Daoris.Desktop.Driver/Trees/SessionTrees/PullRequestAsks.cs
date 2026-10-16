@@ -5,7 +5,14 @@ namespace Daoris.Driver;
 /// source commit it merged, and the landed branch's tip where the answer cleared that branch too. A session branch at or under
 /// either goes, every keep still applying.
 /// </summary>
-public sealed record PullRequestCarrier(LandedBranch Entry, string Source, string? ClearedTip);
+public sealed record PullRequestCarrier(LandedBranch Entry, string Source, string? ClearedTip)
+{
+    /// <summary>
+    /// What a removal on its word rests on (FABRIC-END4a, third review): the form of the line its merge commit was found on, at the commit
+    /// read, and the cleared tip's branch where that tip is what carried the revision (<see cref="PullRequestAsks.CarrierOfAsync"/>).
+    /// </summary>
+    internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
+}
 
 /// <summary>
 /// A landed branch's pull request, asked about and judged (PLUGHOOK1a, PLUGHOOK1c, D148; PART10l, out of
@@ -210,7 +217,8 @@ internal sealed class PullRequestAsks(TreeContext context)
         string? mergeOn = null;
         foreach (var form in forms)
         {
-            var (on, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", merge, form.Ref], ct).ConfigureAwait(false);
+            // FABRIC-END4a, third review: at the commit the form was read at, which a removal by this verdict verifies.
+            var (on, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", merge, form.Rev], ct).ConfigureAwait(false);
             if (on != 0) continue;
             mergeOn = form.Name;
             break;
@@ -244,13 +252,22 @@ internal sealed class PullRequestAsks(TreeContext context)
         {
             var tip = entry.GoneAt is null ? await LandedProofs.StandingTipAsync(root, entry, ct, refs).ConfigureAwait(false) : null;
             var verdict = await VerdictAsync(root, line, forms, entry.PullRequestState!, tip, ct).ConfigureAwait(false);
-            if (verdict.Carries) carriers.Add(new PullRequestCarrier(entry, entry.PullRequestState!.SourceCommit!, verdict.Clears ? tip : null));
+            if (verdict.Carries)
+            {
+                carriers.Add(new PullRequestCarrier(entry, entry.PullRequestState!.SourceCommit!, verdict.Clears ? tip : null)
+                {
+                    Rests = LandedProofs.RestsOn(forms.FirstOrDefault(form => form.Name == verdict.Form)),
+                });
+            }
         }
 
         return carriers;
     }
 
-    /// <summary>The carrier whose pull request carried <paramref name="revision"/>: at or under its source commit, or under a tip it cleared.</summary>
+    /// <summary>
+    /// The carrier whose pull request carried <paramref name="revision"/>: at or under its source commit, or under a tip it cleared; that tip's
+    /// branch at it is then one more thing a removal by it rests on (FABRIC-END4a, third review).
+    /// </summary>
     internal static async Task<PullRequestCarrier?> CarrierOfAsync(
         string root, string revision, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct)
     {
@@ -260,7 +277,8 @@ internal sealed class PullRequestAsks(TreeContext context)
             {
                 if (over is null) continue;
                 var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", revision, over], ct).ConfigureAwait(false);
-                if (code == 0) return carrier;
+                if (code != 0) continue;
+                return over == carrier.Source ? carrier : carrier with { Rests = [.. carrier.Rests, ($"refs/heads/{carrier.Entry.Branch}", over)] };
             }
         }
 

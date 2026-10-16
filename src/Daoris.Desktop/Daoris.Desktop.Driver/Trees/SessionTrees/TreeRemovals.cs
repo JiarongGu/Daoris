@@ -50,7 +50,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         LandedBranch? squashedOn = null;
         string? judged = null;
         string? kept = null;
-        IReadOnlyList<(string Ref, string Commit)> forms = [];
+        // What the proof that clears the branch rests on (FABRIC-END4a, third review), each ref at the commit it read: returned by that proof
+        // and verified exactly by the delete, never looked for again.
+        IReadOnlyList<(string Ref, string Commit)> rests = [];
 
         if (!force)
         {
@@ -99,15 +101,6 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 var (workspace, repository) = context.OwnerOf(full);
                 var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
                 var canonical = line ?? "HEAD";
-                // The line's forms at their commits, read before any proof (FABRIC-END4a, second review): the delete verifies them, and the
-                // branch of the person's holding its commits, in one transaction.
-                if (await ContentHolds.LineRefsAsync(root, line, ct).ConfigureAwait(false) is not { } read)
-                {
-                    return new(false, $"Daoris cannot read the line the work on `{branch}` is judged against. "
-                        + "The tree stays; say it again with --force to discard it.");
-                }
-
-                forms = read;
                 // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
                 // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
                 // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
@@ -123,9 +116,30 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 // the content can. Before it, a squashing landing's record, which vouches as ancestry would (PROCESS1b-ii point 3).
                 // Work held nowhere still refuses, and force stays its door.
                 ContentProof? proof = null;
-                if (!string.IsNullOrWhiteSpace(unmerged)
-                    && (squashedOn = await squashes.SquashedHolderAsync(full, repository, judged, ct).ConfigureAwait(false)) is null
-                    && (held = (proof = await ContentHolds.HeldByContentAsync(full, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false)).Hold) is null)
+                if (string.IsNullOrWhiteSpace(unmerged))
+                {
+                    // FABRIC-END4a, third review: the branch of the person's holding it, at the commit read, is what the delete verifies; one
+                    // gone since the judgement read none is a refusal.
+                    if (await ContentHolds.HoldersAsync(root, judged, named, ct).ConfigureAwait(false) is not { } holders)
+                    {
+                        return new(false, $"Daoris cannot tell which branch of yours holds the work on `{branch}`. "
+                            + "The tree stays; say it again with --force to discard it.");
+                    }
+
+                    if (ContentHolds.HolderOf(holders, line, ContentHolds.PersonsRef) is not { } holder)
+                    {
+                        return new(false, $"the branch of yours that held the work on `{branch}` went as it was judged. "
+                            + "The tree stays; say it again with --force to discard it.");
+                    }
+
+                    rests = [holder];
+                }
+                else if (await squashes.SquashedHoldAsync(full, repository, judged, ct).ConfigureAwait(false) is { } squashed)
+                {
+                    squashedOn = squashed.Entry;
+                    rests = [($"refs/heads/{squashed.Entry.Branch}", squashed.At)];
+                }
+                else if ((held = (proof = await ContentHolds.HeldByContentAsync(full, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false)).Hold) is null)
                 {
                     // PROOF-UNREAD1: a proof git could not read is not "held nowhere"; the refusal says it could not tell.
                     if (proof!.Unread is { } unread)
@@ -143,6 +157,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own before anything goes.
                 if (held is not null)
                 {
+                    rests = proof!.Rests;
                     var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
                     if (reference is null)
                     {
@@ -196,10 +211,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             }
             else
             {
-                var proven = await ContentHolds.ProofRefsAsync(root, branch, judged, forms, ContentHolds.PersonsRef, ct).ConfigureAwait(false);
-                stays = proven is null
-                    ? "Daoris could not read what its proof rests on"
-                    : await content.DeleteJudgedAsync(root, branch, judged, proven, ct).ConfigureAwait(false);
+                stays = await content.DeleteJudgedAsync(root, branch, judged, rests, ct).ConfigureAwait(false);
                 if (stays is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
             }
 
