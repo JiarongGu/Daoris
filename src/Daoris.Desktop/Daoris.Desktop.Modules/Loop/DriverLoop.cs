@@ -567,6 +567,8 @@ public sealed class DriverLoop(
             // STATEHUB1e (D169 point 8): a terminal's `trees` press, told here, reaches every window as the window's press would,
             // and the plugins at `state/changed` with it.
             Told = press => StatePublisher.Publish(eventBus, press),
+            // FABRIC-EVENT2: each look the folder woke, with its ms and why.
+            Log = log,
         };
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
