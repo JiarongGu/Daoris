@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   DEFAULTS, PERMISSIONS_FILE, addRule, commandRules, composeRules, permissionsPath, readPermissions,
   removeRule, ruleRefusal, switchDefault, writePermissions,
