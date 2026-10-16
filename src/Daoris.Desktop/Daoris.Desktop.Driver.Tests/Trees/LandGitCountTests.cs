@@ -109,6 +109,47 @@ public sealed class LandGitCountTests : IDisposable
         Judge(starts, MergeCeiling);
     }
 
+    /// <summary>
+    /// 🔴 A fact is kept only until a git of the landing's own may move a ref: the branch made answers the question it was asked
+    /// before it was made, and a plugin's push (<see cref="GitFacts.Dropped"/>) drops what was held.
+    /// </summary>
+    [Fact]
+    public async Task A_fact_asked_before_a_write_is_asked_again_after_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var starts = new List<string>();
+        string[] ask = ["rev-parse", "--verify", "--quiet", "refs/heads/made^{commit}"];
+        using (Counting(starts))
+        using (GitFacts.Within())
+        {
+            var before = await WorkingTree.GitAsync(root, ask, default);
+            var again = await WorkingTree.GitAsync(root, ask, default);
+            Assert.Equal((1, 1), (before.Code, again.Code));
+            Assert.Single(starts);
+
+            await WorkingTree.GitAsync(root, ["branch", "made", "HEAD"], default);
+            var after = await WorkingTree.GitAsync(root, ask, default);
+            Assert.Equal(0, after.Code);
+            Assert.Equal(3, starts.Count);
+
+            // A write that is not git's: dropped by its caller, as the plugin's push is.
+            await GitAsync(root, "branch", "-D", "made");
+            GitFacts.Dropped();
+            Assert.Equal(1, (await WorkingTree.GitAsync(root, ask, default)).Code);
+            Assert.Equal(4, starts.Count);
+        }
+
+        // Outside a landing nothing is kept: each ask is git's.
+        starts.Clear();
+        using (Counting(starts))
+        {
+            await WorkingTree.GitAsync(root, ask, default);
+            await WorkingTree.GitAsync(root, ask, default);
+        }
+
+        Assert.Equal(2, starts.Count);
+    }
+
     // Git starts of one landing on this fixture, before LANDGIT1 and after: the look's automatic landing 61 and 34, the press on a
     // squash rule 54 and 42, the press on a merge rule 45 and 34. The tidy's own reads (its proof and its delete) are asked as they
     // were: what they repeat of the head is read after the landing's writes, so it is read again.
