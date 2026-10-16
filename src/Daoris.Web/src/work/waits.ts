@@ -3,7 +3,7 @@ import { answeredPark } from '../design/ui';
 import type { RuleProposal } from '../settings/AgentRules';
 import { OPEN_STATES } from '../settings/proposals';
 import { workflowHolds } from '../workflow/gate';
-import type { LineBehind } from './diff';
+import type { LineBehind, SessionDiff } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
 import { heldDiscardable } from './HeldDiscard';
 import { type HelperAskRow, waitsOnWord } from './HelperAsks';
@@ -59,6 +59,34 @@ export function landingStands({ lands, landing, behind }: {
   // words its session is asked to rebase with; *Accept…* comes back once the tree changes and the plan reads it again.
   const conflict = acceptable ? landing?.conflict ?? null : null;
   return { review, workflow, second, opinionWaits, answers, acceptable, conflict };
+}
+
+/**
+ * What an open conversation's own tree offers to land once its turn has ended (ACCEPTFOOT1, D164's note): the commits beyond its
+ * line, on the branch its tree is on, from the review's own answer. Its record stays `working` between turns, so the driver's look,
+ * which reads records alone, offers it nothing (LAND4 leaves a live session's tree to it); the turn's state is the driver's word
+ * the page holds (CONV4a). None while a turn runs or words wait to start one, before that word is known, in the person's checkout
+ * (no tree of its own), where the line was not read or nothing is beyond it (REVIEWBASE4), or once the review reads as landed. The
+ * press is the review's Accept, which judges again; this only says there is work it would land.
+ */
+export function conversationOffer({ tree, turn, review }: {
+  /** Its own tree's name (`ownTree`), null where it works in the person's checkout. */
+  tree: string | null;
+  /** Where its turns stand, as the driver holds them; absent until it answers. */
+  turn?: { taking: boolean; queued: readonly unknown[] } | null;
+  review?: SessionDiff | null;
+}): LandOffer | null {
+  if (!tree || !turn || turn.taking || turn.queued.length > 0) return null;
+  if (!review || review.source === 'branch' || review.landed?.asLanded) return null;
+  const ahead = review.behind?.ahead ?? 0;
+  if (ahead <= 0) return null;
+  return {
+    // The tree's own branch where it moved onto one (TREEFOLLOW1), else the layout's name, as the driver's offer says it.
+    branch: review.treeBranch ?? `daoris/${tree}`,
+    tree,
+    commits: ahead,
+    uncommitted: review.uncommitted?.files.length ?? 0,
+  };
 }
 
 /**

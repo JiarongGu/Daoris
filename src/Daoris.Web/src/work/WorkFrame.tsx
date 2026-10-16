@@ -29,7 +29,7 @@ import { type WaitProps, WaitStrip } from './WaitStrip';
 import { type AnchorWait, anchorOf, waitEvents } from './anchors';
 import type { RuleAsk } from './ProposedRules';
 import { useRuleAnswer } from './ruleAnswer';
-import { rulesAsked, waitsOf } from './waits';
+import { conversationOffer, rulesAsked, waitsOf } from './waits';
 import { useWaitsOnScreen } from './waitsOnScreen';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';
@@ -1364,16 +1364,25 @@ export function WorkFrame({
   const grouping = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
   // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
   // put it: the review's own plan, asked only where there is something to land, under the review's key.
-  const lands = attended && here && grouping?.lands ? grouping.lands : null;
+  const driverOffers = attended && here && grouping?.lands ? grouping.lands : null;
+  // ACCEPTFOOT1 (D164's note): an open conversation's record stays `working` between turns, so the driver's look offers its tree
+  // nothing; once its turn has ended, by the driver's word on its turns, the review's own answer says what is beyond the line.
+  const talksInTree = !driverOffers && talking && attended
+    ? ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root)
+    : null;
+  const turnHeld = talksInTree ? chatTurns[attended!.id] : undefined;
+  const turnEnded = Boolean(turnHeld && !turnHeld.taking && turnHeld.queued.length === 0);
+  // How the tree stands against its line, from the review's own answer (REVIEWBASE5): the same query the review reads, so the
+  // head offers no *Accept…* where the review says nothing is beyond the line. Asked only where there is something offered, or a
+  // conversation's turn has ended in a tree of its own.
+  const reviewRead = useSessionDiff(driverOffers || turnEnded ? attended!.id : null, attended ? { updated: attended.updated, live: SESSION_ACTIVE.has(attended.state) } : null);
+  const behind = reviewRead.data?.behind ?? null;
+  const lands = driverOffers ?? conversationOffer({ tree: talksInTree, turn: turnHeld, review: reviewRead.data });
   // The branch a moved tree is on (TREEFOLLOWWEB2): the head names it where the clean-up lists no `daoris/<folder>` row for it.
   const ownBranch = attended && here ? grouping?.work?.branch ?? null : null;
   // LANDNAME1b: the branch name typed in the head's land ask, so its plan is asked again with it and a refusal shows first.
   const [landName, setLandName] = useState('');
   const landing = useLanding(lands ? attended!.id : null, landName);
-  // How the tree stands against its line, from the review's own answer (REVIEWBASE5): the same query the review reads, so the
-  // head offers no *Accept…* where the review says nothing is beyond the line. Asked only where there is something offered.
-  const reviewRead = useSessionDiff(lands ? attended!.id : null, attended ? { updated: attended.updated, live: SESSION_ACTIVE.has(attended.state) } : null);
-  const behind = reviewRead.data?.behind ?? null;
   // Another session's page is another ask: a name typed for one is not carried to the next.
   useEffect(() => setLandName(''), [attended?.id]);
   const land = useLandSessionTree();

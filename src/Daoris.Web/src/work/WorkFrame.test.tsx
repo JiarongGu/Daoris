@@ -4380,6 +4380,60 @@ describe('acting on what a session landed', () => {
     expect(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' })).toHaveValue('');
   });
 
+  /**
+   * ACCEPTFOOT1 (D164's note, D168 point 2): the owner, 2026-10-16, found no *Accept* in an open conversation whose turn ended
+   * with a commit beyond the line: its record stays `working`, so the driver's look offered nothing, and only the review's side
+   * bar had the press. Once its turn ends, the head and the foot offer it from the review's own answer; never while a turn runs.
+   */
+  describe('an open conversation whose turn ended with work', () => {
+    const TALK = { ...CHAT, tree: 'C:/somewhere/.daoris/trees/default/engine/s-c0ffee11' };
+    const BEYOND = { ...DIFF, session: 'c0ffee11', behind: { line: 'main', commits: 0, ahead: 1 }, treeBranch: 'daoris/s-c0ffee11' };
+    const answering = (review: object, taking = false) => async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking };
+      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 'c0ffee11', group: 'working', shown: 'working', archived: false, teammate: false }] };
+      if (type === 'LANDING') return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace' };
+      if (type === 'SESSION_DIFF') return review;
+      return DRIVER_STATE;
+    };
+
+    it('offers *Accept…* at its foot and its head once the turn has ended', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering(BEYOND));
+
+      show('c0ffee11');
+      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+      // The head's and the foot's, one press (D56).
+      expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(2);
+    });
+
+    it('offers none while a turn runs, and offers it the moment the turn ends', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering(BEYOND, true));
+
+      show('c0ffee11');
+      expect(await screen.findByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
+
+      act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: false }));
+      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    });
+
+    it('offers none where its tree holds nothing beyond the line (REVIEWBASE4)', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering({ ...BEYOND, files: [], behind: { line: 'main', commits: 0, ahead: 0 } }));
+
+      show('c0ffee11');
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything()));
+      expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Waiting on you' })).not.toBeInTheDocument();
+    });
+  });
+
   // WAITFOOT2a: the strip stands aside while the head's waits are on screen, never from under an ask open in it.
   it('keeps the strip up while the work\'s ask is open in it, though the head came on screen', async () => {
     const watched = watchScreen();

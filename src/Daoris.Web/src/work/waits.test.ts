@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { GoAhead, Session } from '../data/api';
 import type { RuleProposal } from '../settings/AgentRules';
+import type { SessionDiff } from './diff';
 import type { HelperAskRow } from './HelperAsks';
 import { GATES } from './opinionFixtures';
-import { landingStands, rulesAsked, waitsOf } from './waits';
+import { conversationOffer, landingStands, rulesAsked, waitsOf } from './waits';
 
 // WAITFOOT1b (D168 point 2): which waits on the person stand, one rule the foot's strip and the head's work read, so the two
 // cannot disagree. A wait is the person's to press; what waits on an agent, a workflow or nothing is not one.
@@ -156,5 +157,47 @@ describe('how the work stands for its landing', () => {
     // A dispute *Accept…* answers keeps it, with the token it sends back (XAGENT1g).
     expect(landingStands({ lands: LANDS, landing: { ...PLAN, opinion: { ...GATES.disputed, answers: 't0k' } } }))
       .toMatchObject({ acceptable: true, answers: 't0k' });
+  });
+});
+
+// ACCEPTFOOT1 (D164's note): an open conversation's record stays `working` between turns, so the driver's look offers its tree
+// nothing; once its turn has ended, the review's own answer says what is beyond the line, and that is its offer.
+describe('what an open conversation offers once its turn has ended', () => {
+  const ENDED = { taking: false, queued: [] };
+  const REVIEW = {
+    session: 'c0ffee11', base: 'abc1234', truncated: null, files: [{ path: 'a.ts', status: 'modified', added: 1, removed: 0, patch: '' }],
+    behind: { line: 'main', commits: 0, ahead: 2 }, treeBranch: 'daoris/s-c0ffee11',
+  };
+
+  it('offers the commits beyond the line on the branch its tree is on', () => {
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: REVIEW }))
+      .toEqual({ branch: 'daoris/s-c0ffee11', tree: 's-c0ffee11', commits: 2, uncommitted: 0 });
+    // A branch its agent moved it to (TREEFOLLOW1), and the uncommitted files the ask counts.
+    const uncommitted = { files: [REVIEW.files[0]!], truncated: false };
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: { ...REVIEW, treeBranch: 'feature/x', uncommitted } }))
+      .toEqual({ branch: 'feature/x', tree: 's-c0ffee11', commits: 2, uncommitted: 1 });
+    // A host before REVIEWBASE4 names no branch: the layout's, as the driver's offer says it.
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: { ...REVIEW, treeBranch: undefined } })?.branch)
+      .toBe('daoris/s-c0ffee11');
+  });
+
+  it('offers nothing while its turn runs, is queued, or is not known yet', () => {
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: { taking: true, queued: [] }, review: REVIEW })).toBeNull();
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: { taking: false, queued: [{ text: 'and then' }] }, review: REVIEW })).toBeNull();
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: undefined, review: REVIEW })).toBeNull();
+  });
+
+  it('offers nothing where nothing is beyond the line, or the line was not read (REVIEWBASE4)', () => {
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: { ...REVIEW, behind: { line: 'main', commits: 0, ahead: 0 } } }))
+      .toBeNull();
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: { ...REVIEW, behind: null } })).toBeNull();
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: undefined })).toBeNull();
+  });
+
+  it('offers nothing in the person\'s checkout, or once the review reads as landed', () => {
+    expect(conversationOffer({ tree: null, turn: ENDED, review: REVIEW })).toBeNull();
+    const landed = { branch: 'feature/x', state: 'standing', asLanded: true } as NonNullable<SessionDiff['landed']>;
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: { ...REVIEW, landed } })).toBeNull();
+    expect(conversationOffer({ tree: 's-c0ffee11', turn: ENDED, review: { ...REVIEW, source: 'branch' } })).toBeNull();
   });
 });
