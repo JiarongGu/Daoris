@@ -35,9 +35,20 @@ public sealed record GrownBranch(
     /// </summary>
     public DateTimeOffset? GoneAt { get; init; }
 
+    /// <summary>
+    /// What kept the line-held branch when the look's tidy last tried it (FABRIC-END4a, the design §D3's <i>blocked</i>, with why): the
+    /// guard's code (<see cref="TidyKept"/>, or the press's <see cref="SweepKind.Dirty"/> and <see cref="SweepKind.InUse"/>) and when.
+    /// Written only by the tidy's effect (<see cref="TidyEffect"/>); dropped when the branch is recorded again or goes. Additive: an
+    /// entry written before it reads as null.
+    /// </summary>
+    public TidyBlock? Blocked { get; init; }
+
     /// <summary>A new unit's id: written once, where a tree opens.</summary>
     public static string NewUnit() => $"unit-{Guid.NewGuid():N}";
 }
+
+/// <summary>A guard that kept a line-held branch at the look's tidy (FABRIC-END4a): its code, and when it last kept it.</summary>
+public sealed record TidyBlock(string Why, DateTimeOffset At);
 
 /// <summary>
 /// Where this machine's session branches grew from (WSR6): <c>&lt;home&gt;/session-branches.json</c>. Written
@@ -95,8 +106,23 @@ public sealed class SessionBranches(string home)
     {
         var standing = all.LastOrDefault(each => Standing(each, entry.Repository, entry.Branch));
         return [.. all.Where(each => !Standing(each, entry.Repository, entry.Branch)),
-            entry with { Unit = standing?.Unit ?? entry.Unit, Held = standing?.Held, GoneAt = null }];
+            entry with { Unit = standing?.Unit ?? entry.Unit, Held = standing?.Held, GoneAt = null, Blocked = null }];
     });
+
+    /// <summary>
+    /// The tidy's effect's write (FABRIC-END4a, <see cref="TidyEffect"/>, its only caller): the guard that kept the standing branch, written
+    /// only where it says something new, so a refusal repeated on every wake writes the file once.
+    /// </summary>
+    /// <remarks>
+    /// Only the home's lease holder writes it, as only it keeps ends (FABRIC-END2): a process beside it (<c>drive --share</c>) writes nothing.
+    /// The reason is compared again inside the record's lock, so two writers never rewrite one reason with two moments.
+    /// </remarks>
+    internal void Block(string repository, string branch, string why, DateTimeOffset at)
+    {
+        if (!HomeLease.HeldHere(home)) return;
+        if (Of(repository, branch) is not { } standing || standing.Blocked?.Why == why) return;
+        Edit(all => [.. all.Select(each => Standing(each, repository, branch) && each.Blocked?.Why != why ? each with { Blocked = new TidyBlock(why, at) } : each)]);
+    }
 
     /// <summary>
     /// The end judgement's write (FABRIC-END2, <see cref="EndKeeping"/>, its only caller): the standing entry's held fact, or none where it
@@ -126,12 +152,28 @@ public sealed class SessionBranches(string home)
                 }
                 else if (each.Held is not null || (each.Unit is { } unit && open.Contains(unit)))
                 {
-                    kept.Add(each with { GoneAt = now });
+                    kept.Add(each with { GoneAt = now, Blocked = null });
                 }
             }
 
             return kept;
         });
+    }
+
+    /// <summary>
+    /// The look's tidy removed these branches (FABRIC-END4a review): each standing entry whose tree moved onto a branch of its own
+    /// (<see cref="GrownBranch.Now"/>) becomes its trace at once, keeping where the tree's work is, since <c>ForgetGoneAsync</c> keeps
+    /// such an entry standing while that tree or branch exists, and a standing entry of a deleted branch would stay pending for ever.
+    /// The rest are forgotten as ever, by <c>ForgetGoneAsync</c>.
+    /// </summary>
+    public void Gone(string repository, IReadOnlyCollection<string> branches)
+    {
+        if (!All().Any(each => each.Now is not null && Same(each, repository, each.Branch) && branches.Contains(each.Branch, StringComparer.Ordinal))) return;
+        var now = DateTimeOffset.UtcNow;
+        Edit(all => [.. all.Select(each => each.GoneAt is null && each.Now is not null
+            && string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && branches.Contains(each.Branch, StringComparer.Ordinal)
+                ? each with { GoneAt = now, Blocked = null }
+                : each)]);
     }
 
     /// <summary>
@@ -198,6 +240,15 @@ public sealed class SessionBranches(string home)
             if (entry.Unit is not null) writer.WriteString("unit", entry.Unit);
             if (entry.Held is { } held) HeldFact.Write(writer, held);
             if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
+            // FABRIC-END4a: only where a guard kept it, so an entry from before reads as it did.
+            if (entry.Blocked is { } blocked)
+            {
+                writer.WriteStartObject("blocked");
+                writer.WriteString("why", blocked.Why);
+                writer.WriteString("at", Moments.Write(blocked.At));
+                writer.WriteEndObject();
+            }
+
             writer.WriteEndObject();
         }
 
@@ -220,6 +271,10 @@ public sealed class SessionBranches(string home)
             Unit = Text(element, "unit"),
             Held = HeldFact.Read(element),
             GoneAt = Moments.Read(Text(element, "goneAt")),
+            Blocked = element.TryGetProperty("blocked", out var blocked) && blocked.ValueKind == JsonValueKind.Object
+                && Text(blocked, "why") is { } why && Moments.Read(Text(blocked, "at")) is { } when
+                    ? new TidyBlock(why, when)
+                    : null,
         };
     }
 }
