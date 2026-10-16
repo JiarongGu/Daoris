@@ -30,6 +30,14 @@ internal static class SkillsSpawnProbe
             $"---\nname: triage\ndescription: Sort the issues by what they block.\n---\n\n{SkillWords}\n");
     }
 
+    /// <summary>
+    /// A Daoris account for Claude Code's doors in the home, where a start that walks the roster now runs (OWNSPACE1a, D175
+    /// point 2): without one an intake's or a helper's start is held for its sign-in and nothing is spawned. The stand-in
+    /// harness answers its sign-in question as signed in. A reviewer's pass is handed its selection, so it needs none.
+    /// </summary>
+    public static void SignIn(string home) =>
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(home, "claude-code", "daoris"));
+
     /// <summary>The stand-in harness for <paramref name="adapter"/>, written under the home; its command is <c>node script probe</c>.</summary>
     public static IReadOnlyList<string> Command(string home, string adapter)
     {

@@ -582,6 +582,7 @@ public sealed class IntakeTests : IDisposable
     public async Task An_intake_is_handed_a_plugins_skills_on_either_door_and_the_folder_goes_with_its_session(string adapter)
     {
         SkillsSpawnProbe.Install(_home);
+        SkillsSpawnProbe.SignIn(_home);
         var config = DriverConfig.Empty with
         {
             Adapter = adapter,
