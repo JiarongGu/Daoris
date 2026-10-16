@@ -204,7 +204,7 @@ on a clock (D147:62, D148:84-85; the owner's own words, D173's events note point
 - when the person's own `git fetch` or pull moves `refs/remotes/origin/<line>`, which the ref watcher hears: a plugin's
   completed answer can now be confirmed here;
 - at D148's four occasions, which stand;
-- at the window's focus while a handed unit waits on its pull request, bounded by D148's one minute (§Q3).
+- at the window's focus while a handed unit waits on its pull request, bounded by D148's one minute (§Q4).
 
 At each new moment the plugin's ask goes with a fetch of the line, so a completed answer's merge commit is held here for
 git to confirm (D148 point 4). None of them is a press that removes. Without any of these moments, a completion on the
@@ -343,7 +343,7 @@ There is no `end` setting, and none is added. The cycle is resolved as *Accept* 
 | *Accept* at done (`autoAccept`, D145) | at the quest's done, by the rule's switch | as the form it lands by | as that form | as that form |
 | A chain's advance (LAND2c) | each later done advances the landing branch | each session when the line holds its advance's `To` | as the form, per advance | each session branch as its advance ends |
 | A tree its agent moved (TREEFOLLOW1) | as its form, on the branch it moved to (`Now`) | when the line holds `Now`'s work; landed only on the person's other branch is not ended (D88:150-153) | as the form, on `Now` | as the form |
-| No landing (no rule; the person merges by hand) | never by Daoris | when the line holds it | the look's `landed` kinds, as AUTOTIDY2a | the session branch and its tree |
+| Not accepted (the person integrates the session branch by hand, with no *Accept*) | never by Daoris | when the line holds it | the look's `landed` kinds, as AUTOTIDY2a | the session branch and its tree |
 | Nothing beyond the line | - | at once: there is nothing to hand | `empty` (the branch holds no commit the line lacks) | the session branch and its tree |
 
 Removal by the person's authority is not on this table and does not wait for an end (§B6): LAND3's tidy at *Accept* takes
@@ -493,7 +493,8 @@ workspace's); `twins.md`'s rows for the driver's choices and for plugins.
 - **§B5:** `Ended` is kept as `Held` with the same fields and rules. A plugin's steps are kept beside it as `Steps`, and
   *ended* is derived at read, never stored (§C7).
 - **§B7:** a push may be a defined end, on its evidence (§C2).
-- **§B8:** the automatic tidy takes a unit at the later of *held* and *ended* (§C3). Everything else stands.
+- **§B8:** the automatic tidy still needs *held*. Whether it also waits for an end defined after the line is the owner's
+  choice (§C3, §Q1). Everything else stands.
 
 ## C2. The cycle: its steps, its end, its definition
 
@@ -505,11 +506,13 @@ plugin declares:
 | `claimed` | the agent's done | the ledger (Sessions.cs:10-41, Quests.cs:6-19) | **no**: a claim, and the owner's own condition is that a step is reached only on git's or a plugin's evidence | no |
 | `handed` | Daoris's landing: the landing branch made at its recorded tip; for the merge form, the merge on the line | the landing entry (`LandedAt`, `Tip`, `AcceptedBy`); for a merge, `Held` | yes | no (a merge is *held* at once) |
 | `pushed` | the plugin's `work/land` answer that it pushed, at its pushed tip, **and** git's remote-tracking ref holding that tip (a push moves `refs/remotes/<remote>/<branch>`, which the ref watcher hears) | `Pushed` and `PushedTip` on the landing entry; the ref read again at each judgement | yes | no |
-| `pull-request` | the plugin's `completed` answer with the full merge and source commits and the line as its target (D148 point 3) | `PullRequestState` on the landing entry (D148 point 6) | yes | no, until git holds the merge commit on the line, which is `line` |
+| `pull-request` | the plugin's `completed` answer with the full merge and source commits (D148 point 3), its target the line, and the recorded tip the source commit or an ancestor of it held here: D148 point 4's first and third checks | `PullRequestState` on the landing entry (D148 point 6) | yes | no: its second check, the merge commit held on the local line or origin's copy, is `line` |
 | `line` | git's proof (§B3) | `Held` on the entry (§C7) | yes, **the default** | **yes**: this is *held* |
 | `<plugin>/<step>` | the plugin's event and its evidence (§C4), bound to a commit | `Steps` on the entry | yes | no |
 
 Every step after `handed` is about a commit: a newer commit on the work makes it stale for that work (D157 §5.3).
+`pushed` and `pull-request` are built in: a plugin speaks them through the points it already has (`work/land`'s answer,
+`work/state`'s answer or its event form, §C4), never through its declared `steps`, which name only its own.
 
 **The definition: a `cycle` on the landing rule.** Its home is `landings` and `workspaceLandings` (Landing.cs:47; read and
 written at DriverConfig.cs:842-881):
@@ -524,11 +527,21 @@ written at DriverConfig.cs:842-881):
   `end` naming a plugin step includes that step without listing it.
 - **Why the landing rule.** The end is how work proceeds after it lands: D157 §2.3 gives that sort of field to the landing
   rule under Current (`form`, `autoAccept`) and to the workflow where a named one governs. The plugin a cycle's steps need
-  is already the rule's `plugin`. A key of its own would be a second rule that had to agree with this one (rejected below).
+  is already the rule's `plugin`. A key of its own (`cycles`, `workspaceCycles`) was weighed: a validation could reconcile
+  the two declarations. The landing rule is still preferred because D164's whole-rule inheritance then moves the landing
+  and its end together, where two keys would let a repository take its workspace's end beside a landing rule of its own,
+  a pairing nobody wrote; and because one Setup section and one twin carry both.
 - **Inheritance.** The repository's whole landing rule replaces its workspace's (D164's amendment), and its cycle comes
-  with it. A repository rule with no `cycle` takes the default, never the workspace's cycle. Under a named workflow, the
-  run's bound version decides its `end`, read where its landing is read (TreeLands.cs:346-350). D157 §2.3's table gains
-  the row *The end of work*: the plugin steps a repository may use stay a declaration, and `end` is the workflow's.
+  with it. A repository rule with no `cycle` takes the default, never the workspace's cycle. A repository with no rule at
+  all, its own or its workspace's, lands by merge (`LandingRules.Choose`, Landing.cs:979-984), and its cycle is the
+  default.
+- **Under a named workflow**, the run's bound version decides its `end`, read where its landing is read
+  (TreeLands.cs:346-350). Every named workflow holds a landing (WorkflowNamed.cs:491), and a version saved before `end`
+  existed reads `line`. D157 §2.3's table gains the row *The end of work*: the plugin steps a repository may use stay a
+  declaration, and `end` is the workflow's.
+- **Work integrated by hand**, never accepted, follows the same cycle. `handed`, `pushed` and `pull-request` never come for
+  it, so an end among them stays *pending* for it, and its removal goes at *held* (§C3). An end apart from the landing is
+  therefore set on the same rule, whatever its form.
 - **The default** is absent, read as `{ "end": "line", "steps": [] }`. That is today's behaviour exactly: ended when the
   line holds the committed tip, and the look's tidy as AUTOTIDY2a and 2b.
 - **The CLI twin** is `driverconfig.ts`'s landing rule. `twins.md`'s row for the driver's choices names the field, and
@@ -543,20 +556,34 @@ written at DriverConfig.cs:842-881):
   - a plugin step whose plugin is not installed, switched on, sound and declaring it.
 
   A cycle that later becomes unreachable (the plugin removed, the form changed) is said once, on the Setup row and in the
-  machine log. Its units' end reads *not known*, and the removal goes on at *held* (§C3).
+  machine log. Its units' end reads *unreachable*, and the removal goes on at *held* (§C3).
 
 ## C3. The end and the removal, kept apart
 
 *Held* is the line holding the committed tip, by §B3's proofs: ancestry, content after a squash (with its commits kept on
 `refs/daoris/discarded/`), or a completed pull request's merge commit on the line. **Only *held* lets the look's automatic
-tidy take anything.** The tidy takes a unit at the later of *held* and *ended*:
+tidy take anything.**
+
+An end not yet reached is one of three, said apart everywhere it is read:
+
+- **pending**: reachable and not yet reached. The pull request is open, or the plugin has not reported its step.
+- **unreadable**: reachable, but its evidence cannot be read now. The plugin's process is down or refusing, or a git read
+  failed. It is tried again at its topic's deadline.
+- **unreachable**: the cycle names what its rule can no longer reach. The plugin is removed or switched off, the step is
+  no longer declared, or the form changed. It is said once, and stays so until the definition changes.
 
 | The defined end | The tidy takes the unit |
 |---|---|
 | before the line (`handed`, `pushed`, `pull-request`, a plugin step placed before the line) | at *held*, as today: an end defined earlier never by itself allows a removal (D88:150-153 stands) |
 | `line` (the default) | at *held*, as today |
-| after the line (a plugin's step placed after it, a deploy say) | at that end, waiting at most 7 days after *held*, then at *held*, said once (§Q1) |
-| unreachable, or not known | at *held*, said once |
+| after the line, reached | at *held* (it is later) |
+| after the line, pending or unreadable | **the owner's choice (§Q1)**; until it is made, at *held*, as today |
+| unreachable | at *held*, said once |
+
+**A deadline's origin is persisted and stable.** If the owner chooses to wait, the wait counts from `Held.Since`, the
+moment *held* was first recorded for the unit's current tip. It is kept on the entry, unchanged by later judgements. It
+resets only when *held* stops holding and is recorded again, never at a restart or a re-read. D157 §5.4's seven days
+stops a run's asking; it is no ground for a removal.
 
 The person's own removals (the sweep's press, LAND3's tidy) are unchanged (§B6). The rest of §B8 stands.
 
@@ -590,26 +617,52 @@ It is twinned in `plugins.ts` and `PluginManifest` (PluginManifest.cs:114), read
 - **`work/ended`, an observation.** Every switched-on plugin that listens gets it when a unit's end is reached, as
   `session/ended` is sent today. It changes nothing.
 
+**A frame from the plugin is a real change to the wire.** Today the host's reader drops every frame a plugin sends that
+is not an answer: *"A notification is noise, and is ignored"* (Hooks.cs:349-351). The kit's test does the same
+(`plugin-kit/plugin.test.mjs.template`:183). The reader is changed to accept exactly one method, `work/step`, and only
+on a process Daoris started for `work/watch`. Every other notification stays ignored, and a request from a plugin is
+still never answered (D64 §7). An older host ignores the frame, so `protocolVersion` stays 1 (D148 point 8's rule). The
+kit's template gains the frame, its bounds and its refusals.
+
+The event form of a built-in step: a plugin may send `pull-request` as a `work/step` whose `evidence` is `work/state`'s
+answer, the same as if Daoris had asked. `pushed` is never an event; it is `work/land`'s answer only.
+
 **The process's lifetime.** Today a landing starts its plugin for one frame, while the loop keeps a process for each
 plugin on a loop point (`HookPoints.Loop`).
 
-- The loop keeps one process per plugin on `work/watch`: started when a unit first awaits one of its steps, and sent
-  `shutdown` (ended 2 s later) once none does.
-- On exit it is restarted with a back-off of 1, 5 and 15 minutes. Three exits within an hour mark it unsound until its
-  page's *Try again* (D119).
-- At most 60 events a minute are read from one plugin; past that, they are dropped and said once.
+- **Who owns it.** The process is the loop's that holds the home's lease (the shell's or the headless host's), the same
+  process the loop keeps for the plugin's other loop points (`HookPoints.Loop`, reconciled at each look, Driver.cs:349-352).
+  A verb never starts one, and a second loop on the home never does either.
+- **When it runs.** It starts when a unit first awaits one of its steps, and is sent `shutdown` (ended 2 s later) once
+  none does, when the plugin is switched off, at an update's drain, and when the loop ends.
+- **Restarts.** An exit Daoris did not ask for is restarted with a back-off of 1, 5 and 15 minutes. Three such exits
+  within an hour mark the plugin unsound until its page's *Try again* (D119). An exit after Daoris's own `shutdown`
+  never counts.
+- **Bounds, before anything is believed:**
+  - a frame longer than 64 KB is dropped unread;
+  - at most 60 events a minute are parsed from one plugin;
+  - at most 256 events wait in its queue, and the oldest is dropped first;
+  - a refusal is logged at most once a minute per plugin and code, with a count.
+- **What replays after a drop.** Every `work/watch` frame carries the whole awaited set and a generation. After any drop
+  or restart, the next frame says `resync: true`, and the plugin sends again what it knows of each awaited step. A
+  `pull-request` is also asked at the due moments (§A4.3), so a dropped event costs time, never a fact.
 
-**What makes an event believed.** A `work/step` counts only where all four hold:
+**What makes an event believed.** A `work/step` counts only where all five hold:
 
-1. **The plugin is the one a rule names for that step** (D100: a plugin acts on a repository only where a rule names it):
-   the landing rule's `plugin` for `pushed` and `pull-request`, and the cycle's `steps` for the plugin's own.
-2. **The step is declared** in its manifest, confirmed by its handshake, and included by the effective cycle.
-3. **Its `commit` is the unit's current tip**, or for `pull-request`, D148 point 4's three checks pass. A newer commit
-   makes it stale.
-4. **It reads by shape**, its `at` is no more than a minute ahead, and no newer event is kept for that step and commit.
+1. **Who sent it is the process, never the frame.** The sender is the plugin whose process Daoris started for
+   `work/watch` and read the frame from. A `plugin` field inside the frame is ignored.
+2. **That plugin is the one a rule names for the step** (D100: a plugin acts on a repository only where a rule names it):
+   the landing rule's `plugin` for `pull-request`, and the cycle's `steps` for the plugin's own. Its own step must also be
+   declared in its manifest, confirmed by its handshake, and included by the effective cycle.
+3. **It names a unit Daoris told that process about.** The repository, the branch and the repository's identity (§B5's
+   `Repository`) are looked up in the last `work/watch` frame sent to it, never by name alone.
+4. **It is bound to the work.** Its `commit` is that unit's current tip. For `pull-request`, D148 point 4's first and
+   third checks (§C2) must also pass. A newer commit makes it stale.
+5. **It reads by shape**, its `at` is no more than a minute ahead, and no newer event is kept for that step and commit.
 
-Anything else is no event. It is counted in the machine log as `plugin.step` with a code (`not-named`, `not-declared`,
-`stale`, `shape`, `late`) and no words.
+Anything else is no event. It is counted in the machine log as `plugin.step` with a code (`not-sender`, `not-named`,
+`not-declared`, `not-watched`, `stale`, `shape`, `late`) and no words. Binding to the commit ties the plugin's claim to
+this work. It does not prove a deployment happened: that stays the plugin's word.
 
 **Trust.** An event reaches a step, and nothing else:
 
@@ -656,17 +709,32 @@ A chain is the links from an event to what follows it.
 | # | On | Runs | May emit | |
 |---|---|---|---|---|
 | 1 | `refs`, `timer(refs)`, `plugin.step`, Daoris's own ref move | the end judgement for that repository or unit (§B4) | `work.step`, `work.held`, `work.ended` | fixed |
-| 2 | `work.held` and `work.ended` both standing (§C3) | the look's automatic tidy, judging again inside its hold (D88) | `work.tidied` | fixed; no setting turns it off (D88's AUTOTIDY2a judgement) |
+| 2 | the tidy pending: *held* and §C3's condition standing, and the branch still there | the look's automatic tidy, judging again inside its hold (D88) | `work.tidied` | fixed; an effect link; no setting turns it off (D88's AUTOTIDY2a judgement) |
 | 3 | `work.ended` | `work/ended` to the plugins that listen; the quest's page and What needs you read it | nothing | fixed |
 | 4 | any `work.*` | `STATE_CHANGED` with the existing scopes (D169) | nothing | fixed |
 | 5 | `ledger`, `timer(look)` | the local plan (FABRIC-EVENT3a) | starts, through the existing paths | fixed |
 | 6 | `refs` moving origin's line, Daoris's push, `focus` while a pull request is open | a plugin's `work/state` ask, with a fetch of the line (§A4.3) | an answer kept as today | fixed moments, within D148's minute |
 | 7 | `home`, `timer(<folder>)` | that folder's reader | its own | fixed |
 
-**What a workspace and a repository configure** is which step ends their work, and which plugin steps their cycle
-includes (§C2). So the event that ends a piece of work is theirs to choose: a ref, a platform's word, or a plugin's step.
-**What stays fixed, for safety:** what judges, what may remove and when, what is published, and that every topic keeps a
-reconciliation.
+**Two sorts of link.** A **fact link** (1, 3, 4) fires when a fact changes, and never on a fact that stands. An **effect
+link** (2, and every later effect) is level-triggered:
+
+- **An effect is pending while its condition stands and it has not happened.** The tidy is pending while *held* and the
+  removal's condition (§C3) stand, and the unit's branch is still there.
+- **It is tried when its facts change, and again at its topic's deadline.** It is also tried on the wakes that can
+  unblock it: a session leaving the tree or ending (`ledger`), a review closed, a lock released, the configuration
+  changed (`home`), and a deadline reached.
+- **A refusal is not an outcome.** When the tidy refuses because the tree is busy, the effect stays pending and is tried
+  again on those wakes.
+- **After a crash**, the start's reconciliation finds every pending effect from the persisted facts, so a crash between
+  recording a fact and acting on it loses nothing.
+- **Retries are bounded:** one try per unit per wake, and at most one per deadline while nothing changes.
+
+**What a workspace and a repository configure** is, in this design, which step ends their work and which plugin steps
+their cycle includes (§C2). So the event that ends a piece of work is theirs to choose: a ref, a platform's word, or a
+plugin's step. Whether a workspace may also choose further effects from a bounded menu is the owner's (§Q2). **What
+stays fixed, for safety, under either answer:** what judges, what may remove and when, what is published, and that
+every topic keeps a reconciliation.
 
 **Order.** Hints for one subject coalesce in its due set and are judged in one pass that reads the truth as it stands, so
 their order does not matter. A plugin's events for one step are ordered by `at` and commit: an older one never replaces a
@@ -675,14 +743,21 @@ newer, and a failure never replaces a kept answer (D148 point 5).
 **De-duplication.** A due set is a set. A plugin event equal to the kept one (the same plugin, unit, step, commit and
 `id`) is no event.
 
-**Loops**, since a chain must never wake itself:
+**Loops, and convergence.** A chain must never wake itself, but ranking the links does not stop an effect from coming
+back through the world: the tidy deletes a branch, and the ref watcher hears it. What makes it converge:
 
-- **A link fires on a change, never on a standing fact.** A judgement that finds what it found before emits nothing.
-- **The links are ranked** (sources, judgements, facts, actions, publication), and a link leads only to a higher rank.
-- **An action's effect comes back once.** When the tidy deletes a branch, the ref watcher hears it and the end judgement
-  runs once, finding no change.
+- **A fact link emits only on a change.** A judgement that finds what it found before emits nothing.
+- **A removed unit becomes a trace.** Its kept facts stay as they were at the removal, with `GoneAt` and `RemovedAs`, the
+  tombstone that `landings.json` already keeps and that §B5 adds for session branches. A trace is never judged again:
+  §B5's rule that a fact stops holding when the tip moves applies to standing units only. So a branch's disappearance
+  never reads as its end being lost.
+- **An effect is done once its unit no longer meets its condition.** A trace meets no effect's condition.
+- **So each wake ends.** It runs one judgement per due subject (finitely many) and at most one try of each pending
+  effect. That try either completes, turning the unit into a trace, or leaves it pending until the next unblocking wake.
+  The world's echo of a completed effect is judged once, finds no change and no pending effect, and emits nothing.
 - **The change stream answers families by their own revisions**, so the driver's own sync pass wakes nothing (§A4.2).
-- **No configuration can make a loop.** The configurable part is chosen from fixed values, none of which adds a link.
+- **No configuration adds a link that can feed itself.** Under §Q2's menu, if chosen, every effect is one that writes
+  no git ref and no ledger family a link listens to.
 
 ## C7. Where a chain's state lives
 
@@ -692,12 +767,17 @@ newer, and a failure never replaces a kept answer (D148 point 5).
   - claimed: the ledger;
   - handed, pushed and pull-request: the landing entry, as today (`LandedAt`, `Pushed` and `PushedTip`,
     `PullRequestState`);
-  - held: `Held { At, By, Tip, Line, On, OnAt, Repository }` on the landing entry and on the session branch's entry
-    (§B5's fields and rules, renamed);
-  - a plugin's steps: `Steps [{ plugin, step, commit, state, at, id, evidence }]` on the same entries, the newest per step
-    and commit.
+  - held: `Held { At, Since, By, Tip, Line, On, OnAt, Repository }` on the landing entry and on the session branch's
+    entry (§B5's fields and rules, renamed). `At` is the last judgement; `Since` is when it was first held at this tip;
+  - a plugin's own steps: `Steps [{ plugin, step, commit, state, at, id, evidence }]` on the same entries. Each plugin
+    step keeps at most two: the newest for the current tip, and the newest for the tip before it. An entry holds at most
+    16 steps, and a trace keeps only the step that ended it.
 
-  §B5's traces, its one writer across processes and its rules for when a fact stops holding apply to each.
+  A built-in step's event (`pull-request` sent as `work/step`) updates the existing fact, `PullRequestState`, through the
+  writer `work/state`'s answer uses, never a competing `Steps` entry. A named workflow's `signal` step projects these
+  same facts; its run file keeps no answer of its own for it (D157 §5.1 keeps only what only a run knows). `Held.Since`
+  (§C3) is the stable origin of any deadline. §B5's traces, its one writer across processes and its rules for when a
+  fact stops holding apply to each.
 - ***Ended* is never stored.** It is derived at read from the kept facts and the effective cycle, so a changed definition
   reads at once and no verdict goes stale.
 - **What is in flight:** the due sets, the de-duplication ids and the plugins' processes live in memory. A restart loses
@@ -723,7 +803,7 @@ newer, and a failure never replaces a kept answer (D148 point 5).
 | **The end at the quest's done or a conversation's end** | A claim, not evidence (Evidence-First Completion) | - |
 | **A webhook only** | The desktop is not reachable, local operation needs no remote, and with no reconciliation a missed delivery never ends | A platform's hook is a plugin's way to learn a step (§C4), never Daoris's |
 | **A timed fetch** | A network call nobody waits on | **Stands** (D147:62) for Daoris's own asks: the owner's direction itself says *not on a clock*; a plugin's own cadence is the plugin's (§C4) |
-| **A timed plugin query** | Same reason | **Stands** (D148:84-85). The fetch-when-due moments of §A4.3 add occasions to D148 point 2's list, which is an amendment to D148 (§Q3) |
+| **A timed plugin query** | Same reason | **Stands** (D148:84-85). The fetch-when-due moments of §A4.3 add occasions to D148 point 2's list, which is an amendment to D148 (§Q4) |
 | **No watcher yet** (the scout's 6.3: nudge on Daoris's own moves and measure first) | The probe measured it: every ref write heard on this machine under its antivirus, with no process start | **Overridden by the owner's direction**, on the measurement; the scout's safety is kept as the reconciliation, and its caution as the recovery and bounds of §A4.1 |
 | **Git hooks** (`reference-transaction`, `post-commit`) | Daoris writes nothing into the person's repository configuration (SessionBranches.cs:28-30), and the person's and agents' git would run Daoris's code | - |
 | **`fsmonitor` or an outside file watcher service** | A dependency that watches working trees, not refs | - |
@@ -731,11 +811,11 @@ newer, and a failure never replaces a kept answer (D148 point 5).
 | **An in-memory change signal in the service host** | Each connector writes the store from its own process (Service.Mcp/Program.cs:100), so the host would not hear an agent's quest | - |
 | **A watcher on a task's output file** (row 17) | Its offset read sees every byte and is its own reconciliation | **Stands**: OutputTail.cs:16-18 |
 | **Raising `pollSeconds` or the tidy's pace now** | Before the wakes land and their recovery is measured, a raise only makes things later; `pollSeconds`' CLI twin and the rehearsals read it | - |
-| **A `cycles` key of its own** (part C) | A second rule that must agree with the landing rule's form and plugin, which D164's inheritance would split: a repository could take its workspace's cycle and its own landing rule | - |
+| **A `cycles` key of its own** (part C; weighed, not chosen) | Workable, with a validation reconciling it with the landing rule; not chosen because D164's whole-rule inheritance would then split a repository's landing from its end, and two Setup sections and two twins would carry one decision (§C2) | - |
 | **An end only in a named workflow** | The editor is not built (WORKFLOW1g), and the owner asked for each repository's and workspace's end now, so Current must carry it; a named workflow's `end` still governs where one is chosen | - |
 | **`claimed` as an end** | The owner's own condition: a step is reached only on git's or a plugin's evidence; and the model is not the authority on its own success | - |
 | **Storing *ended*** | A verdict that goes stale the moment the definition changes; derived from the kept facts instead | Part B's `Ended` field, superseded by `Held` |
-| **Chains as rules the person writes** (an event, a condition, an action) | D65's no engine, and D157 §2.1's no expressions; what is configured is the end and its steps, chosen from fixed values | - |
+| **Chains as rules the person writes** (an event, a condition, an action, freely) | D65's no engine, and D157 §2.1's no expressions | A bounded, typed menu of events and effects, with no expressions, is not rejected: it is §Q2's option |
 | **A configurable tidy after the end** | D88 judged that no setting turns the look's tidy off: what goes is what the press would clear, kept fourteen days | **Stands** (AUTOTIDY2a) |
 | **A plugin event that removes, writes the ledger, or speaks for a repository no rule names it on** | D51 rule 7, D46, D100 | - |
 | **A plugin calling Daoris with requests Daoris answers** | A notification on a declared point is enough for an event | **Stands** (D64 §7) |
@@ -757,11 +837,13 @@ newer, and a failure never replaces a kept answer (D148 point 5).
    never judged twice at once.
 4. More wakes are not more full looks: a thousand hints run no look, and no remote sync.
 5. A look that changes nothing wakes nothing: the driver's own sync pass moves no family (§A4.2).
-6. No end without git's proof: each case of §B7 is not ended, and a failed read leaves the subject unknown.
-7. An end stops holding when its tip, its line's commit, its cycle's line or its repository changes.
+6. No step without its evidence: git's for `handed`, `pushed`'s ref and `line`; the plugin's believed answer or event for
+   `pull-request` and its own steps. Each case of §B7 is not ended, and a failed read leaves the subject unreadable,
+   never ended.
+7. A fact stops holding when its tip, its line's commit, its cycle's line or its repository changes; a trace never does.
 8. The removal judges again: an end contradicted before the act keeps the branch; the person's removals are unchanged.
-9. One writer: a structure test finds no writer of `Ended` outside the end judgement, and a verb beside an instance writes
-   none.
+9. One writer: a structure test finds no writer of `Held` or `Steps` outside the end judgement, and none of
+   `PullRequestState` outside its existing writer; a verb beside an instance writes none.
 10. Measured on the owner's use: the machine log's look timing, its git starts per hour, the delay from a ref move to its
     end, and the watchers' handles and nonpaged memory, before and after (Process classes and a day's log, not a load).
 11. A chain that changes nothing wakes nothing: a judgement that finds what it found emits no event, and the tidy's own
@@ -769,7 +851,18 @@ newer, and a failure never replaces a kept answer (D148 point 5).
 12. No configuration makes a loop: every value a `cycle` may take is tried against the link table.
 13. A plugin event that is not named, not declared, stale or misshapen is no event, and no event removes anything.
 14. The default cycle is today's: with no `cycle` set, the Trees suites and the tidy's tests are unchanged.
-15. An end before the line never lets the tidy go before *held*; an end after it waits no longer than its bound.
+15. An end before the line never lets the tidy go before *held*; pending, unreadable and unreachable are said apart, and
+    each takes §C3's row.
+16. A restart between a fact and its effect: the fact recorded, the process killed before the tidy, and the start's
+    reconciliation performs the pending tidy once.
+17. Busy, then free: the tidy refused for a busy tree stays pending, and runs when the session leaves the tree, with no
+    fact having changed.
+18. A deadline expiring: with every source silent, each topic is judged whole at its deadline, and a deadline counted
+    from `Held.Since` survives a restart unchanged.
+19. A dropped plugin event replayed: an event dropped past a bound is sent again after the next `resync` frame, and is
+    believed then.
+20. A definition changed: a cycle's `end` changed in `driver.json` makes every unit's *ended* read anew at once, with no
+    fact rewritten.
 
 **The rows**, in order, re-cut on part C. Each is sized near a hundred turns, and each later row names what it waits on.
 The first two were dispatched as part B proposed them; FABRIC-END2a takes the cycle as an input, so part C's defined
@@ -780,25 +873,30 @@ cycles plug into it.
 | 1 | FABRIC-EVENT2 | driver | - | `ChangeWatch` with its topic queue and recovery (§A3, §A4.1), the topic-carrying `Nudge`, the request and presses folders on it with a 3 s listing behind, and a machine-log line timing the watch's look | canaries 1-3 on a fake source; a Process class with a real watcher on a scratch folder; a request answered within the debounce, and inside the caller's 10 s with the source silenced |
 | 2 | FABRIC-END2a | driver | - | the end judgement extracted: §B3's cycles and proofs as one pure judgement over a snapshot, with no store and no reader changed | canary 6; each cycle of §B3 with the named workflow's landing; the Trees suites unchanged |
 | 3 | FABRIC-CYCLE1a | driver, cli | 2 | the `cycle` on the landing rule with its built-in steps (§C2): both twins, D164's inheritance, a named workflow's `end`, the refusals naming the Setup row | canary 14; one table of rows read the same by both twins; each refusal; a repository rule replacing its workspace's cycle whole |
-| 4 | FABRIC-END2b | driver | 2, 3 | the facts kept (§C7): `Held` and `Steps` on both entries, *ended* derived from the effective cycle, traces on both forget paths, one writer across processes | canary 9; an old entry reads as not yet judged; a trace survives the branch on every removal path; a changed cycle reads at once |
-| 5 | FABRIC-END2c | driver | 4 | when a fact stops holding (§B5): the tip, the line's commit, the cycle's line, the repository | canary 7, with real git in a Process class (a line rewound, a repository replaced at its path) |
-| 6 | FABRIC-CHAIN2 | driver | 1 | the chains' links as a declared, ranked table (§C6), firing on changes only, and each topic's deadline as a `timer` event (§C5); `chain.*` lines in the machine log | canaries 4, 11 and 12; a link to a lower rank fails a test |
+| 4 | FABRIC-END2b | driver | 2, 3; the cross-process writer: RPC1's pipe covering the verbs that write these two records (RPC1d covers the sessions verbs; HOMELEASE1 leaves a verb beside an instance holding nothing, HomeLease.cs:192-197), or a cross-process lock on the two files, chosen first | the facts kept (§C7): `Held` (with `Since`) and `Steps` on both entries, *ended* derived from the effective cycle, traces on both forget paths, written only by the lease's loop | canaries 9 and 20; an old entry reads as not yet judged; a trace survives the branch on every removal path |
+| 5 | FABRIC-END2c | driver | 4 | when a fact stops holding (§B5), on standing units only: the tip, the line's commit, the cycle's line, the repository | canary 7, with real git in a Process class (a line rewound, a repository replaced at its path, a trace untouched) |
+| 6 | FABRIC-CHAIN2 | driver | 1 | the chains (§C6): fact links on a change, effect links pending until done with their unblocking wakes, and each topic's deadline as a `timer` event (§C5); `chain.*` lines | canaries 4, 11, 12, 16, 17 and 18; a link to a lower rank fails a test |
 | 7 | FABRIC-END3 | driver | 1, 5, 6 | the ref watcher on link 1 (§B4) | canaries 1-4 on git; a Process class with real git (a commit, a merge onto the line, a pack-refs, a tree's switch, each judged once within a second); canary 10's first day |
-| 8 | FABRIC-END4a | driver | 7 | the look's automatic tidy on link 2, at the later of *held* and *ended*, with the 7-day bound (§C3) | canaries 8 and 15; the tidy's git starts counted down; `BranchTidyingProcessTests`, `SweepTests` and LAND3's tests green |
+| 8 | FABRIC-END4a | driver | 7; §Q1, and PLUGSTEP1e where the answer is to wait | the look's automatic tidy as link 2's pending effect, at *held*, with §C3's rows | canaries 8, 15, 16 and 17; the tidy's git starts counted down; `BranchTidyingProcessTests`, `SweepTests` and LAND3's tests green |
 | 9 | FABRIC-CYCLE1b | web-shell, modules | 3 | the Setup row *Work ends* in both locales, and Ask Daoris's room saying a repository's cycle | the Setup rows' tests and the locale checks; the help room's goldens; HelpCoverage's row for any new press |
-| 10 | FABRIC-END4b | driver, web-shell | 4, 9 | the page draws the cycle: the steps reached, the end marked, *held* said (§B6) | both locales; the window shows a merged pull request's session as ended with no press |
-| 11 | FABRIC-PLUGSTEP1a | driver, cli | 4, 6 | a plugin's `steps` in its manifest, and `work/watch`, `work/step` and `work/ended` (§C4): both manifest twins, the kit's entries, the process's lifetime, belief and its refusal codes; the cycle's plugin steps validated | canary 13; a fake plugin's events believed and refused by each rule; the manifest twins' tables |
-| 12 | FABRIC-PLUGSTEP1b | examples, tools | 11 | an example plugin that contributes a step from its own watch, with its README and `plugins try` samples | the example's tests; the rehearsal check written for the parent to run |
-| 13 | FABRIC-EVENT3a | driver | 1, 6 | the look's topics: the remote sync on its own clock, and a `ledger` wake that runs the local plan only | canary 4; the planner's tests unchanged; a sync pass still at its own pace |
-| 14 | FABRIC-EVENT3b | service, driver | 13 | the change stream (§A4.2), `sessions` first | canary 5; a second connection's write wakes the wait; the cursor's bootstrap, stale, malformed and future cases; an agent's quest starts without the poll |
-| 15 | FABRIC-END5 | driver, modules | 10 | the CLI, a quest's page and Ask Daoris read the cycle and its end | the CLI's and the rehearsal's sentences; the help room's goldens |
-| 16 | FABRIC-END6 | driver | 7; §Q3 | a fetch and a plugin's ask when due (§A4.3, link 6) | each moment and its bound; never at a removing press; an end with no press |
-| 17 | FABRIC-EVENT4 | driver, modules | 1, 6 | the home's record files on the watch (§A4.1, link 7) | each heard within the debounce, and found by its deadline when silenced |
-| 18 | FABRIC-END7 | driver | 14, 17 | auto-landing woken by refs, the ledger, the config and the gate's declarations, together | every release of AutoLander.cs:153-177 lands without the look |
-| 19 | FABRIC-EVENT5a | web-shell, modules | 17 | Ask Daoris's two polls (rows 23, 24) become publishes | no interval in a desktop window; a plain browser keeps its polls (D169 §4) |
-| 20 | FABRIC-EVENT5b | web-settings, modules | 17 | Settings' wiring poll (row 22) becomes a publish | as row 19 |
-| 21 | FABRIC-EVENT6 | service | 1 | the knowledge server marks a checkout stale on a watch (row 20); the service references no driver library, so its watch is a twin in `twins.md` or a shared home the row chooses | a document's edit read at the next search, with no minute's re-read |
-| 22 | FABRIC-EVENT7 | driver, cli | 7, 14, 17 | the clocks as deadlines (§C5): `pollSeconds` the `look` topic's, with its CLI twin, the tidy's pace the `refs` topic's, each default raised only after its measurement | canary 10 shows the wakes carry the work, and their recovery held, before and after |
+| 10 | FABRIC-END4b | driver, web-shell | 4, 9 | the page draws the cycle: the steps reached, the end marked, pending, unreadable and unreachable said apart, *held* said (§B6, §C3) | both locales; the window shows a merged pull request's session as ended with no press |
+| 11 | FABRIC-PLUGSTEP1a | driver, cli | 3 | a plugin's own `steps` in its manifest, both twins (`plugins.ts`, `PluginManifest`), `twins.md`'s row; the cycle's plugin steps validated against them | the manifest twins' tables; each manifest refusal |
+| 12 | FABRIC-PLUGSTEP1b | driver | 11 | the handshake for `work/watch`, `work/step` and `work/ended` in `HookPoints`, and the reverse transport: the reader accepting `work/step` on a watch process only (Hooks.cs:349-351), with its byte, rate and queue bounds | a notification on any other process or method still ignored; each bound; `protocolVersion` 1 unchanged |
+| 13 | FABRIC-PLUGSTEP1c | driver | 12 | the kit: `plugin-kit`'s template sends and tests the frame, its bounds and its refusals (`plugin.test.mjs.template`:183) | the kit's own tests; a kit-made plugin's frame read by the host's reader |
+| 14 | FABRIC-PLUGSTEP1d | driver | 6, 12 | supervision: the lease's loop owns the process, its start and `shutdown`, restarts on an unasked exit only, the generation and `resync` | canary 19; an intentional shutdown never counted; three unasked exits mark it unsound |
+| 15 | FABRIC-PLUGSTEP1e | driver | 4, 14 | authorization: §C4's five rules, the unit looked up in the last frame sent, a built-in `pull-request` event written to `PullRequestState` by its existing writer, the refusal codes | canary 13; each rule refusing a fake plugin's event; no event removes anything |
+| 16 | FABRIC-PLUGSTEP1f | examples, tools | 13, 15 | an example plugin that contributes a step from its own watch, with its README and `plugins try` samples | the example's tests; the rehearsal check written for the parent to run |
+| 17 | FABRIC-EVENT3a | driver | 1, 6 | the look's topics: the remote sync on its own clock, and a `ledger` wake that runs the local plan only | canary 4; the planner's tests unchanged; a sync pass still at its own pace |
+| 18 | FABRIC-EVENT3b | service, driver | 17 | the change stream (§A4.2), `sessions` first | canary 5; a second connection's write wakes the wait; the cursor's bootstrap, stale, malformed and future cases; an agent's quest starts without the poll |
+| 19 | FABRIC-END5 | driver, modules | 10 | the CLI, a quest's page and Ask Daoris read the cycle and its end | the CLI's and the rehearsal's sentences; the help room's goldens |
+| 20 | FABRIC-END6 | driver | 7; §Q4 | a fetch and a plugin's ask when due (§A4.3, link 6), with no second fetch where the occasion just fetched | each moment and its bound; never at a removing press; an end with no press |
+| 21 | FABRIC-EVENT4 | driver, modules | 1, 6 | the home's record files on the watch (§A4.1, link 7) | each heard within the debounce, and found by its deadline when silenced |
+| 22 | FABRIC-END7 | driver | 7, 18, 21 | auto-landing woken by refs, the ledger, the config and the gate's declarations, together | every release of AutoLander.cs:153-177 lands without the look |
+| 23 | FABRIC-EVENT5a | web-shell, modules | 21 | Ask Daoris's two polls (rows 23, 24) become publishes | no interval in a desktop window; a plain browser keeps its polls (D169 §4) |
+| 24 | FABRIC-EVENT5b | web-settings, modules | 21 | Settings' wiring poll (row 22) becomes a publish | as row 23 |
+| 25 | FABRIC-EVENT6 | service | 1 | the knowledge server marks a checkout stale on a watch (row 20); the service references no driver library, so its watch is a twin in `twins.md` or a shared home the row chooses | a document's edit read at the next search, with no minute's re-read |
+| 26 | FABRIC-EVENT7 | driver, cli | 7, 18, 21, 22 | the clocks as deadlines (§C5): `pollSeconds` the `look` topic's, with its CLI twin, the tidy's pace the `refs` topic's, each default raised only after its measurement | canary 10 shows the wakes carry the work, and their recovery held, before and after |
+| 27 | FABRIC-CHAIN3 | driver, cli | 6; only if §Q2 chooses the menu | the chain's bounded menu: typed events and non-destructive effects a workspace selects, with no expressions, in both twins | canary 12 over every menu value; no chosen effect writes a ref or a ledger family a link listens to |
 
 # Questions only the owner can answer
 
@@ -806,15 +904,34 @@ cycles plug into it.
 comes from a plugin, learned its own way (§C4); and the clocks are events, with chains (§C5, §C6). The two clock raises
 stay behind their measurement (FABRIC-EVENT7). Still open:
 
-1. **An end after the line** (a deploy a plugin reports): should the automatic tidy wait for it? *Recommendation:* yes,
-   at most 7 days after the line holds the work, then as today, said once.
-2. **The end and the quest.** Should a quest's Done wait for the end, or the end be written on the quest's record (D144's
+1. **Does the automatic tidy wait for an end defined after the line** (a deploy a plugin reports) while it is pending or
+   unreadable? (§C3)
+   - (a) No: the tidy goes at *held*, as today, and the later end changes only what is said.
+   - (b) Yes, for a bound N counted from `Held.Since`, then at *held*, said once. N is to be measured; D157's seven days
+     stops asking and justifies no removal.
+   - (c) Yes, until the end is reached or the person presses.
+
+   *Recommendation:* (a). The work is on the line, the tree is moved aside for fourteen days and can be brought back,
+   and (b) can follow once a plugin's real delays have been measured.
+2. **May a workspace configure its chains beyond its end?** (§C6)
+   - (a) The end only: a workspace selects which step ends its work and which plugin steps it includes.
+   - (b) A bounded, typed menu as well: for a fixed set of events (a step reached, failed, ended, held), the workspace
+     chooses effects from a fixed list that never remove anything and never write a ref or a ledger family (to tell the
+     person in What needs you; to send a named plugin the observation). No expressions and no scripts. Judging,
+     removal, publication and the reconciliation stay fixed (FABRIC-CHAIN3).
+
+   *Recommendation:* (b), built after the fixed chains run (FABRIC-CHAIN2), each new menu item its own decision.
+3. **The end and the quest.** Should a quest's Done wait for the end, or the end be written on the quest's record (D144's
    evidence) so an asker on another machine sees it? *Recommendation:* not in this pass. This machine's quest page shows
    it beside the claim (FABRIC-END5); the evidence rows decide, and the service keeps knowing nothing of landing (D46).
-3. **May a plugin be asked at the new due moments** (amending D148 point 2): when the person's fetch moves origin's line,
-   after Daoris pushes a handed branch, and at the window's focus while a pull request is open? *Recommendation:* yes,
-   within D148's one-minute freshness, each with a fetch of the line so the merge commit is held here, and never on a
-   timer or at a press that removes. A plugin's own watch (§C4) is the plugin's, and needs no such yes.
+4. **May a plugin be asked at the new due moments** (amending D148 point 2): when the person's fetch moves origin's line,
+   after Daoris pushes a handed branch, and at the window's focus while a pull request is open? *Recommendation:* yes:
+   - within D148's one-minute freshness, its kept answers standing (a failure never overwrites one);
+   - with a fetch of the line so the merge commit is held here, except where the occasion itself just fetched (the
+     person's fetch, bringing up to date), so no fetch is made twice;
+   - never on a timer, and never at a press that removes.
+
+   A plugin's own watch (§C4) is the plugin's, and needs no such yes.
 
 # What this design does not decide
 
