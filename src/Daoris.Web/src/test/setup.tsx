@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { vi } from 'vitest';
 import { configure } from '@testing-library/react';
 import { setProjectAnnotations } from '@storybook/react-vite';
 import preview from '../../.storybook/preview';
@@ -8,6 +9,15 @@ import preview from '../../.storybook/preview';
 // files in parallel workers that took over a second: SettingsView's workspace list failed every full
 // run on 2026-09-28 and passed every time alone. What never appears still fails, five seconds later.
 configure({ asyncUtilTimeout: 5_000 });
+
+// 🔴 WEBWAIT1: `vi.waitFor` is vitest's own and does not read testing-library's setting; its patience is one
+// second. On 2026-10-17 a WorkFrame case waiting on a mocked call gave up at 2993 ms under four workers' load
+// and passed alone. Every `vi.waitFor` without its own patience now waits as long as a `findBy` does (the same
+// 5 s, well under `testTimeout`); a call that names a timeout keeps it. The assertion inside is untouched.
+const waitForPatience = 5_000;
+const waitForOwn = vi.waitFor.bind(vi);
+vi.waitFor = ((callback: Parameters<typeof vi.waitFor>[0], options?: Parameters<typeof vi.waitFor>[1]) =>
+  waitForOwn(callback, options === undefined ? { timeout: waitForPatience } : options)) as typeof vi.waitFor;
 
 // The three environment shims the bilingual sibling learned to need first; adopted with the layer.
 

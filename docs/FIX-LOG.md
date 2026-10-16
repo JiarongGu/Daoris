@@ -2186,6 +2186,16 @@ kept late (`Late(world)`) so each run is the load's shape. Red with the late loo
 times, five of them beside one plain `dotnet build --no-incremental` of another project (the service's HTTP tests, the desktop
 application, the service's solution: each lasted 16-27 s, so the other seven ran after it), while the parent's gates ran.
 
+**WEBWAIT1 (2026-10-17): the page tests' `vi.waitFor` kept vitest's one second while testing-library's waits had five.** The web
+gate failed once on `df95f79` in `WorkFrame.test.tsx` (*asks the plan again with an entered branch name, and the press sends it*):
+a `vi.waitFor` on a mocked call gave up at 2993 ms under four workers' load; alone it passed. The class: `setup.tsx` had widened
+`findBy*` and testing-library's `waitFor` to 5 s (`asyncUtilTimeout`) since 2026-09-28, but `vi.waitFor` is vitest's own and reads
+no such setting, so its 47 uses in eight files (WorkFrame 17, ProjectsView 20) still waited 1 s, with a mocked call or a timer
+between the press and the condition. No wait passed an explicit shorter timeout. Fixed once, in `src/test/setup.tsx`: `vi.waitFor`
+without its own patience waits the same 5 s (well under the 20 s `testTimeout`); a call that names one keeps it, and no assertion
+changed. `src/test/waitPatience.test.ts` is the proof: red before (a condition true at 1.6 s failed at 1 s), green after; WorkFrame's
+file green.
+
 **PLUGKIT2 (2026-10-16): the silent plugin's one second covered its start.** PROC1g's two failures of
 `A_silent_plugin_is_still_running_and_said_nothing_within_the_patience` had one cause: `TrialOptions.Patience`, which only
 tests set, was the peer's for every call, so the case's one second was the handshake's too, and node's start and the
