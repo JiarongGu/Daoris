@@ -28,7 +28,9 @@ public sealed class SecondaryWindowHost(
     ShenoraPaths paths,
     SecondaryWindows windows,
     IColorScheme colorScheme,
-    Microsoft.Extensions.Logging.ILogger<ChromiumView>? log = null) : ISecondaryWindows, IDisposable
+    Microsoft.Extensions.Logging.ILogger<ChromiumView>? log = null,
+    // Each window's showing and closing, by its name, so the last main window ends the application (MAINWINDOWS2).
+    MainWindows? mains = null) : ISecondaryWindows, IDisposable
 {
     /// <summary>
     /// Every name asked for so far. <see cref="SecondaryWindows"/> answers whether a name is open but
@@ -58,12 +60,18 @@ public sealed class SecondaryWindowHost(
                     name, address, engine, log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ChromiumView>.Instance,
                     () => KeptScheme.StartsDark(colorScheme.Scheme, MainForm.OperatingSystemPrefersDark));
                 lock (_forms) _forms[name] = form;
+                // Counted once it is on the screen, since only a window that loaded is ever told closed: one whose making
+                // failed would otherwise keep a put-away first main window hidden with nothing else open (MAINWINDOWS2).
+                form.Load += (_, _) => mains?.Opened(name);
                 form.FormClosed += (_, _) =>
                 {
                     lock (_forms)
                     {
                         if (_forms.TryGetValue(name, out var held) && ReferenceEquals(held, form)) _forms.Remove(name);
                     }
+
+                    // The last main window closing, the first put away, ends the application (MAINWINDOWS2).
+                    mains?.Closed(name);
                 };
                 return form;
             },

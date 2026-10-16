@@ -83,6 +83,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-09-person-door-design.md` | Contract: person/driver authorization | D156; starter integration remains in TASKS |
 | `2026-10-09-workflow-design.md` | Contract: choices, versions and gates | D157 |
 | `2026-10-14-co-working-design.md` | Contract: one session per line of work, its records its parts; an ask's channel | D167; SESSONE rows in TASKS |
+| `2026-10-16-terminal-rpc-design.md` | Contract: the running Daoris answers the terminal's verbs over a pipe into its own dispatcher; the census of what acts outside the loop; a home's identity and its one lease | D171 point 3; HOMEID1, HOMELEASE1 and RPC1 rows in TASKS |
 
 ## UI, browser, tools and plugin contracts
 

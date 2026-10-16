@@ -8,7 +8,8 @@ namespace Daoris.Driver;
 /// <param name="Url">The service's address, without a trailing slash.</param>
 /// <param name="Pid">The desktop's process.</param>
 /// <param name="Started">That process's start time, in UTC ticks, so a process id used again is not taken for it.</param>
-public sealed record RunningEntry(string Url, int Pid, long Started);
+/// <param name="Home">The home's id (HOMEID1, <see cref="HomeIdentity"/>), or null in a file written before it or where the home has none.</param>
+public sealed record RunningEntry(string Url, int Pid, long Started, string? Home = null);
 
 /// <summary>
 /// The address the running desktop leaves in its home (FINDDAORIS1, D171 point 1): a terminal outside Daoris's own panel is
@@ -16,7 +17,7 @@ public sealed record RunningEntry(string Url, int Pid, long Started);
 /// </summary>
 /// <remarks>
 /// <para><b>Written whole, once the service answers</b>, held or adopted, naming the address and the process, as the driver
-/// lock names its holder (<see cref="DriverLock"/>): a reader never meets half of it, and a process id used again by another
+/// lease names its holder (<see cref="HomeLease"/>): a reader never meets half of it, and a process id used again by another
 /// program is told apart by its start time.</para>
 ///
 /// <para><b>Removed by its writer at a clean exit, and only while it still says what that writer wrote</b>, so a second Daoris
@@ -53,6 +54,8 @@ public sealed class RunningAddress : IDisposable
         try
         {
             using var self = Process.GetCurrentProcess();
+            // HOMEID1: the home's id beside the address, minted where it has none (fields added, never changed in place).
+            var id = HomeIdentity.Ensure(home);
             var text = JsonFile.Serialize(writer =>
             {
                 writer.WriteStartObject();
@@ -60,6 +63,7 @@ public sealed class RunningAddress : IDisposable
                 writer.WriteNumber("pid", Environment.ProcessId);
                 writer.WriteNumber("started", self.StartTime.ToUniversalTime().Ticks);
                 writer.WriteString("since", DateTimeOffset.UtcNow);
+                if (id is not null) writer.WriteString("home", id);
                 writer.WriteEndObject();
             });
             Directory.CreateDirectory(home);
@@ -96,7 +100,9 @@ public sealed class RunningAddress : IDisposable
                 && url.GetString() is { Length: > 0 } address
                 && root.TryGetProperty("pid", out var pid) && pid.TryGetInt32(out var id)
                 && root.TryGetProperty("started", out var started) && started.TryGetInt64(out var ticks)
-                    ? new RunningEntry(address, id, ticks)
+                    ? new RunningEntry(address, id, ticks,
+                        root.TryGetProperty("home", out var named) && named.ValueKind == JsonValueKind.String
+                        && HomeIdentity.IsId(named.GetString()) ? named.GetString() : null)
                     : null;
         }
         catch (JsonException)

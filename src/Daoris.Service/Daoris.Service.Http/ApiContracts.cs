@@ -10,7 +10,9 @@ namespace Daoris.Knowledge.Http;
 
 // `Proof` (PERSONDOOR1a, the person-door design §2.3): asked with `prove`, a host holding a person key answers the proof of
 // possession its starter checks before it trusts the host; absent otherwise, so the answer is what it always was.
-public sealed record StatusResponse(bool Semantic, string Tier, string? Note, string? Proof = null);
+// `Home` (HOMEID1, the terminal RPC design §3.2): a local host's home's id (`HomeIdentity`), which a terminal's discovery checks
+// before it takes an address; absent from a shared host, and where the home's id does not read.
+public sealed record StatusResponse(bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null);
 // Provenance is SERVED, never implied (D48 §6): the deployment's copy of a repository's knowledge is
 // a claim about a commit, so the answer names the commit, when it was made, which line it came from
 // and which machine fed it. Absent on a deployment that reads its own checkouts — it has no feed, and

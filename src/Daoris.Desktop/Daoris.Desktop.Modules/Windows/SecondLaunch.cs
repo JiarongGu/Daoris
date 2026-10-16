@@ -16,15 +16,32 @@ namespace Daoris.Desktop;
 /// <para><b>Not before the service answers</b>: the page is the host's, and a page opened on a port nobody holds reads as
 /// "the app is broken" (<c>MainForm</c> waits the same way). Where the service never came up, the main window already says
 /// why, and no window opens.</para>
+///
+/// <para><b>A put-away first window is the launch's</b> (MAINWINDOWS2): where the person closed the first main window while
+/// another was open, it was hidden rather than closed (<see cref="MainWindows"/>), and a launch shows that one again rather
+/// than opening another. Its page is already up, so it waits on nothing.</para>
 /// </remarks>
 public sealed class SecondLaunch(ISecondaryWindows windows, PlatformAddress platform, Func<Task<bool>> hostReady,
     // The shell's machine log (LOG1b, D94): a launch handed over, and the window it opened. Null writes none.
-    Daoris.Driver.MachineLog? log = null)
+    Daoris.Driver.MachineLog? log = null,
+    // Whether the first main window is put away, and what shows it again on its own thread, never blocking (MAINWINDOWS2).
+    MainWindows? mains = null, Action? showFirst = null)
 {
-    /// <summary>Open a new main window for a later launch, once the service answers: its name, or null when none opened.</summary>
+    /// <summary>
+    /// Open a new main window for a later launch, once the service answers, or show the first main window again where it was
+    /// put away: its name (<see cref="MainWindows.First"/> for that one), or null when none opened.
+    /// </summary>
     /// <param name="arguments">The later launch's arguments, which say nothing about what to open today; their count is logged.</param>
     public async Task<string?> OpenAsync(IReadOnlyList<string> arguments)
     {
+        // Asked before anything is awaited: the kit has just brought the first forward on this thread, and that was this launch's.
+        if (mains?.TakeBackFirst() == true)
+        {
+            showFirst?.Invoke();
+            log?.Info("window.launched", ("opened", true), ("window", MainWindows.First), ("arguments", arguments.Count));
+            return MainWindows.First;
+        }
+
         bool up;
         try
         {

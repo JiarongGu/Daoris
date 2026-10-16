@@ -223,17 +223,27 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   `interrupted`, so a take one held is carried on at the next start, as a cut-off is (D104). A host it
   started that exits before it answers, or never answers, is said on the window with the newest few lines
   it printed on its standard error, which the shell reads from the host's start (HOSTSTART1).
-- **One live driver per home** (DRV8a, D104). The loop takes `<home>/driver.lock` (`DriverLock`: its
-  kind, process id and start time, and since when) before it ticks, as a terminal's `daoris-driver
-  drive` does. Where a headless loop holds it, the window says so once on `DRIVER_ERROR` and its loop
-  starts the moment that lock frees; the host, the page and the conversations carry on meanwhile.
+- **One live driver per home** (DRV8a, D104), and **one writer per home** (HOMELEASE1, D171). The loop takes
+  `<home>/home.lease` (`HomeLease`: its kind, process id and start time, since when, and the home's id) before it
+  ticks, as a terminal's `daoris-driver drive` does, and holds it for its life. A terminal's verb acting alone holds
+  it for its act (`VerbLeases`), as do the first-start move of an older home (`InstallHome`) and the launcher's swap of
+  `app/`. Where a headless loop holds it, the window says so once on `DRIVER_ERROR`; where an act holds it, the window
+  and the machine log (`home.waiting`) say so once it has held for thirty seconds; either way the loop starts the
+  moment the lease frees, and the host, the page and the conversations carry on meanwhile. An older build's
+  `driver.lock` is read as its lease while its holder lives.
 - **A terminal finds it** (FINDDAORIS1, D171 point 1). Once the service answers, held or adopted, the loop leaves
-  `<home>/running.json` (`RunningAddress`: the address, its process id and start time), and takes it away first thing at
-  the close. A `daoris-driver` or `daoris` the install carries reads it where no `DAORIS_SERVICE_URL` is set
-  (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is.
+  `<home>/running.json` (`RunningAddress`: the address, its process id and start time, and the home's id), and takes it away
+  first thing at the close. A `daoris-driver` or `daoris` the install carries reads it where no `DAORIS_SERVICE_URL` is set
+  (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is. It takes the address only where its
+  `/api/status`, asked with redirects off, answers this home's id (HOMEID1: `<home>/home.json`, `HomeIdentity`, which every
+  path to the folder reads alike), so another install's service at that address is never used.
 - **One instance per install, and a second launch is another main window** (ONEINSTANCE1, D171 point 2). The kit's
   single-instance guard keeps a second process from starting and hands its launch over; `SecondLaunch` opens `main:<n>`
   once the service answers, frameless as the main window is, and its page tells its frame the theme by that name.
+- **It ends with its last main window** (MAINWINDOWS2, D171 point 2). The first main window holds the kit's loop and the
+  services resolved as it (the pickers, the taskbar's count, the tray, the update), so the person's close of it while a
+  `main:<n>` is open hides it (`MainWindows`); the last of those closing closes it for good, and a later launch or the tray
+  shows it again rather than opening another. A close from code is not the person's: the update's is `CloseForGood`.
 - 🔴 **A diff confirms the tree it was given** (`rev-parse --show-toplevel`): git searches upward, and
   would otherwise answer for the repository above it.
 

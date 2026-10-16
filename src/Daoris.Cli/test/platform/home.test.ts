@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { daorisHome, homeFile, HOME_VARIABLE, installOf, requireHomeFile, THIS_INSTALL } from '../../src/platform/home.ts';
+import { daorisHome, ensureHomeId, homeFile, homeId, HOME_ID_FILE, HOME_VARIABLE, installOf, requireHomeFile, THIS_INSTALL } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
@@ -52,6 +52,51 @@ test('absent, it is absent rather than the user profile', () => {
 test('a file under the home is the home joined, or null when there is none', () => {
   assert.equal(homeFile({ DAORIS_HOME: 'D:/somewhere/data' }, 'driver.json'), join('D:/somewhere/data', 'driver.json'));
   assert.equal(homeFile({}, 'driver.json'), null);
+});
+
+/**
+ * A home's identity (HOMEID1, the terminal RPC design §3.1), the twin of the driver's and the service's `HomeIdentity`: read
+ * from `home.json` alike by every path to the folder, and a file that does not read is no id (and is never replaced).
+ */
+test('a home’s id is read from home.json by every path to the folder, and a file that does not read is none', () => {
+  const fx = makeFixture('home-id');
+  try {
+    const home = join(fx.root, 'data');
+    assert.equal(homeId(home), null);
+    fx.write(join('data', HOME_ID_FILE), JSON.stringify({ id: '0123456789abcdef0123456789abcdef', minted: '2026-10-16T08:00:00+00:00' }));
+    fx.write(join('data', 'sub', '.keep'), '');
+    assert.equal(homeId(home), '0123456789abcdef0123456789abcdef');
+    assert.equal(homeId(join(home, 'sub', '..')), '0123456789abcdef0123456789abcdef');
+    if (process.platform === 'win32') assert.equal(homeId(home.toUpperCase()), '0123456789abcdef0123456789abcdef');
+
+    for (const text of ['not json', '[]', '{ "id": "0123" }', '{ "id": "0123456789ABCDEF0123456789ABCDEF" }']) {
+      fx.write(join('data', HOME_ID_FILE), text);
+      assert.equal(homeId(home), null, text);
+      assert.equal(fx.read(join('data', HOME_ID_FILE)), text);
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** HOMELEASE1: a lease records the home's id, so the CLI mints one where the home has none, as a new file only. */
+test('a home with no id is minted one once, and a file that does not read is never replaced', () => {
+  const fx = makeFixture('home-id-mint');
+  try {
+    const home = join(fx.root, 'data');
+    const id = ensureHomeId(home);
+    assert.match(id ?? '', /^[0-9a-f]{32}$/);
+    assert.equal(ensureHomeId(home), id);
+    assert.equal(ensureHomeId(join(home, '.')), id);
+    const text = fx.read(join('data', HOME_ID_FILE));
+    assert.ok(!text.includes('\r') && text.includes('"minted"'), text);
+
+    fx.write(join('data', HOME_ID_FILE), 'not json');
+    assert.equal(ensureHomeId(home), null);
+    assert.equal(fx.read(join('data', HOME_ID_FILE)), 'not json');
+  } finally {
+    fx.cleanup();
+  }
 });
 
 /**
