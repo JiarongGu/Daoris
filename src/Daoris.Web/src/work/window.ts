@@ -64,6 +64,19 @@ export function secondaryWindow(search: string): SecondaryWindow | null {
   return null;
 }
 
+/**
+ * The name this page's window was opened under, which it tells the host when it asks for a picker (MAINWINDOWS2c): the
+ * dialog is owned by this window, not the first main window, which is hidden while put away. Null for the application's own
+ * window, the first, which a host takes a missing name to be.
+ */
+export function ownWindowName(search: string): string | null {
+  const other = anotherMainWindow(search);
+  if (other !== null) return other;
+  const secondary = secondaryWindow(search);
+  if (secondary === null) return null;
+  return secondary.kind === 'monitor' ? MONITOR_WINDOW : sessionWindowName(secondary.id);
+}
+
 /** The window name for one session's own window — the same string the host opens it under. */
 export function sessionWindowName(id: string): string {
   return `session:${id}`;
