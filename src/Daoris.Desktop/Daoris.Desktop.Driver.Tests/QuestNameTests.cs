@@ -106,6 +106,45 @@ public sealed class QuestNameTests
         Assert.Equal(branch, LandingRules.Branch(subject, new LandingRule(LandingForm.Branch, pattern, Key: key), "portal-ui"));
     }
 
+    // ——— ACCEPTFOOT2 (D164's 2026-10-16 note): a conversation's branch is named for its work, never for its opening
+
+    /// <summary>
+    /// A conversation has no title of its own: its opening is the person's first words, which the page wears as its name (RAIL1), and
+    /// its branch was a slug of them (seen on the install, 2026-10-16). It is named for its work's oldest commit subject beyond the
+    /// line, as PROCESS1b-ii names a squash with no title; the opening stays its title and is searched for a ticket's key after that
+    /// subject. No subject read names it `work`, never the opening.
+    /// </summary>
+    [Theory]
+    [InlineData("feature/{slug}-{session}", "ok so that is merged now, what about the rest", "Cap the chunk budget per frame", "feature/cap-the-chunk-budget-per-frame-s-1a2b3c4d")]
+    [InlineData("feature/{ticket}-{slug}", "ok so that is merged now, what about the rest", "TK-31: cap the chunk budget", "feature/TK-31-cap-the-chunk-budget")]
+    [InlineData("feature/{ticket}-{slug}", "please pick up TK-40 from the board", "Cap the chunk budget", "feature/TK-40-cap-the-chunk-budget")]
+    [InlineData("feature/{ticket}-{slug}", "ok so that is merged now, what about the rest", "Cap the chunk budget", "feature/s-1a2b3c4d-cap-the-chunk-budget")]
+    [InlineData("feature/{slug}-{session}", "ok so that is merged now, what about the rest", null, "feature/work-s-1a2b3c4d")]
+    public void A_conversations_branch_is_named_for_its_work_never_for_its_opening(string pattern, string opening, string? oldest, string branch)
+    {
+        var subject = new LandingSubject("s-1a2b3c4d", null, opening);
+        Assert.True(subject.NamedByOpening);
+
+        var named = subject.ForWork(oldest);
+
+        Assert.Equal(branch, LandingRules.Branch(named, new LandingRule(LandingForm.Branch, pattern), "engine"));
+        Assert.Equal(opening, named.Title);
+    }
+
+    /// <summary>A quest's subject, one already named, and one with no opening are named as they always were.</summary>
+    [Fact]
+    public void Only_a_conversations_opening_is_set_aside_for_its_work()
+    {
+        var quest = new LandingSubject("s1", "q1", "Fix the gap");
+        var named = new LandingSubject("s1", null, "ok so") { Name = "Frame cap" };
+        var bare = new LandingSubject("s1", null, null);
+
+        Assert.Equal(quest, quest.ForWork("Cap the chunk budget"));
+        Assert.Equal(named, named.ForWork("Cap the chunk budget"));
+        Assert.Equal(bare, bare.ForWork("Cap the chunk budget"));
+        Assert.False(quest.NamedByOpening || named.NamedByOpening || bare.NamedByOpening);
+    }
+
     /// <summary>A chain is named for its first quest (WSR5), so its key is searched in that quest's words, not the last step's.</summary>
     [Fact]
     public async Task A_chains_ticket_is_its_first_quests()

@@ -126,7 +126,8 @@ internal sealed class TreeLands(
                 { Own = true };
             }
 
-            var name = BranchNamed(subject, landing.Rule, repository);
+            // A conversation's for its work, never its opening (ACCEPTFOOT2), as the press names it.
+            var name = BranchNamed(await ForWorkAsync(full, workspace, repository, subject, ct).ConfigureAwait(false), landing.Rule, repository);
             // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
                 : plugin is null ? null : context.Plugins.Problem(plugin);
@@ -406,7 +407,8 @@ internal sealed class TreeLands(
         else
         {
             var branched = await BranchAsync(full, workspace, repository,
-                BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
+                BranchNamed(await ForWorkAsync(full, workspace, repository, subject, ct).ConfigureAwait(false), landing.Rule, repository),
+                handedOn: plugin is not null, ct,
                 entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying,
                 join: joins ? sync : null).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
@@ -935,4 +937,23 @@ internal sealed class TreeLands(
     /// </summary>
     private static string BranchNamed(LandingSubject subject, LandingRule rule, string repository) =>
         subject.EnteredName ?? subject.EntryBranch ?? LandingRules.Branch(subject, rule, repository);
+
+    /// <summary>
+    /// The subject a conversation's branch is named for (ACCEPTFOOT2, D164's 2026-10-16 note): <see cref="LandingSubject.ForWork"/>
+    /// with the oldest commit subject its tree holds beyond the line, as the press's own log reads it. Git is asked only where the rule
+    /// would name the branch from a conversation's opening, so a quest's plan, an entered name and an entry's branch start none.
+    /// </summary>
+    internal async Task<LandingSubject> ForWorkAsync(string full, string workspace, string repository, LandingSubject subject, CancellationToken ct)
+    {
+        if (!subject.NamedByOpening || subject.EnteredName is not null || subject.EntryBranch is not null) return subject;
+        var here = Directory.Exists(full) ? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) : null;
+        if (here is not { Code: 0 }) return subject.ForWork(null);
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
+        var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        if (line is null) return subject.ForWork(null);
+        var against = await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
+        var (code, log, _) = await WorkingTree.GitAsync(full, ["log", "--reverse", "--format=%s", $"{against}..HEAD"], ct).ConfigureAwait(false);
+        var oldest = code == 0 ? log.Split('\n').Select(each => each.Trim()).FirstOrDefault(each => each.Length > 0) : null;
+        return subject.ForWork(oldest);
+    }
 }

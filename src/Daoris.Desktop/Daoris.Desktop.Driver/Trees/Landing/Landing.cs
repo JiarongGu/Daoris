@@ -120,6 +120,21 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     public string Slug => LandingRules.Slug(Name ?? Title);
 
     /// <summary>
+    /// Whether this is a conversation's subject, its title its opening (<see cref="LandingRules.SubjectAsync"/>): no quest, no name, and
+    /// the person's first words as its title (ACCEPTFOOT2, D164's 2026-10-16 note).
+    /// </summary>
+    public bool NamedByOpening => Quest is null && Name is null && Title is not null;
+
+    /// <summary>
+    /// This subject named for its work where it is a conversation's (ACCEPTFOOT2): its name the oldest commit subject its work holds
+    /// beyond the line, as PROCESS1b-ii names a squash with no title, or empty where none was read, so its branch is never a slug of
+    /// the person's first words. The opening stays its title, for the record and the squash, and is searched for a ticket's key after
+    /// that subject. Any other subject is as it was.
+    /// </summary>
+    public LandingSubject ForWork(string? oldest) =>
+        NamedByOpening ? this with { Name = string.IsNullOrWhiteSpace(oldest) ? "" : oldest.Trim() } : this;
+
+    /// <summary>
     /// The subject a quest is landed as: its title for the record, its name for the branch where they differ, and its body and
     /// links for a ticket's key to be found in. Blank and empty are carried as none, so a quest without them is the subject it was.
     /// </summary>
