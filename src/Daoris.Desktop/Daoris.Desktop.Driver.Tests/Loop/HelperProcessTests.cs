@@ -141,6 +141,7 @@ public sealed class HelperProcessTests : IDisposable
     public async Task A_helper_is_handed_a_plugins_skills_on_either_door_and_the_folder_goes_with_its_session(string adapter)
     {
         SkillsSpawnProbe.Install(_home);
+        SkillsSpawnProbe.SignIn(_home);
         Ask();
         var service = HelperStandIn.Start(_repository.Root, _tip);
         await using var _ = service;
