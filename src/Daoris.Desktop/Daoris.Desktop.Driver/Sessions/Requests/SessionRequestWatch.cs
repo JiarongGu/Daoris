@@ -53,13 +53,20 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// <summary>The folder's watch, or null on the test seams, which look only when <see cref="HonourAsync"/> is called.</summary>
     internal ChangeWatch? Changes { get; }
 
-    /// <summary>Where a look the folder woke is written with its ms (<c>change.judged</c>); none by default.</summary>
+    /// <summary>
+    /// The chain on the folder's watch (FABRIC-CHAIN2, the design §C6), or null on the test seams: the folder is link 7's, its wake
+    /// a <c>home</c> event and its listing the topic's <c>timer</c>, and its reader the only row bound here.
+    /// </summary>
+    internal Chain? Chain { get; }
+
+    /// <summary>Where a look the folder woke is written with its ms (<c>change.judged</c>), and one that took something as the chain's (<c>chain.fired</c>); none by default.</summary>
     public MachineLog? Log
     {
         get => Changes?.Log;
         init
         {
             if (Changes is not null) Changes.Log = value;
+            if (Chain is not null) Chain.Log = value;
         }
     }
 
@@ -103,7 +110,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         Say = words.HoldAsync;
         TakeBack = words.TakeBackAsync;
         Changes = new ChangeWatch(source);
-        Changes.Topic(ChangeTopics.Requests, every ?? Listing, LookAsync);
+        Chain = new Chain(Changes).Bind(ChainRanks.Read, ReadAsync);
+        Chain.Topic(ChangeTopics.Requests, ChainEvents.Home, every ?? Listing);
         Changes.Watch(ChangeTopics.Requests, ChangeTopics.Requests, _requests.Folder, Hears);
         Changes.Start();
     }
@@ -271,8 +279,12 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         return request;
     }
 
+    /// <summary>Link 7 on the requests folder (FABRIC-CHAIN2): its wake or its deadline reads the folder, and emits nothing into the chain.</summary>
+    private async Task<ChainFired> ReadAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct) =>
+        new(await LookAsync(ct).ConfigureAwait(false), []);
+
     /// <summary>One look the change watch asked for: the requests honoured, and what a terminal pressed; how many of both.</summary>
-    private async Task<int> LookAsync(ChangeWake wake, CancellationToken ct)
+    private async Task<int> LookAsync(CancellationToken ct)
     {
         try
         {
