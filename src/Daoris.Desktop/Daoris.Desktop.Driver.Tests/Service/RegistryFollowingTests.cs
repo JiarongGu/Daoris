@@ -63,8 +63,8 @@ public sealed class RegistryFollowingTests : IDisposable
     public void A_record_that_does_not_read_is_none_and_never_a_failure()
     {
         Directory.CreateDirectory(_home);
-        File.WriteAllText(Path.Combine(_home, RegistryFollowing.MovedFile), "not json");
-        File.WriteAllText(Path.Combine(_home, RegistryFollowing.FollowedFile), "{\"repositories\":[]}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.LinesMoved), "not json");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.RegistryFollowed), "{\"repositories\":[]}");
 
         Assert.Empty(RegistryFollowing.Due(_home));
         Assert.Empty(RegistryFollowing.Read(_home));

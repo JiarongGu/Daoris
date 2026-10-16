@@ -255,7 +255,7 @@ public sealed class ReviewLandingTests : IDisposable
         using var _ = service;
         var lines = new List<LandingLine>();
         service.LandingLined += lines.Add;
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         Assert.Null(await ReviewSetUps.PostAsync(service, Config(), events, _world.Quests["q2"], "s7", tree, "aurora", DateTimeOffset.UtcNow,
             CancellationToken.None));
@@ -308,7 +308,7 @@ public sealed class ReviewLandingTests : IDisposable
 
     private async Task<IReadOnlyList<string>> LookAsync()
     {
-        var lander = new AutoLander(_home, _world, new SessionTrees(_home), new SessionEvents(Path.Combine(_home, "sessions")), _lines.Add);
+        var lander = new AutoLander(_home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add);
         var (chosen, said) = await lander.ChooseAsync(Config());
         return [.. said, .. await lander.LandAsync(chosen)];
     }
@@ -333,7 +333,7 @@ public sealed class ReviewLandingTests : IDisposable
             Verdicts = [new QuestReviewVerdictView(ReviewVerdicts.Reviewed) { SetUpMachine = "desk", SetUpSequence = 41, Commit = commit, Words = words, At = Verdicted }],
         };
 
-    private DriverConfig Config() => DriverConfig.Load(Path.Combine(_home, "driver.json"));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
 
     /// <summary>The landing rule, and a review rule for the workspace and the repository: the repository's own, or its <c>false</c>.</summary>
     private void Configure(LandingRule? landing, bool required, bool repositoryNone = false)
@@ -344,7 +344,7 @@ public sealed class ReviewLandingTests : IDisposable
             Reviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase) { ["web-app"] = repositoryNone ? ReviewRule.None : rule },
             WorkspaceReviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase) { ["aurora"] = rule },
         };
-        (landing is null ? config : config.WithLanding("web-app", landing)).Save(Path.Combine(_home, "driver.json"));
+        (landing is null ? config : config.WithLanding("web-app", landing)).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
     }
 
     /// <summary>
@@ -355,7 +355,7 @@ public sealed class ReviewLandingTests : IDisposable
     {
         WorkflowStore.Add(_home, new WorkflowVersionAdded(
             "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
-        WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "web-app", null, null)).Save(Path.Combine(_home, "driver.json"));
+        WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "web-app", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "web-app", "aurora", null, null, [], DateTimeOffset.UtcNow)));
     }
 
@@ -368,7 +368,7 @@ public sealed class ReviewLandingTests : IDisposable
         _world.Records.Add(new SessionRecord(session, "web-app", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
         if (due)
         {
-            Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(Path.Combine(_home, "sessions")), session,
+            Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
                 _world.Quests[quest], "Done", "completed", opened.Path, "aurora"));
         }
 
@@ -376,7 +376,7 @@ public sealed class ReviewLandingTests : IDisposable
     }
 
     private IReadOnlyList<SessionEvent> Notes(string session) =>
-        [.. new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Note)];
+        [.. new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Note)];
 
     private static object? Value(LandingLine line, string key) => line.Data.Single(pair => pair.Key == key).Value;
 

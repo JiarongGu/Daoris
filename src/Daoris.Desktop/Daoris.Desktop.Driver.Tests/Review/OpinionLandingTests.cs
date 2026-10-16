@@ -215,7 +215,7 @@ public sealed class OpinionLandingTests : IDisposable
 
     private async Task<IReadOnlyList<string>> LookAsync()
     {
-        var lander = new AutoLander(_home, _world, new SessionTrees(_home), new SessionEvents(Path.Combine(_home, "sessions")), _lines.Add);
+        var lander = new AutoLander(_home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add);
         var (chosen, said) = await lander.ChooseAsync(Config());
         return [.. said, .. await lander.LandAsync(chosen)];
     }
@@ -239,7 +239,7 @@ public sealed class OpinionLandingTests : IDisposable
     private void Unavailable(string tip) =>
         new OpinionGates(_home).Asked("q1", "web-app", new OpinionAskKept(DateTimeOffset.UtcNow, "landing", "s1", tip) { Code = ReviewerUnavailable.NoReviewer });
 
-    private DriverConfig Config() => DriverConfig.Load(Path.Combine(_home, "driver.json"));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
 
     /// <summary>The landing rule, and an opinion rule for the repository that reads before landing.</summary>
     private void Configure(LandingRule? landing, bool required)
@@ -251,7 +251,7 @@ public sealed class OpinionLandingTests : IDisposable
                 ["web-app"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], required),
             },
         };
-        (landing is null ? config : config.WithLanding("web-app", landing)).Save(Path.Combine(_home, "driver.json"));
+        (landing is null ? config : config.WithLanding("web-app", landing)).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
     }
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done; made due as the conclusion makes it, where asked.</summary>
@@ -263,7 +263,7 @@ public sealed class OpinionLandingTests : IDisposable
         _world.Records.Add(new SessionRecord(session, "web-app", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
         if (due)
         {
-            Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(Path.Combine(_home, "sessions")), session,
+            Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
                 _world.Quests[quest], "Done", "completed", opened.Path, "aurora"));
         }
 

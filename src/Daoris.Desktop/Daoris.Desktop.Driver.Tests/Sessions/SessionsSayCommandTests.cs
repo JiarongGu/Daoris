@@ -29,7 +29,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string Sessions => Path.Combine(_home, "sessions");
+    private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
     private string Requests => Path.Combine(Sessions, "requests");
 

@@ -18,7 +18,7 @@ public sealed class DriverLockTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-driver-lock-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string LockFile => Path.Combine(_home, "driver.lock");
+    private string LockFile => DaorisHome.Entry(_home, HomeEntry.DriverLock);
 
     public DriverLockTests() => Directory.CreateDirectory(_home);
 

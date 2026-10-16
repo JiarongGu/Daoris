@@ -17,19 +17,19 @@ public sealed class HistoryCommandTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-history-verbs-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public HistoryCommandTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public HistoryCommandTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string Sessions => Path.Combine(_home, "sessions");
+    private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
     private HistoryWorld World(HistoryStandIn service, MachineLog? log = null)
     {
         service.Home = _home;
-        return new HistoryWorld(service.Client(), _home, Path.Combine(_home, "driver.json"), new SessionProcesses(Sessions)) { Log = log };
+        return new HistoryWorld(service.Client(), _home, DaorisHome.Entry(_home, HomeEntry.Driver), new SessionProcesses(Sessions)) { Log = log };
     }
 
     private async Task<(int Exit, string Said)> RunAsync(HistoryStandIn service, HistoryAsk? ask, MachineLog? log = null)
@@ -63,7 +63,7 @@ public sealed class HistoryCommandTests : IDisposable
     /// <summary>A tree still here for a session: the clear never touches one, and it keeps the unit.</summary>
     private string Tree(string name, string workspace = "default")
     {
-        var tree = Path.Combine(_home, "trees", workspace, "engine", name);
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,workspace, "engine", name);
         Directory.CreateDirectory(tree);
         File.WriteAllText(Path.Combine(tree, "work.txt"), "work");
         return tree;
@@ -199,7 +199,7 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.Equal(["quest:q1"], service.Pressed);
         Assert.False(Holds("s1") || Holds("s2"));
         var line = Assert.Single(
-            Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines),
+            Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines),
             each => each.Contains("\"history.cleared\"", StringComparison.Ordinal));
         Assert.Contains("\"door\":\"terminal\"", line);
         Assert.Contains("\"scope\":\"quest\"", line);
@@ -466,7 +466,7 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.Contains("  1 of the quests was forgotten here; the remote for aurora keeps the team's copy, and this machine will not fetch it again.", said.Split('\n'));
         Assert.Contains("  keeps #q2: Session `s2`'s tree is still here; clean it up, or discard it, first.", said.Split('\n'));
         var line = Assert.Single(
-            Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines),
+            Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines),
             each => each.Contains("\"history.cleared\"", StringComparison.Ordinal));
         Assert.Contains("\"door\":\"terminal\"", line);
         Assert.Contains("\"scope\":\"workspace\"", line);

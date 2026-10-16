@@ -25,7 +25,7 @@ public sealed class SessionRequestTickTests : IDisposable
     public SessionRequestTickTests()
     {
         Directory.CreateDirectory(_home);
-        _processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        _processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
         Git("init", "-q", "-b", "main");
@@ -73,7 +73,7 @@ public sealed class SessionRequestTickTests : IDisposable
         var stopped = service.Session("s1");
         Assert.Equal("stopped", stopped["state"]!.GetValue<string>());
         Assert.Equal("the person stopped it.", stopped["note"]!.GetValue<string>());
-        Assert.False(File.Exists(Path.Combine(_home, "sessions", "requests", "s1.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Requests, "s1.json")));
 
         // 3. The next look holds the quest, as a person's stop holds it, and starts nothing.
         var held = await Driver(service, config).TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
@@ -86,7 +86,7 @@ public sealed class SessionRequestTickTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: _processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>The stand-in harness: it takes its quest and works until it is stopped.</summary>

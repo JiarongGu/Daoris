@@ -117,7 +117,7 @@ public sealed class CanonicalLineTests : IDisposable
         await GitAsync(root, "checkout", "--quiet", "develop");
         await CommitAsync(root, "develop.txt", "the develop line", "on develop");
         await GitAsync(root, "checkout", "--quiet", "main");
-        DriverConfig.Empty.WithLine("engine", "develop").Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithLine("engine", "develop").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
 
@@ -130,7 +130,7 @@ public sealed class CanonicalLineTests : IDisposable
     {
         var root = await RepositoryAsync("engine");
         await GitAsync(root, "branch", "develop");
-        DriverConfig.Empty.WithWorkspaceLine("aurora", "develop").Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithWorkspaceLine("aurora", "develop").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
 
@@ -148,7 +148,7 @@ public sealed class CanonicalLineTests : IDisposable
         await GitAsync(upstream, "checkout", "--quiet", "main");
         var root = Path.Combine(_scratch, "engine");
         await GitAsync(_scratch, "clone", "--quiet", upstream, root);
-        DriverConfig.Empty.WithLine("engine", "develop").Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithLine("engine", "develop").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
 
@@ -187,7 +187,7 @@ public sealed class CanonicalLineTests : IDisposable
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
-        DriverConfig.Empty.WithLine("engine", "gone").Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithLine("engine", "gone").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
         var removal = await trees.RemoveAsync(opened.Path);
 
@@ -204,7 +204,7 @@ public sealed class CanonicalLineTests : IDisposable
         await GitAsync(_scratch, "clone", "--quiet", upstream, root);
         await GitAsync(root, "config", "user.email", "fixture@example.test");
         await GitAsync(root, "config", "user.name", "Fixture");
-        DriverConfig.Empty.WithLine("engine", "develop").Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithLine("engine", "develop").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         return root;
     }
 
@@ -212,7 +212,7 @@ public sealed class CanonicalLineTests : IDisposable
     public async Task A_line_set_to_a_branch_nowhere_is_refused_with_how_to_fix_it()
     {
         var root = await RepositoryAsync("engine");
-        DriverConfig.Empty.WithLine("engine", "develop").Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithLine("engine", "develop").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
         var refused = await Assert.ThrowsAsync<DriverException>(() => new SessionTrees(_home).OpenAsync(root, "engine", "aurora"));
 
@@ -226,7 +226,7 @@ public sealed class CanonicalLineTests : IDisposable
     {
         var root = await RepositoryAsync("engine");
         await GitAsync(root, "branch", "develop");
-        DriverConfig.Empty.WithLine("engine", "develop").Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithLine("engine", "develop").Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");

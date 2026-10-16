@@ -90,7 +90,7 @@ public sealed class IntakeTests : IDisposable
     {
         var room = IntakeRoom.Prepare(_home, "work", Circle);
 
-        Assert.Equal(Path.Combine(_home, IntakeRoom.Folder, "work"), room);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Intake,"work"), room);
         var agents = File.ReadAllText(Path.Combine(room, "AGENTS.md"));
         Assert.Contains("`media-api`", agents);
         Assert.Contains("video and image field names", agents);
@@ -174,7 +174,7 @@ public sealed class IntakeTests : IDisposable
     {
         var room = IntakeRoom.PathOf(_home, "../team/a:b");
 
-        Assert.Equal(Path.Combine(_home, IntakeRoom.Folder), Path.GetDirectoryName(room));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Intake), Path.GetDirectoryName(room));
         Assert.DoesNotContain("..", Path.GetFileName(room));
     }
 
@@ -198,7 +198,7 @@ public sealed class IntakeTests : IDisposable
     {
         Assert.Equal(IntakeRoom.PathOf(_home, "Aurora"), IntakeRoom.PathOf(_home, " aurora "));
         Assert.Equal(IntakeRoom.PathOf(_home, "设计"), IntakeRoom.PathOf(_home, "设计"));
-        Assert.Equal(Path.Combine(_home, IntakeRoom.Folder, "default"), IntakeRoom.PathOf(_home, "default"));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Intake,"default"), IntakeRoom.PathOf(_home, "default"));
     }
 
     // ——— The instruction.
@@ -322,7 +322,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     private SessionTarget IntakeTarget() =>
-        new("", "an ask", "the words", "ask #a1b2c3", "ask #a1b2c3", Path.Combine(_home, "intake", "work"), "http://localhost:0")
+        new("", "an ask", "the words", "ask #a1b2c3", "ask #a1b2c3", DaorisHome.Entry(_home, HomeEntry.Intake, "work"), "http://localhost:0")
         {
             Ask = "a1b2c3",
             Session = "s1",
@@ -455,13 +455,13 @@ public sealed class IntakeTests : IDisposable
 
         var opened = Assert.Single(service.Intakes);
         Assert.Equal("a1b2c3", opened["ask"]!.GetValue<string>());
-        Assert.Equal(Path.Combine(_home, IntakeRoom.Folder, "work"), opened["room"]!.GetValue<string>());
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Intake,"work"), opened["room"]!.GetValue<string>());
         Assert.Equal("stub", opened["adapter"]!.GetValue<string>());
 
         // What the agent said, when it published nothing: this failed once in a loaded full run
         // (2026-09-25) and the transcript went with the test's home, so the next failure says why.
-        var said = File.Exists(Path.Combine(_home, "sessions", "i1.log"))
-            ? File.ReadAllText(Path.Combine(_home, "sessions", "i1.log"))
+        var said = File.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions,"i1.log"))
+            ? File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"i1.log"))
             : "(no transcript)";
         Assert.True(service.Published.Count == 1, $"published {service.Published.Count}; the session said:\n{said}\n{string.Join("\n", report.Events)}");
         var published = service.Published[0];
@@ -476,7 +476,7 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal("ask #a1b2c3", ended.Repository);
         Assert.Null(ended.Quest);
 
-        var transcript = File.ReadAllText(Path.Combine(_home, "sessions", "i1.log"));
+        var transcript = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"i1.log"));
         Assert.Contains("stub: intake for ask a1b2c3 as session i1", transcript);
         Assert.Contains("stub: quest (none)", transcript);
         Assert.Contains("stub: the room declares media-api", transcript);
@@ -498,7 +498,7 @@ public sealed class IntakeTests : IDisposable
         Assert.Empty(service.Published);
         Assert.Equal("awaiting-person", service.Session("i1")["state"]!.GetValue<string>());
         Assert.Contains(first.Events, line => line.StartsWith("awaiting-person  intake i1", StringComparison.Ordinal));
-        Assert.Contains("which repository owns the widget", File.ReadAllText(Path.Combine(_home, "sessions", "i1.log")));
+        Assert.Contains("which repository owns the widget", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"i1.log")));
 
         // The person answers — publishing it themselves — and the next tick ends the parked intake.
         service.Answer("a1b2c3", "q9");
@@ -526,7 +526,7 @@ public sealed class IntakeTests : IDisposable
         await driver.RunOnceAsync();
 
         Assert.Equal(["aaaaaa", "cccccc"], service.Intakes.Select(i => i["ask"]!.GetValue<string>()).Order());
-        Assert.True(Directory.Exists(Path.Combine(_home, IntakeRoom.Folder, "other")));
+        Assert.True(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Intake,"other")));
 
         await driver.RunOnceAsync();
 
@@ -597,14 +597,14 @@ public sealed class IntakeTests : IDisposable
     public async Task An_intake_in_a_room_the_harness_never_trusted_is_held_and_says_so_as_a_fact()
     {
         await using var service = StandInService.Start(Circle, Ask());
-        var profile = Path.Combine(_home, "harnesses", "claude-code", "work");
+        var profile = DaorisHome.Entry(_home, HomeEntry.AgentHomes, "claude-code", "work");
         Directory.CreateDirectory(profile);
         var trustFile = Path.Combine(profile, ClaudeTrust.FileName);
         File.WriteAllText(trustFile, """{"projects":{}}""");
-        File.WriteAllText(Path.Combine(_home, "harnesses.json"), """{"defaults":{"claude-code":"work"}}""");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
         // The connector default off: handed Daoris's rules with it on, an intake could publish in an
         // untrusted room, and there would be nothing to hold for (measured, D73).
-        File.WriteAllText(Path.Combine(_home, PermissionRules.FileName), """{"defaultsOff":["connector"]}""");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Permissions), """{"defaultsOff":["connector"]}""");
         var claude = Path.Combine(_home, "claude.mjs");
         File.WriteAllText(claude, """
             const argv = process.argv.slice(2);
@@ -630,7 +630,7 @@ public sealed class IntakeTests : IDisposable
 
         // With the connector default on, the rules handed over at spawn let it publish untrusted
         // (measured, D73): nothing is held, and the intake opens.
-        File.Delete(Path.Combine(_home, PermissionRules.FileName));
+        File.Delete(DaorisHome.Entry(_home, HomeEntry.Permissions));
         var open = await Driver(config, service).RunOnceAsync();
 
         Assert.Empty(open.Untrusted);
@@ -654,7 +654,7 @@ public sealed class IntakeTests : IDisposable
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         await driver.RunOnceAsync();
 
@@ -683,7 +683,7 @@ public sealed class IntakeTests : IDisposable
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         await driver.RunOnceAsync();
 
@@ -722,7 +722,7 @@ public sealed class IntakeTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>

@@ -430,10 +430,10 @@ public sealed class HookTests : IDisposable
 
     private static PluginCatalog Catalog(string home, params (string Id, string[] Points)[] plugins)
     {
-        Directory.CreateDirectory(Path.Combine(home, "plugins"));
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins));
         foreach (var (id, points) in plugins)
         {
-            var folder = Path.Combine(home, "plugins", id);
+            var folder = DaorisHome.Entry(home, HomeEntry.Plugins,id);
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
             {
@@ -573,8 +573,8 @@ public sealed class HookTests : IDisposable
             started = true;
             return Task.FromResult<IHookChannel>(new FakeChannel([]));
         });
-        Directory.CreateDirectory(Path.Combine(_home, "plugins", "acme.agent"));
-        File.WriteAllText(Path.Combine(_home, "plugins", "acme.agent", "plugin.json"),
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.agent"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.agent", "plugin.json"),
             """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ] }""");
 
         Assert.Empty(await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None));
@@ -591,7 +591,7 @@ public sealed class HookTests : IDisposable
     [Fact]
     public async Task A_real_hook_process_is_started_in_its_folder_with_its_data_and_id_in_the_environment()
     {
-        var folder = Path.Combine(_home, "plugins", "acme.gate");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.gate");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """
             { "id": "acme.gate", "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider", "session/ended"] } }
@@ -647,7 +647,7 @@ public sealed class HookTests : IDisposable
     [Fact]
     public async Task A_hook_process_speaks_utf8_both_ways_whatever_the_consoles_code_page()
     {
-        var folder = Path.Combine(_home, "plugins", "acme.words");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.words");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """
             { "id": "acme.words", "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider"] } }

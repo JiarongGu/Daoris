@@ -443,7 +443,7 @@ public sealed class AutoLandingTests : IDisposable
         (DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true)) with
         {
             Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase) { ["engine"] = new(["codex-acp"], [OpinionRules.Steps]) },
-        }).Save(Path.Combine(_home, "driver.json"));
+        }).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         Follow("""[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion","required":true},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""");
         await NamedDoneAsync(root, "s1", "q1");
 
@@ -467,7 +467,7 @@ public sealed class AutoLandingTests : IDisposable
         var config = WorkflowSelection.Apply(
             DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")),
             new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]));
-        config.Save(Path.Combine(_home, "driver.json"));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""", kind: "docs");
         var tree = await NamedDoneAsync(root, "s1", "q1");
 
@@ -499,7 +499,7 @@ public sealed class AutoLandingTests : IDisposable
         WorkflowSelection.Apply(
             DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")),
             new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]))
-            .Save(Path.Combine(_home, "driver.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""", kind: "docs");
         var tree = await NamedDoneAsync(root, "s1", "q1");
         var binding = WorkflowRunBindings.PathOf(_home, "q1");
@@ -535,7 +535,7 @@ public sealed class AutoLandingTests : IDisposable
         var use = kind is null
             ? new WorkflowUse("docs-to-pr", "engine", null, null)
             : new WorkflowUse("docs-to-pr", null, "aurora", kind);
-        WorkflowSelection.Apply(Config(), use).Save(Path.Combine(_home, "driver.json"));
+        WorkflowSelection.Apply(Config(), use).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
         var task = kind is null ? null : new WorkflowTaskChoice(kind, null);
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "engine", "aurora", null, task, [], DateTimeOffset.UtcNow)));
     }
@@ -549,7 +549,7 @@ public sealed class AutoLandingTests : IDisposable
         _world.Records.Add(new SessionRecord(session, "engine", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
         var process = await AutoLander.ProcessAsync(_home, Config(), _world, _world.Quests[quest], opened.Path, "aurora");
         Assert.True(process!.Named);
-        Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(Path.Combine(_home, "sessions")), session,
+        Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
             _world.Quests[quest], "Done", "completed", opened.Path, "aurora", process: process));
         return opened.Path;
     }
@@ -605,7 +605,7 @@ public sealed class AutoLandingTests : IDisposable
                 ? new PluginLanding(Plugin, true, "https://example.test/pull/7", "pushed it.")
                 : new PluginLanding(Plugin, false, null, "gh is not signed in — run `gh auth login`.");
         })))),
-        new SessionEvents(Path.Combine(_home, "sessions")), _lines.Add);
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add);
 
     /// <summary>One look: what it chose, then what landing those beside it said.</summary>
     private async Task<IReadOnlyList<string>> LookAsync(bool pushes = true)
@@ -616,7 +616,7 @@ public sealed class AutoLandingTests : IDisposable
         return [.. said, .. await lander.LandAsync(chosen)];
     }
 
-    private DriverConfig Config() => DriverConfig.Load(Path.Combine(_home, "driver.json"));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done, made due as the driver's conclusion makes it.</summary>
     /// <param name="parent">The quest it follows, where it is a chain's later step.</param>
@@ -633,7 +633,7 @@ public sealed class AutoLandingTests : IDisposable
         {
             Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow, Entry = entry,
         });
-        var verdict = AutoLander.Concluded(_home, Config(), new SessionEvents(Path.Combine(_home, "sessions")), session, _world.Quests[quest],
+        var verdict = AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session, _world.Quests[quest],
             "Done", "completed", opened.Path, "aurora");
         Assert.Equal(Config().Landings.GetValueOrDefault("engine")?.AutoAccept == true ? AutoConcluded.Due : null, verdict);
         return opened.Path;
@@ -650,16 +650,16 @@ public sealed class AutoLandingTests : IDisposable
     }
 
     private IReadOnlyList<SessionEvent> Notes(string session) =>
-        [.. new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Note)];
+        [.. new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Note)];
 
     private static object? Value(LandingLine line, string key) => line.Data.Single(pair => pair.Key == key).Value;
 
     private void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(Path.Combine(_home, "driver.json"));
+        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
     private void InstallManifest()
     {
-        var folder = Path.Combine(_home, "plugins", Plugin);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,Plugin);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");

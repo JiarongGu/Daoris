@@ -98,7 +98,7 @@ public sealed class PluginHealthTests : IDisposable
             Play(log, entry, step);
         }
 
-        var lines = MachineLogReader.Read(Path.Combine(_home, MachineLog.Folder), new LogFilter()).Lines;
+        var lines = MachineLogReader.Read(DaorisHome.Entry(_home, HomeEntry.Logs), new LogFilter()).Lines;
         foreach (var (reading, said) in new[] { ("the record", health.Of(entry)), ("the log", PluginHealthRules.FromLog(entry, lines)) })
         {
             var where = $"{row}, from {reading}";
@@ -135,7 +135,7 @@ public sealed class PluginHealthTests : IDisposable
     [Fact]
     public void A_log_with_no_word_of_it_is_ready_with_no_word_and_a_torn_line_is_passed_over()
     {
-        var folder = Path.Combine(_home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "2026-10-01.desktop.jsonl"),
             """{"time":"2026-10-01T09:00:01.000Z","source":"desktop","level":"info","event":"plugin.started","data":{"plugin":"acme.gate","po""" + "\n");

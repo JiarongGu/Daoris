@@ -17,16 +17,16 @@ public sealed class HistoryClearingTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-history-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public HistoryClearingTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public HistoryClearingTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string Sessions => Path.Combine(_home, "sessions");
+    private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
-    private string ConfigPath => Path.Combine(_home, "driver.json");
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.Driver);
 
     private HistoryWorld World(StandIn service, MachineLog? log = null, Func<DateTimeOffset>? clock = null)
     {
@@ -52,9 +52,9 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, id + GoOnMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + HandOverBox.Suffix), "{}");
-        Directory.CreateDirectory(Path.Combine(_home, SpawnServers.Folder));
-        File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.mcp.json"), "{}");
-        File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.settings.json"), "{}");
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.mcp.json"), "{}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
     }
 
     private string[] KeptOf(string id) =>
@@ -62,7 +62,7 @@ public sealed class HistoryClearingTests : IDisposable
         .. new[] { ".events.jsonl", ".log", HarnessConversations.Suffix, ".pid", GoOnMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
             .Select(suffix => Path.Combine(Sessions, id + suffix))
             .Where(File.Exists),
-        .. new[] { ".mcp.json", ".settings.json" }.Select(suffix => Path.Combine(_home, SpawnServers.Folder, id + suffix)).Where(File.Exists),
+        .. new[] { ".mcp.json", ".settings.json" }.Select(suffix => DaorisHome.Entry(_home, HomeEntry.Spawn,id + suffix)).Where(File.Exists),
         .. Directory.Exists(Path.Combine(Sessions, id)) ? [Path.Combine(Sessions, id)] : Array.Empty<string>(),
     ];
 
@@ -131,7 +131,7 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.Empty(KeptOf("s1"));
         Assert.Empty(KeptOf("s2"));
         Assert.NotEmpty(KeptOf("o1"));
-        Assert.True(Directory.Exists(Path.Combine(_home, "quests", "q2")));
+        Assert.True(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles,"q2")));
         Assert.Null(new AutoLandings(_home).Of("s1"));
         Assert.False(File.Exists(HeldWordsFile.PathOf(_home)));
         Assert.Equal(["o1"], new SessionArchive(_home).Marks().Keys);
@@ -391,7 +391,7 @@ public sealed class HistoryClearingTests : IDisposable
     [Fact]
     public async Task A_tree_still_here_keeps_the_unit_and_the_service_is_not_asked()
     {
-        var tree = Path.Combine(_home, "trees", "default", "engine", "s-1a2b3c4d");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-1a2b3c4d");
         Directory.CreateDirectory(tree);
         File.WriteAllText(Path.Combine(tree, "work.txt"), "work");
         Kept("s1");
@@ -610,15 +610,15 @@ public sealed class HistoryClearingTests : IDisposable
         Kept("s2");
         Kept("c1");
         KeptFiles("quests", "q1");
-        var tree = Path.Combine(_home, "trees", "aurora", "engine", "s-2b2b2b2b");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-2b2b2b2b");
         Directory.CreateDirectory(tree);
         File.WriteAllText(Path.Combine(tree, "work.txt"), "work");
         // Left over: the files of records no store has, and kept files of a quest and an ask no store has.
         File.WriteAllText(Path.Combine(Sessions, "gone1.log"), "an old transcript");
         Directory.CreateDirectory(Path.Combine(Sessions, "gone1", "files"));
         File.WriteAllText(Path.Combine(Sessions, "gone1", "files", "x.png"), "png");
-        Directory.CreateDirectory(Path.Combine(_home, SpawnServers.Folder));
-        File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, "gone2.settings.json"), "{}");
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,"gone2.settings.json"), "{}");
         KeptFiles("quests", "qgone");
         KeptFiles("asks", "agone");
         // Never left over: a file touched within the hour, a file Daoris did not write, and a terminal's requests.
@@ -672,9 +672,9 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.True(File.Exists(Path.Combine(tree, "work.txt")));
         Assert.False(File.Exists(Path.Combine(Sessions, "gone1.log")));
         Assert.False(Directory.Exists(Path.Combine(Sessions, "gone1")));
-        Assert.False(File.Exists(Path.Combine(_home, SpawnServers.Folder, "gone2.settings.json")));
-        Assert.False(Directory.Exists(Path.Combine(_home, "quests", "qgone")));
-        Assert.False(Directory.Exists(Path.Combine(_home, "asks", "agone")));
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"gone2.settings.json")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles,"qgone")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.AskFiles,"agone")));
         Assert.True(File.Exists(Path.Combine(Sessions, "young1.log")));
         Assert.True(File.Exists(Path.Combine(Sessions, "notes.txt")));
         Assert.True(File.Exists(Path.Combine(Sessions, "requests", "r1.json")));
@@ -810,7 +810,7 @@ public sealed class HistoryClearingTests : IDisposable
 
         Assert.Equal((1, 1, 1), (outcome.Quests, outcome.Sessions, outcome.Failed));
         Assert.Equal(unit.Bytes.Total - unit.Bytes.Kept, outcome.Bytes);
-        Assert.True(Directory.Exists(Path.Combine(_home, "quests", "q1")));
+        Assert.True(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles,"q1")));
         Assert.Empty(KeptOf("s1"));
     }
 
@@ -841,7 +841,7 @@ public sealed class HistoryClearingTests : IDisposable
     [Fact]
     public async Task An_empty_folder_a_cleared_sessions_tree_left_goes_with_its_empty_parents()
     {
-        var trees = Path.Combine(_home, "trees");
+        var trees = DaorisHome.Entry(_home, HomeEntry.Trees);
         var empty = Path.Combine(trees, "aurora", "engine", "s-1a1a1a1a");
         var other = Path.Combine(trees, "default", "game", "s-3c3c3c3c");
         Directory.CreateDirectory(empty);
@@ -878,7 +878,7 @@ public sealed class HistoryClearingTests : IDisposable
         public IReadOnlyList<string> Lines()
         {
             Log.Dispose();
-            var folder = Path.Combine(home, MachineLog.Folder);
+            var folder = DaorisHome.Entry(home, HomeEntry.Logs);
             return Directory.Exists(folder) ? [.. Directory.GetFiles(folder).SelectMany(StubFile.Lines)] : [];
         }
     }

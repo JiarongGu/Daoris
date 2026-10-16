@@ -49,7 +49,7 @@ public sealed class HelperProcessTests : IDisposable
 
     private void Ask(string question = "Why does the daily report drop its last day?")
     {
-        Directory.CreateDirectory(Path.Combine(_home, "helpers"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
         File.WriteAllText(Files.PathOf(AskId, "ask"),
             new JsonObject
             {
@@ -71,7 +71,7 @@ public sealed class HelperProcessTests : IDisposable
         };
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+            new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((_tip, _repository.Root)),
         };
@@ -109,7 +109,7 @@ public sealed class HelperProcessTests : IDisposable
         // The record the host opened: serves the asker, on the stub, in a clone under the home's trees.
         var opened = Assert.Single(service.Opened);
         Assert.Equal(("s1", "stub"), (opened["asker"]!.GetValue<string>(), opened["adapter"]!.GetValue<string>()));
-        Assert.StartsWith(Path.Combine(_home, "trees"), opened["tree"]!.GetValue<string>());
+        Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Trees), opened["tree"]!.GetValue<string>());
         Assert.Equal(["starting", "working", "completed"], service.States("h1"));
 
         // 🔴 What the helper saw at its turn: its state already named it (helper_answer finds its ask by that), its own session
@@ -129,7 +129,7 @@ public sealed class HelperProcessTests : IDisposable
         Assert.Equal(("h1", null), (service.Words.Single()["helper"]!.GetValue<string>(), service.Words.Single()["by"]?.GetValue<string>()));
 
         Assert.Equal(refs, _repository.Output("for-each-ref --format=\"%(refname) %(objectname)\""));
-        Assert.Empty(Directory.EnumerateDirectories(Path.Combine(_home, "trees", "work", "reports")));
+        Assert.Empty(Directory.EnumerateDirectories(DaorisHome.Entry(_home, HomeEntry.Trees,"work", "reports")));
     }
 
     /// <summary>The helper never used its tool and said words: its last words, bounded, stand as the answer, marked.</summary>

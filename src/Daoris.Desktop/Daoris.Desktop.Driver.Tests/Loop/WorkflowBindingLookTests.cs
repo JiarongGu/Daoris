@@ -136,7 +136,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(string more)
     {
-        var config = Path.Combine(_home, "driver.json");
+        var config = DaorisHome.Entry(_home, HomeEntry.Driver);
         File.WriteAllText(config, $$"""
             { {{more}} "drivable": ["engine"], "adapter": "stub", "cap": 2, "pollSeconds": 1, "trees": ["engine"] }
             """);
@@ -144,7 +144,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(
             service, config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")))
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
         };

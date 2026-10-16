@@ -38,16 +38,16 @@ public sealed partial class ConfigSeamTests
     public void An_override_in_another_home_is_never_this_homes_file()
     {
         Assert.Equal(
-            Path.Combine(Home, "driver.json"),
+            DaorisHome.Entry(Home, HomeEntry.Driver),
             DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, Path.Combine(Elsewhere, "driver.json"))), Home));
     }
 
     [Fact]
     public void With_no_override_a_home_reads_its_own_driver_json()
     {
-        Assert.Equal(Path.Combine(Home, "driver.json"), DriverConfig.ResolvePath(Env(), Home));
-        Assert.Equal(Path.Combine(Home, "driver.json"), DriverConfig.ResolvePath(Env((DaorisHome.Variable, Elsewhere)), Home));
-        Assert.Equal(Path.Combine(Home, "driver.json"), DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, "")), Home));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.ResolvePath(Env(), Home));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.ResolvePath(Env((DaorisHome.Variable, Elsewhere)), Home));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.ResolvePath(Env((DriverConfig.PathVariable, "")), Home));
     }
 
     /// <summary>The one resolution, for a door with no home in hand: the override, then the home's file, then nothing to read.</summary>
@@ -57,14 +57,15 @@ public sealed partial class ConfigSeamTests
         var chosen = Path.Combine(Elsewhere, "landing.json");
 
         Assert.Equal(chosen, DriverConfig.FindPath(Env((DriverConfig.PathVariable, chosen), (DaorisHome.Variable, Home))));
-        Assert.Equal(Path.Combine(Home, "driver.json"), DriverConfig.FindPath(Env((DaorisHome.Variable, Home))));
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.Driver), DriverConfig.FindPath(Env((DaorisHome.Variable, Home))));
         Assert.Null(DriverConfig.FindPath(Env()));
     }
 
     /// <summary>
     /// The seam held by a scan, as the spawn sites' are (<see cref="NoConsoleWindowTests"/>): the property is one every reader must
     /// carry, and the next reader written will not know to. Outside <c>DriverConfig.cs</c> no source names the file, the variable,
-    /// or the default path, so a reader can only come through the one resolution; inside it, the variable is read once.
+    /// or the default path, so a reader can only come through the one resolution; inside it, the variable is read once. The home's
+    /// table (<c>DaorisHome.cs</c>, HOMELAYOUT2) names the file as its <c>driver</c> entry's place, which only DriverConfig asks for.
     /// </summary>
     [Fact]
     public void Every_reader_of_the_drivers_config_resolves_it_through_the_one_function()
@@ -75,6 +76,7 @@ public sealed partial class ConfigSeamTests
         string? owner = null;
         // The owner found by name, wherever the driver keeps it (STRUCT1, D166).
         var owning = Path.GetFullPath(SourceFiles.Driver("DriverConfig.cs"));
+        var table = Path.GetFullPath(SourceFiles.Driver("DaorisHome.cs"));
 
         foreach (var project in Projects)
         {
@@ -96,6 +98,8 @@ public sealed partial class ConfigSeamTests
                     owner = source;
                     continue;
                 }
+
+                if (string.Equals(Path.GetFullPath(file), table, StringComparison.OrdinalIgnoreCase)) continue;
 
                 foreach (Match bypass in Bypass().Matches(source))
                 {

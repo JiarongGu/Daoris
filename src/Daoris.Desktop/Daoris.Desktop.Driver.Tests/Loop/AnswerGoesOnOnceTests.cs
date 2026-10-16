@@ -143,7 +143,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] };
         var driver = new Daoris.Driver.Driver(
-            service, config, adapters, _home, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+            service, config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
         };
@@ -174,7 +174,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
 
         await Daoris.Driver.Driver.AbandonedAsync(process: null, capture, "s1", log, output);
 
-        var line = Assert.Single(StubFile.Lines(Path.Combine(_home, MachineLog.Folder, "2026-10-08.desktop.jsonl")));
+        var line = Assert.Single(StubFile.Lines(DaorisHome.Entry(_home, HomeEntry.Logs,"2026-10-08.desktop.jsonl")));
         Assert.Contains("\"level\":\"error\",\"event\":\"error\"", line);
         Assert.Contains($"\"where\":\"{Daoris.Driver.Driver.AbandonedRun}\"", line);
         Assert.Contains("\"type\":\"System.IO.IOException\"", line);
@@ -214,7 +214,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         await Daoris.Driver.Driver.AbandonedAsync(process: null, Task.CompletedTask, "s1", log, output);
         await Daoris.Driver.Driver.AbandonedAsync(process: null, Task.FromCanceled(new CancellationToken(canceled: true)), "s1", log, output);
 
-        Assert.False(Directory.Exists(Path.Combine(_home, MachineLog.Folder)) && Directory.EnumerateFiles(Path.Combine(_home, MachineLog.Folder)).Any());
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Logs)) && Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).Any());
         Assert.Empty(output.Tail("s1").Lines);
     }
 
@@ -282,7 +282,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] };
         var driver = new Daoris.Driver.Driver(
-            service, config, adapters, _home, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+            service, config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
         };

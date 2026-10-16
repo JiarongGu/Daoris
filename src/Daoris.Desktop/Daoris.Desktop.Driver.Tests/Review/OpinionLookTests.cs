@@ -92,7 +92,7 @@ public sealed class OpinionLookTests : IDisposable
         Assert.False(twice.Done);
         Assert.StartsWith("nothing waits for a second opinion on session s1's work:", twice.Message);
 
-        var stop = await presses.StopAsync("nothing1", new SessionProcesses(Path.Combine(_home, "sessions")));
+        var stop = await presses.StopAsync("nothing1", new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
         Assert.Equal((false, "there is no second opinion `nothing1` on this machine."), (stop.Done, stop.Message));
     }
 
@@ -171,7 +171,7 @@ public sealed class OpinionLookTests : IDisposable
         }
 
         var set = new AdapterSet(adapters);
-        return new Daoris.Driver.Driver(host.Client(), Config(), set, _home, harnesses: new HarnessRoster(set, Path.Combine(_home, "harnesses.json")))
+        return new Daoris.Driver.Driver(host.Client(), Config(), set, _home, harnesses: new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Passes = (ask, choice, _) =>
             {
@@ -184,7 +184,7 @@ public sealed class OpinionLookTests : IDisposable
         };
     }
 
-    private DriverConfig Config() => DriverConfig.Load(Path.Combine(_home, "driver.json"));
+    private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.Driver));
 
     /// <summary>
     /// A session that worked in its own tree on `reports` and concluded on its quest's done, owed an opinion as the conclusion makes
@@ -199,7 +199,7 @@ public sealed class OpinionLookTests : IDisposable
             {
                 ["reports"] = new OpinionRule(["codex-acp"], on ?? [OpinionRules.Landing], required),
             },
-        }).Save(Path.Combine(_home, "driver.json"));
+        }).Save(DaorisHome.Entry(_home, HomeEntry.Driver));
 
         var root = Path.Combine(_scratch, "reports");
         Directory.CreateDirectory(root);

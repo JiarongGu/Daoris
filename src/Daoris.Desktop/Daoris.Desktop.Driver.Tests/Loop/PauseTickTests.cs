@@ -45,7 +45,7 @@ public sealed class PauseTickTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string ConfigPath => Path.Combine(_home, "driver.json");
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.Driver);
 
     [Fact]
     public async Task An_ask_paused_while_its_session_works_holds_its_quest_with_nothing_spawned_and_Resume_carries_it_on_in_its_tree()
@@ -150,7 +150,7 @@ public sealed class PauseTickTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), DriverConfig.Load(ConfigPath), adapters, _home, processes: _processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>
