@@ -435,6 +435,8 @@ public static class StagedBuild
         var staging = path + ".writing";
         File.WriteAllText(staging, root.ToJsonString(Indented).Replace("\r\n", "\n") + "\n", new System.Text.UTF8Encoding(false));
         Replace(staging, path);
+        // This process's own write, said to the updater's watch of the journal (FABRIC-EVENT4).
+        HomeWrites.Mine(path);
     }
 
     /// <summary>Whether the journal says a swap is under way: moving, started, or confirmed and not yet finished.</summary>

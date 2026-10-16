@@ -626,6 +626,8 @@ public sealed class DriverLoop(
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
         };
+        // FABRIC-EVENT4: and the record files' watchers, reopened at a resume as the requests folder's are.
+        using var filesResumed = Power?.Hear(_watch.Resumed);
         await _watch.RunAsync(
             async (report, ticked) =>
             {

@@ -159,7 +159,13 @@ public sealed class ChainTable
             [ChainEvents.WorkStep, ChainEvents.WorkHeld, ChainEvents.WorkEnded, ChainEvents.WorkTidied], []),
         new(ChainRanks.Plan, "plan", ChainKind.Reader, [ChainEvents.Ledger, ChainEvents.TimerOf(ChangeTopics.Look)], []),
         new(ChainRanks.Ask, "ask", ChainKind.Reader, [ChainEvents.Refs, ChainEvents.Press, ChainEvents.Focus], []),
-        new(ChainRanks.Read, "read", ChainKind.Reader, [ChainEvents.Home, ChainEvents.TimerOf(ChangeTopics.Requests)], []),
+        // Each home folder's reader hears its own deadline: the requests folder's, and the record files' (FABRIC-EVENT4).
+        new(ChainRanks.Read, "read", ChainKind.Reader,
+        [
+            ChainEvents.Home, ChainEvents.TimerOf(ChangeTopics.Requests), ChainEvents.TimerOf(ChangeTopics.Config),
+            ChainEvents.TimerOf(ChangeTopics.Plugins), ChainEvents.TimerOf(ChangeTopics.Lines), ChainEvents.TimerOf(ChangeTopics.Words),
+            ChainEvents.TimerOf(ChangeTopics.Update),
+        ], []),
     ]);
 
     /// <summary>
