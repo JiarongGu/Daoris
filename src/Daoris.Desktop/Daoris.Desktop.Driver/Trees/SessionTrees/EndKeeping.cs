@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -22,6 +24,10 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
 {
+    // One judgement of a repository at a time in this process (FABRIC-END3): the look's tidy, Accept and the ref watch each keep ends, and
+    // two keepers of one repository at once would each write what it read before the other wrote.
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> Judging = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Judge one repository's standing branches and keep what the line holds; how many entries were written comes back.</summary>
     /// <param name="root">The repository's main checkout, whose common dir is its <c>.git</c> folder.</param>
     /// <param name="line">The line the cycle names (D86), read by the caller as its own judgement reads it.</param>
@@ -30,6 +36,20 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         string root, string repository, string workspace, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
         if (!HomeLease.HeldHere(context.Home)) return 0;
+        var alone = Judging.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
+        await alone.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await KeepAloneAsync(root, repository, workspace, line, ct, refs).ConfigureAwait(false);
+        }
+        finally
+        {
+            alone.Release();
+        }
+    }
+
+    private async Task<int> KeepAloneAsync(string root, string repository, string workspace, string? line, CancellationToken ct, RefSnapshot? refs)
+    {
         // The repository judged, by its common dir's identity: a folder that cannot be read is no repository to keep an end for.
         if (FolderIdentity.Of(Path.Combine(root, ".git")) is not { } identity) return 0;
         refs ??= RefSnapshot.Take(root);
