@@ -9,6 +9,7 @@ import { WiringLogs } from './WiringLogs';
 import { WiringLoop } from './WiringLoop';
 import { WiringService } from './WiringService';
 import { WiringTerminal } from './WiringTerminal';
+import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
 import { DEVELOPMENT, MEASURING, WIRED } from './wiringFixtures';
@@ -201,6 +202,25 @@ export const LogsUnmeasured: Story = { render: () => <WiringLogs logs={DEVELOPME
 
 /** A narrow main area. */
 export const LogsNarrow: Story = { render: () => <WiringLogs logs={WIRED.logs} onOpenFolder={none} onLog={none} />, decorators: narrow };
+
+/** What Daoris's sessions left in the person's own tool home (OWNSPACE2), read-only until *Remove these*. */
+export const ToolHomeListed: Story = {
+  render: () => <WiringToolHome toolHome={WIRED.toolHome!} onClear={none} />, decorators: inTheme('light'),
+};
+
+/** The same, in dark. */
+export const ToolHomeListedDark: Story = {
+  render: () => <WiringToolHome toolHome={WIRED.toolHome!} onClear={none} />, decorators: inTheme('dark'),
+};
+
+/** A walk under way: each size says Measuring… */
+export const ToolHomeMeasuring: Story = { render: () => <WiringToolHome toolHome={MEASURING.toolHome!} measuring onClear={none} /> };
+
+/** Nothing of Daoris's is left there, so there is no press. */
+export const ToolHomeNothing: Story = { render: () => <WiringToolHome toolHome={DEVELOPMENT.toolHome!} onClear={none} /> };
+
+/** A narrow main area: a long folder name breaks anywhere. */
+export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={WIRED.toolHome!} onClear={none} />, decorators: narrow };
 
 /** A shell older than the page: one line, and Driver's home row is its fallback. */
 export const Older: Story = { render: () => <WiringOlder /> };

@@ -28,6 +28,17 @@ export interface WiringVariable {
 
 export interface WiringLocated { path: string | null; pathWhy: Why; from: 'variable' | 'beside' | 'home' | 'workspace' | null }
 
+/** A project folder Daoris's sessions left in the person's own tool home (OWNSPACE2): its name there, its size and newest file once measured. */
+export interface WiringToolFolder {
+  name: string; path: string; bytes: number | null; bytesWhy: Why; partial: boolean; newest: string | null; newestWhy: Why;
+}
+
+/** What `SYSTEM_TOOL_CLEAR` did: each folder removed with its bytes, and each kept with why (`not-listed`, `in-use`, `not-removed`). */
+export interface WiringToolCleared {
+  cleared: { name: string; bytes: number }[];
+  kept: { name: string; why: 'not-listed' | 'in-use' | 'not-removed' }[];
+}
+
 export interface SystemWiring {
   schema: number;
   reader: 'window' | 'terminal';
@@ -70,4 +81,7 @@ export interface SystemWiring {
   };
   knowledge: { path: string | null; pathWhy: Why; from: 'variable' | 'home' | null; bytes: number | null; bytesWhy: Why; familyRoot: string | null; familyRootWhy: Why };
   logs: { path: string | null; pathWhy: Why; bytes: number | null; bytesWhy: Why; days: number; newest: string | null; newestWhy: Why; engineLog: boolean };
+  // What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3). Added after the first shape: a shell
+  // older than it sends none, so the page reads it as absent.
+  toolHome?: { path: string | null; pathWhy: Why; from: 'variable' | 'default' | 'named' | null; present: boolean; folders: WiringToolFolder[] };
 }

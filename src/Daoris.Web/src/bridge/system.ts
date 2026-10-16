@@ -1,14 +1,14 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import type { SystemWiring } from '../data/wiring';
+import type { SystemWiring, WiringToolCleared } from '../data/wiring';
 import { call, refusedNoRoute } from './call';
 
 // How this Daoris is wired (WIRING1b, the this-Daoris design §6, D50): Settings → This Daoris's read, the screen's door to
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
 // The shape is a wire shape (`data/wiring.ts`, where the cards that draw it can name it): a field is added, never renamed.
 export type {
-  SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringVariable,
+  SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringToolCleared, WiringToolFolder, WiringVariable,
 } from '../data/wiring';
 // The page tells a shell older than it by this refusal, and reaches the route helper through the domain, not around it.
 export { refusedNoRoute } from './call';
@@ -37,4 +37,17 @@ export const useSystemWiring = () => {
     return answered;
   };
   return { available: isAvailable, query, measure };
+};
+
+/**
+ * *Remove these* (OWNSPACE2, D175 point 3, D88): the project folders Daoris's sessions left in the person's own tool home, the
+ * `names` the list showed. The driver judges each again right before it goes and answers what it removed and what stayed and
+ * why; the wiring is read again either way, so the list is what is there now. The person's own projects are never named.
+ */
+export const useClearToolFolders = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (names: string[]) => call<WiringToolCleared>('SYSTEM_TOOL_CLEAR', { names }),
+    onSettled: () => void client.invalidateQueries({ queryKey: keys.systemWiring }),
+  });
 };

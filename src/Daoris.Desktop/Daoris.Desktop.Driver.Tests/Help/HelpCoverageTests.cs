@@ -781,6 +781,9 @@ public sealed partial class HelpCoverageTests
 
         ("logs", "useOpenLogFolder", null, new Exempt(
             "it opens the log's folder in the system's file browser and changes nothing; a go reaches Settings → Logs.")),
+        ("wiring", "useClearToolFolders", null, new Exempt(
+            "removing what Daoris's sessions left in the person's own tool home is a delete, the person's own press after the list "
+            + "(D88, D175 point 3); a helper never reaches into the person's own tool home (OWNSPACE2).")),
         ("wiring", "useOpenLogFolder", null, new Exempt(
             "This Daoris's Logs card opens the same folder and changes nothing; a go reaches Settings → This Daoris (WIRING1c-ii).")),
     ];

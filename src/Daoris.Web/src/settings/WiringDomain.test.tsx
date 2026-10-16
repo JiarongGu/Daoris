@@ -399,6 +399,70 @@ describe('Settings → This Daoris', () => {
     expect(pressed.filter((name) => /^(Open folder|Copy terminal line|Put on my PATH|Change address)/.test(name ?? ''))).toEqual([]);
   });
 
+  // OWNSPACE2 (D175 point 3, D88): what Daoris's sessions left in the person's own tool home, listed and removed by the press.
+  it('lists the folders Daoris left in the person\'s own tool home, read-only until the press', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    for (const each of WIRED.toolHome!.folders) expect(card.getByText(each.name)).toBeTruthy();
+    expect(card.getByText('2.3 MB')).toBeTruthy();
+    expect(card.getByText('D:/somewhere/person/.claude')).toBeTruthy();
+    expect(card.getByRole('button', { name: 'Remove these' })).toBeTruthy();
+    expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_TOOL_CLEAR')).toBe(false);
+  });
+
+  it('removes exactly the folders it listed, after an ask, and reads the wiring again', async () => {
+    const answered = { cleared: WIRED.toolHome!.folders.map((each) => ({ name: each.name, bytes: each.bytes })), kept: [] };
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) =>
+      (type === 'SYSTEM_TOOL_CLEAR' ? answered : shell(WIRED)(module, type, request)));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    await userEvent.click(card.getByRole('button', { name: 'Remove these' }));
+    // The ask says what goes and what does not; nothing is sent until it is confirmed.
+    expect(card.getByText(/your own work is not touched/i)).toBeTruthy();
+    expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_TOOL_CLEAR')).toBe(false);
+    const wirings = () => invoke.mock.calls.filter(([, type]) => type === 'SYSTEM_WIRING').length;
+    const before = wirings();
+    await userEvent.click(card.getByRole('button', { name: 'Remove them' }));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYSTEM_TOOL_CLEAR', { payload: { names: WIRED.toolHome!.folders.map((each) => each.name) } }));
+    await vi.waitFor(() => expect(wirings()).toBeGreaterThan(before));
+  });
+
+  it('says a folder the driver kept, and why, and a refusal in the ask', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => (
+      type === 'SYSTEM_TOOL_CLEAR'
+        ? { cleared: [], kept: [{ name: WIRED.toolHome!.folders[0]!.name, why: 'in-use' }] }
+        : shell(WIRED)(module, type, request)));
+    show(<SettingsView notify={notify} section="wiring" onGo={vi.fn()} />);
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    await userEvent.click(card.getByRole('button', { name: 'Remove these' }));
+    await userEvent.click(card.getByRole('button', { name: 'Remove them' }));
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/stayed: 1.*in use/i)));
+  });
+
+  it('says there is nothing left, and offers no press, where the tool home holds none of Daoris\'s', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    expect(card.getByText(/nothing of Daoris's is left/i)).toBeTruthy();
+    expect(card.queryByRole('button', { name: 'Remove these' })).toBeNull();
+  });
+
+  it('draws no card from a shell older than the list', async () => {
+    invoke.mockImplementation(shell({ ...WIRED, toolHome: undefined }));
+    open();
+    await screen.findByRole('region', { name: 'Folders' });
+
+    expect(screen.queryByRole('region', { name: 'Left in your own tool home' })).toBeNull();
+  });
+
   it('a shell older than the page: one line saying so, and no card', async () => {
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_WIRING') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
@@ -419,6 +483,6 @@ describe('Settings → This Daoris', () => {
     expect(screen.getByRole('region', { name: '服务' })).toBeTruthy();
     expect(screen.getByRole('region', { name: '驱动循环' })).toBeTruthy();
     expect(screen.getAllByText('开发运行').length).toBeGreaterThan(0);
-    for (const name of ['设置文件', '环境变量', '版本', '终端', '知识库', '日志']) expect(screen.getByRole('region', { name })).toBeTruthy();
+    for (const name of ['设置文件', '环境变量', '版本', '终端', '知识库', '日志', '留在你自己工具主目录里']) expect(screen.getByRole('region', { name })).toBeTruthy();
   });
 });
