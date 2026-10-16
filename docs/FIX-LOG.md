@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A content proof git could not read said the work was held nowhere (PROOF-UNREAD1)
+
+- **Symptom:** none seen on an install; found reading the fabric events design §B7 against the code. `ContentHolds.HeldByContentAsync`
+  returned null both for "no branch holds this work" and for "git could not answer", so a missing git, a timeout or a ref git
+  could not read looked like the work was held nowhere, a finding the callers worded as one ("holds commits no branch of yours
+  holds"), not as a read that was not made.
+- **Root cause:** every read in the proof's chain (the line's forms, the tip's tree, each merge base, the changed files, the
+  branch list, each holder's comparison) turned a git failure into "continue" or `null`, and `LineFormsAsync` read any failure of
+  `rev-parse --verify --quiet` as "no such ref", so a git that never ran left a line with no forms and the proof returned
+  before a single comparison. "Absent is never zero" (D57) was not kept.
+- **Fix:** the proof returns a `ContentProof`: held (`Hold`), not held (both null) or unread (`Unread`, git's words). Exit 1 of
+  `rev-parse --verify --quiet` and of `merge-base` is git's answer (no such ref, no common commit); any other failure marks the
+  proof unread unless another read found the work held. `LandedProofs.ReadLineFormsAsync` says what it could not read. Callers:
+  the sweep keeps the row unread (as its own git failures already do), the branch tidy's and the tree's unforced removal refuse
+  saying git could not tell (and `--force` stays the door), the head's discard offer offers none. `LandedProofs.ProveAsync` had no
+  such gap: a failed read ends as `Unknown`, never `OnLine` or `Merged`. A test seam, `WorkingTree.Answered`, scripts git's answer.
+- **Verification:** `ContentHoldsUnreadTests` (the driver's fast half): git missing, each git ask failing in turn (tree, commit,
+  merge base, diff, log, branch list), a timeout, each reading as unread; no common ancestor and a clean find-nothing reading as
+  not held; `ProveAsync` reading unknown. Written with the code, so the red was a build that failed for want of the type.
+
 ## 2026-10-16 — Accept named a conversation's branch from the person's opening words (ACCEPTFOOT2)
 
 - **Symptom:** on the installed Daoris, a conversation's *Accept* put its one commit on a branch made from a slug of the

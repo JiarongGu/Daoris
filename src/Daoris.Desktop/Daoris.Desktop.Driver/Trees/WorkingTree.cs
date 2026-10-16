@@ -930,6 +930,12 @@ public static class WorkingTree
     /// </summary>
     internal static readonly AsyncLocal<Action<IReadOnlyList<string>>?> Started = new();
 
+    /// <summary>
+    /// The test seam for git's answer (PROOF-UNREAD1): where it returns a reply for a start's arguments, that reply stands in for
+    /// git, so a missing git, a ref git cannot read and a timeout are each one fast case. Null in production, and an async local.
+    /// </summary>
+    internal static readonly AsyncLocal<Func<IReadOnlyList<string>, (int Code, string Stdout, string Stderr)?>?> Answered = new();
+
     // Internal rather than private since D51: SessionTrees asks git the same way for the same reason —
     // one process-spawning implementation, not two that differ in encoding or error shape.
     internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
@@ -946,6 +952,7 @@ public static class WorkingTree
         CancellationToken ct)
     {
         Started.Value?.Invoke(arguments);
+        if (Answered.Value?.Invoke(arguments) is { } answered) return answered;
         var (info, refusal) = GitStart(root, arguments, DaorisHome.Resolve());
         // A git the person chose that cannot run is git's answer, said in the resolution's words (TOOLS5): never PATH's.
         if (info is null) return (-1, "", refusal!);

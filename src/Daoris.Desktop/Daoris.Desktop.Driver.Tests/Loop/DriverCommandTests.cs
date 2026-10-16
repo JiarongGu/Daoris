@@ -373,7 +373,7 @@ public sealed class DriverCommandTests
         // Every loop on the home watches the requests: the headless loop as the desktop's does.
         Assert.Contains("new SessionRequestWatch(home, processes, () => service)", program);
         // MSG1e: the headless loop's own record of each session shows the words it keeps, and its look is nudged to take them up.
-        Assert.Contains("Say = new LoopWords(processes, () => service) { Events = events, Nudge = () => watching?.Nudge() }.HoldAsync", program);
+        Assert.Contains("Say = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session) }.HoldAsync", program);
 
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SessionsConsole.cs"));
         Assert.Contains("SessionsCommand.Read(args, out var problem)", console);

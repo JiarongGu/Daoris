@@ -948,7 +948,7 @@ public sealed class SessionWords : IDisposable
             Tell(id);
         }
 
-        _loop.Nudge();
+        _loop.Said(id);
     }
 
     /// <summary>Held words the record would not keep once it ended, said where the person wrote them, never dropped silently.</summary>

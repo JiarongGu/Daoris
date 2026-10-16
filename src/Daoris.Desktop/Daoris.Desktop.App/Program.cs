@@ -266,6 +266,14 @@ internal static class Program
                 look => log.Warn("update.look", ("message", look.Exception!.GetBaseException().Message)),
                 CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
             updater.Start();
+            // FABRIC-EVENT2d: the system's resume is told to the loop's change watch, which reopens its roots and judges them;
+            // SystemEvents raises on its own thread, and the handler lives as long as the process does.
+            var power = new PowerResume();
+            loop.Power = power;
+            Microsoft.Win32.SystemEvents.PowerModeChanged += (_, change) =>
+            {
+                if (change.Mode == Microsoft.Win32.PowerModes.Resume) power.Raise();
+            };
             loop.Start();
         });
         builder.OnStopping(app =>

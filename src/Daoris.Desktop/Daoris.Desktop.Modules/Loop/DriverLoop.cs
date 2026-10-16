@@ -208,6 +208,16 @@ public sealed class DriverLoop(
         _watch?.Nudge();
     }
 
+    /// <summary>Look now because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake (FABRIC-EVENT2b).</summary>
+    public void Said(string session)
+    {
+        Interlocked.Increment(ref _nudges);
+        _watch?.Said(session);
+    }
+
+    /// <summary>The machine's resume as the shell hears it (FABRIC-EVENT2d); null where the shell hears none, and the watch's overrun rule is all.</summary>
+    public PowerResume? Power { get; set; }
+
     private long _nudges;
 
     /// <summary>How many times a route asked the loop to look now: what a test holds "the loop is nudged" by (MSG1d).</summary>
@@ -567,7 +577,12 @@ public sealed class DriverLoop(
             // STATEHUB1e (D169 point 8): a terminal's `trees` press, told here, reaches every window as the window's press would,
             // and the plugins at `state/changed` with it.
             Told = press => StatePublisher.Publish(eventBus, press),
+            // FABRIC-EVENT2: each look the folder woke, with its ms and why.
+            Log = log,
         };
+
+        // FABRIC-EVENT2d: the shell's power event reopens this watch's roots at a resume; its own overrun rule is the fallback.
+        using var resumeHeard = Power?.Hear(requests.Resumed);
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.

@@ -154,7 +154,7 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
     public SessionEvents? Events { get; init; }
 
     /// <summary>The loop's nudge, so its look takes kept words up now rather than at its next interval; null waits for that.</summary>
-    public Action? Nudge { get; init; }
+    public Action<string>? Nudge { get; init; }
 
     public async Task<WordsHeld> HoldAsync(SessionRequest request, CancellationToken ct)
     {
@@ -193,7 +193,7 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
         if (said.Kept)
         {
             if (said.Word is { } kept) Events?.Keep(id, Shown(kept, request.By), null);
-            Nudge?.Invoke();
+            Nudge?.Invoke(id);
             return new WordsHeld(true, "resume", null) { Word = said.Word?.Id };
         }
 
@@ -225,7 +225,7 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
 
         Events?.Keep(id, SessionNotes.Withdrawn(word), null);
         if (back.Word is { } kept) Events?.Keep(id, Shown(kept, request.By), null);
-        Nudge?.Invoke();
+        Nudge?.Invoke(id);
         return new WordsHeld(true, null, null) { Word = back.Word?.Id, Message = back.Message };
     }
 
