@@ -190,14 +190,14 @@ test('`profile use` sets how the machine\'s list is used, and with `--workspace`
   assert.match(machine.out, /on this machine, `claude-code`'s list is account-1, then account-2, then account-3\./);
   assert.match(machine.out, /use accounts\s+one by one, in order — one limit stops every session on that account/);
   assert.match(machine.out, /kept for conversations\s+account-3/);
-  assert.match(machine.out, /switch before the limit\s+smart — a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
+  assert.match(machine.out, /switch accounts\s+Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
   assert.doesNotMatch(machine.out, /\n\s+curve\s/, 'no curve of its own, none shown');
   assert.match(machine.out, /Written to /);
   assert.equal(scoped.code, 0);
   assert.match(scoped.out, /in `work`, `claude-code`'s list is account-2, then account-1\./);
   assert.match(scoped.out, /use accounts\s+make the most of them\n/);
   // Off still passes an account over Daoris's curve at a start (SWITCH1b-ii); the next start's steps say the pace.
-  assert.match(scoped.out, /switch before the limit\s+off — a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
+  assert.match(scoped.out, /switch accounts\s+Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
   assert.match(scoped.out, /curve\s+session 0:85 — kept, and read only under curve\n/);
   assert.deepEqual(written(fx, 'rotationUse', 'workspaceRotationUse'), {
     rotationUse: { 'claude-code': { use: 'order', keep: 'account-3' } },
@@ -213,7 +213,7 @@ test('`profile use --switch` and `--curve` set the switch and the person\'s curv
 
   const curved = run(['profile', 'use', 'claude-code', '--switch', 'curve', '--curve', 'weekly=0:30,50:70,100:100', '--curve', 'session=0:85'], at(fx));
   assert.equal(curved.code, 0);
-  assert.match(curved.out, /switch before the limit\s+curve — a start passes an account whose limit is reached, that draws on usage credits, or whose use is over your curve, Daoris's smart curve on a window yours leaves out\n/);
+  assert.match(curved.out, /switch accounts\s+My own curve — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over your curve, Daoris's smart curve on a window yours leaves out\n/);
   assert.match(curved.out, /curve\s+session 0:85; weekly 0:30, 50:70, 100:100\n/);
   assert.deepEqual(written(fx, 'rotationUse'), {
     rotationUse: { 'claude-code': { switch: 'curve', curve: { session: [[0, 85]], weekly: [[0, 30], [50, 70], [100, 100]] } } },
@@ -223,7 +223,7 @@ test('`profile use --switch` and `--curve` set the switch and the person\'s curv
   assert.match(week.out, /curve\s+session 0:85; weekly 0:20, 100:95\n/, 'a window set replaces that window and keeps the other');
 
   const off = run(['profile', 'use', 'claude-code', '--switch', 'off'], at(fx));
-  assert.match(off.out, /switch before the limit\s+off — a start still passes [^\n]+ over Daoris's smart curve\n/);
+  assert.match(off.out, /switch accounts\s+Off — no session moves at a turn's end; a start still passes [^\n]+ over Daoris's smart curve\n/);
   assert.match(off.out, /curve\s+session 0:85; weekly 0:20, 100:95 — kept, and read only under curve\n/);
 
   const none = run(['profile', 'use', 'claude-code', '--no-curve'], at(fx));
@@ -249,7 +249,7 @@ test('`profile use` with no flag prints the scope\'s settings and what each acco
   assert.equal(printed.code, 0);
   assert.match(printed.out, /use accounts\s+make the most of them/);
   assert.match(printed.out, /kept for conversations\s+none/);
-  assert.match(printed.out, /switch before the limit\s+smart — /);
+  assert.match(printed.out, /switch accounts\s+Smart — /);
   assert.match(printed.out, /account-1\s+nothing said about what it has left/);
   assert.match(printed.out, /account-2\s+cooling until .* — as the agent said/);
   assert.match(borrowed.out, /`home` names no account of its own for `claude-code`, so it uses this machine's: account-1, then account-2\./);
@@ -311,11 +311,11 @@ test('`profile use` shows each account\'s last reading and its age, and says no 
   assert.match(printed, /account-2\s+nothing said about what it has left/);
   assert.doesNotMatch(printed, /no account has said what it has left yet/);
   // Codex's accounts speak through its own app server, asked by the driver (CODEXUSE1b): the curve's steps, and none said yet.
-  assert.match(codex, /switch before the limit\s+smart — a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
+  assert.match(codex, /switch accounts\s+Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
   assert.match(codex, /next start\s+the ready account running [^\n]*then the one with the most room under its curve;[^\n]*; one whose limit is reached, [^\n]+ goes last, the least over first\n/);
   assert.match(codex, /no account has said what it has left yet/);
   // An agent whose accounts do not say it passes nothing, says so, and walks without the curve's steps.
-  assert.match(silent, /switch before the limit\s+smart — DeepSeek Harness's sessions here do not say how much of each window is used, so a start passes no account by its use\n/);
+  assert.match(silent, /switch accounts\s+Smart — DeepSeek Harness's sessions here do not say how much of each window is used, so a start passes no account by its use\n/);
   assert.match(silent, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one Daoris started on least recently;/);
   assert.match(silent, /no account has said what it has left yet/);
   fx.cleanup();
@@ -541,9 +541,9 @@ test('`agent list` says how each list is used beneath it, the machine\'s and eac
     workspaceRotationUse: { work: { 'claude-code': { keep: 'account-2', weekly: 'pace', early: 'no', switch: 'eager' } } },
   });
 
-  assert.match(plain, /rotation\s+account-1, then account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: none\n\s+switch before the limit: smart — a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
+  assert.match(plain, /rotation\s+account-1, then account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: none\n\s+switch accounts: Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
   // The old names read on: `early: false` is off, and `near: 85` the session window flat at 85, kept under off.
-  assert.match(set, /rotation\s+account-1, then account-2, then account-3\n\s+use accounts: one by one, in order — one limit stops every session on that account\n\s+kept for conversations: account-3\n\s+switch before the limit: off — a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n\s+curve: session 0:85 — kept, and read only under curve\n\s+its default, `account-9`, is not in this list: name it in the list, or make one of the list the default\n/);
-  assert.match(set, /rotation in work account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: account-2\n\s+switch before the limit: smart — a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n\s+`account-2` is kept for conversations, and this list holds no other account for driven work\n\s+`switch` holds a value this build does not know, so it reads as today's default; it is kept as written\n\s+`early` is an old name of the switch, and holds a value this build does not read: nothing reads it, and the next write takes it out\n\s+`weekly` is a setting this build does not know: nothing here reads it, and it is kept as written\n/);
+  assert.match(set, /rotation\s+account-1, then account-2, then account-3\n\s+use accounts: one by one, in order — one limit stops every session on that account\n\s+kept for conversations: account-3\n\s+switch accounts: Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n\s+curve: session 0:85 — kept, and read only under curve\n\s+its default, `account-9`, is not in this list: name it in the list, or make one of the list the default\n/);
+  assert.match(set, /rotation in work account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: account-2\n\s+switch accounts: Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n\s+`account-2` is kept for conversations, and this list holds no other account for driven work\n\s+`switch` holds a value this build does not know, so it reads as today's default; it is kept as written\n\s+`early` is an old name of the switch, and holds a value this build does not read: nothing reads it, and the next write takes it out\n\s+`weekly` is a setting this build does not know: nothing here reads it, and it is kept as written\n/);
   fx.cleanup();
 });

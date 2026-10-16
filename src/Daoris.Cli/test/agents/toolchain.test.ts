@@ -1209,7 +1209,7 @@ test('`agent list` reads a Codex account\'s kept reading as one that speaks: its
 
   assert.match(codex, /account-1[^\n]*\n\s+said 20 min ago: 1% of its session limit used, resetting [^;]+; 15% of its weekly limit used, resetting [^\n]+\n/);
   assert.match(codex, new RegExp('rotation\\s+account-1, then account-2\\n(?:.*\\n)*?'
-    + '\\s+switch before the limit: smart — a start passes an account whose limit is reached, that draws on usage credits, or '
+    + '\\s+switch accounts: Smart — a session moves at a turn\'s end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or '
     + 'whose use is over Daoris\'s smart curve\\n'
     + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; '
     + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
