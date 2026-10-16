@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
+  *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
+  Ask Daoris can answer where your work has got to.
+- In the window, Ask Daoris shows a proposal and a conversation's progress as Daoris writes them, and Settings' sizes as their
+  count ends, rather than asking every one to four seconds; it still reads again every 30 s in case a change was missed. A
+  plain browser asks as before.
+- The knowledge server reads a checkout again at the next search after its files or branches change, rather than once a
+  minute, and at least every five minutes.
 - A conversation whose turn ends with commits beyond its line now offers *Accept…* (采纳…) at the foot of the chat and in its
   head, as a driven session does, not only in the review's side bar; none is offered while a turn runs. Its *Accept* names the
   branch for the work's first commit, never for your opening words; a ticket you named in those words still names it.

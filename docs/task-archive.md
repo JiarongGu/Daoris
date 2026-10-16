@@ -15813,3 +15813,63 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-PLUGSTEP1f — an example plugin that contributes a step** (examples, tools; after PLUGSTEP1c and 1e; §C4). A stand-in source reporting one declared step, its README and `plugins try` samples. Proof: its tests; a rehearsal check for the parent.
 
 **Outcome** 2026-10-17: superseded by part D: the example is FABRIC-PERFORM1e.
+
+## FABRIC-END3 — the ref watcher (2026-10-17, D173)
+
+> - [ ] **FABRIC-END3 — the ref watcher** (driver; after EVENT2, END2c and CHAIN2; §B4, §A4.1). A `ChangeWatch` on each common git dir holding Daoris's work feeds link 1; Daoris's own ref moves add their repository in process; the 5-minute pass stays the reconciliation. Proof: canaries 1-4 on git; a Process class with real git; canary 10's first day, handles and nonpaged memory.
+
+**Outcome** 2026-10-17: a `RefWatch` on each repository's common git dir is link 1: a ref move judges that repository's ends on its own (the end keeper), never the look and never the remote sync, Daoris's own moves marked; judged 24-254 ms after git's write, the keeper's judgement 0.4-4 s (git starts). On Opus: about 52 tool calls. Detail: D173's FABRIC-END3 note.
+
+## FABRIC-MILESTONE1a — the default inventory and the milestone's answer (2026-10-17, D173)
+
+> - [ ] **FABRIC-MILESTONE1a — the default inventory and the milestone's answer** (driver; after END2; the fabric events design's rows table (§E10)). Derive the branch adapter's inventory read-only from the existing records and answer end reached, result kept, cleanup pending or completed, recovery retained; `trees state` and `work state`. Proof: as the design's row.
+
+**Outcome** 2026-10-17: `WorkInventory` derives the branch adapter's inventory read-only from the existing records and answers, per unit, the end, the result, the clean-up and the recovery; `WORK_STATE`, `daoris-driver work state` and `trees state` read it. On Sonnet: about 81 tool calls. Detail: D173's FABRIC-MILESTONE1a note.
+
+## FABRIC-MILESTONE1b — the milestone shown (2026-10-17, D173)
+
+> - [ ] **FABRIC-MILESTONE1b — the milestone shown** (web-shell, modules; after MILESTONE1a; the fabric events design's rows table (§E10)). On the work's foot, What needs you, Branches and Ask Daoris, both locales. Proof: as the design's row; the window.
+
+**Outcome** 2026-10-17: the milestone is shown: `WorkMilestone` on the session's foot, a `work` row in What needs you only where a clean-up is blocked or an owner unknown, a `MilestoneLine` under each tidied branch, and Ask Daoris's "Where work has got to", in en and zh (End/结束, Result/成果, Clean-up/清理, Recovery/找回); the window check is FABRIC-MILESTONE1c. On Sonnet: about 105 tool calls. Detail: D173's FABRIC-MILESTONE1b note.
+
+## FABRIC-UNIT1a — the work-unit adapters (2026-10-17, D173)
+
+> - [ ] **FABRIC-UNIT1a — the work-unit adapters** (driver; after END2; the fabric events design's rows table (§E10), §D2). The `WorkUnit` projection, the branch adapter, read-only quest and ask adapters; no store added.
+
+**Outcome** 2026-10-17: `WorkUnit` is one projection over every kind of work (§D2): the branch adapter is MILESTONE1a's inventory read as units, quest and ask adapters read the service's records by GET and link to the branch units their sessions worked, by id; the milestone is read from any unit; nothing is stored and `WORK_STATE`'s answer is unchanged. On Opus: about 80 tool calls. Detail: D173's FABRIC-UNIT1a note.
+
+## FABRIC-NODE1 — one node contract and its state table (2026-10-17, D173)
+
+> - [ ] **FABRIC-NODE1 — one node contract and its state table** (driver; after UNIT1a; the fabric events design's rows table (§E10), §E2). One lifecycle for every node kind, evidence authority, retries, acceptances bound and invalidated transitively, the built-ins as observed nodes.
+
+**Outcome** 2026-10-17: one node contract in `Trees/Nodes/`: the one lifecycle and its 29-row table every kind passes (`NodeLifecycle`, canary 43), evidence authority by kind (`NodeAuthorities`), bounded retries with reconciliation before a new attempt, acceptances named by their binding and invalidated transitively across units, and `claimed`, `handed`, `pushed`, `pull-request` and `line` observed from `WorkUnit.Records`; derived, nothing stored; nine choices §E2 left open are in the note. On Opus: about 55 tool calls. Detail: D173's FABRIC-NODE1 note.
+
+## FABRIC-EVENT3b — the service's change stream (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT3b — the service's change stream** (service, driver; after EVENT3a; §A4.2). `GET /api/changes` on one observer connection, families by their own revisions, `Open` in `PersonDoors` with at most 8 waits, not in shared mode, the epoch reset on reconnection or a replaced database. Proof: canary 5; a second connection's write wakes the wait; each cursor case; an agent's quest starts without the poll.
+
+**Outcome** 2026-10-17: the local host answers `GET /api/changes` (Open, local only, 8 waits, a ninth answered without sampling): one sampler on its own observer connection reads `data_version` and answers the `sessions` and `quests` families by their own revisions; the epoch resets on reconnection, on a first open after a cursor went out, or on another database at the path. The driver holds one wait and nudges the `ledger` topic, its bootstrap once, so an agent's quest starts without the poll; canary 5 holds. Four review findings fixed. On Opus: about 130 tool calls. Detail: D173's FABRIC-EVENT3b note.
+
+## FABRIC-EVENT5a — Ask Daoris's polls become publishes (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT5a — Ask Daoris's polls become publishes** (web-shell, modules; after EVENT4; D169 §4). Publish `sessions` when the driver takes words up and `help` when a proposal is written; drop the 1.5 s and 4 s intervals in a desktop window. Proof: web and bridge event tests; a plain browser keeps its polls.
+
+**Outcome** 2026-10-17: Ask Daoris's polls are publishes in a desktop window: `sessions` on every move a record makes (`ServiceClient.Moved`), `help` when a proposal arrives (`HomeWatch.ForProposals`, started before the home's lease, with a publish at its start); an invalidation during a fetch asks once more after it (`askAgain`); a 30 s reconciliation read in a desktop window, the old intervals in a plain browser. Four review findings fixed. On Sonnet: about 115 tool calls. Detail: D173's FABRIC-EVENT5a and 5b note.
+
+## FABRIC-EVENT5b — Settings' wiring poll becomes a publish (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT5b — Settings' wiring poll becomes a publish** (web-settings, modules; after EVENT4). A WIRING `STATE_CHANGED` as each size lands, in place of the 2 s poll. Proof: web tests; a plain browser keeps its poll.
+
+**Outcome** 2026-10-17: Settings' 2 s wiring poll is a `wiring` scope (`StateScopes.Wiring`), published as a size walk starts and as it ends; a late measure answer never overwrites a newer read; a 30 s read while measuring in a desktop window, the old poll in a plain browser. Detail: the same note.
+
+## FABRIC-EVENT6 — the knowledge server's freshness on a watch (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT6 — the knowledge server's freshness on a watch** (service; after EVENT2). Mark the checkout stale on a watch of its refs and knowledge folders, a 5-10 min deadline, in place of the one-minute re-read. Proof: an edit read at the next search with no re-read; a silenced source caught by its deadline.
+
+**Outcome** 2026-10-17: the knowledge server over one checkout marks its reading stale from a watch of the checkout's git refs and knowledge folders (`CheckoutFreshness`) and reads it at the next search, with a 5-minute deadline for a silenced watch and the old minute for a checkout nothing could watch; an overflow or watcher error marks stale, never fresh. On Sonnet: about 42 tool calls. Detail: D173's FABRIC-EVENT6 note.
+
+## GATEORDER1 — the Process gates run with nothing heavy beside them (2026-10-17, D115)
+
+> - [ ] **GATEORDER1 — the Process gates run with nothing heavy beside them** (tools). In the 0b44c7a run `driver-process` started as soon as the driver and modules builds ended, beside cli, service and web, and two timing tests failed in the full run and passed alone. Start the Process halves once the heavy light-lane gates have ended, or say why not with the measured wall-time cost. Proof: `merge-branch.test.ts`'s plan order; a full run's log times.
+
+**Outcome** 2026-10-17: a Process-lane gate that names a component also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, web), so no Process half runs beside a suite loading the CPU; the git and serial halves never overlapped; `--stale` and `--rerun` share the schedule. Cost: the light lane's tail, about 7-8 min against an hour or more. On Sonnet: about 54 tool calls. Detail: `tools/merge-branch.mjs`'s header, `docs/development.md`.
