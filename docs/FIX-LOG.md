@@ -25,14 +25,15 @@ repository.
     The next turn waits until the stop is on the wire or dropped: `PumpAsync` awaits it, and `NextOrClose` hands back a
     `Waits`. The inbox asks a turn to stop once.
   - **The next-step door is never stopped.** That holds while a word is on its way, or wherever the door takes words at
-    its next step. Words behind others go behind them, answered `now: false` with `why: "behind"`, and nothing is
-    steered past a word on its way.
+    its next step. Where the agent steers, the press steers past what is ahead: a steer is no stop (D136's STEER2a note).
+    Where it cannot steer, the words go behind, answered `now: false` with `why: "behind"`.
   - **A finished call stays finished.** It is kept finished through any update without a status. Only `pending` or
     `in_progress` opens a call, or an announcement with no status, which the protocol reads as `pending`.
 - **Verification:**
-  - `ChatTurnsTests`: a slow stop holding the kept words' turn until it landed on the turn before; the helper-waiting case
-    and the word-on-its-way case.
-  - `DrivenInboxTests`: one stop per turn; no held word taken while a stop is on its way; behind a word on its way.
+  - `ChatTurnsTests`: a slow stop holding the kept words' turn until it landed on the turn before; on a door that cannot
+    steer, the helper-waiting case and the word-on-its-way case; on one that steers, past both with nothing stopped.
+  - `DrivenInboxTests`: one stop per turn; no held word taken while a stop is on its way; past a word on its way, or
+    behind it where the agent cannot steer.
   - `AcpSteerTests`: completed, then a statusless update, then a steer, with no cut.
   - Each was seen failing behaviourally once its surface compiled.
 
