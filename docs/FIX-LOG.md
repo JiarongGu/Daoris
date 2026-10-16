@@ -17,10 +17,14 @@ repository.
 - **Fix:** with nothing named, the walk goes over the agent's Daoris accounts, and with none signed in holds with
   `held.no-account` as a wait for a sign-in; a record that began in the own home resumes there; a test double declares
   `RunsInOwnHome`. `ClaudeTrust.PathFor` reads the file the session's harness reads, and a hold on an account names Daoris's
-  door alone. D175's OWNSPACE1a note.
+  door alone. A second maker's review found two gaps, closed before the merge: an own-home resume whose words fell back to a
+  new record opened it in the person's home (now `CarriedOnAsync`, the walk, before the record opens), and the page's next
+  start, asked by the owner (`codex`), found no adapter of that name and skipped the rule (now the owner's toolchain through
+  its doors). D175's OWNSPACE1a note.
 - **Verification:** `OwnSpaceTests` (red as it could not compile: each start kind's selection applied to a spawn sets the
   variable to a Daoris account; none signed in holds with the sentence; an own-home resume stays; the stub exempt; the next
-  start), `SignedOutWaitTests`' no-account wait said once, `WorkspaceTrustTests`' path and sentence, and the account tests
+  start; and, red then green, an own-home resume's words carried to a new record take the walk, and Codex's next start by its
+  owner waits or takes its one account), `SignedOutWaitTests`' no-account wait said once, `WorkspaceTrustTests`' path and sentence, and the account tests
   that pinned D125 point 5 rewritten to D175 (`AccountNextStartTests`, `AccountRotationTests`, `AccountRotationGoalTests`,
   `StartWiringTests`).
 

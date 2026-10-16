@@ -203,6 +203,57 @@ public sealed class OwnSpaceTests : IDisposable
         Assert.Equal(["acp-stub", "stub"], exempt);
     }
 
+    /// <summary>
+    /// 🔴 A resume of a record begun in the tool's own home goes on there, but where its words are carried to a NEW record (its
+    /// conversation could not go on), that record is a new start: it takes the walk (D130 §16.2), and holds where the walk holds,
+    /// never a new session in the person's home.
+    /// </summary>
+    [Fact]
+    public async Task Words_an_own_home_resume_carries_to_a_new_record_take_the_walk()
+    {
+        var roster = Roster();
+        var resume = await roster.ResumeAsync("fake", Config, "aurora", account: null, StartKind.Driven);
+        Assert.Null(resume.Selection.ProfileHome);
+
+        var (held, _) = await roster.CarriedOnAsync(resume, "fake", Config, "aurora", null);
+        Assert.False(held.Allowed);
+        Assert.StartsWith(NoAccount, held.Refusal);
+
+        var home = Account("daoris-1");
+        var (runs, _) = await roster.CarriedOnAsync(resume, "fake", Config, "aurora", null);
+        Assert.Equal(("daoris-1", home), (runs.Profile, runs.ProfileHome));
+    }
+
+    [Fact]
+    public async Task Words_a_Daoris_account_s_resume_carries_to_a_new_record_stay_on_that_account()
+    {
+        Account("daoris-1");
+        var second = Account("daoris-2");
+        var roster = Roster();
+        var resume = await roster.ResumeAsync("fake", Config, "aurora", "daoris-2", StartKind.Conversation, walks: false);
+
+        var (carried, passed) = await roster.CarriedOnAsync(resume, "fake", Config, "aurora", null);
+
+        Assert.Same(resume.Selection, carried);
+        Assert.Equal(("daoris-2", second, (string?)null), (carried.Profile, carried.ProfileHome, passed));
+    }
+
+    /// <summary>
+    /// 🔴 The page asks the next start by the accounts' OWNER, which no adapter may be named (`codex` behind `codex-acp`): its
+    /// toolchain is read through its doors, so the rule holds for it as for any agent.
+    /// </summary>
+    [Fact]
+    public void The_next_start_of_an_owner_no_adapter_is_named_after_follows_the_rule()
+    {
+        var roster = new HarnessRoster(AdapterSet.Built(), Settings);
+
+        Assert.Equal(((string?)null, NextReason.Waits), roster.Next("codex", null) is var waits ? (waits.Account, waits.Reason) : default);
+
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "codex", "daoris-1"));
+
+        Assert.Equal(("daoris-1", NextReason.Named), roster.Next("codex", null) is var next ? (next.Account, next.Reason) : default);
+    }
+
     [Fact]
     public void The_next_start_with_no_Daoris_account_waits_and_with_one_takes_it()
     {
