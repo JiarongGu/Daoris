@@ -312,9 +312,9 @@ describe('a start held on signed-out accounts with none cooling (UX6d2)', () => 
   });
 
   /** The tool's own sign-in read signed out, which this machine's empty list runs on, is its own row: the wait never names it. */
-  it('leaves the tool’s own signed-out sign-in its own row', () => {
+  it('gives the tool’s own signed-out sign-in no row: nothing runs on it (OWNSPACE1b-A)', () => {
     const rows = derive(facts({ ownLogin: 'out', ownRead: READ }));
-    expect(rows.map(({ id }) => id)).toEqual(['wait:claude-code/:signed-out', 'signed-out:claude-code/']);
+    expect(rows.map(({ id }) => id)).toEqual(['wait:claude-code/:signed-out']);
   });
 
   /** A cool-off of the tool's own sign-in names no account either: the two waits of one agent are two rows, two keys. */
@@ -399,13 +399,10 @@ describe('a signed-out account a list holds', () => {
   });
 
   /** The tool's own sign-in holds the starts where no account is named (D125 §3.7), so reading signed out it needs the person. */
-  it('includes the tool’s own sign-in while the starts run on it', () => {
+  /** OWNSPACE1b-A (D175 point 1): the own sign-in holds no work, so it is never listed; the hold for no account is B's row. */
+  it('leaves out the tool’s own sign-in, which no start runs on', () => {
     const tools = byTool([door({ profiles: [], ownLogin: 'out', ownRead: READ })]);
-    const [row] = derive({ tools, use: answer([scope()]), waits: [] });
-    expect(row).toMatchObject({
-      id: 'signed-out:claude-code/', kind: 'signed-out', title: 'Your own sign-in', where: 'Claude Code', since: null,
-      read: READ, detail: "Daoris's starts run on it, since no account is named.",
-    });
+    expect(derive({ tools, use: answer([scope()]), waits: [] })).toEqual([]);
   });
 });
 
