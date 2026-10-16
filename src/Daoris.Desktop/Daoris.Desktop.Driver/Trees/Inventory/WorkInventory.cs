@@ -50,6 +50,15 @@ public static class InventoryKind
     public const string AutoLanding = "auto-landing";
     public const string History = "history";
     public const string End = "end";
+
+    /// <summary>A quest's own record, the service's (FABRIC-UNIT1a): its evidence pointer.</summary>
+    public const string Quest = "quest";
+
+    /// <summary>An ask's own record, the service's (FABRIC-UNIT1a): its evidence pointer.</summary>
+    public const string Ask = "ask";
+
+    /// <summary>A file a quest or an ask carries, by its name: the service keeps its bytes.</summary>
+    public const string Attachment = "attachment";
 }
 
 /// <summary>One resource a unit's work made, with its role and what became of it (FABRIC-MILESTONE1a, the design's §D3).</summary>
@@ -85,12 +94,40 @@ public sealed record MilestoneCleanup(string State, IReadOnlyList<InventoryEntry
 
 /// <summary>
 /// The milestone the person sees for one unit (the design's §D0): end reached, result kept, cleanup, recovery retained; and the
-/// entries it was read from. Derived at each read from the records the branch adapter already keeps, and stored nowhere.
+/// entries it was read from. Read from the unit (<see cref="Of"/>), the same way for every kind, and stored nowhere.
 /// </summary>
 /// <param name="Unit">The unit's id, or a name derived from its branch for work from before units were kept.</param>
+/// <param name="Repository">The owner's repository; empty for an ask, which is a workspace's.</param>
+/// <param name="Branch">A branch unit's branch; null for every other kind.</param>
 public sealed record WorkMilestone(
     string Unit, string Repository, string? Branch, string? Session, MilestoneEnd End, IReadOnlyList<InventoryEntry> Result,
-    MilestoneCleanup Cleanup, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryEntry> Entries);
+    MilestoneCleanup Cleanup, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryEntry> Entries)
+{
+    /// <summary>
+    /// The unit's milestone (FABRIC-UNIT1a reads MILESTONE1a's through the projection): the cleanup waits on every temporary entry
+    /// pending or blocked and on any entry blocked, and on the end itself while nothing else waits and the end is not over; it is
+    /// completed only once the end is over and nothing waits. An unknown owner's unit names no end to wait for: its blocked entry says why.
+    /// </summary>
+    public static WorkMilestone Of(WorkUnit unit)
+    {
+        var over = WorkEndState.Over(unit.End.State);
+        var entries = unit.Entries;
+        var waits = entries.Where(entry => entry.Role == InventoryRole.Temporary
+            && entry.Disposition is InventoryDisposition.Pending or InventoryDisposition.Blocked).ToList();
+        waits.AddRange(entries.Where(entry => entry.Role != InventoryRole.Temporary && entry.Disposition == InventoryDisposition.Blocked));
+        if (!over && waits.Count == 0 && unit.OwnerKnown)
+        {
+            waits.Add(new InventoryEntry(unit.Id, InventoryKind.End, "the end", InventoryRole.Temporary, InventoryDisposition.Pending, unit.End.Said));
+        }
+
+        var gone = entries.Where(entry => entry.Role == InventoryRole.Temporary && entry.Disposition == InventoryDisposition.Removed).ToList();
+        return new WorkMilestone(
+            unit.Id, unit.Owner.Repository ?? "", unit.Kind == WorkUnitKind.Branch ? unit.Subject.Artifact : null, unit.Executors.FirstOrDefault(),
+            unit.End, [.. entries.Where(entry => entry.Role == InventoryRole.Result)],
+            new MilestoneCleanup(over && waits.Count == 0 ? "completed" : "pending", waits, gone),
+            [.. entries.Where(entry => entry.Role == InventoryRole.Recovery)], entries);
+    }
+}
 
 /// <summary>A recovery ref a content-held removal kept (<c>refs/daoris/discarded/&lt;branch&gt;</c>), by its repository.</summary>
 public sealed record RecoveryRef(string Repository, string Ref);
@@ -109,11 +146,15 @@ public sealed record InventoryFacts(
     Func<string, bool> HasHistory, DateTimeOffset Now);
 
 /// <summary>
-/// The branch adapter's ownership inventory, derived (FABRIC-MILESTONE1a; the fabric events design §D0 and §D3): every entry gets a
-/// role and a disposition from the records that already name the resource, and each unit's milestone is read from them. Pure over
+/// The branch adapter (FABRIC-UNIT1a; the fabric events design §D2) and its ownership inventory, derived (FABRIC-MILESTONE1a; §D0 and
+/// §D3): every entry gets a role and a disposition from the records that already name the resource, each unit is read from them as a
+/// <see cref="WorkUnit"/> of kind <see cref="WorkUnitKind.Branch"/>, and its milestone from the unit. Pure over
 /// <see cref="InventoryFacts"/>: nothing is stored, nothing removed, no fact written twice.
 /// </summary>
 /// <remarks>
+/// <para><b>The canonical records</b> (§D2's table): the session branch's entry in <see cref="SessionBranches.FileName"/>, with the
+/// landings in <see cref="LandedBranches.FileName"/> that name its unit (<see cref="LandedBranch.Units"/>); their one writer is the
+/// driver. A landing from before units, and an auto-landing alone, name a unit of their own from their record.</para>
 /// <para><b>The end is the kept fact</b> (<see cref="HeldFact"/>), never judged again here: a fact whose branch moved since is
 /// cleared by the next look (§B5), so this reads what the keeper last proved. Absent, the work is <i>handed</i> where a landing
 /// carries it and the line does not hold that, else <i>not ended</i> (<see cref="EndState"/>'s words).</para>
@@ -134,8 +175,14 @@ public static partial class WorkInventory
         public HashSet<string> Sessions { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>The milestone of every unit the records name, and of what no record names, oldest first.</summary>
-    public static IReadOnlyList<WorkMilestone> Derive(InventoryFacts facts)
+    /// <summary>The milestone of every unit the records name, and of what no record names, oldest first: each read from its unit.</summary>
+    public static IReadOnlyList<WorkMilestone> Derive(InventoryFacts facts) => [.. Units(facts).Select(WorkMilestone.Of)];
+
+    /// <summary>
+    /// Every branch unit the records name, and a unit of its own for what no record names, oldest first (the branch adapter, §D2). A
+    /// landing that carries one unit alone links it to the quest the landing names; one carrying several does not say which served it.
+    /// </summary>
+    public static IReadOnlyList<WorkUnit> Units(InventoryFacts facts)
     {
         var drafts = new Dictionary<string, Draft>(StringComparer.Ordinal);
         foreach (var branch in facts.Branches)
@@ -170,9 +217,9 @@ public static partial class WorkInventory
         AttachAutoLandings(facts, drafts, treeOf);
         AttachRefs(facts, drafts);
 
-        var milestones = new List<WorkMilestone>();
-        foreach (var draft in drafts.Values) milestones.Add(Milestone(draft, facts, trees.GetValueOrDefault(draft.Id) ?? []));
-        return milestones;
+        var units = new List<WorkUnit>();
+        foreach (var draft in drafts.Values) units.Add(Unit(draft, facts, trees.GetValueOrDefault(draft.Id) ?? []));
+        return units;
     }
 
     private static string Name(string path) => Path.GetFileName(Path.TrimEndingDirectorySeparator(path));
@@ -269,11 +316,11 @@ public static partial class WorkInventory
 
     private const string ContentHoldsPrefix = "refs/daoris/discarded/";
 
-    private static WorkMilestone Milestone(Draft draft, InventoryFacts facts, IReadOnlyList<SessionTree> trees)
+    private static WorkUnit Unit(Draft draft, InventoryFacts facts, IReadOnlyList<SessionTree> trees)
     {
         var branch = draft.Branch;
         var end = End(draft);
-        var ended = end.State == "ended";
+        var ended = end.State == WorkEndState.Ended;
         var entries = new List<InventoryEntry>();
 
         if (branch is not null)
@@ -318,20 +365,20 @@ public static partial class WorkInventory
                 "the session's record and log: history, which the end never removes (clearing governs it)"));
         }
 
-        var waits = entries.Where(entry => entry.Role == InventoryRole.Temporary
-            && entry.Disposition is InventoryDisposition.Pending or InventoryDisposition.Blocked).ToList();
-        waits.AddRange(entries.Where(entry => entry.Role != InventoryRole.Temporary && entry.Disposition == InventoryDisposition.Blocked));
-        if (!ended && waits.Count == 0 && !draft.Unowned)
+        // The record that names it, by what the draft was read from; none for what no record names (canary 27).
+        var record = draft.Unowned ? null
+            : branch is not null ? SessionBranches.FileName
+            : draft.Landings.Count > 0 ? LandedBranches.FileName
+            : AutoLandings.FileName;
+        var quests = draft.Landings.Where(landing => landing.Quest is { Length: > 0 } && landing.Units.Count <= 1)
+            .Select(landing => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(landing.Quest!))).Distinct().ToList();
+        return new WorkUnit(
+            draft.Id, WorkUnitKind.Branch, new WorkOwner(draft.Repository, draft.Workspace, record, WorkRecord.Driver),
+            new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch, end.Revision), end, entries)
         {
-            waits.Add(new InventoryEntry(draft.Id, InventoryKind.End, "the end", InventoryRole.Temporary, InventoryDisposition.Pending, end.Said));
-        }
-
-        var gone2 = entries.Where(entry => entry.Role == InventoryRole.Temporary && entry.Disposition == InventoryDisposition.Removed).ToList();
-        var cleanup = new MilestoneCleanup(ended && waits.Count == 0 ? "completed" : "pending", waits, gone2);
-        return new WorkMilestone(
-            draft.Id, draft.Repository, branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch, draft.Sessions.FirstOrDefault(), end,
-            [.. entries.Where(entry => entry.Role == InventoryRole.Result)], cleanup,
-            [.. entries.Where(entry => entry.Role == InventoryRole.Recovery)], entries);
+            Executors = [.. draft.Sessions],
+            Links = quests,
+        };
     }
 
     private static InventoryEntry TreeEntry(Draft draft, SessionTree tree, InventoryFacts facts, bool ended)
