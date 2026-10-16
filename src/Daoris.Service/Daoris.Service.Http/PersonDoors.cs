@@ -130,7 +130,7 @@ public static class PersonDoors
     /// <summary>The person's refusal of what a terminal asked: the key's alone.</summary>
     public static readonly Door Refuse = new("POST", "/api/confirmations/{id}/refuse", DoorClass.Person, "the refusal of a terminal's act");
 
-    /// <summary>Every route either host maps, each with its class: 68 at PERSONDOOR1b.</summary>
+    /// <summary>Every route either host maps, each with its class: 68 at PERSONDOOR1b, the change stream's read among them since FABRIC-EVENT3b.</summary>
     public static IReadOnlyList<Door> Table { get; } =
     [
         // Open: reads (design §3.2, 18), and the second opinion's two (D155's XAGENT1c note), answered to loopback only.
@@ -163,6 +163,9 @@ public static class PersonDoors
         // Neither answers a secret's hash, so a reader learns nothing that grants.
         new("GET", "/api/confirmations", DoorClass.Open),
         new("GET", "/api/confirmations/{id}", DoorClass.Open),
+        // Which ledger families moved (FABRIC-EVENT3b, the fabric events design §A4.2): families and a cursor, never a record, as
+        // the connector reads the same store. A local host's alone, with at most eight waits held at once.
+        new("GET", ChangeStream.Route, DoorClass.Open),
 
         // What an agent may do (3): the exchange the connector's tools use, so the two doors cannot drift. And asking the
         // person to confirm (PERSONDOOR1b): a session can ask, and its card is one the person refuses or lets expire.
