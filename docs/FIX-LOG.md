@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — Accept named a conversation's branch from the person's opening words (ACCEPTFOOT2)
+
+- **Symptom:** on the installed Daoris, a conversation's *Accept* put its one commit on a branch made from a slug of the
+  person's first sentence and the session's id, under a repository whose landing pattern is `feature/<KEY>-<words>`. Nothing in
+  the name said what the work was.
+- **Root cause:** a conversation's landing subject is its opening (`LandingRules.SubjectAsync` with no quest): PROCESS1b-i
+  searched it for a ticket and `{slug}` was made of it, as PROCESS1d-ii's note said (*made at Accept from its opening*). The
+  opening is the person's chat, worn by the page as the conversation's name only because it has no title (RAIL1).
+- **Fix:** a subject whose title is a conversation's opening (`LandingSubject.NamedByOpening`) is named for its work: `ForWork`
+  sets its name to the oldest commit subject its tree holds beyond the line, the subject PROCESS1b-ii already names a squash by
+  where there is no title; the opening stays its title and is searched for a ticket after that subject. The plan, the press and
+  an entry's branch read it alike (`TreeLands.ForWorkAsync`, git asked only for such a subject). D164's ACCEPTFOOT2 note.
+- **Verification:** `QuestNameTests` (the driver's fast half: the opening never named, a ticket in the commit or the opening,
+  none found, no commit read) and `LandingTests`' real-git case, plan and press naming one branch, seen red with the old name
+  (`feature/ok-so-that-is-merged-now-what-abo…`) before the wiring.
+
+## 2026-10-16 — A conversation whose turn ended with work offered Accept only in the review's side bar (ACCEPTFOOT1)
+
+- **Symptom:** on the installed Daoris, an open conversation in a tree of its own ended its turn with a commit beyond the line
+  and its agent said so; the chat showed no *Accept* at its foot or its head, and the person found it only in the review's side
+  bar.
+- **Root cause:** the head and the foot draw the work's wait from `SESSION_GROUPS`' `lands` (LAND4), which the driver's look
+  gives only a session that is not live (`SessionGroups.Place`, `LandableTree`). An open conversation's record stays `working`
+  between turns, so it never had an offer; the review's side bar asks its own plan from `SESSION_DIFF`, so it did.
+- **Fix:** the frame reads an open conversation's offer from the review's own answer once the driver says its turn has ended
+  (`conversationOffer`, `work/waits.ts`): the commits beyond the line on the branch its tree is on, none while a turn runs or
+  words wait, none where nothing is beyond the line (REVIEWBASE4); the same *Accept…* and press (D56). D164's ACCEPTFOOT1 note.
+- **Verification:** `waits.test.ts` (the offer and each case of none) and `WorkFrame.test.tsx` (*Accept…* at the foot and the
+  head once the turn ends, none while it runs, none with nothing beyond the line), each seen red first.
+
 ## 2026-10-16 — The merge gate's note named tests that passed alone as failed again
 
 - **Symptom:** after a Process gate's full run failed four tests and two of them failed again alone, the note read
