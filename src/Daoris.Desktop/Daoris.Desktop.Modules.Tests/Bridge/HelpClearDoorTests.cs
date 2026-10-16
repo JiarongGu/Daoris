@@ -65,7 +65,8 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
         Assert.Contains("\"units\"", File.ReadAllText(path));
         Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
 
-        var applied = await AnswerAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" });
+        var applied = await AnswerAsync(module, "HELP_APPLY",
+            new { id = "p1a2b3c4", revision = drawn.GetProperty("proposals")[0].GetProperty("revision").GetString() });
 
         Assert.True(applied.GetProperty("applied").GetBoolean());
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));

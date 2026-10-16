@@ -28,4 +28,21 @@ describe('picking a folder', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity });
   });
+
+  // MAINWINDOWS2c: the dialog is owned by the window whose page asked, which the first main window, put away, is not.
+  it('names the window it is in, so the dialog is that window\'s', async () => {
+    window.history.pushState({}, '', '/?window=main%3A2');
+    try {
+      const client = new QueryClient();
+      const { result } = renderHook(() => usePickFolder(), {
+        wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+      });
+
+      await result.current.mutateAsync();
+
+      expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', { payload: { window: 'main:2' }, timeoutMs: Infinity });
+    } finally {
+      window.history.pushState({}, '', '/');
+    }
+  });
 });

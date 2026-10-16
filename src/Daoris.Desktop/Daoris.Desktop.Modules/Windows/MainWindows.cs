@@ -40,6 +40,22 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
         }
     }
 
+    /// <summary>
+    /// The first main window went away or came back (MAINWINDOWS2b): the windows that wear the taskbar's count are now others.
+    /// Raised on the thread that changed it, outside the lock.
+    /// </summary>
+    public event Action? AwayChanged;
+
+    /// <summary>
+    /// Whether this window wears the taskbar's count (MAINWINDOWS2b): the first main window always, whose button it is, and each
+    /// other main window while the first is put away, since a button hidden shows none. A utility window never does.
+    /// </summary>
+    public bool WearsCount(string name)
+    {
+        if (name == First) return true;
+        return SecondaryWindow.IsMain(name) && FirstAway;
+    }
+
     /// <summary>A window opened, by its name; only another main window is counted.</summary>
     public void Opened(string name)
     {
@@ -72,6 +88,7 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
         }
 
         log?.Info("window.away", ("others", others));
+        AwayChanged?.Invoke();
         return true;
     }
 
@@ -104,6 +121,8 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
             _away = false;
             _cameBack = true;
         }
+
+        AwayChanged?.Invoke();
     }
 
     /// <summary>
@@ -112,12 +131,16 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
     /// </summary>
     public bool TakeBackFirst()
     {
+        bool wasAway;
         lock (_gate)
         {
             if (_ending || (!_away && !_cameBack)) return false;
+            wasAway = _away;
             _away = false;
             _cameBack = false;
-            return true;
         }
+
+        if (wasAway) AwayChanged?.Invoke();
+        return true;
     }
 }

@@ -30,6 +30,10 @@ public sealed class SecondaryForm : OptimizedForm
     private readonly bool _main;
     private bool _pageSaid;
     private bool _pageDark;
+    private readonly TaskbarBadge? _badge;
+
+    /// <summary>The name this window was opened under: <c>monitor</c>, <c>session:&lt;id&gt;</c> or <c>main:&lt;n&gt;</c>.</summary>
+    public string WindowName { get; }
 
     /// <param name="startsDark">
     /// The theme to wear until the page says its own: the viewer's held choice, or the OS's at <i>System</i>, asked each
@@ -59,6 +63,21 @@ public sealed class SecondaryForm : OptimizedForm
         // The main window's taskbar identity (TASKBAR1, D108), or this window would be a button of its
         // own beside the main one's, grouped by the executable the main one no longer is.
         TaskbarWindow.Wear(this);
+        WindowName = name;
+
+        // And, for another main window, the taskbar's count while the first is put away and its button is gone (MAINWINDOWS2b):
+        // the host tells it what to show (`SecondaryWindowHost.ShowWaiting`), and the button's overlay is put back each time
+        // Explorer makes the button, as the main window's is.
+        if (_main)
+        {
+            _badge = new TaskbarBadge(this);
+            _badge.Wear(ChromePalette.For(startsDark()));
+            WndProcHook = message =>
+            {
+                if (TaskbarBadge.ButtonCreated != 0 && message.Msg == TaskbarBadge.ButtonCreated) _badge.Apply();
+                return null;
+            };
+        }
 
         // The viewer's held choice, or the OS theme at System, until the page says which one it is in (WINDOW2:
         // `FollowPage`, over `DAORIS.WINDOWS`; THEMESTART1). Shenora's window commands route a second window's
@@ -105,6 +124,32 @@ public sealed class SecondaryForm : OptimizedForm
     };
 
     /// <summary>
+    /// Wear the taskbar's count on this window's button and in its title (MAINWINDOWS2b), or none at none: another main window's
+    /// while the first is put away. From any thread; a window that is not a main window wears nothing.
+    /// </summary>
+    public void ShowWaiting(int count, string? description)
+    {
+        if (_badge is null || IsDisposed) return;
+        if (InvokeRequired)
+        {
+            if (!IsHandleCreated) return;
+            try
+            {
+                BeginInvoke(() => ShowWaiting(count, description));
+            }
+            catch (InvalidOperationException)
+            {
+                // The handle went between the look and the post.
+            }
+
+            return;
+        }
+
+        Text = WaitingBadge.Title(count);
+        _badge.Show(count, description);
+    }
+
+    /// <summary>
     /// The theme the page in this window is in (WINDOW2) — the viewer's choice where there is one —
     /// painted on the caption and border the page cannot reach. Called on this window's thread.
     /// </summary>
@@ -135,6 +180,7 @@ public sealed class SecondaryForm : OptimizedForm
         {
             // Frameless: the kit's theme reaches its caption, and the buttons are this window's to paint, as the main one's are.
             CaptionButtonColors = MainForm.CaptionColors(palette);
+            _badge?.Wear(palette);
             return;
         }
 
@@ -179,6 +225,7 @@ public sealed class SecondaryForm : OptimizedForm
     {
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= _themeChanged;
         _view.Dispose();
+        _badge?.Dispose();
         base.OnFormClosed(e);
     }
 

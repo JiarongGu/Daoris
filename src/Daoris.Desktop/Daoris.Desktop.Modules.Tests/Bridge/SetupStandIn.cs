@@ -11,7 +11,7 @@ internal sealed class SetupStandIn : ISetupWorld
 {
     public List<RepoView> Registry { get; } = [new("atlas", false, "/fixture/atlas", "work")];
 
-    public LayoutFacts Facts { get; init; } = new() { Line = "main", Commit = "0123456789abcdef0123456789abcdef01234567" };
+    public LayoutFacts Facts { get; set; } = new() { Line = "main", Commit = "0123456789abcdef0123456789abcdef01234567" };
 
     public SetupTools Tools { get; init; } = new("node", "v24.1.0", null, "daoris", "0.9.0", null);
 

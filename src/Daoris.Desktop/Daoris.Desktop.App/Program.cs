@@ -149,14 +149,16 @@ internal static class Program
             bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
         builder.Services.AddIpcModule<UpdateModule>();
         builder.Services.AddSingleton<MainForm>();
-        // A tool named as a file (TOOLS7): the system's file picker, owned by the window, as the folder picker is.
-        builder.Services.AddSingleton<PickFile>(sp => title => sp.GetRequiredService<MainForm>().PickFile(title));
+        // A tool named as a file (TOOLS7): the system's file picker, owned by the window whose page asked (MAINWINDOWS2c), as the
+        // folder picker is: the first main window is hidden while put away, and a dialog owned by it would open behind nobody.
+        builder.Services.AddSingleton<PickFile>(sp => (title, window) => Pickers.File(
+            Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window), title));
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();
         // The one thing a page cannot do: name a directory on this machine (D48 §7). Everything else
         // about managing a repository is an ordinary call to the loopback host.
-        builder.Services.AddSingleton<Func<string?>>(sp => () =>
-            sp.GetRequiredService<MainForm>().PickFolder());
+        builder.Services.AddSingleton<PickFolder>(sp => window => Pickers.Folder(
+            Pickers.Owner(sp.GetRequiredService<MainForm>(), sp.GetRequiredService<SecondaryWindowHost>(), window)));
         builder.Services.AddIpcModule<RegistryModule>();
         // The machine's wiring — which deployment serves each workspace (D48 §5, D50). The same file
         // `daoris remote` edits; the service has no door onto it, deliberately.
@@ -193,8 +195,14 @@ internal static class Program
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         // The main window's taskbar count (NOTIFY1b): the window is resolved as the page tells it, never as the module
         // is made, since the window is made after the modules and maps one of its own.
+        // And, while the first is put away and its button is gone, each other main window's (MAINWINDOWS2b).
+        builder.Services.AddSingleton(sp => new WaitingCount(sp.GetRequiredService<MainWindows>()));
         builder.Services.AddSingleton<ShowWaiting>(sp => (count, description) =>
-            sp.GetRequiredService<MainForm>().ShowWaiting(count, description));
+        {
+            sp.GetRequiredService<WaitingCount>().Told(count, description);
+            sp.GetRequiredService<MainForm>().ShowWaiting(count, description);
+            sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting();
+        });
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And

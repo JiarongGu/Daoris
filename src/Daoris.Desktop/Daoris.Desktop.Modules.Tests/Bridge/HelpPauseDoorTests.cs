@@ -113,7 +113,7 @@ public sealed class HelpPauseDoorTests : DriverModuleBridge
         File.WriteAllText(Path.Combine(folder, "p1a2b3c4.json"),
             """{"id":"p1a2b3c4","kind":"pause","door":"pause","target":"#a1","why":"hold it","state":"proposed","by":{"session":"h1"}}""");
 
-        var answer = await AnswerAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" });
+        var answer = await ApplyShownAsync(module, "h1", "p1a2b3c4");
 
         Assert.True(answer.GetProperty("applied").GetBoolean());
         Assert.Equal("w0rk1ng0", DriverConfig.Load(DriverConfigPath).PausedAsk("a1")!.Stopped["q2"]);
