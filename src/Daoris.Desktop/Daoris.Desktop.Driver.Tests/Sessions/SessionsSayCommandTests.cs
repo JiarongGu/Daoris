@@ -67,9 +67,13 @@ public sealed class SessionsSayCommandTests : IDisposable
         return (exit, output.ToString().ReplaceLineEndings("\n"));
     }
 
-    /// <summary>A loop on the home: a real watch over a registry that holds no process, looking every few milliseconds.</summary>
-    private SessionRequestWatch Loop(SessionProcesses processes, ServiceClient service, SessionEvents? events = null, Action? nudge = null) =>
-        new(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
+    /// <summary>
+    /// A loop on the home: a real watch over a registry that holds no process, looking every few milliseconds, or every
+    /// <paramref name="every"/>.
+    /// </summary>
+    private SessionRequestWatch Loop(
+        SessionProcesses processes, ServiceClient service, SessionEvents? events = null, Action? nudge = null, TimeSpan? every = null) =>
+        new(_home, processes, () => service, every: every ?? TimeSpan.FromMilliseconds(20))
         {
             Say = new LoopWords(processes, () => service) { Events = events, Nudge = nudge }.HoldAsync,
         };
@@ -82,6 +86,36 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     private bool AnyRequest() => Directory.Exists(Requests) && Directory.EnumerateFiles(Requests).Any();
+
+    /// <summary>
+    /// How often a loop under load looks, as these tests make it (FLAKE5): only after the verb's wait would have run out on the
+    /// machine's clock, which is what a loaded machine did to a loop looking every 20 ms.
+    /// </summary>
+    private static TimeSpan Late(SessionsWorld world) => world.Wait * 2;
+
+    /// <summary>
+    /// The verb's clock in a test of a loop that took the words (FLAKE5): it stands still until the test's condition has held,
+    /// then runs as the machine's, so the verb's wait counts from the take however late a loaded machine made it. It runs by
+    /// itself after a minute, so a condition that never holds fails its test rather than holding it.
+    /// </summary>
+    private sealed class HeldClock : TimeProvider
+    {
+        private static readonly TimeSpan Bound = TimeSpan.FromMinutes(1);
+        private readonly long _made = Stopwatch.GetTimestamp();
+        private long _from;
+
+        /// <summary>From now on it runs; once, whoever calls it again.</summary>
+        public void Run() => Interlocked.CompareExchange(ref _from, Stopwatch.GetTimestamp(), 0);
+
+        public override long TimestampFrequency => Stopwatch.Frequency;
+
+        public override long GetTimestamp()
+        {
+            if (Volatile.Read(ref _from) == 0 && Stopwatch.GetElapsedTime(_made) > Bound) Run();
+            var from = Volatile.Read(ref _from);
+            return from == 0 ? 0 : Stopwatch.GetTimestamp() - from;
+        }
+    }
 
     public static TheoryData<string[]> Problems => new()
     {
@@ -368,19 +402,26 @@ public sealed class SessionsSayCommandTests : IDisposable
     /// A loop that took a say always answers it, so the verb waits on that answer rather than its clock, and follows the words:
     /// it said the loop had taken them and not said where they stood, exit 2, while the loop was writing its answer.
     /// </summary>
+    /// <remarks>
+    /// 🔴 FLAKE5: "in time" was the machine's 300 ms, which a loaded machine's loop missed, and the verb withdrew the words. The
+    /// loop here looks late, as one under load does, and the verb's wait is read off <see cref="HeldClock"/>, which runs from
+    /// the take.
+    /// </remarks>
     [Fact]
     public async Task A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for()
     {
         var room = Ended();
         using var service = room.Client();
         var processes = new SessionProcesses(Sessions);
-        var world = World(service, wait: TimeSpan.FromMilliseconds(300));
+        var clock = new HeldClock();
+        var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
         var words = new LoopWords(processes, () => service) { Nudge = () => room.GoOn("d0ne0000") };
-        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
+        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: Late(world))
         {
             // Its pass is late: the words are kept, and its look nudged, only once the verb's wait is over.
             Say = async (request, ct) =>
             {
+                clock.Run();
                 await Task.Delay(world.Wait * 2, ct);
                 return await words.HoldAsync(request, ct);
             },
@@ -403,15 +444,18 @@ public sealed class SessionsSayCommandTests : IDisposable
         var room = Ended();
         using var service = room.Client();
         var holds = 1;
+        var clock = new HeldClock();
         var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with
         {
             LoopRuns = () => Volatile.Read(ref holds) == 1,
             Answer = TimeSpan.FromMinutes(1),
+            Clock = clock,
         };
-        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: TimeSpan.FromMilliseconds(20))
+        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: Late(world))
         {
             Say = async (_, ct) =>
             {
+                clock.Run();
                 await Task.Delay(world.Wait * 2, ct);
                 Volatile.Write(ref holds, 0);
                 await Task.Delay(Timeout.Infinite, ct);
@@ -433,11 +477,13 @@ public sealed class SessionsSayCommandTests : IDisposable
     {
         var room = Ended();
         using var service = room.Client();
-        var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Answer = TimeSpan.FromMilliseconds(300) };
-        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: TimeSpan.FromMilliseconds(20))
+        var clock = new HeldClock();
+        var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Answer = TimeSpan.FromMilliseconds(300), Clock = clock };
+        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: Late(world))
         {
             Say = async (_, ct) =>
             {
+                clock.Run();
                 await Task.Delay(Timeout.Infinite, ct);
                 return WordsHeld.Failed("never");
             },
@@ -482,14 +528,28 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(4, room.Says);
     }
 
+    /// <summary>
+    /// Still winding up when the wait ends: nothing here holds the words. 🔴 FLAKE5: the wait is read off a clock that runs
+    /// once the loop has taken the verb's second ask, so the verb has heard it running before it gives up; on the machine's
+    /// 400 ms a late loop had not answered once, and the verb kept the words as if no loop had taken them.
+    /// </summary>
     [Fact]
     public async Task A_session_still_winding_up_after_the_wait_could_not_take_them()
     {
-        var room = new Room([Record("w1nd1ng0", "working")], [Quest("q1", "Taken")]) { Winding = int.MaxValue };
+        var clock = new HeldClock();
+        var room = new Room([Record("w1nd1ng0", "working")], [Quest("q1", "Taken")])
+        {
+            Winding = int.MaxValue,
+            Heard = says =>
+            {
+                if (says == 2) clock.Run();
+            },
+        };
         using var service = room.Client();
-        await using var loop = Loop(new SessionProcesses(Sessions), service);
+        var world = World(service, wait: TimeSpan.FromMilliseconds(400)) with { Clock = clock };
+        await using var loop = Loop(new SessionProcesses(Sessions), service, every: Late(world));
 
-        var (exit, said) = await SayAsync(room, ["w1nd1ng0", "and the tests"], World(service, wait: TimeSpan.FromMilliseconds(400)));
+        var (exit, said) = await SayAsync(room, ["w1nd1ng0", "and the tests"], world);
 
         Assert.Equal(2, exit);
         Assert.Contains("was still winding up after", said);
@@ -830,6 +890,9 @@ public sealed class SessionsSayCommandTests : IDisposable
         /// <summary>How many times the say door was posted to.</summary>
         public int Says { get; private set; }
 
+        /// <summary>Told each post to the say door, with how many there have been: a test's condition (FLAKE5).</summary>
+        public Action<int>? Heard { get; init; }
+
         /// <summary>How many times the take-back door was posted to (SAIDBACK1a).</summary>
         public int TakeBacks { get; private set; }
 
@@ -909,6 +972,7 @@ public sealed class SessionsSayCommandTests : IDisposable
                 if (request.Method == HttpMethod.Post && path.EndsWith("/say", StringComparison.Ordinal))
                 {
                     Says++;
+                    Heard?.Invoke(Says);
                     var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/say".Length]);
                     var record = _records.FirstOrDefault(each => (string?)each["id"] == id);
                     if (record is null) return Refuse(HttpStatusCode.NotFound, "not-found", $"No session `{id}` of this machine's.");

@@ -2143,6 +2143,23 @@ wire test's two seconds to leave after `shutdown`, green in the next two: FLAKE1
 trx sums, the serial half goes from 708 to about 520 s quiet and from 2126 to about 1270 s under that load, and the git half,
 four at once, gains about 70 s and 6 minutes; the next full set measures it.
 
+**FLAKE5 (2026-10-16): `SessionsSayCommandTests` waited on the machine's clock for a loop the load made late.** Three of its cases
+failed under four workers' load that day and passed alone. Each gave the verb a 300 or 400 ms `Wait`, read off the machine's clock
+from the verb's start, within which a real `SessionRequestWatch`, ticking every 20 ms on a `PeriodicTimer`, had to take the say; a
+loaded pool ran the tick late. *`A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for`*: nothing had taken the say
+when the wait ended, so the verb withdrew it and kept the words on the record itself, and said `held: … at the driver's next look`
+where `going on: the same session took it` was asserted. *`A_loop_that_took_the_words_and_never_answers_is_said_after_its_bound`*:
+the same withdrawal, exit 0 where 2 (*took your words, and gave no answer*) was asserted. *`A_session_still_winding_up_after_the_wait_could_not_take_them`*:
+the loop had not answered `running` once within the 400 ms, so the verb held no winding answer, withdrew the say and kept the
+words as if no loop had taken them: no *still winding up*. The sightings' messages were not kept; each shape is reproduced by a
+loop that first looks after twice the wait, which fails those three and `…went_away_unanswered_is_said_at_once` (the same
+shape, exit 0 where 2) on the machine's clock. Fixed by the condition, not a wider window: every wait the verb measures is read off
+`SessionsWorld.Clock` (a `TimeProvider`, the machine's in production), and these four tests hand it a clock that stands still until
+the loop has entered its say (the winding case: until the say door has heard the verb's second ask) and then runs, with their loop
+kept late (`Late(world)`) so each run is the load's shape. Red with the late loop before, 57/57 after; the class ran green twelve
+times, five of them beside one plain `dotnet build --no-incremental` of another project (the service's HTTP tests, the desktop
+application, the service's solution: each lasted 16-27 s, so the other seven ran after it), while the parent's gates ran.
+
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
 **Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no
