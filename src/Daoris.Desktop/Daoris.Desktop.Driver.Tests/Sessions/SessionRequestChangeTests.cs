@@ -78,6 +78,20 @@ public sealed class SessionRequestChangeTests : IDisposable
         Assert.Single(inbox.State.Queued);
     }
 
+    /// <summary>FABRIC-EVENT2d: a resume the shell heard reopens the folder's watcher and judges it, with no 30 s overrun to find it.</summary>
+    [Fact]
+    public async Task A_resume_the_shell_heard_reopens_the_watcher()
+    {
+        var (processes, _) = Hearing();
+        await using var watch = new SessionRequestWatch(_home, processes, () => null, every: TimeSpan.FromHours(1), source: _source);
+        var first = _source.On(Requests.Folder);
+        Assert.NotNull(first);
+
+        watch.Resumed();
+
+        await Poll.Until(() => first!.Disposed && _source.On(Requests.Folder) is { } now && now != first, () => "the watcher was never reopened", TimeSpan.FromSeconds(30));
+    }
+
     /// <summary>
     /// With the source silenced, the listing behind it takes the request inside the asking door's ten seconds (SessionsCommand's
     /// <see cref="SessionsWorld.Wait"/>): the watch's default, unchanged by the test.

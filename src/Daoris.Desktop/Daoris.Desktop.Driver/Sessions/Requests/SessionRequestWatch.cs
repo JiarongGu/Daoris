@@ -111,6 +111,9 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         Changes.Start();
     }
 
+    /// <summary>The machine resumed, as its shell heard (FABRIC-EVENT2d): the folder's watcher is reopened and the requests judged now.</summary>
+    public void Resumed() => Changes?.Resumed();
+
     /// <summary>
     /// The test seam: what this loop runs, and how it stops one, in place of a registry of real processes. It looks only when
     /// <see cref="HonourAsync"/> is called.
