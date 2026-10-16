@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, SectionTitle } from '../design/ui';
 
@@ -19,6 +19,25 @@ export function Unread({ why }: { why: string | null | undefined }) {
 /** A value where there is one, else why there is none: the row's control in either case. */
 export function Fact({ value, why, children }: { value: unknown; why: string | null | undefined; children: ReactNode }) {
   return value === null || value === undefined ? <Unread why={why} /> : <>{children}</>;
+}
+
+/**
+ * A fold under a card's rows (the records, the variables not set): shut until pressed, so the card leads with what is there.
+ * Its own press is the only state it holds.
+ */
+export function Fold({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t border-line pt-2.5">
+      <Button variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{label}</Button>
+      {open && <div className="mt-1.5">{children}</div>}
+    </div>
+  );
+}
+
+/** A door to where a thing is set: a press that goes there and changes nothing. */
+export function Door({ label, onPress }: { label: string; onPress: () => void }) {
+  return <Button variant="ghost" onClick={onPress}>{label}</Button>;
 }
 
 /** One card of the page: its title as a heading, a press at its right where it has one, and its rows under. */

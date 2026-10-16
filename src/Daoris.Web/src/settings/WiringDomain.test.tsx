@@ -22,9 +22,12 @@ import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemWiring } from '../bridge/system';
 import { DEVELOPMENT, MEASURING, WIRED } from './wiringFixtures';
 
+const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
+
 /** The shell: the wiring as given for `SYSTEM_WIRING` (a function may ask the payload), the driver's state for the rest. */
 const shell = (wiring: SystemWiring | ((payload?: { measure?: boolean }) => SystemWiring)) =>
   async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => {
+    if (module === 'DAORIS.UPDATE') return NO_UPDATE;
     if (module !== 'DAORIS.DRIVER') return WIRING;
     if (type === 'SYSTEM_WIRING') return typeof wiring === 'function' ? wiring(request?.payload) : wiring;
     return DRIVER_STATE;
@@ -198,6 +201,195 @@ describe('Settings → This Daoris', () => {
     expect(loop.getByText('Starting')).toBeTruthy();
   });
 
+  it('lists each settings file with what it holds, its size, whether it reads and what overrides it, and never its contents', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    open();
+    const files = within(await screen.findByRole('region', { name: 'Settings files' }));
+
+    expect(files.getByText('driver.json')).toBeTruthy();
+    expect(files.getByText("The driver's dials: its pace, the starts it holds and its limits.")).toBeTruthy();
+    expect(files.getAllByText('1.2 KB').length).toBeGreaterThan(0);
+    expect(files.getAllByText('reads').length).toBeGreaterThan(0);
+    expect(files.getByText('named by DAORIS_HARNESS_FILE')).toBeTruthy();
+    // A file that does not parse says what follows from it; one not there yet says so.
+    expect(files.getByText('cannot be read')).toBeTruthy();
+    expect(files.getByText(/The screens that edit it refuse until it is fixed/)).toBeTruthy();
+    expect(files.getByText('Not there yet')).toBeTruthy();
+    // The records are folded away, with no door.
+    expect(files.queryByText('usage.json')).toBeNull();
+    await userEvent.click(files.getByRole('button', { name: 'Records' }));
+    expect(files.getByText('usage.json')).toBeTruthy();
+    expect(files.getByText('knowledge.db')).toBeTruthy();
+  });
+
+  it('opens where a file is edited by a door, and never a file', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    const onGo = open();
+    const files = within(await screen.findByRole('region', { name: 'Settings files' }));
+
+    await userEvent.click(files.getByRole('button', { name: 'Open Tools' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'tools' });
+    await userEvent.click(files.getAllByRole('button', { name: 'Open Driver' })[0]!);
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'driver' });
+    await userEvent.click(files.getByRole('button', { name: 'Open Agents' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents' });
+    await userEvent.click(files.getByRole('button', { name: 'Open Browser' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'browser' });
+  });
+
+  it('says a development run\'s files that could not be read or are not there, in their own words', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const files = within(await screen.findByRole('region', { name: 'Settings files' }));
+
+    expect(files.getByText('Could not be read')).toBeTruthy();
+    expect(files.getByText('plugins.json')).toBeTruthy();
+  });
+
+  it('shows each variable that is set with its value and where it came from, a key as its prefix and never its value', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    open();
+    const variables = within(await screen.findByRole('region', { name: 'Variables' }));
+
+    expect(variables.getByText('DAORIS_HOME')).toBeTruthy();
+    expect(variables.getByText('D:/somewhere/Daoris')).toBeTruthy();
+    expect(variables.getByText('set by Daoris for this window')).toBeTruthy();
+    // Where the window's value differs from the account's, both.
+    expect(variables.getByText("Your account's: D:/somewhere/first/data")).toBeTruthy();
+    expect(variables.getByText('inherited from your account')).toBeTruthy();
+    expect(variables.getByText('DAORIS_SERVICE_KEY')).toBeTruthy();
+    expect(variables.getByText('set, key dk_abcd1234')).toBeTruthy();
+    expect(variables.queryByText('DAORIS_REMOTE_KEY')).toBeNull();
+  });
+
+  it('folds the variables that are not set away, each with what is used instead', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    open();
+    const variables = within(await screen.findByRole('region', { name: 'Variables' }));
+
+    expect(variables.queryByText('DAORIS_EMBED_MODEL')).toBeNull();
+    await userEvent.click(variables.getByRole('button', { name: '3 not set' }));
+    expect(variables.getByText('DAORIS_EMBED_MODEL')).toBeTruthy();
+    expect(variables.getByText('used instead: keyword search only')).toBeTruthy();
+    expect(variables.getByText('used instead: 2000')).toBeTruthy();
+    expect(variables.getByText('DAORIS_REMOTE_KEY')).toBeTruthy();
+  });
+
+  it('says an adopted service\'s variables are its own, and a value set for this start apart from the account\'s', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const variables = within(await screen.findByRole('region', { name: 'Variables' }));
+
+    expect(variables.getByText('set for this start')).toBeTruthy();
+    expect(variables.getByText("Your account's: http://localhost:6000")).toBeTruthy();
+    await userEvent.click(variables.getByRole('button', { name: '1 not set' }));
+    expect(variables.getByText('DAORIS_KNOWLEDGE_ROOT')).toBeTruthy();
+    expect(variables.getByText('The service was already running; it knows its own')).toBeTruthy();
+  });
+
+  it('shows the versions, the one not read in its own words with its door, and the update in one line', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    const onGo = open();
+    const versions = within(await screen.findByRole('region', { name: 'Versions' }));
+
+    expect(versions.getByText('0.21.0 (abc1234)')).toBeTruthy();
+    expect(versions.getByText('Shenora 0.21.1')).toBeTruthy();
+    expect(versions.getByText('10.0.1')).toBeTruthy();
+    expect(versions.getByText('Settings → Tools says it')).toBeTruthy();
+    expect(await versions.findByText('Nothing is staged beside this install.')).toBeTruthy();
+    await userEvent.click(versions.getByRole('button', { name: 'Open Tools' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'tools' });
+    await userEvent.click(versions.getByRole('button', { name: 'Open Driver' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'driver' });
+  });
+
+  it('says what a development run does not carry, and that it is not updated', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const versions = within(await screen.findByRole('region', { name: 'Versions' }));
+
+    expect(versions.getAllByText('A development run has none')).toHaveLength(2);
+    expect(versions.getByText('A development run is not updated.')).toBeTruthy();
+    expect(versions.getByText('Only the window knows')).toBeTruthy();
+  });
+
+  it('shows the terminal: the launchers, the PATH, what a new terminal runs, the address file and the account\'s two variables', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    open();
+    const terminal = within(await screen.findByRole('region', { name: 'Terminal' }));
+
+    expect(terminal.getByText('daoris-driver.cmd')).toBeTruthy();
+    expect(terminal.getByText('missing')).toBeTruthy();
+    expect(terminal.getByText("On your account's PATH")).toBeTruthy();
+    expect(terminal.getByText("This install's")).toBeTruthy();
+    expect(terminal.getByText('Another')).toBeTruthy();
+    expect(terminal.getByText('D:/somewhere/else/bin/daoris-driver.cmd')).toBeTruthy();
+    // The address file's, and the account's DAORIS_SERVICE_URL, which a terminal reads first.
+    expect(terminal.getAllByText('http://localhost:5177')).toHaveLength(2);
+    expect(terminal.getByText(/^process 4242, since /)).toBeTruthy();
+    expect(terminal.getByText('taken')).toBeTruthy();
+    expect(terminal.getByText('D:/somewhere/first/data')).toBeTruthy();
+  });
+
+  it('says a development run has no launchers, and why a terminal does not take the address file', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const terminal = within(await screen.findByRole('region', { name: 'Terminal' }));
+
+    expect(terminal.getAllByText('A development run has none').length).toBeGreaterThan(0);
+    expect(terminal.getByText('Its process has ended')).toBeTruthy();
+    expect(terminal.getByText('not taken')).toBeTruthy();
+    expect(terminal.getAllByText('None').length).toBe(2);
+  });
+
+  it('shows the knowledge store: its file and where that was named, its size, the family root and the tier, with a door to AI features', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    const onGo = open();
+    const knowledge = within(await screen.findByRole('region', { name: 'Knowledge store' }));
+
+    expect(knowledge.getByText('D:/somewhere/Daoris/data/knowledge.db')).toBeTruthy();
+    expect(knowledge.getByText("in the Daoris home's data folder")).toBeTruthy();
+    expect(knowledge.getByText(/MB$/)).toBeTruthy();
+    expect(knowledge.getByText('D:/somewhere/family')).toBeTruthy();
+    expect(knowledge.getByText('semantic')).toBeTruthy();
+    await userEvent.click(knowledge.getByRole('button', { name: 'Open AI features' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'ai' });
+  });
+
+  it('says why the knowledge store has no root or size, and where its file was named', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const knowledge = within(await screen.findByRole('region', { name: 'Knowledge store' }));
+
+    expect(knowledge.getByText('from the variable DAORIS_KNOWLEDGE_DB')).toBeTruthy();
+    expect(knowledge.getByText('The service was already running; it knows its own')).toBeTruthy();
+    expect(knowledge.getByText('Not there')).toBeTruthy();
+  });
+
+  it('shows the logs: the folder, its size, the days it keeps, its newest day and the engine\'s log, with doors', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    const onGo = open();
+    const logs = within(await screen.findByRole('region', { name: 'Logs' }));
+
+    expect(logs.getByText('D:/somewhere/Daoris/logs')).toBeTruthy();
+    expect(logs.getByText('93.8 KB')).toBeTruthy();
+    expect(logs.getByText('30 days')).toBeTruthy();
+    expect(logs.getByText('present')).toBeTruthy();
+    expect(logs.getByRole('button', { name: 'Open the folder' })).toBeTruthy();
+    await userEvent.click(logs.getByRole('button', { name: 'Open Machine log' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'logs' });
+  });
+
+  it('says the logs\' size is not measured and the engine\'s log is not there', async () => {
+    invoke.mockImplementation(shell(DEVELOPMENT));
+    open();
+    const logs = within(await screen.findByRole('region', { name: 'Logs' }));
+
+    expect(logs.getByText('Not measured yet')).toBeTruthy();
+    expect(logs.getByText('Not there')).toBeTruthy();
+    expect(logs.getByText('not there')).toBeTruthy();
+  });
+
   it('offers no press that opens, copies or changes anything: the page shows', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
@@ -227,5 +419,6 @@ describe('Settings → This Daoris', () => {
     expect(screen.getByRole('region', { name: '服务' })).toBeTruthy();
     expect(screen.getByRole('region', { name: '驱动循环' })).toBeTruthy();
     expect(screen.getAllByText('开发运行').length).toBeGreaterThan(0);
+    for (const name of ['设置文件', '环境变量', '版本', '终端', '知识库', '日志']) expect(screen.getByRole('region', { name })).toBeTruthy();
   });
 });
