@@ -2,8 +2,8 @@
 
 **Standing:** contract under D171 point 3 (RPC1). Written by the steward, as the owner left the shape: *"you can decide but
 this clearly is a gap"*; a second agent's (Codex's) review of the plan, checked against `RunningService.cs` and D171, added §3's
-home identity, §5's lease and §6's request ids. Its rows are HOMEID1, HOMELEASE1 and RPC1a to RPC1g in `TASKS.md`. Nothing here
-is built.
+home identity, §5's lease and §6's request ids. Its rows are HOMEID1, HOMELEASE1 and RPC1a to RPC1g in `TASKS.md`. §3.1, §3.2
+and §5 are built (D171's HOMEID1 and HOMELEASE1 notes); the rest is not.
 
 > The owner, 2026-10-16: *"so we had better have a server, or set it up as an RPC service for Daoris, and this will also
 > support multi-instance Daoris windows syncing messages (or the second time I click on the exe, we only start a new window

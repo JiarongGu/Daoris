@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { daorisHome, homeFile, homeId, HOME_ID_FILE, HOME_VARIABLE, installOf, requireHomeFile, THIS_INSTALL } from '../../src/platform/home.ts';
+import { daorisHome, ensureHomeId, homeFile, homeId, HOME_ID_FILE, HOME_VARIABLE, installOf, requireHomeFile, THIS_INSTALL } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
@@ -74,6 +74,26 @@ test('a home’s id is read from home.json by every path to the folder, and a fi
       assert.equal(homeId(home), null, text);
       assert.equal(fx.read(join('data', HOME_ID_FILE)), text);
     }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** HOMELEASE1: a lease records the home's id, so the CLI mints one where the home has none, as a new file only. */
+test('a home with no id is minted one once, and a file that does not read is never replaced', () => {
+  const fx = makeFixture('home-id-mint');
+  try {
+    const home = join(fx.root, 'data');
+    const id = ensureHomeId(home);
+    assert.match(id ?? '', /^[0-9a-f]{32}$/);
+    assert.equal(ensureHomeId(home), id);
+    assert.equal(ensureHomeId(join(home, '.')), id);
+    const text = fx.read(join('data', HOME_ID_FILE));
+    assert.ok(!text.includes('\r') && text.includes('"minted"'), text);
+
+    fx.write(join('data', HOME_ID_FILE), 'not json');
+    assert.equal(ensureHomeId(home), null);
+    assert.equal(fx.read(join('data', HOME_ID_FILE)), 'not json');
   } finally {
     fx.cleanup();
   }

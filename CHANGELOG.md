@@ -9,7 +9,9 @@ with the version and date at release.
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
   holds, by the address it leaves in that home, and only where the service there answers as that home's: another install's
   Daoris at that address is never used. With Daoris not running, a verb that needs its service says so and names the
-  `Daoris.exe` to start. The variables still win. The install's knowledge connector (`app/daoris-knowledge/`), named in your
+  `Daoris.exe` to start. The variables still win. A `daoris-driver` verb that changes the home now holds it while it acts
+  alone, as an update's swap and the first start's move of an older home do: another such verb waits up to thirty seconds
+  and then says which one holds the home, and Daoris starting meanwhile waits for it, saying so if it takes that long. The install's knowledge connector (`app/daoris-knowledge/`), named in your
   own agent's `.mcp.json` with no `DAORIS_HOME`, and its HTTP host started from a terminal, now take the same home instead
   of refusing to start. Opening Daoris again while it runs now opens another main window of the
   same Daoris, which hears every press the first one does, rather than only bringing the first one forward. Closing the

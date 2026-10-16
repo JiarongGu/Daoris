@@ -17,6 +17,10 @@ import { ensureHomeId } from './home.ts';
  *
  * An older build's `driver.lock` is read as its lease while its holder lives, so a desktop from before HOMELEASE1 is still a
  * holder to this one.
+ *
+ * The twin's half for this CLI's own verbs: `daoris driver …`, `agent`, `plugin` and `tool` edit files under the home, and
+ * RPC1f sends them over the running instance's pipe while one runs and takes this lease (`leaseForVerb`) when none does, the
+ * design's §9. Until then they act as they always did.
  */
 
 export const LEASE_FILE = 'home.lease';
@@ -136,20 +140,6 @@ export async function leaseForVerb(
     await sleep(poll);
   }
 }
-
-/** Run `act` under a verb's lease on `home`, released however it ends; the refusal as an error where it was never taken. */
-export async function underVerbLease<T>(home: string, what: string, act: () => T | Promise<T>): Promise<T> {
-  const taken = await leaseForVerb(home, what);
-  if ('refusal' in taken) throw new LeaseRefusedError(taken.refusal);
-  try {
-    return await act();
-  } finally {
-    taken.lease.release();
-  }
-}
-
-/** A verb's lease another act held for the whole of the wait: a refusal, exit 1. */
-export class LeaseRefusedError extends Error {}
 
 function leaseHolderIn(path: string, lives: Lives): LeaseHolder | null {
   const seen = readText(path);
