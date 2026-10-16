@@ -113,8 +113,9 @@ internal sealed class AutoTidies(
     EndKeeping ends)
 {
     /// <summary>
-    /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a): every session branch, judged as the press's
-    /// list judges it against the line read here with no fetch, and those <see cref="TreeSetAside.GoesByItself"/> takes removed
+    /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a; FABRIC-END4a): each session branch whose kept
+    /// <see cref="HeldFact"/> holds at its tip, judged as the press's list judges it against the line read here with no fetch,
+    /// and those <see cref="TreeSetAside.GoesByItself"/> takes removed
     /// by the clean-up's own press (<see cref="TreeSweeps"/>), judged again right before each goes, and deleted only while it is
     /// the commit judged. Then the branches the repository's landings made and recorded (AUTOTIDY2b, D102's group), each the
     /// press would take that no session branch the look leaves leans on, by the press's own half
@@ -125,7 +126,7 @@ internal sealed class AutoTidies(
     /// a clean tree until its record opens, so the repository's trees are held as bringing them up to date holds them
     /// (<see cref="TreeLock"/>), and a start that holds them leaves every branch for another look.</para>
     ///
-    /// <para><b>Judged before the hold</b> (AUTOTIDY2a): every session branch is judged first, the sessions asked for it too so
+    /// <para><b>Judged before the hold</b> (AUTOTIDY2a): every held candidate is judged first, the sessions asked for it too so
     /// no tree a session works in is read, and the hold is taken only where one may go. A start waits on it only while those few
     /// are judged again and removed, and a look with nothing to take never holds the repository.</para>
     ///

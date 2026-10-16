@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>The press's path, not a second one.</b> Each repository is tidied by <see cref="SessionTrees.TidyEmptyAsync"/>,
-/// which judges every session branch as the press's list does and runs the clean-up's own path over those the look takes
+/// which judges each session branch the line is kept holding (FABRIC-END4a) as the press's list does and runs the clean-up's own path over those the look takes
 /// (<see cref="SessionTrees.GoesByItself"/>). Every guard is the press's: judged again right before it goes, deleted only
 /// while it is the commit judged, never forced. The look adds its last guards, and never deletes a tree's folder: it moves it
 /// aside, and a later look deletes it only once it has waited <see cref="SetAsideFor"/> with nothing written in it since.</para>

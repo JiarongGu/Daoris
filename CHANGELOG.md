@@ -12,6 +12,10 @@ with the version and date at release.
   (为 Daoris 登录) right there; the agent's page heads with the same press. Your own sign-in stays listed, read-only: Daoris
   starts no session in it, and a conversation begun there goes on there. Ask Daoris and the setup guide count only Daoris's
   accounts as signed in, and the terminal says the same.
+- A session's branch and tree are tidied once Daoris has seen the line hold its work: right after the merge, or as soon as the
+  session leaves a tree that kept it, rather than at the next five-minute pass. The pass no longer reads every branch the line
+  holds none of again (about nine git commands fewer for each), and the work's state names what kept a tree, such as a session
+  still in it or uncommitted work.
 - A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
 - A terminal's `sessions stop`, `say` or `take-back`, and its `trees` presses, reach the running Daoris as they are written
   (about a third of a second), where Daoris used to look for them once a second; it still looks every 3 s in case one is
