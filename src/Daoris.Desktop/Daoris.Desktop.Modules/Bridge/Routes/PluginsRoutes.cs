@@ -184,9 +184,10 @@ public sealed class PluginsRoutes(DriverContext context)
 
     // Open folder and Open the plugins folder (PLUGUI1e, D119 §4.1): the module names the folder, never the page, and
     // opens it through the window kit's launcher, as the log's module opens the log's (LOG1c). `which` is a plugin's
-    // install folder, its data folder, or the plugins folder.
+    // install folder, its data folder, or the plugins folder. The launcher starts the file manager, so it is opened through the
+    // start gate, off the window's thread (PROCSTART2).
     [DriverRoute("PLUGIN_OPEN_FOLDER")]
-    private object? PluginOpenFolder(IpcRequest request)
+    private async Task<object?> PluginOpenFolderAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var which = PayloadHelper.GetRequiredValue<string>(request.Payload, "which");
         string folder;
@@ -219,7 +220,7 @@ public sealed class PluginsRoutes(DriverContext context)
         {
             // The plugins folder is made first if nothing was installed yet, as the log's folder is.
             if (which == "plugins") Directory.CreateDirectory(folder);
-            _openFolder(folder);
+            await _openFolder.OpenAsync(folder, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException
             or System.ComponentModel.Win32Exception or InvalidOperationException)

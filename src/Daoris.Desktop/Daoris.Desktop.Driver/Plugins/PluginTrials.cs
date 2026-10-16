@@ -149,7 +149,7 @@ public static class PluginTrials
         try
         {
             // The sample frames name no repository, so git is pointed at one that is not there; a person's frame is theirs.
-            process = PluginTrialProcess.Start(entry, home, noRepositoryAt: options.Frame is null ? root : null);
+            process = await PluginTrialProcess.StartAsync(entry, home, noRepositoryAt: options.Frame is null ? root : null).ConfigureAwait(false);
         }
         catch (DriverException error)
         {

@@ -97,7 +97,8 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         try
         {
-            _owned = Process.Start(StartInfo(location));
+            // Through the start gate (PROCSTART2), as every start of the desktop's is.
+            _owned = await ProcessStarts.Shared.StartAsync(StartInfo(location), CancellationToken.None).ConfigureAwait(false);
             // HOSTSTART1: read from the start, so a host that prints more than a pipe holds never waits on it.
             if (_owned is not null) _said = LastLines.Drain(_owned.StandardError);
         }

@@ -18,19 +18,36 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Four.</b> The lock lets one start through at a time, so more places only park more threads on it; four keep the
 /// next starts ready the moment the lock frees, and a start hung in an antivirus scan holds one place, not every start.</para>
+///
+/// <para><b>Every start of the desktop's</b> passes it (PROCSTART2): git's, a session's, a harness action's, a plugin's, the
+/// host's, Edge's, and the file manager the window kit's launcher opens (<see cref="RunAsync(Action, CancellationToken)"/>).
+/// <c>ProcessStartsCensusTests</c> names the few that stay outside, each with why.</para>
 /// </remarks>
-internal sealed class ProcessStarts(int bound, Func<ProcessStartInfo, Process?> start)
+public sealed class ProcessStarts
 {
     /// <summary>How many starts may be under way at once.</summary>
-    internal const int Bound = 4;
+    public const int Bound = 4;
 
-    /// <summary>The one gate every start through <see cref="ChildProcess"/> passes, as the lock is one per process.</summary>
-    internal static ProcessStarts Shared { get; } = new(Bound, Process.Start);
+    /// <summary>The one gate every start of the desktop's passes, as the lock is one per process.</summary>
+    public static ProcessStarts Shared { get; } = new(Bound, Process.Start);
 
-    private readonly SemaphoreSlim _places = new(bound, bound);
+    // The stand-in a test's flow makes its starts with (Within); null in production.
+    private static readonly AsyncLocal<Func<ProcessStartInfo, Process?>?> s_within = new();
+
+    private readonly int _bound;
+    private readonly Func<ProcessStartInfo, Process?> _start;
+    private readonly SemaphoreSlim _places;
+
+    /// <summary>A gate of <paramref name="bound"/> places over <paramref name="start"/>: the shared one's, or a test's.</summary>
+    internal ProcessStarts(int bound, Func<ProcessStartInfo, Process?> start)
+    {
+        _bound = bound;
+        _start = start;
+        _places = new SemaphoreSlim(bound, bound);
+    }
 
     /// <summary>How many places the gate has, free or taken.</summary>
-    internal int Places => bound;
+    internal int Places => _bound;
 
     /// <summary>How many places are free now: the tests' window on the gate.</summary>
     internal int Free => _places.CurrentCount;
@@ -40,16 +57,49 @@ internal sealed class ProcessStarts(int bound, Func<ProcessStartInfo, Process?> 
     /// for a place throws <see cref="OperationCanceledException"/>; once the start is under way it is seen through, since a
     /// process abandoned as it started would run on unowned. The runtime's refusal to start is thrown as it threw it.
     /// </summary>
-    internal async Task<Process?> StartAsync(ProcessStartInfo info, CancellationToken ct)
+    public Task<Process?> StartAsync(ProcessStartInfo info, CancellationToken ct)
+    {
+        var start = s_within.Value ?? _start;
+        return RunAsync(() => start(info), ct);
+    }
+
+    /// <summary>
+    /// Run <paramref name="start"/>, a start the runtime's <see cref="Process"/> is not handed directly (the window kit's
+    /// launcher opening the file manager), as <see cref="StartAsync"/> runs one: once a place is free, on the thread pool.
+    /// </summary>
+    public Task RunAsync(Action start, CancellationToken ct) => RunAsync<object?>(() =>
+    {
+        start();
+        return null;
+    }, ct);
+
+    private async Task<T> RunAsync<T>(Func<T> start, CancellationToken ct)
     {
         await _places.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            return await Task.Run(() => start(info), CancellationToken.None).ConfigureAwait(false);
+            return await Task.Run(start, CancellationToken.None).ConfigureAwait(false);
         }
         finally
         {
             _places.Release();
         }
+    }
+
+    /// <summary>
+    /// The test seam (PROCSTART2): until disposed, every start this flow makes through a gate is made by
+    /// <paramref name="start"/> instead of the runtime, still on the thread pool and inside its place, so a test sees where a
+    /// site's start was made and answers it without a process. Production opens none.
+    /// </summary>
+    public static IDisposable Within(Func<ProcessStartInfo, Process?> start)
+    {
+        var before = s_within.Value;
+        s_within.Value = start;
+        return new Ending(before);
+    }
+
+    private sealed class Ending(Func<ProcessStartInfo, Process?>? before) : IDisposable
+    {
+        public void Dispose() => s_within.Value = before;
     }
 }

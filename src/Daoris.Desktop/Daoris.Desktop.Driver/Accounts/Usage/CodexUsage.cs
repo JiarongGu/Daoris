@@ -256,7 +256,8 @@ public static class CodexUsage
         Process? process;
         try
         {
-            process = Process.Start(info);
+            // Through the start gate (PROCSTART2): the usage page's read reaches here.
+            process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)
         {
