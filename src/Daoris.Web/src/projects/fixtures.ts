@@ -2,6 +2,7 @@ import type { Registration, Repository } from '../data/api';
 import type { RepositoryLine } from '../settings/Lines';
 import type { GraphCommitRow } from './CommitGraph';
 import type { RepositorySetupProps } from './RepositorySetup';
+import type { SetupShown } from './SetUpForAgents';
 
 // Repositories as the registry and the index answer them (FRAME1e), for the list's and the page's stories: the
 // example family's two adopters, a teammate's registration with no checkout here, one that declared nothing, two not
@@ -40,6 +41,27 @@ export const UNDECLARED: Registration = {
 export const NEWBIE: Registration = {
   repository: 'newbie', adopted: false, registered: true, addressable: true, workspace: 'default', root: 'C:/somewhere/newbie',
   owns: [], accepts: [], packs: [], entries: 3,
+};
+
+/** What a press on `newbie` would ask (LAYOUT8, `SETUP_PLAN`): nothing of Daoris's on its line, driven here, the tools found. */
+export const NEWBIE_SETUP: SetupShown = {
+  repository: 'newbie',
+  workspace: 'default',
+  line: 'main',
+  commit: '0123456789ab',
+  layout: 'none',
+  adopted: false,
+  declares: false,
+  asks: 'whole',
+  agent: 'claude-code-acp',
+  lands: 'merge',
+  node: 'v24.1.0',
+  daoris: '0.9.0',
+  rules: ['Bash(daoris --version)', 'Bash(daoris init --harness agents)', 'Bash(daoris sync)'],
+  title: 'Set up this repository for every agent (2026-10-16)',
+  body: 'What is asked, and whose it is: take up the shared doctrine in the layout every agent reads.\n\nThe steps.',
+  refusals: [],
+  pressable: true,
 };
 
 /** Not adopted, with no root here: nowhere to start it. */

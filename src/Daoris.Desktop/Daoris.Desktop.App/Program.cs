@@ -12,6 +12,8 @@ using Shenora.Windows;
 //
 //   DAORIS_HOME            where every machine-local file lives (D63)          (an install: `data/` beside this exe, set here)
 //   DAORIS_SERVICE_URL     where the service is, which the page calls         (default: http://localhost:5177)
+//                          — left in $DAORIS_HOME/running.json while it runs, for a terminal the install's
+//                          launchers set nothing for (FINDDAORIS1, D171)
 //   DAORIS_DEVTOOLS_PORT   the engine's DevTools port, in development only     (absent: none)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: $DAORIS_HOME/driver.json)
@@ -169,6 +171,11 @@ internal static class Program
         builder.Services.AddSingleton<SecondaryWindowHost>();
         builder.Services.AddSingleton<ISecondaryWindows>(
             sp => sp.GetRequiredService<SecondaryWindowHost>());
+        // A later launch of the executable, handed here by the kit's single-instance guard (ONEINSTANCE1, D171 point 2): a new
+        // main window of this instance once its service answers, rather than a second process and a second loop on this home.
+        builder.Services.AddSingleton(sp => new SecondLaunch(
+            sp.GetRequiredService<ISecondaryWindows>(), sp.GetRequiredService<PlatformAddress>(),
+            () => sp.GetRequiredService<DriverLoop>().HostReady, log));
         // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
         // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
         // the home — the directory `driver.json` sits in, as every machine file's is.
@@ -259,6 +266,14 @@ internal static class Program
             {
                 Store = sp => new JsonFileWindowStateStore(
                     Path.Combine(sp.GetRequiredService<ShenoraPaths>().DataArea("config"), "window-state.json")),
+            },
+            // One instance per install, the kit's default, and a later launch is a new main window of it (ONEINSTANCE1, D171
+            // point 2): the guard brings this instance's main window forward and hands the launch over on the window's thread,
+            // and the hand-over opens the window off it, once the service answers.
+            SingleInstance = new SingleInstanceHostOptions
+            {
+                OnActivated = (running, launch) =>
+                    _ = running.Services.GetRequiredService<SecondLaunch>().OpenAsync(launch.Arguments),
             },
         });
 

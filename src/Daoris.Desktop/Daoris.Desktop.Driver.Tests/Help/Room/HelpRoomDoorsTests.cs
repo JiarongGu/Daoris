@@ -34,7 +34,7 @@ public sealed class HelpRoomDoorsTests
             // LEFT3: the screen's clear has its terminal door, which Ask Daoris still owes.
             "daoris agent profile default <agent> <profile>|--clear [--workspace <name>]",
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
-            // LAYOUT7: the set-up press, which Ask Daoris owes a kind until LAYOUT8.
+            // LAYOUT7: the set-up press, Ask Daoris's `setup` kind since LAYOUT8, its screen the repository page's Set up for agents.
             "daoris-driver setup <repository> [--plan]",
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
             "daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]",

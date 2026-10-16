@@ -6,13 +6,14 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// A secondary window (D55 §b, SURF8): the same platform bundle, at its own route, in a window of
-/// its own — the monitor on a second screen, or one session detached.
+/// its own — the monitor on a second screen, or one session detached; or the whole platform again,
+/// another main window a later launch opened (ONEINSTANCE1, D171 point 2).
 /// </summary>
 /// <remarks>
-/// <para><b>Native chrome, deliberately.</b> The main window is frameless because its app strip IS
-/// the title bar (SURF7); this one is not, because <c>WindowCommandModule</c> targets one form and
-/// its module name is reserved and singular. Hand-rolling a second dispatcher so a utility window
-/// could lose its close button's OS behaviour is a lot of machinery for a loss.</para>
+/// <para><b>Native chrome, deliberately, for a utility window.</b> The main window is frameless because its
+/// app strip IS the title bar (SURF7); a monitor or a detached session is not: it is a utility, and OS chrome
+/// is what a utility should wear (D55 §b). Another main window is frameless as the main one is
+/// (<see cref="Options"/> has why it can be).</para>
 ///
 /// <para><b>Its page on the same engine, the same dispatcher and the same bus</b> (D92): a
 /// <c>ChromiumView</c> bridges its page's IPC itself, on this window's own thread. Requests go to the same
@@ -26,6 +27,7 @@ public sealed class SecondaryForm : OptimizedForm
     private readonly ChromiumView _view;
     private readonly Microsoft.Win32.UserPreferenceChangedEventHandler _themeChanged;
     private readonly Func<bool> _startsDark;
+    private readonly bool _main;
     private bool _pageSaid;
     private bool _pageDark;
 
@@ -39,21 +41,20 @@ public sealed class SecondaryForm : OptimizedForm
         ChromiumEngine engine,
         ILogger<ChromiumView> log,
         Func<bool> startsDark)
-        : base(new OptimizedFormOptions
-        {
-            // Framed, which is the whole point (D55 §b) — but the DWM dark-mode flag and the border
-            // colour are still ours to set, and a light title bar over a dark page is the most
-            // visible thing in the window.
-            FramelessChrome = false,
-            BackColor = ChromePalette.For(startsDark()).Page,
-            DwmBorderColor = ChromePalette.For(startsDark()).Line,
-            ImmersiveDarkMode = startsDark(),
-        })
+        : base(Options(SecondaryWindow.IsMain(name), startsDark()))
     {
         _startsDark = startsDark;
-        // The taskbar's label and the window's own caption — this one HAS a caption, so it is read.
-        Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : $"Daoris — {name}";
+        _main = SecondaryWindow.IsMain(name);
+        // The taskbar's label and the window's own caption — a utility window HAS a caption, so it is read. Another main
+        // window is named as the main one is, with no count: the taskbar's count is the main window's (NOTIFY1b).
+        Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : _main ? WaitingBadge.Title(0) : $"Daoris — {name}";
         StartPosition = FormStartPosition.CenterScreen;
+        if (_main)
+        {
+            if (MainForm.Face() is { } face) Icon = face;
+            MinimumSize = new Size(960, 600);
+            CaptionButtonColors = MainForm.CaptionColors(ChromePalette.For(startsDark()));
+        }
 
         // The main window's taskbar identity (TASKBAR1, D108), or this window would be a button of its
         // own beside the main one's, grouped by the executable the main one no longer is.
@@ -87,6 +88,23 @@ public sealed class SecondaryForm : OptimizedForm
     }
 
     /// <summary>
+    /// How this window is made. A utility window is framed, which is the whole point (D55 §b) — but the DWM dark-mode flag
+    /// and the border colour are still ours to set, and a light title bar over a dark page is the most visible thing in the
+    /// window. Another main window (ONEINSTANCE1, D171 point 2) carries the whole platform, whose app strip IS the title bar
+    /// (SURF7, D56), so it is frameless with the caption buttons it paints, as the main window is: the kit's window commands
+    /// act on the window whose page sent them, its own maximize and caption buttons included, and only the theme has no route
+    /// there, which its page says by name over <c>DAORIS.WINDOWS</c> as a utility window's does.
+    /// </summary>
+    private static OptimizedFormOptions Options(bool main, bool dark) => new()
+    {
+        FramelessChrome = main,
+        NativeCaptionButtons = main,
+        BackColor = ChromePalette.For(dark).Page,
+        DwmBorderColor = ChromePalette.For(dark).Line,
+        ImmersiveDarkMode = dark,
+    };
+
+    /// <summary>
     /// The theme the page in this window is in (WINDOW2) — the viewer's choice where there is one —
     /// painted on the caption and border the page cannot reach. Called on this window's thread.
     /// </summary>
@@ -113,6 +131,13 @@ public sealed class SecondaryForm : OptimizedForm
     {
         var palette = ChromePalette.For(dark);
         ApplyChromeTheme(palette.Page, palette.Line, dark);
+        if (_main)
+        {
+            // Frameless: the kit's theme reaches its caption, and the buttons are this window's to paint, as the main one's are.
+            CaptionButtonColors = MainForm.CaptionColors(palette);
+            return;
+        }
+
         if (!IsHandleCreated) return;
         var flag = dark ? 1 : 0;
         _ = DwmSetWindowAttribute(Handle, DwmImmersiveDarkMode, ref flag, sizeof(int));

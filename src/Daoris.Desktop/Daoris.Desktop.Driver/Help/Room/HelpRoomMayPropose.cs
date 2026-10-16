@@ -128,7 +128,17 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  makes the card a draft with no apply until it is. Changes against a base, a kind and an import are not\n");
         text.Append("  proposed yet.\n");
         text.Append("  Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which\n");
-        text.Append("  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.\n\n");
+        text.Append("  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.\n");
+        // LAYOUT8 (D170 point 1): the set-up press as a card, where the owner's helper could only name the terminal command. The
+        // room has no shell, by design (D89): the door is the press, judged by `--plan`'s refusals.
+        text.Append("- `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`\n");
+        text.Append("  and its page's Set up for agents do: one quest to that repository's own session, which takes up the shared\n");
+        text.Append("  doctrine and writes down what the repository owns and its instructions on a branch of its own, landed by its\n");
+        text.Append("  workspace's rule, and a rule letting its sessions run the doctrine tool. Name it as `registry` lists it.\n");
+        text.Append("  Its card shows what was read on its line and the quest's whole text; what the press refuses (not driven here,\n");
+        text.Append("  no tree of its own, no doctrine tool, already set up, a set-up already open) comes back to you in its words,\n");
+        text.Append("  each with the door that answers it. Daoris never writes into the repository, and you never run it yourself:\n");
+        text.Append("  the person's Apply is the press.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");

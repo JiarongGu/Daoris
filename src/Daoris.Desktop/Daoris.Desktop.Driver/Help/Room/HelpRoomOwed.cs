@@ -14,14 +14,6 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class HelpRoomOwed : IHelpRoomSection
 {
-    /// <summary>LAYOUT7's <c>daoris-driver setup</c> (D117 §6.1): owed until LAYOUT8 builds the <c>setup</c> kind.</summary>
-    public static readonly HelpOwedDoor Setup = new(
-        "set a repository up for every agent (one quest to its own session, which takes up the doctrine on its own branch)",
-        ["daoris-driver setup <repository> [--plan]"],
-        "setting a repository up publishes a quest to it and adds a rule its session needs, a widening the person applies "
-        + "as a card, so Ask Daoris should propose it; that waits on LAYOUT8's `setup` kind: the service's box and tool, the "
-        + "driver's judge against the same facts, and the card (D110).");
-
     /// <summary>WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5): owed until WSSETUP7's doors of the <c>setup</c> kind.</summary>
     public static readonly HelpOwedDoor Workspace = new(
         "set every repository of a workspace up, one at a time, or pause, resume or stop that plan",
@@ -108,7 +100,7 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
 
     /// <summary>Every door owed, in the order a person meets the tasks, as the doors table runs.</summary>
     public static readonly IReadOnlyList<HelpOwedDoor> All =
-        [Setup, Workspace, Register, Check, AskReview, AskKind, Workflow, ToolUse, ToolLocation, DefaultClear];
+        [Workspace, Register, Check, AskReview, AskKind, Workflow, ToolUse, ToolLocation, DefaultClear];
 
     public string Render(HelpMachine machine)
     {

@@ -37,10 +37,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // PAUSE1b (D132 §13): a repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
         ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris driver hold|resume <repository>`"),
         ("give its sessions their own tree", Setup + "Driving", "`daoris driver trees <repository> on|off`"),
-        // LAYOUT7: the set-up press's terminal door; its screen and Ask Daoris's `setup` kind are LAYOUT8's, owed meanwhile.
+        // LAYOUT7: the set-up press's terminal door; LAYOUT8 (D170 point 1): its screen, the page's press with its plan first,
+        // and Ask Daoris's `setup` kind, which proposes it.
         ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
-            + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
-            "(no screen yet)", "`daoris-driver setup <repository> [--plan]`"),
+            + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing; "
+            + "Ask Daoris proposes it)",
+            "Repositories → the repository's page → Details → Set up for agents (one not adopted, with a checkout here)",
+            "`daoris-driver setup <repository> [--plan]`"),
         // WSSETUP6: the workspace plan's terminal door; its screen and Ask Daoris's doors are WSSETUP7's, owed meanwhile.
         ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
             + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",

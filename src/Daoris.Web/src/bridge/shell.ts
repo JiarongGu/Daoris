@@ -24,6 +24,7 @@ export * from './registry';
 export * from './remotes';
 export * from './rules';
 export * from './sessions';
+export * from './setup';
 export * from './stateHub';
 export * from './terminal';
 export * from './tools';

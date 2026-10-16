@@ -23,18 +23,42 @@ public sealed class ServiceHttp : IServiceDoors
         }
     }
 
-    /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b).</summary>
-    public static ServiceHttp FromEnvironment()
+    /// <summary>The refusal for no service at all, where nothing else was looked for.</summary>
+    public const string NoService =
+        $"no {ServiceClient.UrlVariable} — the driver watches a service, and needs to know where one is. "
+        + "A local host is usually http://localhost:5177.";
+
+    /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b) — for this process.</summary>
+    public static ServiceHttp FromEnvironment() =>
+        FromEnvironment(Environment.GetEnvironmentVariable, AppContext.BaseDirectory, url => RunningService.AnswersAsDaoris(url));
+
+    /// <summary>
+    /// The service, in the order a terminal finds it (FINDDAORIS1, D171 point 1): the variable, which still wins; else, for a
+    /// program the install carries, the address the running desktop left in the home (<see cref="RunningService"/>); else the
+    /// refusal, which then says Daoris is not running there and how to start it.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 A workspace build reads no address file. The account's <c>DAORIS_HOME</c> names a live install's home on a machine
+    /// that has one, and a gate, a rehearsal or a test that cleared the variable to see this refusal would otherwise reach that
+    /// install's running service and act on it. The dev loop and every gate name the service themselves.
+    /// </remarks>
+    /// <param name="baseDirectory">Where this program runs from, which says whether an install carries it.</param>
+    /// <param name="answers">Whether an address answers as a Daoris host.</param>
+    public static ServiceHttp FromEnvironment(Func<string, string?> environment, string baseDirectory, Func<string, bool> answers)
     {
-        var url = Environment.GetEnvironmentVariable(ServiceClient.UrlVariable);
+        var url = environment(ServiceClient.UrlVariable);
         if (string.IsNullOrWhiteSpace(url))
         {
-            throw new DriverException(
-                $"no {ServiceClient.UrlVariable} — the driver watches a service, and needs to know where one is. "
-                + "A local host is usually http://localhost:5177.");
+            if (DaorisHome.InstallOf(baseDirectory) is not { } install
+                || DaorisHome.Resolve(environment, baseDirectory) is not { } home)
+            {
+                throw new DriverException(NoService);
+            }
+
+            url = RunningService.Find(home, install, answers, out var why) ?? throw new DriverException($"{NoService} {why}");
         }
 
-        return new ServiceHttp(url, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
+        return new ServiceHttp(url, environment(ServiceClient.KeyVariable));
     }
 
     public string BaseUrl { get; }

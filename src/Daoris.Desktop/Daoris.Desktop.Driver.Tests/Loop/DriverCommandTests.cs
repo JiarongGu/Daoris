@@ -450,6 +450,21 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// FINDDAORIS1 (D171 point 1): an install's launcher sets no variable, so the host takes its install's home as its own
+    /// before any door is routed, the trace's and the branch list's included, and before its machine log opens there.
+    /// The service is found where it is asked for (<c>ServiceHttp.FromEnvironment</c>), so a verb needing none asks nothing.
+    /// </summary>
+    [Fact]
+    public void The_host_takes_its_installs_home_before_any_door_is_routed()
+    {
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var adopt = program.IndexOf("DaorisHome.Adopt(AppContext.BaseDirectory)", StringComparison.Ordinal);
+        var trace = program.IndexOf("if (args is [\"trace\", .. var traceArgs])", StringComparison.Ordinal);
+        var log = program.IndexOf("using var log = MachineLog.Open(", StringComparison.Ordinal);
+        Assert.True(adopt > 0 && trace > adopt && log > adopt, $"the home taken at {adopt}, the trace routed at {trace}, the log opened at {log}");
+    }
+
+    /// <summary>
     /// TRACE1 (D143, D50): one read back to the ask is a door the usage names, routed by the host to its console before the
     /// machine log opens, since that open prunes old files and the trace writes nothing anywhere. The words are the library's,
     /// which <c>TraceTests</c> holds.

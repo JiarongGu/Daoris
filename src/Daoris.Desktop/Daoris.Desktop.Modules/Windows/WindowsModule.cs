@@ -18,9 +18,9 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>The name is the whole contract, and it is checked here.</b> It becomes the URL the new
 /// window navigates to AND the filename its geometry is remembered in, so an unchecked name would be
-/// a page choosing where a window points and what the shell overwrites. Only the two names this
-/// build knows are opened; anything else is refused with a sentence rather than sanitised into
-/// something adjacent.</para>
+/// a page choosing where a window points and what the shell overwrites. Only the names this build
+/// knows are opened (the monitor, a session, and another main window, ONEINSTANCE1); anything else
+/// is refused with a sentence rather than sanitised into something adjacent.</para>
 ///
 /// <para><b>There is no CLOSE route, deliberately.</b> Secondary windows keep their native frame
 /// (D55 §b: a monitor is a utility, and OS chrome is what a utility should wear), so the close
@@ -109,8 +109,8 @@ public sealed class WindowsModule(
         ? name
         : throw Refusals.Because(
             Refusals.WindowUnknown,
-            $"`{name}` is not a window this build opens. The windows are `monitor` and "
-            + "`session:<id>` for one session detached.",
+            $"`{name}` is not a window this build opens. The windows are `monitor`, "
+            + "`session:<id>` for one session detached, and `main:<n>` for another main window.",
             ("name", name));
 
     /// <summary>

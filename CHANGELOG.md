@@ -5,6 +5,16 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
+  that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
+  holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the
+  `Daoris.exe` to start. The variables still win. Opening Daoris again while it runs now opens another main window of the
+  same Daoris, which hears every press the first one does, rather than only bringing the first one forward.
+- Ask Daoris can now set a repository up for you: asked to include a registered repository that has not adopted, it proposes
+  the set-up as a card showing what was read on the repository's line, the rule it adds and the quest's whole text, and
+  *Apply* publishes that one quest to the repository's own session, as `daoris-driver setup <repository>` does. The same press is
+  on the repository's page: *Set up for agents* (为智能体配置) under its adoption steps shows the plan first, every reason it
+  cannot go yet with what fixes it, then *Set it up*. Daoris still writes nothing into the repository.
 - The review says before the press what *Accept* will do and why it would be refused: it lands the session's own branch as
   it stands, adds to a branch that already stands, or names the refusal (a branch somebody else made, one moved since or
   checked out elsewhere) and offers no *Accept* then, as the line's and the ask's *Accept* do for each part; a part's own

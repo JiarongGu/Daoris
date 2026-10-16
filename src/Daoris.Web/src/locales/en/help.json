@@ -48,6 +48,7 @@
   "help.proposal.acceptNote": "Accept is your yes to each departure above: what the quest holds goes on, and the departure stays on its record.",
   "help.proposal.accept": "Accept",
   "help.proposal.titleWorkflow": "Ask Daoris proposes a workflow change",
+  "help.proposal.titleSetup": "Ask Daoris proposes a setup",
   "help.proposal.workflow.versionNew": "v{{version}} of {{name}}",
   "help.proposal.workflow.versionEdit": "v{{version}} of {{name}}, from v{{base}}",
   "help.proposal.workflow.yourPart": "Your part",

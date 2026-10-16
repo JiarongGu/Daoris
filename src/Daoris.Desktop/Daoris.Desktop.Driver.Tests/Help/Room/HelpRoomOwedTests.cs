@@ -30,14 +30,19 @@ public sealed class HelpRoomOwedTests
         }
     }
 
-    /// <summary>The first door the owner met (D170 point 1): setting a repository up, by its headless verb.</summary>
+    /// <summary>
+    /// The door the owner met (D170 point 1), setting a repository up, is LAYOUT8's `setup` kind's now, so it is owed no more;
+    /// registering one from its line, WSSETUP7's, still is, by its headless verb.
+    /// </summary>
     [Fact]
-    public void Setting_a_repository_up_is_a_door_owed_by_its_command()
+    public void A_door_built_leaves_the_list_and_registering_a_repository_is_still_owed()
     {
         var agents = HelpRoom.Render(new HelpMachine());
+        var owed = agents[agents.IndexOf("## Doors Daoris still owes", StringComparison.Ordinal)..];
 
-        Assert.Contains("`daoris-driver setup <repository> [--plan]`", agents[agents.IndexOf("## Doors Daoris still owes", StringComparison.Ordinal)..]);
-        Assert.Contains(HelpRoomOwed.Setup, HelpRoomOwed.All);
+        Assert.DoesNotContain("`daoris-driver setup <repository> [--plan]`", owed);
+        Assert.Contains("`daoris-driver register [--repository <name>]`", owed);
+        Assert.Contains(HelpRoomOwed.Register, HelpRoomOwed.All);
     }
 
     /// <summary>
