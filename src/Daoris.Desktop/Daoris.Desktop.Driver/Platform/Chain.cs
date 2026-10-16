@@ -164,7 +164,7 @@ public sealed class ChainTable
         [
             ChainEvents.Home, ChainEvents.TimerOf(ChangeTopics.Requests), ChainEvents.TimerOf(ChangeTopics.Config),
             ChainEvents.TimerOf(ChangeTopics.Plugins), ChainEvents.TimerOf(ChangeTopics.Lines), ChainEvents.TimerOf(ChangeTopics.Words),
-            ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help),
+            ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help), ChainEvents.TimerOf(ChangeTopics.Gates),
         ], []),
     ]);
 

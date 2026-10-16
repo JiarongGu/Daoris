@@ -340,5 +340,20 @@ public sealed class LandingWakesTests : IDisposable
         await Poll.Until(() => woken.Contains((ChangeTopics.Gates, ChangeTopics.Gates)), () => "the run's binding was never heard");
     }
 
+    /// <summary>With the source silent, the gate's files are found by their topic's deadline, as every home topic is (link 7's timer).</summary>
+    [Fact]
+    public async Task The_gate_s_files_are_found_by_their_deadline_when_the_source_is_silent()
+    {
+        Directory.CreateDirectory(Gates);
+        var woken = new ConcurrentQueue<(string Topic, string Subject)>();
+        await using var watch = HomeWatch.ForDriver(_home, DaorisHome.Entry(_home, HomeEntry.DriverConfig), (topic, subject) => woken.Enqueue((topic, subject)),
+            TimeSpan.FromMilliseconds(300), _source);
+        watch.Start();
+
+        File.WriteAllText(Path.Combine(Gates, "q1.json"), "{}");
+
+        await Poll.Until(() => woken.Contains((ChangeTopics.Gates, ChangeTopics.Gates)), () => "the gate's record was never found at its deadline");
+    }
+
     private static WorkflowRunBinding Binding(string run) => new(run, "engine", "aurora", "careful", WorkflowLevels.Task, At);
 }
