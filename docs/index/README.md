@@ -87,7 +87,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/AutoLandingTests.cs` | 54 | 1013 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 46 | 821 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 51 | 783 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 42 | 765 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 51 | 951 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/SessionGroupsTests.cs` | 64 | 1104 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessRoster.cs` | 104 | 1804 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSettings.cs` | 49 | 951 |
@@ -112,7 +112,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 48 | 840 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 57 | 1008 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 46 | 806 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 47 | 753 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 52 | 836 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 45 | 719 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WorkPerformer.cs` | 51 | 862 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 62 | 1110 |
@@ -221,6 +221,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
-| `docs/2026-10-16-fabric-events-design.md` | 168 | 2059 |
+| `docs/2026-10-16-fabric-events-design.md` | 168 | 2063 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 94 | 537 |
+| `src/Daoris.Desktop/README.md` | 94 | 538 |

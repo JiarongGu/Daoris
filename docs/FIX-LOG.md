@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A chain's close closed an earlier quest whose own deploy was still held (FABRIC-CLOSE1t)
+
+- **Symptom:** none on an install: no quest is bound to a closure graph there. Found by a read-only review of the whole close path. In a
+  two-quest chain, the first quest published the second while its deployment stayed held, and the second's close closed both.
+- **Root cause:** the terminal quest's own prerequisites were fenced by the evaluation that proposed its close. `QuestClosing.Judge`
+  then named each earlier quest on its submission and hold alone (`Trees/Nodes/QuestCloser.cs`), and `NodeRuntime.CloseAsync` read no
+  other quest's node record.
+- **Fix:** `NodeRuntime.Unreached` judges each other quest a close names on its own node record, under its bound graph and at its
+  current revision, with the evaluation its own pass makes. The close waits, said once a pass naming the quest and the node, until that
+  quest's close is eligible there. D173's FABRIC-CLOSE1t note has the detail and the counts.
+- **Verification:** red first: three `QuestCloseTests` (the held deploy, the same chain reached, an unreadable record) sent the close.
+  The unarmed look's test was green before and after. Then the driver's fast half passes 9280 (9276 before), and `CloseFenceGitTests`
+  (Git, run once) passes with its counts unchanged.
+
 ## 2026-10-18 — The light lane ran its gates one at a time, and each Process half built again (GATELANES2, GATEBUILD1)
 
 - **Symptom:** a merge's light lane (universal, code-map, orient-index, cli, service, driver, modules) took 10 to 12 minutes
