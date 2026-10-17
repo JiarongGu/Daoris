@@ -147,6 +147,13 @@ public sealed record SessionTarget(
     public SessionLanguage? Language { get; init; }
 
     /// <summary>
+    /// Whether the quest closes through its closure graph (FABRIC-CLOSE1l, folding CLOSE1g; the fabric events design §E5): bound at its
+    /// take, or bound already. Its session closes its work with `ready`, never `done`, which the service refuses on such a quest, on a
+    /// first start, a resume and a carry-on alike. False for every other quest, and the instruction reads as it did.
+    /// </summary>
+    public bool Ready { get; init; }
+
+    /// <summary>
     /// Whether the session before was stopped by the person, who has since released the quest from that stop with *Try
     /// again* (SESSUX1b): the carry-on is told so, rather than that the session before was cut off.
     /// </summary>
@@ -347,12 +354,24 @@ public static class TargetPrompt
         new(HandedSections.WrittenTo, WrittenTo(target)),
         // A further part of a session is told the parts before it (SESSONE1d), counted as what the sessions before it left.
         new(HandedSections.CarryOn, SessionPartsText.Of(target)),
-        .. Tail(target,
-            $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"
-            + "repository under its own doctrine and gates, then close it: `done` when it has landed, or\n"
-            + "`decline` with the reason — the reason is the part the asker can act on. If the quest is already\n"
-            + "taken or closed, stand down and finish without changing anything."),
+        .. Tail(target, target.Ready
+            ? $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"
+              + "repository under its own doctrine and gates, then say it is ready: `ready` when its work is done,\n"
+              + $"with your note and an answer for each requirement. {ReadyWords} Or `decline` with the reason — the\n"
+              + "reason is the part the asker can act on. If the quest is already taken or closed, stand down and\n"
+              + "finish without changing anything."
+            : $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"
+              + "repository under its own doctrine and gates, then close it: `done` when it has landed, or\n"
+              + "`decline` with the reason — the reason is the part the asker can act on. If the quest is already\n"
+              + "taken or closed, stand down and finish without changing anything."),
     ];
+
+    /// <summary>
+    /// How a session ends a quest its closure graph closes (FABRIC-CLOSE1l, folding CLOSE1g; the fabric events design §E5): `ready`, never
+    /// `done`, which the service refuses on a bound quest, naming `ready`.
+    /// </summary>
+    private const string ReadyWords =
+        "Never `done`: its graph refuses it, and closes\nthe quest itself once its holds and gates are through.";
 
     /// <summary>
     /// A session resuming a quest its own earlier session took and waited on (D79): the quest again,
@@ -369,10 +388,13 @@ public static class TargetPrompt
             $"\nAn earlier session on this quest needed something only `{answered.To}` could answer, asked it, and\n"
             + "waited. What it did is in this tree — read its commits before you go on. The question was quest\n"
             + $"`#{answered.Id}`, \"{answered.Title}\", and {Answer(answered)}\n"),
-        .. Tail(target,
-            "\nCarry on from there, inside this repository under its own doctrine and gates, then close\n"
-            + $"`#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part\n"
-            + "the asker can act on."),
+        .. Tail(target, target.Ready
+            ? "\nCarry on from there, inside this repository under its own doctrine and gates, then say\n"
+              + $"`#{target.QuestId}` is ready: `ready` when its work is done, with your note and an answer for each\n"
+              + $"requirement. {ReadyWords} Or `decline` with the reason — the reason is the part the asker can act on."
+            : "\nCarry on from there, inside this repository under its own doctrine and gates, then close\n"
+              + $"`#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part\n"
+              + "the asker can act on."),
     ];
 
     /// <summary>
@@ -389,10 +411,14 @@ public static class TargetPrompt
         new(HandedSections.CarryOn,
             $"\n{Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,\n"
             + $"and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}\n"),
-        .. Tail(target,
-            "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
-            + $"gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —\n"
-            + "the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less."),
+        .. Tail(target, target.Ready
+            ? "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
+              + $"gates, then say `#{target.QuestId}` is ready: `ready` when its work is done, with your note and an\n"
+              + $"answer for each requirement. {ReadyWords} Or `decline` with the reason — the reason is the part\n"
+              + "the asker can act on. Commit as you go, so a second cut-off loses less."
+            : "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
+              + $"gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —\n"
+              + "the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less."),
     ];
 
     /// <summary>

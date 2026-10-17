@@ -62,6 +62,13 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
     public DateTimeOffset? AskAt { get; init; }
 
     /// <summary>
+    /// A <c>quest.close</c> attempt's close (FABRIC-CLOSE1b, §E5 step 1): its token and the quests it names with the submissions it judged,
+    /// persisted with its key before the first send, so a timeout or a restart sends the same close again; and a refusal's words once one
+    /// came. Null on a plugin's attempt, and on every attempt from before.
+    /// </summary>
+    public QuestCloseCall? Close { get; init; }
+
+    /// <summary>
     /// The person's word on a held attempt (FABRIC-PERFORM1g, one of <see cref="HeldResolutions"/>): written by their door while it is held,
     /// applied by the runtime under the node's declaration, and kept once it settles the attempt, so an outcome settled by the person is
     /// never read as its plugin's word. Null on every attempt the person did not settle, and on a record written before the field.
