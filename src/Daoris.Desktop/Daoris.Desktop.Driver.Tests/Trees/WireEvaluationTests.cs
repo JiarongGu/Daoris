@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the one table; an <c>anyOf</c>'s witness; a trigger once per receipt; a skip, a failure and a rejection each a scoped receipt read by
 /// its own wires; forks within the limit; <c>all</c> joins; an invalidation lapsing downstream. Pure: nothing is stored.
 /// </summary>
-public sealed class WireEvaluationTests
+public sealed partial class WireEvaluationTests
 {
     private const string Unit = "unit-a";
     private const string Plugin = "acme.deploy/deploy";
