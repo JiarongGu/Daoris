@@ -588,8 +588,10 @@ try
 
     if (held.Beside is { } beside)
     {
+        // FABRIC-END7's review: only the lease's holder lands done work automatically, so this loop lands none.
         Console.WriteLine(
-            $"driver: running beside {beside.Named}, as --share asked — the two loops race for the same quests, and the take decides.");
+            $"driver: running beside {beside.Named}, as --share asked — the two loops race for the same quests, and the take decides. "
+            + "Done work lands automatically from that one alone, which holds the home.");
     }
 
     var started = DateTimeOffset.UtcNow;

@@ -75,6 +75,13 @@ public static class ChangeTopics
     public const string Words = "words";
 
     /// <summary>
+    /// The landing gate's files (FABRIC-END7): a second opinion's record, where the person's answer is kept, and the workflows, a
+    /// version and a run's binding with the person's say-so. Another process's write wakes the look's plan, whose landing looks at
+    /// the due entries a gate holds.
+    /// </summary>
+    public const string Gates = "gates";
+
+    /// <summary>
     /// A proposal arriving in Ask Daoris's folder, written by the connector in another process (FABRIC-EVENT5a): told to the window
     /// as <c>help</c>, which needs no look, so the shell's watch alone listens for it.
     /// </summary>

@@ -240,6 +240,31 @@ public sealed class ReviewLandingTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-END7's review, finding 1: the gate is read again just before the landing, never taken from the look that chose it. A
+    /// commit the tree gains after the look chose it is work nobody reviewed: it waits as unreviewed, and nothing is made.
+    /// </summary>
+    [Fact]
+    public async Task A_commit_after_the_look_chose_it_holds_it_for_review_before_it_lands()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true), required: true);
+        var tree = await DoneSessionAsync(root, "s1", "q1", due: true);
+        var tip = await HeadAsync(tree);
+        ShowStep(tip);
+        Review(tip);
+        var lander = new AutoLander(_home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add);
+        var (chosen, _) = await lander.ChooseAsync(Config());
+        Assert.Single(chosen);
+
+        await CommitAsync(tree, "late.txt", "added after the look chose it", "a late change");
+        var said = await lander.LandAsync(chosen);
+
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"), "the late commit is work nobody reviewed");
+        Assert.Equal(AutoLandingCode.Unreviewed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Contains("what you reviewed does not hold these commits", Assert.Single(said));
+    }
+
+    /// <summary>
     /// The set-up's commit is read, never reported (design §2.6): at a set-up step's end the driver posts its session's said
     /// set-ups with its tree's <c>HEAD</c> and the kind the rule declares, tells the conversation, and logs <c>review.shown</c>. A
     /// quest that is no set-up step posts nothing.
