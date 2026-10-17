@@ -64,11 +64,12 @@ internal static class LandingHolds
             }
         }
 
+        FileStream? file = null;
         try
         {
             var path = PathOf(home, tree);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            var file = Open(path);
+            file = Open(path);
             if (file is null)
             {
                 waited = true;
@@ -99,6 +100,8 @@ internal static class LandingHolds
         }
         catch
         {
+            // A moment that could not be read or written, or a wait cancelled: nothing is held.
+            file?.Dispose();
             gate.Release();
             throw;
         }
