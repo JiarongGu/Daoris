@@ -300,10 +300,16 @@ public sealed record LandingCommit(string Sha, string Subject);
 /// Who accepted the work (LAND2c, D145 point 3), one of <see cref="Daoris.Driver.AcceptedBy"/>: the description a plugin
 /// writes says it, and it is not always the person who reviewed it.
 /// </param>
+/// <param name="Tip">
+/// The commit the landing judged and put the branch at (LANDPIN2, D173's FABRIC-END7 note), which the plugin pushes to the branch
+/// (<c>git push origin &lt;tip&gt;:refs/heads/&lt;branch&gt;</c>) rather than the branch as it stands at the push: a tree on a branch of
+/// its own (TREEFOLLOW1) has no ref made for it, so a commit made there after the judgement would otherwise ride the push unseen.
+/// Null in a frame from before it, where a plugin pushes the branch by name.
+/// </param>
 public sealed record LandingFrame(
     string Repository, string Workspace, string Root, string Branch, string? Base, string? Title,
     string? Quest, string Session, IReadOnlyList<LandingCommit> Commits, string? PullRequest = null,
-    string AcceptedBy = Daoris.Driver.AcceptedBy.Person);
+    string AcceptedBy = Daoris.Driver.AcceptedBy.Person, string? Tip = null);
 
 /// <summary>
 /// What an advance of a standing branch is judged by (LAND2c, D149 points 2–3), read from git at the press or the look: the

@@ -740,7 +740,7 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/quests/{id}/bind", async (
         ComposedService s, HttpContext http, string id, BindQuestRequest body, CancellationToken ct) =>
     {
-        var outcome = await s.Exchange.BindAsync(id, body.Graph, DateTimeOffset.UtcNow, ct, atTake: body.AtTake == true);
+        var outcome = await s.Exchange.BindAsync(id, body.Graph, DateTimeOffset.UtcNow, ct, atTake: body.AtTake == true, session: body.Session);
         return outcome.Refusal switch
         {
             QuestRespondRefusal.None => Results.Ok(

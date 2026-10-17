@@ -1110,7 +1110,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The driver binds a quest it took to the graph that closes it (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/bind</c>), at its take. The
     /// service's sentence comes back verbatim, a refusal included, and a host older than the door is said to be.
     /// </summary>
-    public async Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, CancellationToken ct = default)
+    public async Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, string session, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
@@ -1119,6 +1119,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             // FABRIC-CLOSE1l (CLOSE1f): named for the take as the first session opens, never bound after it; a host before it refuses an
             // open quest's bind as not taken, and the quest closes by its done.
             writer.WriteBoolean("atTake", true);
+            // FABRIC-CLOSE1o: the session opening, whose take alone binds it. A host before it reads it as absent, and binds as CLOSE1l did.
+            writer.WriteString("session", session);
             writer.WriteEndObject();
         });
         var (ok, status, payload, root) = await PostJsonAsync(

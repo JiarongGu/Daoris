@@ -77,6 +77,11 @@ once three batches hold the targets (MODELROLE1).
    open any pointer that looks wrong, and correct it before passing the pack on. A pack whose
    *Size* says the row is more than one sitting is split first (step 3). Never skip it, a design row least of all: NEW1b
    went with the parent's pointers alone and ran 184 turns, 77 of them before its first edit (D160's twelfth batch).
+   For a judgement row (an Opus row: a race, a format, a destructive path, a protocol), ask the other maker of step 9 for
+   a pre-mortem beside the scout: the row, its contract and the code it touches, and "what will a builder get wrong
+   here". Put its verified findings in the brief. A review after the build costs a rework round each time: on
+   2026-10-18 LANDRACE1 took three rounds (a later commit hidden by `already`, path aliases, the wall clock, the
+   hand-off, linked worktrees), GRAPH1b two and CLOSE1b one, each 30 to 60 minutes of building and a re-check.
 2. **Reserve the decision number** before dispatching. It is the next number after both the highest file
    in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
 3. **Size the branch to about a hundred turns.** Cost grows with the square of a branch's turns: in the

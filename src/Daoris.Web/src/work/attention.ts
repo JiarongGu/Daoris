@@ -10,7 +10,7 @@ import type { SessionGrouping } from './groups';
 import { askName, questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import type { HelperWait } from './HelperAsks';
-import { entryName, type HeldAttempt, heldWhy, type MilestoneUnit, waitsOnPerson } from './milestone';
+import { CLOSE_SENDER, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneUnit, waitsOnPerson } from './milestone';
 import { type OpinionWait, opinionState } from './opinion';
 import { opinionSays } from './OpinionGate';
 import { newestSetUp, setUpRef, waitsForLook } from './review';
@@ -96,7 +96,22 @@ export type AttentionActId =
   | 'sign-in' | 'sign-in-new' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
   | 'let-ask' | 'not-now'
   // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them.
-  | 'happened' | 'did-not' | 'stop-step';
+  | 'happened' | 'did-not' | 'stop-step'
+  // FABRIC-CLOSE1q: the person's word on Daoris's own close held for them: its recoveries, and the rest of the work stopped apart.
+  | 'record-close' | 'resend-close' | 'stop-close';
+
+/** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
+export function heldActs(held: HeldAttempt): AttentionActId[] {
+  const close = held.plugin === CLOSE_SENDER;
+  return heldWords(held).map((word): AttentionActId => {
+    switch (word) {
+      case 'record': return 'record-close';
+      case 'resend': return 'resend-close';
+      case 'stop': return close ? 'stop-close' : 'stop-step';
+      default: return word;
+    }
+  });
+}
 
 /** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
 export type AttentionOffer = { act: AttentionActId; account?: string };
@@ -172,8 +187,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
     case 'opinion': return opinionOffers(item);
     // A plugin step's attempt held for the person (FABRIC-PERFORM1g, §D6): their three words, until one is recorded and the driver's next
-    // look applies it. A unit's blocked clean-up has its session's page for its door, and no act.
-    case 'work': return item.held && !item.held.resolution ? plain('happened', 'did-not', 'stop-step') : [];
+    // look applies it; a held close (FABRIC-CLOSE1q) its own, as the driver offers them. A unit's blocked clean-up has its session's page
+    // for its door, and no act.
+    case 'work': return item.held && !item.held.resolution ? plain(...heldActs(item.held)) : [];
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
     default: return [];
@@ -580,7 +596,10 @@ export function needsAPerson(
     since: attempt.resolvedAt ?? attempt.at,
     detail: attempt.resolution
       ? i18n.t('work.milestone.held.worded', { node: attempt.node, attempt: attempt.attempt, word: i18n.t(`work.milestone.held.word.${attempt.resolution}`) })
-      : i18n.t('work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
+      // FABRIC-CLOSE1q: a held close's outcome is its door's answer, so its row says what the door answered and that no second close is made.
+      : attempt.plugin === CLOSE_SENDER
+        ? i18n.t('work.milestone.held.close.detail', { why: heldWhy(i18n.t, attempt) })
+        : i18n.t('work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
     held: attempt,
   }));
 

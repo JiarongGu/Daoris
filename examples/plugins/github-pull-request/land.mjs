@@ -72,6 +72,12 @@ const safe = (text) => (process.platform === 'win32'
   ? text.replace(/"/g, "'").replace(/%/g, ' percent').replace(/[\r\n]+/g, ' ')
   : text);
 
+/**
+ * Push the work to `origin` (LANDPIN2): the commit the landing judged, as the frame's `tip` names it, to the branch, so a commit
+ * made on the branch after Daoris judged it never rides the push; the branch as it stands only where a Daoris from before names none.
+ */
+const push = (p) => run('git', ['push', '--quiet', 'origin', p.tip ? `${p.tip}:refs/heads/${p.branch}` : p.branch], p.root);
+
 /** Who accepted the work, as the frame says it: a person's press, or the rule's switch at the quest's done (LAND2c). */
 const accepted = (p) => (p.acceptedBy === 'auto'
   ? 'accepted automatically when its quest was done'
@@ -123,7 +129,7 @@ function advance(p) {
     };
   }
 
-  const pushed = run('git', ['push', '--quiet', 'origin', p.branch], p.root);
+  const pushed = push(p);
   if (!pushed.ok) return { pushed: false, pullRequest: p.pullRequest, message: `git push to origin failed — ${pushed.why}` };
   return {
     pushed: true,
@@ -136,7 +142,7 @@ function advance(p) {
 function land(p) {
   if (p.pullRequest) return advance(p);
 
-  const pushed = run('git', ['push', '--quiet', '-u', 'origin', p.branch], p.root);
+  const pushed = push(p);
   if (!pushed.ok) return { pushed: false, message: `git push to origin failed — ${pushed.why}` };
 
   const data = process.env.DAORIS_PLUGIN_DATA;
