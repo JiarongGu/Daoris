@@ -85,7 +85,11 @@ public static class PluginSteps
             {
                 var (step, code, name) = Step(plugin, row, steps);
                 if (code is not null) return Refused(code, name);
-                steps.Add(step!);
+
+                // FABRIC-PERFORM1a (UNIT1d's choice 8): a performed step is asked at `work/perform` on the plugin's process, so a
+                // manifest whose hooks do not name that point declares a step nothing could ask; refused when read, after its own shape.
+                if (step!.Reach == NodeReach.Performed && !Names(root, PerformPoint)) return Refused(PluginStepCodes.PerformPoint, name);
+                steps.Add(step);
             }
         }
 
@@ -267,6 +271,12 @@ public static class PluginSteps
 
     private static bool Is(JsonElement value, string text) => value.ValueKind == JsonValueKind.String && value.GetString() == text;
 
+    /// <summary>Whether the manifest's <c>hooks.points</c>, as written, names <paramref name="point"/>. Twin: <c>names</c> in <c>steps.ts</c>.</summary>
+    private static bool Names(JsonElement root, string point) =>
+        root.TryGetProperty("hooks", out var hooks) && hooks.ValueKind == JsonValueKind.Object
+        && hooks.TryGetProperty("points", out var points) && points.ValueKind == JsonValueKind.Array
+        && points.EnumerateArray().Any(each => Is(each, point));
+
     private static PluginStepsRead Refused(string code, string? name) => new([], [], code, Words(code, name));
 
     /// <summary>The words each code is said in, naming the step by its manifest's id or the resource by its schema. Twin: <c>steps.ts</c>.</summary>
@@ -287,6 +297,7 @@ public static class PluginSteps
         "perform" => $"step `{name}`'s `perform` is a `performed` step's alone: an object whose `point`, where it names one, is `work/perform`.",
         PluginStepCodes.Idempotent => $"step `{name}`'s `idempotent` must be `true` or `false`: whether the plugin deduplicates a redelivered key.",
         PluginStepCodes.Reconcile => $"step `{name}`'s `reconcile` must be `work/reconcile`, the point that answers what became of an attempt.",
+        PluginStepCodes.PerformPoint => $"step `{name}` is performed, so `hooks.points` must name `work/perform`: the point Daoris asks it at.",
         "transient" => $"step `{name}`'s `transient` must list the failure codes worth retrying, once each, in lowercase letters, digits and dashes, and only with a `retry` of more than one attempt.",
         PluginStepCodes.Resources => "`resources` must be an array of what the plugin's steps create.",
         PluginStepCodes.Schema => "a declared resource needs a `schema` — what it is, like `acme.deploy/preview@1`.",
@@ -309,6 +320,10 @@ public static class PluginStepCodes
     public const string StepTwice = "step-twice";
     public const string Idempotent = "idempotent";
     public const string Reconcile = "reconcile";
+
+    /// <summary>A performed step whose manifest's <c>hooks.points</c> does not name <c>work/perform</c> (FABRIC-PERFORM1a).</summary>
+    public const string PerformPoint = "perform-point";
+
     public const string Resources = "resources";
     public const string Schema = "schema";
     public const string ResourceTwice = "resource-twice";

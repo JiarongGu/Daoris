@@ -121,6 +121,10 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 const schemaOf = (value: unknown): string | null => (typeof value === 'string' && isSchema(value) ? value : null);
 
+/** Whether the manifest's `hooks.points`, as written, names `point`. Twin: `PluginSteps.Names`. */
+const names = (root: Record<string, unknown>, point: string): boolean =>
+  isObject(root.hooks) && Array.isArray(root.hooks.points) && root.hooks.points.includes(point);
+
 const ordinal = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 /** A port map: absent is none; otherwise each name of `STEP_NAME` with its schema, ordered by name; null where it breaks that. */
@@ -155,6 +159,7 @@ function words(code: string, name: string | null): string {
     case 'perform': return `step \`${name}\`'s \`perform\` is a \`performed\` step's alone: an object whose \`point\`, where it names one, is \`work/perform\`.`;
     case 'idempotent': return `step \`${name}\`'s \`idempotent\` must be \`true\` or \`false\`: whether the plugin deduplicates a redelivered key.`;
     case 'reconcile': return `step \`${name}\`'s \`reconcile\` must be \`work/reconcile\`, the point that answers what became of an attempt.`;
+    case 'perform-point': return `step \`${name}\` is performed, so \`hooks.points\` must name \`work/perform\`: the point Daoris asks it at.`;
     case 'transient': return `step \`${name}\`'s \`transient\` must list the failure codes worth retrying, once each, in lowercase letters, digits and dashes, and only with a \`retry\` of more than one attempt.`;
     case 'resources': return "`resources` must be an array of what the plugin's steps create.";
     case 'schema': return 'a declared resource needs a `schema` — what it is, like `acme.deploy/preview@1`.';
@@ -267,6 +272,9 @@ export function stepsDeclared(plugin: string, root: Record<string, unknown>): St
     for (const row of root.steps) {
       const read = stepDeclared(plugin, row, steps);
       if (read.code !== null) return refused(read.code, read.name);
+      // FABRIC-PERFORM1a (UNIT1d's choice 8): a performed step is asked at `work/perform` on the plugin's process, so a manifest
+      // whose hooks do not name that point declares a step nothing could ask; refused when read, after its own shape.
+      if (read.step.reach === 'performed' && !names(root, PERFORM_POINT)) return refused('perform-point', read.name);
       steps.push(read.step);
     }
   }

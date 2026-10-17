@@ -19,11 +19,21 @@ public sealed class PluginStepsTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
+    /// <summary>
+    /// The hooks a row's manifest speaks with where it names none (FABRIC-PERFORM1a): a performed step is asked at `work/perform`, so
+    /// the hooks must name that point, and a row about anything else is not refused for it. Twin: <c>HOOKS</c> in the CLI's test.
+    /// </summary>
+    private const string Hooks = """, "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] }""";
+
+    /// <summary>The manifest a row declares: its id, the default hooks unless it names its own, and what it declares. Twin: <c>manifest</c>.</summary>
+    private static string Manifest(string declared) =>
+        $"{{ \"id\": \"acme.deploy\"{(declared.Contains("\"hooks\"", StringComparison.Ordinal) ? "" : Hooks)}{declared} }}";
+
     private void Plugin(string declared)
     {
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.deploy");
         Directory.CreateDirectory(folder);
-        File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), $"{{ \"id\": \"acme.deploy\"{declared} }}");
+        File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), Manifest(declared));
     }
 
     /// <summary>One step as the table says it: its kind and version, its reach, then each declared part. Twin: <c>said</c> in the CLI's test.</summary>
@@ -119,6 +129,10 @@ public sealed class PluginStepsTests : IDisposable
     [InlineData("no cleanup", """, "resources": [{ "schema": "acme.deploy/preview@1" }] """, "cleanup", "resource `acme.deploy/preview@1`'s `cleanup` must be `work/cleanup`: the plugin removes what it made through its own cleanup point, and Daoris never does.", "", "")]
     [InlineData("cleanup at another point", """, "resources": [{ "schema": "acme.deploy/preview@1", "cleanup": "work/perform" }] """, "cleanup", "resource `acme.deploy/preview@1`'s `cleanup` must be `work/cleanup`: the plugin removes what it made through its own cleanup point, and Daoris never does.", "", "")]
     [InlineData("a step's problem before a resource's", """, "steps": [{ "id": "deploy" }], "resources": [{ "schema": "preview" }] """, "reach", "step `deploy`'s `reach` must be `observed`, which the plugin reports, or `performed`, which Daoris asks the plugin to do.", "", "")]
+    [InlineData("a performed step asked nowhere", """, "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/watch", "work/step"] }, "steps": [{ "id": "deploy", "reach": "performed" }] """, "perform-point", "step `deploy` is performed, so `hooks.points` must name `work/perform`: the point Daoris asks it at.", "", "")]
+    [InlineData("an observed step asked nowhere", """, "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/watch", "work/step"] }, "steps": [{ "id": "deployed", "reach": "observed" }] """, null, null, "acme.deploy/deployed@1 observed", "")]
+    [InlineData("a step's own problem before its point", """, "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/watch"] }, "steps": [{ "id": "deploy", "reach": "performed", "timeoutSeconds": 0 }] """, "timeoutSeconds", "step `deploy`'s `timeoutSeconds` must be a whole number of seconds, above 0.", "", "")]
+    [InlineData("the second step asked nowhere", """, "hooks": { "command": ["node", "deploy.mjs"], "points": ["quest/consider"] }, "steps": [{ "id": "deployed", "reach": "observed" }, { "id": "deploy", "reach": "performed" }] """, "perform-point", "step `deploy` is performed, so `hooks.points` must name `work/perform`: the point Daoris asks it at.", "", "")]
     public void The_steps_read_as_the_cli_reads_them(string name, string declared, string? code, string? problem, string steps, string resources)
     {
         Plugin(declared);
@@ -130,9 +144,29 @@ public sealed class PluginStepsTests : IDisposable
         Assert.All(entry.Manifest.Steps, step => Assert.Equal(step.Kind, step.Id));
 
         // The reader's own answer names the code the sentence says.
-        using var root = JsonDocument.Parse($"{{ \"id\": \"acme.deploy\"{declared} }}");
+        using var root = JsonDocument.Parse(Manifest(declared));
         var read = PluginSteps.Read("acme.deploy", root.RootElement);
         Assert.Equal((code, problem), (read.Code, read.Problem));
+    }
+
+    /// <summary>
+    /// A performed step is asked at `work/perform` on the plugin's process (FABRIC-PERFORM1a, UNIT1d's choice 8): a manifest whose hooks
+    /// do not name that point, or that has no hooks at all, is refused when it is read, and an observed step needs no point.
+    /// </summary>
+    [Theory]
+    [InlineData("""{ "id": "acme.deploy", "steps": [{ "id": "deploy", "reach": "performed" }] }""", "perform-point")]
+    [InlineData("""{ "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"] }, "steps": [{ "id": "deploy", "reach": "performed" }] }""", "perform-point")]
+    [InlineData("""{ "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": "work/perform" }, "steps": [{ "id": "deploy", "reach": "performed" }] }""", "perform-point")]
+    [InlineData("""{ "id": "acme.deploy", "steps": [{ "id": "deployed", "reach": "observed" }] }""", null)]
+    [InlineData("""{ "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] }, "steps": [{ "id": "deploy", "reach": "performed" }] }""", null)]
+    public void A_performed_step_needs_its_point_in_the_hooks(string manifest, string? code)
+    {
+        using var root = JsonDocument.Parse(manifest);
+
+        var read = PluginSteps.Read("acme.deploy", root.RootElement);
+
+        Assert.Equal(code, read.Code);
+        if (code is not null) Assert.Equal("step `deploy` is performed, so `hooks.points` must name `work/perform`: the point Daoris asks it at.", read.Problem);
     }
 
     /// <summary>A manifest's step is the node declaration built by hand: one model, judged by its own checks.</summary>
@@ -140,7 +174,7 @@ public sealed class PluginStepsTests : IDisposable
     public void A_manifest_s_step_is_the_node_declaration_built_by_hand()
     {
         Plugin("""
-            , "hooks": { "command": ["node", "deploy.mjs"], "points": ["quest/consider"] },
+            , "hooks": { "command": ["node", "deploy.mjs"], "points": ["quest/consider", "work/perform"] },
             "steps": [{ "id": "deploy", "version": 2, "reach": "performed",
               "inputs": { "release": "acme.build/artifact@1" }, "outputs": { "preview": "acme.deploy/preview@1" },
               "evidence": { "schema": "acme.deploy/receipt@1" }, "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
@@ -219,7 +253,7 @@ public sealed class PluginStepsTests : IDisposable
     public void A_plugin_refused_by_the_catalogue_keeps_no_steps()
     {
         var steps = """, "steps": [{ "id": "deploy", "reach": "performed" }], "resources": [{ "schema": "acme.deploy/preview@1", "cleanup": "work/cleanup" }] """;
-        var (manifest, problem) = PluginCatalog.Parse("acme.deploy", $"{{ \"id\": \"acme.deploy\"{steps} }}");
+        var (manifest, problem) = PluginCatalog.Parse("acme.deploy", Manifest(steps));
         Assert.Null(problem);
         Assert.Single(manifest.Steps);
 

@@ -33,6 +33,7 @@ const RECONCILE = "step `deploy`'s `reconcile` must be `work/reconcile`, the poi
 const TRANSIENT = "step `deploy`'s `transient` must list the failure codes worth retrying, once each, in lowercase letters, digits and dashes, and only with a `retry` of more than one attempt.";
 const SCHEMA = 'a declared resource needs a `schema` — what it is, like `acme.deploy/preview@1`.';
 const CLEANUP = "resource `acme.deploy/preview@1`'s `cleanup` must be `work/cleanup`: the plugin removes what it made through its own cleanup point, and Daoris never does.";
+const POINT = 'step `deploy` is performed, so `hooks.points` must name `work/perform`: the point Daoris asks it at.';
 const WHOLE = 'acme.deploy/deploy@2 performed in release=acme.build/artifact@1 out log=acme.deploy/log@1,preview=acme.deploy/preview@1 evidence acme.deploy/receipt@1 retry 3/5+30 timeout 600 no-skip reject perform idempotent reconcile transient=unavailable+rate-limited+timeout';
 
 /**
@@ -104,6 +105,10 @@ const STEP_ROWS: Row[] = [
   ['no cleanup', ', "resources": [{ "schema": "acme.deploy/preview@1" }] ', 'cleanup', CLEANUP, '', ''],
   ['cleanup at another point', ', "resources": [{ "schema": "acme.deploy/preview@1", "cleanup": "work/perform" }] ', 'cleanup', CLEANUP, '', ''],
   ["a step's problem before a resource's", ', "steps": [{ "id": "deploy" }], "resources": [{ "schema": "preview" }] ', 'reach', REACH, '', ''],
+  ['a performed step asked nowhere', ', "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/watch", "work/step"] }, "steps": [{ "id": "deploy", "reach": "performed" }] ', 'perform-point', POINT, '', ''],
+  ['an observed step asked nowhere', ', "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/watch", "work/step"] }, "steps": [{ "id": "deployed", "reach": "observed" }] ', null, null, 'acme.deploy/deployed@1 observed', ''],
+  ["a step's own problem before its point", ', "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/watch"] }, "steps": [{ "id": "deploy", "reach": "performed", "timeoutSeconds": 0 }] ', 'timeoutSeconds', TIMEOUT, '', ''],
+  ['the second step asked nowhere', ', "hooks": { "command": ["node", "deploy.mjs"], "points": ["quest/consider"] }, "steps": [{ "id": "deployed", "reach": "observed" }, { "id": "deploy", "reach": "performed" }] ', 'perform-point', POINT, '', ''],
 ];
 
 const ordinal = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -130,10 +135,19 @@ function said(step: NodeDeclaration): string {
 
 const saidResource = (resource: PluginResource): string => `${resource.schema} ${resource.role} ${resource.cleanup}`;
 
+/**
+ * The hooks a row's manifest speaks with where it names none (FABRIC-PERFORM1a): a performed step is asked at `work/perform`, so
+ * the hooks must name that point, and a row about anything else is not refused for it. Twin: `PluginStepsTests.Hooks`.
+ */
+const HOOKS = ', "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] }';
+
+/** The manifest a row declares: its id, the default hooks unless it names its own, and what it declares. Twin: `Manifest`. */
+const manifest = (declared: string): string => `{ "id": "acme.deploy"${declared.includes('"hooks"') ? '' : HOOKS}${declared} }`;
+
 function plugin(home: string, declared: string): void {
   const folder = join(pluginsRoot(home), 'acme.deploy');
   mkdirSync(folder, { recursive: true });
-  writeFileSync(join(folder, MANIFEST), `{ "id": "acme.deploy"${declared} }`);
+  writeFileSync(join(folder, MANIFEST), manifest(declared));
 }
 
 test('the driver’s steps table is this table, row for row and in this order', () => {
@@ -151,15 +165,29 @@ test('the steps read as the driver reads them: each a node declaration, or the f
     assert.equal(entry!.manifest.resources.map(saidResource).join('; '), resources, name);
     for (const step of entry!.manifest.steps) assert.equal(step.id, step.kind, name);
 
-    const read = stepsDeclared('acme.deploy', JSON.parse(`{ "id": "acme.deploy"${declared} }`) as Record<string, unknown>);
+    const read = stepsDeclared('acme.deploy', JSON.parse(manifest(declared)) as Record<string, unknown>);
     assert.deepEqual([read.code, read.problem], [code, problem], name);
     fx.cleanup();
   });
 });
 
+test('a performed step needs its point in the hooks, and an observed step needs none (FABRIC-PERFORM1a)', () => {
+  const cases: [string, string | null][] = [
+    ['{ "id": "acme.deploy", "steps": [{ "id": "deploy", "reach": "performed" }] }', 'perform-point'],
+    ['{ "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"] }, "steps": [{ "id": "deploy", "reach": "performed" }] }', 'perform-point'],
+    ['{ "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": "work/perform" }, "steps": [{ "id": "deploy", "reach": "performed" }] }', 'perform-point'],
+    ['{ "id": "acme.deploy", "steps": [{ "id": "deployed", "reach": "observed" }] }', null],
+    ['{ "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] }, "steps": [{ "id": "deploy", "reach": "performed" }] }', null],
+  ];
+  for (const [written, code] of cases) {
+    const read = stepsDeclared('acme.deploy', JSON.parse(written) as Record<string, unknown>);
+    assert.deepEqual([read.code, read.problem], [code, code === null ? null : POINT], written);
+  }
+});
+
 test('a manifest’s step is the node declaration built by hand', () => {
   const fx = makeFixture('pluginSteps-whole');
-  plugin(fx.root, `, "hooks": { "command": ["node", "deploy.mjs"], "points": ["quest/consider"] },
+  plugin(fx.root, `, "hooks": { "command": ["node", "deploy.mjs"], "points": ["quest/consider", "work/perform"] },
     "steps": [{ "id": "deploy", "version": 2, "reach": "performed",
       "inputs": { "release": "acme.build/artifact@1" }, "outputs": { "preview": "acme.deploy/preview@1" },
       "evidence": { "schema": "acme.deploy/receipt@1" }, "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
