@@ -1,5 +1,6 @@
 using System.Reflection;
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.WireEvaluationTests;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -7,9 +8,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// FABRIC-WIRE1g (the fabric events design §E2, §E4, §E7): the decoded nodes evaluated. A <c>stop</c> sink is reached once on the receipt
 /// of the path into it, and never on a success, a skip, an unknown, a retryable failure or another run's failure; an <c>opinion</c> is
 /// reached, pending or passed over on its gate's judgement or on the opinion a recorded landing kept, and invents nothing; and the decoded
-/// order that holds a look behind a disputed opinion, which a schema-1 run does not, is recorded as it stands.
+/// order that holds a look behind a disputed opinion, which a schema-1 run does not, is recorded as it stands. Evaluated on
+/// <see cref="WireEvaluationTests"/>' unit, run and graph helper.
 /// </summary>
-public sealed partial class WireEvaluationTests
+public sealed class WireEvaluationDecodedTests
 {
     private const string Repository = "engine";
 

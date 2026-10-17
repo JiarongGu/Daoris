@@ -7,32 +7,33 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the one table; an <c>anyOf</c>'s witness; a trigger once per receipt; a skip, a failure and a rejection each a scoped receipt read by
 /// its own wires; forks within the limit; <c>all</c> joins; an invalidation lapsing downstream. Pure: nothing is stored.
 /// </summary>
-public sealed partial class WireEvaluationTests
+/// <remarks>Its unit, run, builders and <see cref="Graph"/> are internal: FABRIC-WIRE1g's <see cref="WireEvaluationDecodedTests"/> evaluates on them too.</remarks>
+public sealed class WireEvaluationTests
 {
-    private const string Unit = "unit-a";
+    internal const string Unit = "unit-a";
     private const string Plugin = "acme.deploy/deploy";
     private const string Preview = "acme.deploy/preview@1";
-    private static readonly DateTimeOffset Then = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
+    internal static readonly DateTimeOffset Then = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
 
-    private static readonly WireRun Base = new("graph-1", "run-1") { Revisions = new Dictionary<string, string?> { [Unit] = "tip-1" } };
+    internal static readonly WireRun Base = new("graph-1", "run-1") { Revisions = new Dictionary<string, string?> { [Unit] = "tip-1" } };
 
-    private static NodeDeclaration Node(string id, string kind = Plugin) =>
+    internal static NodeDeclaration Node(string id, string kind = Plugin) =>
         new(id, kind, 1, NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) ? builtIn.Reach : NodeReach.Performed);
 
-    private static Dictionary<string, string> Ports(string name, string schema) => new() { [name] = schema };
+    internal static Dictionary<string, string> Ports(string name, string schema) => new() { [name] = schema };
 
-    private static Wire After(string id, string from, string to, WireGroup? group = null) => new(id, WireKinds.After, new(from), new(to)) { Group = group };
+    internal static Wire After(string id, string from, string to, WireGroup? group = null) => new(id, WireKinds.After, new(from), new(to)) { Group = group };
 
     private static Wire Trigger(string id, string from, string to) => new(id, WireKinds.Trigger, new(from), new(to));
 
-    private static Wire Failed(string id, string from, string to) => new(id, WireKinds.Failed, new(from), new(to));
+    internal static Wire Failed(string id, string from, string to) => new(id, WireKinds.Failed, new(from), new(to));
 
-    private static Wire Rejected(string id, string from, string to) => new(id, WireKinds.Rejected, new(from), new(to));
+    internal static Wire Rejected(string id, string from, string to) => new(id, WireKinds.Rejected, new(from), new(to));
 
-    private static Wire Data(string id, string from, string output, string to, string input) => new(id, WireKinds.Data, new(from, output), new(to, input));
+    internal static Wire Data(string id, string from, string output, string to, string input) => new(id, WireKinds.Data, new(from, output), new(to, input));
 
     /// <summary>A graph's nodes on one unit, with their statuses as a record writer would keep them between evaluations.</summary>
-    private sealed class Graph(NodeDeclaration[] nodes, Wire[] wires)
+    internal sealed class Graph(NodeDeclaration[] nodes, Wire[] wires)
     {
         private readonly HashSet<string> fired = new(StringComparer.Ordinal);
 
