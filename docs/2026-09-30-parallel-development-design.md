@@ -129,7 +129,9 @@ that commit; outside a merge it changes nothing. `docs/FIX-LOG.md` keeps the inc
 the Process lane (the real-process halves and the rehearsals), which still runs one gate at a time, as rule 5 has it.
 A Process-lane gate starts once the light gates of its .NET component have built it, and a rehearsal once the light
 lane has ended. The first failure starts nothing more in either lane. `--one-at-a-time` runs every gate in turn, for a
-loaded machine. D115's note has the rules.
+loaded machine. D115's note has the rules. **GATELANES2 (2026-10-18)** runs up to three light gates at once, never two
+that build one .NET component, and **GATEBUILD1** runs a Process half on its fast half's build when that passed on the
+same tree in the same run; D115's note of that day has both.
 
 ## 4. The splits (the code half)
 

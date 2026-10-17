@@ -205,11 +205,12 @@ public sealed class QuestClosureTests : IAsyncLifetime
     {
         // FABRIC-CLOSE1l (CLOSE1f): the driver names the graph as it opens the first session; nothing is bound until the take.
         var open = await Open();
-        var named = await _exchange.BindAsync(open.Id, Graph, Now, atTake: true);
+        var named = await _exchange.BindAsync(open.Id, Graph, Now, atTake: true, session: "ses-first");
         Assert.Equal(QuestRespondRefusal.None, named.Refusal);
         Assert.Null((await Find(open.Id)).Closure);
 
-        var take = await _exchange.RespondAsync(open.Id, "take", null, Now);
+        // FABRIC-CLOSE1o: the session it was named for takes it (QuestTakeBindTests holds every other taker).
+        var take = await _exchange.RespondAsync(open.Id, "take", null, Now, session: "ses-first");
 
         // The take answers bound, saying `ready`, with the bind appended in the take's own write: no done fits between them.
         Assert.Equal(QuestRespondRefusal.None, take.Refusal);
@@ -231,7 +232,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.DoesNotContain("ready", take.Message, StringComparison.OrdinalIgnoreCase);
 
         // Already taken: its take has passed, so a graph named for it now is refused and nothing is bound (§E5's cutover).
-        Assert.NotEqual(QuestRespondRefusal.None, (await _exchange.BindAsync(open.Id, Graph, Now, atTake: true)).Refusal);
+        Assert.NotEqual(QuestRespondRefusal.None, (await _exchange.BindAsync(open.Id, Graph, Now, atTake: true, session: "ses-first")).Refusal);
         Assert.DoesNotContain(await _quests.HistoryAsync(open.Id), op => op.Kind == QuestOperationKind.Bound);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(open.Id, "done", "Built.", Now, answers: [Met(1), Met(2)])).Refusal);
     }

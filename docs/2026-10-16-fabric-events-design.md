@@ -1645,6 +1645,12 @@ distributed transaction is pretended:
    answers the first outcome. A stale binding, a lost claim or a racing close leaves every quest untouched and answers
    why.
 
+**Amended (FABRIC-CLOSE1q, D173's note).** A close speaks for the submissions it named, by their machine and sequence. The
+same commit made ready again is another submission, which a close kept for the one before neither reaches nor keeps from
+the person's override. A close the door answered whose node could not take the answer is held as the door's. The person
+goes on by a close's own words: record its kept close again, ask for its answer again with the same key, or stop the
+work's further nodes. Never a new close, and never their word for the door's answer.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 

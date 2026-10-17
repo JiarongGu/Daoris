@@ -49,14 +49,33 @@ internal sealed class TreeHandOffs(TreeContext context)
     /// </remarks>
     internal async Task<TreeHand> HandAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default)
     {
+        // LANDRACE1's review (D173's LANDRACE1 note): one push of a landed branch at a time, a hand-off's and a landing's plugin step
+        // alike, so a hand-off beside the landing that is still pushing the branch never pushes it again or opens a second pull request.
+        using var pushing = await LandingHolds.BranchAsync(context.Home, root, entry.Branch, ct).ConfigureAwait(false);
+        if (pushing is null)
+        {
+            return new(false, $"`{entry.Branch}` was not handed on: another push of it was still under way after "
+                + $"{(int)LandingHolds.Wait.TotalMinutes} minutes. Nothing changed; hand it on again once that one ends.", entry.Branch);
+        }
+
+        // Read again under the hold: a push that ended while this one waited is on the record now, with the pull request it opened.
+        entry = context.Recorded.Of(entry.Repository, entry.Branch) ?? entry;
         var (plan, frame, tip) = await PrepareHandAsync(root, entry, plugin, ct).ConfigureAwait(false);
         if (plan.Problem is not null || frame is null || plan.Plugin is null)
         {
             return new(false, plan.Problem ?? $"`{entry.Branch}` cannot be handed on.", entry.Branch);
         }
 
+        // The push it waited behind pushed this very commit: said as that push's answer, and the plugin is not told again.
+        if (pushing.Before is { Said: { Pushed: true, Failed: false } pushed } before && string.Equals(before.Tip, tip, StringComparison.OrdinalIgnoreCase))
+        {
+            return new(false, $"`{entry.Branch}` was pushed at this commit while this hand-off waited for that push: {Said(pushed, entry.Branch)} "
+                + "Nothing more was handed on.", entry.Branch, pushed);
+        }
+
         // The landing's own frame, said in the machine log as a hand-off (PLUGUI1d).
         var said = await context.Plugins.HandAsync(plan.Plugin, frame, ct).ConfigureAwait(false);
+        pushing.Keep(new LandingAttempt(entry.Branch, tip!, frame.AcceptedBy) { Plugin = plan.Plugin, Said = said });
         var handed = said is { Pushed: true, Failed: false };
         var message = handed
             ? $"handed `{entry.Branch}` to plugin `{said.Plugin}`. {Said(said, entry.Branch)}"
@@ -165,7 +184,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         var newest = entry.Advances.Count > 0 ? entry.Advances[^1].Session : entry.Session;
         return (new HandPlan(repository, branch, plugin, null, entry.PullRequest, commits.Count),
             new LandingFrame(repository, workspace, root, branch, line, entry.Title, entry.Quest, entry.Session, commits,
-                entry.Pushed ? entry.PullRequest : null, entry.AcceptedByOf(newest) ?? AcceptedBy.Person),
+                entry.Pushed ? entry.PullRequest : null, entry.AcceptedByOf(newest) ?? AcceptedBy.Person, Tip: tip),
             tip);
     }
 }

@@ -164,6 +164,18 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public const string Worded = "worded";
 
     /// <summary>
+    /// A plugin's word on Daoris's own close (FABRIC-CLOSE1q): a close's outcome is its door's answer, so neither <i>it happened</i> nor <i>it
+    /// did not</i> is taken; nothing is recorded, and a word recorded before is taken back.
+    /// </summary>
+    public const string NotCloseWord = "not-close-word";
+
+    /// <summary>A close's word on a plugin's attempt (FABRIC-CLOSE1q): nothing is recorded, and its three words stay as they were.</summary>
+    public const string NotOffered = "not-offered";
+
+    /// <summary><c>record</c> on a held close whose door's answer is not kept (FABRIC-CLOSE1q): there is nothing to record again, so nothing is recorded.</summary>
+    public const string NotKept = "not-kept";
+
+    /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
     /// new loop's generations start again at 1 (FABRIC-PERFORM1a) and cannot tell its process from the old one's.
     /// </summary>
@@ -394,6 +406,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
             if (held is not { State: AttemptStates.Held }) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
             if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
+
+            // FABRIC-CLOSE1q: each attempt takes its own words. A close's outcome is its door's answer, so a plugin's words are never taken on
+            // it, and `record` only where that answer is kept; a plugin's attempt keeps its three.
+            if (WordRefused(held, resolution) is { } code) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, code));
             return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
         });
     }
@@ -437,8 +453,16 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
 
         return done;
 
-        static bool HasWord(NodeAttempt attempt) => attempt is { State: AttemptStates.Held, Resolution: not null };
+        // FABRIC-CLOSE1q: a close's word is its closer's (QuestCloser.Resolve), never applied here as a plugin's.
+        static bool HasWord(NodeAttempt attempt) => attempt is { State: AttemptStates.Held, Resolution: not null } && attempt.Plugin != QuestClosing.Sender;
     }
+
+    /// <summary>Why <paramref name="word"/> is not taken on <paramref name="held"/> (FABRIC-CLOSE1q), or null where it is one of its words.</summary>
+    internal static string? WordRefused(NodeAttempt held, string word) =>
+        HeldResolutions.Of(held).Contains(word, StringComparer.Ordinal) ? null
+        : held.Plugin != QuestClosing.Sender ? NotOffered
+        : word == HeldResolutions.Record ? NotKept
+        : NotCloseWord;
 
     /// <summary>One word applied (<see cref="Resolve"/>): the record after it, and what it came to.</summary>
     private (NodeRecord Next, WorkPerformed Result) Settle(NodeRecord record, NodeAttempt attempt, NodeDeclaration node)
@@ -446,6 +470,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         var now = clock();
         var unit = record.Unit;
         var word = attempt.Resolution!;
+
+        // FABRIC-CLOSE1q: a close's word is never a plugin attempt's; one no door would record is taken back, saying why.
+        if (WordRefused(attempt, word) is { } refused)
+        {
+            return (With(record, attempt, attempt with { Resolution = null, ResolvedAt = null, Code = refused }), new(unit, node.Id, PerformedWhat.Refused, refused));
+        }
+
         var status = StatusOf(record, node.Id);
         var current = status.Attempt == attempt.Attempt && status.State is NodeStates.Active or NodeStates.Unknown;
         var outcome = word switch { HeldResolutions.Happened => WorkStates.Reached, HeldResolutions.DidNot => WorkStates.Failed, _ => WorkStates.Unknown };

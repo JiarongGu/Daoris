@@ -23,9 +23,13 @@ speaks only at a landing. Named, it is started for one accepted landing, told th
 In the repository's own checkout, after Daoris has made the branch:
 
 ```sh
-git push --quiet -u origin <branch>
+git push --quiet origin <tip>:refs/heads/<branch>
 gh pr create --head <branch> --title <title> --body-file <file> --base <base>
 ```
+
+What it pushes is the commit Daoris judged and landed, the frame's `tip`, never the branch as it stands
+at the push: a commit made on the branch after the landing judged it (an agent's, in a tree on a branch
+of its own) stays behind for the next landing. A frame from a Daoris before `tip` pushes `<branch>`.
 
 The title is the quest's (or what you first said in a conversation). The body names the quest, the
 session, who accepted the work (the person who reviewed it, or automatically when its quest was done,
@@ -43,7 +47,7 @@ while it is open:
 
 ```sh
 gh pr view <pullRequest> --json state
-git push --quiet origin <branch>
+git push --quiet origin <tip>:refs/heads/<branch>
 ```
 
 A pull request that is merged or closed, or a state `gh` cannot read, answers *not pushed*, saying which:
@@ -67,10 +71,11 @@ calls above, the check, and the version question Daoris asks.
   `--body-file`), its `--head` in [1.0.0](https://github.com/cli/cli/releases/tag/v1.0.0), `gh auth status`
   in [0.12.0](https://github.com/cli/cli/releases/tag/v0.12.0), and `--title`, `--base` and `--version` are
   in 0.12.0's source. Known from the release notes, and from that source for the last three.
-- **Git 1.7.0**: `git push`'s `-u` and `--quiet` are both in 1.7.0's options
-  ([`builtin-push.c` at v1.7.0](https://github.com/git/git/blob/v1.7.0/builtin-push.c)), and its
-  [release notes](https://github.com/git/git/blob/master/Documentation/RelNotes/1.7.0.adoc) name
-  `--set-upstream`. A reading of the source: no Git that old was run.
+- **Git 1.7.0**: `git push`'s `--quiet` is in 1.7.0's options
+  ([`builtin-push.c` at v1.7.0](https://github.com/git/git/blob/v1.7.0/builtin-push.c)), and a refspec
+  whose source is a commit's id is in its documentation there
+  ([`git-push.txt` at v1.7.0](https://github.com/git/git/blob/v1.7.0/Documentation/git-push.txt)). A
+  reading of the source: no Git that old was run.
 - **Node.js 16.6.0**: `land.mjs` takes a command's last line with `Array.prototype.at`, which came with V8
   9.2 in [Node.js 16.6.0](https://nodejs.org/en/blog/release/v16.6.0). That everything else it uses is
   older is a reading of the script, not a run on 16.6.0.
