@@ -380,6 +380,29 @@ public enum QuestCloseRefusal
     KeyReused,
 }
 
+/// <summary>
+/// A close's refusal as the close door names it on the wire (FABRIC-CLOSE1b): the driver keeps the code beside the sentence, so it tells a key
+/// gone with another close from a check a quest's state failed without reading the words.
+/// </summary>
+public static class QuestCloseCodes
+{
+    /// <summary>The refusal's code, or null for none.</summary>
+    public static string? Of(QuestCloseRefusal refusal) => refusal switch
+    {
+        QuestCloseRefusal.None => null,
+        QuestCloseRefusal.Malformed => "malformed",
+        QuestCloseRefusal.NotFound => "not-found",
+        QuestCloseRefusal.NotBound => "not-bound",
+        QuestCloseRefusal.NotHeld => "not-held",
+        QuestCloseRefusal.Closed => "closed",
+        QuestCloseRefusal.Stale => "stale",
+        QuestCloseRefusal.Held => "held",
+        QuestCloseRefusal.Unsealed => "unsealed",
+        QuestCloseRefusal.KeyReused => "key-reused",
+        _ => "refused",
+    };
+}
+
 /// <param name="Refusal"><see cref="QuestCloseRefusal.None"/> when every named quest is Done.</param>
 /// <param name="Quest">The quest a refusal failed on, or null.</param>
 /// <param name="Quests">Every named quest as it now stands, in the order named; empty where one was not found.</param>

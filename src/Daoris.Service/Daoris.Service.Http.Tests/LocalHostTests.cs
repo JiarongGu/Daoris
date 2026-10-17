@@ -817,6 +817,13 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         });
         Assert.Equal(409, stale.Status);
         Assert.Contains("first sent", stale.Error);
+
+        // FABRIC-CLOSE1b: each refusal names its check by a code the driver reads, a replayed one the check it was refused on then.
+        Assert.Equal("key-reused", reused.Json.GetProperty("code").GetString());
+        Assert.Equal("stale", stale.Json.GetProperty("code").GetString());
+
+        // FABRIC-CLOSE1b's handshake: this host knows a closure graph's operations and doors.
+        Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
     }
 
     /// <summary>

@@ -14,8 +14,10 @@ namespace Daoris.Knowledge.Http;
 // before it takes an address; absent from a shared host, and where the home's id does not read.
 // `Version` (WIRING1b, the this-Daoris design §3.6): the host's informational version as the release workflow stamped it, which
 // This Daoris shows. Added after the others, a wire shape's field being added and never renamed; a reader older than it skips it.
+// `Closure` (FABRIC-CLOSE1b's handshake): this host knows a closure graph's operations (`bound`, `submitted`) and its bind and close
+// doors. A host from before answers none, which a driver reads as not knowing them, and binds nothing there.
 public sealed record StatusResponse(
-    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null);
+    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null, bool? Closure = null);
 
 /// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
 public static class HostVersion
