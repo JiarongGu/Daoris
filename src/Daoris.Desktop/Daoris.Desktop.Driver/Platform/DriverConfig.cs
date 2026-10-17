@@ -687,6 +687,12 @@ public sealed record DriverConfig(
     /// </summary>
     public string? Source { get; init; }
 
+    /// <summary>
+    /// The file <see cref="Source"/> was read from (<see cref="Load"/>), whole, or null for a text parsed in memory: <see cref="Save"/> makes
+    /// an edit onto that file as it stands, and writes over <see cref="Source"/> anywhere else (FABRIC-GRAPH1's re-check, finding 1).
+    /// </summary>
+    public string? SourceFile { get; init; }
+
     /// <summary>A missing file is a machine that has opted nothing in — the empty config, not an error.</summary>
     /// <exception cref="DriverConfigUnreadableException">
     /// The file is there and does not read (CONFIGREAD1): it could not be opened, is not JSON, or is not the choices' shape.
@@ -708,7 +714,7 @@ public sealed record DriverConfig(
 
         try
         {
-            return Parse(text);
+            return Parse(text) with { SourceFile = Path.GetFullPath(path) };
         }
         catch (JsonException error) when (error.LineNumber is { } line && error.BytePositionInLine is { } position)
         {
@@ -740,14 +746,19 @@ public sealed record DriverConfig(
     /// 🔴 The edit (what changed between <see cref="Source"/> as read and these choices) is made onto the file read again here, under the
     /// same keep rules (FABRIC-GRAPH1's re-check, finding 1): written over <see cref="Source"/>, a change another writer made in between was
     /// lost, and a file that had since stopped reading was overwritten. A file that does not read now, or holds a key twice in one object,
-    /// is refused and left as it is; one that is gone is written from nothing. A config built in memory is written whole. The CLI's
+    /// is refused and left as it is; one that is gone is written from nothing. A config built in memory is written whole, and one parsed
+    /// from a text (<see cref="Parse"/>) or read from another file over that text (<see cref="ToJson"/>). The CLI's
     /// <c>writeDriverChoices</c> does the same.
     /// </remarks>
     /// <exception cref="DriverConfigUnreadableException">The file there now does not read, or holds a key twice; nothing was written.</exception>
     public void Save(string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        AtomicFile.WriteText(path, Source is null ? Written() : JsonKeeping.Kept(Current(path), Understood(), Written()));
+        var file = Path.GetFullPath(path);
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        AtomicFile.WriteText(path, Source is not null && string.Equals(SourceFile, file, same)
+            ? JsonKeeping.Kept(Current(path), Understood(), Written())
+            : ToJson());
     }
 
     /// <summary>The file at <paramref name="path"/> as it stands, for an edit to be written over; <c>{}</c> where it is gone.</summary>
