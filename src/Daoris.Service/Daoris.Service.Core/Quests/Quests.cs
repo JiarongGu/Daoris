@@ -139,10 +139,11 @@ public sealed record Quest(
 
     /// <summary>
     /// The evidence its done waits on (EVID1a, D144 §3): each item of each requirement its done answered met, by the
-    /// requirement's number. A departure waits on none of its requirement's evidence, since the work departed from it.
+    /// requirement's number. A departure waits on none of its requirement's evidence, since the work departed from it. In a
+    /// closure graph a current submission's answers wait on it the same way (FABRIC-CLOSE1a, §E5).
     /// </summary>
     public IReadOnlyList<(int Requirement, QuestEvidence Item)> EvidenceWanted =>
-        Status != QuestStatus.Done
+        !Judged
             ? []
             : [.. Answers
                 .Where(answer => !answer.IsDeparture && answer.Requirement >= 1 && answer.Requirement <= Requirements.Count)
@@ -155,7 +156,7 @@ public sealed record Quest(
     /// found yet, and the person has not accepted the done as it stands.
     /// </summary>
     public bool AwaitsEvidence =>
-        Status == QuestStatus.Done && Accepted is null && Evidence is not { Found: true } && EvidenceWanted.Count > 0;
+        Judged && Accepted is null && Evidence is not { Found: true } && EvidenceWanted.Count > 0;
 
     /// <summary>
     /// The chain's review choice (REVIEWENV1b, D154 point 3): <c>off</c>, <c>on</c> or an environment's name, set at publish
@@ -179,13 +180,33 @@ public sealed record Quest(
     public IReadOnlyList<QuestReviewVerdict> Verdicts { get; init; } = [];
 
     /// <summary>
+    /// The digest of the graph that closes it (FABRIC-CLOSE1a, the fabric events design §E5), bound by its taker's driver at
+    /// its first start; null for a quest no closure graph holds, which is every quest from before. While it is set its taker
+    /// says <c>ready</c>, and only the graph's close door, or the person's own done, writes its Done.
+    /// </summary>
+    public string? Closure { get; init; }
+
+    /// <summary>
+    /// Its taker's latest submission in a closure graph (FABRIC-CLOSE1a, §E5), the one the holds and the close judge; null while
+    /// none was made. Its answers are <see cref="Answers"/>, as a done's are. It stays once the quest is Done, as the work closed.
+    /// </summary>
+    public QuestSubmission? Submission { get; init; }
+
+    /// <summary>
+    /// Whether its result is judged (FABRIC-CLOSE1a, §E5): closed done, or taken with a current submission. The holds, the
+    /// evidence and the review hang on it, so in a closure graph they hang on the submission exactly as they hang on a done.
+    /// </summary>
+    internal bool Judged => Status == QuestStatus.Done || (Status == QuestStatus.Taken && Submission is not null);
+
+    /// <summary>
     /// Why it waits for the person, or null when nothing holds it (DRIFT1d, EVID1a; D133 §4, D144 §6): a departure,
     /// which only their yes lets go, comes first; then evidence nobody read, or evidence read and not found. A set-up step's
     /// review comes after both (REVIEWENV1b, D154 point 9), so their order is unchanged, and only the person's verdict
-    /// lets it go: their yes accepts a departure or its evidence, never a review.
+    /// lets it go: their yes accepts a departure or its evidence, never a review. In a closure graph each holds a current
+    /// submission as it holds a done (FABRIC-CLOSE1a, §E5).
     /// </summary>
     public QuestHold? Hold =>
-        Status != QuestStatus.Done ? null
+        !Judged ? null
         : Accepted is null && Answers.Any(answer => answer.IsDeparture) ? QuestHold.Departed
         : AwaitsEvidence ? Evidence is null ? QuestHold.EvidenceUnread : QuestHold.EvidenceMissing
         : QuestReviewing.Waits(this) ? QuestHold.Unreviewed
@@ -299,7 +320,65 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
     /// wait would be made on a claim this machine never held. Said apart from the table's refusals, so the answer can say why.
     /// </summary>
     public bool ClaimLost { get; init; }
+
+    /// <summary>
+    /// Refused because the quest's graph closes it (FABRIC-CLOSE1a, §E5): an agent's done on a quest bound to a closure graph,
+    /// which says <c>ready</c> instead, so no done slips past the graph.
+    /// </summary>
+    public bool ClosedByGraph { get; init; }
+
+    /// <summary>
+    /// The successor a sealed submission published (FABRIC-CLOSE1a, §E5), naming why a later <c>ready</c> was refused: it
+    /// stands on the submission it grew from. Null on every other move.
+    /// </summary>
+    public string? SealedBy { get; init; }
 }
+
+/// <summary>
+/// A taker's submission in a closure graph (FABRIC-CLOSE1a, the fabric events design §E5): the operation that made it, by the
+/// machine and sequence that name it everywhere, which the graph's close names as the one it judged; when; and its note. Its
+/// answers are the quest's <see cref="Quest.Answers"/>.
+/// </summary>
+public sealed record QuestSubmission(string Machine, long Sequence, DateTimeOffset At, string? Note);
+
+/// <summary>
+/// Why a graph's close wrote nothing (FABRIC-CLOSE1a, §E5), or <see cref="None"/> when it closed every quest it named. Each
+/// refusal names the quest it failed on, and nothing is written for any.
+/// </summary>
+public enum QuestCloseRefusal
+{
+    None,
+
+    /// <summary>The call is not one: no key or token, no quest named, a quest named twice, or a submission half named.</summary>
+    Malformed,
+
+    /// <summary>No quest under a named id.</summary>
+    NotFound,
+
+    /// <summary>A named quest no closure graph holds: its taker's driver never bound it.</summary>
+    NotBound,
+
+    /// <summary>A named quest this machine does not hold: never taken here, or taken on another machine first (D69).</summary>
+    NotHeld,
+
+    /// <summary>A named quest is already done or declined, by another close, the person, or another machine.</summary>
+    Closed,
+
+    /// <summary>The submission named is not the quest's current one, or it has none: the close's binding is stale.</summary>
+    Stale,
+
+    /// <summary>A named quest's submission is held for the person: a departure, its evidence, or its review.</summary>
+    Held,
+
+    /// <summary>A named quest's chain step is not published from its submission, so the submission is not sealed.</summary>
+    Unsealed,
+}
+
+/// <param name="Refusal"><see cref="QuestCloseRefusal.None"/> when every named quest is Done.</param>
+/// <param name="Quest">The quest a refusal failed on, or null.</param>
+/// <param name="Quests">Every named quest as it now stands, in the order named; empty where one was not found.</param>
+/// <param name="Replayed">Whether this was the same key again, answered with the first close's outcome and writing nothing.</param>
+public sealed record QuestClosing(QuestCloseRefusal Refusal, Quest? Quest, IReadOnlyList<Quest> Quests, bool Replayed = false);
 
 /// <summary>What a dismissal did: the quest as it now stands (null when there is no such quest), and how many conflicts went.</summary>
 public sealed record QuestDismissal(Quest? Quest, int Dismissed);
@@ -511,7 +590,9 @@ public sealed class QuestStore
                   set_up_in   TEXT NULL,
                   set_ups     TEXT NOT NULL DEFAULT '[]',
                   verdicts    TEXT NOT NULL DEFAULT '[]',
-                  note_parts  TEXT NULL
+                  note_parts  TEXT NULL,
+                  closure     TEXT NULL,
+                  submission  TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -556,6 +637,9 @@ public sealed class QuestStore
             ("quests", "verdicts", "verdicts TEXT NOT NULL DEFAULT '[]'"),
             // The note's parts (QUESTCLOSE1b1); a quest from before has a note with none, which the page shows as recorded.
             ("quests", "note_parts", "note_parts TEXT NULL"),
+            // A closure graph's binding and its current submission (FABRIC-CLOSE1a); a quest from before has neither.
+            ("quests", "closure", "closure TEXT NULL"),
+            ("quests", "submission", "submission TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -829,7 +913,7 @@ public sealed class QuestStore
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
-        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null)
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -852,8 +936,10 @@ public sealed class QuestStore
         var said = kind == QuestOperationKind.Verdict ? review : null;
         // Parts only beside a note, as the store keeps them (QUESTCLOSE1b1): what it reads back is what it wrote.
         var parts = note is null ? null : NoteParts.Normalize(NoteParts.Element(noteParts));
+        // A close's provenance is a done's alone (FABRIC-CLOSE1a).
+        var closed = kind == QuestOperationKind.Done ? close : null;
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts));
+            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
@@ -868,7 +954,8 @@ public sealed class QuestStore
             Evidence: verdict,
             SetUp: shown,
             Verdict: said,
-            NoteParts: parts);
+            NoteParts: parts,
+            Close: closed);
     }
 
     /// <summary>
@@ -899,7 +986,8 @@ public sealed class QuestStore
                 operation.Kind == QuestOperationKind.Evidenced ? operation.Evidence : null,
                 operation.Kind == QuestOperationKind.SetUp ? operation.SetUp : null,
                 operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null,
-                operation.NoteParts));
+                operation.NoteParts,
+                operation.Kind == QuestOperationKind.Done ? operation.Close : null));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -927,8 +1015,8 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, note_parts = excluded.note_parts, filed = excluded.filed, updated = excluded.updated,
@@ -937,8 +1025,21 @@ public sealed class QuestStore
               awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes,
               requirements = excluded.requirements, answers = excluded.answers, accepted = excluded.accepted,
               held = excluded.held, short_title = excluded.short_title, evidence = excluded.evidence,
-              review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts
+              review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts,
+              closure = excluded.closure, submission = excluded.submission
             """;
+        command.Parameters.AddWithValue("$closure", (object?)quest.Closure ?? DBNull.Value);
+        command.Parameters.AddWithValue("$submission", quest.Submission is { } submitted
+            ? JsonFields.Written(writer =>
+            {
+                writer.WriteStartObject();
+                writer.WriteString("machine", submitted.Machine);
+                writer.WriteNumber("sequence", submitted.Sequence);
+                writer.WriteString("at", Moments.Write(submitted.At));
+                if (submitted.Note is not null) writer.WriteString("note", submitted.Note);
+                writer.WriteEndObject();
+            })
+            : DBNull.Value);
         command.Parameters.AddWithValue(
             "$review", quest.Review is { } chosen ? JsonFields.Written(writer => Reviews.Write(writer, chosen)) : DBNull.Value);
         command.Parameters.AddWithValue("$setUpIn", (object?)quest.SetUpIn ?? DBNull.Value);
@@ -1075,9 +1176,13 @@ public sealed class QuestStore
     /// The note's parts beside it (QUESTCLOSE1b1, D142 point 2), as <see cref="NoteParts"/> keeps them: Daoris's lead by its
     /// code, then someone's words. Only with a note; a move that writes its note without them clears the quest's.
     /// </param>
+    /// <param name="byAgent">
+    /// An agent's done (FABRIC-CLOSE1a, §E5): refused here, with <see cref="QuestMove.ClosedByGraph"/>, on a quest a closure
+    /// graph binds, judged inside the write so a bind landing a moment earlier is seen. The person's done is never one.
+    /// </param>
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
-        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? noteParts = null) =>
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? noteParts = null, bool byAgent = false) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
@@ -1111,6 +1216,12 @@ public sealed class QuestStore
             // A close on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
             if (QuestLog.OnALostTake(standing, history, judged)) return new QuestMove(held, Moved: false) { ClaimLost = true };
 
+            // An agent's done where the graph closes the quest (FABRIC-CLOSE1a): its result is a submission, so no done slips past.
+            if (byAgent && status == QuestStatus.Done && standing is { Closure: not null })
+            {
+                return new QuestMove(held, Moved: false) { ClosedByGraph = true };
+            }
+
             var operation = await AppendAsync(
                 id, kind, now, note, null, transaction, inside,
                 answers: status == QuestStatus.Done ? answers : null, whileOpen: open, noteParts: noteParts).ConfigureAwait(false);
@@ -1139,6 +1250,147 @@ public sealed class QuestStore
             ? await FindAsync(next.Step.Id, transaction, ct).ConfigureAwait(false)
               ?? await PublishInAsync(next.Step, transaction, ct, next.Left).ConfigureAwait(false)
             : null;
+
+    /// <summary>
+    /// Bind a taken quest to the graph that closes it (FABRIC-CLOSE1a, §E5): a <see cref="QuestOperationKind.Bound"/> operation
+    /// naming the graph's digest, judged against the replayed history inside the write.
+    /// </summary>
+    /// <returns>
+    /// The quest as it now stands and whether this call bound it; a null quest means no such id. Refused with
+    /// <see cref="QuestMove.ClaimLost"/> where this machine's take lost, and unmoved where this machine holds no take on it.
+    /// </returns>
+    public Task<QuestMove> BindAsync(string id, string graph, DateTimeOffset now, CancellationToken ct = default) =>
+        TakersMoveAsync(id, new QuestOperation(id, QuestOperationKind.Bound, Machine, 0, now, graph), now, ct);
+
+    /// <summary>
+    /// Submit a closure graph's work (FABRIC-CLOSE1a, §E5): a <see cref="QuestOperationKind.Submitted"/> operation carrying a
+    /// done's note and answers, and the chain's next step it publishes when nothing holds it, in the same transaction.
+    /// </summary>
+    /// <returns>
+    /// As <see cref="BindAsync"/>, and refused with <see cref="QuestMove.SealedBy"/> where the current submission already
+    /// published its successor, which stands: the step grew from that submission, and only the person reopens it.
+    /// </returns>
+    public Task<QuestMove> SubmitAsync(
+        string id, string? note, IReadOnlyList<QuestAnswer> answers, DateTimeOffset now, CancellationToken ct = default) =>
+        TakersMoveAsync(
+            id, new QuestOperation(id, QuestOperationKind.Submitted, Machine, 0, now, note, Answers: answers.Count > 0 ? answers : null),
+            now, ct);
+
+    /// <summary>
+    /// A closure graph's bind or submission (FABRIC-CLOSE1a), made by the machine holding the take, judged by the replay's rule
+    /// inside the write as every move is. A submission nothing holds publishes the chain's next step in the same transaction,
+    /// as an unheld done does, and is sealed by it (§E5).
+    /// </summary>
+    private Task<QuestMove> TakersMoveAsync(string id, QuestOperation judged, DateTimeOffset now, CancellationToken ct) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
+            if (held is null) return new QuestMove(null, Moved: false);
+
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (history.Count == 0) history = await GiveHistoryAsync(held, transaction, inside).ConfigureAwait(false);
+            var standing = QuestLog.Replay(history);
+            if (!QuestLog.Applies(standing, judged)) return new QuestMove(held, Moved: false);
+            if (QuestLog.OnALostTake(standing, history, judged)) return new QuestMove(held, Moved: false) { ClaimLost = true };
+
+            // Only the machine holding the take binds or submits (§E5): another machine's take is its own to finish.
+            if (QuestLog.Claim(history, Machine) is not (QuestClaim.Held or QuestClaim.Unconfirmed)) return new QuestMove(held, Moved: false);
+
+            // Sealed (§E5): a submission whose successor stands takes no later one, so the step never stands on work replaced
+            // under it. Only the take's machine submits, so this machine's store is where the seal is judged.
+            if (judged.Kind == QuestOperationKind.Submitted && standing!.Submission is not null
+                && await SuccessorAsync(standing, transaction, inside).ConfigureAwait(false) is { } successor)
+            {
+                return new QuestMove(held, Moved: false) { SealedBy = successor.Id };
+            }
+
+            var operation = await AppendAsync(
+                id, judged.Kind, now, judged.Note, null, transaction, inside, answers: judged.Answers).ConfigureAwait(false);
+            var moved = QuestLog.Step(standing, operation)!;
+            await WriteCacheAsync(moved, transaction, inside).ConfigureAwait(false);
+
+            var followUp = judged.Kind == QuestOperationKind.Submitted && !moved.Held
+                ? await PublishNextAsync(moved, now, transaction, inside).ConfigureAwait(false)
+                : null;
+            return new QuestMove(moved, Moved: true, followUp);
+        }, ct);
+
+    /// <summary>The chain's next step <paramref name="quest"/>'s close or submission published, where it stands; else null.</summary>
+    private async Task<Quest?> SuccessorAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
+        NextStep(quest, quest.Updated) is { } next ? await FindAsync(next.Step.Id, transaction, ct).ConfigureAwait(false) : null;
+
+    /// <summary>
+    /// The graph's close (FABRIC-CLOSE1a, §E5): every named quest Done, each on its named submission, in one transaction. Each
+    /// quest is judged on its history replayed inside the transaction: bound to a closure graph, held by this machine's take,
+    /// its named submission the current one, nothing holding it, and its chain's next step published from it. Any failed check
+    /// writes nothing, and answers which check on which quest. Only then is Done appended to each, in the order named, with its
+    /// submission's note and answers and the close's key and token as provenance.
+    /// </summary>
+    /// <remarks>
+    /// The key is what makes a close once (§E5 step 4): a close whose key a named quest's Done already carries is the same close
+    /// sent again after a timeout or a lost answer, and is answered with what the first wrote, writing nothing.
+    /// </remarks>
+    public Task<QuestClosing> CloseAsync(
+        IReadOnlyList<(string Id, QuestOperationRef Submission)> named, QuestClose close, DateTimeOffset now,
+        CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var judged = new List<(Quest Quest, IReadOnlyList<QuestOperation> History)>();
+            foreach (var (id, _) in named)
+            {
+                var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+                if (QuestLog.Replay(history) is not { } quest)
+                {
+                    return new QuestClosing(QuestCloseRefusal.NotFound, null, [.. judged.Select(each => each.Quest)]);
+                }
+
+                judged.Add((quest, history));
+            }
+
+            // The same close again: its key is on a named quest's Done already.
+            if (judged.Any(each => each.History.Any(op => op is { Kind: QuestOperationKind.Done } && op.Close?.Key == close.Key)))
+            {
+                return new QuestClosing(QuestCloseRefusal.None, null, [.. judged.Select(each => each.Quest)], Replayed: true);
+            }
+
+            foreach (var ((quest, history), (_, submission)) in judged.Zip(named))
+            {
+                var done = new QuestOperation(quest.Id, QuestOperationKind.Done, Machine, 0, now);
+                var refusal = quest switch
+                {
+                    { Status: QuestStatus.Done or QuestStatus.Declined } => QuestCloseRefusal.Closed,
+                    { Closure: null } => QuestCloseRefusal.NotBound,
+                    _ when QuestLog.OnALostTake(quest, history, done)
+                           || QuestLog.Claim(history, Machine) is not (QuestClaim.Held or QuestClaim.Unconfirmed) => QuestCloseRefusal.NotHeld,
+                    { Submission: null } => QuestCloseRefusal.Stale,
+                    _ when quest.Submission!.Machine != submission.Machine || quest.Submission.Sequence != submission.Sequence
+                        => QuestCloseRefusal.Stale,
+                    { Held: true } => QuestCloseRefusal.Held,
+                    _ => QuestCloseRefusal.None,
+                };
+
+                if (refusal == QuestCloseRefusal.None && quest.Then.Count > 0
+                    && await SuccessorAsync(quest, transaction, inside).ConfigureAwait(false) is null)
+                {
+                    refusal = QuestCloseRefusal.Unsealed;
+                }
+
+                if (refusal != QuestCloseRefusal.None) return new QuestClosing(refusal, quest, [.. judged.Select(each => each.Quest)]);
+            }
+
+            var closed = new List<Quest>();
+            foreach (var (quest, history) in judged)
+            {
+                var operation = await AppendAsync(
+                    quest.Id, QuestOperationKind.Done, now, quest.Submission!.Note, null, transaction, inside,
+                    answers: quest.Answers, close: close).ConfigureAwait(false);
+                var done = QuestLog.Replay([.. history, operation])!;
+                await WriteCacheAsync(done, transaction, inside).ConfigureAwait(false);
+                closed.Add(done);
+            }
+
+            return new QuestClosing(QuestCloseRefusal.None, null, closed);
+        }, ct);
 
     /// <summary>
     /// The person accepts a done as it stands (DRIFT1d, D133 §4; EVID1a, D144 §6): its departure, or its evidence unread
@@ -1650,6 +1902,7 @@ public sealed class QuestStore
         var claimLost = false;
         (long Position, int Reported)? lostTake = null;
         var waitsLost = new List<string>();
+        var submissionLost = false;
         // The history as this rebase leaves it so far: what QuestLog.OnALostTake reads this machine's claim from.
         var replayed = new List<QuestOperation>();
         foreach (var operation in await HistoryAsync(id, transaction, ct).ConfigureAwait(false))
@@ -1705,6 +1958,15 @@ public sealed class QuestStore
                     await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
                 }
 
+                // A submission that lost takes the step it published with it, its publication pending on the same take
+                // (FABRIC-CLOSE1a, §E5), and the take's conflict names it. One that lost to another machine's done leaves the
+                // step that done published, which is the same one.
+                if (operation.Kind == QuestOperationKind.Submitted && quest is not { Status: QuestStatus.Done })
+                {
+                    await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+                    submissionLost |= lostClaim;
+                }
+
                 continue;
             }
 
@@ -1714,7 +1976,7 @@ public sealed class QuestStore
             // decline, and the flag, a decline's, goes with the kind.
             var lost = operation with
             {
-                Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind), WhileOpen = false,
+                Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind), WhileOpen = false, Close = null,
             };
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
             quest = quest is null ? null : QuestLog.Step(quest, lost);
@@ -1734,12 +1996,13 @@ public sealed class QuestStore
 
         // The take's conflict names the waits that went with it, after its own note (WAITCLAIM1). It is rewritten before
         // it is pushed, so every machine keeps the one note.
-        if (lostTake is { } take && waitsLost.Count > 0)
+        if (lostTake is { } take && (waitsLost.Count > 0 || submissionLost))
         {
             // A note rewritten here has no parts of its own, so it keeps none: a stale lead would word a note it no longer is.
+            var note = waitsLost.Count > 0 ? WaitsWentWith(conflicts[take.Reported].Note, waitsLost) : conflicts[take.Reported].Note;
             var named = conflicts[take.Reported] with
             {
-                Note = WaitsWentWith(conflicts[take.Reported].Note, waitsLost), NoteParts = null,
+                Note = submissionLost ? SubmissionWentWith(note) : note, NoteParts = null,
             };
             await RewriteAsync(take.Position, named, transaction, ct).ConfigureAwait(false);
             conflicts[take.Reported] = named;
@@ -1800,6 +2063,16 @@ public sealed class QuestStore
             : $"This take's waits on {string.Join(", ", named.Take(named.Count - 1))} and {named[^1]} went with it, "
               + "so this quest does not wait on those questions' answers.";
         return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
+    }
+
+    /// <summary>
+    /// A lost take's note, then the submission that went with it (FABRIC-CLOSE1a, §E5), said on the conflict every machine
+    /// shows: the winner's work is what the quest's graph now closes.
+    /// </summary>
+    internal static string SubmissionWentWith(string? note)
+    {
+        const string Said = "This take's submission went with it, and so did any step it published; the quest's close is the winner's.";
+        return string.IsNullOrWhiteSpace(note) ? Said : $"{note.TrimEnd()} {Said}";
     }
 
     /// <summary>Take a quest's row out of the cache — the replay says there is no quest (D95).</summary>
@@ -2290,7 +2563,20 @@ public sealed class QuestStore
         SetUpIn = reader.IsDBNull(reader.GetOrdinal("set_up_in")) ? null : reader.GetString(reader.GetOrdinal("set_up_in")),
         SetUps = ReadList(reader.GetString(reader.GetOrdinal("set_ups")), Reviews.JudgedSetUp),
         Verdicts = ReadList(reader.GetString(reader.GetOrdinal("verdicts")), Reviews.JudgedVerdict),
+        Closure = reader.IsDBNull(reader.GetOrdinal("closure")) ? null : reader.GetString(reader.GetOrdinal("closure")),
+        Submission = reader.IsDBNull(reader.GetOrdinal("submission")) ? null : ReadSubmission(reader.GetString(reader.GetOrdinal("submission"))),
     };
+
+    /// <summary>A current submission as this store's own column keeps it (FABRIC-CLOSE1a).</summary>
+    private static QuestSubmission ReadSubmission(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        var root = document.RootElement;
+        return new QuestSubmission(
+            root.GetProperty("machine").GetString() ?? "", root.GetProperty("sequence").GetInt64(),
+            Moments.ReadRequired(root.GetProperty("at").GetString()!),
+            root.TryGetProperty("note", out var note) ? note.GetString() : null);
+    }
 
     /// <summary>One value of this store's own column, read through the judge the wire reads it with (REVIEWENV1b).</summary>
     private static T? ReadColumn<T>(string json, Func<System.Text.Json.JsonElement, T?> judged) where T : class
@@ -2374,7 +2660,27 @@ public sealed class QuestStore
             kind == QuestOperationKind.SetUp && payload.TryGetProperty("setUp", out var shown) ? Reviews.JudgedSetUp(shown) : null,
             kind == QuestOperationKind.Verdict && payload.TryGetProperty("verdict", out var given) ? Reviews.JudgedVerdict(given) : null,
             // Absent from every operation before note parts, and from every note written without them (QUESTCLOSE1b1).
-            note is not null && payload.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null);
+            note is not null && payload.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null,
+            // Absent from every done but a graph's close's (FABRIC-CLOSE1a), which this store wrote whole.
+            kind == QuestOperationKind.Done && payload.TryGetProperty("close", out var close) ? ReadClose(close) : null);
+    }
+
+    /// <summary>A close's provenance (FABRIC-CLOSE1a), or null where it is not whole: a key and a token, both strings.</summary>
+    internal static QuestClose? ReadClose(System.Text.Json.JsonElement close) =>
+        close.ValueKind == System.Text.Json.JsonValueKind.Object
+        && close.TryGetProperty("key", out var key) && key.ValueKind == System.Text.Json.JsonValueKind.String
+        && close.TryGetProperty("token", out var token) && token.ValueKind == System.Text.Json.JsonValueKind.String
+        && key.GetString() is { Length: > 0 } named && token.GetString() is { Length: > 0 } computed
+            ? new QuestClose(named, computed)
+            : null;
+
+    /// <summary>A close's provenance (FABRIC-CLOSE1a), as the log and the wire write it.</summary>
+    internal static void WriteClose(System.Text.Json.Utf8JsonWriter writer, QuestClose close)
+    {
+        writer.WriteStartObject("close");
+        writer.WriteString("key", close.Key);
+        writer.WriteString("token", close.Token);
+        writer.WriteEndObject();
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
@@ -2387,7 +2693,8 @@ public sealed class QuestStore
     private static string PayloadJson(
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
-        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null) => JsonFields.Written(writer =>
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null) =>
+        JsonFields.Written(writer =>
     {
         if (dismisses is not null)
         {
@@ -2486,6 +2793,9 @@ public sealed class QuestStore
             writer.WritePropertyName("verdict");
             Reviews.Write(writer, review);
         }
+
+        // Only on a done the graph's close wrote (FABRIC-CLOSE1a): every other done reads as it did.
+        if (close is not null) WriteClose(writer, close);
 
         writer.WriteEndObject();
     });

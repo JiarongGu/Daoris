@@ -732,6 +732,49 @@ if (mode == ServiceMode.Local)
         };
     });
 
+    // A closure graph's bind and its close (FABRIC-CLOSE1a, the fabric events design §E5): the driver binds a taken quest to the
+    // graph that closes it at its run's first start, and closes every quest of the chain at the graph's end, in one transaction
+    // under the unit's record lock, which the driver holds. LOCAL mode only, as the evidence door is: the graph and its lock are
+    // the machine's, and the Done travels from there as an operation (D68). No connector tool reaches either: an agent's result
+    // is its `ready`, through respond.
+    app.MapPost("/api/quests/{id}/bind", async (
+        ComposedService s, HttpContext http, string id, BindQuestRequest body, CancellationToken ct) =>
+    {
+        var outcome = await s.Exchange.BindAsync(id, body.Graph, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(
+                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // Not taken, already submitted, another graph's, or a take this machine lost: a state, the lock's own shape.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
+
+    app.MapPost("/api/quests/{id}/close", async (
+        ComposedService s, HttpContext http, string id, CloseQuestRequest body, CancellationToken ct) =>
+    {
+        // A half-named submission arrives blank and is refused by the exchange, which says what a close names.
+        var named = (body.Quests ?? [])
+            .Select(q => (q?.Id ?? "", new QuestOperationRef(q?.Machine ?? "", q?.Sequence ?? 0)))
+            .ToList();
+        var outcome = await s.Exchange.CloseAsync(id, body.Key, body.Token, named, DateTimeOffset.UtcNow, ct);
+        if (outcome.Refusal == QuestCloseRefusal.None)
+        {
+            var answered = new List<QuestResponse>();
+            foreach (var quest in outcome.Quests) answered.Add(await QuestAnswerAsync(s, http, quest, ct));
+            return Results.Ok(new QuestCloseResponse(answered, outcome.Message));
+        }
+
+        return outcome.Refusal switch
+        {
+            QuestCloseRefusal.Malformed => Results.BadRequest(new ErrorResponse(outcome.Message)),
+            QuestCloseRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // A check that refused on a quest's state: stale, held, closed, unbound or not this machine's. Nothing was written.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
+
     // A set-up on a set-up step (REVIEWENV1b, design §2.6, §3.3): the driver posts each set-up a session said, with the commit it
     // read from the step's tree, or the person records their own. LOCAL mode only, as the evidence door is: the commit is read
     // on the machine whose tree holds it, and the set-up travels from there as an operation (D68). No connector tool reaches
@@ -2173,7 +2216,10 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
         : q.Verdicts.Select(v => new QuestReviewVerdictWire(
             v.Said, v.SetUp is { } named ? new QuestSetUpRefWire(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList(),
     // The note's parts (QUESTCLOSE1b1): a code and someone's words, as the note already travels to every door, uncleaned.
-    NoteParts.Element(q.NoteParts));
+    NoteParts.Element(q.NoteParts),
+    // A closure graph's digest and its taker's submission (FABRIC-CLOSE1a): names and words, which every door may answer.
+    q.Closure,
+    q.Submission is { } submitted ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note) : null);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item

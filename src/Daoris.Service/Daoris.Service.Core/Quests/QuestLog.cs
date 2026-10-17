@@ -68,6 +68,21 @@ public enum QuestOperationKind
     /// else; it moves no status.
     /// </summary>
     Verdict,
+
+    /// <summary>
+    /// Its taker's driver bound it to a graph that closes its quest itself (FABRIC-CLOSE1a, the fabric events design §E5):
+    /// its note is the graph's digest. It applies once, to a taken quest with no submission yet, so a quest follows a closure
+    /// graph only from its first start, and quests already in flight keep today's done. From then on its taker's agent says
+    /// <c>ready</c>, never <c>done</c>, and the graph's close door closes it. It moves no status.
+    /// </summary>
+    Bound,
+
+    /// <summary>
+    /// Its taker's agent submitted its work in a closure graph (FABRIC-CLOSE1a, §E5): the <c>ready</c> a done would have been,
+    /// carrying a done's note and answers. The quest stays taken: a submission is not a status. The holds a done carries hang
+    /// on the latest submission, and a later one replaces it, judged again from the start. It moves no status.
+    /// </summary>
+    Submitted,
 }
 
 /// <summary>
@@ -113,6 +128,10 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// lead by its code, then someone's words. Only with a note, and null where its writer gave none, which is every operation
 /// from before and every note that is all someone's words. <see cref="Note"/> stays byte for byte.
 /// </param>
+/// <param name="Close">
+/// For a <see cref="QuestOperationKind.Done"/> the graph's close door wrote (FABRIC-CLOSE1a, §E5): the invocation's key and the
+/// close token, as its provenance. Null on every other done, and on every other kind.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -129,7 +148,16 @@ public sealed record QuestOperation(
     QuestEvidenceVerdict? Evidence = null,
     QuestSetUp? SetUp = null,
     QuestReviewVerdict? Verdict = null,
-    string? NoteParts = null);
+    string? NoteParts = null,
+    QuestClose? Close = null);
+
+/// <summary>
+/// What a graph's close names its Done by (FABRIC-CLOSE1a, the fabric events design §E5): the invocation's key, which the
+/// driver persists before it sends and sends again after a timeout, and the close token it computed from the unit, the
+/// revision, the graph's digest and the prerequisite acceptances. A second close carrying the same key answers the first's
+/// outcome, so a close is never applied twice.
+/// </summary>
+public sealed record QuestClose(string Key, string Token);
 
 /// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
 public enum QuestClaim
@@ -271,6 +299,13 @@ public static class QuestLog
                                     && operation.SetUp is { } setUp && !quest.SetUps.Any(setUp.Same),
         QuestOperationKind.Verdict => quest is { Status: not QuestStatus.Declined } && operation.Verdict is { } verdict
                                       && QuestReviewing.Takes(quest, verdict),
+        // A bind once, on a taken quest before its first submission (FABRIC-CLOSE1a, §E5): a quest follows the graph bound at
+        // its start, so a second bind, of the same graph or another, is no move.
+        QuestOperationKind.Bound => quest is { Status: QuestStatus.Taken, Closure: null, Submission: null }
+                                    && !string.IsNullOrEmpty(operation.Note),
+        // A submission only on a taken quest a closure graph binds (§E5). A later one replaces it; whether its successor seals it
+        // is the store's to judge inside the write, since only the take's machine makes one.
+        QuestOperationKind.Submitted => quest is { Status: QuestStatus.Taken, Closure: not null },
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -315,11 +350,13 @@ public static class QuestLog
         && Claim(history, operation.Machine) == QuestClaim.Lost;
 
     /// <summary>
-    /// Whether a kind is made on a take, by the machine holding it: a move, a wait, or a set-up (WAITCLAIM1, REVIEWENV1b). One
-    /// list for <see cref="OnALostTake"/> and for a rebase's losing of what a lost take made.
+    /// Whether a kind is made on a take, by the machine holding it: a move, a wait, a set-up (WAITCLAIM1, REVIEWENV1b), or a
+    /// closure graph's bind and submission (FABRIC-CLOSE1a, §E5). One list for <see cref="OnALostTake"/> and for a rebase's
+    /// losing of what a lost take made.
     /// </summary>
     public static bool TakersOwn(QuestOperationKind kind) =>
-        QuestTransitions.Target(kind) is not null || kind is QuestOperationKind.Waited or QuestOperationKind.SetUp;
+        QuestTransitions.Target(kind) is not null
+        || kind is QuestOperationKind.Waited or QuestOperationKind.SetUp or QuestOperationKind.Bound or QuestOperationKind.Submitted;
 
     /// <summary>The quest after an operation that <see cref="Applies"/> — none after a delete.</summary>
     public static Quest? Step(Quest? quest, QuestOperation operation) => operation.Kind switch
@@ -363,6 +400,14 @@ public static class QuestLog
             Verdicts = [.. quest.Verdicts, operation.Verdict! with { At = operation.At, Machine = operation.Machine }],
             Updated = operation.At,
         },
+        QuestOperationKind.Bound => quest! with { Closure = operation.Note, Updated = operation.At },
+        // The latest submission is the current one, judged again from the start (FABRIC-CLOSE1a, §E5): its answers are the
+        // quest's, and a yes or an evidence verdict given on the one before is not given on it.
+        QuestOperationKind.Submitted => quest! with
+        {
+            Submission = new QuestSubmission(operation.Machine, operation.Sequence, operation.At, operation.Note),
+            Answers = operation.Answers ?? [], Accepted = null, Evidence = null, Updated = operation.At,
+        },
         // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none. The note's parts are the
         // move's own, so a note written without them clears the last one's (QUESTCLOSE1b1, D142 point 2). A close also clears
         // the question the quest waited on: it names one only while taken, the Waited operation staying in the history (AWAITSTALE1, D79).
@@ -397,10 +442,13 @@ public static class QuestLog
         // first. A verdict on evidence nothing waits on any more (EVID1a): another machine's verdict found it first, or the
         // person accepted the done as it stood. A set-up on a step another machine declined or deleted, the same set-up
         // posted first elsewhere, or one made on this machine's take that lost (REVIEWENV1b). A review's verdict another
-        // machine's came before, or on a set-up a newer one stands beside.
+        // machine's came before, or on a set-up a newer one stands beside. A closure graph's bind or submission once its quest
+        // is no longer taken, or made on this machine's take that lost (FABRIC-CLOSE1a, §E5): the take's conflict names a lost
+        // submission, and the step a submission published goes with it (QuestStore.RebaseAsync).
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
             or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
-            or QuestOperationKind.SetUp or QuestOperationKind.Verdict => QuestLoss.Forgotten,
+            or QuestOperationKind.SetUp or QuestOperationKind.Verdict
+            or QuestOperationKind.Bound or QuestOperationKind.Submitted => QuestLoss.Forgotten,
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind), kind,
             "A rebase has no rule for this kind of quest operation; .claude/knowledge/quest-operations.md names every place a kind goes."),
