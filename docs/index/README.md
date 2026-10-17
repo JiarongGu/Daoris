@@ -178,7 +178,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `tools/deployment-rehearsal.mjs` | 100 | 1751 |
 | `tools/desktop-publish.mjs` | 63 | 1116 |
-| `tools/desktop.mjs` | 51 | 1052 |
+| `tools/desktop.mjs` | 51 | 1057 |
 | `tools/family-rehearsal.mjs` | 340 | 5984 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 145 | 2600 |
