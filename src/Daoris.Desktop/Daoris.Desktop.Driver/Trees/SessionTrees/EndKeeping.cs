@@ -120,14 +120,16 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
 
     /// <summary>
     /// CLEANUP1b: one landing whose branch git said is missing (<see cref="LandedGone.Missing"/>), judged through <see cref="EndJudgement"/>
-    /// at the tip its landing recorded, where the line's ancestry of that commit is its end (§B5). Where the line holds it, the fact is
-    /// written as the entry retires (<see cref="LandedBranches.HoldGone"/>): ended, so nothing of it is left to clean. Asked by the clean-up
-    /// and the look before they read where its work went (<see cref="LandedCleanups"/>), so a branch merged into the line is never read as
-    /// moved to it.
+    /// at the tip its landing recorded, where the line's ancestry of that commit is its end (§B5), or (CLEANUP1c) that commit's content
+    /// proof on a form of the line, as a platform's squash merge leaves it. Where the line holds it, the fact is written as the entry retires
+    /// (<see cref="LandedBranches.HoldGone"/>): ended, so nothing of it is left to clean, and no recovery ref is made, since the line holds
+    /// its work. Asked by the clean-up and the look before they read where its work went (<see cref="LandedCleanups"/>), so a branch merged
+    /// into the line is never read as moved to it, nor a squashed one as dropped.
     /// </summary>
     /// <remarks>
     /// Only the lease's holder writes, as <see cref="KeepAsync"/>. An entry with a fact already is the existing judgement's, and one Daoris
-    /// removed is ended by its removal: neither is judged here. One <c>merge-base --is-ancestor</c> for each form of the line, once a landing.
+    /// removed is ended by its removal: neither is judged here. One <c>merge-base --is-ancestor</c> for each form of the line, once a landing;
+    /// where none holds it, the content proof's reads (<see cref="LandedProofs.ProveAsync"/>: two diffs and a merge base for each form).
     /// </remarks>
     /// <returns>Whether its end was kept and the entry retired with it; false writes nothing, and the caller reads where it went.</returns>
     internal async Task<bool> KeepGoneAsync(string root, string repository, LandedBranch entry, string? line, CancellationToken ct, RefSnapshot? refs = null)

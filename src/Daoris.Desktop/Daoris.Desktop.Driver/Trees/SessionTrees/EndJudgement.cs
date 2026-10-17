@@ -116,7 +116,7 @@ internal sealed record EndSubject(string Branch, string Tip, EndRole Role, Lande
 
     /// <summary>
     /// A landing whose branch git said is missing (CLEANUP1b, <see cref="LandedGone.Missing"/>), judged at the tip its landing recorded:
-    /// only the line's ancestry of that commit ends it.
+    /// only the line's ancestry of that commit ends it, or its content proof on a form of the line (CLEANUP1c).
     /// </summary>
     public bool Gone { get; init; }
 }
@@ -230,8 +230,11 @@ internal static class EndJudgement
 
     /// <summary>
     /// CLEANUP1b: a landing whose branch git said is missing, judged at the tip its landing recorded. The line's ancestry of that commit is
-    /// its end (§B5): every commit the landing recorded is on a form of the line. Content and a pull request's word are read of a branch that
-    /// stands, so they end nothing here. A branch of its name standing again holding that commit is judged as one that stands, never here.
+    /// its end (§B5): every commit the landing recorded is on a form of the line. CLEANUP1c: so is that commit's content proof on a form of
+    /// the line, every file it changed reading there as the landing left it, which is what a platform's squash merge leaves once the person
+    /// pulled and deleted the branch. Content only a branch of the person's holds is no end (D88), and a pull request's word is read of a
+    /// branch that stands, so neither ends anything here. A branch of its name standing again holding that commit is judged as one that
+    /// stands, never here.
     /// </summary>
     private static EndVerdict JudgeGone(EndFacts facts)
     {
@@ -245,8 +248,14 @@ internal static class EndJudgement
             return new(EndState.Ended, EndBy.Merged, facts.Ancestry.Where, $"every commit its landing recorded is on `{facts.Ancestry.Where}`, and its branch went");
         }
 
+        if (facts.Content is { Found: true } content && IsLine(content.Where!, facts.Line))
+        {
+            return new(EndState.Ended, EndBy.OnLine, content.Where,
+                $"every file its landing's recorded commit changed reads on `{content.Where}` as it left it, and its branch went");
+        }
+
         if (!facts.Ancestry.Read) return new(EndState.Unknown, null, null, "git could not read the line, so whether it holds the branch is not said");
-        return new(EndState.Handed, null, null, "its branch went, and the line does not hold the commit its landing recorded");
+        return new(EndState.Handed, null, null, "its branch went, and the line holds the commit its landing recorded neither by ancestry nor by content");
     }
 
     private static EndVerdict JudgeSession(EndCycle cycle, EndSubject subject, EndFacts facts)
@@ -311,12 +320,16 @@ internal static class EndJudgement
         {
             var standing = await LandedProofs.StandingTipAsync(root, entry, ct, refs).ConfigureAwait(false);
             facts = facts with { Standing = standing is not null };
-            // CLEANUP1b: a landing whose branch went is judged by ancestry alone, so nothing read of a branch is asked for it.
-            if (subject.Gone || facts.Ancestry.Found || standing is null) return facts;
-            // A proof Unknown is no proof: a read git could not make never ends it.
+            if (facts.Ancestry.Found) return facts;
+            // CLEANUP1b: a landing whose branch went is judged only while it is gone (one standing again is judged as one that stands); a
+            // standing one only while it is the branch its landing made.
+            if (subject.Gone ? standing is not null : standing is null) return facts;
+            // A proof Unknown is no proof: a read git could not make never ends it (PROOF-UNREAD1). CLEANUP1c: a gone landing's is read at the
+            // commit its landing recorded, which a platform's squash merge leaves on no ancestry of the line.
             var proof = await LandedProofs.ProveAsync(root, subject.Tip, line, forms, ct).ConfigureAwait(false);
             if (proof.Kind == LandedKind.OnLine && proof.Where is { } on) facts = facts with { Content = Held.At(on) };
-            if (entry.PullRequestState is { } kept)
+            // A pull request's word is read of a branch that stands (CLEANUP1b), so none is asked for a gone one, whose branch reads null here.
+            if (standing is not null && entry.PullRequestState is { } kept)
             {
                 facts = facts with { Verdict = await PullRequestAsks.VerdictAsync(root, line, forms, kept, standing, ct).ConfigureAwait(false) };
             }

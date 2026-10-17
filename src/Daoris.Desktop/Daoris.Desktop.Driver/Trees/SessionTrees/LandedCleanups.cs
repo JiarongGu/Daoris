@@ -518,8 +518,8 @@ internal sealed class LandedCleanups(
     /// </summary>
     /// <remarks>
     /// CLEANUP1b: a landing git says is missing is the end judgement's first (<see cref="EndKeeping.KeepGoneAsync"/>): where the line holds
-    /// the tip its landing recorded, it is kept ended as it retires, never read as moved to the line. A trace an earlier look read as moved
-    /// to the line, with no fact, is asked again for it.
+    /// the tip its landing recorded, by ancestry or (CLEANUP1c) by content, it is kept ended as it retires, never read as moved to the line
+    /// nor as dropped, and no recovery ref is made. A trace an earlier look read as moved to the line, with no fact, is asked again for it.
     /// </remarks>
     /// <param name="line">The line the repository's cycle names, as the look reads it; null where none is set, so nothing is judged ended.</param>
     /// <returns>How many entries were written.</returns>
