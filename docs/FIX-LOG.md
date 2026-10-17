@@ -29,7 +29,11 @@ repository.
   same name retired the new one: each write now names the landing read, by identity and tip. (4) A folder moved aside whose purge a
   later write, a link or a failed read blocks was listed as a recovery for ever: past its date it is a unit blocked on the person.
   Red on round 1's branch first, five in `CleanupLeftoversTests` and four in `CleanupGitTests`; D173's and D102's CLEANUP1 notes,
-  *After review*, have the detail.
+  *After review*, have the detail. The coordinator's re-check closed four more, each red first: a symbolic branch held a recovery ref
+  (now no symbolic ref holds, by git's `%(symref)`, in every proof by ancestry too); a moved-to name made again elsewhere was still
+  taken for the work, and a rename to `feature/HEAD` read dropped (the branch's commit is kept and compared, and only a remote's `HEAD`
+  is left out); the keep could follow a branch made again (it is made in one transaction verifying the branch absent); and a delete
+  the purge could not finish was invisible to the inventory (kept in `trees/.tidied/purge-failed.json`, read as blocked).
 
 ## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
 

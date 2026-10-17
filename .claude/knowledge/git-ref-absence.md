@@ -46,3 +46,8 @@ bundled MinGit is newer.
   "missing", look for the name in another case in the branches' list; one there is a doubt, kept (CLEANUP1).
 - **Unread keeps and says.** The record stays, the branch is kept, a recovery ref stays, and the answer says
   git could not read it, with git's first line.
+- **An act that rests on absence verifies it in its own transaction.** `update-ref --stdin` with `verify <ref>` and no id is git's
+  word that the ref does not exist, and refuses the whole transaction where it stands: put it beside the `create` that rests on the
+  absence, so a ref made again between the read and the act refuses the act (CLEANUP1's keep for a dropped landing).
+- **A holder is never a symbolic ref.** `for-each-ref --format='%(symref)'` names the target of one; a name that only points at
+  another ref holds nothing of its own (`ContentHolds.Unaliased`).

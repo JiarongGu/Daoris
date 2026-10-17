@@ -53,8 +53,8 @@ with the version and date at release.
   kept and says why, and a landing branch you renamed is followed to its new name rather than read as over. A recovery ref whose
   commit a branch or tag of yours holds goes after 30 days (never one only a Daoris branch holds); one nothing of yours holds is kept
   and `daoris-driver work state` says how to delete it. Folders set aside and recovery refs no work names are listed as recovery kept
-  until their date, no longer as work with an unknown owner in *What needs you*; a folder whose deletion a later write, a link or a
-  failed read blocks past its date is in *What needs you*, saying why.
+  until their date, no longer as work with an unknown owner in *What needs you*; a folder whose deletion a later write, a link, or a
+  read or delete that failed blocks past its date is in *What needs you*, saying why.
 - A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
 - A terminal's `sessions stop`, `say` or `take-back`, and its `trees` presses, reach the running Daoris as they are written
   (about a third of a second), where Daoris used to look for them once a second; it still looks every 3 s in case one is
