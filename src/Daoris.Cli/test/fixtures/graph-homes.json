@@ -1,0 +1,101 @@
+{
+  "about": "FABRIC-GRAPH1: which cycle governs a unit, and from where (the fabric events design §C2, §D7, §E7; D164's whole-rule inheritance). Read row for row by the CLI's cycles.test.ts and the driver's NodeGraphHomesTests. A row's config is a driver.json; `cycle` is the governing cycle as the file holds it, null where none is set; `source` is repository, workspace or default.",
+  "rows": [
+    {
+      "name": "nothing set: the default, today's",
+      "config": {},
+      "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "default", "cycle": null
+    },
+    {
+      "name": "the repository's own rule with no cycle: the default, never its workspace's cycle",
+      "config": {
+        "landings": { "engine": { "form": "merge" } },
+        "workspaceLandings": { "shop": { "form": "branch", "pattern": "feature/{slug}", "plugin": "acme.pr", "cycle": { "end": "pull-request" } } }
+      },
+      "repository": "engine", "workspace": "shop", "kind": "branch",
+      "source": "repository", "cycle": null
+    },
+    {
+      "name": "no rule of its own: its workspace's, the cycle with it",
+      "config": {
+        "landings": { "engine": { "form": "merge" } },
+        "workspaceLandings": { "shop": { "form": "branch", "pattern": "feature/{slug}", "plugin": "acme.pr", "cycle": { "end": "pull-request" } } }
+      },
+      "repository": "orders", "workspace": "shop", "kind": "branch",
+      "source": "workspace", "cycle": { "end": "pull-request" }
+    },
+    {
+      "name": "its own rule's cycle, over its workspace's",
+      "config": {
+        "landings": { "Engine": { "form": "merge", "cycle": { "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "wires": [ { "id": "a", "kind": "after", "from": "line", "to": "qa" } ], "end": "qa" } } },
+        "workspaceLandings": { "shop": { "form": "merge", "cycle": { "end": "handed" } } }
+      },
+      "repository": "engine", "workspace": "shop", "kind": "branch",
+      "source": "repository", "cycle": { "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "wires": [ { "id": "a", "kind": "after", "from": "line", "to": "qa" } ], "end": "qa" }
+    },
+    {
+      "name": "a repository in no workspace takes the default workspace's rule",
+      "config": { "workspaceLandings": { "default": { "form": "merge", "cycle": { "end": "handed" } } } },
+      "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "workspace", "cycle": { "end": "handed" }
+    },
+    {
+      "name": "a cycle that is not an object is none, the rule standing",
+      "config": { "landings": { "engine": { "form": "merge", "cycle": "line" } } },
+      "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "repository", "cycle": null
+    },
+    {
+      "name": "a cycle on a rule that cannot land is not read, with its rule",
+      "config": {
+        "landings": { "engine": { "form": "sideways", "cycle": { "end": "handed" } } },
+        "workspaceLandings": { "default": { "form": "merge" } }
+      },
+      "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "workspace", "cycle": null
+    },
+    {
+      "name": "a cycle that does not hold is still the governing one, kept as written",
+      "config": { "landings": { "engine": { "form": "merge", "cycle": { "end": "pull-request" } } } },
+      "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "repository", "cycle": { "end": "pull-request" }
+    },
+    {
+      "name": "a quest's cycle: the repository's",
+      "config": {
+        "workCycles": { "engine": { "quest": { "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "entries": ["qa"], "end": "qa" } } },
+        "workspaceWorkCycles": { "shop": { "quest": { "nodes": [ { "id": "go", "kind": "go-ahead", "version": 1, "reach": "pressed" } ], "entries": ["go"], "end": "go" } } }
+      },
+      "repository": "engine", "workspace": "shop", "kind": "quest",
+      "source": "repository", "cycle": { "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "entries": ["qa"], "end": "qa" }
+    },
+    {
+      "name": "a kind the repository names none of: its workspace's, kind by kind",
+      "config": {
+        "workCycles": { "engine": { "quest": { "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "entries": ["qa"], "end": "qa" } } },
+        "workspaceWorkCycles": { "shop": { "ask": { "nodes": [ { "id": "go", "kind": "go-ahead", "version": 1, "reach": "pressed" } ], "entries": ["go"], "end": "go" } } }
+      },
+      "repository": "engine", "workspace": "shop", "kind": "ask",
+      "source": "workspace", "cycle": { "nodes": [ { "id": "go", "kind": "go-ahead", "version": 1, "reach": "pressed" } ], "entries": ["go"], "end": "go" }
+    },
+    {
+      "name": "no work cycle: none, today's",
+      "config": { "landings": { "engine": { "form": "merge", "cycle": { "end": "handed" } } } },
+      "repository": "engine", "workspace": null, "kind": "quest",
+      "source": "default", "cycle": null
+    },
+    {
+      "name": "a branch's cycle is the landing rule's, never a work cycle's",
+      "config": { "workCycles": { "engine": { "branch": { "nodes": [], "entries": [], "end": "line" } } } },
+      "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "default", "cycle": null
+    },
+    {
+      "name": "a work cycle that is not an object is none",
+      "config": { "workCycles": { "engine": { "quest": [] } }, "workspaceWorkCycles": { "default": { "quest": { "entries": ["qa"], "end": "qa" } } } },
+      "repository": "engine", "workspace": null, "kind": "quest",
+      "source": "workspace", "cycle": { "entries": ["qa"], "end": "qa" }
+    }
+  ]
+}
