@@ -135,6 +135,19 @@ public sealed record PluginManifest(
     /// <summary>The skills it hands sessions or Ask Daoris (HELPPLUG1b, D170 point 4); none for a refused plugin.</summary>
     public IReadOnlyList<PluginSkill> Skills { get; init; } = [];
 
+    /// <summary>
+    /// The steps it declares (FABRIC-UNIT1d; the fabric events design §D9, §E2): each a node of its own kind, <c>&lt;id&gt;/&lt;step&gt;</c>,
+    /// read into the one <see cref="NodeDeclaration"/> a built-in is and judged by its <see cref="NodeDeclarations.Problem"/>. None for a
+    /// refused plugin, or one that declares none. <see cref="PluginSteps"/> reads them. Twin: the CLI's <c>steps</c>.
+    /// </summary>
+    public IReadOnlyList<NodeDeclaration> Steps { get; init; } = [];
+
+    /// <summary>
+    /// What its steps create that a unit's cleanup must account for (§D3), each by schema, with its role and who cleans it. None for a
+    /// refused plugin, or one that declares none. Twin: the CLI's <c>resources</c>.
+    /// </summary>
+    public IReadOnlyList<PluginResource> Resources { get; init; } = [];
+
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
     public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);
 }

@@ -50,6 +50,11 @@
 //
 //  10. A declared harness may say `ownHome`: only JSON `true` says its agent's own home is nobody's (a sandboxed tool), so the
 //      driver starts it with no Daoris account. Absent or anything else is false; never a refusal. This side only reads it.
+//
+// And since FABRIC-UNIT1d (D173's note), with `PluginSteps.cs`, `PluginStepsTests` holding the table:
+//
+//  11. A plugin's `steps` are node declarations of its own kind `<id>/<step>`, and its `resources` say what they create and
+//      who cleans it (`steps.ts`). The first problem refuses the plugin, by the same rules in the same order, codes and words.
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
@@ -61,6 +66,8 @@ import { daorisHome, HOME_SENTENCE, homeEntry } from '../platform/home.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
 import { TOOLS, isAddress } from '../tools/tools.ts';
 import type { CommandArgs } from '../platform/types.ts';
+import { stepsDeclared } from './steps.ts';
+import type { NodeDeclaration, PluginResource } from './steps.ts';
 
 /** The plugin API this build speaks. Raised only when a plugin written for the new shape cannot work on the old one. */
 export const API_VERSION = 1;
@@ -216,6 +223,13 @@ export interface PluginManifest {
   /** The skills it hands sessions or Ask Daoris (HELPPLUG1b), each by its folder's name; none for a refused plugin. */
   skills: PluginSkill[];
   /**
+   * The steps it declares (FABRIC-UNIT1d, §D9, §E2): each the one node declaration a built-in is, of its own kind
+   * `<id>/<step>`; none for a refused plugin. `steps.ts` reads them. Twin: `PluginManifest.Steps`.
+   */
+  steps: NodeDeclaration[];
+  /** What its steps create that a unit's cleanup must account for (§D3); none for a refused plugin. Twin: `PluginManifest.Resources`. */
+  resources: PluginResource[];
+  /**
    * Its icon (PLUGUI2, D140 §3.1): a path inside its folder to an SVG or a PNG, as the manifest writes it, once the
    * manifest's rules hold; null with none, and with one they refuse. `readIcon` judges the file.
    */
@@ -305,7 +319,7 @@ export function dataFolder(home: string, id: string): string {
 
 const empty = (id: string): PluginManifest => ({
   id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [], skills: [],
-  icon: null, iconProblem: null, tools: [], toolsProblem: null,
+  steps: [], resources: [], icon: null, iconProblem: null, tools: [], toolsProblem: null,
 });
 
 /** A server's `allow` or `writes` (HELPPLUG1a): absent is none; otherwise tool names, each once; null where it breaks that. */
@@ -543,6 +557,11 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
     }
   }
 
+  // FABRIC-UNIT1d (§D9): its steps, each the one node declaration a built-in is, and the resources they create. Twin:
+  // `PluginSteps.cs`, the same rules and words in the same order; a problem refuses the plugin, as a skill's does.
+  const declaredSteps = stepsDeclared(id, root as Record<string, unknown>);
+  if (declaredSteps.problem !== null) return { manifest: empty(id), problem: declaredSteps.problem };
+
   // Its icon, last: an icon's problem is said and never refuses the plugin (D140 §3.1).
   const declaredIcon = (root as Record<string, unknown>).icon;
   const { icon, problem: iconProblem } = declaredIcon === undefined ? { icon: null, problem: null } : iconDeclared(declaredIcon);
@@ -562,6 +581,8 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
       hooks,
       servers,
       skills,
+      steps: declaredSteps.steps,
+      resources: declaredSteps.resources,
       icon,
       iconProblem,
       tools,
@@ -884,7 +905,9 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
     }
 
     // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run (PLUGTOOL1a).
-    if (problem !== null) manifest = { ...manifest, harnesses: [], hooks: null, servers: [], skills: [], tools: [], toolsProblem: null };
+    if (problem !== null) {
+      manifest = { ...manifest, harnesses: [], hooks: null, servers: [], skills: [], steps: [], resources: [], tools: [], toolsProblem: null };
+    }
 
     plugins.push({ manifest, folder, data: dataFolder(home, manifest.id), enabled, problem });
   }

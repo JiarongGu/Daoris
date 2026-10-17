@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { DaorisError } from './errors.ts';
 
@@ -19,12 +19,28 @@ export function readText(file: string): string {
  * Write beside the target, then rename — a crash never leaves a half-written
  * rule on disk. Node writes UTF-8 without a BOM, and the text is already LF.
  * The rename waits while something holds the file it replaces (FLAKE1, 2026-10-07).
+ *
+ * @param rename The move itself; a test hands in one that records or refuses.
  */
-export function writeTextAtomic(file: string, text: string): void {
+export function writeTextAtomic(file: string, text: string, { rename = renameSync }: { rename?: (from: string, to: string) => void } = {}): void {
+  writeBeside(file, (beside) => writeFileSync(beside, text, 'utf8'), rename);
+}
+
+/**
+ * The staging file is named per write and removed when the write fails, as the driver's `AtomicFile` does (FABRIC-GRAPH1's re-check,
+ * finding 2): under one fixed name, two writers of one file at once wrote into and moved each other's, so one could put the other's
+ * text in place, or find its own already moved.
+ */
+function writeBeside(file: string, write: (beside: string) => void, rename: (from: string, to: string) => void = renameSync): void {
   mkdirSync(dirname(file), { recursive: true });
-  const tmp = `${file}.daoris-tmp`;
-  writeFileSync(tmp, text, 'utf8');
-  renameHeld(tmp, file);
+  const beside = `${file}.${randomUUID().replaceAll('-', '')}.daoris-tmp`;
+  try {
+    write(beside);
+    renameHeld(beside, file, { rename });
+  } finally {
+    // Only a write that failed leaves one behind, and it is nobody's.
+    rmSync(beside, { force: true });
+  }
 }
 
 /**
@@ -32,18 +48,20 @@ export function writeTextAtomic(file: string, text: string): void {
  * value, a BOM is stripped because `File.ReadAllText` strips it on the other side, and anything that is
  * not a JSON object names why rather than reading as empty.
  */
-export function readJsonObject(path: string): { value: Record<string, unknown> | null; problem: string | null } {
+export function readJsonObject(path: string): { value: Record<string, unknown> | null; problem: string | null; text?: string } {
   if (!existsSync(path)) return { value: null, problem: null };
   let parsed: unknown;
+  // The text as it stands, its BOM apart: an editor that keeps what it does not own writes from it (FABRIC-GRAPH1's review).
+  const text = readFileSync(path, 'utf8').replace(/^﻿/, '');
   try {
-    parsed = JSON.parse(readText(path));
+    parsed = JSON.parse(text);
   } catch (error) {
     return { value: null, problem: `${path} is not readable JSON (${(error as Error).message})` };
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return { value: null, problem: `${path} is not a JSON object` };
   }
-  return { value: parsed as Record<string, unknown>, problem: null };
+  return { value: parsed as Record<string, unknown>, problem: null, text };
 }
 
 /**
@@ -56,12 +74,17 @@ export function readJsonObject(path: string): { value: Record<string, unknown> |
  * and reported success. Checking here holds every editor, including the next one.
  */
 export function writeJsonAtomic(path: string, value: unknown): void {
+  writeJsonTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+/** `writeJsonAtomic` for a file's whole text, composed by its editor (`jsonkeep.ts`'s `keepEdits`): refused the same way. */
+export function writeJsonTextAtomic(path: string, text: string): void {
   const { problem } = readJsonObject(path);
   if (problem !== null) {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
-  writeTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
+  writeTextAtomic(path, text);
 }
 
 export function sha256(text: string): string {
@@ -81,10 +104,7 @@ export function digestBytes(bytes: Buffer): string {
 
 /** `writeTextAtomic` for bytes copied as they are: a mirror of a file that is not its skill's entry (D117 §3.2). */
 export function writeBytesAtomic(file: string, bytes: Buffer): void {
-  mkdirSync(dirname(file), { recursive: true });
-  const tmp = `${file}.daoris-tmp`;
-  writeFileSync(tmp, bytes);
-  renameHeld(tmp, file);
+  writeBeside(file, (beside) => writeFileSync(beside, bytes));
 }
 
 /** The refusals that mean something still holds a file in the way, and give way once it lets go. */

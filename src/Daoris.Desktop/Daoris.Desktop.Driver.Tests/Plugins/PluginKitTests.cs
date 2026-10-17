@@ -317,6 +317,32 @@ public sealed class PluginKitTests : IDisposable
         Assert.Contains("left when told", trial.Steps.Single(step => step.Name == "shutdown").Sentence);
     }
 
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: try reads a plugin's stdout under the bound the driver reads it under. A landing's answer over 64 KB from a
+    /// plugin that speaks no work point passes, as the driver takes it; one past the answers' bound fails at once with the reason, as the
+    /// driver fails it — where try had read it whole and passed a plugin the driver then never heard.
+    /// </summary>
+    [Theory]
+    [InlineData(70_000, true)]
+    [InlineData(HookPeer.AnswerBytes + 1, false)]
+    public async Task Try_reads_a_long_answer_as_the_driver_does(int length, bool passes)
+    {
+        var folder = New("acme.long", [HookPoints.Land]);
+        Replace(folder, "pushed: false,", $"pushed: false, diagnostic: 'd'.repeat({length}),");
+
+        var trial = await PluginTrials.TryFolderAsync(Home, folder);
+
+        if (passes)
+        {
+            Assert.True(trial.Passed, Describe(trial));
+            return;
+        }
+
+        var step = Failed(trial, HookPoints.Land);
+        Assert.Contains("4 MB", step.Sentence);
+        Assert.DoesNotContain("did not answer", step.Sentence);
+    }
+
     // ——— try says what went wrong, each in its own sentence
 
     [Fact]

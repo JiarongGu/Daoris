@@ -25,7 +25,11 @@ public sealed class NodeLifecycleTests
         {
             Retry = retry ?? new NodeRetry(3, [5, 30]),
             Rejectable = rejectable,
+            // FABRIC-UNIT1d: a plugin's performed node retries only a transient code, and only where it is idempotent or reconciled.
+            Perform = builtIn is null ? Retrying : null,
         };
+
+    private static readonly NodePerform Retrying = new(Idempotent: true, Reconcile: false, ["unavailable"]);
 
     /// <summary>The binding an attempt starts on: what Daoris's evaluation hands the start.</summary>
     private static NodeAcceptance Bind(int attempt, string node = "n1") => new(Unit, "tip-1", "graph-1", node, 1, attempt);
@@ -34,7 +38,7 @@ public sealed class NodeLifecycleTests
     private static NodeAcceptance Accept(int attempt, string node = "n1") =>
         Bind(attempt, node) with { Evidence = new NodePort("acme/receipt@1", $"{node}#{attempt}", "tip-1", null) };
 
-    private static NodeMove Start(int attempt) => new(NodeStates.Active, NodeCause.Daoris) { Binding = Bind(attempt) };
+    private static NodeMove Start(int attempt) => new(NodeStates.Active, NodeCause.Daoris) { Binding = Bind(attempt), Scope = Run };
 
     private static NodeStatus At(string state, int attempt = 1, int tries = 1, bool transient = true, int? unreconciled = null) =>
         new(Unit, "n1", state)
@@ -67,7 +71,7 @@ public sealed class NodeLifecycleTests
         (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
         (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
         (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
-        (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1) },
+        (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1), Scope = Run },
         _ => new NodeMove(row.To, row.By),
     };
 
@@ -325,7 +329,7 @@ public sealed class NodeLifecycleTests
     {
         Assert.Null(NodeDeclarations.Problem(Declared(NodeKinds.Line) with { Retry = null }));
         Assert.Null(NodeDeclarations.Problem(Declared("acme.deploy/deploy")));
-        Assert.Null(NodeDeclarations.Problem(Declared("acme.watch/deployed") with { Reach = NodeReach.Observed }));
+        Assert.Null(NodeDeclarations.Problem(Declared("acme.watch/deployed") with { Reach = NodeReach.Observed, Retry = null, Perform = null }));
 
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(Declared("deploy")));
         Assert.Equal("reach", NodeDeclarations.Problem(Declared(NodeKinds.Line) with { Reach = NodeReach.Performed, Retry = null }));
@@ -335,6 +339,68 @@ public sealed class NodeLifecycleTests
         Assert.Equal("retry", NodeDeclarations.Problem(Declared(NodeKinds.Line)));
         Assert.Equal("timeoutSeconds", NodeDeclarations.Problem(Declared("acme.deploy/deploy") with { TimeoutSeconds = 0 }));
         Assert.Equal("rejectable", NodeDeclarations.Problem(Declared(NodeKinds.Line, rejectable: true) with { Retry = null }));
+    }
+
+    /// <summary>
+    /// FABRIC-UNIT1d (§D6): only a plugin's own performed node says how it is performed, and its retry is one it can take: a transient
+    /// code to retry, on a node that is idempotent or reconciled. A retry or a code nothing could ever take is refused, as NODE1 refuses
+    /// a retry on a kind nothing can fail.
+    /// </summary>
+    [Fact]
+    public void A_plugin_s_performed_node_says_how_it_is_performed_and_only_a_retry_it_can_take()
+    {
+        var performed = new NodeDeclaration("acme.deploy/deploy", "acme.deploy/deploy", 1, NodeReach.Performed);
+        var close = new NodeDeclaration("close", NodeKinds.QuestClose, 1, NodeReach.Performed);
+        var three = new NodeRetry(3, [5]);
+
+        Assert.Null(NodeDeclarations.Problem(performed));
+        Assert.Null(NodeDeclarations.Problem(performed with { Perform = Retrying, Retry = three }));
+        Assert.Null(NodeDeclarations.Problem(performed with { Perform = Retrying with { Idempotent = false, Reconcile = true }, Retry = new NodeRetry(2, []) }));
+        Assert.Null(NodeDeclarations.Problem(performed with { Perform = new NodePerform(false, false, []), Retry = new NodeRetry(1, []) }));
+        Assert.Null(NodeDeclarations.Problem(close with { Retry = three }));
+
+        Assert.Equal("perform", NodeDeclarations.Problem(performed with { Reach = NodeReach.Observed, Perform = new NodePerform(false, false, []) }));
+        Assert.Equal("perform", NodeDeclarations.Problem(close with { Perform = new NodePerform(true, false, []) }));
+
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying with { Transient = ["Unavailable"] }, Retry = three }));
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying with { Transient = ["unavailable", "unavailable"] }, Retry = three }));
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying }));
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying, Retry = new NodeRetry(1, []) }));
+
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Retry = three }));
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Perform = Retrying with { Transient = [] }, Retry = three }));
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Perform = Retrying with { Idempotent = false }, Retry = three }));
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Reach = NodeReach.Observed, Retry = new NodeRetry(2, []) }));
+    }
+
+    /// <summary>
+    /// FABRIC-UNIT1d: two declarations saying the same are equal, whoever built their collections, so a manifest's step is the one
+    /// built by hand and a graph compares declarations by what they say.
+    /// </summary>
+    [Fact]
+    public void Two_declarations_saying_the_same_are_equal()
+    {
+        static NodeDeclaration Made() => new("acme.deploy/deploy", "acme.deploy/deploy", 1, NodeReach.Performed)
+        {
+            Inputs = new Dictionary<string, string> { ["release"] = "acme/artifact@1" },
+            Outputs = new Dictionary<string, string> { ["preview"] = "acme/preview@1", ["log"] = "acme/log@1" },
+            Evidence = "acme/receipt@1",
+            Retry = new NodeRetry(3, [5, 30]),
+            Perform = new NodePerform(true, false, ["unavailable"]),
+        };
+
+        Assert.Equal(Made(), Made());
+        Assert.Equal(Made().GetHashCode(), Made().GetHashCode());
+        Assert.Equal(new NodeRetry(2, [1]), new NodeRetry(2, new List<int> { 1 }));
+        Assert.Equal(new NodePerform(true, true, ["a"]), new NodePerform(true, true, new List<string> { "a" }));
+
+        Assert.NotEqual(Made(), Made() with { Inputs = new Dictionary<string, string> { ["release"] = "acme/other@1" } });
+        Assert.NotEqual(Made(), Made() with { Outputs = new Dictionary<string, string> { ["preview"] = "acme/preview@1" } });
+        Assert.NotEqual(Made(), Made() with { Retry = new NodeRetry(3, [5]) });
+        Assert.NotEqual(Made(), Made() with { Perform = new NodePerform(true, false, ["timeout"]) });
+        Assert.NotEqual(Made(), Made() with { Perform = null });
+        Assert.NotEqual(Made(), Made() with { Skippable = false });
+        Assert.NotEqual(Made(), Made() with { Version = 2 });
     }
 
     // ---- FABRIC-NODE1c: a second maker's review
@@ -398,6 +464,30 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
+    /// FABRIC-WIRE1e: a start names the graph and run its attempt belongs to, as a skip does, and the status keeps it through the attempt's
+    /// outcome, so a failure or a rejection is a receipt in that run alone. A start naming none, or another graph than its binding's, is
+    /// refused.
+    /// </summary>
+    [Fact]
+    public void A_start_names_the_run_its_attempt_belongs_to()
+    {
+        var node = Declared("acme.deploy/deploy", rejectable: true);
+        var ready = At(NodeStates.Ready, attempt: 0, tries: 0);
+
+        Assert.Equal(NodeRefusal.NoScope, NodeLifecycle.Apply(node, ready, Start(1) with { Scope = null }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(node, ready, Start(1) with { Scope = Run with { GraphDigest = "graph-0" } }).Refused);
+        var active = Moved(node, ready, Start(1));
+        Assert.Equal(Run, active.Scope);
+
+        var failed = Moved(node, active, new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = 1, Code = "deploy-failed" });
+        var rejected = Moved(node, active, new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = 1, Words = "not this" });
+        Assert.Equal((Run, Run), (failed.Scope, rejected.Scope));
+
+        var again = Moved(node, Moved(node, failed, new NodeMove(NodeStates.Ready, NodeCause.Person)), Start(2) with { Scope = Run with { Run = "run-2" } });
+        Assert.Equal(Run with { Run = "run-2" }, again.Scope);
+    }
+
+    /// <summary>
     /// Defect 3: a reach is the binding its attempt started on, whole. An old graph, revision or node version, other inputs or receipts,
     /// another node's declaration, or no evidence where the kind needs it is refused; a start brings this node's next attempt at its
     /// declared version.
@@ -408,7 +498,7 @@ public sealed class NodeLifecycleTests
         var node = Declared("acme.deploy/deploy") with { Evidence = "acme/receipt@1" };
         var ready = At(NodeStates.Ready, attempt: 0, tries: 0);
         var binding = Bind(1) with { PrerequisiteReceipts = ["acc-build"] };
-        var start = new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = binding };
+        var start = new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = binding, Scope = Run };
 
         Assert.Equal(NodeRefusal.NoBinding, NodeLifecycle.Apply(node, ready, start with { Binding = null }).Refused);
         Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(node, ready, start with { Binding = binding with { NodeVersion = 2 } }).Refused);
@@ -510,6 +600,7 @@ public sealed class NodeLifecycleTests
             Inputs = inputs,
             Outputs = outputs,
             Retry = new NodeRetry(3, delays),
+            Perform = Retrying,
         };
         Assert.Null(NodeDeclarations.Problem(node));
 

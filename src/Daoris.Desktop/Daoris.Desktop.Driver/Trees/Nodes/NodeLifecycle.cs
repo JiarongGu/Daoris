@@ -32,7 +32,10 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// </summary>
     public NodeAcceptance? Binding { get; init; }
 
-    /// <summary>A skip's graph and run: it holds for those alone (<see cref="NodeLifecycle.Skips"/>).</summary>
+    /// <summary>
+    /// The graph and run it belongs to: a skip's, which holds for those alone (<see cref="NodeLifecycle.Skips"/>), or, from a start, its
+    /// attempt's, kept through that attempt's outcome, so a failure or a rejection is a receipt in that run alone (FABRIC-WIRE1e).
+    /// </summary>
     public NodeScope? Scope { get; init; }
 
     /// <summary>The acceptance it was reached on; kept as history once invalidated (<see cref="Current"/> is null then).</summary>
@@ -85,7 +88,10 @@ public sealed record NodeMove(string To, string By)
     /// <summary>The person's words: required for a rejection and a skip.</summary>
     public string? Words { get; init; }
 
-    /// <summary>A skip's graph and run: required, since a skip holds for its own alone.</summary>
+    /// <summary>
+    /// A skip's graph and run, or a start's: required of both, since a skip holds for its own alone and an attempt's outcome is a receipt in
+    /// its own run alone (FABRIC-WIRE1e). A start's graph is its binding's.
+    /// </summary>
     public NodeScope? Scope { get; init; }
 }
 
@@ -145,7 +151,7 @@ public static class NodeRefusal
 
     /// <summary>
     /// The acceptance is not the binding its attempt started on (another unit, node, revision, graph, version, inputs or prerequisite
-    /// receipts), or a start's binding is not this node's next attempt at its declared version.
+    /// receipts), or a start's binding is not this node's next attempt at its declared version, or not of the graph its scope names.
     /// </summary>
     public const string NotBound = "not-bound";
 
@@ -173,7 +179,7 @@ public static class NodeRefusal
     /// <summary>A reach without one of its node's declared outputs: every declared output is exposed (FABRIC-NODE1e).</summary>
     public const string NoOutput = "no-output";
 
-    /// <summary>A skip that names no graph and run.</summary>
+    /// <summary>A skip or a start that names no graph and run.</summary>
     public const string NoScope = "no-scope";
 
     /// <summary>The declaration judged is another node's than the status's.</summary>
@@ -263,11 +269,15 @@ public static class NodeLifecycle
     /// <summary>A node not yet eligible, on the unit it acts on.</summary>
     public static NodeStatus Start(string unit, string node) => new(unit, node, NodeStates.Blocked);
 
-    /// <summary>The delay before attempt <paramref name="attempt"/> (from 2) under the node's retry: its delays in order, the last repeating.</summary>
-    public static TimeSpan DelayBefore(NodeDeclaration node, int attempt) =>
-        attempt < 2 || node.Retry is not { DelaysSeconds.Count: > 0 } retry
+    /// <summary>
+    /// The delay before try <paramref name="tryNumber"/> (from 2) under the node's retry: its delays in order, the last repeating. A try is
+    /// counted within its binding (<see cref="NodeStatus.Tries"/>), never by the attempt's lifetime number, which keeps growing across
+    /// bindings and runs (FABRIC-PERFORM1h).
+    /// </summary>
+    public static TimeSpan DelayBefore(NodeDeclaration node, int tryNumber) =>
+        tryNumber < 2 || node.Retry is not { DelaysSeconds.Count: > 0 } retry
             ? TimeSpan.Zero
-            : TimeSpan.FromSeconds(retry.DelaysSeconds[Math.Min(attempt - 2, retry.DelaysSeconds.Count - 1)]);
+            : TimeSpan.FromSeconds(retry.DelaysSeconds[Math.Min(tryNumber - 2, retry.DelaysSeconds.Count - 1)]);
 
     /// <summary>
     /// An earlier attempt's outcome established after it stopped being current (a stopped, skipped, rejected or superseded attempt's
@@ -349,7 +359,10 @@ public static class NodeLifecycle
             case NodeStates.Active:
                 if (status.Unreconciled is not null) return Refuse(NodeRefusal.Unreconciled);
                 if (move.Binding is not { } binding) return Refuse(NodeRefusal.NoBinding);
-                if (binding.Unit != status.Unit || binding.Node != status.Node || binding.NodeVersion != node.Version || binding.Attempt != status.Attempt + 1)
+                // FABRIC-WIRE1e: the attempt belongs to its graph and run, so its failure or rejection is a receipt in that run alone.
+                if (move.Scope is not { } scope) return Refuse(NodeRefusal.NoScope);
+                if (binding.Unit != status.Unit || binding.Node != status.Node || binding.NodeVersion != node.Version || binding.Attempt != status.Attempt + 1
+                    || scope.GraphDigest != binding.GraphDigest)
                 {
                     return Refuse(NodeRefusal.NotBound);
                 }
@@ -359,6 +372,7 @@ public static class NodeLifecycle
                     Attempt = status.Attempt + 1,
                     Tries = status.Tries + 1,
                     Binding = binding with { Evidence = null, Outputs = NodeAcceptance.NoPorts },
+                    Scope = scope,
                     Unreconciled = authority.Dispatches ? status.Attempt + 1 : null,
                 });
 

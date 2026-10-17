@@ -25,8 +25,9 @@ namespace Daoris.Driver;
 /// the home through that helper, which does the I/O, so this file names none itself.</para>
 ///
 /// <para>The CLI's <c>plugins.ts</c> is this class's twin and reads the same folder by the same rules;
-/// they share no code and move together. Two fields have readers of their own, each held by its table: the icon
-/// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin.</para>
+/// they share no code and move together. Three fields have readers of their own, each held by its table: the icon
+/// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin, and the steps
+/// with their resources (<see cref="PluginSteps"/>, FABRIC-UNIT1d), whose problems do.</para>
 /// </remarks>
 public sealed class PluginCatalog
 {
@@ -274,9 +275,12 @@ public sealed class PluginCatalog
             }
 
             // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run
-            // (PLUGTOOL1a). Its icon stays: it is how the person recognises the plugin the sentence is about, never something
-            // the plugin contributes (D140 §3.1).
-            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Tools = [], ToolsProblem = null };
+            // (PLUGTOOL1a), not a step or a resource (FABRIC-UNIT1d). Its icon stays: it is how the person recognises the plugin the
+            // sentence is about, never something the plugin contributes (D140 §3.1).
+            if (problem is not null)
+            {
+                manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Tools = [], ToolsProblem = null };
+            }
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
         }
@@ -521,6 +525,11 @@ public sealed class PluginCatalog
                 }
             }
 
+            // FABRIC-UNIT1d (§D9): its steps, each the one node declaration a built-in is, and the resources they create. Twin:
+            // `steps.ts`, the same rules and words in the same order; a problem refuses the plugin, as a skill's does.
+            var declaredSteps = PluginSteps.Read(id, root);
+            if (declaredSteps.Problem is not null) return (PluginManifest.Empty(id), declaredSteps.Problem);
+
             // Its icon, last: an icon's problem is said and never refuses the plugin (D140 §3.1).
             var (icon, iconProblem) = root.TryGetProperty("icon", out var declaredIcon)
                 ? PluginIcon.Declared(declaredIcon)
@@ -544,6 +553,8 @@ public sealed class PluginCatalog
                 iconProblem)
             {
                 Skills = skills,
+                Steps = declaredSteps.Steps,
+                Resources = declaredSteps.Resources,
                 Tools = tools,
                 ToolsProblem = toolsProblem,
             }, null);

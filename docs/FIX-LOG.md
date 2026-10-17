@@ -5,6 +5,102 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — Durable execution could dispatch a node twice, take an outcome back, and settle an attempt nothing had answered (FABRIC-PERFORM1h)
+
+- **Symptom:** found by a second maker's review of FABRIC-PERFORM1b, before it was staged or called by any loop: two starts on one ready
+  node both dispatched; a send's receipt wrote back the record as it stood before the send, dropping another node's start made
+  meanwhile, and putting a node heard reached back to active; a `running` answer did the same to an outcome heard while it was awaited;
+  an `idempotent`-only attempt of a stopped node was settled as never started, its gate lifted while its effect might still run, and its
+  completion later dropped as a replay; a pending retry was trimmed away with its timer; `{"unit":"u"}` read as an empty record; and a
+  retry after a person's new attempt waited a later delay than its first.
+- **Root cause:** `NodeRecordFiles.Write` held the record's lock only for the final replace, so every caller read and decided outside
+  it, and the lease was asked nowhere in the record; the performer kept the record it read before an await and wrote it whole after;
+  idempotency alone was taken for a `not-started` answer; trimming judged an attempt by its state alone; the parser defaulted an absent
+  or mistyped container to empty and never checked the record against itself; the retry's delay was indexed by the attempt's lifetime
+  number, which grows across bindings and runs, where the bound counts tries.
+- **Fix:** D173's FABRIC-PERFORM1b note, choices 1, 4, 6, 8 and 9 changed and its "After review": `NodeRecordFiles.Edit`, one
+  read-modify-write in one hold of the lock with the lease asked inside; every receipt and answer applied after its await to its own
+  invocation, only while that attempt still waits for it; an `idempotent`-only attempt redelivered while current and held otherwise
+  (`not-current`); every attempt a status needs kept; a record whose structure does not hold or that disagrees with itself unreadable;
+  the delay by `Tries + 1`.
+- **Verification:** 24 fast tests (`WorkPerformerTests` 7, `NodeRecordFilesTests` 17 with the theory's rows), each seen failing on
+  PERFORM1b's code with only the new members added, then passing; the driver's fast half; `WorkPerformProcessTests` by class.
+
+## 2026-10-17 — The work wire's bound lost valid landing answers, and its supervision could hang, starve or stay deaf (FABRIC-PERFORM1a)
+
+- **Symptom:** found by a second maker's review of FABRIC-PERFORM1a, before it was staged: a landing plugin's valid answer over 64 KB
+  (a long diagnostic) was dropped and the landing waited out its patience, though the kit's trial passed it; a plugin answering
+  `JSON\r` timed out; an answer completed just before a stop was returned as the next generation's; 61 awaited steps replayed in a
+  stable order lost the 61st at every resync; an unsound plugin stayed unsound after its update; a hybrid plugin stayed deaf once the
+  lease returned; a plugin that stopped reading stdin held its disposal for ever. Running the Process class also showed a process that
+  exited partway through a look restarted at once, uncounted.
+- **Root cause:** one 64 KB reader served every plugin process, a dropped answer failed nothing, and the trial read whole; the reader
+  ended lines at LF alone; the hook set returned the generation it had snapshotted before the await; the rate admitted the first 60 of
+  each minute whatever a resync had asked for; `Keep` reset restarts only for an id that left the catalogue; a running process was
+  skipped when the lease returned; `shutdown` was written with no cancellation; and the look's exit snapshot and its removal read
+  `Alive` apart.
+- **Fix:** D173's FABRIC-PERFORM1a note, choices 5, 7 and 9 changed and its "After review": the bound by what a plugin speaks
+  (`HookProcess.FrameLimit`, 64 KB or 4 MB, the trial reading alike), an over-long answer failed at once as `unreadable`, LF, CRLF or
+  CR; the generation fence at hand-back; a resync's replay admitted and queued whole; the build kept per plugin; `Reattach`; one grace
+  for the whole disposal; an exit seen partway through a look counted.
+- **Verification:** twelve fast tests, each seen failing first (members added without behaviour), then passing; the three Process tests
+  (a 70 KB landing answer from a real process, a plugin that stops reading, the trial's long answer) seen failing against the old
+  behaviours, then passing; the driver's fast half and the Process classes that read through `HookProcess`.
+
+## 2026-10-17 — The wire evaluation leaked outcomes across runs and exposed receipts it would invalidate (FABRIC-WIRE1e)
+
+- **Symptom:** found by a second maker's review of FABRIC-WIRE1b, before any dispatch builds on it: a failure or a rejection kept
+  from run 1 took its `failed` or `rejected` path in run 2 of the same graph and revision; an active `pushed` bound to tip 1 and
+  observed after the unit moved to tip 2 reached, and a downstream node was offered a start on tip 2 resting on it; a join with a
+  reached member and an unrelated `failed` wire reported `member-failed`.
+- **Root cause:** the binding carried no run, so `WireEvaluation.Receipts` hashed the caller's current run into a failure's or a
+  rejection's receipt; the observation pass ran before the invalidations, and the invalidations exempted what it had moved; a
+  started join took any failure receipt in its binding for a member's.
+- **Fix:** D173's FABRIC-WIRE1e note: a start names its graph and run, kept as the status's scope, and only an outcome of that run is a
+  receipt; the invalidations run before the observation; a join fails on its members' receipts alone. Choices 2, 7 and 9 of the
+  WIRE1b note changed with it: `Settled` clarified, waiting capacity apart from execution capacity, and a complete revision snapshot
+  required (`no-revision`).
+- **Verification:** seven new tests, the evaluation's members added first without behaviour, each failed on its own defect at run
+  time, then passed; the node and wire suites pass, and the driver's fast half.
+## 2026-10-17 — An edit of driver.json from Setup or Ask Daoris deleted the settings its writer did not know (FABRIC-GRAPH1's review)
+
+- **Symptom:** found by a second maker's review of FABRIC-GRAPH1, and live in the installed build: a key `driver.json` holds that the
+  driver has no field for (a newer build's, a hand-written one, a landing rule's own) was gone after any edit at Setup or from Ask
+  Daoris's proposals, and every key moved to the writer's order. The terminal kept unknown top-level keys, but first, and dropped a
+  landing rule's; it also wrote `9007199254740993` back as `9007199254740992`. Both dropped a cycle that was not an object, a kind of
+  work no unit reads and an empty `workCycles` on an unrelated edit.
+- **Root cause:** `DriverConfig.ToJson` rebuilt the file from the fields it reads (`Platform/DriverConfig.cs`), so what it did not read
+  was never written; the CLI spread an untyped `rest` before its own fields and parsed through JavaScript's numbers. The tests that
+  claimed byte-for-byte writing built their input with the same writer, so they proved only that it was idempotent.
+- **Fix:** D173's FABRIC-GRAPH1 note, *After review*: both twins write an edit over the text they read (`Platform/JsonKeeping.cs`,
+  `platform/jsonkeep.ts`), from the file as it stands, the file as its reader understood it and the edited choices: what no edit changed
+  is written as the file has it, numbers by their own text; an object an edit changed is merged key by key; a key it adds goes after
+  the one before it in the writer's order; no edit is the file's own bytes. The cycle's homes keep every value raw. *After the
+  re-check* (D173's note): writing over the text read still lost a change another writer made between the read and the write, and the
+  driver overwrote a file that had since stopped reading. Both twins now read the file again at write and make the edit onto it
+  (`DriverConfig.Save`, `writeDriverChoices`); a file that does not read then, or holds a key twice in one object, is refused and left
+  as it is. An edit keeps the file's CRLF, and the CLI stages each write under its own name (`fsx.ts`), as `AtomicFile` does.
+  *After the second re-check* (D173's note): merging the edit over the file as it stands still wrote what the edit never touched. A
+  map another writer took out came back whole when this edit changed one entry in it, every other entry with it, and an object another
+  writer made a string was overwritten by the stale edited object. Choices read where no file was carried no text, so both twins wrote
+  them whole, over a file another writer made before the save, an unreadable one included in the driver's. An edit is now the set of key
+  paths it changed (`JsonKeeping.Plan`, `jsonkeep.ts`' `plan`): an object missing now is made again with only the edit's own keys, one
+  that is no longer an object refuses it, naming the path (`JsonEditRefusedException`, `EditRefused`), and a map the reader never saw is
+  merged key by key into one another writer wrote meanwhile, never written whole over it; a config read where no file was carries `{}`
+  and its path. The CLI writes its maps in the driver's order, so an entry an edit adds goes where the driver's goes.
+- **Verification:** `DriverConfigKeepsTests` and the CLI's `configkeeps.test.ts` read one table, `driver-config-keeps.json` (an
+  existing file in the writer's layout with unknown keys at the top, in a landing rule and a workspace rule, and numbers JavaScript
+  cannot hold; nine edits and the bytes both write): the table failed on GRAPH1's branch in both twins (all nine rows in the driver's)
+  and passes; the driver's and the modules' fast halves and the CLI's suite pass. The re-check's seven rows (another writer's change
+  between the read and the write, four ways; CRLF; a file left unreadable; a key written twice) and its `twice` read failed in the
+  driver's, each alone, and in the CLI's at its first such row, and pass; `fsx.test.ts`' two staging cases failed and pass. The second
+  re-check's six rows (a map taken out, a rule taken out, a map made a string, and a file another writer made, unreadable or with a key
+  twice, after this one found none) and a save where there still is none failed on round 2's branch in the driver's, each alone, and in
+  the CLI's, a test a row now, all but the unreadable one, which its whole write already refused; all pass, with the driver's and the
+  modules' fast halves and the CLI's suite. A further re-check's three rows (a map the reader never saw, written meanwhile by another
+  writer as an object, as nothing, as a string) failed in both twins where it was an object or a string, and pass; the row where
+  there is none was already right, the edit's keys alone, and holds it.
+
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
 - **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node
