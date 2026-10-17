@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — An edit of driver.json from Setup or Ask Daoris deleted the settings its writer did not know (FABRIC-GRAPH1's review)
+
+- **Symptom:** found by a second maker's review of FABRIC-GRAPH1, and live in the installed build: a key `driver.json` holds that the
+  driver has no field for (a newer build's, a hand-written one, a landing rule's own) was gone after any edit at Setup or from Ask
+  Daoris's proposals, and every key moved to the writer's order. The terminal kept unknown top-level keys, but first, and dropped a
+  landing rule's; it also wrote `9007199254740993` back as `9007199254740992`. Both dropped a cycle that was not an object, a kind of
+  work no unit reads and an empty `workCycles` on an unrelated edit.
+- **Root cause:** `DriverConfig.ToJson` rebuilt the file from the fields it reads (`Platform/DriverConfig.cs`), so what it did not read
+  was never written; the CLI spread an untyped `rest` before its own fields and parsed through JavaScript's numbers. The tests that
+  claimed byte-for-byte writing built their input with the same writer, so they proved only that it was idempotent.
+- **Fix:** D173's FABRIC-GRAPH1 note, *After review*: both twins write an edit over the text they read (`Platform/JsonKeeping.cs`,
+  `platform/jsonkeep.ts`), from the file as it stands, the file as its reader understood it and the edited choices: what no edit changed
+  is written as the file has it, numbers by their own text; an object an edit changed is merged key by key; a key it adds goes after
+  the one before it in the writer's order; no edit is the file's own bytes. The cycle's homes keep every value raw.
+- **Verification:** `DriverConfigKeepsTests` and the CLI's `configkeeps.test.ts` read one table, `driver-config-keeps.json` (an
+  existing file in the writer's layout with unknown keys at the top, in a landing rule and a workspace rule, and numbers JavaScript
+  cannot hold; nine edits and the bytes both write): the table failed on GRAPH1's branch in both twins (all nine rows in the driver's)
+  and passes; the driver's and the modules' fast halves and the CLI's suite pass.
+
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
 - **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node

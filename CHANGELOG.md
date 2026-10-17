@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A setting you add to `driver.json` by hand, or one a newer Daoris wrote there, now survives an edit from Setup, Ask Daoris or
+  the terminal: an edit changes only what it edits, everything else stays where it stands and as it was written, and a file
+  read and saved with no change keeps its bytes.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.

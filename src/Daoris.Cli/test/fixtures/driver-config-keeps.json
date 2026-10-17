@@ -1,0 +1,213 @@
+{
+  "about": "FABRIC-GRAPH1's review, finding 1 (FIX-LOG 2026-10-17): a writer of driver.json keeps every key it does not own, in its place, and an edit changes only what it edits. Read row for row by the CLI's configkeeps.test.ts and the driver's DriverConfigKeepsTests. `file` is an existing file in the writer's layout, its lines joined by LF with one final LF: every key Setup and the terminal write, and keys neither twin knows at the top, in a landing rule and in a workspace rule, a cycle with numbers JavaScript cannot hold, a cycle that is not an object, a kind of work no unit reads and an empty map. A row's `edit` is one door's change (`op` and its fields); `changes` turn `file` into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`.",
+  "file": [
+    "{",
+    "  \"drivable\": [",
+    "    \"engine\",",
+    "    \"shop-api\"",
+    "  ],",
+    "  \"holds\": [],",
+    "  \"trees\": [",
+    "    \"engine\"",
+    "  ],",
+    "  \"cap\": 2,",
+    "  \"theme\": \"dark\",",
+    "  \"adapter\": \"claude-code\",",
+    "  \"helperAdapter\": \"claude-code\",",
+    "  \"notify\": true,",
+    "  \"timeoutMinutes\": 30,",
+    "  \"pollSeconds\": 15,",
+    "  \"strikes\": 3,",
+    "  \"forgiven\": {",
+    "    \"q7\": 2",
+    "  },",
+    "  \"released\": {",
+    "    \"q9\": \"s-41\"",
+    "  },",
+    "  \"standing\": {",
+    "    \"engine\": {",
+    "      \"says\": \"先在 dev 上测试\",",
+    "      \"at\": \"2026-10-02T09:20:00Z\"",
+    "    }",
+    "  },",
+    "  \"lines\": {",
+    "    \"engine\": \"main\"",
+    "  },",
+    "  \"languages\": {",
+    "    \"engine\": \"zh\"",
+    "  },",
+    "  \"landings\": {",
+    "    \"engine\": {",
+    "      \"form\": \"branch\",",
+    "      \"pattern\": \"work/{quest}\",",
+    "      \"plugin\": \"acme.pr\",",
+    "      \"reviewer\": \"kim\",",
+    "      \"cycle\": {",
+    "        \"nodes\": [",
+    "          {",
+    "            \"id\": \"qa\",",
+    "            \"kind\": \"human\",",
+    "            \"version\": 1,",
+    "            \"reach\": \"pressed\",",
+    "            \"options\": {",
+    "              \"limit\": 9007199254740993,",
+    "              \"ratio\": 1.50",
+    "            }",
+    "          }",
+    "        ],",
+    "        \"wires\": [",
+    "          {",
+    "            \"id\": \"a\",",
+    "            \"kind\": \"after\",",
+    "            \"from\": \"line\",",
+    "            \"to\": \"qa\"",
+    "          }",
+    "        ],",
+    "        \"end\": \"qa\"",
+    "      }",
+    "    },",
+    "    \"legacy\": {",
+    "      \"form\": \"merge\",",
+    "      \"cycle\": []",
+    "    }",
+    "  },",
+    "  \"workspaceLandings\": {",
+    "    \"shop\": {",
+    "      \"form\": \"merge\",",
+    "      \"tidy\": true,",
+    "      \"note\": \"kept by hand\"",
+    "    }",
+    "  },",
+    "  \"workCycles\": {",
+    "    \"engine\": {",
+    "      \"quest\": {",
+    "        \"entries\": [",
+    "          \"qa\"",
+    "        ],",
+    "        \"end\": \"qa\"",
+    "      },",
+    "      \"chore\": {",
+    "        \"end\": \"done\"",
+    "      }",
+    "    }",
+    "  },",
+    "  \"workspaceWorkCycles\": {},",
+    "  \"readAcross\": {",
+    "    \"shop-api\": false",
+    "  },",
+    "  \"writeAcross\": {",
+    "    \"engine\": [",
+    "      \"shop-api\"",
+    "    ]",
+    "  },",
+    "  \"commands\": {",
+    "    \"stub\": [",
+    "      \"node\",",
+    "      \"stub.mjs\"",
+    "    ]",
+    "  },",
+    "  \"budget\": 12345678901234567890",
+    "}"
+  ],
+  "rows": [
+    {
+      "name": "read and written with no edit: the same bytes",
+      "edit": { "op": "none" },
+      "changes": []
+    },
+    {
+      "name": "a repository made drivable: only `drivable` changes, every number written as it was",
+      "edit": { "op": "drivable", "repository": "orders", "on": true },
+      "changes": [
+        { "from": ["    \"shop-api\"", "  ],", "  \"holds\""], "to": ["    \"shop-api\",", "    \"orders\"", "  ],", "  \"holds\""] }
+      ]
+    },
+    {
+      "name": "a landing rule edited at Setup: the key it adds in its place, the rule's own unknown key and its cycle kept",
+      "edit": { "op": "landing", "repository": "engine", "rule": { "form": "branch", "pattern": "work/{quest}", "plugin": "acme.pr", "tidy": true } },
+      "changes": [
+        { "from": ["      \"plugin\": \"acme.pr\","], "to": ["      \"plugin\": \"acme.pr\",", "      \"tidy\": true,"] }
+      ]
+    },
+    {
+      "name": "a workspace rule edited: what the edit took goes, the rule's own unknown key stays",
+      "edit": { "op": "workspace-landing", "workspace": "shop", "rule": { "form": "merge" } },
+      "changes": [
+        { "from": ["      \"tidy\": true,", "      \"note\""], "to": ["      \"note\""] }
+      ]
+    },
+    {
+      "name": "a landing rule cleared: the rule goes whole, its unknown key and its cycle with it",
+      "edit": { "op": "landing-clear", "repository": "engine" },
+      "changes": [
+        {
+          "from": [
+            "  \"landings\": {",
+            "    \"engine\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"work/{quest}\",",
+            "      \"plugin\": \"acme.pr\",",
+            "      \"reviewer\": \"kim\",",
+            "      \"cycle\": {",
+            "        \"nodes\": [",
+            "          {",
+            "            \"id\": \"qa\",",
+            "            \"kind\": \"human\",",
+            "            \"version\": 1,",
+            "            \"reach\": \"pressed\",",
+            "            \"options\": {",
+            "              \"limit\": 9007199254740993,",
+            "              \"ratio\": 1.50",
+            "            }",
+            "          }",
+            "        ],",
+            "        \"wires\": [",
+            "          {",
+            "            \"id\": \"a\",",
+            "            \"kind\": \"after\",",
+            "            \"from\": \"line\",",
+            "            \"to\": \"qa\"",
+            "          }",
+            "        ],",
+            "        \"end\": \"qa\"",
+            "      }",
+            "    },",
+            "    \"legacy\": {"
+          ],
+          "to": ["  \"landings\": {", "    \"legacy\": {"]
+        }
+      ]
+    },
+    {
+      "name": "a line set: the entry it adds after the one before it",
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["    \"engine\": \"main\""], "to": ["    \"engine\": \"main\",", "    \"orders\": \"trunk\""] }
+      ]
+    },
+    {
+      "name": "the intake named where the file named none: in the writer's place, after the adapter",
+      "edit": { "op": "intake", "adapter": "codex" },
+      "changes": [
+        { "from": ["  \"adapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\",", "  \"intakeAdapter\": \"codex\","] }
+      ]
+    },
+    {
+      "name": "notifications off: the one value changes",
+      "edit": { "op": "notify", "on": false },
+      "changes": [
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "a quest's work cycle cleared: the kind no unit reads stays with its owner",
+      "edit": { "op": "work-cycle-clear", "repository": "engine", "kind": "quest" },
+      "changes": [
+        {
+          "from": ["    \"engine\": {", "      \"quest\": {", "        \"entries\": [", "          \"qa\"", "        ],", "        \"end\": \"qa\"", "      },", "      \"chore\": {"],
+          "to": ["    \"engine\": {", "      \"chore\": {"]
+        }
+      ]
+    }
+  ]
+}

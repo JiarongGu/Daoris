@@ -102,7 +102,11 @@ public sealed class NodeWiresTests
         ["a group over two nodes"] = (Nodes,
             [.. Replacing(Wired("a") with { Group = AnyOfG }), After("x", "line", "rollback") with { Group = AnyOfG }],
             (WireRefusal.GroupSplit, "x", "rollback")),
-        ["a failure path from a proof"] = (Nodes, Adding(new("x", WireKinds.Failed, new("line"), new("rollback"))), (WireRefusal.NeverFails, "x", "line")),
+        // FABRIC-WIRE1d: a join's members are its `after` wires' sources whatever their group, so a group there is refused.
+        ["a join's member wire grouped"] = ([.. Nodes, Node("checks", NodeKinds.All)],
+            [.. Wires, After("x", "line", "checks") with { Group = AnyOfG }, After("y", "qa", "checks")],
+            (WireRefusal.GroupedMember, "x", "checks")),
+        ["a failure path from a proof"] =(Nodes, Adding(new("x", WireKinds.Failed, new("line"), new("rollback"))), (WireRefusal.NeverFails, "x", "line")),
         ["a failure path from a person's task"] = (Nodes, Adding(new("x", WireKinds.Failed, new("qa"), new("rollback"))), (WireRefusal.NeverFails, "x", "qa")),
         ["a rejection path from a plugin's node not declared rejectable"] = (Nodes, Adding(new("x", WireKinds.Rejected, new("deploy"), new("redo"))), (WireRefusal.NeverRejected, "x", "deploy")),
         ["a rejection path from a proof"] = (Nodes, Adding(new("x", WireKinds.Rejected, new("line"), new("redo"))), (WireRefusal.NeverRejected, "x", "line")),
@@ -179,6 +183,26 @@ public sealed class NodeWiresTests
         Assert.Null(NodeWires.SourceSchema(Node("dependency", NodeKinds.WaitUnit), WireEnd.Evidence));
         Assert.Null(NodeWires.SourceSchema(Nodes[3], "approval"));
         Assert.Equal("outputs", NodeDeclarations.Problem(Node("tag", "acme.git/tag") with { Outputs = Ports(WireEnd.Evidence, "acme.git/tag@1") }));
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1d: a join's member wires are plain <c>after</c> wires, and saved so; its other eligibility wires are any node's, a group
+    /// on them kept (WIRE1b's choice 6). Only a group on a member wire is refused.
+    /// </summary>
+    [Fact]
+    public void A_join_with_plain_member_wires_holds()
+    {
+        NodeDeclaration[] nodes = [.. Nodes, Node("checks", NodeKinds.All)];
+        Wire[] wires =
+        [
+            .. Wires,
+            After("x", "line", "checks"),
+            After("y", "qa", "checks"),
+            new("t", WireKinds.Trigger, new("announce"), new("checks")) { Group = AnyOfG },
+            new("u", WireKinds.Rejected, new("redo"), new("checks")) { Group = AnyOfG },
+        ];
+
+        Assert.Empty(NodeWires.Problems(nodes, wires));
     }
 
     /// <summary>

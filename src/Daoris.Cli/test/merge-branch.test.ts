@@ -500,6 +500,11 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the rotation-use table', ['src/Daoris.Cli/test/fixtures/rotation-use.json'], [...BASE, 'driver', 'web']],
     // TWINWORDS1: the landing, helpers and commits sentences sit among the CLI's fixtures, and the driver's twin reads them too.
     ['the landing-says table', ['src/Daoris.Cli/test/fixtures/landing-says.json'], [...BASE, 'driver']],
+    // FABRIC-GRAPH1: which cycle governs a unit sits among the CLI's fixtures, and the driver's NodeGraphHomesTests reads it too.
+    ['the graph-homes table', ['src/Daoris.Cli/test/fixtures/graph-homes.json'], [...BASE, 'driver']],
+    // FABRIC-GRAPH1's review: the bytes an edit of driver.json writes sit among the CLI's fixtures, and the driver's DriverConfigKeepsTests
+    // reads them too.
+    ['the driver-config-keeps table', ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], [...BASE, 'driver']],
     // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver', 'web']],
