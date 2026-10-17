@@ -1651,6 +1651,10 @@ the person's override. A close the door answered whose node could not take the a
 goes on by a close's own words: record its kept close again, ask for its answer again with the same key, or stop the
 work's further nodes. Never a new close, and never their word for the door's answer.
 
+**Amended (FABRIC-CLOSE1t, D173's note).** Step 1's eligibility is every named quest's. Before a chain's close is sent,
+each other quest it names has its own graph's prerequisites to its close reached: on its own node record, under the graph it
+is bound to, at its current revision. Until then the close waits, naming the quest and the node.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
