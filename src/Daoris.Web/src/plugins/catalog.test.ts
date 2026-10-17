@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  chosenOf, offerItem, type OfferShown, pluginGroups, type PluginShown, pluginState, sourceWord, speaks, stripOrder, updateWaits,
+  chosenOf, offerItem, type OfferShown, pluginGroups, type PluginShown, pluginState, shippedChanged, sourceWord, speaks, stripOrder,
+  takesShipped, updateWaits,
 } from './catalog';
 
 // The Plugins view's list and page on today's answers (PLUGUI1b, D119 §3.1): what state a plugin is in, which
@@ -94,6 +95,25 @@ describe('where a plugin came from, on its row', () => {
     expect(updateWaits(plugin({ update: 'current' }))).toBe(false);
     expect(updateWaits(plugin({ update: null }))).toBe(false);
     expect(updateWaits(plugin())).toBe(false);
+  });
+
+  /** LANDPIN3: a copy older than the one this install ships waits for a press, whatever record it has; a changed one never does. */
+  it('says an update waits for a copy older than the one the install ships, and never for a changed one', () => {
+    const older = { state: 'older', installed: '1.2.0', shipped: '1.3.0', changes: 'Pushes the commit judged.' } as const;
+    const changed = { state: 'changed', installed: '1.3.0', shipped: '1.3.0' } as const;
+    expect(updateWaits(plugin({ shipped: older }))).toBe(true);
+    expect(updateWaits(plugin({ shipped: changed }))).toBe(false);
+    expect(updateWaits(plugin({ shipped: null }))).toBe(false);
+    expect(shippedChanged(plugin({ shipped: changed }))).toBe(true);
+    expect(shippedChanged(plugin({ shipped: older }))).toBe(false);
+
+    // Its press takes the install's copy where no record of the plugin's own can: none, one that does not read, or nothing sent.
+    expect(takesShipped(plugin({ shipped: older }))).toBe(true);
+    expect(takesShipped(plugin({ shipped: older, source: { kind: 'none' } }))).toBe(true);
+    expect(takesShipped(plugin({ shipped: older, source: { kind: 'unread', problem: 'x' } }))).toBe(true);
+    expect(takesShipped(plugin({ shipped: older, source: { kind: 'offer', offer: 'acme.gate' } }))).toBe(false);
+    expect(takesShipped(plugin({ shipped: older, source: { kind: 'folder', folder: 'C:/x' } }))).toBe(false);
+    expect(takesShipped(plugin({ shipped: changed }))).toBe(false);
   });
 });
 

@@ -119,6 +119,19 @@ describe('the plugin list', () => {
     expect(within(screen.getByRole('button', { name: /Same/ })).queryByText('update available')).toBeNull();
   });
 
+  /** LANDPIN3: an older copy of the install's own plugin waits for a press; a changed one is said, never offered. */
+  it('says update available on an older copy of the shipped one and changed here on a changed copy', () => {
+    render(<PluginList groups={pluginGroups([
+      plugin({ source: { kind: 'none' }, shipped: { state: 'older', installed: '1.2.0', shipped: '1.3.0' } }),
+      plugin({ id: 'acme.edited', name: 'Edited', shipped: { state: 'changed', installed: '1.3.0', shipped: '1.3.0' } }),
+    ], [])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
+
+    expect(within(screen.getByRole('button', { name: /Acme gate/ })).getByText('update available')).toBeInTheDocument();
+    const edited = within(screen.getByRole('button', { name: /Edited/ }));
+    expect(edited.getByText('changed here')).toBeInTheDocument();
+    expect(edited.queryByText('update available')).toBeNull();
+  });
+
   it('draws an offer\'s icon and what it gives, and no source, since its section says it', () => {
     render(<PluginList groups={pluginGroups([], [OFFER])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 
