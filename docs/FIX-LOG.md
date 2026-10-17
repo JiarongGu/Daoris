@@ -2749,6 +2749,21 @@ removal's). `TreeSyncStartsTests` (6, one new: the one start answers as the two 
 checkout) passed in the git half's gate run on `c7ed4c6`, 2026-10-16: 104 s of test time summed over its six, four classes at once
 beside it, where PROC1d-ii's 80 s was its five alone.
 
+**PROC1d-iv (2026-10-18): a judgement asks its checkout's git each question of commits by their ids once.** The judgement's
+`RefSnapshot` keeps what git answered of `merge-base --is-ancestor`, `NamesAsync`'s `diff` and `rev-list --count` by full ids
+(D88's PROC1d-iv note); a landing's `GitFacts` keeps the `diff` and the count too, and both keep only an answer git gave. *Counted*
+(`TreeSyncStartsTests`, a sync plan over three session branches): 28 starts before, 24 after. Of the 28, 7 were `merge-base
+--is-ancestor` (one pair, the record's start against where each branch leaves the line, three times) and 3 `diff` (the files the
+line changed since they left it, one pair three times); 3 plain `merge-base`, 3 `log`, 4 `status` and 1 `rev-list --count` asked no
+pair twice. No question of commits is asked twice after. A real look's saving grows with the branches that left the line at one
+commit. The landings' counts (`LandGitCountTests`) moved none: 55, 51 and 43, each of one branch asking no pair twice. *Wall*, one
+run each of the four classes at once (`TreeSyncTests`, `TreeUpdateTests`, `TreeSyncStartsTests`, `LandGitCountTests`,
+`git.process.runsettings`) on `cb15ad7` and on this branch: 581 s (24 tests) before at 94–96% CPU with three test hosts and 21
+node processes beside it from other worktrees, 506 s (26, the two new ones among them) after at about 60%; `LandingTidyTests`
+(11) 533 s before and 122 s after under the same two loads. The load moved more than the change did, so the walls compare the
+machine, not the memo: the start counts are the measure. Seen failing first: four fast tests on the memo, and two of
+`TreeSyncStartsTests` (the plan's bound and repeats; each kept answer git's own).
+
 **PROC1f (2026-10-16): the last git-only classes join the four-at-once half.** `SessionTreesTests` (16 tests) and
 `LandingPluginTests` (8, its helpers now `LandingPluginFixture`) carry `Parallel=Git`; the plugin that never answers, timed out at
 three seconds of patience, is `LandingPluginPatienceTests`, run one at a time. Listed on this branch with each file: the git half

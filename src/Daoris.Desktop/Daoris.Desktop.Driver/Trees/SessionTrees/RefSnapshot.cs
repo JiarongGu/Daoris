@@ -6,7 +6,8 @@ namespace Daoris.Driver;
 /// line or an upstream asked one at a time; a judgement takes one of these and hands it to the reads that ask (an optional
 /// parameter, null asking git as before), so a judgement reads a repository's refs once. Its working trees, which branch each
 /// holds, are one more start kept the same way (PROC1d-iii): <c>worktree list</c> was 47 of those starts, asked by each part
-/// of a judgement in turn.
+/// of a judgement in turn. And what git answered the judgement of commits by their ids is kept with them (PROC1d-iv,
+/// <see cref="Asked"/>): <c>diff</c> and <c>merge-base --is-ancestor</c> were 132 and 130 more, the same pair asked per branch.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Never stale across a write.</b> It is read at its first question, not when taken, so one taken before a fetch is
