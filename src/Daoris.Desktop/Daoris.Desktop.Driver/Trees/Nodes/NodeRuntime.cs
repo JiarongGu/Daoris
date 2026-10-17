@@ -45,6 +45,12 @@ public sealed record GovernedUnit(
 public sealed record NodeRuntimePass(bool Armed, IReadOnlyList<WorkPerformed> Performed, IReadOnlyList<string> Evaluated, IReadOnlyList<string> Said)
 {
     public static NodeRuntimePass Idle { get; } = new(false, [], [], []);
+
+    /// <summary>
+    /// Whether the awaited set told differs from the one told before: the loop wakes once more, so a process the set now needs is started
+    /// by the look's supervision and its start made, rather than at the look's deadline. The same set told again wakes nothing.
+    /// </summary>
+    public bool AwaitedChanged { get; init; }
 }
 
 /// <summary>
@@ -168,7 +174,7 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
             {
                 // Disarmed since the last pass: the plugins are told nothing is awaited, once, so their processes stop; nothing else is read.
                 port.Watch(NoneAwaited);
-                (_told, _governed, NextDue) = (false, null, null);
+                (_told, _toldText, _governed, NextDue) = (false, "", null, null);
                 return NodeRuntimePass.Idle;
             }
 
@@ -198,8 +204,8 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
                 sends = await EvaluateAsync(each, sends, done, said, ct).ConfigureAwait(false);
             }
 
-            Tell(governed.Values);
-            return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said);
+            var changed = Tell(governed.Values);
+            return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
         }
         finally
         {
@@ -274,8 +280,9 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
     /// <summary>
     /// The awaited set told (§C4's <c>work/watch</c>, PERFORM1a's supervision): each governed unit with a dispatchable node ready, active or
     /// unknown, or an attempt still waiting for its answer, under that node's plugin and step; and the next timer the records persist.
+    /// Returns whether the set differs from the one told before.
     /// </summary>
-    private void Tell(IEnumerable<GovernedUnit> governed)
+    private bool Tell(IEnumerable<GovernedUnit> governed)
     {
         var awaited = new SortedDictionary<string, List<WatchedUnit>>(StringComparer.Ordinal);
         DateTimeOffset? due = null;
@@ -315,7 +322,15 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
         port.Watch(awaited.ToDictionary(each => each.Key, each => (IReadOnlyList<WatchedUnit>)each.Value, StringComparer.Ordinal));
         _told = awaited.Count > 0;
         NextDue = due;
+        var text = string.Join("\n", awaited.SelectMany(each => each.Value.Select(unit =>
+            $"{each.Key}\t{unit.Repository}\t{unit.Workspace}\t{unit.Branch}\t{unit.Tip}\t{string.Join(",", unit.Awaiting)}")));
+        var changed = !string.Equals(text, _toldText, StringComparison.Ordinal);
+        _toldText = text;
+        return changed;
     }
+
+    /// <summary>The awaited set last told, as text: what <see cref="NodeRuntimePass.AwaitedChanged"/> compares.</summary>
+    private string _toldText = "";
 
     private static string PluginOf(string kind) => kind[..kind.IndexOf('/')];
 
