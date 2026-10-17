@@ -403,6 +403,50 @@ public sealed class NodeLifecycleTests
         Assert.Equal((NodeStates.Active, (int?)null), (observed.Status.State, observed.Status.Unreconciled));
     }
 
+    /// <summary>
+    /// FABRIC-NODE1f: an observed node's unknown belonged to its old binding and dispatched nothing, so an invalidation (a new binding)
+    /// clears it and the node is offered a start on the new one, where it once stayed Unreconciled and was skipped by the start loop for good.
+    /// </summary>
+    [Theory]
+    [InlineData(NodeKinds.Pushed)]
+    [InlineData(NodeKinds.PullRequest)]
+    [InlineData(NodeKinds.Line)]
+    [InlineData(NodeKinds.Claimed)]
+    public void An_observed_node_s_unknown_never_holds_its_next_attempt(string kind)
+    {
+        var node = Declared(kind);
+        var unknown = Moved(node, At(NodeStates.Active, attempt: 1), new NodeMove(NodeStates.Unknown, NodeCause.Daoris) { Attempt = 1 });
+        var invalidated = Moved(node, unknown, new NodeMove(NodeStates.Invalidated, NodeCause.Daoris));
+        Assert.Null(invalidated.Unreconciled);
+        var ready = Moved(node, invalidated, new NodeMove(NodeStates.Ready, NodeCause.Daoris));
+        Assert.Null(ready.Unreconciled);
+        Assert.Equal((NodeStates.Active, 2), (Moved(node, ready, Start(2)).State, 2));
+    }
+
+    /// <summary>
+    /// FABRIC-NODE1f: a performed plugin node's unknown attempt may have taken effect, so an invalidation never clears it: only its
+    /// reconciliation, or the person's word on it (FABRIC-PERFORM1g), does.
+    /// </summary>
+    [Fact]
+    public void A_performed_node_s_unknown_is_held_across_an_invalidation()
+    {
+        var node = Declared("acme.deploy/deploy");
+        var unknown = Moved(node, At(NodeStates.Active, attempt: 1), new NodeMove(NodeStates.Unknown, NodeCause.Daoris) { Attempt = 1 });
+        var ready = Moved(node, Moved(node, unknown, new NodeMove(NodeStates.Invalidated, NodeCause.Daoris)), new NodeMove(NodeStates.Ready, NodeCause.Daoris));
+        Assert.Equal((int?)1, ready.Unreconciled);
+        Assert.Equal(NodeRefusal.Unreconciled, NodeLifecycle.Apply(node, ready, Start(2)).Refused);
+    }
+
+    /// <summary>FABRIC-NODE1f: an install with nothing armed has no unknown and no held attempt, so a ready node starts as before.</summary>
+    [Fact]
+    public void An_unarmed_node_starts_as_before()
+    {
+        var node = Declared(NodeKinds.Pushed);
+        var ready = Moved(node, Moved(node, At(NodeStates.Active, attempt: 1), new NodeMove(NodeStates.Invalidated, NodeCause.Daoris)), new NodeMove(NodeStates.Ready, NodeCause.Daoris));
+        Assert.Null(ready.Unreconciled);
+        Assert.Equal(NodeStates.Active, NodeLifecycle.Apply(node, ready, Start(2)).Status.State);
+    }
+
     // ---- the contract
 
     /// <summary>A declaration names a kind this build knows, at its own reach, with a version and bounds that can hold.</summary>

@@ -438,6 +438,11 @@ public static class NodeLifecycle
             case NodeStates.Ready when move.By == NodeCause.Person:
                 return To(Reset(next) with { Tries = 0 });
 
+            case NodeStates.Invalidated:
+                // FABRIC-NODE1f: an observed node's unknown was about its old binding and dispatched no effect, so a new binding clears it,
+                // or the start loop would skip the node for good. A dispatched attempt's stays: it may have taken effect (NODE1c, PERFORM1g).
+                return To(next with { Unreconciled = authority.Dispatches ? status.Unreconciled : null });
+
             default:
                 // blocked ↔ ready on Daoris's evaluation, and an invalidation, which keeps the binding and acceptance as history.
                 return To(next);
