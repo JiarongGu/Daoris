@@ -35,7 +35,17 @@ public static class ReconcileStates
 
 /// <summary>One unit a plugin is told about at <see cref="HookPoints.Watch"/> (§C4): where it is, its tip, and which of the plugin's steps it awaits.</summary>
 public sealed record WatchedUnit(
-    string Repository, string Workspace, string Root, string Branch, string Tip, string? Line, string? PullRequest, IReadOnlyList<string> Awaiting);
+    string Repository, string Workspace, string Root, string Branch, string Tip, string? Line, string? PullRequest, IReadOnlyList<string> Awaiting)
+{
+    /// <summary>
+    /// The canonical unit it is told for (FABRIC-PERFORM1i): the host's half of the frame, never written on the wire, so an event bound to
+    /// the frame actually sent is bound to the unit that frame named, never looked up by its repository's name alone (§C4's third rule).
+    /// </summary>
+    public string? Unit { get; init; }
+
+    /// <summary>The repository's identity (§B5): its common git folder's file identity, else its spelling. The host's alone, as <see cref="Unit"/> is.</summary>
+    public string? Identity { get; init; }
+}
 
 /// <summary>
 /// A <see cref="HookPoints.Watch"/> frame (§C4): the whole awaited set, the generation of the process it is sent to, and whether the plugin
