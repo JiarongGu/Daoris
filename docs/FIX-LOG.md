@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — Work state listed leftovers that could never clear (CLEANUP1)
+
+- **Symptom:** the owner's `daoris-driver work state` listed 40 units no look would ever clear: 18 landings whose branch the person
+  deleted after its pull request (end *not reached: nothing was handed on*, clean-up pending for ever), and 7 recovery refs and 7
+  folders moved aside, each a unit of its own with its end unknown, which *What needs you* then listed as work nobody owns.
+- **Root cause:** the inventory read a landing retired as gone, with no proof that the line held it, as not ended, and nothing could
+  end it: the record kept no word of why it went, so git's own "missing" (the person's removal) read the same as a read that failed.
+  Recovery refs had no rule but "never deleted", and a recovery no record named was drafted as a unit with an unknown owner.
+- **Fix:** the landing keeps why it went (`GoneAs`: `missing` on `show-ref --exists`'s exit 2 with no name in another case, else
+  `stands`), written by the clean-up and once by the look; the inventory reads a unit whose landings all went as missing, nothing of
+  it standing, as dropped and retired, and keeps every doubt, saying which. A recovery ref whose commit a branch or a tag holds goes
+  after 30 days in a verified transaction; one nothing else holds is kept and says how to delete it. Recoveries no record names are
+  listed apart, not as units. D173's CLEANUP1 note and D102's have the detail.
+- **Verification:** red first, twelve of `CleanupLeftoversTests` and six of `CleanupGitTests`, the safety guards passing before and
+  after; then green with the driver's and the modules' fast halves, `CleanupGitTests` alone under `git.process.runsettings`, and the
+  milestone's web test in both languages.
+
 ## 2026-10-17 — An unread ref forgot its record, and a detached tree's removal verified nothing (RECORDUNREAD1, DETACHTX1)
 
 - **Symptom:** a fifth review of FABRIC-END4a: a session branch whose ref git could not read was forgotten by LAND3's door as

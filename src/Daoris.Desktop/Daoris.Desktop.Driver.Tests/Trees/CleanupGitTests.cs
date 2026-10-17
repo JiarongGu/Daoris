@@ -60,7 +60,7 @@ public sealed class CleanupGitTests : LandedFixture
             string.Equals(Path.GetFullPath(a).TrimEnd('\\', '/'), Path.GetFullPath(b).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>The owner's 18: the person deleted the landing branch after its pull request; the look marks it missing and it reads dropped.</summary>
+    /// <summary>The person deleted the landing branch after its pull request: the look marks it missing, and it reads dropped.</summary>
     [Fact]
     public async Task A_landing_branch_the_person_deleted_is_marked_missing_and_reads_as_the_persons_end()
     {

@@ -39,7 +39,7 @@ public sealed class CleanupLeftoversTests : IDisposable
 
     // ---- (1) a landing whose branch the person removed
 
-    /// <summary>The owner's 18: a landing alone, its branch gone outside Daoris on git's word. The person's end of it: dropped, nothing left to clean, retired.</summary>
+    /// <summary>A landing alone, its branch gone outside Daoris on git's word: the person's end of it, dropped, nothing left to clean, retired.</summary>
     [Fact]
     public void A_landing_whose_branch_git_says_is_missing_reads_dropped_and_retires()
     {
