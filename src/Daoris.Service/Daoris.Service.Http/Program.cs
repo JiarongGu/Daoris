@@ -135,13 +135,9 @@ if (mode == ServiceMode.Local && DaorisHome.Resolve() is { } idHome)
 // working directory has no bundle and the binary's directory does, the binary's wins. Without this
 // the published exe answers every API call and serves a 404 for the page, which reads as "the app is
 // broken" rather than "the cwd was wrong".
-var contentRoot = Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"))
-    ? Directory.GetCurrentDirectory()
-    : Directory.Exists(Path.Combine(AppContext.BaseDirectory, "wwwroot"))
-        ? AppContext.BaseDirectory
-        : Directory.GetCurrentDirectory();
-
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = contentRoot });
+// The choice and the host's one watch-nothing setting are HostRoot's (HTTPWATCH1): the binary's own bundle first, then the
+// working folder's (development), and no settings file watched in either.
+var builder = HostRoot.Builder(args);
 builder.Logging.AddProvider(new MachineLogProvider(log));
 // FLAKE2: a host the shell started waits for its requests in flight less than the shell waits for it (InputEndStop.Drain).
 builder.Services.Configure<HostOptions>(host =>

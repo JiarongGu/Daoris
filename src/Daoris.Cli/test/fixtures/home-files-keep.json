@@ -1,0 +1,214 @@
+{
+  "about": "KEEPALL1 (D173's KEEPALL1 note; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so).",
+  "files": {
+    "plugins.json": [
+      "{",
+      "  \"later\": {",
+      "    \"kept\": true,",
+      "    \"big\": 9007199254740993",
+      "  },",
+      "  \"disabled\": [",
+      "    \"acme.agent\",",
+      "    \"acme.tools\"",
+      "  ],",
+      "  \"ratio\": 1.50",
+      "}"
+    ],
+    "permissions.json": [
+      "{",
+      "  \"later\": {",
+      "    \"kept\": true",
+      "  },",
+      "  \"machine\": {",
+      "    \"allow\": [",
+      "      \"Bash(npm test:*)\"",
+      "    ],",
+      "    \"note\": \"hand-written\",",
+      "    \"deny\": [",
+      "      \"Bash(rm:*)\"",
+      "    ]",
+      "  },",
+      "  \"workspaces\": {",
+      "    \"work\": {",
+      "      \"allow\": [",
+      "        \"Read\"",
+      "      ],",
+      "      \"since\": 9007199254740993",
+      "    }",
+      "  },",
+      "  \"repositories\": {",
+      "    \"engine\": {",
+      "      \"ask\": [",
+      "        \"Bash(git rebase:*)\"",
+      "      ]",
+      "    }",
+      "  },",
+      "  \"defaultsOff\": [",
+      "    \"commit\"",
+      "  ],",
+      "  \"ratio\": 1.50",
+      "}"
+    ],
+    "keys.json": [
+      "{",
+      "  \"claude-code\": {",
+      "    \"account-1\": \"sk-one\",",
+      "    \"note\": 7,",
+      "    \"account-2\": \"sk-two\"",
+      "  },",
+      "  \"later\": {",
+      "    \"kept\": true",
+      "  },",
+      "  \"codex\": {",
+      "    \"account-1\": \"sk-three\"",
+      "  },",
+      "  \"ratio\": 1.50",
+      "}"
+    ]
+  },
+  "rows": [
+    {
+      "name": "keys: an account's key replaced changes that key alone, an agent's own unknown key and the file's kept as written",
+      "file": "keys.json",
+      "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-1", "key": "sk-new" },
+      "changes": [
+        { "from": ["    \"account-1\": \"sk-one\","], "to": ["    \"account-1\": \"sk-new\","] }
+      ]
+    },
+    {
+      "name": "keys: a file in CRLF stays in CRLF",
+      "file": "keys.json",
+      "crlf": true,
+      "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-2", "key": "sk-new" },
+      "changes": [
+        { "from": ["    \"account-2\": \"sk-two\""], "to": ["    \"account-2\": \"sk-new\""] }
+      ]
+    },
+    {
+      "name": "keys: a key added over a file that does not read is refused, every key in it kept",
+      "file": "keys.json",
+      "start": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,"] }
+      ],
+      "edit": { "op": "key-add", "agent": "claude-code", "key": "sk-four" },
+      "refused": "Fix it, or delete it to start from nothing",
+      "changes": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,"] }
+      ]
+    },
+    {
+      "name": "plugins: an edit that changes nothing writes the same bytes",
+      "file": "plugins.json",
+      "edit": { "op": "plugin-enable", "id": "acme.none" },
+      "changes": []
+    },
+    {
+      "name": "plugins: a plugin disabled joins the list, every key the writer does not own kept as written",
+      "file": "plugins.json",
+      "edit": { "op": "plugin-disable", "id": "acme.new" },
+      "changes": [
+        { "from": ["    \"acme.agent\","], "to": ["    \"acme.agent\",", "    \"acme.new\","] }
+      ]
+    },
+    {
+      "name": "plugins: a plugin enabled leaves the list, every key the writer does not own kept as written",
+      "file": "plugins.json",
+      "edit": { "op": "plugin-enable", "id": "acme.agent" },
+      "changes": [
+        { "from": ["    \"acme.agent\",", "    \"acme.tools\""], "to": ["    \"acme.tools\""] }
+      ]
+    },
+    {
+      "name": "plugins: a file in CRLF stays in CRLF",
+      "file": "plugins.json",
+      "crlf": true,
+      "edit": { "op": "plugin-disable", "id": "acme.new" },
+      "changes": [
+        { "from": ["    \"acme.agent\","], "to": ["    \"acme.agent\",", "    \"acme.new\","] }
+      ]
+    },
+    {
+      "name": "plugins: a key written twice in one object refuses the edit, naming it",
+      "file": "plugins.json",
+      "start": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,", "  \"ratio\": 2"] }
+      ],
+      "edit": { "op": "plugin-disable", "id": "acme.new" },
+      "refused": "the key `ratio` twice",
+      "changes": [
+        { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,", "  \"ratio\": 2"] }
+      ]
+    },
+    {
+      "name": "permissions: read and written with no edit, the same bytes",
+      "file": "permissions.json",
+      "edit": { "op": "none" },
+      "changes": []
+    },
+    {
+      "name": "permissions: a machine rule added keeps the machine's own key and the rest as written",
+      "file": "permissions.json",
+      "edit": { "op": "permission-add", "scope": "machine", "list": "allow", "rule": "Bash(npm run build:*)" },
+      "changes": [
+        { "from": ["      \"Bash(npm test:*)\""], "to": ["      \"Bash(npm test:*)\",", "      \"Bash(npm run build:*)\""] }
+      ]
+    },
+    {
+      "name": "permissions: a workspace rule added goes after the list before it, the workspace's own key kept",
+      "file": "permissions.json",
+      "edit": { "op": "permission-add", "scope": "workspace", "name": "work", "list": "deny", "rule": "Bash(curl:*)" },
+      "changes": [
+        { "from": ["        \"Read\"", "      ],"], "to": ["        \"Read\"", "      ],", "      \"deny\": [", "        \"Bash(curl:*)\"", "      ],"] }
+      ]
+    },
+    {
+      "name": "permissions: a repository's last rule removed takes the repository, and the emptied map",
+      "file": "permissions.json",
+      "edit": { "op": "permission-remove", "scope": "repository", "name": "engine", "rule": "Bash(git rebase:*)" },
+      "changes": [
+        { "from": ["  \"repositories\": {", "    \"engine\": {", "      \"ask\": [", "        \"Bash(git rebase:*)\"", "      ]", "    }", "  },"], "to": [] }
+      ]
+    },
+    {
+      "name": "permissions: a default switched back on leaves the list, the rest as written",
+      "file": "permissions.json",
+      "edit": { "op": "permission-default", "id": "commit", "on": true },
+      "changes": [
+        { "from": ["  \"defaultsOff\": [", "    \"commit\"", "  ],"], "to": [] }
+      ]
+    },
+    {
+      "name": "permissions: a file in CRLF stays in CRLF",
+      "file": "permissions.json",
+      "crlf": true,
+      "edit": { "op": "permission-add", "scope": "machine", "list": "allow", "rule": "Bash(npm run build:*)" },
+      "changes": [
+        { "from": ["      \"Bash(npm test:*)\""], "to": ["      \"Bash(npm test:*)\",", "      \"Bash(npm run build:*)\""] }
+      ]
+    },
+    {
+      "name": "permissions: another writer's change between the read and the write stays",
+      "file": "permissions.json",
+      "between": [
+        { "from": ["    \"note\": \"hand-written\","], "to": ["    \"note\": \"changed since\","] }
+      ],
+      "edit": { "op": "permission-add", "scope": "machine", "list": "allow", "rule": "Bash(npm run build:*)" },
+      "changes": [
+        { "from": ["    \"note\": \"hand-written\","], "to": ["    \"note\": \"changed since\","] },
+        { "from": ["      \"Bash(npm test:*)\""], "to": ["      \"Bash(npm test:*)\",", "      \"Bash(npm run build:*)\""] }
+      ]
+    },
+    {
+      "name": "permissions: a scope another writer made a string since refuses the edit, naming it",
+      "file": "permissions.json",
+      "between": [
+        { "from": ["  \"workspaces\": {", "    \"work\": {", "      \"allow\": [", "        \"Read\"", "      ],", "      \"since\": 9007199254740993", "    }", "  },"], "to": ["  \"workspaces\": \"none\","] }
+      ],
+      "edit": { "op": "permission-add", "scope": "workspace", "name": "work", "list": "deny", "rule": "Bash(curl:*)" },
+      "refused": "`workspaces` is no longer an object",
+      "changes": [
+        { "from": ["  \"workspaces\": {", "    \"work\": {", "      \"allow\": [", "        \"Read\"", "      ],", "      \"since\": 9007199254740993", "    }", "  },"], "to": ["  \"workspaces\": \"none\","] }
+      ]
+    }
+  ]
+}

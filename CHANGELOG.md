@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Work Daoris did not record: a `daoris/` branch that no record names now shows in What needs you and in `work state` as an
+  unknown owner, blocked, saying only your Discard branch removes it; Daoris never removes it on its own.
+- An update that could not move a file because another program held it now says which file and which program, in
+  `daoris-driver update` and in the window's note of the rolled-back update.
 - A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,
   how it is retried, whether it is performed and how), and the `resources` they create with who cleans them. Daoris reads and
   checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet. A plugin
@@ -13,6 +17,11 @@ with the version and date at release.
   the terminal: an edit changes only the settings it edits, the rest keep their values and their places, and a file read and
   saved with no change keeps its bytes. A change one of them made while another was open survives that one's edit too; a file
   that no longer reads, or names a setting twice in one place, is refused and left as it is; and Windows line endings are kept.
+- The same now holds for `plugins.json`, `permissions.json` and `keys.json`: switching a plugin on or off, changing a permission
+  rule and adding or replacing an API key, from the window or the terminal, keep every setting their writer has no field for,
+  at every level, and a file read and saved with no change keeps its bytes. Before, switching a plugin deleted everything in
+  `plugins.json` but the list of disabled plugins, and a key added in the window over a `keys.json` that did not read replaced
+  every other account's key; that edit is now refused, and the file left as it is.
   A rule or a group of settings another one removed meanwhile does not come back with an unrelated edit, one it turned into
   something else refuses the edit by name, and the first save where there was no `driver.json` keeps one written meanwhile.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
@@ -45,6 +54,16 @@ with the version and date at release.
   other branches, it keeps them and says it could not judge them. A branch git cannot read, such as a broken ref, is kept and
   said unread rather than forgotten as gone, and a detached tree's removal keeps its commit at a recovery ref where what held it
   moved as the tree went.
+- Work whose landing branch you deleted yourself, after its pull request, now reads as over without its result (已结束，未留成果)
+  and its clean-up as completed, rather than waiting for ever; where no ref of yours held its commits, Daoris first keeps them on a
+  recovery ref. Where your line holds its work (a pull request merged with a merge commit, or squash-merged with every file it changed
+  reading the same on your line, then pulled), it reads as ended, its clean-up completed and no recovery ref made, rather than as moved
+  to the line or over without its result. Where anything leaves doubt (a branch of that name, a read git could not make, its session branch still there) it is
+  kept and says why, and a landing branch you renamed is followed to its new name rather than read as over. A recovery ref whose
+  commit a branch or tag of yours holds goes after 30 days (never one only a Daoris branch holds); one nothing of yours holds is kept
+  and `daoris-driver work state` says how to delete it. Folders set aside and recovery refs no work names are listed as recovery kept
+  until their date, no longer as work with an unknown owner in *What needs you*; a folder whose deletion a later write, a link, or a
+  read or delete that failed blocks past its date is in *What needs you*, saying why.
 - A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
 - A terminal's `sessions stop`, `say` or `take-back`, and its `trees` presses, reach the running Daoris as they are written
   (about a third of a second), where Daoris used to look for them once a second; it still looks every 3 s in case one is

@@ -105,7 +105,8 @@ public sealed class WorkWordsTests : IDisposable
         Assert.Contains("WorkConsole.ReadAsync(home)", console);
         Assert.Contains("args is [\"work\", \"state\", ..", program);
         Assert.Contains("WorkConsole.MilestonesAsync(", program);
-        Assert.Contains("WorkInventories.MilestonesAsync(", work);
+        // CLEANUP1: the one read gives the units and the recoveries no unit names.
+        Assert.Contains("WorkInventories.ReadAsync(", work);
         Assert.Contains("work state [<unit>]", DriverCommand.Usage);
         Assert.Contains("work state [<unit>]", program);
         // A look: no lease taken, no record written, no window told.

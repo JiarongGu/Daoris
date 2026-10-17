@@ -109,6 +109,7 @@ import { DaorisError } from '../platform/errors.ts';
 import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from '../accounts/agentsettings.ts';
 import type { AgentSettingsEdit } from '../accounts/agentsettings.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { writeKeeping } from '../platform/jsonkeep.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
@@ -685,12 +686,18 @@ function readKeys(home: string): Keys {
   return Object.fromEntries(Object.entries(parsed).map(([agent, held]) => [agent, stringMap(held)]));
 }
 
-function writeKeys(home: string, keys: Keys): void {
-  const kept = Object.fromEntries(Object.entries(keys)
+/**
+ * The edit from `read` made onto the file as it stands (KEEPALL1, `jsonkeep.ts`' `writeKeeping`): a key this build has no field for
+ * stays where it is, as written, at the top and inside an agent's keys, and a file that does not read is never written over. The
+ * driver's `HarnessKeys` does the same.
+ */
+function writeKeys(home: string, keys: Keys, read: Keys): void {
+  const written = (each: Keys) => Object.fromEntries(Object.entries(each)
     .filter(([, held]) => Object.keys(held).length > 0)
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([agent, held]) => [agent, sorted(held)]));
-  writeJsonAtomic(keysPath(home), kept);
+  const path = keysPath(home);
+  writeKeeping(path, existsSync(path), written(read), written(keys));
 }
 
 /** The key's last four characters — every Anthropic key begins the same way. */
@@ -706,8 +713,8 @@ export function keyOf(home: string, harness: string, profile: string): string | 
 function removeKey(home: string, harness: string, profile: string): void {
   const keys = readKeys(home);
   if (!keys[harness]?.[profile]) return;
-  delete keys[harness]![profile];
-  writeKeys(home, keys);
+  const { [profile]: _gone, ...held } = keys[harness]!;
+  writeKeys(home, { ...keys, [harness]: held }, keys);
 }
 
 /**
@@ -730,9 +737,8 @@ export function addKeyAccount(
 
   const account = nextAccount(home, harness);
   const keys = readKeys(home);
-  keys[harness] = { ...keys[harness], [account]: key };
   // The key first: a `keys.json` it cannot read refuses here, before an account directory exists.
-  writeKeys(home, keys);
+  writeKeys(home, { ...keys, [harness]: { ...keys[harness], [account]: key } }, keys);
   mkdirSync(profileHome(home, harness, account), { recursive: true });
   // A key made into an account ends a cool-off its name still carries (D125 §2.3), as the driver's `HarnessKeys.Add` does,
   // and is marked as a sign-in is (TOOL6g), so a name a removed account had carries no word that it is signed out.
@@ -775,8 +781,7 @@ export function replaceKeyAccount(
   const key = raw.trim();
   if (!key || /\s/.test(key)) throw new DaorisError('that is not an API key — it is blank, or has spaces in it.');
 
-  keys[harness] = { ...keys[harness], [account]: key };
-  writeKeys(home, keys);
+  writeKeys(home, { ...keys, [harness]: { ...keys[harness], [account]: key } }, keys);
   // What marked the account refused: its last reading, its cool-off. Marked signed in, as a key made into an account is.
   forgetRead(home, harness, account);
   endCooling(home, harness, account, new Date());

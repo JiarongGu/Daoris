@@ -63,6 +63,49 @@ public sealed partial class HeldFactsTests : IDisposable
         Assert.Equal(["unit-a"], landed.Of("engine", "feature/x")!.Units);
     }
 
+    /// <summary>
+    /// CLEANUP1b: the keeper's write for a landing whose branch git said is missing keeps the fact as the entry retires with git's word, on
+    /// that landing alone: a standing entry becomes a trace, and a trace that says no why, or moved, gains it. One with a fact already, one
+    /// Daoris removed, and a new landing of the same name are left as they are.
+    /// </summary>
+    [Fact]
+    public void A_landing_whose_branch_went_keeps_its_held_fact_as_it_retires_on_that_landing_alone()
+    {
+        var landed = new LandedBranches(_home);
+        LandedBranch Entry(string branch, DateTimeOffset? at = null) => new("engine", "default", branch, "main", "t1", "s1", null, null, at ?? Then);
+        LandedBranch Read(string branch) => landed.Entries().First(each => each.Branch == branch);
+        foreach (var branch in new[] { "feature/standing", "feature/before", "feature/moved", "feature/held", "feature/removed", "feature/again" })
+        {
+            landed.Record(Entry(branch));
+        }
+
+        landed.Gone("engine", ["feature/before", "feature/again"]);
+        landed.GoneAs(Read("feature/moved"), LandedGone.Moved, "main", null, "m0");
+        landed.Hold(Read("feature/held"), Fact(tip: "t0"));
+        landed.Removed("engine", "feature/removed", LandedKind.Merged, "main");
+        var old = Read("feature/again");
+        landed.Record(Entry("feature/again", Then.AddHours(1)));
+
+        var wrote = new[] { "feature/standing", "feature/before", "feature/moved", "feature/held", "feature/removed" }
+            .Select(branch => landed.HoldGone(Read(branch), Fact())).ToList();
+        var again = landed.HoldGone(old, Fact());
+
+        Assert.Equal([true, true, true, false, false], wrote);
+        Assert.True(again);
+        foreach (var branch in new[] { "feature/standing", "feature/before", "feature/moved" })
+        {
+            var entry = Read(branch);
+            Assert.Equal((Fact(), LandedGone.Missing, (string?)null, (string?)null), (entry.Held, entry.GoneAs, entry.MovedTo, entry.MovedToAt));
+            Assert.NotNull(entry.GoneAt);
+        }
+
+        Assert.Equal((Fact(tip: "t0"), (DateTimeOffset?)null), (Read("feature/held").Held, Read("feature/held").GoneAt));
+        Assert.Equal(((HeldFact?)null, LandedKind.Merged), (Read("feature/removed").Held, Read("feature/removed").RemovedAs));
+        var standing = landed.Of("engine", "feature/again")!;
+        Assert.Equal(((HeldFact?)null, (DateTimeOffset?)null), (standing.Held, standing.GoneAt));
+        Assert.Equal(Fact(), landed.Entries().Single(each => each.Branch == "feature/again" && each.GoneAt is not null).Held);
+    }
+
     /// <summary>A replay or a follow records the entry again: the unit is written once and kept, and only the end judgement writes Held.</summary>
     [Fact]
     public void Recording_again_keeps_the_unit_and_the_held_fact()
@@ -257,8 +300,8 @@ public sealed partial class HeldFactsTests : IDisposable
         Assert.Empty(offenders);
     }
 
-    // A call of the two records' writer: on the trees' context's stores, or on a store made where it is called.
-    [GeneratedRegex(@"\b(Grown|Recorded|SessionBranches\([^)]*\)|LandedBranches\([^)]*\))\.Hold\(")]
+    // A call of the two records' writer: on the trees' context's stores, or on a store made where it is called. CLEANUP1b's HoldGone is one.
+    [GeneratedRegex(@"\b(Grown|Recorded|SessionBranches\([^)]*\)|LandedBranches\([^)]*\))\.Hold(Gone)?\(")]
     private static partial Regex HoldCall();
 
     // The field set on an entry: in a `with`, or where an entry is made.

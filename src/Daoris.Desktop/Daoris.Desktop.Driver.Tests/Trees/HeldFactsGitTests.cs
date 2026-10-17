@@ -194,6 +194,56 @@ public sealed class HeldFactsGitTests : LandedFixture
         Assert.False(SessionBranches.Open(trace, SessionBranches.OpenUnits(Home)));
     }
 
+    /// <summary>
+    /// FABRIC-END2d (a), a guard green before and after: a session branch recorded before END2, with no unit, whose squashing landing's branch
+    /// the line holds, is kept ended with no unit naming its landing. The line holds the squash commit, whose tree is the session's own, so
+    /// the content proof ends it on the line, as the clean-up's press proves it there (<c>SquashedHoldAsync</c>, then the content).
+    /// </summary>
+    [Fact]
+    public async Task A_session_branch_from_before_units_whose_squash_landing_the_line_holds_is_kept_ended()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (_, branch, landing) = await OlderSquashAsync(trees, root);
+        Assert.Null(Entry(branch).Unit);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        await KeepAsync(trees, root);
+
+        var held = Entry(branch).Held;
+        Assert.NotNull(held);
+        Assert.Equal((EndBy.OnLine, "main"), (held.By, held.On));
+        Assert.Equal(EndBy.Merged, new LandedBranches(Home).Of("engine", landing)!.Held?.By);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-END2d (b): a landing inside another whose own proof ended it is kept ended inside that one (D102's group, as the clean-up's
+    /// <c>Inside</c> proves it), its fact resting on that branch at the commit read; and the session branch it carries ends with it. With no
+    /// units (an install from before END2), the session branch ends through the landing whose branch holds its work.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_landing_inside_another_the_line_holds_is_kept_ended_inside_it(bool units)
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (a, b, _, first) = await InsideLandingAsync(trees, root);
+        if (!units) ForgetUnits();
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        await KeepAsync(trees, root);
+
+        var landings = new LandedBranches(Home);
+        Assert.Equal(EndBy.OnLine, landings.Of("engine", b.Branch!)!.Held?.By);
+        var inside = landings.Of("engine", a.Branch!)!.Held;
+        Assert.NotNull(inside);
+        Assert.Equal((EndBy.Inside, b.Branch, (await GitAsync(root, "rev-parse", b.Branch!)).Trim()), (inside.By, inside.On, inside.OnAt));
+        Assert.Equal((EndBy.Landed, units ? a.Branch : b.Branch), (Entry(first).Held?.By, Entry(first).Held?.On));
+        // A judgement that finds what it found writes nothing.
+        Assert.Equal(0, await KeepAsync(trees, root));
+    }
+
     private static void Copy(string from, string to)
     {
         Directory.CreateDirectory(to);

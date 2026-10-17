@@ -48,12 +48,15 @@ public static class HarnessKeys
         }
 
         var account = HarnessSettings.NextAccount(home, harness);
-        Directory.CreateDirectory(HarnessSettings.ProfileHome(home, harness, account));
 
+        // The key first (KEEPALL1), as the CLI's `addKeyAccount`: a `keys.json` that does not read refuses here, before an account
+        // directory exists. Written over, it lost every other account's key.
         var keys = Read(home);
+        var read = Written(keys);
         if (!keys.TryGetValue(harness, out var held)) keys[harness] = held = new(StringComparer.Ordinal);
         held[account] = trimmed;
-        Write(home, keys);
+        Write(home, read, keys);
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(home, harness, account));
 
         // Marked as a sign-in is (TOOL6g): a name a removed account had carries no word that it is signed out.
         ProbeLock.MarkSignedIn(HarnessSettings.ProfileHome(home, harness, account), DateTimeOffset.UtcNow);
@@ -98,8 +101,9 @@ public static class HarnessKeys
             throw new DriverException("that is not an API key — it is blank, or has spaces in it.");
         }
 
+        var read = Written(keys);
         held[named] = trimmed;
-        Write(home, keys);
+        Write(home, read, keys);
 
         // What marked it refused is cleared, none the reason the key is not kept.
         try
@@ -124,9 +128,10 @@ public static class HarnessKeys
     public static void Remove(string home, string harness, string profile)
     {
         var keys = Read(home);
+        var read = Written(keys);
         if (!keys.TryGetValue(harness, out var held) || !held.Remove(profile)) return;
         if (held.Count == 0) keys.Remove(harness);
-        Write(home, keys);
+        Write(home, read, keys);
     }
 
     private static Dictionary<string, Dictionary<string, string>> Read(string home)
@@ -145,7 +150,8 @@ public static class HarnessKeys
                 var held = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var entry in agent.Value.EnumerateObject())
                 {
-                    if (entry.Value.GetString() is { Length: > 0 } key) held[entry.Name] = key;
+                    // A value that is not text is no key, and is kept as written (KEEPALL1): read as one, it threw.
+                    if (entry.Value.ValueKind == JsonValueKind.String && entry.Value.GetString() is { Length: > 0 } key) held[entry.Name] = key;
                 }
 
                 keys[agent.Name] = held;
@@ -159,25 +165,35 @@ public static class HarnessKeys
         return keys;
     }
 
-    private static void Write(string home, Dictionary<string, Dictionary<string, string>> keys)
+    /// <summary>
+    /// The edit from <paramref name="read"/>, the keys as read and written, made onto the file as it stands (KEEPALL1,
+    /// <see cref="JsonKeeping.Save"/>): a key this build has no field for stays where it is, as written, at the top and inside an agent's
+    /// keys, and a file that does not read is refused, never written over. Rebuilt from the keys it read, an edit over a file that did
+    /// not read wrote every other account's key away. The CLI's <c>writeKeys</c> does the same.
+    /// </summary>
+    private static void Write(string home, string read, Dictionary<string, Dictionary<string, string>> keys)
     {
-        JsonFile.Write(DaorisHome.Entry(home, HomeEntry.Keys), writer =>
-        {
-            writer.WriteStartObject();
-            foreach (var (agent, held) in keys.OrderBy(e => e.Key, StringComparer.Ordinal))
-            {
-                writer.WriteStartObject(agent);
-                foreach (var (account, key) in held.OrderBy(e => e.Key, StringComparer.Ordinal))
-                {
-                    writer.WriteString(account, key);
-                }
+        var path = DaorisHome.Entry(home, HomeEntry.Keys);
+        JsonKeeping.Save(path, File.Exists(path), read, Written(keys));
+    }
 
-                writer.WriteEndObject();
+    /// <summary>The keys' own shape: agent then account, each sorted.</summary>
+    private static string Written(Dictionary<string, Dictionary<string, string>> keys) => JsonFile.Serialize(writer =>
+    {
+        writer.WriteStartObject();
+        foreach (var (agent, held) in keys.OrderBy(e => e.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(agent);
+            foreach (var (account, key) in held.OrderBy(e => e.Key, StringComparer.Ordinal))
+            {
+                writer.WriteString(account, key);
             }
 
             writer.WriteEndObject();
-        });
-    }
+        }
+
+        writer.WriteEndObject();
+    });
 }
 
 /// <summary>

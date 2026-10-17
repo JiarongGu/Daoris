@@ -75,6 +75,34 @@ describe('the milestone on the work’s foot', () => {
     expect(region).toHaveTextContent('Unknown: no record names its unit');
   });
 
+  // CLEANUP1: a landing whose branch the person removed outside Daoris is over without its result, never read as not reached.
+  it('says an end the person dropped as over without its result, in both languages, and as one line', async () => {
+    const dropped = unit({
+      end: { state: 'dropped', said: '`feature/x` was removed outside Daoris, and git said it is missing' }, result: [],
+      cleanup: { state: 'completed', waits: [], gone: [entry({ kind: 'landing-branch', resource: 'feature/x', disposition: 'removed' })] },
+    });
+    const { unmount } = render(<WorkMilestone unit={dropped} />);
+    const region = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(region).toHaveTextContent('Over without its result: `feature/x` was removed outside Daoris');
+    expect(region).not.toHaveTextContent('Not reached');
+    unmount();
+    render(<MilestoneLine unit={dropped} />);
+    expect(screen.getByText(/Over, no result kept/)).toHaveTextContent('clean-up completed');
+    expect(waitsOnPerson(dropped)).toEqual([]);
+    await i18n.changeLanguage('zh');
+    expect(i18n.t('work.milestone.end.dropped', { said: 'x' })).not.toBe(i18n.t('work.milestone.end.dropped', { said: 'x', lng: 'en' }));
+  });
+
+  // FABRIC-END2d: a landing ended inside another landing is said by the page's words for its code, in both languages.
+  it('says an end inside another landing in the page’s words, never the driver’s sentence', async () => {
+    const inside = unit({ end: { state: 'ended', by: 'inside', on: 'feature/q2-more', said: 'it is inside `feature/q2-more`, whose work is on the line' } });
+    render(<WorkMilestone unit={inside} />);
+    const region = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(region).toHaveTextContent('Reached: it is inside feature/q2-more, whose work is on the line');
+    await i18n.changeLanguage('zh');
+    expect(i18n.t('work.milestone.by.inside', { on: 'x' })).not.toBe(i18n.t('work.milestone.by.inside', { on: 'x', lng: 'en' }));
+  });
+
   it('is said in Chinese by the same facts', async () => {
     await i18n.changeLanguage('zh');
     render(<WorkMilestone unit={unit({

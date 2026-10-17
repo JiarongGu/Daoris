@@ -125,7 +125,14 @@ public sealed class LandingTests : IDisposable
         Assert.Equal("feature/{quest}-{slug}", again.WorkspaceLandings["aurora"].Pattern);
 
         var cleared = config.WithLanding("engine", null).WithWorkspaceLanding("aurora", null);
-        Assert.DoesNotContain("landings", cleared.ToJson(), StringComparison.OrdinalIgnoreCase);
+        var written = cleared.ToJson();
+        // FABRIC-GRAPH1's review: rules the reader could not take (`odd`, `bad`) are the person's text, kept as they stand and still
+        // not read; only what the edit changed goes.
+        Assert.Contains("\"odd\"", written, StringComparison.Ordinal);
+        Assert.Contains("\"bad\"", written, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"engine\"", written, StringComparison.Ordinal);
+        Assert.DoesNotContain("workspaceLandings", written, StringComparison.Ordinal);
+        Assert.Empty(DriverConfig.Parse(written).Landings);
         Assert.Throws<DriverException>(() => config.WithLanding("engine", new LandingRule(LandingForm.Branch, "fixed")));
         Assert.Throws<DriverException>(() => config.WithLanding("engine", new LandingRule("push")));
     }
@@ -163,8 +170,13 @@ public sealed class LandingTests : IDisposable
         Assert.False(config.Landings.ContainsKey("odd"));
         Assert.Equal("example.github-pull-request", config.WorkspaceLandings["aurora"].Plugin);
         Assert.Equal("example.github-pull-request", DriverConfig.Parse(config.ToJson()).WorkspaceLandings["aurora"].Plugin);
-        // Written only when named: a rule with none reads as it always has.
-        Assert.DoesNotContain("plugin", config.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "review/{session}")).ToJson());
+        // Written only when named: a rule with none reads as it always has. `odd`, a merge naming a plugin, is not read and stays as
+        // the person wrote it (FABRIC-GRAPH1's review), so the edited rule itself is what must carry no plugin.
+        var renamed = config.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "review/{session}")).ToJson();
+        var aurora = System.Text.Json.Nodes.JsonNode.Parse(renamed)!["workspaceLandings"]!["aurora"]!.AsObject();
+        Assert.False(aurora.ContainsKey("plugin"));
+        Assert.Null(DriverConfig.Parse(renamed).WorkspaceLandings["aurora"].Plugin);
+        Assert.Contains("\"odd\"", renamed, StringComparison.Ordinal);
         Assert.Throws<DriverException>(() => config.WithLanding("engine", new LandingRule(LandingForm.Merge, Plugin: "example.github-pull-request")));
     }
 
