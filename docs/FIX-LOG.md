@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The light lane ran its gates one at a time, and each Process half built again (GATELANES2, GATEBUILD1)
+
+- **Symptom:** a merge's light lane (universal, code-map, orient-index, cli, service, driver, modules) took 10 to 12 minutes
+  under load and about 5 on a quiet machine: 394 to 434 s in the 2026-10-18 merges' logs, cli 144 to 231 s and service 142
+  to 206 s of it. In a full set the light lane took about 14 minutes (2026-10-17, 1 h 38 m in all), and every Process
+  gate waited for its heavy gates (GATEORDER1). Each Process half then built the test project its fast half had just built.
+- **Root cause:** GATELANES1 ran the light lane beside the Process lane but one gate at a time within it, though only gates
+  that build one .NET component share `obj/` and `bin/`. And a `dotnet test` gate always builds, whatever ran before it.
+- **Fix:** `tools/merge-branch.mjs` runs up to three light gates at once (`LIGHT_WIDTH`), never two that build one
+  component (`gateComponents`, read through the root scripts: the CLI's `verify` shares the devkit's, the web gate the
+  service's). A Process half runs `--no-build` when its test project's fast half passed in the same run on the tree it
+  starts on (`testBuild`, `reuses`, `reuseBuild`); its line says whose build it ran.
+- **Verification:** seven new tests in `merge-branch.test.ts`, six seen red first. Then 97 of 97 green (90 before), with the
+  end-to-end tests that read the gates' order reading which ran instead, and `verify`. **The walls** (the row's proof,
+  recorded by the parent at its next full sets, against the one-at-a-time light lane above): set 1 —; set 2 —; set 3 —;
+  the flakes of each, and a Process half's log showing `--no-build` with its verdict as before.
+
 ## 2026-10-18 — The merge tool's prune left merged agent worktrees and a half-removed folder standing (CLEANUP2)
 
 - **Symptom:** 24 worktrees stood with 3 agents running. 9 merged ones were kept as "locked, so in use", 5 for worker logs
@@ -2804,6 +2821,24 @@ process costs a class.
 
 *`MaxParallelThreads` 6 and 8* on the same four classes after: 514 s at 59% and 383 s at 64%. Four classes cannot run
 more than four at once, so these are two more runs of one setting, and the knee is unmeasured. The setting stays at four.
+
+**A repository copied from a seed (PROC1h, 2026-10-18).** `LandedFixture.RepositoryAsync` and `RepositoryWithOriginAsync` (284 and 73
+calls of `"engine"` in the driver's tests, the shape every other name follows) made each test's repositories with `init`, two
+`config`, a commit, and for an origin a bare `init`, `remote add` and `push`. `GitSeed` builds a shape once per test run, at its first
+asker (a lazy task per shape, so the git half's four classes at once in one host share it), in `_fixtures/seeds/<run>` removed at the
+host's exit, and a test's own repositories are plain file copies of it: files keep their times, a `.git/worktrees` folder is not
+copied, hooks and config come as the seed had them, and the origin's one `url` line is written again as the copy's own bare
+repository. No git runs in a copy. `BuildRepositoryAsync(name)` is the old step by step build, for a test that reads a fresh
+repository's commit ids or times; none in the classes run needed it, so none uses it yet. The seed's one commit is the same id in
+every copy. `GitSeedTests` (3, no git) holds the copy, the repair and the one build. *Measured* on `LandedReviewTests`,
+`LandedBranchTests`, `ContentHeldTests` and `ReviewBaseTests` (35 tests, `git.process.runsettings`, `DAORIS_HOME` on scratch, from
+PowerShell, one run each before and after, wall including the build): fixture starts (`FixtureSpawns`) 437 → 258, with `init` 42 →
+0, `config` 66 → 0, `remote` 9 → 0 and `push` 20 → 12 (the others a test's own); the starts' own run times summed over the four
+classes 264 s → 239 s; wall 409 s at a mean 64% CPU (26 samples, 15 s apart, other worktrees' builds beside) → 403 s at 56% (25
+samples); test time 5 m 56 s → 6 m 7 s; all 35 passed both times. *So* the saving is real in starts (41%) and small in the wall: at
+four classes at once the wall is the longest class's product starts, and a run varies by more than the 6 s. `LandedProofTests`,
+`LandedKeepTests`, `LandingSquashTests` and `ContentOfferTests` (24 tests) passed on the copies too. `BranchTidyingFixture` and
+`LandingPluginFixture` keep their own builds: their classes were not run, and the plugin's shape differs (no push, another README); a row below takes them.
 
 **The driver's Process half runs as two (PROC1b, PROC1c, 2026-10-15; a note on MOD8's rule).** A Process class that starts
 git and nothing a neighbour's load could fail also carries `Parallel=Git` (`Category.cs` says which may, `CategoryTests`
