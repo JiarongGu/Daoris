@@ -82,7 +82,11 @@ read from (`BuiltInNodes`). It is pure and writes nothing: a move returns what i
 result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c). The wires between nodes are judged there too:
 `NodeWires` names what a save refuses (FABRIC-WIRE1a), and `WireEvaluation` evaluates them over the nodes' statuses, moving each
 node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b), on a complete snapshot of the
-units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e). Both are pure as well.
+units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e), and a failure or a rejection kept from another
+run lapsed (`run-scope`, FABRIC-WIRE1f). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
+durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the attempt written with its start before
+`work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
+answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note).
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
 its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
 rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),
