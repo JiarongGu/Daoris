@@ -132,6 +132,9 @@ public sealed record WorkMilestone(
 /// <summary>A recovery ref a content-held removal kept (<c>refs/daoris/discarded/&lt;branch&gt;</c>), by its repository.</summary>
 public sealed record RecoveryRef(string Repository, string Ref);
 
+/// <summary>A <c>daoris/*</c> branch standing in a repository (FABRIC-UNKNOWN1), whether or not a record names it.</summary>
+public sealed record StandingBranch(string Repository, string Branch);
+
 /// <summary>What the records, the disk and git said, gathered for <see cref="WorkInventory.Derive"/> to read: nothing here is judged.</summary>
 /// <param name="Branches">Every session branch entry, standing and traces.</param>
 /// <param name="Landings">Every landing entry, standing and traces.</param>
@@ -143,7 +146,14 @@ public sealed record RecoveryRef(string Repository, string Ref);
 public sealed record InventoryFacts(
     IReadOnlyList<GrownBranch> Branches, IReadOnlyList<LandedBranch> Landings, IReadOnlyList<SessionTree> Trees,
     IReadOnlyList<AutoLanding> AutoLandings, IReadOnlyList<RecoveryRef> Refs, IReadOnlySet<string> InUse,
-    Func<string, bool> HasHistory, DateTimeOffset Now);
+    Func<string, bool> HasHistory, DateTimeOffset Now)
+{
+    /// <summary>
+    /// The <c>daoris/*</c> branches standing in each repository read (FABRIC-UNKNOWN1, the design's §D3): one that no record names and
+    /// no tree holds is a unit of its own with an unknown owner, blocked. Read in the same git start as the recovery refs.
+    /// </summary>
+    public IReadOnlyList<StandingBranch> Standing { get; init; } = [];
+}
 
 /// <summary>
 /// The branch adapter (FABRIC-UNIT1a; the fabric events design §D2) and its ownership inventory, derived (FABRIC-MILESTONE1a; §D0 and
@@ -172,6 +182,9 @@ public static partial class WorkInventory
         public List<LandedBranch> Landings { get; } = [];
         public List<InventoryEntry> Extra { get; } = [];
         public bool Unowned { get; set; }
+
+        /// <summary>The standing branch no record names (FABRIC-UNKNOWN1), which is the whole of such a unit.</summary>
+        public string? Standing { get; set; }
         public HashSet<string> Sessions { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
@@ -216,6 +229,7 @@ public static partial class WorkInventory
         var trees = AttachTrees(facts, drafts, out var treeOf);
         AttachAutoLandings(facts, drafts, treeOf);
         AttachRefs(facts, drafts);
+        AttachUnrecorded(facts, drafts);
 
         var units = new List<WorkUnit>();
         foreach (var draft in drafts.Values) units.Add(Unit(draft, facts, trees.GetValueOrDefault(draft.Id) ?? []));
@@ -314,7 +328,32 @@ public static partial class WorkInventory
         }
     }
 
-    private const string ContentHoldsPrefix = "refs/daoris/discarded/";
+    /// <summary>
+    /// A <c>daoris/*</c> branch standing that no record names and no tree has checked out (FABRIC-UNKNOWN1, §D3): a unit of its own with
+    /// an unknown owner. Only the person's press removes it, so it is blocked, never pending: the look's tidy takes recorded branches
+    /// alone. A branch a tree holds is that tree's (<see cref="AttachTrees"/>), and a landing's own branch is the landing's.
+    /// </summary>
+    private static void AttachUnrecorded(InventoryFacts facts, Dictionary<string, Draft> drafts)
+    {
+        foreach (var each in facts.Standing)
+        {
+            if (!each.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)) continue;
+            var named = facts.Trees.Any(tree => SameRepository(tree.Repository, each.Repository) && tree.Branch == each.Branch)
+                || drafts.Values.Any(draft => SameRepository(draft.Repository, each.Repository)
+                    && (draft.Branch is { } branch && (branch.Branch == each.Branch || branch.Now == each.Branch)
+                        || draft.Landings.Any(landing => landing.Branch == each.Branch)));
+            if (named) continue;
+            var id = $"unknown-branch:{each.Repository.ToLowerInvariant()}/{each.Branch}";
+            if (drafts.ContainsKey(id)) continue;
+            var draft = new Draft(id, each.Repository, "default") { Unowned = true, Standing = each.Branch };
+            draft.Extra.Add(new InventoryEntry(id, InventoryKind.SessionBranch, each.Branch, InventoryRole.Temporary, InventoryDisposition.Blocked,
+                $"its owner is unknown: Daoris did not record `{each.Branch}`, so nothing here is cleaned; only your Discard branch press "
+                + "(Settings, clean-up) removes it"));
+            drafts[id] = draft;
+        }
+    }
+
+    private const string ContentHoldsPrefix ="refs/daoris/discarded/";
 
     private static WorkUnit Unit(Draft draft, InventoryFacts facts, IReadOnlyList<SessionTree> trees)
     {
@@ -381,7 +420,7 @@ public static partial class WorkInventory
             .Select(landing => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(landing.Quest!))).Distinct().ToList();
         return new WorkUnit(
             draft.Id, WorkUnitKind.Branch, new WorkOwner(draft.Repository, draft.Workspace, record, WorkRecord.DriverWriter),
-            new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch, end.Revision), end, entries)
+            new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch ?? draft.Standing, end.Revision), end, entries)
         {
             Executors = [.. draft.Sessions],
             Links = quests,
