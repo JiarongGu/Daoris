@@ -171,7 +171,8 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     /// <summary>
     /// The git starts counted down (END3 measured the keeper at 0.4-4 s of them per repository): a pace's tidy of a repository whose
     /// branches the line holds none of starts no more git than the end judgement's keeper already did for each of them, however many.
-    /// Before FABRIC-END4a each was judged again by the press's list as well.
+    /// Before FABRIC-END4a each was judged again by the press's list as well. 🔴 FABRIC-END2d: the first pass is the second, since no
+    /// recorded branch the keeper could not prove is judged again by the press's list (END4a's review fallback is gone).
     /// </summary>
     [Fact]
     public async Task A_tidy_judges_no_branch_the_line_does_not_hold()
@@ -179,52 +180,94 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         var one = await RepositoryAsync("one");
         var four = await RepositoryAsync("four");
         var trees = new SessionTrees(Home);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        // The recovery refs' retention is held once a day for each repository in a process (CLEANUP1): asked here, before any branch.
+        foreach (var root in new[] { one, four }) await trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None);
         await WorkAsync(trees, one, "a.txt", merged: false, repository: "one");
         for (var each = 0; each < 4; each++) await WorkAsync(trees, four, $"{each}.txt", merged: false, repository: "four");
-        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var overOne = await BeyondTheKeeperAsync(trees, one);
         var overFour = await BeyondTheKeeperAsync(trees, four);
 
-        // Read beside the D173 note: the starts the tidy makes beyond the keeper's, with one branch and with four.
-        output.WriteLine($"END4a git starts beyond the keeper: one branch {overOne}, four branches {overFour}");
+        // Read beside the D173 note: the starts the tidy makes beyond the keeper's, with one branch and with four, first pass and second.
+        output.WriteLine($"END2d git starts beyond the keeper: one branch {overOne.First} then {overOne.Second}, four branches {overFour.First} then {overFour.Second}");
+        Assert.Equal(overOne.First, overOne.Second);
+        Assert.Equal(overFour.First, overFour.Second);
         // At most the follow's one read of each tree (TREEFOLLOW1), three here; before FABRIC-END4a the press's list judged each of
         // them again, nine starts a branch on this machine (16 with one, 43 with four).
-        Assert.True(overFour - overOne <= 3, $"the tidy judged branches the line holds none of: {overOne} starts beyond the keeper with one, {overFour} with four");
+        Assert.True(overFour.Second - overOne.Second <= 3, $"the tidy judged branches the line holds none of: {overOne.Second} starts beyond the keeper with one, {overFour.Second} with four");
     }
 
     /// <summary>
-    /// 🔴 The second review's P2 (AutoTidies.cs:263, :268, :320): a recorded branch the keeper could not prove and the press's judgement kept
-    /// is judged again once the <c>refs</c> deadline passed, with neither its tip nor the line moved, since what kept it (a busy or dirty
-    /// tree, a landing checked out inside another) can clear with neither moving.
+    /// 🔴 FABRIC-END2d, the review's older squash record (D173's FABRIC-END4a note, "After review"): a session branch from before units whose
+    /// squashing landing the line holds goes at the look's tidy, as before, now on the fact the keeper keeps for it.
     /// </summary>
     [Fact]
-    public async Task A_kept_unproven_branch_is_judged_again_once_the_refs_deadline_passed()
+    public async Task An_older_squash_records_session_branch_goes_once_the_line_holds_its_landing()
     {
         var root = await RepositoryAsync("engine");
-        var now = DateTimeOffset.UtcNow;
-        var trees = new SessionTrees(Home) { Clock = () => now };
-        await WorkAsync(trees, root, "a.txt", merged: false);
+        var trees = new SessionTrees(Home);
+        var (_, branch, landing) = await OlderSquashAsync(trees, root);
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
-        await TidyAsync(trees, root);
 
-        var within = await CountedAsync(() => TidyAsync(trees, root));
-        now += RefWatch.Deadline;
-        var after = await CountedAsync(() => TidyAsync(trees, root));
+        var pass = await TidyAsync(trees, root);
 
-        Assert.True(after > within, $"judged again at the deadline: {within} git starts within it, {after} after");
+        Assert.Contains(pass.Results, result => result.Removed && result.Item.Branch == branch);
+        Assert.False(await StandsAsync(root, branch));
+        Assert.Contains(pass.Landed, result => result.Removed && result.Item.Branch == landing);
     }
 
     /// <summary>
-    /// The git starts a pace's tidy of <paramref name="root"/> makes, less those its keeper alone makes over the same refs, once a first
-    /// pass has judged its recorded branches the keeper could not prove: those are judged again only when their tip or the line moves.
+    /// 🔴 FABRIC-END2d, the review's landing inside another: it goes at the look's tidy with the one it is inside, as before, now on the fact
+    /// the keeper keeps for it.
     /// </summary>
-    private static async Task<int> BeyondTheKeeperAsync(SessionTrees trees, string root)
+    [Fact]
+    public async Task A_landing_inside_another_the_line_holds_goes_with_it()
     {
-        await trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None);
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (a, b) = await InsideLandingAsync(trees, root);
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        var pass = await TidyAsync(trees, root);
+
+        Assert.Contains(pass.Landed, result => result.Removed && result.Item.Branch == a.Branch && result.Item.Kind == LandedKind.Inside);
+        Assert.Contains(pass.Landed, result => result.Removed && result.Item.Branch == b.Branch);
+        Assert.False(await StandsAsync(root, a.Branch!));
+    }
+
+    /// <summary>
+    /// 🔴 The second review's P2 (AutoTidies.cs:263, :268, :320), now with no memory at all (FABRIC-END2d): a recorded branch the press kept
+    /// because its tree held uncommitted work goes at the next pace once the tree is clean, with neither its tip nor the line moved. END4a's
+    /// fallback remembered it at its tip and the line's commit and judged it again only after the <c>refs</c> deadline.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_older_squash_branch_goes_at_the_next_pace_once_its_tree_is_clean()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (tree, branch, _) = await OlderSquashAsync(trees, root);
+        await File.WriteAllTextAsync(Path.Combine(tree, "work.txt"), "not yet committed\n");
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        var kept = await TidyAsync(trees, root);
+        Assert.DoesNotContain(kept.Results, result => result.Removed && result.Item.Branch == branch);
+        await GitAsync(tree, "checkout", "--", "work.txt");
+
+        var next = await TidyAsync(trees, root);
+
+        Assert.Contains(next.Results, result => result.Removed && result.Item.Branch == branch);
+    }
+
+    /// <summary>
+    /// The git starts a pace's tidy of <paramref name="root"/> makes, less those its keeper alone makes over the same refs, on its first pass
+    /// and on its second.
+    /// </summary>
+    private static async Task<(int First, int Second)> BeyondTheKeeperAsync(SessionTrees trees, string root)
+    {
         var keeper = await CountedAsync(() => trees.Ends.KeepAsync(root, Path.GetFileName(root), "aurora", "main", CancellationToken.None));
-        var tidy = await CountedAsync(() => trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None));
-        return tidy - keeper;
+        var first = await CountedAsync(() => trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None));
+        var second = await CountedAsync(() => trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None));
+        return (first - keeper, second - keeper);
     }
 
     private static async Task<int> CountedAsync<T>(Func<Task<T>> act)

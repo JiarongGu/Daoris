@@ -63,30 +63,75 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         var now = DateTimeOffset.UtcNow;
         var written = 0;
 
+        // FABRIC-END2d: every landing's end this pass, by its branch (its kept fact where that still holds, else this pass's verdict), before
+        // any is written: a landing inside another is judged once that one's own proof is known, and a session branch reads its landing's end
+        // here rather than judging that landing again.
+        var ends = new Dictionary<string, EndHost>(StringComparer.Ordinal);
+        var judged = new List<(EndHost Landing, EndFacts Facts)>();
+        var insideKept = new List<(LandedBranch Entry, string Tip, HeldFact Kept)>();
         foreach (var entry in landings)
         {
             if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) continue;
-            if (entry.Held is { } kept && await HoldsAsync(kept, tip).ConfigureAwait(false)) continue;
-            carriers ??= await asks.CarriersAsync(root, repository, line, ct, refs).ConfigureAwait(false);
-            var verdict = await EndJudgement.JudgeAsync(
-                root, EndCycle.Recorded(entry), new EndSubject(entry.Branch, tip, EndRole.Landing, entry), line, notHolders, carriers, ct, refs)
-                .ConfigureAwait(false);
-            var next = Next(entry.Held, verdict, await OnAtAsync(verdict).ConfigureAwait(false), identity, now);
-            if (next == entry.Held) continue;
-            context.Recorded.Hold(entry, next);
+            if (entry.Held is { } kept && await HoldsAsync(kept, tip).ConfigureAwait(false))
+            {
+                // One kept inside another rests on that one's own end too, which is known once every landing is.
+                if (kept.By == EndBy.Inside) insideKept.Add((entry, tip, kept));
+                else ends[entry.Branch] = new(entry, tip, Kept(kept));
+                continue;
+            }
+
+            await JudgeLandingAsync(entry, tip).ConfigureAwait(false);
+        }
+
+        foreach (var (entry, tip, kept) in insideKept)
+        {
+            if (ends.TryGetValue(kept.On, out var host) && EndJudgement.OwnEnd(host.End)) ends[entry.Branch] = new(entry, tip, Kept(kept));
+            else await JudgeLandingAsync(entry, tip).ConfigureAwait(false);
+        }
+
+        // FABRIC-END2d (D102's group, as the clean-up's `Inside` proves it): a landing its own proofs did not end, whose files were compared,
+        // inside one whose own proof did. The landings' order, as the clean-up asks them.
+        var hosts = landings.Where(entry => ends.TryGetValue(entry.Branch, out var end) && EndJudgement.OwnEnd(end.End)).Select(entry => ends[entry.Branch]).ToList();
+        for (var at = 0; at < judged.Count && hosts.Count > 0; at++)
+        {
+            var (landing, facts) = judged[at];
+            if (landing.End.Ended || !facts.Judgeable) continue;
+            if (await EndJudgement.WithinAsync(root, landing.Tip, hosts.Where(host => host.Entry.Branch != landing.Entry.Branch), ct).ConfigureAwait(false) is not { } within) continue;
+            var inside = facts with { Within = within };
+            var subject = new EndSubject(landing.Entry.Branch, landing.Tip, EndRole.Landing, landing.Entry);
+            judged[at] = (landing with { End = EndJudgement.Judge(EndCycle.Recorded(landing.Entry), subject, inside) }, inside);
+            ends[landing.Entry.Branch] = judged[at].Landing;
+        }
+
+        foreach (var (landing, _) in judged)
+        {
+            var next = Next(landing.Entry.Held, landing.End, await OnAtAsync(landing.End).ConfigureAwait(false), identity, now);
+            if (next == landing.Entry.Held) continue;
+            context.Recorded.Hold(landing.Entry, next);
             written++;
         }
 
         foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)))
         {
             if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{grown.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) continue;
-            if (grown.Held is { } kept && await HoldsAsync(kept, tip).ConfigureAwait(false)) continue;
+            // FABRIC-END2d: a fact ended through a landing rests on that landing's end, so it holds while that end holds this pass.
+            if (grown.Held is { } kept && await HoldsAsync(kept, tip).ConfigureAwait(false)
+                && (kept.By != EndBy.Landed || (ends.TryGetValue(kept.On, out var on) && on.End.Ended))) continue;
             // The landing that carries its unit's work, where one stands: its cycle is what that landing recorded (§B3).
             var landing = grown.Unit is { } unit ? landings.LastOrDefault(entry => entry.Units.Contains(unit, StringComparer.Ordinal)) : null;
+            var landingEnd = landing is not null && ends.TryGetValue(landing.Branch, out var its) ? its.End : null;
+            // FABRIC-END2d: where no unit names a landing (an install from before END2), or the one it names has not ended, the landing whose
+            // record holds its work and whose own proof ended it carries it, as the squash's record vouches for its session (SquashedHoldAsync)
+            // and a landing's branch holds a session's commits.
+            if (landingEnd is not { Ended: true } && await EndJudgement.HolderAsync(root, tip, hosts, ct).ConfigureAwait(false) is { } holder)
+            {
+                (landing, landingEnd) = (holder.Entry, holder.End);
+            }
+
             var cycle = landing is not null ? EndCycle.Recorded(landing) : EndCycle.Accepts(config ??= context.Config(), repository, workspace);
             carriers ??= await asks.CarriersAsync(root, repository, line, ct, refs).ConfigureAwait(false);
             var subject = new EndSubject(grown.Branch, tip, EndRole.Session, landing) { Worked = !string.Equals(tip, grown.From, StringComparison.Ordinal) };
-            var verdict = await EndJudgement.JudgeAsync(root, cycle, subject, line, notHolders, carriers, ct, refs).ConfigureAwait(false);
+            var verdict = await EndJudgement.JudgeAsync(root, cycle, subject, line, notHolders, carriers, ct, refs, landingEnd).ConfigureAwait(false);
             var next = Next(grown.Held, verdict, await OnAtAsync(verdict).ConfigureAwait(false), identity, now);
             if (next == grown.Held) continue;
             context.Grown.Hold(grown.Repository, grown.Branch, next);
@@ -94,6 +139,21 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         }
 
         return written;
+
+        // One landing judged on its own proofs, kept for the inside pass and the write.
+        async Task JudgeLandingAsync(LandedBranch entry, string tip)
+        {
+            carriers ??= await asks.CarriersAsync(root, repository, line, ct, refs).ConfigureAwait(false);
+            var subject = new EndSubject(entry.Branch, tip, EndRole.Landing, entry);
+            var facts = await EndJudgement.GatherAsync(root, subject, line, notHolders, carriers, ct, refs).ConfigureAwait(false);
+            var landing = new EndHost(entry, tip, EndJudgement.Judge(EndCycle.Recorded(entry), subject, facts));
+            judged.Add((landing, facts));
+            ends[entry.Branch] = landing;
+        }
+
+        // A kept fact that still holds, as the end a landing inside it or a session branch it carries reads.
+        static EndVerdict Kept(HeldFact kept) =>
+            new(EndState.Ended, kept.By, kept.On, $"its end is kept ({kept.By} on `{kept.On}`)") { Tip = kept.Tip, Line = kept.Line };
 
         // Whether a kept fact still holds at the branch's tip now: the cheap fields first, then where it held, read from the refs.
         async Task<bool> HoldsAsync(HeldFact kept, string tip)
