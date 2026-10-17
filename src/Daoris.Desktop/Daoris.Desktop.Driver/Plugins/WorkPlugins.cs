@@ -53,6 +53,15 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         public bool ResyncDue { get; set; }
 
         public DateTimeOffset? Resynced { get; set; }
+
+        /// <summary>
+        /// The last frame whose send to the current generation completed, and its number among the frames told it (FABRIC-PERFORM1i): what an
+        /// event from that process is bound by. A send that fails leaves the one before; a newer one sent first is never replaced by an older.
+        /// </summary>
+        public (WorkWatchFrame Frame, int Number)? Sent { get; set; }
+
+        /// <summary>The frames told the current generation so far, numbered in the order they were told.</summary>
+        public int Sends { get; set; }
     }
 
     private readonly Dictionary<string, State> _states = new(StringComparer.Ordinal);
@@ -92,6 +101,18 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         lock (_gate) return _states.TryGetValue(id, out var state) && state.Restarts.Unsound;
     }
 
+    /// <summary>
+    /// The last frame whose send to <paramref name="id"/>'s process of <paramref name="generation"/> completed (FABRIC-PERFORM1i, §C4's third
+    /// rule): what that process was actually told. Null where none did, the generation is not the current one, or it is not listened to.
+    /// </summary>
+    public WorkWatchFrame? SentTo(string id, int generation)
+    {
+        lock (_gate)
+        {
+            return _states.TryGetValue(id, out var state) && state.Listened is not null && state.Generation == generation ? state.Sent?.Frame : null;
+        }
+    }
+
     public int? GenerationOf(string id)
     {
         lock (_gate) return _states.TryGetValue(id, out var state) && state.Listened is not null ? state.Generation : null;
@@ -116,6 +137,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
             var generation = state.Generation += 1;
             state.Listened = null;
             state.Told = null;
+            (state.Sent, state.Sends) = (null, 0);
             if (!listen) return generation;
 
             state.Listened = channel;
@@ -268,6 +290,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         state.Listened?.Listen(null);
         state.Listened = null;
         state.Told = null;
+        state.Sent = null;
     }
 
     /// <summary>An event read from generation <paramref name="generation"/>'s process, or null for a frame dropped unread: taken under the bounds.</summary>
@@ -340,18 +363,38 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         }
 
         var generation = state.Generation;
+        var frame = new WorkWatchFrame(generation, resync, state.Awaited);
+        var number = state.Sends += 1;
         Task sending;
         try
         {
-            sending = channel.WatchAsync(new WorkWatchFrame(generation, resync, state.Awaited), _going.Token);
+            sending = channel.WatchAsync(frame, _going.Token);
         }
         catch (Exception error) when (error is DriverException or ObjectDisposedException or InvalidOperationException)
         {
             sending = Task.FromException(error);
         }
 
+        // FABRIC-PERFORM1i: the frame binds an event only once its send completed; one written at once is kept here, under the lock held.
+        if (sending.IsCompletedSuccessfully) Said(state, generation, frame, number);
+        else _ = sending.ContinueWith(_ => Said(plugin, generation, frame, number), CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
         _ = sending.ContinueWith(
             task => Unsaid(plugin, generation, task), CancellationToken.None, TaskContinuationOptions.NotOnRanToCompletion, TaskScheduler.Default);
+    }
+
+    /// <summary>A frame whose send completed, kept as the last sent where it is the generation's newest so far.</summary>
+    private void Said(string id, int generation, WorkWatchFrame frame, int number)
+    {
+        lock (_gate)
+        {
+            if (_states.TryGetValue(id, out var state)) Said(state, generation, frame, number);
+        }
+    }
+
+    private static void Said(State state, int generation, WorkWatchFrame frame, int number)
+    {
+        if (state.Generation != generation || state.Listened is null || state.Sent is { Number: var last } && last >= number) return;
+        state.Sent = (frame, number);
     }
 
     /// <summary>A frame that did not reach the plugin: a failure in the machine log, and the set told again with a resync at a later look.</summary>
