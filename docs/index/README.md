@@ -50,7 +50,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 52 | 1022 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 307 | 5759 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 124 | 2220 |
-| `src/Daoris.Web/src/work/attention.test.ts` | 46 | 922 |
+| `src/Daoris.Web/src/work/attention.test.ts` | 48 | 943 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 55 | 1044 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 70 | 1045 |
@@ -125,7 +125,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 45 | 838 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 49 | 822 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 44 | 799 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 67 | 1163 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 67 | 1165 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 53 | 932 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 62 | 1132 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 50 | 1031 |

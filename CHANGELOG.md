@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- Work Daoris did not record: a `daoris/` branch that no record names now shows in What needs you and in `work state` as an
+  unknown owner, blocked, saying only your Discard branch removes it; Daoris never removes it on its own.
 - An update that could not move a file because another program held it now says which file and which program, in
   `daoris-driver update` and in the window's note of the rolled-back update.
 - A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,

@@ -553,9 +553,12 @@ export function needsAPerson(
       title: unit.branch ?? unit.unit,
       where: unit.repository,
       since: unit.end.at ?? null,
-      detail: unit.end.state === 'unknown'
-        ? i18n.t('work.milestone.wait.owner')
-        : waits.map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entry.detail })).join(' '),
+      // An unknown owner says so, then each blocked entry's own reason where it has one (FABRIC-UNKNOWN1: which press removes it).
+      detail: [
+        ...(unit.end.state === 'unknown' ? [i18n.t('work.milestone.wait.owner')] : []),
+        ...waits.filter((entry) => unit.end.state !== 'unknown' || entry.disposition === 'blocked')
+          .map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entry.detail })),
+      ].join(' '),
       session: unit.session ?? null,
     }];
   });

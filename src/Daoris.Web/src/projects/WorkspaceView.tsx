@@ -27,6 +27,7 @@ import { WorkflowTab } from '../workflow/WorkflowTab';
 import { KeptHistory } from './KeptHistory';
 import { WorkspaceBranchGroups } from './RepositoryGitView';
 import { InclusionContext, useInclusion } from './WorkspaceBranches';
+import { WorkspaceRecoveries } from './WorkspaceRecoveries';
 import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from './tabs';
 import { accountsHere, hostOf } from './workspace';
@@ -124,6 +125,7 @@ export function WorkspaceView({
       ? (
         <BranchesPart
           workspace={workspace}
+          repositories={repositories}
           notify={notify}
           onOpenRepository={onOpenRepository}
           onOpenBranch={onOpenBranch}
@@ -233,8 +235,10 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
  * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
  * its own. The rows are filtered again, so a host before BRSCOPE1, whose look is the machine's, still shows only its own.
  */
-function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpenHistory }: {
+function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpenBranch, onOpenHistory }: {
   workspace: string;
+  /** The workspace's repositories, by name: the recoveries kept for them are listed beneath what was cleaned up. */
+  repositories: string[];
   notify: Notify;
   onOpenRepository: (repository: string) => void;
   onOpenBranch?: (repository: string, branch: string) => void;
@@ -276,6 +280,8 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
     <InclusionContext.Provider value={inclusion}>
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
       <WorkspaceTidied lines={tidiedLines} titles={titles} units={workState.data?.units} />
+      {/* What Daoris keeps for recovery that no unit names (RECOVERYVIEW1): a shell older than the field answers none. */}
+      <WorkspaceRecoveries recoveries={workState.data?.recovery} repositories={repositories} />
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
         landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}
