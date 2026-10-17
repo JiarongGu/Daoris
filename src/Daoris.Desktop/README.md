@@ -276,7 +276,10 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   route, its payload and the key its sender sent beside it, so a lost connection cancels nothing, `RESULT` tells the key's
   holder how a press ended, an id sent twice runs once, and one the journal cannot hold never runs. The address names the pipe as
   `pipe` once it is served; at the close every new hello is answered `stopping`, the pipe's presses answer, and only then
-  does the address go.
+  does the address go. The client is the driver library's `InstanceDoor` (RPC1b, §7.2): a verb whose route is open sends it
+  where the instance answers its hello, acts alone where none runs (a workspace build reads no address file; `DAORIS_INSTANCE`
+  names a pipe), is refused where one lives and does not answer, and asks `RESULT` for a lost answer, never acting alone after
+  a send. A `person` verb, every `trees` press among them (`TreesRoutes`), acts alone until RPC1c.
 - **One instance per install, and a second launch is another main window** (ONEINSTANCE1, D171 point 2). The kit's
   single-instance guard keeps a second process from starting and hands its launch over; `SecondLaunch` opens `main:<n>`
   once the service answers, frameless as the main window is, and its page tells its frame the theme by that name.
