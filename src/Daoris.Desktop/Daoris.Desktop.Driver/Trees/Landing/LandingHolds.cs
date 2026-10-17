@@ -11,10 +11,9 @@ namespace Daoris.Driver;
 /// around the whole landing (<c>TreeLands.LandAsync</c>), its plugin and its tidy included.
 /// </summary>
 /// <remarks>
-/// <para><b>Why.</b> Before it, only git's own ref writes kept two landings of one entry apart: a branch made once, an advance by
-/// compare-and-swap. A tree on a branch of its own (TREEFOLLOW1) has no ref made for it, so a press beside the automatic landing
-/// landed it twice and its plugin pushed twice; and a press that came while the other's plugin pushed was refused in words that did
-/// not say what happened.</para>
+/// <para><b>Why.</b> Git's ref writes keep two landings of a made branch apart (a branch made once, an advance by compare-and-swap),
+/// but a tree on a branch of its own (TREEFOLLOW1) has no ref made for it, so both would land it and its plugin would push twice; and
+/// a press that comes while the other's plugin pushes is owed what happened, not git's refusal.</para>
 ///
 /// <para><b>In this process, then across processes.</b> A semaphore per tree keeps this process's doors apart without polling. A file
 /// under the home's <c>locks/landings/</c>, opened alone, keeps this process apart from another (a terminal's press beside the
