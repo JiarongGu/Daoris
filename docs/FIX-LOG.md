@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A landing merged into the line, then deleted, read moved to the line for ever (CLEANUP1b)
+
+- **Symptom:** a landing branch whose pull request was merged with a merge commit and pulled, then deleted by the person before a look
+  judged it, read *moved to `main`* in `work state`: not ended, its clean-up pending for ever.
+- **Root cause:** CLEANUP1's `WentAsync` asks git which local branch holds the recorded tip once the branch is missing, and the line is
+  a local branch, so the line holding the work by ancestry read as a rename. The end judgement never saw it: `EndKeeping` judges only
+  a landing whose branch stands, and the judgement called a landing whose branch is not standing unknown.
+- **Fix:** a landing git says is missing is judged first through `EndJudgement` at the tip its landing recorded, by the line's ancestry
+  alone (`EndSubject.Gone`), and `EndKeeping.KeepGoneAsync` keeps the fact as it retires (`LandedBranches.HoldGone`), so the inventory
+  reads it ended with its clean-up completed. Only where no end is kept does `WentAsync` read where the work went. D173's CLEANUP1b
+  note has the detail.
+- **Verification:** red on CLEANUP1's branch first, one in `EndJudgementTests`, one in `HeldFactsTests` and three in
+  `CleanupGitTests`; then green with the driver's fast half and `CleanupGitTests`, `EndJudgementGitTests`, `HeldFactsGitTests` and
+  `TidyEffectGitTests` by class under `git.process.runsettings`.
+
 ## 2026-10-17 — Work state listed leftovers that could never clear (CLEANUP1)
 
 - **Symptom:** the owner's `daoris-driver work state` listed 40 units no look would ever clear: 18 landings whose branch the person

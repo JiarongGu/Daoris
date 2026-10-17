@@ -55,6 +55,7 @@ public static class LandedGone
     /// <summary>
     /// git says its branch is missing, and another local branch holds the landing's recorded tip by ancestry (CLEANUP1, after review): the
     /// work moved there, a rename or a branch made from it, so it is kept, never read as the person's end (<see cref="LandedBranch.MovedTo"/>).
+    /// Read only where the end judgement kept no end first (CLEANUP1b, <see cref="EndKeeping.KeepGoneAsync"/>): a line that holds it ends it.
     /// </summary>
     public const string Moved = "moved";
 }
