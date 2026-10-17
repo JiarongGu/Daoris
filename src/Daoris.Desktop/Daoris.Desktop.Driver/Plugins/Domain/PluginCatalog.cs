@@ -25,8 +25,9 @@ namespace Daoris.Driver;
 /// the home through that helper, which does the I/O, so this file names none itself.</para>
 ///
 /// <para>The CLI's <c>plugins.ts</c> is this class's twin and reads the same folder by the same rules;
-/// they share no code and move together. Two fields have readers of their own, each held by its table: the icon
-/// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin.</para>
+/// they share no code and move together. Three fields have readers of their own, each held by its table: the icon
+/// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin, and the steps
+/// with their resources (<see cref="PluginSteps"/>, FABRIC-UNIT1d), whose problems do.</para>
 /// </remarks>
 public sealed class PluginCatalog
 {

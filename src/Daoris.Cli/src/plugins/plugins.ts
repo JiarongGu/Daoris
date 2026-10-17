@@ -50,6 +50,11 @@
 //
 //  10. A declared harness may say `ownHome`: only JSON `true` says its agent's own home is nobody's (a sandboxed tool), so the
 //      driver starts it with no Daoris account. Absent or anything else is false; never a refusal. This side only reads it.
+//
+// And since FABRIC-UNIT1d (D173's note), with `PluginSteps.cs`, `PluginStepsTests` holding the table:
+//
+//  11. A plugin's `steps` are node declarations of its own kind `<id>/<step>`, and its `resources` say what they create and
+//      who cleans it (`steps.ts`). The first problem refuses the plugin, by the same rules in the same order, codes and words.
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';

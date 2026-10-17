@@ -332,7 +332,8 @@ executable, else beside the home), each with its README's requirement lines, and
 **The module keeps the onion for its model and rules alone** (STRUCT3a, D166's note; flattened by FLAT1a): `Plugins/Domain` is
 the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
 (`PluginCatalog`), the hook wire's words (`HookPoints`, `HookFrames`), the log's events, the health's rules, the activity's
-summary, the tools' table, and the icon's, the offer's, the source record's and the package's rules. The rest sits at the
+summary, the tools' table, the steps' and resources' (`PluginSteps`, FABRIC-UNIT1d: each step read into the node contract's
+`NodeDeclaration` and judged by its `Problem`), and the icon's, the offer's, the source record's and the package's rules. The rest sits at the
 module's top, beside `plugin-kit/`: the home's plugin folders (`PluginFolders`), the hook process (`HookProcess`), the tool
 checks' runs, the kit's files and templates, a trial's process and the package file, and what other modules and the hosts call:
 the catalogue's reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop

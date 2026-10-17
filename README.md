@@ -211,7 +211,7 @@ can break the tool that reads it:
 | **Doctrine** for a stack | a pack — `canon/packs/<name>/pack.json` + its tiers |
 | **A gate** | a row in `daoris.gates.json` |
 | **A harness** to drive sessions on | nothing — speak the **Agent Client Protocol** |
-| **A plugin** on one machine | a folder under the home's `plugins/` with a `plugin.json` (D64): it *declares* ACP-door configurations (each may name its tool's `product` and `maker`, D155), the servers and skills sessions or Ask Daoris are handed (D170), and may *speak* from its own process |
+| **A plugin** on one machine | a folder under the home's `plugins/` with a `plugin.json` (D64): it *declares* ACP-door configurations (each may name its tool's `product` and `maker`, D155), the servers and skills sessions or Ask Daoris are handed (D170), the steps it adds to a piece of work and the resources they create (D173), and may *speak* from its own process |
 
 A pack and a plugin each declare the API they need (`"apiVersion"`), read first. The harness seam is
 a protocol, not a registry; a plugin a folder, not a catalogue. `docs/2026-09-23-plugin-design.md`

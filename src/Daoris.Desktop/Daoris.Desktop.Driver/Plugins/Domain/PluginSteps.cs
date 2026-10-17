@@ -27,10 +27,7 @@ public static class PluginResourceRoles
 /// <summary>A manifest's <c>steps</c> and <c>resources</c> as read: each list, or the first problem's code and words, which refuse the plugin.</summary>
 /// <param name="Code">The problem's code, one of <see cref="PluginSteps"/>' codes, or null.</param>
 /// <param name="Problem">Its sentence, which is the plugin's problem, or null.</param>
-public sealed record PluginStepsRead(IReadOnlyList<NodeDeclaration> Steps, IReadOnlyList<PluginResource> Resources, string? Code, string? Problem)
-{
-    public static readonly PluginStepsRead None = new([], [], null, null);
-}
+public sealed record PluginStepsRead(IReadOnlyList<NodeDeclaration> Steps, IReadOnlyList<PluginResource> Resources, string? Code, string? Problem);
 
 /// <summary>
 /// A plugin's steps and resources (FABRIC-UNIT1d; the fabric events design §D4, §D6, §D9, §E2): the manifest declares a step once, and it
