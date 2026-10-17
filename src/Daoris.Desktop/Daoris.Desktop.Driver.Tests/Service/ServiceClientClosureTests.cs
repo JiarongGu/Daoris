@@ -136,9 +136,9 @@ public sealed class ServiceClientClosureTests
         var doors = new Doors((_, _, _) => replies.Dequeue());
         using var client = new ServiceClient(doors);
 
-        var bound = await client.BindQuestAsync("#q7", "gph-1");
-        var refused = await client.BindQuestAsync("q7", "gph-1");
-        var older = await client.BindQuestAsync("q7", "gph-1");
+        var bound = await client.BindQuestAsync("#q7", "gph-1", "ses-q7");
+        var refused = await client.BindQuestAsync("q7", "gph-1", "ses-q7");
+        var older = await client.BindQuestAsync("q7", "gph-1", "ses-q7");
 
         Assert.Equal((true, "Quest `#q7` closes through graph `gph-1`."), bound);
         Assert.Equal((false, "Quest `#q7` closes through graph `gph-0`, bound at its start."), refused);
@@ -148,6 +148,8 @@ public sealed class ServiceClientClosureTests
         Assert.Equal("gph-1", JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("graph").GetString());
         // FABRIC-CLOSE1l: the driver binds only at the take, naming the graph for it as the first session opens.
         Assert.True(JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("atTake").GetBoolean());
+        // FABRIC-CLOSE1o: for the session opening, whose take alone binds it.
+        Assert.Equal("ses-q7", JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("session").GetString());
     }
 
     [Theory]

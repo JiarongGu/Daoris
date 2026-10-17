@@ -444,7 +444,8 @@ public interface IClosureBindPort
     /// <summary>Whether the local host knows a closure graph's operations (<c>bound</c>, <c>submitted</c>) and doors; false from a host before them.</summary>
     Task<bool> KnowsClosureAsync(CancellationToken ct);
 
-    Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, CancellationToken ct);
+    /// <summary>Names <paramref name="graph"/> for the take of <paramref name="id"/> by <paramref name="session"/>, whose take alone binds it (FABRIC-CLOSE1o).</summary>
+    Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, string session, CancellationToken ct);
 }
 
 /// <summary>
@@ -464,16 +465,19 @@ public static class ClosureBinding
     /// (<see cref="AtTakeAsync"/>), and says `ready` only where the host took that; a quest taken unbound keeps today's done. Null where no
     /// closure graph governs the quest and it is bound to none: nothing is asked, kept or said (the owner's install).
     /// </summary>
+    /// <param name="session">The session opening, whose take alone binds the graph named for it (FABRIC-CLOSE1o); none names nothing.</param>
     public static async Task<ClosureBound?> AtStartAsync(
-        IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, string? home, CancellationToken ct)
+        IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, string? home, CancellationToken ct,
+        string? session = null)
     {
         if (quest.Closure is { Length: > 0 } bound) return new(true, $"#{quest.Id} closes through its graph `{bound}`: its session says `ready`.");
-        return quest.Status == "Open" ? await AtTakeAsync(port, config, quest, workspace, remote, ct, home).ConfigureAwait(false) : null;
+        return quest.Status == "Open" ? await AtTakeAsync(port, config, quest, workspace, remote, ct, home, session).ConfigureAwait(false) : null;
     }
 
     /// <summary>The bind for a quest just taken, or null where no closure graph governs it: nothing is asked, nothing changes.</summary>
     public static async Task<ClosureBound?> AtTakeAsync(
-        IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, CancellationToken ct, string? keepIn = null)
+        IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, CancellationToken ct, string? keepIn = null,
+        string? session = null)
     {
         var home = NodeGraphHomes.Work(config, quest.To, workspace, WorkUnitKind.Quest);
         if (!QuestClosing.Holds(home.Graph)) return null;
@@ -506,13 +510,19 @@ public static class ClosureBinding
                               + $"than this driver), {AsToday}");
         }
 
+        // FABRIC-CLOSE1o: named for one session, whose take alone binds it; a start that names none would bind nobody's take.
+        if (string.IsNullOrWhiteSpace(session))
+        {
+            return new(false, $"#{quest.Id} is not bound to its closure graph `{digest}`: no session was named for its take, {AsToday}");
+        }
+
         // FABRIC-CLOSE1l: kept by its digest before it is named, so the quest is closed by this graph whatever the choices say later.
         if (keepIn is not null && home.Cycle is { } json) ClosureGraphs.Keep(keepIn, digest, json);
         bool ok;
         string message;
         try
         {
-            (ok, message) = await port.BindQuestAsync(quest.Id, digest, ct).ConfigureAwait(false);
+            (ok, message) = await port.BindQuestAsync(quest.Id, digest, session, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
                                       || (error is TaskCanceledException && !ct.IsCancellationRequested))
@@ -526,4 +536,14 @@ public static class ClosureBinding
             ? new(true, $"#{quest.Id} closes through its graph `{digest}`: its session says `ready`, and the graph writes its Done at the work's end.")
             : new(false, $"#{quest.Id} is not bound to its closure graph `{digest}`: {message} It closes by its done, as today.");
     }
+
+    /// <summary>
+    /// What the loop's line says at a session's end whose start named its quest's graph for the take, where that take left the quest
+    /// unbound (FABRIC-CLOSE1o: a bind expired, a remote since, another session's take): said once, at that end, since a later start reads
+    /// the quest taken and unbound and names nothing. Null everywhere else.
+    /// </summary>
+    public static string? UnboundAtEnd(ClosureBound? named, QuestView? after) =>
+        named is { Bound: true } && after is { Status: "Taken" or "Done", Closure: null or "" }
+            ? $" #{after.Id}'s closure graph was named for its take, and its take did not bind it (its answer said why), so it closes by its done."
+            : null;
 }
