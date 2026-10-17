@@ -554,6 +554,62 @@ public sealed class AutoLandingTests : IDisposable
         return opened.Path;
     }
 
+    // ——— FABRIC-END7's review: what lands is what was judged
+
+    /// <summary>
+    /// Finding 1: each chosen entry is judged again from fresh facts just before its own landing. A look chooses two; the person holds the
+    /// second's departure before the pass reaches it, so the first lands and the second is kept as held, with no branch made for it.
+    /// </summary>
+    [Fact]
+    public async Task A_chosen_entry_is_judged_again_just_before_its_own_landing()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        await DoneSessionAsync(root, "s1", "q1");
+        await DoneSessionAsync(root, "s2", "q2");
+        var lander = Lander();
+        var (chosen, said) = await lander.ChooseAsync(Config());
+        Assert.Empty(said);
+        Assert.Equal(2, chosen.Count);
+
+        _world.Quests["q2"] = _world.Quests["q2"] with { Held = true };
+        var landed = await lander.LandAsync(chosen);
+
+        Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.False(await BranchAsync(root, "feature/q2-fix-the-gap"), "a hold that came after the choice holds it");
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(AutoLandingCode.Held, new AutoLandings(_home).Of("s2")!.Last!.Code);
+        Assert.Contains(landed, line => line.StartsWith("landing  session s2", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Finding 1's pin: a landing whose gate names the tip it was judged at lands exactly that commit. A commit the tree gained after the
+    /// judgement is refused, not landed unseen, and nothing is made; pinned at the tip it stands at, it lands that commit.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_pinned_to_the_tip_judged_refuses_a_tree_that_moved_past_it()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var trees = new SessionTrees(_home);
+        var judged = (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
+        var gate = await trees.GateAsync(tree, "q1", _world, "s1") with { Tip = judged };
+        await CommitAsync(tree, "late.txt", "made after the judgement", "a late change");
+
+        var moved = await trees.LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap"), acceptedBy: AcceptedBy.Auto, gate: gate);
+
+        Assert.False(moved.Landed, moved.Message);
+        Assert.Equal(AutoLandingCode.Refused, moved.Refusal);
+        Assert.Contains("moved", moved.Message);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"), "nothing is made from a tip nobody judged");
+
+        var now = (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
+        var landed = await trees.LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap"), acceptedBy: AcceptedBy.Auto, gate: gate with { Tip = now });
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(now, (await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim());
+    }
+
     // ——— the world, the plugin and the fixtures
 
     /// <summary>The service's quests and records, standing in.</summary>

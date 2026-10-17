@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,
+  how it is retried, whether it is performed and how), and the `resources` they create with who cleans them. Daoris reads and
+  checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet. A plugin
+  with a step Daoris asks it to perform must list `work/perform` among its hook points, or it does not load.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.
@@ -30,6 +34,15 @@ with the version and date at release.
 - A quest an agent publishes from its session, and a session record another process writes, now start Daoris's work at once,
   where the driver used to find them at its next look (up to `pollSeconds`, 15 s by default). The local service answers
   `GET /api/changes`, which says which of its records moved; a sync pass that changes nothing wakes nothing.
+- Done work set to land automatically lands as soon as what held it lets it go, rather than at the driver's next look. This
+  covers a hold released, a review given or skipped, a second opinion settled or answered, a workflow's declaration or your
+  say-so, a commit in its tree, and a change to the landing rule. When a change releases none of the waiting work, the landing
+  starts no git for it.
+  Daoris still looks at all of it every `pollSeconds`.
+- Done work that lands automatically is checked again just before it lands: its quest, its holds, its review and its tree. A
+  hold, or a commit nobody reviewed, that came after Daoris chose it holds it again, and only the commit it checked lands. Only the
+  loop holding the home lands work automatically: a `daoris-driver drive --share` loop beside it lands none, and says so as it
+  starts.
 - `daoris-driver sessions say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
 - *This Daoris* also shows the settings files, the variables Daoris reads, the versions, the terminal's wiring, the
   knowledge store and the logs.

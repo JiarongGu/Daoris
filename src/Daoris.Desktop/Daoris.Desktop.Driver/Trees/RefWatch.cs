@@ -136,9 +136,10 @@ public sealed class RefWatch : IAsyncDisposable
     }
 
     /// <summary>The driver's: the registry's repositories holding Daoris's work (<see cref="RepositoriesAsync"/>), judged by the end keeper.</summary>
+    /// <param name="heard">Told each repository judged (<see cref="Heard"/>): the landing's wake (FABRIC-END7).</param>
     public static RefWatch ForDriver(
         string home, Func<CancellationToken, Task<IReadOnlyList<RepoView>>> registry, TimeSpan? every = null, IChangeSource? source = null,
-        MachineLog? log = null) =>
+        MachineLog? log = null, Action<string>? heard = null) =>
         new(
             home,
             ct => RepositoriesAsync(home, registry, ct),
@@ -147,7 +148,14 @@ public sealed class RefWatch : IAsyncDisposable
             source)
         {
             Log = log,
+            Heard = heard,
         };
+
+    /// <summary>
+    /// Told each repository a hint, Daoris's own move or a root's recovery judges, before its ends are kept (FABRIC-END7): the landing's
+    /// wake, which looks at the due entries of that repository alone (<see cref="LandingWakes.Moved"/>). Never told at a deadline.
+    /// </summary>
+    public Action<string>? Heard { get; init; }
 
     /// <summary>Where each judgement that was not an idle deadline, each loss and each link that acted is written; none by default.</summary>
     public MachineLog? Log
@@ -305,6 +313,7 @@ public sealed class RefWatch : IAsyncDisposable
             RefRepository? repository;
             lock (_gate) _watched.TryGetValue(@event.Subject, out repository);
             if (repository is null) continue;
+            Heard?.Invoke(repository.Repository);
             var written = await _keep(repository, ct).ConfigureAwait(false);
             if (written <= 0) continue;
             acted += written;

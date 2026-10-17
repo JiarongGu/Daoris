@@ -188,4 +188,23 @@ public sealed class RunningSessionsTests
         Assert.Empty(running.Drain());
         Assert.True(running.Idle);
     }
+
+    /// <summary>
+    /// FABRIC-END7's review: a landing pass's end is told once it no longer runs, whether it said something or nothing, so what a look
+    /// held back for it is offered again at once rather than at the next wake.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_pass_s_end_is_told_once_it_no_longer_runs()
+    {
+        var running = new RunningSessions();
+        var release = new TaskCompletionSource<IReadOnlyList<string>>();
+        var told = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Assert.True(running.Beside(_ => release.Task, CancellationToken.None, ended: () => told.TrySetResult(running.Landing)));
+        Assert.False(told.Task.IsCompleted);
+        release.SetResult([]);
+
+        Assert.False(await told.Task.WaitAsync(Bound), "told while the pass still counted as running");
+        Assert.Empty(running.Drain());
+    }
 }

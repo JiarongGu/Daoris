@@ -259,6 +259,9 @@ public static class PluginsCommand
             PluginHealthRules.Off => $"off: the driver asks it nothing, and hands sessions nothing it declares. `daoris plugin enable {page.Id}` turns it on.",
             _ => points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal))
                 ? "ready: on and sound, and no process of it is up now; the driver loop starts it"
+                // FABRIC-PERFORM1a: the work wire's process is the lease's loop's, kept while its steps are awaited.
+                : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal))
+                    ? "ready: the loop that holds this home starts it while a unit awaits one of its steps"
                 : points.Contains(HookPoints.Land, StringComparer.Ordinal)
                     ? "ready: a landing starts it for each branch it lands"
                     : points.Contains(HookPoints.State, StringComparer.Ordinal)
@@ -275,6 +278,7 @@ public static class PluginsCommand
               : points.Contains(HookPoints.SessionEnded, StringComparer.Ordinal) ? HookPoints.SessionEnded
               // STATEHUB1g: an observation too, so a plugin that only watches the state costs nothing when it fails.
               : points.Contains(HookPoints.StateChanged, StringComparer.Ordinal) ? HookPoints.StateChanged
+              : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal)) ? HookPoints.Watch
               : points.Contains(HookPoints.Land, StringComparer.Ordinal) ? HookPoints.Land
               : HookPoints.State
             : where;
@@ -284,6 +288,8 @@ public static class PluginsCommand
             HookPoints.Land => "A landing keeps its branch; push it by hand.",
             // PLUGHOOK1a (design §2.4): a query fails toward keeping.
             HookPoints.State => "Nothing is removed on its word until it answers.",
+            // FABRIC-PERFORM1a: a step is reached only on its word, so its steps wait; nothing else does.
+            HookPoints.Watch or HookPoints.Step or HookPoints.Perform => "The steps it reports or performs wait until it is back.",
             _ => "Nothing waits on it; the driver goes on.",
         };
     }

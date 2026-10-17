@@ -59,6 +59,29 @@ public static class HookPoints
     /// tells it nothing (D169's STATEHUB1g note).
     /// </summary>
     public static readonly IReadOnlyList<string> Loop = [QuestConsider, SessionEnded, StateChanged];
+
+    /// <summary>
+    /// A loop point of the work wire (FABRIC-PERFORM1a, the fabric events design §C4): which units await the plugin's steps, the whole set
+    /// each time it changes, with the process's generation and whether to send again what it knows (<see cref="WorkWatchFrame"/>).
+    /// </summary>
+    public const string Watch = "work/watch";
+
+    /// <summary>
+    /// An event (§C4): a JSON-RPC notification the plugin sends, never answered, read only from the process the lease's loop started for it
+    /// (<see cref="WorkStepFrame"/>). Named in the manifest, so a person reads that the plugin reports steps.
+    /// </summary>
+    public const string Step = "work/step";
+
+    /// <summary>A request (§D6): a performed step's attempt, acknowledged on receipt, its outcome arriving later at <see cref="Step"/>.</summary>
+    public const string Perform = "work/perform";
+
+    /// <summary>
+    /// The work wire's points (FABRIC-PERFORM1a): spoken only by the loop that holds the home's lease, on a process it supervises
+    /// (<see cref="HookSet"/>), never by a verb, a landing or a <c>--share</c> loop. A handshake keeps them as it keeps <see cref="All"/>'s.
+    /// They stay out of <see cref="All"/>, whose every point the kit scaffolds, answers in its test and lets a person try, until their kit
+    /// entries come with FABRIC-PERFORM1e: the remark above is that row's list.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Work = [Watch, Step, Perform];
 }
 
 /// <summary>

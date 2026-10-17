@@ -104,9 +104,10 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `tool.location.fetched` / `.failed` | the process that looks (D121 §3.7, TOOLS4) | position in the list, versions or check | a resource location looked at, by its place and never by the address the person typed |
 | `tool.used` | desktop (D121 §3.6, TOOLS7) | tool, way, version when managed | a tool's way set from Settings → Tools, never the path of a file the person named |
 | `plugin.started` | desktop, driver | plugin, points, ms, by | a plugin's process up: what it listens on, how long its handshake took, and whose it is (D119) |
-| `plugin.stopped` | desktop, driver | plugin, why, by | why a plugin's process went: off, removed, updated, changed, or its owner ended |
+| `plugin.stopped` | desktop, driver | plugin, why, by | why a plugin's process went: off, removed, updated, changed, or its owner ended; a work process also idle or not-held (FABRIC-PERFORM1a) |
 | `plugin.called` | desktop, driver | plugin, point, answer, ms | each answer at a point, by its word, and how long it took |
 | `plugin.failed` (warn) | desktop, driver | plugin, where, kind, code, ms, by | a plugin that could not start, exited, or answered late, unreadably or with an error |
+| `plugin.step` (warn) | desktop, driver | plugin, code, count | frames from a plugin's work process not taken (FABRIC-PERFORM1a, D173): one line per code at most once a minute, never the frame's words |
 | `plugin.served` | desktop, driver | plugin, server, session, handed | which sessions each plugin's server was handed to, or withheld from |
 | `plugin.tried` (warn when failed) | desktop, driver | plugin, passed, checks, failed, ms, door | a trial of an installed plugin with the kit, from the screen or a terminal |
 | `plugin.tested` (warn when failed) | desktop, driver | plugin, passed, code, ms, door | a run of a plugin's own tests (its runner is PLUGUI1g's; the shape is reserved) |

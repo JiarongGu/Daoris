@@ -170,7 +170,8 @@ public static class PluginTrials
         {
             var stderr = RelayAsync(process.Error, line => { lock (said) said.Add(line); });
             var noise = new List<string>();
-            var peer = new HookPeer(process.Output, process.Input, id, line => { lock (noise) noise.Add(line); }, patience);
+            // Read under the bound the driver reads it under (FABRIC-PERFORM1a, round 2): read whole, a long answer passed here and was lost there.
+            var peer = new HookPeer(process.Output, process.Input, id, line => { lock (noise) noise.Add(line); }, patience, HookProcess.FrameLimit(entry));
 
             // Each call, judged: its sentence when it answered, and when it did not, which of the three
             // ways it did not — the process gone, the process silent, or the process wrong.
