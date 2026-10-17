@@ -159,6 +159,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
 /// <summary>
 /// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule; D88's PROC1d-ii): one <c>for-each-ref</c> of its
 /// refs for the whole judgement, a snapshot of its own, never one held across judgements, so a ref moved outside Daoris is read at the next.
+/// A pass asks it once a checkout, for its events and its observed nodes' bindings alike (<see cref="PassTips"/>, FABRIC-PERFORM1m).
 /// </summary>
 public static class NodeTips
 {
@@ -175,6 +176,36 @@ public static class NodeTips
 
         return tips;
     }
+}
+
+/// <summary>
+/// One pass's tips (FABRIC-PERFORM1m; §C4's fourth rule, D88's PROC1d-ii): each checkout read once, by whatever asks of it first (an event's
+/// belief, a rebinding's check, an observed node's binding), for every branch the pass governs there as well as those asked, so they share
+/// the one read. Made for one pass and dropped with it, so no tip is carried into the next (LANDGIT1).
+/// </summary>
+/// <param name="read">The look's read of one checkout (<see cref="NodeRuntimeLook.Tips"/>).</param>
+/// <param name="governed">Each checkout's branches the pass may bind an observed node on.</param>
+public sealed class PassTips(
+    Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> read,
+    IReadOnlyDictionary<string, IReadOnlyCollection<string>> governed)
+{
+    private static readonly IReadOnlyDictionary<string, string> None = new Dictionary<string, string>();
+
+    private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _read = new(StringComparer.Ordinal);
+
+    /// <summary>The tips of <paramref name="root"/>'s branches, read at the first ask; a branch not read is absent, and a later ask reads nothing again.</summary>
+    public async Task<IReadOnlyDictionary<string, string>> ReadAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct)
+    {
+        if (root.Length == 0) return None;
+        if (_read.TryGetValue(root, out var tips)) return tips;
+        var all = (governed.GetValueOrDefault(root) ?? []).Concat(branches).Where(branch => branch.Length > 0)
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+        return _read[root] = all.Count == 0 ? None : await read(root, all, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>One branch's tip read this pass, or null where it was not read.</summary>
+    public async Task<string?> TipAsync(string root, string branch, CancellationToken ct) =>
+        branch.Length == 0 ? null : (await ReadAsync(root, [branch], ct).ConfigureAwait(false)).GetValueOrDefault(branch);
 }
 
 /// <summary>

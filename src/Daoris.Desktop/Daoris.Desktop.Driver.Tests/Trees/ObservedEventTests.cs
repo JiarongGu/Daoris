@@ -73,8 +73,9 @@ public sealed class ObservedEventTests : IDisposable
 
     private NodeRuntime Runtime() => new(Files, _port, () => _now, () => true);
 
-    private static WorkUnit BranchUnit(string id, string branch) => new(id, WorkUnitKind.Branch,
-        new WorkOwner("engine", "default", "session-branches.json", WorkRecord.DriverWriter), new WorkSubject(branch, C1),
+    /// <summary>A branch unit as the inventory gives it: its revision the end fact's (<paramref name="revision"/>), which may lag the branch.</summary>
+    private static WorkUnit BranchUnit(string id, string branch, string revision = C1) => new(id, WorkUnitKind.Branch,
+        new WorkOwner("engine", "default", "session-branches.json", WorkRecord.DriverWriter), new WorkSubject(branch, revision),
         new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
 
     private NodeRuntimeLook Look(string config, bool whole = true) => new(DriverConfig.Parse(config), whole)
@@ -136,9 +137,10 @@ public sealed class ObservedEventTests : IDisposable
         Assert.Equal((Plugin, "deployed", C1, "e1", WorkStates.Reached, "deployed"), (kept.Plugin, kept.Step, kept.Commit, kept.Id, kept.State, kept.Node));
         Assert.Contains(pass.Performed, done => (done.Node, done.What, done.Code) == ("deployed", PerformedWhat.Applied, WorkStates.Reached));
 
-        // Its wire fired once the acceptance was written: the notify sent on the same revision, and the tips read once for the judgement.
+        // Its wire fired once the acceptance was written: the notify sent on the same revision, and the tips read once a pass (FABRIC-PERFORM1m:
+        // the first pass's to bind the node, the second's for the event's belief and the binding alike).
         Assert.Equal(C1, Assert.Single(_port.Sent).SubjectRevision);
-        Assert.Equal([("checkout", 1)], _tipReads);
+        Assert.Equal([("checkout", 1), ("checkout", 1)], _tipReads);
         Assert.Empty(_port.Refusals);
     }
 
@@ -191,12 +193,10 @@ public sealed class ObservedEventTests : IDisposable
         await PassAsync(runtime);
         Assert.Equal(C1, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
 
-        // The branch moved after the frame was told and before the event was heard; the wake judges with the unit cached at C1.
+        // The branch moved after the frame was told and before the event was heard; the wake judges with the unit cached at C1. The new tip's
+        // event, heard in the same pass, reaches no node bound to the old one either: the node rebinds after the hearing (FABRIC-PERFORM1m).
         _tips["feature/a"] = C2;
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));
-        await PassAsync(runtime, whole: false);
-
-        // The new tip's event reaches no node bound to the old one either.
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e2", _now, commit: C2));
         await PassAsync(runtime, whole: false);
 
@@ -209,6 +209,98 @@ public sealed class ObservedEventTests : IDisposable
         Assert.Empty(Record().Observations);
         Assert.Empty(_port.Sent);
         Assert.Equal([WorkRefusals.Stale, WorkRefusals.Stale, WorkRefusals.Stale], _port.Refusals.Select(refusal => refusal.Code));
+    }
+
+    [Fact]
+    public async Task A_lagging_units_observed_node_rebinds_to_the_tip_read_at_the_next_pass_and_is_reached_there()
+    {
+        var runtime = Runtime();
+        await PassAsync(runtime);
+        Assert.Equal(C1, Record().Statuses["deployed"].Binding!.SubjectRevision);
+
+        // FABRIC-PERFORM1m: the branch moved and the unit's revision, the end fact's, still lags at C1. The next pass, a wake, reads the tip and
+        // rebinds the node to it: the old binding lapses under RUN1's rules, and the person is told nothing, no work is sent, nothing kept.
+        _tips["feature/a"] = C2;
+        var rebound = await PassAsync(runtime, whole: false);
+        var deployed = Record().Statuses["deployed"];
+        Assert.Equal((NodeStates.Active, C2), (deployed.State, deployed.Binding!.SubjectRevision));
+        Assert.Equal([A], rebound.Evaluated);
+        Assert.Empty(rebound.Said);
+        Assert.False(rebound.AwaitedChanged);
+        Assert.Empty(_port.Sent);
+        Assert.Empty(Record().Observations);
+
+        // The new tip's event is reached on that binding, and its wire fires once.
+        _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now, commit: C2));
+        await PassAsync(runtime, whole: false);
+        var reached = Record();
+        Assert.Equal((NodeStates.Reached, C2), (reached.Statuses["deployed"].State, reached.Statuses["deployed"].Acceptance!.SubjectRevision));
+        Assert.Equal(C2, Assert.Single(reached.Observations).Commit);
+        Assert.Empty(_port.Refusals);
+
+        // A performed node is bound as before, to the unit's revision: only the observed node reads the tip.
+        Assert.Equal(C1, Assert.Single(_port.Sent).SubjectRevision);
+
+        // The end fact catching up reaches nothing again: the observed node keeps its acceptance and its event, its wire fires no more.
+        _units = [BranchUnit(A, "feature/a", C2)];
+        await PassAsync(runtime);
+        Assert.Equal(NodeRecordFiles.StatusText(reached.Statuses["deployed"]), NodeRecordFiles.StatusText(Record().Statuses["deployed"]));
+        Assert.Equal(reached.Observations, Record().Observations);
+        Assert.Equal(reached.Fired, Record().Fired);
+
+        // One read of the checkout's tips a pass, whatever binds or hears.
+        Assert.Equal([("checkout", 1), ("checkout", 1), ("checkout", 1), ("checkout", 1)], _tipReads);
+    }
+
+    [Fact]
+    public async Task An_event_at_the_old_tip_after_the_rebind_is_stale_and_moves_nothing()
+    {
+        var runtime = Runtime();
+        await PassAsync(runtime);
+        _tips["feature/a"] = C2;
+        await PassAsync(runtime, whole: false);
+        Assert.Equal(C2, Record().Statuses["deployed"].Binding!.SubjectRevision);
+        var before = NodeRecordFiles.ToJson(Record());
+
+        _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now, commit: C1));
+        var pass = await PassAsync(runtime, whole: false);
+
+        Assert.Contains(pass.Performed, done => (done.Node, done.What, done.Code) == ("deployed", PerformedWhat.NotTaken, WorkRefusals.Stale));
+        Assert.Equal((Plugin, WorkRefusals.Stale), Assert.Single(_port.Refusals));
+        Assert.Equal(before, NodeRecordFiles.ToJson(Record()));
+        Assert.Empty(_port.Sent);
+    }
+
+    [Fact]
+    public async Task An_unread_tip_binds_nothing_new_and_keeps_the_node_as_it_stands()
+    {
+        _units = [BranchUnit(A, "feature/a"), BranchUnit(B, "feature/b")];
+        _tips.Remove("feature/b");
+        var runtime = Runtime();
+        await PassAsync(runtime);
+
+        // FABRIC-PERFORM1m: B's tip was not read, so its node is left ready, bound to nothing on a guess, and never published.
+        Assert.Equal(NodeStates.Active, Record().Statuses["deployed"].State);
+        Assert.Equal(NodeStates.Ready, Record(B).Statuses["deployed"].State);
+        Assert.Equal(["feature/a"], _port.SentTo(Plugin, 1)!.Units.Select(unit => unit.Branch));
+
+        // A rebound to its moved tip, then that tip unread at the look's deadline: its node stays as it stands, never lapsed back to the
+        // unit's lagging revision, and its record is not written.
+        _tips["feature/a"] = C2;
+        await PassAsync(runtime, whole: false);
+        var before = NodeRecordFiles.ToJson(Record());
+        Assert.Equal(C2, Record().Statuses["deployed"].Binding!.SubjectRevision);
+        _tips.Remove("feature/a");
+        var unread = await PassAsync(runtime);
+        Assert.Equal(before, NodeRecordFiles.ToJson(Record()));
+        Assert.Empty(unread.Said);
+        Assert.Empty(_port.Sent);
+
+        // B's tip read: its node is begun on it at the next pass.
+        _tips["feature/b"] = C2;
+        await PassAsync(runtime, whole: false);
+        var b = Record(B).Statuses["deployed"];
+        Assert.Equal((NodeStates.Active, C2), (b.State, b.Binding!.SubjectRevision));
     }
 
     [Fact]
@@ -350,10 +442,11 @@ public sealed class ObservedEventTests : IDisposable
         Assert.True(await runtime.WithdrawAsync(DriverConfig.Parse("{}"), CancellationToken.None));
         Assert.Empty(_port.Told[^1]);
         var told = _port.Told.Count;
+        var read = _tipReads.Count;
         var idle = await PassAsync(runtime, "{}");
         Assert.False(idle.Armed);
         Assert.Equal(told, _port.Told.Count);
-        Assert.Empty(_tipReads);
+        Assert.Equal(read, _tipReads.Count);
     }
 
     [Fact]

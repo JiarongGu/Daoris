@@ -330,6 +330,10 @@ public sealed class NodeRuntime(
             var governed = _governed!;
             NodeDeclaration? Declared(string unit, string node) => governed.TryGetValue(unit, out var each) ? each.Declared.GetValueOrDefault(node) : null;
 
+            // FABRIC-PERFORM1m: the pass's tips, each checkout read once by whatever asks of it first (the hearing, a rebinding's check, a
+            // binding), never kept past the pass.
+            var tips = new PassTips(look.Tips, Observing(governed.Values));
+
             // FABRIC-RUN1e: one count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
             var done = new List<WorkPerformed>();
@@ -341,7 +345,7 @@ public sealed class NodeRuntime(
             done.AddRange(_performer.Hear([.. heard.Where(each => each.Step.Invocation is not null)], Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
             // FABRIC-PERFORM1i: an event naming no invocation is an observed node's, bound to the frame its process was sent and the tips read
             // now, and written before the evaluation below fires its wires.
-            done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], governed, look.Tips, ct).ConfigureAwait(false));
+            done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], governed, tips.ReadAsync, ct).ConfigureAwait(false));
             // FABRIC-PERFORM1g: the person's word on a held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(_performer.Resolve(Declared));
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
@@ -357,11 +361,17 @@ public sealed class NodeRuntime(
             }
 
             var named = done.Select(each => each.Unit).ToHashSet(StringComparer.Ordinal);
-            var concerned = Turn(governed.Values.Where(each => fresh || named.Contains(each.Unit.Id) || OwesStart(each)));
+            var owing = new List<GovernedUnit>();
+            foreach (var each in governed.Values)
+            {
+                if (fresh || named.Contains(each.Unit.Id) || OwesStart(each) || await RebindsAsync(each, tips, ct).ConfigureAwait(false)) owing.Add(each);
+            }
+
+            var concerned = Turn(owing);
             foreach (var each in concerned)
             {
                 if (each.Closes) Settle(each, done, said);
-                await EvaluateAsync(each, sends, done, said, look.Units, ct).ConfigureAwait(false);
+                await EvaluateAsync(each, sends, done, said, look.Units, tips, ct).ConfigureAwait(false);
             }
 
             var changed = Tell(governed.Values);
@@ -379,10 +389,15 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task EvaluateAsync(
         GovernedUnit governed, WorkSends sends, List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units,
-        CancellationToken ct)
+        PassTips tips, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
+
+        // FABRIC-PERFORM1m: a branch unit's observed plugin nodes bind to its branch's tip read this pass, not to the unit's revision, which is
+        // the end fact's and lags a moved branch until the end judgement catches up; the pass's one read of the checkout, null where unread.
+        var tipped = Tipped(governed);
+        var tip = tipped ? await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
         for (var round = 0; round <= nodes.Count; round++)
         {
             if (records.Read(unit) is not { } record)
@@ -395,6 +410,7 @@ public sealed class NodeRuntime(
             var run = new WireRun(governed.GraphDigest, governed.Run)
             {
                 Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
+                NodeRevisions = tipped ? ObservedRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
                 Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
                 Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
             };
@@ -418,6 +434,10 @@ public sealed class NodeRuntime(
                 }
                 else if (node.Reach == NodeReach.Observed && (BuiltInNodes.Observed.Contains(node.Kind) || governed.Observable.Contains(node.Id)))
                 {
+                    // FABRIC-PERFORM1m: an observed plugin node whose branch's tip this pass did not read is left as it stands: nothing is
+                    // bound on a guess, and the pass that reads the tip begins it there.
+                    if (tipped && tip is null && governed.Observable.Contains(node.Id)) continue;
+
                     // FABRIC-PERFORM1i: a plugin's observed node starts as a built-in does, ready to active with its firings written, and is
                     // published to its plugin only after (Tell, below).
                     var begun = _performer.Begin(node, start, evaluated.Statuses[start.Node]);
@@ -577,6 +597,57 @@ public sealed class NodeRuntime(
     private bool OwesStart(GovernedUnit governed) =>
         records.Read(governed.Unit.Id) is { } record
         && governed.Dispatchable.Concat(governed.Observable).Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
+
+    /// <summary>
+    /// Whether a unit's observed plugin nodes bind to its branch's tip read in the pass (FABRIC-PERFORM1m): a branch unit's. A quest's revision
+    /// is null by design, and a performed node's is the unit's, as the plugins are told it (<see cref="GovernedUnit.Watched"/>).
+    /// </summary>
+    private static bool Tipped(GovernedUnit governed) => governed.Unit.Kind == WorkUnitKind.Branch && governed.Observable.Count > 0;
+
+    /// <summary>
+    /// Whether a branch unit's observed node awaits its event on a revision its branch's tip, read this pass, has moved off (FABRIC-PERFORM1m):
+    /// judged at this pass, a wake as well as a look, so it rebinds before the event at the new tip comes. The checkout is read only where such
+    /// a node is active; an unread tip rebinds nothing.
+    /// </summary>
+    private async Task<bool> RebindsAsync(GovernedUnit governed, PassTips tips, CancellationToken ct)
+    {
+        if (!Tipped(governed) || records.Read(governed.Unit.Id) is not { } record) return false;
+        var awaiting = governed.Observable.Select(node => record.Statuses.GetValueOrDefault(node)?.Binding is { } binding
+                && record.Statuses[node].State == NodeStates.Active ? binding.SubjectRevision : null)
+            .OfType<string>().ToList();
+        if (awaiting.Count == 0) return false;
+        var tip = await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false);
+        return tip is not null && awaiting.Any(revision => !string.Equals(revision, tip, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The revision each of a branch unit's observed plugin nodes is judged on (FABRIC-PERFORM1m): its branch's tip read this pass, so a moved
+    /// branch lapses the old binding and the node is begun again on the new tip. Where the tip was not read, a bound node keeps its binding's
+    /// revision, so nothing lapses on a read that failed; a node not bound is not begun (<see cref="EvaluateAsync"/>).
+    /// </summary>
+    private static Dictionary<string, string?> ObservedRevisions(GovernedUnit governed, string? tip, IReadOnlyDictionary<string, NodeStatus> statuses)
+    {
+        var revisions = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var node in governed.Observable)
+        {
+            if (tip is not null) revisions[node] = tip;
+            else if (statuses.GetValueOrDefault(node)?.Binding is { } binding) revisions[node] = binding.SubjectRevision;
+        }
+
+        return revisions;
+    }
+
+    /// <summary>Each checkout's branches whose unit binds an observed node to its tip (FABRIC-PERFORM1m): what the pass's one read of it serves.</summary>
+    private static Dictionary<string, IReadOnlyCollection<string>> Observing(IEnumerable<GovernedUnit> governed)
+    {
+        var branches = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
+        foreach (var same in governed.Where(Tipped).Where(each => each.Watched.Root.Length > 0).GroupBy(each => each.Watched.Root, StringComparer.Ordinal))
+        {
+            branches[same.Key] = same.Select(each => each.Watched.Branch).Where(branch => branch.Length > 0).Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        return branches;
+    }
 
     /// <summary>
     /// The awaited set told (§C4's <c>work/watch</c>, PERFORM1a's supervision): each governed unit with a dispatchable node ready, active or
