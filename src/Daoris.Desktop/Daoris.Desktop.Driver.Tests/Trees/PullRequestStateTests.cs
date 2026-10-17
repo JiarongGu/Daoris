@@ -94,6 +94,70 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
+    /// 🔴 FABRIC-END4a, the fourth review's P1 (TreeTidies.cs:133 and :136, PullRequestAsks.cs:279): the carried tidy asks about the tip it
+    /// read, never the branch's live name. A session branch at A, one commit past what the pull request carried, moved to B, which it carried,
+    /// as it was asked, and back to A before its delete, keeps A: B's proof is not A's.
+    /// </summary>
+    [Fact]
+    public async Task A_carried_tidy_whose_branch_moved_away_and_back_keeps_it()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "first.txt", "the first work\n", "the first work");
+        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "First"));
+        Assert.True(landed.Landed, landed.Message);
+        var source = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
+        var merge = await SquashOnPlatformAsync(origin, landed.Branch!);
+        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
+        await GitAsync(root, "branch", "-D", landed.Branch!);
+        _answers[landed.Branch!] = () => Completed(merge, source);
+        // The answer kept while the session branch is still what the pull request carried, so the carried tidy has a carrier to ask.
+        await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+        Assert.Equal(PullRequestStates.Completed, trees.Recorded.Landing("s1")!.PullRequestState!.State);
+        // A: a commit the pull request never carried, its tree removed by hand so the branch stands alone.
+        await CommitAsync(first.Path, "more.txt", "more work\n", "more work");
+        var a = (await GitAsync(root, "rev-parse", first.Branch)).Trim();
+        await GitAsync(root, "worktree", "remove", first.Path);
+
+        Rule(tidy: true);
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(second.Path, "second.txt", "other work\n", "other work");
+        // The carried tidy reads the branch, then asks the carrier about it: the branch is at B while it is asked, and at A from the next
+        // git start on. (The asks before it ask the same of the branch by name, after reading the pull request's source commit.)
+        var (read, moved, back) = (false, false, false);
+        WorkingTree.Started.Value = arguments =>
+        {
+            if (moved && !back)
+            {
+                back = true;
+                GitNow(root, "update-ref", $"refs/heads/{first.Branch}", a);
+            }
+            else if (read && !moved && arguments is ["merge-base", "--is-ancestor", var revision, var over] && over == source
+                     && (revision == a || revision == $"refs/heads/{first.Branch}"))
+            {
+                moved = true;
+                GitNow(root, "update-ref", $"refs/heads/{first.Branch}", source);
+            }
+
+            read = arguments is ["rev-parse", "--verify", "--quiet", var named] && named == $"refs/heads/{first.Branch}";
+        };
+        try
+        {
+            var next = await trees.LandAsync(second.Path, new LandingSubject("s2", "q2", "Second"), inUse: NoneRunning);
+
+            Assert.True(next.Landed, next.Message);
+            Assert.True(back, "the branch moved to what was carried and back as it was asked");
+            Assert.Equal(a, (await GitAsync(root, "rev-parse", first.Branch)).Trim());
+            Assert.DoesNotContain(next.Tidied!, each => each.Branch == first.Branch && each.Removed);
+        }
+        finally
+        {
+            WorkingTree.Started.Value = null;
+        }
+    }
+
+    /// <summary>
     /// The clean-up's look asks; its press acts on what was kept (design §2.1 occasion 2, §2.3). A landed branch squash-merged
     /// after which the line changed its file again (D102's proof cannot see it) goes as <c>pull-request</c>; each other code
     /// keeps its branch and names why; a second look within the minute asks nothing.
@@ -213,6 +277,8 @@ public sealed class PullRequestStateTests : LandedFixture
         _answers[landing.Branch!] = () => Completed(merge, source);
         await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
         var asked = _asked;
+        // FABRIC-END4a: the look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
 
@@ -247,6 +313,8 @@ public sealed class PullRequestStateTests : LandedFixture
         _answers[landing.Branch!] = () => Completed(merge, source);
         await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
         var asked = _asked;
+        // FABRIC-END4a: the look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
 

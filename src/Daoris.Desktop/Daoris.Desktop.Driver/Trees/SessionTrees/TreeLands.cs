@@ -372,8 +372,10 @@ internal sealed class TreeLands(
         }
 
         TreeLanding landed;
-        // The session tip a squash made the branch's commit from (PROCESS1b-ii): the tidy's proof of what the landing holds.
+        // The session tip a squash made the branch's commit from (PROCESS1b-ii): the tidy's proof of what the landing holds; and the
+        // commit the squash made, which binds the branch the tidy reads to this landing (FABRIC-END4a, fourth review).
         string? squashedTip = null;
+        string? squashedInto = null;
         var branchForm = landing.Rule.Form == LandingForm.Branch;
         // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used.
         if (!branchForm && subject.EnteredName is not null) return new(false, EnteredMerge);
@@ -434,6 +436,7 @@ internal sealed class TreeLands(
             // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
             // because this line wrote it down, at the commit it was made at.
             var tip = branched.Commits.Count > 0 ? branched.Commits[^1].Sha : null;
+            squashedInto = squashedTip is null ? null : tip;
             if (landed.Landed && tip is not null && landed.AdvancedFrom is { } advancedFrom)
             {
                 // Moved on (LAND2c): the entry's tip is the new commit, and the advance is kept with who accepted it (D143).
@@ -558,8 +561,11 @@ internal sealed class TreeLands(
             ? landed.Branch
             : (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         if (into is null) return landed with { Tidied = [] };
-        // A squash holds no session commit, so what it squashed is what it holds (PROCESS1b-ii point 3).
-        var held = await tidies.TidyHeldAsync(root, repository, workspace, squashedTip ?? $"refs/heads/{into}", pressedOut.Trim(), inUse, ct)
+        // A squash holds no session commit, so what it squashed is what it holds (PROCESS1b-ii point 3); the branch made holds that, and a
+        // removal rests on it at the commit read (FABRIC-END4a, third review), a commit holding the one the squash made (fourth review).
+        var held = await tidies.TidyHeldAsync(
+                root, repository, workspace, squashedTip ?? $"refs/heads/{into}", pressedOut.Trim(), inUse, ct, holder: $"refs/heads/{into}",
+                madeAt: squashedInto)
             .ConfigureAwait(false);
         return landed with { Message = landed.Message + TreeTidies.TidiedSaid(held, into), Tidied = held };
     }

@@ -29,6 +29,80 @@ repository.
   again names the last holder and not the first (red with the ask made rare), the journal's new fields round-trip and an old
   one reads as before, the terminal's words and the log line's fields. `HeldFilesProcessTests` (Process): a `node` whose working
   folder is `app/` is named as holding `app` itself, and the folder's move is refused. Two deployment rehearsals, 115/115 each.
+## 2026-10-17 — An unread ref forgot its record, and a detached tree's removal verified nothing (RECORDUNREAD1, DETACHTX1)
+
+- **Symptom:** a fifth review of FABRIC-END4a: a session branch whose ref git could not read was forgotten by LAND3's door as
+  "gone already", and by each look's and press's clean-up of the record; a landing's branch that did not read was retired as gone;
+  and a detached tree whose holder was rewound after its proof was removed, leaving the commit it had out on no ref.
+- **Root cause:** each path read a failed read as absence. `rev-parse --verify --quiet` exits 1 on any failure to resolve, a broken
+  ref's too, and `for-each-ref` leaves a broken ref out of its list and exits 0, so the door, `ForgetGoneAsync` and
+  `JudgeLandedAsync` saw "missing" where git had said nothing of the kind; `merge-base --is-ancestor`'s 128 was read as "not the
+  landing's". A detached tree's removal deletes no branch, so no ref transaction verified what its proof rested on.
+- **Fix:** absence asked of `show-ref --exists`, exit 2 alone (`ContentHolds.MissingAsync`, the knowledge note `git-ref-absence`);
+  anything else keeps the record and says unread, a landing as kind `unknown`. A detached tree's commit kept on a recovery ref
+  before the tree goes, dropped only in one transaction verifying what its proof rested on (`DropKeptVerifiedAsync`). D173's
+  RECORDUNREAD1 and DETACHTX1 note has the detail.
+- **Verification:** red first on END4a's branch, six tests: `UnreadRecordGitTests`' five broken reads and `JudgedDeleteGitTests`'
+  detached holder rewound as the tree went; then green, with the driver's fast half and the Git classes that reach the door, the
+  clean-up, the tidy and the delete.
+
+## 2026-10-17 — A tidy could rest on a landing's branch alone, a replaced holder or a live name (FABRIC-END4a, fourth review)
+
+- **Symptom:** a fourth review, before staging: the automatic tidy removed a session branch held through a landing's branch after the
+  line rewound past that landing; LAND3's squash path cleared a chain's earlier branch on a landing branch made again elsewhere; the
+  carried tidy took a branch at A on the proof of B, where it moved A to B and back as it was asked; a ref broken as its delete was
+  refused read as gone; and an unread landing branch left every other branch unjudged with nothing said.
+- **Root cause:** what a removal rests on was still cut short or unbound in three places: `AutoTidies` rebuilt each landing as a
+  `LineLanding` with its tip and line but not its proof's rests; `TidyHeldAsync` compared the other branches with the squashed session
+  tip while reading the holder at whatever commit it then stood; and `TidyCarriedAsync` handed `CarrierOfAsync` the branch's live name.
+  `RefusedAsync` read `rev-parse`'s exit 1 as "no such ref", though git exits 1 on any failure to resolve. `TidiedSaid` had no words
+  for a branch nobody judged.
+- **Fix:** `LineLanding.Rests` carried to the delete; the holder read at a commit that is or contains the one the squash made
+  (`madeAt`), else nothing judged and each standing branch said as not judged (`TidiedBranch.Unjudged`); the carrier asked about the
+  tip read; absence asked of `show-ref --exists`, exit 2 alone. D173's FABRIC-END4a note, "After the fourth review", has the detail.
+- **Verification:** red first on round 4's branch: `TidyEffectGitTests`' rewound landing, three `JudgedDeleteGitTests` and
+  `PullRequestStateTests`' moved carried branch; then green, with the driver's fast half and the Git classes that reach the delete and
+  the tidy.
+
+## 2026-10-17 — A removal could rest on a holder that was gone, or verify a line it never compared (FABRIC-END4a, third review)
+
+- **Symptom:** a third review, before staging: a branch of the person's that held a session branch by ancestry, deleted between the
+  judgement and the delete, let the unchanged line authorize the delete; a content holder, a landing an `Inside` branch rested on and
+  a squashing landing's branch moved as the branch went, and it went; the line rewound between a landed branch's proof and its
+  recovery ref was verified at its rewound commit; a read that failed after a refused delete counted as the branch gone; and one name
+  recorded and removed again and again kept every one of its traces from pruning.
+- **Root cause:** what a removal rested on was derived again after its proof (`ContentHolds.ProofRefsAsync` read the holders afresh,
+  and fell back to the line's forms where it found none; the landings' clean-up read the line after making the recovery ref, which
+  drops the judgement's snapshot), and the proofs asked refs by their live names, so the commit verified was not always the commit
+  proved. `RefusedAsync` read any non-zero exit as "no such ref". `Bounded` exempted every trace whose name's tree folder stood.
+- **Fix:** each proof returns its dependencies, each ref at the commit it read (`HoldersAsync`/`HolderOf`, `ContentProof.At`,
+  `SquashedHoldAsync`, `PullRequestCarrier.Rests`, `LandedProofs.Proof.Rests` with `LineForm.At`, `Judged.Rests`), and the delete's
+  transaction verifies exactly those; the after-the-fact reads are gone, and a delete handed nothing refuses. Only exit 1 reads as gone.
+  Only the newest trace of a name where none stands is exempt. D173's FABRIC-END4a note, "After the third review", has the detail.
+- **Verification:** red first on round 3's branch: six `JudgedDeleteGitTests` and `TidyEffectTests`'s repeated re-record; then green,
+  with the driver's fast half and the Git classes that reach the delete and the tidy.
+
+## 2026-10-17 — The look's tidy could take a branch the line had stopped holding, and say a failed put-back worked (FABRIC-END4a)
+
+- **Symptom:** a second review of END4a's fixes, before it was staged (its merge was reverted): the delete's look-again caught two
+  tested races, but four callers passed it nothing to look at; a put-back git refused still read as "put back"; a tree list git
+  could not give after the delete read as clear; and while a branch was absent, another look, the branches page or a session's
+  checkout could observe the absence, which no put-back undoes. Beside it, the look's fallback memory and the effect's settle could
+  suppress a cleared blocker for good, or past one more deadline.
+- **Root cause:** `git update-ref -d <branch> <judged>` compares the branch alone, so whatever the proof rested on was looked at only
+  after the branch was gone, by callers that remembered to say what that was; and `GitAsync` wrote no standard input, so git's own
+  transaction was out of reach. The put-back ran `update-ref` and ignored its exit. The fallback's memory and the settle were keyed
+  on what a blocker's clearing need not change (two commits; a folder's and an index's times), and a settled wake still counted as
+  the chain's try.
+- **Fix:** `WorkingTree.GitAsync` writes git's input, and `ContentHolds.DeleteJudgedAsync` deletes with `update-ref --stdin`, a
+  `verify` for every ref the proof rested on beside the `delete`, so git refuses the whole under its locks; its snapshot is a
+  required argument every caller passes. The late checkout, which no ref says, is read again: an unread list is not clear, the
+  put-back's exit is read and a refusal said, and a recovery ref goes only in a transaction verifying the branch that holds its
+  commit. The memory and the settle judge again at the `refs` deadline, a deadline wake always tries, and a settled answer leaves
+  the chain's deadline unmoved. D173's FABRIC-END4a note, "After the second review", has the detail.
+- **Verification:** red first: `JudgedDeleteGitTests` (4), `TidyEffectGitTests` (the rewound row, the live tree's follow, the bound
+  on the memory) and `TidyEffectTests` (the settled wake, the live tree's trace, the reason); then green, with the driver's fast half
+  and the Git classes that reach the delete and the tidy.
 
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 

@@ -79,7 +79,8 @@ internal sealed class TreeFollows(TreeContext context)
             return await OwnBranchOfAsync(tree, ct).ConfigureAwait(false) ?? layout.Branch;
         }
 
-        return context.Grown.Of(layout.Repository, layout.Branch)?.Now ?? layout.Branch;
+        // A removed branch's trace keeps where its tree went (FABRIC-END4a, second review), so it is still known once the tree is gone.
+        return context.Grown.Following(layout.Repository, layout.Branch)?.Now ?? layout.Branch;
     }
 
     /// <summary>
@@ -98,7 +99,8 @@ internal sealed class TreeFollows(TreeContext context)
                 // A linked tree's `.git` is a file; a folder with none is a leftover, which git would answer for the repository above.
                 if (!File.Exists(Path.Combine(tree, ".git"))) continue;
                 var layout = SessionPrefix + Path.GetFileName(tree);
-                if (context.Grown.Of(repository, layout) is not { } entry) continue;
+                // The standing entry, else the trace the tidy left of a removed branch whose tree lives on (FABRIC-END4a, second review).
+                if (context.Grown.Following(repository, layout) is not { } entry) continue;
                 string? now;
                 try
                 {
@@ -112,7 +114,8 @@ internal sealed class TreeFollows(TreeContext context)
                 // A detached tree has no branch to follow: the layout's stays.
                 if (now is null) continue;
                 var learned = string.Equals(now, layout, StringComparison.Ordinal) ? null : now;
-                if (!string.Equals(entry.Now, learned, StringComparison.Ordinal)) context.Grown.Record(entry with { Now = learned });
+                // Written in place: a trace stays a trace, never recorded standing (and pending) again.
+                if (!string.Equals(entry.Now, learned, StringComparison.Ordinal)) context.Grown.Follow(repository, layout, learned);
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

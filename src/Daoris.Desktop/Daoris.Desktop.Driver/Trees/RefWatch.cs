@@ -123,9 +123,13 @@ public sealed class RefWatch : IAsyncDisposable
     /// <param name="every">The topic's deadline; <see cref="Deadline"/> unless a test or a host says another.</param>
     /// <param name="source">What watches the folders: the machine's watchers unless a test hands its fake.</param>
     /// <param name="clock">What time it is; the system's unless a test hands its own.</param>
+    /// <param name="tidy">
+    /// Link 2, the look's tidy as an effect (FABRIC-END4a), bound on this chain beside link 1, so a <c>work.held</c> it emits tries that
+    /// repository's tidy in the same wake; null leaves the row unbound.
+    /// </param>
     public RefWatch(
         string home, Func<CancellationToken, Task<IReadOnlyList<RefRepository>>> repositories, Func<RefRepository, CancellationToken, Task<int>> keep,
-        TimeSpan? every = null, IChangeSource? source = null, Func<DateTimeOffset>? clock = null)
+        TimeSpan? every = null, IChangeSource? source = null, Func<DateTimeOffset>? clock = null, IChainEffect? tidy = null)
     {
         _home = home;
         _repositories = repositories;
@@ -133,19 +137,30 @@ public sealed class RefWatch : IAsyncDisposable
         _changes = new ChangeWatch(source, clock);
         _chain = new Chain(_changes, clock: clock).Bind(ChainRanks.Judge, JudgeAsync);
         _chain.Topic(ChangeTopics.Refs, ChainEvents.Refs, every ?? Deadline, AtOnce);
+        if (tidy is null) return;
+
+        // Link 2's unblocking wakes (§C6), each a topic of its own on this chain so a burst of them is one wake: a session leaving its tree
+        // or ending, a press, the home's files. Their deadlines wake no link; the `refs` deadline is the effect's.
+        _tidy = true;
+        _chain.Bind(ChainRanks.Tidy, tidy);
+        foreach (var wake in Unblocking) _chain.Topic(wake, wake, every ?? Deadline);
     }
+
+    /// <summary>The wakes the loop hands link 2 (<see cref="Unblocked"/>): <c>ledger</c>, <c>press</c> and <c>home</c>.</summary>
+    public static IReadOnlyList<string> Unblocking { get; } = [ChainEvents.Ledger, ChainEvents.Press, ChainEvents.Home];
 
     /// <summary>The driver's: the registry's repositories holding Daoris's work (<see cref="RepositoriesAsync"/>), judged by the end keeper.</summary>
     /// <param name="heard">Told each repository judged (<see cref="Heard"/>): the landing's wake (FABRIC-END7).</param>
     public static RefWatch ForDriver(
         string home, Func<CancellationToken, Task<IReadOnlyList<RepoView>>> registry, TimeSpan? every = null, IChangeSource? source = null,
-        MachineLog? log = null, Action<string>? heard = null) =>
+        MachineLog? log = null, Action<string>? heard = null, IChainEffect? tidy = null) =>
         new(
             home,
             ct => RepositoriesAsync(home, registry, ct),
             (repository, ct) => new SessionTrees(home).KeepEndsAsync(repository.Root, repository.Repository, repository.Workspace, ct),
             every,
-            source)
+            source,
+            tidy: tidy)
         {
             Log = log,
             Heard = heard,
@@ -156,6 +171,24 @@ public sealed class RefWatch : IAsyncDisposable
     /// wake, which looks at the due entries of that repository alone (<see cref="LandingWakes.Moved"/>). Never told at a deadline.
     /// </summary>
     public Action<string>? Heard { get; init; }
+
+    /// <summary>
+    /// Something that can unblock a refused tidy happened (§C6): <paramref name="wake"/> is one of <see cref="Unblocking"/>. Coalesced on
+    /// its topic, so a burst is one try of each pending repository. Nothing where link 2 is not bound here.
+    /// </summary>
+    public void Unblocked(string wake)
+    {
+        if (_tidy && Unblocking.Contains(wake, StringComparer.Ordinal)) _chain.Hint(wake, wake);
+    }
+
+    /// <summary>
+    /// The start's reconciliation (§C6, canary 16): every topic judged whole and every repository link 2 is pending for, read from the
+    /// persisted facts, tried once, so a crash between a fact and its tidy loses nothing. What the links acted on.
+    /// </summary>
+    public Task<int> RecoverAsync(CancellationToken ct) => _chain.RecoverAsync(ct);
+
+    // Whether link 2 is bound here: only then do the unblocking wakes have a topic.
+    private readonly bool _tidy;
 
     /// <summary>Where each judgement that was not an idle deadline, each loss and each link that acted is written; none by default.</summary>
     public MachineLog? Log
