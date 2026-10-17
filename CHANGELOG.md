@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A workspace's Branches page can now delete the recovery refs nothing holds in one press, *Delete the ones nothing holds*, after a
+  confirmation that lists them and says their commits may then be lost from this machine and that a git remote may still have the
+  work; `daoris-driver work recovery drop` does the same from a terminal. A ref that moved, or that a branch or a tag now holds, is
+  kept, and the answer says which and why.
 - An update that could not move a file because another program held it now says which file and which program, in
   `daoris-driver update` and in the window's note of the rolled-back update.
 - A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,

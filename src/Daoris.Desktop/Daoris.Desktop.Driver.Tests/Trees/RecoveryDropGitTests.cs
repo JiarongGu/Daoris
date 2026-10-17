@@ -126,6 +126,26 @@ public sealed class RecoveryDropGitTests : LandedFixture
     }
 
     [Fact]
+    public async Task Only_the_process_holding_the_home_acts_and_a_missing_checkout_is_said()
+    {
+        var root = await RepositoryAsync("engine");
+        var alone = await CommitAsync(root, await TipAsync(root), "work nothing holds");
+        await GitAsync(root, "update-ref", $"{Prefix}daoris/s-alone", alone);
+
+        var without = await RecoveryDropping.PressAsync(Home, root, "engine", null, CancellationToken.None);
+
+        Assert.Contains("does not hold the home", without.Refused);
+        Assert.Equal(alone, (await GitAsync(root, "rev-parse", $"{Prefix}daoris/s-alone")).Trim());
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            Assert.Contains("no checkout", (await RecoveryDropping.PressAsync(Home, null, "engine", null, CancellationToken.None)).Refused);
+            var held = await RecoveryDropping.PressAsync(Home, root, "engine", null, CancellationToken.None);
+            Assert.Null(held.Refused);
+            Assert.Equal([new RecoveryDropped($"{Prefix}daoris/s-alone", alone)], held.Dropped);
+        }
+    }
+
+    [Fact]
     public void The_words_say_what_went_and_what_was_kept_and_why()
     {
         var words = RecoveryDropping.Words("engine", new RecoveryDrops(

@@ -96,6 +96,9 @@ public sealed partial class PressesTold(string home)
         }
     }
 
+    /// <summary>A press of no one session's, told now in <paramref name="home"/>: what a verb says once it has acted (RECOVERYDROP1).</summary>
+    public static bool Tell(string home, string route) => new PressesTold(home).Tell(new PressTold(route, null, DateTimeOffset.UtcNow));
+
     /// <summary>
     /// Every note waiting, taken once and removed, oldest first: what the loop that hears them publishes. One that does not read as
     /// a press, or that nobody took for <see cref="Lifetime"/>, is removed and not returned.

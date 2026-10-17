@@ -139,7 +139,7 @@ internal static class WorkConsole
             kept |= done.Refused is not null || (!ask.Unheld && done.Skipped.Count > 0);
         }
 
-        if (dropped > 0) new PressesTold(home).Tell(new PressTold(PressesTold.RecoveryDrop, null, DateTimeOffset.UtcNow));
+        if (dropped > 0) PressesTold.Tell(home, PressesTold.RecoveryDrop);
         return kept ? 1 : 0;
     }
 
