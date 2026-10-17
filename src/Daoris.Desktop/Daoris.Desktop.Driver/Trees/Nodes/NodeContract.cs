@@ -416,7 +416,7 @@ public static class NodeAuthorities
     /// <summary>
     /// The node's authority: its built-in kind's, or a plugin's own (its believed answer either way, a person only where declared, a
     /// skip unless declared otherwise); null for a kind this build does not know. A plugin's answer is named <see cref="NodeSource.Plugin"/>
-    /// here alone: that the answer came from the declaring plugin is PERFORM1c's authenticated sender check, not the lifecycle's.
+    /// here alone: that the answer came from the declaring plugin is <see cref="WorkBelief.Completion"/>'s sender check, not the lifecycle's.
     /// </summary>
     public static NodeAuthority? Of(NodeDeclaration node) =>
         BuiltIn.TryGetValue(node.Kind, out var builtIn) ? builtIn

@@ -74,7 +74,7 @@ public sealed record WorkReconcileAnswer(string State, WorkOutcome? Outcome = nu
 
 /// <summary>
 /// A step event as the hook set heard it (FABRIC-PERFORM1a): the plugin and the generation of the process it was read from, never what the
-/// frame says of its sender (§C4's first belief rule), and the frame read by shape. What is believed of it is PERFORM1c's.
+/// frame says of its sender (§C4's first belief rule), and the frame read by shape. What is believed of it is <see cref="WorkBelief"/>'s.
 /// </summary>
 public sealed record WorkStepHeard(string Plugin, int Generation, WorkStepFrame Step);
 
