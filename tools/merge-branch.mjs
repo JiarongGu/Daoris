@@ -164,11 +164,12 @@
  * gate also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, the web gate), GATEORDER1:
  * the 0b44c7a run started `driver-process` beside cli, service and web and two timing tests failed there. The cost is
  * the light lane's tail, about 7 to 8 minutes of a full set of an hour or more, since the Process lane is the long pole
- * either way. The git half and the serial half never overlap: the Process lane is one gate at a time. `--stale` and
- * `--rerun` run through the same `runGates`, so they follow the same order. A Process-lane
- * gate whose command names no project, a rehearsal, starts once the light lane has ended: it builds the hosts behind its
- * script's name, and the deployment rehearsal first shuts the build servers down. A Process gate's failures are re-run
- * alone only once the light lane has ended, so a pass alone is still a pass with nothing beside it (FLAKE1).
+ * either way. The git half and the serial half never overlap: the Process lane is one gate at a time, but for the family
+ * rehearsal beside the git half (REHLANE1, below). `--stale` and `--rerun` run through the same `runGates`, so they follow
+ * the same order. A Process-lane gate whose command names no project, a rehearsal, starts once the light lane has ended:
+ * it builds the hosts behind its script's name, and the deployment rehearsal first shuts the build servers down. A
+ * Process gate's failures are re-run alone only once the light lane has ended, and the gate beside it in its own lane,
+ * so a pass alone is still a pass with nothing beside it (FLAKE1).
  *
  * Each gate's log, verdict and line are its own, the line printed as the gate ends; once both lanes have ended, every
  * gate's line is printed again in the plan's order, a gate not started as NOT RUN. The first failure, unless
@@ -198,6 +199,38 @@
  * a changed tree, or one git cannot name, builds. A `--rerun` or `--stale` that names a Process half without its fast
  * half has no fast half in its run, and builds; one that names both reuses as a full set does. The flake re-run alone
  * was `--no-build` already. One at a time reuses too.
+ *
+ * ## The family rehearsal beside the git half (REHLANE1)
+ *
+ * After GATELANES2 a full set's wall was mostly the Process lane, one gate at a time: the git half about 45 to 50
+ * minutes, the serial half 15 to 19, the family rehearsal 10 to 26 and the deployment rehearsal 13 to 15. So a rehearsal
+ * of `BESIDE_GIT_HALF` (`runsBesideGitHalf`) runs beside a git half (`isGitHalf`, the driver's `git.process.runsettings`
+ * half, `beside` in the schedule): it goes in the lane right after the last git half, and a Process-lane gate starts once
+ * every gate before it in the lane has ended but those it may run beside. Every other pair still runs one at a time, the
+ * serial halves among them, and the rehearsal still waits for the whole light lane.
+ *
+ * A rehearsal runs beside a Process half only where they share no build output. The Process halves build the desktop's
+ * projects into their own `bin/` and `obj/` and run from them, and only the desktop's (a test holds that). So the family
+ * rehearsal builds the driver host into an output of its own, `_fixtures/rehearsal-builds/family` (`ownBuild` in
+ * `tools/rehearsal-kit.mjs`, the SDK's `--artifacts-path`), and the service's hosts where the driver finds a development
+ * build, in folders no Process half builds; and it shuts no build server down. A test reads its tool for both.
+ *
+ * The deployment rehearsal and the release rehearsal are not of `BESIDE_GIT_HALF` (its comment says why): they run alone,
+ * the deployment rehearsal last, where its build-server shutdown stops no build. D115's REHLANE1 note has what was rejected.
+ *
+ * A git half that re-runs its failures alone (FLAKE1) waits for the family rehearsal beside it to end, and no Process-lane
+ * gate starts meanwhile. A rehearsal that died and is run again whole (LEFT1) does not wait: that re-run is about a process
+ * that ended, and two gates each waiting for the other to end would never start.
+ *
+ * ## The web gate's unit run beside service (WEBSPLIT1)
+ *
+ * In a full set the light lane's floor was the service suite then the web gate, about 10 minutes under load, because the
+ * web gate builds the HTTP host the service suite builds. Its first step, the page's vitests, builds nothing. So it is a
+ * light gate of its own, `web-unit` (`npm run test:web:unit`), of no component, and runs beside service; `web` runs the
+ * page's build, the HTTP host's and Playwright (`npm run test:web:e2e`), after service as before. `npm run test:web` runs
+ * both, for a person. Both are heavy (GATEORDER1), and `web` is declared first (`LIGHT_WIDTH` says why). WEBGATE1's cap on
+ * vitest's workers is the page's own config, so it holds wherever the unit run runs. A vitest's read outside the page
+ * reaches `web-unit`, and the browser suite's reads reach `web`.
  *
  * ## A batch
  *
@@ -287,7 +320,7 @@ export const runsBesideGitHalf = (gate) => BESIDE_GIT_HALF.includes(scriptNamed(
 
 /**
  * The heavy light gates (GATEORDER1): the suites that load the CPU for minutes (the CLI's verify, the .NET test suites,
- * the web's build and end-to-end run). The 0b44c7a run started `driver-process` beside cli, service and web, and two
+ * the web's build and end-to-end run, and its unit run, WEBSPLIT1). The 0b44c7a run started `driver-process` beside cli, service and web, and two
  * timing tests failed there and passed alone. A Process gate starts after these, not only after its own component's.
  * Named by what a gate runs, as `isProcessLane` is. The cheap light gates (universal, code-map, orient-index) are not.
  */
@@ -320,6 +353,13 @@ export function dotnetComponent(run) {
  * of the devkit's 175 s and the service's and the desktop's together, 257 s; three take the devkit's 175 s. A full set
  * that runs the web gate ends no sooner with three than with two (the service's gates then web, about 10 minutes under
  * load, are its floor), so three is the width, on 22 logical processors.
+ *
+ * WEBSPLIT1 took the web gate's vitests off that floor as a gate that builds none, `web-unit`. It takes the first free
+ * place `web` does not take: `web` is declared before it, so a place service frees goes to `web`, and the floor is service
+ * then the page's build and browser suite. By the figures above the desktop's fast halves end before service, so it runs
+ * beside service. A
+ * fourth place would start it at once, beside three heavy gates, for no shorter floor: TESTWAIT2's 600 ms bound already
+ * failed beside two, so the width stays three until the parent's full sets measure otherwise.
  */
 export const LIGHT_WIDTH = 3;
 

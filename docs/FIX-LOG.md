@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The rehearsals waited for the whole Process lane, and the web gate's vitests for service (REHLANE1, WEBSPLIT1)
+
+- **Symptom:** after GATELANES2 (a merge's light lane about 4 m 15 s, against 9 m 35 s one at a time) a full set's wall was
+  the Process lane in turn: the git half about 45 to 50 m, alone in the lane; the serial half about 15 to 19 m;
+  `rehearse-family` 10 to 26 m; `deployment` about 13 to 15 m. Before it, the light lane's floor: `web`, 4 to 6 m, behind
+  `service`, about 10 m under load together.
+- **Root cause:** a rehearsal waited for every Process half, though the family rehearsal and the git half share nothing
+  but the desktop's build output, which only the rehearsal's build of the driver host touched. The web gate's first step,
+  the page's vitests, builds nothing, and waited for service only because the rest of its gate builds the HTTP host.
+- **Fix:** `tools/merge-branch.mjs` runs a rehearsal of `BESIDE_GIT_HALF` (the family rehearsal) beside a git half, and
+  every other Process-lane gate alone, the deployment rehearsal last; a git half's re-run alone waits for it. The family
+  rehearsal builds the driver host into its own output (`ownBuild` in `tools/rehearsal-kit.mjs`, `--artifacts-path` under
+  `_fixtures/rehearsal-builds/family`). The web gate's vitests are their own light gate, `web-unit`
+  (`npm run test:web:unit`); `web` runs `npm run test:web:e2e`. D115's note "REHLANE1, WEBSPLIT1" has the choices.
+- **Verification:** seven new tests in `merge-branch.test.ts` (the schedule's pair and order, the run beside and the
+  re-run alone, the family's own output read from its tool, the web gate's two halves) and one in `rehearsal-kit.test.mjs`,
+  all seen red but one: the unit run beside service passed on GATELANES2's light lane as it stood. Then `merge-branch.test.ts` 104 (97 before), `rehearsal-kit.test.mjs` 29 (28), `dogfood.test.ts`
+  32, and `verify`. **The walls** (the rows' proof, recorded by the parent at its next full sets, against the figures
+  above): set 1 —; set 2 —; set 3 —; the Process lane's wall, the light lane's, and the flakes of each, with the family
+  rehearsal's transcript showing its driver host built under `_fixtures/rehearsal-builds/family`.
+
 ## 2026-10-18 — The light lane ran its gates one at a time, and each Process half built again (GATELANES2, GATEBUILD1)
 
 - **Symptom:** a merge's light lane (universal, code-map, orient-index, cli, service, driver, modules) took 10 to 12 minutes
