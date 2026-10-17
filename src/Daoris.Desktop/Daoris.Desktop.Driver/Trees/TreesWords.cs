@@ -196,6 +196,62 @@ public static class TreesWords
 
     /// <summary>A look or a press that took no checkout, or a workspace the registry does not name: a sentence on the error, exit 1.</summary>
     public static TreesSaid Refused(string sentence) => new([], [sentence], 1);
+
+    /// <summary>
+    /// A landing the review already reads as landed (REVIEW2, D113): <c>trees land</c> says why nothing is landed again, on its output,
+    /// exit 1, and the route that answers the press says the same (RPC1b4).
+    /// </summary>
+    public static TreesSaid NotAgain(string session, LandedReview review, bool treeGone) =>
+        new([$"trees: {LandedReviewWords.NotAgain(session, review, treeGone)}"], [], 1);
+
+    /// <summary>A press to land a session whose record names no tree here: a sentence on the error, exit 1.</summary>
+    public static TreesSaid NoTreeToLand(string session) =>
+        new([], [$"trees: session `{session}` names no working tree on this machine, so there is nothing here to land."], 1);
+
+    /// <summary>
+    /// The review's reading of a session's earlier landing, for the press that would land it again: null where this machine kept no
+    /// landing of it. The verb and the route ask it alike, so the two refuse alike (RPC1b4).
+    /// </summary>
+    public static async Task<LandedReview?> LandedBeforeAsync(
+        SessionTrees trees, ServiceClient service, string session, CancellationToken ct = default)
+    {
+        var landed = trees.Recorded.Landing(session);
+        if (landed is null) return null;
+        var checkout = (await service.RegistryAsync(ct).ConfigureAwait(false))
+            .FirstOrDefault(row => string.Equals(row.Repository, landed.Repository, StringComparison.OrdinalIgnoreCase))?.Root;
+        return await trees.LandedReviewAsync(
+            string.IsNullOrWhiteSpace(checkout) || !Directory.Exists(checkout) ? null : checkout, landed, changes: false, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A refusal the driver threw for one entry's press, said as that entry's own landing: it holds only this entry and never stops
+    /// the rest (D167's amendment point 4). Both doors say it alike.
+    /// </summary>
+    public static EntryLanding Unlanded(string reason) => new(false, $"Nothing was landed: {reason}", null, []);
+
+    /// <summary>An entry's or an ask's Accept naming nothing with work to land here: a sentence on the error, exit 1.</summary>
+    public static TreesSaid EntryNone(bool isAsk, string id) =>
+        Refused($"trees: no {(isAsk ? "ask" : "entry")} `{id}` has work to land on this machine.");
+
+    /// <summary>
+    /// <c>trees land --entry</c> and <c>--ask</c>: the plugins' lines first, then each repository's landing sentence with each part's
+    /// outcome under it, the notes kept on the error; 1 where any entry did not land entirely.
+    /// </summary>
+    public static TreesSaid EntryLand(
+        IReadOnlyList<(string Repository, EntryLanding Landed)> landings, IReadOnlyList<string> pluginLines, IReadOnlyList<string> notes)
+    {
+        var said = new List<string>(pluginLines);
+        foreach (var (repository, landed) in landings)
+        {
+            said.Add($"trees: {repository}: {landed.Message}");
+            foreach (var part in landed.Parts)
+            {
+                said.Add($"  {part.Outcome,-9}  {part.Session}" + (part.Landing is { } its ? $"  {its.Message}" : ""));
+            }
+        }
+
+        return new(said, notes, landings.All(each => each.Landed.Landed) ? 0 : 1);
+    }
 }
 
 /// <summary>What the registry's following said of the lines a press moved (WSSETUP5, D124 §3.1): the lines, and the failure if it had one.</summary>

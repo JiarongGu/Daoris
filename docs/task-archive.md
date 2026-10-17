@@ -16197,3 +16197,81 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **GITSTART1 — Daoris's git starts past Git for Windows' launcher** (driver; D121 §2.4). Where `PATH` finds `cmd\git.exe`, a launcher that starts the real git as a second process, Daoris's own git and the driver tests' git start the real one with the environment the launcher gives it, measured, not recalled. The owner: the tests are too slow; PROC1a found the Process half is mostly git starts. Proof: the layout recognised and others left alone; the child environment equal to the launcher's on a real install; a hook and a `!` alias through the direct start; the person's named git untouched; timings in FIX-LOG.
 
 **Outcome** 2026-10-18: where `PATH` finds Git for Windows' launcher, the system's git starts as `<top>\<prefix>\bin\git.exe` with the launcher's measured variables (`GitForWindows`, from `WorkingTree.GitStart`); a named or managed git starts as before, and so does a start whose `PATH` would pass 32,766 characters. The driver tests' fixtures and 34 classes' own runners go the same way (`TestGit.Past`). Bare starts are 25–40% faster (110–180 ms each); four Git classes showed no gain beyond noise, and gate runs started from Git Bash never went through the launcher (its `PATH` finds `mingw64\bin\git.exe` first), so the gain is the installed app's and PowerShell's. A Codex review's two edges (a long `HOME`, a long `PATH`) were measured and fixed before the merge. On Opus: about 130 tool calls. Detail: FIX-LOG GITSTART1, D121's 2026-10-18 note.
+
+## GATELANES2 — the light lane's components side by side (2026-10-18, D115)
+
+> - [ ] **GATELANES2 — the light lane's components side by side** (tools; after GATEORDER1). The light lane runs its gates one at a time (cli about 4 m alone), and every Process gate waits for the heavy ones, so its length adds to every full set. Run light gates of different components at once, never two builds of one project. Proof: three full sets' walls and flakes against the one-at-a-time lane, in FIX-LOG.
+
+**Outcome** 2026-10-18: the light lane runs up to three gates at once (`LIGHT_WIDTH`), never two that build one .NET component; a gate's components are read through the root scripts it names. GATEORDER1's waits, the stop on the first failure, the summary's order and `--one-at-a-time` are unchanged. Its first merge ran six light gates in about 4 m 15 s against 9 m 35 s one at a time; two fast-suite tests with clock-bound waits then failed beside other gates and passed alone (TESTWAIT2). On Opus: about 60 tool calls (with GATEBUILD1). Detail: `tools/merge-branch.mjs`'s header, D115's 2026-10-18 note.
+
+## GATEBUILD1 — a Process gate reuses the build its fast half made (2026-10-18, D115)
+
+> - [ ] **GATEBUILD1 — a Process gate reuses the build its fast half made** (tools). Each `dotnet test` gate builds again; a Process half after its component's fast half on an unchanged tree could run `--no-build`. Proof: the gate's log shows no build and its verdict is unchanged; a changed tree still builds.
+
+**Outcome** 2026-10-18: a Process half runs `--no-build` when its test project's fast half passed in the same run on the tree it starts on (`testBuild`, `reuses`, `reuseBuild`), and its line says whose build it ran; a changed tree, a tree git cannot name, or a `--rerun`/`--stale` without the fast half builds. Detail: `tools/merge-branch.mjs`'s header, D115's 2026-10-18 note.
+
+## PROC1h — Git fixtures copied from a seed (2026-10-18, D160)
+
+> - [ ] **PROC1h — Git fixtures copied from a seed** (driver tests; after GITSTART1; FIX-LOG PROC1a). Making repositories (`init`, `config`, the first commit, `remote add`, the first push) is about half of the fixture's 14–24% of a Git class's time. Build each fixture shape once per run and copy it per test, each with its own writable repositories, origin paths repaired and no linked-worktree metadata carried. Proof: the four-class wall before and after, every test unchanged and passing.
+
+**Outcome** 2026-10-18: `LandedFixture`'s repositories are file copies of a seed built once per run (`GitSeed`), origin url repaired and no worktree metadata carried; fixture starts on four classes 437 → 258 (`init`, `config`, `remote` to 0). The four-class wall did not move beyond noise: at four classes at once the wall is the longest class's own product starts, while the whole git half is its summed time over its width. On Sonnet: about 35 tool calls. Detail: FIX-LOG's PROC1h paragraph.
+
+## FABRIC-CLOSE1q — a close's authority: today's submission and the door's answer (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1q — a close's authority: today's submission and the door's answer** (driver; after CLOSE1l, PERFORM1g; §E5). (1) `Chained` and the override's suppression accept any past successful close naming the id (`NodeRuntime.cs:403`): match `(quest, submission machine, sequence)`, since a resubmitted same commit is another submission. (2) A held close attempt (`QuestCloser.cs:374`) takes PERFORM1g's happened / did-not / stop, and did-not mints a second close: a held close gets its own recovery instead: record the door's established answer again, or replay an unanswered call with its key, token and named submissions; stopping the graph's further work is offered apart; never a new close, never the person's word as the door's. Proof: a close for S1 kept, S2 of the same commit closed by the person, read as overridden and never reached through S1; a door's success whose local application held, each recovery across a restart, one key and Done unchanged.
+
+**Outcome** 2026-10-18: a close speaks only for the submission it judged (`QuestClosing.NamesCurrent`: the quest, its submission's machine and sequence, for `ReachByChain` and the override alike; a held close with no refusal kept is the door's, never the person's). A held close takes its own recovery: `record`, `resend` and `stop`; it never takes a plugin's word. `WORK_STATE`'s `held` gains `words`, and What needs you offers exactly those in English and 中文. Built from a Codex pre-mortem in one round. On Opus: about 90 tool calls. Detail: D173's FABRIC-CLOSE1q note.
+
+## FABRIC-CLOSE1o — a pending take-bind owned, expiring and rechecked (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1o — a pending take-bind owned, expiring and rechecked** (service, driver; after CLOSE1l; §E5). A pending take-bind row names only a quest id (`Quests.cs:1285`, `:1349`, `:1364`, `:1845`): store the intended session, the publication's operation identity and an expiry, and validate and consume it in the take's own transaction with Taken and Bound, rechecking the effective remote there. `CREATE TABLE IF NOT EXISTS` upgrades nothing: migrate local and shared stores, discarding legacy pending rows whose owner cannot be shown. An expired bind lets the take go unbound and says so once. Proof: an upgrade-and-take test over the old schema: legacy owner, wrong session, replaced publication, expiry crossed while waiting, remote enabled since; none appends Bound, the valid case appends Taken and Bound together.
+
+**Outcome** 2026-10-18: a pending take-bind keeps the session it is named for, the quest's publication and an expiry an hour on; the take consumes it in its own write and binds only for that session, on that publication, before it expires, with no remote read at that moment. `quest_take_binds` gains these columns on local and shared stores, and ownerless rows are discarded; an expired, replaced or remote-since bind is said once and the session finishes with `done`. Built from a Codex pre-mortem in one round. On Opus: about 90 tool calls. Detail: D173's FABRIC-CLOSE1o note; FIX-LOG.
+
+## FABRIC-CLOSE1p — the close's fresh fence reads branch tips (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1p — the close's fresh fence reads branch tips** (driver; after CLOSE1l; §E5). The fence passes empty roots to the inventory (`Loop/DriverWatch.cs:404`), and `StandingBranch` drops object ids: resolve the roots and carry the refs' ids into the branches' revisions, one batched snapshot per repository per judgement and a fresh one just before the send; an unread ref leaves the close waiting. LANDGIT1 forbids carrying a mutable tip across judgements. Proof: real git through `DriverWatch`'s units, a session branch moved after the prerequisite's acceptance, no close sent until judged again, and the test's git starts counted with branches sharing a repository.
+
+**Outcome** 2026-10-18: the loop's units read carries the tip of each branch a bound quest's chain worked, one `RefSnapshot` per repository per read (`QuestClosing.TipsAsync`); the close's revision digests those tips, an unread tip leaves the close waiting, and a stale fence ends the unit's judgement for the pass. Git starts: 0 with no bound quest, 1 per repository per read, 2 in a fenced pass. Merged with CLOSE1r against CLOSE1q (`NamesCurrent`'s `Naming` kept). On Opus: about 60 tool calls. Detail: D173's FABRIC-CLOSE1p note.
+
+## LANDPIN3 — an installed copy of an example plugin brought up to date (2026-10-18, D119)
+
+> - [ ] **LANDPIN3 — an installed copy of an example plugin brought up to date** (driver, plugins; D119). A copy installed before GitHub 1.3.0 / Azure DevOps 1.4.0 still pushes by name (the owner's Azure DevOps plugin does), and nothing says so. Proof: a test where the catalogue says an installed example is older than the one shipped.
+
+**Outcome** 2026-10-18: an installed copy of an example plugin older than the shipped one is said with both versions and the example's `changes` line, and the person's press takes the shipped copy even when the copy has no record of its source (keeping `.data/` and the switch); a copy whose files differ at the shipped version is said as changed and never replaced. On Sonnet: about 120 tool calls. Detail: D119's LANDPIN3 note.
+
+## LANDHOLD2 — a press says it is waiting behind a landing (2026-10-18, D173)
+
+> - [ ] **LANDHOLD2 — a press says it is waiting behind a landing** (web-shell, driver; D145 point 2, D173's LANDRACE1 note). A press during another landing waits up to five minutes with no word on the page, and PressSteps has no step for it. Proof: a press-step test that reaches a waiting step while the hold is taken, in English and Chinese.
+
+**Outcome** 2026-10-18: a landing or hand-off that waits on a tree's or branch's hold says so (`LandingHoldNotice` → `PressSteps.Waiting`) and says it stopped once it has the hold; the review's Accept and hand button read "Waiting its turn…" / "排队中…", and `trees land` and `trees hand` print one line. An uncontended press says nothing new. On Sonnet. Detail: D173's LANDHOLD2 note.
+
+## RPC1b3 — the trees presses' routes carry the terminal's words (2026-10-18, D171)
+
+> - [ ] **RPC1b3 — the trees presses' routes carry the terminal's words** (modules, driver host; before RPC1c opens them). `remove <path>` names a tree where `DISCARD_SESSION_TREE` takes a session, `hand` names a branch and repository where `HANDOFF` takes a session, plugin lines go to the loop's output, and `sync --yes` fetches where `TREES_SYNC` acts on the page's list. Add each route's fields, never changed in place, so RPC1c only flips the class. Proof: per verb, the text from the answer equals the alone path's against `InstanceStandIn`.
+
+**Outcome** 2026-10-18: the trees presses' routes take the verbs' added fields and answer each verb's words as `said`; `TreesWords` builds them for the alone path and the route alike, and `TreesConsole` prints through it; no route opened, the page's payloads unchanged. On Sonnet: about 75 tool calls. Detail: D171's RPC1b3 note.
+
+## FABRIC-WIRE1g — the decoded nodes evaluated (2026-10-18, D173)
+
+> - [ ] **FABRIC-WIRE1g — the decoded nodes evaluated** (driver; after WORKFLOW2; §E2, §E4, §E7). A `stop` sink is never reached on the receipt of the path into it, and no `opinion` node is observed from the gate's record. Proof: a sink reached once on its failure's receipt; an opinion reached, pending and skipped from its record.
+
+**Outcome** 2026-10-18: a started stop reaches once on the failure or rejection receipt its binding rests on; an opinion reads the gate's judgement handed in (`WireRun.Opinions`) or a landing recorded at the bound commit: reached, passed over by the gate's record (§E2's active → skipped row by the authority, `NodeAuthority.SkipBy`), or pending, never on another commit's or repository's judgement. Schema 1 unchanged; the decoded order holding a look behind a disputed opinion is recorded. Built from a Codex pre-mortem in one round. On Opus: about 78 tool calls. Detail: D173's FABRIC-WIRE1g note.
+
+## FABRIC-PERFORM1i — an observed node reached by its believed event (2026-10-18, D173)
+
+> - [ ] **FABRIC-PERFORM1i — an observed node reached by its believed event** (driver; after PERFORM1c; §C4, §E2, §E10). A `work/step` naming no invocation reaches nothing, and an observed node is never awaited. Bind an event to the last `work/watch` frame actually sent to that process generation and to one eligible observed node of its governing graph; believe it by §C4's five rules (the tip read fresh, once a judgement); accept it through §E2 on the node's binding, persisted before its wires fire; its identity is plugin, repository identity, unit, step, commit and event id, and replay mints nothing. A graph with an observed node arms the runtime. Proof: one test per trap of the pre-mortem.
+
+**Outcome** 2026-10-18: an observed plugin node is begun, awaited once active, and reached or failed by a believed `work/step` naming no invocation: bound to the last `work/watch` frame actually sent to its process and to one observed node of its unit's graph, believed by §C4's five rules with tips read fresh once per checkout per pass, accepted on the node's binding and kept by its identity before wires fire; replays write nothing, and observed work arms the runtime (the parent's ruling). Built from a Codex pre-mortem in one round. On Opus: about 90 tool calls. Detail: D173's FABRIC-PERFORM1i note.
+
+## FABRIC-CLOSE1r — a units read without git's tips never closes (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1r — a units read without git's tips never closes** (driver; after CLOSE1p; §E5 step 1). `NodeUnitsRead.Tips` null still meant "judge on the records", so a future production read that forgot the tips would bring the defect back silently. Proof: a closing quest read with `Tips` null leaves the close waiting; `QuestCloseTests` runs on explicit tips.
+
+**Outcome** 2026-10-18: the close's fence waits on a read that carried no git tips and says "git's tips were not read for this look"; `QuestCloseTests` builds its reads' tips explicitly (`Tips()`). On Sonnet: about 22 tool calls. Detail: D173's FABRIC-CLOSE1r note.
+
+## FABRIC-PERFORM1m — a branch unit's observed node bound to the fresh tip, not the end fact's (2026-10-18, D173)
+
+> - [ ] **FABRIC-PERFORM1m — a branch unit's observed node bound to the fresh tip, not the end fact's** (driver; after PERFORM1i; §C4 rule 4, §E2, D88's PROC1d-ii). A branch unit's revision is the end fact's (`WorkInventory`), so while the end judgement lags, an observed node binds to the old tip and every event at the new one is refused `stale`. Proof: a lagging unit rebinds at the next pass and is reached; one `for-each-ref` per checkout per pass.
+
+**Outcome** 2026-10-18: a branch unit's observed plugin node binds to, and lapses on, its branch's tip read in the pass (`WireRun.NodeRevisions`); the tip is read once per checkout per pass (`PassTips`); a unit whose awaiting node the tip moved off is judged at the pass and rebinds under RUN1's lapse; performed nodes and quest units keep the unit's revision. On Opus: about 50 tool calls. Detail: D173's FABRIC-PERFORM1m note.

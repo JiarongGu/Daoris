@@ -314,8 +314,9 @@ internal static class TreesConsole
                     : found.Take(1).ToList();
                 if (entries.Count == 0)
                 {
-                    Console.Error.WriteLine($"trees: no {(ask.IsAsk ? "ask" : "entry")} `{ask.Id}` has work to land on this machine.");
-                    return 1;
+                    var none = TreesWords.EntryNone(ask.IsAsk, ask.Id);
+                    none.Print(Console.Out, Console.Error);
+                    return none.Code;
                 }
 
                 if (ask.Plan)
@@ -329,31 +330,26 @@ internal static class TreesConsole
                     return 0;
                 }
 
-                var done = true;
+                var landings = new List<(string Repository, EntryLanding Landed)>();
                 foreach (var entry in entries)
                 {
                     // One repository's refusal, said or thrown, holds only its own entry; the next is landed all the same (point 4).
-                    EntryLanding landed;
                     try
                     {
-                        landed = await accepts.LandAsync(entry, rows, ask.LeaveOut, default).ConfigureAwait(false);
+                        landings.Add((entry.Repository, await accepts.LandAsync(entry, rows, ask.LeaveOut, default).ConfigureAwait(false)));
                     }
                     catch (DriverException error)
                     {
-                        landed = new EntryLanding(false, $"Nothing was landed: {error.Message}", null, []);
-                    }
-
-                    done &= landed.Landed;
-                    Console.WriteLine($"trees: {entry.Repository}: {landed.Message}");
-                    foreach (var part in landed.Parts)
-                    {
-                        Console.WriteLine($"  {part.Outcome,-9}  {part.Session}" + (part.Landing is { } its ? $"  {its.Message}" : ""));
+                        landings.Add((entry.Repository, TreesWords.Unlanded(error.Message)));
                     }
                 }
 
                 Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);
+                // The plugins' lines and the notes were said as they came; the sentences and the exit are the routes' words too (RPC1b4).
+                var said = TreesWords.EntryLand(landings, [], []);
+                said.Print(Console.Out, Console.Error);
                 await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
-                return done ? 0 : 1;
+                return said.Code;
             }
 
             // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second
@@ -370,33 +366,28 @@ internal static class TreesConsole
 
                 // A session whose review reads as landed (REVIEW2, D113) — its landed branch stands, or its tree is gone —
                 // is said as the review says it, and lands nothing again: the review offers no Accept there at all.
-                var landedBefore = trees.Recorded.Landing(session);
-                LandedReview? before = null;
+                // The reading is the route's too (RPC1b4): both doors refuse a second landing in the same words.
+                var before = await TreesWords.LandedBeforeAsync(trees, service, session).ConfigureAwait(false);
                 var gone = TreeFolders.TreeGone(tree);
-                if (landedBefore is not null)
+                if (before is not null && before.ReadsAsLanded(gone))
                 {
-                    var checkout = (await service.RegistryAsync().ConfigureAwait(false))
-                        .FirstOrDefault(row => string.Equals(row.Repository, landedBefore.Repository, StringComparison.OrdinalIgnoreCase))?.Root;
-                    before = await trees.LandedReviewAsync(
-                        string.IsNullOrWhiteSpace(checkout) || !Directory.Exists(checkout) ? null : checkout, landedBefore, changes: false).ConfigureAwait(false);
-                    if (before.ReadsAsLanded(gone))
+                    if (args.Contains("--plan"))
                     {
-                        if (args.Contains("--plan"))
-                        {
-                            Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
-                            if (Due(new AutoLandings(home).Of(session)) is { } landedDue) Console.WriteLine(landedDue);
-                            return 0;
-                        }
-
-                        Console.WriteLine($"trees: {LandedReviewWords.NotAgain(session, before, gone)}");
-                        return 1;
+                        Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
+                        if (Due(new AutoLandings(home).Of(session)) is { } landedDue) Console.WriteLine(landedDue);
+                        return 0;
                     }
+
+                    var again = TreesWords.NotAgain(session, before, gone);
+                    again.Print(Console.Out, Console.Error);
+                    return again.Code;
                 }
 
                 if (string.IsNullOrWhiteSpace(tree))
                 {
-                    Console.Error.WriteLine($"trees: session `{session}` names no working tree on this machine, so there is nothing here to land.");
-                    return 1;
+                    var none = TreesWords.NoTreeToLand(session);
+                    none.Print(Console.Out, Console.Error);
+                    return none.Code;
                 }
 
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
