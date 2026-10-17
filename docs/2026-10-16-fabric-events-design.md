@@ -1656,6 +1656,13 @@ work's further nodes. Never a new close, and never their word for the door's ans
 each other quest it names has its own graph's prerequisites to its close reached: on its own node record, under the graph it
 is bound to, at its current revision. Until then the close waits, naming the quest and the node.
 
+**Amended (FABRIC-CLOSE1u, D173's note).** Step 4 asks before it sends. A key's idempotency protects an outcome the door
+already keeps, not a key it never took, so the same close sent again after a restart could run on evidence that moved since
+it was recorded. The driver asks the door what became of the key (`close/outcome`), which answers from its own record and
+runs nothing. A key it took is settled from that answer. A key it never took is withdrawn in the same transaction, so that
+close never runs: its node is judged again, and a close is made again only through step 1's fence, under a new key. A close
+whose door answers neither stays unknown, never sent again by itself, and the person may stop its work.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
