@@ -251,17 +251,30 @@ public sealed class RunningServiceTests : IDisposable
     [Fact]
     public async Task A_redirect_is_no_answer()
     {
-        using var target = Listener.Start();
-        using var redirecting = Listener.Start();
+        // 🔴 TESTWAIT3: Status holds its own two-second bound, which a loaded machine can spend before the loopback listener
+        // has even been asked (the answer then fails to be sent, and the old single try failed "not asked"). A try the listener
+        // was never asked in proves nothing about redirects, so it is run again, up to three times, with fresh listeners; a try
+        // that was asked is held to both assertions.
         var id = HomeIdentity.Ensure(Data);
-        var serving = target.AnswerOnceAsync($"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n", $"{{\"tier\":\"lexical only\",\"home\":\"{id}\"}}");
-        var redirect = redirecting.AnswerOnceAsync($"HTTP/1.1 302 Found\r\nLocation: {target.Url}/api/status\r\n", "");
+        for (var attempt = 1; ; attempt++)
+        {
+            using var target = Listener.Start();
+            using var redirecting = Listener.Start();
+            var serving = target.AnswerOnceAsync($"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n", $"{{\"tier\":\"lexical only\",\"home\":\"{id}\"}}");
+            var redirect = redirecting.AnswerOnceAsync($"HTTP/1.1 302 Found\r\nLocation: {target.Url}/api/status\r\n", "");
 
-        var status = await Task.Run(() => RunningService.Status(redirecting.Url));
+            var status = await Task.Run(() => RunningService.Status(redirecting.Url));
 
-        Assert.Null(status);
-        Assert.True(await redirect, "the address was not asked");
-        Assert.False(serving.IsCompleted && await serving, "the redirect was followed");
+            Assert.Null(status);
+            if (!await redirect)
+            {
+                Assert.True(attempt < 3, "the address was not asked");
+                continue;
+            }
+
+            Assert.False(serving.IsCompleted && await serving, "the redirect was followed");
+            return;
+        }
     }
 
     [Theory]
