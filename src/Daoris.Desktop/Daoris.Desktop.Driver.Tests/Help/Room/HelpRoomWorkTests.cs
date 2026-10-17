@@ -43,6 +43,46 @@ public sealed class HelpRoomWorkTests
         Assert.Contains("not read: `engine` has no checkout here", room);
     }
 
+    private static InventoryEntry Unheld(string name) => new("", InventoryKind.RecoveryRef, $"refs/daoris/discarded/{name}", InventoryRole.Recovery, InventoryDisposition.Retained,
+        $"no branch or tag of yours holds its commit, so Daoris keeps it until you delete it: `git update-ref -d refs/daoris/discarded/{name}` in `engine`")
+    { Repository = "engine" };
+
+    private static InventoryEntry Held(string name) => new("", InventoryKind.RecoveryRef, $"refs/daoris/discarded/{name}", InventoryRole.Recovery, InventoryDisposition.Retained,
+        "a branch or a tag of yours holds its commit, so the look's tidy removes it once it is 30 days old, from 2026-11-16 09:00 UTC")
+    { Until = Then.AddDays(30), Repository = "engine" };
+
+    /// <summary>RECOVERYASK1: a recovery ref no unit names and nothing holds is said with its delete line, so the helper can give the person the command.</summary>
+    [Fact]
+    public void The_room_names_a_recovery_no_unit_names_and_says_its_delete_line()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine with { Work = [Ended("u2")], WorkRecovery = [Held("daoris/s-old"), Unheld("daoris/s-gone")] });
+
+        Assert.Contains("kept on this machine that no unit names", room);
+        Assert.Contains("git update-ref -d refs/daoris/discarded/daoris/s-gone", room);
+        Assert.Contains("recovery-ref `refs/daoris/discarded/daoris/s-old`: a branch or a tag of yours holds its commit", room);
+        // What the person must delete comes first.
+        Assert.True(room.IndexOf("s-gone", StringComparison.Ordinal) < room.IndexOf("s-old", StringComparison.Ordinal));
+    }
+
+    /// <summary>Said even where no unit is recorded, and at most five are listed, the rest counted.</summary>
+    [Fact]
+    public void The_room_lists_five_recoveries_at_most_and_counts_the_rest_even_with_no_unit()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine with { Work = [], WorkRecovery = [.. Enumerable.Range(1, 8).Select(n => Unheld($"daoris/s-{n}"))] });
+
+        Assert.Contains("No unit of work is recorded", room);
+        Assert.Contains("daoris/s-5`", room);
+        Assert.DoesNotContain("daoris/s-6`", room);
+        Assert.Contains("and 3 more", room);
+    }
+
+    [Fact]
+    public void The_room_says_nothing_of_recoveries_where_there_are_none_and_where_the_milestones_were_not_read()
+    {
+        Assert.DoesNotContain("no unit names", HelpRoom.Render(HelpRoomFixture.Machine with { Work = [Ended("u2")] }));
+        Assert.DoesNotContain("no unit names", HelpRoom.Render(HelpRoomFixture.Machine with { Work = null, WorkRecovery = [Unheld("daoris/s-x")] }));
+    }
+
     [Fact]
     public void The_room_says_when_none_was_read_and_when_there_is_none()
     {
