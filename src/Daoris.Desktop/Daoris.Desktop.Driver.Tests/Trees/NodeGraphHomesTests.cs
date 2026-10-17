@@ -219,5 +219,50 @@ public sealed class NodeGraphHomesTests
         return rows;
     }
 
+    /// <summary>
+    /// FABRIC-GRAPH1's review, findings 2 and 3: what the file keeps that no unit reads is said, as the CLI's <c>cycleStrays</c> says it: a kind
+    /// with no work cycle, and a name an earlier entry of the same map spells in another case (the first written governs).
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(StrayRows))]
+    public void The_shared_table_says_the_same_strays(string name, string config, string strays)
+    {
+        var said = NodeGraphHomes.Strays(DriverConfig.Parse(config));
+        Assert.Equal((name, strays), (name, string.Join(" ", said.Select(stray => $"{string.Join("/", stray.At)}:{stray.Code}"))));
+        Assert.All(said, stray => Assert.Contains($"`{stray.At[^1]}`", stray.Words));
+    }
+
+    public static TheoryData<string, string, string> StrayRows()
+    {
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "graph-homes.json")));
+        var rows = new TheoryData<string, string, string>();
+        foreach (var row in table.RootElement.GetProperty("strays").EnumerateArray())
+        {
+            rows.Add(row.GetProperty("name").GetString()!, row.GetProperty("config").GetRawText(), string.Join(" ", row.GetProperty("strays").EnumerateArray()
+                .Select(stray => $"{string.Join("/", stray.GetProperty("at").EnumerateArray().Select(part => part.GetString()))}:{stray.GetProperty("code").GetString()}")));
+        }
+
+        return rows;
+    }
+
+    /// <summary>
+    /// Finding 2: a cycle the file holds that is not an object, and a kind no unit reads, are kept as written by an edit elsewhere and by
+    /// one beside them, and the cycle is said where it governs.
+    /// </summary>
+    [Fact]
+    public void A_cycle_that_is_not_an_object_is_kept_and_said()
+    {
+        var config = DriverConfig.Parse("""{ "landings": { "engine": { "form": "merge", "cycle": [] } }, "workCycles": { "engine": { "quest": 7, "chore": { "end": "done" } } } }""");
+
+        var branch = NodeGraphHomes.Current(config, "engine", null);
+        Assert.Equal(("[]", GraphRefusal.Unreadable), (branch.Cycle, Assert.Single(branch.Problems).Code));
+        var quest = NodeGraphHomes.Work(config, "engine", null, WorkUnitKind.Quest);
+        Assert.Equal(("7", GraphRefusal.Unreadable), (quest.Cycle, Assert.Single(quest.Problems).Code));
+
+        var edited = config.WithLanding("engine", LandingRule.Merge with { Tidy = true }).WithWorkCycle("engine", WorkUnitKind.Quest, null);
+        Assert.Equal("[]", edited.Landings["engine"].Cycle);
+        Assert.Equal(["chore"], edited.WorkCycles["engine"].Keys);
+    }
+
     private static string CompactCycle(string json) => NodeGraphHomes.Compact(json);
 }

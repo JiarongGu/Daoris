@@ -67,6 +67,22 @@ export function cycleFor(choices: Pick<DriverChoices, 'landings' | 'workspaceLan
     : { kind: 'branch', source: 'default', cycle: null };
 }
 
+/** A value the file keeps under the cycle's homes that no unit reads — the driver's `CycleStray`: where, its code and its sentence. */
+export interface CycleStray {
+  at: string[];
+  code: 'kind' | 'shadowed';
+  words: string;
+}
+
+/**
+ * What the file keeps under the cycle's homes that no unit reads (FABRIC-GRAPH1's review, findings 2 and 3), each kept as written and said
+ * here: a kind with no work cycle, a branch's included; and a name an earlier entry of `landings`, `workspaceLandings` or the work cycles
+ * spells in another case, where the first written governs. The driver's `NodeGraphHomes.Strays`, row for row (`graph-homes.json`'s `strays`).
+ */
+export function cycleStrays(_choices: Pick<DriverChoices, 'source'>): CycleStray[] {
+  return [];
+}
+
 /**
  * The cycle governing a unit of `kind`: a branch's is `cycleFor`'s; a quest's or an ask's the repository's own for that kind, else its
  * workspace's, else none. A repository naming one kind takes its workspace's for another. The driver's `NodeGraphHomes.Work`.

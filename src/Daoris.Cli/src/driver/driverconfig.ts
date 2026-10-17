@@ -51,6 +51,11 @@ export function driverConfigPath(env: Record<string, string | undefined> = proce
 
 /** The choices, plus everything else the file held — this is an editor, not the file's owner. */
 export interface DriverChoices {
+  /**
+   * The text these choices were read from, absent for choices built here (FABRIC-GRAPH1's review, finding 1): the writer keeps from it
+   * every key it does not own, in its place, and every value no edit changed by its own text, as the driver's `DriverConfig.Source`.
+   */
+  source?: string;
   drivable: string[];
   holds: string[];
   /** Repositories whose sessions open their own worktree instead of the registered root (D51). */
@@ -1121,13 +1126,7 @@ export function commandDriver(
       const unready = rule?.plugin === undefined ? null : landingPluginProblem(rule.plugin, readPlugins(dirname(path)));
       if (unready !== null) throw new DaorisError(`${unready} Nothing was written.`);
 
-      // This verb has no field for the rule's cycle (FABRIC-GRAPH1), so a rule it sets keeps the one there is, as the driver's
-      // `WithLanding` does; clearing the rule takes its cycle with it.
-      const held = workspace ? atName(choices.workspaceLandings, workspace) : atName(choices.landings, name);
-      const whole = rule !== null && held?.cycle !== undefined ? { ...rule, cycle: held.cycle } : rule;
-      writeDriverChoices(path, workspace
-        ? { ...choices, workspaceLandings: withEntry(choices.workspaceLandings, workspace, whole && kept(whole)) }
-        : { ...choices, landings: withEntry(choices.landings, name, whole && kept(whole)) });
+      writeDriverChoices(path, landingEdited(choices, name, workspace, rule));
 
       const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
       if (rule === null) {
@@ -2125,6 +2124,19 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   }
 
   return held;
+}
+
+/**
+ * The choices with a repository's landing rule, or a workspace's, set or cleared (null), as the `landing` verb sets it. The verb has no
+ * field for the rule's cycle (FABRIC-GRAPH1), so a rule it sets keeps the one there is, as the driver's `WithLanding` does; clearing the
+ * rule takes its cycle with it.
+ */
+export function landingEdited(choices: DriverChoices, name: string, workspace: string | null | undefined, rule: LandingRule | null): DriverChoices {
+  const held = workspace ? atName(choices.workspaceLandings, workspace) : atName(choices.landings, name);
+  const whole = rule !== null && held?.cycle !== undefined ? { ...rule, cycle: held.cycle } : rule;
+  return workspace
+    ? { ...choices, workspaceLandings: withEntry(choices.workspaceLandings, workspace, whole && kept(whole)) }
+    : { ...choices, landings: withEntry(choices.landings, name, whole && kept(whole)) };
 }
 
 /**

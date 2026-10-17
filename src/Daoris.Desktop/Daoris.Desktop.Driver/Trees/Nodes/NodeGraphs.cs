@@ -540,6 +540,19 @@ public sealed record GraphHome(string Kind, string Source, string? Cycle, NodeGr
 }
 
 /// <summary>
+/// A value <c>driver.json</c> keeps under the cycle's homes that no unit reads (<see cref="NodeGraphHomes.Strays"/>): where it is, from the
+/// file's top (<c>workCycles</c>, the owner, the kind), its code, <c>kind</c> or <c>shadowed</c>, and the sentence that says it.
+/// </summary>
+public sealed record CycleStray(IReadOnlyList<string> At, string Code, string Words)
+{
+    /// <summary>A kind with no work cycle: only <c>quest</c> and <c>ask</c> have one, a branch's being its landing rule's.</summary>
+    public const string Kind = "kind";
+
+    /// <summary>A name an earlier entry of the same map spells in another case: the first written governs.</summary>
+    public const string Shadowed = "shadowed";
+}
+
+/// <summary>
 /// Current's graphs, derived from the rules (FABRIC-GRAPH1; the fabric events design §E7, §C2, §D7): a branch's from its landing rule,
 /// the landing's own nodes first and the rule's <see cref="LandingRule.Cycle"/> after them; a quest's or an ask's from
 /// <see cref="DriverConfig.WorkCycles"/>, else <see cref="DriverConfig.WorkspaceWorkCycles"/>. Inherited as D164's amendment inherits a
@@ -629,6 +642,14 @@ public static class NodeGraphHomes
 
         return new(kind, LandingSource.Default, null, null, []);
     }
+
+    /// <summary>
+    /// What the file keeps under the cycle's homes that no unit reads (FABRIC-GRAPH1's review, findings 2 and 3), each kept as written and
+    /// said here: a kind with no work cycle under <c>workCycles</c> or <c>workspaceWorkCycles</c>, a branch's included; and a name an earlier
+    /// entry of <c>landings</c>, <c>workspaceLandings</c> or the work cycles spells in another case, where the first written governs. The CLI's
+    /// <c>cycleStrays</c> says the same, row for row (<c>graph-homes.json</c>'s <c>strays</c>).
+    /// </summary>
+    public static IReadOnlyList<CycleStray> Strays(DriverConfig config) => [];
 
     private static GraphHome Whole(string kind, string source, string cycle)
     {

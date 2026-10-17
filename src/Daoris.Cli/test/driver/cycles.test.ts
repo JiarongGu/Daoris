@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readDriverChoices, writeDriverChoices } from '../../src/driver/driverconfig.ts';
-import { WORK_CYCLE_KINDS, workCycleFor } from '../../src/driver/cycles.ts';
+import { landingEdited, readDriverChoices, writeDriverChoices } from '../../src/driver/driverconfig.ts';
+import { WORK_CYCLE_KINDS, cycleStrays, workCycleFor } from '../../src/driver/cycles.ts';
 import { driverFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -32,6 +32,30 @@ test('graph-homes: each row of the shared table reads as the driver reads it', (
   }
 });
 
+type Stray = { at: string[]; code: string };
+const STRAYS = (JSON.parse(readFileSync(join(here, 'fixtures', 'graph-homes.json'), 'utf8')) as { strays: { name: string; config: Record<string, unknown>; strays: Stray[] }[] }).strays;
+
+test('graph-homes: what the file keeps that no unit reads is said as the driver says it', () => {
+  const fx = makeFixture('cycles-strays');
+  for (const row of STRAYS) {
+    const said = cycleStrays(readDriverChoices(fx.write('driver.json', JSON.stringify(row.config))));
+    assert.deepEqual({ name: row.name, strays: said.map(({ at, code }) => ({ at, code })) }, { name: row.name, strays: row.strays });
+    for (const stray of said) assert.ok(stray.words.includes(`\`${stray.at.at(-1)}\``), stray.words);
+  }
+});
+
+test('graph-homes: a cycle that is not an object, and a kind no unit reads, are kept by an edit beside them', () => {
+  const fx = makeFixture('cycles-kept');
+  const path = fx.write('driver.json', JSON.stringify({ landings: { engine: { form: 'merge', cycle: [] } }, workCycles: { engine: { quest: 7, chore: { end: 'done' } } } }));
+  const choices = readDriverChoices(path);
+  assert.deepEqual(choices.landings['engine']?.cycle, []);
+  const { quest: _quest, ...kinds } = choices.workCycles['engine']!;
+  writeDriverChoices(path, { ...landingEdited(choices, 'engine', null, { form: 'merge', tidy: true }), workCycles: { engine: kinds } });
+  const written = JSON.parse(fx.read('driver.json')) as Record<string, unknown>;
+  assert.deepEqual(written['landings'], { engine: { form: 'merge', tidy: true, cycle: [] } });
+  assert.deepEqual(written['workCycles'], { engine: { chore: { end: 'done' } } });
+});
+
 test('graph-homes: a cycle and the work cycles are written back as read, and a file with neither gains neither', () => {
   const fx = makeFixture('cycles-written');
   const cycle = { nodes: [{ id: 'qa', kind: 'human', version: 1, reach: 'pressed' }], wires: [{ id: 'a', kind: 'after', from: 'line', to: 'qa' }], end: 'qa' };
@@ -45,8 +69,9 @@ test('graph-homes: a cycle and the work cycles are written back as read, and a f
   writeDriverChoices(path, readDriverChoices(path));
   const written = JSON.parse(fx.read('driver.json')) as Record<string, unknown>;
   assert.deepEqual(written['landings'], { engine: { form: 'merge', tidy: true, cycle } });
-  // Only a kind with a work cycle is read, and so written: a branch's is its landing rule's, and no kind has two homes (§D7).
-  assert.deepEqual(written['workCycles'], { engine: { quest } });
+  // Every kind is kept as written (the review's finding 2): only a kind with a work cycle governs, a branch's being its landing rule's
+  // (§D7), and the others are said (`cycleStrays`).
+  assert.deepEqual(written['workCycles'], { engine: { quest, branch: quest, chore: quest } });
   assert.deepEqual(written['workspaceWorkCycles'], { shop: { ask: quest } });
 
   const plain = fx.write('plain.json', JSON.stringify({ landings: { engine: { form: 'merge' } } }));

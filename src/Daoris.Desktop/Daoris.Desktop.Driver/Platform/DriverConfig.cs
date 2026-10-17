@@ -679,6 +679,12 @@ public sealed record DriverConfig(
     /// </summary>
     public static string HomeOf(string configPath) => Path.GetDirectoryName(Path.GetFullPath(configPath))!;
 
+    /// <summary>
+    /// The text this config was read from, or null for one built in memory (FABRIC-GRAPH1's review, finding 1): the writer keeps from it
+    /// every key it does not own, in its place, and every value no edit changed, as written (<see cref="ToJson"/>).
+    /// </summary>
+    public string? Source { get; init; }
+
     /// <summary>A missing file is a machine that has opted nothing in — the empty config, not an error.</summary>
     /// <exception cref="DriverConfigUnreadableException">
     /// The file is there and does not read (CONFIGREAD1): it could not be opened, is not JSON, or is not the choices' shape.

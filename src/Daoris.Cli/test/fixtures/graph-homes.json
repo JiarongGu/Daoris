@@ -41,10 +41,34 @@
       "source": "workspace", "cycle": { "end": "handed" }
     },
     {
-      "name": "a cycle that is not an object is none, the rule standing",
+      "name": "a cycle that is not an object is kept as written and governs, the rule standing (the driver says it does not read)",
       "config": { "landings": { "engine": { "form": "merge", "cycle": "line" } } },
       "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "repository", "cycle": "line"
+    },
+    {
+      "name": "a cycle of null is none",
+      "config": { "landings": { "engine": { "form": "merge", "cycle": null } } },
+      "repository": "engine", "workspace": null, "kind": "branch",
       "source": "repository", "cycle": null
+    },
+    {
+      "name": "two rules in another case: the first written governs",
+      "config": { "landings": { "Engine": { "form": "merge", "cycle": { "end": "handed" } }, "engine": { "form": "merge", "cycle": { "end": "line" } } } },
+      "repository": "engine", "workspace": null, "kind": "branch",
+      "source": "repository", "cycle": { "end": "handed" }
+    },
+    {
+      "name": "a rule that cannot land shadows none in another case",
+      "config": { "landings": { "ENGINE": { "form": "sideways", "cycle": { "end": "handed" } }, "engine": { "form": "merge", "cycle": { "end": "line" } } } },
+      "repository": "Engine", "workspace": null, "kind": "branch",
+      "source": "repository", "cycle": { "end": "line" }
+    },
+    {
+      "name": "two workspace rules in another case: the first written governs",
+      "config": { "workspaceLandings": { "shop": { "form": "merge", "cycle": { "end": "handed" } }, "Shop": { "form": "merge" } } },
+      "repository": "engine", "workspace": "SHOP", "kind": "branch",
+      "source": "workspace", "cycle": { "end": "handed" }
     },
     {
       "name": "a cycle on a rule that cannot land is not read, with its rule",
@@ -92,10 +116,50 @@
       "source": "default", "cycle": null
     },
     {
-      "name": "a work cycle that is not an object is none",
+      "name": "a work cycle that is not an object is kept as written and governs (the driver says it does not read)",
       "config": { "workCycles": { "engine": { "quest": [] } }, "workspaceWorkCycles": { "default": { "quest": { "entries": ["qa"], "end": "qa" } } } },
       "repository": "engine", "workspace": null, "kind": "quest",
-      "source": "workspace", "cycle": { "entries": ["qa"], "end": "qa" }
+      "source": "repository", "cycle": []
+    },
+    {
+      "name": "two owners of work cycles in another case: the first written governs",
+      "config": { "workCycles": { "Engine": { "quest": { "end": "a" } }, "engine": { "quest": { "end": "b" } } } },
+      "repository": "engine", "workspace": null, "kind": "quest",
+      "source": "repository", "cycle": { "end": "a" }
+    },
+    {
+      "name": "an owner naming no kind shadows none in another case",
+      "config": { "workCycles": { "ENGINE": {}, "engine": { "quest": { "end": "b" } } } },
+      "repository": "Engine", "workspace": null, "kind": "quest",
+      "source": "repository", "cycle": { "end": "b" }
+    }
+  ],
+  "strays": [
+    {
+      "name": "nothing kept that no unit reads",
+      "config": { "landings": { "engine": { "form": "merge", "cycle": [] } }, "workCycles": { "engine": { "quest": [] } } },
+      "strays": []
+    },
+    {
+      "name": "a kind with no work cycle, a branch's included, kept and said",
+      "config": { "workCycles": { "engine": { "quest": { "end": "qa" }, "chore": { "end": "done" } } }, "workspaceWorkCycles": { "shop": { "branch": [] } } },
+      "strays": [
+        { "at": ["workCycles", "engine", "chore"], "code": "kind" },
+        { "at": ["workspaceWorkCycles", "shop", "branch"], "code": "kind" }
+      ]
+    },
+    {
+      "name": "a name an earlier entry spells in another case, kept and said; one that does not read shadows none",
+      "config": {
+        "landings": { "ENGINE": { "form": "sideways" }, "Engine": { "form": "merge" }, "engine": { "form": "merge", "tidy": true } },
+        "workspaceLandings": { "shop": { "form": "merge" }, "Shop": { "form": "merge" } },
+        "workCycles": { "Engine": { "quest": { "end": "a" } }, "engine": { "chore": {} } }
+      },
+      "strays": [
+        { "at": ["landings", "engine"], "code": "shadowed" },
+        { "at": ["workspaceLandings", "Shop"], "code": "shadowed" },
+        { "at": ["workCycles", "engine"], "code": "shadowed" }
+      ]
     }
   ]
 }

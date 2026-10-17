@@ -111,6 +111,10 @@ public sealed class NodeGraphsTests
             (GraphRefusal.ProtectedOrder, null, "look")),
         ["the look beside the landing"] = (new NodeGraph([Node("landing", NodeKinds.Handed), Node("look", NodeKinds.Look)], [], ["landing", "look"], "landing"),
             (GraphRefusal.ProtectedOrder, null, "look")),
+        // FABRIC-GRAPH1's review, finding 4: the look reaches the landing, and a person's press reaches it past the look in one `anyOf`.
+        ["a way to the landing past the look"] = (new NodeGraph([Node("look", NodeKinds.Look), Node("bypass", NodeKinds.Human), Node("landing", NodeKinds.Handed)],
+            [After("a", "look", "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) }, After("b", "bypass", "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) }],
+            ["look", "bypass"], "landing"), (GraphRefusal.ProtectedOrder, null, "look")),
         ["the close not the end"] = (Example with { End = "deploy" }, (GraphRefusal.CloseEnd, null, "close")),
         ["a node after the close"] = (Adding(Node("notify", NodeKinds.Human), After("x", "close", "notify")), (GraphRefusal.AfterClose, "x", "close")),
         ["the quest's own done before its close"] = (Adding(Node("done", NodeKinds.Claimed), After("x", "done", "close")) with { Entries = ["line", "dependency", "done"] },
@@ -186,6 +190,24 @@ public sealed class NodeGraphsTests
         Assert.Equal(codes.Count, codes.Distinct().Count());
         Assert.Empty(codes.Intersect(typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!)));
         Assert.Equal(codes.Order(), Cases.Values.Select(each => each.Expected.Code).Concat(FragmentCases.Values.Select(each => each.Expected.Code)).Distinct().Order());
+    }
+
+    /// <summary>
+    /// FABRIC-GRAPH1's review, finding 4: the protected order holds on every way to the landing, an <c>anyOf</c>'s members as alternatives.
+    /// A landing that waits on the look and on another node as well holds; one the look's failure reaches does not, nor one a press reaches
+    /// beside two looks in one <c>anyOf</c>, which is said once, naming the first look.
+    /// </summary>
+    [Fact]
+    public void The_protected_order_holds_on_every_way_to_the_landing()
+    {
+        IEnumerable<string> Order(NodeGraph graph) => NodeGraphs.Problems(graph).Where(problem => problem.Code == GraphRefusal.ProtectedOrder).Select(problem => problem.Node!);
+        NodeDeclaration[] nodes = [Node("look", NodeKinds.Look), Node("press", NodeKinds.Human), Node("landing", NodeKinds.Handed)];
+        Wire Any(string id, string from) => After(id, from, "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) };
+
+        Assert.Empty(Order(new NodeGraph(nodes, [After("a", "look", "landing"), After("b", "press", "landing")], ["look", "press"], "landing")));
+        Assert.Empty(Order(new NodeGraph(nodes, [After("a", "press", "look"), After("b", "look", "landing")], ["press"], "landing")));
+        Assert.Equal(["look"], Order(new NodeGraph(nodes, [new Wire("a", WireKinds.Failed, new("look"), new("landing")), After("b", "press", "landing")], ["look", "press"], "landing")));
+        Assert.Equal(["look"], Order(new NodeGraph([.. nodes, Node("second", NodeKinds.Look)], [Any("a", "look"), Any("b", "press"), Any("c", "second")], ["look", "press", "second"], "landing")));
     }
 
     /// <summary>The bounds (§E7): 24 authored nodes and 96 wires hold; synthetic nodes and their wires are counted apart, three nodes an authored one.</summary>
