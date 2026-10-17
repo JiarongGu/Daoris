@@ -44,6 +44,26 @@ export function evidenceFolder(repoRoot, name, started = new Date()) {
   return join(repoRoot, '_fixtures', 'rehearsal-logs', `${name}-${started.toISOString().replace(/[:.]/g, '-')}`);
 }
 
+/**
+ * Where a rehearsal builds what the Process lane builds (REHLANE1): a folder of its own under `_fixtures/rehearsal-builds/`.
+ * The family rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own `bin/`
+ * and `obj/`; two builds of one project there fight over them, and a build can find a file a running test holds. Outside
+ * the rehearsal's scratch, which each run wipes, so the next run's build is incremental.
+ */
+export const ownBuildRoot = (repoRoot, name) => join(repoRoot, '_fixtures', 'rehearsal-builds', name);
+
+/**
+ * The `dotnet build` of `project` into a rehearsal's own output (REHLANE1). `--artifacts-path` is the SDK's own option: every
+ * project the build reaches, the referenced ones too, puts its `obj/` and `bin/` under the root, and none under its folder.
+ */
+export const ownBuild = (project, root) => `dotnet build "${project}" --artifacts-path "${root}"`;
+
+/**
+ * A file `ownBuild` wrote for `project` (REHLANE1): the SDK's artifacts layout, `bin/<the project's name>/<configuration, lower
+ * case>/`, with no framework folder for a project of one framework. Measured on the driver host with `-getProperty:TargetPath`.
+ */
+export const ownBuilt = (root, project, file) => join(root, 'bin', basename(project), 'debug', file);
+
 /** How long a kept check's folder name may be: a label is a sentence, and a deep checkout's paths are long. */
 const NAME_LIMIT = 60;
 

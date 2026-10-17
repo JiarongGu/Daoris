@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-CLOSE1b (the fabric events design §E5; D173's FABRIC-CLOSE1a and CLOSE1e notes): <c>quest.close</c> as the graph's end, run by the
 /// evaluation runtime over a stand-in close door. A bound quest is closed once its submission is current and unheld, and once only; an
-/// unanswered close is sent again with the same key, after a restart too; a refusal is kept with its words and said; a chain closed only in
+/// unanswered close is asked after by its key, never sent again blind (FABRIC-CLOSE1u); a refusal is kept with its words and said; a chain closed only in
 /// part is said, naming the quest; the person's own done ends the graph as overridden and stops its nodes; an unbound quest is unchanged; and a
 /// quest is bound at its take only where its host and its circle know a bound quest.
 /// </summary>
@@ -29,6 +29,25 @@ public sealed class QuestCloseTests : IDisposable
                       { "id": "close", "kind": "quest.close", "version": 1, "reach": "performed" }],
             "wires": [{ "id": "a", "kind": "after", "from": "qa", "to": "close" }] } } } }
         """;
+
+    /// <summary>FABRIC-CLOSE1t: a plugin's deploy, then the close, so each quest of a chain has its own deploy before its own close.</summary>
+    private const string Deployed = """
+        { "workCycles": { "engine": { "quest": {
+            "schemaVersion": 2, "entries": ["deploy"], "end": "close",
+            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" },
+                      { "id": "close", "kind": "quest.close", "version": 1, "reach": "performed" }],
+            "wires": [{ "id": "a", "kind": "after", "from": "deploy", "to": "close" }] } } } }
+        """;
+
+    /// <summary>The deploy plugin's step, as its catalogue declares it.</summary>
+    private static readonly NodeDeclaration DeployStep = new("acme.deploy/deploy", "acme.deploy/deploy", 1, NodeReach.Performed)
+    {
+        Retry = new NodeRetry(3, [30, 60]),
+        Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: ["unavailable"]),
+    };
+
+    /// <summary>The plugins' steps the pass reads: none, unless a test's graph names a plugin's.</summary>
+    private IReadOnlyList<NodeDeclaration> _steps = [];
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-close-" + Guid.NewGuid().ToString("N")[..8]);
 
@@ -61,10 +80,39 @@ public sealed class QuestCloseTests : IDisposable
 
         public Func<int, QuestCloseAnswer> Answer { get; set; } = _ => new(QuestCloseOutcomes.Closed, null, "Closed.", []);
 
+        /// <summary>FABRIC-CLOSE1u: the outcome the door keeps under each key it took, a withdrawn key's included, as its store does.</summary>
+        public Dictionary<string, QuestCloseAnswer> Taken { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>FABRIC-CLOSE1u: each question of what became of a key, by the quest and the key.</summary>
+        public List<(string Quest, string Key)> Asked { get; } = [];
+
+        /// <summary>FABRIC-CLOSE1u: the loop ends after the attempt is written and before the close leaves: nothing sent, nothing taken.</summary>
+        public bool Crash { get; set; }
+
+        /// <summary>FABRIC-CLOSE1u: the door takes the close and keeps its outcome, and its answer is lost on the way back.</summary>
+        public bool Lose { get; set; }
+
+        /// <summary>FABRIC-CLOSE1u: the answer to a question of what became of a key, where the test sets one (a throw is a door not answering).</summary>
+        public Func<int, QuestCloseAnswer>? Told { get; set; }
+
         public Task<QuestCloseAnswer> CloseQuestsAsync(string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct)
         {
+            if (Crash) throw new InvalidOperationException("the loop ended before the close left");
             Sent.Add((quest, key, token, quests));
-            return Task.FromResult(Answer(Sent.Count));
+            if (Taken.TryGetValue(key, out var first)) return Task.FromResult(first);
+            var answer = Answer(Sent.Count);
+            Taken[key] = answer;
+            return Lose ? throw new HttpRequestException("the answer was lost on its way back") : Task.FromResult(answer);
+        }
+
+        public Task<QuestCloseAnswer> CloseOutcomeAsync(string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct)
+        {
+            Asked.Add((quest, key));
+            if (Told is { } told) return Task.FromResult(told(Asked.Count));
+            if (Taken.TryGetValue(key, out var first)) return Task.FromResult(first);
+            var withdrawn = new QuestCloseAnswer(QuestCloseOutcomes.Refused, QuestCloseOutcomes.Withdrawn, $"Key `{key}` was never taken, and is withdrawn.", []);
+            Taken[key] = withdrawn;
+            return Task.FromResult(withdrawn);
         }
     }
 
@@ -85,10 +133,50 @@ public sealed class QuestCloseTests : IDisposable
         public IReadOnlyList<WorkStepHeard> TakeSteps() => [];
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1t: the deploy plugin's work process as the runtime sees it: each perform kept, a unit's left unanswered where the test says
+    /// (so it is unknown, and held once its reconcile answers unknown too), each completion the test's.
+    /// </summary>
+    private sealed class Deploys : IWorkRuntimePort
+    {
+        public List<WorkPerformCall> Sent { get; } = [];
+
+        public HashSet<string> Unanswered { get; } = new(StringComparer.Ordinal);
+
+        public Queue<WorkStepHeard> Heard { get; } = new();
+
+        public Task<int> PerformAsync(string plugin, WorkPerformCall call, CancellationToken ct)
+        {
+            Sent.Add(call);
+            return Unanswered.Contains(call.Unit) ? Task.FromException<int>(new IOException("the plugin did not answer")) : Task.FromResult(1);
+        }
+
+        public Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct) =>
+            Task.FromResult((new WorkReconcileAnswer(ReconcileStates.Unknown), 1));
+
+        public int? GenerationOf(string plugin) => 1;
+
+        public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
+        {
+        }
+
+        public IReadOnlyList<WorkStepHeard> TakeSteps()
+        {
+            var taken = Heard.ToList();
+            Heard.Clear();
+            return taken;
+        }
+    }
+
+    /// <summary>The deploy's completion, reached, for the attempt its call names.</summary>
+    private WorkStepHeard Reached(WorkPerformCall call) =>
+        new("acme.deploy", 1, new WorkStepFrame("deploy", new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence("acme.deploy/receipt@1:r1", null, null, "deployed")),
+            _now, "e-" + call.Invocation, Invocation: call.Invocation));
+
     private NodeRecordFiles Files => new(_home, () => true);
 
     /// <summary>A new runtime over the same home: a loop's, and a loop's started again after a restart.</summary>
-    private NodeRuntime Runtime() => new(Files, new NoPlugins(), () => _now, () => true, _door);
+    private NodeRuntime Runtime(IWorkRuntimePort? plugins = null) => new(Files, plugins ?? new NoPlugins(), () => _now, () => true, _door);
 
     private static string Digest(string config) =>
         NodeGraphs.Digest(NodeGraphHomes.Work(DriverConfig.Parse(config), "engine", "default", WorkUnitKind.Quest).Graph!);
@@ -130,6 +218,7 @@ public sealed class QuestCloseTests : IDisposable
                 ],
                 new Dictionary<string, string> { ["engine"] = "checkout" }) { Tips = Tips() });
         },
+        Steps = () => _steps,
     };
 
     /// <summary>What git answered of each branch's tip at a read (FABRIC-CLOSE1p), by its unit's id; null, the tips of <c>_branches</c> as they stand.</summary>
@@ -208,26 +297,134 @@ public sealed class QuestCloseTests : IDisposable
         Assert.DoesNotContain(later.Said, line => line.Contains("closed by you", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public async Task A_close_unanswered_is_sent_again_with_the_same_key_after_a_restart_and_closes_once()
+    /// <summary>
+    /// FABRIC-CLOSE1u (§E5 step 4): a close whose answer was lost is settled from what its door kept under its key, asked after a restart before
+    /// anything new and never sent again: closed is the reach on its key, a refusal the failure with the door's code.
+    /// </summary>
+    [Theory]
+    [InlineData(QuestCloseOutcomes.Closed, null, NodeStates.Reached)]
+    [InlineData(QuestCloseOutcomes.Refused, "held", NodeStates.Failed)]
+    public async Task A_close_whose_answer_was_lost_is_settled_from_its_doors_answer_after_a_restart_and_never_sent_again(string outcome, string? code, string state)
     {
-        var digest = Digest(Closing);
-        Quest(Taken("q7", digest, Ready41));
-        _door.Answer = sent => sent == 1 ? throw new HttpRequestException("the host did not answer in time") : new(QuestCloseOutcomes.Closed, null, "Closed.", []);
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        _door.Answer = _ => new(outcome, code, "The door's words.", []);
+        _door.Lose = true;
 
         await Runtime().PassAsync(Look(Closing), CancellationToken.None);
         Assert.Equal((NodeStates.Unknown, AttemptStates.Unknown), (Record().Statuses["close"].State, Assert.Single(Record().Attempts).State));
 
-        // A new loop after a restart: the same close, its key, token and quests, before anything new.
+        // A new loop after a restart: the door is asked what became of the key, before anything new, and nothing is sent.
+        _door.Lose = false;
         var restarted = Runtime();
         await restarted.PassAsync(Look(Closing), CancellationToken.None);
         await restarted.PassAsync(Look(Closing), CancellationToken.None);
 
-        Assert.Equal(2, _door.Sent.Count);
-        Assert.Equal((_door.Sent[0].Key, _door.Sent[0].Token), (_door.Sent[1].Key, _door.Sent[1].Token));
-        Assert.Equal(_door.Sent[0].Quests, _door.Sent[1].Quests);
+        var sent = Assert.Single(_door.Sent);
+        Assert.Equal(("q7", sent.Key), Assert.Single(_door.Asked));
+        var status = Record().Statuses["close"];
+        Assert.Equal(state, status.State);
+        if (state == NodeStates.Reached) Assert.Equal((NodeSource.CloseDoor, "close:" + sent.Key), (status.By, status.Current!.Evidence!.Ref));
+        else Assert.Equal((code, false), (status.Code, status.Transient));
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Settled, sent.Key), (attempt.State, attempt.Call.IdempotencyKey));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1u (§E5 steps 1 and 4; the 2026-10-18 review of the close path): a close recorded and never delivered is never sent on the
+    /// evidence it was recorded on. The loop ends after the attempt is written and before the close leaves; the session's branch moves; a loop
+    /// started again asks the door what became of the key, which it never took, so the key is withdrawn and nothing is sent until the work is
+    /// judged again on the new tip: its deploy there first, then one close under a new key, bound to that revision.
+    /// </summary>
+    [Fact]
+    public async Task A_close_recorded_and_never_delivered_sends_nothing_after_its_branch_moved_until_judged_again_on_the_new_tip()
+    {
+        _steps = [DeployStep];
+        var plugins = new Deploys();
+        Quest(Taken("q7", Digest(Deployed), Ready41));
+        _branches["daoris/q7"] = ("q7", "c1");
+        var runtime = Runtime(plugins);
+
+        // The deploy sent and reached at c1; the close recorded at c1, and the loop ends before it leaves.
+        await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        plugins.Heard.Enqueue(Reached(Assert.Single(plugins.Sent)));
+        _door.Crash = true;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runtime.PassAsync(Look(Deployed), CancellationToken.None));
+        var recorded = Record().Attempts.Single(attempt => attempt.Plugin == QuestClosing.Sender);
+        Assert.Equal(AttemptStates.Recorded, recorded.State);
+        Assert.Empty(_door.Sent);
+
+        // The session commits again, and the loop starts again.
+        _door.Crash = false;
+        _branches["daoris/q7"] = ("q7", "c2");
+        var restarted = Runtime(plugins);
+        await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+        await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+
+        // Asked, never sent: the key withdrawn, its attempt settled as never started, and the deploy sent again for the new tip.
+        Assert.Empty(_door.Sent);
+        Assert.Equal(("q7", recorded.Call.IdempotencyKey), Assert.Single(_door.Asked));
+        var superseded = Record().Attempts.Single(attempt => attempt.Call.Invocation == recorded.Call.Invocation);
+        Assert.Equal((AttemptStates.Settled, ReconcileStates.NotStarted, QuestCloseOutcomes.Withdrawn), (superseded.State, superseded.Outcome, superseded.Code));
+        Assert.Equal(2, plugins.Sent.Count);
+        Assert.NotEqual(plugins.Sent[0].SubjectRevision, plugins.Sent[1].SubjectRevision);
+        Assert.DoesNotContain(Record().Statuses["close"].State, new[] { NodeStates.Active, NodeStates.Unknown, NodeStates.Reached });
+        Assert.Empty(HeldAttempts.Read(Files));
+
+        // The deploy reached at c2: one close, under a new key, bound to the new revision.
+        plugins.Heard.Enqueue(Reached(plugins.Sent[^1]));
+        await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+        var (_, key, _, _) = Assert.Single(_door.Sent);
+        Assert.NotEqual(recorded.Call.IdempotencyKey, key);
+        var made = Record().Attempts.Single(attempt => attempt.Call.IdempotencyKey == key);
+        Assert.Equal(plugins.Sent[1].SubjectRevision, made.Call.SubjectRevision);
         Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
-        Assert.Equal(AttemptStates.Settled, Assert.Single(Record().Attempts).State);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1u: a close whose door answers neither the close nor the question of what became of it stays unknown, is never sent again by
+    /// itself, and is offered to the person with a held close's words. Their stop stops its work, and the close is still asked after, settled
+    /// as never started once its door says it never took the key.
+    /// </summary>
+    [Fact]
+    public async Task A_close_its_door_does_not_answer_stays_unknown_is_offered_to_the_person_and_stopped_by_them()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        _door.Answer = _ => throw new HttpRequestException("the host did not answer in time");
+        _door.Told = _ => throw new HttpRequestException("the host did not answer in time");
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+
+        var sent = Assert.Single(_door.Sent);
+        Assert.Equal(2, _door.Asked.Count);
+        Assert.All(_door.Asked, asked => Assert.Equal(sent.Key, asked.Key));
+        Assert.Equal((NodeStates.Unknown, AttemptStates.Unknown), (Record().Statuses["close"].State, Assert.Single(Record().Attempts).State));
+
+        // Offered to the person, with a close's words: nothing to record again, so asked for again, or its work stopped.
+        var listed = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((QuestClosing.Sender, NodeStates.Unknown), (listed.Plugin, listed.NodeState));
+        Assert.Equal(HeldResolutions.CloseUnkept, listed.Words);
+        Assert.Contains(HeldAttempts.Lines([listed]), line => line.EndsWith("resend|stop", StringComparison.Ordinal));
+        var record = HeldAttempts.Word(Files, Unit, "close", listed.Attempt, HeldResolutions.Record, () => _now);
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotKept), (record.What, record.Code));
+
+        // The person's stop: its work stopped as theirs, nothing sent, the close still asked after and no longer offered.
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, Unit, "close", listed.Attempt, HeldResolutions.Stop, () => _now).What);
+        await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+        var status = Record().Statuses["close"];
+        Assert.Equal((NodeStates.Stopped, NodeSource.Person), (status.State, status.By));
+        Assert.Equal((AttemptStates.Unknown, (string?)null), (Assert.Single(Record().Attempts).State, Record().Attempts[0].Resolution));
+        Assert.Empty(HeldAttempts.Read(Files));
+
+        // Its door answers at last: the key never taken, so withdrawn, and the attempt settled as never started, its node left stopped.
+        _door.Told = null;
+        await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Single(_door.Sent);
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Settled, ReconcileStates.NotStarted), (attempt.State, attempt.Outcome));
+        Assert.Equal(NodeStates.Stopped, Record().Statuses["close"].State);
     }
 
     [Fact]
@@ -403,20 +600,24 @@ public sealed class QuestCloseTests : IDisposable
         Assert.NotNull(token);
     }
 
-    /// <summary>FABRIC-CLOSE1l, the review's finding 6: an unanswered close is reconciled whether or not a closure graph still arms the runtime.</summary>
+    /// <summary>
+    /// FABRIC-CLOSE1l, the review's finding 6: an unanswered close is reconciled whether or not a closure graph still arms the runtime;
+    /// FABRIC-CLOSE1u: by asking its door what became of its key, never by sending it again.
+    /// </summary>
     [Fact]
     public async Task A_close_unanswered_is_reconciled_after_the_last_closure_graph_is_removed()
     {
         Quest(Taken("q7", Digest(Closing), Ready41));
-        _door.Answer = sent => sent == 1 ? throw new HttpRequestException("the host did not answer in time") : new(QuestCloseOutcomes.Closed, null, "Closed.", []);
+        _door.Lose = true;
         await Runtime().PassAsync(Look(Closing), CancellationToken.None);
 
-        // The graph removed, and the loop started again: the same close, its key and token, is still sent before anything else.
+        // The graph removed, and the loop started again: the door is still asked what became of the key before anything else.
+        _door.Lose = false;
         await Runtime().PassAsync(Look("{}"), CancellationToken.None);
 
-        Assert.Equal(2, _door.Sent.Count);
-        Assert.Equal((_door.Sent[0].Key, _door.Sent[0].Token), (_door.Sent[1].Key, _door.Sent[1].Token));
-        Assert.Equal(AttemptStates.Settled, Assert.Single(Record().Attempts).State);
+        var sent = Assert.Single(_door.Sent);
+        Assert.Equal(("q7", sent.Key), Assert.Single(_door.Asked));
+        Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (Assert.Single(Record().Attempts).State, Record().Attempts[0].Outcome));
     }
 
     /// <summary>
@@ -444,6 +645,133 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Equal(2, _door.Sent.Count);
         Assert.NotEqual(_door.Sent[0].Key, _door.Sent[1].Key);
         Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1t: a two-quest chain under <see cref="Deployed"/>, each quest's deploy sent, the first's left unanswered: the second's deploy is
+    /// then reached, and the first's held, since its reconcile answers unknown too. Returns the runtime, its plugin and the pass that found it held.
+    /// </summary>
+    private async Task<(NodeRuntime Runtime, Deploys Plugins, NodeRuntimePass Held)> ChainHeldAsync()
+    {
+        var digest = Digest(Deployed);
+        _steps = [DeployStep];
+        var plugins = new Deploys();
+        plugins.Unanswered.Add("quest:q6");
+        Quest(Taken("q6", digest, Ready40) with { Then = [new QuestStepView("engine", "Ship q7", "")], Updated = _now });
+        Quest(Taken("q7", digest, Ready41) with { Parent = "q6", Updated = _now });
+        var runtime = Runtime(plugins);
+
+        await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        Assert.Equal(["quest:q6", "quest:q7"], plugins.Sent.Select(call => call.Unit).Order(StringComparer.Ordinal));
+
+        plugins.Heard.Enqueue(Reached(plugins.Sent.Single(call => call.Unit == "quest:q7")));
+        var held = await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        Assert.Equal(AttemptStates.Held, Assert.Single(Record("quest:q6").Attempts).State);
+        Assert.Equal(NodeStates.Reached, Record().Statuses["deploy"].State);
+        return (runtime, plugins, held);
+    }
+
+    /// <summary>The process starts made within the test, by program: a close's judgement of its chain starts none.</summary>
+    private static IDisposable Counting(List<string> starts) => ProcessStarts.Within(info =>
+    {
+        lock (starts) starts.Add(Path.GetFileNameWithoutExtension(info.FileName));
+        return System.Diagnostics.Process.Start(info);
+    });
+
+    /// <summary>
+    /// FABRIC-CLOSE1t (§E5 step 1; the 2026-10-18 review of the close path): a chain's close is sent only once every quest it names has its own
+    /// graph's prerequisites to its close reached. The first quest published the second while its deploy stays held: the second's own deploy
+    /// reached, no close is sent, and each pass says once which quest and which node it waits for. No process is started for it.
+    /// </summary>
+    [Fact]
+    public async Task A_chains_close_waits_while_its_first_quests_deploy_is_held_and_says_which_quest_and_node()
+    {
+        var starts = new List<string>();
+        using var counting = Counting(starts);
+        var (runtime, _, held) = await ChainHeldAsync();
+        var again = await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+
+        Assert.Empty(_door.Sent);
+        foreach (var pass in new[] { held, again })
+        {
+            var said = Assert.Single(pass.Said, line => line.Contains("its close waits for #q6", StringComparison.Ordinal));
+            Assert.Contains("`deploy`", said, StringComparison.Ordinal);
+            Assert.Contains("held", said, StringComparison.Ordinal);
+        }
+
+        Assert.Empty(starts);
+    }
+
+    /// <summary>FABRIC-CLOSE1t: once the first quest's deploy is reached (here by the person's word on its held attempt), one close names both.</summary>
+    [Fact]
+    public async Task A_chains_close_names_both_quests_once_its_first_quests_deploy_is_reached()
+    {
+        var starts = new List<string>();
+        using var counting = Counting(starts);
+        var (runtime, plugins, _) = await ChainHeldAsync();
+        Assert.Empty(_door.Sent);
+
+        Assert.Equal(PerformedWhat.Worded, new WorkPerformer(Files, plugins, () => _now).Word("quest:q6", "deploy", 1, HeldResolutions.Happened).What);
+        var reached = await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+
+        Assert.Equal(NodeStates.Reached, Record("quest:q6").Statuses["deploy"].State);
+        var (quest, _, _, named) = Assert.Single(_door.Sent);
+        Assert.Equal("q7", quest);
+        Assert.Equal([new QuestCloseItem("q6", "desk", 40), new QuestCloseItem("q7", "desk", 41)], named);
+        Assert.DoesNotContain(reached.Said, line => line.Contains("its close waits for", StringComparison.Ordinal));
+        Assert.Empty(starts);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1t: a quest a chain's close would name whose own node record does not read is never closed on a guess: the close waits and
+    /// says so, and is sent once the record reads.
+    /// </summary>
+    [Fact]
+    public async Task A_chains_close_waits_while_its_first_quests_node_record_does_not_read()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q6", digest, Ready40) with { Then = [new QuestStepView("engine", "Ship q7", "")] });
+        Quest(Taken("q7", digest, Ready41) with { Parent = "q6" });
+        var unreadable = NodeRecordFiles.PathOf(_home, "quest:q6");
+        Directory.CreateDirectory(Path.GetDirectoryName(unreadable)!);
+        File.WriteAllText(unreadable, "{ not a record");
+        var runtime = Runtime();
+
+        var waiting = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Empty(_door.Sent);
+        var said = Assert.Single(waiting.Said, line => line.Contains("its close waits for #q6", StringComparison.Ordinal));
+        Assert.Contains("node record does not read", said, StringComparison.Ordinal);
+
+        File.Delete(unreadable);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        var (_, _, _, named) = Assert.Single(_door.Sent);
+        Assert.Equal([new QuestCloseItem("q6", "desk", 40), new QuestCloseItem("q7", "desk", 41)], named);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1t: an unarmed look is as it was. A chain bound to a graph the choices no longer hold, and no graph kept, reads no units,
+    /// keeps no record, sends and says nothing, and starts no process.
+    /// </summary>
+    [Fact]
+    public async Task An_unarmed_look_reads_no_units_judges_no_chain_and_starts_no_process()
+    {
+        var digest = Digest(Deployed);
+        _steps = [DeployStep];
+        Quest(Taken("q6", digest, Ready40) with { Then = [new QuestStepView("engine", "Ship q7", "")] });
+        Quest(Taken("q7", digest, Ready41) with { Parent = "q6" });
+        var plugins = new Deploys();
+        var starts = new List<string>();
+        NodeRuntimePass pass;
+        using (Counting(starts)) pass = await Runtime(plugins).PassAsync(Look("{}"), CancellationToken.None);
+
+        Assert.False(pass.Armed);
+        Assert.Equal(0, _reads);
+        Assert.Empty(plugins.Sent);
+        Assert.Empty(_door.Sent);
+        Assert.Empty(_door.Asked);
+        Assert.Empty(pass.Said);
+        Assert.False(Directory.Exists(NodeRecordFiles.FolderOf(_home)));
+        Assert.Empty(starts);
     }
 
     [Fact]
@@ -514,13 +842,13 @@ public sealed class QuestCloseTests : IDisposable
     /// FABRIC-CLOSE1q, part 2: a close its door made, whose answer its node could not take, is held as the door's: no override is read and
     /// no plugin's word offered. Each of its recoveries, said and then applied by a loop started again, keeps the one key: the answer
     /// recorded again, asked for again with the same close, or its work's further nodes stopped with the close's answer kept. The quest's
-    /// Done stands, and no second close is made.
+    /// Done stands, and no second close is made. FABRIC-CLOSE1u: asked for again is the door's answer under the key, the close never sent again.
     /// </summary>
     [Theory]
-    [InlineData(HeldResolutions.Record, NodeStates.Reached, 1)]
-    [InlineData(HeldResolutions.Resend, NodeStates.Reached, 2)]
-    [InlineData(HeldResolutions.Stop, NodeStates.Stopped, 1)]
-    public async Task A_close_made_whose_answer_did_not_bind_is_held_as_the_doors_and_each_recovery_keeps_its_one_key(string word, string state, int sends)
+    [InlineData(HeldResolutions.Record, NodeStates.Reached, 0)]
+    [InlineData(HeldResolutions.Resend, NodeStates.Reached, 1)]
+    [InlineData(HeldResolutions.Stop, NodeStates.Stopped, 0)]
+    public async Task A_close_made_whose_answer_did_not_bind_is_held_as_the_doors_and_each_recovery_keeps_its_one_key(string word, string state, int asks)
     {
         Quest(Taken("q7", Digest(Closing), Ready41));
         var binding = ClosedUnbound();
@@ -543,9 +871,9 @@ public sealed class QuestCloseTests : IDisposable
         var applied = await restarted.PassAsync(Look(Closing), CancellationToken.None);
         await restarted.PassAsync(Look(Closing), CancellationToken.None);
 
-        Assert.Equal(sends, _door.Sent.Count);
-        Assert.All(_door.Sent, each => Assert.Equal((_door.Sent[0].Key, _door.Sent[0].Token), (each.Key, each.Token)));
-        Assert.All(_door.Sent, each => Assert.Equal(_door.Sent[0].Quests, each.Quests));
+        Assert.Single(_door.Sent);
+        Assert.Equal(asks, _door.Asked.Count);
+        Assert.All(_door.Asked, each => Assert.Equal(("q7", _door.Sent[0].Key), each));
         var status = Record().Statuses["close"];
         Assert.Equal(state, status.State);
         if (state == NodeStates.Reached) Assert.Equal((NodeSource.CloseDoor, "close:" + _door.Sent[0].Key), (status.By, status.Current!.Evidence!.Ref));

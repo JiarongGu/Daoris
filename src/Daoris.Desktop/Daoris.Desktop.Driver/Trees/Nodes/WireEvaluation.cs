@@ -49,6 +49,13 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// </summary>
     public IReadOnlyDictionary<string, string?> Revisions { get; init; } = ImmutableDictionary<string, string?>.Empty;
 
+    /// <summary>
+    /// A node's own revision where it is not its unit's, by node id (FABRIC-PERFORM1m): a branch unit's observed plugin node, bound to its
+    /// branch's tip read in the caller's pass rather than the end fact's revision, which lags it. The node's binding is made and lapses on
+    /// it; every other node on <see cref="Revisions"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, string?> NodeRevisions { get; init; } = ImmutableDictionary<string, string?>.Empty;
+
     /// <summary>The trigger firings already recorded (<see cref="WireFiring.Key"/>): a trigger fires once per receipt, whatever replays.</summary>
     public IReadOnlySet<string> Fired { get; init; } = ImmutableHashSet<string>.Empty;
 
@@ -76,6 +83,13 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// here, so its opinion stays pending, never guessed.
     /// </summary>
     public IReadOnlyDictionary<string, OpinionGateState> Opinions { get; init; } = ImmutableDictionary<string, OpinionGateState>.Empty;
+
+    /// <summary>
+    /// The review's gate for each unit's work, by <see cref="WorkUnit.Id"/>, as <see cref="ReviewGate"/> read it: the caller's read, which a
+    /// <c>look</c> node observes only for the choice that turns the look off (FABRIC-WIRE1h, <see cref="LookNode"/>). A unit it leaves out
+    /// has no read, so its look stays the person's to answer.
+    /// </summary>
+    public IReadOnlyDictionary<string, ReviewGateState> Reviews { get; init; } = ImmutableDictionary<string, ReviewGateState>.Empty;
 }
 
 /// <summary>One trigger's firing (§E3): its wire started its target on one receipt. Its key is what the record writer keeps.</summary>
@@ -299,14 +313,17 @@ public static class WireEvaluation
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
-                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind == NodeKinds.Opinion) || !run.Units.TryGetValue(status.Unit, out var unit))
+                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look) || !run.Units.TryGetValue(status.Unit, out var unit))
             {
                 continue;
             }
 
-            var observation = node.Kind == NodeKinds.Opinion
-                ? OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(status.Unit))
-                : BuiltInNodes.Observe(unit, node, binding, run.Git);
+            var observation = node.Kind switch
+            {
+                NodeKinds.Opinion => OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(status.Unit)),
+                NodeKinds.Look => LookNode.Observe(unit, node, binding, run.Reviews.GetValueOrDefault(status.Unit)),
+                _ => BuiltInNodes.Observe(unit, node, binding, run.Git),
+            };
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs.
@@ -484,16 +501,18 @@ public static class WireEvaluation
         // attempt restarts it. It is no receipt here (Receipts reads this graph's and run's alone), so nothing fires on it.
         if (status.State is NodeStates.Failed or NodeStates.Rejected && (binding.GraphDigest != run.GraphDigest || status.Scope != run.Scope))
         {
-            return string.Equals(binding.SubjectRevision, Revision(run, binding.Unit), StringComparison.Ordinal) ? null : (WireWhy.Lapsed, NodeLapse.Revision);
+            return string.Equals(binding.SubjectRevision, Revision(run, binding.Unit, node.Id), StringComparison.Ordinal) ? null : (WireWhy.Lapsed, NodeLapse.Revision);
         }
 
-        if (NodeAcceptances.Lapsed(binding, Revision(run, binding.Unit), run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
+        if (NodeAcceptances.Lapsed(binding, Revision(run, binding.Unit, node.Id), run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
         var lost = binding.PrerequisiteReceipts.FirstOrDefault(receipt => !current.Contains(receipt))
             ?? binding.Inputs.Values.Select(port => port.Acceptance).FirstOrDefault(acceptance => acceptance is not null && !current.Contains(acceptance));
         return lost is null ? null : (WireWhy.Upstream, lost);
     }
 
-    private static string? Revision(WireRun run, string unit) => run.Revisions.TryGetValue(unit, out var revision) ? revision : null;
+    /// <summary>The revision a node is bound to and lapses on: its own where the caller gives one (FABRIC-PERFORM1m), else its unit's.</summary>
+    private static string? Revision(WireRun run, string unit, string node) =>
+        run.NodeRevisions.TryGetValue(node, out var own) ? own : run.Revisions.TryGetValue(unit, out var revision) ? revision : null;
 
     /// <summary>One node's eligibility on <paramref name="receipts"/>: its data inputs, its join members, and its groups (§E3, §E7).</summary>
     private static WireEligibility Eligible(
@@ -599,7 +618,7 @@ public static class WireEvaluation
             Receipts = [.. consumed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
             Waiting = [.. waiting.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
             Binding = eligible
-                ? new NodeAcceptance(status.Unit, Revision(run, status.Unit), run.GraphDigest, node.Id, node.Version, status.Attempt + 1)
+                ? new NodeAcceptance(status.Unit, Revision(run, status.Unit, node.Id), run.GraphDigest, node.Id, node.Version, status.Attempt + 1)
                 {
                     Inputs = inputs,
                     PrerequisiteReceipts = [.. consumed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],

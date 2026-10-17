@@ -342,8 +342,15 @@ public sealed class NewerIndexTests : IDisposable
             Assert.DoesNotContain("knowledge.db", refused, StringComparison.Ordinal);
             Assert.DoesNotContain(Path.GetFileName(_root), refused, StringComparison.Ordinal);
 
-            string error;
-            lock (said) error = said.ToString();
+            // TESTWAIT2: stderr is read asynchronously, so its line is waited for, not assumed with the log's.
+            string error = "";
+            for (var attempt = 0; attempt < 150; attempt++)
+            {
+                lock (said) error = said.ToString();
+                if (error.Contains("newer Daoris", StringComparison.Ordinal)) break;
+                await Task.Delay(100);
+            }
+
             Assert.Contains("written by a newer Daoris", error);
             Assert.Contains(Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory), error);
             Assert.Single(error.Split('\n', StringSplitOptions.RemoveEmptyEntries), line => line.Contains("newer Daoris", StringComparison.Ordinal));

@@ -361,6 +361,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         // operation, so a shared host maps neither.
         Assert.DoesNotContain(("POST", "/api/quests/{id}/bind"), host.Routes());
         Assert.DoesNotContain(("POST", "/api/quests/{id}/close"), host.Routes());
+        Assert.DoesNotContain(("POST", "/api/quests/{id}/close/outcome"), host.Routes());
         var key = (await host.MintAsync("evidence@a-machine")).Key;
         var refused = await host.SendAsync("POST", "/api/quests/abcdefabcdef/evidence", DaorisHost.Loopback, key,
             """{ "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "how": "terminal", "items": [] }""");

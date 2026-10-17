@@ -45,11 +45,14 @@ public static class HeldAttempts
     public const string Usage =
         "usage: daoris-driver work held [--unit <id>]  |  daoris-driver work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop)";
 
-    /// <summary>Every attempt held on the records that read, oldest first; with <paramref name="unit"/>, that unit's alone.</summary>
+    /// <summary>
+    /// Every attempt held on the records that read, and every close unknown with its node still on it (FABRIC-CLOSE1u,
+    /// <see cref="QuestClosing.Unanswered"/>), oldest first; with <paramref name="unit"/>, that unit's alone.
+    /// </summary>
     public static IReadOnlyList<HeldAttempt> Read(NodeRecordFiles records, string? unit = null) =>
         [.. records.All().Records
             .Where(record => unit is null || string.Equals(record.Unit, unit, StringComparison.Ordinal))
-            .SelectMany(record => record.Attempts.Where(attempt => attempt.State == AttemptStates.Held).Select(attempt => new HeldAttempt(
+            .SelectMany(record => record.Attempts.Where(attempt => attempt.State == AttemptStates.Held || QuestClosing.Unanswered(record, attempt)).Select(attempt => new HeldAttempt(
                 record.Unit, attempt.Node, attempt.Attempt, attempt.Plugin, attempt.Call.Step,
                 record.Statuses.GetValueOrDefault(attempt.Node)?.State ?? NodeStates.Blocked, attempt.Code ?? ReconcileStates.Unknown)
             {

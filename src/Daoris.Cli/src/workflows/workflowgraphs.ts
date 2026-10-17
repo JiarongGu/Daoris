@@ -1,8 +1,8 @@
 /**
  * D157's named versions decoded as graphs, never rewritten (FABRIC-WORKFLOW2; the fabric events design §E7's migration contract, §E4).
  * Pure: a version read as `namedworkflows.ts` reads it becomes `{ schemaVersion, entries, end, cleanup, nodes, wires }`, each node's
- * options as JSON values. Step order is `after` wires; a group is a synthetic `all` join with the group's id, its members wired into it
- * and it into the next step; `failed: stop` is a `failed` wire to a synthetic `stop`, `wait` one to a synthetic person's task, and
+ * options as JSON values. Step order is `after` wires, and each gate of the protected order before the landing is wired into every gate
+ * after it (FABRIC-GRAPH1h); a group is a synthetic `all` join with the group's id, its members wired into it and it into the next step; `failed: stop` is a `failed` wire to a synthetic `stop`, `wait` one to a synthetic person's task, and
  * `send-back` the adapter's one return, then the person's task; a go-ahead's `refused` takes its `rejected` wire the same way.
  *
  * The driver's twin is `WorkflowGraphs` (`WorkflowGraphs.cs`); both read `test/fixtures/workflow-graphs.json`, row for row, every graph
@@ -14,8 +14,14 @@ import { createHash } from 'node:crypto';
 import type { GraphForm } from './graphversions.ts';
 import { field, members, quoted, versionDigest, type NamedStep, type NamedVersion, type StepValue } from './namedworkflows.ts';
 
-/** The decoder's own version — the driver's `WorkflowGraphs.DecoderVersion`: a decoded graph's digest is derived from it. */
-export const DECODER_VERSION = 1;
+/**
+ * The decoder's own version — the driver's `WorkflowGraphs.DecoderVersion`: a decoded graph's digest is derived from it. 2 since
+ * FABRIC-GRAPH1h, whose wires hold the protected order across a skip.
+ */
+export const DECODER_VERSION = 2;
+
+/** The protected order's steps before the landing (D157 §2.2), each wired into every one after it — the driver's `WorkflowGraphs.Gate`. */
+const GATES: ReadonlySet<string> = new Set(['work', 'opinion', 'look', 'landing']);
 
 /** The kind a check decodes to after its plugin — the driver's `WorkflowGraphs.ChecksNode`: `work/checks`, its slash a dot. */
 const CHECKS_NODE = 'work.checks';
@@ -80,6 +86,7 @@ export function workflowGraph(steps: readonly NamedStep[]): DecodedGraph {
   };
 
   let previous: string | null = null;
+  const gates: string[] = [];
   for (const step of steps) {
     if (step.kind === 'all') {
       // A member's own `failed` is kept as written and takes no path: a member failed is the group failed (D157 §3.3).
@@ -92,6 +99,14 @@ export function workflowGraph(steps: readonly NamedStep[]): DecodedGraph {
     } else {
       nodes.push(nodeOf(step));
       if (previous !== null) wire('after', previous, step.id);
+
+      // FABRIC-GRAPH1h: the protected order (D157 §2.2) held by wires, not by reachability alone. A skip satisfies its `after` wire
+      // (§E2), so the step order alone would let a gate go past an earlier one still unsettled once a step between is skipped. Each
+      // gate (the work, whose node carries the holds; the opinion; the look) is wired into every gate after it — the driver's `Gate`.
+      if (GATES.has(step.kind)) {
+        for (const gate of gates) if (gate !== previous) wire('after', gate, step.id);
+        gates.push(step.id);
+      }
     }
 
     if (step.kind === 'check' || step.kind === 'stage' || step.kind === 'all') outcome(step, 'failed', field(step, 'failed'));

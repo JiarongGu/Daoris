@@ -81,8 +81,12 @@ public sealed class WorkSupervisionTests : IDisposable
 
         public void Listen(Action<JsonElement?>? steps) => Steps = steps;
 
+        /// <summary>Where set and true for a frame, its send fails, as a broken pipe does (FABRIC-PERFORM1i).</summary>
+        public Func<WorkWatchFrame, bool>? Fails { get; set; }
+
         public Task WatchAsync(WorkWatchFrame frame, CancellationToken ct)
         {
+            if (Fails?.Invoke(frame) == true) return Task.FromException(new DriverException("the pipe broke"));
             lock (Told) Told.Add(frame);
             return Task.CompletedTask;
         }
@@ -216,6 +220,37 @@ public sealed class WorkSupervisionTests : IDisposable
         Assert.True(channel.Disposed);
         Assert.Empty(set.Running);
         Assert.Equal(PluginEvents.Idle, Text(Assert.Single(Lines(PluginEvents.Stopped)), "why"));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1i (§C4's third rule): an event is bound by the last frame its process was actually sent, never the set desired since. A
+    /// send that fails leaves the frame before it; another generation was sent nothing yet.
+    /// </summary>
+    [Fact]
+    public async Task The_frame_an_event_is_bound_by_is_the_last_one_its_process_was_actually_sent()
+    {
+        await using var set = Set();
+        set.Watch(Awaiting(Unit() with { Unit = "u-a" }));
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+        var channel = Assert.Single(_started);
+        var first = set.SentTo(Deploy, 1)!;
+        Assert.Equal((true, "u-a"), (first.Resync, Assert.Single(first.Units).Unit));
+
+        // A newly desired unit whose send fails: the process was never told of it.
+        channel.Fails = frame => frame.Units.Any(unit => unit.Branch == "quest/b");
+        set.Watch(Awaiting(Unit() with { Unit = "u-a" }, Unit("quest/b") with { Unit = "u-b" }));
+        Assert.Equal(["quest/a"], set.SentTo(Deploy, 1)!.Units.Select(unit => unit.Branch));
+        Assert.Null(set.SentTo(Deploy, 2));
+
+        // A later set whose send completes is what binds from then on.
+        channel.Fails = null;
+        set.Watch(Awaiting(Unit() with { Unit = "u-a" }, Unit("quest/b") with { Unit = "u-b" }, Unit("quest/c") with { Unit = "u-c" }));
+        Assert.Equal(["u-a", "u-b", "u-c"], set.SentTo(Deploy, 1)!.Units.Select(unit => unit.Unit));
+
+        // Stopped: nothing it was sent binds an event any more.
+        _holds = false;
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+        Assert.Null(set.SentTo(Deploy, 1));
     }
 
     [Fact]

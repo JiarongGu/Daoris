@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readShape, readSteps, readVersion, versionDigest } from '../../src/workflows/namedworkflows.ts';
@@ -66,6 +66,31 @@ test('workflow-graphs: the shape reads a kind this build does not run, which the
     ['ci:failed', 'human', 'pressed', true],
   ]);
   assert.equal(graph.end, 'ci');
+});
+
+test('workflow-graphs: the protected order wires each gate into every gate after it, a go-ahead none, and nothing after the landing', () => {
+  // FABRIC-GRAPH1h: a skip satisfies its `after` wire, so the step order alone lets the landing past an unsettled gate once a step
+  // between is skipped; the work (its node carries the holds), the opinion and the look are wired into every gate after them, once.
+  const { steps, problem } = readShape([
+    { id: 'work', kind: 'work' }, { id: 'ask', kind: 'go-ahead', act: 'Ship', on: 'the line' }, { id: 'second', kind: 'opinion' },
+    { id: 'see', kind: 'look' }, { id: 'land', kind: 'landing', form: 'branch', accept: 'you', plugin: 'acme.ci' }, { id: 'pr', kind: 'pull-request' },
+    { id: 'lint', kind: 'check', plugin: 'acme.ci', failed: 'stop' },
+  ], 1);
+  assert.equal(problem, null);
+  const graph = workflowGraph(steps!);
+  assert.deepEqual(graph.wires.filter((each) => each.kind === 'after').map((each) => each.id), [
+    'work>ask', 'ask>second', 'work>second', 'second>see', 'work>see', 'see>land', 'work>land', 'second>land', 'land>pr', 'pr>lint',
+  ]);
+  assert.equal(new Set(graph.wires.map((each) => each.id)).size, graph.wires.length);
+});
+
+test('workflow-graphs: no CLI source reads the decoder, so a decoder change moves nothing the CLI stores', () => {
+  // FABRIC-GRAPH1h: the driver's `Nothing_outside_the_read_only_projection_reads_the_decoder` is this file's twin.
+  const source = join(here, '..', 'src');
+  const readers = (readdirSync(source, { recursive: true }) as string[])
+    .filter((file) => file.endsWith('.ts') && !file.endsWith('workflowgraphs.ts'))
+    .filter((file) => /from '[^']*workflowgraphs\.ts'/.test(readFileSync(join(source, file), 'utf8')));
+  assert.deepEqual(readers, []);
 });
 
 test('workflow-graphs: decoding twice gives the same graph and digest, and the identity is the version\'s digest', () => {

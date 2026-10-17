@@ -185,9 +185,11 @@ npm --prefix src/Daoris.Web run e2e:ui                          # the outer loop
 npm --prefix src/Daoris.Web run storybook
 ```
 
-`test:web` is a declared gate in `daoris.gates.json`, so the devkit's `verify` — and the release
-workflow — refuse a release whose UI cannot do its job over the example family. Note it rebuilds the
-host, so stop a locally running instance first, or the build fails on the locked DLL.
+`test:web`'s two halves are declared gates in `daoris.gates.json` (WEBSPLIT1): `test:web:unit`, the
+vitests, which build nothing, and `test:web:e2e`, the bundle, the host and Playwright. So the devkit's
+`verify` — and the release workflow — refuse a release whose UI cannot do its job over the example
+family. Note the second rebuilds the host, so stop a locally running instance first, or the build
+fails on the locked DLL.
 
 Set `DAORIS_EMBED_MODEL` to turn the semantic tier on; without it the UI says so and convergence finds
 copies and restatements only.
