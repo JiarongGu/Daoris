@@ -25,7 +25,11 @@ public sealed class NodeLifecycleTests
         {
             Retry = retry ?? new NodeRetry(3, [5, 30]),
             Rejectable = rejectable,
+            // FABRIC-UNIT1d: a plugin's performed node retries only a transient code, and only where it is idempotent or reconciled.
+            Perform = builtIn is null ? Retrying : null,
         };
+
+    private static readonly NodePerform Retrying = new(Idempotent: true, Reconcile: false, ["unavailable"]);
 
     /// <summary>The binding an attempt starts on: what Daoris's evaluation hands the start.</summary>
     private static NodeAcceptance Bind(int attempt, string node = "n1") => new(Unit, "tip-1", "graph-1", node, 1, attempt);
@@ -325,7 +329,7 @@ public sealed class NodeLifecycleTests
     {
         Assert.Null(NodeDeclarations.Problem(Declared(NodeKinds.Line) with { Retry = null }));
         Assert.Null(NodeDeclarations.Problem(Declared("acme.deploy/deploy")));
-        Assert.Null(NodeDeclarations.Problem(Declared("acme.watch/deployed") with { Reach = NodeReach.Observed }));
+        Assert.Null(NodeDeclarations.Problem(Declared("acme.watch/deployed") with { Reach = NodeReach.Observed, Retry = null, Perform = null }));
 
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(Declared("deploy")));
         Assert.Equal("reach", NodeDeclarations.Problem(Declared(NodeKinds.Line) with { Reach = NodeReach.Performed, Retry = null }));
@@ -335,6 +339,68 @@ public sealed class NodeLifecycleTests
         Assert.Equal("retry", NodeDeclarations.Problem(Declared(NodeKinds.Line)));
         Assert.Equal("timeoutSeconds", NodeDeclarations.Problem(Declared("acme.deploy/deploy") with { TimeoutSeconds = 0 }));
         Assert.Equal("rejectable", NodeDeclarations.Problem(Declared(NodeKinds.Line, rejectable: true) with { Retry = null }));
+    }
+
+    /// <summary>
+    /// FABRIC-UNIT1d (§D6): only a plugin's own performed node says how it is performed, and its retry is one it can take: a transient
+    /// code to retry, on a node that is idempotent or reconciled. A retry or a code nothing could ever take is refused, as NODE1 refuses
+    /// a retry on a kind nothing can fail.
+    /// </summary>
+    [Fact]
+    public void A_plugin_s_performed_node_says_how_it_is_performed_and_only_a_retry_it_can_take()
+    {
+        var performed = new NodeDeclaration("acme.deploy/deploy", "acme.deploy/deploy", 1, NodeReach.Performed);
+        var close = new NodeDeclaration("close", NodeKinds.QuestClose, 1, NodeReach.Performed);
+        var three = new NodeRetry(3, [5]);
+
+        Assert.Null(NodeDeclarations.Problem(performed));
+        Assert.Null(NodeDeclarations.Problem(performed with { Perform = Retrying, Retry = three }));
+        Assert.Null(NodeDeclarations.Problem(performed with { Perform = Retrying with { Idempotent = false, Reconcile = true }, Retry = new NodeRetry(2, []) }));
+        Assert.Null(NodeDeclarations.Problem(performed with { Perform = new NodePerform(false, false, []), Retry = new NodeRetry(1, []) }));
+        Assert.Null(NodeDeclarations.Problem(close with { Retry = three }));
+
+        Assert.Equal("perform", NodeDeclarations.Problem(performed with { Reach = NodeReach.Observed, Perform = new NodePerform(false, false, []) }));
+        Assert.Equal("perform", NodeDeclarations.Problem(close with { Perform = new NodePerform(true, false, []) }));
+
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying with { Transient = ["Unavailable"] }, Retry = three }));
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying with { Transient = ["unavailable", "unavailable"] }, Retry = three }));
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying }));
+        Assert.Equal("transient", NodeDeclarations.Problem(performed with { Perform = Retrying, Retry = new NodeRetry(1, []) }));
+
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Retry = three }));
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Perform = Retrying with { Transient = [] }, Retry = three }));
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Perform = Retrying with { Idempotent = false }, Retry = three }));
+        Assert.Equal("retry", NodeDeclarations.Problem(performed with { Reach = NodeReach.Observed, Retry = new NodeRetry(2, []) }));
+    }
+
+    /// <summary>
+    /// FABRIC-UNIT1d: two declarations saying the same are equal, whoever built their collections, so a manifest's step is the one
+    /// built by hand and a graph compares declarations by what they say.
+    /// </summary>
+    [Fact]
+    public void Two_declarations_saying_the_same_are_equal()
+    {
+        static NodeDeclaration Made() => new("acme.deploy/deploy", "acme.deploy/deploy", 1, NodeReach.Performed)
+        {
+            Inputs = new Dictionary<string, string> { ["release"] = "acme/artifact@1" },
+            Outputs = new Dictionary<string, string> { ["preview"] = "acme/preview@1", ["log"] = "acme/log@1" },
+            Evidence = "acme/receipt@1",
+            Retry = new NodeRetry(3, [5, 30]),
+            Perform = new NodePerform(true, false, ["unavailable"]),
+        };
+
+        Assert.Equal(Made(), Made());
+        Assert.Equal(Made().GetHashCode(), Made().GetHashCode());
+        Assert.Equal(new NodeRetry(2, [1]), new NodeRetry(2, new List<int> { 1 }));
+        Assert.Equal(new NodePerform(true, true, ["a"]), new NodePerform(true, true, new List<string> { "a" }));
+
+        Assert.NotEqual(Made(), Made() with { Inputs = new Dictionary<string, string> { ["release"] = "acme/other@1" } });
+        Assert.NotEqual(Made(), Made() with { Outputs = new Dictionary<string, string> { ["preview"] = "acme/preview@1" } });
+        Assert.NotEqual(Made(), Made() with { Retry = new NodeRetry(3, [5]) });
+        Assert.NotEqual(Made(), Made() with { Perform = new NodePerform(true, false, ["timeout"]) });
+        Assert.NotEqual(Made(), Made() with { Perform = null });
+        Assert.NotEqual(Made(), Made() with { Skippable = false });
+        Assert.NotEqual(Made(), Made() with { Version = 2 });
     }
 
     // ---- FABRIC-NODE1c: a second maker's review
@@ -534,6 +600,7 @@ public sealed class NodeLifecycleTests
             Inputs = inputs,
             Outputs = outputs,
             Retry = new NodeRetry(3, delays),
+            Perform = Retrying,
         };
         Assert.Null(NodeDeclarations.Problem(node));
 
