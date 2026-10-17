@@ -76,7 +76,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             }
 
             var (taken, lags) = Take(each, now);
-            if (lags && lagging is not null) lagging.Add(new WorkLagging(each.Heard, unit, each.Node.Id));
+            if (lags && lagging is not null) lagging.Add(new WorkLagging(each.Heard, unit));
             else done.Add(Counted(each.Heard.Plugin, taken));
         }
 
@@ -178,7 +178,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
 /// pass's hearing comes before its rebinding, so it is held for the pass, neither refused nor counted, and heard again, the five rules and
 /// all, once the evaluation has rebound the node. Never kept past the pass.
 /// </summary>
-public sealed record WorkLagging(WorkStepHeard Heard, string Unit, string Node);
+public sealed record WorkLagging(WorkStepHeard Heard, string Unit);
 
 /// <summary>
 /// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule; D88's PROC1d-ii): one <c>for-each-ref</c> of its
