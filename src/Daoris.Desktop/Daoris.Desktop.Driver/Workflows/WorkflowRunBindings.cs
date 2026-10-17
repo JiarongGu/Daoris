@@ -102,7 +102,8 @@ public static class WorkflowRunBindings
 
         if (found.Read.Problem is { } unread) return binding with { Problem = $"`{selected.Workflow}` cannot be read: {unread}" };
         var newest = found.Read.Versions[^1];
-        return newest.Steps is null
+        // A graph version (schema 2) binds its graph's digest (FABRIC-GRAPH1b); it is held as unrun where the process reads it.
+        return newest.Steps is null && newest.Graph is null
             ? binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem}" }
             : binding with { Version = newest.Version, Digest = newest.Digest };
     }
