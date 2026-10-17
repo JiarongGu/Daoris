@@ -275,7 +275,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// The step events heard (<see cref="HookSet.TakeSteps"/>): each completion applied to the attempt its invocation names, once
     /// <see cref="WorkBelief.Completion"/> believes it (FABRIC-PERFORM1c: §C4's five rules, the unit as <paramref name="watched"/> tells it now);
     /// one not believed moves nothing and is counted by its code (<see cref="IWorkPerformPort.Refused"/>). An event naming no invocation is an
-    /// observed plugin node's, which no node of this build takes yet.
+    /// observed plugin node's, passed over here and judged by <see cref="WorkObserver"/> (FABRIC-PERFORM1i).
     /// </summary>
     public IReadOnlyList<WorkPerformed> Hear(
         IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, WatchedUnit?> watched)

@@ -101,8 +101,11 @@ public static class NodeRuns
 /// awaited set (<see cref="IWorkRuntimePort.Watch"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>Off unless a graph naming a plugin's performed node governs something</b> (the owner's ruling for RUN1): with no such graph in
-/// the choices, a pass reads no unit, no plugin step and no record, tells and takes nothing, writes nothing and starts no process or git.</para>
+/// <para><b>Off unless a graph naming a plugin's performed node governs something</b> (the owner's ruling for RUN1), or its observed node
+/// (FABRIC-PERFORM1i, the parent's ruling): with no such graph in the choices, a pass reads no unit, no plugin step and no record, tells and
+/// takes nothing, writes nothing and starts no process or git.</para>
+/// <para><b>Observed nodes</b> (FABRIC-PERFORM1i): begun as a built-in is, published once active, and reached by a believed event through
+/// <see cref="WorkObserver"/> before the evaluation, whose tips are read fresh (<see cref="NodeRuntimeLook.Tips"/>).</para>
 /// <para><b>One pass at a time, one performer per loop:</b> a wake that comes while a look's pass is out waits for it, so a start is never
 /// judged twice on one record; a second loop or a verb holds no lease, and every record edit asks it under the record's lock.</para>
 /// <para><b>A wake runs only what it concerns:</b> the units its answers, reconciliations and retries named, and those owing a start; the

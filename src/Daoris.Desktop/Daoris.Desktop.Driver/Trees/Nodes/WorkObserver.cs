@@ -85,7 +85,11 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             .Where(unit => unit.Unit is not null && string.Equals(unit.Repository, frame.Repository, StringComparison.Ordinal)
                            && string.Equals(unit.Branch, frame.Branch, StringComparison.Ordinal) && unit.Awaiting.Contains(step, StringComparer.Ordinal))
             .ToList() ?? [];
-        if (told.Count != 1 || !governed.TryGetValue(told[0].Unit!, out var unit)) return (null, "", "", WorkRefusals.NotWatched);
+        // The unit still governed, in the repository the process was told of: a checkout moved since names another repository's identity.
+        if (told.Count != 1 || !governed.TryGetValue(told[0].Unit!, out var unit) || unit.Watched.Identity != told[0].Identity)
+        {
+            return (null, "", "", WorkRefusals.NotWatched);
+        }
 
         var kind = heard.Plugin + "/" + step;
         var named = unit.Graph.Nodes.Where(node => node.Kind == kind && node.Reach == NodeReach.Observed).ToList();
@@ -108,8 +112,10 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             var kept = record.Observations.FirstOrDefault(each => Same(each) && string.Equals(each.Commit, commit, StringComparison.OrdinalIgnoreCase));
             if (kept is not null)
             {
-                if (kept.Id == frame.Id) return (null, new(unit, node.Id, kept.State == state && kept.At == frame.At ? PerformedWhat.Replay : PerformedWhat.NotTaken, kept.State == state && kept.At == frame.At ? null : WorkRefusals.Late));
-                if (frame.At <= kept.At) return (null, new(unit, node.Id, PerformedWhat.NotTaken, WorkRefusals.Late));
+                // The same identity again is a replay; its id reused for another outcome or time is late, the first word under it standing.
+                var replay = kept.Id == frame.Id && kept.State == state && kept.At == frame.At;
+                if (replay) return (null, new(unit, node.Id, PerformedWhat.Replay));
+                if (kept.Id == frame.Id || frame.At <= kept.At) return (null, new(unit, node.Id, PerformedWhat.NotTaken, WorkRefusals.Late));
             }
 
             if (state == WorkStates.Unknown) return (null, new(unit, node.Id, PerformedWhat.Noted));
