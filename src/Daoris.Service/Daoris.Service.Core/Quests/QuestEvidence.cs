@@ -241,6 +241,12 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
     /// <summary>The machine that read it: the operation's, set on the quest as the replay keeps it.</summary>
     public string? Machine { get; init; }
 
+    /// <summary>
+    /// The submission it was asked for (FABRIC-CLOSE1e, §E5), by the machine and sequence that made it, as a close names one.
+    /// Null on a verdict read of a done, which is every verdict from before.
+    /// </summary>
+    public QuestOperationRef? Submission { get; init; }
+
     /// <summary>Whether every item was found: the one verdict that lets what the done held go on.</summary>
     public bool Found => Items.Count > 0 && Items.All(item => item.Result == QuestEvidenceCodes.Found);
 

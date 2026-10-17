@@ -372,6 +372,12 @@ public enum QuestCloseRefusal
 
     /// <summary>A named quest's chain step is not published from its submission, so the submission is not sealed.</summary>
     Unsealed,
+
+    /// <summary>
+    /// The key was a close's already, sent with another token or other submissions (FABRIC-CLOSE1e): not that close again, so
+    /// not answered with its outcome. A new attempt takes a new key.
+    /// </summary>
+    KeyReused,
 }
 
 /// <param name="Refusal"><see cref="QuestCloseRefusal.None"/> when every named quest is Done.</param>

@@ -89,7 +89,8 @@ public sealed class QuestOperationKindsTests
                     Object = "fedcba9876543210fedcba9876543210fedcba98", Changed = true,
                 },
             ])
-            { Session = "s1a2b3c4" },
+            // Read for the submission the states below show at sequence 4 (FABRIC-CLOSE1e), so the field is held everywhere.
+            { Session = "s1a2b3c4", Submission = new QuestOperationRef("m1", 4) },
         },
         // A deployed set-up, so its address crosses as given: a local one leaves it behind on the wire, which
         // ReviewStepTests holds.

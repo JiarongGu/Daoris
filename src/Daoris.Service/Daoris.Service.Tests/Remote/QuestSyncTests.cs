@@ -1223,6 +1223,46 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.NotNull(await _remote.FindAsync(question.Id));
     }
 
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1e, finding 2 (D173's FABRIC-CLOSE1a note, §E5): a submission made on a take that lost goes with the take,
+    /// and the step it published goes with it, even once this machine took that step. Kept, the step's publication and take would
+    /// sync on their own, and its session would run on a quest nobody asked. Its take reads lost, so the driver stops that session,
+    /// and the loss says why: the parent's take lost.
+    /// </summary>
+    [Fact]
+    public async Task A_lost_submissions_step_goes_with_it_though_taken_and_its_session_is_told_why()
+    {
+        var quest = await _a.PublishAsync("Asker", "Federated", "Close in a graph", "why", Now,
+            then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        // A works offline: it takes, binds and submits, nothing holds the submission, so its step is published, and A takes that.
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        Assert.True((await _a.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now.AddHours(1))).Moved);
+        var step = (await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2))).FollowUp!;
+        Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(3))).Moved);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(4))).Moved);
+        await SyncAsync(_b);
+
+        var lost = await SyncAsync(_a);
+
+        Assert.Null(lost.Problem);
+        Assert.Empty(lost.Refused);
+        Assert.Equal(QuestClaim.Lost, await _a.ClaimAsync(quest.Id));
+        // The step is gone with the submission that published it, here and at the remote, and nothing of it waits to go up.
+        Assert.Null(await _a.FindAsync(step.Id));
+        Assert.Null(await _remote.FindAsync(step.Id));
+        Assert.DoesNotContain(await _a.PendingAsync(Workspaces.Default, _ => true), op => op.Quest == step.Id);
+        // Its take reads lost, the claim the driver stops a session by, and the pass names why.
+        Assert.Equal(QuestClaim.Lost, await _a.ClaimAsync(step.Id));
+        var told = Assert.Single(lost.Conflicts, c => c.Quest == step.Id);
+        Assert.Equal((QuestStatus.Taken, _a.Machine), (told.Attempted, told.Machine));
+        Assert.Contains($"#{quest.Id}", told.Note);
+        // The parent's own loss names its submission, as it did.
+        Assert.Contains("submission", Assert.Single(lost.Conflicts, c => c.Quest == quest.Id).Note);
+    }
+
     /// <summary>The take's note stays as it was given, and the waits that went with it follow it, each named (WAITCLAIM1).</summary>
     [Theory]
     [InlineData(null, new[] { "q2" },

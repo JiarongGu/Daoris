@@ -104,9 +104,14 @@ public sealed class QuestClosureTests : IAsyncLifetime
     private Task<QuestRespondOutcome> Ready(Quest quest, params QuestAnswer[] answers) =>
         _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: answers.Length > 0 ? answers : [Met(1), Met(2)]);
 
-    private Task<QuestRespondOutcome> Found(Quest quest) =>
+    /// <summary>The report found, read for the quest's current submission, as the driver asks it.</summary>
+    private async Task<QuestRespondOutcome> Found(Quest quest) =>
+        await Found(quest, (await Find(quest.Id)).Submission is { } current ? new QuestOperationRef(current.Machine, current.Sequence) : null);
+
+    /// <summary>The report found, read for the submission named (FABRIC-CLOSE1e): a verdict says which submission it read.</summary>
+    private Task<QuestRespondOutcome> Found(Quest quest, QuestOperationRef? asked) =>
         _exchange.EvidenceAsync(quest.Id, new QuestEvidenceVerdict(Commit, "session-end",
-            [new QuestEvidenceRead(1, "docs/report-bridge.md", null, "found") { Object = Blob, Changed = true }]), Now);
+            [new QuestEvidenceRead(1, "docs/report-bridge.md", null, "found") { Object = Blob, Changed = true }]) { Submission = asked }, Now);
 
     private static (string, QuestOperationRef) Named(Quest quest) =>
         (quest.Id, new QuestOperationRef(quest.Submission!.Machine, quest.Submission.Sequence));
@@ -246,6 +251,47 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Single(await _quests.ListAsync(), q => q.Parent == quest.Id);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1e, finding 1: evidence read for one submission, arriving after a later ready replaced it, would release a
+    /// submission nobody read, and publish its step. A verdict names the submission it was asked for, and is no verdict on another.
+    /// </summary>
+    [Fact]
+    public async Task A_late_verdict_read_for_a_replaced_submission_never_releases_the_one_that_replaced_it()
+    {
+        var quest = await Bound();
+        var first = (await Ready(quest)).Quest!.Submission!;
+        var replaced = (await Ready(quest)).Quest!;
+        Assert.NotEqual(first.Sequence, replaced.Submission!.Sequence);
+        Assert.Equal(QuestHold.EvidenceUnread, replaced.Hold);
+
+        var late = await Found(quest, new QuestOperationRef(first.Machine, first.Sequence));
+
+        Assert.Equal(QuestRespondRefusal.NotAwaitingEvidence, late.Refusal);
+        Assert.Contains("submission", late.Message, StringComparison.Ordinal);
+        var standing = await Find(quest.Id);
+        Assert.Equal(QuestHold.EvidenceUnread, standing.Hold);
+        Assert.Null(standing.Evidence);
+        Assert.DoesNotContain(await _quests.ListAsync(), q => q.Parent == quest.Id);
+        Assert.DoesNotContain(await _quests.HistoryAsync(quest.Id), op => op.Kind == QuestOperationKind.Evidenced);
+
+        // The replay judges it alike, so a verdict another machine pushed applies to no submission but its own.
+        var history = await _quests.HistoryAsync(quest.Id);
+        QuestOperation Read(QuestOperationRef? asked) => new(quest.Id, QuestOperationKind.Evidenced, "m2", 1, Now,
+            Evidence: new QuestEvidenceVerdict(Commit, "session-end",
+                [new QuestEvidenceRead(1, "docs/report-bridge.md", null, "found") { Object = Blob }]) { Submission = asked });
+        Assert.False(QuestLog.Applies(QuestLog.Replay(history), Read(new QuestOperationRef(first.Machine, first.Sequence))));
+        Assert.False(QuestLog.Applies(QuestLog.Replay(history), Read(null)));
+        Assert.True(QuestLog.Applies(
+            QuestLog.Replay(history), Read(new QuestOperationRef(replaced.Submission.Machine, replaced.Submission.Sequence))));
+
+        // A submission's verdict names it: one naming none is not read for it.
+        Assert.Equal(QuestRespondRefusal.NotAwaitingEvidence, (await Found(quest, null)).Refusal);
+
+        // Read for the current submission, it releases it, and its step is published.
+        Assert.Equal(QuestRespondRefusal.None, (await Found(quest)).Refusal);
+        Assert.Single(await _quests.ListAsync(), q => q.Parent == quest.Id);
+    }
+
     // ——— The close door.
 
     /// <summary>Canary 48: a two-step chain advances on the first step's unheld submission, and the close closes both in order.</summary>
@@ -301,6 +347,70 @@ public sealed class QuestClosureTests : IAsyncLifetime
         // Another key on quests already closed is a racing close: refused, naming the state.
         var racing = await Close("k2", first, second);
         Assert.Equal(QuestCloseRefusal.Closed, racing.Refusal);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1e, finding 3: a key is one invocation. Its replay names the same token and the same submissions; anything
+    /// else sent with it is another call, refused, never answered with the first close's success.
+    /// </summary>
+    [Fact]
+    public async Task A_close_key_answers_only_its_own_close_and_refuses_another_call_sent_under_it()
+    {
+        var (first, second) = await Chain();
+        Assert.Equal(QuestCloseRefusal.None, (await Close("k1", first)).Refusal);
+
+        // The same key, naming a still-taken quest beside the closed one: not the close it was, so nothing is written.
+        var wider = await Close("k1", first, second);
+
+        Assert.Equal(QuestCloseRefusal.KeyReused, wider.Refusal);
+        Assert.Contains("k1", wider.Message, StringComparison.Ordinal);
+        Assert.Equal(QuestStatus.Taken, (await Find(second.Id)).Status);
+        Assert.DoesNotContain(await _quests.HistoryAsync(second.Id), op => op.Kind == QuestOperationKind.Done);
+
+        // Nor with another token, nor another submission.
+        Assert.Equal(QuestCloseRefusal.KeyReused,
+            (await _exchange.CloseAsync(first.Id, "k1", "another-token", [Named(first)], Now)).Refusal);
+        Assert.Equal(QuestCloseRefusal.KeyReused,
+            (await _exchange.CloseAsync(first.Id, "k1", "token-k1", [(first.Id, new QuestOperationRef("m9", 1))], Now)).Refusal);
+
+        // The same call again is the same close.
+        var again = await Close("k1", first);
+        Assert.Equal(QuestCloseRefusal.None, again.Refusal);
+        Assert.Single(await _quests.HistoryAsync(first.Id), op => op.Kind == QuestOperationKind.Done);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1e, finding 4: the first outcome is the answer, a refusal as much as a close. A close refused for a hold whose
+    /// answer was lost, sent again after the hold is released, answers the same refusal and writes nothing; a new attempt takes a
+    /// new key. The refusal is kept in the store, beside the closes, and never as an operation that syncs.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_close_is_answered_the_same_under_its_key_after_what_refused_it_is_gone()
+    {
+        var quest = await Bound(chain: false);
+        var held = (await Ready(quest, Departed, Met(2))).Quest!;
+        Assert.Equal(QuestHold.Departed, held.Hold);
+        Assert.Equal(QuestCloseRefusal.Held, (await Close("k1", held)).Refusal);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.AcceptAsync(quest.Id, Now)).Refusal);
+        var written = (await _quests.HistoryAsync(quest.Id)).Count;
+
+        var retried = await Close("k1", held);
+
+        Assert.Equal(QuestCloseRefusal.Held, retried.Refusal);
+        Assert.Contains("k1", retried.Message, StringComparison.Ordinal);
+        Assert.Equal(QuestStatus.Taken, (await Find(quest.Id)).Status);
+        Assert.Equal(written, (await _quests.HistoryAsync(quest.Id)).Count);
+        // Under the key it was refused with, another call is still another call.
+        Assert.Equal(QuestCloseRefusal.KeyReused,
+            (await _exchange.CloseAsync(quest.Id, "k1", "another-token", [Named(held)], Now)).Refusal);
+        // Kept in the store: a store opened again answers it alike.
+        var reopened = await QuestStore.OpenAsync(_connection);
+        var kept = await reopened.CloseAsync([Named(held)], new QuestClose("k1", "token-k1"), Now);
+        Assert.Equal((QuestCloseRefusal.Held, true), (kept.Refusal, kept.Replayed));
+
+        var fresh = await Close("k2", held);
+        Assert.Equal(QuestCloseRefusal.None, fresh.Refusal);
+        Assert.Equal(new QuestClose("k2", "token-k2"), Assert.Single(await _quests.HistoryAsync(quest.Id), op => op.Kind == QuestOperationKind.Done).Close);
     }
 
     /// <summary>Canary 45: a close naming a submission no longer current writes nothing.</summary>
