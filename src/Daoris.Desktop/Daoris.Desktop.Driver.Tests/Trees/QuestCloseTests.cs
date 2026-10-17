@@ -128,12 +128,19 @@ public sealed class QuestCloseTests : IDisposable
                         Links = [new WorkLink(WorkRelation.ProducedBy, "quest:" + branch.Value.Quest)],
                     }),
                 ],
-                new Dictionary<string, string> { ["engine"] = "checkout" }) { Tips = _tips is null ? null : new Dictionary<string, string?>(_tips) });
+                new Dictionary<string, string> { ["engine"] = "checkout" }) { Tips = Tips() });
         },
     };
 
-    /// <summary>What git answered of each branch's tip at a read (FABRIC-CLOSE1p), by its unit's id; null, a read that asked no git.</summary>
+    /// <summary>What git answered of each branch's tip at a read (FABRIC-CLOSE1p), by its unit's id; null, the tips of <c>_branches</c> as they stand.</summary>
     private Dictionary<string, string?>? _tips;
+
+    /// <summary>A read that asked no git (FABRIC-CLOSE1r): its tips are null, and a close made on it waits.</summary>
+    private bool _noTips;
+
+    /// <summary>The tips a read carries: those the test set, else each branch's own tip, as git would answer them (FABRIC-CLOSE1r).</summary>
+    private Dictionary<string, string?>? Tips() =>
+        _noTips ? null : _tips is not null ? new(_tips) : _branches.ToDictionary(branch => "branch:engine/" + branch.Key, branch => (string?)branch.Value.Tip);
 
     private NodeRecord Record(string unit = Unit) => Files.Read(unit)!;
 
@@ -324,6 +331,28 @@ public sealed class QuestCloseTests : IDisposable
 
         _onRead = null;
         _tips["branch:engine/daoris/q7"] = "c1";
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Single(_door.Sent);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1r: a read that carried no tips (a future read that forgot them) never closes: the close waits and says why, so the defect
+    /// CLOSE1p mended cannot return silently; a read that carries them closes.
+    /// </summary>
+    [Fact]
+    public async Task A_read_without_git_tips_leaves_the_close_waiting_and_says_why()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        _branches["daoris/q7"] = ("q7", "c1");
+        _noTips = true;
+        var runtime = Runtime();
+
+        var waiting = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Empty(_door.Sent);
+        Assert.Empty(Record().Attempts);
+        Assert.Single(waiting.Said, line => line.Contains("git's tips were not read for this look", StringComparison.Ordinal));
+
+        _noTips = false;
         await runtime.PassAsync(Look(Closing), CancellationToken.None);
         Assert.Single(_door.Sent);
     }

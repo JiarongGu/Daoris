@@ -18,7 +18,7 @@ public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDicti
     /// <summary>
     /// The tip of each branch a bound quest's chain worked, as git answered this one read (FABRIC-CLOSE1p, <see cref="QuestClosing.TipsAsync"/>),
     /// by the branch unit's id: a commit, empty where the branch is not there, null where git did not say. What a closing quest's revision digests
-    /// (<see cref="QuestClosing.Revision"/>). Null where the read asked no git at all, and a branch's revision is its record's.
+    /// (<see cref="QuestClosing.Revision"/>). Null where the read asked no git at all: a close made on it waits (FABRIC-CLOSE1r).
     /// </summary>
     public IReadOnlyDictionary<string, string?>? Tips { get; init; }
 }
@@ -435,6 +435,8 @@ public sealed class NodeRuntime(
         var quests = Quests(again);
         var stale = !quests.TryGetValue(quest.Id, out var now) ? "its quest was not read again"
             : !string.Equals(now.Closure, governed.GraphDigest, StringComparison.Ordinal) ? "its binding moved"
+            // FABRIC-CLOSE1r: a read that asked no git never closes, so a production read that forgets the tips cannot bring CLOSE1p's defect back.
+            : again.Tips is null ? "git's tips were not read for this look"
             : QuestClosing.Unread(now, quests, again.Units, again.Tips) is { } unread ? $"git did not say where `{unread}`, a branch it worked, stands"
             : QuestClosing.Revision(now, quests, again.Units, again.Tips) != governed.Unit.Subject.Revision ? "its chain or a branch it worked moved since it was judged"
             : !QuestClosing.Judge(now, quests).Named.SequenceEqual(judged.Named) ? "what it would close moved"
