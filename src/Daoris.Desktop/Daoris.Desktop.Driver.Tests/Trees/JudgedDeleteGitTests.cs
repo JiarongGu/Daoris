@@ -65,6 +65,60 @@ public sealed class JudgedDeleteGitTests : LandedFixture
     }
 
     /// <summary>
+    /// 🔴 DETACHTX1 (TreeRemovals.cs:178, :205): a detached tree's commit is held by the tree's own HEAD and the holder its proof found.
+    /// The holder rewound as the tree goes leaves that commit on a recovery ref, kept until a transaction shows the holder where the proof
+    /// read it, never on no ref at all.
+    /// </summary>
+    [Fact]
+    public async Task A_detached_trees_removal_keeps_its_commit_where_its_holder_moved_as_it_went()
+    {
+        var root = await RepositoryAsync("engine");
+        var opened = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        await GitAsync(opened.Path, "switch", "--quiet", "--detach");
+        await CommitAsync(opened.Path, "a.txt", "a\n", "work on a, detached");
+        var judged = (await GitAsync(opened.Path, "rev-parse", "HEAD")).Trim();
+        await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "merge the detached work", judged);
+        var trees = new SessionTrees(Home);
+        // The line rewound as the tree goes, after its proof: the commit is then the tree's alone.
+        WorkingTree.Started.Value = arguments =>
+        {
+            if (arguments is ["worktree", "remove", ..]) GitNow(root, "reset", "--hard", "--quiet", "HEAD~1");
+        };
+        TreeRemoval removal;
+        try
+        {
+            removal = await trees.RemoveAsync(opened.Path);
+        }
+        finally
+        {
+            WorkingTree.Started.Value = null;
+        }
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.False(Directory.Exists(opened.Path));
+        var holding = (await GitAsync(root, "for-each-ref", "--contains", judged, "--format=%(refname)")).Trim();
+        Assert.StartsWith(ContentHolds.DiscardedPrefix, holding, StringComparison.Ordinal);
+        Assert.Contains(holding, removal.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>DETACHTX1's other half: a detached tree whose holder stood as it went leaves no recovery ref behind.</summary>
+    [Fact]
+    public async Task A_detached_trees_removal_whose_holder_stood_keeps_no_recovery_ref()
+    {
+        var root = await RepositoryAsync("engine");
+        var opened = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        await GitAsync(opened.Path, "switch", "--quiet", "--detach");
+        await CommitAsync(opened.Path, "a.txt", "a\n", "work on a, detached");
+        var judged = (await GitAsync(opened.Path, "rev-parse", "HEAD")).Trim();
+        await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "merge the detached work", judged);
+
+        var removal = await new SessionTrees(Home).RemoveAsync(opened.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.Empty((await GitAsync(root, "for-each-ref", "--format=%(refname)", ContentHolds.DiscardedPrefix)).Trim());
+    }
+
+    /// <summary>
     /// 🔴 The review's P1 (ContentHolds.cs:302): a list of the trees git could not give once the branch went is no answer that no tree
     /// checked it out meanwhile, so the branch is put back.
     /// </summary>
