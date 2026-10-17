@@ -27,8 +27,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * `edited` written over `original`, where `read` is `original` as its reader understood it, written by the same writer as `edited`: the
- * file's text, two spaces deep, LF, one final newline. No edit is `original`'s own text.
+ * `edited` written over `original`, where `read` is the file as its reader understood it when it read it, written by the same writer as
+ * `edited`: the file's text, two spaces deep, one final newline, its lines ended as `original`'s first line is (the re-check's finding
+ * 3: an edit wrote LF over a file in CRLF). No edit is `original`'s own text. `original` is the file as it stands when the edit is
+ * written, which may be another writer's since the read (finding 1): what that writer changed and this edit did not stays as it is.
  */
 export function keepEdits(original: string, read: unknown, edited: unknown): string {
   const readText = JSON.stringify(read);
@@ -38,7 +40,43 @@ export function keepEdits(original: string, read: unknown, edited: unknown): str
   const understood: unknown = JSON.parse(readText);
   const now: unknown = JSON.parse(editedText);
   const kept = isObject(file) && isObject(understood) && isObject(now) ? plan(file, understood, now, true) : now;
-  return `${JSON.stringify(kept, null, 2)}\n`;
+  const text = `${JSON.stringify(kept, null, 2)}\n`;
+  const end = original.indexOf('\n');
+  return end > 0 && original[end - 1] === '\r' ? text.replaceAll('\n', '\r\n') : text;
+}
+
+/**
+ * The first key written twice in one object of `text`, a JSON text that parses, in the order the second is written; or null (the
+ * re-check's finding 3, the driver's `JsonKeeping.Twice`). `JSON.parse` reads such a key as its last value in its first place, and
+ * the driver reads it so too; an edit cannot tell which of the two it changes, so a writer refuses to edit a file holding one.
+ */
+export function twice(text: string): string | null {
+  const objects: (Set<string> | null)[] = [];
+  let key = false;
+  for (let at = 0; at < text.length; at++) {
+    const c = text[at];
+    if (c === '"') {
+      let end = at + 1;
+      while (text[end] !== '"') end += text[end] === '\\' ? 2 : 1;
+      if (key) {
+        const name = JSON.parse(text.slice(at, end + 1)) as string;
+        const names = objects.at(-1)!;
+        if (names.has(name)) return name;
+        names.add(name);
+        key = false;
+      }
+      at = end;
+    } else if (c === '{' || c === '[') {
+      objects.push(c === '{' ? new Set() : null);
+      key = c === '{';
+    } else if (c === '}' || c === ']') {
+      objects.pop();
+      key = false;
+    } else if (c === ',') {
+      key = objects.at(-1) != null;
+    }
+  }
+  return null;
 }
 
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);

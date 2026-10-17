@@ -23,7 +23,7 @@ import { requireHomeFile } from '../platform/home.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { flagValue, operands } from '../platform/args.ts';
 import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from '../platform/fsx.ts';
-import { keepEdits } from '../platform/jsonkeep.ts';
+import { keepEdits, twice } from '../platform/jsonkeep.ts';
 import { atName, findName, sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.ts';
@@ -651,17 +651,34 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
 }
 
 /**
- * Write them back over the text they were read from, keeping in its place every key this build does not own and every value no edit
- * changed by its own text (`jsonkeep.ts`, FABRIC-GRAPH1's review, findings 1 and 5); read and written with no edit, the same bytes.
- * Choices built here, with no text, are written whole.
+ * Write the edit over the file as it stands, keeping in its place every key this build does not own and every value no edit changed by
+ * its own text (`jsonkeep.ts`, FABRIC-GRAPH1's review, findings 1 and 5); read and written with no edit, the same bytes. Choices built
+ * here, with no text, are written whole.
+ *
+ * @remarks
+ * 🔴 The edit is what changed between the text read (`source`) and the choices, made onto the file read again here (the re-check's
+ * finding 1): written over the text read, a change another writer made in between was lost. A file that no longer reads, or holds a key
+ * twice in one object, is refused and left as it is, never overwritten; one that is gone is written from nothing. The driver's
+ * `DriverConfig.Save` does the same.
  */
 export function writeDriverChoices(path: string, choices: DriverChoices): void {
   if (choices.source === undefined) {
     writeJsonAtomic(path, choicesWritten(choices));
     return;
   }
+  const { problem, text } = readJsonObject(path);
+  if (problem !== null) {
+    throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
+      + 'this edit was not written, since this command will not overwrite a file it could not understand.');
+  }
+  const current = text ?? '{}\n';
+  const doubled = twice(current);
+  if (doubled !== null) {
+    throw new DaorisError(`${path} holds the key \`${doubled}\` twice in one object, so an edit cannot tell which it changes; `
+      + 'this edit was not written. Fix it, or delete it to start from nothing.');
+  }
   const read = choicesWritten(choicesOf(JSON.parse(choices.source) as Record<string, unknown>));
-  writeJsonTextAtomic(path, keepEdits(choices.source, read, choicesWritten(choices)));
+  writeJsonTextAtomic(path, keepEdits(current, read, choicesWritten(choices)));
 }
 
 /**

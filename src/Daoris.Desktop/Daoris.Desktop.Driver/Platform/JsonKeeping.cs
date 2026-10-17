@@ -16,8 +16,11 @@ public static class JsonKeeping
     private static readonly JsonDocument Nothing = JsonDocument.Parse("{}");
 
     /// <summary>
-    /// <paramref name="edited"/> written over <paramref name="original"/>, where <paramref name="read"/> is <paramref name="original"/> as its
-    /// reader understood it, written by the same writer as <paramref name="edited"/>. No edit is <paramref name="original"/>'s own bytes.
+    /// <paramref name="edited"/> written over <paramref name="original"/>, where <paramref name="read"/> is the file as its reader understood
+    /// it when it read it, written by the same writer as <paramref name="edited"/>. No edit is <paramref name="original"/>'s own bytes.
+    /// <paramref name="original"/> is the file as it stands when the edit is written, which may be another writer's since the read (the
+    /// re-check's finding 1): what that writer changed and this edit did not stays as it is. Its lines end as its first line does (finding 3:
+    /// an edit wrote LF over a file in CRLF).
     /// </summary>
     public static string Kept(string original, string read, string edited)
     {
@@ -25,9 +28,85 @@ public static class JsonKeeping
         using var file = JsonDocument.Parse(original);
         using var understood = JsonDocument.Parse(read);
         using var now = JsonDocument.Parse(edited);
-        if (file.RootElement.ValueKind != JsonValueKind.Object) return edited;
-        var plan = Plan(file.RootElement, understood.RootElement, now.RootElement, top: true);
-        return JsonFile.Serialize(writer => Write(writer, plan));
+        var text = file.RootElement.ValueKind != JsonValueKind.Object
+            ? edited
+            : JsonFile.Serialize(writer => Write(writer, Plan(file.RootElement, understood.RootElement, now.RootElement, top: true)));
+        var end = original.IndexOf('\n');
+        return end > 0 && original[end - 1] == '\r' ? text.Replace("\n", "\r\n", StringComparison.Ordinal) : text;
+    }
+
+    /// <summary>
+    /// The first key written twice in one object of <paramref name="text"/>, a JSON text, in the order the second is written; or null (the
+    /// re-check's finding 3; the CLI's <c>twice</c>). An edit cannot tell which of the two it changes: this writer kept both and edited
+    /// each, the CLI's kept the last, so neither edits a file holding one.
+    /// </summary>
+    public static string? Twice(string text)
+    {
+        using var document = JsonDocument.Parse(text);
+        return Twice(document.RootElement);
+    }
+
+    private static string? Twice(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                if (Twice(item) is { } inner) return inner;
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Object)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var property in element.EnumerateObject())
+            {
+                if (!seen.Add(property.Name)) return property.Name;
+                if (Twice(property.Value) is { } inner) return inner;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// <paramref name="text"/> read as JavaScript's <c>JSON.parse</c> reads it, where a key is written twice in one object: once, in its
+    /// first place, with its last value (the re-check's finding 3: the work cycles' kinds read the first here and the last in the CLI);
+    /// else <paramref name="text"/> itself.
+    /// </summary>
+    public static string Once(string text)
+    {
+        using var document = JsonDocument.Parse(text);
+        return Twice(document.RootElement) is null ? text : JsonFile.Serialize(writer => WriteOnce(writer, document.RootElement));
+    }
+
+    private static void WriteOnce(Utf8JsonWriter writer, JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            writer.WriteStartArray();
+            foreach (var item in element.EnumerateArray()) WriteOnce(writer, item);
+            writer.WriteEndArray();
+        }
+        else if (element.ValueKind == JsonValueKind.Object)
+        {
+            var last = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+            var order = new List<string>();
+            foreach (var property in element.EnumerateObject())
+            {
+                if (!last.ContainsKey(property.Name)) order.Add(property.Name);
+                last[property.Name] = property.Value;
+            }
+
+            writer.WriteStartObject();
+            foreach (var name in order)
+            {
+                writer.WritePropertyName(name);
+                WriteOnce(writer, last[name]);
+            }
+
+            writer.WriteEndObject();
+        }
+        else element.WriteTo(writer);
     }
 
     private static void Write(Utf8JsonWriter writer, List<(string Name, Action<Utf8JsonWriter> Value)> plan)

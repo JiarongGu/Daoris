@@ -14,10 +14,11 @@ import { makeFixture } from '../_fixture.ts';
 
 type Edit = { op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string };
 type Change = { from: string[]; to: string[] };
-type Row = { name: string; edit: Edit; changes: Change[] };
+type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string };
+type Twice = { changes: Change[]; notify: boolean; workCycles: Record<string, Record<string, unknown>>; refused: string };
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
-const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'driver-config-keeps.json'), 'utf8')) as { file: string[]; rows: Row[] };
+const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'driver-config-keeps.json'), 'utf8')) as { file: string[]; rows: Row[]; twice: Twice };
 const FILE = `${TABLE.file.join('\n')}\n`;
 
 /** The edit as the door that makes it makes it: the `landing` verb through `landingEdited`, the rest as their verbs set the field. */
@@ -39,7 +40,8 @@ function applied(choices: DriverChoices, edit: Edit): DriverChoices {
   }
 }
 
-function expected(changes: Change[]): string {
+/** The file with `changes` made, its lines ended by CRLF where `crlf` says. */
+function expected(changes: Change[], crlf = false): string {
   let text = FILE;
   for (const change of changes) {
     const from = change.from.join('\n');
@@ -47,16 +49,33 @@ function expected(changes: Change[]): string {
     assert.ok(at >= 0 && text.indexOf(from, at + 1) < 0, `a change's \`from\` is in the file once: ${from}`);
     text = text.slice(0, at) + change.to.join('\n') + text.slice(at + from.length);
   }
-  return text;
+  return crlf ? text.replaceAll('\n', '\r\n') : text;
 }
 
 test('configkeeps: each row of the shared table writes the bytes the driver writes', () => {
   const fx = makeFixture('config-keeps');
   for (const row of TABLE.rows) {
-    const path = fx.write('driver.json', FILE);
-    writeDriverChoices(path, applied(readDriverChoices(path), row.edit));
-    assert.equal(`${row.name}\n${fx.read('driver.json')}`, `${row.name}\n${expected(row.changes)}`);
+    const path = fx.write('driver.json', expected([], row.crlf));
+    const choices = readDriverChoices(path);
+    // The re-check's finding 1: another writer's change, made after this one read the file and before it writes.
+    if (row.between !== undefined) fx.write('driver.json', expected(row.between, row.crlf));
+    const write = () => writeDriverChoices(path, applied(choices, row.edit));
+    if (row.refused === undefined) write();
+    else assert.throws(write, (error: Error) => error.message.includes(row.refused!), row.name);
+    assert.equal(`${row.name}\n${fx.read('driver.json')}`, `${row.name}\n${expected(row.changes, row.crlf)}`);
   }
+});
+
+test('configkeeps: a key written twice in one object reads as its last, in its first place, and refuses every edit naming it', () => {
+  const fx = makeFixture('config-keeps-twice');
+  const text = expected(TABLE.twice.changes);
+  const path = fx.write('driver.json', text);
+  const choices = readDriverChoices(path);
+  assert.equal(choices.notify, TABLE.twice.notify);
+  assert.deepEqual(Object.entries(choices.workCycles), Object.entries(TABLE.twice.workCycles));
+  assert.deepEqual(Object.keys(choices.workCycles['engine']!), Object.keys(TABLE.twice.workCycles['engine']!));
+  assert.throws(() => writeDriverChoices(path, { ...choices, cap: 3 }), (error: Error) => error.message.includes(TABLE.twice.refused));
+  assert.equal(fx.read('driver.json'), text);
 });
 
 test('configkeeps: a number JavaScript cannot hold, and one it would write shorter, survive an edit elsewhere', () => {

@@ -1,5 +1,5 @@
 {
-  "about": "FABRIC-GRAPH1's review, finding 1 (FIX-LOG 2026-10-17): a writer of driver.json keeps every key it does not own, in its place, and an edit changes only what it edits. Read row for row by the CLI's configkeeps.test.ts and the driver's DriverConfigKeepsTests. `file` is an existing file in the writer's layout, its lines joined by LF with one final LF: every key Setup and the terminal write, and keys neither twin knows at the top, in a landing rule and in a workspace rule, a cycle with numbers JavaScript cannot hold, a cycle that is not an object, a kind of work no unit reads and an empty map. A row's `edit` is one door's change (`op` and its fields); `changes` turn `file` into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`.",
+  "about": "FABRIC-GRAPH1's review, finding 1 (FIX-LOG 2026-10-17): a writer of driver.json keeps every key it does not own, in its place, and an edit changes only what it edits. Read row for row by the CLI's configkeeps.test.ts and the driver's DriverConfigKeepsTests. `file` is an existing file in the writer's layout, its lines joined by LF with one final LF: every key Setup and the terminal write, and keys neither twin knows at the top, in a landing rule and in a workspace rule, a cycle with numbers JavaScript cannot hold, a cycle that is not an object, a kind of work no unit reads and an empty map. A row's `edit` is one door's change (`op` and its fields); `changes` turn `file` into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. The re-check (finding 1, 3): a row's `between` is another writer's change, made to the file after this writer read it and before it writes, which the write keeps; a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says (empty: any refusal), the file left as `between` made it. `twice` is one rule for a key written twice in one object: read as its last value in its first place (JavaScript's own reading), and never edited.",
   "file": [
     "{",
     "  \"drivable\": [",
@@ -208,6 +208,75 @@
           "to": ["    \"engine\": {", "      \"chore\": {"]
         }
       ]
+    },
+    {
+      "name": "another writer's edit between this one's read and its write survives",
+      "between": [{ "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }],
+      "edit": { "op": "drivable", "repository": "orders", "on": true },
+      "changes": [
+        { "from": ["    \"shop-api\"", "  ],", "  \"holds\""], "to": ["    \"shop-api\",", "    \"orders\"", "  ],", "  \"holds\""] },
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "another writer's edit inside the rule this one edits survives",
+      "between": [{ "from": ["      \"reviewer\": \"kim\","], "to": ["      \"reviewer\": \"lee\","] }],
+      "edit": { "op": "landing", "repository": "engine", "rule": { "form": "branch", "pattern": "work/{quest}", "plugin": "acme.pr", "tidy": true } },
+      "changes": [
+        { "from": ["      \"plugin\": \"acme.pr\",", "      \"reviewer\": \"kim\","], "to": ["      \"plugin\": \"acme.pr\",", "      \"tidy\": true,", "      \"reviewer\": \"lee\","] }
+      ]
+    },
+    {
+      "name": "a setting another writer took out stays out, though this writer read it",
+      "between": [{ "from": ["  \"adapter\": \"claude-code\",", "  \"helperAdapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\","] }],
+      "edit": { "op": "notify", "on": false },
+      "changes": [
+        { "from": ["  \"adapter\": \"claude-code\",", "  \"helperAdapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\","] },
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "another writer's entry beside the one this edit adds: both, the edit's after the one before it",
+      "between": [{ "from": ["    \"engine\": \"main\""], "to": ["    \"engine\": \"main\",", "    \"shop-api\": \"dev\""] }],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["    \"engine\": \"main\""], "to": ["    \"engine\": \"main\",", "    \"orders\": \"trunk\",", "    \"shop-api\": \"dev\""] }
+      ]
+    },
+    {
+      "name": "a file written with CRLF is written with CRLF",
+      "crlf": true,
+      "edit": { "op": "notify", "on": false },
+      "changes": [
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "a file another writer left unreadable refuses the write, and stays as it is",
+      "between": [{ "from": ["  \"theme\": \"dark\","], "to": ["  \"theme\": dark,"] }],
+      "edit": { "op": "notify", "on": false },
+      "refused": "",
+      "changes": [
+        { "from": ["  \"theme\": \"dark\","], "to": ["  \"theme\": dark,"] }
+      ]
+    },
+    {
+      "name": "a key another writer wrote twice in one object refuses the write, naming the key",
+      "between": [{ "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }],
+      "edit": { "op": "notify", "on": false },
+      "refused": "`quest`",
+      "changes": [
+        { "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }
+      ]
     }
-  ]
+  ],
+  "twice": {
+    "changes": [
+      { "from": ["  \"notify\": true,"], "to": ["  \"notify\": true,", "  \"notify\": false,"] },
+      { "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }
+    ],
+    "notify": false,
+    "workCycles": { "engine": { "quest": { "end": "close" }, "chore": { "end": "done" } } },
+    "refused": "`notify`"
+  }
 }

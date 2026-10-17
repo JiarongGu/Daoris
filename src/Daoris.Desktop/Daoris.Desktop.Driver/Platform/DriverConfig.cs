@@ -736,19 +736,54 @@ public sealed record DriverConfig(
     /// Write the choices back — atomically, beside-then-rename, like every write in this family: the
     /// watch loop re-reads this file every tick, and a torn read must never be what it finds.
     /// </summary>
+    /// <remarks>
+    /// 🔴 The edit (what changed between <see cref="Source"/> as read and these choices) is made onto the file read again here, under the
+    /// same keep rules (FABRIC-GRAPH1's re-check, finding 1): written over <see cref="Source"/>, a change another writer made in between was
+    /// lost, and a file that had since stopped reading was overwritten. A file that does not read now, or holds a key twice in one object,
+    /// is refused and left as it is; one that is gone is written from nothing. A config built in memory is written whole. The CLI's
+    /// <c>writeDriverChoices</c> does the same.
+    /// </remarks>
+    /// <exception cref="DriverConfigUnreadableException">The file there now does not read, or holds a key twice; nothing was written.</exception>
     public void Save(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        AtomicFile.WriteText(path, ToJson());
+        AtomicFile.WriteText(path, Source is null ? Written() : JsonKeeping.Kept(Current(path), Understood(), Written()));
     }
+
+    /// <summary>The file at <paramref name="path"/> as it stands, for an edit to be written over; <c>{}</c> where it is gone.</summary>
+    private static string Current(string path)
+    {
+        DriverConfig now;
+        try
+        {
+            now = Load(path);
+        }
+        catch (DriverConfigUnreadableException error)
+        {
+            throw new DriverConfigUnreadableException(
+                error.Path, $"{error.Message} This edit was not written: a file that does not read is never overwritten.", error.Line, error.Byte);
+        }
+
+        if (now.Source is not { } text) return "{}\n";
+        if (JsonKeeping.Twice(text) is { } key)
+        {
+            throw new DriverConfigUnreadableException(path, $"{path} holds the key `{key}` twice in one object, so an edit cannot tell which it "
+                + $"changes; this edit was not written. {DriverConfigUnreadableException.Remedy}");
+        }
+
+        return text;
+    }
+
+    /// <summary>The choices as their reader understood <see cref="Source"/>, written: what an edit is measured from.</summary>
+    private string Understood() => (Parse(Source!) with { Source = null }).Written();
 
     /// <summary>
     /// The file's text: the choices written over the text they were read from (<see cref="Source"/>), so every key this build does not own
     /// stays where it stands and every value no edit changed stays as written (<see cref="JsonKeeping"/>, FABRIC-GRAPH1's review, finding 1);
-    /// read and written with no edit, the same bytes. A config built in memory is written whole.
+    /// read and written with no edit, the same bytes. A config built in memory is written whole. <see cref="Save"/> writes the edit over the
+    /// file as it stands instead.
     /// </summary>
-    public string ToJson() =>
-        Source is null ? Written() : JsonKeeping.Kept(Source, (Parse(Source) with { Source = null }).Written(), Written());
+    public string ToJson() => Source is null ? Written() : JsonKeeping.Kept(Source, Understood(), Written());
 
     /// <summary>The choices' own shape, written by hand for the same AOT reason it is read by hand.</summary>
     private string Written()
@@ -1134,7 +1169,9 @@ public sealed record DriverConfig(
     // quietly stop working under AOT, and the shape is small enough to be explicit about.
     public static DriverConfig Parse(string json)
     {
-        using var document = JsonDocument.Parse(json);
+        // A key written twice in one object reads as its last value in its first place, as the CLI's JSON.parse reads it (the re-check's
+        // finding 3); the text read stays as written, and no edit is written over it (Save).
+        using var document = JsonDocument.Parse(JsonKeeping.Once(json));
         var root = document.RootElement;
         // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind
         // (CONFIGREAD1): said here, so the reader can say it with its file.
