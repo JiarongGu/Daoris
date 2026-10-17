@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (151)
+## Files over 40 KB (152)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -155,13 +155,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 118 | 2149 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 78 | 1521 |
+| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 40 | 821 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 103 | 1974 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 62 | 1098 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 839 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 134 | 2466 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 207 | 3180 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 207 | 3182 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 
@@ -174,7 +175,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 340 | 5984 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 144 | 2597 |
+| `tools/merge-branch.mjs` | 144 | 2598 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
@@ -183,7 +184,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 92 | 158 |
+| `.claude/knowledge/twins.md` | 94 | 159 |
 | `docs/2026-09-19-platform-ux.md` | 65 | 679 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
@@ -212,4 +213,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/2026-10-16-fabric-events-design.md` | 167 | 2051 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 88 | 496 |
+| `src/Daoris.Desktop/README.md` | 88 | 498 |

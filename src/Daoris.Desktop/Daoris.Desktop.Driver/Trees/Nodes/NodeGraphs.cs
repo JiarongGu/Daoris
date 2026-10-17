@@ -113,7 +113,8 @@ public static class GraphRefusal
 /// <remarks>
 /// The choices §E7 left open, made here (D173's FABRIC-GRAPH1 note): synthetic nodes and every wire to or from one are counted apart,
 /// three nodes and four wires to each authored node; Current's landing nodes are the graph's own, counted; an entry takes no wire from
-/// another node; the protected order is the look's before every landing; a <c>quest.close</c>'s only way out is its <c>failed</c>
+/// another node; the protected order is the look's before every landing, and the opinion's before every look and landing
+/// (FABRIC-WORKFLOW2); a <c>quest.close</c>'s only way out is its <c>failed</c>
 /// wire; and the cleanup's wait is refused for an end at or before the line.
 /// </remarks>
 public static class NodeGraphs

@@ -502,6 +502,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the landing-says table', ['src/Daoris.Cli/test/fixtures/landing-says.json'], [...BASE, 'driver']],
     // FABRIC-GRAPH1: which cycle governs a unit sits among the CLI's fixtures, and the driver's NodeGraphHomesTests reads it too.
     ['the graph-homes table', ['src/Daoris.Cli/test/fixtures/graph-homes.json'], [...BASE, 'driver']],
+    // FABRIC-WORKFLOW2: D157's versions and the graphs they decode to sit among the CLI's fixtures, and the driver's WorkflowGraphsTests reads them too.
+    ['the workflow-graphs table', ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], [...BASE, 'driver']],
     // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver', 'web']],

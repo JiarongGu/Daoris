@@ -86,7 +86,9 @@ units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
 its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
 rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1).
-The CLI's `cycles.ts` is its twin, and both read the CLI's `test/fixtures/graph-homes.json`.
+The CLI's `cycles.ts` is its twin, and both read the CLI's `test/fixtures/graph-homes.json`. `WorkflowGraphs` reads D157's stored
+versions as graphs by §E7's migration contract, never writing them, a version that does not decode read as unreadable whole
+(FABRIC-WORKFLOW2); the CLI's `workflowgraphs.ts` is its twin, on `test/fixtures/workflow-graphs.json`.
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
 second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,
