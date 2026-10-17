@@ -1183,6 +1183,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                                        + TextBounds.Clip(payload, 200));
     }
 
+    /// <summary>What became of a close sent with <paramref name="key"/> (FABRIC-CLOSE1u): not answered yet.</summary>
+    public Task<QuestCloseAnswer> CloseOutcomeAsync(
+        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default) =>
+        throw new NotImplementedException();
+
     /// <summary>
     /// What Daoris read of a done's evidence, posted to the one door that takes it (EVID1a, EVID1b; D144 §3): the local host's
     /// <c>POST /api/quests/{id}/evidence</c>, with this client's key, as records are written. A refusal is an answer, in the

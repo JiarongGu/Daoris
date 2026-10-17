@@ -29,6 +29,12 @@ public static class QuestCloseOutcomes
     public const string Refused = "refused";
 
     /// <summary>
+    /// The refusal's code for a key the door never took before it was asked what became of it (FABRIC-CLOSE1u): that close never ran, and the
+    /// key is withdrawn, so it never runs. Its close is judged again on what is there now, under a new key.
+    /// </summary>
+    public const string Withdrawn = "withdrawn";
+
+    /// <summary>
     /// The checks the close door names a refusal by (the service's <c>QuestCloseCodes</c>): only a refusal naming one of these is the door's
     /// own, and settles the close (FABRIC-CLOSE1l, the review's finding 7). Any other answer leaves the close unknown.
     /// </summary>
@@ -48,8 +54,16 @@ public sealed record QuestCloseAnswer(string Outcome, string? Code, string Messa
 /// <summary>The close door, as the closer calls it (FABRIC-CLOSE1b): a port, so the fence is proved without a host.</summary>
 public interface IQuestClosePort
 {
-    /// <exception cref="HttpRequestException">The host did not answer: the close's outcome is unknown, and the same close is sent again.</exception>
+    /// <exception cref="HttpRequestException">The host did not answer: the close's outcome is unknown, and its door is asked what became of it.</exception>
     Task<QuestCloseAnswer> CloseQuestsAsync(string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct);
+
+    /// <summary>
+    /// What became of a close sent with <paramref name="key"/> (FABRIC-CLOSE1u), answered from the door's own record, executing nothing: its
+    /// first outcome where the door took the key (closed, or its refusal), else refused <see cref="QuestCloseOutcomes.Withdrawn"/>, the key
+    /// withdrawn in the same transaction so a send of it still on its way is refused too.
+    /// </summary>
+    /// <exception cref="HttpRequestException">The host did not answer: the close stays unknown, and is asked after again.</exception>
+    Task<QuestCloseAnswer> CloseOutcomeAsync(string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct);
 }
 
 /// <summary>What a close node may do now (<see cref="QuestClosing.Judge"/>).</summary>
