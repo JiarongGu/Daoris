@@ -15873,3 +15873,45 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **GATEORDER1 — the Process gates run with nothing heavy beside them** (tools). In the 0b44c7a run `driver-process` started as soon as the driver and modules builds ended, beside cli, service and web, and two timing tests failed in the full run and passed alone. Start the Process halves once the heavy light-lane gates have ended, or say why not with the measured wall-time cost. Proof: `merge-branch.test.ts`'s plan order; a full run's log times.
 
 **Outcome** 2026-10-17: a Process-lane gate that names a component also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, web), so no Process half runs beside a suite loading the CPU; the git and serial halves never overlapped; `--stale` and `--rerun` share the schedule. Cost: the light lane's tail, about 7-8 min against an hour or more. On Sonnet: about 54 tool calls. Detail: `tools/merge-branch.mjs`'s header, `docs/development.md`.
+
+## LAUNCHGATE1 — a light gate builds the launcher (2026-10-17, D115)
+
+> - [ ] **LAUNCHGATE1 — a light gate builds the launcher** (tools, desktop; the 2026-10-17 FIX-LOG entry). The launcher compiles driver files in by link and no light gate builds it, so a driver change it cannot compile surfaced only in the deployment rehearsal's publish, two hours into a gate run. Build `Daoris.Desktop.Launcher` in the driver gate (or a test that compiles every linked file against the base library alone). Proof: a linked file naming a driver-only type fails the light gate.
+
+**Outcome** 2026-10-17: the driver's tests project builds the launcher as a build-only reference, so a linked driver file naming a type the launcher lacks fails the driver gate (shown red with a probe, then reverted) instead of the publish; a launcher change makes the driver gate stale too. On Sonnet: about 30 tool calls. Detail: `Daoris.Desktop.Driver.Tests.csproj`, the launcher rule in `tools/merge-branch.mjs`, the 2026-10-17 FIX-LOG entry.
+
+## FABRIC-WIRE1a — the wires' validation (2026-10-17, D173)
+
+> - [ ] **FABRIC-WIRE1a — the wires' validation** (driver; after NODE1; the fabric events design's rows table (§E10), §E3). The six wire kinds, `allOf`/`anyOf`, mandatory data inputs, the refusals at save.
+
+**Outcome** 2026-10-17: the wires' validation at save, pure, in `Trees/Nodes/NodeWires.cs`: the six kinds, `allOf`/`anyOf` groups (one node's each, eligibility kinds only), every data input mandatory and fed once at the same schema, and 20 refusal codes with words, including §E3's missing reference, incompatible schema, foreign node and local cycle; `Groups` gives WIRE1b each node's witness order. On Opus: about 50 tool calls. Detail: D173's FABRIC-WIRE1a note (eight choices).
+
+## FABRIC-WIRE1b — the wires evaluated (2026-10-17, D173)
+
+> - [ ] **FABRIC-WIRE1b — the wires evaluated** (driver; after WIRE1a; the fabric events design's rows table (§E10), §E3). Eligibility from current acceptances, an `anyOf`'s witness, a trigger once per receipt, forks within limits, join nodes.
+
+**Outcome** 2026-10-17: `WireEvaluation.Evaluate` (`Trees/Nodes/WireEvaluation.cs`) evaluates a graph's wires over its nodes' statuses, pure, every move through `NodeLifecycle.Apply`: scoped typed receipts each wire kind reads, `anyOf` witnesses, a trigger once per receipt, transitive invalidation, `all` joins, starts proposed within a dispatch limit, observed built-ins read with the caller's git reads. A second maker's review found run scoping and stale observed receipts to fix before dispatch builds on it: FABRIC-WIRE1e. On Opus: about 55 tool calls. Detail: D173's FABRIC-WIRE1b note (nine choices).
+
+## FABRIC-END7 — auto-landing on its wakes (2026-10-17, D173)
+
+> - [ ] **FABRIC-END7 — auto-landing on its wakes** (driver; after END3, EVENT3b and EVENT4). Look at due entries when their refs, the ledger, the config or the gate's declarations move, the look as the deadline. Proof: every release path lands without the look; git starts counted down.
+
+**Outcome** 2026-10-17: a wake's plan lands only the due entries its wakes can release, found from the due list and git's own files with no process (`Trees/Landing/LandingWakes.cs`); the gate's files are the home topic `gates`; the whole look stays every entry's deadline; a wake that concerns nothing starts no git. After a second maker's review: each chosen entry is judged again just before its own landing from fresh facts and pinned to the tip judged; only the home's lease holder lands automatically; a wake is spent only where a selection judged with it. On Opus: about 85 + 90 tool calls. Detail: D173's FABRIC-END7 note and its *After review*.
+
+## FABRIC-NODE1c — the node contract's fixes before the wires (2026-10-17, D173)
+
+> - [ ] **FABRIC-NODE1c — the node contract's fixes before the wires** (driver; after NODE1, before WIRE1a; §E2, D173's FABRIC-NODE1 note). A second maker's review: bind every outcome to its attempt, track an unresolved dispatch apart from the visible state, validate the expected binding, let built-in observation take an evaluated binding, make issued acceptance ids immutable, one result per binding, keep what a transition clears, a skip scoped to its graph and run with a withdrawal, a plugin able to forbid a skip. Proof: a test per defect, red first.
+
+**Outcome** 2026-10-17: the node contract binds every outcome to its attempt and a reach to its attempt's whole binding, with the evidence its kind needs; holds the start while a dispatched attempt is unresolved; copies an acceptance's collections; keeps one result per binding (`NodeAcceptances.Keep`); returns what a move cleared (`NodeMoved.Cleared`); a skip is scoped to its graph and run and can be withdrawn; a plugin's declaration can forbid a skip; the table has 31 rows. On Opus: about 50 tool calls. Detail: D173's FABRIC-NODE1c note; FIX-LOG 2026-10-17.
+
+## FABRIC-NODE1d — a node declaration's collections copied when set (2026-10-17, D173)
+
+> - [ ] **FABRIC-NODE1d — a node declaration's collections copied when set** (driver; before GRAPH1's digest). `NodeDeclaration.Inputs`, `Outputs` and `Retry.DelaysSeconds` held the caller's collections, so a graph digest would move with them, and a reach's evidence port could name another acceptance. Proof: mutating the supplied collections leaves the declaration unchanged; a reach naming another acceptance is refused.
+
+**Outcome** 2026-10-17: a node declaration's inputs, outputs and retry delays are copied when set; a reach whose evidence or an output names another acceptance is refused (`other-acceptance`), and a port naming none is stamped with the reach's own. Built with WIRE1a. Detail: D173's FABRIC-WIRE1a note, its NODE1d point; FIX-LOG 2026-10-17.
+
+## FABRIC-NODE1e — a reach exposes its declared outputs (2026-10-17, D173)
+
+> - [ ] **FABRIC-NODE1e — a reach exposes its declared outputs** (driver; before WIRE1b; §E2, §E3). `NodeLifecycle.Apply` checked a reach's evidence schema but not its outputs. Proof: an undeclared output, a declared output at another schema, or a declared output missing is refused with a code.
+
+**Outcome** 2026-10-17: `NodeLifecycle.Apply` refuses a reach whose outputs are not exactly its node's declared ones (`undeclared-output`, `output-schema`, `no-output`), so WIRE1a's save-time schema check holds at run time. Built with WIRE1b. Detail: D173's FABRIC-WIRE1b note, its NODE1e point; FIX-LOG 2026-10-17.
