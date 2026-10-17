@@ -142,7 +142,9 @@ public sealed record QuestResponse(
 // sequence a close names it by, when, and its note. Its answers are the quest's `Answers`.
 public sealed record QuestSubmissionWire(string Machine, long Sequence, DateTimeOffset At, string? Note);
 // The driver's bind of a taken quest to the graph that closes it (FABRIC-CLOSE1a): the graph's digest.
-public sealed record BindQuestRequest(string? Graph);
+// `atTake` (FABRIC-CLOSE1l): the graph an open quest binds at its take, named as the driver opens its first session; a host before it
+// reads it as absent, and refuses the open quest's bind as not taken.
+public sealed record BindQuestRequest(string? Graph, bool? AtTake = null);
 // The graph's close (FABRIC-CLOSE1a, §E5 step 2): its key, which a second send of the same close repeats, its close token, and
 // every quest of the chain it closes, each with the submission it judged. Nullable on the way in and judged by the exchange.
 public sealed record CloseQuestRequest(string? Key, string? Token, IReadOnlyList<QuestCloseItemWire?>? Quests);

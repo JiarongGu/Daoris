@@ -599,6 +599,14 @@ public sealed class QuestStore
                   quest   TEXT NULL,
                   at      TEXT NOT NULL
                 );
+                -- The closure graph each open quest binds at its take (FABRIC-CLOSE1l, §E5's cutover), as the driver named it
+                -- when it opened the quest's first session: the take on this machine binds it in the take's own write, and
+                -- the row goes with it. Never pushed or served.
+                CREATE TABLE IF NOT EXISTS quest_take_binds (
+                  id    TEXT PRIMARY KEY,
+                  graph TEXT NOT NULL,
+                  at    TEXT NOT NULL
+                );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -1271,6 +1279,19 @@ public sealed class QuestStore
                 id, kind, now, note, null, transaction, inside,
                 answers: status == QuestStatus.Done ? answers : null, whileOpen: open, noteParts: noteParts).ConfigureAwait(false);
             var moved = QuestLog.Replay([.. history, operation])!;
+
+            // FABRIC-CLOSE1l (CLOSE1f): a take whose graph the driver named binds in this same write, judged by the replay's rule as
+            // every bind is, so no agent's done can land between the take and its bind.
+            if (status == QuestStatus.Taken && await TakeBindAsync(id, transaction, inside).ConfigureAwait(false) is { } graph)
+            {
+                var bind = new QuestOperation(id, QuestOperationKind.Bound, Machine, 0, now, graph);
+                if (QuestLog.Applies(moved, bind))
+                {
+                    var bound = await AppendAsync(id, QuestOperationKind.Bound, now, graph, null, transaction, inside).ConfigureAwait(false);
+                    moved = QuestLog.Replay([.. history, operation, bound])!;
+                }
+            }
+
             await WriteCacheAsync(moved, transaction, inside).ConfigureAwait(false);
 
             // A close that finishes a chain's step publishes the next one IN THE SAME TRANSACTION
@@ -1306,6 +1327,44 @@ public sealed class QuestStore
     /// </returns>
     public Task<QuestMove> BindAsync(string id, string graph, DateTimeOffset now, CancellationToken ct = default) =>
         TakersMoveAsync(id, new QuestOperation(id, QuestOperationKind.Bound, Machine, 0, now, graph), now, ct);
+
+    /// <summary>
+    /// Name the closure graph an open quest binds at its take (FABRIC-CLOSE1l, folding CLOSE1f; §E5's cutover): kept in this store
+    /// alone, so the take on this machine appends the bind in its own write (<see cref="MoveAsync"/>), and no agent's `done` can
+    /// land between the take and the bind. The same graph again is the same; another replaces it, since nothing is bound yet.
+    /// </summary>
+    /// <returns>The quest as it stands and whether the graph is named now; unmoved where it is not open, a null quest for no such id.</returns>
+    public Task<QuestMove> BindAtTakeAsync(string id, string graph, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
+            if (held is null) return new QuestMove(null, Moved: false);
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            var standing = history.Count == 0 ? held : QuestLog.Replay(history);
+            if (standing is not { Status: QuestStatus.Open }) return new QuestMove(held, Moved: false);
+
+            await using var command = _db.Command();
+            command.Transaction = transaction;
+            command.CommandText = """
+                INSERT INTO quest_take_binds (id, graph, at) VALUES ($id, $graph, $at)
+                ON CONFLICT(id) DO UPDATE SET graph = excluded.graph, at = excluded.at
+                """;
+            command.Parameters.AddWithValue("$id", id);
+            command.Parameters.AddWithValue("$graph", graph);
+            command.Parameters.AddWithValue("$at", Moments.Write(now));
+            await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            return new QuestMove(held, Moved: true);
+        }, ct);
+
+    /// <summary>The graph named for <paramref name="id"/>'s take, taken from the store in the caller's transaction; null where none was.</summary>
+    private async Task<string?> TakeBindAsync(string id, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.Transaction = transaction;
+        command.CommandText = "DELETE FROM quest_take_binds WHERE id = $id RETURNING graph";
+        command.Parameters.AddWithValue("$id", id);
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) as string;
+    }
 
     /// <summary>
     /// Submit a closure graph's work (FABRIC-CLOSE1a, §E5): a <see cref="QuestOperationKind.Submitted"/> operation carrying a
