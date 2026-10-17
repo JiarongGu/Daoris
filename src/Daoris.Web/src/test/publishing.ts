@@ -19,6 +19,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   HANDOFF: { scopes: ['handOff', 'sweep'], session: 'id' },
   SWEEP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   DISCARD_SESSION_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
+  // RECOVERYDROP1: the person's delete of the recovery refs nothing holds; the work state asks again with the landings and the sweep.
+  RECOVERY_DROP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   // The second opinion's presses, the landing's setting, the sessions' and work's moves, the rules' presses, a history clear and
   // a sync (PUBLISHTWIN2: every mark has its copy here, held two ways by `StatePublisherTests`).

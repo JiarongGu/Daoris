@@ -162,6 +162,11 @@ public static class DriverCommand
               whether its end was reached, the result kept, the cleanup pending (what waits and why) or
               completed, and the recovery retained until its date; --entries lists what it is read from, and a
               unit named by its id, session or branch always does. The page's is the work's foot.
+          work recovery drop <ref>... --repository <name> | --unheld [--repository <name>] [--plan]
+              delete the recovery refs no branch or tag of yours holds, which Daoris keeps until you say so: each ref
+              in one transaction that verifies the commit it names, so one that moved or that a holder now keeps is
+              kept and said; its commits may then be lost from this machine once git collects them. Only the process
+              holding the home acts. --plan lists and changes nothing. The page's is Branches' Kept for recovery.
           sync [status | dismiss <quest>] [--workspace <name>]
               one sync pass now, or where each workspace stands.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]

@@ -79,6 +79,79 @@ describe('what is kept for recovery', () => {
     expect(rows[0]).toHaveTextContent('was not read');
   });
 
+  // RECOVERYDROP1: the person's press to delete the refs nothing holds, behind a confirmation that says plainly what may be lost.
+  describe('the delete of the ones nothing holds', () => {
+    const COMMIT = 'a'.repeat(40);
+    const shown = recovery({ commit: COMMIT });
+    const other = recovery({ resource: 'refs/daoris/discarded/daoris/s-two', commit: 'b'.repeat(40) });
+    const answered = { dropped: [{ repository: 'billing', ref: shown.resource, commit: COMMIT }], skipped: [], refused: [] };
+
+    it('is offered only where a ref nothing holds names its commit and the holder gave a press', () => {
+      const { rerender } = render(<WorkspaceRecoveries recoveries={[shown]} repositories={['billing']} />);
+      expect(screen.queryByRole('button', { name: 'Delete the ones nothing holds' })).toBeNull();
+      rerender(<WorkspaceRecoveries recoveries={[unheld]} repositories={['billing']} onDrop={vi.fn()} />);
+      expect(screen.queryByRole('button', { name: 'Delete the ones nothing holds' })).toBeNull();
+      rerender(<WorkspaceRecoveries recoveries={[folder, held]} repositories={['billing']} onDrop={vi.fn()} />);
+      expect(screen.queryByRole('button', { name: 'Delete the ones nothing holds' })).toBeNull();
+      rerender(<WorkspaceRecoveries recoveries={[held, shown]} repositories={['billing']} onDrop={vi.fn()} />);
+      expect(screen.getByRole('button', { name: 'Delete the ones nothing holds' })).toBeInTheDocument();
+    });
+
+    it('lists the refs and says their commits may be lost, and a remote may still have the work, before anything is deleted', async () => {
+      const onDrop = vi.fn().mockResolvedValue(answered);
+      render(<WorkspaceRecoveries recoveries={[shown, other]} repositories={['billing']} onDrop={onDrop} />);
+      await userEvent.click(screen.getByRole('button', { name: 'Delete the ones nothing holds' }));
+      const ask = screen.getByRole('group', { name: 'delete the recovery refs nothing holds' });
+      expect(ask).toHaveTextContent('Deletes 2 recovery refs that no branch or tag of yours holds');
+      expect(ask).toHaveTextContent('daoris/s-gone');
+      expect(ask).toHaveTextContent('daoris/s-two');
+      expect(ask).toHaveTextContent("may then be lost from this machine, once git's garbage collection runs");
+      expect(ask).toHaveTextContent('A git remote may still have the work');
+      await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+      expect(onDrop).not.toHaveBeenCalled();
+      expect(screen.queryByRole('group', { name: 'delete the recovery refs nothing holds' })).toBeNull();
+    });
+
+    it('sends each repository its refs with the commits shown, and says what was deleted and what was kept and why', async () => {
+      const onDrop = vi.fn().mockResolvedValue({
+        dropped: [{ repository: 'billing', ref: shown.resource, commit: COMMIT }],
+        skipped: [{ repository: 'billing', ref: other.resource, why: 'it moved since you were shown it, so it is kept: look at the list again.' }],
+        refused: [],
+      });
+      render(<WorkspaceRecoveries recoveries={[shown, other]} repositories={['billing']} onDrop={onDrop} />);
+      await userEvent.click(screen.getByRole('button', { name: 'Delete the ones nothing holds' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Delete them' }));
+      expect(onDrop).toHaveBeenCalledWith([{ repository: 'billing', refs: [
+        { ref: shown.resource, commit: COMMIT }, { ref: other.resource, commit: 'b'.repeat(40) },
+      ] }]);
+      const said = await screen.findByRole('status');
+      expect(said).toHaveTextContent('Deleted 1 recovery ref');
+      expect(said).toHaveTextContent('Kept refs/daoris/discarded/daoris/s-two: it moved since you were shown it');
+    });
+
+    it('keeps the ask open and says the driver\'s sentence where the whole press was refused', async () => {
+      const onDrop = vi.fn().mockResolvedValue({ dropped: [], skipped: [], refused: ['this process does not hold the home, so it deletes nothing.'] });
+      render(<WorkspaceRecoveries recoveries={[shown]} repositories={['billing']} onDrop={onDrop} />);
+      await userEvent.click(screen.getByRole('button', { name: 'Delete the ones nothing holds' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Delete them' }));
+      expect(await screen.findByText('this process does not hold the home, so it deletes nothing.')).toBeInTheDocument();
+      expect(screen.getByRole('group', { name: 'delete the recovery refs nothing holds' })).toBeInTheDocument();
+    });
+
+    it('says it all in Chinese', async () => {
+      await i18n.changeLanguage('zh');
+      const onDrop = vi.fn().mockResolvedValue(answered);
+      render(<WorkspaceRecoveries recoveries={[shown]} repositories={['billing']} onDrop={onDrop} />);
+      await userEvent.click(screen.getByRole('button', { name: '删除无人持有的那些' }));
+      const ask = screen.getByRole('group', { name: '删除无人持有的找回引用' });
+      expect(ask).toHaveTextContent('你的分支和标签都不持有它们的提交');
+      expect(ask).toHaveTextContent('垃圾回收');
+      expect(ask).toHaveTextContent('远程仓库');
+      await userEvent.click(screen.getByRole('button', { name: '确认删除' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('已删除 1 个找回引用');
+    });
+  });
+
   it('says it all in Chinese', async () => {
     await i18n.changeLanguage('zh');
     render(<WorkspaceRecoveries recoveries={[folder, held, unheld]} repositories={['billing']} />);

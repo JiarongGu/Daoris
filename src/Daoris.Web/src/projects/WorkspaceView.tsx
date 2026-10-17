@@ -14,7 +14,7 @@ import { sayDiscard, sweepKey, SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross,
+  useDiscardSessionBranch, useDropRecoveries, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross,
   useSetReview, useStarts,
   useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWorkState,
@@ -249,6 +249,8 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
   const sweep = useSweep();
   // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris-driver trees remove … --force`.
   const discard = useDiscardSessionBranch();
+  // The person's delete of the recovery refs nothing holds (RECOVERYDROP1): `daoris-driver work recovery drop`'s twin.
+  const dropRecoveries = useDropRecoveries();
   const syncScope = useTreesSyncScope();
   const syncPlan = useTreesSyncPlan(workspace);
   const sync = useTreesSync(workspace);
@@ -281,7 +283,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
       <WorkspaceTidied lines={tidiedLines} titles={titles} units={workState.data?.units} />
       {/* What Daoris keeps for recovery that no unit names (RECOVERYVIEW1): a shell older than the field answers none. */}
-      <WorkspaceRecoveries recoveries={workState.data?.recovery} repositories={repositories} />
+      <WorkspaceRecoveries recoveries={workState.data?.recovery} repositories={repositories} onDrop={(groups) => dropRecoveries.mutateAsync(groups)} />
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
         landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}

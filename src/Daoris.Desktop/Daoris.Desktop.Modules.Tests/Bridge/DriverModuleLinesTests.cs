@@ -310,6 +310,26 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "DISCARD_SESSION_BRANCH", new { branch = "daoris/s-1a2b3c4d" }));
     }
 
+    /// <summary>
+    /// The person's delete of recovery refs (RECOVERYDROP1): before the driver is up it is the cold-start sentence; a call naming no
+    /// repository or no refs is malformed; and a process that does not hold the home deletes nothing and says so, as an answer.
+    /// </summary>
+    [Fact]
+    public async Task Deleting_recovery_refs_is_refused_cold_malformed_or_without_the_home()
+    {
+        var ref1 = new { @ref = "refs/daoris/discarded/daoris/s-1", commit = new string('a', 40) };
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "RECOVERY_DROP", new { repository = "engine", refs = new[] { ref1 } }));
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "RECOVERY_DROP", new { refs = new[] { ref1 } }));
+        var module = await ModuleOverAsync(new DiscardService(root: Home));
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(module, "RECOVERY_DROP", new { repository = "engine" }));
+
+        var answer = await AnswerAsync(module, "RECOVERY_DROP", new { repository = "engine", refs = new[] { ref1 } });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Contains("does not hold the home", answer.GetProperty("refused").GetString());
+        Assert.Equal(0, answer.GetProperty("dropped").GetArrayLength());
+    }
+
     /// <summary>The route's module over a loop come up on <paramref name="service"/>, standing in for the service.</summary>
     private async Task<DriverModule> ModuleOverAsync(DiscardService service)
     {
