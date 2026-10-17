@@ -131,7 +131,8 @@ public sealed class HookProcess : IHookChannel
         }
 
         var stderr = RelayAsync(process.StandardError, onLine);
-        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience);
+        // FABRIC-PERFORM1a (§C4): every frame a plugin's process writes is bounded, so none can grow the driver's memory past it.
+        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience, WorkBounds.FrameBytes);
         var started = new HookProcess(process, peer, stderr);
         try
         {
@@ -155,6 +156,16 @@ public sealed class HookProcess : IHookChannel
     public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
 
     public Task ChangedAsync(object payload, CancellationToken ct) => _peer.ChangedAsync(payload, ct);
+
+    public IReadOnlyList<string> Capabilities => _peer.Capabilities;
+
+    public void Listen(Action<System.Text.Json.JsonElement?>? steps) => _peer.Listen(steps);
+
+    public Task WatchAsync(WorkWatchFrame frame, CancellationToken ct) => _peer.WatchAsync(frame, ct);
+
+    public Task PerformAsync(WorkPerformCall call, CancellationToken ct) => _peer.PerformAsync(call, ct);
+
+    public Task<WorkReconcileAnswer> ReconcileStepAsync(WorkReconcileCall call, CancellationToken ct) => _peer.ReconcileStepAsync(call, ct);
 
     /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
     public async ValueTask DisposeAsync()
