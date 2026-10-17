@@ -465,6 +465,35 @@
       ]
     },
     {
+      "name": "a map this writer never read, which another writer wrote meanwhile, takes the edit key by key: the other writer's entries stay",
+      "missing": true,
+      "between": [],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["  \"lines\": {", "    \"engine\": \"main\""], "to": ["  \"lines\": {", "    \"orders\": \"trunk\",", "    \"engine\": \"main\""] }
+      ]
+    },
+    {
+      "name": "a map neither this writer nor the other wrote is made with the edit's keys alone",
+      "missing": true,
+      "between": [{ "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },", "  \"languages\": {"], "to": ["  \"languages\": {"] }],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },", "  \"languages\": {"], "to": ["  \"languages\": {"] },
+        { "from": ["  \"forgiven\": {", "    \"q7\": 2", "  },"], "to": ["  \"forgiven\": {", "    \"q7\": 2", "  },", "  \"lines\": {", "    \"orders\": \"trunk\"", "  },"] }
+      ]
+    },
+    {
+      "name": "a map this writer never read, which another writer wrote meanwhile as a string, refuses the edit, naming its path",
+      "missing": true,
+      "between": [{ "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },"], "to": ["  \"lines\": \"main\","] }],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "refused": "`lines.orders`",
+      "changes": [
+        { "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },"], "to": ["  \"lines\": \"main\","] }
+      ]
+    },
+    {
       "name": "a file another writer wrote with a key twice after this one found none refuses the write, naming the key",
       "missing": true,
       "between": [{ "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }],

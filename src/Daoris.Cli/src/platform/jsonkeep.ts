@@ -110,7 +110,8 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 /**
  * What one object of the file as it stands becomes, key by key in its order, `where` being its path: a key neither its reader nor the edit
  * holds is the file's, kept; one the edit took goes, except that a map emptied at the top loses only the entries its reader read; one its
- * reader did not read and the edit set is the edit's; one the edit left as read is the file's, as written; an object the edit changed is
+ * reader did not read and the edit set is the edit's, a map merged into the file's key by key and refused where the file's is no longer an
+ * object; one the edit left as read is the file's, as written; an object the edit changed is
  * merged, refused where the file's is no longer an object; else the edit's. A key the edit set that the file no longer holds is added, an
  * object with only the edit's own keys under it (the second re-check, finding 1).
  */
@@ -132,6 +133,11 @@ function plan(
       if (!isObject(kept)) throw new EditRefused(first, path);
       const unread = plan(kept, was as Record<string, unknown>, {}, path, false);
       if (Object.keys(unread).length > 0) out.push([name, unread]);
+    } else if (!wasRead && isObject(now)) {
+      // A map its reader never saw is no whole value: its keys are the edit's paths, made into what another writer wrote meanwhile (the
+      // re-check of round 3: written whole, it deleted that writer's entries, or overwrote its string).
+      if (!isObject(kept)) throw new EditRefused(changed({}, now, path) ?? path, path);
+      out.push([name, plan(kept, {}, now, path, false)]);
     } else if (!wasRead) out.push([name, now]);
     else if (same(was, now)) out.push([name, kept]);
     else if (isObject(was) && isObject(now)) {

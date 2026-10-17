@@ -134,7 +134,8 @@ public static class JsonKeeping
     /// <summary>
     /// What one object of the file as it stands becomes, key by key in its order, <paramref name="where"/> being its path: a key neither
     /// its reader nor the edit holds is the file's, kept; one the edit took goes, except that a map emptied at the top loses only the
-    /// entries its reader read; one its reader did not read and the edit set is the edit's; one the edit left as read is the file's, as
+    /// entries its reader read; one its reader did not read and the edit set is the edit's, a map merged into the file's key by key and
+    /// refused where the file's is no longer an object; one the edit left as read is the file's, as
     /// written; an object the edit changed is merged, refused where the file's is no longer an object; else the edit's. A key the edit
     /// set that the file no longer holds is added, an object with only the edit's own keys under it (the second re-check, finding 1).
     /// </summary>
@@ -155,6 +156,14 @@ public static class JsonKeeping
                 if (kept.ValueKind != JsonValueKind.Object) throw new JsonEditRefusedException(first, path);
                 var unread = Plan(kept, was, Nothing.RootElement, path, top: false);
                 if (unread.Count > 0) plan.Add((property.Name, writer => Write(writer, unread)));
+            }
+            else if (!wasRead && now.ValueKind == JsonValueKind.Object)
+            {
+                // A map its reader never saw is no whole value: its keys are the edit's paths, made into what another writer wrote
+                // meanwhile (the re-check of round 3: written whole, it deleted that writer's entries, or overwrote its string).
+                if (kept.ValueKind != JsonValueKind.Object) throw new JsonEditRefusedException(Changed(Nothing.RootElement, now, path) ?? path, path);
+                var merged = Plan(kept, Nothing.RootElement, now, path, top: false);
+                plan.Add((property.Name, writer => Write(writer, merged)));
             }
             else if (!wasRead) plan.Add((property.Name, now.WriteTo));
             else if (was.GetRawText() == now.GetRawText()) plan.Add((property.Name, kept.WriteTo));

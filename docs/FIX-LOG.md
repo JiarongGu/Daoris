@@ -28,8 +28,9 @@ repository.
   writer made a string was overwritten by the stale edited object. Choices read where no file was carried no text, so both twins wrote
   them whole, over a file another writer made before the save, an unreadable one included in the driver's. An edit is now the set of key
   paths it changed (`JsonKeeping.Plan`, `jsonkeep.ts`' `plan`): an object missing now is made again with only the edit's own keys, one
-  that is no longer an object refuses it, naming the path (`JsonEditRefusedException`, `EditRefused`); a config read where no file was
-  carries `{}` and its path. The CLI writes its maps in the driver's order, so an entry an edit adds goes where the driver's goes.
+  that is no longer an object refuses it, naming the path (`JsonEditRefusedException`, `EditRefused`), and a map the reader never saw is
+  merged key by key into one another writer wrote meanwhile, never written whole over it; a config read where no file was carries `{}`
+  and its path. The CLI writes its maps in the driver's order, so an entry an edit adds goes where the driver's goes.
 - **Verification:** `DriverConfigKeepsTests` and the CLI's `configkeeps.test.ts` read one table, `driver-config-keeps.json` (an
   existing file in the writer's layout with unknown keys at the top, in a landing rule and a workspace rule, and numbers JavaScript
   cannot hold; nine edits and the bytes both write): the table failed on GRAPH1's branch in both twins (all nine rows in the driver's)
@@ -39,7 +40,9 @@ repository.
   re-check's six rows (a map taken out, a rule taken out, a map made a string, and a file another writer made, unreadable or with a key
   twice, after this one found none) and a save where there still is none failed on round 2's branch in the driver's, each alone, and in
   the CLI's, a test a row now, all but the unreadable one, which its whole write already refused; all pass, with the driver's and the
-  modules' fast halves and the CLI's suite.
+  modules' fast halves and the CLI's suite. A further re-check's three rows (a map the reader never saw, written meanwhile by another
+  writer as an object, as nothing, as a string) failed in both twins where it was an object or a string, and pass; the row where
+  there is none was already right, the edit's keys alone, and holds it.
 
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
