@@ -59,8 +59,11 @@ public sealed partial class PressesTold(string home)
     /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept (ACCEPTALL1e).</summary>
     public const string LandAsk = "LAND_ASK";
 
+    /// <summary><c>work recovery drop</c>: the person's delete of the recovery refs nothing holds (RECOVERYDROP1).</summary>
+    public const string RecoveryDrop = "RECOVERY_DROP";
+
     /// <summary>Every route a terminal tells: the modules hold each to a route that declares what it changes.</summary>
-    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk];
+    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk, RecoveryDrop];
 
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";
@@ -92,6 +95,9 @@ public sealed partial class PressesTold(string home)
             return false;
         }
     }
+
+    /// <summary>A press of no one session's, told now in <paramref name="home"/>: what a verb says once it has acted (RECOVERYDROP1).</summary>
+    public static bool Tell(string home, string route) => new PressesTold(home).Tell(new PressTold(route, null, DateTimeOffset.UtcNow));
 
     /// <summary>
     /// Every note waiting, taken once and removed, oldest first: what the loop that hears them publishes. One that does not read as

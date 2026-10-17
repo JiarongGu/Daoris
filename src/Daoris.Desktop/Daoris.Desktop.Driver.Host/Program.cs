@@ -179,6 +179,11 @@ using Daoris.Driver;
 //                 each unit of work's milestone (FABRIC-MILESTONE1a): its end reached, the result kept, the cleanup pending or
 //                 completed, the recovery retained, derived read-only from the tree lifecycle's records; `trees state` says the same.
 //
+//   work recovery drop <ref>... --repository <name> | --unheld [--repository <name>] [--plan]
+//                 delete the recovery refs (`refs/daoris/discarded/*`) no branch or tag of yours holds, which Daoris keeps at any
+//                 age until you say so (RECOVERYDROP1, CLEANUP1): each in one transaction that verifies the commit it names, a ref
+//                 a holder keeps or that moved is kept and said; only the process holding the home acts; --plan lists, changes nothing.
+//
 //   sync [status | dismiss <quest>] [--workspace <name>]
 //                 one pass now, the tick's own, for every circle with a remote or the one named; with
 //                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a);
@@ -491,6 +496,12 @@ try
     if (args is ["work", "state", .. var stateArgs])
     {
         return await Daoris.Driver.Host.WorkConsole.MilestonesAsync(stateArgs);
+    }
+
+    // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D50): the workspace's Branches press is the other door.
+    if (args is ["work", "recovery", "drop", .. var dropArgs])
+    {
+        return await Daoris.Driver.Host.WorkConsole.RecoveryDropAsync(dropArgs);
     }
 
     // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.

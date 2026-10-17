@@ -102,6 +102,15 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
 
+    /// <summary>
+    /// The choices <see cref="_governed"/> was judged under, as read (FABRIC-RUN1e): a wake under other choices reads the units afresh before
+    /// any attempt is heard, asked after, retried or started, so a unit whose graph was removed or edited is never judged under the old one.
+    /// </summary>
+    private string? _choices;
+
+    /// <summary>The last unit a pass evaluated when the units concerned passed <see cref="UnitsPerPass"/>: the next pass begins after it (FABRIC-RUN1e).</summary>
+    private string? _after;
+
     /// <summary>Whether the plugins were last told a set naming anything: a disarmed pass empties it once.</summary>
     private volatile bool _told;
 
@@ -160,48 +169,80 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
     }
 
     /// <summary>
+    /// Withdraws what the runtime holds once the choices no longer arm it (FABRIC-RUN1e): the awaited set told nothing, the timers and the
+    /// governed units cleared. Called before the plan's supervision, so a plugin the last graph awaited is not started again by the look that
+    /// reads that graph's removal. Returns whether the choices disarm the runtime.
+    /// </summary>
+    public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
+    {
+        if (Armed(config)) return false;
+        if (!Holding) return true;
+        await _one.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            Withdraw();
+        }
+        finally
+        {
+            _one.Release();
+        }
+
+        return true;
+    }
+
+    /// <summary>Whether the runtime holds anything a disarm withdraws: an awaited set told, units governed, a timer.</summary>
+    private bool Holding => _told || _governed is not null || NextDue is not null || _toldText.Length > 0;
+
+    /// <summary>
+    /// Disarmed (FABRIC-RUN1e): the plugins are told nothing is awaited where something was, so their processes stop, and everything cached is
+    /// cleared whatever was told, a pending retry's timer included, so nothing wakes the loop and a later arming reads the units afresh.
+    /// Nothing is read. Called holding <see cref="_one"/>.
+    /// </summary>
+    private void Withdraw()
+    {
+        if (_told) port.Watch(NoneAwaited);
+        (_told, _toldText, _governed, _choices, _after, NextDue) = (false, "", null, null, null, null);
+    }
+
+    /// <summary>
     /// One pass, at a look (<see cref="NodeRuntimeLook.Whole"/>) or a wake: completions heard, attempts due asked after before any new start,
     /// retries due made ready, the concerned units evaluated and their starts made within <see cref="SendsPerPass"/>, the awaited set told.
     /// </summary>
     public async Task<NodeRuntimePass> PassAsync(NodeRuntimeLook look, CancellationToken ct)
     {
-        var armed = Armed(look.Config);
-        if (!armed && !_told) return NodeRuntimePass.Idle;
+        // Disarmed (FABRIC-RUN1e): whatever was told or cached is withdrawn, a pending retry's timer included; nothing is read.
+        if (await WithdrawAsync(look.Config, ct).ConfigureAwait(false)) return NodeRuntimePass.Idle;
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (!armed)
-            {
-                // Disarmed since the last pass: the plugins are told nothing is awaited, once, so their processes stop; nothing else is read.
-                port.Watch(NoneAwaited);
-                (_told, _toldText, _governed, NextDue) = (false, "", null, null);
-                return NodeRuntimePass.Idle;
-            }
-
             if (!_holdsLease()) return new NodeRuntimePass(true, [], [], []);
-            if (look.Whole || _governed is null)
+
+            // FABRIC-RUN1e: governance is read afresh at the look's deadline, at the first pass, and at a wake under choices other than the
+            // ones it was judged under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged.
+            var choices = look.Config.Source ?? look.Config.ToJson();
+            var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal);
+            if (fresh)
             {
                 var read = await look.Units(ct).ConfigureAwait(false);
-                _governed = Govern(look.Config, read, look.Steps()).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal);
+                (_governed, _choices) = (Govern(look.Config, read, look.Steps()).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
             }
 
-            var governed = _governed;
+            var governed = _governed!;
             NodeDeclaration? Declared(string unit, string node) => governed.TryGetValue(unit, out var each) ? each.Declared.GetValueOrDefault(node) : null;
 
+            // FABRIC-RUN1e: one count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
+            var sends = new WorkSends(SendsPerPass);
             var done = new List<WorkPerformed>();
             done.AddRange(_performer.Hear(port.TakeSteps(), Declared));
-            done.AddRange(await _performer.ReconcileAsync(Declared, ct).ConfigureAwait(false));
+            done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
 
             var said = new List<string>();
             var named = done.Select(each => each.Unit).ToHashSet(StringComparer.Ordinal);
-            var concerned = governed.Values
-                .Where(each => look.Whole || named.Contains(each.Unit.Id) || OwesStart(each))
-                .Take(UnitsPerPass).ToList();
-            var sends = SendsPerPass;
+            var concerned = Turn(governed.Values.Where(each => fresh || named.Contains(each.Unit.Id) || OwesStart(each)));
             foreach (var each in concerned)
             {
-                sends = await EvaluateAsync(each, sends, done, said, ct).ConfigureAwait(false);
+                await EvaluateAsync(each, sends, done, said, ct).ConfigureAwait(false);
             }
 
             var changed = Tell(governed.Values);
@@ -215,9 +256,9 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
 
     /// <summary>
     /// One unit's graph evaluated to <see cref="WireEvaluated.Settled"/>, at most a round per node and one more: each round on the record as
-    /// it is then, its moves kept and its starts made. Returns the sends left in the pass.
+    /// it is then, its moves kept and its starts made, each send taking one of the pass's <paramref name="sends"/>.
     /// </summary>
-    private async Task<int> EvaluateAsync(GovernedUnit governed, int sends, List<WorkPerformed> done, List<string> said, CancellationToken ct)
+    private async Task EvaluateAsync(GovernedUnit governed, WorkSends sends, List<WorkPerformed> done, List<string> said, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
@@ -254,10 +295,9 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
                     done.Add(begun);
                     started |= begun.What == PerformedWhat.Begun;
                 }
-                else if (governed.Dispatchable.Contains(node.Id) && sends > 0 && port.GenerationOf(PluginOf(node.Kind)) is not null)
+                else if (governed.Dispatchable.Contains(node.Id) && sends.Left > 0 && port.GenerationOf(PluginOf(node.Kind)) is not null && sends.Take())
                 {
                     // A process not up yet is awaited (Tell below), and the start is made at a later pass once it is: never sent blind.
-                    sends--;
                     var sent = await _performer.StartAsync(node, start, ct).ConfigureAwait(false);
                     done.Add(sent);
                     started |= sent.What != PerformedWhat.Refused;
@@ -268,8 +308,22 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
 
             if (evaluated.Settled && !started) break;
         }
+    }
 
-        return sends;
+    /// <summary>
+    /// The units a pass evaluates, in id order (FABRIC-RUN1e): all of them up to <see cref="UnitsPerPass"/>; past it, the next
+    /// <see cref="UnitsPerPass"/> after the last unit the pass before reached, round again from the first, so no unit waits behind the same
+    /// prefix at every pass.
+    /// </summary>
+    private List<GovernedUnit> Turn(IEnumerable<GovernedUnit> concerned)
+    {
+        var ordered = concerned.OrderBy(each => each.Unit.Id, StringComparer.Ordinal).ToList();
+        if (ordered.Count <= UnitsPerPass) return ordered;
+        var next = _after is null ? 0 : ordered.FindIndex(each => string.CompareOrdinal(each.Unit.Id, _after) > 0);
+        if (next < 0) next = 0;
+        var turn = ordered.Skip(next).Concat(ordered.Take(next)).Take(UnitsPerPass).ToList();
+        _after = turn[^1].Unit.Id;
+        return turn;
     }
 
     /// <summary>Whether a unit's record holds one of its dispatchable nodes ready: a start owed, judged at a wake as well as at the look.</summary>
@@ -317,6 +371,14 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
                 if (attempt.State is AttemptStates.Recorded or AttemptStates.Unknown or AttemptStates.Sent) Due(attempt.AskAt);
                 if (attempt.State == AttemptStates.Sent && attempt.AskAt is null) Due(attempt.Call.DeadlineAt);
             }
+        }
+
+        // FABRIC-RUN1e: published only while this loop still holds the lease, asked after the pass's awaits; a loop that lost it meanwhile
+        // tells nothing and keeps no timer, and the lease's next holder tells its own set.
+        if (!_holdsLease())
+        {
+            NextDue = null;
+            return false;
         }
 
         port.Watch(awaited.ToDictionary(each => each.Key, each => (IReadOnlyList<WatchedUnit>)each.Value, StringComparer.Ordinal));

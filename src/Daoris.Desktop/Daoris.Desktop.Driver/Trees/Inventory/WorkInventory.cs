@@ -73,6 +73,12 @@ public sealed record InventoryEntry(string Unit, string Kind, string Resource, s
     /// <summary>A recovery's purge date: retained until then.</summary>
     public DateTimeOffset? Until { get; init; }
 
+    /// <summary>The repository a recovery belongs to (RECOVERYVIEW1), so a workspace's page lists its own; null for an entry that is no recovery.</summary>
+    public string? Repository { get; init; }
+
+    /// <summary>The commit a recovery ref names (RECOVERYDROP1), which the person's delete is verified against; null for an entry that is no recovery ref.</summary>
+    public string? Commit { get; init; }
+
     /// <summary>A removal's proof, where its record kept one.</summary>
     public string? Proof { get; init; }
 }
@@ -145,6 +151,9 @@ public sealed record RecoveryRef(string Repository, string Ref)
     public bool? Held { get; init; }
 }
 
+/// <summary>A <c>daoris/*</c> branch standing in a repository (FABRIC-UNKNOWN1), whether or not a record names it.</summary>
+public sealed record StandingBranch(string Repository, string Branch);
+
 /// <summary>What the records, the disk and git said, gathered for <see cref="WorkInventory.Derive"/> to read: nothing here is judged.</summary>
 /// <param name="Branches">Every session branch entry, standing and traces.</param>
 /// <param name="Landings">Every landing entry, standing and traces.</param>
@@ -156,7 +165,14 @@ public sealed record RecoveryRef(string Repository, string Ref)
 public sealed record InventoryFacts(
     IReadOnlyList<GrownBranch> Branches, IReadOnlyList<LandedBranch> Landings, IReadOnlyList<SessionTree> Trees,
     IReadOnlyList<AutoLanding> AutoLandings, IReadOnlyList<RecoveryRef> Refs, IReadOnlySet<string> InUse,
-    Func<string, bool> HasHistory, DateTimeOffset Now);
+    Func<string, bool> HasHistory, DateTimeOffset Now)
+{
+    /// <summary>
+    /// The <c>daoris/*</c> branches standing in each repository read (FABRIC-UNKNOWN1, the design's §D3): one that no record names and
+    /// no tree holds is a unit of its own with an unknown owner, blocked. Read in the same git start as the recovery refs.
+    /// </summary>
+    public IReadOnlyList<StandingBranch> Standing { get; init; } = [];
+}
 
 /// <summary>
 /// The branch adapter (FABRIC-UNIT1a; the fabric events design §D2) and its ownership inventory, derived (FABRIC-MILESTONE1a; §D0 and
@@ -185,6 +201,9 @@ public static partial class WorkInventory
         public List<LandedBranch> Landings { get; } = [];
         public List<InventoryEntry> Extra { get; } = [];
         public bool Unowned { get; set; }
+
+        /// <summary>The standing branch no record names (FABRIC-UNKNOWN1), which is the whole of such a unit.</summary>
+        public string? Standing { get; set; }
         public HashSet<string> Sessions { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
@@ -239,6 +258,7 @@ public static partial class WorkInventory
         var trees = AttachTrees(facts, drafts, recoveries, out var treeOf);
         AttachAutoLandings(facts, drafts, treeOf);
         AttachRefs(facts, drafts, recoveries);
+        AttachUnrecorded(facts, drafts);
 
         var units = new List<WorkUnit>();
         foreach (var draft in drafts.Values) units.Add(Unit(draft, facts, trees.GetValueOrDefault(draft.Id) ?? []));
@@ -343,6 +363,31 @@ public static partial class WorkInventory
     }
 
     /// <summary>
+    /// A <c>daoris/*</c> branch standing that no record names and no tree has checked out (FABRIC-UNKNOWN1, §D3): a unit of its own with
+    /// an unknown owner. Only the person's press removes it, so it is blocked, never pending: the look's tidy takes recorded branches
+    /// alone. A branch a tree holds is that tree's (<see cref="AttachTrees"/>), and a landing's own branch is the landing's.
+    /// </summary>
+    private static void AttachUnrecorded(InventoryFacts facts, Dictionary<string, Draft> drafts)
+    {
+        foreach (var each in facts.Standing)
+        {
+            if (!each.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)) continue;
+            var named = facts.Trees.Any(tree => SameRepository(tree.Repository, each.Repository) && tree.Branch == each.Branch)
+                || drafts.Values.Any(draft => SameRepository(draft.Repository, each.Repository)
+                    && (draft.Branch is { } branch && (branch.Branch == each.Branch || branch.Now == each.Branch)
+                        || draft.Landings.Any(landing => landing.Branch == each.Branch)));
+            if (named) continue;
+            var id = $"unknown-branch:{each.Repository.ToLowerInvariant()}/{each.Branch}";
+            if (drafts.ContainsKey(id)) continue;
+            var draft = new Draft(id, each.Repository, "default") { Unowned = true, Standing = each.Branch };
+            draft.Extra.Add(new InventoryEntry(id, InventoryKind.SessionBranch, each.Branch, InventoryRole.Temporary, InventoryDisposition.Blocked,
+                $"its owner is unknown: Daoris did not record `{each.Branch}`, so nothing here is cleaned; only your Discard branch press "
+                + "(Settings, clean-up) removes it"));
+            drafts[id] = draft;
+        }
+    }
+
+    /// <summary>
     /// A recovery ref by its rule (CLEANUP1, <see cref="RecoveryRetention"/>): one a branch or a tag here holds goes at the look's tidy
     /// once past its retention; one nothing else holds is kept until the person deletes it, and says how; one whose holders git did not
     /// read is kept.
@@ -359,7 +404,7 @@ public static partial class WorkInventory
             false => $"no branch or tag of yours holds its commit, so Daoris keeps it until you delete it: `git update-ref -d {each.Ref}` in `{each.Repository}`",
             _ => "kept by its own rule: whether a branch or a tag of yours holds its commit was not read, so it is kept, and the end never takes it",
         })
-        { Until = until };
+        { Until = until, Repository = each.Repository, Commit = each.Commit };
     }
 
     private const string ContentHoldsPrefix = "refs/daoris/discarded/";
@@ -440,7 +485,7 @@ public static partial class WorkInventory
             .Select(landing => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(landing.Quest!))).Distinct().ToList();
         return new WorkUnit(
             draft.Id, WorkUnitKind.Branch, new WorkOwner(draft.Repository, draft.Workspace, record, WorkRecord.DriverWriter),
-            new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch, end.Revision), end, entries)
+            new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch ?? draft.Standing, end.Revision), end, entries)
         {
             Executors = [.. draft.Sessions],
             Links = quests,
@@ -461,14 +506,14 @@ public static partial class WorkInventory
             return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Blocked,
                 $"moved aside {Minute(tree.MovedAside ?? DateTimeOffset.MinValue)} UTC and past its date, but the look's purge keeps it, since {kept}; "
                 + "look at it, and delete it once it holds nothing you need")
-            { Until = until };
+            { Until = until, Repository = tree.Repository };
         }
 
         return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Retained,
             tree.MovedAside is { } at
                 ? $"moved aside {Minute(at)} UTC; deleted once it is left untouched until {Minute(until!.Value)} UTC"
                 : "moved aside; its name says no date, so the look's purge never takes it")
-        { Until = until };
+        { Until = until, Repository = tree.Repository };
     }
 
     private static InventoryEntry TreeEntry(Draft draft, SessionTree tree, InventoryFacts facts, bool ended)

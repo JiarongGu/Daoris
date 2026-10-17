@@ -16095,3 +16095,39 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HOSTROOT1 — a knowledge note on .NET hosts started inside a checkout or an install** (knowledge).
 
 **Outcome** 2026-10-17: `.claude/knowledge/host-content-root.md`: a .NET host started in a checkout or an install sets its own root and turns reload off, and how to prove it.
+
+## FABRIC-END2d — the keeper learns the squash-holder and inside proofs (2026-10-17, D173)
+
+> - [ ] **FABRIC-END2d — the keeper learns the squash-holder and inside proofs** (driver; after END4a; §B3, §B5, §C3). END4a's fallback judges recorded branches the keeper cannot prove (an older squash record without a unit, a landing inside another) once per tip and line commit, at the old tidy's git cost after each line move. Proof: `EndJudgement` keeps a `HeldFact` for both; the fallback removed; the count test's first pass equals its second.
+
+**Outcome** 2026-10-17: the end keeper judges every landing before it writes; it ends a landing inside one ended by its own proof (`EndBy.Inside`), and a session branch only such a landing holds through it (`HolderAsync`); an inside or landed fact lapses with the end it rests on. END4a's review fallback (`AutoTidies.Judged`) is removed; an older squash record's session branch was already ended by content. Git starts beyond the keeper, first pass then second: 16→5 and 43→8 before, 5→5 and 8→8 now. On Opus: about 80 tool calls. Detail: D173's FABRIC-END2d note.
+
+## FABRIC-UNKNOWN1 — unrecorded `daoris/*` branches named as blocked (2026-10-17, D173)
+
+> - [ ] **FABRIC-UNKNOWN1 — unrecorded `daoris/*` branches named as blocked** (driver; after END4a; §D3). END4a leaves a `daoris/*` branch with no record for the person's press, and nothing says why: name it in the inventory and What needs you as an unknown owner, *blocked*. Proof: `WorkInventoryTests` names such a branch; the look never removes it.
+
+**Outcome** 2026-10-17: a `daoris/*` branch no record names, and no tree holds, is read by the inventory as a unit with an unknown owner and a blocked clean-up, saying Daoris did not record it and that only the person's Discard branch press removes it; it shows in `work state` and What needs you, read from CLEANUP1's one listing (`RecoveryRetention.ReadWithBranchesAsync`, no extra git start), and the look never removes it. On Sonnet: about 33 + 28 tool calls. Detail: D173's FABRIC-UNKNOWN1 note.
+
+## RECOVERYVIEW1 — the page shows the recoveries (2026-10-17, D173)
+
+> - [ ] **RECOVERYVIEW1 — the page shows the recoveries** (web-shell, modules; after CLEANUP1). `WORK_STATE.recovery` on Branches or the workspace page, each with its date or its delete command. Proof: a component test in both locales; an older shell answering none.
+
+**Outcome** 2026-10-17: the workspace's Branches list the recoveries no unit names (`WorkspaceRecoveries`): a folder set aside with "kept until <date>", a recovery ref with its holder and date or, where nothing holds it, its copyable `git update-ref -d` line; en and zh; none drawn when there are none or an older shell answers none; each recovery carries its repository. On Sonnet: about 45 tool calls (with RECOVERYASK1). Detail: D173's RECOVERYVIEW1 note.
+
+## FABRIC-RUN1e — the runtime ready to arm (2026-10-17, D173)
+
+> - [ ] **FABRIC-RUN1e — the runtime ready to arm** (driver; after RUN1, with PERFORM1c and PERFORM1g; D173's RUN1 note). A review's six findings: governance refreshed on a config change before attempts are processed; disarming clears timers and withdraws awaits before plan supervision; restarting failed work across graph edits needs deliberate authorisation (A→B→A resets tries); fair continuation past 32 units; one send budget shared with reconciliation; the awaited-set publication fenced by the lease. Until PERFORM1c an unverified `reached` can dispatch downstream plugins. Proof: a test per finding, red first; runtime tests for config transitions and mid-pass lease loss.
+
+**Outcome** 2026-10-17: the runtime's six review findings fixed, each tested first: a wake under other choices reads the units again before any attempt is handled; a disarm clears everything held and withdraws the awaited set at link 5, before supervision; a failure or rejection from another graph or run stays for the person, lapsed only by a new revision (replacing WIRE1f's `run-scope`); units past 32 taken in turn; reconciliation and starts share the pass's four sends; the awaited set told only while the lease is held. The owner's unarmed install unchanged. On Opus: about 60 tool calls. Detail: D173's FABRIC-RUN1 note, "After review"; FIX-LOG 2026-10-17.
+
+## RECOVERYASK1 — Ask Daoris names the recoveries no unit names (2026-10-17, D173)
+
+> - [ ] **RECOVERYASK1 — Ask Daoris names the recoveries no unit names** (driver; after CLEANUP1; §D0, §D3). "Where work has got to" no longer mentions a kept recovery ref only the person can delete. Proof: a `HelpRoomWorkTests` golden with an unheld recovery ref, saying its `git update-ref -d` line.
+
+**Outcome** 2026-10-17: Ask Daoris's *Where work has got to* names the recoveries no unit names, at most five with the rest counted, unheld recovery refs first, each saying what keeps it and its `git update-ref -d` line. Detail: D173's RECOVERYVIEW1 note.
+
+## RECOVERYDROP1 — the person's press to delete the recovery refs nothing holds (2026-10-17, D102)
+
+> - [ ] **RECOVERYDROP1 — the person's press to delete the recovery refs nothing holds** (driver, modules, web-shell; after RECOVERYVIEW1; D102's CLEANUP1 note). CLEANUP1 keeps a recovery ref nothing of the person's holds until the person deletes it; the owner's install listed 18. Give them one press.
+
+**Outcome** 2026-10-17: the person deletes the recovery refs nothing holds in one press, on the workspace's Branches ("Delete the ones nothing holds", behind a confirmation saying the commits may be lost from this machine and a remote may still have them) or by terminal (`daoris-driver work recovery drop`), each ref verified at the commit shown and skipped with its reason if it moved or a holder now keeps it, only the lease's holder acting. On Sonnet: about 150 tool calls. Detail: D102's RECOVERYDROP1 note, `RecoveryDropping.cs`.

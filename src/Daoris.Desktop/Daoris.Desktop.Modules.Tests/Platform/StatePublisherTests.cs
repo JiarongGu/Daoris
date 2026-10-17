@@ -347,6 +347,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("STOP_OPINION", "sessions,landing", null)]
     [InlineData("SWEEP", "sessions,landing,diff,handOff,sweep,treesSync", null)]
     [InlineData("DISCARD_SESSION_BRANCH", "sessions,landing,diff,handOff,sweep,treesSync", null)]
+    [InlineData("RECOVERY_DROP", "sessions,landing,diff,handOff,sweep,treesSync", null)]
     [InlineData("TREES_SYNC", "sessions,landing,diff,handOff,sweep,treesSync", null)]
     [InlineData("SET_LANDING", "landing,lines", null)]
     [InlineData("LANDING", "", null)]

@@ -318,5 +318,21 @@
   "projects.tidied.cause.index": "工作树索引",
   "projects.tidied.cause.folders": "文件夹读取",
   "projects.tidied.cause.pass": "整理出错",
-  "projects.tidied.cause.judged": "未能判断"
+  "projects.tidied.cause.judged": "未能判断",
+  "projects.recoveries.title": "为找回保留的内容",
+  "projects.recoveries.folderUntil": "保留到 {{when}}，届时若未被动过则删除",
+  "projects.recoveries.heldUntil": "你的分支或标签持有它的提交，所以 Daoris 会在 {{when}} 起清除它",
+  "projects.recoveries.unheld": "你的分支和标签都不持有它的提交，所以会一直保留到你删除它：",
+  "projects.recoveries.copy": "复制命令",
+  "projects.recoveries.copyShort": "复制",
+  "projects.recoveries.copied": "已复制",
+  "projects.recoveries.drop": "删除无人持有的那些",
+  "projects.recoveries.dropTitle": "删除无人持有的找回引用",
+  "projects.recoveries.dropSays": "将删除 {{count}} 个找回引用，你的分支和标签都不持有它们的提交：",
+  "projects.recoveries.dropSays_other": "将删除 {{count}} 个找回引用，你的分支和标签都不持有它们的提交：",
+  "projects.recoveries.dropLoss": "删除后，git 运行垃圾回收时，这些提交可能会从本机丢失，Daoris 也无法找回。远程仓库里可能仍有这些工作。",
+  "projects.recoveries.dropMeanIt": "确认删除",
+  "projects.recoveries.deleted": "已删除 {{count}} 个找回引用。",
+  "projects.recoveries.deleted_other": "已删除 {{count}} 个找回引用。",
+  "projects.recoveries.kept": "已保留 {{ref}}：{{why}}"
 }

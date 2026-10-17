@@ -18,6 +18,21 @@ export type MilestoneEntry = {
   /** A recovery's purge date, where one stands. */
   until?: string | null;
   proof?: string | null;
+  /** The repository a recovery belongs to (RECOVERYVIEW1); a shell older than it answers none. */
+  repository?: string | null;
+  /** The commit a recovery ref names (RECOVERYDROP1), which a delete is verified against; a shell older than it answers none. */
+  commit?: string | null;
+};
+
+/** The recovery refs of one repository a press of the delete names, each with the commit the page showed (RECOVERYDROP1). */
+export type RecoveryDropGroup = { repository: string; refs: { ref: string; commit: string }[] };
+
+/** What a press of the delete answered across its repositories: what went, what was kept and why, and what refused the whole. */
+export type RecoveryDropResult = {
+  dropped: { repository: string; ref: string; commit: string }[];
+  skipped: { repository: string; ref: string; why: string }[];
+  /** A repository's whole press refused: not the lease's holder, or no checkout here. The driver's own sentence. */
+  refused: string[];
 };
 
 /** Whether the end was reached, and on what evidence. */
@@ -45,8 +60,11 @@ export type MilestoneUnit = {
   entries: MilestoneEntry[];
 };
 
-/** What `WORK_STATE` answers: the units, and what could not be read (a repository with no checkout here). */
-export type WorkState = { units: MilestoneUnit[]; unread: string[] };
+/**
+ * What `WORK_STATE` answers: the units, Daoris's own recoveries no unit names (RECOVERYVIEW1, CLEANUP1: a folder moved aside, a
+ * recovery ref), and what could not be read (a repository with no checkout here).
+ */
+export type WorkState = { units: MilestoneUnit[]; recovery: MilestoneEntry[]; unread: string[] };
 
 /** The kinds of thing a unit owns that have a word of the page's; a `line` or an `end` is its resource's own name. */
 const KINDS = ['tree', 'session-branch', 'landing-branch', 'moved-aside', 'recovery-ref', 'auto-landing', 'history'] as const;
@@ -76,9 +94,10 @@ export function unitOfBranch(units: readonly MilestoneUnit[], repository: string
 
 /** Older shells answer nothing of the kind, and a malformed answer reads as none. */
 export function readWorkState(answer: unknown): WorkState {
-  const held = answer as { units?: unknown; unread?: unknown } | null | undefined;
+  const held = answer as { units?: unknown; recovery?: unknown; unread?: unknown } | null | undefined;
   return {
     units: Array.isArray(held?.units) ? held.units as MilestoneUnit[] : [],
+    recovery: Array.isArray(held?.recovery) ? held.recovery as MilestoneEntry[] : [],
     unread: Array.isArray(held?.unread) ? held.unread.filter((each): each is string => typeof each === 'string') : [],
   };
 }

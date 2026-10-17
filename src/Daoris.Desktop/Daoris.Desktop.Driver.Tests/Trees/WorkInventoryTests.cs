@@ -30,9 +30,10 @@ public sealed class WorkInventoryTests
 
     private static InventoryFacts Facts(
         GrownBranch[]? branches = null, LandedBranch[]? landings = null, SessionTree[]? trees = null, AutoLanding[]? autos = null,
-        RecoveryRef[]? refs = null, string[]? inUse = null, string[]? history = null) =>
+        RecoveryRef[]? refs = null, string[]? inUse = null, string[]? history = null, StandingBranch[]? standing = null) =>
         new(branches ?? [], landings ?? [], trees ?? [], autos ?? [], refs ?? [], (inUse ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase),
-            session => (history ?? []).Contains(session), Then.AddDays(1));
+            session => (history ?? []).Contains(session), Then.AddDays(1))
+        { Standing = standing ?? [] };
 
     private static WorkMilestone One(InventoryFacts facts) => Assert.Single(WorkInventory.Derive(facts));
 
@@ -326,6 +327,41 @@ public sealed class WorkInventoryTests
         Assert.Contains(units, unit => unit.End.State == "unknown" && unit.Cleanup.Waits.Any(wait => wait.Disposition == "blocked"));
         // Every entry is in one unit only.
         Assert.Equal(entries.Count, entries.Distinct().Count());
+    }
+
+    // ---- FABRIC-UNKNOWN1: a daoris/* branch no record names
+
+    /// <summary>No record names it and no tree holds it: an unknown owner, blocked, saying why and which press removes it.</summary>
+    [Fact]
+    public void An_unrecorded_daoris_branch_is_an_unknown_owner_blocked_naming_the_press()
+    {
+        var unit = One(Facts(standing: [new StandingBranch("engine", "daoris/orphan")]));
+
+        Assert.Equal("unknown", unit.End.State);
+        Assert.Equal("daoris/orphan", unit.Branch);
+        Assert.Equal("pending", unit.Cleanup.State);
+        var wait = Assert.Single(unit.Cleanup.Waits);
+        Assert.Equal(("session-branch", "daoris/orphan", "temporary", "blocked"), (wait.Kind, wait.Resource, wait.Role, wait.Disposition));
+        Assert.Contains("Daoris did not record `daoris/orphan`", wait.Detail);
+        Assert.Contains("Discard branch", wait.Detail);
+        Assert.Contains("blocked", string.Join("\n", WorkWords.Milestone(unit)));
+    }
+
+    /// <summary>A branch a record names (standing or traced), a landing carries, or a tree holds is not this unit's to name.</summary>
+    [Fact]
+    public void A_daoris_branch_a_record_or_a_tree_names_is_not_an_unknown_owner()
+    {
+        var standing = new[]
+        {
+            new StandingBranch("engine", "daoris/s1"), new StandingBranch("engine", "daoris/now"), new StandingBranch("engine", "daoris/gone"),
+            new StandingBranch("engine", "daoris/landed"), new StandingBranch("Engine", "daoris/s9"), new StandingBranch("engine", "feature/x"),
+        };
+        var units = WorkInventory.Derive(Facts(
+            branches: [Grown(), Grown("daoris/old", "unit-b", now: "daoris/now"), Grown("daoris/gone", "unit-c", gone: Then)],
+            landings: [Landed("daoris/landed", "unit-a")], trees: [Tree("s9", "daoris/s9")], standing: standing));
+
+        Assert.DoesNotContain(units, unit => unit.End.State == "unknown" && unit.Cleanup.Waits.Any(wait => wait.Kind == "session-branch"));
+        Assert.Equal(1, units.Count(unit => unit.Entries.Any(entry => entry.Kind == "session-branch" && entry.Resource == "daoris/s1")));
     }
 
     [Fact]

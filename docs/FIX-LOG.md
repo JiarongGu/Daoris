@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The evaluation runtime could restart failed work for ever, judge under removed graphs and outrun its bounds (FABRIC-RUN1e)
+
+- **Symptom:** found by a second maker's review of FABRIC-RUN1 before any install armed a graph (the owner's names no performed node,
+  so nothing ran there). Six faults: a config wake judged a unit under a graph since removed; a disarm left a pending retry's timer and
+  the cached units, and the plan's supervision could start a plugin the last graph awaited after its removal; graph edits back and
+  forth restarted a permanent failure past `retry`; units past the first 32 never judged; a pass's four sends not counting
+  reconciliation; the awaited set told after a lease lost mid-pass.
+- **Root cause:** RUN1 cached governance per look and checked nothing at a wake; it cleaned a disarm up only when a non-empty set had
+  been told, and link 8 runs after link 5's supervision; a run's identity follows the graph, and both WIRE1f (another run's failure
+  lapses) and WIRE1e (a binding of another graph lapses, its tries counted afresh) took a graph edit as a new start; the pass took the
+  same id-ordered prefix and counted only its own starts; `Tell` asked no lease.
+- **Fix:** `NodeRuntime` reads governance afresh at a wake under other choices, before any attempt; `WithdrawAsync` clears everything
+  held and is called at link 5 before the look; `WireEvaluation` keeps a failure or rejection of another graph or run for the person,
+  lapsed by a new revision alone; `Turn` takes the units past 32 in turn; `WorkSends` is one count shared by reconciliation and starts;
+  `Tell` asks the lease before `Watch`. D173's RUN1 note, "After review", has the detail.
+- **Verification:** each scenario red on RUN1 first: eight in `NodeRuntimeTests` and three in `WireEvaluationTests` (two of WIRE1f's
+  lapse tests rewritten to the new rule); then green with the driver's fast half, `NodeRuntimeLoopProcessTests` and
+  `WorkPerformProcessTests` by class.
+
 ## 2026-10-17 — A landing squash-merged on the platform, then deleted, read dropped with a recovery ref kept for ever (CLEANUP1c)
 
 - **Symptom:** found reading CLEANUP1 against the owner's install, before it ran there: a landing whose pull request the platform
