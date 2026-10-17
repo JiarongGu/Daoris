@@ -238,24 +238,44 @@ internal sealed class TreeSetAside(TreeContext context)
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             if (MovedAt(Path.GetFileName(folder)) is not { } moved || now - moved < after) continue;
-            (string Code, string Sentence)? kept;
-            try
+            var kept = Kept(folder, moved);
+            if (kept is null)
             {
-                // A link on the way to it, the folder itself included, makes it somewhere else: never walked into (TIDIEDLINK1).
-                kept = context.Worktrees.LinkBelowTreesRoot(folder) is { } link
-                    ? (SetAsideKept.Linked, $"it is reached through a link, at {link}")
-                    : WrittenSince(folder, moved);
-                if (kept is null) DeleteNeverFollowing(folder);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                kept = (SetAsideKept.Unread, $"it could not be read or deleted ({error.Message.Trim()})");
+                try
+                {
+                    DeleteNeverFollowing(folder);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    kept = (SetAsideKept.Unread, $"it could not be read or deleted ({error.Message.Trim()})");
+                }
             }
 
             results.Add(new SetAside(folder, moved, kept is null, kept?.Sentence, kept?.Code));
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// Why the purge keeps a folder moved aside at <paramref name="moved"/>, read and never written: reached through a link, a link in it
+    /// outside a build folder, something in it written after the move, or a folder that cannot be read; null where the purge would delete
+    /// it. The purge's own read, and the inventory's (CLEANUP1, after review), so a folder its rule can no longer finish is said to the
+    /// person rather than retained for ever: the comparison is with the move, so a later write keeps it at every pass.
+    /// </summary>
+    internal (string Code, string Sentence)? Kept(string folder, DateTimeOffset moved)
+    {
+        try
+        {
+            // A link on the way to it, the folder itself included, makes it somewhere else: never walked into (TIDIEDLINK1).
+            return context.Worktrees.LinkBelowTreesRoot(folder) is { } link
+                ? (SetAsideKept.Linked, $"it is reached through a link, at {link}")
+                : WrittenSince(folder, moved);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return (SetAsideKept.Unread, $"it could not be read or deleted ({error.Message.Trim()})");
+        }
     }
 
     /// <summary>

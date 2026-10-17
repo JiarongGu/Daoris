@@ -14,7 +14,15 @@ public static class WorkInventories
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread,
         CancellationToken ct = default, DateTimeOffset? now = null)
     {
-        var trees = await new SessionTrees(home).ListAsync(ct).ConfigureAwait(false);
+        var at = now ?? DateTimeOffset.UtcNow;
+        var sessionTrees = new SessionTrees(home);
+        // CLEANUP1, after review: a folder moved aside past its date that the purge keeps, read as the purge reads it, so it is said to the
+        // person. Only past its date, where the purge has decided: a folder it deletes is walked once more before the next pass takes it.
+        var trees = (await sessionTrees.ListAsync(ct).ConfigureAwait(false))
+            .Select(tree => tree.MovedAside is { } moved && at - moved >= BranchTidying.SetAsideFor && sessionTrees.SetAsideKept(tree.Path, moved) is { } kept
+                ? tree with { PurgeKept = kept.Sentence }
+                : tree)
+            .ToList();
         var branches = new SessionBranches(home).Entries();
         var landings = new LandedBranches(home).Entries();
         var refs = new List<RecoveryRef>();
@@ -41,7 +49,7 @@ public static class WorkInventories
 
         return new InventoryFacts(
             branches, landings, trees, new AutoLandings(home).All(), refs, inUse,
-            session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), now ?? DateTimeOffset.UtcNow);
+            session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at);
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>

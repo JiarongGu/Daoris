@@ -247,7 +247,7 @@ internal sealed class LandedCleanups(
         {
             if (LandedProofs.EntriesOf(context.Recorded.All(), repository).Count == 0 || string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
             var workspace = RemoteTarget.Workspace(space);
-            var stale = new List<(string Branch, string Why)>();
+            var stale = new List<(LandedBranch Entry, string Why)>();
             var removed = new List<string>();
             var proven = new List<LandedItem>();
             // The session each branch's newest landing carried (AUTOTIDY2b), read before a removal makes the entry a trace: what the
@@ -330,10 +330,13 @@ internal sealed class LandedCleanups(
             // Gone, or no longer the landing's: never judged again — the name may be the person's now — and kept as a
             // trace with what the proof found, so the review of the session that landed it says where its work went (D113).
             foreach (var item in proven) context.Recorded.Removed(repository, item.Branch, item.Kind, item.Where);
-            // CLEANUP1: with why, on git's word: missing (the person's end of it), or a branch of its name standing that is not the landing's.
-            foreach (var same in stale.GroupBy(each => each.Why, StringComparer.Ordinal))
+            // CLEANUP1: with why, on git's word: a branch of its name standing that is not the landing's, or missing, where what holds its
+            // recorded tip is asked first (after review): moved to a branch that holds it, or its commit kept on a ref where nothing does.
+            // Each written to the landing judged alone, so a new landing of its name keeps its standing.
+            foreach (var (entry, why) in stale)
             {
-                context.Recorded.Gone(repository, [.. same.Select(each => each.Branch)], same.Key);
+                if (why != LandedGone.Missing) context.Recorded.Gone(entry, why);
+                else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went) context.Recorded.Gone(entry, went.Why, went.MovedTo, went.KeptOn);
             }
         }
 
@@ -368,7 +371,7 @@ internal sealed class LandedCleanups(
     /// <param name="refs">The refs the caller's judgement read (PROC1d-ii); null takes this judgement's own, so each judgement again reads afresh.</param>
     internal async Task<List<Judged>> JudgeLandedAsync(
         string root, string repository, string workspace, IReadOnlyList<LandedBranch> entries, IReadOnlyCollection<string> staying,
-        List<(string Branch, string Why)>? stale, CancellationToken ct, RefSnapshot? refs = null)
+        List<(LandedBranch Entry, string Why)>? stale, CancellationToken ct, RefSnapshot? refs = null)
     {
         // One read of the refs and the working trees for every branch judged here (PROC1d-ii, -iii); a write in this flow drops it.
         refs ??= RefSnapshot.Take(root);
@@ -386,7 +389,7 @@ internal sealed class LandedCleanups(
             {
                 // A broken ref resolves to nothing and is left out of the refs' list, so it is gone only where git says it is missing.
                 var (gone, said) = await AbsenceAsync(root, entry.Branch, refs, ct).ConfigureAwait(false);
-                if (gone is not null) stale?.Add((entry.Branch, gone));
+                if (gone is not null) stale?.Add((entry, gone));
                 else unread.Add(Unread(repository, workspace, entry, $"its branch did not read ({said}), so it is kept as unread"));
                 continue;
             }
@@ -396,7 +399,7 @@ internal sealed class LandedCleanups(
             var (ours, _, oursErr) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
             if (ours == 1)
             {
-                stale?.Add((entry.Branch, LandedGone.Stands));
+                stale?.Add((entry, LandedGone.Stands));
                 continue;
             }
 
@@ -499,38 +502,93 @@ internal sealed class LandedCleanups(
     /// The landings of one repository whose branch went outside Daoris, said on git's own word (CLEANUP1): a standing entry whose branch the
     /// refs do not list is retired as a trace once git says it is missing, and a trace from before <see cref="LandedBranch.GoneAs"/> was kept
     /// is asked once. Missing, with no branch of its name in another case standing, is <see cref="LandedGone.Missing"/>, the person's end of
-    /// it; a branch of its name standing is <see cref="LandedGone.Stands"/>; a read git could not make writes nothing, and is asked again at
-    /// the next look. No git where nothing needs asking.
+    /// it, once what holds its recorded tip is asked (<see cref="WentAsync"/>, after review); a branch of its name standing is
+    /// <see cref="LandedGone.Stands"/>; a read git could not make writes nothing, and is asked again at the next look. A trace that moved is
+    /// followed: asked again once the branch it moved to is no longer listed. Each write names the landing it read, never its name alone,
+    /// so a landing recorded since keeps its standing. No git where nothing needs asking.
     /// </summary>
     /// <returns>How many entries were written.</returns>
     internal async Task<int> MarkAbsentAsync(string root, string repository, CancellationToken ct, RefSnapshot? refs = null)
     {
-        // Asked: a standing entry (its end held or not), and a trace that says no why, neither removed by Daoris. A held trace reads ended.
-        var asking = context.Recorded.Entries()
-            .Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && each.RemovedAs is null && each.GoneAs is null
-                           && (each.GoneAt is null || each.Held is null))
+        // Asked: a standing entry (its end held or not), and a trace that says no why, neither removed by Daoris; a held trace reads ended.
+        // And a trace that moved, once the refs no longer list the branch it moved to: read from the refs the look already holds, so a
+        // moved trace whose branch stands costs no git of its own.
+        var entries = context.Recorded.Entries()
+            .Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && each.RemovedAs is null)
             .ToList();
-        if (asking.Count == 0) return 0;
+        var asking = entries.Where(each => each.GoneAs is null && (each.GoneAt is null || each.Held is null)).ToList();
+        var moved = entries.Where(each => each.GoneAs == LandedGone.Moved).ToList();
+        if (asking.Count == 0 && moved.Count == 0) return 0;
         refs ??= RefSnapshot.Take(root);
-        var written = 0;
-        foreach (var branch in asking.Select(each => each.Branch).Distinct(StringComparer.Ordinal))
+        foreach (var each in moved)
         {
-            var standing = asking.Any(each => each.Branch == branch && each.GoneAt is null);
-            if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{branch}", ct, refs).ConfigureAwait(false) is not null)
-            {
-                // A standing entry whose branch stands is the clean-up's to judge; a trace whose name stands again is a doubt, said once.
-                if (standing) continue;
-                context.Recorded.GoneAs(repository, branch, LandedGone.Stands);
-                written++;
-                continue;
-            }
+            if (each.MovedTo is null || await TreeRefs.CommitOfAsync(root, $"refs/heads/{each.MovedTo}", ct, refs).ConfigureAwait(false) is null) asking.Add(each);
+        }
 
-            if ((await AbsenceAsync(root, branch, refs, ct).ConfigureAwait(false)).Why is not { } why) continue;
-            context.Recorded.GoneAs(repository, branch, why);
-            written++;
+        var written = 0;
+        foreach (var named in asking.GroupBy(each => each.Branch, StringComparer.Ordinal))
+        {
+            var why = await TreeRefs.CommitOfAsync(root, $"refs/heads/{named.Key}", ct, refs).ConfigureAwait(false) is not null
+                ? LandedGone.Stands
+                : (await AbsenceAsync(root, named.Key, refs, ct).ConfigureAwait(false)).Why;
+            if (why is null) continue;
+            foreach (var entry in named)
+            {
+                if (why == LandedGone.Stands)
+                {
+                    // A standing entry whose name stands is the clean-up's to judge; a trace whose name stands again is a doubt, said once.
+                    if (entry.GoneAt is null) continue;
+                    context.Recorded.GoneAs(entry, LandedGone.Stands);
+                }
+                else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
+                {
+                    context.Recorded.GoneAs(entry, went.Why, went.MovedTo, went.KeptOn);
+                }
+                else
+                {
+                    continue;
+                }
+
+                written++;
+            }
         }
 
         return written;
+    }
+
+    /// <summary>
+    /// What holds a landing's recorded tip once git said its branch is missing (CLEANUP1, after review), asked before its record retires.
+    /// A local branch holding it by ancestry is <see cref="LandedGone.Moved"/> to that branch, a branch of the person's named first: a rename,
+    /// or a branch made from it, so the work goes on and is never read as the person's end. Else <see cref="LandedGone.Missing"/>; and where
+    /// neither a tag nor a recovery ref holds it, its commit is first kept on a recovery ref of the landing's name
+    /// (<see cref="ContentHolds.KeepDiscardedAsync"/>), which nothing else holds and so stays until the person deletes it: the record never
+    /// goes as the only way back to it. A remote-tracking ref does not count, since a fetch moves or prunes it (SQUASHTIDY1c 6), as the
+    /// recovery refs' holders do not (<see cref="RecoveryRetention"/>). A commit this repository no longer has, which git's own collection
+    /// took once nothing held it, is missing with nothing to keep. Null, writing nothing, where git could not say or the ref was not made:
+    /// asked again at the next look.
+    /// </summary>
+    /// <remarks>One <c>for-each-ref --contains</c> for each landing read missing, once; one <c>update-ref</c> where nothing holds it.</remarks>
+    private static async Task<(string Why, string? MovedTo, string? KeptOn)?> WentAsync(string root, LandedBranch entry, CancellationToken ct)
+    {
+        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", entry.Tip, "--format=%(refname)"], ct).ConfigureAwait(false);
+        if (code != 0)
+        {
+            // `cat-file -e` exits 1, saying nothing, for an object the repository does not have; every other failure is unread (git-ref-absence).
+            var (has, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", entry.Tip], ct).ConfigureAwait(false);
+            return has == 1 && WorkingTree.IsCommitId(entry.Tip) ? (LandedGone.Missing, null, null) : null;
+        }
+
+        var holders = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(each => !each.EndsWith("/HEAD", StringComparison.Ordinal)).ToList();
+        var local = holders.Where(each => each.StartsWith("refs/heads/", StringComparison.Ordinal)).ToList();
+        if (local.Count > 0) return (LandedGone.Moved, ContentHolds.Named(local.Where(ContentHolds.PersonsRef).Concat(local).First()), null);
+        if (holders.Any(each => each.StartsWith("refs/tags/", StringComparison.Ordinal) || each.StartsWith(ContentHolds.DiscardedPrefix, StringComparison.Ordinal)))
+        {
+            return (LandedGone.Missing, null, null);
+        }
+
+        var (kept, _) = await ContentHolds.KeepDiscardedAsync(root, entry.Branch, entry.Tip, CancellationToken.None).ConfigureAwait(false);
+        return kept is null ? null : (LandedGone.Missing, null, kept);
     }
 
     /// <summary>

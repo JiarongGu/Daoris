@@ -308,28 +308,41 @@ public sealed class LandedBranches(string home)
     /// again (REVIEW2, D113). Until D113 they were forgotten, and the review of the session that landed one then had
     /// nothing to say of where its work went.
     /// </summary>
-    /// <param name="why">Why each went, where git said (CLEANUP1, <see cref="LandedGone"/>); null where the caller does not say.</param>
-    public void Gone(string repository, IReadOnlyCollection<string> branches, string? why = null) => Edit(all =>
+    public void Gone(string repository, IReadOnlyCollection<string> branches) => Edit(all =>
         [.. all.Select(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                && each.GoneAt is null && branches.Contains(each.Branch, StringComparer.Ordinal)
-            ? each with { GoneAt = DateTimeOffset.UtcNow, GoneAs = why }
+            ? each with { GoneAt = DateTimeOffset.UtcNow }
             : each)]);
 
     /// <summary>
-    /// Why a branch Daoris did not remove went (CLEANUP1, <see cref="LandedGone"/>), said once: a trace that says no why yet gains it, and,
-    /// where git said the branch is missing, a standing entry of that name becomes a trace with it. A trace that already says why, one Daoris
-    /// removed, and a standing entry where the name stands, are left as they are.
+    /// The clean-up's word on one landing it judged gone, or no longer the landing's (CLEANUP1, <see cref="LandedGone"/>): that standing
+    /// entry becomes a trace with why. Applied to that landing alone, by its identity and the tip judged (<see cref="SameLanding"/>), so a
+    /// new landing of the same name recorded since keeps its standing.
     /// </summary>
-    public void GoneAs(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null) => GoneAs(entry.Repository, entry.Branch, why);
+    internal void Gone(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null) => Edit(all =>
+        [.. all.Select(each => each.GoneAt is null && SameLanding(each, entry)
+            ? each with { GoneAt = DateTimeOffset.UtcNow, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn }
+            : each)]);
 
-    public void GoneAs(string repository, string branch, string why) => Edit(all =>
+    /// <summary>
+    /// The look's word on why a branch Daoris did not remove went (CLEANUP1, <see cref="LandedGone"/>), on that landing alone, by its
+    /// identity and the tip read (<see cref="SameLanding"/>; after review: an observation by name retired a new landing of the same name).
+    /// A trace that says no why, or says it moved, gains it; a standing entry becomes a trace with it where git said its branch is missing
+    /// (<see cref="LandedGone.Missing"/> or <see cref="LandedGone.Moved"/>). One Daoris removed, a trace that says another why, and a standing
+    /// entry where the name stands, are left as they are.
+    /// </summary>
+    public void GoneAs(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null) => Edit(all =>
     {
         var now = DateTimeOffset.UtcNow;
-        return [.. all.Select(each => Same(each, repository, branch) && each.RemovedAs is null && each.GoneAs is null
-                                      && (each.GoneAt is not null || why == LandedGone.Missing)
-            ? each with { GoneAt = each.GoneAt ?? now, GoneAs = why }
+        return [.. all.Select(each => SameLanding(each, entry) && each.RemovedAs is null && (each.GoneAs is null or LandedGone.Moved)
+                                      && (each.GoneAt is not null || why is LandedGone.Missing or LandedGone.Moved)
+            ? each with { GoneAt = each.GoneAt ?? now, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn }
             : each)];
     });
+
+    /// <summary>The same landing as <paramref name="entry"/>: its identity (<see cref="SameEntry"/>) and the tip it was observed at.</summary>
+    private static bool SameLanding(LandedBranch each, LandedBranch entry) =>
+        SameEntry(each, entry) && string.Equals(each.Tip, entry.Tip, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>A branch the clean-up removed once its work read on the line (WSR5): a trace, with what the proof found and where.</summary>
     public void Removed(string repository, string branch, string kind, string? where) => Edit(all =>
@@ -449,6 +462,8 @@ public sealed class LandedBranches(string home)
             if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
             if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
             if (entry.GoneAs is not null) writer.WriteString("goneAs", entry.GoneAs);
+            if (entry.MovedTo is not null) writer.WriteString("movedTo", entry.MovedTo);
+            if (entry.KeptOn is not null) writer.WriteString("keptOn", entry.KeptOn);
             if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
             if (entry.Rule is { } rule)
             {
@@ -725,6 +740,8 @@ public sealed class LandedBranches(string home)
             RemovedAs = Text(element, "removedAs"),
             RemovedOn = Text(element, "removedOn"),
             GoneAs = Text(element, "goneAs"),
+            MovedTo = Text(element, "movedTo"),
+            KeptOn = Text(element, "keptOn"),
             AcceptedBy = Text(element, "acceptedBy"),
             Rule = element.TryGetProperty("rule", out var rule) && rule.ValueKind == JsonValueKind.Object
                 ? new LandedRule(

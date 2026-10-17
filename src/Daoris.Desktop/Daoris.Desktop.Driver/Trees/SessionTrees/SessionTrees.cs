@@ -657,6 +657,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <inheritdoc cref="TreeSetAside.PurgeSetAside"/>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after) => SetAsides.PurgeSetAside(now, after);
 
+    /// <inheritdoc cref="TreeSetAside.Kept"/>
+    internal (string Code, string Sentence)? SetAsideKept(string folder, DateTimeOffset moved) => SetAsides.Kept(folder, moved);
+
     /// <inheritdoc cref="LandedCleanups.CleanPlanAsync"/>
     public Task<SweepPlan> CleanPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
