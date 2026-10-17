@@ -179,9 +179,11 @@ using Daoris.Driver;
 //                 each unit of work's milestone (FABRIC-MILESTONE1a): its end reached, the result kept, the cleanup pending or
 //                 completed, the recovery retained, derived read-only from the tree lifecycle's records; `trees state` says the same.
 //
-//   work held [--unit <id>]  |  work held <unit> <node> <attempt> happened|did-not|stop
-//                 the plugin steps whose attempt is held for the person, and why; with a word, theirs on one (FABRIC-PERFORM1g):
-//                 it happened, it did not (a new attempt with a new key), or stop; only the process holding the home records it.
+//   work held [--unit <id>]  |  work held <unit> <node> <attempt> happened|did-not|stop|record|resend
+//                 the steps whose attempt is held for the person, and why; with a word, theirs on one (FABRIC-PERFORM1g):
+//                 a plugin's step, it happened, it did not (a new attempt with a new key), or stop; a quest's close (FABRIC-CLOSE1q),
+//                 record its door's answer again, resend the same close, or stop the work's further steps; only the process
+//                 holding the home records it.
 //
 //   work recovery drop <ref>... --repository <name> | --unheld [--repository <name>] [--plan]
 //                 delete the recovery refs (`refs/daoris/discarded/*`) no branch or tag of yours holds, which Daoris keeps at any

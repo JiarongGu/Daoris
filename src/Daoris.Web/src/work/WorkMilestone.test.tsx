@@ -182,6 +182,50 @@ describe('an attempt held for the person', () => {
     expect(words).toEqual(['did-not', 'stop', 'happened']);
   });
 
+  // FABRIC-CLOSE1q: Daoris's own close held for the person is the door's, never a plugin's step: its row says what the door answered
+  // and offers only the close's recoveries and its stop, never *It happened* or *It did not*, in both languages.
+  const heldClose = (over: Partial<HeldAttempt> = {}): HeldAttempt => heldAttempt({
+    unit: 'quest:q7', node: 'close', attempt: 1, plugin: 'quest.close', step: 'quest.close', nodeState: 'unknown', why: 'no-acceptance',
+    outcome: 'reached', words: ['record', 'resend', 'stop'], said: 'the quest was closed', ...over,
+  });
+
+  it('offers a held close only its own recoveries and its stop, saying what its door answered', async () => {
+    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose()]);
+    expect(row).toMatchObject({ kind: 'work', title: 'close, attempt 1', where: 'quest:q7' });
+    expect(row!.detail).toContain('The quest was closed, and Daoris could not record that on this work (no-acceptance)');
+    expect(row!.detail).toContain('never closed a second time');
+    expect(attentionActs(row!)).toEqual(['record-close', 'resend-close', 'stop-close']);
+    const [unkept] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ outcome: null, words: ['resend', 'stop'] })]);
+    expect(attentionActs(unkept!)).toEqual(['resend-close', 'stop-close']);
+    const [older] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ words: undefined })]);
+    expect(attentionActs(older!)).toEqual([]);
+
+    const words: string[] = [];
+    render(<ul><AttentionRow item={row!} acts={{ held: (_, resolution) => words.push(resolution) }} /></ul>);
+    expect(screen.queryByRole('button', { name: 'It happened' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'It did not: try again' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Ask for the answer again' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop the rest of this work' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Record the answer again' }));
+    expect(words).toEqual(['resend', 'stop', 'record']);
+
+    const [worded] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ resolution: 'resend' })]);
+    expect(worded!.detail).toContain('your word “ask for the answer again” is recorded');
+    expect(attentionActs(worded!)).toEqual([]);
+  });
+
+  it('says a held close on the work’s foot in English and in 中文', async () => {
+    const { unmount } = render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'not-close-word' })] })} />);
+    expect(screen.getByRole('region', { name: 'Where this work stands' }))
+      .toHaveTextContent("close, attempt 1: Your word could not be taken: only the close's own answer says whether the quest closed. It waits for your word.");
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone unit={unit({ held: [heldClose({ outcome: 'failed' })] })} />);
+    expect(screen.getByRole('region', { name: '这项工作进展到哪里' }))
+      .toHaveTextContent('close，第 1 次尝试：委托的关闭被拒绝了，但 Daoris 没能把这一结果记到这项工作上（no-acceptance）。它在等你的答复。');
+  });
+
   it('takes its node’s place on the work’s foot, in English and in 中文', async () => {
     const { unmount } = render(<WorkMilestone unit={unit({ held: [heldAttempt({ why: 'no-reconcile' })] })} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });

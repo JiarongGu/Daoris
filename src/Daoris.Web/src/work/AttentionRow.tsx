@@ -176,6 +176,9 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   happened: 'held',
   'did-not': 'held',
   'stop-step': 'held',
+  'record-close': 'held',
+  'resend-close': 'held',
+  'stop-close': 'held',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -270,7 +273,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'opinion-again') acts.opinionAgain?.(item);
     else if (act === 'let-ask' || act === 'not-now') acts.helper?.(item, act === 'let-ask');
     else if (act === 'happened' || act === 'did-not') acts.held?.(item, act);
-    else if (act === 'stop-step') acts.held?.(item, 'stop');
+    else if (act === 'stop-step' || act === 'stop-close') acts.held?.(item, 'stop');
+    else if (act === 'record-close') acts.held?.(item, 'record');
+    else if (act === 'resend-close') acts.held?.(item, 'resend');
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -306,6 +311,10 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'happened': return t('work.milestone.held.act.happened');
       case 'did-not': return t('work.milestone.held.act.did-not');
       case 'stop-step': return t('work.milestone.held.act.stop');
+      // FABRIC-CLOSE1q: a held close's own, as `daoris-driver work held` names them: record, resend, stop.
+      case 'record-close': return t('work.milestone.held.act.record');
+      case 'resend-close': return t('work.milestone.held.act.resend');
+      case 'stop-close': return t('work.milestone.held.act.stopClose');
     }
   };
 

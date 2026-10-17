@@ -181,10 +181,23 @@ public static class QuestClosing
         return "crv-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())))[..32];
     }
 
-    /// <summary>The close attempts kept on <paramref name="records"/> that name <paramref name="quest"/>.</summary>
-    public static IEnumerable<NodeAttempt> Naming(IEnumerable<NodeRecord> records, string quest) =>
-        records.SelectMany(record => record.Attempts)
-            .Where(attempt => attempt.Close?.Quests.Any(named => string.Equals(named.Id, quest, StringComparison.Ordinal)) == true);
+    /// <summary>
+    /// The close attempts kept on <paramref name="records"/> that name <paramref name="quest"/> at the submission it stands on now
+    /// (<see cref="NamesCurrent"/>): the only ones whose close may speak for it.
+    /// </summary>
+    public static IEnumerable<NodeAttempt> Naming(IEnumerable<NodeRecord> records, QuestView quest) =>
+        records.SelectMany(record => record.Attempts).Where(attempt => NamesCurrent(attempt, quest));
+
+    /// <summary>
+    /// Whether a close attempt names <paramref name="quest"/> at its current submission (FABRIC-CLOSE1q): its id, and the machine and
+    /// sequence of the operation that made the submission. The same commit made ready again is another submission, so a close kept for
+    /// the one before (its id, its commit, a sequence of another machine's) is never its authority. A quest with no submission has none.
+    /// </summary>
+    public static bool NamesCurrent(NodeAttempt attempt, QuestView quest) =>
+        quest.Submission is { } current
+        && attempt.Close?.Quests.Any(named => string.Equals(named.Id, quest.Id, StringComparison.Ordinal)
+                                              && string.Equals(named.Machine, current.Machine, StringComparison.Ordinal)
+                                              && named.Sequence == current.Sequence) == true;
 }
 
 /// <summary>
@@ -254,13 +267,99 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
             foreach (var attempt in record.Attempts.Where(Waiting).ToList())
             {
                 if (!sends.Take()) return done;
-                var node = new NodeDeclaration(attempt.Node, NodeKinds.QuestClose, attempt.Call.StepVersion, NodeReach.Performed);
-                done.Add(await SendAsync(record.Unit, attempt, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false));
+                done.Add(await SendAsync(record.Unit, attempt, Declaration(attempt), PerformedWhat.Redelivered, ct).ConfigureAwait(false));
             }
         }
 
         return done;
     }
+
+    /// <summary>
+    /// The person's word on each held close (FABRIC-CLOSE1q), applied before any close is sent again (<see cref="ReconcileAsync"/>): a close's
+    /// recovery, never a plugin's <i>it happened</i> or <i>it did not</i>, since its outcome is its door's answer and no word of the person's
+    /// stands in for it, and a new close is never made. The word is cleared as it is applied, so only one not applied yet is ever written.
+    /// </summary>
+    /// <remarks>
+    /// <para><b><c>record</c></b>: the door's answer kept on the attempt (it closed the quest) recorded again through the one table, its key as
+    /// the evidence. Refused again, the attempt stays held with the new refusal; its node moved off, it settles as a stale one's (§D3).</para>
+    /// <para><b><c>resend</c></b>: the attempt waits for its answer again, so the same close, its key, token and named submissions, is sent
+    /// within this pass; the door answers its first outcome and writes nothing twice.</para>
+    /// <para><b><c>stop</c></b>, offered apart: every live node of its work stopped by the person, and the close's answer kept as it is (a
+    /// kept one settles the attempt, its receipt kept; one not kept is asked for again with its key, and lands as a stale one's). The quest's
+    /// Done, if the door wrote it, stands.</para>
+    /// <para>A plugin's word recorded on a close before this build, or <c>record</c> with nothing kept, is taken back, saying why.</para>
+    /// </remarks>
+    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
+    {
+        var done = new List<WorkPerformed>();
+        foreach (var read in records.All().Records)
+        {
+            if (!read.Attempts.Any(Worded)) continue;
+            var (refused, resolved) = records.Edit<List<WorkPerformed>>(read.Unit, current =>
+            {
+                var said = new List<WorkPerformed>();
+                var record = current;
+                foreach (var attempt in current.Attempts.Where(Worded))
+                {
+                    var (next, result) = Recover(record, attempt, declared);
+                    record = next;
+                    said.Add(result);
+                }
+
+                return (ReferenceEquals(record, current) ? null : record, said);
+            });
+            if (refused is not null) done.Add(new(read.Unit, "", PerformedWhat.Refused, refused));
+            else done.AddRange(resolved!);
+        }
+
+        return done;
+
+        static bool Worded(NodeAttempt attempt) => attempt is { Plugin: QuestClosing.Sender, State: AttemptStates.Held, Resolution: not null, Close: not null };
+    }
+
+    /// <summary>One word on a held close applied (<see cref="Resolve"/>): the record after it, and what it came to.</summary>
+    private (NodeRecord Next, WorkPerformed Result) Recover(NodeRecord record, NodeAttempt attempt, Func<string, string, NodeDeclaration?> declared)
+    {
+        var unit = record.Unit;
+        var word = attempt.Resolution!;
+        var node = declared(unit, attempt.Node) ?? Declaration(attempt);
+        var cleared = attempt with { Resolution = null, ResolvedAt = null };
+        if (WorkPerformer.WordRefused(attempt, word) is { } code)
+        {
+            return (WorkPerformer.With(record, attempt, cleared with { Code = code }), new(unit, node.Id, PerformedWhat.Refused, code));
+        }
+
+        if (word == HeldResolutions.Resend)
+        {
+            return (WorkPerformer.With(record, attempt, cleared with { State = AttemptStates.Unknown }), new(unit, node.Id, PerformedWhat.Resolved, word));
+        }
+
+        if (word == HeldResolutions.Record)
+        {
+            var (next, result) = Answered(record, cleared, node, closed: true, null, attempt.Close);
+            return (next, result.What == PerformedWhat.Held ? result with { What = PerformedWhat.Refused } : new(unit, node.Id, PerformedWhat.Resolved, word));
+        }
+
+        // Stop, apart from the close's answer: its work's live nodes stopped by the person, whatever the close comes to.
+        var now = clock();
+        foreach (var (id, status) in record.Statuses.Where(each => NodeStates.Live.Contains(each.Value.State)).ToList())
+        {
+            var live = id == node.Id ? node : declared(unit, id);
+            if (live is not null) record = WorkPerformer.Kept(record, NodeLifecycle.Apply(live, status, new NodeMove(NodeStates.Stopped, NodeCause.Person)), "person-stop", now);
+        }
+
+        if (attempt.Outcome != WorkStates.Reached)
+        {
+            return (WorkPerformer.With(record, attempt, cleared with { State = AttemptStates.Unknown }), new(unit, node.Id, PerformedWhat.Resolved, word));
+        }
+
+        var after = WorkPerformer.StatusOf(record, node.Id);
+        record = WorkPerformer.With(record, attempt, cleared with { State = AttemptStates.Settled, Code = null });
+        return (record with { Statuses = WorkPerformer.With(record.Statuses, NodeLifecycle.Reconciled(after, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Resolved, word));
+    }
+
+    /// <summary>A close node's declaration from its attempt: a close in flight is answered whatever graph governs its unit now.</summary>
+    private static NodeDeclaration Declaration(NodeAttempt attempt) => new(attempt.Node, NodeKinds.QuestClose, attempt.Call.StepVersion, NodeReach.Performed);
 
     /// <summary>
     /// The chain's close reached on a quest it closed (D173's CLOSE1b note, choice 2): a chain quest's own close node, proposed to start once its
@@ -350,16 +449,23 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     /// </summary>
     private (NodeRecord? Next, WorkPerformed Result) Outcome(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, QuestCloseAnswer answer)
     {
+        var closed = answer.Outcome == QuestCloseOutcomes.Closed;
+        return Answered(record, attempt with { Deliveries = attempt.Deliveries + 1 }, node, closed, closed ? null : answer.Code ?? Refused,
+            closed ? attempt.Close : attempt.Close! with { Words = answer.Message });
+    }
+
+    /// <summary>
+    /// A door's answer applied to its attempt's node (<see cref="Outcome"/>, and the person's <c>record</c>): settled with it where it binds or
+    /// where the node moved off the attempt; held where the one table refuses it, the answer kept on the attempt and any word taken back, so
+    /// the person's next word is asked afresh and never applied twice (FABRIC-CLOSE1q).
+    /// </summary>
+    private (NodeRecord Next, WorkPerformed Result) Answered(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, bool closed, string? code, QuestCloseCall? close)
+    {
         var unit = record.Unit;
         var now = clock();
-        var delivered = attempt with { Deliveries = attempt.Deliveries + 1 };
-        var closed = answer.Outcome == QuestCloseOutcomes.Closed;
-        var code = closed ? null : answer.Code ?? Refused;
-        var settled = delivered with
-        {
-            State = AttemptStates.Settled, Outcome = closed ? WorkStates.Reached : WorkStates.Failed, Code = code,
-            Close = closed ? attempt.Close : attempt.Close! with { Words = answer.Message },
-        };
+        var outcome = closed ? WorkStates.Reached : WorkStates.Failed;
+        var answered = attempt with { Outcome = outcome, Close = close, Resolution = null, ResolvedAt = null };
+        var settled = answered with { State = AttemptStates.Settled, Code = code };
         var status = WorkPerformer.StatusOf(record, node.Id);
         if (status.Attempt != attempt.Attempt || status.State is not (NodeStates.Active or NodeStates.Unknown))
         {
@@ -371,9 +477,13 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
             ? Reach(node, status, attempt.Call.IdempotencyKey)
             : new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.CloseDoor, Attempt = attempt.Attempt, Code = code };
         var moved = NodeLifecycle.Apply(node, status, move);
-        if (!moved.Moved) return WorkPerformer.Hold(record, delivered with { Outcome = settled.Outcome }, moved.Refused!);
-        return (WorkPerformer.With(WorkPerformer.Kept(record, moved, settled.Outcome!, now), attempt, settled),
-            new(unit, node.Id, PerformedWhat.Applied, settled.Outcome));
+        if (!moved.Moved)
+        {
+            var (held, result) = WorkPerformer.Hold(record, answered, moved.Refused!);
+            return (held!, result);
+        }
+
+        return (WorkPerformer.With(WorkPerformer.Kept(record, moved, outcome, now), attempt, settled), new(unit, node.Id, PerformedWhat.Applied, outcome));
     }
 
     /// <summary>The close's reach (§E2: the close door's write is its authority): its binding, with the close's key as its evidence.</summary>
