@@ -33,8 +33,8 @@ public static class WorkflowRunDifferences
 
     /// <summary>
     /// A skip satisfies its <c>after</c> wire whatever stands before it (§E2, §E3): a step skipped while an earlier one is not settled lets
-    /// the next go, where schema 1 holds it. Since FABRIC-GRAPH1h no skip passes a gate of the protected order (the work, the opinion, the
-    /// look), each wired into every gate after it by the decoder; a skip past any other step may still be this. At the skipped step.
+    /// the next go, where schema 1 holds it. No skip passes a gate of the protected order (the work, the opinion, the look), which the
+    /// decoder wires into every gate after it (FABRIC-GRAPH1h); a skip past any other step may still be this. At the skipped step.
     /// </summary>
     public const string SkipPassesEarlier = "skip-passes-earlier";
 
