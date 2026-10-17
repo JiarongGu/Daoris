@@ -1,6 +1,6 @@
 {
   "about": "FABRIC-WORKFLOW2: D157's stored versions and the graphs they decode to (the fabric events design §E7's migration contract). Read row for row by the CLI's workflowgraphs.test.ts and the driver's WorkflowGraphsTests. A row's `version` is a version as a workflow's file holds it. `read` is `version` (as the stored version reads in this build: a kind it does not run, or a version that does not read, is unreadable with its reason) or `shape` (its steps as their shape reads, every kind included: the mapping, for the build that runs them). `identity` is the version's digest (WorkflowNamed.Digest, unchanged), `graphDigest` the decoded graph's, derived from the version and the decoder's version; `graph` is the decoded graph, each node's options as JSON values.",
-  "decoderVersion": 1,
+  "decoderVersion": 2,
   "rows": [
     {
       "name": "the smallest version: the work, then a merge landing",
@@ -8,7 +8,7 @@
       "version": { "version": 1, "at": "2026-10-09T09:12:00Z", "door": "screen", "steps": [
         { "id": "work", "kind": "work" },
         { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ] },
-      "identity": "75906e6bfc40", "graphDigest": "gph-a165bc24ca1ef885986856aa914f1fc3",
+      "identity": "75906e6bfc40", "graphDigest": "gph-68bea661115caab7ab124e145520bc92",
       "graph": { "schemaVersion": 2, "entries": ["work"], "end": "land", "cleanup": { "until": "held" },
         "nodes": [
           { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
@@ -22,7 +22,7 @@
       "version": { "version": 2, "at": "2026-10-10T10:00:00Z", "door": "terminal", "steps": [
         { "id": "work", "kind": "work" },
         { "id": "land", "kind": "landing", "form": "merge", "accept": "you", "pattern": null, "plugin": null } ] },
-      "identity": "75906e6bfc40", "graphDigest": "gph-a165bc24ca1ef885986856aa914f1fc3",
+      "identity": "75906e6bfc40", "graphDigest": "gph-68bea661115caab7ab124e145520bc92",
       "graph": { "schemaVersion": 2, "entries": ["work"], "end": "land", "cleanup": { "until": "held" },
         "nodes": [
           { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
@@ -41,7 +41,7 @@
         { "id": "land", "kind": "landing", "form": "branch", "accept": "automatic", "pattern": "feature/{quest}-{slug}", "plugin": "acme.pr" },
         { "id": "pr", "kind": "pull-request" },
         { "id": "ship", "kind": "go-ahead", "act": "Announce it", "on": "the team channel" } ] },
-      "identity": "f07e3afcf161", "graphDigest": "gph-db3fcf8fa807c524af599d172fddf430",
+      "identity": "f07e3afcf161", "graphDigest": "gph-0c93aafc7073ca16cb2424ec1472920d",
       "graph": { "schemaVersion": 2, "entries": ["work"], "end": "ship", "cleanup": { "until": "held" },
         "nodes": [
           { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
@@ -57,11 +57,38 @@
           { "id": "work>ask", "kind": "after", "from": "work", "to": "ask" },
           { "id": "ask>ask:rejected", "kind": "rejected", "from": "ask", "to": "ask:rejected" },
           { "id": "ask>second", "kind": "after", "from": "ask", "to": "second" },
+          { "id": "work>second", "kind": "after", "from": "work", "to": "second" },
           { "id": "second>see", "kind": "after", "from": "second", "to": "see" },
+          { "id": "work>see", "kind": "after", "from": "work", "to": "see" },
           { "id": "see>land", "kind": "after", "from": "see", "to": "land" },
+          { "id": "work>land", "kind": "after", "from": "work", "to": "land" },
+          { "id": "second>land", "kind": "after", "from": "second", "to": "land" },
           { "id": "land>pr", "kind": "after", "from": "land", "to": "pr" },
           { "id": "pr>ship", "kind": "after", "from": "pr", "to": "ship" },
           { "id": "ship>ship:rejected", "kind": "rejected", "from": "ship", "to": "ship:rejected" } ] }
+    },
+    {
+      "name": "the protected order held across a skip: the work, the opinion and the look each wired into every gate after it (FABRIC-GRAPH1h)",
+      "read": "version",
+      "version": { "version": 7, "at": "2026-10-18T09:00:00Z", "door": "screen", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "second", "kind": "opinion" },
+        { "id": "see", "kind": "look" },
+        { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ] },
+      "identity": "42021b4bf601", "graphDigest": "gph-ced9bd706852bdd40b2805509a33cfc6",
+      "graph": { "schemaVersion": 2, "entries": ["work"], "end": "land", "cleanup": { "until": "held" },
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "second", "kind": "opinion", "version": 1, "reach": "observed", "options": { "recheck": true, "required": false, "reviewers": null, "steps": false } },
+          { "id": "see", "kind": "look", "version": 1, "reach": "observed", "options": { "environment": null } },
+          { "id": "land", "kind": "handed", "version": 1, "reach": "observed", "options": { "accept": "you", "form": "merge", "pattern": null, "plugin": null } } ],
+        "wires": [
+          { "id": "work>second", "kind": "after", "from": "work", "to": "second" },
+          { "id": "second>see", "kind": "after", "from": "second", "to": "see" },
+          { "id": "work>see", "kind": "after", "from": "work", "to": "see" },
+          { "id": "see>land", "kind": "after", "from": "see", "to": "land" },
+          { "id": "work>land", "kind": "after", "from": "work", "to": "land" },
+          { "id": "second>land", "kind": "after", "from": "second", "to": "land" } ] }
     },
     {
       "name": "a version naming a kind this build does not run: kept, and unreadable here with its reason",
@@ -94,7 +121,7 @@
           { "id": "unit", "kind": "check", "plugin": "acme.ci", "checks": ["unit", "e2e"] },
           { "id": "smoke", "kind": "stage", "plugin": "acme.deploy", "stage": "smoke", "start": "automatic" } ] },
         { "id": "release", "kind": "stage", "plugin": "acme.deploy", "stage": "release" } ] },
-      "identity": "03076126957d", "graphDigest": "gph-812c7ba7366d4b6d95953beb75d06f4f",
+      "identity": "03076126957d", "graphDigest": "gph-d8a03441cf0a5ae33fd40835afa41abe",
       "graph": { "schemaVersion": 2, "entries": ["work"], "end": "release", "cleanup": { "until": "held" },
         "nodes": [
           { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
