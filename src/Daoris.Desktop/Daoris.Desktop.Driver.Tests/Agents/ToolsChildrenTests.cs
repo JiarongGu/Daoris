@@ -344,12 +344,14 @@ public sealed class ToolsChildrenTests : IDisposable
     }
 
     [Fact]
-    public void With_no_home_Daoris_own_git_is_the_one_PATH_finds_as_before()
+    public void With_no_home_Daoris_own_git_is_the_one_PATH_finds_past_Git_for_Windows_launcher()
     {
         var (info, refusal) = WorkingTree.GitStart(_root, ["status"], home: null);
+        var found = CommandPresence.Resolve("git", startable: true);
 
         Assert.Null(refusal);
-        Assert.Equal(CommandPresence.Resolve("git", startable: true) ?? "git", info!.FileName);
+        // GITSTART1: where PATH finds Git for Windows' launcher, its real git starts directly.
+        Assert.Equal(found is null ? "git" : GitForWindows.Behind(found)?.Git ?? found, info!.FileName);
     }
 
     // ── A hook's first word (§2.4) ──────────────────────────────────────────────────────────────────
