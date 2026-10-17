@@ -61,6 +61,12 @@ public sealed record LandedBranch(
     public string? MovedTo { get; init; }
 
     /// <summary>
+    /// The commit <see cref="MovedTo"/> stood at when it was found holding the recorded tip (CLEANUP1, re-check): while it stands there it
+    /// still holds it, read from the refs the look holds; once it moved, or its name was made again elsewhere, the look asks again.
+    /// </summary>
+    public string? MovedToAt { get; init; }
+
+    /// <summary>
     /// Where <see cref="GoneAs"/> is <see cref="LandedGone.Missing"/> and no ref held its recorded tip (CLEANUP1, after review): the recovery
     /// ref Daoris kept that commit on before the record was retired, so the record never goes as the only breadcrumb to it.
     /// </summary>
@@ -320,7 +326,7 @@ public sealed class LandedBranches(string home)
     /// entry becomes a trace with why. Applied to that landing alone, by its identity and the tip judged (<see cref="SameLanding"/>), so a
     /// new landing of the same name recorded since keeps its standing.
     /// </summary>
-    internal void Gone(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null) => Edit(all =>
+    internal void Gone(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null, string? movedToAt = null) => Edit(all =>
         [.. all.Select(each => each.GoneAt is null && SameLanding(each, entry)
             ? each with { GoneAt = DateTimeOffset.UtcNow, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn }
             : each)]);
@@ -332,7 +338,7 @@ public sealed class LandedBranches(string home)
     /// (<see cref="LandedGone.Missing"/> or <see cref="LandedGone.Moved"/>). One Daoris removed, a trace that says another why, and a standing
     /// entry where the name stands, are left as they are.
     /// </summary>
-    public void GoneAs(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null) => Edit(all =>
+    public void GoneAs(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null, string? movedToAt = null) => Edit(all =>
     {
         var now = DateTimeOffset.UtcNow;
         return [.. all.Select(each => SameLanding(each, entry) && each.RemovedAs is null && (each.GoneAs is null or LandedGone.Moved)

@@ -211,7 +211,7 @@ internal sealed class ContentHolds(TreeContext context)
     /// </summary>
     /// <returns>The ref, or null with git's reason; then nothing may be removed.</returns>
     internal static async Task<(string? Reference, string? Why)> KeepDiscardedAsync(
-        string root, string branch, string judged, CancellationToken ct)
+        string root, string branch, string judged, CancellationToken ct, string? absent = null)
     {
         string? why = null;
         for (var n = 1; n <= DiscardedNames; n++)

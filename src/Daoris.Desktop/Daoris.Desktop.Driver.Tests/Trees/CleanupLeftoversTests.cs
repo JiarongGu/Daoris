@@ -214,6 +214,38 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Contains(quiet, WorkInventory.Recoveries(facts).Select(entry => entry.Resource));
     }
 
+    /// <summary>
+    /// 🔴 Re-check: a folder past its date whose read finds nothing late, but whose delete the purge could not finish (a file held open
+    /// against it), is a unit in What needs you with the purge's reason, kept where the gather reads it until a later purge takes it.
+    /// </summary>
+    [Fact]
+    public async Task A_moved_aside_folder_whose_delete_failed_needs_the_person_until_a_purge_takes_it()
+    {
+        if (!OperatingSystem.IsWindows()) return; // a file held open blocks its delete on Windows alone
+        var now = DateTimeOffset.UtcNow;
+        var moved = now.AddDays(-15);
+        var stamp = moved.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture);
+        var held = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine"), $"s-held-{stamp}");
+        Directory.CreateDirectory(held);
+        var file = Path.Combine(held, "held.db");
+        await File.WriteAllTextAsync(file, "written before the move\n");
+        File.SetLastWriteTimeUtc(file, moved.AddDays(-1).UtcDateTime);
+        var trees = new SessionTrees(_home);
+
+        using (new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.False(Assert.Single(trees.PurgeSetAside(now, BranchTidying.SetAsideFor)).Purged);
+            var facts = await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), now: now);
+            var wait = Assert.Single(Assert.Single(WorkInventory.Derive(facts)).Cleanup.Waits);
+            Assert.Equal((InventoryKind.MovedAside, InventoryDisposition.Blocked, held), (wait.Kind, wait.Disposition, wait.Resource));
+            Assert.Contains("could not be read or deleted", wait.Detail, StringComparison.Ordinal);
+        }
+
+        Assert.True(Assert.Single(trees.PurgeSetAside(now, BranchTidying.SetAsideFor)).Purged);
+        var after = await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), now: now);
+        Assert.Empty(WorkInventory.Derive(after));
+    }
+
     /// <summary>One whose name says no date is never purged by itself, so it stays a unit whose owner is unknown: it does need the person.</summary>
     [Fact]
     public void A_moved_aside_folder_with_no_date_stays_a_unit_its_owner_unknown()

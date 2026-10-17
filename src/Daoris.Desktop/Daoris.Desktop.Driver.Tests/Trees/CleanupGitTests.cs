@@ -221,7 +221,90 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.Equal((LandedGone.Missing, $"refs/daoris/discarded/{landed.Branch}"), (trace.GoneAs, trace.KeptOn));
     }
 
+    /// <summary>
+    /// 🔴 Re-check: the branch a landing moved to is made again at an unrelated commit. Its name resolves, but it no longer holds the
+    /// recorded tip, so the look asks again, keeps the commit nothing else holds, and reads it dropped.
+    /// </summary>
+    [Fact]
+    public async Task A_moved_landing_whose_branch_is_made_again_elsewhere_is_asked_again()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        await SessionGoneAsync(root);
+        await GitAsync(root, "branch", "-m", landed.Branch!, "feature/renamed");
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+            await GitAsync(root, "branch", "-f", "feature/renamed", "main");
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Missing, $"refs/daoris/discarded/{landed.Branch}"), (trace.GoneAs, trace.KeptOn));
+    }
+
+    /// <summary>🔴 Re-check: a local branch whose name ends in `/HEAD` is a branch like any other: a rename to one reads moved, not dropped.</summary>
+    [Fact]
+    public async Task A_landing_renamed_to_a_name_ending_in_HEAD_reads_moved()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        var tip = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
+        await SessionGoneAsync(root);
+        await GitAsync(root, "update-ref", "refs/heads/feature/HEAD", tip);
+        await GitAsync(root, "branch", "-D", landed.Branch!);
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Moved, "feature/HEAD"), (trace.GoneAs, trace.MovedTo));
+    }
+
+    /// <summary>
+    /// 🔴 Re-check: the recovery for a dropped landing is made in one transaction with git's word that its branch is still absent, so a
+    /// branch made again between the look's read and the keep refuses it: no ref, and nothing written for the landing.
+    /// </summary>
+    [Fact]
+    public async Task The_keep_for_a_dropped_landing_is_refused_once_its_branch_stands_again()
+    {
+        var root = await RepositoryAsync("engine");
+        var main = (await GitAsync(root, "rev-parse", "main")).Trim();
+        var work = await OldCommitAsync(root, main, "work of a landing");
+        await GitAsync(root, "update-ref", "refs/heads/feature/back", work);
+
+        var (kept, why) = await ContentHolds.KeepDiscardedAsync(root, "feature/back", work, CancellationToken.None, absent: "refs/heads/feature/back");
+
+        Assert.Null(kept);
+        Assert.NotNull(why);
+        Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
+    }
+
     // ---- (2) recovery refs past their retention
+
+    /// <summary>
+    /// 🔴 Re-check: a symbolic branch is never a holder. `personal` names a session branch, which the same look may remove, so a ref only
+    /// they hold is kept at any age, and the read says nothing of the person's holds it.
+    /// </summary>
+    [Fact]
+    public async Task A_symbolic_branch_is_never_a_recovery_refs_holder()
+    {
+        var root = await RepositoryAsync("engine");
+        var main = (await GitAsync(root, "rev-parse", "main")).Trim();
+        var work = await OldCommitAsync(root, main, "work a session branch holds");
+        await GitAsync(root, "update-ref", "refs/heads/daoris/s-aliased", work);
+        await GitAsync(root, "symbolic-ref", "refs/heads/personal", "refs/heads/daoris/s-aliased");
+        await GitAsync(root, "update-ref", "refs/daoris/discarded/daoris/s-c", work);
+
+        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow, CancellationToken.None));
+
+        Assert.Equal(work, (await GitAsync(root, "rev-parse", "refs/daoris/discarded/daoris/s-c")).Trim());
+        Assert.False(Assert.Single((await RecoveryRetention.ReadAsync(root, "engine", NoneMade, CancellationToken.None)).Refs!).Held);
+    }
 
     /// <summary>
     /// 🔴 After review: only a branch or a tag of the person's holds a recovery ref's commit. A session branch, which the same look may
