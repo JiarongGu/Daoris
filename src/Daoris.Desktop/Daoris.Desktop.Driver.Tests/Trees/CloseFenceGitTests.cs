@@ -51,6 +51,8 @@ public sealed class CloseFenceGitTests : IDisposable
     {
         try
         {
+            // git keeps its objects read-only: cleared first, so the folder goes with the test.
+            foreach (var file in Directory.EnumerateFiles(_scratch, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
             Directory.Delete(_scratch, recursive: true);
         }
         catch (IOException) { /* a straggling git handle */ }
