@@ -117,7 +117,9 @@ a key it has no field for stays where it stands, a value no edit changed keeps i
 read stays; a file that does not read then is refused. The CLI's `jsonkeep.ts` is its twin (D173's FABRIC-GRAPH1 note says exactly
 what an edit keeps). `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
 version that does not decode read as unreadable whole (FABRIC-WORKFLOW2); the CLI's `workflowgraphs.ts` is its twin, on
-`test/fixtures/workflow-graphs.json`. A named workflow's version may be a graph instead (schema 2, `graph` and no `steps`):
+`test/fixtures/workflow-graphs.json`. `WorkflowRunNodes` reads a bound run's step states onto its decoded graph through the
+evaluation and the one table, and compares where each reading stands, every difference named (FABRIC-WORKFLOW2b); it writes nothing
+and governs nothing. A named workflow's version may be a graph instead (schema 2, `graph` and no `steps`):
 `WorkflowNamed.ReadVersion` judges it by `NodeGraphs.Problems` and refuses it whole, its digest is `NodeGraphs.Digest` (what a run
 bound to it binds), and an older build reads it as unreadable since it reads `steps` alone (FABRIC-GRAPH1b); the CLI's
 `graphversions.ts` reads it too, judges none, saves none, and reads as unreadable an option whose text it cannot write as the driver's compact writer does, on `test/fixtures/workflow-graph-versions.json`.
