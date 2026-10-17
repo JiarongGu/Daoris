@@ -6,7 +6,9 @@ import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from '
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
-import { type HelpServerShown, type PluginShown, pluginState, type SkillShown, speaks, updateWaits } from './catalog';
+import {
+  type HelpServerShown, type PluginShown, pluginState, shippedChanged, type SkillShown, speaks, takesShipped, updateWaits,
+} from './catalog';
 import { PluginIcon } from './PluginIcon';
 import { STATE_WORD } from './PluginList';
 
@@ -211,6 +213,9 @@ export function PluginPage({
   const { t } = useTranslation();
   const word = STATE_WORD[pluginState(plugin)];
   const tryable = canTry && speaks(plugin);
+  // LANDPIN3: its own record's update, or the install's copy where it has none; never for a copy whose files the person changed,
+  // which an update from the install's offer would replace whole.
+  const canUpdate = (updatable(plugin.source) && !(shippedChanged(plugin) && plugin.source?.kind === 'offer')) || takesShipped(plugin);
 
   const acts = (
     <>
@@ -222,7 +227,7 @@ export function PluginPage({
           {t('plugin.kit.try')}
         </Button>
       )}
-      {updatable(plugin.source) && (
+      {canUpdate && (
         <Button disabled={updating} aria-label={t('plugin.update.askNamed', { id: plugin.id })} onClick={() => onAskUpdate(plugin.id)}>
           {t('plugin.update.ask')}
         </Button>
@@ -240,7 +245,7 @@ export function PluginPage({
         onSelect: () => onSwitch(plugin.id, plugin.enabled ? 'disable' : 'enable'),
       },
       ...(tryable ? [{ id: 'try', label: t('plugin.kit.try'), icon: 'execute' as const, disabled: trying, onSelect: () => onTry(plugin.id) }] : []),
-      ...(updatable(plugin.source)
+      ...(canUpdate
         ? [{ id: 'update', label: t('plugin.update.ask'), icon: 'refresh' as const, disabled: updating, onSelect: () => onAskUpdate(plugin.id) }]
         : []),
       ...(!asking ? [{ id: 'remove', label: t('plugin.forget'), icon: 'remove' as const, disabled: acting, onSelect: () => onAskRemove(plugin.id) }] : []),
@@ -258,6 +263,7 @@ export function PluginPage({
           {word && <Pill tone={word.tone}>{t(word.key)}</Pill>}
           {/* An update waits on nobody, so it is never a state: the neutral pill beside it (D119 §2, D140 §2). */}
           {updateWaits(plugin) && <Pill tone="neutral">{t('plugin.update.waits')}</Pill>}
+          {shippedChanged(plugin) && <Pill tone="neutral">{t('plugin.shipped.changedPill')}</Pill>}
         </>
       )}
       id={plugin.id}
@@ -287,6 +293,22 @@ export function PluginPage({
         <div className="mb-4">
           <PluginUpdatePlan plan={plan} busy={updating} onApply={onApplyUpdate} onCancel={onCancelUpdate} />
         </div>
+      )}
+
+      {/* LANDPIN3: a copy of the install's own plugin that is older than the shipped one, or whose files were changed. */}
+      {plugin.shipped && (
+        <PageSection title={t('plugin.shipped.title')}>
+          <div className="flex flex-col gap-1 text-small text-ink-soft">
+            {plugin.shipped.state === 'older' ? (
+              <span>
+                {t('plugin.shipped.older', { installed: plugin.shipped.installed, shipped: plugin.shipped.shipped })}
+                {plugin.shipped.changes && ` ${t('plugin.shipped.brings', { changes: plugin.shipped.changes })}`}
+              </span>
+            ) : (
+              <span>{t('plugin.shipped.changed', { shipped: plugin.shipped.shipped })}</span>
+            )}
+          </div>
+        </PageSection>
       )}
 
       {plugin.points.length > 0 && (

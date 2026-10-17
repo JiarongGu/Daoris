@@ -23,7 +23,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import '../locales/i18n';
+import i18n from '../locales/i18n';
 import { useStateHub } from '../bridge/stateHub';
 import { DiffPane } from './DiffPane';
 
@@ -126,6 +126,53 @@ describe('a press under way, in the review', () => {
     expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
     told({ seq: 4, presses: [] });
     expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
+  });
+
+  /**
+   * LANDHOLD2 (D145 point 2, D173's LANDRACE1 note): the driver says the landing waits behind another landing of its tree, and the
+   * press says so in the page's language, then *Landing…* once it has the hold. Another session's wait is not this one's.
+   */
+  it.each([
+    ['en', 'Waiting its turn…', 'Landing…'],
+    ['zh', '排队中…', '落地中…'],
+  ])('says it waits behind another landing, in %s, and goes back to the landing once it has the hold', async (language, waiting, landing) => {
+    await i18n.changeLanguage(language);
+    try {
+      answer();
+      root();
+      await screen.findByRole('button', { name: language === 'en' ? 'Accept' : '采纳' });
+      const press = { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' };
+
+      told({ seq: 1, presses: [{ route: 'LAND_SESSION_TREE', session: 'feedface', step: 'waiting' }] });
+      await act(() => new Promise((resolve) => { setTimeout(resolve, 0); }));
+      expect(screen.queryByRole('button', { name: waiting })).toBeNull();
+
+      told({ seq: 2, presses: [{ ...press, step: 'waiting' }] });
+      expect(await screen.findByRole('button', { name: waiting })).toBeDisabled();
+
+      told({ seq: 3, presses: [{ ...press, step: 'landing' }] });
+      expect(await screen.findByRole('button', { name: landing })).toBeDisabled();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /** LANDHOLD2: a hand-off that waits behind the push of its branch says so, and says *Handing off…* once it has the hold. */
+  it('says a hand-off waits behind another push of its branch', async () => {
+    answer();
+    const asked = invoke.getMockImplementation()!;
+    invoke.mockImplementation((module: string, type: string) => type === 'HANDOFF_PLAN'
+      ? Promise.resolve({ session: 's1a2b3c4', branch: 'feature/0fda18-fix-the-gap', repository: 'engine', plugin: 'example.lands', problem: null, commits: 1 })
+      : asked(module, type));
+    root();
+    await screen.findByRole('button', { name: 'Hand to example.lands' });
+    const press = { route: 'HANDOFF', session: 's1a2b3c4' };
+
+    told({ seq: 1, presses: [{ ...press, step: 'waiting' }] });
+    expect(await screen.findByRole('button', { name: 'Waiting its turn…' })).toBeDisabled();
+
+    told({ seq: 2, presses: [{ ...press, step: 'handOff' }] });
+    expect(await screen.findByRole('button', { name: 'Handing off…' })).toBeDisabled();
   });
 
   /**

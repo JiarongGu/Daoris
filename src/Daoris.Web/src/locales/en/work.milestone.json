@@ -63,5 +63,15 @@
   "work.milestone.held.act.stop": "Stop this step",
   "work.milestone.held.word.happened": "it happened",
   "work.milestone.held.word.did-not": "it did not",
-  "work.milestone.held.word.stop": "stop"
+  "work.milestone.held.word.stop": "stop",
+  "work.milestone.held.close.why.closed": "The quest was closed, and Daoris could not record that on this work ({{code}})",
+  "work.milestone.held.close.why.refused": "The quest's close was refused, and Daoris could not record that on this work ({{code}})",
+  "work.milestone.held.close.why.unanswered": "Daoris keeps no answer to the quest's close ({{code}})",
+  "work.milestone.held.close.why.notCloseWord": "Your word could not be taken: only the close's own answer says whether the quest closed",
+  "work.milestone.held.close.detail": "{{why}}. The quest is never closed a second time: record the answer again, ask for it again, or stop the rest of this work.",
+  "work.milestone.held.act.record": "Record the answer again",
+  "work.milestone.held.act.resend": "Ask for the answer again",
+  "work.milestone.held.act.stopClose": "Stop the rest of this work",
+  "work.milestone.held.word.record": "record the answer again",
+  "work.milestone.held.word.resend": "ask for the answer again"
 }

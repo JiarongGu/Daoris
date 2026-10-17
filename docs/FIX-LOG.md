@@ -5,6 +5,73 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The light lane ran its gates one at a time, and each Process half built again (GATELANES2, GATEBUILD1)
+
+- **Symptom:** a merge's light lane (universal, code-map, orient-index, cli, service, driver, modules) took 10 to 12 minutes
+  under load and about 5 on a quiet machine: 394 to 434 s in the 2026-10-18 merges' logs, cli 144 to 231 s and service 142
+  to 206 s of it. In a full set the light lane took about 14 minutes (2026-10-17, 1 h 38 m in all), and every Process
+  gate waited for its heavy gates (GATEORDER1). Each Process half then built the test project its fast half had just built.
+- **Root cause:** GATELANES1 ran the light lane beside the Process lane but one gate at a time within it, though only gates
+  that build one .NET component share `obj/` and `bin/`. And a `dotnet test` gate always builds, whatever ran before it.
+- **Fix:** `tools/merge-branch.mjs` runs up to three light gates at once (`LIGHT_WIDTH`), never two that build one
+  component (`gateComponents`, read through the root scripts: the CLI's `verify` shares the devkit's, the web gate the
+  service's). A Process half runs `--no-build` when its test project's fast half passed in the same run on the tree it
+  starts on (`testBuild`, `reuses`, `reuseBuild`); its line says whose build it ran.
+- **Verification:** seven new tests in `merge-branch.test.ts`, six seen red first. Then 97 of 97 green (90 before), with the
+  end-to-end tests that read the gates' order reading which ran instead, and `verify`. **The walls** (the row's proof,
+  recorded by the parent at its next full sets, against the one-at-a-time light lane above): set 1 —; set 2 —; set 3 —;
+  the flakes of each, and a Process half's log showing `--no-build` with its verdict as before.
+## 2026-10-18 — A close spoke for a later submission, and a held close took a plugin's words (FABRIC-CLOSE1q)
+
+- **Symptom:** found before any install armed a closure graph (the owner's holds none), by the row's pre-mortem checked against the
+  code. A close kept for one submission was read as the close of any later one. S2, the same commit made ready again and closed by the
+  person, reached its close node through S1's receipt (`ReachByChain`) and was never read as overridden. A close its door made, whose
+  answer its node could not take, was held and offered PERFORM1g's three words. *It did not* failed it as the person's and made it ready,
+  minting a second close under a new key; *it happened* stood in for the door. While it was held, the door's Done read as the person's.
+- **Root cause:** `QuestClosing.Naming` matched a close to a quest by its id alone. The held list and its two doors took Daoris's own
+  close for a plugin's attempt. `NodeRuntime.Settle` counted a closed or waiting close as the door's, and not a held one.
+- **Fix:** `QuestClosing.NamesCurrent` matches the quest, its submission's machine and its sequence, for `ReachByChain` and the
+  override alike; a held close with no refusal kept is the door's. A held close takes `record`, `resend` and `stop`
+  (`HeldResolutions.Of`, `QuestCloser.Resolve`); a plugin's word is refused at the door (`not-close-word`), and one recorded before is
+  taken back. D173's note "FABRIC-CLOSE1q" has the choices.
+- **Verification:** red first: `QuestCloseTests` (part 1's one; part 2's theory of three and one more), `NodeRuntimeTests` (a close's
+  word on a plugin's attempt, at the door and at the pass), `DriverModuleLinesTests` (the wire's `words`) and `WorkMilestone.test.tsx`
+  (two). Then green with the driver's fast half (9224 before, 9230 after), the modules' (1392, 1393) and the web's touched files with
+  its page-wide checks.
+## 2026-10-18 — A graph named for a take bound whichever take came, however late, and the store never upgraded its table (FABRIC-CLOSE1o)
+
+- **Symptom:** found by a pre-mortem of FABRIC-CLOSE1l before any install armed a closure graph (the owner's holds none). A pending
+  take-bind bound the next take of its quest id. That could be another session's take, a take of the same ask deleted and published
+  again, a take hours later, or one after the circle gained a remote. A store from before the row had an owner kept its rows as they
+  were.
+- **Root cause:** `quest_take_binds` held the quest id, the graph and a moment, and the take read it with `DELETE … RETURNING graph`
+  alone. The connector's session never reached the take. The remote was judged once, at the naming. The table was made by
+  `CREATE TABLE IF NOT EXISTS`, which upgrades nothing.
+- **Fix:** D173's FABRIC-CLOSE1o note. The row keeps its session, the publication's operation and an expiry. The take consumes it in its
+  own write and binds only where `PendingTakeBind.Judge` reads all of them, with the remotes map read there. The columns are added at
+  open, and a row without an owner is discarded. An expired, replaced or remote-since bind is said once, in the take's answer and on the
+  loop's end line.
+- **Verification:** red first: `QuestTakeBindTests` (five of six theory rows, an older build's row, a bind naming no session),
+  `QuestCloseTests` (1) and `ServiceClientClosureTests` (1). Then green with `Daoris.Service.Tests` (2214, 2205 before), the driver's
+  fast half (9225) and `Daoris.Service.Http.Tests`.
+## 2026-10-18 — The close's fresh fence read no branch tip, so a commit after a prerequisite's acceptance was closed on it (FABRIC-CLOSE1p)
+
+- **Symptom:** none on an install: no quest is bound to a closure graph there. Under one, a session branch that moved after the close's
+  prerequisite was accepted was closed on that acceptance. This held whether the branch moved between passes or between the pass's read
+  and the fence's.
+- **Root cause:** CLOSE1l's fence read the units again right before the close, but the loop's read (`DriverWatch`'s units callback)
+  passed no roots to the inventory, so it asked git nothing. A branch unit's `Subject.Revision` is its kept end fact's, which a commit
+  does not move. `QuestClosing.Revision` therefore digested records alone. `QuestCloseTests` handed in branch units with tips already
+  set, so it never saw this.
+- **Fix:** the read carries `NodeUnitsRead.Tips`, the tip of each branch a bound chain worked. `QuestClosing.TipsAsync` reads them
+  with one `RefSnapshot` per repository, per read. `Revision` digests those tips, and an unread tip leaves the close waiting
+  (`QuestClosing.Unread`). A fence that finds the unit moved ends its judgement for that pass. D173's FABRIC-CLOSE1p note has the
+  detail and the counts.
+- **Verification:** red first. `CloseFenceGitTests` (Git, real git through the production read) sent the close after the move; it
+  now sends none until the deploy is accepted again on the new tip. The same test counted three `for-each-ref` in the fenced pass
+  before the early end, and counts two now. `CloseTipsTests`' four tests were red on the members. The driver's fast half passes
+  9229 (9224 before).
+
 ## 2026-10-18 — The merge tool's prune left merged agent worktrees and a half-removed folder standing (CLEANUP2)
 
 - **Symptom:** 24 worktrees stood with 3 agents running. 9 merged ones were kept as "locked, so in use", 5 for worker logs
@@ -2804,6 +2871,24 @@ process costs a class.
 
 *`MaxParallelThreads` 6 and 8* on the same four classes after: 514 s at 59% and 383 s at 64%. Four classes cannot run
 more than four at once, so these are two more runs of one setting, and the knee is unmeasured. The setting stays at four.
+
+**A repository copied from a seed (PROC1h, 2026-10-18).** `LandedFixture.RepositoryAsync` and `RepositoryWithOriginAsync` (284 and 73
+calls of `"engine"` in the driver's tests, the shape every other name follows) made each test's repositories with `init`, two
+`config`, a commit, and for an origin a bare `init`, `remote add` and `push`. `GitSeed` builds a shape once per test run, at its first
+asker (a lazy task per shape, so the git half's four classes at once in one host share it), in `_fixtures/seeds/<run>` removed at the
+host's exit, and a test's own repositories are plain file copies of it: files keep their times, a `.git/worktrees` folder is not
+copied, hooks and config come as the seed had them, and the origin's one `url` line is written again as the copy's own bare
+repository. No git runs in a copy. `BuildRepositoryAsync(name)` is the old step by step build, for a test that reads a fresh
+repository's commit ids or times; none in the classes run needed it, so none uses it yet. The seed's one commit is the same id in
+every copy. `GitSeedTests` (3, no git) holds the copy, the repair and the one build. *Measured* on `LandedReviewTests`,
+`LandedBranchTests`, `ContentHeldTests` and `ReviewBaseTests` (35 tests, `git.process.runsettings`, `DAORIS_HOME` on scratch, from
+PowerShell, one run each before and after, wall including the build): fixture starts (`FixtureSpawns`) 437 → 258, with `init` 42 →
+0, `config` 66 → 0, `remote` 9 → 0 and `push` 20 → 12 (the others a test's own); the starts' own run times summed over the four
+classes 264 s → 239 s; wall 409 s at a mean 64% CPU (26 samples, 15 s apart, other worktrees' builds beside) → 403 s at 56% (25
+samples); test time 5 m 56 s → 6 m 7 s; all 35 passed both times. *So* the saving is real in starts (41%) and small in the wall: at
+four classes at once the wall is the longest class's product starts, and a run varies by more than the 6 s. `LandedProofTests`,
+`LandedKeepTests`, `LandingSquashTests` and `ContentOfferTests` (24 tests) passed on the copies too. `BranchTidyingFixture` and
+`LandingPluginFixture` keep their own builds: their classes were not run, and the plugin's shape differs (no push, another README); a row below takes them.
 
 **The driver's Process half runs as two (PROC1b, PROC1c, 2026-10-15; a note on MOD8's rule).** A Process class that starts
 git and nothing a neighbour's load could fail also carries `Parallel=Git` (`Category.cs` says which may, `CategoryTests`

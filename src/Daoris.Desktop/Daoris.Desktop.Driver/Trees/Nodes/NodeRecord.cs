@@ -91,10 +91,43 @@ public static class HeldResolutions
     /// <summary>It did not: the attempt failed by the person's word, and the node is ready for a new attempt with a new key.</summary>
     public const string DidNot = "did-not";
 
-    /// <summary>Stop the node: the attempt's outcome stays unknown, settled as the person's to answer for, and nothing more is asked.</summary>
+    /// <summary>
+    /// Stop the node: the attempt's outcome stays unknown, settled as the person's to answer for, and nothing more is asked. On a held close
+    /// (FABRIC-CLOSE1q), stop its work's further nodes instead: the close's answer is still its door's, kept or asked for with its key.
+    /// </summary>
     public const string Stop = "stop";
 
-    public static readonly IReadOnlyList<string> All = [Happened, DidNot, Stop];
+    /// <summary>
+    /// On a held close (FABRIC-CLOSE1q) whose door's answer is kept on it: record that answer again through the one table, never a new close
+    /// and never the person's word for the door's.
+    /// </summary>
+    public const string Record = "record";
+
+    /// <summary>On a held close (FABRIC-CLOSE1q): ask its door again with the same key, token and submissions, which answers its first outcome.</summary>
+    public const string Resend = "resend";
+
+    /// <summary>The words on a plugin's attempt (FABRIC-PERFORM1g), as they were.</summary>
+    public static readonly IReadOnlyList<string> Plugin = [Happened, DidNot, Stop];
+
+    /// <summary>The words on Daoris's own close (FABRIC-CLOSE1q): its recoveries, and the stop offered apart.</summary>
+    public static readonly IReadOnlyList<string> Close = [Record, Resend, Stop];
+
+    /// <summary>The words on a close whose door's answer is not kept: nothing to record again, so it is asked for again, or its work stopped.</summary>
+    public static readonly IReadOnlyList<string> CloseUnkept = [Resend, Stop];
+
+    /// <summary>
+    /// Every word a record may hold on an attempt. A record holding a close's word reads as unreadable on a build before FABRIC-CLOSE1q, which
+    /// is why the closer clears the word as it applies it: only a word not applied yet is ever written.
+    /// </summary>
+    public static readonly IReadOnlyList<string> All = [Happened, DidNot, Stop, Record, Resend];
+
+    /// <summary>
+    /// The words offered on a held attempt (FABRIC-CLOSE1q): a plugin's three; on Daoris's own close, <c>record</c> only where its door closed
+    /// the quest (that answer needs nothing but its key), then <c>resend</c> and <c>stop</c>. A refusal is asked for again, its door's code and
+    /// words coming back with its first outcome.
+    /// </summary>
+    public static IReadOnlyList<string> Of(NodeAttempt attempt) =>
+        attempt.Plugin != QuestClosing.Sender ? Plugin : attempt.Outcome == WorkStates.Reached ? Close : CloseUnkept;
 }
 
 /// <summary>A status a move took away (<see cref="NodeMoved.Cleared"/>): kept as the attempt's history before the reset (§D3).</summary>

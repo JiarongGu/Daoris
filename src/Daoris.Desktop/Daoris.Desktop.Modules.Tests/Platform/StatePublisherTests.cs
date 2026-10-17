@@ -77,6 +77,30 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
         }
     }
 
+    /// <summary>A route whose landing waits behind another's hold (LANDHOLD2), said as the hold says it, and ends when the test lets it.</summary>
+    private sealed class Queued : ModuleBase
+    {
+        private readonly TaskCompletionSource _wait = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _end = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override string ModuleName => "TEST.QUEUED";
+
+        public void LetWait() => _wait.TrySetResult();
+
+        public void LetEnd() => _end.TrySetResult();
+
+        protected override async Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
+        {
+            PressSteps.Reach(PressSteps.Landing);
+            using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
+            LandingHoldNotice.Waiting(true);
+            await _wait.Task;
+            LandingHoldNotice.Waiting(false);
+            await _end.Task;
+            return new { Done = true };
+        }
+    }
+
     private IMessageDispatcher Compose(IIpcModule module, Func<IpcRequest, StateChange?>? declared = null)
     {
         var services = new ServiceCollection();
@@ -247,6 +271,28 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
         Assert.True((await pressing).Success);
         await UntilAsync(() => Told().Count == 4);
         Assert.Equal("""{"seq":4,"presses":[]}""", Told()[^1]);
+    }
+
+    /// <summary>
+    /// LANDHOLD2 (D145 point 2, D173's LANDRACE1 note): a press whose landing waits behind another's hold says the waiting step before it
+    /// waits, and the step it was at when it has the hold; the waiting reaches the page's telling like any step, and ends with the press.
+    /// </summary>
+    [Fact]
+    public async Task A_press_waiting_behind_a_landing_says_so_and_goes_back_to_its_step()
+    {
+        var queued = new Queued();
+        var dispatcher = Compose([queued], request => new StateChange(StateScopes.Landing, "id"), Loop().UnderWay);
+
+        var pressing = Dispatch(dispatcher, queued.ModuleName, "MOVE", new { id = "s1" });
+        await UntilAsync(() => Told().Count == 3);
+        Assert.Equal("""{"seq":3,"presses":[{"route":"MOVE","session":"s1","step":"waiting"}]}""", Told()[^1]);
+
+        queued.LetWait();
+        await UntilAsync(() => Told().Count == 4);
+        Assert.Equal("""{"seq":4,"presses":[{"route":"MOVE","session":"s1","step":"landing"}]}""", Told()[^1]);
+
+        queued.LetEnd();
+        Assert.True((await pressing).Success);
     }
 
     /// <summary>
