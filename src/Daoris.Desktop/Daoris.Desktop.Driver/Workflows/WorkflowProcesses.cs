@@ -57,7 +57,7 @@ public static class WorkflowProcesses
         if (found.Read.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` cannot be read: {unread}" };
         var version = found.Read.Versions.FirstOrDefault(each => each.Version == number);
         if (version is null) return held with { Problem = $"`{binding.Workflow}` v{number} is no longer saved here." };
-        if (version.Steps is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Problem}" };
+        if (version.Steps is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Unrun}" };
         if (binding.Digest is { } digest && !string.Equals(digest, version.Digest, StringComparison.Ordinal))
         {
             return held with

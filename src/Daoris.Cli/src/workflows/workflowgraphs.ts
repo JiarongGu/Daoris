@@ -11,6 +11,7 @@
  * holds, so the twins agree on what is unreadable.
  */
 import { createHash } from 'node:crypto';
+import type { GraphForm } from './graphversions.ts';
 import { field, members, quoted, versionDigest, type NamedStep, type NamedVersion, type StepValue } from './namedworkflows.ts';
 
 /** The decoder's own version — the driver's `WorkflowGraphs.DecoderVersion`: a decoded graph's digest is derived from it. */
@@ -27,7 +28,11 @@ export interface GraphWire { id: string; kind: string; from: string; to: string 
 export interface DecodedGraph { schemaVersion: number; entries: string[]; end: string; cleanup: { until: string }; nodes: GraphNode[]; wires: GraphWire[] }
 
 /** A version as a graph: its identity (`versionDigest`, unchanged) and its graph with the digest a run on it binds, or why it is unreadable. */
-export interface DecodedVersion { version: number; identity: string | null; graph: DecodedGraph | null; graphDigest: string | null; unreadable: string | null }
+export interface DecodedVersion {
+  version: number; identity: string | null; graph: DecodedGraph | null; graphDigest: string | null; unreadable: string | null;
+  /** A graph version's own graph (schema 2, FABRIC-GRAPH1b), which is not decoded from steps. */
+  graphForm?: GraphForm;
+}
 
 /** An option's value: a field's as written, a group's members apart. */
 type StepOption = string | null | boolean | string[];
@@ -182,6 +187,11 @@ export function decodeSteps(version: number, steps: readonly NamedStep[]): Decod
  * included, is unreadable with that reason, kept as it is; one that reads is decoded whole.
  */
 export function decodeVersion(version: NamedVersion): DecodedVersion {
+  // A graph version (schema 2, FABRIC-GRAPH1b) is a graph already: its identity is its own digest, which a run on it binds.
+  if (version.graph !== undefined && version.digest !== null) {
+    return { version: version.version, identity: version.digest, graph: null, graphForm: version.graph, graphDigest: version.digest, unreadable: null };
+  }
+
   return version.steps === null || version.problem !== null
     ? { version: version.version, identity: null, graph: null, graphDigest: null, unreadable: version.problem ?? `v${version.version}: it does not read.` }
     : decodeSteps(version.version, version.steps);

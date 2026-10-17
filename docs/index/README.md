@@ -84,7 +84,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsCommandTests.cs` | 46 | 904 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs` | 56 | 1147 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/TraceTests.cs` | 41 | 691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/AutoLandingTests.cs` | 53 | 995 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/AutoLandingTests.cs` | 53 | 1006 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 46 | 821 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 48 | 744 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/SessionGroupsTests.cs` | 64 | 1104 |
@@ -162,14 +162,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 124 | 2232 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 80 | 1550 |
-| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 40 | 821 |
-| `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |
+| `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 44 | 874 |
+| `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 839 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 103 | 1974 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 62 | 1098 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 839 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 135 | 2476 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 207 | 3188 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 225 | 3439 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 
@@ -182,7 +182,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1057 |
 | `tools/family-rehearsal.mjs` | 340 | 5984 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 145 | 2600 |
+| `tools/merge-branch.mjs` | 159 | 2859 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
@@ -220,4 +220,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/2026-10-16-fabric-events-design.md` | 167 | 2052 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 93 | 529 |
+| `src/Daoris.Desktop/README.md` | 93 | 532 |

@@ -109,8 +109,17 @@ public sealed record NamedStep(string Id, string Kind, IReadOnlyList<WorkflowSet
     public IReadOnlyList<NamedStep> Members => Kind == WorkflowKinds.All && Field("steps") is IReadOnlyList<NamedStep> members ? members : [];
 }
 
-/// <summary>One version as read: its number, when and through which door it was saved, and its steps and digest, or its first problem.</summary>
-public sealed record NamedVersion(int Version, string? At, string? Door, IReadOnlyList<NamedStep>? Steps, string? Problem, string? Digest);
+/// <summary>
+/// One version as read: its number, when and through which door it was saved, and its steps and digest, or its first problem. A graph
+/// version (schema 2, FABRIC-GRAPH1b) holds <see cref="Graph"/> and no steps, and its digest is the graph's own
+/// (<see cref="NodeGraphs.Digest"/>), which a run bound to it binds.
+/// </summary>
+public sealed record NamedVersion(
+    int Version, string? At, string? Door, IReadOnlyList<NamedStep>? Steps, string? Problem, string? Digest, NodeGraph? Graph = null)
+{
+    /// <summary>Why the steps-driven runtime cannot run it, or null where it can: a graph version reads, and is not run until the cutover.</summary>
+    public string? Unrun => Steps is not null ? null : Problem ?? $"v{Version}: it is a graph (schema 2), which this build reads and does not run yet.";
+}
 
 /// <summary>A workflow file as read: its id and name and every version, each readable or not; or the file's own first problem.</summary>
 public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<NamedVersion> Versions, string? Problem);
@@ -200,9 +209,39 @@ public static class WorkflowNamed
             return Unread($"v{number}: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.");
         }
 
-        var (steps, problem) = ReadSteps(version.TryGetProperty("steps", out var raw) ? raw : null, number, prior);
+        // A version is its steps (schema 1: no `schema`, or 1) or its graph (schema 2), never both and never in part (FABRIC-GRAPH1b). An
+        // older build reads `steps` alone and no other key, so a graph version, which holds none, is unreadable there as it is here.
+        var hasSteps = version.TryGetProperty("steps", out var raw) && raw.ValueKind != JsonValueKind.Null;
+        if (version.TryGetProperty("schema", out var schema) && schema.ValueKind != JsonValueKind.Null)
+        {
+            if (!(schema.ValueKind == JsonValueKind.Number && schema.TryGetInt32(out var named) && named is 1 or GraphSchema))
+            {
+                return Unread($"v{number}: its `schema` is 1, its steps, or {GraphSchema}, its graph; this build reads no other.");
+            }
+
+            if (named == GraphSchema)
+            {
+                if (hasSteps) return Unread(BothSentence(number));
+                if (!version.TryGetProperty("graph", out var graphJson) || graphJson.ValueKind != JsonValueKind.Object)
+                {
+                    return Unread($"v{number}: its schema is {GraphSchema}, so its `graph` is the graph's JSON object.");
+                }
+
+                var (graph, problems) = NodeGraphs.Read(graphJson.GetRawText());
+                return graph is null
+                    ? Unread($"v{number}: its graph does not hold: {problems[0].Words}")
+                    : new NamedVersion(number, at, door, null, null, NodeGraphs.Digest(graph), graph);
+            }
+        }
+
+        var (steps, problem) = ReadSteps(hasSteps ? raw : null, number, prior);
         return steps is null ? Unread(problem!) : new NamedVersion(number, at, door, steps, null, Digest(steps));
     }
+
+    /// <summary>The schema of a version that is a graph (FABRIC-GRAPH1b); a version of steps is schema 1, named or not.</summary>
+    public const int GraphSchema = 2;
+
+    private static string BothSentence(int number) => $"v{number}: a version is its `steps` or its `graph`, never both.";
 
     /// <summary>
     /// A version's steps read (design §2.5, §3.2, §3.3, §3.9), the first problem said: the list and its bound, then each step's
@@ -568,7 +607,19 @@ public static class WorkflowNamed
     public static WorkflowAddPlan PlanAdd(JsonNode? file, WorkflowVersionAdded add, IReadOnlyCollection<int> kept)
     {
         static WorkflowAddPlan Refused(string problem) => new(null, null, problem);
-        var version = new JsonObject { ["version"] = 0, ["at"] = add.At, ["door"] = add.Door, ["steps"] = add.Steps?.DeepClone() };
+        // A graph is the version's schema 2 and its steps are none: both is refused whole, by the reader below, with the number it would take.
+        var version = new JsonObject { ["version"] = 0, ["at"] = add.At, ["door"] = add.Door };
+        if (add.Graph is not null)
+        {
+            version["schema"] = GraphSchema;
+            version["graph"] = add.Graph.DeepClone();
+            if (add.Steps is not null) version["steps"] = add.Steps.DeepClone();
+        }
+        else
+        {
+            version["steps"] = add.Steps?.DeepClone();
+        }
+
         if (file is null)
         {
             if ((IdProblem(add.Id) ?? NameProblem(add.Name)) is { } problem) return Refused(problem);
