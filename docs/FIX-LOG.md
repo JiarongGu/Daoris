@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The closure graph's close fenced too little: a stale verdict, a kept step, a key reused, a refusal forgotten (FABRIC-CLOSE1e)
+
+- **Symptom:** a second review of FABRIC-CLOSE1a, before any quest is bound, found four ways around the close. (1) An evidence
+  verdict read for a submission and arriving after a later `ready` released the replacement nobody read, and could publish and
+  seal its step. (2) A step a lost submission had published survived the rebase once this machine had taken it: it synced on its
+  own, and its session ran with a held claim. (3) A close sent with a key already used, naming another quest list, answered
+  success without closing the rest. (4) A refused close sent again with its key after the hold was released closed.
+- **Root cause:** (1) the replay judged a verdict by `Covers`, requirements and evidence names only, and a replacement has the
+  same ones; clearing `Evidence` on the replacement cannot fence a verdict arriving after it. (2) The submission's rebase reused
+  `ForgetFollowUpsAsync`, written for a lost done, which forgets a step only while its history is its single publication. (3) The
+  replay matched the key on any named quest's Done and compared nothing else. (4) Only a success left its key anywhere, on the Done.
+- **Fix:** D173's FABRIC-CLOSE1a note, its *After review*: a verdict names its submission and the replay and the door take it
+  for that one only (`QuestEvidenceVerdict.AskedFor`); `QuestStore.ForgetStepsAsync` forgets a lost submission's unpushed steps
+  with what this machine did on them, rewriting a take as a conflict on a quest no push carries; the store keeps every close
+  outcome, refusal or success, under its key in `quest_closes` with its token and submissions, answering only the same call with
+  it (`KeyReused` otherwise).
+- **Verification:** four tests (three in `QuestClosureTests`, one in `QuestSyncTests`) failed at run time on CLOSE1a with the
+  members added without behaviour, then passed. `Daoris.Service.Tests` (2197) and `Daoris.Service.Http.Tests` (280) pass, the
+  ordinary quest's suites unchanged.
+
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
 - **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node
