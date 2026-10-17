@@ -283,7 +283,9 @@ internal sealed class LandedCleanups(
                     keptAt = reference;
                 }
 
-                var kept = await content.DeleteJudgedAsync(root, item.Branch, now.Tip, ct).ConfigureAwait(false);
+                // FABRIC-END4a, third review: what the judgement again's proof returned, each ref at the commit it read before the recovery
+                // ref was made, verified in the delete's own transaction; nothing is read again here.
+                var kept = await content.DeleteJudgedAsync(root, item.Branch, now.Tip, now.Rests, ct).ConfigureAwait(false);
                 if (kept is null)
                 {
                     removed.Add(item.Branch);
@@ -323,6 +325,12 @@ internal sealed class LandedCleanups(
         /// branch inside another is found through that one.
         /// </summary>
         internal string? Line { get; init; }
+
+        /// <summary>
+        /// What its removal rests on (FABRIC-END4a, third review), as its proof returned it: the form of the line it was proved on, or the
+        /// landing it is inside at the tip judged with what that one rests on, each at the commit read; its delete verifies exactly these.
+        /// </summary>
+        internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
     }
 
     /// <summary>
@@ -368,7 +376,12 @@ internal sealed class LandedCleanups(
                 : null;
             if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged) && verdict is { Clears: true })
             {
-                proof = proof with { Kind = LandedKind.PullRequest, Where = verdict.Form, Files = [], Detail = null, Judgeable = false };
+                proof = proof with
+                {
+                    Kind = LandedKind.PullRequest, Where = verdict.Form, Files = [], Detail = null, Judgeable = false,
+                    // FABRIC-END4a, third review: the form its merge commit was found on, at the commit read.
+                    Rests = LandedProofs.RestsOn(forms.FirstOrDefault(form => form.Name == verdict.Form)),
+                };
             }
 
             string? keep = null;
@@ -393,6 +406,7 @@ internal sealed class LandedCleanups(
         {
             var kind = proof.Kind;
             var where = proof.Where;
+            var rests = proof.Rests;
             // Inside another landed branch the proof clears — whether or not that one can go, its history
             // holds these commits and its files read on the line.
             if (proof.Judgeable)
@@ -403,6 +417,8 @@ internal sealed class LandedCleanups(
                     if (inside != 0) continue;
                     kind = LandedKind.Inside;
                     where = other.Entry.Branch;
+                    // FABRIC-END4a, third review: it rests on that branch at the tip judged, and on what that one's proof rests on.
+                    rests = [($"refs/heads/{other.Entry.Branch}", other.Tip), .. other.Proof.Rests];
                     break;
                 }
             }
@@ -433,6 +449,7 @@ internal sealed class LandedCleanups(
                 tip)
             {
                 Line = proof.Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.PullRequest ? proof.Where : null,
+                Rests = rests,
             });
         }
 

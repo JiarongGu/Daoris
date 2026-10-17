@@ -1,0 +1,300 @@
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// FABRIC-END4a's link 2 over the records alone (the over-git half is <see cref="TidyEffectGitTests"/>): the tidy pending from the
+/// kept facts through the inventory, recovered at the start (canary 16), refused for a busy tree with no git and run when the session
+/// leaves it (canary 17), never pending for an unknown owner (canary 27), and a branch's removal leaving its unit open (canary 35).
+/// </summary>
+public sealed class TidyEffectTests : IDisposable
+{
+    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-tidy-effect-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly HashSet<string> _inUse = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<string> _tidied = [];
+    private DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
+
+    // Whether the stand-in tidy removes what it is handed, or keeps it as a dirty tree would, saying so.
+    private bool _keeps;
+
+    private const string KeptSaid = "its tree has 2 path(s) uncommitted";
+
+    public TidyEffectTests() => Directory.CreateDirectory(_home);
+
+    public void Dispose()
+    {
+        try
+        {
+            Directory.Delete(_home, recursive: true);
+        }
+        catch (IOException) { /* a straggling handle */ }
+    }
+
+    private SessionBranches Grown => new(_home);
+
+    private HeldFact Held(string tip, string by = EndBy.Merged) => new(_now, _now, by, tip, "main", "main", "c0ffee", "identity");
+
+    /// <summary>A session branch recorded with its unit, and its kept fact where one is given.</summary>
+    private void Record(string name, HeldFact? held, string? unit = null)
+    {
+        Grown.Record(new GrownBranch("engine", "default", $"daoris/{name}", "main", "base", null, _now) { Unit = unit ?? $"unit-{name}" });
+        if (held is not null) Grown.Hold("engine", $"daoris/{name}", held);
+    }
+
+    private string TreeOf(string name)
+    {
+        var path = Path.GetFullPath(Path.Combine(new SessionTrees(_home).TreesRoot, "default", "engine", name));
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    /// <summary>The effect over a stand-in tidy, which removes every held branch it is handed as the real one leaves it: a trace.</summary>
+    private TidyEffect Effect() => new(
+        _home,
+        (name, _) => Task.FromResult<RefRepository?>(new RefRepository(name, "default", _home)),
+        _ => Task.FromResult<IReadOnlySet<string>>(_inUse),
+        (repository, _, _) =>
+        {
+            _tidied.Add(repository.Repository);
+            var going = TidyEffect.Pending(_home, _now).SelectMany(unit => unit.Branches).ToList();
+            if (_keeps)
+            {
+                return Task.FromResult(new TidyPass(
+                    [.. going.Select(branch => new SweepResult(new SweepItem("engine", "default", branch, null, SweepKind.Dirty, 0, "main", null), false, KeptSaid))]));
+            }
+
+            Grown.Forget(repository.Repository, going);
+            return Task.FromResult(new TidyPass(
+                [.. going.Select(branch => new SweepResult(new SweepItem("engine", "default", branch, null, SweepKind.Empty, 0, "main", null), true, "removed"))]));
+        })
+    {
+        Clock = () => _now,
+    };
+
+    private Chain ChainOf(TidyEffect effect) => new Chain(new ChangeWatch(), clock: () => _now).Bind(ChainRanks.Tidy, effect);
+
+    /// <summary>🔴 Canary 15: a unit the line is not known to hold is never pending; a held one is, by its repository.</summary>
+    [Fact]
+    public async Task Only_a_unit_whose_end_is_held_is_pending()
+    {
+        Record("a", held: null);
+        Record("b", Held("tip-b"));
+
+        var units = TidyEffect.Pending(_home, _now);
+
+        Assert.Equal(["unit-b"], units.Select(unit => unit.Unit));
+        Assert.Equal(["daoris/b"], units.Single().Branches);
+        Assert.Equal(["engine"], (await Effect().PendingAsync(CancellationToken.None)).Select(each => each.Unit));
+    }
+
+    /// <summary>🔴 Canary 16: the fact recorded, the process gone before the tidy; the start's reconciliation tidies it once.</summary>
+    [Fact]
+    public async Task The_starts_reconciliation_performs_a_pending_tidy_once()
+    {
+        Record("a", Held("tip-a"));
+        var chain = ChainOf(Effect());
+
+        Assert.Equal(1, await chain.RecoverAsync(CancellationToken.None));
+        Assert.Equal(0, await chain.RecoverAsync(CancellationToken.None));
+
+        Assert.Equal(["engine"], _tidied);
+        var trace = Grown.Entries().Single();
+        Assert.NotNull(trace.GoneAt);
+        Assert.Empty(TidyEffect.Pending(_home, _now));
+    }
+
+    /// <summary>
+    /// 🔴 Canary 17: refused for a tree a session holds, with no tidy started and the guard written as the unit's disposition; then run
+    /// on the session's leaving, a <c>ledger</c> wake, with no fact having changed.
+    /// </summary>
+    [Fact]
+    public async Task A_busy_tree_stays_pending_and_is_tidied_when_the_session_leaves()
+    {
+        Record("a", Held("tip-a"));
+        _inUse.Add(TreeOf("a"));
+        var chain = ChainOf(Effect());
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+
+        Assert.Equal(0, await chain.FireAsync([new ChainEvent(ChainEvents.WorkHeld, "engine", ChangeTopics.Refs)], CancellationToken.None));
+        Assert.Empty(_tidied);
+        Assert.Equal(SweepKind.InUse, Grown.Of("engine", "daoris/a")!.Blocked?.Why);
+        var entry = Milestone("unit-a").Entries.Single(each => each.Kind == InventoryKind.SessionBranch);
+        Assert.Equal(InventoryDisposition.Blocked, entry.Disposition);
+        Assert.Contains("a session running or waiting holds its tree", entry.Detail, StringComparison.Ordinal);
+
+        _inUse.Clear();
+        Assert.Equal(1, await chain.FireAsync([new ChainEvent(ChainEvents.Ledger, "sessions", ChangeTopics.Ledger)], CancellationToken.None));
+
+        Assert.Equal(["engine"], _tidied);
+        Assert.Equal("completed", Milestone("unit-a").Cleanup.State);
+    }
+
+    /// <summary>
+    /// 🔴 The review's P2s: an unchanged blocker is one try, whatever wakes come, until the <c>refs</c> deadline passes; and a process
+    /// that does not hold the home's lease writes no <c>blocked</c>.
+    /// </summary>
+    [Fact]
+    public async Task An_unchanged_blocker_is_tried_once_until_the_deadline_and_only_the_lease_writes_it()
+    {
+        Record("a", Held("tip-a"));
+        _keeps = true;
+        var chain = ChainOf(Effect());
+
+        foreach (var wake in RefWatch.Unblocking) await chain.FireAsync([new ChainEvent(wake, wake, wake)], CancellationToken.None);
+
+        Assert.Equal(["engine"], _tidied);
+        Assert.Null(Grown.Of("engine", "daoris/a")!.Blocked);
+
+        _now += RefWatch.Deadline;
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        await chain.FireAsync([new ChainEvent(ChainEvents.Ledger, "sessions", ChangeTopics.Ledger)], CancellationToken.None);
+
+        Assert.Equal(["engine", "engine"], _tidied);
+        Assert.Equal(SweepKind.Dirty, Grown.Of("engine", "daoris/a")!.Blocked?.Why);
+    }
+
+    /// <summary>🔴 The second review: <c>blocked</c> carries the sentence the tidy kept the branch with, not only its guard's code, and the inventory says it.</summary>
+    [Fact]
+    public async Task Blocked_carries_the_reason_the_tidy_kept_it_with()
+    {
+        Record("a", Held("tip-a"));
+        _keeps = true;
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+
+        await ChainOf(Effect()).FireAsync([new ChainEvent(ChainEvents.Ledger, "sessions", ChangeTopics.Ledger)], CancellationToken.None);
+
+        var blocked = Grown.Of("engine", "daoris/a")!.Blocked!;
+        Assert.Equal((SweepKind.Dirty, KeptSaid), (blocked.Why, blocked.Reason));
+        Assert.Contains(KeptSaid, Milestone("unit-a").Entries.Single(each => each.Kind == InventoryKind.SessionBranch).Detail, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 The second review's P2 (Chain.cs:476): a wake the settle answers with no try never moves the chain's deadline, so the <c>refs</c>
+    /// deadline after the last real try tries again, never one deadline later.
+    /// </summary>
+    [Fact]
+    public async Task A_settled_wake_never_moves_the_deadline()
+    {
+        Record("a", Held("tip-a"));
+        _keeps = true;
+        var chain = ChainOf(Effect());
+        chain.Topic(ChangeTopics.Refs, ChainEvents.Refs, RefWatch.Deadline);
+        var wake = new ChainEvent(ChainEvents.Ledger, "sessions", ChangeTopics.Ledger);
+
+        await chain.FireAsync([wake], CancellationToken.None);
+        _now += TimeSpan.FromMinutes(4);
+        await chain.FireAsync([wake], CancellationToken.None);
+        Assert.Equal(["engine"], _tidied);
+
+        _now += TimeSpan.FromMinutes(1);
+        await chain.FireAsync([ChainEvent.Timer(ChangeTopics.Refs)], CancellationToken.None);
+
+        Assert.Equal(["engine", "engine"], _tidied);
+    }
+
+    /// <summary>
+    /// 🔴 The second review's P2 (SessionBranches.cs:197): a trace whose tree still lives is never pruned with the retired traces, however
+    /// many go after it: the live tree's tracking is kept apart from the branch's disposition.
+    /// </summary>
+    [Fact]
+    public void A_trace_whose_tree_lives_is_never_pruned()
+    {
+        Grown.Record(new GrownBranch("engine", "default", "daoris/live", "main", "base", null, _now, Now: "feature/x") { Unit = "unit-live" });
+        Grown.Hold("engine", "daoris/live", Held("tip-live"));
+        File.WriteAllText(Path.Combine(TreeOf("live"), ".git"), "gitdir: elsewhere\n");
+        Grown.Gone("engine", ["daoris/live"]);
+
+        for (var each = 0; each <= SessionBranches.TracesKept; each++)
+        {
+            Record($"t{each}", Held($"tip-{each}"));
+            Grown.Forget("engine", [$"daoris/t{each}"]);
+        }
+
+        Assert.Equal("feature/x", Grown.Entries().Single(entry => entry.Branch == "daoris/live").Now);
+        Assert.Equal(SessionBranches.TracesKept + 1, Grown.Entries().Count);
+    }
+
+    /// <summary>
+    /// 🔴 The third review's P2 (SessionBranches.cs:248): one name recorded and removed again and again leaves one trace that follows its
+    /// tree, the newest; the older traces of that name are retired traces like any other, pruned beyond the bound.
+    /// </summary>
+    [Fact]
+    public void Repeated_re_record_and_removal_of_one_name_keeps_one_trace()
+    {
+        File.WriteAllText(Path.Combine(TreeOf("live"), ".git"), "gitdir: elsewhere\n");
+        for (var each = 0; each < 5; each++)
+        {
+            Grown.Record(new GrownBranch("engine", "default", "daoris/live", "main", "base", null, _now, Now: $"feature/{each}") { Unit = "unit-live" });
+            Grown.Hold("engine", "daoris/live", Held($"tip-live-{each}"));
+            Grown.Gone("engine", ["daoris/live"]);
+        }
+
+        for (var each = 0; each < SessionBranches.TracesKept; each++)
+        {
+            Record($"t{each}", Held($"tip-{each}"));
+            Grown.Forget("engine", [$"daoris/t{each}"]);
+        }
+
+        var live = Assert.Single(Grown.Entries(), entry => entry.Branch == "daoris/live");
+        Assert.Equal("feature/4", live.Now);
+    }
+
+    /// <summary>🔴 The review's P2: a removed branch whose tree moved onto a branch of its own is a trace at once, keeping where it went, and no longer pending.</summary>
+    [Fact]
+    public void A_removed_branch_whose_tree_moved_on_is_a_trace_at_once()
+    {
+        Grown.Record(new GrownBranch("engine", "default", "daoris/a", "main", "base", null, _now, Now: "feature/x") { Unit = "unit-a" });
+        Grown.Hold("engine", "daoris/a", Held("tip-a"));
+
+        Grown.Gone("engine", ["daoris/a"]);
+
+        var trace = Grown.Entries().Single();
+        Assert.NotNull(trace.GoneAt);
+        Assert.Equal("feature/x", trace.Now);
+        Assert.Empty(TidyEffect.Pending(_home, _now));
+    }
+
+    /// <summary>🔴 Canary 27: a tree no record names is its own unit, blocked and said so, and never pending; nothing is tried for it.</summary>
+    [Fact]
+    public async Task An_unknown_owner_blocks_and_is_never_tried()
+    {
+        TreeOf("nobody");
+        var chain = ChainOf(Effect());
+
+        await chain.RecoverAsync(CancellationToken.None);
+
+        Assert.Empty(TidyEffect.Pending(_home, _now));
+        Assert.Empty(_tidied);
+        var unknown = (await WorkInventories.MilestonesAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>())).Single();
+        Assert.Equal("unknown", unknown.End.State);
+        var blocked = unknown.Entries.Single();
+        Assert.Equal(InventoryDisposition.Blocked, blocked.Disposition);
+        Assert.Contains("its owner is unknown", blocked.Detail, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 Canary 35: the tidy removing a held session branch whose unit a standing landing still carries leaves the unit open, its trace
+    /// kept; it retires once the line holds the landing.
+    /// </summary>
+    [Fact]
+    public async Task A_branch_removed_leaves_its_unit_open_until_its_landing_is_held()
+    {
+        Record("a", Held("tip-a"), unit: "unit-a");
+        var landings = new LandedBranches(_home);
+        landings.Record(new LandedBranch("engine", "default", "feature/q1-work", "main", "tip-l", "s1", "q1", "Work", _now) { Units = ["unit-a"] });
+
+        await ChainOf(Effect()).RecoverAsync(CancellationToken.None);
+
+        var trace = Grown.Entries().Single();
+        Assert.NotNull(trace.GoneAt);
+        Assert.Contains("unit-a", SessionBranches.OpenUnits(_home));
+        Assert.Equal(InventoryDisposition.Removed, Milestone("unit-a").Entries.Single(each => each.Kind == InventoryKind.SessionBranch).Disposition);
+
+        landings.Hold(landings.All().Single(), Held("tip-l"));
+        Assert.DoesNotContain("unit-a", SessionBranches.OpenUnits(_home));
+    }
+
+    private WorkMilestone Milestone(string unit) =>
+        WorkInventory.Derive(new InventoryFacts(
+            Grown.Entries(), new LandedBranches(_home).Entries(), [], [], [], new HashSet<string>(), _ => false, _now)).Single(each => each.Unit == unit);
+}

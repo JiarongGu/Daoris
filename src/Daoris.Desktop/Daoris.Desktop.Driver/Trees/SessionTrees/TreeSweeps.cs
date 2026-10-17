@@ -136,10 +136,12 @@ internal sealed class TreeSweeps(
             var line = (await context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
             var carriers = item.Kind == SweepKind.Carried ? await asks.CarriersAsync(root, item.Repository, line, ct, fresh).ConfigureAwait(false) : [];
             // The commit it was judged at (SQUASHTIDY1c): the one its delete must still find, and the one a pull request's answer
-            // removed, for the record of it (PLUGHOOK1a, design §2.5).
+            // removed, for the record of it (PLUGHOOK1a, design §2.5). And what that judgement's proof rested on (FABRIC-END4a, third
+            // review), each ref at the commit it read: the delete verifies exactly these, and nothing looks for them again.
+            var rests = new List<(string Ref, string Commit)>();
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
-                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself, landings, fresh)
+                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself, landings, fresh, rests)
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
@@ -206,8 +208,9 @@ internal sealed class TreeSweeps(
                 }
             }
 
-            // Only while it is still the commit judged (SQUASHTIDY1c); git's own -d asks only about the checkout's HEAD.
-            var stays = await content.DeleteJudgedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
+            // Only while it is still the commit judged (SQUASHTIDY1c), and in one transaction with what its proof rested on (FABRIC-END4a,
+            // second and third reviews): exactly what the judgement returned.
+            var stays = await content.DeleteJudgedAsync(root, now.Branch, judged, rests, done).ConfigureAwait(false);
             if (stays is not null)
             {
                 await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
@@ -256,10 +259,12 @@ internal sealed class TreeSweeps(
     /// <param name="byItself">For the look's own tidy (AUTOTIDY2a): an ignored path only the tree holds is no keep, since the look moves the folder aside.</param>
     /// <param name="landings">For the look's own tidy (AUTOTIDY2b): the branches landings made whose work the line holds.</param>
     /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
+    /// <param name="rests">Where a removal follows (FABRIC-END4a, third review): filled with what the proof that cleared it rested on, each ref
+    /// at the commit the proof read, for the delete to verify exactly; null where nothing is removed by this judgement.</param>
     private async Task<(SweepItem Item, string? Tip)> JudgeAsync(
         string root, string repository, string workspace, string branch, string? tree, string? line,
         HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct, string? treeOn = null, bool byItself = false,
-        IReadOnlyList<LineLanding>? landings = null, RefSnapshot? refs = null)
+        IReadOnlyList<LineLanding>? landings = null, RefSnapshot? refs = null, List<(string Ref, string Commit)>? rests = null)
     {
         // The ignored paths its tree shares with the checkout, on every row once read (AUTOTIDY1). Whether it made commits since it
         // grew, on every row once its tip is read (AUTOTIDY2a): a tree that never moved is a conversation's place (D137), whatever its kind.
@@ -303,13 +308,25 @@ internal sealed class TreeSweeps(
         {
             // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch it made would by ancestry, so the row
             // is landed where that branch is, with no ref to keep.
-            if (await squashes.SquashedHolderAsync(root, repository, tip, ct, refs).ConfigureAwait(false) is { } squashedOn)
+            if (await squashes.SquashedHoldAsync(root, repository, tip, ct, refs).ConfigureAwait(false) is { } squash)
             {
-                // AUTOTIDY2a: the look's only once the line holds the branch the landing made, or the work by content.
-                var squashOnLine = byItself
-                    && (await LineHoldingAsync(root, line, $"refs/heads/{squashedOn.Branch}", ct, refs).ConfigureAwait(false) is not null
-                        || (await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false)).Hold is { } byContent
-                            && IsLineForm(byContent.Where, line));
+                // FABRIC-END4a, third review: the record vouches while the landing's branch stands at the commit read, so it rests on that.
+                var squashedOn = squash.Entry;
+                rests?.Add(($"refs/heads/{squashedOn.Branch}", squash.At));
+                // AUTOTIDY2a: the look's only once the line holds the branch the landing made, or the work by content; and then on that too.
+                var squashOnLine = false;
+                if (byItself && await LineHoldingAsync(root, line, squash.At, ct, refs).ConfigureAwait(false) is { At: { } formAt } form)
+                {
+                    squashOnLine = true;
+                    rests?.Add((form.Ref, formAt));
+                }
+                else if (byItself && await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false)
+                             is { Hold: { } byContent } held && IsLineForm(byContent.Where, line))
+                {
+                    squashOnLine = true;
+                    rests?.AddRange(held.Rests);
+                }
+
                 return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))) with { OnLine = squashOnLine }, tip);
             }
 
@@ -317,6 +334,7 @@ internal sealed class TreeSweeps(
             // A branch checked out outside the trees home is the person's to move, so it is never taken on the platform's word.
             if ((tree is null || context.Holds(tree)) && await PullRequestAsks.CarrierOfAsync(root, tip, carriers, ct).ConfigureAwait(false) is { } carrier)
             {
+                rests?.AddRange(carrier.Rests);
                 return (Item(SweepKind.Carried, unlanded.Length, carrier.Entry.Branch, string.Join('\n', unlanded.Take(3))) with { CarriedBy = carrier.Entry }, tip);
             }
 
@@ -327,6 +345,8 @@ internal sealed class TreeSweeps(
                 var proof = await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false);
                 if (proof.Hold is { } held)
                 {
+                    // FABRIC-END4a, third review: the ref it found the work on, at the commit it compared.
+                    rests?.AddRange(proof.Rests);
                     return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3)))
                         with { HeldBy = held, OnLine = byItself && IsLineForm(held.Where, line) }, tip);
                 }
@@ -342,37 +362,62 @@ internal sealed class TreeSweeps(
         }
 
         var against = line is null ? null : await ComparableAsync(root, line, ct, refs).ConfigureAwait(false);
-        if (against is not null)
+        // FABRIC-END4a, third review: the line is compared at the commit read, which an empty branch's removal rests on.
+        var againstAt = against is null ? null : await TreeRefs.CommitOfAsync(root, against, ct, refs).ConfigureAwait(false);
+        if (against is not null && againstAt is not null)
         {
-            var (_, ahead, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{against}..{tip}"], ct).ConfigureAwait(false);
-            if (ahead.Trim() == "0") return (Item(SweepKind.Empty, where: line), tip);
+            var (_, ahead, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{againstAt}..{tip}"], ct).ConfigureAwait(false);
+            if (ahead.Trim() == "0")
+            {
+                rests?.Add((against, againstAt));
+                return (Item(SweepKind.Empty, where: line), tip);
+            }
         }
 
-        // Where it landed, for the list: the first branch of the person's that holds its tip.
-        var (_, holders, _) = await WorkingTree.GitAsync(
-            root, ["branch", "--all", "--contains", tip, "--format=%(refname:short)"], ct).ConfigureAwait(false);
-        var where = holders.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault(name => !name.StartsWith("daoris/", StringComparison.Ordinal) && !name.Contains("/daoris/", StringComparison.Ordinal));
+        // Where it landed, for the list: the first branch of the person's that holds its tip. And the holder its removal rests on (FABRIC-END4a,
+        // third review), out of the same read: a form of the line first, else a branch of the person's, each at the commit read.
+        if (await ContentHolds.HoldersAsync(root, tip, branch, ct).ConfigureAwait(false) is not { } holders)
+        {
+            return (Item(SweepKind.Unlanded, detail: "git could not list the branches that hold it") with { Unread = true }, null);
+        }
+
+        if (ContentHolds.HolderOf(holders, line, ContentHolds.PersonsRef) is not { } holder)
+        {
+            return (Item(SweepKind.Unlanded, detail: "the branch of yours that held it went as it was judged"), null);
+        }
+
+        rests?.Add(holder);
+        var where = holders.Select(pair => pair.Ref).Where(ContentHolds.PersonsRef).Select(ContentHolds.Named).FirstOrDefault();
         var (_, count, _) = await WorkingTree.GitAsync(
-            root, ["rev-list", "--count", tip, "--not", against ?? "HEAD"], ct).ConfigureAwait(false);
+            root, ["rev-list", "--count", tip, "--not", againstAt ?? "HEAD"], ct).ConfigureAwait(false);
         // AUTOTIDY2a: for the look, the form of the line that holds it, which it names; none where only a branch of the person's does.
-        var onLine = byItself ? await LineHoldingAsync(root, line, tip, ct, refs).ConfigureAwait(false) : null;
+        var onLine = byItself && line is not null && (holder.Ref == $"refs/heads/{line}" || holder.Ref == $"refs/remotes/origin/{line}")
+            ? ContentHolds.Named(holder.Ref)
+            : null;
         // AUTOTIDY2b: or the form a landing's branch that holds it was proven on: the line holds this work through that branch, which
         // the look takes after this one, as the press does. Waiting for the line by ancestry, a squash merge would keep both.
-        if (byItself && onLine is null) onLine = await LandingHoldingAsync(root, tip, landings, ct).ConfigureAwait(false);
+        if (byItself && onLine is null && await LandingHoldingAsync(root, tip, landings, ct).ConfigureAwait(false) is { } landing)
+        {
+            onLine = landing.Line;
+            // FABRIC-END4a, fourth review: and on what that landing's proof rested on, so the line rewound since it was proved keeps it.
+            rests?.Add(($"refs/heads/{landing.Branch}", landing.Tip));
+            rests?.AddRange(landing.Rests);
+        }
+
         return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null }, tip);
     }
 
     /// <summary>
     /// The form of the line that holds <paramref name="commit"/> by ancestry (AUTOTIDY2a): the line's own branch, else origin's
-    /// copy, which a fetch brings a platform's merge to before anyone pulls it. Null where neither does, or git could not say.
+    /// copy, which a fetch brings a platform's merge to before anyone pulls it. Null where neither does, or git could not say. Asked at
+    /// the commit the form was read at (FABRIC-END4a, third review), which a removal on it rests on.
     /// </summary>
-    private static async Task<string?> LineHoldingAsync(string root, string? line, string commit, CancellationToken ct, RefSnapshot? refs = null)
+    private static async Task<LandedProofs.LineForm?> LineHoldingAsync(string root, string? line, string commit, CancellationToken ct, RefSnapshot? refs = null)
     {
         foreach (var form in await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false))
         {
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, form.Ref], ct).ConfigureAwait(false);
-            if (code == 0) return form.Name;
+            var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, form.Rev], ct).ConfigureAwait(false);
+            if (code == 0) return form;
         }
 
         return null;
@@ -384,14 +429,15 @@ internal sealed class TreeSweeps(
 
     /// <summary>
     /// The form of the line a landing's branch holding <paramref name="tip"/> was proven on (AUTOTIDY2b), the first that holds it;
-    /// null where none does, or git could not say.
+    /// null where none does, or git could not say. A removal on it rests on that branch at the tip judged (FABRIC-END4a, third review), and
+    /// on what its own proof rested on (fourth review): a landing whose proof names nothing it rested on holds nothing here.
     /// </summary>
-    private static async Task<string?> LandingHoldingAsync(string root, string tip, IReadOnlyList<LineLanding>? landings, CancellationToken ct)
+    private static async Task<LineLanding?> LandingHoldingAsync(string root, string tip, IReadOnlyList<LineLanding>? landings, CancellationToken ct)
     {
-        foreach (var landing in landings ?? [])
+        foreach (var landing in (landings ?? []).Where(each => each.Rests.Count > 0))
         {
             var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, landing.Tip], ct).ConfigureAwait(false);
-            if (code == 0) return landing.Line;
+            if (code == 0) return landing;
         }
 
         return null;
@@ -405,4 +451,11 @@ internal sealed class TreeSweeps(
 /// </summary>
 /// <param name="Tip">The commit it was judged at.</param>
 /// <param name="Line">The form of the line its proof named (<c>main</c>, <c>origin/main</c>).</param>
-internal sealed record LineLanding(string Branch, string Tip, string Line);
+internal sealed record LineLanding(string Branch, string Tip, string Line)
+{
+    /// <summary>
+    /// What its own proof rested on, each ref at the commit read (FABRIC-END4a, fourth review): the form of the line it was proved on. A
+    /// session branch's removal through it rests on these too, so the line rewound since keeps that branch. None, and it holds nothing.
+    /// </summary>
+    internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
+}

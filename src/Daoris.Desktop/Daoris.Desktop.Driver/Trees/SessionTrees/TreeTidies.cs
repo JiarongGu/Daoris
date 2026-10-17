@@ -17,6 +17,12 @@ public sealed record TidiedBranch(string Branch, bool Removed, bool Tree, string
     /// rather than the landed ref's containment; null for the latter.
     /// </summary>
     public string? CarriedBy { get; init; }
+
+    /// <summary>
+    /// Kept because the tidy could judge nothing (FABRIC-END4a, fourth review): what the landed work is held by was not read, or not at what
+    /// the landing made, so whether it holds this branch's commits was never asked. Said apart from a kept branch whose commits it holds.
+    /// </summary>
+    internal bool Unjudged { get; init; }
 }
 
 /// <summary>
@@ -43,11 +49,23 @@ internal sealed class TreeTidies(
     /// with uncommitted work; not one a person checked the branch out in. Where nobody asked which sessions run, or a start
     /// holds the repository, a branch with a tree is kept and said. A branch with no tree holds no session.</para>
     /// </remarks>
-    /// <param name="landed">The ref the work landed on: the branch the landing made, or the line a merge went into.</param>
+    /// <param name="landed">The ref the work landed on: the branch the landing made, or the line a merge went into; or the session tip a
+    /// squash squashed, which <paramref name="holder"/> then holds.</param>
     /// <param name="pressed">The pressed session's own branch, which the tidy before this one handled.</param>
+    /// <param name="holder">The ref holding the landed work, by its full name, where <paramref name="landed"/> is no ref of its own: what a
+    /// removal here rests on, read once at its commit (FABRIC-END4a, third review). Null where <paramref name="landed"/> is that ref.</param>
+    /// <param name="madeAt">The commit the landing made <paramref name="holder"/> at (FABRIC-END4a, fourth review): where
+    /// <paramref name="landed"/> is a squashed tip, the holder is read at a commit holding this one, or nothing is judged.</param>
+    /// <remarks>
+    /// 🔴 <b>Bound to what the landing made</b> (fourth review). A squash's other branches are compared with the session tip it squashed,
+    /// which no ref holds, so a holder made again elsewhere before it is read would vouch for work it does not hold. Read at a commit that is
+    /// not, or does not contain, the one the landing made, or not read at all, the holder judges nothing: each other session branch stays,
+    /// and the landing says the clean-up could not judge it, never that the landed work holds its commits. The cost is one git start where
+    /// the holder moved since the landing made it (its ancestry asked), and a branch kept for the next clean-up where it moved elsewhere.
+    /// </remarks>
     internal async Task<IReadOnlyList<TidiedBranch>> TidyHeldAsync(
         string root, string repository, string workspace, string landed, string? pressed,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse, CancellationToken ct)
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse, CancellationToken ct, string? holder = null, string? madeAt = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the held tidy and the carried one ask git's guess at the line once.
         using var look = context.OneLook();
@@ -58,14 +76,30 @@ internal sealed class TreeTidies(
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        // Each the landed ref holds, at the tip it was judged at; one that is gone is the record's to forget below.
+        // The ref holding the landed work at its commit, read once before any proof (FABRIC-END4a, third review): each proof below is asked
+        // at that commit, and each delete verifies that ref at it, in its own transaction. A squash's own tip is a commit, asked as it is.
+        var holds = holder ?? landed;
+        var holdsAt = recorded.Count == 0 ? null : await TreeRefs.CommitOfAsync(root, holds, ct).ConfigureAwait(false);
+        // FABRIC-END4a, fourth review: why nothing here can be judged, where the holder was not read, or not at what the landing made.
+        var unjudged = recorded.Count == 0 ? null : await UnjudgedAsync(root, holds, holdsAt, holds == landed ? null : madeAt ?? "", ct).ConfigureAwait(false);
+        IReadOnlyList<(string Ref, string Commit)> rests = unjudged is null && holdsAt is not null ? [(holds, holdsAt)] : [];
+        var against = unjudged is not null ? null : holds == landed ? holdsAt : landed;
+        // Each the landed ref holds, at the tip it was judged at; one that is gone is the record's to forget below. Where nothing can be
+        // judged, each that stands is kept, said as not judged.
         var held = new List<(string Branch, string Tip)>();
+        var notJudged = new List<TidiedBranch>();
         foreach (var branch in recorded)
         {
             var (code, tip, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
                 .ConfigureAwait(false);
             if (code != 0) continue;
-            var (ancestor, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", $"refs/heads/{branch}", landed], ct)
+            if (against is null)
+            {
+                notJudged.Add(new TidiedBranch(branch, false, false, unjudged) { Unjudged = true });
+                continue;
+            }
+
+            var (ancestor, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip.Trim(), against], ct)
                 .ConfigureAwait(false);
             if (ancestor == 0) held.Add((branch, tip.Trim()));
         }
@@ -86,16 +120,35 @@ internal sealed class TreeTidies(
             {
                 results.Add(worktrees is null
                     ? new TidiedBranch(branch, false, false, ListUnread)
-                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false));
+                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, rests, ct).ConfigureAwait(false));
             }
         }
 
         // PLUGHOOK1a: a squash leaves no ancestor, so the branches a completed pull request carried go on its plugin's word,
         // where git confirms its merge commit on the line.
-        results.AddRange(await TidyCarriedAsync(root, repository, workspace, held.Select(each => each.Branch).ToList(), pressed, inUse, ct)
-            .ConfigureAwait(false));
+        var carried = await TidyCarriedAsync(root, repository, workspace, held.Select(each => each.Branch).ToList(), pressed, inUse, ct)
+            .ConfigureAwait(false);
+        results.AddRange(carried);
+        // The carried tidy rests on its own proofs, so a branch it judged is said as it judged it, not as unjudged here.
+        results.AddRange(notJudged.Where(each => !carried.Any(other => string.Equals(other.Branch, each.Branch, StringComparison.Ordinal))));
         await replays.ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
         return results;
+    }
+
+    /// <summary>
+    /// Why the held tidy can judge nothing (FABRIC-END4a, fourth review), or null where it can: the holder unread, or, where
+    /// <paramref name="madeAt"/> is asked for (a squash: not null), read at a commit that neither is nor contains the one the landing made.
+    /// An empty <paramref name="madeAt"/> is a squash whose made commit is not known, which binds nothing, so it judges nothing either.
+    /// </summary>
+    private static async Task<string?> UnjudgedAsync(string root, string holds, string? holdsAt, string? madeAt, CancellationToken ct)
+    {
+        var named = holds.StartsWith("refs/heads/", StringComparison.Ordinal) ? holds["refs/heads/".Length..] : holds;
+        if (holdsAt is null) return $"Daoris could not read `{named}`";
+        if (madeAt is null || holdsAt == madeAt) return null;
+        if (madeAt.Length == 0) return $"Daoris does not know the commit the landing made `{named}` at";
+        return await TreeRefs.IsAncestorAsync(root, madeAt, holdsAt, ct).ConfigureAwait(false)
+            ? null
+            : $"`{named}` no longer holds the commit the landing made";
     }
 
     /// <summary>
@@ -109,6 +162,7 @@ internal sealed class TreeTidies(
     {
         await asks.AskStatesAsync([(root, repository, workspace)], landedMayGo: false, ct).ConfigureAwait(false);
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        // Each carrier names what its proof rested on (FABRIC-END4a, third review): the form its merge was found on, at the commit read.
         var carriers = await asks.CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
         if (carriers.Count == 0) return [];
 
@@ -123,7 +177,9 @@ internal sealed class TreeTidies(
             var (code, tip, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
                 .ConfigureAwait(false);
             if (code != 0) continue;
-            if (await PullRequestAsks.CarrierOfAsync(root, $"refs/heads/{branch}", carriers, ct).ConfigureAwait(false) is { } carrier)
+            // FABRIC-END4a, fourth review: the carrier is asked about the tip read, which the delete compares, never the live name, so a
+            // branch moved to what was carried and back as it was asked is not taken on that proof.
+            if (await PullRequestAsks.CarrierOfAsync(root, tip.Trim(), carriers, ct).ConfigureAwait(false) is { } carrier)
             {
                 carried.Add((branch, tip.Trim(), carrier));
             }
@@ -144,7 +200,7 @@ internal sealed class TreeTidies(
         {
             var tidied = (worktrees is null
                     ? new TidiedBranch(branch, false, false, ListUnread)
-                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false))
+                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, carrier.Rests, ct).ConfigureAwait(false))
                 with { CarriedBy = carrier.Entry.Branch };
             results.Add(tidied);
             if (!tidied.Removed) continue;
@@ -161,10 +217,14 @@ internal sealed class TreeTidies(
         return results;
     }
 
+    /// <param name="rests">What the proof that cleared it rested on, each ref at the commit it read (FABRIC-END4a, third review): the delete
+    /// verifies exactly these; none keeps it.</param>
     private async Task<TidiedBranch> TidyOneAsync(
-        string root, string branch, string tip, string? tree, HashSet<string>? busy, string unasked, CancellationToken ct)
+        string root, string branch, string tip, string? tree, HashSet<string>? busy, string unasked,
+        IReadOnlyList<(string Ref, string Commit)> rests, CancellationToken ct)
     {
         TidiedBranch Kept(string why) => new(branch, false, tree is not null, why);
+        if (rests.Count == 0) return Kept("Daoris could not read what its proof rests on");
 
         if (tree is not null)
         {
@@ -195,9 +255,9 @@ internal sealed class TreeTidies(
             }
         }
 
-        // The look above leaves a moment before the delete, so the delete itself compares (SQUASHTIDY1c); git's own -d asks
-        // only about the checkout's HEAD.
-        var stays = await content.DeleteJudgedAsync(root, branch, tip, ct).ConfigureAwait(false);
+        // The look above leaves a moment before the delete, so the delete itself compares (SQUASHTIDY1c), in one transaction with what
+        // its proof rested on (FABRIC-END4a, second and third reviews); git's own -d asks only about the checkout's HEAD.
+        var stays = await content.DeleteJudgedAsync(root, branch, tip, rests, ct).ConfigureAwait(false);
         return stays is null ? new(branch, true, tree is not null) : Kept(stays);
     }
 
@@ -208,9 +268,16 @@ internal sealed class TreeTidies(
         var removed = tidied.Where(each => each.Removed && each.CarriedBy is null).Select(Named).ToArray();
         if (removed.Length > 0) said += $" Also removed {Listed(removed)}, whose commits `{landed}` holds.";
 
-        foreach (var kept in tidied.Where(each => !each.Removed && each.CarriedBy is null))
+        foreach (var kept in tidied.Where(each => !each.Removed && each.CarriedBy is null && !each.Unjudged))
         {
             said += $" Kept `{kept.Branch}`, whose commits `{landed}` holds: {kept.Why}.";
+        }
+
+        // FABRIC-END4a, fourth review: what could not be judged is said so, never as held by the landed work.
+        foreach (var why in tidied.Where(each => each.Unjudged).GroupBy(each => each.Why, StringComparer.Ordinal))
+        {
+            var names = why.Select(each => $"`{each.Branch}`").ToArray();
+            said += $" The clean-up could not judge {Listed(names)}, so {(names.Length == 1 ? "it stays" : "they stay")}: {why.Key}.";
         }
 
         // PLUGHOOK1a: each landed branch's completed pull request, and what it carried.
@@ -292,6 +359,10 @@ internal sealed class TreeTidies(
             var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(
                 root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct).ConfigureAwait(false);
             var judged = tipOut.Trim();
+            // The line it grew against (SQUASHTIDY1's proof by content asks it).
+            var grewIn = context.Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                                                                    && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
+            var line = (await context.LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
             var (logCode, unlanded, logErr) = tipCode != 0 ? (tipCode, "", tipErr) : await TreeFollows.UnlandedLogAsync(root, judged, ct).ConfigureAwait(false);
             if (logCode != 0)
             {
@@ -299,16 +370,38 @@ internal sealed class TreeTidies(
                     + "The branch stays; say it again with --force to discard it.");
             }
 
-            // SQUASHTIDY1: the same proof by content as a tree's removal, against the line of the workspace it grew in; before it,
-            // a squashing landing's record, which vouches as ancestry would and keeps no ref (PROCESS1b-ii point 3).
-            if (!string.IsNullOrWhiteSpace(unlanded)
-                && (squashedOn = await squashes.SquashedHolderAsync(root, repository, judged, ct).ConfigureAwait(false)) is null)
+            // What the proof that clears it rests on (FABRIC-END4a, third review), each ref at the commit it read, returned by that proof and
+            // verified exactly by the delete: the branch of the person's holding it, a squashing landing's branch, or the ref holding its
+            // work by content.
+            IReadOnlyList<(string Ref, string Commit)> rests = [];
+            if (string.IsNullOrWhiteSpace(unlanded))
             {
-                var grewIn = context.Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
-                                                                        && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
-                var line = (await context.LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
+                if (await ContentHolds.HoldersAsync(root, judged, branch, ct).ConfigureAwait(false) is not { } holders)
+                {
+                    return new(false, $"Daoris cannot tell which branch of yours holds the work on `{branch}`, so it stays. "
+                        + "Say it again with --force to discard it.");
+                }
+
+                if (ContentHolds.HolderOf(holders, line, ContentHolds.PersonsRef) is not { } holder)
+                {
+                    return new(false, $"the branch of yours that held the work on `{branch}` went as it was judged, so it stays. "
+                        + "Say it again with --force to discard it.");
+                }
+
+                rests = [holder];
+            }
+            else if (await squashes.SquashedHoldAsync(root, repository, judged, ct).ConfigureAwait(false) is { } squash)
+            {
+                // A squashing landing's record vouches as ancestry would and keeps no ref (PROCESS1b-ii point 3), while its branch stands.
+                squashedOn = squash.Entry;
+                rests = [($"refs/heads/{squash.Entry.Branch}", squash.At)];
+            }
+            else
+            {
+                // SQUASHTIDY1: the same proof by content as a tree's removal, against the line of the workspace it grew in.
                 var proof = await ContentHolds.HeldByContentAsync(root, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false);
                 held = proof.Hold;
+                rests = proof.Rests;
                 if (proof.Unread is { } unread)
                 {
                     // PROOF-UNREAD1: a proof git could not read is not "held nowhere"; the refusal says it could not tell.
@@ -333,7 +426,7 @@ internal sealed class TreeTidies(
                 kept = reference;
             }
 
-            var stays = await content.DeleteJudgedAsync(root, branch, judged, ct).ConfigureAwait(false);
+            var stays = await content.DeleteJudgedAsync(root, branch, judged, rests, ct).ConfigureAwait(false);
             if (stays is not null)
             {
                 await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
