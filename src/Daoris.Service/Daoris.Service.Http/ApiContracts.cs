@@ -127,7 +127,22 @@ public sealed record QuestResponse(
     IReadOnlyList<QuestReviewVerdictWire>? Verdicts = null,
     // The note's parts beside `Note` (QUESTCLOSE1b1, D142 point 2): Daoris's lead by its code, then someone's words. Absent
     // for a note written without them, which is every quest from before, and from a host from before; `Note` is unchanged.
-    JsonElement? NoteParts = null);
+    JsonElement? NoteParts = null,
+    // FABRIC-CLOSE1a (the fabric events design §E5): the digest of the graph that closes it, and its taker's current submission,
+    // its result while it stays Taken. Both absent for a quest no closure graph holds, which is every quest from before, and from
+    // a host from before: a reader that knows neither reads a submitted quest as Taken, as it is.
+    string? Closure = null, QuestSubmissionWire? Submission = null);
+// A taker's submission in a closure graph (FABRIC-CLOSE1a), answered only: the operation that made it, by the machine and
+// sequence a close names it by, when, and its note. Its answers are the quest's `Answers`.
+public sealed record QuestSubmissionWire(string Machine, long Sequence, DateTimeOffset At, string? Note);
+// The driver's bind of a taken quest to the graph that closes it (FABRIC-CLOSE1a): the graph's digest.
+public sealed record BindQuestRequest(string? Graph);
+// The graph's close (FABRIC-CLOSE1a, §E5 step 2): its key, which a second send of the same close repeats, its close token, and
+// every quest of the chain it closes, each with the submission it judged. Nullable on the way in and judged by the exchange.
+public sealed record CloseQuestRequest(string? Key, string? Token, IReadOnlyList<QuestCloseItemWire?>? Quests);
+public sealed record QuestCloseItemWire(string? Id, string? Machine, long? Sequence);
+// What a close did: every quest it named as it now stands, and the sentence.
+public sealed record QuestCloseResponse(IReadOnlyList<QuestResponse> Quests, string Message);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -576,6 +591,9 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(DismissConflictRequest))]
 [JsonSerializable(typeof(QuestEvidenceVerdictWire))]
 [JsonSerializable(typeof(QuestSetUpRequest))]
+[JsonSerializable(typeof(BindQuestRequest))]
+[JsonSerializable(typeof(CloseQuestRequest))]
+[JsonSerializable(typeof(QuestCloseResponse))]
 [JsonSerializable(typeof(QuestReviewRequest))]
 [JsonSerializable(typeof(SetUpStepRequest))]
 [JsonSerializable(typeof(AskReviewRequest))]

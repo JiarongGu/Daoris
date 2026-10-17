@@ -731,6 +731,69 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1a (the fabric events design §E5): the driver binds a taken quest to the graph that closes it; the agent's
+    /// done is refused there naming `ready`, and its `ready` answers the quest Taken with its submission and the graph's digest.
+    /// The close door writes it Done on the submission named, answers the same key again with the first outcome, and refuses a
+    /// call that is not one (400), an unknown quest (404) and a stale or closed one (409).
+    /// </summary>
+    [Fact]
+    public async Task A_bound_quest_is_submitted_with_ready_and_closed_once_by_the_close_door()
+    {
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the bridge report for the weekly review." });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the closure report", body = "For the review.",
+            requirements = new[] { new { quote = "Write the bridge report", check = "The report is written." } },
+        });
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Contains(("POST", "/api/quests/{id}/bind"), host.Routes());
+        Assert.Contains(("POST", "/api/quests/{id}/close"), host.Routes());
+
+        const string Graph = "sha256:0f1e2d3c4b5a6978";
+        var bound = await host.PostAsync($"/api/quests/{quest}/bind", new { graph = Graph });
+        Assert.Equal(200, bound.Status);
+        Assert.Equal(Graph, bound.Json.GetProperty("quest").GetProperty("closure").GetString());
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/bind", new { graph = Graph })).Status);
+
+        var answers = new[] { new { requirement = 1, met = "It is written." } };
+        var done = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written.", answers });
+        Assert.Equal(400, done.Status);
+        Assert.Contains("`ready`", done.Error);
+
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written.", answers });
+        Assert.Equal(200, ready.Status);
+        var submitted = ready.Json.GetProperty("quest");
+        Assert.Equal("Taken", submitted.GetProperty("status").GetString());
+        var submission = submitted.GetProperty("submission");
+        Assert.Equal("Written.", submission.GetProperty("note").GetString());
+        var named = new { id = quest, machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
+
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/close", new { token = "t", quests = new[] { named } })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/close", new
+        {
+            key = "k1", token = "t", quests = new[] { new { id = "feedfacecafe", machine = "m", sequence = 1L } },
+        })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/close", new
+        {
+            key = "k0", token = "t", quests = new[] { named with { sequence = named.sequence + 7 } },
+        })).Status);
+
+        var closed = await host.PostAsync($"/api/quests/{quest}/close", new { key = "k1", token = "t", quests = new[] { named } });
+        Assert.Equal(200, closed.Status);
+        var doneQuest = Assert.Single(closed.Json.GetProperty("quests").EnumerateArray().ToList());
+        Assert.Equal("Done", doneQuest.GetProperty("status").GetString());
+        Assert.Equal("Written.", doneQuest.GetProperty("note").GetString());
+
+        var again = await host.PostAsync($"/api/quests/{quest}/close", new { key = "k1", token = "t", quests = new[] { named } });
+        Assert.Equal(200, again.Status);
+        Assert.Contains("made already", again.Json.GetProperty("message").GetString());
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/close", new { key = "k2", token = "t", quests = new[] { named } })).Status);
+    }
+
+    /// <summary>
     /// REVIEWENV1b (D154; the review environment design §2.1, §2.6, §3.3–§3.6): the publish doors take a chain's review choice
     /// and a set-up step and answer them on the quest; a set-up step that reads as production is refused. The set-up step's
     /// done waits on a set-up, here the person's own posted at the set-up door, then holds (<c>hold</c> <c>unreviewed</c>)
