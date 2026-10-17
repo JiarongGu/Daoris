@@ -22,6 +22,7 @@ import { findName, sameName } from '../platform/casefold.ts';
 import { DaorisError } from '../platform/errors.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { writeKeeping } from '../platform/jsonkeep.ts';
 import { requireHomeFile } from '../platform/home.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import type { CommandArgs } from '../platform/types.ts';
@@ -55,6 +56,13 @@ export interface PermissionFile {
   rest: Record<string, unknown>;
   /** Why the file was read as empty, when it could not be read. */
   problem?: string;
+  /**
+   * The file as `readPermissions` understood it, written, or absent for rules built here (KEEPALL1): what an edit is measured from, so
+   * a write makes only the edit onto the file as it stands.
+   */
+  understood?: string;
+  /** Whether a file was there when it was read (KEEPALL1): with none then and none now, the write writes the rules whole. */
+  found?: boolean;
 }
 
 /**
@@ -143,20 +151,33 @@ export function readPermissions(path: string): PermissionFile {
   if (problem !== null) {
     return { ...nothing, problem: `${problem}, so no rule of it applies. The defaults still do.` };
   }
-  if (value === null) return nothing;
+  if (value === null) return { ...nothing, understood: JSON.stringify(permissionsWritten(nothing)), found: false };
 
   const { machine, workspaces, repositories, defaultsOff, ...rest } = value;
-  return {
+  const file: PermissionFile = {
     machine: lists(machine),
     workspaces: scopes(workspaces),
     repositories: scopes(repositories),
     defaultsOff: strings(defaultsOff),
     rest,
   };
+  return { ...file, understood: JSON.stringify(permissionsWritten(file)), found: true };
 }
 
-/** Written beside and renamed over, BOM-less and LF; an empty scope is left out — and never over a file it could not read. */
+/**
+ * Written beside and renamed over, BOM-less and LF; an empty scope is left out — and never over a file it could not read. The edit from
+ * what was read is made onto the file as it stands (KEEPALL1, `jsonkeep.ts`' `writeKeeping`), so a key this build has no field for
+ * stays where it is at every level, every number it did not change by its own text, a change another writer made since the read stays,
+ * and no edit writes nothing: rebuilt from the fields it reads, it moved what it did not know to the front and deleted a scope's own
+ * unknown keys. Rules built here are written whole. The driver's `PermissionRules.Save` does the same.
+ */
 export function writePermissions(path: string, file: PermissionFile): void {
+  if (file.understood === undefined) writeJsonAtomic(path, permissionsWritten(file));
+  else writeKeeping(path, file.found === true, JSON.parse(file.understood) as Record<string, unknown>, permissionsWritten(file));
+}
+
+/** The rules' own shape: what neither knows first, then each scope only where it holds a rule, as the driver's `PermissionRules.Root`. */
+function permissionsWritten(file: PermissionFile): Record<string, unknown> {
   const node = (held: RuleLists) => Object.fromEntries(LISTS.filter((list) => held[list].length > 0).map((list) => [list, held[list]]));
   const named = (map: Record<string, RuleLists>) => Object.fromEntries(
     Object.entries(map).filter(([, held]) => !isEmpty(held)).sort(([a], [b]) => (a < b ? -1 : 1)).map(([key, held]) => [key, node(held)]));
@@ -166,8 +187,7 @@ export function writePermissions(path: string, file: PermissionFile): void {
   if (Object.keys(named(file.workspaces)).length > 0) out.workspaces = named(file.workspaces);
   if (Object.keys(named(file.repositories)).length > 0) out.repositories = named(file.repositories);
   if (file.defaultsOff.length > 0) out.defaultsOff = [...new Set(file.defaultsOff)].sort();
-
-  writeJsonAtomic(path, out);
+  return out;
 }
 
 /**

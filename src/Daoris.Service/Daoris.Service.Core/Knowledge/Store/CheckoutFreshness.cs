@@ -20,6 +20,9 @@ namespace Daoris.Knowledge;
 /// small watcher over the same <see cref="FileSystemWatcher"/>, with the same rules: a hint is a wake, an overflow or an
 /// error is never taken for fresh.</para>
 ///
+/// <para><b>No watch reaches what git ignores</b> (KNOWWALK1): a watched folder with an ignored folder in it is watched in
+/// parts around it (<see cref="IgnoredPaths"/>), so <c>.claude/worktrees/</c>, every agent's checkout, wakes nothing.</para>
+///
 /// <para>Its own writes wake nothing: a refresh only reads the checkout.</para>
 /// </remarks>
 public sealed class CheckoutFreshness : IDisposable
@@ -93,13 +96,17 @@ public sealed class CheckoutFreshness : IDisposable
         var root = _checkout!;
         // The checkout's own top: its AGENTS.md, README, backlog and the lock that says what it owns, not every file there.
         OpenFolder(root, recursive: false, hears: name => IsRecord(name));
-        foreach (var folder in new[] { ".claude", "docs" }) OpenFolder(Path.Combine(root, folder), recursive: true);
+        var trees = new List<string> { ".claude", "docs" };
         foreach (var named in new[] { _documents, _index })
         {
             if (string.IsNullOrWhiteSpace(named)) continue;
             var folder = Path.Combine(root, named.Replace('/', Path.DirectorySeparatorChar));
-            if (!IsUnder(folder, Path.Combine(root, "docs")) && !IsUnder(folder, Path.Combine(root, ".claude"))) OpenFolder(folder, recursive: true);
+            if (!IsUnder(folder, Path.Combine(root, "docs")) && !IsUnder(folder, Path.Combine(root, ".claude"))) trees.Add(named.Trim('/'));
         }
+
+        // What git ignores in them, asked once for the process (KNOWWALK1): `.claude/worktrees/` is every agent's checkout.
+        var ignored = IgnoredPaths.Of(root, [.. trees]);
+        foreach (var tree in trees) OpenTree(root, tree, ignored);
 
         if (GitFolders(root) is { } git)
         {
@@ -110,7 +117,40 @@ public sealed class CheckoutFreshness : IDisposable
         }
     }
 
+    /// <summary>
+    /// Watches a folder and all of it git does not ignore (KNOWWALK1): one watch of the whole where nothing within is
+    /// ignored, else this folder alone, hearing none of its ignored entries, and each folder in it git does not ignore, the
+    /// same way. A recursive watch hears every write beneath it, and under <c>.claude/</c> that was every agent's build and
+    /// install in <c>.claude/worktrees/</c>, each a reading marked stale for nothing. A folder made later, inside a folder
+    /// watched alone, is heard being made and is watched from the next start; the deadline covers it till then.
+    /// </summary>
+    /// <param name="relative">The folder, repository-relative with forward slashes.</param>
+    private void OpenTree(string root, string relative, IgnoredPaths ignored)
+    {
+        if (ignored.Covers($"{relative}/")) return;
+        var folder = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        if (!ignored.AnyWithin(relative))
+        {
+            OpenFolder(folder, recursive: true);
+            return;
+        }
+
+        OpenFolder(folder, recursive: false, hears: name => !ignored.Covers($"{relative}/{name}") && !ignored.Covers($"{relative}/{name}/"));
+        IEnumerable<string> below;
+        try
+        {
+            below = Directory.EnumerateDirectories(folder).Select(Path.GetFileName).OfType<string>().ToList();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return;
+        }
+
+        foreach (var name in below) OpenTree(root, $"{relative}/{name}", ignored);
+    }
+
     /// <summary>Opens a watcher, or says nothing when the folder is absent: a folder made later is found at the deadline.</summary>
+    /// <param name="hears">Which events mark stale, by the name of the file or folder that moved; null hears every one.</param>
     private void OpenFolder(string folder, bool recursive, Func<string, bool>? hears = null)
     {
         if (!Directory.Exists(folder)) return;
