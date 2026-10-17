@@ -92,6 +92,15 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         lock (_gate) return _states.TryGetValue(id, out var state) && state.Restarts.Unsound;
     }
 
+    /// <summary>
+    /// The last frame whose send to <paramref name="id"/>'s process of <paramref name="generation"/> completed (FABRIC-PERFORM1i, §C4's third
+    /// rule): what that process was actually told. Null where none did, the generation is not the current one, or it is not listened to.
+    /// </summary>
+    public WorkWatchFrame? SentTo(string id, int generation)
+    {
+        return null;
+    }
+
     public int? GenerationOf(string id)
     {
         lock (_gate) return _states.TryGetValue(id, out var state) && state.Listened is not null ? state.Generation : null;

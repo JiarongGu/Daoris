@@ -10,6 +10,12 @@ public interface IWorkRuntimePort : IWorkPerformPort
     void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited);
 
     IReadOnlyList<WorkStepHeard> TakeSteps();
+
+    /// <summary>
+    /// The last <c>work/watch</c> frame whose send to <paramref name="plugin"/>'s process of <paramref name="generation"/> completed
+    /// (FABRIC-PERFORM1i, §C4's third rule), or null where none did: what that process was actually told, never the set desired since.
+    /// </summary>
+    WorkWatchFrame? SentTo(string plugin, int generation) => null;
 }
 
 /// <summary>The units a pass reads (<see cref="WorkUnits"/>), and each repository's checkout here, which the awaited set names.</summary>
@@ -26,6 +32,13 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
 
     /// <summary>The plugins' steps as the catalogue declares them (<see cref="PluginManifest.Steps"/>): a performed node's contract.</summary>
     public Func<IReadOnlyList<NodeDeclaration>> Steps { get; init; } = () => [];
+
+    /// <summary>
+    /// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule): one read of the checkout's refs per pass
+    /// (<see cref="NodeTips.ReadAsync"/>), never a cached unit's revision. A branch it could not read is absent, and establishes nothing.
+    /// </summary>
+    public Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> Tips { get; init; } =
+        (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
 }
 
 /// <summary>
@@ -43,6 +56,12 @@ public sealed record GovernedUnit(
     /// bound to another graph, is never closed by one, and keeps today's done.
     /// </summary>
     public bool Closes { get; init; }
+
+    /// <summary>
+    /// The plugins' observed nodes whose plugin declares their step at the graph's version and reach (FABRIC-PERFORM1i): only these are
+    /// begun, awaited and reached by a believed event.
+    /// </summary>
+    public IReadOnlySet<string> Observable { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 }
 
 /// <summary>What one pass did (FABRIC-RUN1), for the look's report, the machine log and the tests.</summary>

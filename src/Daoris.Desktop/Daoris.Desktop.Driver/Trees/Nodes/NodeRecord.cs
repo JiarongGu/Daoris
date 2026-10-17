@@ -104,6 +104,20 @@ public static class HeldResolutions
 public sealed record NodeHistory(DateTimeOffset At, string Why, NodeStatus Was);
 
 /// <summary>
+/// One event taken for an observed node (FABRIC-PERFORM1i; §C4's <c>work/step</c> naming no invocation). Its identity is its plugin, its
+/// repository's identity, its unit (the record's), its step, its commit and its id: the process's generation fences delivery, never this.
+/// </summary>
+/// <param name="Plugin">The plugin whose process sent it (§C4's first rule), never what the frame says.</param>
+/// <param name="Repository">The repository's identity (§B5), as the frame actually sent named it.</param>
+/// <param name="Step">The plugin's own step id, normalised (<c>&lt;plugin&gt;/</c> taken off).</param>
+/// <param name="Commit">The full commit it is bound to.</param>
+/// <param name="Id">The plugin's id for the event.</param>
+/// <param name="State">Reached or failed: an unknown establishes nothing and is not kept.</param>
+/// <param name="At">When the plugin says it happened.</param>
+/// <param name="Node">The node it was taken for.</param>
+public sealed record ObservedEvent(string Plugin, string Repository, string Step, string Commit, string Id, string State, DateTimeOffset At, string Node);
+
+/// <summary>
 /// A unit's node record (FABRIC-PERFORM1b; §E7, <i>unit records keep §D6's attempts</i>): every node's status on the unit, the attempts
 /// dispatched for them, the trigger firings their starts consumed, and the history their moves cleared. One writer, the driver in the
 /// loop that holds the home's lease (<see cref="NodeRecordFiles"/>).
@@ -127,6 +141,12 @@ public sealed record NodeRecord(string Unit)
     public IReadOnlyList<string> Fired { get; init; } = [];
 
     public IReadOnlyList<NodeHistory> History { get; init; } = [];
+
+    /// <summary>
+    /// The plugins' events an observed node was reached or failed on (FABRIC-PERFORM1i): the newest taken for each step and commit, what a
+    /// replay is known by and a later event is ordered against. A record written before them reads with none.
+    /// </summary>
+    public IReadOnlyList<ObservedEvent> Observations { get; init; } = [];
 
     /// <summary>The attempt an invocation names, or null.</summary>
     public NodeAttempt? Invoked(string invocation) =>

@@ -73,6 +73,12 @@ public static class PerformedWhat
 
     /// <summary>The person's word was applied (FABRIC-PERFORM1g): the attempt settled by the person, its node moved through the one table.</summary>
     public const string Resolved = "resolved";
+
+    /// <summary>
+    /// A believed event that establishes nothing (FABRIC-PERFORM1i): an observed step's <c>unknown</c>, which moves no node and is not kept,
+    /// so no later word is ordered behind it.
+    /// </summary>
+    public const string Noted = "noted";
 }
 
 /// <summary>One thing the performer did, on one unit's node.</summary>
