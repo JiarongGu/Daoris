@@ -844,6 +844,18 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal("key-reused", reused.Json.GetProperty("code").GetString());
         Assert.Equal("stale", stale.Json.GetProperty("code").GetString());
 
+        // FABRIC-CLOSE1u: what became of a key, at its own door, executing nothing: a close made answers it; a key never taken is
+        // withdrawn (409 `withdrawn`), and its close sent after is refused alike; a question that is not one is 400.
+        Assert.Contains(("POST", "/api/quests/{id}/close/outcome"), host.Routes());
+        var made = await host.PostAsync($"/api/quests/{quest}/close/outcome", new { key = "k1", token = "t", quests = new[] { named } });
+        Assert.Equal(200, made.Status);
+        Assert.Equal("Done", Assert.Single(made.Json.GetProperty("quests").EnumerateArray().ToList()).GetProperty("status").GetString());
+        var withdrawn = await host.PostAsync($"/api/quests/{quest}/close/outcome", new { key = "k9", token = "t", quests = new[] { named } });
+        Assert.Equal((409, "withdrawn"), (withdrawn.Status, withdrawn.Json.GetProperty("code").GetString()));
+        var late = await host.PostAsync($"/api/quests/{quest}/close", new { key = "k9", token = "t", quests = new[] { named } });
+        Assert.Equal((409, "withdrawn"), (late.Status, late.Json.GetProperty("code").GetString()));
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/close/outcome", new { token = "t", quests = new[] { named } })).Status);
+
         // FABRIC-CLOSE1b's handshake: this host knows a closure graph's operations and doors.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
     }

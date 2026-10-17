@@ -421,6 +421,13 @@ public enum QuestCloseRefusal
     /// not answered with its outcome. A new attempt takes a new key.
     /// </summary>
     KeyReused,
+
+    /// <summary>
+    /// The key was never taken before the driver asked what became of it (FABRIC-CLOSE1u), so its close never ran, and the
+    /// question withdrew it: kept under the key like any outcome, so a send of it arriving after is refused and never runs. Kept
+    /// by its name; a build before it reads the name as no refusal it knows, which it answers as a key not that close's.
+    /// </summary>
+    Withdrawn,
 }
 
 /// <summary>
@@ -1677,6 +1684,12 @@ public sealed class QuestStore
 
             writer.WriteEndArray();
         });
+
+    /// <summary>What became of a close sent with <paramref name="close"/>'s key (FABRIC-CLOSE1u): not answered yet.</summary>
+    public Task<QuestClosing> CloseOutcomeAsync(
+        IReadOnlyList<(string Id, QuestOperationRef Submission)> named, QuestClose close, DateTimeOffset now,
+        CancellationToken ct = default) =>
+        throw new NotImplementedException();
 
     /// <summary>A close's first outcome, as kept under its key: its token, what it named, how it ended and on which quest.</summary>
     private sealed record KeptClose(string Token, string Named, QuestCloseRefusal Refusal, string? On);

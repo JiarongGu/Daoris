@@ -1629,6 +1629,12 @@ public sealed class QuestExchange(
         };
     }
 
+    /// <summary>What became of a close sent with <paramref name="key"/> (FABRIC-CLOSE1u): not answered yet.</summary>
+    public Task<QuestCloseOutcome> CloseOutcomeAsync(
+        string id, string? key, string? token, IReadOnlyList<(string Id, QuestOperationRef Submission)> named,
+        DateTimeOffset now, CancellationToken ct = default) =>
+        throw new NotImplementedException();
+
     /// <summary>
     /// Which check refused a close when it was first sent (FABRIC-CLOSE1e), in words that hold however the quest has moved since.
     /// </summary>
