@@ -88,7 +88,10 @@ durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the
 `work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
 answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked
 read-modify-write with the lease asked inside it (`NodeRecordFiles.Edit`), and a reply is applied after its await to the record as
-it is then (FABRIC-PERFORM1h).
+it is then (FABRIC-PERFORM1h). `NodeRuntime` runs them in the lease's loop, link 8 of its chain (`ChainRanks.Nodes`, bound by
+`DriverWatch` where it holds a hook set): off unless a graph naming a plugin's performed node governs a unit, it hears completions,
+reconciles, makes retries due, evaluates the concerned units to settled with their moves kept and starts made, and tells the plugins
+the awaited set; one pass at a time, with the loop's one performer (FABRIC-RUN1, D173's note).
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
 its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
 rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),
