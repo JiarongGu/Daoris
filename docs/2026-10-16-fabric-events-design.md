@@ -1731,6 +1731,7 @@ A failure sink may end without reaching the end.
 | D157 (WorkflowNamed.cs) | Graph |
 |---|---|
 | step order | `after` wires |
+| D157 §2.2's protected order before the landing: the holds (the work's claim carries them), the opinion, the look, the landing | an `after` wire from each into every one after it, beside the step order. A skip satisfies `after` (§E2), so reachability alone would let a skip pass a gate still unsettled (D173's FABRIC-GRAPH1h note) |
 | a step's inputs | `data` wires |
 | an `all` group, its members and its own `failed` policy (WorkflowNamed.cs:92) | an **`all` join node** with the group's id: reached when every member is reached or skipped, failed under the group's policy when a member fails. Members are wired into it, and it into the next step, so the group's identity and policy survive as a node |
 | `failed: stop` | a `failed` wire to a synthetic sink |

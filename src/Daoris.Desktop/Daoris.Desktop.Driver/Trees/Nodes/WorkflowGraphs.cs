@@ -17,9 +17,10 @@ public sealed record DecodedVersion(int Version, string? Identity, NodeGraph? Gr
 /// <summary>
 /// D157's named versions decoded as graphs, never rewritten (FABRIC-WORKFLOW2; the fabric events design §E7's migration contract, §E4).
 /// Pure: it reads a version as <see cref="WorkflowNamed"/> read it and writes nothing, so a stored file and a run's binding stay byte for
-/// byte. Step order is <c>after</c> wires; a group is a synthetic <c>all</c> join with the group's id, its members wired into it and it
-/// into the next step; <c>failed: stop</c> is a <c>failed</c> wire to a synthetic <c>stop</c>, <c>wait</c> one to a synthetic person's
-/// task, and <c>send-back</c> the adapter's one return, then the person's task; a person's skip is the node's, a group's its members'.
+/// byte. Step order is <c>after</c> wires, and each gate of the protected order before the landing is wired into every gate after it
+/// (FABRIC-GRAPH1h); a group is a synthetic <c>all</c> join with the group's id, its members wired into it and it into the next step;
+/// <c>failed: stop</c> is a <c>failed</c> wire to a synthetic <c>stop</c>, <c>wait</c> one to a synthetic person's task, and
+/// <c>send-back</c> the adapter's one return, then the person's task; a person's skip is the node's, a group's its members'.
 /// </summary>
 /// <remarks>
 /// A TWIN with the CLI's <c>workflowgraphs.ts</c>: both read the CLI's <c>test/fixtures/workflow-graphs.json</c>, row for row, every graph
@@ -28,8 +29,11 @@ public sealed record DecodedVersion(int Version, string? Identity, NodeGraph? Gr
 /// </remarks>
 public static class WorkflowGraphs
 {
-    /// <summary>The decoder's own version: a decoded graph's digest is derived from it, so a changed mapping binds afresh.</summary>
-    public const int DecoderVersion = 1;
+    /// <summary>
+    /// The decoder's own version: a decoded graph's digest is derived from it, so a changed mapping binds afresh. 2 since FABRIC-GRAPH1h,
+    /// whose wires hold the protected order across a skip; no stored record binds a decoded digest yet (D173's FABRIC-GRAPH1h note).
+    /// </summary>
+    public const int DecoderVersion = 2;
 
     /// <summary>The kind a check decodes to after its plugin: the plugin point <c>work/checks</c>, its slash a dot, which no stage's id holds.</summary>
     public const string ChecksNode = "work.checks";
@@ -87,6 +91,7 @@ public static class WorkflowGraphs
         }
 
         string? previous = null;
+        var gates = new List<string>();
         foreach (var step in steps)
         {
             if (step.Kind == WorkflowKinds.All)
@@ -105,6 +110,15 @@ public static class WorkflowGraphs
             {
                 nodes.Add(Node(step));
                 if (previous is not null) Wire(WireKinds.After, previous, step.Id);
+
+                // FABRIC-GRAPH1h: the protected order (D157 §2.2) held by wires, not by reachability alone. A skip satisfies its `after`
+                // wire (§E2), so the step order alone would let a gate go past an earlier one still unsettled once a step between is
+                // skipped. Each gate (the work, whose node carries the holds; the opinion; the look) is wired into every gate after it.
+                if (Gate(step))
+                {
+                    foreach (var gate in gates.Where(gate => gate != previous)) Wire(WireKinds.After, gate, step.Id);
+                    gates.Add(step.Id);
+                }
             }
 
             switch (step.Kind)
@@ -122,6 +136,12 @@ public static class WorkflowGraphs
 
         return new NodeGraph(nodes, wires, steps.Count > 0 ? [steps[0].Id] : [], previous ?? "");
     }
+
+    /// <summary>
+    /// A step of the protected order before the landing (D157 §2.2: the holds, the second opinion, the look, the landing): the work, whose
+    /// claim carries the holds, the opinion, the look and the landing. A go-ahead sits with the work and is none; no group holds one.
+    /// </summary>
+    private static bool Gate(NamedStep step) => step.Kind is WorkflowKinds.Work or WorkflowKinds.Opinion or WorkflowKinds.Look or WorkflowKinds.Landing;
 
     /// <summary>A step as its node (§E4): its kind's node, its reach, and every field it takes but a group's members as an option, as written.</summary>
     private static NodeDeclaration Node(NamedStep step)

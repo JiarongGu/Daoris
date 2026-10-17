@@ -227,6 +227,52 @@ public sealed class WorkflowGraphsTests : IDisposable
         Assert.NotEqual(first.GraphDigest, WorkflowGraphs.GraphDigest("000000000000", first.Graph!));
     }
 
+    /// <summary>
+    /// FABRIC-GRAPH1h (D157 §2.2; GRAPH1's choice 5, WORKFLOW2's choice 10): the protected order held by wires, not by reachability alone.
+    /// A skip satisfies its <c>after</c> wire (§E2), so a chain alone lets the landing past an unsettled gate once a step between is
+    /// skipped. Each gate before the landing (the work, whose node carries the holds; the opinion; the look) is wired into every gate after
+    /// it, once, beside the step order; a go-ahead is no gate, and nothing after the landing gains a wire.
+    /// </summary>
+    [Fact]
+    public void The_protected_order_wires_each_gate_into_every_gate_after_it()
+    {
+        List<NamedStep> steps =
+        [
+            Step("work", WorkflowKinds.Work), Step("ask", WorkflowKinds.GoAhead, ("act", "Ship"), ("on", "the line")), Step("second", WorkflowKinds.Opinion),
+            Step("see", WorkflowKinds.Look), Landing(), Step("pr", WorkflowKinds.PullRequest), Check("lint", "stop"),
+        ];
+        var graph = WorkflowGraphs.Graph(steps);
+
+        Assert.Equal(
+            ["work>ask", "ask>second", "work>second", "second>see", "work>see", "see>land", "work>land", "second>land", "land>pr", "pr>lint"],
+            graph.Wires.Where(wire => wire.Kind == WireKinds.After).Select(wire => wire.Id));
+        Assert.Equal(graph.Wires.Count, graph.Wires.Select(wire => wire.Id).Distinct(StringComparer.Ordinal).Count());
+        Assert.Empty(NodeGraphs.Problems(graph));
+        Assert.Equal(["work>land"], WorkflowGraphs.Graph([Step("work", WorkflowKinds.Work), Landing()]).Wires.Select(wire => wire.Id));
+    }
+
+    /// <summary>
+    /// FABRIC-GRAPH1h: why a decoder change moves nothing stored. No record binds a decoded graph's digest yet: outside the decoder, only
+    /// the read-only projection (<c>WorkflowRunNodes</c>) reads it, and nothing else in the driver, whose runtime writes every node record,
+    /// reads the projection; the runtime governs the rules' graphs and kept closures by their own digest (<c>NodeRuntime.Govern</c>), and a
+    /// graph version is not decoded. When the cutover binds a run to a decoded graph this fails, and a decoder change is then a stored
+    /// binding's to keep (D173's FABRIC-GRAPH1h note).
+    /// </summary>
+    [Fact]
+    public void Nothing_outside_the_read_only_projection_reads_the_decoder()
+    {
+        var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
+        var separator = Path.DirectorySeparatorChar;
+        var readers = Directory.GetFiles(driver, "*.cs", SearchOption.AllDirectories)
+            .Where(file => !file.Contains($"{separator}obj{separator}", StringComparison.Ordinal) && !file.Contains($"{separator}bin{separator}", StringComparison.Ordinal))
+            .Where(file => Path.GetFileName(file) is not ("WorkflowGraphs.cs" or "WorkflowRunNodes.cs"))
+            .Where(file => File.ReadAllText(file) is var text
+                && (text.Contains("WorkflowGraphs.", StringComparison.Ordinal) || text.Contains("WorkflowRunNodes.", StringComparison.Ordinal)))
+            .Select(file => Path.GetRelativePath(driver, file))
+            .ToList();
+        Assert.Empty(readers);
+    }
+
     private const string WorkflowFile = """
         {
           "id": "careful",

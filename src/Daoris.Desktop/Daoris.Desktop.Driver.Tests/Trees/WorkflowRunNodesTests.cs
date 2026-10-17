@@ -175,10 +175,20 @@ public sealed class WorkflowRunNodesTests : IDisposable
         {
             Review = Review(ReviewStates.NotShown),
         }, "second", ["second"], [("second", NodeStates.Unknown), ("see", Blocked), ("land", Blocked)], [(WorkflowRunDifferences.LookBesideOpinion, "second")]),
-        ["a look skipped while an agent reads the opinion: the decoded landing goes past it"] = new(Opined, facts => Done(facts) with
+        // FABRIC-GRAPH1h: the protected order held across a skip. The look's skip satisfies its own wire, and the opinion's and the work's
+        // wires into the landing still hold it, as schema 1 does.
+        ["a look skipped while an agent reads the opinion: the landing still waits on the opinion"] = new(Opined, facts => Done(facts) with
         {
             Review = Skipped, Opinion = Opinion(OpinionGateStates.Reading),
-        }, "second", ["second", "land"], [("second", Active), ("see", NodeStates.Skipped), ("land", Ready)], [(WorkflowRunDifferences.SkipPassesEarlier, "see")]),
+        }, "second", ["second"], [("second", Active), ("see", NodeStates.Skipped), ("land", Blocked)], []),
+        ["a look skipped while the work runs: the landing waits on the work"] = new(Looked, facts => facts with
+        {
+            Quests = [Quest("q1", "Taken")], Sessions = [Session("s1", "q1", "working")], Review = Skipped,
+        }, "work", ["work"], [("work", Active), ("see", NodeStates.Skipped), ("land", Blocked)], []),
+        ["a look skipped while the work runs and the opinion is not yet read: both hold the landing"] = new(Opined, facts => facts with
+        {
+            Quests = [Quest("q1", "Taken")], Sessions = [Session("s1", "q1", "working")], Review = Skipped,
+        }, "work", ["work"], [("work", Active), ("second", Blocked), ("see", NodeStates.Skipped), ("land", Blocked)], []),
         ["a historical landing decides, whatever its gates say now"] = new(Opined, facts => Accepted(facts) with
         {
             Review = Review(ReviewStates.NotShown), Opinion = Opinion(OpinionGateStates.Disputed),
@@ -353,7 +363,7 @@ public sealed class WorkflowRunNodesTests : IDisposable
     /// <summary>The CLI twin's smallest version (its table's first row), with the identity and the graph digest the twin computed for it.</summary>
     private const string Smallest = """{ "id": "work", "kind": "work" }, { "id": "land", "kind": "landing", "form": "merge", "accept": "you" }""";
     private const string SmallestIdentity = "75906e6bfc40";
-    private const string SmallestGraph = "gph-a165bc24ca1ef885986856aa914f1fc3";
+    private const string SmallestGraph = "gph-68bea661115caab7ab124e145520bc92";
 
     private static string File(params string[] versions) =>
         "{\n  \"id\": \"careful\",\n  \"name\": \"Careful\",\n  \"versions\": [\n"
@@ -459,6 +469,42 @@ public sealed class WorkflowRunNodesTests : IDisposable
         Assert.NotEqual(SmallestGraph, changed);
         Assert.Equal(SmallestGraph, WorkflowGraphs.GraphDigest(version.Identity!, version.Graph!, WorkflowGraphs.DecoderVersion));
         Assert.Equal(SmallestIdentity, runs.Read(RunId)!.Digest);
+        Assert.Equal(before, Snapshot());
+    }
+
+    /// <summary>A version with every gate before the landing (D157 §2.2): the work, the second opinion, the look, then a merge landing.</summary>
+    private const string Gated = """{ "id": "work", "kind": "work" }, { "id": "second", "kind": "opinion" }, { "id": "see", "kind": "look" }, { "id": "land", "kind": "landing", "form": "merge", "accept": "you" }""";
+
+    /// <summary>Its identity (<see cref="WorkflowNamed.Digest"/>) and the graph digest decoder 1 derived for it, both read before FABRIC-GRAPH1h.</summary>
+    private const string GatedIdentity = "42021b4bf601";
+    private const string GatedGraphUnderDecoder1 = "gph-09e1782a24b3918ad87319bf7c7ad129";
+
+    /// <summary>
+    /// FABRIC-GRAPH1h, golden: the protected order's wires changed the decoder, so the derived digest moved, and nothing stored did. The
+    /// version's identity is the one read before the change, the run's binding still names it, and the workflow's file and the binding keep
+    /// their bytes and their last write, read through stores that refuse every write.
+    /// </summary>
+    [Fact]
+    public void The_protected_orders_wires_move_only_the_derived_digest_and_nothing_stored()
+    {
+        var file = File(Smallest, Gated);
+        Keep(file);
+        Bind(2);
+        var binding = System.IO.File.ReadAllBytes(WorkflowRunBindings.PathOf(_home, RunId));
+        var before = Snapshot();
+        var store = new ReadOnlyStore(new WorkflowFiles(_home));
+        var runs = new ReadOnlyRuns(new WorkflowRunFiles(_home));
+
+        var version = WorkflowRunNodes.VersionOf(store, runs, RunId)!;
+        Assert.Equal((2, GatedIdentity, (string?)null), (version.Version, version.Identity, version.Unreadable));
+        Assert.Equal(GatedIdentity, runs.Read(RunId)!.Digest);
+        Assert.Contains(version.Graph!.Wires, wire => (wire.Id, wire.Kind) == ("second>land", WireKinds.After));
+        Assert.NotEqual(GatedGraphUnderDecoder1, version.GraphDigest);
+        Assert.Equal(WorkflowGraphs.GraphDigest(GatedIdentity, version.Graph!), version.GraphDigest);
+        Assert.NotNull(WorkflowRunNodes.Read(store, runs, Read(store, runs)));
+
+        Assert.Equal(file, System.IO.File.ReadAllText(WorkflowStore.PathOf(_home, "careful")));
+        Assert.Equal(binding, System.IO.File.ReadAllBytes(WorkflowRunBindings.PathOf(_home, RunId)));
         Assert.Equal(before, Snapshot());
     }
 

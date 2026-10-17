@@ -26,8 +26,9 @@ public static class WorkflowRunDifferences
     public const string Added = "added";
 
     /// <summary>
-    /// A skip satisfies its <c>after</c> wire whatever stands before it (§E2, §E3): a look skipped while the opinion before it is not settled
-    /// lets the decoded landing go, where schema 1 holds the landing on the opinion. At the skipped step.
+    /// A skip satisfies its <c>after</c> wire whatever stands before it (§E2, §E3): a step skipped while an earlier one is not settled lets
+    /// the next go, where schema 1 holds it. No skip passes a gate of the protected order (the work, the opinion, the look), which the
+    /// decoder wires into every gate after it (FABRIC-GRAPH1h); a skip past any other step may still be this. At the skipped step.
     /// </summary>
     public const string SkipPassesEarlier = "skip-passes-earlier";
 
