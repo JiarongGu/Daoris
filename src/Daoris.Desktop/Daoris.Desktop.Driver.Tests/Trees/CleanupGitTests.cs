@@ -167,6 +167,8 @@ public sealed class CleanupGitTests : LandedFixture
 
         var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
         Assert.Equal((LandedGone.Moved, "feature/renamed", (string?)null), (trace.GoneAs, trace.MovedTo, trace.KeptOn));
+        // CLEANUP1b's guard: a branch of the person's is never the line, so no end is kept.
+        Assert.Null(trace.Held);
         var unit = Assert.Single(await MilestonesAsync(root), each => each.Entries.Any(entry => entry.Resource == landed.Branch));
         Assert.Equal(WorkEndState.NotEnded, unit.End.State);
         Assert.Contains("`feature/renamed`", unit.End.Said, StringComparison.Ordinal);
@@ -263,6 +265,123 @@ public sealed class CleanupGitTests : LandedFixture
 
         var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
         Assert.Equal((LandedGone.Moved, "feature/HEAD"), (trace.GoneAs, trace.MovedTo));
+    }
+
+    // ---- CLEANUP1b: a landing whose deleted branch's tip the line holds
+
+    /// <summary>The person's line merges the landing branch with a merge commit, as a pull request merged so and pulled leaves it.</summary>
+    private static Task MergeIntoLineAsync(string root, string branch) => GitAsync(root, "merge", "--no-ff", "--no-edit", branch);
+
+    private async Task<WorkMilestone> UnitOfAsync(string root, string branch) =>
+        Assert.Single(await MilestonesAsync(root), each => each.Entries.Any(entry => entry.Resource == branch));
+
+    /// <summary>
+    /// 🔴 CLEANUP1b: a pull request merged with a merge commit and pulled, then the person deleted the landing branch. The line holds its
+    /// recorded tip, so the end judgement keeps the end as the look retires it: ended, its cleanup completed, never read as moved to the
+    /// line, and no recovery ref, since the line holds its commits.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_branch_the_line_merged_and_the_person_deleted_reads_ended_with_its_cleanup_completed()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        var tip = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
+        await SessionGoneAsync(root);
+        await MergeIntoLineAsync(root, landed.Branch!);
+        await GitAsync(root, "branch", "-D", landed.Branch!);
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Missing, (string?)null, (string?)null), (trace.GoneAs, trace.MovedTo, trace.KeptOn));
+        Assert.Equal((EndBy.Merged, tip, "main", "main"), (trace.Held?.By, trace.Held?.Tip, trace.Held?.Line, trace.Held?.On));
+        var unit = await UnitOfAsync(root, landed.Branch!);
+        Assert.Equal((WorkEndState.Ended, "completed"), (unit.End.State, unit.Cleanup.State));
+        Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
+    }
+
+    /// <summary>
+    /// 🔴 CLEANUP1b: what an earlier look wrote of such a landing is judged once: a trace from before CLEANUP1's field, and one CLEANUP1 read
+    /// as moved to the line while the line stands where it was found, each reads ended once the line is proved to hold its recorded tip.
+    /// </summary>
+    [Fact]
+    public async Task A_trace_from_before_or_read_moved_to_the_line_is_judged_and_reads_ended()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var before = await LandAsync(trees, root, "one.txt", "one\n", new LandingSubject("s1", "q1", "First"));
+        var moved = await LandAsync(trees, root, "two.txt", "two\n", new LandingSubject("s2", "q2", "Second"));
+        await SessionGoneAsync(root);
+        await MergeIntoLineAsync(root, before.Branch!);
+        await MergeIntoLineAsync(root, moved.Branch!);
+        await GitAsync(root, "branch", "-D", before.Branch!);
+        await GitAsync(root, "branch", "-D", moved.Branch!);
+        var records = new LandedBranches(Home);
+        records.Gone("engine", [before.Branch!]);
+        records.GoneAs(records.Of("engine", moved.Branch!)!, LandedGone.Moved, "main", null, (await GitAsync(root, "rev-parse", "main")).Trim());
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        foreach (var branch in new[] { before.Branch!, moved.Branch! })
+        {
+            var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == branch);
+            Assert.Equal((LandedGone.Missing, EndBy.Merged, (string?)null), (trace.GoneAs, trace.Held?.By, trace.MovedTo));
+            var unit = await UnitOfAsync(root, branch);
+            Assert.Equal((WorkEndState.Ended, "completed"), (unit.End.State, unit.Cleanup.State));
+        }
+    }
+
+    /// <summary>🔴 CLEANUP1b: the clean-up's press, which retires such a landing too, keeps its end the same way.</summary>
+    [Fact]
+    public async Task The_clean_ups_press_reads_a_landing_the_line_merged_and_the_person_deleted_as_ended()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        await SessionGoneAsync(root);
+        await MergeIntoLineAsync(root, landed.Branch!);
+        await GitAsync(root, "branch", "-D", landed.Branch!);
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.CleanAsync([("engine", "aurora", root)], new HashSet<string>());
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Missing, EndBy.Merged, (string?)null), (trace.GoneAs, trace.Held?.By, trace.MovedTo));
+        Assert.Equal(WorkEndState.Ended, (await UnitOfAsync(root, landed.Branch!)).End.State);
+    }
+
+    /// <summary>
+    /// CLEANUP1b's guard: a session branch is never the line, so a landing whose deleted branch's tip only another session branch holds
+    /// still reads as CLEANUP1 says: moved there, not ended, and no fact kept.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_only_another_session_branch_holds_still_reads_moved_not_ended()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        var tip = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
+        await SessionGoneAsync(root);
+        await GitAsync(root, "update-ref", "refs/heads/daoris/other", tip);
+        await GitAsync(root, "branch", "-D", landed.Branch!);
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Moved, "daoris/other", (HeldFact?)null), (trace.GoneAs, trace.MovedTo, trace.Held));
+        Assert.Equal(WorkEndState.NotEnded, (await UnitOfAsync(root, landed.Branch!)).End.State);
     }
 
     /// <summary>

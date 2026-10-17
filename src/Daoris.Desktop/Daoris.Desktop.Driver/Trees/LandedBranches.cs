@@ -303,6 +303,9 @@ public sealed class LandedBranches(string home)
     internal void Hold(LandedBranch entry, HeldFact? held) => Edit(all =>
         [.. all.Select(each => each.GoneAt is null && SameEntry(each, entry) ? each with { Held = held } : each)]);
 
+    /// <summary>CLEANUP1b: the end judgement's write for a landing whose branch git said is missing.</summary>
+    internal bool HoldGone(LandedBranch entry, HeldFact held) => false;
+
     /// <summary>
     /// Where bringing it up to date replayed it (WSR6): its new tip, and the line's commit it now grows from.
     /// Daoris moved it, so it stays the landing's; a branch someone else rebased no longer holds its tip and is not.

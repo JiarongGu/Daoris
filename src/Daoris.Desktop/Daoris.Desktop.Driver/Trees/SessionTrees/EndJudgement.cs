@@ -113,6 +113,12 @@ internal sealed record EndSubject(string Branch, string Tip, EndRole Role, Lande
 
     /// <summary>Whether its tree holds uncommitted work. It does not stop the committed tip's end; a reader says both (§B7).</summary>
     public bool? Uncommitted { get; init; }
+
+    /// <summary>
+    /// A landing whose branch git said is missing (CLEANUP1b, <see cref="LandedGone.Missing"/>), judged at the tip its landing recorded:
+    /// only the line's ancestry of that commit ends it.
+    /// </summary>
+    public bool Gone { get; init; }
 }
 
 /// <summary>One proof's read: found where, found nowhere, or not read.</summary>

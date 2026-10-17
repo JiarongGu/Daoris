@@ -118,6 +118,10 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         }
     }
 
+    /// <summary>CLEANUP1b: one landing whose branch git said is missing, judged at the tip its landing recorded.</summary>
+    internal Task<bool> KeepGoneAsync(string root, LandedBranch entry, string? line, CancellationToken ct, RefSnapshot? refs = null) =>
+        Task.FromResult(false);
+
     /// <summary>
     /// The fact a judgement leaves (§C7), given the one kept: an end held with its evidence, <c>Since</c> kept where the tip, the line and
     /// the repository are the ones it was first held at; null where the verdict is not an end, or its evidence could not be read.
