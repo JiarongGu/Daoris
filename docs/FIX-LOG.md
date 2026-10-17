@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — Every knowledge connector watched its whole checkout, and walked each folder renamed in it (KNOWWALK1)
+
+- **Symptom:** the deployment rehearsal's swap of `_fixtures/deployment-rehearsal/install/app` was refused `busy`, and
+  DEPLOYBUSY1's diagnosis named `bin` held by `16075bf6 (pid 36544)`: a `dotnet` whose image an installer had replaced as it
+  ran (the `.rbf` name), running the workspace's knowledge connector build of 10-09, started by `tools/knowledge-server.mjs` on
+  10-10 for a session in this checkout. Asked again later, it held the checkout's root and nothing under `_fixtures/`: the hold
+  came and went.
+- **Root cause:** not the knowledge read. Neither the 10-09 build nor main reads outside the `.claude/` tiers, `docs/` and the
+  declared folders, and the 10-09 build had no watcher of its own. The connector's host did: `Host.CreateApplicationBuilder(args)`
+  takes the working folder, the session's checkout, for its content root, and its default configuration watches
+  `appsettings.json` there for a reload. The framework's `PhysicalFilesWatcher` watches that root with `IncludeSubdirectories`
+  set, and its `OnRenamed` lists everything in a renamed folder with `SearchOption.AllDirectories` (read from the IL of the
+  running build's own `Microsoft.Extensions.FileProviders.Physical.dll`). So every session's connector (23 processes held the
+  checkout's root when asked) heard every write in the checkout, ignored trees too, and walked each folder renamed in it. The
+  swap's rename of `app` set each one walking the renamed tree, holding `bin` as the swap's next move came. Two smaller causes
+  besides. On main only, EVENT6's recursive watch of `.claude/` reached `.claude/worktrees/`, so each agent's build and install
+  marked the reading stale. And, latent, the documents folder's walk (`RepositoryScanner.Records`) entered every folder, so a
+  docs site's `docs/node_modules/` would have been walked and its READMEs indexed.
+- **Fix:** `KnowledgeServer.HostBuilder` takes the build's own folder for the content root and sets
+  `hostBuilder:reloadConfigOnChange` false: no file is watched, and a repository's own `appsettings.json` no longer configures
+  the connector. `IgnoredPaths` asks git once (`ls-files -z --others --ignored --exclude-standard --directory`, ceilinged at the
+  root's parent), which names each ignored folder and not what is in it. `Records` skips what it names, asked at the first
+  record of a read. `CheckoutFreshness.OpenTree` watches a folder with an ignored one inside in parts. Where git cannot answer,
+  both are as they were. The cost is one git process, 0.1-0.34 s measured in a worktree on this machine under load: once per
+  read for the walk and once per process for the watch.
+- **Verification:** the members came first and each new test failed before the fix. `ConnectorHostTests`: all four file
+  sources were watched. `IgnoredPathsTests.A_read_of_a_checkouts_documents_opens_nothing_under_a_folder_git_ignores`: forty
+  ignored package folders under `docs/` and two files held with no sharing; the read threw the sharing violation before the
+  fix, and opens neither after it. `CheckoutFreshnessTests.A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard`:
+  writes in `.claude/worktrees/` marked stale before the fix. Service tests went from 2197 to 2203. A running connector keeps
+  the old host until its session restarts it on a build made after this fix.
+
 ## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
 
 - **Symptom:** twice in a row on main (3a0d0af, 6bd7e0e) the deployment rehearsal's 9e rolled `fails-to-start` back `busy`,
@@ -29,6 +61,8 @@ repository.
   again names the last holder and not the first (red with the ask made rare), the journal's new fields round-trip and an old
   one reads as before, the terminal's words and the log line's fields. `HeldFilesProcessTests` (Process): a `node` whose working
   folder is `app/` is named as holding `app` itself, and the folder's move is refused. Two deployment rehearsals, 115/115 each.
+- **Attributed, 2026-10-17 (KNOWWALK1):** the `dotnet` a rehearsal's hold named by its `.rbf` (`16075bf6`, pid 36544) was
+  this checkout's knowledge connector, walking the folder the swap had renamed; see that entry.
 ## 2026-10-17 — An unread ref forgot its record, and a detached tree's removal verified nothing (RECORDUNREAD1, DETACHTX1)
 
 - **Symptom:** a fifth review of FABRIC-END4a: a session branch whose ref git could not read was forgotten by LAND3's door as

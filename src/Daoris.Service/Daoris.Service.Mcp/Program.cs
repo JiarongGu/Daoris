@@ -54,7 +54,7 @@ catch (IOException)
 // the quest files read one. A workspace build is no install, and still needs one named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = KnowledgeServer.HostBuilder(args);
 
 // The machine log (LOG1, D94): this host's start and stop and its warnings and errors, in a file of its
 // own beside the desktop's, since this standard error belongs to the agent that started it and nobody

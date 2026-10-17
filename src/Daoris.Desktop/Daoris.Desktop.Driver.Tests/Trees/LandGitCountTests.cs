@@ -213,10 +213,12 @@ public sealed class LandGitCountTests : IDisposable
 
     // Git starts of one landing on this fixture, before LANDGIT1 and after: the look's automatic landing 61 and 52, the press on a
     // squash rule 54 and 51, the press on a merge rule 45 and 42. A first version kept every ref and head read and reached 34, 42 and
-    // 34; its review found each a stale answer a judgement or a delete could act on, so only what an id answers is kept now.
-    private const int AutomaticCeiling = 52;
+    // 34; its review found each a stale answer a judgement or a delete could act on, so only what an id answers is kept now. Merged
+    // with FABRIC-END4a's judged delete (its holders read and its one ref transaction) and END6c's per-line fetch reservation, the
+    // automatic landing measured 55 and the merge press 43; the squash press stayed within 51.
+    private const int AutomaticCeiling = 55;
     private const int SquashCeiling = 51;
-    private const int MergeCeiling = 42;
+    private const int MergeCeiling = 43;
 
     private static void Judge(List<string> starts, int ceiling)
     {
