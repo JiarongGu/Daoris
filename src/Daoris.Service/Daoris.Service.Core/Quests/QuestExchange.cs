@@ -1667,7 +1667,7 @@ public sealed class QuestExchange(
     private static string Refused(QuestCloseRefusal refusal, Quest quest, Quest? at) => refusal switch
     {
         QuestCloseRefusal.OtherRepository => $"Quest `#{quest.Id}` asks `{quest.To}`, and the close at `#{at?.Id}` closes its chain in "
-                                             + $"`{at?.To}`: a close names only its own repository's quests, and another's graph closes its own.",
+                                             + $"`{at?.To}`: a close names only its own repository's quests, and another repository closes its own.",
         QuestCloseRefusal.NotInChain => $"Quest `#{quest.Id}` is not of the chain `#{at?.Id}` grew from: a close at a quest names only that "
                                         + "quest and the ones before it in its chain.",
         QuestCloseRefusal.OtherGraph => $"Quest `#{quest.Id}` closes through graph `{quest.Closure}`, and the close at `#{at?.Id}` closes "
