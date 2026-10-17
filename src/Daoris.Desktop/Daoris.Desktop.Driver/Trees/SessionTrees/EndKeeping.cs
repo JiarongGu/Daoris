@@ -118,9 +118,44 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         }
     }
 
-    /// <summary>CLEANUP1b: one landing whose branch git said is missing, judged at the tip its landing recorded.</summary>
-    internal Task<bool> KeepGoneAsync(string root, LandedBranch entry, string? line, CancellationToken ct, RefSnapshot? refs = null) =>
-        Task.FromResult(false);
+    /// <summary>
+    /// CLEANUP1b: one landing whose branch git said is missing (<see cref="LandedGone.Missing"/>), judged through <see cref="EndJudgement"/>
+    /// at the tip its landing recorded, where the line's ancestry of that commit is its end (§B5). Where the line holds it, the fact is
+    /// written as the entry retires (<see cref="LandedBranches.HoldGone"/>): ended, so nothing of it is left to clean. Asked by the clean-up
+    /// and the look before they read where its work went (<see cref="LandedCleanups"/>), so a branch merged into the line is never read as
+    /// moved to it.
+    /// </summary>
+    /// <remarks>
+    /// Only the lease's holder writes, as <see cref="KeepAsync"/>. An entry with a fact already is the existing judgement's, and one Daoris
+    /// removed is ended by its removal: neither is judged here. One <c>merge-base --is-ancestor</c> for each form of the line, once a landing.
+    /// </remarks>
+    /// <returns>Whether its end was kept and the entry retired with it; false writes nothing, and the caller reads where it went.</returns>
+    internal async Task<bool> KeepGoneAsync(string root, string repository, LandedBranch entry, string? line, CancellationToken ct, RefSnapshot? refs = null)
+    {
+        if (entry.Held is not null || entry.RemovedAs is not null || !HomeLease.HeldHere(context.Home)) return false;
+        var alone = Judging.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
+        await alone.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (FolderIdentity.Of(Path.Combine(root, ".git")) is not { } identity) return false;
+            refs ??= RefSnapshot.Take(root);
+            var subject = new EndSubject(entry.Branch, entry.Tip, EndRole.Landing, entry) { Gone = true };
+            var verdict = await EndJudgement.JudgeAsync(root, EndCycle.Recorded(entry), subject, line, NoHolders, carriers: null, ct, refs)
+                .ConfigureAwait(false);
+            if (verdict is not { Ended: true, Where: { } where }) return false;
+            var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
+            var on = forms.FirstOrDefault(form => string.Equals(form.Name, where, StringComparison.Ordinal))?.Ref;
+            var onAt = on is null ? null : await TreeRefs.CommitOfAsync(root, on, ct, refs).ConfigureAwait(false);
+            return Next(null, verdict, onAt, identity, DateTimeOffset.UtcNow) is { } held && context.Recorded.HoldGone(entry, held);
+        }
+        finally
+        {
+            alone.Release();
+        }
+    }
+
+    // A landing's judgement reads no holder by content, so none is named.
+    private static readonly IReadOnlySet<string> NoHolders = new HashSet<string>();
 
     /// <summary>
     /// The fact a judgement leaves (§C7), given the one kept: an end held with its evidence, <c>Since</c> kept where the tip, the line and

@@ -141,11 +141,11 @@ public static class LandedWords
 /// <summary>
 /// The clean-up of the branches landings made (D88, WSR5; PART10l, out of <c>SessionTrees.Landed.cs</c>): the list, the press, and
 /// each recorded branch judged over the whole set. Over the trees' context, the pull request's asks (the look's one occasion), the
-/// content proof's keep and delete, the replay's record tidying, and the session branches' half of the clean-up
-/// (<see cref="TreeSweeps"/>).
+/// content proof's keep and delete, the replay's record tidying, the session branches' half of the clean-up
+/// (<see cref="TreeSweeps"/>), and the end judgement's keeper for a landing whose branch went (<see cref="EndKeeping.KeepGoneAsync"/>).
 /// </summary>
 internal sealed class LandedCleanups(
-    TreeContext context, PullRequestAsks asks, ContentHolds content, BranchReplays replays, TreeSweeps sweeps)
+    TreeContext context, PullRequestAsks asks, ContentHolds content, BranchReplays replays, TreeSweeps sweeps, EndKeeping ends)
 {
     /// <summary>
     /// The clean-up's list (D88, WSR5): every session branch with what it holds, then every branch a landing
@@ -332,11 +332,16 @@ internal sealed class LandedCleanups(
             foreach (var item in proven) context.Recorded.Removed(repository, item.Branch, item.Kind, item.Where);
             // CLEANUP1: with why, on git's word: a branch of its name standing that is not the landing's, or missing, where what holds its
             // recorded tip is asked first (after review): moved to a branch that holds it, or its commit kept on a ref where nothing does.
-            // Each written to the landing judged alone, so a new landing of its name keeps its standing.
+            // Each written to the landing judged alone, so a new landing of its name keeps its standing. CLEANUP1b: a missing one the line
+            // holds is the end judgement's first, kept ended as it retires, never read as moved to the line.
+            var line = stale.Any(each => each.Why == LandedGone.Missing)
+                ? (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch
+                : null;
             foreach (var (entry, why) in stale)
             {
                 if (why != LandedGone.Missing) context.Recorded.Gone(entry, why);
-                else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
+                else if (!await ends.KeepGoneAsync(root, repository, entry, line, ct).ConfigureAwait(false)
+                         && await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
                 {
                     context.Recorded.Gone(entry, went.Why, went.MovedTo, went.KeptOn, went.MovedToAt);
                 }
@@ -510,8 +515,14 @@ internal sealed class LandedCleanups(
     /// followed: asked again once the branch it moved to is no longer listed. Each write names the landing it read, never its name alone,
     /// so a landing recorded since keeps its standing. No git where nothing needs asking.
     /// </summary>
+    /// <remarks>
+    /// CLEANUP1b: a landing git says is missing is the end judgement's first (<see cref="EndKeeping.KeepGoneAsync"/>): where the line holds
+    /// the tip its landing recorded, it is kept ended as it retires, never read as moved to the line. A trace an earlier look read as moved
+    /// to the line, with no fact, is asked again for it.
+    /// </remarks>
+    /// <param name="line">The line the repository's cycle names, as the look reads it; null where none is set, so nothing is judged ended.</param>
     /// <returns>How many entries were written.</returns>
-    internal async Task<int> MarkAbsentAsync(string root, string repository, CancellationToken ct, RefSnapshot? refs = null)
+    internal async Task<int> MarkAbsentAsync(string root, string repository, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
         // Asked: a standing entry (its end held or not), and a trace that says no why, neither removed by Daoris; a held trace reads ended.
         // And a trace that moved, once the branch it moved to no longer stands at the commit it was found holding the work at (re-check:
@@ -526,6 +537,13 @@ internal sealed class LandedCleanups(
         refs ??= RefSnapshot.Take(root);
         foreach (var each in moved)
         {
+            // CLEANUP1b: moved to the line with no fact is the end judgement's to prove, whether or not the line has moved since.
+            if (each.Held is null && line is not null && string.Equals(each.MovedTo, line, StringComparison.Ordinal))
+            {
+                asking.Add(each);
+                continue;
+            }
+
             var at = each.MovedTo is null ? null : await TreeRefs.CommitOfAsync(root, $"refs/heads/{each.MovedTo}", ct, refs).ConfigureAwait(false);
             if (at is null || !string.Equals(at, each.MovedToAt, StringComparison.OrdinalIgnoreCase)) asking.Add(each);
         }
@@ -544,6 +562,10 @@ internal sealed class LandedCleanups(
                     // A standing entry whose name stands is the clean-up's to judge; a trace whose name stands again is a doubt, said once.
                     if (entry.GoneAt is null) continue;
                     context.Recorded.GoneAs(entry, LandedGone.Stands);
+                }
+                else if (await ends.KeepGoneAsync(root, repository, entry, line, ct, refs).ConfigureAwait(false))
+                {
+                    // CLEANUP1b: the line holds what its landing recorded, so its end is kept and the entry retired with it.
                 }
                 else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
                 {

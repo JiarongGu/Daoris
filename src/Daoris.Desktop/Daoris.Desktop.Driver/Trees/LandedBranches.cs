@@ -303,8 +303,30 @@ public sealed class LandedBranches(string home)
     internal void Hold(LandedBranch entry, HeldFact? held) => Edit(all =>
         [.. all.Select(each => each.GoneAt is null && SameEntry(each, entry) ? each with { Held = held } : each)]);
 
-    /// <summary>CLEANUP1b: the end judgement's write for a landing whose branch git said is missing.</summary>
-    internal bool HoldGone(LandedBranch entry, HeldFact held) => false;
+    /// <summary>
+    /// CLEANUP1b: the end judgement's write for a landing whose branch git said is missing (<see cref="EndKeeping.KeepGoneAsync"/>, its only
+    /// caller): the fact the line's ancestry proved at the tip its landing recorded, kept as the entry retires with git's word
+    /// (<see cref="LandedGone.Missing"/>), on that landing alone (<see cref="SameLanding"/>). A standing entry becomes a trace; a trace that
+    /// says no why, or says it moved, gains it, and no longer names where it moved. One with a fact already, one Daoris removed, and one that
+    /// says another why are left as they are: a trace with its fact is never judged again (FABRIC-END2).
+    /// </summary>
+    /// <returns>Whether it was written.</returns>
+    internal bool HoldGone(LandedBranch entry, HeldFact held)
+    {
+        var wrote = false;
+        Edit(all =>
+        {
+            var now = DateTimeOffset.UtcNow;
+            wrote = false;
+            return [.. all.Select(each =>
+            {
+                if (!SameLanding(each, entry) || each.Held is not null || each.RemovedAs is not null || each.GoneAs is not (null or LandedGone.Moved)) return each;
+                wrote = true;
+                return each with { Held = held, GoneAt = each.GoneAt ?? now, GoneAs = LandedGone.Missing, MovedTo = null, KeptOn = null, MovedToAt = null };
+            })];
+        });
+        return wrote;
+    }
 
     /// <summary>
     /// Where bringing it up to date replayed it (WSR6): its new tip, and the line's commit it now grows from.

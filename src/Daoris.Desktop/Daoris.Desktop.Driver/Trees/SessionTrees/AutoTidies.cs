@@ -203,11 +203,13 @@ internal sealed class AutoTidies(
         using var look = context.OneLook();
         // The refs read once for the judgement before the hold (PROC1d-ii); the press's path inside it reads its own again.
         var refs = RefSnapshot.Take(root);
+        var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         if (HomeLease.HeldHere(context.Home))
         {
             // CLEANUP1: a landing's branch the person removed is said on git's word, once (the person's end of it), and a recovery ref past
-            // its retention that a branch or a tag holds goes, at most once a day for each repository in a process.
-            await cleanups.MarkAbsentAsync(root, repository, ct, refs).ConfigureAwait(false);
+            // its retention that a branch or a tag holds goes, at most once a day for each repository in a process. CLEANUP1b: one the line
+            // holds is judged ended first, against the line read here.
+            await cleanups.MarkAbsentAsync(root, repository, line, ct, refs).ConfigureAwait(false);
             if (RetentionDue(repository))
             {
                 recovered = await RecoveryRetention.TidyAsync(
@@ -215,7 +217,6 @@ internal sealed class AutoTidies(
             }
         }
 
-        var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct, refs).ConfigureAwait(false);
         if (against is null) return Pass([]);
         // Every session branch (AUTOTIDY2a): the press takes landed, content-held and carried ones the line need not hold, so the

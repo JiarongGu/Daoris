@@ -167,7 +167,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private PassLeftovers Leftovers => _leftovers ??= new(_context, SetAsides);
 
     /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
-    private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps);
+    private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps, Ends);
 
     /// <summary>Each branch judged for the replay (WSR6).</summary>
     private BranchJudging Judging => _judging ??= new(_context, Cleanups);
