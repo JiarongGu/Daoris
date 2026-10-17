@@ -114,6 +114,7 @@ public static class WiringVariables
         ["DAORIS_STOP_ON_INPUT_END"] = "handed to the service host the desktop starts: its stop",
         ["DAORIS_PERSON_KEY_ON_INPUT"] = "handed to the service host the desktop starts: the person key's line",
         ["DAORIS_DEVTOOLS_PORT"] = "a development run's instruments only",
+        [InstanceDoor.Variable] = "the dev loop's or a rehearsal's own instance, named for a workspace build, which reads no address file",
         ["DAORIS_WEB_WORKERS"] = "the web tests' worker count",
         ["DAORIS_CANON"] = "the doctrine tool's tests' fixture canon",
         ["DAORIS_STUB_CONFIG_DIR"] = "the stub agent's tests' folder",

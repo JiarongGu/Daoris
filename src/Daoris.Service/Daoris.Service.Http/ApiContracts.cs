@@ -14,8 +14,10 @@ namespace Daoris.Knowledge.Http;
 // before it takes an address; absent from a shared host, and where the home's id does not read.
 // `Version` (WIRING1b, the this-Daoris design §3.6): the host's informational version as the release workflow stamped it, which
 // This Daoris shows. Added after the others, a wire shape's field being added and never renamed; a reader older than it skips it.
+// `Closure` (FABRIC-CLOSE1b's handshake): this host knows a closure graph's operations (`bound`, `submitted`) and its bind and close
+// doors. A host from before answers none, which a driver reads as not knowing them, and binds nothing there.
 public sealed record StatusResponse(
-    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null);
+    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null, bool? Closure = null);
 
 /// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
 public static class HostVersion
@@ -140,7 +142,9 @@ public sealed record QuestResponse(
 // sequence a close names it by, when, and its note. Its answers are the quest's `Answers`.
 public sealed record QuestSubmissionWire(string Machine, long Sequence, DateTimeOffset At, string? Note);
 // The driver's bind of a taken quest to the graph that closes it (FABRIC-CLOSE1a): the graph's digest.
-public sealed record BindQuestRequest(string? Graph);
+// `atTake` (FABRIC-CLOSE1l): the graph an open quest binds at its take, named as the driver opens its first session; a host before it
+// reads it as absent, and refuses the open quest's bind as not taken.
+public sealed record BindQuestRequest(string? Graph, bool? AtTake = null);
 // The graph's close (FABRIC-CLOSE1a, §E5 step 2): its key, which a second send of the same close repeats, its close token, and
 // every quest of the chain it closes, each with the submission it judged. Nullable on the way in and judged by the exchange.
 public sealed record CloseQuestRequest(string? Key, string? Token, IReadOnlyList<QuestCloseItemWire?>? Quests);

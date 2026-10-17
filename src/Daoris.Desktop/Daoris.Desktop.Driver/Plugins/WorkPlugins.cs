@@ -224,6 +224,19 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         return heard;
     }
 
+    /// <summary>
+    /// A step event taken here and not believed by the performer (FABRIC-PERFORM1c, §C4's belief codes), counted with this plugin's other
+    /// refusals. A plugin this supervision holds nothing for is passed over.
+    /// </summary>
+    public void Refused(string id, string code)
+    {
+        var now = clock();
+        lock (_gate)
+        {
+            if (_states.TryGetValue(id, out var state)) Refuse(id, state, code, now);
+        }
+    }
+
     /// <summary>At each look: the refusals held past their minute written, and a drop's resync told where a minute has passed since the last.</summary>
     public void Look(DateTimeOffset now)
     {

@@ -34,7 +34,9 @@ public static partial class EvidenceCheck
         {
             try
             {
-                posted = await service.EvidenceAsync(quest.Id, verdict, ct).ConfigureAwait(false);
+                // FABRIC-CLOSE1b (CLOSE1e's first fence): a submitted quest's verdict names the submission it was read for; a done's names none.
+                var named = quest is { Status: "Taken", Submission: { } submission } ? new QuestSubmissionRef(submission.Machine, submission.Sequence) : null;
+                posted = await service.EvidenceAsync(quest.Id, verdict with { Submission = named }, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
             {

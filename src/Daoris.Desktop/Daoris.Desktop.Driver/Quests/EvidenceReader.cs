@@ -39,7 +39,8 @@ public static class EvidenceReader
     /// evidence, since the work departed from it. Empty for a quest that is not done.
     /// </summary>
     public static IReadOnlyList<WantedEvidence> Wanted(QuestView quest) =>
-        quest.Status != "Done"
+        // FABRIC-CLOSE1b (§E5): in a closure graph a taken quest's current submission is judged as a done is, its evidence read for it.
+        quest.Status != "Done" && quest is not { Status: "Taken", Submission: not null }
             ? []
             : [.. quest.Answers
                 .Where(answer => answer.Departed is null && answer.Requirement >= 1 && answer.Requirement <= quest.Requirements.Count)

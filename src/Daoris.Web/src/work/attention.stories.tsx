@@ -26,7 +26,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
   declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
-  showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {},
+  showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {}, held: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {

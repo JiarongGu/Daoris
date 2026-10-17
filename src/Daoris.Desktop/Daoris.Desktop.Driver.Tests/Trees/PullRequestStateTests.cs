@@ -293,6 +293,34 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
+    /// 🔴 FABRIC-END2d, after the merge: the keeper keeps a carried session branch's end once the platform and the person deleted the
+    /// carrier's branch, resting on the form of the line its merge commit is on (<see cref="PullRequestCarrier.Rests"/>), as the carried
+    /// tidy verifies it. It named the gone branch before, whose commit cannot be read, so no fact was kept and only END4a's fallback took it.
+    /// </summary>
+    [Fact]
+    public async Task The_keeper_keeps_a_carried_session_branchs_end_on_the_form_its_merge_commit_is_on()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var carried = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
+        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"));
+        var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
+        var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
+        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
+        await GitAsync(root, "branch", "-D", landing.Branch!);
+        _answers[landing.Branch!] = () => Completed(merge, source);
+        await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        await trees.Ends.KeepAsync(root, "engine", "aurora", "main", CancellationToken.None);
+
+        var held = new SessionBranches(Home).Of("engine", carried.Branch)?.Held;
+        Assert.NotNull(held);
+        Assert.Equal((EndBy.Carried, "origin/main", (await GitAsync(root, "rev-parse", "origin/main")).Trim()), (held.By, held.On, held.OnAt));
+    }
+
+    /// <summary>
     /// AUTOTIDY2b: the watch's look takes a landing's branch whose pull request completed by squash, on the answer a list kept,
     /// though the line changed its file since, so D102's proof by content cannot see it: its session's branch first, whose work
     /// is on the line through it, its tree's folder moved aside; then the landing's branch, its commits kept on a ref of their

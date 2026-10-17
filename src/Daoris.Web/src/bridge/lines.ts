@@ -10,7 +10,7 @@ import type { OpinionChange, RepositoryOpinion } from '../settings/Opinions';
 import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
-import { readWorkState, type RecoveryDropGroup, type RecoveryDropResult } from '../work/milestone';
+import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult } from '../work/milestone';
 import { call, lookBound, pressBound } from './call';
 import { type DriverState, useDriverChange } from './driver';
 
@@ -116,6 +116,17 @@ export const useDiscardSessionBranch = () =>
   useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
       call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
+  });
+
+/**
+ * The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the screen's half of `daoris-driver work
+ * held <unit> <node> <attempt> <word>`. The driver records it only where it holds the home, and applies it at its next look; a refusal
+ * is an answer with the driver's sentence. What it moved the state hub asks again, as the route declares it (STATEHUB1f).
+ */
+export const useResolveHeld = () =>
+  useMutation({
+    mutationFn: ({ unit, node, attempt, resolution }: { unit: string; node: string; attempt: number; resolution: HeldResolution }) =>
+      call<{ done: boolean; refused?: string | null; message: string }>('WORK_HELD', { unit, node, attempt, resolution }),
   });
 
 type RecoveryDropAnswer = {

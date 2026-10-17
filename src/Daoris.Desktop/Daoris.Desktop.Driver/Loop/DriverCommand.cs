@@ -167,6 +167,11 @@ public static class DriverCommand
               in one transaction that verifies the commit it names, so one that moved or that a holder now keeps is
               kept and said; its commits may then be lost from this machine once git collects them. Only the process
               holding the home acts. --plan lists and changes nothing. The page's is Branches' Kept for recovery.
+          work held [--unit <id>]  |  work held <unit> <node> <attempt> happened|did-not|stop
+              the plugin steps whose attempt is held for you, because nothing else can say what became of it, and
+              why; with a word, yours on one of them: it happened (the step is reached on your word), it did not
+              (a new attempt with a new key), or stop the step. Only the process holding the home records it; the
+              next look applies it. The page's is What needs you, and the work's foot.
           sync [status | dismiss <quest>] [--workspace <name>]
               one sync pass now, or where each workspace stands.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]

@@ -145,6 +145,14 @@ public sealed record RemoteTarget(string Url, string Key)
         FromEnvironment(environment) ?? Parse(File.Exists(path) ? File.ReadAllText(path) : null);
 
     /// <summary>
+    /// This machine's remotes as sync reads them, for the loop of <paramref name="home"/> (FABRIC-CLOSE1l): the environment's pair, else the
+    /// file <see cref="PathVariable"/> names, else the home's own map. What a bind at the take reads to leave a circle synced through a remote
+    /// unbound, so it never reads a map sync does not.
+    /// </summary>
+    public static IReadOnlyDictionary<string, RemoteTarget> Effective(Func<string, string?> environment, string home) =>
+        Load(environment, environment(PathVariable) ?? DaorisHome.Entry(home, HomeEntry.Remotes));
+
+    /// <summary>
     /// The map as it sits on disk, whatever the environment currently says — what an EDITOR reads.
     /// </summary>
     /// <remarks>

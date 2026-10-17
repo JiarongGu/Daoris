@@ -22,6 +22,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // RECOVERYDROP1: the person's delete of the recovery refs nothing holds; the work state asks again with the landings and the sweep.
   RECOVERY_DROP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
+  // FABRIC-PERFORM1g: the person's word on a held attempt; the work state, which lists what is held, asks again with the sessions.
+  WORK_HELD: { scopes: ['sessions'] },
   // The second opinion's presses, the landing's setting, the sessions' and work's moves, the rules' presses, a history clear and
   // a sync (PUBLISHTWIN2: every mark has its copy here, held two ways by `StatePublisherTests`).
   ASK_OPINION: { scopes: ['sessions', 'landing'], session: 'id' },

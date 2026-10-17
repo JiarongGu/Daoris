@@ -85,6 +85,10 @@ export const REDIRECTED = [
  * repository's own `.mcp.json` in a pipe-door session, inherits the environment instead, and an inherited
  * one would file a scratch session's proposal among the real machine's. Unset, it falls back to the
  * redirected `DAORIS_HOME`.
+ *
+ * The instance (RPC1b, the terminal RPC design §7.4) names the running Daoris's pipe that a verb sends its
+ * press to. Inherited, a `daoris-driver` run from the scratch shell's terminal would press the real
+ * instance's routes; unset, a workspace build reads no address file and acts alone on the scratch home.
  */
 export const CLEARED = [
   'DAORIS_REMOTE_URL',
@@ -92,6 +96,7 @@ export const CLEARED = [
   'DAORIS_REMOTE_WORKSPACE',
   'DAORIS_SERVICE_KEY',
   'DAORIS_RULES_HOME',
+  'DAORIS_INSTANCE',
 ];
 
 /**

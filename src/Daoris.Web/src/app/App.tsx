@@ -451,7 +451,8 @@ export function App() {
   // roster and the accounts' files the Agents badge reads, and the tick's waits.
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
-    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown, opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? []).length;
+    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown, opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? [],
+    workState.data?.held ?? []).length;
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);

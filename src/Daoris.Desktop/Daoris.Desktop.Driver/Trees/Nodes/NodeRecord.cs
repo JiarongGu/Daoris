@@ -60,6 +60,41 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>When Daoris next asks after it by itself: a <c>running</c> answer waits to here.</summary>
     public DateTimeOffset? AskAt { get; init; }
+
+    /// <summary>
+    /// A <c>quest.close</c> attempt's close (FABRIC-CLOSE1b, §E5 step 1): its token and the quests it names with the submissions it judged,
+    /// persisted with its key before the first send, so a timeout or a restart sends the same close again; and a refusal's words once one
+    /// came. Null on a plugin's attempt, and on every attempt from before.
+    /// </summary>
+    public QuestCloseCall? Close { get; init; }
+
+    /// <summary>
+    /// The person's word on a held attempt (FABRIC-PERFORM1g, one of <see cref="HeldResolutions"/>): written by their door while it is held,
+    /// applied by the runtime under the node's declaration, and kept once it settles the attempt, so an outcome settled by the person is
+    /// never read as its plugin's word. Null on every attempt the person did not settle, and on a record written before the field.
+    /// </summary>
+    public string? Resolution { get; init; }
+
+    /// <summary>When the person gave <see cref="Resolution"/>.</summary>
+    public DateTimeOffset? ResolvedAt { get; init; }
+}
+
+/// <summary>
+/// The person's ways on from a held attempt (FABRIC-PERFORM1g; the fabric events design §D6, <i>unknown stops the step, and the person sees
+/// it</i>): their word settles what nothing else can establish, and lifts the gate the attempt held.
+/// </summary>
+public static class HeldResolutions
+{
+    /// <summary>It happened: the node is reached on the person's word, its evidence the person's, never its plugin's.</summary>
+    public const string Happened = "happened";
+
+    /// <summary>It did not: the attempt failed by the person's word, and the node is ready for a new attempt with a new key.</summary>
+    public const string DidNot = "did-not";
+
+    /// <summary>Stop the node: the attempt's outcome stays unknown, settled as the person's to answer for, and nothing more is asked.</summary>
+    public const string Stop = "stop";
+
+    public static readonly IReadOnlyList<string> All = [Happened, DidNot, Stop];
 }
 
 /// <summary>A status a move took away (<see cref="NodeMoved.Cleared"/>): kept as the attempt's history before the reset (§D3).</summary>

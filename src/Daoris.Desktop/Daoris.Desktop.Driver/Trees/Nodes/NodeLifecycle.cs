@@ -200,6 +200,18 @@ public static class NodeRefusal
     /// <summary>A kind this build does not know.</summary>
     public const string UnknownKind = "unknown-kind";
 
+    /// <summary>
+    /// The person settles an attempt only of a plugin's performed node, the one kind whose attempt can be held with nothing else to say
+    /// what became of it (FABRIC-PERFORM1g, §D6): every other kind's outcome has its authority, a record or git to say it.
+    /// </summary>
+    public const string NotSettled = "not-settled";
+
+    /// <summary>
+    /// The person's word reaches a node only where it exposes nothing a consumer reads (FABRIC-PERFORM1g): a declared output or evidence
+    /// schema is its plugin's reference, which no word makes.
+    /// </summary>
+    public const string NotOnWord = "not-on-word";
+
     /// <summary>The kind is not observed from records: a pressed, performed or waited node is its own row's, a join its members'.</summary>
     public const string NotObserved = "not-observed";
 
@@ -241,6 +253,10 @@ public static class NodeLifecycle
             new(NodeStates.Unknown, NodeStates.Active, daoris, "reconciliation says it is running, or never started"),
             new(NodeStates.Unknown, NodeStates.Reached, authority, "reconciliation establishes the outcome"),
             new(NodeStates.Unknown, NodeStates.Failed, authority, "reconciliation establishes the outcome"),
+            // FABRIC-PERFORM1g (§D6, D173's note): an attempt held because nothing else can say what became of it is settled by the person,
+            // on their own word and never as its plugin's, on a plugin's performed node alone (NodeAuthority.PersonSettles).
+            new(NodeStates.Unknown, NodeStates.Reached, person, "the person settles an attempt nothing else can establish: it happened, on their word"),
+            new(NodeStates.Unknown, NodeStates.Failed, person, "the person settles an attempt nothing else can establish: it did not"),
             new(NodeStates.Failed, NodeStates.Ready, daoris, "a declared retry: a transient code with attempts left, as a new attempt"),
             new(NodeStates.Failed, NodeStates.Ready, person, "a new attempt the person asks for"),
             new(NodeStates.Rejected, NodeStates.Ready, person, "a new attempt the person asks for"),
@@ -310,6 +326,24 @@ public static class NodeLifecycle
         var next = status with { State = move.To };
         switch (move.To)
         {
+            case NodeStates.Reached or NodeStates.Failed when move.By == NodeCause.Person:
+                // FABRIC-PERFORM1g: the person's word on a held attempt, theirs alone: its source the person, its evidence their word.
+                if (!authority.PersonSettles) return Refuse(NodeRefusal.NotSettled);
+                if (move.Source != NodeSource.Person) return Refuse(NodeRefusal.NotAuthority);
+                if (Unbound(move.Attempt) is { } settledAttempt) return Refuse(settledAttempt);
+                if (move.To == NodeStates.Failed)
+                {
+                    if (string.IsNullOrWhiteSpace(move.Code)) return Refuse(NodeRefusal.NoCode);
+                    return To(next with { By = NodeSource.Person, Code = move.Code, Transient = false, Unreconciled = null });
+                }
+
+                if (node.Outputs.Count > 0 || node.Evidence is not null) return Refuse(NodeRefusal.NotOnWord);
+                if (move.Acceptance is not { } worded) return Refuse(NodeRefusal.NoAcceptance);
+                if (status.Binding is not { } bound) return Refuse(NodeRefusal.NoBinding);
+                if (worded.Id != bound.Id) return Refuse(NodeRefusal.NotBound);
+                if (worded.Evidence?.Schema != NodeSource.Person || worded.Outputs.Count > 0) return Refuse(NodeRefusal.NoEvidence);
+                return To(next with { Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Transient = false, Unreconciled = null });
+
             case NodeStates.Reached:
                 if (move.Source != authority.ReachBy) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } reachAttempt) return Refuse(reachAttempt);

@@ -373,6 +373,21 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// reconciliation establishes how that attempt ended, no new attempt starts, whatever moved the node off it (FABRIC-NODE1c).
     /// </summary>
     public bool Dispatches => Reach is NodeReach.Performed or NodeReach.Waited;
+
+    /// <summary>
+    /// Whether a plugin's frame, once §C4's belief rules hold, is itself the reach (FABRIC-PERFORM1c; §C4's trust, §E2's authority by kind): a
+    /// plugin's own node alone, its evidence kept as the plugin's word (D143). <c>pushed</c> needs Daoris's own reading of git's
+    /// remote-tracking ref beside the plugin's answer, and <c>pull-request</c> the plugin's answer to Daoris's own ask (<c>work/state</c>, with
+    /// D148 point 4's checks) kept on the landing, so a frame naming either is never their outcome; nor is it git's, a person's or a record's.
+    /// </summary>
+    public bool OnPluginWord => ReachBy == NodeSource.Plugin && NodeKinds.IsPlugin(Kind);
+
+    /// <summary>
+    /// Whether the person may settle an attempt whose outcome nothing else establishes (FABRIC-PERFORM1g; §D6, <i>unknown stops the step,
+    /// and the person sees it</i>): a plugin's performed node alone, whose attempt the performer holds when reconciliation cannot say. Its
+    /// <c>unknown → reached</c> and <c>unknown → failed</c> by the person are the person's word, never the plugin's (<see cref="NodeSource.Person"/>).
+    /// </summary>
+    public bool PersonSettles => Reach == NodeReach.Performed && NodeKinds.IsPlugin(Kind);
 }
 
 /// <summary>The authority by kind (§E2): the built-ins' table, and a plugin's own node's from its declaration.</summary>
@@ -408,7 +423,7 @@ public static class NodeAuthorities
     /// <summary>
     /// The node's authority: its built-in kind's, or a plugin's own (its believed answer either way, a person only where declared, a
     /// skip unless declared otherwise); null for a kind this build does not know. A plugin's answer is named <see cref="NodeSource.Plugin"/>
-    /// here alone: that the answer came from the declaring plugin is PERFORM1c's authenticated sender check, not the lifecycle's.
+    /// here alone: that the answer came from the declaring plugin is <see cref="WorkBelief.Completion"/>'s sender check, not the lifecycle's.
     /// </summary>
     public static NodeAuthority? Of(NodeDeclaration node) =>
         BuiltIn.TryGetValue(node.Kind, out var builtIn) ? builtIn

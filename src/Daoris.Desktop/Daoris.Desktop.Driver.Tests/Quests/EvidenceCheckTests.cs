@@ -166,6 +166,30 @@ public sealed class EvidenceCheckTests : IDisposable
                 ("uncommitted", 0), ("case", 0), ("noQueue", 0), ("outcome", "kept"),
             ],
             line.Data);
+        Assert.DoesNotContain("submission", posted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1b (CLOSE1e's first fence): a submitted quest's verdict names the submission it was read for, so the service applies it to
+    /// that submission alone, never to a later <c>ready</c> that replaced it.
+    /// </summary>
+    [Fact]
+    public async Task A_submitted_quests_verdict_names_the_submission_it_was_read_for()
+    {
+        var git = new StandInGit(_tree);
+        var before = git.Commit("base", ("README.md", "r"));
+        git.Commit("ready", ("README.md", "r"), ("docs/report.md", "report"));
+        string? posted = null;
+        using var service = Client(request =>
+        {
+            posted = request.Content!.ReadAsStringAsync().Result;
+            return (HttpStatusCode.OK, """{"quest":{"id":"q1"},"message":"Read the evidence."}""");
+        });
+        var quest = Quest(["docs/report.md"]) with { Status = "Taken", Closure = "gph-1", Submission = new QuestSubmissionView("desk", 41, null, "ready") };
+
+        await EvidenceCheck.RunAsync(service, quest, new EvidenceAt(_tree, EvidenceCodes.SessionEnd) { Base = before, Session = "s1" }, git.Read);
+
+        Assert.Contains("\"submission\":{\"machine\":\"desk\",\"sequence\":41}", posted, StringComparison.Ordinal);
     }
 
     [Fact]
