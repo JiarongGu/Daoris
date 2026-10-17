@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A workspace's *Branches* now lists what Daoris keeps for recovery that no piece of work names: folders set aside until a
+  date, and recovery refs with who holds them or the command to delete them. Ask Daoris says the same when asked where work
+  has got to.
 - A workspace's Branches page can now delete the recovery refs nothing holds in one press, *Delete the ones nothing holds*, after a
   confirmation that lists them and says their commits may then be lost from this machine and that a git remote may still have the
   work; `daoris-driver work recovery drop` does the same from a terminal. A ref that moved, or that a branch or a tag now holds, is
