@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The due moments could fetch twice, overwrite a completed answer and drop the start's focus (FABRIC-END6c)
+
+- **Symptom:** a second review of FABRIC-END6, before plugin mode is relied on, found five faults:
+  - a moment could start a fetch beside a landing's fetch in flight, and run beside a removing press;
+  - a moment's slow `open` could return after a concurrent look's `completed` and overwrite it, and concurrent occasions each asked
+    inside the minute;
+  - every answer of an occasion was stamped with the occasion's start;
+  - a person's fetch that changed nothing was not counted;
+  - the main window's focus at a start was dropped before the moments existed.
+- **Root cause:**
+  - `RemoteFetches` stamped a fetch only once it ended, and nothing reserved a repository. `PullRequestMoments` serialised only the
+    moments themselves.
+  - `LandedBranches.Answered` saved unconditionally, and the minute was the record's alone plus the moments' own ledger.
+  - `PullRequestAsks.AskStatesAsync` took one time for the whole occasion.
+  - The moments counted a person's fetch only where origin's tip moved, and their ledger was the process's own.
+  - `DriverLoop.Focused` and `DriverWatch.Focused` dropped a focus while their listener was null.
+- **Fix:** D173's FABRIC-END6 note, its "After review": a fetch in flight is joined (`RemoteFetches.OnceAsync`); a moment skips a
+  repository that `RepositoryHolds` holds (the replay's lock, a landing) and asks once it is let go; `PullRequestMinute` is the one
+  minute of every occasion; an answer is kept only where asked no earlier than the kept one, and a completed one never replaced;
+  `StateAnswer.AskedAt` is each request's own time; `RemoteFetches.InGit` reads `FETCH_HEAD` and origin's line's log; `PendingFocus`
+  keeps one focus until it can be told.
+- **Verification:** the members were added first with no behaviour. Nine new fast tests failed at run time, as did the modules' focus
+  test and three new rows over real git. All then passed, with the driver's and the modules' fast halves and
+  `PullRequestStateTests` and `PullRequestMomentsGitTests`, each run once.
+
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
 - **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node

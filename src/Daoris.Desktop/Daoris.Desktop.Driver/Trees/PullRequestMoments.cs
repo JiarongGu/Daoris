@@ -146,7 +146,7 @@ internal interface IPullRequestMomentWorld
     /// <summary>The commit origin's line stands at here, read from git's files with no process; null where they cannot say.</summary>
     string? OriginTip(RefRepository repository, string line);
 
-    /// <summary>When the line was last fetched or heard fetched (<see cref="RemoteFetches"/>).</summary>
+    /// <summary>When the line was last fetched or heard fetched (<see cref="RemoteFetches"/>), git's own files said as well (<see cref="RemoteFetches.InGit"/>).</summary>
     DateTimeOffset? Fetched(RefRepository repository, string line);
 
     /// <summary>Someone else's fetch moved origin's line, heard at <paramref name="at"/>.</summary>
@@ -180,12 +180,15 @@ internal interface IPullRequestMomentWorld
 /// </list>
 ///
 /// <para><b>The bounds.</b> A pull request is asked at most once a minute: D148's minute over the record's last ask
-/// (<see cref="PullRequestAsking.Due"/>), and over this process's own asks, so a plugin not ready is not started again inside it. A
+/// (<see cref="PullRequestAsking.Due"/>), and over every occasion's asks in this process (<see cref="PullRequestMinute"/>, FABRIC-END6c),
+/// so a plugin not ready is not started again inside it and two occasions at once ask once. A
 /// repository's line is fetched at most once a minute, every fetch of it counted (<see cref="RemoteFetches"/>). A moment with nothing due
 /// fetches nothing and asks nothing. A moment that concerns no open pull request reads no line and starts no process.</para>
 ///
 /// <para><b>Never at a removing press.</b> A <c>press</c> is no moment here, and a removing press's own ref moves (a branch deleted) move
-/// no line of origin's. The asks run one at a time, and only in the process holding the home's lease, which alone keeps ends.</para>
+/// no line of origin's. A repository a removing press, bringing it up to date or a landing holds is skipped, and asked once it is let
+/// go (<see cref="RepositoryHolds"/>, FABRIC-END6c). The asks run one at a time, and only in the process holding the home's lease,
+/// which alone keeps ends.</para>
 ///
 /// <para><b>An end with no press.</b> Where an answer comes back completed, the repository's ends are judged again at once, as Daoris's own
 /// move is (<see cref="RefMoves.Mine"/>), so a merged pull request's work is held (§B) with nobody pressing anything.</para>
