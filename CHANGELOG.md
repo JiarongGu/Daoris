@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- An update that could not move a file because another program held it now says which file and which program, in
+  `daoris-driver update` and in the window's note of the rolled-back update.
 - A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,
   how it is retried, whether it is performed and how), and the `resources` they create with who cleans them. Daoris reads and
   checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet. A plugin
