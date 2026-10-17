@@ -75,6 +75,49 @@ public static class HeldAttempts
         })];
     }
 
+    /// <summary>
+    /// <c>daoris-driver work held [--unit &lt;id&gt;]</c> lists; <c>daoris-driver work held &lt;unit&gt; &lt;node&gt; &lt;attempt&gt;
+    /// happened|did-not|stop</c> records the person's word (FABRIC-PERFORM1g, D50: the page's <c>WORK_HELD</c> is the other door). Only the
+    /// process holding the home's lease records it, asked inside the record's lock. Exit 0 clean; 1 refused; 2 words not understood.
+    /// </summary>
+    public static int Run(string home, IReadOnlyList<string> args, TextWriter output, TextWriter error, Func<DateTimeOffset>? clock = null)
+    {
+        var records = new NodeRecordFiles(home);
+        if (args is [] or ["--unit", _])
+        {
+            foreach (var line in Lines(Read(records, args.Count == 2 ? args[1] : null))) output.WriteLine(line);
+            return 0;
+        }
+
+        if (args is not [var unit, var node, var number, var word] || !int.TryParse(number, out var attempt) || attempt < 1)
+        {
+            error.WriteLine(Usage);
+            return 2;
+        }
+
+        var done = Word(records, unit, node, attempt, word, clock);
+        (done.What == PerformedWhat.Worded ? output : error).WriteLine(Said(done, attempt, word));
+        return done.What == PerformedWhat.Worded ? 0 : 1;
+    }
+
+    /// <summary>
+    /// The person's word on a held attempt, from either door (<see cref="WorkPerformer.Word"/>): recorded under the record's lock, the lease
+    /// asked inside it, and applied by the loop holding the lease at its next pass.
+    /// </summary>
+    public static WorkPerformed Word(NodeRecordFiles records, string unit, string node, int attempt, string word, Func<DateTimeOffset>? clock = null) =>
+        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word);
+
+    /// <summary>A terminal sends nothing to a plugin: the word is recorded, and the loop holding the lease applies it.</summary>
+    private sealed class Unperformed : IWorkPerformPort
+    {
+        public Task<int> PerformAsync(string plugin, WorkPerformCall call, CancellationToken ct) => throw new InvalidOperationException("a terminal sends nothing");
+
+        public Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct) =>
+            throw new InvalidOperationException("a terminal asks nothing");
+
+        public int? GenerationOf(string plugin) => null;
+    }
+
     /// <summary>The sentence a door says for what the person's word came to: recorded, or refused and why.</summary>
     public static string Said(WorkPerformed done, int attempt, string resolution) => (done.What, done.Code) switch
     {

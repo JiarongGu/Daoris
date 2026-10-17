@@ -484,7 +484,51 @@ public sealed class LinesRoutes(DriverContext context)
             // CLEANUP1, additive: Daoris's own recoveries no unit names (a folder moved aside, a recovery ref), each by its rule.
             Recovery = recovery.Select(Entry).ToArray(),
             Unread = unread.ToArray(),
+            // FABRIC-PERFORM1g, additive: the plugin steps whose attempt is held for the person, of every unit (a quest's too), or of the
+            // units the name picked. An install no graph naming a plugin's performed node governs keeps no node record, and lists none.
+            Held = HeldAnswer(HeldAttempts.Read(new NodeRecordFiles(_loop.Home))
+                .Where(held => Optional(request, "unit") is not { } picked || held.Unit == picked || units.Any(unit => unit.Unit == held.Unit))),
         };
+    }
+
+    /// <summary>The attempts held for the person as the wire carries them: the page words <c>why</c> by its code.</summary>
+    public static object[] HeldAnswer(IEnumerable<HeldAttempt> held) =>
+    [
+        .. held.Select(each => new
+        {
+            each.Unit, each.Node, each.Attempt, each.Plugin, each.Step, each.NodeState, each.Why, each.Outcome, each.Revision,
+            At = each.RecordedAt, each.Resolution, each.ResolvedAt, Said = HeldAttempts.WhySaid(each),
+        }),
+    ];
+
+    // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris-driver work
+    // held <unit> <node> <attempt> <word>`. Both doors end in HeldAttempts.Word, which records it under the unit's node record's lock with
+    // the lease asked inside it; the loop's runtime applies it under the node's declaration at its next pass, which the nudge wakes.
+    /// <summary>
+    /// Record the person's word (`resolution`: `happened`, `did-not` or `stop`) on `attempt` of `node` on `unit`, held for them.
+    /// </summary>
+    /// <remarks>
+    /// A refusal is an ANSWER, as a discard's is: `{ done, refused, message }`, the message the terminal's sentence. Only the lease's
+    /// holder records; an attempt no longer held, or already worded, is refused and said.
+    /// </remarks>
+    [DriverRoute("WORK_HELD")]
+    [Publishes("WORK_HELD", StateScopes.Sessions)]
+    private Task<object?> WorkHeldAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var unit = PayloadHelper.GetRequiredValue<string>(request.Payload, "unit");
+        var node = PayloadHelper.GetRequiredValue<string>(request.Payload, "node");
+        var attempt = PayloadHelper.GetRequiredValue<int>(request.Payload, "attempt");
+        var word = PayloadHelper.GetRequiredValue<string>(request.Payload, "resolution");
+        _ = _loop.Service ?? throw NotReady();
+
+        var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word);
+        var worded = done.What == PerformedWhat.Worded;
+        if (worded) _loop.Nudge();
+        return Task.FromResult<object?>(new
+        {
+            Unit = unit, Node = node, Attempt = attempt, Resolution = word, Done = worded, Refused = worded ? null : done.Code,
+            Message = HeldAttempts.Said(done, attempt, word),
+        });
     }
 
     /// <summary>The strings of a payload's array field, or none where it has no such array.</summary>
