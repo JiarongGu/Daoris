@@ -359,6 +359,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TREES_SYNC_PLAN", "", null)]
     [InlineData("TREES_SYNC_SCOPE", "", null)]
     [InlineData("WORK_STATE", "", null)]
+    [InlineData("WORK_HELD", "sessions", null)]
     public void The_landing_family_declares_what_it_changes(string route, string scopes, string? session)
     {
         var declared = DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route });

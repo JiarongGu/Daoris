@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { moment } from '../locales/format';
 import { cn } from '../lib/cn';
-import { entryName, type MilestoneUnit } from './milestone';
+import { entryName, heldSentence, type MilestoneUnit } from './milestone';
 
 /** The proofs the driver names by code (`EndBy`): any other code is said by the driver's own sentence. */
 const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried', 'inside'] as const;
@@ -95,6 +95,14 @@ export function WorkMilestone({ unit, className }: { unit: MilestoneUnit; classN
               </>
             )}
         </Row>
+        {/* FABRIC-PERFORM1g: a plugin step's attempt held for the person, its node's place here; their word is What needs you's. */}
+        {(unit.held?.length ?? 0) > 0 && (
+          <Row label={t('work.milestone.held.label')}>
+            {unit.held!.map((held) => (
+              <span key={`${held.node}-${held.attempt}`} className={held.resolution ? undefined : 'text-ink-danger'}>{heldSentence(t, held)}</span>
+            ))}
+          </Row>
+        )}
         <Row label={t('work.milestone.recovery.label')}>
           {unit.recovery.length === 0
             ? <span>{t('work.milestone.recovery.none')}</span>

@@ -7,7 +7,8 @@ import {
 } from '../data/queries';
 import {
   retryNotice, useAccounts, useApproveHelper, useConsidered, useDeclineHelper, useHarnessAction, useHarnesses, useHelperWaits, useNudge,
-  useOpinionWaits, useRefreshHarnesses, useWorkState, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
+  useOpinionWaits, useRefreshHarnesses, useResolveHeld, useWorkState, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted,
+  useWaits,
 } from '../bridge/shell';
 import { useSay } from '../bridge/conversation';
 import { SignIn } from '../agents/SignIn';
@@ -125,6 +126,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const helperWaits = useHelperWaits();
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
+  const resolveHeld = useResolveHeld();
   // The accounts as last known and the tick's waits (UX6d): a browser has none.
   const accounts = useAccountsKnown();
 
@@ -152,7 +154,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const waiting = needsAPerson(
     (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
     untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts,
-    opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? []);
+    opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? [], workState.data?.held ?? []);
 
   if (waiting.length === 0) {
     return (
@@ -251,6 +253,14 @@ function Band({ doors, notify, onSessions, onRun }: {
         (session, text) => say.mutateAsync({ id: session, text })),
     ), (said) => notify(said), answered),
     declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
+    // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): recorded, it is said; refused (the desktop not holding
+    // the home, the attempt no longer held), the driver's own sentence in the error's tone. The hub reads the work state again (D169).
+    held: (item, resolution) => {
+      const attempt = item.held;
+      if (!attempt) return;
+      run(item, () => resolveHeld.mutateAsync({ unit: attempt.unit, node: attempt.node, attempt: attempt.attempt, resolution }),
+        (answer) => notify(answer.done ? t('work.milestone.held.recorded', { node: attempt.node }) : answer.message, answer.done ? undefined : 'error'));
+    },
     // An agent's ask for a helper said yes or no to, as its session's page says it (MIXAGENT2c): its answer said in the page's
     // words, a refusal by its code in the error's tone. The hub reads the waits again (D169).
     helper: (item, yes) => {

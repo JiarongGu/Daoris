@@ -63,6 +63,7 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "DISCARD_SESSION_TREE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SWEEP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "RECOVERY_DROP", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "WORK_HELD", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "HISTORY_CLEAR", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SESSION_INPUT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "OPINION_MYSELF", PipeClass.Person)]

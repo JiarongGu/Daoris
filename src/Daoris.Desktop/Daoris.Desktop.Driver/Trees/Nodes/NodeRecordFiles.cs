@@ -278,6 +278,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (attempt.Code is { } code) writer.WriteString("code", code);
         if (attempt.RetryAt is { } retryAt) writer.WriteString("retryAt", Moments.Write(retryAt));
         if (attempt.AskAt is { } askAt) writer.WriteString("askAt", Moments.Write(askAt));
+        if (attempt.Resolution is { } resolution) writer.WriteString("resolution", resolution);
+        if (attempt.ResolvedAt is { } resolvedAt) writer.WriteString("resolvedAt", Moments.Write(resolvedAt));
         writer.WriteEndObject();
     }
 
@@ -453,6 +455,10 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             return null;
         }
 
+        // FABRIC-PERFORM1g: the person's word, absent on a record written before it; one no rule knows does not read, as a state's does.
+        var resolution = Text(element, "resolution");
+        if (resolution is not null && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return null;
+
         return new NodeAttempt(node, number, plugin, new WorkPerformCall(unit, step, stepVersion, invocation, key, revision, inputs, deadline), state)
         {
             RecordedAt = recordedAt,
@@ -462,6 +468,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             Code = Text(element, "code"),
             RetryAt = Moments.Read(element, "retryAt"),
             AskAt = Moments.Read(element, "askAt"),
+            Resolution = resolution,
+            ResolvedAt = Moments.Read(element, "resolvedAt"),
         };
     }
 }

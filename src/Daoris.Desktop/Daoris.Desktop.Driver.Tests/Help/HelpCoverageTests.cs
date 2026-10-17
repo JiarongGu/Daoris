@@ -559,6 +559,10 @@ public sealed partial class HelpCoverageTests
         ("asks", "useMarkChannel", null, new Exempt(
             "it moves the person's own read mark on an ask's channel to what the page showed them, and changes nothing of the work "
             + "or the machine's settings, as reading is exempt, so there is nothing to propose (D167 point 7).")),
+        // FABRIC-PERFORM1g (D173's note): What needs you's word on a plugin step's attempt held for the person, `daoris-driver work held`'s twin.
+        ("work", "useResolveHeld", null, new Exempt(
+            "it records the person's own word on what became of a plugin step's attempt nothing else can establish, which no helper "
+            + "can know: a proposal would stand in for the person (§D6), so it stays the person's own press, as a discard does.")),
         ("work", "useDiscardSessionTree", null, new Exempt(
             "it discards a session's tree and its work for good, a discard, which stays the person's own press (D89), as the "
             + "clean-up and a failed attempt's branch do.")),
