@@ -1086,7 +1086,8 @@ test('retry --session releases a stop, and a retry without it still marks the st
   const said = run(['retry', 'q1', '--session', 's1'], at(fx));
   const written = JSON.parse(readFileSync(at(fx), 'utf8'));
   assert.deepEqual(written.released, { q1: 's1' });
-  assert.equal(written.forgiven.q1, undefined);
+  // Read where no file was, the edit writes its own keys alone (FABRIC-GRAPH1's second re-check, finding 2): no empty `forgiven`.
+  assert.equal(written.forgiven?.q1, undefined);
   assert.match(said.out, /#q1` is released from your stop of session `s1`/);
   assert.match(said.out, /A later stop holds it again/);
 
@@ -1844,7 +1845,8 @@ test('review writes a rule it could not check, and says so', async () => {
   const unread = await runReview(['review', 'media-api', 'dev', '--kind', 'deployed', '--procedure', 'README.md'],
     at(fx), async () => ({ unread: 'no DAORIS_SERVICE_URL is set' }));
   assert.match(unread.out, /Not checked: the registry could not be read — no DAORIS_SERVICE_URL is set/);
-  assert.deepEqual(Object.keys(JSON.parse(readFileSync(at(fx), 'utf8')).reviews), ['storefront', 'media-api']);
+  // Both written, an entry added in the driver's order (FABRIC-GRAPH1's second re-check: the CLI wrote its maps in the order they were set).
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(at(fx), 'utf8')).reviews), ['media-api', 'storefront']);
   fx.cleanup();
 });
 

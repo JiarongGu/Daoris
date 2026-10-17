@@ -14,14 +14,15 @@ public sealed class DriverConfigKeepsTests
 {
     [Theory]
     [MemberData(nameof(Rows))]
-    public void An_edit_changes_only_what_it_edits(string name, string edit, string start, string? between, string? refused, string expected)
+    public void An_edit_changes_only_what_it_edits(string name, string edit, bool missing, string start, string? between, string? refused, string expected)
     {
         var folder = Path.Combine(Path.GetTempPath(), "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
         var path = Path.Combine(folder, "driver.json");
         try
         {
             Directory.CreateDirectory(folder);
-            System.IO.File.WriteAllText(path, start);
+            // The second re-check's finding 2: a row `missing` is read where no file was.
+            if (!missing) System.IO.File.WriteAllText(path, start);
             var config = DriverConfig.Load(path);
             // The re-check's finding 1: another writer's change, made after this one read the file and before it writes.
             if (between is not null) System.IO.File.WriteAllText(path, between);
@@ -117,18 +118,41 @@ public sealed class DriverConfigKeepsTests
         return crlf ? text.Replace("\n", "\r\n", StringComparison.Ordinal) : text;
     }
 
-    public static TheoryData<string, string, string, string?, string?, string> Rows()
+    public static TheoryData<string, string, bool, string, string?, string?, string> Rows()
     {
-        var rows = new TheoryData<string, string, string, string?, string?, string>();
+        var rows = new TheoryData<string, string, bool, string, string?, string?, string>();
         foreach (var row in Table.RootElement.GetProperty("rows").EnumerateArray())
         {
             var crlf = row.TryGetProperty("crlf", out var ends) && ends.GetBoolean();
+            var missing = row.TryGetProperty("missing", out var none) && none.GetBoolean();
             var between = row.TryGetProperty("between", out var made) ? Changed(made, crlf) : null;
             var refused = row.TryGetProperty("refused", out var said) ? said.GetString() : null;
-            rows.Add(row.GetProperty("name").GetString()!, row.GetProperty("edit").GetRawText(), Changed(null, crlf), between, refused,
+            rows.Add(row.GetProperty("name").GetString()!, row.GetProperty("edit").GetRawText(), missing, Changed(null, crlf), between, refused,
                 Changed(row.GetProperty("changes"), crlf));
         }
 
         return rows;
+    }
+
+    /// <summary>
+    /// The second re-check's finding 2, its plain side: a config read where no file was, saved where there still is none, writes the edit's
+    /// changed keys alone (the defaults it never changed stay unwritten, as the reader reads them), and carries the path and <c>{}</c>.
+    /// </summary>
+    [Fact]
+    public void A_config_read_where_no_file_was_writes_the_edits_keys_alone()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
+        var path = Path.Combine(folder, "driver.json");
+        try
+        {
+            var config = DriverConfig.Load(path);
+            Assert.Equal(("{}", Path.GetFullPath(path)), (config.Source, config.SourceFile));
+            config.WithNotify(false).Save(path);
+            Assert.Equal("{\n  \"notify\": false\n}\n", System.IO.File.ReadAllText(path));
+        }
+        finally
+        {
+            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        }
     }
 }

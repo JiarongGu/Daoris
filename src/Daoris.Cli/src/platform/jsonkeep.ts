@@ -9,7 +9,33 @@
  *
  * A name JavaScript reads as an array index (`"2048"`) is laid out before the other names of its object when an edit rewrites the file:
  * a plain object keeps such keys in number order, so the driver's twin, which keeps every key in place, is the exact one there.
+ *
+ * 🔴 An edit is the set of key paths it changed (a value set, a key added, a key removed), from the text read and the edited choices, and
+ * making it touches those paths alone (the second re-check, finding 1): merged over the file as it stands, an object another writer had
+ * taken out came back whole with every key the edit never touched, and one another writer had made a string was overwritten by the stale
+ * edited object. An object missing now is made again with only the edit's own keys under it; one that is no longer an object refuses the
+ * edit (`EditRefused`); a key the edit took that is already gone is nothing.
  */
+
+/**
+ * An edit refused, nothing written: it changes `editPath`, and `holder`, the value that path lies under, is no longer an object in the
+ * file as it stands (the second re-check, finding 1), the driver's `JsonEditRefusedException`. Another writer made it a string, a number
+ * or an array since this one read it; writing the stale object over it would undo that writer's change.
+ */
+export class EditRefused extends Error {
+  /** The key path the edit changes, its names joined by dots. */
+  readonly editPath: string;
+  /** The path of the value it lies under that is no longer an object; empty for the file's top. */
+  readonly holder: string;
+
+  constructor(editPath: string, holder: string) {
+    super(holder.length === 0
+      ? `this edit changes \`${editPath}\`, and the file is no longer a JSON object`
+      : `this edit changes \`${editPath}\`, and \`${holder}\` is no longer an object there`);
+    this.editPath = editPath;
+    this.holder = holder;
+  }
+}
 
 type Raw = { readonly rawJSON: string };
 const rawJSON = (JSON as unknown as { rawJSON?: (text: string) => Raw }).rawJSON;
@@ -32,15 +58,15 @@ function isObject(value: unknown): value is Record<string, unknown> {
  * 3: an edit wrote LF over a file in CRLF). No edit is `original`'s own text. `original` is the file as it stands when the edit is
  * written, which may be another writer's since the read (finding 1): what that writer changed and this edit did not stays as it is.
  */
-export function keepEdits(original: string, read: unknown, edited: unknown): string {
+export function keepEdits(original: string, read: Record<string, unknown>, edited: Record<string, unknown>): string {
   const readText = JSON.stringify(read);
   const editedText = JSON.stringify(edited);
   if (readText === editedText) return original;
   const file = parseKeepingNumbers(original);
-  const understood: unknown = JSON.parse(readText);
-  const now: unknown = JSON.parse(editedText);
-  const kept = isObject(file) && isObject(understood) && isObject(now) ? plan(file, understood, now, true) : now;
-  const text = `${JSON.stringify(kept, null, 2)}\n`;
+  const understood = JSON.parse(readText) as Record<string, unknown>;
+  const now = JSON.parse(editedText) as Record<string, unknown>;
+  if (!isObject(file)) throw new EditRefused(changed(understood, now, '') ?? '', '');
+  const text = `${JSON.stringify(plan(file, understood, now, '', true), null, 2)}\n`;
   const end = original.indexOf('\n');
   return end > 0 && original[end - 1] === '\r' ? text.replaceAll('\n', '\r\n') : text;
 }
@@ -82,30 +108,40 @@ export function twice(text: string): string | null {
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 /**
- * What one object becomes, key by key in the file's order: a key neither its reader nor the edit holds is the file's, kept; one the edit
- * took goes, except that a map emptied at the top keeps the entries its reader never read; one its reader did not read and the edit set is
- * the edit's; one the edit left as read is the file's, as written; an object the edit changed is merged; else the edit's.
+ * What one object of the file as it stands becomes, key by key in its order, `where` being its path: a key neither its reader nor the edit
+ * holds is the file's, kept; one the edit took goes, except that a map emptied at the top loses only the entries its reader read; one its
+ * reader did not read and the edit set is the edit's; one the edit left as read is the file's, as written; an object the edit changed is
+ * merged, refused where the file's is no longer an object; else the edit's. A key the edit set that the file no longer holds is added, an
+ * object with only the edit's own keys under it (the second re-check, finding 1).
  */
-function plan(file: Record<string, unknown>, read: Record<string, unknown>, edited: Record<string, unknown>, top: boolean): Record<string, unknown> {
+function plan(
+  file: Record<string, unknown>, read: Record<string, unknown>, edited: Record<string, unknown>, where: string, top: boolean,
+): Record<string, unknown> {
   const out: [string, unknown][] = [];
   for (const [name, kept] of Object.entries(file)) {
+    const path = joined(where, name);
     const wasRead = Object.hasOwn(read, name);
     const isEdited = Object.hasOwn(edited, name);
     const was = read[name];
     const now = edited[name];
     if (!wasRead && !isEdited) out.push([name, kept]);
     else if (!isEdited) {
-      if (top && isObject(kept) && isObject(was)) {
-        const unread = plan(kept, was, {}, false);
-        if (Object.keys(unread).length > 0) out.push([name, unread]);
-      }
+      // The writer leaves an emptied map out, so at the top its edit took the entries its reader read, not the map.
+      const first = top && isObject(was) ? changed(was, {}, path) : null;
+      if (first === null) continue;
+      if (!isObject(kept)) throw new EditRefused(first, path);
+      const unread = plan(kept, was as Record<string, unknown>, {}, path, false);
+      if (Object.keys(unread).length > 0) out.push([name, unread]);
     } else if (!wasRead) out.push([name, now]);
     else if (same(was, now)) out.push([name, kept]);
-    else if (isObject(kept) && isObject(was) && isObject(now)) out.push([name, plan(kept, was, now, false)]);
-    else out.push([name, now]);
+    else if (isObject(was) && isObject(now)) {
+      if (!isObject(kept)) throw new EditRefused(changed(was, now, path) ?? path, path);
+      out.push([name, plan(kept, was, now, path, false)]);
+    } else out.push([name, now]);
   }
 
-  // A key the edit adds goes after the edit's key before it, or first; a default the file never wrote stays unwritten.
+  // A key the edit adds goes after the edit's key before it, or first; a default the file never wrote stays unwritten, and a key another
+  // writer took that this edit left as read stays out.
   let at = 0;
   for (const [name, now] of Object.entries(edited)) {
     const index = out.findIndex(([each]) => each === name);
@@ -114,9 +150,35 @@ function plan(file: Record<string, unknown>, read: Record<string, unknown>, edit
       continue;
     }
     if (Object.hasOwn(file, name)) continue;
-    if (Object.hasOwn(read, name) && same(read[name], now)) continue;
-    out.splice(at++, 0, [name, now]);
+    const was = read[name];
+    if (!Object.hasOwn(read, name)) out.splice(at++, 0, [name, now]);
+    else if (same(was, now)) continue;
+    else if (isObject(was) && isObject(now)) {
+      // Taken out since the read: made again with only the edit's own keys under it, never the ones it left as read.
+      const made = plan({}, was, now, joined(where, name), false);
+      if (Object.keys(made).length > 0) out.splice(at++, 0, [name, made]);
+    } else out.splice(at++, 0, [name, now]);
   }
 
   return Object.fromEntries(out);
 }
+
+/**
+ * The first key path under `where` the edit from `was` to `now` changes, in the edit's order and then the keys it took; or null where it
+ * changes none. What a refusal names, as the driver's `JsonKeeping.Changed`.
+ */
+function changed(was: Record<string, unknown>, now: Record<string, unknown>, where: string): string | null {
+  for (const [name, value] of Object.entries(now)) {
+    const path = joined(where, name);
+    if (!Object.hasOwn(was, name)) return path;
+    const before = was[name];
+    if (same(before, value)) continue;
+    return isObject(before) && isObject(value) ? changed(before, value, path) ?? path : path;
+  }
+  for (const name of Object.keys(was)) {
+    if (!Object.hasOwn(now, name)) return joined(where, name);
+  }
+  return null;
+}
+
+const joined = (where: string, name: string): string => where.length === 0 ? name : `${where}.${name}`;

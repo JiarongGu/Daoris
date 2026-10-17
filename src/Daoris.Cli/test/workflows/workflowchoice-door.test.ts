@@ -152,9 +152,10 @@ test('kind declares a workspace\'s kind with its paths, use maps it, a repositor
   assert.deepEqual(choices(fx).workflows, { 'web-app': { kinds: { docs: 'current' } }, 'notes-site': { kinds: { docs: 'docs-to-pr' } } });
 
   const dropped = await run(fx, ['kind', 'work', 'docs', '--drop']);
+  // In the file's order, which the CLI now writes as the driver does, names sorted (FABRIC-GRAPH1's second re-check).
   assert.equal(dropped.out.split('\n').slice(0, 2).join('\n'), [
     'daoris: the workspace `work` no longer declares kind `docs`.',
-    '  `web-app`, `notes-site` still map it; no task of that kind reaches those mappings until `docs` is declared again.',
+    '  `notes-site`, `web-app` still map it; no task of that kind reaches those mappings until `docs` is declared again.',
   ].join('\n'));
   assert.equal(choices(fx).workspaceWorkflows, undefined);
 
