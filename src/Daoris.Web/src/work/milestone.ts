@@ -48,6 +48,31 @@ export type MilestoneEnd = {
   said: string;
 };
 
+/** The person's words on a held attempt (FABRIC-PERFORM1g): it happened, it did not (a new attempt), or stop the step. */
+export type HeldResolution = 'happened' | 'did-not' | 'stop';
+
+/**
+ * A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6): nothing else can say what became of it,
+ * so its gate holds until their word. `why` is a code the page words (`unknown`, `no-reconcile`, `no-outcome`, `not-current`,
+ * `not-on-word`, or the one table's refusal of its outcome); `said` is the driver's sentence for a code the page has no words for.
+ */
+export type HeldAttempt = {
+  unit: string;
+  node: string;
+  attempt: number;
+  plugin: string;
+  step: string;
+  nodeState: string;
+  why: string;
+  outcome?: string | null;
+  revision?: string | null;
+  at: string;
+  /** The person's word, recorded and not yet applied by the driver's next look. */
+  resolution?: HeldResolution | null;
+  resolvedAt?: string | null;
+  said: string;
+};
+
 export type MilestoneUnit = {
   unit: string;
   repository: string;
@@ -58,13 +83,32 @@ export type MilestoneUnit = {
   cleanup: { state: string; waits: MilestoneEntry[]; gone: MilestoneEntry[] };
   recovery: MilestoneEntry[];
   entries: MilestoneEntry[];
+  /** Its plugin steps' attempts held for the person (FABRIC-PERFORM1g), joined from the answer's `held` by the page. */
+  held?: HeldAttempt[];
 };
 
 /**
  * What `WORK_STATE` answers: the units, Daoris's own recoveries no unit names (RECOVERYVIEW1, CLEANUP1: a folder moved aside, a
- * recovery ref), and what could not be read (a repository with no checkout here).
+ * recovery ref), what could not be read (a repository with no checkout here), and every attempt held for the person, of any unit
+ * (FABRIC-PERFORM1g: a quest's too, which no milestone names).
  */
-export type WorkState = { units: MilestoneUnit[]; recovery: MilestoneEntry[]; unread: string[] };
+export type WorkState = { units: MilestoneUnit[]; recovery: MilestoneEntry[]; unread: string[]; held: HeldAttempt[] };
+
+/** The why codes the page has words for; any other is the one table's refusal of an outcome, said with its code. */
+const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word'] as const;
+
+/** Why an attempt is held, in the reader's language (FABRIC-PERFORM1g). */
+export function heldWhy(t: TFunction, held: HeldAttempt): string {
+  const code = HELD_WHY.find((one) => one === held.why);
+  return code ? t(`work.milestone.held.why.${code}`) : t('work.milestone.held.why.other', { code: held.why });
+}
+
+/** A held attempt in one line: its step, its attempt, and why, or the person's word waiting for the next look. */
+export function heldSentence(t: TFunction, held: HeldAttempt): string {
+  return held.resolution
+    ? t('work.milestone.held.worded', { node: held.node, attempt: held.attempt, word: t(`work.milestone.held.word.${held.resolution}`) })
+    : t('work.milestone.held.step', { node: held.node, attempt: held.attempt, why: heldWhy(t, held) });
+}
 
 /** The kinds of thing a unit owns that have a word of the page's; a `line` or an `end` is its resource's own name. */
 const KINDS = ['tree', 'session-branch', 'landing-branch', 'moved-aside', 'recovery-ref', 'auto-landing', 'history'] as const;
@@ -94,10 +138,14 @@ export function unitOfBranch(units: readonly MilestoneUnit[], repository: string
 
 /** Older shells answer nothing of the kind, and a malformed answer reads as none. */
 export function readWorkState(answer: unknown): WorkState {
-  const held = answer as { units?: unknown; recovery?: unknown; unread?: unknown } | null | undefined;
+  const read = answer as { units?: unknown; recovery?: unknown; unread?: unknown; held?: unknown } | null | undefined;
+  // FABRIC-PERFORM1g: a shell older than the field answers none held.
+  const held = Array.isArray(read?.held) ? read.held as HeldAttempt[] : [];
+  const units = Array.isArray(read?.units) ? read.units as MilestoneUnit[] : [];
   return {
-    units: Array.isArray(held?.units) ? held.units as MilestoneUnit[] : [],
-    recovery: Array.isArray(held?.recovery) ? held.recovery as MilestoneEntry[] : [],
-    unread: Array.isArray(held?.unread) ? held.unread.filter((each): each is string => typeof each === 'string') : [],
+    units: units.map((unit) => ({ ...unit, held: held.filter((each) => each.unit === unit.unit) })),
+    recovery: Array.isArray(read?.recovery) ? read.recovery as MilestoneEntry[] : [],
+    unread: Array.isArray(read?.unread) ? read.unread.filter((each): each is string => typeof each === 'string') : [],
+    held,
   };
 }
