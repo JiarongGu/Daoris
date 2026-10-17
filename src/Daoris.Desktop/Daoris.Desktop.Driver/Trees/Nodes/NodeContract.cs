@@ -56,7 +56,16 @@ public static class NodeKinds
     /// <summary>A join of a group's members, keeping its identity and failure policy (§E7).</summary>
     public const string All = "all";
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All];
+    /// <summary>The second opinion's gate (D155 §8.2, §E4): observed, before the look and the landing in D157 §2.2's order (FABRIC-WORKFLOW2).</summary>
+    public const string Opinion = "opinion";
+
+    /// <summary>
+    /// Where a failure or a refusal stops the run short of its end: a decoded D157 version's <c>stop</c>, §E7's synthetic sink
+    /// (FABRIC-WORKFLOW2). Reached on the receipt of the path into it; never a graph's end.
+    /// </summary>
+    public const string Stop = "stop";
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -159,6 +168,12 @@ public static class NodeSource
 
     /// <summary>The agent's own word, the ledger's done: a claim, never another node's evidence.</summary>
     public const string Ledger = "ledger";
+
+    /// <summary>The second opinion's gate as the driver keeps it (D155 §8.2): an answer covering the tip with no dispute open, or the person's answer in its place.</summary>
+    public const string Opinion = "opinion";
+
+    /// <summary>The path into a sink (§E7): the failure or the refusal whose receipt leads there, as a join's members reach it.</summary>
+    public const string Path = "path";
 }
 
 /// <summary>A node's declared retry (§D4, §D6): how many attempts it may take on one binding, and the delay before each new one.</summary>
@@ -365,7 +380,8 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
 /// <para><b>Skips</b> (§E2 leaves which nodes allow one to the node; FABRIC-NODE1's reading, D173's note): git's proofs
 /// (<c>claimed</c>, <c>handed</c>, <c>line</c>) are never skipped, since <i>held</i> and the cleanup rest on them and a skip would read
 /// as evidence; nor is <c>quest.close</c>, whose override is the person's own done (§E5), nor a join, whose members are skipped
-/// instead. Every other kind may be, and a plugin's own node unless its declaration forbids it (FABRIC-NODE1c).</para>
+/// instead, nor a <c>stop</c>, which is the run stopped (FABRIC-WORKFLOW2). Every other kind may be, and a plugin's own node unless
+/// its declaration forbids it (FABRIC-NODE1c).</para>
 /// </remarks>
 public static class NodeAuthorities
 {
@@ -383,6 +399,10 @@ public static class NodeAuthorities
         [NodeKinds.WaitUnit] = new(NodeKinds.WaitUnit, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, true, true, true),
         [NodeKinds.QuestClose] = new(NodeKinds.QuestClose, NodeReach.Performed, NodeSource.CloseDoor, NodeSource.CloseDoor, false, false, true, true),
         [NodeKinds.All] = new(NodeKinds.All, NodeReach.Observed, NodeSource.Members, NodeSource.Members, false, false, true, false),
+        // FABRIC-WORKFLOW2: D157's opinion never fails (a required one waits), and the person may pass it over, as its gate's
+        // unavailable reads as skipped today. A sink is the run stopped: never skipped, never the end, its receipt its path's.
+        [NodeKinds.Opinion] = new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, null, false, true, true, true),
+        [NodeKinds.Stop] = new(NodeKinds.Stop, NodeReach.Observed, NodeSource.Path, null, false, false, MayEnd: false, Evidenced: false),
     };
 
     /// <summary>

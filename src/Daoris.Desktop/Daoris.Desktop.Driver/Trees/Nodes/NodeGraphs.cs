@@ -90,7 +90,7 @@ public static class GraphRefusal
     /// <summary>A node no entry reaches.</summary>
     public const string Unreachable = "unreachable";
 
-    /// <summary>D157 §2.2's protected order broken: the look comes before the landing.</summary>
+    /// <summary>D157 §2.2's protected order broken: the opinion comes before the look, and both before the landing.</summary>
     public const string ProtectedOrder = "protected-order";
 
     /// <summary>A graph holding <c>quest.close</c> whose end is not it (§E5: in a graph that holds it, it is the end).</summary>
@@ -113,7 +113,8 @@ public static class GraphRefusal
 /// <remarks>
 /// The choices §E7 left open, made here (D173's FABRIC-GRAPH1 note): synthetic nodes and every wire to or from one are counted apart,
 /// three nodes and four wires to each authored node; Current's landing nodes are the graph's own, counted; an entry takes no wire from
-/// another node; the protected order is the look's before every landing; a <c>quest.close</c>'s only way out is its <c>failed</c>
+/// another node; the protected order is the look's before every landing, and the opinion's before every look and landing
+/// (FABRIC-WORKFLOW2); a <c>quest.close</c>'s only way out is its <c>failed</c>
 /// wire; and the cleanup's wait is refused for an end at or before the line.
 /// </remarks>
 public static class NodeGraphs
@@ -209,7 +210,9 @@ public static class NodeGraphs
         }
         else if (NodeAuthorities.Of(end) is { MayEnd: false })
         {
-            Say(GraphRefusal.EndKind, null, end.Id, $"`{end.Id}` is a `{end.Kind}`, which is never an end: it is reached on a claim, and an end on evidence.");
+            Say(GraphRefusal.EndKind, null, end.Id, end.Kind == NodeKinds.Stop
+                ? $"`{end.Id}` is a `{end.Kind}`, which is never an end: a failure stops the run there, short of its end."
+                : $"`{end.Id}` is a `{end.Kind}`, which is never an end: it is reached on a claim, and an end on evidence.");
         }
 
         if (starts.Count > 0)
@@ -221,26 +224,33 @@ public static class NodeGraphs
             }
         }
 
-        // D157 §2.2's protected order: the gates come before the landing. Of them only the look is a node yet (§E4), so every look reaches
-        // every landing through wires a reach satisfies, never a failure's or a rejection's path; and (the review's finding 4) no landing
-        // can start before a look has passed, whichever member of an `anyOf` a run takes. One problem a landing, naming the look.
+        // D157 §2.2's protected order: the gates come before the landing, the opinion before the look. Of them the opinion (FABRIC-WORKFLOW2)
+        // and the look are nodes (§E4), so each must be reached before every later gate and every landing starts: through wires a reach
+        // satisfies, never a failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet.
+        var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
+        var landings = byId.Values.Where(node => node.Kind == NodeKinds.Handed).ToList();
         var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
+        var unreached = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
+        {
+            var after = Reach([gate.Id], ordered, forward: true);
+            var later = gate.Kind == NodeKinds.Opinion ? looks.Select(look => ("look", look)).Concat(landings.Select(landing => ("landing", landing))) : landings.Select(landing => ("landing", landing));
+            if (gate.Kind == NodeKinds.Look) unreached.UnionWith(landings.Where(landing => !after.Contains(landing.Id)).Select(landing => landing.Id));
+            if (later.FirstOrDefault(each => !after.Contains(each.Item2.Id)) is ({ } what, { } early))
+            {
+                Say(GraphRefusal.ProtectedOrder, null, gate.Id, $"the {gate.Kind} `{gate.Id}` comes before the {what} `{early.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
+            }
+        }
+
+        // FABRIC-GRAPH1's review, finding 4: every look reaching a landing is not enough; no landing may start before a look has passed,
+        // whichever member of an `anyOf` a run takes. One problem a landing the looks all reach, naming the first look.
         if (looks.Count > 0)
         {
-            var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
-            var afterEach = looks.Select(look => (look, after: Reach([look.Id], ordered, forward: true))).ToList();
             var unlooked = StartsWithNoLook(byId, starts, local);
-            foreach (var landing in byId.Values.Where(node => node.Kind == NodeKinds.Handed))
+            foreach (var landing in landings.Where(landing => !unreached.Contains(landing.Id) && unlooked.Contains(landing.Id)))
             {
-                if (afterEach.FirstOrDefault(each => !each.after.Contains(landing.Id)).look is { } early)
-                {
-                    Say(GraphRefusal.ProtectedOrder, null, early.Id, $"the look `{early.Id}` comes before the landing `{landing.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
-                }
-                else if (unlooked.Contains(landing.Id))
-                {
-                    Say(GraphRefusal.ProtectedOrder, null, looks[0].Id, $"the landing `{landing.Id}` can start with no look passed, though `{looks[0].Id}` reaches it: every way to it "
-                        + "passes a look (D157 §2.2's order: holds, opinion, look, landing).");
-                }
+                Say(GraphRefusal.ProtectedOrder, null, looks[0].Id, $"the landing `{landing.Id}` can start with no look passed, though `{looks[0].Id}` reaches it: every way to it "
+                    + "passes a look (D157 §2.2's order: holds, opinion, look, landing).");
             }
         }
 

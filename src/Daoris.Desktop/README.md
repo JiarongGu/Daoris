@@ -90,7 +90,9 @@ and says what the file keeps there that no unit reads (`Strays`). The CLI's `cyc
 `test/fixtures/graph-homes.json`. `DriverConfig.Save` makes an edit onto the file as it stands at write (`Platform/JsonKeeping`), so
 a key it has no field for stays where it stands, a value no edit changed keeps its value, and another writer's change made since the
 read stays; a file that does not read then is refused. The CLI's `jsonkeep.ts` is its twin (D173's FABRIC-GRAPH1 note says exactly
-what an edit keeps).
+what an edit keeps). `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
+version that does not decode read as unreadable whole (FABRIC-WORKFLOW2); the CLI's `workflowgraphs.ts` is its twin, on
+`test/fixtures/workflow-graphs.json`.
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
 second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,

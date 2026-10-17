@@ -505,6 +505,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // FABRIC-GRAPH1's review: the bytes an edit of driver.json writes sit among the CLI's fixtures, and the driver's DriverConfigKeepsTests
     // reads them too.
     ['the driver-config-keeps table', ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], [...BASE, 'driver']],
+    // FABRIC-WORKFLOW2: D157's versions and the graphs they decode to sit among the CLI's fixtures, and the driver's WorkflowGraphsTests reads them too.
+    ['the workflow-graphs table', ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], [...BASE, 'driver']],
     // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver', 'web']],
