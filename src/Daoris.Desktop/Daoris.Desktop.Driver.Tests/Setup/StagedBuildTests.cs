@@ -323,8 +323,13 @@ public sealed class StagedBuildTests : IDisposable
         var me = $"(pid {Environment.ProcessId})";
         Assert.Equal("app/Daoris.Desktop.App.dll", hold.Held);
         Assert.Contains(me, hold.By);
+        // In full in the journal alone: when it started and its command line.
+        Assert.NotNull(hold.Holders);
+        Assert.StartsWith(hold.By!, hold.Holders);
+        Assert.Contains(" started ", hold.Holders);
         Assert.Contains("app/Daoris.Desktop.App.dll held by ", journal.Detail);
         Assert.Contains(me, journal.Detail);
+        Assert.Contains(hold.Holders!, journal.Detail);
     }
 
     /// <summary>
@@ -359,6 +364,52 @@ public sealed class StagedBuildTests : IDisposable
         Assert.True(hold.Released);
         Assert.Equal("app/Daoris.Desktop.App.dll", hold.Held);
         Assert.Contains($"(pid {Environment.ProcessId})", hold.By);
+    }
+
+    /// <summary>
+    /// DEPLOYBUSY1: a hold is asked again as it lasts, and the last answer is kept: one moment's holder can be a passer-by,
+    /// as a program that opened a file for a moment at the first refusal is, while another holds the folder for the rest.
+    /// </summary>
+    [Fact]
+    public void A_hold_asked_again_names_what_held_it_last_and_not_a_passer_by()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Stage();
+        var now = Start;
+        FileStream? passer = new(Path.Combine(_install, "app", "Daoris.Desktop.exe"), FileMode.Open, FileAccess.Read, FileShare.None);
+        FileStream? holder = null;
+
+        var outcome = new InstallSwap(_install, start: _ =>
+        {
+            Assert.True(StagedBuild.Confirm(_install, 4242));
+            return 4242;
+        }, alive: _ => true, clock: () => now, sleep: span => now += span)
+        {
+            Mover = (from, to, overwrite) =>
+            {
+                if (now - Start >= TimeSpan.FromSeconds(3) && passer is not null)
+                {
+                    passer.Dispose();
+                    passer = null;
+                    holder = new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None);
+                }
+
+                if (now - Start >= TimeSpan.FromSeconds(30))
+                {
+                    holder?.Dispose();
+                    holder = null;
+                }
+
+                InstallSwap.MoveOnDisk(from, to, overwrite);
+            },
+        }.Run([]);
+        passer?.Dispose();
+        holder?.Dispose();
+
+        Assert.Equal(SwapPhase.Installed, outcome.Phase);
+        var hold = Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!);
+        Assert.True(hold.Released);
+        Assert.Equal("app/Daoris.Desktop.App.dll", hold.Held);
     }
 
     /// <summary>
@@ -632,6 +683,8 @@ public sealed class StagedBuildTests : IDisposable
             new("app", "update/previous/app", 12_345, 62, true),
             new("update/staged/app", "app", 120_000, 601, false),
             new("app", "update/previous/app", 120_000, 601, false, Held: "app", By: "node (pid 4242), git (pid 4343)"),
+            new("app", "update/previous/app", 45_573, 220, true, Held: "app/bin", By: "dotnet (pid 4242)",
+                Holders: "dotnet (pid 4242) started 03:40:12Z: dotnet knowledge.dll"),
         ];
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.RolledBack, "b1", "0.0.1", null, Start, [], Reason: "busy", Holds: holds));
 

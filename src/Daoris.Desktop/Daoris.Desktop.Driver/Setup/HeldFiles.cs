@@ -7,8 +7,21 @@ namespace Daoris.Driver;
 /// <summary>A process found holding an entry open (DEPLOYBUSY1): its id, its name, when it started, and its command line.</summary>
 public sealed record FileHolder(int Pid, string Name, DateTimeOffset? Started = null, string? Command = null)
 {
+    /// <summary>The most of a command line <see cref="InFull"/> carries.</summary>
+    private const int CommandMost = 300;
+
     /// <summary>The holder in a terminal's words: <c>git (pid 1234)</c>.</summary>
     public string Said => $"{Name} (pid {Pid})";
+
+    /// <summary>
+    /// The holder with when it started and its command line, for the swap's journal: <c>git (pid 1234) started
+    /// 03:00:20Z: git status</c>. A name alone can mislead: a program an installer replaced as it ran is named by its
+    /// rollback file.
+    /// </summary>
+    public string InFull =>
+        Said
+        + (Started is { } started ? " started " + started.ToString("HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture) : "")
+        + (Command is { Length: > 0 } command ? ": " + (command.Length > CommandMost ? command[..CommandMost] + "…" : command) : "");
 }
 
 /// <summary>An entry found held open, by its full path, and the processes holding it.</summary>
@@ -109,64 +122,70 @@ public static class HeldFiles
         return [];
     }
 
-    /// <summary>A process by its id: its name, when it started and its command line, as far as this account may read them.</summary>
+    /// <summary>
+    /// A process by its id: its name, when it started and its command line, as far as this account may read them. Asked of
+    /// the one process, never through <see cref="Process.GetProcessById(int)"/>, which reads every process on the machine
+    /// to answer for one, a third of a second each time on a busy machine (measured), and a hold is asked every few seconds.
+    /// </summary>
     private static FileHolder Holder(int pid)
     {
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            DateTimeOffset? started = null;
-            try
-            {
-                started = new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero);
-            }
-            catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
-            {
-                // Another account's, or one that ended as it was asked: its name is still said.
-            }
-
-            return new FileHolder(pid, process.ProcessName, started, CommandLineOf(pid));
-        }
-        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
-        {
-            // Ended between the two questions.
-            return new FileHolder(pid, "ended");
-        }
-    }
-
-    /// <summary>A process's command line, or null where this account may not read it (ProcessCommandLineInformation, Windows 8.1 on).</summary>
-    private static string? CommandLineOf(int pid)
-    {
         var process = OpenProcess(ProcessQueryLimitedInformation, false, pid);
-        if (process == IntPtr.Zero) return null;
+        if (process == IntPtr.Zero) return new FileHolder(pid, NameByList(pid));
         try
         {
-            for (var size = 4096; size <= 1 << 20; size *= 4)
-            {
-                var buffer = Marshal.AllocHGlobal(size);
-                try
-                {
-                    var status = NtQueryInformationProcess(process, ProcessCommandLineInformation, buffer, (uint)size, out _);
-                    if (status == StatusInfoLengthMismatch || status == StatusBufferOverflow || status == StatusBufferTooSmall) continue;
-                    if (status != 0) return null;
-
-                    // A UNICODE_STRING: its length in bytes, then, pointer-aligned, where its characters are.
-                    var length = (ushort)Marshal.ReadInt16(buffer);
-                    var characters = Marshal.ReadIntPtr(buffer, IntPtr.Size);
-                    return characters == IntPtr.Zero ? null : Marshal.PtrToStringUni(characters, length / 2);
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
-            }
-
-            return null;
+            var name = new char[1024];
+            var length = (uint)name.Length;
+            var image = QueryFullProcessImageNameW(process, 0, name, ref length) ? new string(name, 0, (int)length) : null;
+            DateTimeOffset? started = GetProcessTimes(process, out var creation, out _, out _, out _)
+                ? DateTimeOffset.FromFileTime(creation).ToUniversalTime()
+                : null;
+            return new FileHolder(
+                pid, image is null ? NameByList(pid) : System.IO.Path.GetFileNameWithoutExtension(image), started, CommandLineOf(process));
         }
         finally
         {
             CloseHandle(process);
         }
+    }
+
+    /// <summary>The name the process list gives, where the process itself cannot be opened; <c>ended</c> when it is gone.</summary>
+    private static string NameByList(int pid)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(pid);
+            return process.ProcessName;
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
+        {
+            return "ended";
+        }
+    }
+
+    /// <summary>A process's command line, or null where this account may not read it (ProcessCommandLineInformation, Windows 8.1 on).</summary>
+    private static string? CommandLineOf(IntPtr process)
+    {
+        for (var size = 4096; size <= 1 << 20; size *= 4)
+        {
+            var buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                var status = NtQueryInformationProcess(process, ProcessCommandLineInformation, buffer, (uint)size, out _);
+                if (status == StatusInfoLengthMismatch || status == StatusBufferOverflow || status == StatusBufferTooSmall) continue;
+                if (status != 0) return null;
+
+                // A UNICODE_STRING: its length in bytes, then, pointer-aligned, where its characters are.
+                var length = (ushort)Marshal.ReadInt16(buffer);
+                var characters = Marshal.ReadIntPtr(buffer, IntPtr.Size);
+                return characters == IntPtr.Zero ? null : Marshal.PtrToStringUni(characters, length / 2);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
+        return null;
     }
 
     private const uint FileReadAttributes = 0x80;
@@ -203,4 +222,10 @@ public static class HeldFiles
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool CloseHandle(IntPtr handle);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool QueryFullProcessImageNameW(IntPtr process, uint flags, [Out] char[] name, ref uint length);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetProcessTimes(IntPtr process, out long creation, out long exit, out long kernel, out long user);
 }

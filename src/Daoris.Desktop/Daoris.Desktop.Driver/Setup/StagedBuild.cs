@@ -120,7 +120,12 @@ public sealed record SwapRecord(
 /// where Windows could not tell, and on a journal written before it.
 /// </param>
 /// <param name="By">The processes found holding <paramref name="Held"/>, each <c>name (pid n)</c>; null where none was found.</param>
-public sealed record SwapHold(string From, string To, long Ms, int Tries, bool Released, string? Held = null, string? By = null)
+/// <param name="Holders">
+/// The same processes in full, each with when it started and its command line: the journal's alone, never a log line's,
+/// since a command line carries paths.
+/// </param>
+public sealed record SwapHold(
+    string From, string To, long Ms, int Tries, bool Released, string? Held = null, string? By = null, string? Holders = null)
 {
     /// <summary>
     /// The hold in a terminal's words: <c>app for 12.3 s</c>, what held it where that was found, and whether it never gave
@@ -389,7 +394,7 @@ public static class StagedBuild
                         // What was found holding it (DEPLOYBUSY1), absent on a hold journalled before it.
                         holds.Add(new SwapHold(from, to, ms, (int)tries,
                             hold["released"] is JsonValue released && released.TryGetValue<bool>(out var gave) && gave,
-                            Text(hold["held"]), Text(hold["by"])));
+                            Text(hold["held"]), Text(hold["by"]), Text(hold["holders"])));
                     }
                 }
             }
@@ -445,6 +450,7 @@ public static class StagedBuild
                 };
                 if (hold.Held is { } held) written["held"] = held;
                 if (hold.By is { } by) written["by"] = by;
+                if (hold.Holders is { } holders) written["holders"] = holders;
                 return (JsonNode)written;
             }).ToArray());
         }
