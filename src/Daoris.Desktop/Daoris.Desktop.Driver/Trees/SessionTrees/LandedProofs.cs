@@ -16,13 +16,32 @@ internal static class LandedProofs
     /// </summary>
     internal sealed record LineForm(string Name, string Ref)
     {
+        /// <summary>
+        /// The commit it was read at, where <see cref="LineFormsAsync"/> read it (FABRIC-END4a, third review): what every proof over it compares
+        /// with, and what a removal by such a proof verifies, so the commit verified is the commit proved. Null for a form a caller named.
+        /// </summary>
+        internal string? At { get; init; }
+
+        /// <summary>What git is asked by: the commit it was read at, else its reference.</summary>
+        internal string Rev => At ?? Ref;
+
         /// <summary>Its name, as every sentence says it.</summary>
         public override string ToString() => Name;
     }
 
     /// <summary>What the proof found, before anything that keeps a branch is asked.</summary>
     /// <param name="Judgeable">Whether the branch may still be inside another: its line was read and its files compared.</param>
-    internal sealed record Proof(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail, int Commits, bool Judgeable);
+    internal sealed record Proof(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail, int Commits, bool Judgeable)
+    {
+        /// <summary>
+        /// What a removal by it rests on (FABRIC-END4a, third review): the form of the line it found the work on, at the commit it compared.
+        /// Empty where it found none, or where the form was a caller's, read at no commit.
+        /// </summary>
+        internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
+    }
+
+    /// <summary>The form at the commit it was read at, as a removal verifies it; none where it was read at none.</summary>
+    internal static IReadOnlyList<(string Ref, string Commit)> RestsOn(LineForm? form) => form?.At is { } at ? [(form.Ref, at)] : [];
 
     /// <summary>The landing's own branches of one repository the record holds, standing or not.</summary>
     internal static List<LandedBranch> EntriesOf(IReadOnlyList<LandedBranch> record, string repository) =>
@@ -61,15 +80,22 @@ internal static class LandedProofs
         if (line is null) return (forms, null);
         foreach (var (reference, name) in new[] { ($"refs/heads/{line}", line), ($"refs/remotes/origin/{line}", $"origin/{line}") })
         {
-            var there = refs is null ? null : await refs.HasAsync(reference, ct).ConfigureAwait(false);
+            // FABRIC-END4a, third review: the commit is read with the form, so a proof compares with it and a removal verifies it.
+            bool? there = null;
+            string? at = null;
+            if (refs is not null && await refs.CommitAsync(reference, ct).ConfigureAwait(false) is { Known: true } read)
+            {
+                (there, at) = (read.Commit is not null, read.Commit);
+            }
+
             if (there is null)
             {
-                var (code, _, err) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-                there = code == 0;
+                var (code, sha, err) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{reference}^{{commit}}"], ct).ConfigureAwait(false);
+                (there, at) = (code == 0, code == 0 ? sha.Trim() : null);
                 if (code is not (0 or 1)) unread ??= $"git could not look for `{name}`: {(string.IsNullOrWhiteSpace(err) ? "git said nothing" : FirstLine(err))}";
             }
 
-            if (there == true) forms.Add(new LineForm(name, reference));
+            if (there == true) forms.Add(new LineForm(name, reference) { At = at });
         }
 
         return (forms, unread);
@@ -89,20 +115,22 @@ internal static class LandedProofs
                 : $"there is no `{line}` here, nor `origin/{line}`, to compare it with", 0, false);
         }
 
+        // FABRIC-END4a, third review: each form is asked at the commit it was read at (Rev), never by its live name, and the proof names
+        // that form and commit as what a removal by it rests on.
         foreach (var form in forms)
         {
-            var (merged, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, form.Ref], ct).ConfigureAwait(false);
-            if (merged == 0) return new(LandedKind.Merged, form.Name, [], null, 0, false);
+            var (merged, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, form.Rev], ct).ConfigureAwait(false);
+            if (merged == 0) return new(LandedKind.Merged, form.Name, [], null, 0, false) { Rests = RestsOn(form) };
         }
 
-        var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", tip, "--not", .. forms.Select(form => form.Ref)], ct)
+        var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", tip, "--not", .. forms.Select(form => form.Rev)], ct)
             .ConfigureAwait(false);
         var commits = int.TryParse(count.Trim(), out var n) ? n : 0;
         Proof? closest = null;
         string? failed = null;
         foreach (var form in forms)
         {
-            var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, form.Ref], ct).ConfigureAwait(false);
+            var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, form.Rev], ct).ConfigureAwait(false);
             if (baseCode != 0)
             {
                 failed = $"git found no point where it left `{form}`: {FirstLine(baseErr)}";
@@ -110,7 +138,7 @@ internal static class LandedProofs
             }
 
             var changed = await NamesAsync(root, baseOut.Trim(), tip, ct).ConfigureAwait(false);
-            var differing = await NamesAsync(root, tip, form.Ref, ct).ConfigureAwait(false);
+            var differing = await NamesAsync(root, tip, form.Rev, ct).ConfigureAwait(false);
             if (changed is null || differing is null)
             {
                 failed = $"git could not compare it with `{form}`";
@@ -126,7 +154,7 @@ internal static class LandedProofs
             }
 
             var still = changed.Where(differing.Contains).ToList();
-            if (still.Count == 0) return new(LandedKind.OnLine, form.Name, [], null, commits, false);
+            if (still.Count == 0) return new(LandedKind.OnLine, form.Name, [], null, commits, false) { Rests = RestsOn(form) };
             if (closest is null || closest.Kind == LandedKind.Unknown || still.Count < closest.Files.Count)
             {
                 closest = new(LandedKind.Differs, form.Name, still, null, commits, true);

@@ -57,7 +57,14 @@ internal sealed class TreeSquashes(TreeContext context)
     /// <param name="cwd">A working tree of the repository: the session's own, or the registered root.</param>
     /// <param name="tip">The session branch's commit, read once by the caller.</param>
     /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
-    internal async Task<LandedBranch?> SquashedHolderAsync(string cwd, string repository, string tip, CancellationToken ct, RefSnapshot? refs = null)
+    internal async Task<LandedBranch?> SquashedHolderAsync(string cwd, string repository, string tip, CancellationToken ct, RefSnapshot? refs = null) =>
+        (await SquashedHoldAsync(cwd, repository, tip, ct, refs).ConfigureAwait(false))?.Entry;
+
+    /// <summary>
+    /// <see cref="SquashedHolderAsync"/> with the commit its branch was read standing at (FABRIC-END4a, third review): the record vouches only
+    /// while that branch is the landing's, so a removal on its word rests on the branch at that commit, and verifies it as it goes.
+    /// </summary>
+    internal async Task<(LandedBranch Entry, string At)?> SquashedHoldAsync(string cwd, string repository, string tip, CancellationToken ct, RefSnapshot? refs = null)
     {
         var squashed = context.Recorded.All()
             .Where(entry => entry.Squashed is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
@@ -74,7 +81,7 @@ internal sealed class TreeSquashes(TreeContext context)
         foreach (var entry in squashed)
         {
             var (under, _, _) = await WorkingTree.GitAsync(cwd, ["merge-base", "--is-ancestor", tip, entry.Squashed!], ct).ConfigureAwait(false);
-            if (under == 0 && await LandedProofs.StandingTipAsync(cwd, entry, ct, refs).ConfigureAwait(false) is not null) return entry;
+            if (under == 0 && await LandedProofs.StandingTipAsync(cwd, entry, ct, refs).ConfigureAwait(false) is { } at) return (entry, at);
         }
 
         return null;

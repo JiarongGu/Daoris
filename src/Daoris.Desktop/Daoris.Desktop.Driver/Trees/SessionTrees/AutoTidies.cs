@@ -113,8 +113,9 @@ internal sealed class AutoTidies(
     EndKeeping ends)
 {
     /// <summary>
-    /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a): every session branch, judged as the press's
-    /// list judges it against the line read here with no fetch, and those <see cref="TreeSetAside.GoesByItself"/> takes removed
+    /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a; FABRIC-END4a): each session branch whose kept
+    /// <see cref="HeldFact"/> holds at its tip, judged as the press's list judges it against the line read here with no fetch,
+    /// and those <see cref="TreeSetAside.GoesByItself"/> takes removed
     /// by the clean-up's own press (<see cref="TreeSweeps"/>), judged again right before each goes, and deleted only while it is
     /// the commit judged. Then the branches the repository's landings made and recorded (AUTOTIDY2b, D102's group), each the
     /// press would take that no session branch the look leaves leans on, by the press's own half
@@ -125,7 +126,7 @@ internal sealed class AutoTidies(
     /// a clean tree until its record opens, so the repository's trees are held as bringing them up to date holds them
     /// (<see cref="TreeLock"/>), and a start that holds them leaves every branch for another look.</para>
     ///
-    /// <para><b>Judged before the hold</b> (AUTOTIDY2a): every session branch is judged first, the sessions asked for it too so
+    /// <para><b>Judged before the hold</b> (AUTOTIDY2a): every held candidate is judged first, the sessions asked for it too so
     /// no tree a session works in is read, and the hold is taken only where one may go. A start waits on it only while those few
     /// are judged again and removed, and a look with nothing to take never holds the repository.</para>
     ///
@@ -136,6 +137,31 @@ internal sealed class AutoTidies(
     internal async Task<TidyPass> TidyEmptyAsync(
         string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
         CancellationToken ct = default)
+    {
+        // FABRIC-END4a: the pace's pass and link 2's tries tidy one repository at a time in a process, so neither meets the other's
+        // hold and says a start held it.
+        var alone = Tidying.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
+        await alone.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await TidyAloneAsync(root, repository, workspace, inUse, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            alone.Release();
+        }
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> Tidying = new(StringComparer.OrdinalIgnoreCase);
+
+    // FABRIC-END4a review: each recorded branch the keeper could not prove and the press's judgement kept, at the tip and line commit it
+    // was judged at, and when (home|repository|branch). In memory: a restart judges each once again. 🔴 Never for good (second review): a
+    // busy, dirty or checked-out tree, or a landing checked out inside another, can clear with neither commit moving, so an entry older than
+    // the `refs` deadline is judged again.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Tip, string? Line, DateTimeOffset At)> Judged = new(StringComparer.OrdinalIgnoreCase);
+
+    private async Task<TidyPass> TidyAloneAsync(
+        string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, CancellationToken ct)
     {
         var space = RemoteTarget.Workspace(workspace);
         TidyPass Pass(IReadOnlyList<SweepResult> results, string? held = null, string? detail = null, string? cause = null) =>
@@ -174,13 +200,54 @@ internal sealed class AutoTidies(
             sessions = output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
 
-        var branches = sessions.Select(branch => $"{repository}:{branch}").ToHashSet(StringComparer.Ordinal);
         // The branches the repository's landings made and recorded (AUTOTIDY2b, D102's group), which the look takes after them.
-        var entries = LandedProofs.EntriesOf(context.Recorded.All(), repository);
-        if (branches.Count == 0 && entries.Count == 0) return Pass([]);
+        if (sessions.Count == 0 && LandedProofs.EntriesOf(context.Recorded.All(), repository).Count == 0) return Pass([]);
         // FABRIC-END2: what the line holds is kept on the entries before anything goes, so an ended entry outlives its branch as a
-        // trace. The end judgement's own writer, in the lease's process only; the tidy's judgement below is unchanged (END4a moves it).
+        // trace. The end judgement's own writer, in the lease's process only.
         await ends.KeepAsync(root, repository, space, line, ct, refs).ConfigureAwait(false);
+
+        // FABRIC-END4a (the design §C3, §C6 link 2): the candidates are the units whose kept fact says the line holds them at the tip
+        // they stand at now, read from the records the keeper just wrote, never every branch judged again each pace. Nothing goes
+        // before *held*. The press's judgement below, again inside the hold and once more right before each goes, still decides,
+        // so a fact contradicted since keeps its branch (canary 8).
+        var held = new List<string>();
+        foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                     && sessions.Contains(each.Branch, StringComparer.Ordinal)))
+        {
+            if (await HeldHereAsync(grown.Branch, grown.Held).ConfigureAwait(false)) held.Add(grown.Branch);
+        }
+
+        var entries = new List<LandedBranch>();
+        foreach (var entry in LandedProofs.EntriesOf(context.Recorded.All(), repository))
+        {
+            if (await HeldHereAsync(entry.Branch, entry.Held).ConfigureAwait(false)) entries.Add(entry);
+        }
+
+        // FABRIC-END4a review: a recorded branch the keeper could not prove (an older squash with no unit, a landing inside another)
+        // may still be proved by the press's own judgement, as the old tidy proved it (SquashedHolderAsync, Inside). In the keeper's
+        // process alone, each is judged once per tip and line commit: an unchanged one is not judged again each pass.
+        var lineAt = await LineCommitAsync().ConfigureAwait(false);
+        var began = context.Clock();
+        var unproven = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (HomeLease.HeldHere(context.Home))
+        {
+            foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                         && sessions.Contains(each.Branch, StringComparer.Ordinal) && !held.Contains(each.Branch, StringComparer.Ordinal)))
+            {
+                if (await UnjudgedAsync(grown.Branch).ConfigureAwait(false) is { } tip) unproven[grown.Branch] = tip;
+            }
+
+            foreach (var entry in LandedProofs.EntriesOf(context.Recorded.All(), repository).Where(each => !entries.Contains(each)))
+            {
+                if (await UnjudgedAsync(entry.Branch).ConfigureAwait(false) is not { } tip) continue;
+                unproven[entry.Branch] = tip;
+                entries.Add(entry);
+            }
+        }
+
+        held.AddRange(unproven.Keys.Where(branch => sessions.Contains(branch, StringComparer.Ordinal)));
+        var branches = held.Select(branch => $"{repository}:{branch}").ToHashSet(StringComparer.Ordinal);
+        if (branches.Count == 0 && entries.Count == 0) return Pass([]);
 
         // A list of the working trees git could not give is never "no tree here": nothing in the repository is judged this look.
         if (await context.Worktrees.ListAsync(root, ct, refs).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
@@ -195,10 +262,23 @@ internal sealed class AutoTidies(
         var onLine = landed.Where(each => each.Line is not null).Select(each => new LineLanding(each.Item.Branch, each.Tip, each.Line!)).ToList();
         var plan = branches.Count == 0 ? []
             : await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true, onLine).ConfigureAwait(false);
+        // What the press's judgement kept of the unproven is remembered at its tip and the line's commit, and not judged again until either moves.
+        foreach (var item in plan.Where(item => !setAside.GoesByItself(item) && unproven.ContainsKey(item.Branch)))
+        {
+            Judged[Key(item.Branch)] = (unproven[item.Branch], lineAt, began);
+        }
+
+        foreach (var each in landed.Where(each => !each.Item.Removable && unproven.ContainsKey(each.Item.Branch)))
+        {
+            Judged[Key(each.Item.Branch)] = (unproven[each.Item.Branch], lineAt, began);
+        }
+
         var stays = plan.Where(item => !setAside.GoesByItself(item)).Select(item => new SweepResult(item, false, "kept")).ToList();
         var candidates = plan.Where(setAside.GoesByItself).Select(item => $"{repository}:{item.Branch}").ToHashSet(StringComparer.Ordinal);
         // Then each landing's branch the press would take, unless a session branch the look leaves leans on it (D102: those go first).
-        var leaning = plan.Where(item => !setAside.GoesByItself(item)).Select(item => item.Branch).ToList();
+        // FABRIC-END4a: every session branch the look leaves leans, the ones it did not judge because the line holds none of them too.
+        var leaning = plan.Where(item => !setAside.GoesByItself(item)).Select(item => item.Branch)
+            .Concat(sessions.Where(branch => !held.Contains(branch, StringComparer.Ordinal))).ToList();
         var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
         var landings = new HashSet<string>(StringComparer.Ordinal);
         foreach (var each in landed.Where(each => each.Item.Removable))
@@ -217,12 +297,37 @@ internal sealed class AutoTidies(
             : await sweeps.SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct, onLine).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone (LAND3), as the press's does: after a removal, so not
         // cancelled either.
-        if (results.Any(result => result.Removed)) await replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
+        if (results.Any(result => result.Removed))
+        {
+            // FABRIC-END4a review: a removed branch whose tree moved onto a branch of its own is a trace at once, never left standing.
+            context.Grown.Gone(repository, [.. results.Where(result => result.Removed).Select(result => result.Item.Branch)]);
+            await replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
+        }
         // The landings' branches after the session branches, by the press's own half (AUTOTIDY2b): each judged again against the
         // session branches still standing, and again right before it goes, deleted only at the commit judged.
         var gone = landings.Count == 0 ? []
             : await cleanups.CleanLandedAsync([(repository, space, root)], landings, ct).ConfigureAwait(false);
         return Pass([.. stays, .. results]) with { Landed = gone };
+
+        string Key(string branch) => $"{Path.GetFullPath(context.Home)}|{repository}|{branch}";
+
+        // The line's commit as the refs read it: its local branch, else origin's copy.
+        async Task<string?> LineCommitAsync() => line is null ? null
+            : await TreeRefs.CommitOfAsync(root, $"refs/heads/{line}", ct, refs).ConfigureAwait(false)
+              ?? await TreeRefs.CommitOfAsync(root, $"refs/remotes/origin/{line}", ct, refs).ConfigureAwait(false);
+
+        // A recorded branch's tip, where the press's judgement has not yet kept it at that tip and this line commit; null where it has.
+        async Task<string?> UnjudgedAsync(string branch)
+        {
+            if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{branch}", ct, refs).ConfigureAwait(false) is not { } tip) return null;
+            return Judged.TryGetValue(Key(branch), out var seen) && (seen.Tip, seen.Line) == (tip, lineAt) && began - seen.At < RefWatch.Deadline ? null : tip;
+        }
+
+        // Whether the kept fact holds at the branch's tip now, by the line the cycle names: read from the refs already taken, so no
+        // git starts for it. Where it was cleared or never written, the line is not known to hold it, and nothing goes (canary 15).
+        async Task<bool> HeldHereAsync(string branch, HeldFact? fact) =>
+            fact is not null && string.Equals(fact.Line, line, StringComparison.Ordinal)
+            && string.Equals(await TreeRefs.CommitOfAsync(root, $"refs/heads/{branch}", ct, refs).ConfigureAwait(false), fact.Tip, StringComparison.Ordinal);
 
         // The trees sessions running or waiting name; none where the service did not say, with its words.
         async Task<(IReadOnlySet<string>? Busy, string? Why)> BusyAsync()

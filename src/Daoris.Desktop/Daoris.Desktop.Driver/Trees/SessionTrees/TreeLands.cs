@@ -558,8 +558,10 @@ internal sealed class TreeLands(
             ? landed.Branch
             : (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         if (into is null) return landed with { Tidied = [] };
-        // A squash holds no session commit, so what it squashed is what it holds (PROCESS1b-ii point 3).
-        var held = await tidies.TidyHeldAsync(root, repository, workspace, squashedTip ?? $"refs/heads/{into}", pressedOut.Trim(), inUse, ct)
+        // A squash holds no session commit, so what it squashed is what it holds (PROCESS1b-ii point 3); the branch made holds that, and a
+        // removal rests on it at the commit read (FABRIC-END4a, third review).
+        var held = await tidies.TidyHeldAsync(
+                root, repository, workspace, squashedTip ?? $"refs/heads/{into}", pressedOut.Trim(), inUse, ct, holder: $"refs/heads/{into}")
             .ConfigureAwait(false);
         return landed with { Message = landed.Message + TreeTidies.TidiedSaid(held, into), Tidied = held };
     }

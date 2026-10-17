@@ -35,8 +35,26 @@ public sealed record GrownBranch(
     /// </summary>
     public DateTimeOffset? GoneAt { get; init; }
 
+    /// <summary>
+    /// What kept the line-held branch when the look's tidy last tried it (FABRIC-END4a, the design §D3's <i>blocked</i>, with why): the
+    /// guard's code (<see cref="TidyKept"/>, or the press's <see cref="SweepKind.Dirty"/> and <see cref="SweepKind.InUse"/>) and when.
+    /// Written only by the tidy's effect (<see cref="TidyEffect"/>); dropped when the branch is recorded again or goes. Additive: an
+    /// entry written before it reads as null.
+    /// </summary>
+    public TidyBlock? Blocked { get; init; }
+
     /// <summary>A new unit's id: written once, where a tree opens.</summary>
     public static string NewUnit() => $"unit-{Guid.NewGuid():N}";
+}
+
+/// <summary>A guard that kept a line-held branch at the look's tidy (FABRIC-END4a): its code, and when it last kept it.</summary>
+public sealed record TidyBlock(string Why, DateTimeOffset At)
+{
+    /// <summary>
+    /// The sentence the tidy kept it with (FABRIC-END4a, second review), so What needs you says why and not only which guard; null where
+    /// none was said. Additive: a block written before it reads as null.
+    /// </summary>
+    public string? Reason { get; init; }
 }
 
 /// <summary>
@@ -95,7 +113,47 @@ public sealed class SessionBranches(string home)
     {
         var standing = all.LastOrDefault(each => Standing(each, entry.Repository, entry.Branch));
         return [.. all.Where(each => !Standing(each, entry.Repository, entry.Branch)),
-            entry with { Unit = standing?.Unit ?? entry.Unit, Held = standing?.Held, GoneAt = null }];
+            entry with { Unit = standing?.Unit ?? entry.Unit, Held = standing?.Held, GoneAt = null, Blocked = null }];
+    });
+
+    /// <summary>
+    /// The tidy's effect's write (FABRIC-END4a, <see cref="TidyEffect"/>, its only caller): the guard that kept the standing branch, written
+    /// only where it says something new, so a refusal repeated on every wake writes the file once.
+    /// </summary>
+    /// <remarks>
+    /// Only the home's lease holder writes it, as only it keeps ends (FABRIC-END2): a process beside it (<c>drive --share</c>) writes nothing.
+    /// The reason is compared again inside the record's lock, so two writers never rewrite one reason with two moments.
+    /// </remarks>
+    internal void Block(string repository, string branch, string why, string? reason, DateTimeOffset at)
+    {
+        if (!HomeLease.HeldHere(home)) return;
+        if (Of(repository, branch) is not { } standing || Said(standing.Blocked)) return;
+        Edit(all => [.. all.Select(each => Standing(each, repository, branch) && !Said(each.Blocked) ? each with { Blocked = new TidyBlock(why, at) { Reason = reason } } : each)]);
+
+        bool Said(TidyBlock? blocked) => blocked?.Why == why && blocked.Reason == reason;
+    }
+
+    /// <summary>
+    /// The entry that follows the tree of <paramref name="branch"/> (TREEFOLLOW1; FABRIC-END4a, second review): the standing one, else the
+    /// newest trace, which keeps where the tree went once the tidy removed the branch, so a live tree is never left unfollowed.
+    /// </summary>
+    internal GrownBranch? Following(string repository, string branch) =>
+        Of(repository, branch) ?? Entries().LastOrDefault(entry => entry.GoneAt is not null && Same(entry, repository, branch));
+
+    /// <summary>
+    /// Where the tree of <paramref name="branch"/> is now (TREEFOLLOW1), written on the entry that follows it (<see cref="Following"/>): a
+    /// trace's is written in place and stays a trace, never recorded standing again.
+    /// </summary>
+    internal void Follow(string repository, string branch, string? now) => Edit(all =>
+    {
+        var at = -1;
+        for (var index = 0; index < all.Count; index++)
+        {
+            // The standing entry wins; else the newest trace.
+            if (Same(all[index], repository, branch) && (all[index].GoneAt is null || at < 0 || all[at].GoneAt is not null)) at = index;
+        }
+
+        return at < 0 ? all : [.. all.Select((entry, index) => index == at ? entry with { Now = now } : entry)];
     });
 
     /// <summary>
@@ -126,12 +184,28 @@ public sealed class SessionBranches(string home)
                 }
                 else if (each.Held is not null || (each.Unit is { } unit && open.Contains(unit)))
                 {
-                    kept.Add(each with { GoneAt = now });
+                    kept.Add(each with { GoneAt = now, Blocked = null });
                 }
             }
 
             return kept;
         });
+    }
+
+    /// <summary>
+    /// The look's tidy removed these branches (FABRIC-END4a review): each standing entry whose tree moved onto a branch of its own
+    /// (<see cref="GrownBranch.Now"/>) becomes its trace at once, keeping where the tree's work is, since <c>ForgetGoneAsync</c> keeps
+    /// such an entry standing while that tree or branch exists, and a standing entry of a deleted branch would stay pending for ever.
+    /// The rest are forgotten as ever, by <c>ForgetGoneAsync</c>.
+    /// </summary>
+    public void Gone(string repository, IReadOnlyCollection<string> branches)
+    {
+        if (!All().Any(each => each.Now is not null && Same(each, repository, each.Branch) && branches.Contains(each.Branch, StringComparer.Ordinal))) return;
+        var now = DateTimeOffset.UtcNow;
+        Edit(all => [.. all.Select(each => each.GoneAt is null && each.Now is not null
+            && string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && branches.Contains(each.Branch, StringComparer.Ordinal)
+                ? each with { GoneAt = now, Blocked = null }
+                : each)]);
     }
 
     /// <summary>
@@ -152,18 +226,39 @@ public sealed class SessionBranches(string home)
     /// The entries with each repository's retired traces beyond its newest <see cref="TracesKept"/> dropped, the one that went first
     /// first. An open unit's trace is never dropped nor counted (§D3); the landings are read only where a repository has too many.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Nor is the trace that follows a live tree</b> (FABRIC-END4a, second review): one that names where its tree went (<c>Now</c>)
+    /// while that tree's folder stands is the live tree's tracking, which a branch's removal never retires. 🔴 <b>Only that one</b> (third
+    /// review): the newest trace of its name where none of that name stands, as <see cref="Following"/> reads; a name recorded and removed
+    /// again and again leaves older traces naming the same folder, and those are retired like any other.
+    /// </remarks>
     private IReadOnlyList<GrownBranch> Bounded(IReadOnlyList<GrownBranch> entries)
     {
         var traces = entries.Select((entry, at) => (Entry: entry, At: at)).Where(each => each.Entry.GoneAt is not null).ToList();
         if (!traces.GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > TracesKept)) return entries;
         var open = OpenUnits(home);
+        var following = entries.Select((entry, at) => (Entry: entry, At: at))
+            .GroupBy(each => $"{each.Entry.Repository.ToUpperInvariant()}\n{each.Entry.Branch}", StringComparer.Ordinal)
+            .Where(name => name.All(each => each.Entry.GoneAt is not null))
+            .Select(name => name.MaxBy(each => each.At))
+            .Where(newest => Lives(newest.Entry))
+            .Select(newest => newest.At)
+            .ToHashSet();
         var dropped = traces
-            .Where(each => !Open(each.Entry, open))
+            .Where(each => !Open(each.Entry, open) && !following.Contains(each.At))
             .GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase)
             .SelectMany(group => group.OrderByDescending(each => each.Entry.GoneAt).ThenByDescending(each => each.At).Skip(TracesKept))
             .Select(each => each.At)
             .ToHashSet();
         return dropped.Count == 0 ? entries : [.. entries.Where((_, at) => !dropped.Contains(at))];
+    }
+
+    /// <summary>Whether a trace names a tree that still stands: one whose agent moved it onto a branch of its own, its folder there.</summary>
+    private bool Lives(GrownBranch trace)
+    {
+        if (trace.Now is null || !trace.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)) return false;
+        var tree = Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), trace.Workspace, trace.Repository, trace.Branch[TreeFollows.SessionPrefix.Length..]);
+        return File.Exists(Path.Combine(tree, ".git"));
     }
 
     private static bool Same(GrownBranch entry, string repository, string branch) => SameBranch(entry.Repository, entry.Branch, repository, branch);
@@ -198,6 +293,17 @@ public sealed class SessionBranches(string home)
             if (entry.Unit is not null) writer.WriteString("unit", entry.Unit);
             if (entry.Held is { } held) HeldFact.Write(writer, held);
             if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
+            // FABRIC-END4a: only where a guard kept it, so an entry from before reads as it did.
+            if (entry.Blocked is { } blocked)
+            {
+                writer.WriteStartObject("blocked");
+                writer.WriteString("why", blocked.Why);
+                writer.WriteString("at", Moments.Write(blocked.At));
+                // Second review: only where one was said, so a block from before reads as it did.
+                if (blocked.Reason is not null) writer.WriteString("reason", blocked.Reason);
+                writer.WriteEndObject();
+            }
+
             writer.WriteEndObject();
         }
 
@@ -220,6 +326,10 @@ public sealed class SessionBranches(string home)
             Unit = Text(element, "unit"),
             Held = HeldFact.Read(element),
             GoneAt = Moments.Read(Text(element, "goneAt")),
+            Blocked = element.TryGetProperty("blocked", out var blocked) && blocked.ValueKind == JsonValueKind.Object
+                && Text(blocked, "why") is { } why && Moments.Read(Text(blocked, "at")) is { } when
+                    ? new TidyBlock(why, when) { Reason = Text(blocked, "reason") }
+                    : null,
         };
     }
 }

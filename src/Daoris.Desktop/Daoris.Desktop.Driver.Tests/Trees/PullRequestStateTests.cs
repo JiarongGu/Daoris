@@ -213,6 +213,8 @@ public sealed class PullRequestStateTests : LandedFixture
         _answers[landing.Branch!] = () => Completed(merge, source);
         await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
         var asked = _asked;
+        // FABRIC-END4a: the look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
 
@@ -247,6 +249,8 @@ public sealed class PullRequestStateTests : LandedFixture
         _answers[landing.Branch!] = () => Completed(merge, source);
         await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
         var asked = _asked;
+        // FABRIC-END4a: the look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
 
