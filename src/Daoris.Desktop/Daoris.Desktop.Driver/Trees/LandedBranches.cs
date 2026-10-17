@@ -305,12 +305,28 @@ public sealed class LandedBranches(string home)
     /// A plugin's answer about the entry's pull request (PLUGHOOK1a, D148 point 6), standing or a trace: it replaces the kept
     /// answer, and a failure older than it is no longer the latest word.
     /// </summary>
+    /// <remarks>
+    /// FABRIC-END6c: occasions ask at once, and the slower request can return last, so an answer is kept only where it was asked no
+    /// earlier than the kept one, judged under the record's lock; and a kept <c>completed</c>, which is final (D148 point 6), is never
+    /// replaced. A failure asked after the answer stays the latest word beside it.
+    /// </remarks>
     public void Answered(LandedBranch entry, PullRequestState answer) => Edit(all =>
-        [.. all.Select(each => SameEntry(each, entry) ? each with { PullRequestState = answer, PullRequestAskFailed = null } : each)]);
+        [.. all.Select(each => SameEntry(each, entry) && Newer(each, answer)
+            ? each with { PullRequestState = answer, PullRequestAskFailed = each.PullRequestAskFailed is { } failed && failed.At > answer.AskedAt ? failed : null }
+            : each)]);
 
     /// <summary>An ask that failed (design §2.4): kept beside the answer, which it never overwrites. Absent is never zero.</summary>
+    /// <remarks>FABRIC-END6c: a failure asked before the kept answer, or before the kept failure, is not the latest word, and is not kept.</remarks>
     public void AskFailed(LandedBranch entry, PullRequestAskFailed failed) => Edit(all =>
-        [.. all.Select(each => SameEntry(each, entry) ? each with { PullRequestAskFailed = failed } : each)]);
+        [.. all.Select(each => SameEntry(each, entry)
+                               && !(each.PullRequestState is { } kept && kept.AskedAt > failed.At)
+                               && !(each.PullRequestAskFailed is { } was && was.At > failed.At)
+            ? each with { PullRequestAskFailed = failed }
+            : each)]);
+
+    /// <summary>Whether an answer is kept over the entry's: none kept, or one not completed and asked no later than this one.</summary>
+    private static bool Newer(LandedBranch each, PullRequestState answer) =>
+        each.PullRequestState is not { } kept || (kept.State != PullRequestStates.Completed && answer.AskedAt >= kept.AskedAt);
 
     /// <summary>A session branch removed on the entry's pull request's answer (design §2.5): kept with the rest.</summary>
     public void Carried(LandedBranch entry, CarriedBranch carried) => Edit(all =>

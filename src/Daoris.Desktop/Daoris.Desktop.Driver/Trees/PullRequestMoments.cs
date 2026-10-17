@@ -6,11 +6,15 @@ namespace Daoris.Driver;
 /// When each repository's line was last fetched here, or heard fetched (FABRIC-END6, the design §A4.3): kept in this process for the
 /// minute that bounds the next fetch (D148), so a moment fetches only where nothing brought the remote's facts within it. Every fetch
 /// of a line, made or failed, is counted by <see cref="TreeRefs.FetchAsync"/>, the landing press's and bringing up to date's among them;
-/// the person's own fetch, heard by the ref watch moving origin's line, is counted by the moments.
+/// the person's own fetch, heard by the ref watch moving origin's line, is counted by the moments, and git's own files say when it was last
+/// fetched across restarts (<see cref="InGit"/>, FABRIC-END6c). A fetch in flight counts as made: every fetch of a line goes through
+/// <see cref="OnceAsync"/>, so a second joins it (FABRIC-END6c).
 /// </summary>
 public static class RemoteFetches
 {
     private static readonly ConcurrentDictionary<string, DateTimeOffset> Last = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly ConcurrentDictionary<string, Task<(string? Failed, string? Url)>> InFlight = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The line of the checkout at <paramref name="root"/> was fetched, or heard fetched, at <paramref name="at"/>. Never throws.</summary>
     public static void Fetched(string root, string line, DateTimeOffset at)
@@ -21,12 +25,95 @@ public static class RemoteFetches
     /// <summary>When the line was last fetched or heard fetched in this process, or null where it never was.</summary>
     public static DateTimeOffset? When(string root, string line) => Key(root, line) is { } key && Last.TryGetValue(key, out var at) ? at : null;
 
-    /// <summary>The line's fetch, made once at a time per repository and line.</summary>
-    internal static Task<(string? Failed, string? Url)> OnceAsync(
-        string root, string line, Func<CancellationToken, Task<(string? Failed, string? Url)>> fetch, CancellationToken ct) => fetch(ct);
+    /// <summary>
+    /// The line's fetch, one at a time per repository and line, whichever path asks (FABRIC-END6c): a landing's press, bringing up to
+    /// date, a moment. A fetch in flight counts as made: a second caller joins it and answers what it answered, rather than start another
+    /// beside it. A fetch its own caller cancelled, or that threw, is no answer for one that joined it, which fetches afresh.
+    /// </summary>
+    internal static async Task<(string? Failed, string? Url)> OnceAsync(
+        string root, string line, Func<CancellationToken, Task<(string? Failed, string? Url)>> fetch, CancellationToken ct)
+    {
+        if (Key(root, line) is not { } key) return await fetch(ct).ConfigureAwait(false);
+        while (true)
+        {
+            var mine = new TaskCompletionSource<(string? Failed, string? Url)>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var flight = InFlight.GetOrAdd(key, mine.Task);
+            if (flight != mine.Task)
+            {
+                try
+                {
+                    return await flight.WaitAsync(ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    continue;
+                }
+            }
 
-    /// <summary>When git's files say the line was last fetched, or null.</summary>
-    public static DateTimeOffset? InGit(string commonDir, string line) => null;
+            try
+            {
+                var fetched = await fetch(ct).ConfigureAwait(false);
+                mine.SetResult(fetched);
+                return fetched;
+            }
+            catch
+            {
+                mine.SetCanceled(CancellationToken.None);
+                throw;
+            }
+            finally
+            {
+                InFlight.TryRemove(new KeyValuePair<string, Task<(string? Failed, string? Url)>>(key, mine.Task));
+            }
+        }
+    }
+
+    /// <summary>
+    /// When git's own files say the line was last fetched here, across restarts, or null (FABRIC-END6c): <c>FETCH_HEAD</c>'s time where it
+    /// names the line (every fetch writes it, a fetch that changed nothing too; Daoris's own writes none, and an empty one is a fetch that
+    /// failed), and the newest entry of <c>origin/&lt;line&gt;</c>'s log, which every fetch that moved it writes, Daoris's own included. The
+    /// later of the two. Read from the main checkout's git dir, with no process; a fetch made in a linked tree writes its own.
+    /// </summary>
+    public static DateTimeOffset? InGit(string commonDir, string line)
+    {
+        DateTimeOffset? head = null;
+        try
+        {
+            var file = new FileInfo(Path.Combine(commonDir, "FETCH_HEAD"));
+            if (file.Exists && file.Length > 0
+                && File.ReadLines(file.FullName).Any(each => each.Contains($"\tbranch '{line}' of ", StringComparison.Ordinal)))
+            {
+                head = new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero);
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            // Unreadable is unsaid: the moments' own ledger still counts.
+        }
+
+        var moved = LoggedAt(Path.Combine(commonDir, "logs", "refs", "remotes", "origin", line));
+        return head is null ? moved : moved is null || head > moved ? head : moved;
+    }
+
+    /// <summary>The time of a ref log's newest entry (<c>old new who &lt;mail&gt; seconds zone\tmessage</c>), read from its tail; null where none.</summary>
+    private static DateTimeOffset? LoggedAt(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return null;
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            stream.Seek(Math.Max(0, stream.Length - 4096), SeekOrigin.Begin);
+            using var reader = new StreamReader(stream);
+            var last = reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+            if (last is null) return null;
+            var who = last.Split('\t', 2)[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return who.Length >= 2 && long.TryParse(who[^2], out var seconds) ? DateTimeOffset.FromUnixTimeSeconds(seconds) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
 
     private static string? Key(string root, string line)
     {
@@ -129,7 +216,8 @@ public sealed class PullRequestMoments : IAsyncDisposable
     private readonly Dictionary<string, RefRepository> _known = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _pushed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string?> _seen = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, DateTimeOffset> _asked = new(StringComparer.Ordinal);
+    // The repositories a moment skipped while something held them (FABRIC-END6c), asked once they are let go.
+    private readonly HashSet<string> _owed = new(StringComparer.OrdinalIgnoreCase);
     private bool _listening;
 
     /// <param name="world">What the moments read and do.</param>
@@ -190,6 +278,15 @@ public sealed class PullRequestMoments : IAsyncDisposable
         foreach (var moments in Of(home)) moments.HeardPushed(repository);
     }
 
+    /// <summary>
+    /// What held <paramref name="repository"/> under <paramref name="home"/> let it go (<see cref="RepositoryHolds"/>, FABRIC-END6c): a
+    /// moment it skipped is due now. Never throws.
+    /// </summary>
+    public static void Released(string home, string repository)
+    {
+        foreach (var moments in Of(home)) moments.HeardReleased(repository);
+    }
+
     /// <summary>The window has the person's focus: every repository with an open pull request is a moment. Never blocks on the work.</summary>
     public void Focused() => _changes.Now(ChangeTopics.Focus, Window);
 
@@ -219,6 +316,14 @@ public sealed class PullRequestMoments : IAsyncDisposable
     {
         lock (_gate) _pushed.Add(repository);
         _changes.Now(ChangeTopics.Refs, repository);
+    }
+
+    /// <summary>A hold on a repository was let go: a moment owed there wakes.</summary>
+    internal void HeardReleased(string repository)
+    {
+        bool owed;
+        lock (_gate) owed = _owed.Contains(repository);
+        if (owed) _changes.Now(ChangeTopics.Refs, repository);
     }
 
     /// <summary>
@@ -265,8 +370,9 @@ public sealed class PullRequestMoments : IAsyncDisposable
     /// </summary>
     private async Task<int> RefsAsync(string name, CancellationToken ct)
     {
+        // A push, or a moment skipped while the repository was held (FABRIC-END6c): asked as a push is, fetched where the minute allows.
         bool pushed;
-        lock (_gate) pushed = _pushed.Remove(name);
+        lock (_gate) pushed = _pushed.Remove(name) | _owed.Remove(name);
         var open = Concerning(name);
         if (open.Count == 0) return 0;
         if (await KnownAsync(name, ct).ConfigureAwait(false) is not { } repository) return 0;
@@ -302,14 +408,15 @@ public sealed class PullRequestMoments : IAsyncDisposable
     /// <summary>
     /// The entries still due by D148's minute, asked: the line fetched first where <paramref name="fetch"/> and no fetch of it came within
     /// the minute, so a completed answer's merge commit is here for git to confirm; the repository judged again where one completed.
-    /// Nothing due: nothing fetched and nothing asked.
+    /// Nothing due: nothing fetched and nothing asked. A repository something holds (<see cref="RepositoryHolds"/>) is skipped and owed
+    /// (FABRIC-END6c). Each entry's minute is taken just before the ask, shared with every other occasion (<see cref="PullRequestMinute"/>).
     /// </summary>
     private async Task<int> AskDueAsync(
         RefRepository repository, string line, IReadOnlyList<LandedBranch> open, bool fetch, DateTimeOffset now, CancellationToken ct)
     {
-        List<LandedBranch> due;
-        lock (_gate) due = [.. open.Where(entry => PullRequestAsking.Due(entry, now) && !AskedHere(entry, now))];
+        List<LandedBranch> due = [.. open.Where(entry => PullRequestAsking.Due(entry, now) && !PullRequestMinute.Within(_home, entry, now))];
         if (due.Count == 0) return 0;
+        if (Owed(repository)) return 0;
 
         if (fetch && !(_world.Fetched(repository, line) is { } last && now - last < PullRequestAsking.Fresh))
         {
@@ -318,13 +425,26 @@ public sealed class PullRequestMoments : IAsyncDisposable
             Seen(repository, line, _world.OriginTip(repository, line));
         }
 
-        lock (_gate)
-        {
-            foreach (var entry in due) _asked[Key(entry)] = now;
-        }
+        // A press or a landing that took the repository during the fetch: skipped too, before anything is asked.
+        if (Owed(repository)) return 0;
+        var asking = _clock();
+        due = [.. due.Where(entry => PullRequestMinute.TryTake(_home, entry, asking))];
+        if (due.Count == 0) return 0;
 
         if (await _world.AskAsync(repository, due, ct).ConfigureAwait(false) > 0) _world.Judge(repository);
         return due.Count;
+    }
+
+    /// <summary>
+    /// Whether something holds the repository now: the moment is skipped and owed, and asked once the hold is let go. A hold let go
+    /// between the look and the owing wakes the moment at once, so none is lost.
+    /// </summary>
+    private bool Owed(RefRepository repository)
+    {
+        if (!RepositoryHolds.Held(_home, repository.Repository)) return false;
+        lock (_gate) _owed.Add(repository.Repository);
+        if (!RepositoryHolds.Held(_home, repository.Repository)) _changes.Now(ChangeTopics.Refs, repository.Repository);
+        return true;
     }
 
     /// <summary>The open pull requests a moment concerns: of one repository, or of every one where null.</summary>
@@ -363,11 +483,6 @@ public sealed class PullRequestMoments : IAsyncDisposable
             return moved;
         }
     }
-
-    /// <summary>Whether this process asked about the entry inside the minute, answered or not: a plugin not ready keeps nothing on the record.</summary>
-    private bool AskedHere(LandedBranch entry, DateTimeOffset now) => _asked.TryGetValue(Key(entry), out var at) && now - at < PullRequestAsking.Fresh;
-
-    private static string Key(LandedBranch entry) => $"{entry.Repository}|{entry.Branch}|{entry.Session}|{entry.LandedAt:O}";
 
     private void Listen()
     {
@@ -416,7 +531,13 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
         public string? OriginTip(RefRepository repository, string line) => TreeTips.Named(repository.CommonDir, $"refs/remotes/origin/{line}");
 
-        public DateTimeOffset? Fetched(RefRepository repository, string line) => RemoteFetches.When(repository.Root, line);
+        // FABRIC-END6c: git's own files as well, so the person's fetch that changed nothing counts, and one made before a restart.
+        public DateTimeOffset? Fetched(RefRepository repository, string line) =>
+            (RemoteFetches.When(repository.Root, line), RemoteFetches.InGit(repository.CommonDir, line)) switch
+            {
+                ({ } here, { } git) => here > git ? here : git,
+                (var here, var git) => here ?? git,
+            };
 
         public void HeardFetched(RefRepository repository, string line, DateTimeOffset at) => RemoteFetches.Fetched(repository.Root, line, at);
 

@@ -328,11 +328,18 @@ internal sealed class TreeLands(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false)
     {
-        var landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched).ConfigureAwait(false);
+        var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
+        TreeLanding landed;
+        // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
+        using (RepositoryHolds.Hold(context.Home, repository))
+        {
+            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched).ConfigureAwait(false);
+        }
+
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
-        if (landed.Landed) RefMoves.Mine(context.Home, context.OwnerOf(Path.GetFullPath(path)).Repository);
+        if (landed.Landed) RefMoves.Mine(context.Home, repository);
         // FABRIC-END6: Daoris pushed, a moment to ask about its pull request (§A4.3), told after the rule's tidy, whose own ask it counts.
-        if (landed.Plugin is { Pushed: true, Failed: false }) PullRequestMoments.Pushed(context.Home, context.OwnerOf(Path.GetFullPath(path)).Repository);
+        if (landed.Plugin is { Pushed: true, Failed: false }) PullRequestMoments.Pushed(context.Home, repository);
         return landed;
     }
 

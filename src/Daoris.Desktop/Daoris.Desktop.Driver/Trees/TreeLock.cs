@@ -30,6 +30,10 @@ public sealed class TreeLock : IDisposable
 {
     private readonly FileStream _file;
 
+    // A replay alone holds the repository for the due moments too (FABRIC-END6c), in this process: a removing press or bringing it up
+    // to date, which a moment skips rather than run beside.
+    private IDisposable? _held;
+
     private TreeLock(FileStream file) => _file = file;
 
     /// <summary>
@@ -50,8 +54,13 @@ public sealed class TreeLock : IDisposable
     /// Hold the repository alone, to replay its branches — or null while a session is starting in one of its trees,
     /// or another replay holds it.
     /// </summary>
-    public static TreeLock? TryReplaying(string home, string? workspace, string repository) =>
-        TryOpen(PathOf(home, workspace, repository), FileAccess.ReadWrite, FileShare.None);
+    /// <remarks>Held, it holds the repository for the due moments as well (<see cref="RepositoryHolds"/>, FABRIC-END6c).</remarks>
+    public static TreeLock? TryReplaying(string home, string? workspace, string repository)
+    {
+        var replay = TryOpen(PathOf(home, workspace, repository), FileAccess.ReadWrite, FileShare.None);
+        if (replay is not null) replay._held = RepositoryHolds.Hold(home, repository);
+        return replay;
+    }
 
     /// <summary>What a start says when a replay holds its repository: held now, carried on at the next look.</summary>
     public static string Replaying(string repository) =>
@@ -79,5 +88,9 @@ public sealed class TreeLock : IDisposable
         }
     }
 
-    public void Dispose() => _file.Dispose();
+    public void Dispose()
+    {
+        _file.Dispose();
+        _held?.Dispose();
+    }
 }

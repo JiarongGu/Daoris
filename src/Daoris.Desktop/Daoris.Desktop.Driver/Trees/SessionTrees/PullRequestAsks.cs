@@ -52,15 +52,21 @@ internal sealed class PullRequestAsks(TreeContext context)
         var answers = await context.Plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
         foreach (var answer in answers)
         {
+            // FABRIC-END6c: each answer stamped with the time its own request went out, the minute counted from there for every occasion.
+            // A look's minute for an entry it sent nothing for (a plugin not ready, or its bound first) is given back, so the next look asks
+            // again as D148 says; a due moment's stays, so a plugin not ready is not started again inside it.
+            var asked = answer.AskedAt ?? now;
+            if (answer.AskedAt is { } sent) PullRequestMinute.Asked(context.Home, answer.Ask.Entry, sent);
+            else if (again is null && moment is null) PullRequestMinute.Release(context.Home, answer.Ask.Entry, now);
             try
             {
                 if (answer.Answer is { } said)
                 {
-                    context.Recorded.Answered(answer.Ask.Entry, said with { AskedAt = now });
+                    context.Recorded.Answered(answer.Ask.Entry, said with { AskedAt = asked });
                 }
                 else if (answer.Failure is { } code && code is not (PullRequestCodes.NotAsked or PullRequestCodes.Unready))
                 {
-                    context.Recorded.AskFailed(answer.Ask.Entry, new PullRequestAskFailed(code, answer.Ask.Plugin, now));
+                    context.Recorded.AskFailed(answer.Ask.Entry, new PullRequestAskFailed(code, answer.Ask.Plugin, asked));
                 }
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -101,6 +107,9 @@ internal sealed class PullRequestAsks(TreeContext context)
                 if (!await CouldRemoveAsync(root, entry, line, forms, unlanded, landedMayGo, ct, refs).ConfigureAwait(false)) continue;
             }
 
+            // FABRIC-END6c: D148's minute shared with every other occasion in this process, taken last so only an entry asked takes it. A
+            // due moment took its entries' minutes itself, just before it asked; Ask again, a person's door, asks whatever it says.
+            if (again is null && moment is null && !PullRequestMinute.TryTake(context.Home, entry, now)) continue;
             asks.Add(new StateAsk(entry, plugin,
                 new StateFrame(repository, workspace, root, entry.Branch, line, entry.PullRequest, entry.PushedTip)));
         }
