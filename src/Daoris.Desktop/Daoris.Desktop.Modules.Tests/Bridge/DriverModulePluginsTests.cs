@@ -204,6 +204,62 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LANDPIN3 (D119): an installed copy of an example older than the one the install ships is answered with both versions and
+    /// what the newer one brings, and its update is the person's press, taken from the offer though the copy has no record. A
+    /// copy the person changed is said as changed and its press is refused.
+    /// </summary>
+    [Fact]
+    public async Task An_installed_example_older_than_the_shipped_one_is_said_and_its_update_is_a_press_that_keeps_what_it_kept()
+    {
+        var offers = Path.Combine(Home, "..", "offers-" + Path.GetFileName(Home));
+        try
+        {
+            string Manifest(string version) => "{ \"id\": \"github-pull-request\", \"version\": \"" + version + "\", \"changes\": \"Pushes the commit judged.\","
+                + " \"hooks\": { \"command\": [\"node\", \"${plugin}/land.mjs\"], \"points\": [\"work/land\"] } }";
+            var offer = Path.Combine(offers, "github-pull-request");
+            Directory.CreateDirectory(offer);
+            File.WriteAllText(Path.Combine(offer, "plugin.json"), Manifest("1.3.0"));
+            File.WriteAllText(Path.Combine(offer, "land.mjs"), "// shipped");
+            var copy = DaorisHome.Entry(Home, HomeEntry.Plugins, "github-pull-request");
+            Directory.CreateDirectory(copy);
+            File.WriteAllText(Path.Combine(copy, "plugin.json"), Manifest("1.2.0"));
+            File.WriteAllText(Path.Combine(copy, "land.mjs"), "// old");
+            var kept = DaorisHome.Entry(Home, HomeEntry.Plugins, ".data", "github-pull-request");
+            Directory.CreateDirectory(kept);
+            var module = new DriverModule(Bus, Loop()) { Offers = offers };
+
+            var said = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single().GetProperty("shipped");
+            Assert.Equal(("older", "1.2.0", "1.3.0", "Pushes the commit judged."),
+                (said.GetProperty("state").GetString(), said.GetProperty("installed").GetString(), said.GetProperty("shipped").GetString(), said.GetProperty("changes").GetString()));
+
+            // Asked first: what it would change, from the install's offer, with no press made.
+            var asked = await AnswerAsync(module, "PLUGIN_UPDATE", new { id = "github-pull-request", shipped = true });
+            Assert.False(asked.GetProperty("applied").GetBoolean());
+            Assert.Equal("1.3.0", Assert.Single(asked.GetProperty("changes").EnumerateArray()).GetProperty("now").GetString());
+            Assert.Equal("// old", File.ReadAllText(Path.Combine(copy, "land.mjs")));
+
+            var done = await AnswerAsync(module, "PLUGIN_UPDATE", new { id = "github-pull-request", shipped = true, apply = true });
+            Assert.True(done.GetProperty("applied").GetBoolean());
+            Assert.Equal("// shipped", File.ReadAllText(Path.Combine(copy, "land.mjs")));
+            Assert.True(Directory.Exists(kept));
+            var after = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single();
+            Assert.Equal(JsonValueKind.Null, after.GetProperty("shipped").ValueKind);
+            Assert.Equal("offer", after.GetProperty("source").GetProperty("kind").GetString());
+
+            // The person edits it: said as changed, and the press is refused whole.
+            File.WriteAllText(Path.Combine(copy, "land.mjs"), "// mine");
+            var changed = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single().GetProperty("shipped");
+            Assert.Equal("changed", changed.GetProperty("state").GetString());
+            Assert.Contains("changed", await RefusalAsync(module, "PLUGIN_UPDATE", new { id = "github-pull-request", shipped = true, apply = true }));
+            Assert.Equal("// mine", File.ReadAllText(Path.Combine(copy, "land.mjs")));
+        }
+        finally
+        {
+            try { Directory.Delete(offers, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>
     /// PLUG8: the plugin kit's screen half. The catalogue says where a new plugin may speak; New writes a
     /// plugin's folder where the person named and installs nothing; Try starts a folder or an installed
     /// plugin as the driver would. The kit's refusals arrive in its own words.
