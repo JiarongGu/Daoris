@@ -318,5 +318,12 @@
   "projects.tidied.cause.index": "tree's index",
   "projects.tidied.cause.folders": "folders unread",
   "projects.tidied.cause.pass": "pass failed",
-  "projects.tidied.cause.judged": "item unread"
+  "projects.tidied.cause.judged": "item unread",
+  "projects.recoveries.title": "Kept for recovery",
+  "projects.recoveries.folderUntil": "kept until {{when}}, then deleted if left untouched",
+  "projects.recoveries.heldUntil": "a branch or tag of yours holds its commit, so Daoris removes it from {{when}}",
+  "projects.recoveries.unheld": "nothing of yours holds its commit, so it stays until you delete it:",
+  "projects.recoveries.copy": "Copy the command",
+  "projects.recoveries.copyShort": "Copy",
+  "projects.recoveries.copied": "Copied"
 }

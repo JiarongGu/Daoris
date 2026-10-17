@@ -318,5 +318,12 @@
   "projects.tidied.cause.index": "工作树索引",
   "projects.tidied.cause.folders": "文件夹读取",
   "projects.tidied.cause.pass": "整理出错",
-  "projects.tidied.cause.judged": "未能判断"
+  "projects.tidied.cause.judged": "未能判断",
+  "projects.recoveries.title": "为找回保留的内容",
+  "projects.recoveries.folderUntil": "保留到 {{when}}，届时若未被动过则删除",
+  "projects.recoveries.heldUntil": "你的分支或标签持有它的提交，所以 Daoris 会在 {{when}} 起清除它",
+  "projects.recoveries.unheld": "你的分支和标签都不持有它的提交，所以会一直保留到你删除它：",
+  "projects.recoveries.copy": "复制命令",
+  "projects.recoveries.copyShort": "复制",
+  "projects.recoveries.copied": "已复制"
 }
