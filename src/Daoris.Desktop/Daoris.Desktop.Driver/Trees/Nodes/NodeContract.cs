@@ -235,6 +235,20 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// (FABRIC-NODE1c). A built-in kind's skip is the kind's, never a declaration's.
     /// </summary>
     public bool Skippable { get; init; } = true;
+
+    private readonly IReadOnlyDictionary<string, string> options = NoPorts;
+
+    /// <summary>
+    /// Its adapter's options by name (§E2's <c>options</c>, as a human node's <c>brief</c>), each its JSON value's text as written: what
+    /// the adapter reads, never a condition (FABRIC-GRAPH1). A copy of what was set, in name order, so a graph's digest holds it.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Options { get => options; init => options = Frozen(value); }
+
+    /// <summary>
+    /// Made by decoding a D157 version (a sink, a person's task or a join, §E7), never authored: counted apart from a graph's 24-node
+    /// bound (FABRIC-GRAPH1, <see cref="NodeGraphs.MaxNodes"/>). A graph read from a person's file declares none.
+    /// </summary>
+    public bool Synthetic { get; init; }
 }
 
 /// <summary>

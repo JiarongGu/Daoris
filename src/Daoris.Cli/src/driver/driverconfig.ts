@@ -21,11 +21,12 @@ import { requireHomeFile } from '../platform/home.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { flagValue, operands } from '../platform/args.ts';
 import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
-import { findName, sameName } from '../platform/casefold.ts';
+import { atName, findName, sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
+import { cycleOf, workCycleMap, type Cycle } from './cycles.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
 import {
   applyReviewEdit, holdsProcedure, inScope, reviewGate, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,
@@ -94,6 +95,13 @@ export interface DriverChoices {
   landings: Record<string, LandingRule>;
   /** A workspace's landing rule, for every repository in it that sets none of its own. */
   workspaceLandings: Record<string, LandingRule>;
+  /**
+   * The cycles of the kinds of work that do not land (FABRIC-GRAPH1; the fabric events design §D7's `workCycles`): by repository,
+   * then by kind (`WORK_CYCLE_KINDS`), each a whole graph kept as written. `cycles.ts` reads them; the driver's `DriverConfig.WorkCycles`.
+   */
+  workCycles: Record<string, Record<string, Cycle>>;
+  /** A workspace's work cycles, by kind, for each repository in it naming none of that kind. */
+  workspaceWorkCycles: Record<string, Record<string, Cycle>>;
   /**
    * Whether each repository's checkout is read by agents outside it (READ1, D107) — absent takes its
    * workspace's, then on. Only the driver resolves it (`Across.cs`); this editor sets and lists.
@@ -235,7 +243,8 @@ export const DEFAULT_COOLOFF_MINUTES = 60;
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
-  landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
+  landings: {}, workspaceLandings: {}, workCycles: {}, workspaceWorkCycles: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {},
+  standing: {}, languages: {},
   workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
   commits: {}, workspaceCommits: {},
   workflows: {}, workspaceWorkflows: {},
@@ -284,6 +293,13 @@ export interface LandingRule {
    * and the driver makes the commit.
    */
   squash?: boolean;
+  /**
+   * The work's cycle after the landing (FABRIC-GRAPH1; the fabric events design §C2, §E7): a graph fragment `{ nodes, wires, entries,
+   * end, cleanup }`, kept as written; absent is the default, ended when the line holds the work and cleaned up at *held*. It rides
+   * the rule (D164), and the `landing` verb, which has no field for it, keeps it. The driver's `LandingRule.Cycle` is the twin, and
+   * judges its graph where it reads it; `cycles.ts` says which governs.
+   */
+  cycle?: Cycle;
 }
 
 /** The shape of a ticket's key where a rule names none — the driver's `LandingRules.DefaultKey`. */
@@ -536,7 +552,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   if (parsed === null) {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
-      workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
+      workspaceLandings: {}, workCycles: {}, workspaceWorkCycles: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
       workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
   commits: {}, workspaceCommits: {},
       workflows: {}, workspaceWorkflows: {}, rest: {},
@@ -545,7 +561,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
-    cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing,
+    cooloff, lines, workspaceLines, landings, workspaceLandings, workCycles, workspaceWorkCycles, readAcross, workspaceReadAcross, writeAcross, standing,
     languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, commits, workspaceCommits,
     workflows, workspaceWorkflows, ...rest
   } = parsed;
@@ -590,6 +606,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // A rule that could not land work is not read, as the driver does not read it.
     landings: ruleMap(landings),
     workspaceLandings: ruleMap(workspaceLandings),
+    // As the driver reads them (FABRIC-GRAPH1): a kind with a work cycle, an object, kept as written whether or not its graph holds.
+    workCycles: workCycleMap(workCycles),
+    workspaceWorkCycles: workCycleMap(workspaceWorkCycles),
     // Only a boolean is read, and only other names as a relationship, as the driver reads them (D107).
     readAcross: flagMap(readAcross),
     workspaceReadAcross: flagMap(workspaceReadAcross),
@@ -646,6 +665,9 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (WSR1): absent is the merge it always was.
     ...(Object.keys(choices.landings).length > 0 ? { landings: choices.landings } : {}),
     ...(Object.keys(choices.workspaceLandings).length > 0 ? { workspaceLandings: choices.workspaceLandings } : {}),
+    // Written only when set (FABRIC-GRAPH1), as the driver writes them: absent is no cycle for a quest or an ask, today's.
+    ...(Object.keys(choices.workCycles).length > 0 ? { workCycles: choices.workCycles } : {}),
+    ...(Object.keys(choices.workspaceWorkCycles).length > 0 ? { workspaceWorkCycles: choices.workspaceWorkCycles } : {}),
     // Written only when set (D107): absent is reading on and no relationship.
     ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: choices.readAcross } : {}),
     ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: choices.workspaceReadAcross } : {}),
@@ -1099,9 +1121,13 @@ export function commandDriver(
       const unready = rule?.plugin === undefined ? null : landingPluginProblem(rule.plugin, readPlugins(dirname(path)));
       if (unready !== null) throw new DaorisError(`${unready} Nothing was written.`);
 
+      // This verb has no field for the rule's cycle (FABRIC-GRAPH1), so a rule it sets keeps the one there is, as the driver's
+      // `WithLanding` does; clearing the rule takes its cycle with it.
+      const held = workspace ? atName(choices.workspaceLandings, workspace) : atName(choices.landings, name);
+      const whole = rule !== null && held?.cycle !== undefined ? { ...rule, cycle: held.cycle } : rule;
       writeDriverChoices(path, workspace
-        ? { ...choices, workspaceLandings: withEntry(choices.workspaceLandings, workspace, rule && kept(rule)) }
-        : { ...choices, landings: withEntry(choices.landings, name, rule && kept(rule)) });
+        ? { ...choices, workspaceLandings: withEntry(choices.workspaceLandings, workspace, whole && kept(whole)) }
+        : { ...choices, landings: withEntry(choices.landings, name, whole && kept(whole)) });
 
       const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
       if (rule === null) {
@@ -2075,7 +2101,9 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
     if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern, key, tidy, plugin, autoAccept, squash } = rule as Record<string, unknown>;
+    const { form, pattern, key, tidy, plugin, autoAccept, squash, cycle } = rule as Record<string, unknown>;
+    // An object is the cycle (FABRIC-GRAPH1), kept as written, as the driver reads it; anything else is none.
+    const graph = cycleOf(cycle);
     const read: LandingRule = {
       form: typeof form === 'string' ? form : '',
       ...(typeof pattern === 'string' ? { pattern } : {}),
@@ -2088,6 +2116,7 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
       ...(autoAccept === true ? { autoAccept: true } : {}),
       // Only JSON `true` squashes (PROCESS1b-ii), as the driver reads it.
       ...(squash === true ? { squash: true } : {}),
+      ...(graph !== undefined ? { cycle: graph } : {}),
     };
     // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
     // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
@@ -2110,6 +2139,8 @@ function kept(rule: LandingRule): LandingRule {
     ...(rule.tidy ? { tidy: true } : {}),
     ...(rule.form !== 'merge' && rule.autoAccept ? { autoAccept: true } : {}),
     ...(rule.form !== 'merge' && rule.squash ? { squash: true } : {}),
+    // Last, whatever the form (FABRIC-GRAPH1): the driver writes it there too.
+    ...(rule.cycle !== undefined ? { cycle: rule.cycle } : {}),
   };
 }
 
