@@ -347,4 +347,179 @@ public sealed class RefSnapshotTests
         Assert.Null(await context.Worktrees.ReadAsync("unused", None, refs));
         Assert.Equal(1, _listed);
     }
+
+    private static readonly string Root = Tree("engine");
+
+    /// <summary>The questions of commits by their full ids alone a judgement asks most (PROC1d-iv), as the product asks them.</summary>
+    private static string[][] ByIds =>
+    [
+        ["merge-base", "--is-ancestor", Main, Work],
+        ["diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", Main, Work],
+        ["rev-list", "--count", Work, "--not", Main, Origin],
+        ["rev-list", "--count", $"{Main}..{Work}"],
+    ];
+
+    // A question through the judgement's memo: each start the memo lets through is counted, and git's answer is the one handed in.
+    private static Task<(int Code, string Stdout, string Stderr)> AskAsync(
+        string root, string[] arguments, List<string> asked, (int Code, string Stdout, string Stderr) answer)
+    {
+        Task<(int Code, string Stdout, string Stderr)> Start()
+        {
+            lock (asked) asked.Add(string.Join(' ', arguments));
+            return Task.FromResult(answer);
+        }
+
+        return RefSnapshot.Asked(root, arguments, Start) ?? Start();
+    }
+
+    /// <summary>
+    /// PROC1d-iv: a question of commits by their full ids alone (whether one holds another, the files two differ in, how many commits
+    /// one has beyond others) is asked of a checkout's git once a judgement, and every later asker is handed git's answer as given.
+    /// Three branches that left the line at one commit asked the same pair each. A landing's table keeps the same questions.
+    /// </summary>
+    [Fact]
+    public async Task A_question_of_commits_by_their_ids_is_asked_once_a_judgement()
+    {
+        RefSnapshot.Take(_ => Task.FromResult(_output), root: Root);
+        var asked = new List<string>();
+
+        foreach (var question in ByIds)
+        {
+            Assert.True(GitFacts.Kept(question), string.Join(' ', question));
+            for (var each = 0; each < 2; each++)
+            {
+                Assert.Equal((0, $"{question[0]} said\n", ""), await AskAsync(Root, question, asked, (0, $"{question[0]} said\n", "")));
+            }
+        }
+
+        Assert.Equal(ByIds.Select(question => string.Join(' ', question)), asked);
+    }
+
+    /// <summary>
+    /// PROC1d-iv: what names a ref or the head, reads the files, or could read another way under the person's configuration is never
+    /// kept: a judgement asks git each time, as before.
+    /// </summary>
+    [Theory]
+    [InlineData("merge-base --is-ancestor {main} refs/heads/main")]
+    [InlineData("merge-base --is-ancestor HEAD {work}")]
+    [InlineData("merge-base --is-ancestor 1111111 {work}")]
+    [InlineData("diff --no-ext-diff --no-renames --ignore-submodules=none --name-only -z {main}")]
+    [InlineData("diff --no-ext-diff --no-renames --ignore-submodules=none --name-only -z --cached {main}")]
+    [InlineData("diff --no-ext-diff --no-renames --ignore-submodules=none --name-only -z {main} {work} -- a.txt")]
+    [InlineData("diff --no-ext-diff --no-renames --ignore-submodules=none --name-only -z {main} refs/heads/main")]
+    [InlineData("diff --no-ext-diff --name-only -z {main} {work}")]
+    [InlineData("diff --no-ext-diff --no-renames --ignore-submodules=none -z {main} {work}")]
+    [InlineData("rev-list --count {main}..HEAD")]
+    [InlineData("rev-list --count {work} --not origin/main")]
+    [InlineData("rev-list --count {work} --not --remotes")]
+    [InlineData("rev-list --first-parent --max-count=64 {work} --not {main}")]
+    [InlineData("status --porcelain")]
+    public async Task A_question_naming_a_ref_the_head_or_the_files_is_asked_each_time(string question)
+    {
+        var arguments = question.Replace("{main}", Main).Replace("{work}", Work).Split(' ');
+        RefSnapshot.Take(_ => Task.FromResult(_output), root: Root);
+        var asked = new List<string>();
+
+        await AskAsync(Root, arguments, asked, (0, "", ""));
+        await AskAsync(Root, arguments, asked, (0, "", ""));
+
+        Assert.Equal(2, asked.Count);
+        Assert.False(GitFacts.Kept(arguments), question);
+    }
+
+    /// <summary>
+    /// PROC1d-iv, RECORDUNREAD1: only an answer git gave is kept; a git that could not answer (a missing object's 128, a start that
+    /// failed, a throw, a cancel) is asked again at the next question, never read as "no". `merge-base`'s 1 is its "no".
+    /// </summary>
+    [Fact]
+    public async Task Only_an_answer_git_gave_is_kept()
+    {
+        RefSnapshot.Take(_ => Task.FromResult(_output), root: Root);
+        var asked = new List<string>();
+        string[] ancestor = ByIds[0];
+        string[] differ = ByIds[1];
+
+        foreach (var code in new[] { 128, -1, 2 })
+        {
+            asked.Clear();
+            await AskAsync(Root, ancestor, asked, (code, "", "fatal"));
+            await AskAsync(Root, ancestor, asked, (code, "", "fatal"));
+            Assert.Equal(2, asked.Count);
+        }
+
+        asked.Clear();
+        await AskAsync(Root, differ, asked, (1, "", "error"));
+        await AskAsync(Root, differ, asked, (1, "", "error"));
+        Assert.Equal(2, asked.Count);
+
+        var thrown = 0;
+        Task<(int, string, string)> Throws()
+        {
+            thrown++;
+            return Task.FromException<(int, string, string)>(new InvalidOperationException("no git"));
+        }
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => RefSnapshot.Asked(Root, ByIds[2], Throws)!);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => RefSnapshot.Asked(Root, ByIds[2], Throws)!);
+        Assert.Equal(2, thrown);
+
+        asked.Clear();
+        await AskAsync(Root, ancestor, asked, (1, "", ""));
+        Assert.Equal((1, "", ""), await AskAsync(Root, ancestor, asked, (0, "", "")));
+        Assert.Single(asked);
+    }
+
+    /// <summary>
+    /// PROC1d-iv: a judgement keeps only its own checkout's answers, and only while it holds: another repository asks its own git; the
+    /// judgement again before an act takes its own refs and so asks afresh (D88); a write this flow starts drops what was kept with the
+    /// refs; and a seam's snapshot, no checkout's, keeps nothing.
+    /// </summary>
+    [Fact]
+    public async Task Another_checkout_the_judgement_again_and_a_write_each_ask_git_again()
+    {
+        var question = ByIds[0];
+        var asked = new List<string>();
+        RefSnapshot.Take(_ => Task.FromResult(_output), root: Root);
+
+        await AskAsync(Root, question, asked, (0, "", ""));
+        await AskAsync(Root.ToUpperInvariant() + Path.DirectorySeparatorChar, question, asked, (0, "", ""));
+        Assert.Equal(OperatingSystem.IsWindows() ? 1 : 2, asked.Count);
+        await AskAsync(Tree("other"), question, asked, (1, "", ""));
+        Assert.Equal(OperatingSystem.IsWindows() ? 2 : 3, asked.Count);
+
+        asked.Clear();
+        RefSnapshot.Take(_ => Task.FromResult(_output), root: Root);
+        await AskAsync(Root, question, asked, (0, "", ""));
+        await AskAsync(Root, question, asked, (0, "", ""));
+        Assert.Single(asked);
+
+        RefSnapshot.Ran(["rev-list", "--count", $"{Main}..{Work}"]);
+        await AskAsync(Root, question, asked, (0, "", ""));
+        Assert.Single(asked);
+        RefSnapshot.Ran(["update-ref", "-d", "refs/heads/daoris/aurora-1", Work]);
+        await AskAsync(Root, question, asked, (0, "", ""));
+        Assert.Equal(2, asked.Count);
+    }
+
+    /// <summary>PROC1d-iv: what a judgement kept ends with it: its caller, after it returns, asks git, and a seam's snapshot keeps nothing.</summary>
+    [Fact]
+    public async Task What_a_judgement_kept_is_not_its_caller_s_after()
+    {
+        var asked = new List<string>();
+
+        async Task JudgeAsync()
+        {
+            await Task.Yield();
+            RefSnapshot.Take(_ => Task.FromResult(_output), root: Root);
+            await AskAsync(Root, ByIds[0], asked, (0, "", ""));
+            await AskAsync(Root, ByIds[0], asked, (0, "", ""));
+        }
+
+        await JudgeAsync();
+        Assert.Single(asked);
+        Assert.Null(RefSnapshot.Asked(Root, ByIds[0], () => Task.FromResult((0, "", ""))));
+
+        RefSnapshot.Take(_ => Task.FromResult(_output));
+        Assert.Null(RefSnapshot.Asked(Root, ByIds[0], () => Task.FromResult((0, "", ""))));
+    }
 }

@@ -13,9 +13,12 @@ namespace Daoris.Driver;
 /// after it ends, through <see cref="WorkingTree"/>'s one runner, so what a merge, a replay, a branch made or a worktree removed
 /// changed is asked again. A step that is not git (a plugin pushing) calls <see cref="Dropped"/> itself. A write in a flow beside
 /// this one drops nothing of it, as the snapshot's remark says: the judgement again right before an act is what guards it (D88).</para>
-/// <para><b>Reads only, and nothing the files decide.</b> `status` and `diff` are never kept: what the working tree holds is not
-/// a ref. A git that did not start (code -1) and a read that was cancelled are not kept, so the next asker asks again. A call with
-/// its own environment or bound (a fetch) and a test's stand-in answer (<see cref="WorkingTree.Answered"/>) are not touched.</para>
+/// <para><b>Reads only, and nothing the files decide.</b> `status`, and a `diff` that reads the working tree or the index, are never
+/// kept: what the working tree holds is not a ref (a `diff` of two commits by their ids is, PROC1d-iv). A git that did not start
+/// (code -1), a read that was cancelled and a question of commits git could not answer (<see cref="Answered"/>) are not kept, so
+/// the next asker asks again. A call with its own environment or bound (a fetch) and a test's stand-in answer
+/// (<see cref="WorkingTree.Answered"/>) are not touched. Outside a landing, a judgement keeps the same questions of commits for
+/// itself (<see cref="RefSnapshot.Asked"/>).</para>
 /// </remarks>
 internal sealed class GitFacts
 {
@@ -99,13 +102,14 @@ internal sealed class GitFacts
         if (Live is not { } facts || !Kept(arguments)) return null;
         var folder = Folder(root);
         // A question of refs and commits by full name is the repository's, whichever of its working trees asked it.
-        var wide = RepositoryWide(arguments);
+        var wide = ById(arguments);
         if (wide)
         {
             lock (facts._gate) folder = facts._pairs.GetValueOrDefault(folder, folder);
         }
 
-        return facts.AskAsync(folder + "\n" + string.Join('\0', arguments), wide, ask);
+        // PROC1d-iv: a question of commits keeps only an answer git gave; a layout read, whatever git said, as before.
+        return facts.AskAsync(folder + "\n" + string.Join('\0', arguments), wide, code => wide ? Answered(arguments, code) : code >= 0, ask);
     }
 
     private void Unpair()
@@ -114,22 +118,29 @@ internal sealed class GitFacts
     }
 
     private Task<(int Code, string Stdout, string Stderr)> AskAsync(
-        string key, bool wide, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
+        string key, bool wide, Func<int, bool> keeps, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
     {
         Task<(int Code, string Stdout, string Stderr)> task;
         Dictionary<string, Task<(int Code, string Stdout, string Stderr)>> held;
         lock (_gate)
         {
             held = _asked;
-            if (held.TryGetValue(key, out var known) && !known.IsFaulted && !known.IsCanceled) return known;
+            // An answer that came and is not kept is asked again even before the removal below has run.
+            if (held.TryGetValue(key, out var known)
+                && (!known.IsCompleted || known.IsCompletedSuccessfully && keeps(known.Result.Code)))
+            {
+                return known;
+            }
+
             held[key] = task = ask();
             if (wide) _wide.Add(key);
         }
 
-        // Not kept where it did not come: a git that would not start, or a read that ended by an exception or a cancel.
+        // Not kept where it did not come: a git that would not start, a read that ended by an exception or a cancel, and a question
+        // of commits git could not answer.
         _ = task.ContinueWith(done =>
         {
-            if (done.IsCompletedSuccessfully && done.Result.Code >= 0) return;
+            if (done.IsCompletedSuccessfully && keeps(done.Result.Code)) return;
             lock (_gate)
             {
                 if (held.TryGetValue(key, out var now) && ReferenceEquals(now, task)) held.Remove(key);
@@ -151,8 +162,8 @@ internal sealed class GitFacts
     // The keys of what was asked of a repository by full names, kept to move to the checkout once its folder is known (SameRepository).
     private readonly HashSet<string> _wide = new(StringComparer.Ordinal);
 
-    // A folder as one spelling: Windows compares blind to case, as TreeGit.SamePath does.
-    private static string Folder(string path)
+    /// <summary>A folder as one spelling: Windows compares blind to case, as <c>TreeGit.SamePath</c> does.</summary>
+    internal static string Folder(string path)
     {
         var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)).Replace('\\', '/');
         return OperatingSystem.IsWindows() ? full.ToLowerInvariant() : full;
@@ -166,11 +177,16 @@ internal sealed class GitFacts
         @"^([0-9a-f]{40}|[0-9a-f]{64})(\^\{(commit|tree)\})?$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// A question of commits by their full ids alone (`rev-parse --verify`, `merge-base`, `log` of them or of a range between them):
-    /// no ref, no HEAD, no path, and no option that reads the refs (`--branches`, `--remotes`, `--all`, `--tags`, `--glob`). Its answer
-    /// is the repository's and does not move while the objects stay, so whichever working tree asked it, and when, it is one fact.
+    /// A question of commits by their full ids alone (`rev-parse --verify`, `merge-base`, `log` of them or of a range between them;
+    /// PROC1d-iv: `rev-list --count`, and the files two commits differ in as `LandedProofs.NamesAsync` asks): no ref, no HEAD, no
+    /// path, and no option that reads the refs (`--branches`, `--remotes`, `--all`, `--tags`, `--glob`). Its answer is the
+    /// repository's and does not move while the objects stay, so whichever working tree asked it, and when, it is one fact.
     /// </summary>
-    private static bool RepositoryWide(IReadOnlyList<string> arguments)
+    /// <remarks>
+    /// The files two commits differ in are kept only in the one form whose answer no configuration changes: names alone, renames
+    /// off (`diff.renames` would name a renamed file once) and every submodule seen (`diff.ignoreSubmodules` would hide one).
+    /// </remarks>
+    internal static bool ById(IReadOnlyList<string> arguments)
     {
         var at = CommandAt(arguments);
         if (at >= arguments.Count) return false;
@@ -184,12 +200,24 @@ internal sealed class GitFacts
             "merge-base" => options.All(each => each is "--is-ancestor" or "--all"),
             "log" => options.All(each => each is "--reverse" or "--no-merges" or "--oneline" or "--not"
                 || each.StartsWith("--format=", StringComparison.Ordinal)),
+            "rev-list" => options.Contains("--count") && options.All(each => each is "--count" or "--not"),
+            "diff" => positional.Count == 2 && positional.All(Whole.IsMatch)
+                && options.Contains("--name-only") && options.Contains("--no-renames") && options.Contains("--ignore-submodules=none")
+                && options.All(each => each is "--name-only" or "--no-renames" or "--ignore-submodules=none" or "--no-ext-diff" or "-z"),
             _ => false,
         };
 
         // A range names its two ends.
         static bool Names(string each) => each.Split(["...", ".."], StringSplitOptions.None).All(end => Whole.IsMatch(end));
     }
+
+    /// <summary>
+    /// Whether git gave an answer to a question of commits by their ids (<see cref="ById"/>), so it may be kept: 0, or the "no" (1) of
+    /// `merge-base` (the one is not in the other; they share none) and of `rev-parse --verify --quiet`. Anything else (a missing
+    /// object's 128, a git that did not start) is a read not made, asked again and never read as "no" (RECORDUNREAD1, PROC1d-iv).
+    /// </summary>
+    internal static bool Answered(IReadOnlyList<string> arguments, int code) =>
+        code == 0 || (code == 1 && Command(arguments) is "merge-base" or "rev-parse");
 
     // What no write of ours changes and no other process moves: where a folder's working tree and repository are.
     private static bool Layout(IReadOnlyList<string> arguments) =>
@@ -210,7 +238,7 @@ internal sealed class GitFacts
     private static string? Command(IReadOnlyList<string> arguments) => CommandAt(arguments) is var at && at < arguments.Count ? arguments[at] : null;
 
     /// <summary>The reads whose answer is a ref's or a repository's and never the files': git's own options before the command are skipped.</summary>
-    internal static bool Kept(IReadOnlyList<string> arguments) => RepositoryWide(arguments) || Layout(arguments);
+    internal static bool Kept(IReadOnlyList<string> arguments) => ById(arguments) || Layout(arguments);
 
     private sealed class Ending(GitFacts facts) : IDisposable
     {

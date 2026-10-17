@@ -55,9 +55,118 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         Assert.True(starts.Count(each => each.StartsWith("rev-parse --verify", StringComparison.Ordinal)) <= 1, report);
         // PROC1d-iii: the working trees are listed once for the repository's judgement, with its refs (twice before).
         Assert.True(starts.Count(each => each.StartsWith("worktree list", StringComparison.Ordinal)) == 1, report);
+        // PROC1d-iv: a question of commits by their ids is asked once a judgement: the three branches left the line at one commit, and
+        // each asked whether its record's start holds it and which files the line changed since.
+        var repeated = starts.Where(each => GitFacts.Kept(each.Split(' '))).GroupBy(each => each).Where(group => group.Count() > 1).ToList();
+        Assert.True(repeated.Count == 0, $"asked again: {string.Join("; ", repeated.Select(group => $"{group.Count()} × {group.Key}"))}; {report}");
         // Over three session branches: 44 starts before the look (two guesses of the line), 42 after it, 29 with the refs read once
-        // per judgement (8 `rev-parse --verify` before, 1 after), 28 with the working trees listed once; PROC1d-iv cuts the rest.
-        Assert.True(starts.Count is > 0 and <= 28, report);
+        // per judgement (8 `rev-parse --verify` before, 1 after), 28 with the working trees listed once, 24 with the questions of
+        // commits by their ids asked once.
+        Assert.True(starts.Count is > 0 and <= 24, report);
+    }
+
+    /// <summary>
+    /// PROC1d-iv: what a judgement keeps of a question of commits by their ids is git's own answer, in its checkout: each asked in a
+    /// judgement answers as it does outside one, git is started once for each it answered, and again for each it could not (a
+    /// missing object). Another repository holding the same ids asks its own git, which lacks the work.
+    /// </summary>
+    [Fact]
+    public async Task What_a_judgement_keeps_of_commits_is_git_s_own_answer()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var tree = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "work\n", "session work");
+        await PlatformCommitAsync(origin, "other.txt", "other\n", "Someone else's (#8)");
+        await GitAsync(root, "fetch", "--quiet", "origin");
+        var other = await RepositoryAsync("elsewhere");
+        var main = await RevAsync(root, "main");
+        var work = await RevAsync(root, tree.Branch);
+        var theirs = await RevAsync(root, "origin/main");
+        var missing = new string('e', main.Length);
+        string[] names = ["diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z"];
+        string[][] questions =
+        [
+            ["merge-base", "--is-ancestor", main, work],
+            ["merge-base", "--is-ancestor", work, main],
+            ["merge-base", "--is-ancestor", missing, work],
+            [.. names, work, theirs],
+            [.. names, missing, work],
+            ["rev-list", "--count", work, "--not", main, theirs],
+            ["rev-list", "--count", $"{main}..{theirs}"],
+        ];
+
+        async Task<List<string>> AskAllAsync(string at)
+        {
+            var said = new List<string>();
+            foreach (var question in questions)
+            {
+                var (code, output, _) = await WorkingTree.GitAsync(at, question, CancellationToken.None);
+                said.Add($"{code} {string.Join('|', output.Split('\0', StringSplitOptions.RemoveEmptyEntries)).Trim()}");
+            }
+
+            return said;
+        }
+
+        var plain = await AskAllAsync(root);
+        var plainOther = await AskAllAsync(other);
+        var starts = new List<string>();
+        var judged = new List<List<string>>();
+
+        async Task JudgeAsync()
+        {
+            RefSnapshot.Take(root);
+            RefSnapshot.Take(other);
+            judged.Add(await AskAllAsync(root));
+            judged.Add(await AskAllAsync(root));
+            judged.Add(await AskAllAsync(other));
+        }
+
+        WorkingTree.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
+        try
+        {
+            await JudgeAsync();
+        }
+        finally
+        {
+            WorkingTree.Started.Value = null;
+        }
+
+        Assert.Equal(plain, judged[0]);
+        Assert.Equal(plain, judged[1]);
+        Assert.Equal(plainOther, judged[2]);
+        Assert.Contains("0 other.txt|work.txt", plain);
+        Assert.NotEqual(plain, plainOther);
+        // In the checkout: five answered once, the missing object's two asked each time; in the other repository, which has none of
+        // these commits, each is a missing object's and asked once there.
+        Assert.True(starts.Count == 5 + 2 * 2 + questions.Length, string.Join(" | ", starts));
+    }
+
+    /// <summary>
+    /// PROC1d-iv: what names a ref is never kept, so a branch moved by another process in the middle of a judgement is read as it
+    /// stands; the judgement again reads its refs afresh, and the pair of commits it then asks is git's.
+    /// </summary>
+    [Fact]
+    public async Task A_ref_moved_in_the_middle_of_a_judgement_is_read_as_it_stands()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var tree = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        var grown = await RevAsync(root, tree.Branch);
+        await CommitAsync(tree.Path, "work.txt", "work\n", "session work");
+        var worked = await RevAsync(root, tree.Branch);
+        string[] byName = ["merge-base", "--is-ancestor", worked, $"refs/heads/{tree.Branch}"];
+
+        var refs = RefSnapshot.Take(root);
+        Assert.Equal(worked, await TreeRefs.CommitOfAsync(root, $"refs/heads/{tree.Branch}", CancellationToken.None, refs));
+        Assert.Equal(0, (await WorkingTree.GitAsync(root, byName, CancellationToken.None)).Code);
+        Assert.Equal(0, (await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", worked, worked], CancellationToken.None)).Code);
+
+        // Another process moves the branch back (the person's own git): no git of this flow wrote, so the judgement holds its refs.
+        await GitAsync(root, "update-ref", $"refs/heads/{tree.Branch}", grown, worked);
+
+        Assert.Equal(1, (await WorkingTree.GitAsync(root, byName, CancellationToken.None)).Code);
+        var now = await TreeRefs.CommitOfAsync(root, $"refs/heads/{tree.Branch}", CancellationToken.None, RefSnapshot.Take(root));
+        Assert.Equal(grown, now);
+        Assert.Equal(1, (await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", worked, now!], CancellationToken.None)).Code);
     }
 
     /// <summary>

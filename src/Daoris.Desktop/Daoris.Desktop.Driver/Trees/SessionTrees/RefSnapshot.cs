@@ -54,17 +54,70 @@ internal sealed class RefSnapshot
     }
 
     /// <summary>A snapshot of <paramref name="root"/>'s refs and working trees for this flow. Nothing is started until it is first asked.</summary>
-    internal static RefSnapshot Take(string root) => Take(ct => ReadAsync(root, ct), ct => TreeWorktrees.PorcelainAsync(root, ct));
+    internal static RefSnapshot Take(string root) => Take(ct => ReadAsync(root, ct), ct => TreeWorktrees.PorcelainAsync(root, ct), root);
 
     /// <summary>
     /// The test seam: a snapshot whose read is <paramref name="read"/> and whose list of the working trees is <paramref name="list"/>
-    /// (each one's output, or null where git could not give it). Without a list, the trees are asked of git as before.
+    /// (each one's output, or null where git could not give it). Without a list, the trees are asked of git as before. Without a
+    /// <paramref name="root"/>, it answers no question of commits (<see cref="Asked"/>): it is no checkout's.
     /// </summary>
-    internal static RefSnapshot Take(Func<CancellationToken, Task<string?>> read, Func<CancellationToken, Task<string?>>? list = null)
+    internal static RefSnapshot Take(
+        Func<CancellationToken, Task<string?>> read, Func<CancellationToken, Task<string?>>? list = null, string? root = null)
     {
-        var taken = new RefSnapshot(read, list);
+        var taken = new RefSnapshot(read, list) { _root = root is null ? null : GitFacts.Folder(root) };
         Held.Value = Held.Value is { } held ? [.. held, taken] : [taken];
         return taken;
+    }
+
+    // The checkout this judgement is of, as one spelling (GitFacts.Folder); null for a seam's snapshot.
+    private string? _root;
+
+    // What git answered this judgement of commits by their ids (PROC1d-iv), by the question's arguments: dropped with the refs.
+    private Dictionary<string, Task<(int Code, string Stdout, string Stderr)>> _facts = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// <paramref name="ask"/>'s answer to a question of commits by their full ids alone, or the one this judgement already holds for
+    /// <paramref name="root"/>; null where no judgement of that checkout is held in this flow, or the question is not one that is
+    /// kept, and the caller asks git as before (PROC1d-iv). <c>merge-base --is-ancestor</c>, the files two commits differ in
+    /// (<c>LandedProofs.NamesAsync</c>) and <c>rev-list --count</c> were asked per pair, the same pair by each branch that left the
+    /// line at one commit.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>One judgement's, one checkout's.</b> The newest snapshot of <paramref name="root"/> this flow holds answers: a
+    /// judgement again takes its own refs, so it asks git afresh (D88), and another repository, or another folder, is never one.</para>
+    /// <para><b>Nothing that moves.</b> The question names no ref, no head and no path (<see cref="GitFacts.ById"/>): what it
+    /// asks of two commits git answers the same while the objects stay. Every write this flow starts drops it with the refs all the
+    /// same, and only an answer git gave is kept (<see cref="GitFacts.Answered"/>): a missing object or a start that failed is
+    /// asked again, never read as "no" (RECORDUNREAD1).</para>
+    /// </remarks>
+    internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
+        string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
+    {
+        if (Held.Value is not { Length: > 0 } held || !GitFacts.ById(arguments)) return null;
+        var folder = GitFacts.Folder(root);
+        for (var at = held.Length - 1; at >= 0; at--)
+        {
+            if (held[at]._root == folder) return held[at].AskAsync(arguments, ask);
+        }
+
+        return null;
+    }
+
+    private Task<(int Code, string Stdout, string Stderr)> AskAsync(
+        IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
+    {
+        var key = string.Join('\0', arguments);
+        lock (_gate)
+        {
+            // An answer in flight is shared; one that came is handed on only where git gave it.
+            if (_facts.TryGetValue(key, out var known)
+                && (!known.IsCompleted || known.IsCompletedSuccessfully && GitFacts.Answered(arguments, known.Result.Code)))
+            {
+                return known;
+            }
+
+            return _facts[key] = ask();
+        }
     }
 
     /// <summary>The one start: every branch here and every copy of origin's, with what each points at and its upstream.</summary>
@@ -93,10 +146,10 @@ internal sealed class RefSnapshot
         static string? Empty(string field) => field.Length == 0 ? null : field;
     }
 
-    /// <summary>Drop what was read: the next question reads again.</summary>
+    /// <summary>Drop what was read, and what git answered of commits (PROC1d-iv): the next question reads again.</summary>
     internal void Invalidate()
     {
-        lock (_gate) (_refs, _trees) = (null, null);
+        lock (_gate) (_refs, _trees, _facts) = (null, null, new(StringComparer.Ordinal));
     }
 
     /// <summary>A ref may have moved: every snapshot this flow holds is dropped.</summary>
