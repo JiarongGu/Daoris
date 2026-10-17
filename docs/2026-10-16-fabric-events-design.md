@@ -1452,6 +1452,7 @@ literally one, for every node.** What differs between kinds is only **evidence a
 | failed, rejected or stopped → ready | a new attempt the person asks for | the person |
 | ready, blocked or active → skipped | the person passes it over for this graph and run, with their words (D157's skip) | the person, where the node allows a skip |
 | active → skipped | its kind's record passes the attempt over, where nothing is asked of it: an `opinion` whose rule asks none, or an optional one none could be had. It carries no words, and a changed binding lapses it (D173's FABRIC-WIRE1g note) | the record's authority: an opinion's gate alone |
+| active → skipped | the same, for two more kinds (D173's FABRIC-WIRE1h note): a `look` whose review the chain's or the ask's choice turns off for this work, and a `pull-request` whose work went into the line with no branch landed to open one on | the record's authority: the review gate's, or the landing record's |
 | skipped → blocked | the person withdraws their skip; it is judged again | the person |
 | skipped → invalidated | its graph or run is another: a skip holds for its own alone | Daoris |
 | any live state → stopped | the person stops this node | the person |
@@ -1651,6 +1652,17 @@ same commit made ready again is another submission, which a close kept for the o
 the person's override. A close the door answered whose node could not take the answer is held as the door's. The person
 goes on by a close's own words: record its kept close again, ask for its answer again with the same key, or stop the
 work's further nodes. Never a new close, and never their word for the door's answer.
+
+**Amended (FABRIC-CLOSE1t, D173's note).** Step 1's eligibility is every named quest's. Before a chain's close is sent,
+each other quest it names has its own graph's prerequisites to its close reached: on its own node record, under the graph it
+is bound to, at its current revision. Until then the close waits, naming the quest and the node.
+
+**Amended (FABRIC-CLOSE1u, D173's note).** Step 4 asks, and never sends the close again. A key's idempotency protects an outcome the door
+already keeps, not a key it never took, so the same close sent again after a restart could run on evidence that moved since
+it was recorded. The driver asks the door what became of the key (`close/outcome`), which answers from its own record and
+runs nothing. A key it took is settled from that answer. A key it never took is withdrawn in the same transaction, so that
+close never runs: its node is judged again, and a close is made again only through step 1's fence, under a new key. A close
+whose door answers neither stays unknown, never sent again by itself, and the person may stop its work.
 
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.

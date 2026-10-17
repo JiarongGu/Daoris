@@ -369,7 +369,8 @@ public sealed class NodeRuntime(
 
             var said = new List<string>();
 
-            // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is sent again, the same close, before anything new starts.
+            // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is reconciled before anything new starts; FABRIC-CLOSE1u: by asking its
+            // door what became of its key, never by sending it again blind, so one never delivered is judged again on what is there now.
             if (_closer is not null)
             {
                 done.AddRange(await _closer.ReconcileAsync(sends, ct).ConfigureAwait(false));
@@ -409,13 +410,11 @@ public sealed class NodeRuntime(
         PassTips tips, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
-        var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
-
         // FABRIC-PERFORM1m: a branch unit's observed plugin nodes bind to its branch's tip read this pass, not to the unit's revision, which is
         // the end fact's and lags a moved branch until the end judgement catches up; the pass's one read of the checkout, null where unread.
         var tipped = Tipped(governed);
         var tip = tipped ? await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
-        for (var round = 0; round <= nodes.Count; round++)
+        for (var round = 0; round <= governed.Graph.Nodes.Count; round++)
         {
             if (records.Read(unit) is not { } record)
             {
@@ -423,15 +422,7 @@ public sealed class NodeRuntime(
                 break;
             }
 
-            var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(unit, node.Id), StringComparer.Ordinal);
-            var run = new WireRun(governed.GraphDigest, governed.Run)
-            {
-                Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
-                NodeRevisions = tipped ? ObservedRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
-                Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
-                Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
-            };
-            var evaluated = WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run);
+            var (before, evaluated) = Evaluate(governed, record, tipped, tip);
             if (evaluated.Refusal is { } refusal)
             {
                 said.Add($"work  {unit}: its graph was not judged ({refusal}: {string.Join(", ", evaluated.Missing)}), so nothing on it is started.");
@@ -481,8 +472,29 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
+    /// A unit's graph evaluated on its record as it stands (FABRIC-RUN1): each node's status before (the record's, else a fresh one), and
+    /// the evaluation on the unit's revision and the triggers its record has fired; a branch unit's observed plugin nodes on the tip its pass
+    /// read (FABRIC-PERFORM1m), handed in. Pure: what it moves is the caller's to keep. No git is read.
+    /// </summary>
+    private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null)
+    {
+        var unit = governed.Unit.Id;
+        var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
+        var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(unit, node.Id), StringComparer.Ordinal);
+        var run = new WireRun(governed.GraphDigest, governed.Run)
+        {
+            Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
+            NodeRevisions = tipped ? ObservedRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
+            Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
+            Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
+        };
+        return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
+    }
+
+    /// <summary>
     /// A <c>quest.close</c> the evaluation proposes to start (FABRIC-CLOSE1b, §E5): on a quest bound to this graph alone, sent once its chain's
-    /// submissions are current and unheld, taking one of the pass's <paramref name="sends"/>; reached without a send where its chain's close
+    /// submissions are current and unheld and each other quest it names has reached its close in its own graph (FABRIC-CLOSE1t), taking one of
+    /// the pass's <paramref name="sends"/>; reached without a send where its chain's close
     /// already closed its quest; left ready while it waits. Null where nothing was done.
     /// </summary>
     private async Task<WorkPerformed?> CloseAsync(
@@ -500,7 +512,18 @@ public sealed class NodeRuntime(
                 : null;
         }
 
-        if (judged.Waits is not null || !sends.Take()) return null;
+        if (judged.Waits is not null) return null;
+
+        // FABRIC-CLOSE1t: the evaluation that proposed this start fenced this quest's own prerequisites; each other quest the close names is
+        // fenced in its own graph, on its own record, before anything is sent or read again. Said once a pass, however many rounds propose it.
+        if (Unreached(governed, node, judged.Named) is { } unreached)
+        {
+            var line = $"work  {governed.Unit.Id}: its close waits for {unreached}.";
+            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
+            return null;
+        }
+
+        if (!sends.Take()) return null;
 
         // FABRIC-CLOSE1l, the review's finding 5 (§E5 step 1): git (each branch's tip, a fresh read of its refs), the binding and the chain
         // are read again right before the close. The same revision means every prerequisite acceptance bound to it still stands, since this
@@ -527,6 +550,67 @@ public sealed class NodeRuntime(
         var sent = await _closer.StartAsync(node, start, evaluated, judged.Named, ct).ConfigureAwait(false);
         said.AddRange(_closer.TakeSaid());
         return sent;
+    }
+
+    /// <summary>
+    /// The first quest a chain's close names, besides its own, whose own graph has not reached its close (FABRIC-CLOSE1t; §E5 step 1), said as
+    /// the quest and the node it waits on; null where every one has. Each is judged on its own node record, under the graph it is bound to, at
+    /// its current binding (its governed revision this pass), as its own evaluation judges it: the close is eligible there, and no prerequisite
+    /// wired into it moves in that judgement, so what the close rests on is what its record holds. A record that does not read, a quest not
+    /// governed by its graph here, or a graph not judged leaves the close waiting, never judged without it.
+    /// </summary>
+    /// <remarks>
+    /// One record read for each other quest named, only for a close about to be sent; no git, since the evaluation is handed no git reads. Its
+    /// revision is current at the send: each is computed from the same read as this quest's, and every input of it (its chain's quests here
+    /// and the branches they worked) is an input of this quest's revision, which the fence reads again below.
+    /// </remarks>
+    private string? Unreached(GovernedUnit governed, NodeDeclaration close, IReadOnlyList<QuestCloseItem> named)
+    {
+        foreach (var each in named)
+        {
+            var unit = QuestUnits.IdOf(each.Id);
+            if (string.Equals(unit, governed.Unit.Id, StringComparison.Ordinal)) continue;
+            string Waits(string why) => $"#{each.Id}, which it would close too: {why}";
+            if (_governed?.GetValueOrDefault(unit) is not { Closes: true } own || !own.Declared.ContainsKey(close.Id))
+            {
+                return Waits($"it is not governed here by the graph it is bound to, so its `{close.Id}` is not judged");
+            }
+
+            if (records.Read(unit) is not { } record) return Waits($"its node record does not read, so its `{close.Id}` is not judged");
+            var (_, evaluated) = Evaluate(own, record);
+            if (evaluated.Refusal is { } refusal) return Waits($"its graph was not judged ({refusal}), so its `{close.Id}` is not judged");
+            var into = own.Graph.Wires.Where(wire => wire.To is { Unit: null } to && to.Node == close.Id && wire.From is { Unit: null }).ToList();
+            if (evaluated.Of(close.Id) is not { Eligible: true })
+            {
+                var waiting = evaluated.Of(close.Id)?.Waiting ?? [];
+                var source = into.FirstOrDefault(wire => waiting.Contains(wire.Id, StringComparer.Ordinal))?.From!.Node;
+                return Waits(source is null
+                    ? $"its `{close.Id}` is not reached in its own graph yet"
+                    : $"its `{source}`, before its `{close.Id}` in its own graph, {Standing(record, evaluated.Statuses[source])}");
+            }
+
+            var moved = evaluated.Moves.Select(move => move.Node).ToHashSet(StringComparer.Ordinal);
+            if (into.Select(wire => wire.From!.Node).FirstOrDefault(moved.Contains) is { } unkept)
+            {
+                return Waits($"its `{unkept}`, before its `{close.Id}` in its own graph, has moved and its record does not hold that yet");
+            }
+        }
+
+        return null;
+
+        // Where a prerequisite stands, said as the person would ask it: held, unknown, failed, or not reached yet.
+        static string Standing(NodeRecord record, NodeStatus status) =>
+            record.Attempts.Any(attempt => attempt.Node == status.Node && attempt.Attempt == status.Attempt && attempt.State == AttemptStates.Held)
+                ? "is held for the person"
+                : status.State switch
+                {
+                    NodeStates.Unknown => "is unknown",
+                    NodeStates.Failed => "failed",
+                    NodeStates.Rejected => "was rejected",
+                    NodeStates.Stopped => "was stopped",
+                    NodeStates.Invalidated => "was reached on work that has moved since",
+                    _ => "is not reached yet",
+                };
     }
 
     /// <summary>

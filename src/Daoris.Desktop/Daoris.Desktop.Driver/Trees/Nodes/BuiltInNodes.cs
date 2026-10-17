@@ -144,6 +144,14 @@ public static class BuiltInNodes
                 };
 
             default:
+                // FABRIC-WIRE1h: the work went into the line with no branch landed, so there is none to open a pull request on: the landing
+                // record's skip, as D157's run reads it. A unit with no branch kept yet only waits, and nothing is passed over on a guess.
+                if (landing is null && branch?.Held is { } into)
+                {
+                    return Seen(NodeStates.Skipped, $"merged into the line {WorkInventory.Minute(into.At)} UTC with no branch landed, so no pull request opens")
+                        with { Source = NodeSource.Landing };
+                }
+
                 return PullRequest(landing, git, Seen, Reached);
         }
     }

@@ -280,6 +280,104 @@ public sealed class WireEvaluationDecodedTests
         Assert.Equal((WireWhy.Lapsed, NodeStates.Invalidated, NodeStates.Skipped), (lapsed.Moves.Single(move => move.Node == "opinion").Why, newer.State("opinion"), newer.State("look")));
     }
 
+    private static ReviewGateState Review(string state, string? environment = null) =>
+        new(state, new ReviewDecision(environment is null ? ReviewLevels.Chain : ReviewLevels.Repository, environment) { Choice = environment is null ? "off" : "on" })
+        {
+            Tip = "tip-1",
+        };
+
+    private static Graph Looked(ReviewGateState? gate)
+    {
+        var g = new Graph([Node("look", NodeKinds.Look), Node("land")], [After("look>land", "look", "land")])
+        {
+            Run = Base with
+            {
+                Units = new Dictionary<string, WorkUnit> { [Unit] = Branch() },
+                Reviews = gate is null ? new Dictionary<string, ReviewGateState>() : new Dictionary<string, ReviewGateState> { [Unit] = gate },
+            },
+        };
+        g.Start(g.Evaluate(), "look");
+        return g;
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1h: a look the chain's or the ask's choice turns off is passed over by its gate's record, never in the person's words,
+    /// and satisfies <c>after</c>; every other state of the gate, and a read not handed in, is the person's to answer and passes nothing
+    /// over; and the skip holds for its own run alone.
+    /// </summary>
+    [Fact]
+    public void A_look_the_choice_turns_off_is_passed_over_by_its_gate_and_lapses_outside_its_run()
+    {
+        var g = Looked(Review(ReviewStates.None));
+        var evaluated = g.Evaluate();
+        var look = g.Statuses["look"];
+        Assert.Equal((NodeStates.Skipped, NodeSource.Review, (string?)null, NodeStates.Ready), (look.State, look.By, look.Words, g.State("land")));
+        Assert.StartsWith("skp-", Assert.Single(evaluated.Of("land")!.Receipts), StringComparison.Ordinal);
+
+        g.Run = g.Run with { Run = "run-2" };
+        Assert.Equal(WireWhy.SkipScope, g.Evaluate().Moves.Single(move => move.Node == "look").Why);
+        Assert.Equal(NodeStates.Blocked, g.State("land"));
+
+        foreach (var (why, gate) in new (string, ReviewGateState?)[]
+        {
+            ("no read", null),
+            ("not shown", Review(ReviewStates.NotShown, "preview")),
+            ("shown", Review(ReviewStates.Shown, "preview")),
+            ("the person's skip", Review(ReviewStates.Skipped, "preview")),
+            ("reviewed", Review(ReviewStates.Reviewed, "preview")),
+            ("unread", Review(ReviewStates.Unread)),
+            ("cannot start", Review(ReviewStates.CannotStart)),
+        })
+        {
+            var waiting = Looked(gate);
+            waiting.Evaluate();
+            Assert.Equal((why, NodeStates.Active, NodeStates.Blocked), (why, waiting.State("look"), waiting.State("land")));
+        }
+    }
+
+    private static Graph Pulled(WorkUnit unit)
+    {
+        var g = new Graph([Node("pr", NodeKinds.PullRequest), Node("next")], [After("pr>next", "pr", "next")])
+        {
+            Run = Base with { Units = new Dictionary<string, WorkUnit> { [Unit] = unit } },
+        };
+        g.Start(g.Evaluate(), "pr");
+        return g;
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1h: a pull request is passed over by the landing record where the work went into the line with no branch landed; a landed
+    /// branch, a branch not yet handed on and no record at all are pending, never passed over; and the skip holds for its own run alone.
+    /// </summary>
+    [Fact]
+    public void A_pull_request_with_no_branch_landed_is_passed_over_by_the_landing_record_and_lapses_outside_its_run()
+    {
+        var held = new HeldFact(Then, Then, "line", "tip-1", "main", "main", "m1", Repository);
+        var merged = Branch() with
+        {
+            Records = new WorkUnitRecords(new GrownBranch(Repository, "default", "feature/x", "main", "base", null, Then) { Held = held }, [], null),
+        };
+
+        var g = Pulled(merged);
+        g.Evaluate();
+        var pr = g.Statuses["pr"];
+        Assert.Equal((NodeStates.Skipped, NodeSource.Landing, (string?)null, NodeStates.Ready), (pr.State, pr.By, pr.Words, g.State("next")));
+
+        g.Run = g.Run with { Run = "run-2" };
+        Assert.Equal(WireWhy.SkipScope, g.Evaluate().Moves.Single(move => move.Node == "pr").Why);
+
+        foreach (var (why, unit) in new (string, WorkUnit)[]
+        {
+            ("nothing handed on yet", Branch()),
+            ("a branch landed", merged with { Records = merged.Records with { Landings = [Landed(null)] } }),
+        })
+        {
+            var waiting = Pulled(unit);
+            waiting.Evaluate();
+            Assert.Equal((why, NodeStates.Active, NodeStates.Blocked), (why, waiting.State("pr"), waiting.State("next")));
+        }
+    }
+
     /// <summary>
     /// The trap of a historical opinion read anew: a landing recorded at the bound commit keeps today's reading of what its gate let go, as
     /// <c>WorkflowRun</c> reads a landing done, whatever the gate says now; one recorded at another commit says nothing of this one.

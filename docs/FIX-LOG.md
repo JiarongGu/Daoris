@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A close never delivered was sent after a restart on the evidence it was recorded on (FABRIC-CLOSE1u)
+
+- **Symptom:** none on an install: no quest is bound to a closure graph there. Found by the read-only review of the close path. A
+  loop that ended after writing a close attempt and before the close left, then a session branch that moved, then a restart: the
+  restarted loop sent that close, and the door closed the quest on the old revision, since its submissions had not moved.
+- **Root cause:** `QuestCloser.ReconcileAsync` sent every recorded or unknown close again with its key, before any fence
+  (`Trees/Nodes/QuestCloser.cs`). The key's idempotency protects an outcome the door already keeps; a key it never took runs as new.
+- **Fix:** step 4 asks instead (`POST /api/quests/{id}/close/outcome`), answered from `quest_closes` and running nothing. A key taken
+  settles from its first outcome. A key never taken is withdrawn there in the same transaction, its attempt settled `not-started` and
+  its node invalidated, so a close is made again only through the fresh fence, under a new key. An unanswered close stays unknown and
+  takes the person's `resend` and `stop`. D173's FABRIC-CLOSE1u note has the choices.
+- **Verification:** red first: the crash, move and restart test sent the old close; the lost-answer theory, the unknown close's stop,
+  the client's question and the service's withdrawal failed. Then the driver's fast half passes 9338 (9334 before), the service's
+  2215 (2214) and its HTTP suite 283 (283), and `CloseFenceGitTests` (Git, run once) passes.
+
+## 2026-10-18 — A chain's close closed an earlier quest whose own deploy was still held (FABRIC-CLOSE1t)
+
+- **Symptom:** none on an install: no quest is bound to a closure graph there. Found by a read-only review of the whole close path. In a
+  two-quest chain, the first quest published the second while its deployment stayed held, and the second's close closed both.
+- **Root cause:** the terminal quest's own prerequisites were fenced by the evaluation that proposed its close. `QuestClosing.Judge`
+  then named each earlier quest on its submission and hold alone (`Trees/Nodes/QuestCloser.cs`), and `NodeRuntime.CloseAsync` read no
+  other quest's node record.
+- **Fix:** `NodeRuntime.Unreached` judges each other quest a close names on its own node record, under its bound graph and at its
+  current revision, with the evaluation its own pass makes. The close waits, said once a pass naming the quest and the node, until that
+  quest's close is eligible there. D173's FABRIC-CLOSE1t note has the detail and the counts.
+- **Verification:** red first: three `QuestCloseTests` (the held deploy, the same chain reached, an unreadable record) sent the close.
+  The unarmed look's test was green before and after. Then the driver's fast half passes 9280 (9276 before), and `CloseFenceGitTests`
+  (Git, run once) passes with its counts unchanged.
 ## 2026-10-18 — The rehearsals waited for the whole Process lane, and the web gate's vitests for service (REHLANE1, WEBSPLIT1)
 
 - **Symptom:** after GATELANES2 (a merge's light lane about 4 m 15 s, against 9 m 35 s one at a time) a full set's wall was

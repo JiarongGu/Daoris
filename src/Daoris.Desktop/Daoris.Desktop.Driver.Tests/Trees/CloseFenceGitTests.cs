@@ -222,6 +222,10 @@ public sealed class CloseFenceGitTests : IDisposable
             Sent.Add((quest, key, token, quests));
             return Task.FromResult(new QuestCloseAnswer(QuestCloseOutcomes.Closed, null, "Closed.", []));
         }
+
+        /// <summary>FABRIC-CLOSE1u: every close here is answered as it is sent, so none is ever asked after.</summary>
+        public Task<QuestCloseAnswer> CloseOutcomeAsync(string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct) =>
+            throw new InvalidOperationException("no close is asked after here");
     }
 
     /// <summary>The service's reads, standing in: the quest, its two sessions on their trees, no ask, and the repository's checkout.</summary>

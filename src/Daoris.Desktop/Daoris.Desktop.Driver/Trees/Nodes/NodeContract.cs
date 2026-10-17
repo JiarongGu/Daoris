@@ -172,6 +172,12 @@ public static class NodeSource
     /// <summary>The second opinion's gate as the driver keeps it (D155 §8.2): an answer covering the tip with no dispute open, or the person's answer in its place.</summary>
     public const string Opinion = "opinion";
 
+    /// <summary>The review's gate as the driver keeps it (D154): the choice of the chain or the ask that turns the look off for this work (FABRIC-WIRE1h).</summary>
+    public const string Review = "review";
+
+    /// <summary>The landing record: no branch was landed for the work to open a pull request on, or nothing was landed at all (FABRIC-WIRE1h).</summary>
+    public const string Landing = "landing";
+
     /// <summary>The path into a sink (§E7): the failure or the refusal whose receipt leads there, as a join's members reach it.</summary>
     public const string Path = "path";
 }
@@ -391,8 +397,9 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
 
     /// <summary>
     /// The source whose record passes the node over for its attempt's graph and run, where nothing is asked of it (FABRIC-WIRE1g): an
-    /// <c>opinion</c>'s gate, whose rule asks none here or an optional one none could be had, read as skipped as D157's run reads it. Null
-    /// for every other kind, which the person alone passes over. Never the person's skip: it carries no words, and its source is the record's.
+    /// <c>opinion</c>'s gate, whose rule asks none here or an optional one none could be had, read as skipped as D157's run reads it; and
+    /// (FABRIC-WIRE1h) a <c>look</c>'s review gate, where the chain's or the ask's choice turns it off, and a <c>pull-request</c>'s landing
+    /// record, where no branch landed to open one on. Null for every other kind, which the person alone passes over. Never the person's skip: it carries no words, and its source is the record's.
     /// </summary>
     public string? SkipBy { get; init; }
 }
@@ -413,10 +420,12 @@ public static class NodeAuthorities
         [NodeKinds.Handed] = new(NodeKinds.Handed, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
         [NodeKinds.Line] = new(NodeKinds.Line, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
         [NodeKinds.Pushed] = new(NodeKinds.Pushed, NodeReach.Observed, NodeSource.PluginRef, NodeSource.Plugin, false, true, true, true),
-        [NodeKinds.PullRequest] = new(NodeKinds.PullRequest, NodeReach.Observed, NodeSource.Plugin, NodeSource.Plugin, false, true, true, true),
+        // FABRIC-WIRE1h: the landing record passes it over where the work went into the line with no branch landed to open one on.
+        [NodeKinds.PullRequest] = new(NodeKinds.PullRequest, NodeReach.Observed, NodeSource.Plugin, NodeSource.Plugin, false, true, true, true) { SkipBy = NodeSource.Landing },
         [NodeKinds.Human] = new(NodeKinds.Human, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false),
         // §E4: the look is its gate, observed, and the person's *reviewed* is what reaches it.
-        [NodeKinds.Look] = new(NodeKinds.Look, NodeReach.Observed, NodeSource.Person, null, true, true, true, false),
+        // FABRIC-WIRE1h: the review gate's record passes it over where the chain's or the ask's choice turns it off for this work.
+        [NodeKinds.Look] = new(NodeKinds.Look, NodeReach.Observed, NodeSource.Person, null, true, true, true, false) { SkipBy = NodeSource.Review },
         [NodeKinds.GoAhead] = new(NodeKinds.GoAhead, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false),
         [NodeKinds.WaitUnit] = new(NodeKinds.WaitUnit, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, true, true, true),
         [NodeKinds.QuestClose] = new(NodeKinds.QuestClose, NodeReach.Performed, NodeSource.CloseDoor, NodeSource.CloseDoor, false, false, true, true),

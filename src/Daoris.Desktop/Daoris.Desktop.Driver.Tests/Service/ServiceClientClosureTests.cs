@@ -108,7 +108,7 @@ public sealed class ServiceClientClosureTests
 
     /// <summary>
     /// FABRIC-CLOSE1v: the door's scope checks, a quest of another repository, of no chain the close's quest grew from, or bound to another
-    /// graph, are its own coded refusals, so each settles the close as refused and it is not sent again.
+    /// graph, are its own coded refusals, so each settles the close as refused, whether sent or asked after, and it is not sent again.
     /// </summary>
     [Theory]
     [InlineData("other-repository")]
@@ -118,11 +118,49 @@ public sealed class ServiceClientClosureTests
     {
         var doors = new Doors((_, _, _) => new ServiceReply(409, $$"""{ "error": "Quest `#q6` is refused.", "code": "{{code}}" }"""));
         using var client = new ServiceClient(doors);
+        IReadOnlyList<QuestCloseItem> named = [new("q6", "desk", 40), new("q7", "desk", 41)];
 
-        var refused = await client.CloseQuestsAsync("q7", "k-1", "ctk-1", [new("q6", "desk", 40), new("q7", "desk", 41)]);
+        var refused = await client.CloseQuestsAsync("q7", "k-1", "ctk-1", named);
+        var asked = await client.CloseOutcomeAsync("q7", "k-1", "ctk-1", named);
 
         Assert.Equal((QuestCloseOutcomes.Refused, code, "Quest `#q6` is refused."), (refused.Outcome, refused.Code, refused.Message));
-        Assert.Single(doors.Asked);
+        Assert.Equal((QuestCloseOutcomes.Refused, code), (asked.Outcome, asked.Code));
+        Assert.Equal(2, doors.Asked.Count);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1u: what became of a close is asked at its own door with the close as it was sent, and read as a close is: its first outcome,
+    /// or refused <c>withdrawn</c> where the door never took the key, which the close door says too of a send of that key arriving after. A
+    /// host before the question answers it as no door of its own, so the close stays unknown.
+    /// </summary>
+    [Fact]
+    public async Task What_became_of_a_close_is_asked_with_its_key_and_read_as_a_close_is()
+    {
+        var replies = new Queue<ServiceReply>(
+        [
+            new(200, """{ "quests": [{ "id": "q7", "from": "a", "to": "engine", "title": "t", "body": "", "status": "Done" }], "message": "This close was made already." }"""),
+            new(409, """{ "error": "Key `k-2` was never taken by this door, and is withdrawn.", "code": "withdrawn" }"""),
+            new(409, """{ "error": "This close was refused when it was first sent with key `k-2`: its key was withdrawn.", "code": "withdrawn" }"""),
+            new(404, ""),
+        ]);
+        var doors = new Doors((_, _, _) => replies.Dequeue());
+        using var client = new ServiceClient(doors);
+        IReadOnlyList<QuestCloseItem> named = [new("q7", "desk", 41)];
+
+        var closed = await client.CloseOutcomeAsync("q7", "k-1", "ctk-1", named);
+        var withdrawn = await client.CloseOutcomeAsync("q7", "k-2", "ctk-1", named);
+        var late = await client.CloseQuestsAsync("q7", "k-2", "ctk-1", named);
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.CloseOutcomeAsync("q7", "k-3", "ctk-1", named));
+
+        Assert.Equal((QuestCloseOutcomes.Closed, null), (closed.Outcome, closed.Code));
+        Assert.Equal((QuestCloseOutcomes.Refused, QuestCloseOutcomes.Withdrawn), (withdrawn.Outcome, withdrawn.Code));
+        Assert.Equal((QuestCloseOutcomes.Refused, QuestCloseOutcomes.Withdrawn), (late.Outcome, late.Code));
+        var (verb, path, json) = doors.Asked[0];
+        Assert.Equal((ServiceVerb.Post, "/api/quests/q7/close/outcome"), (verb, path));
+        using var body = JsonDocument.Parse(json!);
+        Assert.Equal(("k-1", "ctk-1", "q7/desk/41"), (body.RootElement.GetProperty("key").GetString(), body.RootElement.GetProperty("token").GetString(),
+            string.Join(",", body.RootElement.GetProperty("quests").EnumerateArray()
+                .Select(q => $"{q.GetProperty("id").GetString()}/{q.GetProperty("machine").GetString()}/{q.GetProperty("sequence").GetInt64()}"))));
     }
 
     /// <summary>

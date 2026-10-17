@@ -26,12 +26,6 @@ public static class WorkflowRunDifferences
     public const string Added = "added";
 
     /// <summary>
-    /// Schema 1 passes a step over by a rule's choice or a fact no node's authority makes (a look the chain's or the ask's choice turns off; a
-    /// pull request with nothing landed or no branch to open): the node stays pending, so the graph stands at it. At the step passed over.
-    /// </summary>
-    public const string PassedByRule = "passed-by-rule";
-
-    /// <summary>
     /// A skip satisfies its <c>after</c> wire whatever stands before it (§E2, §E3): a look skipped while the opinion before it is not settled
     /// lets the decoded landing go, where schema 1 holds the landing on the opinion. At the skipped step.
     /// </summary>
@@ -102,8 +96,9 @@ public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Versi
 /// <para><b>The table</b> (a step's state, its node's state): <i>not reached</i> and <i>cannot start</i> move nothing, so the node is
 /// blocked or ready by its wires; <i>working</i> and <i>waiting</i> are active, the look's <i>not yet</i> the person's rejection with their
 /// words; <i>not known</i> is unknown; <i>done</i> is reached by its kind's authority, its evidence naming the run's reading
-/// (<see cref="Record"/>); <i>skipped</i> is the opinion's gate's skip, or the person's on the look with their words, else active, since no
-/// node's authority passes it over; <i>failed</i> is failed by its kind's failure authority, else active (a claim never fails);
+/// (<see cref="Record"/>); <i>skipped</i> is the person's on the look with their words, else its kind's record's (the opinion's gate; the
+/// look's gate where the choice turns it off; the landing record for a pull request with no branch or nothing landed: FABRIC-WIRE1h), else
+/// active, since no node's authority passes it over; <i>failed</i> is failed by its kind's failure authority, else active (a claim never fails);
 /// <i>stopped</i> is the person's stop, and a pull request's abandon is failed on its plugin's answer, as the node observes it.</para>
 /// </remarks>
 public static class WorkflowRunNodes
@@ -267,13 +262,14 @@ public static class WorkflowRunNodes
     };
 
     /// <summary>
-    /// Whose a schema-1 skip is: the kind's record's where its authority names one (the opinion's gate), the person's where they skipped
-    /// the look, or null: a rule's choice or a fact no node's authority makes (<see cref="WorkflowRunDifferences.PassedByRule"/>).
+    /// Whose a schema-1 skip is: the person's where they skipped the look; the kind's record's where its authority names one (the opinion's
+    /// gate, whatever it says; the look's gate where the choice turns it off; the landing record where no branch or nothing landed:
+    /// FABRIC-WIRE1h); or null, which no node's authority makes (a plugin's own node a run skips).
     /// </summary>
     private static string? SkipBy(NodeDeclaration node, WorkflowRunStep step) =>
         NodeAuthorities.Of(node) is not { } authority ? null
-        : authority.SkipBy is { } record ? record
         : step.Detail == WorkflowRunDetails.Skip && authority.PersonSkips ? NodeSource.Person
+        : authority.SkipBy is { } record && (node.Kind == NodeKinds.Opinion || step.Detail is WorkflowRunDetails.Off or WorkflowRunDetails.Nothing or WorkflowRunDetails.NoBranch) ? record
         : null;
 
     /// <summary>
@@ -293,10 +289,9 @@ public static class WorkflowRunNodes
         bool Settled(string node) => statuses[node].State is NodeStates.Reached or NodeStates.Skipped;
         int Index(string node) => counted.FindIndex(each => each.Id == node);
 
-        // A step schema 1 settled and its node could not: the one table refused it, or no node's authority makes that skip.
-        string? Unsettled(string node) => refused.ContainsKey(node) ? WorkflowRunDifferences.Refused
-            : WorkflowRunStates.Settled(steps[node].State) && !Settled(node) ? WorkflowRunDifferences.PassedByRule
-            : null;
+        // A step schema 1 settled and its node could not: the one table refused it. (FABRIC-WIRE1h: every skip a built-in's step carries now
+        // has its record's authority, so no step is passed over by a rule alone.)
+        string? Unsettled(string node) => refused.ContainsKey(node) ? WorkflowRunDifferences.Refused : null;
 
         // Schema 1 goes on with a step the decoded order holds: named by the first node before it that is not settled.
         (string Code, string Step) Ahead(NodeDeclaration node)
