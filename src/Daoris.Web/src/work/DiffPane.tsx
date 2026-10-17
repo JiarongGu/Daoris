@@ -27,6 +27,12 @@ import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } f
 /** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
 const LAYOUT = 'daoris.reviewLayout';
 
+/** The words the review's Accept says for the steps its landing reports (PRESSSTEP1, LANDHOLD2); any other step says the plain one. */
+const LANDING_WORDS: Record<string, string> = {
+  gate: 'work.review.acceptingGate',
+  waiting: 'work.review.acceptingWaiting',
+};
+
 /**
  * Review: what the session actually did, and what the person does about it (SURF6, design §5).
  *
@@ -189,6 +195,8 @@ export function DiffPane({
     hand: useUnderWay('HANDOFF', session),
     // Where the landing has reached, where its driver says (PRESSSTEP1): the gate is read before anything lands.
     landStep: useUnderWayStep('LAND_SESSION_TREE', session),
+    // LANDHOLD2: a hand-off says it waits behind another push of its branch.
+    handStep: useUnderWayStep('HANDOFF', session),
     // Its line of work's one Accept, or its ask's, lands this part too (ACCEPTALL1h): a press carries its entry or ask, not its parts.
     entry: useUnderWaySubject('LAND_ENTRY', entry),
     ask: useUnderWaySubject('LAND_ASK', ask),
@@ -442,7 +450,7 @@ export function DiffPane({
               }));
             }}
           >
-            {landsNow ? t(underWay.landStep === 'gate' ? 'work.review.acceptingGate' : 'work.review.accepting') : t('work.review.accept')}
+            {landsNow ? t(LANDING_WORDS[underWay.landStep ?? ''] ?? 'work.review.accepting') : t('work.review.accept')}
           </Button>
         )}
 
@@ -454,7 +462,7 @@ export function DiffPane({
             disabled={underWay.hand || Boolean(handable.problem)}
             onClick={() => act(hand.mutateAsync(session))}
           >
-            {underWay.hand ? t('work.review.handing') : t('work.review.hand', { plugin: handable.plugin })}
+            {underWay.hand ? t(underWay.handStep === 'waiting' ? 'work.review.handingWaiting' : 'work.review.handing') :t('work.review.hand', { plugin: handable.plugin })}
           </Button>
         )}
 

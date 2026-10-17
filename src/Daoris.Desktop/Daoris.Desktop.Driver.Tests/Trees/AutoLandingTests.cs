@@ -632,6 +632,7 @@ public sealed class AutoLandingTests : IDisposable
         var (chosen, _) = await lander.ChooseAsync(Config());
         Assert.Single(chosen);
         Task<TreeLanding>? press = null;
+        var waits = new List<bool>();
         // The plugin's first frame: the person presses while the automatic landing's plugin is still pushing. The press is its own
         // request, so nothing of the landing's flow (its look, its table of git's answers) flows into it.
         _landing = () =>
@@ -639,7 +640,12 @@ public sealed class AutoLandingTests : IDisposable
             _landing = null;
             using (ExecutionContext.SuppressFlow())
             {
-                press = Task.Run(() => new SessionTrees(_home, Plugins()).LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap")));
+                press = Task.Run(() =>
+                {
+                    // LANDHOLD2: the press says it waits behind the landing, and that it has stopped.
+                    using var told = LandingHoldNotice.Told(waiting => { lock (waits) waits.Add(waiting); });
+                    return new SessionTrees(_home, Plugins()).LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap"));
+                });
             }
 
             SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, TimeSpan.FromSeconds(30));
@@ -648,6 +654,7 @@ public sealed class AutoLandingTests : IDisposable
         await lander.LandAsync(chosen);
         var pressed = await press!;
 
+        lock (waits) Assert.Equal([true, false], waits);
         Assert.Single(_frames);
         Assert.Single(new LandedBranches(_home).Entries(), entry => entry.Names("s1"));
         Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);

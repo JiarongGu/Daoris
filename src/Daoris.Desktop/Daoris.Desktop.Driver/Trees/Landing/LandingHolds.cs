@@ -85,6 +85,15 @@ internal static class LandingHolds
         var gate = Enter(named);
         var waited = false;
         var held = false;
+        var said = false;
+        // LANDHOLD2: said once before the first wait, and unsaid when the wait ends, whatever it came to.
+        void Say()
+        {
+            if (said) return;
+            said = true;
+            LandingHoldNotice.Waiting(true);
+        }
+
         FileStream? file = null;
         LandingHold? hold = null;
         try
@@ -92,6 +101,7 @@ internal static class LandingHolds
             if (!gate.Semaphore.Wait(0))
             {
                 waited = true;
+                Say();
                 Interlocked.Increment(ref gate.Waiting);
                 try
                 {
@@ -110,6 +120,7 @@ internal static class LandingHolds
             if (file is null)
             {
                 waited = true;
+                Say();
                 Interlocked.Increment(ref gate.Waiting);
                 try
                 {
@@ -139,6 +150,7 @@ internal static class LandingHolds
         }
         finally
         {
+            if (said) LandingHoldNotice.Waiting(false);
             // Anything but a hold handed out lets go of all it took: a bound passed, a wait cancelled, a file that would not read.
             if (hold is null)
             {
