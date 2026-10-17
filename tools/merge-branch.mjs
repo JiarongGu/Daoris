@@ -169,11 +169,12 @@
  * gate also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, the web gate), GATEORDER1:
  * the 0b44c7a run started `driver-process` beside cli, service and web and two timing tests failed there. The cost is
  * the light lane's tail, about 7 to 8 minutes of a full set of an hour or more, since the Process lane is the long pole
- * either way. The git half and the serial half never overlap: the Process lane is one gate at a time. `--stale` and
- * `--rerun` run through the same `runGates`, so they follow the same order. A Process-lane
- * gate whose command names no project, a rehearsal, starts once the light lane has ended: it builds the hosts behind its
- * script's name, and the deployment rehearsal first shuts the build servers down. A Process gate's failures are re-run
- * alone only once the light lane has ended, so a pass alone is still a pass with nothing beside it (FLAKE1).
+ * either way. The git half and the serial half never overlap: the Process lane is one gate at a time, but for the family
+ * rehearsal beside the git half (REHLANE1, below). `--stale` and `--rerun` run through the same `runGates`, so they follow
+ * the same order. A Process-lane gate whose command names no project, a rehearsal, starts once the light lane has ended:
+ * it builds the hosts behind its script's name, and the deployment rehearsal first shuts the build servers down. A
+ * Process gate's failures are re-run alone only once the light lane has ended, and the gate beside it in its own lane,
+ * so a pass alone is still a pass with nothing beside it (FLAKE1).
  *
  * Each gate's log, verdict and line are its own, the line printed as the gate ends; once both lanes have ended, every
  * gate's line is printed again in the plan's order, a gate not started as NOT RUN. The first failure, unless
@@ -203,6 +204,38 @@
  * a changed tree, or one git cannot name, builds. A `--rerun` or `--stale` that names a Process half without its fast
  * half has no fast half in its run, and builds; one that names both reuses as a full set does. The flake re-run alone
  * was `--no-build` already. One at a time reuses too.
+ *
+ * ## The family rehearsal beside the git half (REHLANE1)
+ *
+ * After GATELANES2 a full set's wall was mostly the Process lane, one gate at a time: the git half about 45 to 50
+ * minutes, the serial half 15 to 19, the family rehearsal 10 to 26 and the deployment rehearsal 13 to 15. So a rehearsal
+ * of `BESIDE_GIT_HALF` (`runsBesideGitHalf`) runs beside a git half (`isGitHalf`, the driver's `git.process.runsettings`
+ * half, `beside` in the schedule): it goes in the lane right after the last git half, and a Process-lane gate starts once
+ * every gate before it in the lane has ended but those it may run beside. Every other pair still runs one at a time, the
+ * serial halves among them, and the rehearsal still waits for the whole light lane.
+ *
+ * A rehearsal runs beside a Process half only where they share no build output. The Process halves build the desktop's
+ * projects into their own `bin/` and `obj/` and run from them, and only the desktop's (a test holds that). So the family
+ * rehearsal builds the driver host into an output of its own, `_fixtures/rehearsal-builds/family` (`ownBuild` in
+ * `tools/rehearsal-kit.mjs`, the SDK's `--artifacts-path`), and the service's hosts where the driver finds a development
+ * build, in folders no Process half builds; and it shuts no build server down. A test reads its tool for both.
+ *
+ * The deployment rehearsal and the release rehearsal are not of `BESIDE_GIT_HALF` (its comment says why): they run alone,
+ * the deployment rehearsal last, where its build-server shutdown stops no build. D115's REHLANE1 note has what was rejected.
+ *
+ * A git half that re-runs its failures alone (FLAKE1) waits for the family rehearsal beside it to end, and no Process-lane
+ * gate starts meanwhile. A rehearsal that died and is run again whole (LEFT1) does not wait: that re-run is about a process
+ * that ended, and two gates each waiting for the other to end would never start.
+ *
+ * ## The web gate's unit run beside service (WEBSPLIT1)
+ *
+ * In a full set the light lane's floor was the service suite then the web gate, about 10 minutes under load, because the
+ * web gate builds the HTTP host the service suite builds. Its first step, the page's vitests, builds nothing. So it is a
+ * light gate of its own, `web-unit` (`npm run test:web:unit`), of no component, and runs beside service; `web` runs the
+ * page's build, the HTTP host's and Playwright (`npm run test:web:e2e`), after service as before. `npm run test:web` runs
+ * both, for a person. Both are heavy (GATEORDER1), and `web` is declared first (`LIGHT_WIDTH` says why). WEBGATE1's cap on
+ * vitest's workers is the page's own config, so it holds wherever the unit run runs. A vitest's read outside the page
+ * reaches `web-unit`, and the browser suite's reads reach `web`.
  *
  * ## A batch
  *
@@ -275,9 +308,24 @@ export const isLongGate = (gate) => isProcessGate(gate) || /\brehearse:deploy\b/
  */
 export const isProcessLane = (gate) => isProcessGate(gate) || /^npm run rehearse/.test(gate.run.trim());
 
+/** The driver's git half (PROC1c): a Process half run with `git.process.runsettings`, its git-only classes four at once. */
+export const isGitHalf = (gate) => /git\.process\.runsettings/.test(gate.run);
+
+/**
+ * The rehearsals that may run beside a git half (REHLANE1), by the root script each runs. Each builds the desktop's projects,
+ * which the Process halves build into and run from, only into an output of its own (`ownBuild` in `tools/rehearsal-kit.mjs`),
+ * and shuts no build server down: a test reads each one's tool for both. The deployment rehearsal is not one: it publishes
+ * every desktop project through the install's own recipe and shuts the build servers down first, so it runs alone, last. Nor
+ * is the release rehearsal, which stages the CLI's package in the CLI's own folder.
+ */
+export const BESIDE_GIT_HALF = Object.freeze(['rehearse:family']);
+
+/** Whether a gate runs a rehearsal of `BESIDE_GIT_HALF` (REHLANE1), read from its command as the lanes are. */
+export const runsBesideGitHalf = (gate) => BESIDE_GIT_HALF.includes(scriptNamed(gate.run) ?? '');
+
 /**
  * The heavy light gates (GATEORDER1): the suites that load the CPU for minutes (the CLI's verify, the .NET test suites,
- * the web's build and end-to-end run). The 0b44c7a run started `driver-process` beside cli, service and web, and two
+ * the web's build and end-to-end run, and its unit run, WEBSPLIT1). The 0b44c7a run started `driver-process` beside cli, service and web, and two
  * timing tests failed there and passed alone. A Process gate starts after these, not only after its own component's.
  * Named by what a gate runs, as `isProcessLane` is. The cheap light gates (universal, code-map, orient-index) are not.
  */
@@ -310,6 +358,13 @@ export function dotnetComponent(run) {
  * of the devkit's 175 s and the service's and the desktop's together, 257 s; three take the devkit's 175 s. A full set
  * that runs the web gate ends no sooner with three than with two (the service's gates then web, about 10 minutes under
  * load, are its floor), so three is the width, on 22 logical processors.
+ *
+ * WEBSPLIT1 took the web gate's vitests off that floor as a gate that builds none, `web-unit`. It takes the first free
+ * place `web` does not take: `web` is declared before it, so a place service frees goes to `web`, and the floor is service
+ * then the page's build and browser suite. By the figures above the desktop's fast halves end before service, so it runs
+ * beside service. A
+ * fourth place would start it at once, beside three heavy gates, for no shorter floor: TESTWAIT2's 600 ms bound already
+ * failed beside two, so the width stays three until the parent's full sets measure otherwise.
  */
 export const LIGHT_WIDTH = 3;
 
@@ -376,9 +431,21 @@ export const reuseBuild = (built, tree) => Boolean(built?.tree && tree && built.
  * GATELANES2: up to `width` light gates run at once, never two that build one component (`components`, read through
  * the root `scripts` a gate names). GATEBUILD1: `reuses` names, for each Process half, the light gate that builds the
  * same test project the same way (`testBuild`), its fast half.
+ *
+ * REHLANE1: `beside` names, for each Process-lane gate, the ones it may run beside: a git half and each rehearsal of
+ * `BESIDE_GIT_HALF`. The lane's order is the plan's, but each such rehearsal goes right after the last git half, and a
+ * Process-lane gate starts once every gate before it in the lane has ended but those it may run beside.
  */
 export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH } = {}) {
-  const process = gates.filter(isProcessLane);
+  const lane = gates.filter(isProcessLane);
+  const besideGit = lane.some(isGitHalf) ? lane.filter(runsBesideGitHalf) : [];
+  const process = lane.filter((gate) => !besideGit.includes(gate));
+  process.splice(process.findLastIndex(isGitHalf) + 1, 0, ...besideGit);
+  const beside = {};
+  for (const gate of process) {
+    const others = isGitHalf(gate) ? besideGit : besideGit.includes(gate) ? process.filter(isGitHalf) : [];
+    if (others.length) beside[gate.name] = others.map((other) => other.name);
+  }
   const planned = gates.filter((gate) => !isProcessLane(gate));
   const components = Object.fromEntries(planned.map((gate) => [gate.name, gateComponents(gate, scripts)]));
   const sharing = (component) => planned.filter((other) => component !== null && components[other.name].includes(component));
@@ -396,7 +463,7 @@ export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH } = {}) 
     const fast = build && planned.find((other) => testBuild(other.run) === build);
     if (fast) reuses[gate.name] = fast.name;
   }
-  return { light, process, waits, width: Math.max(1, width), components, reuses };
+  return { light, process, waits, width: Math.max(1, width), components, reuses, beside };
 }
 
 /** The root `package.json`'s scripts, which `gateComponents` reads behind a gate's `npm run`; none when it has none. */
@@ -652,14 +719,15 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver-process', 'modules-process'], why: "the Process halves' settings (MOD8)" },
   { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
   // Before the driver's tests, which would place it first: the page's twin reads it too.
+  // WEBSPLIT1: a vitest's read reaches the web gate's unit run, which runs the vitests; the web gate builds and runs Playwright.
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json'],
-    gates: ['driver', 'web'],
+    gates: ['driver', 'web-unit'],
     why: "the driver's KeptNamesTwinTests and the page's sessionActs vitest read the kept names' table (SESSDEL1c)",
   },
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-run-said.json'],
-    gates: ['driver', 'web'],
+    gates: ['driver', 'web-unit'],
     why: "the driver's WorkflowRunSaidTwinTests and the page's runSaid vitest read a run's English table (WORKFLOW1c5)",
   },
   {
@@ -696,11 +764,11 @@ export const REACH = Object.freeze([
   },
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/vendor/**'], gates: ['driver', 'driver-process'], why: "the driver's release-channel tests read the vendor's files" },
-  { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web-unit'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/account-reads.json'], gates: ['driver'], why: "the driver's AccountReads twin reads the shared reads table (AGENTREAD1b)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/rotation-use.json'], gates: ['driver', 'web'], why: "the driver's RotationUseTwinTests and the page's curve rules read the shared rotation-use table (SWITCH1a, SWITCH1d)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/rotation-use.json'], gates: ['driver', 'web-unit'], why: "the driver's RotationUseTwinTests and the page's curve rules read the shared rotation-use table (SWITCH1a, SWITCH1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/landing-says.json'], gates: ['driver'], why: "the driver's LandingSaysTwinTests read the shared landing, helpers and commits sentences (TWINWORDS1)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/usage-curves.json'], gates: ['driver', 'web'], why: "the driver's UsageCurvesTwinTests and the page's usageCurves twin read the shared usage curve table (SWITCH1b-iii, SWITCH1d)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/usage-curves.json'], gates: ['driver', 'web-unit'], why: "the driver's UsageCurvesTwinTests and the page's usageCurves twin read the shared usage curve table (SWITCH1b-iii, SWITCH1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/graph-homes.json'], gates: ['driver'], why: "the driver's NodeGraphHomesTests reads the shared table of which cycle governs a unit (FABRIC-GRAPH1)" },
   { paths: ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], gates: ['driver'], why: "the driver's DriverConfigKeepsTests reads the shared table of the bytes an edit of driver.json writes (FABRIC-GRAPH1's review)" },
@@ -731,8 +799,8 @@ export const REACH = Object.freeze([
     gates: [...MODULES_READERS, 'driver'],
     why: "the modules' own, and the driver's NoConsoleWindow and PullRequestOccasion scans read every C# source of the modules and the app (MOD9c)",
   },
-  // MOD9e: the page's twin vitests parse these sources' declarations, so they are named by file: the web gate is a
-  // rehearsal's time, and the driver's other sources reach no vitest. STRUCT1 (D166): each by its name at any depth of the
+  // MOD9e: the page's twin vitests parse these sources' declarations, so they are named by file: the driver's other sources
+  // reach no vitest. WEBSPLIT1: the vitests are the web gate's unit run, which builds nothing. STRUCT1 (D166): each by its name at any depth of the
   // driver's folder, since the driver's files move into module folders one module per branch.
   {
     paths: [
@@ -742,14 +810,14 @@ export const REACH = Object.freeze([
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes.
       'HandOver.cs',
     ].map((name) => `src/Daoris.Desktop/Daoris.Desktop.Driver/**/${name}`),
-    gates: [...DRIVER_READERS, 'web'],
+    gates: [...DRIVER_READERS, 'web-unit'],
     why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",
   },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
   { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
-  { lane: 'web-shell', gates: ['web', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
-  { lane: 'web-settings', gates: ['web', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
+  { lane: 'web-shell', gates: ['web', 'web-unit', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
+  { lane: 'web-settings', gates: ['web', 'web-unit', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   {
     lane: 'driver',
     gates: DRIVER_READERS,
@@ -761,8 +829,8 @@ export const REACH = Object.freeze([
   { lane: 'modules', gates: MODULES_READERS, why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
   {
     lane: 'service',
-    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'deployment'],
-    why: "its suite; the devkit's and the driver's read its sources; the family rehearsal, the page's end-to-end suite and the install run its HTTP host",
+    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment'],
+    why: "its suite; the devkit's, the driver's and a page vitest read its sources; the family rehearsal, the page's end-to-end suite and the install run its HTTP host",
   },
   {
     lane: 'cli',
@@ -2329,6 +2397,13 @@ function laneLines(schedule) {
     : [`  the light lane, up to ${schedule.width} gates at once (${turn}):`];
   out.push(`    light    ${names(schedule.light.map((gate) => gate.name))}`);
   if (schedule.process.length) out.push(`    Process  ${names(schedule.process.map((gate) => gate.name))}, one at a time`);
+  // REHLANE1: the rehearsals that run beside a git half.
+  for (const gate of schedule.process.filter(runsBesideGitHalf)) {
+    const halves = schedule.beside[gate.name] ?? [];
+    if (halves.length) {
+      out.push(`    ${gate.name} runs beside ${names(halves)}: it builds what the Process lane builds into its own output, and shuts no build server down`);
+    }
+  }
   // GATELANES2: the light gates that build one component, which run in turn.
   const building = new Map();
   for (const gate of schedule.light) {
@@ -2460,13 +2535,45 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
     }
     if (thrown) throw thrown;
   })();
-  const settled = () => lightEnded.promise;
+  // REHLANE1: a Process-lane gate starts once every gate before it in the lane has ended, but those it may run beside.
+  const processEnded = new Map(schedule.process.map((gate) => [gate.name, signal()]));
+  const processRunning = new Set();
+  // A gate re-running its failures alone holds every other Process-lane start until it ends. Only a Process half asks, and
+  // no two halves run at once, so one holds at a time.
+  const holds = new Map();
+  let alone = null;
+  // GATELANES1: alone means once the light lane has ended, and now once the gates beside it in its own lane have ended too.
+  const settled = (gate) => async () => {
+    const hold = signal();
+    holds.set(gate.name, hold);
+    alone = hold;
+    await lightEnded.promise;
+    await Promise.all([...processRunning].filter((name) => name !== gate.name).map((name) => processEnded.get(name).promise));
+  };
   const processLane = (async () => {
-    for (const gate of schedule.process) {
-      await Promise.all(schedule.waits[gate.name].after.map((name) => ended.get(name).promise));
-      if (stopped) break;
-      await one(gate, { settled, ...built(gate) });
-    }
+    const lane = schedule.process.map((gate, i) => (async () => {
+      try {
+        await Promise.all(schedule.waits[gate.name].after.map((name) => ended.get(name).promise));
+        const beside = schedule.beside[gate.name] ?? [];
+        await Promise.all(schedule.process.slice(0, i).filter((other) => !beside.includes(other.name)).map((other) => processEnded.get(other.name).promise));
+        while (alone) await alone.promise;
+        if (stopped) return;
+        processRunning.add(gate.name);
+        await one(gate, { settled: settled(gate), ...built(gate) });
+      } finally {
+        processRunning.delete(gate.name);
+        const hold = holds.get(gate.name);
+        if (hold) {
+          holds.delete(gate.name);
+          if (alone === hold) alone = null;
+          hold.resolve();
+        }
+        processEnded.get(gate.name).resolve();
+      }
+    })());
+    const ends = await Promise.allSettled(lane);
+    const failed = ends.find((end) => end.status === 'rejected');
+    if (failed) throw failed.reason;
   })();
   const outcomes = await Promise.allSettled([light, processLane]);
   const thrown = outcomes.find((outcome) => outcome.status === 'rejected');

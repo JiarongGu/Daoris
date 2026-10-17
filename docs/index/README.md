@@ -172,7 +172,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 839 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 135 | 2476 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 243 | 3709 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 255 | 3882 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 
@@ -183,11 +183,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 100 | 1751 |
 | `tools/desktop-publish.mjs` | 63 | 1116 |
 | `tools/desktop.mjs` | 51 | 1057 |
-| `tools/family-rehearsal.mjs` | 340 | 5984 |
+| `tools/family-rehearsal.mjs` | 340 | 5988 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 173 | 3076 |
+| `tools/merge-branch.mjs` | 180 | 3183 |
 | `tools/orient-index.mjs` | 66 | 1424 |
-| `tools/rehearsal-kit.mjs` | 42 | 812 |
+| `tools/rehearsal-kit.mjs` | 43 | 832 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
 ### No lane

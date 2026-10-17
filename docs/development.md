@@ -77,7 +77,9 @@ substantial time. The driver's git-only Process classes, marked `Parallel=Git` b
 run four at once in one host with `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`,
 PROC1c): four at once is load, so that half runs after the serial one, never beside it, and a class
 marked so is run alone with that file, not the other, whose filter leaves it out. Rehearsals also run
-serially, use repository scratch and record transcripts there. Do not overlap them with another full gate run. `npm run test:web` rebuilds the HTTP host: a running
+serially, use repository scratch and record transcripts there; the merge tool runs only the family rehearsal beside the
+git half, which builds the driver host into its own output (REHLANE1). Do not overlap them with another full gate run.
+`npm run test:web` runs `test:web:unit` (the vitests) then `test:web:e2e`, which rebuilds the HTTP host: a running
 development instance can hold its assemblies. Identify the owner before stopping a process; do not
 stop an installed application or an unrelated host merely to unblock a build.
 
@@ -104,7 +106,9 @@ start no real process run beside the serial Process lane (GATELANES1), up to thr
 two that build one .NET component (GATELANES2), and a Process half starts only
 once the heavy light gates (the CLI, .NET and web suites) have ended, so its timing tests run with no
 suite loading the CPU (GATEORDER1). A Process half runs `--no-build` when its fast half passed in the
-same run on the same tree (GATEBUILD1). Add `--one-at-a-time` on a
+same run on the same tree (GATEBUILD1). The family rehearsal runs beside the git half, and every other
+Process-lane gate alone (REHLANE1); the web gate's vitests are a light gate of their own, `web-unit`, beside the
+service suite (WEBSPLIT1). Add `--one-at-a-time` on a
 loaded machine to run every gate in turn. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 
