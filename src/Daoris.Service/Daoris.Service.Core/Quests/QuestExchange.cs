@@ -1487,7 +1487,7 @@ public sealed class QuestExchange(
         {
             QuestTakeBind.Expired => "its closure graph was named for this take, and that naming expired before the take came",
             QuestTakeBind.Replaced => "its closure graph was named for an earlier publication of this quest, deleted and asked again since",
-            QuestTakeBind.Remote => "its circle syncs through a remote since its closure graph was named for this take",
+            QuestTakeBind.Remote => "its workspace syncs through a remote since its closure graph was named for this take",
             _ => null,
         };
         return why is null ? "" : $" It is not bound to a graph: {why}. Finish it with `done` when its work is done, as any quest, whatever your instruction said.";
