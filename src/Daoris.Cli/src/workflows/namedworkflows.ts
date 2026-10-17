@@ -226,6 +226,24 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
  * shape in order (a group's members inside it), then the order the runtime keeps, then whether this build runs each kind.
  */
 export function readSteps(value: unknown, number: number, prior: readonly NamedVersion[] = []): { steps: NamedStep[] | null; problem: string | null } {
+  const shape = readShape(value, number, prior);
+  if (shape.steps === null) return shape;
+  for (const step of shape.steps) {
+    for (const each of [step, ...members(step)]) {
+      if (kindOf(each.kind)!.runtime === 'none') {
+        return { steps: null, problem: `v${number}, step \`${each.id}\`: this build does not run a step of kind \`${each.kind}\` yet.` };
+      }
+    }
+  }
+
+  return shape;
+}
+
+/**
+ * A version's steps read as `readSteps` reads them, all but whether this build runs each kind — the driver's
+ * `WorkflowNamed.ReadShape`: FABRIC-WORKFLOW2's decoding proves its mapping on the kinds this build does not run yet.
+ */
+export function readShape(value: unknown, number: number, prior: readonly NamedVersion[] = []): { steps: NamedStep[] | null; problem: string | null } {
   const v = `v${number}`;
   if (!Array.isArray(value) || value.length === 0) return { steps: null, problem: `${v}: its \`steps\` is a list of at least one.` };
   const count = value.length + value.reduce<number>((sum, each) => sum
@@ -243,19 +261,11 @@ export function readSteps(value: unknown, number: number, prior: readonly NamedV
   }
 
   const order = orderProblem(steps, v);
-  if (order !== null) return { steps: null, problem: order };
-  for (const step of steps) {
-    for (const each of [step, ...members(step)]) {
-      if (kindOf(each.kind)!.runtime === 'none') {
-        return { steps: null, problem: `${v}, step \`${each.id}\`: this build does not run a step of kind \`${each.kind}\` yet.` };
-      }
-    }
-  }
-
-  return { steps, problem: null };
+  return order !== null ? { steps: null, problem: order } : { steps, problem: null };
 }
 
-function members(step: NamedStep): NamedStep[] {
+/** A group's members, or none — the driver's `NamedStep.Members`. */
+export function members(step: NamedStep): NamedStep[] {
   const value = field(step, 'steps');
   return step.kind === 'all' && Array.isArray(value) ? value as NamedStep[] : [];
 }
@@ -512,7 +522,8 @@ function canonicalValue(value: string | null | boolean | string[]): string {
   return quoted(value);
 }
 
-function quoted(text: string): string {
+/** Text quoted as the digests quote it — the driver's `WorkflowCurrent.Quoted`: its backslashes, quotes and control characters escaped. */
+export function quoted(text: string): string {
   return `"${text.replace(/[\\"\u0000-\u001f]/g, (c) => (c === '\\' ? '\\\\' : c === '"' ? '\\"'
     : `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`))}"`;
 }

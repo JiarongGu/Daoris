@@ -54,6 +54,9 @@ public sealed class WorkflowFiles(string home) : IWorkflowStore
     public void Write(string id, JsonNode file)
     {
         Directory.CreateDirectory(WorkflowStore.FolderOf(home));
-        AtomicFile.WriteText(WorkflowStore.PathOf(home, id), WorkflowNamed.Text(file));
+        var path = WorkflowStore.PathOf(home, id);
+        AtomicFile.WriteText(path, WorkflowNamed.Text(file));
+        // This process's own write wakes no landing (FABRIC-END7, EVENT2's rule): a version a terminal saved is heard.
+        HomeWrites.Mine(path);
     }
 }

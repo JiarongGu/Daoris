@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_COOLOFF_MINUTES, SESSION_LANGUAGES, commandDriver, driverConfigPath, isBranchName, landingProblem, languageFor,
-  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem, writeDriverChoices,
+  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem, writeDriverChoices, type DriverChoices,
 } from '../../src/driver/driverconfig.ts';
 import {
   REVIEW_WAITING, applyReviewEdit, holdsProcedure, reviewFor, reviewGate, reviewRuleOf, reviewSays, type CheckoutsReader,
@@ -312,6 +312,26 @@ test('landing sets a repository\'s rule, a workspace\'s, and clears either', () 
   const cleared = readDriverChoices(at(fx));
   assert.deepEqual([cleared.landings, cleared.workspaceLandings], [{}, {}]);
   assert.equal('landings' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+test('landing keeps the cycle a rule carries, which it has no field for, and clearing the rule takes it (FABRIC-GRAPH1)', () => {
+  const fx = makeFixture('driver-landing-cycle');
+  const cycle = { nodes: [{ id: 'qa', kind: 'human', version: 1, reach: 'pressed' }], wires: [{ id: 'a', kind: 'after', from: 'line', to: 'qa' }], end: 'qa' };
+  writeFileSync(at(fx), JSON.stringify({
+    landings: { Engine: { form: 'merge', cycle } },
+    workspaceLandings: { aurora: { form: 'merge', cycle: { end: 'handed' } } },
+  }));
+
+  run(['landing', 'engine', 'merge', '--tidy'], at(fx));
+  run(['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}'], at(fx));
+  const kept = readDriverChoices(at(fx));
+  // Matched in any case, as the driver matches it; the verb writes the name as given, as it always has.
+  assert.deepEqual(kept.landings, { engine: { form: 'merge', tidy: true, cycle } });
+  assert.deepEqual(kept.workspaceLandings, { aurora: { form: 'branch', pattern: 'feature/{quest}-{slug}', cycle: { end: 'handed' } } });
+
+  run(['landing', 'engine', '--clear'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {});
   fx.cleanup();
 });
 
@@ -2175,11 +2195,19 @@ function writtenMaps(path: string): unknown {
   return { workflows: back.workflows ?? {}, workspaceWorkflows: back.workspaceWorkflows ?? {} };
 }
 
+/**
+ * The choices without the text they were read from, so the writer writes what its reader holds, whole: since FABRIC-GRAPH1's review it
+ * writes over that text, keeping what it did not read, and these tables say what is read.
+ */
+function readOnly({ source: _source, ...choices }: DriverChoices): DriverChoices {
+  return choices;
+}
+
 test('both workflow maps are read and written as the driver reads and writes them (the shared table)', () => {
   const fx = makeFixture('driver-workflow-read');
   for (const row of SELECTION_TABLE.read) {
     writeFileSync(at(fx), JSON.stringify(row.file), 'utf8');
-    writeDriverChoices(at(fx), readDriverChoices(at(fx)));
+    writeDriverChoices(at(fx), readOnly(readDriverChoices(at(fx))));
     assert.deepEqual(writtenMaps(at(fx)), row.read, row.name);
   }
   fx.cleanup();
@@ -2208,7 +2236,7 @@ test('a workflow edit is the driver\'s, or refused in its words (the shared tabl
     const edited = applyWorkflowEdit(choices, row.edit);
     assert.equal(edited.refusal, row.refusal, row.name);
     if (row.refusal !== null) continue;
-    writeDriverChoices(at(fx), { ...choices, ...edited.maps! });
+    writeDriverChoices(at(fx), readOnly({ ...choices, ...edited.maps! }));
     assert.deepEqual(writtenMaps(at(fx)), row.read, `${row.name}: the maps after`);
   }
   fx.cleanup();

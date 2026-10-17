@@ -470,10 +470,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
-    // What those scans do not read stays the modules lane's alone: a project file, the icon, the launcher, the modules' tests.
+    // What those scans do not read stays the modules lane's alone: a project file, the icon, the modules' tests (the launcher is built by the driver gate, LAUNCHGATE1).
     ["the modules' project", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj'], [...BASE, 'modules', 'modules-process', 'deployment']],
     ["the app's icon", ['src/Daoris.Desktop/Daoris.Desktop.App/daoris.ico'], [...BASE, 'modules', 'modules-process', 'deployment']],
-    ['the launcher', ['src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'], [...BASE, 'modules', 'modules-process', 'deployment']],
+    ['the launcher', ['src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, 'modules', 'modules-process']],
     ['the publish script', ['tools/desktop-publish.mjs'], [...BASE, 'rehearse-family', 'deployment']],
     ['the deployment rehearsal', ['tools/deployment-rehearsal.mjs'], [...BASE, 'deployment']],
@@ -500,6 +500,13 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the rotation-use table', ['src/Daoris.Cli/test/fixtures/rotation-use.json'], [...BASE, 'driver', 'web']],
     // TWINWORDS1: the landing, helpers and commits sentences sit among the CLI's fixtures, and the driver's twin reads them too.
     ['the landing-says table', ['src/Daoris.Cli/test/fixtures/landing-says.json'], [...BASE, 'driver']],
+    // FABRIC-GRAPH1: which cycle governs a unit sits among the CLI's fixtures, and the driver's NodeGraphHomesTests reads it too.
+    ['the graph-homes table', ['src/Daoris.Cli/test/fixtures/graph-homes.json'], [...BASE, 'driver']],
+    // FABRIC-GRAPH1's review: the bytes an edit of driver.json writes sit among the CLI's fixtures, and the driver's DriverConfigKeepsTests
+    // reads them too.
+    ['the driver-config-keeps table', ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], [...BASE, 'driver']],
+    // FABRIC-WORKFLOW2: D157's versions and the graphs they decode to sit among the CLI's fixtures, and the driver's WorkflowGraphsTests reads them too.
+    ['the workflow-graphs table', ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], [...BASE, 'driver']],
     // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver', 'web']],

@@ -55,6 +55,28 @@ public sealed class PluginsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// A plugin on the work wire (FABRIC-PERFORM1a): ready says who starts it and when, and unsound says what waits on it, never that
+    /// nothing does or that it runs nothing itself.
+    /// </summary>
+    [Fact]
+    public async Task Show_says_when_a_work_plugin_runs_and_what_waits_while_it_is_unsound()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.deploy");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/watch", "work/step", "work/perform"] },
+              "steps": [{ "id": "deploy", "reach": "performed" }] }
+            """);
+
+        var (_, ready) = await Run("show", "acme.deploy");
+        Log(DateTimeOffset.UtcNow, log => log.Failed("acme.deploy", PluginEvents.AtProcess, PluginEvents.Unsound, code: null, ms: null, PluginEvents.ByLoop));
+        var (_, unsound) = await Run("show", "acme.deploy");
+
+        Assert.Contains("ready: the loop that holds this home starts it while a unit awaits one of its steps", ready);
+        Assert.Contains("unsound at process. The steps it reports or performs wait until it is back.", unsound);
+    }
+
+    /// <summary>
     /// HELPPLUG1a's tightening (D170's note): <c>approve</c> and <c>withdraw</c> are the terminal twins of the page's presses
     /// (D50): the exact tools a server declares for Ask Daoris, its writes too or its reads alone; a generic execution tool is
     /// refused with its reason, exit 2.

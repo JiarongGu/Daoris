@@ -109,6 +109,13 @@ public sealed class HookProcess : IHookChannel
         return info;
     }
 
+    /// <summary>
+    /// The longest frame read from the plugin's stdout (FABRIC-PERFORM1a, round 2): a plugin that speaks a work point is held to the work
+    /// wire's <see cref="WorkBounds.FrameBytes"/> on every frame, and any other to <see cref="HookPeer.AnswerBytes"/>, which no answer at the
+    /// older points reaches. Stated once, so the kit's trial reads a plugin exactly as the driver does.
+    /// </summary>
+    public static int FrameLimit(PluginEntry plugin) => WorkPlugins.Speaks(plugin) ? WorkBounds.FrameBytes : HookPeer.AnswerBytes;
+
     /// <summary>Start the plugin's program and complete the handshake, or throw with the reason.</summary>
     public static async Task<HookProcess> StartAsync(
         PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null)
@@ -131,7 +138,9 @@ public sealed class HookProcess : IHookChannel
         }
 
         var stderr = RelayAsync(process.StandardError, onLine);
-        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience);
+        // FABRIC-PERFORM1a (§C4): every frame a plugin's process writes is bounded, so none can grow the driver's memory past it; the work
+        // wire's 64 KB holds a plugin that speaks it, and round 2 gave every other the answers' bound, which none of theirs reaches.
+        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience, FrameLimit(plugin));
         var started = new HookProcess(process, peer, stderr);
         try
         {
@@ -156,15 +165,29 @@ public sealed class HookProcess : IHookChannel
 
     public Task ChangedAsync(object payload, CancellationToken ct) => _peer.ChangedAsync(payload, ct);
 
+    public IReadOnlyList<string> Capabilities => _peer.Capabilities;
+
+    public void Listen(Action<System.Text.Json.JsonElement?>? steps) => _peer.Listen(steps);
+
+    public Task WatchAsync(WorkWatchFrame frame, CancellationToken ct) => _peer.WatchAsync(frame, ct);
+
+    public Task PerformAsync(WorkPerformCall call, CancellationToken ct) => _peer.PerformAsync(call, ct);
+
+    public Task<WorkReconcileAnswer> ReconcileStepAsync(WorkReconcileCall call, CancellationToken ct) => _peer.ReconcileStepAsync(call, ct);
+
     /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
+    /// <remarks>
+    /// One grace bounds it all (FABRIC-PERFORM1a, round 2): the write of <c>shutdown</c> too, which waited with no bound on a plugin that
+    /// stopped reading its stdin, so its process outlived the lease and the loop that owned it.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        await _peer.DisposeAsync().ConfigureAwait(false);
+        using var grace = new CancellationTokenSource(Grace);
+        await _peer.ShutdownAsync(grace.Token).ConfigureAwait(false);
         try
         {
             if (!_process.HasExited)
             {
-                using var grace = new CancellationTokenSource(Grace);
                 try
                 {
                     await _process.WaitForExitAsync(grace.Token).ConfigureAwait(false);
