@@ -53,6 +53,12 @@ public static class PerformedWhat
 
     /// <summary>Reconciliation could not be asked now (the process is not up, or its answer was not taken): asked again later.</summary>
     public const string Unanswered = "unanswered";
+
+    /// <summary>
+    /// A node that dispatches nothing was started (FABRIC-RUN1): an observed built-in made active with the firings its start consumed, read
+    /// from its records at the next evaluation.
+    /// </summary>
+    public const string Begun = "begun";
 }
 
 /// <summary>One thing the performer did, on one unit's node.</summary>
@@ -186,6 +192,27 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         if (refused is not null) return new(unit, node.Id, PerformedWhat.Refused, refused);
         if (started.Attempt is not { } recorded) return new(unit, node.Id, PerformedWhat.Refused, started.Refused);
         return await SendAsync(unit, recorded, node, PerformedWhat.Sent, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Starts a node that dispatches nothing (FABRIC-RUN1: an observed built-in, read from its records at the next evaluation) on the start
+    /// the evaluation proposed, its firings kept with it (WIRE1c), where the record still holds the node as it was evaluated
+    /// (<paramref name="evaluated"/>): one locked edit, so a start another writer made since is not made again.
+    /// </summary>
+    public WorkPerformed Begin(NodeDeclaration node, WireStart start, NodeStatus evaluated)
+    {
+        if (start.Move.Binding is not { } binding) return new("", start.Node, PerformedWhat.Refused, NodeRefusal.NoBinding);
+        var unit = binding.Unit;
+        var now = clock();
+        return Edited(unit, node.Id, record =>
+        {
+            var held = StatusOf(record, node.Id);
+            if (!Same(held, evaluated)) return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Refused, Moved));
+            var moved = NodeLifecycle.Apply(node, held, start.Move);
+            if (!moved.Moved) return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Refused, moved.Refused));
+            var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
+            return (Kept(record, moved, "start", now) with { Fired = fired }, new WorkPerformed(unit, node.Id, PerformedWhat.Begun));
+        });
     }
 
     /// <summary>
