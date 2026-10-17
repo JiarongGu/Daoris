@@ -9,6 +9,8 @@ with the version and date at release.
   the terminal: an edit changes only the settings it edits, the rest keep their values and their places, and a file read and
   saved with no change keeps its bytes. A change one of them made while another was open survives that one's edit too; a file
   that no longer reads, or names a setting twice in one place, is refused and left as it is; and Windows line endings are kept.
+  A rule or a group of settings another one removed meanwhile does not come back with an unrelated edit, one it turned into
+  something else refuses the edit by name, and the first save where there was no `driver.json` keeps one written meanwhile.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.
