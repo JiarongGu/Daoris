@@ -69,6 +69,13 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// ancestry. Absent, those outcomes stay unknown, never guessed.
     /// </summary>
     public NodeGitReads? Git { get; init; }
+
+    /// <summary>
+    /// The second opinion's gate for each unit's work, by <see cref="WorkUnit.Id"/>, as <see cref="OpinionGate.JudgeAsync"/> judged it: the
+    /// caller's read, which an <c>opinion</c> node observes (FABRIC-WIRE1g, <see cref="OpinionNode"/>). A unit it leaves out has no judgement
+    /// here, so its opinion stays pending, never guessed.
+    /// </summary>
+    public IReadOnlyDictionary<string, OpinionGateState> Opinions { get; init; } = ImmutableDictionary<string, OpinionGateState>.Empty;
 }
 
 /// <summary>One trigger's firing (§E3): its wire started its target on one receipt. Its key is what the record writer keeps.</summary>
@@ -124,6 +131,9 @@ public static class WireWhy
 
     /// <summary>An <c>all</c> join's members settled: every one reached or skipped, or one failed.</summary>
     public const string Members = "members";
+
+    /// <summary>A <c>stop</c> sink reached on the receipt of the path into it: a failure or a rejection its binding rests on (FABRIC-WIRE1g).</summary>
+    public const string Path = "path";
 
     /// <summary>Its wires and inputs are satisfied.</summary>
     public const string Eligible = "eligible";
@@ -282,25 +292,42 @@ public static class WireEvaluation
             if (lapsing.TryGetValue(node.Id, out var lapse)) Make(node, new NodeMove(NodeStates.Invalidated, NodeCause.Daoris), lapse.Why, lapse.Detail);
         }
 
-        // 2. The observed built-ins still bound, read from their records: NODE1's choice 8, with the caller's git reads. An observation
-        // moves an active or unknown node, which holds no receipt, so it takes none away from what step 1 judged current.
+        // 2. The observed built-ins still bound, read from their records: NODE1's choice 8, with the caller's git reads; and an opinion,
+        // from its gate's judgement as the caller read it (FABRIC-WIRE1g). An observation moves an active or unknown node, which holds no
+        // receipt, so it takes none away from what step 1 judged current.
         foreach (var node in declared.Where(node => !moved.Contains(node.Id)))
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
-                || !BuiltInNodes.Observed.Contains(node.Kind) || !run.Units.TryGetValue(status.Unit, out var unit))
+                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind == NodeKinds.Opinion) || !run.Units.TryGetValue(status.Unit, out var unit))
             {
                 continue;
             }
 
-            var observation = BuiltInNodes.Observe(unit, node, binding, run.Git);
+            var observation = node.Kind == NodeKinds.Opinion
+                ? OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(status.Unit))
+                : BuiltInNodes.Observe(unit, node, binding, run.Git);
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
-            Make(node, move, WireWhy.Observed, observation.Said);
+
+            // A record's skip holds for the attempt's graph and run, as the person's does for theirs.
+            Make(node, move.To == NodeStates.Skipped ? move with { Scope = status.Scope ?? run.Scope } : move, WireWhy.Observed, observation.Said);
         }
 
-        // 3. Each started join, on its members' receipts alone (FABRIC-WIRE1e): its binding's, every one still current, or it was
-        // invalidated above. A failure it consumed through its own failed wire is a condition of its start, never a member's failure.
+        // 3. Each started sink, on the receipt of the path into it (FABRIC-WIRE1g; §E7's synthetic sink, D173's FABRIC-WORKFLOW2 note,
+        // choice 5): a failure or a rejection its binding rests on, read through a failed or rejected wire. Any other receipt, a success's or
+        // a skip's, never reaches it; one no longer current invalidated it above; and a reached sink is no longer active, so it is reached once.
         var receipts = Receipts(declared, now, run, []);
+        foreach (var node in declared.Where(node => node.Kind == NodeKinds.Stop && !moved.Contains(node.Id)))
+        {
+            var status = now[node.Id];
+            if (status.State != NodeStates.Active || status.Binding is not { } binding) continue;
+            var path = PathInto(node.Id, wires, receipts).FirstOrDefault(receipt => binding.PrerequisiteReceipts.Contains(receipt, StringComparer.Ordinal));
+            if (path is null) continue;
+            Make(node, new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = NodeSource.Path, Attempt = status.Attempt, Acceptance = binding }, WireWhy.Path, path);
+        }
+
+        // Then each started join, on its members' receipts alone (FABRIC-WIRE1e): its binding's, every one still current, or it was
+        // invalidated above. A failure it consumed through its own failed wire is a condition of its start, never a member's failure.
         foreach (var node in declared.Where(node => node.Kind == NodeKinds.All && !moved.Contains(node.Id)))
         {
             var status = now[node.Id];
@@ -381,6 +408,17 @@ public static class WireEvaluation
             .Select(wire => wire.From!.Node);
 
     /// <summary>
+    /// The current receipts of the paths into a sink, in wire-id order (FABRIC-WIRE1g): each <c>failed</c> wire's failure and each <c>rejected</c>
+    /// wire's rejection. A success's or a skip's receipt is no path.
+    /// </summary>
+    private static IEnumerable<string> PathInto(string sink, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts) =>
+        wires.Where(wire => wire.To is { Unit: null } to && to.Node == sink && wire.From is { Unit: null })
+            .OrderBy(wire => wire.Id, StringComparer.Ordinal)
+            .Select(wire => receipts.GetValueOrDefault(wire.From!.Node) is { } receipt
+                && (wire.Kind, receipt.Kind) is (WireKinds.Failed, WireReceiptKinds.Failed) or (WireKinds.Rejected, WireReceiptKinds.Rejected) ? receipt.Id : null)
+            .OfType<string>();
+
+    /// <summary>
     /// Whether the caller handed in a revision for <paramref name="unit"/> (FABRIC-WIRE1e): named in <see cref="WireRun.Revisions"/>, and not
     /// null where <see cref="WireRun.Units"/> knows it is a branch. A quest's is null by design.
     /// </summary>
@@ -429,8 +467,16 @@ public static class WireEvaluation
     /// </summary>
     private static (string Why, string? Detail)? Lapse(NodeDeclaration node, NodeStatus status, WireRun run, HashSet<string> current)
     {
-        if (status.State == NodeStates.Skipped) return NodeLifecycle.Skips(status, run.Scope) ? null : (WireWhy.SkipScope, null);
-        if (!NodeStates.Bound.Contains(status.State) || status.Binding is not { } binding) return null;
+        // FABRIC-WIRE1g: a skip by its kind's record (an opinion's gate, NodeAuthority.SkipBy) is that record's judgement of its binding, so
+        // a new revision or a lost receipt lapses it, as it lapses an outcome; the person's skip is their word for the work, and holds.
+        var recorded = status.State == NodeStates.Skipped && status.By is { } by && by != NodeSource.Person && NodeAuthorities.Of(node)?.SkipBy == by;
+        if (status.State == NodeStates.Skipped)
+        {
+            if (!NodeLifecycle.Skips(status, run.Scope)) return (WireWhy.SkipScope, null);
+            if (!recorded) return null;
+        }
+
+        if (!(recorded || NodeStates.Bound.Contains(status.State)) || status.Binding is not { } binding) return null;
 
         // FABRIC-RUN1e, in place of WIRE1f's lapse of another run's failure: a failure or a rejection of another graph or run is kept for the
         // person, since a run begins at a graph edit and a Setup save can edit a derived graph, so edits back and forth would restart failed

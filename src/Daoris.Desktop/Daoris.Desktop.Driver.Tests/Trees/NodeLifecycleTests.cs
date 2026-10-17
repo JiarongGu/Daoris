@@ -72,6 +72,8 @@ public sealed class NodeLifecycleTests
             Source = authority.FailureBy ?? NodeSource.Plugin, Attempt = status.Attempt, Code = "deploy-failed", Transient = true,
         },
         (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
+        // FABRIC-WIRE1g: a record's skip names its source and the attempt, never the person's words.
+        (NodeStates.Skipped, NodeCause.Authority) => new NodeMove(row.To, row.By) { Source = authority.SkipBy ?? authority.ReachBy, Attempt = status.Attempt, Scope = Run },
         (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
         (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
         (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1), Scope = Run },
@@ -84,6 +86,7 @@ public sealed class NodeLifecycleTests
         NodeStates.Reached or NodeStates.Failed when row.By == NodeCause.Person && !authority.PersonSettles => NodeRefusal.NotSettled,
         NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
         NodeStates.Failed when authority.FailureBy is null => NodeRefusal.NoFailureAuthority,
+        NodeStates.Skipped when row.By == NodeCause.Authority => authority.SkipBy is null ? NodeRefusal.NotAuthority : null,
         NodeStates.Skipped when !authority.PersonSkips => NodeRefusal.NotSkippable,
         _ => null,
     };
@@ -106,6 +109,8 @@ public sealed class NodeLifecycleTests
             "unknown>reached:person", "unknown>failed:person",
             "failed>ready:daoris", "failed>ready:person", "rejected>ready:person", "stopped>ready:person",
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
+            // FABRIC-WIRE1g: an opinion's gate passes it over where nothing is asked of it, as D157's run reads it.
+            "active>skipped:authority",
             "skipped>blocked:person", "skipped>invalidated:daoris",
             "blocked>stopped:person", "ready>stopped:person", "active>stopped:person", "unknown>stopped:person", "invalidated>stopped:person",
             "active>invalidated:daoris", "reached>invalidated:daoris", "failed>invalidated:daoris", "rejected>invalidated:daoris",
@@ -288,6 +293,40 @@ public sealed class NodeLifecycleTests
         foreach (var kind in new[] { NodeKinds.Line, NodeKinds.Handed, NodeKinds.Claimed, NodeKinds.QuestClose, NodeKinds.All })
         {
             Assert.Equal((kind, NodeRefusal.NotSkippable), (kind, NodeLifecycle.Apply(Declared(kind), At(NodeStates.Ready), skip).Refused));
+        }
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1g: an opinion's gate passes its started attempt over where nothing is asked of it, as its record's and never the person's:
+    /// its source the gate, no words kept whatever the move brings, the attempt current and the run the attempt's. The person's skip keeps
+    /// its own checks, and no other kind is passed over by a record.
+    /// </summary>
+    [Fact]
+    public void A_record_passes_over_only_an_opinion_and_never_in_the_persons_words()
+    {
+        var opinion = Declared(NodeKinds.Opinion);
+        var active = At(NodeStates.Active) with { Scope = Run };
+        var skip = new NodeMove(NodeStates.Skipped, NodeCause.Authority) { Source = NodeSource.Opinion, Attempt = 1, Scope = Run, Words = "made up" };
+
+        var skipped = Moved(opinion, active, skip);
+        Assert.Equal((NodeStates.Skipped, NodeSource.Opinion, (string?)null, Run), (skipped.State, skipped.By, skipped.Words, skipped.Scope));
+        Assert.True(NodeLifecycle.Skips(skipped, Run));
+
+        Assert.Equal(NodeRefusal.NotAuthority, NodeLifecycle.Apply(opinion, active, skip with { Source = NodeSource.Person }).Refused);
+        Assert.Equal(NodeRefusal.NotAuthority, NodeLifecycle.Apply(opinion, active, skip with { Source = null }).Refused);
+        Assert.Equal(NodeRefusal.StaleAttempt, NodeLifecycle.Apply(opinion, active, skip with { Attempt = 0 }).Refused);
+        Assert.Equal(NodeRefusal.NoAttempt, NodeLifecycle.Apply(opinion, active, skip with { Attempt = null }).Refused);
+        Assert.Equal(NodeRefusal.NoScope, NodeLifecycle.Apply(opinion, active, skip with { Scope = null }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(opinion, active, skip with { Scope = Run with { Run = "run-2" } }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(opinion, active, skip with { Scope = Run with { GraphDigest = "graph-2" } }).Refused);
+        Assert.Equal(NodeRefusal.NotCause, NodeLifecycle.Apply(opinion, At(NodeStates.Ready), skip).Refused);
+
+        // The person's skip of the same node still needs their words.
+        Assert.Equal(NodeRefusal.NoWords, NodeLifecycle.Apply(opinion, active, new NodeMove(NodeStates.Skipped, NodeCause.Person) { Scope = Run }).Refused);
+        foreach (var kind in new[] { NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Human, NodeKinds.Stop, NodeKinds.Pushed, "acme.deploy/deploy" })
+        {
+            var source = NodeAuthorities.Of(Declared(kind))!.ReachBy;
+            Assert.Equal((kind, NodeRefusal.NotAuthority), (kind, NodeLifecycle.Apply(Declared(kind), active, skip with { Source = source }).Refused));
         }
     }
 
