@@ -47,6 +47,32 @@ public sealed record LandedBranch(
     public string? RemovedOn { get; init; }
 
     /// <summary>
+    /// Why this machine found it gone where Daoris did not remove it (CLEANUP1, <see cref="LandedGone"/>): git said its branch is missing,
+    /// another branch holding its recorded tip or not, or a branch of its name stands that is not the landing's. Null where Daoris removed
+    /// it, while it stands, and for a trace from
+    /// before it was kept, which the look asks git about once (<see cref="LandedCleanups.MarkAbsentAsync"/>).
+    /// </summary>
+    public string? GoneAs { get; init; }
+
+    /// <summary>
+    /// Where <see cref="GoneAs"/> is <see cref="LandedGone.Moved"/> (CLEANUP1, after review): the local branch that held its recorded tip
+    /// when git said its own branch is missing. The look asks again once that branch is gone too.
+    /// </summary>
+    public string? MovedTo { get; init; }
+
+    /// <summary>
+    /// The commit <see cref="MovedTo"/> stood at when it was found holding the recorded tip (CLEANUP1, re-check): while it stands there it
+    /// still holds it, read from the refs the look holds; once it moved, or its name was made again elsewhere, the look asks again.
+    /// </summary>
+    public string? MovedToAt { get; init; }
+
+    /// <summary>
+    /// Where <see cref="GoneAs"/> is <see cref="LandedGone.Missing"/> and no ref held its recorded tip (CLEANUP1, after review): the recovery
+    /// ref Daoris kept that commit on before the record was retired, so the record never goes as the only breadcrumb to it.
+    /// </summary>
+    public string? KeptOn { get; init; }
+
+    /// <summary>
     /// Who accepted it (LAND2b, D145 point 6), one of <see cref="Daoris.Driver.AcceptedBy"/>: the person's press, or the rule's switch at
     /// the quest's done. Null for a landing recorded before it was kept, which a reader says is not kept (D143 point 3).
     /// </summary>
@@ -295,6 +321,36 @@ public sealed class LandedBranches(string home)
             ? each with { GoneAt = DateTimeOffset.UtcNow }
             : each)]);
 
+    /// <summary>
+    /// The clean-up's word on one landing it judged gone, or no longer the landing's (CLEANUP1, <see cref="LandedGone"/>): that standing
+    /// entry becomes a trace with why. Applied to that landing alone, by its identity and the tip judged (<see cref="SameLanding"/>), so a
+    /// new landing of the same name recorded since keeps its standing.
+    /// </summary>
+    internal void Gone(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null, string? movedToAt = null) => Edit(all =>
+        [.. all.Select(each => each.GoneAt is null && SameLanding(each, entry)
+            ? each with { GoneAt = DateTimeOffset.UtcNow, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn, MovedToAt = movedToAt }
+            : each)]);
+
+    /// <summary>
+    /// The look's word on why a branch Daoris did not remove went (CLEANUP1, <see cref="LandedGone"/>), on that landing alone, by its
+    /// identity and the tip read (<see cref="SameLanding"/>; after review: an observation by name retired a new landing of the same name).
+    /// A trace that says no why, or says it moved, gains it; a standing entry becomes a trace with it where git said its branch is missing
+    /// (<see cref="LandedGone.Missing"/> or <see cref="LandedGone.Moved"/>). One Daoris removed, a trace that says another why, and a standing
+    /// entry where the name stands, are left as they are.
+    /// </summary>
+    public void GoneAs(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null, string? movedToAt = null) => Edit(all =>
+    {
+        var now = DateTimeOffset.UtcNow;
+        return [.. all.Select(each => SameLanding(each, entry) && each.RemovedAs is null && (each.GoneAs is null or LandedGone.Moved)
+                                      && (each.GoneAt is not null || why is LandedGone.Missing or LandedGone.Moved)
+            ? each with { GoneAt = each.GoneAt ?? now, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn, MovedToAt = movedToAt }
+            : each)];
+    });
+
+    /// <summary>The same landing as <paramref name="entry"/>: its identity (<see cref="SameEntry"/>) and the tip it was observed at.</summary>
+    private static bool SameLanding(LandedBranch each, LandedBranch entry) =>
+        SameEntry(each, entry) && string.Equals(each.Tip, entry.Tip, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>A branch the clean-up removed once its work read on the line (WSR5): a trace, with what the proof found and where.</summary>
     public void Removed(string repository, string branch, string kind, string? where) => Edit(all =>
         [.. all.Select(each => Standing(each, repository, branch)
@@ -412,6 +468,10 @@ public sealed class LandedBranches(string home)
             if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
             if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
             if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
+            if (entry.GoneAs is not null) writer.WriteString("goneAs", entry.GoneAs);
+            if (entry.MovedTo is not null) writer.WriteString("movedTo", entry.MovedTo);
+            if (entry.MovedToAt is not null) writer.WriteString("movedToAt", entry.MovedToAt);
+            if (entry.KeptOn is not null) writer.WriteString("keptOn", entry.KeptOn);
             if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
             if (entry.Rule is { } rule)
             {
@@ -687,6 +747,10 @@ public sealed class LandedBranches(string home)
             GoneAt = Moments.Read(Text(element, "goneAt")),
             RemovedAs = Text(element, "removedAs"),
             RemovedOn = Text(element, "removedOn"),
+            GoneAs = Text(element, "goneAs"),
+            MovedTo = Text(element, "movedTo"),
+            MovedToAt = Text(element, "movedToAt"),
+            KeptOn = Text(element, "keptOn"),
             AcceptedBy = Text(element, "acceptedBy"),
             Rule = element.TryGetProperty("rule", out var rule) && rule.ValueKind == JsonValueKind.Object
                 ? new LandedRule(
