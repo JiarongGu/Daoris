@@ -154,8 +154,9 @@
  * The real-process halves and the rehearsals start real processes and run one at a time (AGENTS.md); the other gates
  * start none, and a full set of about 55 minutes waited about ten of them on those. So the gates run in two lanes at
  * once: the Process lane (`isProcessLane`: a gate run with a `process.runsettings` file, or an `npm run rehearse*`
- * script), one gate at a time, and the light lane beside it, one gate at a time too. The lane is read from what a gate
- * runs, as `isProcessGate` is, rather than declared: the workflow's own rehearsals are in no declaration.
+ * script), one gate at a time, and the light lane beside it, up to three gates at once (GATELANES2, below). The lane is
+ * read from what a gate runs, as `isProcessGate` is, rather than declared: the workflow's own rehearsals are in no
+ * declaration.
  *
  * Two builds of one .NET project at once fight over its `obj/` and `bin/`. So a Process-lane gate starts only once the
  * light gates of its component (`dotnetComponent`: the first two folders of the project its command names) have ended,
@@ -174,6 +175,29 @@
  * `--keep-going`, starts nothing more in either lane, and the gate running in the other lane runs to its end and keeps
  * its verdict: a gate is never stopped midway. `--one-at-a-time` runs every gate in turn in the plan's order, as before,
  * for a loaded machine; a batch keeps it once given. The web gate keeps its own cap on its workers (WEBGATE1).
+ *
+ * ## The light lane's gates side by side (GATELANES2)
+ *
+ * A merge's light gates ran one at a time, 394 to 434 s on 2026-10-18, and in a full set every Process gate waited for
+ * the heavy ones. So up to `LIGHT_WIDTH` (three) light gates run at once, each starting, in the light lane's order, once
+ * a place is free and no gate running builds a component it builds. A gate's components (`gateComponents`) are its
+ * command's and those of the root scripts it names, read through: the CLI's `npm run verify` ends in the devkit's
+ * universal gates, so it runs in turn with universal, code-map and devkit; `npm run test:web` builds the HTTP host its
+ * own build writes into, so it runs in turn with service; driver and modules share the desktop's. A gate that builds
+ * none (orient-index) runs beside any. `LIGHT_WIDTH` says why three. Each gate keeps its own process, log, verdict and
+ * line; the lines print as gates end, and the summary in the plan's order. The first failure starts nothing more, and
+ * the gates running end and keep their verdicts. GATEORDER1's waits are unchanged, and `--one-at-a-time` is as before.
+ * A run of one light gate alone, or of Process gates alone, runs in turn.
+ *
+ * ## A Process half on its fast half's build (GATEBUILD1)
+ *
+ * Each `dotnet test` gate built its project again. A Process half whose test project's fast half (`reuses`: the light
+ * gate whose `testBuild` is the same, the project and every option but `--filter`, `--settings` and the logger) passed
+ * in this run, on the tree the half starts on, runs with `--no-build`, and its line says whose build it ran
+ * (`no build: driver built this tree in this run`). The tree is the one each verdict is recorded with (`contentTree`), so
+ * a changed tree, or one git cannot name, builds. A `--rerun` or `--stale` that names a Process half without its fast
+ * half has no fast half in its run, and builds; one that names both reuses as a full set does. The flake re-run alone
+ * was `--no-build` already. One at a time reuses too.
  *
  * ## A batch
  *

@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The light lane ran its gates one at a time, and each Process half built again (GATELANES2, GATEBUILD1)
+
+- **Symptom:** a merge's light lane (universal, code-map, orient-index, cli, service, driver, modules) took 10 to 12 minutes
+  under load and about 5 on a quiet machine: 394 to 434 s in the 2026-10-18 merges' logs, cli 144 to 231 s and service 142
+  to 206 s of it. In a full set the light lane took about 14 minutes (2026-10-17, 1 h 38 m in all), and every Process
+  gate waited for its heavy gates (GATEORDER1). Each Process half then built the test project its fast half had just built.
+- **Root cause:** GATELANES1 ran the light lane beside the Process lane but one gate at a time within it, though only gates
+  that build one .NET component share `obj/` and `bin/`. And a `dotnet test` gate always builds, whatever ran before it.
+- **Fix:** `tools/merge-branch.mjs` runs up to three light gates at once (`LIGHT_WIDTH`), never two that build one
+  component (`gateComponents`, read through the root scripts: the CLI's `verify` shares the devkit's, the web gate the
+  service's). A Process half runs `--no-build` when its test project's fast half passed in the same run on the tree it
+  starts on (`testBuild`, `reuses`, `reuseBuild`); its line says whose build it ran.
+- **Verification:** seven new tests in `merge-branch.test.ts`, six seen red first. Then 97 of 97 green (90 before), with the
+  end-to-end tests that read the gates' order reading which ran instead, and `verify`. **The walls** (the row's proof,
+  recorded by the parent at its next full sets, against the one-at-a-time light lane above): set 1 —; set 2 —; set 3 —;
+  the flakes of each, and a Process half's log showing `--no-build` with its verdict as before.
+
 ## 2026-10-18 — The merge tool's prune left merged agent worktrees and a half-removed folder standing (CLEANUP2)
 
 - **Symptom:** 24 worktrees stood with 3 agents running. 9 merged ones were kept as "locked, so in use", 5 for worker logs
