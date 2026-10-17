@@ -185,7 +185,8 @@ internal sealed class ContentHolds(TreeContext context)
     }
 
     /// <summary>Git's own words for a failure, or that it said none.</summary>
-    private static string Said(string error) => string.IsNullOrWhiteSpace(error) ? "git said nothing" : FirstLine(error);
+    /// <summary>git's words as a clause, its first line, or that it said nothing.</summary>
+    internal static string Said(string error) => string.IsNullOrWhiteSpace(error) ? "git said nothing" : FirstLine(error);
 
     /// <summary>Whether every one of <paramref name="paths"/> reads on <paramref name="holder"/> as on <paramref name="tip"/>; null where git could not say.</summary>
     private static async Task<bool?> SameFilesAsync(string cwd, string tip, string holder, IReadOnlyList<string> paths, CancellationToken ct)
@@ -247,6 +248,42 @@ internal sealed class ContentHolds(TreeContext context)
         if (held != 0) return;
         await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], $"verify refs/heads/{branch} {tip}\ndelete {reference} {judged}\n", ct)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A detached tree's recovery ref goes (DETACHTX1) only in one ref transaction that verifies what its proof rested on, each ref at the
+    /// commit the proof read it at, as a judged delete verifies them: a holder rewound or replaced as the tree went refuses the whole, and
+    /// the ref stays, the one ref left holding the commit the tree had out.
+    /// </summary>
+    /// <returns>True where the ref went; false where it stays, git having refused or nothing having been named to verify.</returns>
+    internal static async Task<bool> DropKeptVerifiedAsync(
+        string root, string reference, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct)
+    {
+        if (held.Count == 0) return false;
+        var (code, _, _) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], Verified(held, $"delete {reference} {judged}\n"), ct)
+            .ConfigureAwait(false);
+        return code == 0;
+    }
+
+    /// <summary>
+    /// A ref transaction's input (FABRIC-END4a, second review): a <c>verify</c> for each ref and commit the proof rested on, named once
+    /// where two parts of a proof rest on the same ref at the same commit, then <paramref name="change"/>.
+    /// </summary>
+    private static string Verified(IReadOnlyList<(string Ref, string Commit)> held, string change) =>
+        string.Concat(held.Distinct().Select(each => $"verify {each.Ref} {each.Commit}\n")) + change;
+
+    /// <summary>
+    /// Whether git says <paramref name="reference"/> is missing (RECORDUNREAD1, FABRIC-END4a's fourth review): asked where a read of it
+    /// failed, or a list left it out. <c>rev-parse --verify --quiet</c> exits 1 on any failure to resolve, a broken ref's too, and
+    /// <c>for-each-ref</c> leaves a broken ref out of its list with a warning and exits 0; <c>show-ref --exists</c> exits 2 for a missing
+    /// ref alone (git 2.43 and later; the knowledge note <c>git-ref-absence</c>). Only that forgets or retires a record.
+    /// </summary>
+    /// <returns>Missing only on git's own word; otherwise false, with git's words as a clause for the unread sentence. A git older than 2.43
+    /// has no <c>--exists</c>, so there a missing ref reads as unread: kept, never the other way.</returns>
+    internal static async Task<(bool Missing, string Said)> MissingAsync(string root, string reference, CancellationToken ct)
+    {
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["show-ref", "--exists", reference], ct).ConfigureAwait(false);
+        return (code == 2, Said(err));
     }
 
     /// <summary>
@@ -340,9 +377,8 @@ internal sealed class ContentHolds(TreeContext context)
 
         if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
         var none = CancellationToken.None;
-        // One verify per ref and commit: two parts of a proof resting on the same ref at the same commit name it once.
-        var transaction = string.Concat(held.Distinct().Select(each => $"verify {each.Ref} {each.Commit}\n")) + $"delete refs/heads/{branch} {judged}\n";
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], transaction, none).ConfigureAwait(false);
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], Verified(held, $"delete refs/heads/{branch} {judged}\n"), none)
+            .ConfigureAwait(false);
         if (code != 0) return await RefusedAsync(root, branch, judged, held, err).ConfigureAwait(false);
 
         // The late checkout, which no ref says: a tree on the branch, or a list git could not give, is not clear.
@@ -375,16 +411,17 @@ internal sealed class ContentHolds(TreeContext context)
     {
         var none = CancellationToken.None;
         var (exists, now, readErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
+        var unread = Said(readErr);
         if (exists == 1)
         {
-            var (missing, _, missingErr) = await WorkingTree.GitAsync(root, ["show-ref", "--exists", $"refs/heads/{branch}"], none).ConfigureAwait(false);
-            if (missing == 2) return null;
-            readErr = missingErr;
+            var (missing, said) = await MissingAsync(root, $"refs/heads/{branch}", none).ConfigureAwait(false);
+            if (missing) return null;
+            unread = said;
         }
 
         if (exists != 0)
         {
-            return $"git would not delete it ({FirstLine(err)}), and could not read whether it still stands ({Said(readErr)}), so it is kept as unread";
+            return $"git would not delete it ({FirstLine(err)}), and could not read whether it still stands ({unread}), so it is kept as unread";
         }
 
         if (now.Trim() != judged) return MovedSince;

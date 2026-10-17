@@ -332,6 +332,14 @@ internal sealed class TreeTidies(
             .ConfigureAwait(false);
         if (exists != 0)
         {
+            // RECORDUNREAD1: a branch git could not read (a broken ref, a failed start) is not gone, so its record stays; only git's own
+            // "missing" forgets it.
+            var (missing, said) = await ContentHolds.MissingAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);
+            if (!missing)
+            {
+                return new(false, $"`{branch}` stays: git could not read it ({said}), so it is kept as unread.");
+            }
+
             removals.Forget(repository, branch);
             return new(false, $"there is no branch `{branch}` in `{repository}` — it is gone already.");
         }

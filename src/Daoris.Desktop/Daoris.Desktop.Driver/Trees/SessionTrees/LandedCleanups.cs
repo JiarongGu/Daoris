@@ -352,20 +352,32 @@ internal sealed class LandedCleanups(
         var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
 
         var judged = new List<(LandedBranch Entry, string Tip, LandedProofs.Proof Proof, string? Keep, int Ahead, PullRequestVerdict? Verdict)>();
+        // RECORDUNREAD1: a branch git could not read is kept and said, never retired: only git's own word retires a record.
+        var unread = new List<Judged>();
         foreach (var entry in entries)
         {
             if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip)
+            {
+                // A broken ref resolves to nothing and is left out of the refs' list, so it is gone only where git says it is missing.
+                var (missing, said) = await ContentHolds.MissingAsync(root, $"refs/heads/{entry.Branch}", ct).ConfigureAwait(false);
+                if (missing) stale?.Add(entry.Branch);
+                else unread.Add(Unread(repository, workspace, entry, $"its branch did not read ({said}), so it is kept as unread"));
+                continue;
+            }
+
+            // 🔴 A person's own branch is never judged: one that took the recorded name since does not hold the
+            // commit the landing made it at, whatever its files say. Only git's "not an ancestor" (exit 1) says so (RECORDUNREAD1).
+            var (ours, _, oursErr) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
+            if (ours == 1)
             {
                 stale?.Add(entry.Branch);
                 continue;
             }
 
-            // 🔴 A person's own branch is never judged: one that took the recorded name since does not hold the
-            // commit the landing made it at, whatever its files say.
-            var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
             if (ours != 0)
             {
-                stale?.Add(entry.Branch);
+                unread.Add(Unread(repository, workspace, entry,
+                    $"whether its branch still holds the commit the landing made did not read ({ContentHolds.Said(oursErr)}), so it is kept as unread"));
                 continue;
             }
 
@@ -453,8 +465,20 @@ internal sealed class LandedCleanups(
             });
         }
 
+        items.AddRange(unread);
         return items;
     }
+
+    /// <summary>
+    /// A recorded branch git could not read (RECORDUNREAD1): kept as <see cref="LandedKind.Unknown"/> with why, at no tip, so no removal and
+    /// no judgement again takes it, and its record stays for the next read.
+    /// </summary>
+    private static Judged Unread(string repository, string workspace, LandedBranch entry, string why) =>
+        new(new LandedItem(repository, workspace, entry.Branch, LandedKind.Unknown, null, [], why, entry.PullRequest, 0)
+        {
+            State = entry.PullRequestState,
+            AskFailed = entry.PullRequestAskFailed,
+        }, "");
 
     /// <summary>
     /// How many commits the branch holds that its remote-tracking branch does not, where it has one — its

@@ -50,6 +50,8 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         LandedBranch? squashedOn = null;
         string? judged = null;
         string? kept = null;
+        // DETACHTX1: a detached tree's commit kept while its tree goes, until what its proof rested on is shown standing.
+        string? recovery = null;
         // What the proof that clears the branch rests on (FABRIC-END4a, third review), each ref at the commit it read: returned by that proof
         // and verified exactly by the delete, never looked for again.
         IReadOnlyList<(string Ref, string Commit)> rests = [];
@@ -167,6 +169,21 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
                     kept = reference;
                 }
+
+                // DETACHTX1: a detached tree's commit is held by the tree's own HEAD, which goes with it, and by what its proof rested on,
+                // which may move as it goes. No branch is deleted to verify that in, so the commit is kept on a recovery ref first, dropped
+                // only in a transaction that verifies what the proof rested on once the tree went.
+                if (detached && kept is null)
+                {
+                    var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
+                    if (reference is null)
+                    {
+                        return new(false, $"Daoris could not keep the commit the tree at {path} has out on a ref of its own ({why}), so nothing "
+                            + "was removed. Say it again with --force to discard it.");
+                    }
+
+                    recovery = reference;
+                }
             }
         }
 
@@ -185,6 +202,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             if (!letGo)
             {
                 if (judged is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
+                if (recovery is not null) await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false);
                 return new(false, $"git would not remove the tree: {FirstLine(removeErr)}");
             }
 
@@ -217,6 +235,13 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
             // The record drops what is gone (LAND3): a name no branch has is never judged by a start it no longer has.
             if (stays is null) Forget(context.OwnerOf(full).Repository, branch);
+        }
+        else if (recovery is not null
+                 && !await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false))
+        {
+            // DETACHTX1: not cancelled, as a judged delete is not: the ref goes only where the transaction showed the holder standing.
+            return new(true, $"removed the session tree at {path}. The commit it had out stays at `{recovery}` until you delete that ref: what "
+                + "its proof rested on did not stand where the proof read it as the tree went." + (left is null ? "" : $" {left}"));
         }
 
         if (stays is not null)
