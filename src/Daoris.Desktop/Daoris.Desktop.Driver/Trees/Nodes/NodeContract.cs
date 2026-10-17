@@ -388,6 +388,13 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// <c>unknown → reached</c> and <c>unknown → failed</c> by the person are the person's word, never the plugin's (<see cref="NodeSource.Person"/>).
     /// </summary>
     public bool PersonSettles => Reach == NodeReach.Performed && NodeKinds.IsPlugin(Kind);
+
+    /// <summary>
+    /// The source whose record passes the node over for its attempt's graph and run, where nothing is asked of it (FABRIC-WIRE1g): an
+    /// <c>opinion</c>'s gate, whose rule asks none here or an optional one none could be had, read as skipped as D157's run reads it. Null
+    /// for every other kind, which the person alone passes over. Never the person's skip: it carries no words, and its source is the record's.
+    /// </summary>
+    public string? SkipBy { get; init; }
 }
 
 /// <summary>The authority by kind (§E2): the built-ins' table, and a plugin's own node's from its declaration.</summary>
@@ -416,7 +423,8 @@ public static class NodeAuthorities
         [NodeKinds.All] = new(NodeKinds.All, NodeReach.Observed, NodeSource.Members, NodeSource.Members, false, false, true, false),
         // FABRIC-WORKFLOW2: D157's opinion never fails (a required one waits), and the person may pass it over, as its gate's
         // unavailable reads as skipped today. A sink is the run stopped: never skipped, never the end, its receipt its path's.
-        [NodeKinds.Opinion] = new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, null, false, true, true, true),
+        // FABRIC-WIRE1g: the gate's own record passes it over where its rule asks none, or an optional one none could be had.
+        [NodeKinds.Opinion] = new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, null, false, true, true, true) { SkipBy = NodeSource.Opinion },
         [NodeKinds.Stop] = new(NodeKinds.Stop, NodeReach.Observed, NodeSource.Path, null, false, false, MayEnd: false, Evidenced: false),
     };
 

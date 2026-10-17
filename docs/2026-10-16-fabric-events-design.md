@@ -1451,6 +1451,7 @@ literally one, for every node.** What differs between kinds is only **evidence a
 | failed → ready | a declared retry: a `transient` code with attempts left (§D6), as a new attempt | Daoris, by the node's policy |
 | failed, rejected or stopped → ready | a new attempt the person asks for | the person |
 | ready, blocked or active → skipped | the person passes it over for this graph and run, with their words (D157's skip) | the person, where the node allows a skip |
+| active → skipped | its kind's record passes the attempt over, where nothing is asked of it: an `opinion` whose rule asks none, or an optional one none could be had. It carries no words, and a changed binding lapses it (D173's FABRIC-WIRE1g note) | the record's authority: an opinion's gate alone |
 | skipped → blocked | the person withdraws their skip; it is judged again | the person |
 | skipped → invalidated | its graph or run is another: a skip holds for its own alone | Daoris |
 | any live state → stopped | the person stops this node | the person |

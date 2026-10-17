@@ -88,7 +88,9 @@ result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c)
 `NodeWires` names what a save refuses (FABRIC-WIRE1a), and `WireEvaluation` evaluates them over the nodes' statuses, moving each
 node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b), on a complete snapshot of the
 units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e), and a failure or a rejection kept from another
-graph or run kept for the person, lapsed by a new revision alone (FABRIC-RUN1e, in place of WIRE1f's `run-scope`). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
+graph or run kept for the person, lapsed by a new revision alone (FABRIC-RUN1e, in place of WIRE1f's `run-scope`). A decoded `stop` is
+reached on the receipt of the path into it, and an `opinion` is read from the second opinion's gate as its caller judged it
+(`OpinionNode`, FABRIC-WIRE1g). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
 durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the attempt written with its start before
 `work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
 answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked
