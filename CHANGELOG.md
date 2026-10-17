@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Accepting a session while its done work is landing itself now waits for that landing, then says where the work went and
+  lands nothing more. Before, a session whose agent moved its tree onto a branch of its own was landed twice and its pull
+  request plugin pushed twice. The same holds for a terminal's `trees land` beside the window.
+- A landing plugin is now told `tip`, the commit the landing judged, and both example plugins push that commit to the branch
+  rather than the branch as it stands: a commit made on the branch after the judgement waits for the next landing. A plugin
+  copied from an example before this pushes by name until it is copied again.
 - A workspace's *Branches* now lists what Daoris keeps for recovery that no piece of work names: folders set aside until a
   date, and recovery refs with who holds them or the command to delete them. Ask Daoris says the same when asked where work
   has got to.
