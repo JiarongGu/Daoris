@@ -53,6 +53,9 @@ judgement (D173's FABRIC-END2, FABRIC-END4a and FABRIC-END2d notes). Before a re
 moves aside each folder under its trees that git lists no tree in, once quiet, and each tree whose opening was cut off; an open
 holds its tree locked under a reason naming its process, and `TreeOpenings` undoes one cut off (AUTOTIDY2c, OPENCUT1, D88's
 note). The words beside a clean-up row, which the terminal and the bridge say, are the public `SessionBranchDoors`.
+A judgement reads a checkout's refs and working trees once (`RefSnapshot`, PROC1d-ii and -iii) and asks its git each question of
+commits by their ids once (PROC1d-iv), every write in its flow dropping both; a landing's planning keeps its facts in `GitFacts`
+(LANDGIT1). D88's notes say what each keeps.
 Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running session moves at its turn's end: it stays
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes

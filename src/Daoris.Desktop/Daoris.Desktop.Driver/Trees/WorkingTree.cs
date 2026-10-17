@@ -965,12 +965,12 @@ public static class WorkingTree
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         string? input, CancellationToken ct)
     {
-        // LANDGIT1: within a landing, a read of a ref or a repository is asked of git once; a call with a variable of its own or a
-        // bound (a fetch), one that writes git's input (END4a's `update-ref --stdin`) and a test's stand-in answer are always asked
-        // as written.
+        // LANDGIT1: within a landing, a read of a ref or a repository is asked of git once; PROC1d-iv: within a judgement, a question
+        // of commits by their ids is asked of its checkout's git once. A call with a variable of its own or a bound (a fetch), one
+        // that writes git's input (END4a's `update-ref --stdin`) and a test's stand-in answer are always asked as written.
         var run = () => RunGitAsync(root, arguments, environment, timeout, input, ct);
         return environment is null && timeout is null && input is null && Answered.Value is null
-            ? GitFacts.Asked(root, arguments, run) ?? run()
+            ? GitFacts.Asked(root, arguments, run) ?? RefSnapshot.Asked(root, arguments, run) ?? run()
             : run();
     }
 
