@@ -130,14 +130,14 @@ public static class HelpRoom
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
         IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
         IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
-        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<string>? workUnread = null)
+        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<string>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
             parked ?? [], browser)
         {
             Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants,
-            Work = work, WorkUnread = workUnread ?? [],
+            Work = work, WorkUnread = workUnread ?? [], WorkRecovery = workRecovery ?? [],
         };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
@@ -254,6 +254,9 @@ public sealed record HelpMachine
     /// <summary>What the milestones could not read, each in a clause (a repository with no checkout here).</summary>
     public IReadOnlyList<string> WorkUnread { get; init; } = [];
 
+    /// <summary>Daoris's own recoveries no unit names (RECOVERYASK1, <see cref="WorkInventory.Recoveries"/>): a folder moved aside, a recovery ref.</summary>
+    public IReadOnlyList<InventoryEntry> WorkRecovery { get; init; } = [];
+
     // The own-plugins section's.
 
     /// <summary>The install's own plugins not installed here and sound, which an add may name by id (PLUG9 d).</summary>
@@ -304,4 +307,7 @@ internal sealed record HelpMachineSources(
 
     /// <summary>What the milestones could not read.</summary>
     public IReadOnlyList<string> WorkUnread { get; init; } = [];
+
+    /// <summary>Daoris's own recoveries no unit names (RECOVERYASK1).</summary>
+    public IReadOnlyList<InventoryEntry> WorkRecovery { get; init; } = [];
 }

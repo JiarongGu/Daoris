@@ -140,6 +140,8 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Equal(("recovery-ref", "recovery", "retained"), (entry.Kind, entry.Role, entry.Disposition));
         Assert.Contains("git update-ref -d refs/daoris/discarded/daoris/s-gone", entry.Detail, StringComparison.Ordinal);
         Assert.Null(entry.Until);
+        // RECOVERYVIEW1: it says whose, so a workspace's page lists its own.
+        Assert.Equal("engine", entry.Repository);
     }
 
     /// <summary>One another ref holds says from when the look removes it.</summary>
@@ -182,6 +184,7 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Empty(WorkInventory.Derive(facts));
         var entry = Assert.Single(WorkInventory.Recoveries(facts));
         Assert.Equal(("moved-aside", "recovery", "retained", Then + BranchTidying.SetAsideFor), (entry.Kind, entry.Role, entry.Disposition, entry.Until));
+        Assert.Equal("engine", entry.Repository);
     }
 
     /// <summary>
