@@ -44,6 +44,7 @@ public sealed class PluginsRoutes(DriverContext context)
         var running = new HashSet<string>(_loop.RunningPlugins, StringComparer.Ordinal);
         // HELPPLUG1a's tightening: the person's approvals of what each plugin offers Ask Daoris.
         var grants = HelpGrants.Read(_loop.Home, catalog);
+        var offered = PluginOffers.Load(OffersFolder, _loop.Home, reserved);
         return new
         {
             Folder = DaorisHome.Entry(_loop.Home, HomeEntry.Plugins),
@@ -82,11 +83,13 @@ public sealed class PluginsRoutes(DriverContext context)
                     // Where it came from (PLUG9 c): what an Update re-reads, or why there is none.
                     Source = SourceOf(plugin.Folder),
                     Update = UpdateOf(plugin, reserved),
+                    // LANDPIN3: a copy of one of the install's own plugins that is older than the one it ships, or changed from it.
+                    Shipped = ShippedOf(plugin, offered),
                 };
             }).ToArray(),
             // Daoris's own plugins the install carries (PLUG9 d), installed only by a press.
             OffersFolder,
-            Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names).Select(offer =>
+            Offers = offered.Select(offer =>
             {
                 var icon = PluginIcon.Read(offer.Folder, offer.Manifest);
                 return new
@@ -251,13 +254,16 @@ public sealed class PluginsRoutes(DriverContext context)
     private async Task<object?> PluginUpdateAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        // LANDPIN3: `shipped` asks for the install's own copy of an example, whatever record the installed one has; it is the
+        // person's press, and a copy they changed is refused (PluginInstall.PlanUpdate).
+        var shipped = request.Payload is { } asked && asked.TryGetProperty("shipped", out var wants) && wants.ValueKind == JsonValueKind.True;
         if (request.Payload is { } payload && payload.TryGetProperty("apply", out var apply) && apply.ValueKind == JsonValueKind.True)
         {
-            var updated = await UpdatePluginAsync(_context, id).ConfigureAwait(false);
+            var updated = await UpdatePluginAsync(_context, id, shipped).ConfigureAwait(false);
             return new { updated.Id, Applied = true, Refusal = (string?)null, Source = updated.Source.Said, updated.From, Changes = ChangesOf(updated.Changes) };
         }
 
-        var (plan, refusal) = PluginInstall.PlanUpdate(_loop.Home, id, AdapterSet.Built().Names, OffersFolder);
+        var (plan, refusal) = PluginInstall.PlanUpdate(_loop.Home, id, AdapterSet.Built().Names, OffersFolder, shipped);
         return new
         {
             Id = plan?.Id ?? id,
@@ -423,6 +429,22 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
+    /// <summary>
+    /// What an installed plugin is against the offer of its own id (LANDPIN3), as its row says it: null where it needs no word.
+    /// The manifest is read as written, as the page's own is, so a placeholder is compared as the offer writes it.
+    /// </summary>
+    private static object? ShippedOf(PluginEntry plugin, IReadOnlyList<PluginOffer> offers)
+    {
+        var offer = offers.FirstOrDefault(each => string.Equals(each.Id, plugin.Manifest.Id, StringComparison.OrdinalIgnoreCase));
+        if (offer is null) return null;
+        var (written, _) = PluginCatalog.ReadAsWritten(plugin.Manifest.Id, Path.Combine(plugin.Folder, PluginCatalog.ManifestName));
+        // A manifest that does not read has no version to be older with: its own sentence is already said.
+        if (written.Version.Length == 0) return null;
+        return PluginOffers.ShippedOf(plugin.Folder, written, offer) is { } shipped
+            ? new { shipped.State, shipped.Installed, shipped.Shipped, shipped.Changes }
+            : null;
+    }
+
     internal static object[] ChangesOf(IReadOnlyList<PluginChange> changes) =>
         [.. changes.Select(change => (object)new { change.What, change.Was, change.Now })];
 
@@ -515,14 +537,14 @@ public sealed class PluginsRoutes(DriverContext context)
     /// hook stopped first (on Windows a running process holds its folder), the install folder swapped, and
     /// the loop asked to look, which starts the new one as it does any plugin.
     /// </summary>
-    internal static async Task<PluginUpdatePlan> UpdatePluginAsync(DriverContext context, string id)
+    internal static async Task<PluginUpdatePlan> UpdatePluginAsync(DriverContext context, string id, bool shipped = false)
     {
         var loop = context.Loop;
         var reserved = AdapterSet.Built().Names;
-        var (plan, refusal) = PluginInstall.PlanUpdate(loop.Home, id, reserved, context.OffersFolder);
+        var (plan, refusal) = PluginInstall.PlanUpdate(loop.Home, id, reserved, context.OffersFolder, shipped);
         if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
         await loop.StopPluginAsync(plan.Id).ConfigureAwait(false);
-        var updated = PluginInstall.Update(loop.Home, plan.Id, reserved, context.OffersFolder);
+        var updated = PluginInstall.Update(loop.Home, plan.Id, reserved, context.OffersFolder, shipped);
         loop.Nudge();
         return updated;
     }

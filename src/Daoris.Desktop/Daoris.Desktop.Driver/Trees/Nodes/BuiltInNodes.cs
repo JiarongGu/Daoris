@@ -12,7 +12,11 @@ public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null,
 /// What an observed built-in node's records say (FABRIC-NODE1; §E4): an outcome by its authority, or none yet. Applied through the
 /// same one table as any node's report (<see cref="Move"/>), so a built-in is a node and no second mechanism.
 /// </summary>
-/// <param name="Outcome"><see cref="NodeStates.Reached"/>, <see cref="NodeStates.Failed"/> or <see cref="NodeStates.Unknown"/>; null where the records hold no outcome yet, which is pending, never failed.</param>
+/// <param name="Outcome">
+/// <see cref="NodeStates.Reached"/>, <see cref="NodeStates.Failed"/> or <see cref="NodeStates.Unknown"/>, or <see cref="NodeStates.Skipped"/> where
+/// the kind's record passes it over (an opinion's gate, <see cref="OpinionNode"/>; FABRIC-WIRE1g); null where the records hold no outcome yet,
+/// which is pending, never failed.
+/// </param>
 /// <param name="Said">What the records say, in a clause.</param>
 public sealed record NodeObservation(string Unit, string Node, string Kind, string? Outcome, string Said)
 {

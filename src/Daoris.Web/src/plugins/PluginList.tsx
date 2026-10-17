@@ -4,7 +4,7 @@ import { Button, Inline, type MenuAct, Pill, StripMark } from '../design/ui';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
 import {
-  offerItem, type OfferShown, type PluginGroups, type PluginState, pluginState, sourceWord, stripOrder, updateWaits,
+  offerItem, type OfferShown, type PluginGroups, type PluginState, pluginState, shippedChanged, sourceWord, stripOrder, updateWaits,
 } from './catalog';
 import { PluginIcon } from './PluginIcon';
 
@@ -81,7 +81,9 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
                     word={word && <Pill tone={word.tone}>{t(word.key)}</Pill>}
                     gives={plugin.description || adds}
                     meta={[source && t(source), plugin.description ? adds : ''].filter(Boolean).join(' · ')}
-                    update={updateWaits(plugin) && <Pill tone="neutral">{t('plugin.update.waits')}</Pill>}
+                    update={updateWaits(plugin)
+                      ? <Pill tone="neutral">{t('plugin.update.waits')}</Pill>
+                      : shippedChanged(plugin) && <Pill tone="neutral">{t('plugin.shipped.changedPill')}</Pill>}
                   />
                 </RowDoor>
               </li>

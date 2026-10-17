@@ -267,9 +267,15 @@ public static class NodeLifecycle
             rows.Add(new(from, NodeStates.Skipped, person, "the person passes it over for this graph and run, with their words, where the node allows a skip"));
         }
 
+        // FABRIC-WIRE1g: an opinion's gate passes its attempt over where nothing is asked of it, as D157's run reads it; never the person's.
+        rows.Add(new(NodeStates.Active, NodeStates.Skipped, authority,
+            "its kind's record passes its attempt over for this graph and run, where nothing is asked of it (NodeAuthority.SkipBy)"));
+
         // FABRIC-NODE1c: a skip is the person's word for one graph and run, so they may take it back, and another graph or run lapses it.
+        // FABRIC-WIRE1g: a record's skip is its judgement of its binding, so a changed binding lapses it too.
         rows.Add(new(NodeStates.Skipped, NodeStates.Blocked, person, "the person withdraws their skip: it is judged again"));
-        rows.Add(new(NodeStates.Skipped, NodeStates.Invalidated, daoris, "its graph or run is another: a skip holds for its own alone"));
+        rows.Add(new(NodeStates.Skipped, NodeStates.Invalidated, daoris,
+            "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
 
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, person, "the person stops this node"));
         foreach (var from in NodeStates.Bound)
@@ -371,6 +377,16 @@ public static class NodeLifecycle
                 if (Unbound(move.Attempt) is { } rejectAttempt) return Refuse(rejectAttempt);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
                 return To(next with { By = NodeSource.Person, Words = move.Words });
+
+            case NodeStates.Skipped when move.By == NodeCause.Authority:
+                // FABRIC-WIRE1g: the kind's record passes the started attempt over, for that attempt's graph and run. It is never the person's:
+                // its source is the record's, and no words are kept whatever the move brings, so nothing reads it as what someone said.
+                if (authority.SkipBy is null || move.Source != authority.SkipBy) return Refuse(NodeRefusal.NotAuthority);
+                if (Unbound(move.Attempt) is { } skipAttempt) return Refuse(skipAttempt);
+                if (move.Scope is not { } skipScope) return Refuse(NodeRefusal.NoScope);
+                if (status.Binding is not { } judged) return Refuse(NodeRefusal.NoBinding);
+                if (skipScope.GraphDigest != judged.GraphDigest || (status.Scope is { } own && own != skipScope)) return Refuse(NodeRefusal.NotBound);
+                return To(next with { By = move.Source, Words = null, Code = null, Transient = false, Scope = skipScope });
 
             case NodeStates.Skipped:
                 if (!authority.PersonSkips) return Refuse(NodeRefusal.NotSkippable);
