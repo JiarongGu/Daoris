@@ -162,6 +162,56 @@ public sealed class ObservedTipsGitTests : LandedFixture
     }
 
     [Fact]
+    public async Task An_event_at_the_moved_tip_heard_in_the_pass_that_rebinds_is_reached_there_with_one_read_of_the_checkout()
+    {
+        var root = await RepositoryAsync("engine");
+        var tip = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        await GitAsync(root, "branch", "feature/a");
+        IReadOnlyList<WorkUnit> units = [BranchUnit("engine~a", "feature/a", tip)];
+
+        var port = new ObservedPort();
+        var records = new NodeRecordFiles(Home, () => true);
+        var runtime = new NodeRuntime(records, port, () => DateTimeOffset.UtcNow, () => true);
+        NodeRuntimeLook Look(bool whole) => new(DriverConfig.Parse(ObservedOnly), whole)
+        {
+            Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),
+            Steps = () => [Deployed],
+            Tips = NodeTips.ReadAsync,
+        };
+
+        var started = new List<string>();
+        WorkingTree.Started.Value = arguments =>
+        {
+            lock (started) started.Add(string.Join(' ', arguments));
+        };
+        string moved;
+        try
+        {
+            await runtime.PassAsync(Look(whole: true), CancellationToken.None);
+            Assert.StartsWith("for-each-ref", Assert.Single(started), StringComparison.Ordinal);
+
+            // FABRIC-PERFORM1o: the branch moved outside Daoris and the plugin's events came before the node rebound, one at the old tip and
+            // one at the new. The old tip's is stale; the new tip's is taken once the pass has rebound the node, with no git started for it.
+            await CommitAsync(root, "moved.txt", "moved\n", "moved on");
+            await GitAsync(root, "branch", "-f", "feature/a", "HEAD");
+            moved = (await GitAsync(root, "rev-parse", "feature/a")).Trim();
+            port.Heard.Enqueue(Event(port, "feature/a", tip, "e-old"));
+            port.Heard.Enqueue(Event(port, "feature/a", moved, "e-new"));
+            started.Clear();
+            await runtime.PassAsync(Look(whole: false), CancellationToken.None);
+            Assert.StartsWith("for-each-ref", Assert.Single(started), StringComparison.Ordinal);
+        }
+        finally
+        {
+            WorkingTree.Started.Value = null;
+        }
+
+        var deployed = records.Read("engine~a")!.Statuses["deployed"];
+        Assert.Equal((NodeStates.Reached, moved), (deployed.State, deployed.Acceptance!.SubjectRevision));
+        Assert.Equal([(Plugin, WorkRefusals.Stale)], port.Refusals);
+    }
+
+    [Fact]
     public async Task A_repositorys_identity_is_its_common_folders_through_a_linked_worktree_and_another_repository_is_another()
     {
         var root = await RepositoryAsync("engine");

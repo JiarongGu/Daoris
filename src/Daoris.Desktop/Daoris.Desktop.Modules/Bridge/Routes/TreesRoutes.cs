@@ -532,8 +532,18 @@ public sealed class TreesRoutes(DriverLoop loop)
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
+        var press = request.Type == "LAND_SESSION_TREE";
+        // RPC1b4: the verb's two refusals are words on the press, exit 1, where the plan keeps the page's refusal. A landing the review
+        // already reads as landed lands nothing again (REVIEW2, D113), and a session with no tree names nothing to land.
+        if (press && await TreesWords.LandedBeforeAsync(new SessionTrees(_loop.Home), service, id, cancellationToken) is { } before
+            && before.ReadsAsLanded(TreeFolders.TreeGone(tree)))
+        {
+            return Refused(id, TreesWords.NotAgain(id, before, TreeFolders.TreeGone(tree)));
+        }
+
         if (string.IsNullOrWhiteSpace(tree))
         {
+            if (press) return Refused(id, TreesWords.NoTreeToLand(id));
             throw Refusals.Because(
                 Refusals.SessionNotReviewable,
                 "this session's record names no working tree on this machine, so there is nothing here to land.",
@@ -605,6 +615,23 @@ public sealed class TreesRoutes(DriverLoop loop)
             // RPC1b3: what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
             Said = TreesWords.Land(landed, pluginLines).ToWire(),
         };
+    }
+
+    /// <summary>
+    /// A press the verb refuses before it lands anything (RPC1b4): the page's fields as a refusal reads them, nothing landed, and the
+    /// verb's words, with its code, beside them.
+    /// </summary>
+    private static object Refused(string session, TreesSaid said) => new
+    {
+        Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Review = (object?)null,
+        Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null, Said = said.ToWire(),
+    };
+
+    /// <summary>The sentence a refusal's words carry without the verb's <c>trees: </c> lead, as the page shows it.</summary>
+    private static string Sentence(TreesSaid said)
+    {
+        var line = said.Out.Concat(said.Error).FirstOrDefault() ?? "";
+        return line.StartsWith("trees: ", StringComparison.Ordinal) ? line["trees: ".Length..] : line;
     }
 
     /// <summary>

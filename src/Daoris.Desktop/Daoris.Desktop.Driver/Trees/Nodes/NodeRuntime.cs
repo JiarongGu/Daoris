@@ -115,7 +115,8 @@ public static class NodeRuns
 /// <para><b>Observed nodes</b> (FABRIC-PERFORM1i): begun as a built-in is, published once active, and reached by a believed event through
 /// <see cref="WorkObserver"/> before the evaluation, whose tips are read fresh (<see cref="NodeRuntimeLook.Tips"/>). A branch unit's is bound
 /// to its branch's tip read in the pass, not the unit's lagging revision, and rebinds when the branch moves (FABRIC-PERFORM1m,
-/// <see cref="PassTips"/>: one read of each checkout a pass).</para>
+/// <see cref="PassTips"/>: one read of each checkout a pass); an event at that tip heard before the rebinding is heard again after it, in
+/// the same pass (FABRIC-PERFORM1o, <see cref="WorkLagging"/>).</para>
 /// <para><b>One pass at a time, one performer per loop:</b> a wake that comes while a look's pass is out waits for it, so a start is never
 /// judged twice on one record; a second loop or a verb holds no lease, and every record edit asks it under the record's lock.</para>
 /// <para><b>A wake runs only what it concerns:</b> the units its answers, reconciliations and retries named, and those owing a start; the
@@ -355,8 +356,10 @@ public sealed class NodeRuntime(
             var heard = port.TakeSteps();
             done.AddRange(_performer.Hear([.. heard.Where(each => each.Step.Invocation is not null)], Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
             // FABRIC-PERFORM1i: an event naming no invocation is an observed node's, bound to the frame its process was sent and the tips read
-            // now, and written before the evaluation below fires its wires.
-            done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], governed, tips.ReadAsync, ct).ConfigureAwait(false));
+            // now, and written before the evaluation below fires its wires. FABRIC-PERFORM1o: one at the tip read now whose node still awaits an
+            // older binding is held, and heard again once the evaluation has rebound the node.
+            var lagging = new List<WorkLagging>();
+            done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], governed, tips.ReadAsync, ct, lagging).ConfigureAwait(false));
             // FABRIC-PERFORM1g: the person's word on a held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(_performer.Resolve(Declared));
             // FABRIC-CLOSE1q: the person's word on a held close, a close's recovery, before the closer sends any close again below.
@@ -373,7 +376,7 @@ public sealed class NodeRuntime(
                 said.AddRange(_closer.TakeSaid());
             }
 
-            var named = done.Select(each => each.Unit).ToHashSet(StringComparer.Ordinal);
+            var named = done.Select(each => each.Unit).Concat(lagging.Select(each => each.Unit)).ToHashSet(StringComparer.Ordinal);
             var owing = new List<GovernedUnit>();
             foreach (var each in governed.Values)
             {
@@ -387,6 +390,7 @@ public sealed class NodeRuntime(
                 await EvaluateAsync(each, sends, done, said, look.Units, tips, ct).ConfigureAwait(false);
             }
 
+            await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, ct).ConfigureAwait(false);
             var changed = Tell(governed.Values);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
         }
@@ -646,6 +650,26 @@ public sealed class NodeRuntime(
         if (awaiting.Count == 0) return false;
         var tip = await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false);
         return tip is not null && awaiting.Any(revision => !string.Equals(revision, tip, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The events the pass's hearing held because their node lagged the tip read this pass (FABRIC-PERFORM1o), heard again after the
+    /// evaluations, the five rules and all, on the pass's one read of each checkout, so no git is started for them. A node the evaluation
+    /// rebound takes its event, and its unit is evaluated once more so the wires it satisfies fire in this pass; an event whose node was not
+    /// rebound (its unit past the pass's turn) is refused <c>stale</c> and counted, once, as it was before.
+    /// </summary>
+    private async Task HearAgainAsync(
+        List<WorkLagging> lagging, IReadOnlyDictionary<string, GovernedUnit> governed, IReadOnlyList<GovernedUnit> concerned, WorkSends sends,
+        List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units, PassTips tips, CancellationToken ct)
+    {
+        if (lagging.Count == 0) return;
+        var again = await _observer.HearAsync([.. lagging.Select(each => each.Heard)], governed, tips.ReadAsync, ct).ConfigureAwait(false);
+        done.AddRange(again);
+        var taken = again.Where(each => each.What == PerformedWhat.Applied).Select(each => each.Unit).ToHashSet(StringComparer.Ordinal);
+        foreach (var each in concerned.Where(each => taken.Contains(each.Unit.Id)))
+        {
+            await EvaluateAsync(each, sends, done, said, units, tips, ct).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

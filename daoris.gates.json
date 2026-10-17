@@ -13,7 +13,8 @@
     { "name": "driver-process", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings" },
     { "name": "driver-process-git", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings" },
     { "name": "modules-process", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --settings src/Daoris.Desktop/process.runsettings" },
-    { "name": "web", "run": "npm run test:web" },
+    { "name": "web", "run": "npm run test:web:e2e" },
+    { "name": "web-unit", "run": "npm run test:web:unit" },
     { "name": "deployment", "run": "npm run rehearse:deploy" }
   ],
 

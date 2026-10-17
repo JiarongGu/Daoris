@@ -30,9 +30,14 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
     /// The events heard that name no invocation, judged and taken: each refusal counted by its code (<see cref="IWorkPerformPort.Refused"/>),
     /// each read of a checkout's refs made once for the whole judgement, whatever number of events and branches it serves.
     /// </summary>
+    /// <param name="lagging">
+    /// Where given, an event at the tip read now whose node still awaits an older binding is put here rather than refused or counted
+    /// (FABRIC-PERFORM1o): the pass hears it again once its evaluation has rebound the node, and only that hearing's answer stands.
+    /// </param>
     public async Task<IReadOnlyList<WorkPerformed>> HearAsync(
         IReadOnlyList<WorkStepHeard> heard, IReadOnlyDictionary<string, GovernedUnit> governed,
-        Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> tips, CancellationToken ct)
+        Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> tips, CancellationToken ct,
+        ICollection<WorkLagging>? lagging = null)
     {
         var done = new List<WorkPerformed>();
         var bound = new List<Bound>();
@@ -64,7 +69,15 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
                 ? WorkRefusals.Stale
                 : frame.At > now + WorkBounds.Minute ? WorkRefusals.Shape
                 : null;
-            done.Add(Counted(each.Heard.Plugin, code is not null ? new(unit, each.Node.Id, PerformedWhat.NotTaken, code) : Take(each, now)));
+            if (code is not null)
+            {
+                done.Add(Counted(each.Heard.Plugin, new(unit, each.Node.Id, PerformedWhat.NotTaken, code)));
+                continue;
+            }
+
+            var (taken, lags) = Take(each, now);
+            if (lags && lagging is not null) lagging.Add(new WorkLagging(each.Heard, unit));
+            else done.Add(Counted(each.Heard.Plugin, taken));
         }
 
         return done;
@@ -100,9 +113,10 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
 
     /// <summary>
     /// The fifth rule's order and §E2's acceptance, in one locked edit of the unit's record with the lease asked inside it: the node moved on its
-    /// own binding and the event kept beside it, both written before the evaluation reads the record.
+    /// own binding and the event kept beside it, both written before the evaluation reads the record. <c>Lags</c> where the event, at the tip
+    /// read now, found its node still active on an older binding, which this pass's evaluation moves to that tip (FABRIC-PERFORM1o).
     /// </summary>
-    private WorkPerformed Take(Bound bound, DateTimeOffset now)
+    private (WorkPerformed Result, bool Lags) Take(Bound bound, DateTimeOffset now)
     {
         var (unit, node, frame) = (bound.Governed.Unit.Id, bound.Node, bound.Heard.Step);
         var (plugin, identity, step, commit, state) = (bound.Heard.Plugin, bound.Told.Identity ?? "", bound.Step, frame.Commit!, frame.Outcome.State);
@@ -145,7 +159,10 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             return (WorkPerformer.Kept(record, moved, Why, now) with { Observations = [.. record.Observations.Where(each => !Same(each)), observed] },
                 new(unit, node.Id, PerformedWhat.Applied, state));
         });
-        return refused is null ? result! : new(unit, node.Id, PerformedWhat.Refused, refused);
+
+        // The commit is the tip read now (the fourth rule, judged before), so a node active on any other binding lags that tip.
+        if (refused is not null) return (new(unit, node.Id, PerformedWhat.Refused, refused), false);
+        return (result!, result is { What: PerformedWhat.NotTaken, Code: WorkRefusals.Stale });
     }
 
     /// <summary>A refusal of §C4's codes counted as a <c>plugin.step</c> line of its plugin and code, with no words.</summary>
@@ -155,6 +172,13 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
         return result;
     }
 }
+
+/// <summary>
+/// An event at its branch's tip read this pass, heard while its node still awaited an older tip (FABRIC-PERFORM1o; §C4's fourth rule): the
+/// pass's hearing comes before its rebinding, so it is held for the pass, neither refused nor counted, and heard again, the five rules and
+/// all, once the evaluation has rebound the node. Never kept past the pass.
+/// </summary>
+public sealed record WorkLagging(WorkStepHeard Heard, string Unit);
 
 /// <summary>
 /// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule; D88's PROC1d-ii): one <c>for-each-ref</c> of its
