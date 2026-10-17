@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -610,6 +611,91 @@ public sealed class AutoLandingTests : IDisposable
         Assert.Equal(now, (await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim());
     }
 
+    /// <summary>
+    /// LANDRACE1 (D145 point 2, D173's FABRIC-END7 note): the person presses Accept while the automatic landing of the same due entry
+    /// is still in its plugin. The press waits for the entry's hold, finds the landing recorded while it waited, and says so: the plugin
+    /// is spoken to once, and one landing is recorded. A tree on a branch of its own (TREEFOLLOW1) is the case git's ref writes never
+    /// kept apart, since no ref is made for it: both doors landed it, and both pushed.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_press_beside_the_automatic_landing_of_one_entry_waits_for_it_and_lands_nothing_more(bool ownBranch)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1", commit: !ownBranch);
+        if (ownBranch) await OwnBranchAsync(tree);
+
+        var lander = Lander();
+        var (chosen, _) = await lander.ChooseAsync(Config());
+        Assert.Single(chosen);
+        Task<TreeLanding>? press = null;
+        // The plugin's first frame: the person presses while the automatic landing's plugin is still pushing. The press is its own
+        // request, so nothing of the landing's flow (its look, its table of git's answers) flows into it.
+        _landing = () =>
+        {
+            _landing = null;
+            using (ExecutionContext.SuppressFlow())
+            {
+                press = Task.Run(() => new SessionTrees(_home, Plugins()).LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap")));
+            }
+
+            SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, TimeSpan.FromSeconds(30));
+        };
+
+        await lander.LandAsync(chosen);
+        var pressed = await press!;
+
+        Assert.Single(_frames);
+        Assert.Single(new LandedBranches(_home).Entries(), entry => entry.Names("s1"));
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.False(pressed.Landed, pressed.Message);
+        Assert.Equal(AutoLandingCode.Already, pressed.Refusal);
+        Assert.Contains($"`{(ownBranch ? "feature/own" : "feature/q1-fix-the-gap")}`", pressed.Message);
+        Assert.Contains("accepted automatically", pressed.Message);
+    }
+
+    /// <summary>
+    /// LANDPIN2 (D164 point 4, D173's FABRIC-END7 note): a tree on a branch of its own has no ref made for it, so its plugin is handed the
+    /// commit judged to push, not the branch's name alone. Its agent commits again after the judgement, as the plugin starts: the frame
+    /// still names the commit judged, which the record keeps as the one landed.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_on_its_own_branch_hands_its_plugin_the_commit_judged_not_the_branch_as_it_stands()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1", commit: false);
+        await OwnBranchAsync(tree);
+        var judged = (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
+        var lander = Lander();
+        var (chosen, _) = await lander.ChooseAsync(Config());
+        // The plugin's process starting: the agent commits on its branch after the landing judged it, before its plugin pushes.
+        _starting = () =>
+        {
+            _starting = null;
+            CommitAsync(tree, "late.txt", "made after the judgement", "a late change").GetAwaiter().GetResult();
+        };
+
+        await lander.LandAsync(chosen);
+
+        var frame = Json(Assert.Single(_frames));
+        Assert.Equal("feature/own", frame.GetProperty("branch").GetString());
+        Assert.Equal(judged, frame.GetProperty("tip").GetString());
+        Assert.NotEqual(judged, (await GitAsync(tree, "rev-parse", "HEAD")).Trim());
+        Assert.Equal(judged, new LandedBranches(_home).Landing("s1")!.Tip);
+    }
+
+    /// <summary>The agent moves its tree onto a branch of its own and commits its work there (TREEFOLLOW1, D164 point 4).</summary>
+    private static async Task OwnBranchAsync(string tree)
+    {
+        await GitAsync(tree, "checkout", "--quiet", "-b", "feature/own");
+        await CommitAsync(tree, "s1.txt", "the work of s1", "the work of s1");
+    }
+
     // ——— the world, the plugin and the fixtures
 
     /// <summary>The service's quests and records, standing in.</summary>
@@ -652,16 +738,28 @@ public sealed class AutoLandingTests : IDisposable
 
     private bool _pushes = true;
 
+    // What happens as the plugin's process starts, before its frame (LANDPIN2), and as it lands, before it answers (LANDRACE1).
+    private Action? _starting;
+    private Action? _landing;
+
     private AutoLander Lander() => new(
-        _home, _world,
-        new SessionTrees(_home, new LandingPlugins(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(new FakeLander(frame =>
+        _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add);
+
+    /// <summary>The rule's plugin, faked on its channel: every frame it is told is kept, whichever door told it.</summary>
+    private LandingPlugins Plugins() => new(_home, start: (_, _, _) =>
+    {
+        _starting?.Invoke();
+        return Task.FromResult<IHookChannel>(new FakeLander(frame =>
         {
-            _frames.Add(frame);
+            lock (_frames) _frames.Add(frame);
+            _landing?.Invoke();
             return _pushes
                 ? new PluginLanding(Plugin, true, "https://example.test/pull/7", "pushed it.")
                 : new PluginLanding(Plugin, false, null, "gh is not signed in — run `gh auth login`.");
-        })))),
-        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add);
+        }));
+    });
+
+    private static JsonElement Json(object frame) => JsonDocument.Parse(JsonSerializer.Serialize(frame)).RootElement.Clone();
 
     /// <summary>One look: what it chose, then what landing those beside it said.</summary>
     private async Task<IReadOnlyList<string>> LookAsync(bool pushes = true)
