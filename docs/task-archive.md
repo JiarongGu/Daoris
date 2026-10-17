@@ -16041,3 +16041,57 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEPLOYBUSY1 — the update's swap held for 120 s after the app stopped** (desktop, driver; D139). The deployment rehearsal's rollback rolled back `busy` instead of `exited`.
 
 **Outcome** 2026-10-17: the swap's `busy` names the entry held and the process holding it (`HeldFiles`), in the journal, the detail, `daoris-driver update` and the log lines. The cause is not attributed: two worktree rehearsals passed 115/115; a hold seen was by a process outside Daoris on the development machine. On Opus: about 100 tool calls. Detail: FIX-LOG 2026-10-17 DEPLOYBUSY1, D139's note.
+
+## CLEANUP1 — remove the empty harness-held directory (2026-10-17, D115)
+
+> - [ ] **CLEANUP1 — remove the empty harness-held directory** (command review). `.claude/worktrees/agent-a3b92da3b8bb159c9` is empty and unregistered; backups are preserved. Native removal remains rejected after explicit authorization and repository-local defaults. Proof: recheck emptiness/registration, remove when permitted and verify absence; retry receipt: the maintenance review.
+
+**Outcome** 2026-10-17: done: `.claude/worktrees/agent-a3b92da3b8bb159c9` no longer exists and is not registered (`git worktree list`), verified 2026-10-17 during the merged builders' worktree cleanup. The id CLEANUP1 is reused by the row "the leftovers that never clear" of the same day.
+
+## CLEANUP1 — the leftovers that never clear (2026-10-17, D173)
+
+> - [ ] **CLEANUP1 — the leftovers that never clear** (driver, modules; after END4a and RECORDUNREAD1; §B, §C3, §D3). The owner's install lists units that never clear: landings whose branch was removed outside Daoris and whose work the line does not hold; recovery refs kept for ever; moved-aside folders shown as pending units. A landing whose branch git says is missing ends as the person's; recovery refs get a retention rule; a moved-aside folder reads as recovery kept until its date. In progress.
+
+**Outcome** 2026-10-17: the leftovers that never cleared on the owner's install (landings whose branch the person deleted, recovery refs kept for ever, moved-aside folders shown as problems): a landing whose branch git says is missing is judged first by the end judgement at the commit its landing recorded and reads ended by the line's ancestry (CLEANUP1b) or its content on the line (CLEANUP1c); where a branch of the person's still holds its work it reads moved and is followed; where nothing holds it, it reads dropped and its commit is first kept on a recovery ref in one transaction verifying its branch absent. A recovery ref is removed after 30 days only where a tag or a non-symbolic branch of the person's holds its commit (D102 amended); one nothing else holds is kept with its delete command. Daoris's own recoveries no record names are listed apart (`work state`, `WORK_STATE.recovery`); a folder whose purge is blocked is in What needs you; a dropped end reads "Over without its result" (已结束，未留成果). After two reviews by a second maker. On Opus: about 115 + 120 + 50 + 45 tool calls over four builds. Detail: D173's CLEANUP1, CLEANUP1b and CLEANUP1c notes; D102's CLEANUP1 notes; FIX-LOG 2026-10-17.
+
+## KEEPALL1 — every home file a door edits keeps what its writer does not own (2026-10-17, D173)
+
+> - [ ] **KEEPALL1 — every home file a door edits keeps what its writer does not own** (driver, cli; `twins.md`). `driver.json`'s writers now do; audit `harnesses.json`, `tools.json`, `resources.json`'s locations. Proof: per file, unknown keys at each level kept, no edit gives the same bytes, an edit changes only its key.
+
+**Outcome** 2026-10-17: `plugins.json`, `permissions.json` and `keys.json` are written by the keeping write in both twins (`JsonKeeping.Save`, `writeKeeping`): the edit's changed key paths onto the file read again at write; a file that does not read, holds a key twice, or turned an object into a scalar is refused; Windows line endings kept; no edit writes nothing. The driver's key door no longer writes over a `keys.json` that does not read (an installed defect that could lose every other account's key). The other home files audited. On Opus: about 104 tool calls. Detail: D173's KEEPALL1 note, FIX-LOG 2026-10-17 (KEEPALL1).
+
+## KNOWWALK1 — the knowledge server never walks ignored folders (2026-10-17, D173)
+
+> - [ ] **KNOWWALK1 — the knowledge server never walks ignored folders** (service; EVENT6). A knowledge server re-reading a checkout appears to list ignored trees (a rehearsal's `_fixtures/…/app/bin` was held by it during a swap): verify what its re-read walks, and skip ignored folders. Proof: a re-read over a checkout with a large ignored tree opens nothing under it.
+
+**Outcome** 2026-10-17: the hold on the deployment rehearsal's swap was the knowledge connector's host, not its read: `Host.CreateApplicationBuilder`'s default content root (the session's checkout) and its recursive `appsettings.json` reload watch heard every write in the checkout and walked each renamed folder. `KnowledgeServer.HostBuilder` now watches nothing; a documents walk skips what git ignores (`IgnoredPaths`); EVENT6's watch is opened around ignored folders, so `.claude/worktrees/` wakes nothing. Running connectors need a restart on a new build. On Opus: about 75 tool calls. Detail: FIX-LOG KNOWWALK1, D173's KNOWWALK1 note.
+
+## DEPLOYBUSY1b — name what holds `app/` when the rehearsal next says `busy`, and fix it (2026-10-17, D139)
+
+> - [ ] **DEPLOYBUSY1b — name what holds `app/` when the rehearsal next says `busy`, and fix it** (desktop, driver; D139 §5-§6). The journal now names the holder: attribute the next `busy` and fix its root cause, or guard against outside holders. Proof: the failing run's `holders`, a regression test, the rehearsal green.
+
+**Outcome** 2026-10-17: attributed and fixed at the root: DEPLOYBUSY1's diagnosis named the holder (`"held":"bin","heldBy":"… (pid 36544)"`), the development machine's knowledge connector, whose host watched its whole checkout (KNOWWALK1, HTTPWATCH1). Detail: FIX-LOG DEPLOYBUSY1 (Attributed) and KNOWWALK1.
+
+## CLEANUP1b — a landing whose deleted branch's tip the line holds reads ended (2026-10-17, D173)
+
+> - [ ] **CLEANUP1b — a landing whose deleted branch's tip the line holds reads ended** (driver; after CLEANUP1; §B5). A branch merged into the line with a merge commit, pulled and deleted read "moved to main" for ever.
+
+**Outcome** 2026-10-17: a landing git says is missing is judged first at the commit its landing recorded and ended by the line's ancestry (`EndSubject.Gone`, `EndKeeping.KeepGoneAsync`, `LandedBranches.HoldGone`); END2's "a trace is never judged again" gains one exception. On Opus: about 50 tool calls. Detail: D173's CLEANUP1b note, FIX-LOG.
+
+## CLEANUP1c — a squashed landing whose deleted branch's recorded commit reads on the line by content reads ended (2026-10-17, D173)
+
+> - [ ] **CLEANUP1c — a squashed landing whose deleted branch's recorded commit reads on the line by content reads ended** (driver; after CLEANUP1b; §B5, D102). A squash-merged landing the person deleted read dropped and was kept on a recovery ref held by nothing.
+
+**Outcome** 2026-10-17: a gone landing the line's ancestry does not hold is judged by its content proof at the recorded commit, ending `on-line` only on a form of the line; the fact is kept as it retires and no recovery ref is made. On Opus: about 45 tool calls. Detail: D173's and D102's CLEANUP1c notes, FIX-LOG.
+
+## HTTPWATCH1 — every Daoris host watches no settings file in its content root (2026-10-17, D173)
+
+> - [ ] **HTTPWATCH1 — every Daoris host watches no settings file in its content root** (service, desktop). `WebApplication.CreateBuilder` kept the default reload watch over its content root (the install's folder when the desktop hosts the service).
+
+**Outcome** 2026-10-17: the HTTP host takes the binary's own folder (or the working folder when only that holds `wwwroot`, in development) as its content root and watches no settings file (`HostRoot.Builder`); no other Daoris host builds a generic or web host. On Sonnet: about 29 tool calls (with HOSTROOT1). Detail: FIX-LOG HTTPWATCH1, `HostRootTests`.
+
+## HOSTROOT1 — a knowledge note on .NET hosts started inside a checkout or an install (2026-10-17, D173)
+
+> - [ ] **HOSTROOT1 — a knowledge note on .NET hosts started inside a checkout or an install** (knowledge).
+
+**Outcome** 2026-10-17: `.claude/knowledge/host-content-root.md`: a .NET host started in a checkout or an install sets its own root and turns reload off, and how to prove it.
