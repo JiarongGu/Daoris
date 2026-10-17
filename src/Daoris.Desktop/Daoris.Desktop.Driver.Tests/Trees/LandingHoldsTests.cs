@@ -144,6 +144,58 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
+    /// LANDRACE1's re-check: a branch is held by its repository's common git folder, so a linked worktree (whose <c>.git</c> is a file
+    /// naming its git folder, which names the common one in <c>commondir</c>) and the main checkout take one hold for the same branch,
+    /// whether the link is written absolute or relative. A landing names the repository by the main checkout and a terminal's
+    /// hand-off by the registry's, which may be linked.
+    /// </summary>
+    [Fact]
+    public async Task A_linked_worktree_and_its_main_checkout_take_one_branch_hold()
+    {
+        var (main, linked, relative) = LinkedWorktrees();
+        using var pushing = await LandingHolds.BranchAsync(_home, main, "feature/x");
+
+        Assert.Null(await LandingHolds.BranchAsync(_home, linked, "feature/x", within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+        Assert.Null(await LandingHolds.BranchAsync(_home, relative, "feature/x", within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+        using var other = await LandingHolds.BranchAsync(_home, linked, "feature/y").WaitAsync(Bound);
+        Assert.False(other!.Waited);
+    }
+
+    /// <summary>LANDRACE1's re-check: two spellings of a linked worktree take one branch hold, as two of a tree take one tree hold.</summary>
+    [Fact]
+    public async Task Two_names_for_one_linked_worktree_take_one_branch_hold()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (_, linked, _) = LinkedWorktrees();
+        using var pushing = await LandingHolds.BranchAsync(_home, linked, "feature/x");
+
+        Assert.Null(await LandingHolds.BranchAsync(_home, @"\\?\" + linked, "feature/x", within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+    }
+
+    /// <summary>
+    /// A repository's main checkout and two linked worktrees of it, written as git writes them: a <c>.git</c> file naming the worktree's
+    /// git folder (absolute, and relative), and that folder's <c>commondir</c> naming the common one.
+    /// </summary>
+    private (string Main, string Linked, string Relative) LinkedWorktrees()
+    {
+        var main = Path.Combine(_scratch, "engine");
+        var common = Path.Combine(main, ".git");
+        string Link(string name, bool absolute)
+        {
+            var own = Path.Combine(common, "worktrees", name);
+            Directory.CreateDirectory(own);
+            File.WriteAllText(Path.Combine(own, "commondir"), "../..\n");
+            var linked = Path.Combine(_scratch, name);
+            Directory.CreateDirectory(linked);
+            File.WriteAllText(Path.Combine(linked, ".git"), $"gitdir: {(absolute ? own : Path.GetRelativePath(linked, own)).Replace('\\', '/')}\n");
+            return linked;
+        }
+
+        Directory.CreateDirectory(common);
+        return (main, Link("engine-linked", absolute: true), Link("engine-relative", absolute: false));
+    }
+
+    /// <summary>
     /// Beside another process: the hold is a file under the home's <c>locks/</c>, opened alone, so a landing waits while another
     /// process holds it, and takes it once that process lets go.
     /// </summary>

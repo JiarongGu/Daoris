@@ -734,15 +734,26 @@ public sealed class AutoLandingTests : IDisposable
 
     /// <summary>
     /// LANDRACE1's review, finding 4: a hand-off of the branch a landing just recorded, while that landing's plugin still pushes, waits for
-    /// the push and hands nothing more on: the plugin is told once, and the hand-off says the branch was pushed at this commit.
+    /// the push and hands nothing more on: the plugin is told once, and the hand-off says the branch was pushed at this commit. Its
+    /// re-check: a terminal's hand-off from a linked worktree of the repository (a registry may name one) takes the same hold as the
+    /// landing, which names the repository by its main checkout.
     /// </summary>
-    [Fact]
-    public async Task A_hand_off_beside_a_landings_push_waits_for_it_and_hands_nothing_more_on()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_hand_off_beside_a_landings_push_waits_for_it_and_hands_nothing_more_on(bool fromLinked)
     {
-        var root = await RepositoryAsync("engine");
+        var main = await RepositoryAsync("engine");
+        var root = main;
+        if (fromLinked)
+        {
+            root = Path.Combine(_scratch, "engine-linked");
+            await GitAsync(main, "worktree", "add", "--quiet", "--detach", root);
+        }
+
         Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
         InstallManifest();
-        await DoneSessionAsync(root, "s1", "q1");
+        await DoneSessionAsync(main, "s1", "q1");
         const string branch = "feature/q1-fix-the-gap";
         var lander = Lander();
         var (chosen, _) = await lander.ChooseAsync(Config());
