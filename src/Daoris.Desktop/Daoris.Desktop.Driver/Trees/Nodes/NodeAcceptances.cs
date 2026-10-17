@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -16,17 +17,39 @@ namespace Daoris.Driver;
 /// <param name="Attempt">The attempt that reached it.</param>
 public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string GraphDigest, string Node, int NodeVersion, int Attempt)
 {
-    /// <summary>Its inputs by name: references to upstream outputs, each naming the acceptance that produced it.</summary>
-    public IReadOnlyDictionary<string, NodePort> Inputs { get; init; } = new Dictionary<string, NodePort>();
+    /// <summary>No ports: an acceptance's inputs or outputs before any are named.</summary>
+    public static readonly IReadOnlyDictionary<string, NodePort> NoPorts = ImmutableSortedDictionary.Create<string, NodePort>(StringComparer.Ordinal);
 
-    /// <summary>The acceptances of the nodes it came after (<see cref="Id"/>s): the receipts its eligibility rested on.</summary>
-    public IReadOnlyList<string> PrerequisiteReceipts { get; init; } = [];
+    // FABRIC-NODE1c: each collection is copied when it is set, so an issued id never moves with a caller's dictionary or list.
+    private readonly IReadOnlyDictionary<string, NodePort> inputs = NoPorts;
+    private readonly IReadOnlyList<string> prerequisiteReceipts = ImmutableArray<string>.Empty;
+    private readonly IReadOnlyDictionary<string, NodePort> outputs = NoPorts;
+
+    /// <summary>Its inputs by name: references to upstream outputs, each naming the acceptance that produced it. A copy of what was set.</summary>
+    public IReadOnlyDictionary<string, NodePort> Inputs { get => inputs; init => inputs = Frozen(value); }
+
+    /// <summary>The acceptances of the nodes it came after (<see cref="Id"/>s): the receipts its eligibility rested on. A copy of what was set.</summary>
+    public IReadOnlyList<string> PrerequisiteReceipts
+    {
+        get => prerequisiteReceipts;
+        init => prerequisiteReceipts = ImmutableArray.CreateRange(value ?? throw new ArgumentNullException(nameof(value)));
+    }
 
     /// <summary>The immutable evidence reference it was reached on; not part of the binding.</summary>
     public NodePort? Evidence { get; init; }
 
-    /// <summary>Its declared outputs, each a reference naming this acceptance; not part of the binding.</summary>
-    public IReadOnlyDictionary<string, NodePort> Outputs { get; init; } = new Dictionary<string, NodePort>();
+    /// <summary>Its declared outputs, each a reference naming this acceptance; not part of the binding. A copy of what was set.</summary>
+    public IReadOnlyDictionary<string, NodePort> Outputs { get => outputs; init => outputs = Frozen(value); }
+
+    /// <summary>
+    /// Whether <paramref name="other"/> is the same result: the same binding, and the same evidence and outputs, which the id leaves out.
+    /// </summary>
+    public bool SameResult(NodeAcceptance other) =>
+        Id == other.Id && Equals(Evidence, other.Evidence) && Outputs.Count == other.Outputs.Count
+        && Outputs.All(output => other.Outputs.TryGetValue(output.Key, out var port) && Equals(port, output.Value));
+
+    private static IReadOnlyDictionary<string, NodePort> Frozen(IReadOnlyDictionary<string, NodePort> ports) =>
+        (ports ?? throw new ArgumentNullException(nameof(ports))).ToImmutableSortedDictionary(StringComparer.Ordinal);
 
     /// <summary>The binding's digest: the same binding is the same acceptance, so a receipt names it and a replay records it once.</summary>
     public string Id => "acc-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Canonical())))[..32];
@@ -80,6 +103,9 @@ public static class NodeLapse
 /// <summary>One acceptance invalidated: why, and, where it was carried from upstream, the acceptance it rested on.</summary>
 public sealed record NodeInvalidation(string Acceptance, string Because, string? Upstream);
 
+/// <summary>The results a record writer keeps after one more (<see cref="NodeAcceptances.Keep"/>), or as they were with the refusal's code.</summary>
+public sealed record NodeResults(IReadOnlyList<NodeAcceptance> Kept, string? Refused);
+
 /// <summary>
 /// The acceptances' binding and its transitive invalidation (§E2: <i>a changed dependency invalidates every acceptance downstream,
 /// transitively</i>). Pure: nothing is removed. Old answers and resource receipts stay accountable (§D3); an invalidation never reverses
@@ -124,6 +150,19 @@ public static class NodeAcceptances
         }
 
         return found;
+    }
+
+    /// <summary>
+    /// One more result, as a record writer keeps it (FABRIC-NODE1c): one immutable result per binding. A binding with none takes it; the
+    /// same result again is a replay, kept once; a different one for a binding that has one is refused (<see cref="NodeRefusal.OtherResult"/>),
+    /// never overwritten, since the evidence and the outputs are not in the id. Pure: what is kept is returned, and stored by its writer.
+    /// </summary>
+    public static NodeResults Keep(IReadOnlyList<NodeAcceptance> kept, NodeAcceptance result)
+    {
+        var held = kept.FirstOrDefault(each => each.Id == result.Id);
+        return held is null ? new([.. kept, result], null)
+            : held.SameResult(result) ? new(kept, null)
+            : new(kept, NodeRefusal.OtherResult);
     }
 
     private static bool RestsOn(NodeAcceptance acceptance, string upstream) =>

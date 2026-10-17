@@ -424,7 +424,7 @@ internal sealed class TreeLands(
                 BranchNamed(worked, landing.Rule, repository),
                 handedOn: plugin is not null, ct,
                 entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
-                join: joins ? sync : null).ConfigureAwait(false);
+                join: joins ? sync : null, pinned: gate?.Tip).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
             // ACCEPTALL1: a part that joined its entry's branch by a replay follows it as a replay onto the line does (point 7).
@@ -626,9 +626,14 @@ internal sealed class TreeLands(
     /// branch stands and the tree's tip does not grow from it, what neither holds is replayed onto the branch's tip, as
     /// <paramref name="sync"/>'s would be. Null advances only by the session's own tip, as before.
     /// </param>
+    /// <param name="pinned">
+    /// The tip the door judged (FABRIC-END7's review, <see cref="LandingGate.Tip"/>): the session's branch must stand there when its
+    /// commits are read, or nothing lands, and the branch is made or moved to that commit, so one made after the judgement never lands
+    /// unseen. Null lands the branch as it stands, as the press does.
+    /// </param>
     private async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
-        LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null)
+        LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null, string? pinned = null)
     {
         if (!context.Holds(full))
         {
@@ -685,6 +690,14 @@ internal sealed class TreeLands(
             .Select(entry => entry.Split('\t', 2))
             .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))
             .ToList();
+
+        // FABRIC-END7's review: pinned, the work read here is the work judged, or nothing lands.
+        if (pinned is not null && !string.Equals(commits[^1].Sha, pinned, StringComparison.OrdinalIgnoreCase))
+        {
+            return new TreeLanding(false, $"`{branch}` moved after its landing was judged: it stands at {TextBounds.ShortCommit(commits[^1].Sha, 8)}, "
+                + $"not {TextBounds.ShortCommit(pinned, 8)}. Nothing was landed; it is judged again at its new tip.")
+            { Refusal = AutoLandingCode.Refused };
+        }
 
         // TREEFOLLOW1 (D164 point 4): the tree its agent moved onto a branch of its own lands as that branch stands: it is already the
         // pull request's branch, named as the repository names its own, so none is made and the rule's pattern is not asked.
@@ -757,7 +770,7 @@ internal sealed class TreeLands(
             var onto = sync ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
             if (onto is null)
             {
-                return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash).ConfigureAwait(false);
+                return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash, pinned: pinned).ConfigureAwait(false);
             }
 
             // LANDSYNC1 (point 3): what neither the branch nor the line holds, replayed onto the branch's tip, which then moves by D145
@@ -791,8 +804,8 @@ internal sealed class TreeLands(
         }
 
         // PROCESS1b-ii (points 1 and 2): one commit of the session's tip's tree, its parent where the session left the line, and the
-        // branch made at it; the session's own branch is left as it is, and the record keeps the tip squashed.
-        var start = branch;
+        // branch made at it; the session's own branch is left as it is, and the record keeps the tip squashed. Pinned, at the tip judged.
+        var start = pinned ?? branch;
         string? squashed = null;
         IReadOnlyList<LandingCommit> carried = commits;
         // LANDSYNC1 (point 2): only what the line lacks, replayed aside onto the line's latest; the branch is made at the replay's tip.
@@ -874,15 +887,16 @@ internal sealed class TreeLands(
     /// The tip of what the line lacks replayed onto the branch's (LANDSYNC1), which the branch moves to in place of the session's tip;
     /// null moves it to the session's tip, as before.
     /// </param>
+    /// <param name="pinned">The session's tip the door judged (FABRIC-END7's review), which the branch moves to in place of the tip read now.</param>
     private async Task<Branched> AdvanceAsync(
         string root, string repository, string name, string standsAt, string branch, string? line,
         IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct, string? against = null, LandingSubject? squash = null,
-        string? replayed = null)
+        string? replayed = null, string? pinned = null)
     {
         var recorded = context.Recorded.Of(repository, name);
         var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
-        var head = replayed ?? headOut.Trim();
+        var head = replayed ?? pinned ?? headOut.Trim();
         // What the session's work must grow from: the tip the record says was squashed where it says one (point 4), else the tip
         // the branch was made or last moved at, its commits the session's own; a replay onto that tip grows from it (ACCEPTALL1d).
         var grewFrom = LandingAdvance.GrewFrom(recorded, squash is not null, replayed is not null);

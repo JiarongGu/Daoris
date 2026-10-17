@@ -37,6 +37,23 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
     }
 
     /// <summary>
+    /// Every <c>*.json</c> record under <paramref name="folder"/>, by its stamp (FABRIC-END7: the landing gate's files): a record
+    /// arriving, leaving or written again moves it, so each writer in this process marks its own (<see cref="HomeWrites"/>).
+    /// </summary>
+    public static HomePart Records(string folder, bool subfolders)
+    {
+        var full = Path.GetFullPath(folder);
+        var depth = subfolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+        return new(
+            full,
+            subfolders,
+            (moved, _) => (subfolders || !moved.Contains('/')) && moved.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
+            () => Directory.Exists(full)
+                ? Directory.EnumerateFiles(full, "*.json", depth).Select(file => KeyValuePair.Create(file, HomeWrites.Stamp(file)))
+                : []);
+    }
+
+    /// <summary>
     /// The files at <paramref name="names"/> under <paramref name="folder"/>, and what is made or removed on the way to them
     /// (<paramref name="ways"/>): a staged build's folder is heard by its manifest and its journal, never by the build's thousand files.
     /// </summary>
@@ -126,6 +143,9 @@ public sealed class HomeWatch : IAsyncDisposable
         watch.Topic(ChangeTopics.Lines, Path.GetFileName(lines), HomePart.File(lines));
         var words = HeldWordsFile.PathOf(home);
         watch.Topic(ChangeTopics.Words, Path.GetFileName(words), HomePart.File(words));
+        // The landing gate's files (FABRIC-END7): what releases a second opinion's or a workflow's hold when another process writes it.
+        watch.Topic(ChangeTopics.Gates, ChangeTopics.Gates,
+            HomePart.Records(DaorisHome.Entry(home, HomeEntry.OpinionGates), subfolders: false), HomePart.Records(WorkflowStore.FolderOf(home), subfolders: true));
         return watch;
     }
 
