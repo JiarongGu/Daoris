@@ -167,9 +167,23 @@ public abstract class LandedFixture : IDisposable
         await GitAsync(root, "worktree", "remove", place);
     }
 
+    /// <summary>
+    /// A repository on `main` with one commit, README and shared.txt: a copy of the run's seed of that name (<see cref="GitSeed"/>, PROC1h),
+    /// whose commit is the seed's own, so a test that reads a fresh repository's exact history builds its own (<see cref="BuildRepositoryAsync"/>).
+    /// </summary>
     protected async Task<string> RepositoryAsync(string name)
     {
+        var seed = await GitSeed.SeedAsync($"repository:{name}", async folder => await BuildRepositoryAsync(Path.Combine(folder, name), name));
         var root = Path.Combine(Scratch, name);
+        GitSeed.Copy(Path.Combine(seed, name), root);
+        return root;
+    }
+
+    /// <summary>The same repository made step by step, for a test whose assertions read its commit ids or times.</summary>
+    protected async Task<string> BuildRepositoryAsync(string name) => await BuildRepositoryAsync(Path.Combine(Scratch, name), name);
+
+    private static async Task<string> BuildRepositoryAsync(string root, string name)
+    {
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await GitAsync(root, "config", "user.email", "fixture@example.test");
@@ -179,15 +193,26 @@ public abstract class LandedFixture : IDisposable
         return root;
     }
 
-    /// <summary>A repository whose `origin` is a bare repository beside it — somewhere a push lands without leaving the machine.</summary>
+    /// <summary>
+    /// A repository whose `origin` is a bare repository beside it — somewhere a push lands without leaving the machine. A copy of the run's
+    /// seed of that name with its origin, whose url is repaired to the copy's own bare repository (PROC1h).
+    /// </summary>
     protected async Task<(string Root, string Origin)> RepositoryWithOriginAsync(string name)
     {
+        var seed = await GitSeed.SeedAsync($"origin:{name}", async folder =>
+        {
+            var seeded = Path.Combine(folder, $"{name}-origin.git");
+            Directory.CreateDirectory(seeded);
+            await GitAsync(seeded, "init", "--quiet", "--bare", "-b", "main");
+            var repository = await BuildRepositoryAsync(Path.Combine(folder, name), name);
+            await GitAsync(repository, "remote", "add", "origin", seeded);
+            await GitAsync(repository, "push", "--quiet", "-u", "origin", "main");
+        });
         var origin = Path.Combine(Scratch, $"{name}-origin.git");
-        Directory.CreateDirectory(origin);
-        await GitAsync(origin, "init", "--quiet", "--bare", "-b", "main");
-        var root = await RepositoryAsync(name);
-        await GitAsync(root, "remote", "add", "origin", origin);
-        await GitAsync(root, "push", "--quiet", "-u", "origin", "main");
+        var root = Path.Combine(Scratch, name);
+        GitSeed.Copy(Path.Combine(seed, $"{name}-origin.git"), origin);
+        GitSeed.Copy(Path.Combine(seed, name), root);
+        GitSeed.RepairOrigin(root, origin);
         return (root, origin);
     }
 
