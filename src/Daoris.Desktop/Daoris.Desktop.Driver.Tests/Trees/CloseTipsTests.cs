@@ -122,6 +122,13 @@ public sealed class CloseTipsTests
         Assert.Empty(unbound);
         Assert.Equal(0, taken);
 
+        // Closed by its graph: its revision reads no branch any more (QuestClosing.Revision), so neither does a read, however long the service
+        // lists it.
+        var closed = await QuestClosing.TipsAsync([QuestUnit(Taken("q7") with { Status = "Done" }), Branch("daoris/s1", "q7")],
+            new Dictionary<string, string> { ["engine"] = "engine-checkout" }, None, Failing);
+        Assert.Empty(closed);
+        Assert.Equal(0, taken);
+
         // No checkout of its repository: unread, and nothing taken.
         var rootless = await QuestClosing.TipsAsync([QuestUnit(q7), Branch("daoris/s1", "q7")], new Dictionary<string, string>(), None, Failing);
         Assert.Equal(new Dictionary<string, string?> { ["branch:engine/daoris/s1"] = null }, rootless);

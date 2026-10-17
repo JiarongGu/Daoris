@@ -207,7 +207,9 @@ public static class QuestClosing
     {
         var quests = units.Select(unit => unit.Records.Quest).OfType<QuestView>()
             .GroupBy(quest => quest.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
-        var chains = quests.Values.Where(quest => quest.Closure is { Length: > 0 }).SelectMany(quest => Lineage(quest, quests).Chain).ToList();
+        // A chain wholly closed is judged on its quests alone (Revision), so a closed quest the service still lists reads no git.
+        var chains = quests.Values.Where(quest => quest.Closure is { Length: > 0 }).Select(quest => Lineage(quest, quests))
+            .Where(lineage => lineage.Unread is not null || lineage.Chain.Any(each => each.Status != Done)).SelectMany(lineage => lineage.Chain).ToList();
         var tips = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var repository in Worked(chains, units).DistinctBy(unit => unit.Id).GroupBy(unit => unit.Owner.Repository ?? "", StringComparer.OrdinalIgnoreCase))
         {
