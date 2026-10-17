@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { DaorisError } from './errors.ts';
 
@@ -19,12 +19,28 @@ export function readText(file: string): string {
  * Write beside the target, then rename — a crash never leaves a half-written
  * rule on disk. Node writes UTF-8 without a BOM, and the text is already LF.
  * The rename waits while something holds the file it replaces (FLAKE1, 2026-10-07).
+ *
+ * @param rename The move itself; a test hands in one that records or refuses.
  */
-export function writeTextAtomic(file: string, text: string): void {
+export function writeTextAtomic(file: string, text: string, { rename = renameSync }: { rename?: (from: string, to: string) => void } = {}): void {
+  writeBeside(file, (beside) => writeFileSync(beside, text, 'utf8'), rename);
+}
+
+/**
+ * The staging file is named per write and removed when the write fails, as the driver's `AtomicFile` does (FABRIC-GRAPH1's re-check,
+ * finding 2): under one fixed name, two writers of one file at once wrote into and moved each other's, so one could put the other's
+ * text in place, or find its own already moved.
+ */
+function writeBeside(file: string, write: (beside: string) => void, rename: (from: string, to: string) => void = renameSync): void {
   mkdirSync(dirname(file), { recursive: true });
-  const tmp = `${file}.daoris-tmp`;
-  writeFileSync(tmp, text, 'utf8');
-  renameHeld(tmp, file);
+  const beside = `${file}.${randomUUID().replaceAll('-', '')}.daoris-tmp`;
+  try {
+    write(beside);
+    renameHeld(beside, file, { rename });
+  } finally {
+    // Only a write that failed leaves one behind, and it is nobody's.
+    rmSync(beside, { force: true });
+  }
 }
 
 /**
@@ -88,10 +104,7 @@ export function digestBytes(bytes: Buffer): string {
 
 /** `writeTextAtomic` for bytes copied as they are: a mirror of a file that is not its skill's entry (D117 §3.2). */
 export function writeBytesAtomic(file: string, bytes: Buffer): void {
-  mkdirSync(dirname(file), { recursive: true });
-  const tmp = `${file}.daoris-tmp`;
-  writeFileSync(tmp, bytes);
-  renameHeld(tmp, file);
+  writeBeside(file, (beside) => writeFileSync(beside, bytes));
 }
 
 /** The refusals that mean something still holds a file in the way, and give way once it lets go. */
