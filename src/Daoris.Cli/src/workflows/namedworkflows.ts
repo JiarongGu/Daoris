@@ -16,6 +16,7 @@ import { sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { landingProblem } from '../driver/driverconfig.ts';
 import { isPluginId } from '../plugins/plugins.ts';
+import { GRAPH_SCHEMA, graphFormDigest, readGraphForm, type GraphForm } from './graphversions.ts';
 import { ID_SHAPE, isDeviceName, isWorkflowId } from './workflowid.ts';
 
 // The id is `workflowid.ts`'s, which `workflowchoice.ts` reads too; read here as it always was.
@@ -120,8 +121,20 @@ export interface NamedVersion {
   door: string | null;
   steps: NamedStep[] | null;
   problem: string | null;
-  /** The first 12 hex characters of the SHA-256 of `versionCanonical`'s text, where the version reads. */
+  /**
+   * The first 12 hex characters of the SHA-256 of `versionCanonical`'s text, where the version reads; for a graph version, the graph's own
+   * digest (`graphFormDigest`), which a run bound to it binds.
+   */
   digest: string | null;
+  /** A graph version's graph (schema 2, FABRIC-GRAPH1b): it holds no steps, and reads as a graph the steps-driven runtime does not run yet. */
+  graph?: GraphForm;
+  /** Set where the driver reads the version and this build cannot write it as the driver does: a file holding one is never written over here. */
+  rewrites?: true;
+}
+
+/** Why a version cannot be run by the steps-driven runtime, or null where it can — the driver's `NamedVersion.Unrun`. */
+export function unrun(version: NamedVersion): string | null {
+  return version.steps !== null ? null : version.problem ?? `v${version.version}: it is a graph (schema ${GRAPH_SCHEMA}), which this build reads and does not run yet.`;
 }
 
 /** A workflow file as read: its id and name and every version, each readable or not; or the file's own first problem. */
@@ -217,7 +230,32 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
     return unread(`v${number}: its \`door\` is \`screen\`, \`terminal\` or \`ask-daoris:<proposal>\`.`);
   }
 
-  const { steps, problem } = readSteps(value['steps'], number, prior);
+  // A version is its steps (schema 1: no `schema`, or 1) or its graph (schema 2), never both and never in part (FABRIC-GRAPH1b). An
+  // older build reads `steps` alone and no other key, so a graph version, which holds none, is unreadable there as it is here.
+  const hasSteps = value['steps'] !== undefined && value['steps'] !== null;
+  const schema = value['schema'];
+  if (schema !== undefined && schema !== null) {
+    if (schema !== 1 && schema !== GRAPH_SCHEMA) {
+      return unread(`v${number}: its \`schema\` is 1, its steps, or ${GRAPH_SCHEMA}, its graph; this build reads no other.`);
+    }
+
+    if (schema === GRAPH_SCHEMA) {
+      if (hasSteps) return unread(`v${number}: a version is its \`steps\` or its \`graph\`, never both.`);
+      const raw = value['graph'];
+      if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+        return unread(`v${number}: its schema is ${GRAPH_SCHEMA}, so its \`graph\` is the graph's JSON object.`);
+      }
+
+      const read = readGraphForm(raw);
+      // The driver reads this graph and this build cannot write its options as the driver does: no digest, and no rewriting of the file.
+      if (read.lossy !== undefined) return { ...unread(`v${number}: its graph does not hold here: ${read.lossy}`), rewrites: true };
+      return read.graph === null
+        ? unread(`v${number}: its graph does not hold: ${read.problem}`)
+        : { version: number, at, door, steps: null, problem: null, digest: graphFormDigest(read.graph), graph: read.graph };
+    }
+  }
+
+  const { steps, problem } = readSteps(hasSteps ? value['steps'] : undefined, number, prior);
   return steps === null ? unread(problem!) : { version: number, at, door, steps, problem: null, digest: versionDigest(steps) };
 }
 
@@ -782,6 +820,8 @@ export interface VersionAdded {
   door: string;
   at: string;
   steps: unknown;
+  /** A named graph as the version (schema 2, FABRIC-GRAPH1b), instead of the steps: the CLI does not judge one, so it saves none. */
+  graph?: unknown;
 }
 
 /**
@@ -795,7 +835,13 @@ export interface VersionAdded {
 export function planAddVersion(file: unknown, add: VersionAdded, kept: readonly number[] = []):
   { result: Record<string, unknown> | null; version: number | null; problem: string | null } {
   const refused = (problem: string) => ({ result: null, version: null, problem });
-  const version = { version: 0, at: add.at, door: add.door, steps: add.steps };
+  // A graph is judged whole before it is saved (`NodeGraphs.Problems`), which only the driver holds: a CLI that wrote one unjudged would
+  // leave a version the driver refuses (FABRIC-GRAPH1b).
+  if (add.graph !== undefined && add.graph !== null) {
+    return refused('nothing was written: a graph is saved where it is judged whole, by the driver; this door saves a workflow\'s steps.');
+  }
+
+  const version ={ version: 0, at: add.at, door: add.door, steps: add.steps };
   if (file === null) {
     const problem = workflowIdProblem(add.id) ?? workflowNameProblem(add.name);
     if (problem !== null) return refused(problem);
@@ -807,6 +853,13 @@ export function planAddVersion(file: unknown, add: VersionAdded, kept: readonly 
   const read = readWorkflowFile(file);
   if (read.problem !== null) return refused(`nothing was written: the workflow's file cannot be read — ${read.problem}`);
   if (read.id !== add.id) return refused(`nothing was written: the file holds the workflow \`${read.id}\`, not \`${add.id}\`.`);
+  // A parse and a write of the file would change such a version's text, and with it the digest a run bound to it holds (FABRIC-GRAPH1b).
+  const lossy = read.versions.find((each) => each.rewrites === true);
+  if (lossy !== undefined) {
+    return refused(`nothing was written: v${lossy.version} holds a value this build would write differently than the driver does, and `
+      + 'the file is written whole; a version is added where it is read as written, by the driver.');
+  }
+
   version.version = read.versions[read.versions.length - 1]!.version + 1;
   const candidate = readVersion(version, version.version, read.versions.filter((each) => each.steps !== null));
   if (candidate.problem !== null) return refused(candidate.problem);

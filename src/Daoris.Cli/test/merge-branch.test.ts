@@ -510,6 +510,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'driver']],
     // FABRIC-WORKFLOW2: D157's versions and the graphs they decode to sit among the CLI's fixtures, and the driver's WorkflowGraphsTests reads them too.
     ['the workflow-graphs table', ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], [...BASE, 'driver']],
+    // FABRIC-GRAPH1b: a named graph as a named workflow's version sits among the CLI's fixtures, and the driver's WorkflowGraphVersionsTests reads it too.
+    ['the workflow-graph-versions table', ['src/Daoris.Cli/test/fixtures/workflow-graph-versions.json'], [...BASE, 'driver']],
     // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver', 'web']],

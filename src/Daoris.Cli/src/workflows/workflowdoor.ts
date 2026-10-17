@@ -31,8 +31,9 @@ import {
 } from './workflowchoice.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowPluginsOf, workflowSaid, type CurrentWorkflow } from './workflows.ts';
+import { GRAPH_SCHEMA } from './graphversions.ts';
 import {
-  WORKFLOW_PRESETS, field, isWorkflowId, kindOf, planAddVersion, readSteps, readWorkflowFile, rendered, versionDigest,
+  WORKFLOW_PRESETS, field, isWorkflowId, kindOf, planAddVersion, readSteps, readWorkflowFile, rendered, unrun, versionDigest,
   withGates, workflowDiff, workflowIdProblem, workflowLine, type NamedStep, type NamedVersion, type SavedStep, type WorkflowRead,
 } from './namedworkflows.ts';
 
@@ -170,7 +171,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
         continue;
       }
       const reads = [...read.versions].reverse().find((each) => each.steps !== null);
-      write(`  \`${id}\` — ${read.name}: v${newest.version} cannot be read here (${newest.problem})`
+      write(`  \`${id}\` — ${read.name}: v${newest.version} cannot be read here (${unrun(newest)})`
         + (reads === undefined ? '; no version of it reads here.' : `; v${reads.version} is the newest that reads.`));
     }
     write('Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):');
@@ -191,7 +192,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       throw new DaorisError(`\`${id}\` keeps no v${version} — it keeps ${read.versions.map((each) => `v${each.version}`).join(', ')}.`);
     }
     if (shown.steps === null) {
-      throw new DaorisError(`\`${id}\` v${shown.version} cannot be read here: ${shown.problem} The file keeps it as written.`, 1);
+      throw new DaorisError(`\`${id}\` v${shown.version} cannot be read here: ${unrun(shown)} The file keeps it as written.`, 1);
     }
 
     const newest = shown === read.versions[read.versions.length - 1];
@@ -257,7 +258,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       const newest = found?.read.problem === null ? found.read.versions[found.read.versions.length - 1]! : null;
       if (newest?.steps == null) {
         const problem = found === null ? 'no workflow by that id is saved here'
-          : found.read.problem ?? `v${newest!.version} cannot be read here: ${newest!.problem}`;
+          : found.read.problem ?? `v${newest!.version} cannot be read here: ${unrun(newest!)}`;
         write(`daoris: ${whose} chooses \`${selected.workflow}\`, ${why}, which cannot be read here: ${problem.replace(/\.$/, '')}.`);
         for (const line of [...notes, ...undeclaredSaid(selected, circle)]) write(line);
         write(WHAT_CHOOSES);
@@ -322,7 +323,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       }
       if (found.read.problem !== null) throw new DaorisError(`\`${chosen}\` cannot be read: ${found.read.problem}`, 1);
       const newest = found.read.versions[found.read.versions.length - 1]!;
-      if (newest.steps === null) {
+      if (newest.steps === null && newest.graph === undefined) {
         throw new DaorisError(`\`${chosen}\` v${newest.version} cannot be read here: ${newest.problem} It can be chosen once a `
           + 'version that reads is saved after it.', 1);
       }
@@ -354,7 +355,9 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       else {
         const found = load(chosen)!;
         const newest = found.read.versions[found.read.versions.length - 1]!;
-        write(`daoris: ${whose} now chooses \`${chosen}\`${forWhat} — ${found.read.name}, v${newest.version} now: ${workflowLine(newest.steps!)}`);
+        write(`daoris: ${whose} now chooses \`${chosen}\`${forWhat} — ${found.read.name}, v${newest.version} now: ${newest.graph !== undefined
+          ? `a graph (schema ${GRAPH_SCHEMA}) of ${newest.graph.nodes.length} nodes and ${newest.graph.wires.length} wires, digest ${newest.digest}, which this build reads and does not run yet.`
+          : workflowLine(newest.steps!)}`);
       }
       if (owner !== null) {
         write(after === undefined
@@ -527,7 +530,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     if (version === undefined) {
       throw new DaorisError(`\`${found.id}\` keeps no v${wanted} — it keeps ${versions.map((each) => `v${each.version}`).join(', ')}.`);
     }
-    if (version.steps === null) throw new DaorisError(`\`${found.id}\` v${version.version} cannot be read here: ${version.problem}`, 1);
+    if (version.steps === null) throw new DaorisError(`\`${found.id}\` v${version.version} cannot be read here: ${unrun(version)}`, 1);
     const index = versions.indexOf(version);
     const raw = ((found.file as { versions: { steps: unknown }[] }).versions[index]!.steps);
     return { version, raw: JSON.parse(JSON.stringify(raw)) as SavedStep[] };
@@ -550,7 +553,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     const found = required(id);
     const { version, raw } = baseOf(found);
     if (raw === null) {
-      throw new DaorisError(`\`${id}\` v${version.version} cannot be read here: ${version.problem} \`daoris driver workflow apply `
+      throw new DaorisError(`\`${id}\` v${version.version} cannot be read here: ${unrun(version)} \`daoris driver workflow apply `
         + `${id} <file>\` saves a whole version after it.`, 1);
     }
     const tokens: string[] = [];
@@ -623,7 +626,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     const read = readWorkflowFile(file);
     if (read.problem !== null) throw new DaorisError(`\`${from}\` cannot be imported: ${read.problem}`, 1);
     const unread = read.versions.find((each) => each.steps === null);
-    if (unread !== undefined) throw new DaorisError(`\`${from}\` cannot be imported: ${unread.problem}`, 1);
+    if (unread !== undefined) throw new DaorisError(`\`${from}\` cannot be imported: ${unrun(unread)}`, 1);
     const id = read.id!;
     const newest = read.versions[read.versions.length - 1]!;
     const here = load(id);
