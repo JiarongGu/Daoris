@@ -123,7 +123,12 @@
  * branch is not at main's tip, as a just-dispatched agent's is before its first commit, and no running
  * process is inside: none whose executable path or command line names the folder, read once per prune
  * (one CIM query on Windows, `ps` elsewhere) and only when a harness-locked worktree or a folder below
- * needs it. Removal is `git worktree remove`, never forced: ignored build output does not stop it, and
+ * needs it. It also stays locked unless it has been idle (CLEANUP2b): nothing in it written for
+ * `HARNESS_IDLE_MINUTES` (two hours), read by `newestWrite` from the folder's top-level entries, their children but build
+ * output, and the git folder's HEAD, index and HEAD log, never a full walk. A process's command line does not show a shell's
+ * working folder, the lock is held for the agent's whole run, and the branch guard fails once main moves past a fresh
+ * branch, so a worker that had not yet committed lost its tree (2026-10-18); the plan says "written N minutes ago, a worker
+ * may be in it". Removal is `git worktree remove`, never forced: ignored build output does not stop it, and
  * whatever does is work to keep. Then `git branch -d`, never `-D`, and one `git worktree prune` at the
  * end. What git refuses is kept and says why.
  *
@@ -1726,6 +1731,47 @@ export function processesInside(folder, processes, platform = process.platform) 
   return processes.filter((one) => names(one.command) || (one.exe && names(one.exe)));
 }
 
+/** How long a harness-locked worktree must have had no write before the prune takes it (CLEANUP2b). */
+export const HARNESS_IDLE_MINUTES = 120;
+
+// Folders whose children are not read: build output and dependencies, thousands of entries a worker's edits rarely reach first.
+const WRITE_SKIP = new Set(['.git', 'node_modules', 'bin', 'obj', 'dist', 'wwwroot']);
+
+/**
+ * The newest write time, in ms, of a worktree's folder, 0 when nothing could be read (CLEANUP2b). Read cheaply, never a
+ * full walk (a tree is 300 MB): the times of the folder's top-level entries (a file or folder made or removed there moves
+ * the folder's own time, and a worker's builds, logs and scratch land there), of the children of each top-level folder
+ * but build output (`src/`, `local/`, `docs/`), and of the git folder the worktree keeps beside the repository: its HEAD,
+ * its index and its HEAD log, which every commit, checkout and `git add` writes. A file edited in place deeper down, with
+ * nothing made or committed, is not seen; the two hours the caller waits cover that.
+ */
+export function newestWrite(path) {
+  let newest = 0;
+  const seen = (file) => {
+    try {
+      newest = Math.max(newest, lstatSync(file).mtimeMs);
+    } catch { /* gone between the listing and the stat: nothing to read */ }
+  };
+  const children = (folder) => {
+    try {
+      return readdirSync(folder, { withFileTypes: true });
+    } catch {
+      return [];
+    }
+  };
+  seen(path);
+  for (const entry of children(path)) {
+    const at = join(path, entry.name);
+    seen(at);
+    if (entry.isDirectory() && !WRITE_SKIP.has(entry.name)) for (const child of children(at)) seen(join(at, child.name));
+  }
+  try {
+    const pointer = /^gitdir: (.+)$/m.exec(readFileSync(join(path, '.git'), 'utf8'));
+    if (pointer) for (const name of ['HEAD', 'index', join('logs', 'HEAD')]) seen(join(resolve(path, pointer[1].trim()), name));
+  } catch { /* no .git file: the folder's own entries are all there is */ }
+  return newest;
+}
+
 /** One process, as a prune names it: its pid and its command line, cut short. */
 const processSaid = (one) => `pid ${one.pid}: ${one.command.length > 120 ? `${one.command.slice(0, 120)}…` : one.command}`;
 
@@ -1789,6 +1835,9 @@ export function pruneVerdict(candidate, facts) {
   kept.push(...has.map((one) => `it has ${one}`));
   if (!facts.processes) kept.push(`whether a process runs inside it could not be read (${facts.processError ?? 'not looked into'})`);
   else if (facts.processes.length) kept.push(`a running process is inside it (${facts.processes.map(processSaid).join('; ')})`);
+  // A shell's working folder is on no command line, so a quiet tree is the only sign a worker has left it (CLEANUP2b).
+  if (facts.idleMinutes === undefined) kept.push('when it was last written could not be read');
+  else if (facts.idleMinutes < HARNESS_IDLE_MINUTES) kept.push(`written ${facts.idleMinutes} minute${facts.idleMinutes === 1 ? '' : 's'} ago, a worker may be in it`);
   if (kept.length) return { remove: false, why: `its worktree is locked by the agent harness (${tree.lockReason}), and stays locked: ${kept.join('; ')}` };
   return { remove: true, why: '', ...unlock };
 }
@@ -1924,7 +1973,9 @@ export function planPrune(root, { hold = [] } = {}) {
     if (!candidate.held && tree && (!tree.locked || harnessLock(tree.lockReason))) {
       facts = inspectWorktree(tree);
       if (tree.locked && !facts.gone) {
+        const written = newestWrite(tree.path);
         Object.assign(facts, { atTip: refs.find((ref) => ref.branch === candidate.branch)?.sha === tip }, inside(tree.path));
+        if (written > 0) facts.idleMinutes = Math.max(0, Math.floor((Date.now() - written) / 60_000));
       }
     }
     return { ...candidate, ...pruneVerdict(candidate, facts) };

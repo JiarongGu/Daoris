@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync, writeSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync, writeSync } from 'node:fs';
 import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture } from './_fixture.ts';
@@ -48,6 +48,8 @@ interface Candidate { branch: string; worktree: Worktree | null; held: string | 
 interface Facts {
   gone?: boolean; error?: string; tracked: string[]; untracked: string[]; local: string | null;
   atTip?: boolean; processes?: Proc[]; processError?: string;
+  /** CLEANUP2b: minutes since the newest write read in the worktree. */
+  idleMinutes?: number;
 }
 interface Proc { pid: number; exe: string; command: string }
 /** CLEANUP2: a folder under `.claude/worktrees/` that git does not list. */
@@ -111,6 +113,8 @@ const tool = await import(
   pruneCandidates: (facts: { merged: string[]; worktrees: Worktree[]; current: string; hold?: string[] }) => Candidate[];
   pruneVerdict: (candidate: Candidate, facts: Facts | null) => { remove: boolean; why: string; gone?: boolean; unlock?: boolean };
   harnessLock: (reason: string) => boolean;
+  HARNESS_IDLE_MINUTES: number;
+  newestWrite: (path: string) => number;
   parseProcesses: (text: string, platform?: string) => Proc[];
   processesInside: (folder: string, processes: Proc[], platform?: string) => Proc[];
   disposableLocal: (path: string, directory?: boolean) => boolean;
@@ -386,8 +390,34 @@ test('the agent harness\'s lock is its own reason: claude agent, an agent id and
   }
 });
 
+// CLEANUP2b: the newest write is read from the tree's top level, its folders' children, and the git folder's HEAD, index and
+// log, never a full walk; a source file edited in place deeper down is not seen, which the two hours cover.
+test('the newest write of a worktree is read from its top level, its folders\' children and its git folder', () => {
+  const repo = scratch('newest-write', [{ name: 'first', run: 'node gate.mjs first' }], { 'src/a.ts': 'a\n' });
+  try {
+    const path = join(dirname(repo.root), 'tree');
+    git(repo.root, 'worktree', 'add', '--quiet', '-b', 'w', path, 'main');
+    age(path, 300);
+    const idle = (Date.now() - tool.newestWrite(path)) / 60_000;
+    assert.ok(idle >= 299 && idle < 302, `all idle: ${idle}`);
+    const touched = (target: string) => {
+      age(path, 300);
+      writeFileSync(target, 'x\n');
+      return (Date.now() - tool.newestWrite(path)) / 60_000;
+    };
+    assert.ok(touched(join(path, 'top.txt')) < 2, 'a file at the top');
+    assert.ok(touched(join(path, 'src', 'b.ts')) < 2, 'a file in a folder');
+    const gitdir = /^gitdir: (.+)$/m.exec(readFileSync(join(path, '.git'), 'utf8'))![1]!.trim();
+    assert.ok(touched(join(gitdir, 'HEAD')) < 2, "the worktree's HEAD");
+    assert.ok(touched(join(gitdir, 'index')) < 2, "the worktree's index");
+    assert.equal(tool.newestWrite(join(path, 'missing')), 0, 'a folder that is not there has no write');
+  } finally {
+    repo.cleanup();
+  }
+});
+
 test('a harness-locked merged worktree goes, unlocked, only when it is clean, holds nothing under local/ and no process runs inside', () => {
-  const clean: Facts = { tracked: [], untracked: [], local: null, atTip: false, processes: [] };
+  const clean: Facts = { tracked: [], untracked: [], local: null, atTip: false, processes: [], idleMinutes: 300 };
   const reason = 'claude agent agent-b (pid 1)';
   const at = (lockReason = reason): Candidate => ({ branch: 'b', worktree: tree('/r/w/b', 'b', { locked: true, lockReason }), held: null });
 
@@ -399,7 +429,7 @@ test('a harness-locked merged worktree goes, unlocked, only when it is clean, ho
   assert.equal(inside.remove, false);
   assert.match(inside.why, /locked by the agent harness \(claude agent agent-b \(pid 1\)\)/);
   assert.match(inside.why, /a running process is inside it \(pid 9: node land\.mjs\)/);
-  const unread = tool.pruneVerdict(at(), { tracked: [], untracked: [], local: null, atTip: false, processError: 'powershell could not start' });
+  const unread = tool.pruneVerdict(at(), { tracked: [], untracked: [], local: null, atTip: false, idleMinutes: 300, processError: 'powershell could not start' });
   assert.equal(unread.remove, false);
   assert.match(unread.why, /whether a process runs inside it could not be read \(powershell could not start\)/);
   // A just-dispatched agent's branch sits at main's tip before its first commit, and counts as merged.
@@ -411,6 +441,20 @@ test('a harness-locked merged worktree goes, unlocked, only when it is clean, ho
     ...clean, tracked: ['a.ts'], untracked: ['n.txt'], local: 'local/notes.md', processes: [{ pid: 3, exe: '', command: 'code .' }],
   });
   assert.match(all.why, /tracked files \(a\.ts\)[\s\S]*local\/ \(local\/notes\.md\)[\s\S]*untracked files[\s\S]*pid 3: code \./);
+
+  // CLEANUP2b: a worker may be in the tree with no process naming its folder, so a write in the last two hours keeps it.
+  const young = tool.pruneVerdict(at(), { ...clean, idleMinutes: 7 });
+  assert.equal(young.remove, false);
+  assert.equal('unlock' in young, false);
+  assert.match(young.why, /locked by the agent harness \(claude agent agent-b \(pid 1\)\), and stays locked: written 7 minutes ago, a worker may be in it/);
+  assert.equal(tool.pruneVerdict(at(), { ...clean, idleMinutes: tool.HARNESS_IDLE_MINUTES - 1 }).remove, false);
+  assert.equal(tool.pruneVerdict(at(), { ...clean, idleMinutes: tool.HARNESS_IDLE_MINUTES }).remove, true, 'idle for the whole span goes');
+  assert.match(tool.pruneVerdict(at(), { ...clean, idleMinutes: 1 }).why, /written 1 minute ago,/);
+  const { idleMinutes: _unread, ...unwritten } = clean;
+  const unreadWrite = tool.pruneVerdict(at(), unwritten);
+  assert.equal(unreadWrite.remove, false);
+  assert.match(unreadWrite.why, /when it was last written could not be read/);
+  assert.equal(tool.pruneVerdict(at(), { ...unwritten, gone: true }).remove, true, 'a folder that is gone has no one in it');
 
   // Any other lock is in use however the worktree looks, and is never looked into or unlocked.
   for (const other of ['the owner keeps this', '']) {
@@ -2705,6 +2749,24 @@ function git(cwd: string, ...args: string[]): string {
 
 const TRAILER = '\n\nCo-Authored-By: Fixture <fixture@example.test>';
 
+/**
+ * CLEANUP2b: a worktree as a finished agent's is, nothing in it or in its git folder written for `minutes`: every
+ * entry's times set back (links are not followed), and the files of the git folder a worktree keeps beside the repository.
+ */
+function age(worktree: string, minutes: number): void {
+  const when = new Date(Date.now() - minutes * 60_000);
+  const back = (path: string) => {
+    const info = lstatSync(path);
+    if (info.isSymbolicLink()) return;
+    if (info.isDirectory()) for (const name of readdirSync(path)) back(join(path, name));
+    utimesSync(path, when, when);
+  };
+  const pointer = /^gitdir: (.+)$/m.exec(readFileSync(join(worktree, '.git'), 'utf8'));
+  assert.ok(pointer, 'the worktree has a .git file');
+  back(pointer[1]!.trim());
+  back(worktree);
+}
+
 // Every gate appends its name to local/ran.txt and prints a thousand lines, so a test can read the order
 // the gates ran in and whether a log kept the whole output. Given `once`, it exits with its code the first
 // time only, as a rehearsal that died under load and passes run again.
@@ -3465,6 +3527,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const inUse = add('in-use');
     git(repo.root, 'worktree', 'lock', '--reason', 'claude agent agent-x (pid 1)', inUse);
     writeFileSync(join(inUse, 'tracked.txt'), 'the agent is mid-edit\n');
+    // Idle for hours, so only what the plan says of them decides (CLEANUP2b keeps a tree written in the last two).
+    age(fresh, 300);
+    age(inUse, 300);
     writeFileSync(join(add('changed'), 'tracked.txt'), 'changed\n');
     const kept = add('private');
     mkdirSync(join(kept, 'local'), { recursive: true });
@@ -3554,6 +3619,10 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
         writeFileSync(join(notes, path), 'a worker wrote this\n');
       }
       add('owned', 'the owner keeps this');
+      // CLEANUP2b: a worker started minutes ago, clean, merged, behind main's tip and with no process naming its folder
+      // (a shell's working folder is not on a command line) is kept; the others were last written hours ago.
+      const young = add('young', harness('y'));
+      for (const path of [done, busy, logs]) age(path, 300);
       // Main moves on, so these merged branches stand behind its tip, as a finished agent's always does.
       git(repo.root, 'commit', '--quiet', '--allow-empty', '-m', `main moves on${TRAILER}`);
 
@@ -3589,7 +3658,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
       const plan = await repo.run(['--prune', '--plan']);
       assert.equal(plan.status, 0, plan.out);
-      assert.match(plan.out, new RegExp(`prune \\(a plan, so nothing is removed\\): 5 branches merged into main; ${folders} folders under \\.claude/worktrees/ git does not list\\n`));
+      assert.match(plan.out, new RegExp(`prune \\(a plan, so nothing is removed\\): 6 branches merged into main; ${folders} folders under \\.claude/worktrees/ git does not list\\n`));
+      assert.match(plan.out, /\n\s+keep\s+young\s+its worktree is locked by the agent harness \(claude agent agent-y \(pid 4242\)\), and stays locked: written \d+ minutes? ago, a worker may be in it\n/);
       assert.match(plan.out, /\n\s+remove\s+done\s+its worktree \.\.\/trees\/done, unlocked from the agent harness \(claude agent agent-d \(pid 4242\)\), and the branch\n/);
       assert.match(plan.out, new RegExp(`\\n\\s+keep\\s+busy\\s+its worktree is locked by the agent harness \\(claude agent agent-b \\(pid 4242\\)\\), and stays locked: a running process is inside it \\(pid ${busyHolder.pid}: `));
       assert.match(plan.out, /\n\s+remove\s+logs\s+its worktree \.\.\/trees\/logs, unlocked from the agent harness/, 'worker logs keep nothing');
@@ -3606,19 +3676,20 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
       const result = await repo.run(['--prune']);
       assert.equal(result.status, 0, result.out);
-      assert.match(result.out, new RegExp(`prune: 5 branches merged into main; ${folders} folders under \\.claude/worktrees/ git does not list\\n`));
+      assert.match(result.out, new RegExp(`prune: 6 branches merged into main; ${folders} folders under \\.claude/worktrees/ git does not list\\n`));
       assert.match(result.out, /\n\s+removed\s+done\s+its worktree \.\.\/trees\/done, unlocked from the agent harness/);
       assert.match(result.out, /\n\s+removed\s+logs\s/);
-      for (const name of ['busy', 'notes', 'owned']) assert.match(result.out, new RegExp(`\\n\\s+kept\\s+${name}\\s`));
+      for (const name of ['busy', 'notes', 'owned', 'young']) assert.match(result.out, new RegExp(`\\n\\s+kept\\s+${name}\\s`));
       assert.match(result.out, /\n\s+removed\s+\.claude\/worktrees\/agent-h\s/);
       for (const name of ['agent-link', 'agent-held', 'agent-git']) assert.match(result.out, new RegExp(`\\n\\s+kept\\s+\\.claude/worktrees/${name}\\s`));
       if (windows) {
         assert.match(result.out, /\n\s+kept\s+\.claude\/worktrees\/agent-stuck\s+it could not be removed \(E[A-Z]+\b[^)]*\); no running process names it in its command line, so one holds it another way \(its working folder, an open file\); the next prune tries again\n/);
       }
 
-      assert.deepEqual(branches(), ['busy', 'main', 'notes', 'owned']);
+      assert.deepEqual(branches(), ['busy', 'main', 'notes', 'owned', 'young']);
       const after = listing();
-      assert.deepEqual(after.filter((t) => t.locked).map((t) => [t.branch, t.lockReason]).sort(), [['busy', harness('b')], ['owned', 'the owner keeps this']]);
+      assert.deepEqual(after.filter((t) => t.locked).map((t) => [t.branch, t.lockReason]).sort(), [['busy', harness('b')], ['owned', 'the owner keeps this'], ['young', harness('y')]]);
+      assert.ok(existsSync(young), 'a worker written minutes ago keeps its tree, locked as it was (CLEANUP2b)');
       assert.equal(existsSync(done), false);
       assert.equal(existsSync(logs), false, 'the worker logs went with their worktree');
       assert.equal(existsSync(half), false, 'the half-removed folder is gone');

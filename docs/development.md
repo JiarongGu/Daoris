@@ -35,7 +35,8 @@ backups and evidence still needed by the task.
 Agent worktrees and what they leave go by the merge tool's prune, which every merge runs and
 `node tools/merge-branch.mjs --prune [--plan]` runs alone; its rules are the tool header's GATE2. A
 merged worktree with no change and nothing under `local/` but logs and scratch is removed, the agent
-harness's lock lifted when no running process names its folder. A folder under `.claude/worktrees/`
+harness's lock lifted when no running process names its folder and nothing in it was written for two
+hours (a worker's shell shows on no command line). A folder under `.claude/worktrees/`
 that `git worktree list` does not list and that holds no `.git` is a half-removed worktree, removed
 without following a reparse point. A process holding either is named with its pid, never stopped.
 Other registered worktrees use their owning lifecycle tool.
