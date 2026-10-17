@@ -365,8 +365,8 @@ public static class ClosureBinding
         var digest = NodeGraphs.Digest(home.Graph!);
         if (remote)
         {
-            return new(false, $"#{quest.Id} is not bound to its closure graph `{digest}`: its circle `{workspace}` syncs through a remote, and Daoris "
-                              + $"cannot yet tell that the remote and every machine of the circle run a build that knows a bound quest, {AsToday}");
+            return new(false, $"#{quest.Id} is not bound to its closure graph `{digest}`: its workspace `{workspace}` syncs through a remote, and "
+                              + $"Daoris cannot yet tell that the remote and every machine sharing it run a build that knows a bound quest, {AsToday}");
         }
 
         bool knows;
