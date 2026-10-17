@@ -366,7 +366,8 @@ public sealed class NodeRuntime(
 
             var said = new List<string>();
 
-            // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is sent again, the same close, before anything new starts.
+            // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is reconciled before anything new starts; FABRIC-CLOSE1u: by asking its
+            // door what became of its key, never by sending it again blind, so one never delivered is judged again on what is there now.
             if (_closer is not null)
             {
                 done.AddRange(await _closer.ReconcileAsync(sends, ct).ConfigureAwait(false));

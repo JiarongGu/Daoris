@@ -410,7 +410,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return Edited(unit, node, record =>
         {
             var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
-            if (held is not { State: AttemptStates.Held }) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
+
+            // FABRIC-CLOSE1u: an unknown close its node is still on is the person's too, with a held close's words.
+            if (held is null || (held.State != AttemptStates.Held && !QuestClosing.Unanswered(record, held)))
+            {
+                return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
+            }
+
             if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
 
             // FABRIC-CLOSE1q: each attempt takes its own words. A close's outcome is its door's answer, so a plugin's words are never taken on
