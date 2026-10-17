@@ -47,7 +47,9 @@ keeps its callers' one-line calls, while the landing is `TreeLands`, the removal
 clean-up `TreeSweeps` and `LandedCleanups`, and the look's own tidy `AutoTidies` over `TreeSetAside`, which takes every kind of
 session branch the press clears once its work is on the line, a tree holding only ignored paths moved aside (AUTOTIDY2a, D88's
 note), and then each branch a landing made that the press clears, by `LandedCleanups`' own half; the machine log names those
-by their session, since their names carry a title's words (AUTOTIDY2b). Before a repository's session branches, `TreeStrays`
+by their session, since their names carry a title's words (AUTOTIDY2b). The look's candidates are the ends `EndKeeping` keeps on the
+records (`HeldFact`, judged by `EndJudgement`), every proof the press clears by among them; each still goes only through the press's
+judgement (D173's FABRIC-END2, FABRIC-END4a and FABRIC-END2d notes). Before a repository's session branches, `TreeStrays`
 moves aside each folder under its trees that git lists no tree in, once quiet, and each tree whose opening was cut off; an open
 holds its tree locked under a reason naming its process, and `TreeOpenings` undoes one cut off (AUTOTIDY2c, OPENCUT1, D88's
 note). The words beside a clean-up row, which the terminal and the bridge say, are the public `SessionBranchDoors`.

@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The look stopped removing a session branch a completed pull request carried (FABRIC-END2d)
+
+- **Symptom:** the merge gate's Git half, after FABRIC-END2d merged: `PullRequestStateTests.The_look_takes_a_session_branch_a_kept_answer_carried`
+  found nothing removed. A session branch whose pull request the platform squash-merged, its landing branch deleted, stood for ever.
+- **Root cause:** the end keeper proved such a branch `carried`, but named the carrier's landing branch as where the end held. Keeping a
+  fact needs that place's commit (`EndKeeping.Next`'s `OnAt`), and a deleted branch has none, so nothing was kept. END4a's review
+  fallback had judged every recorded branch with no fact again in the look, which hid it. END2d removed the fallback after comparing
+  the proofs, not whether each proof's fact could be kept.
+- **Fix:** the carried end rests on the form of the line the carrier's merge commit was found on (`EndFacts.CarrierOn`, from
+  `PullRequestCarrier.Rests`, what the carried tidy's delete verifies). The inventory's sentence names neither place, so a fact kept
+  before reads as it did. D173's note of 2026-10-18 has the detail.
+- **Verification:** red first: one in `EndJudgementTests`, and two in `PullRequestStateTests` (Git: the keeper keeps the end on
+  `origin/main`; the look takes the branch). Then green with the driver's fast half and every Git class over the tidy, the keeper and
+  landings, by class under `git.process.runsettings`.
+
 ## 2026-10-17 — The evaluation runtime could restart failed work for ever, judge under removed graphs and outrun its bounds (FABRIC-RUN1e)
 
 - **Symptom:** found by a second maker's review of FABRIC-RUN1 before any install armed a graph (the owner's names no performed node,
