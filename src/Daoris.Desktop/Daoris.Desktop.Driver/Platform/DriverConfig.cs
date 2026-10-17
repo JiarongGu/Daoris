@@ -410,6 +410,146 @@ public sealed record DriverConfig(
         this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule) };
 
     /// <summary>
+    /// Set the cycle on a repository's own landing rule (FABRIC-GRAPH1, §C2), or clear it with null to take the default, today's. The
+    /// cycle rides its rule (D164's amendment), so a repository with no rule of its own is refused, and so is a cycle whose graph does
+    /// not hold under its rule, naming the first problem.
+    /// </summary>
+    public DriverConfig WithLandingCycle(string repository, string? cycle) =>
+        this with { Landings = SetCycle(Landings, repository, cycle, "repository") };
+
+    /// <summary>Set the cycle on a workspace's landing rule, or clear it with null.</summary>
+    public DriverConfig WithWorkspaceLandingCycle(string workspace, string? cycle) =>
+        this with { WorkspaceLandings = SetCycle(WorkspaceLandings, workspace, cycle, "workspace") };
+
+    private static IReadOnlyDictionary<string, LandingRule> SetCycle(IReadOnlyDictionary<string, LandingRule> map, string key, string? cycle, string what)
+    {
+        if (!map.TryGetValue(key.Trim(), out var rule))
+        {
+            throw new DriverException($"`{key.Trim()}` has no landing rule of its own, and a cycle rides its {what}'s rule (D164): set the rule first, then its cycle.");
+        }
+
+        var next = new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase);
+        if (cycle is null)
+        {
+            next[key.Trim()] = rule with { Cycle = null };
+            return next;
+        }
+
+        var kept = rule with { Cycle = CompactOrRefuse(cycle) };
+        if (NodeGraphHomes.OfLanding(kept, what).Problems is [var first, ..]) throw new DriverException(first.Words);
+        next[key.Trim()] = kept;
+        return next;
+    }
+
+    private static string CompactOrRefuse(string json)
+    {
+        try
+        {
+            return NodeGraphHomes.Compact(json);
+        }
+        catch (JsonException error)
+        {
+            throw new DriverException($"the cycle is not JSON: {error.Message}");
+        }
+    }
+
+    /// <summary>
+    /// The cycles of the kinds of work that do not land (FABRIC-GRAPH1; §D7's <c>workCycles</c>): by repository, then by unit kind
+    /// (<see cref="NodeGraphHomes.WorkCycleKinds"/>), each a whole graph's JSON text, compact. Absent is none, today's.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkCycles { get; init; } =
+        new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's work cycles (§D7's <c>workspaceWorkCycles</c>), by kind, for each repository in it naming none of that kind.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceWorkCycles { get; init; } =
+        new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Set a repository's cycle for a kind of work, or clear it with null to take its workspace's. A kind with no work cycle is refused,
+    /// a branch's included (its cycle is its landing rule's, §D7), and so is a graph that does not hold, naming the first problem.
+    /// </summary>
+    public DriverConfig WithWorkCycle(string repository, string kind, string? graph) =>
+        this with { WorkCycles = SetWorkCycle(WorkCycles, repository, kind, graph) };
+
+    /// <summary>Set a workspace's cycle for a kind of work, or clear it with null.</summary>
+    public DriverConfig WithWorkspaceWorkCycle(string workspace, string kind, string? graph) =>
+        this with { WorkspaceWorkCycles = SetWorkCycle(WorkspaceWorkCycles, workspace, kind, graph) };
+
+    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> SetWorkCycle(
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> map, string key, string kind, string? graph)
+    {
+        if (!NodeGraphHomes.WorkCycleKinds.Contains(kind))
+        {
+            throw new DriverException(kind == WorkUnitKind.Branch
+                ? "a branch's cycle is its landing rule's `cycle`, so that a repository's landing and its end move together (D164); no kind has two homes."
+                : $"`{kind}` is no kind of work with a cycle of its own here — {string.Join(" or ", NodeGraphHomes.WorkCycleKinds.Select(each => $"`{each}`"))}.");
+        }
+
+        var kinds = new Dictionary<string, string>(map.GetValueOrDefault(key.Trim()) ?? new Dictionary<string, string>(), StringComparer.Ordinal);
+        if (graph is null) kinds.Remove(kind);
+        else
+        {
+            var kept = CompactOrRefuse(graph);
+            if (NodeGraphs.Read(kept).Problems is [var first, ..]) throw new DriverException(first.Words);
+            kinds[kind] = kept;
+        }
+
+        var next = new Dictionary<string, IReadOnlyDictionary<string, string>>(map, StringComparer.OrdinalIgnoreCase);
+        var spelled = next.Keys.FirstOrDefault(name => string.Equals(name, key.Trim(), StringComparison.OrdinalIgnoreCase)) ?? key.Trim();
+        next.Remove(spelled);
+        if (kinds.Count > 0) next[spelled] = kinds;
+        return next;
+    }
+
+    /// <summary>
+    /// The work cycles under <paramref name="name"/>: each repository's or workspace's kinds of work, every kind kept as written, compact, null
+    /// being none (the review's finding 2: a kind with no work cycle, or a cycle that is not an object, was dropped by an edit beside it).
+    /// Only <see cref="NodeGraphHomes.WorkCycleKinds"/> govern; whether a graph holds is said where it is read (<see cref="NodeGraphHomes.Work"/>),
+    /// and a kind no unit reads by <see cref="NodeGraphHomes.Strays"/>. An owner naming no kind is not read, and the first owner written in
+    /// any case governs (finding 3). The CLI's <c>cycles.ts</c> reads it the same way.
+    /// </summary>
+    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkCycleMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
+        foreach (var owner in element.EnumerateObject())
+        {
+            if (owner.Value.ValueKind != JsonValueKind.Object || map.ContainsKey(owner.Name)) continue;
+            var kinds = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var kind in owner.Value.EnumerateObject())
+            {
+                if (kind.Value.ValueKind != JsonValueKind.Null) kinds.TryAdd(kind.Name, NodeGraphHomes.Compact(kind.Value));
+            }
+
+            if (kinds.Count > 0) map[owner.Name] = kinds;
+        }
+
+        return map;
+    }
+
+    private static void WriteWorkCycles(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject(name);
+        foreach (var (owner, kinds) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(owner);
+            foreach (var (kind, cycle) in kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal)) WriteCycle(writer, kind, cycle);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+    }
+
+    /// <summary>A cycle the config keeps as JSON text, written as JSON in the file's own layout.</summary>
+    private static void WriteCycle(Utf8JsonWriter writer, string name, string cycle)
+    {
+        using var document = JsonDocument.Parse(cycle);
+        writer.WritePropertyName(name);
+        document.RootElement.WriteTo(writer);
+    }
+
+    /// <summary>
     /// Whether a repository's checkout may be read by agents outside it (READ1, D107), as the person set
     /// it, by repository. It wins over the workspace's; absent takes the workspace's, then on
     /// (<see cref="AcrossRules.Reading"/>).
@@ -471,7 +611,14 @@ public sealed record DriverConfig(
     {
         var next = new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase);
         if (rule is null) next.Remove(key);
-        else next[key] = LandingRules.Problem(rule) is { } problem ? throw new DriverException(problem) : Kept(rule);
+        else
+        {
+            // FABRIC-GRAPH1: a door with no field for the cycle (Setup's landing row, Ask Daoris, the terminal) keeps the one the rule
+            // has; only WithLandingCycle sets or clears it. A cycle the new form no longer reaches is said where it is read, never dropped.
+            if (rule.Cycle is null && map.TryGetValue(key, out var held) && held.Cycle is not null) rule = rule with { Cycle = held.Cycle };
+            next[key] = LandingRules.Problem(rule) is { } problem ? throw new DriverException(problem) : Kept(rule);
+        }
+
         return next;
     }
 
@@ -534,6 +681,18 @@ public sealed record DriverConfig(
     /// </summary>
     public static string HomeOf(string configPath) => Path.GetDirectoryName(Path.GetFullPath(configPath))!;
 
+    /// <summary>
+    /// The text this config was read from, or null for one built in memory (FABRIC-GRAPH1's review, finding 1): the writer keeps from it
+    /// every key it does not own, in its place, and every value no edit changed, as written (<see cref="ToJson"/>).
+    /// </summary>
+    public string? Source { get; init; }
+
+    /// <summary>
+    /// The file <see cref="Source"/> was read from (<see cref="Load"/>), whole, or null for a text parsed in memory: <see cref="Save"/> makes
+    /// an edit onto that file as it stands, and writes over <see cref="Source"/> anywhere else (FABRIC-GRAPH1's re-check, finding 1).
+    /// </summary>
+    public string? SourceFile { get; init; }
+
     /// <summary>A missing file is a machine that has opted nothing in — the empty config, not an error.</summary>
     /// <exception cref="DriverConfigUnreadableException">
     /// The file is there and does not read (CONFIGREAD1): it could not be opened, is not JSON, or is not the choices' shape.
@@ -555,7 +714,7 @@ public sealed record DriverConfig(
 
         try
         {
-            return Parse(text);
+            return Parse(text) with { SourceFile = Path.GetFullPath(path) };
         }
         catch (JsonException error) when (error.LineNumber is { } line && error.BytePositionInLine is { } position)
         {
@@ -583,14 +742,62 @@ public sealed record DriverConfig(
     /// Write the choices back — atomically, beside-then-rename, like every write in this family: the
     /// watch loop re-reads this file every tick, and a torn read must never be what it finds.
     /// </summary>
+    /// <remarks>
+    /// 🔴 The edit (what changed between <see cref="Source"/> as read and these choices) is made onto the file read again here, under the
+    /// same keep rules (FABRIC-GRAPH1's re-check, finding 1): written over <see cref="Source"/>, a change another writer made in between was
+    /// lost, and a file that had since stopped reading was overwritten. A file that does not read now, or holds a key twice in one object,
+    /// is refused and left as it is; one that is gone is written from nothing. A config built in memory is written whole, and one parsed
+    /// from a text (<see cref="Parse"/>) or read from another file over that text (<see cref="ToJson"/>). The CLI's
+    /// <c>writeDriverChoices</c> does the same.
+    /// </remarks>
+    /// <exception cref="DriverConfigUnreadableException">The file there now does not read, or holds a key twice; nothing was written.</exception>
     public void Save(string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        AtomicFile.WriteText(path, ToJson());
+        var file = Path.GetFullPath(path);
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        AtomicFile.WriteText(path, Source is not null && string.Equals(SourceFile, file, same)
+            ? JsonKeeping.Kept(Current(path), Understood(), Written())
+            : ToJson());
     }
 
-    /// <summary>The file's shape, written by hand for the same AOT reason it is read by hand.</summary>
-    public string ToJson()
+    /// <summary>The file at <paramref name="path"/> as it stands, for an edit to be written over; <c>{}</c> where it is gone.</summary>
+    private static string Current(string path)
+    {
+        DriverConfig now;
+        try
+        {
+            now = Load(path);
+        }
+        catch (DriverConfigUnreadableException error)
+        {
+            throw new DriverConfigUnreadableException(
+                error.Path, $"{error.Message} This edit was not written: a file that does not read is never overwritten.", error.Line, error.Byte);
+        }
+
+        if (now.Source is not { } text) return "{}\n";
+        if (JsonKeeping.Twice(text) is { } key)
+        {
+            throw new DriverConfigUnreadableException(path, $"{path} holds the key `{key}` twice in one object, so an edit cannot tell which it "
+                + $"changes; this edit was not written. {DriverConfigUnreadableException.Remedy}");
+        }
+
+        return text;
+    }
+
+    /// <summary>The choices as their reader understood <see cref="Source"/>, written: what an edit is measured from.</summary>
+    private string Understood() => (Parse(Source!) with { Source = null }).Written();
+
+    /// <summary>
+    /// The file's text: the choices written over the text they were read from (<see cref="Source"/>), so every key this build does not own
+    /// stays where it stands and every value no edit changed stays as written (<see cref="JsonKeeping"/>, FABRIC-GRAPH1's review, finding 1);
+    /// read and written with no edit, the same bytes. A config built in memory is written whole. <see cref="Save"/> writes the edit over the
+    /// file as it stands instead.
+    /// </summary>
+    public string ToJson() => Source is null ? Written() : JsonKeeping.Kept(Source, Understood(), Written());
+
+    /// <summary>The choices' own shape, written by hand for the same AOT reason it is read by hand.</summary>
+    private string Written()
     {
         return JsonFile.Serialize(writer =>
         {
@@ -639,6 +846,9 @@ public sealed record DriverConfig(
             // Written only when set (WSR1), for the same reason: absent is the merge it always was.
             WriteRules(writer, "landings", Landings);
             WriteRules(writer, "workspaceLandings", WorkspaceLandings);
+            // Written only when set (FABRIC-GRAPH1), as the CLI writes them: absent is no cycle for a quest or an ask, today's.
+            WriteWorkCycles(writer, "workCycles", WorkCycles);
+            WriteWorkCycles(writer, "workspaceWorkCycles", WorkspaceWorkCycles);
             // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
             ReviewRules.WriteMap(writer, "reviews", Reviews);
             ReviewRules.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
@@ -851,6 +1061,8 @@ public sealed record DriverConfig(
             if (rule.AutoAccept) writer.WriteBoolean("autoAccept", true);
             // Written only when on (PROCESS1b-ii): absent is the branch at the session's own commits. The CLI writes it here too.
             if (rule.Squash) writer.WriteBoolean("squash", true);
+            // Written only when set (FABRIC-GRAPH1), last, as written: absent is the default cycle, today's. The CLI writes it here too.
+            if (rule.Cycle is not null) WriteCycle(writer, "cycle", rule.Cycle);
             writer.WriteEndObject();
         }
 
@@ -884,7 +1096,12 @@ public sealed record DriverConfig(
                 // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never
                 // drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
                 if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
-                if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
+                // FABRIC-GRAPH1: the cycle is kept as written whether or not it is a graph that holds, said where it is read, so a
+                // mistyped end never changes how the work lands; only null is none (the review's finding 2: `[]` was dropped).
+                if (property.Value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = NodeGraphHomes.Compact(cycle) };
+                // The first rule written in any case governs, as the CLI reads it, and a later spelling is said (the review's finding 3:
+                // the driver kept the last and the terminal the first, so the two chose different graphs).
+                if (LandingRules.Problem(rule) is null && !map.ContainsKey(property.Name)) map[property.Name] = Kept(rule);
             }
         }
 
@@ -963,7 +1180,9 @@ public sealed record DriverConfig(
     // quietly stop working under AOT, and the shape is small enough to be explicit about.
     public static DriverConfig Parse(string json)
     {
-        using var document = JsonDocument.Parse(json);
+        // A key written twice in one object reads as its last value in its first place, as the CLI's JSON.parse reads it (the re-check's
+        // finding 3); the text read stays as written, and no edit is written over it (Save).
+        using var document = JsonDocument.Parse(JsonKeeping.Once(json));
         var root = document.RootElement;
         // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind
         // (CONFIGREAD1): said here, so the reader can say it with its file.
@@ -989,6 +1208,8 @@ public sealed record DriverConfig(
             Strikes: Int(root, "strikes") ?? Empty.Strikes,
             Forgiven: ForgivenMap(root))
         {
+            // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
+            Source = json,
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
             IntakeAdapter = Json.NonEmpty(root,"intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
             // Absent means OFF, as the intake's does (D89).
@@ -1006,6 +1227,8 @@ public sealed record DriverConfig(
             WorkspaceLanguages = LanguageMap(root, "workspaceLanguages"),
             Landings = RuleMap(root, "landings"),
             WorkspaceLandings = RuleMap(root, "workspaceLandings"),
+            WorkCycles = WorkCycleMap(root, "workCycles"),
+            WorkspaceWorkCycles = WorkCycleMap(root, "workspaceWorkCycles"),
             // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
             Reviews = ReviewRules.Map(root, "reviews", allowNone: true),
             WorkspaceReviews = ReviewRules.Map(root, "workspaceReviews", allowNone: false),

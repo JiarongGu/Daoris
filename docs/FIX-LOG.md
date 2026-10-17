@@ -41,6 +41,30 @@ repository.
   required (`no-revision`).
 - **Verification:** seven new tests, the evaluation's members added first without behaviour, each failed on its own defect at run
   time, then passed; the node and wire suites pass, and the driver's fast half.
+## 2026-10-17 — An edit of driver.json from Setup or Ask Daoris deleted the settings its writer did not know (FABRIC-GRAPH1's review)
+
+- **Symptom:** found by a second maker's review of FABRIC-GRAPH1, and live in the installed build: a key `driver.json` holds that the
+  driver has no field for (a newer build's, a hand-written one, a landing rule's own) was gone after any edit at Setup or from Ask
+  Daoris's proposals, and every key moved to the writer's order. The terminal kept unknown top-level keys, but first, and dropped a
+  landing rule's; it also wrote `9007199254740993` back as `9007199254740992`. Both dropped a cycle that was not an object, a kind of
+  work no unit reads and an empty `workCycles` on an unrelated edit.
+- **Root cause:** `DriverConfig.ToJson` rebuilt the file from the fields it reads (`Platform/DriverConfig.cs`), so what it did not read
+  was never written; the CLI spread an untyped `rest` before its own fields and parsed through JavaScript's numbers. The tests that
+  claimed byte-for-byte writing built their input with the same writer, so they proved only that it was idempotent.
+- **Fix:** D173's FABRIC-GRAPH1 note, *After review*: both twins write an edit over the text they read (`Platform/JsonKeeping.cs`,
+  `platform/jsonkeep.ts`), from the file as it stands, the file as its reader understood it and the edited choices: what no edit changed
+  is written as the file has it, numbers by their own text; an object an edit changed is merged key by key; a key it adds goes after
+  the one before it in the writer's order; no edit is the file's own bytes. The cycle's homes keep every value raw. *After the
+  re-check* (D173's note): writing over the text read still lost a change another writer made between the read and the write, and the
+  driver overwrote a file that had since stopped reading. Both twins now read the file again at write and make the edit onto it
+  (`DriverConfig.Save`, `writeDriverChoices`); a file that does not read then, or holds a key twice in one object, is refused and left
+  as it is. An edit keeps the file's CRLF, and the CLI stages each write under its own name (`fsx.ts`), as `AtomicFile` does.
+- **Verification:** `DriverConfigKeepsTests` and the CLI's `configkeeps.test.ts` read one table, `driver-config-keeps.json` (an
+  existing file in the writer's layout with unknown keys at the top, in a landing rule and a workspace rule, and numbers JavaScript
+  cannot hold; nine edits and the bytes both write): the table failed on GRAPH1's branch in both twins (all nine rows in the driver's)
+  and passes; the driver's and the modules' fast halves and the CLI's suite pass. The re-check's seven rows (another writer's change
+  between the read and the write, four ways; CRLF; a file left unreadable; a key written twice) and its `twice` read failed in the
+  driver's, each alone, and in the CLI's at its first such row, and pass; `fsx.test.ts`' two staging cases failed and pass.
 
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 

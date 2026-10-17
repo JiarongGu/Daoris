@@ -9,6 +9,10 @@ with the version and date at release.
   how it is retried, whether it is performed and how), and the `resources` they create with who cleans them. Daoris reads and
   checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet. A plugin
   with a step Daoris asks it to perform must list `work/perform` among its hook points, or it does not load.
+- A setting you add to `driver.json` by hand, or one a newer Daoris wrote there, now survives an edit from Setup, Ask Daoris or
+  the terminal: an edit changes only the settings it edits, the rest keep their values and their places, and a file read and
+  saved with no change keeps its bytes. A change one of them made while another was open survives that one's edit too; a file
+  that no longer reads, or names a setting twice in one place, is refused and left as it is; and Windows line endings are kept.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.

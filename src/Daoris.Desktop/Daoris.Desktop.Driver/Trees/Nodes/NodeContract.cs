@@ -280,9 +280,23 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// </summary>
     public NodePerform? Perform { get; init; }
 
+    private readonly IReadOnlyDictionary<string, string> options = NoPorts;
+
+    /// <summary>
+    /// Its adapter's options by name (§E2's <c>options</c>, as a human node's <c>brief</c>), each its JSON value's text as written: what
+    /// the adapter reads, never a condition (FABRIC-GRAPH1). A copy of what was set, in name order, so a graph's digest holds it.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Options { get => options; init => options = Frozen(value); }
+
+    /// <summary>
+    /// Made by decoding a D157 version (a sink, a person's task or a join, §E7), never authored: counted apart from a graph's 24-node
+    /// bound (FABRIC-GRAPH1, <see cref="NodeGraphs.MaxNodes"/>). A graph read from a person's file declares none.
+    /// </summary>
+    public bool Synthetic { get; init; }
+
     /// <summary>
     /// FABRIC-UNIT1d: two declarations are equal where they say the same, whoever built their collections, so a manifest's step is the
-    /// declaration built by hand and a graph compares declarations by what they say.
+    /// declaration built by hand and a graph compares declarations by what they say (GRAPH1's options and synthetic mark included).
     /// </summary>
     public bool Equals(NodeDeclaration? other) =>
         other is not null
@@ -291,7 +305,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         && Same(Inputs, other.Inputs) && Same(Outputs, other.Outputs)
         && string.Equals(Evidence, other.Evidence, StringComparison.Ordinal) && Equals(Retry, other.Retry)
         && TimeoutSeconds == other.TimeoutSeconds && Rejectable == other.Rejectable && Skippable == other.Skippable
-        && Equals(Perform, other.Perform);
+        && Equals(Perform, other.Perform) && Same(Options, other.Options) && Synthetic == other.Synthetic;
 
     public override int GetHashCode()
     {
@@ -300,7 +314,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         hash.Add(Kind, StringComparer.Ordinal);
         hash.Add(Version);
         hash.Add(Reach, StringComparer.Ordinal);
-        foreach (var (name, schema) in Inputs.Concat(Outputs))
+        foreach (var (name, schema) in Inputs.Concat(Outputs).Concat(Options))
         {
             hash.Add(name, StringComparer.Ordinal);
             hash.Add(schema, StringComparer.Ordinal);
@@ -312,6 +326,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         hash.Add(Rejectable);
         hash.Add(Skippable);
         hash.Add(Perform);
+        hash.Add(Synthetic);
         return hash.ToHashCode();
     }
 

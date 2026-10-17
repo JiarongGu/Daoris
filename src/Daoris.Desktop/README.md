@@ -83,6 +83,14 @@ result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c)
 `NodeWires` names what a save refuses (FABRIC-WIRE1a), and `WireEvaluation` evaluates them over the nodes' statuses, moving each
 node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b), on a complete snapshot of the
 units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e). Both are pure as well.
+`NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
+its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
+rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),
+and says what the file keeps there that no unit reads (`Strays`). The CLI's `cycles.ts` is its twin, and both read the CLI's
+`test/fixtures/graph-homes.json`. `DriverConfig.Save` makes an edit onto the file as it stands at write (`Platform/JsonKeeping`), so
+a key it has no field for stays where it stands, a value no edit changed keeps its value, and another writer's change made since the
+read stays; a file that does not read then is refused. The CLI's `jsonkeep.ts` is its twin (D173's FABRIC-GRAPH1 note says exactly
+what an edit keeps).
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
 second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,
