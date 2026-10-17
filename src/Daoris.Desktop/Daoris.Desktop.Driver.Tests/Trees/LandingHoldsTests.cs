@@ -66,8 +66,11 @@ public sealed class LandingHoldsTests : IDisposable
         }
 
         Assert.Equal(0, LandingHolds.Waiting(_home, _tree));
+        // LANDRACE1's re-check: a key nobody holds or waits for keeps no gate in this process.
+        Assert.False(LandingHolds.Gated(_home, _tree));
         using var later = await LandingHolds.TakeAsync(_home, _tree);
         Assert.Null(later!.Before);
+        Assert.True(LandingHolds.Gated(_home, _tree));
     }
 
     /// <summary>
@@ -226,6 +229,12 @@ public sealed class LandingHoldsTests : IDisposable
 
         Assert.Null(await LandingHolds.TakeAsync(_home, _tree, within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
         Assert.Equal(0, LandingHolds.Waiting(_home, _tree));
+
+        // The one that gave up let go of what it took: once the first lets go too, no gate is kept, and the tree takes at once.
+        first!.Dispose();
+        Assert.False(LandingHolds.Gated(_home, _tree));
+        using var next = await LandingHolds.TakeAsync(_home, _tree, within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound);
+        Assert.False(next!.Waited);
     }
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>

@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,20 +17,24 @@ namespace Daoris.Driver;
 /// hand-off of a branch whose landing is still pushing would push it again and open a second pull request; and a door that comes
 /// while another pushes is owed what happened, not git's refusal.</para>
 ///
-/// <para><b>What is held is the folder, not its name.</b> A tree is keyed by its folder's identity (<see cref="FolderIdentity"/>), a
-/// branch by its repository's git folder's and its name, so a junction, a <c>subst</c> drive, a short name or a long-path prefix
-/// takes the same hold. A folder with no identity (gone, or unreadable) is keyed by its spelling.</para>
+/// <para><b>What is held is the folder, not its name.</b> A tree is keyed by its folder's identity (<see cref="FolderIdentity"/>). A
+/// branch is keyed by its repository's common git folder's identity and its name: the common folder is read from git's own files
+/// (<see cref="TreeTips.CommonDirectory"/>, no process), so the main checkout and any linked worktree of it, under any spelling, name
+/// one repository. A junction, a <c>subst</c> drive, a short name or a long-path prefix takes the same hold. A folder with no identity
+/// (gone, unreadable, or off Windows) is keyed by its spelling.</para>
 ///
-/// <para><b>In this process, then across processes.</b> A semaphore per key keeps this process's doors apart without polling. A file
-/// under the home's <c>locks/landings/</c>, opened alone, keeps this process apart from another (a terminal's press beside the
-/// desktop's look): the handle is the lock, as <see cref="TreeLock"/>'s and <see cref="RecordLock"/>'s are, so a process that dies
-/// lets go with it.</para>
+/// <para><b>In this process, then across processes.</b> A semaphore per key keeps this process's doors apart without polling; it is
+/// dropped once nobody holds or waits for it, so they never accumulate. A file under the home's <c>locks/landings/</c>, opened alone,
+/// keeps this process apart from another (a terminal's press beside the desktop's look): the handle is the lock, as
+/// <see cref="TreeLock"/>'s and <see cref="RecordLock"/>'s are, so a process that dies lets go with it. The files stay, one of under a
+/// kilobyte per tree landed and per branch pushed: removing one could lose what a door in another process is about to read.</para>
 ///
 /// <para><b>What the one before came to, not when.</b> The holder keeps what its attempt came to in the file
 /// (<see cref="LandingHold.Keep"/>): the branch, the commit, who accepted it, and its plugin's answer once it has one. A hold that
 /// waited reads it as <see cref="LandingHold.Before"/>, and compares commits, never moments, so a clock that steps changes nothing.
 /// One that waited for nothing clears it, so an older attempt's outcome is never read as the one waited behind; one that waited and
-/// kept nothing of its own leaves it for the next.</para>
+/// kept nothing of its own leaves it for the next. A write reaches the system's cache, which every process reads, and is not forced to
+/// the disk: it matters only to a door waiting now.</para>
 ///
 /// <para><b>Waited for, within a bound.</b> A door waits while another holds the key, up to <see cref="Wait"/> (longer than a
 /// plugin's two minutes) by a monotonic clock, and then takes nothing: "cannot tell" is never "land anyway". A plugin that calls
@@ -44,9 +47,8 @@ internal static class LandingHolds
 
     private static readonly TimeSpan Poll = TimeSpan.FromMilliseconds(50);
 
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.Ordinal);
-
-    private static readonly ConcurrentDictionary<string, int> Waiters = new(StringComparer.Ordinal);
+    // This process's gate per key, while anyone holds or waits for it; guarded by itself.
+    private static readonly Dictionary<string, KeyGate> Gates = new(StringComparer.Ordinal);
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -56,15 +58,21 @@ internal static class LandingHolds
         HoldAsync(home, TreeKey(tree), ct, within);
 
     /// <summary>Hold a landed branch for one push, waiting while another push of it holds it, here or in another process.</summary>
-    /// <param name="root">The repository's checkout, whose git folder names the repository.</param>
+    /// <param name="root">A checkout of the repository, the main one or a linked worktree: its common git folder names the repository.</param>
     public static Task<LandingHold?> BranchAsync(string home, string root, string branch, CancellationToken ct = default, TimeSpan? within = null) =>
         HoldAsync(home, BranchKey(root, branch), ct, within);
 
     /// <summary>How many landings of the tree wait for its hold in this process now.</summary>
-    public static int Waiting(string home, string tree) => Waiters.GetValueOrDefault(Gate(home, TreeKey(tree)));
+    public static int Waiting(string home, string tree) => WaitingFor(Gate(home, TreeKey(tree)));
 
     /// <summary>How many pushes of the branch wait for its hold in this process now.</summary>
-    public static int WaitingOn(string home, string root, string branch) => Waiters.GetValueOrDefault(Gate(home, BranchKey(root, branch)));
+    public static int WaitingOn(string home, string root, string branch) => WaitingFor(Gate(home, BranchKey(root, branch)));
+
+    /// <summary>Whether this process keeps a gate for the tree now: only while a door holds or waits for it.</summary>
+    public static bool Gated(string home, string tree)
+    {
+        lock (Gates) return Gates.ContainsKey(Gate(home, TreeKey(tree)));
+    }
 
     /// <summary>Where the tree's hold is across processes: one file per key under the home's <c>locks/landings/</c>, named by its hash.</summary>
     public static string PathOf(string home, string tree) => FileOf(home, TreeKey(tree));
@@ -74,71 +82,79 @@ internal static class LandingHolds
         var patience = within ?? Wait;
         var waiting = Stopwatch.StartNew();
         var named = Gate(home, key);
-        var gate = Gates.GetOrAdd(named, _ => new SemaphoreSlim(1, 1));
+        var gate = Enter(named);
         var waited = false;
-        if (!gate.Wait(0))
-        {
-            waited = true;
-            Waiters.AddOrUpdate(named, 1, (_, count) => count + 1);
-            try
-            {
-                if (!await gate.WaitAsync(Left(patience, waiting), ct).ConfigureAwait(false)) return null;
-            }
-            finally
-            {
-                Waiters.AddOrUpdate(named, 0, (_, count) => count - 1);
-            }
-        }
-
+        var held = false;
         FileStream? file = null;
+        LandingHold? hold = null;
         try
         {
+            if (!gate.Semaphore.Wait(0))
+            {
+                waited = true;
+                Interlocked.Increment(ref gate.Waiting);
+                try
+                {
+                    if (!await gate.Semaphore.WaitAsync(Left(patience, waiting), ct).ConfigureAwait(false)) return null;
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref gate.Waiting);
+                }
+            }
+
+            held = true;
             var path = FileOf(home, key);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             file = Open(path);
             if (file is null)
             {
                 waited = true;
-                Waiters.AddOrUpdate(named, 1, (_, count) => count + 1);
+                Interlocked.Increment(ref gate.Waiting);
                 try
                 {
                     while ((file = Open(path)) is null)
                     {
-                        if (waiting.Elapsed >= patience)
-                        {
-                            gate.Release();
-                            return null;
-                        }
-
+                        if (waiting.Elapsed >= patience) return null;
                         await Task.Delay(Poll, ct).ConfigureAwait(false);
                     }
                 }
                 finally
                 {
-                    Waiters.AddOrUpdate(named, 0, (_, count) => count - 1);
+                    Interlocked.Decrement(ref gate.Waiting);
                 }
             }
 
             // A hold that waited reads what the one before kept; one that waited for nothing begins a chain of its own.
             var before = waited ? Read(file) : null;
             if (!waited) file.SetLength(0);
-            return new LandingHold(gate, file) { Waited = waited, Before = before };
+            hold = new LandingHold(
+                () =>
+                {
+                    gate.Semaphore.Release();
+                    Leave(named, gate);
+                },
+                file) { Waited = waited, Before = before };
+            return hold;
         }
-        catch
+        finally
         {
-            // A file that could not be read or cleared, or a wait cancelled: nothing is held.
-            file?.Dispose();
-            gate.Release();
-            throw;
+            // Anything but a hold handed out lets go of all it took: a bound passed, a wait cancelled, a file that would not read.
+            if (hold is null)
+            {
+                file?.Dispose();
+                if (held) gate.Semaphore.Release();
+                Leave(named, gate);
+            }
         }
     }
 
     /// <summary>A tree by its folder's identity, else its spelling.</summary>
     private static string TreeKey(string tree) => $"tree|{Identity(tree)}";
 
-    /// <summary>A branch by its repository's git folder's identity, else the checkout's spelling, and its name.</summary>
+    /// <summary>A branch by its repository's common git folder's identity, else the checkout's spelling, and its name.</summary>
     private static string BranchKey(string root, string branch) =>
-        $"branch|{Identity(Path.Combine(root, ".git"))}|{branch.Trim().ToLowerInvariant()}";
+        $"branch|{Identity(TreeTips.CommonDirectory(root) ?? root)}|{branch.Trim().ToLowerInvariant()}";
 
     /// <remarks>
     /// Windows names a folder by its volume and file index, whatever path reaches it. Elsewhere <see cref="FolderIdentity"/> is a
@@ -158,6 +174,31 @@ internal static class LandingHolds
     {
         var left = patience - waiting.Elapsed;
         return left > TimeSpan.Zero ? left : TimeSpan.Zero;
+    }
+
+    /// <summary>This process's gate for a key, counted as one more door holding or waiting for it.</summary>
+    private static KeyGate Enter(string named)
+    {
+        lock (Gates)
+        {
+            if (!Gates.TryGetValue(named, out var gate)) Gates[named] = gate = new KeyGate();
+            gate.Users++;
+            return gate;
+        }
+    }
+
+    /// <summary>One door fewer for a key: the gate goes once none holds or waits for it.</summary>
+    private static void Leave(string named, KeyGate gate)
+    {
+        lock (Gates)
+        {
+            if (--gate.Users == 0) Gates.Remove(named);
+        }
+    }
+
+    private static int WaitingFor(string named)
+    {
+        lock (Gates) return Gates.TryGetValue(named, out var gate) ? Volatile.Read(ref gate.Waiting) : 0;
     }
 
     /// <remarks>A sharing violation is another door holding it: null. A folder that cannot be made is thrown.</remarks>
@@ -188,19 +229,28 @@ internal static class LandingHolds
         }
     }
 
-    /// <summary>Keep an attempt's outcome in the hold's own file, through its own handle.</summary>
+    /// <summary>Keep an attempt's outcome in the hold's own file, through its own handle, as far as the system's cache.</summary>
     internal static void Write(FileStream file, LandingAttempt attempt)
     {
         var bytes = JsonSerializer.SerializeToUtf8Bytes(attempt, Json);
         file.SetLength(0);
         file.Position = 0;
         file.Write(bytes, 0, bytes.Length);
-        file.Flush(flushToDisk: true);
+        file.Flush();
+    }
+
+    /// <summary>A key's semaphore in this process, and how many doors hold or wait for it.</summary>
+    private sealed class KeyGate
+    {
+        public readonly SemaphoreSlim Semaphore = new(1, 1);
+        public int Users;
+        public int Waiting;
     }
 }
 
 /// <summary>A door's hold of a tree or a branch (<see cref="LandingHolds"/>), let go when disposed.</summary>
-internal sealed class LandingHold(SemaphoreSlim gate, FileStream file) : IDisposable
+/// <param name="release">Lets the key's gate in this process go.</param>
+internal sealed class LandingHold(Action release, FileStream file) : IDisposable
 {
     private int _gone;
 
@@ -234,7 +284,7 @@ internal sealed class LandingHold(SemaphoreSlim gate, FileStream file) : IDispos
     {
         if (Interlocked.Exchange(ref _gone, 1) == 1) return;
         file.Dispose();
-        gate.Release();
+        release();
     }
 }
 
