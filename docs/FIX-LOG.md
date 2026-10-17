@@ -63,7 +63,6 @@ repository.
   on the memory) and `TidyEffectTests` (the settled wake, the live tree's trace, the reason); then green, with the driver's fast half
   and the Git classes that reach the delete and the tidy.
 
-## 2026-10-17 — The publish failed: the launcher compiled a driver file that named a type it did not carry (FABRIC-EVENT4)
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
 - **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node
