@@ -166,6 +166,21 @@ public abstract class LandedFixture : IDisposable
         return await stdout;
     }
 
+    /// <summary>
+    /// git run at once, for a person acting between two of Daoris's own git starts (<see cref="WorkingTree.Started"/>), which is
+    /// synchronous; both pipes read before the wait, as <see cref="GitAsync"/>'s are.
+    /// </summary>
+    protected static void GitNow(string cwd, params string[] arguments)
+    {
+        var info = new ProcessStartInfo { FileName = "git", WorkingDirectory = cwd, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        using var process = Process.Start(info)!;
+        var stderr = process.StandardError.ReadToEndAsync();
+        process.StandardOutput.ReadToEnd();
+        stderr.GetAwaiter().GetResult();
+        process.WaitForExit();
+    }
+
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

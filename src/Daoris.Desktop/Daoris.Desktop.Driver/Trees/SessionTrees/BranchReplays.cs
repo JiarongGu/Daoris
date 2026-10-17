@@ -421,8 +421,12 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
                 if (Directory.Exists(Path.Combine(context.TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch)))) continue;
                 var (stands, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{now}"], ct).ConfigureAwait(false);
                 if (stands == 0) continue;
+                // RECORDUNREAD1: that branch unread (a broken ref) is not gone; only git's own "missing" says so.
+                if (!(await ContentHolds.MissingAsync(root, $"refs/heads/{now}", ct).ConfigureAwait(false)).Missing) continue;
             }
 
+            // RECORDUNREAD1: the list leaves a broken ref out with a warning, so a branch it did not name is gone only on git's own word.
+            if (!(await ContentHolds.MissingAsync(root, $"refs/heads/{entry.Branch}", ct).ConfigureAwait(false)).Missing) continue;
             gone.Add(entry.Branch);
         }
 

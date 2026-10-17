@@ -283,7 +283,9 @@ internal sealed class LandedCleanups(
                     keptAt = reference;
                 }
 
-                var kept = await content.DeleteJudgedAsync(root, item.Branch, now.Tip, ct).ConfigureAwait(false);
+                // FABRIC-END4a, third review: what the judgement again's proof returned, each ref at the commit it read before the recovery
+                // ref was made, verified in the delete's own transaction; nothing is read again here.
+                var kept = await content.DeleteJudgedAsync(root, item.Branch, now.Tip, now.Rests, ct).ConfigureAwait(false);
                 if (kept is null)
                 {
                     removed.Add(item.Branch);
@@ -323,6 +325,12 @@ internal sealed class LandedCleanups(
         /// branch inside another is found through that one.
         /// </summary>
         internal string? Line { get; init; }
+
+        /// <summary>
+        /// What its removal rests on (FABRIC-END4a, third review), as its proof returned it: the form of the line it was proved on, or the
+        /// landing it is inside at the tip judged with what that one rests on, each at the commit read; its delete verifies exactly these.
+        /// </summary>
+        internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
     }
 
     /// <summary>
@@ -344,20 +352,32 @@ internal sealed class LandedCleanups(
         var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
 
         var judged = new List<(LandedBranch Entry, string Tip, LandedProofs.Proof Proof, string? Keep, int Ahead, PullRequestVerdict? Verdict)>();
+        // RECORDUNREAD1: a branch git could not read is kept and said, never retired: only git's own word retires a record.
+        var unread = new List<Judged>();
         foreach (var entry in entries)
         {
             if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip)
+            {
+                // A broken ref resolves to nothing and is left out of the refs' list, so it is gone only where git says it is missing.
+                var (missing, said) = await ContentHolds.MissingAsync(root, $"refs/heads/{entry.Branch}", ct).ConfigureAwait(false);
+                if (missing) stale?.Add(entry.Branch);
+                else unread.Add(Unread(repository, workspace, entry, $"its branch did not read ({said}), so it is kept as unread"));
+                continue;
+            }
+
+            // 🔴 A person's own branch is never judged: one that took the recorded name since does not hold the
+            // commit the landing made it at, whatever its files say. Only git's "not an ancestor" (exit 1) says so (RECORDUNREAD1).
+            var (ours, _, oursErr) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
+            if (ours == 1)
             {
                 stale?.Add(entry.Branch);
                 continue;
             }
 
-            // 🔴 A person's own branch is never judged: one that took the recorded name since does not hold the
-            // commit the landing made it at, whatever its files say.
-            var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
             if (ours != 0)
             {
-                stale?.Add(entry.Branch);
+                unread.Add(Unread(repository, workspace, entry,
+                    $"whether its branch still holds the commit the landing made did not read ({ContentHolds.Said(oursErr)}), so it is kept as unread"));
                 continue;
             }
 
@@ -368,7 +388,12 @@ internal sealed class LandedCleanups(
                 : null;
             if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged) && verdict is { Clears: true })
             {
-                proof = proof with { Kind = LandedKind.PullRequest, Where = verdict.Form, Files = [], Detail = null, Judgeable = false };
+                proof = proof with
+                {
+                    Kind = LandedKind.PullRequest, Where = verdict.Form, Files = [], Detail = null, Judgeable = false,
+                    // FABRIC-END4a, third review: the form its merge commit was found on, at the commit read.
+                    Rests = LandedProofs.RestsOn(forms.FirstOrDefault(form => form.Name == verdict.Form)),
+                };
             }
 
             string? keep = null;
@@ -393,6 +418,7 @@ internal sealed class LandedCleanups(
         {
             var kind = proof.Kind;
             var where = proof.Where;
+            var rests = proof.Rests;
             // Inside another landed branch the proof clears — whether or not that one can go, its history
             // holds these commits and its files read on the line.
             if (proof.Judgeable)
@@ -403,6 +429,8 @@ internal sealed class LandedCleanups(
                     if (inside != 0) continue;
                     kind = LandedKind.Inside;
                     where = other.Entry.Branch;
+                    // FABRIC-END4a, third review: it rests on that branch at the tip judged, and on what that one's proof rests on.
+                    rests = [($"refs/heads/{other.Entry.Branch}", other.Tip), .. other.Proof.Rests];
                     break;
                 }
             }
@@ -433,11 +461,24 @@ internal sealed class LandedCleanups(
                 tip)
             {
                 Line = proof.Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.PullRequest ? proof.Where : null,
+                Rests = rests,
             });
         }
 
+        items.AddRange(unread);
         return items;
     }
+
+    /// <summary>
+    /// A recorded branch git could not read (RECORDUNREAD1): kept as <see cref="LandedKind.Unknown"/> with why, at no tip, so no removal and
+    /// no judgement again takes it, and its record stays for the next read.
+    /// </summary>
+    private static Judged Unread(string repository, string workspace, LandedBranch entry, string why) =>
+        new(new LandedItem(repository, workspace, entry.Branch, LandedKind.Unknown, null, [], why, entry.PullRequest, 0)
+        {
+            State = entry.PullRequestState,
+            AskFailed = entry.PullRequestAskFailed,
+        }, "");
 
     /// <summary>
     /// How many commits the branch holds that its remote-tracking branch does not, where it has one — its
