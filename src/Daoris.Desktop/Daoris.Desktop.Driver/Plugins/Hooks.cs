@@ -93,12 +93,18 @@ public sealed class HookPeer(
     string plugin,
     Action<string>? onLine = null,
     TimeSpan? patience = null,
-    // FABRIC-PERFORM1a (§C4): a frame longer than this, in UTF-8 bytes, is dropped unread. A process's stdout is read with it
-    // (HookProcess); null reads whole lines, as a test's stand-in that gives only lines is read.
+    // FABRIC-PERFORM1a (§C4): a frame longer than this, in UTF-8 bytes, is dropped unread. A process's stdout is read with the bound
+    // HookProcess.FrameLimit names for its plugin; null reads whole lines, as a test's stand-in that gives only lines is read.
     int? frameLimit = null) : IHookChannel
 {
     /// <summary>The wire version this host speaks. Stated in `initialize`; a plugin answering another is refused.</summary>
     public const int ProtocolVersion = 1;
+
+    /// <summary>
+    /// The longest frame read from a plugin that speaks no work point (FABRIC-PERFORM1a, round 2): far past any answer its points read — a
+    /// decision, a landing's sentence and link, a pull request's state — so none is lost, and still a bound on what one line can hold.
+    /// </summary>
+    public const int AnswerBytes = 4 * 1024 * 1024;
 
     /// <summary>How long a call waits for its answer unless the caller says otherwise — the loop's points wait this long.</summary>
     public static readonly TimeSpan DefaultPatience = TimeSpan.FromSeconds(10);
@@ -341,16 +347,26 @@ public sealed class HookPeer(
         }
     }
 
-    /// <summary>Told to go, politely; whoever owns the process then makes sure it did.</summary>
+    /// <summary>Told to go, politely, within <see cref="HookProcess.Grace"/>; whoever owns the process then makes sure it did.</summary>
     public async ValueTask DisposeAsync()
+    {
+        using var grace = new CancellationTokenSource(HookProcess.Grace);
+        await ShutdownAsync(grace.Token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Told to go, the write of <c>shutdown</c> given up when <paramref name="ct"/> is (FABRIC-PERFORM1a, round 2): a plugin that stopped
+    /// reading its stdin filled the pipe, and a write with no bound held whoever disposed it, and the process, for ever. Nothing is read after.
+    /// </summary>
+    public async Task ShutdownAsync(CancellationToken ct)
     {
         try
         {
-            await NotifyAsync("shutdown").ConfigureAwait(false);
+            await NotifyAsync("shutdown", ct).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
+        catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException or OperationCanceledException)
         {
-            // Already gone, which is the state being asked for.
+            // Already gone, which is the state being asked for — or not listening, which its owner's kill answers.
         }
 
         _stopping.Cancel();
@@ -395,8 +411,8 @@ public sealed class HookPeer(
 
     private static DriverException Unreadable(string message) => Marked(message, PluginEvents.Unreadable);
 
-    private Task NotifyAsync(string method) =>
-        SendAsync(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = method }, CancellationToken.None);
+    private Task NotifyAsync(string method, CancellationToken ct) =>
+        SendAsync(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = method }, ct);
 
     private async Task SendAsync(JsonObject frame, CancellationToken ct)
     {
@@ -414,9 +430,18 @@ public sealed class HookPeer(
         }
     }
 
+    /// <summary>A bound as a person reads it: 64 KB, 4 MB.</summary>
+    private static string Size(int bytes) => bytes % (1024 * 1024) == 0 ? $"{bytes / (1024 * 1024)} MB" : $"{bytes / 1024} KB";
+
+    private void Fail(int id, Exception error)
+    {
+        if (_pending.TryRemove(id, out var waiting)) waiting.TrySetException(error);
+    }
+
     private async Task PumpAsync(CancellationToken ct)
     {
-        var bounded = frameLimit is { } limit ? new BoundedLines(incoming, limit) : null;
+        var limit = frameLimit;
+        var bounded = limit is { } bound ? new BoundedLines(incoming, bound) : null;
         try
         {
             while (true)
@@ -432,10 +457,19 @@ public sealed class HookPeer(
                     if (await bounded.ReadAsync(ct).ConfigureAwait(false) is not { } read) break;
                     if (read.Text is not { } text)
                     {
+                        // FABRIC-PERFORM1a, round 2: an answer too long to read fails its call now, as the plugin's unreadable answer; it
+                        // was left to wait out its patience, and a landing's took its whole patience to say only that it was late.
+                        if (read.Id is { } answered && !read.Method)
+                        {
+                            Fail(answered, Unreadable(
+                                $"plugin `{plugin}` answered with a frame over {Size(limit!.Value)}, which is not read: an answer is at most that long."));
+                            continue;
+                        }
+
                         // FABRIC-PERFORM1a (§C4): dropped unread. The lease's loop counts it and asks the plugin to send again what it
-                        // knows; a process nobody listens to says so under the plugin's name. An answer dropped here is a late one.
+                        // knows; a process nobody listens to says so under the plugin's name.
                         if (_steps is { } listening) listening(null);
-                        else onLine?.Invoke($"a frame longer than {WorkBounds.FrameBytes / 1024} KB was dropped unread.");
+                        else onLine?.Invoke($"a frame longer than {Size(limit!.Value)} was dropped unread.");
                         continue;
                     }
 
@@ -645,7 +679,7 @@ public sealed class HookSet(
             List<string> exited;
             lock (_running) exited = [.. _running.Where(pair => pair.Value.Work && !pair.Value.Channel.Alive).Select(pair => pair.Key)];
             var waits = exited.ToDictionary(id => id, id => _work.Exited(id, now), StringComparer.Ordinal);
-            _work.Keep(catalog.Contributing.Select(p => p.Manifest.Id));
+            _work.Keep(catalog.Contributing.Select(p => (p.Manifest.Id, Build(p))));
 
             // Only a plugin the loop has something to ask: one that speaks at a landing alone is started
             // by the landing, for that landing (D100), and a process kept beside the ticks would idle. One on the work wire is
@@ -715,9 +749,15 @@ public sealed class HookSet(
 
             foreach (var plugin in wanted.Values.OrderBy(p => p.Manifest.Id, StringComparer.Ordinal))
             {
-                bool running;
-                lock (_running) running = _running.ContainsKey(plugin.Manifest.Id);
-                if (running) continue;
+                Held? kept;
+                lock (_running) _running.TryGetValue(plugin.Manifest.Id, out kept);
+                if (kept is not null)
+                {
+                    // FABRIC-PERFORM1a, round 2: a process kept for its loop point while the lease was elsewhere is heard and told again
+                    // once the lease is this loop's; it had stayed deaf until it happened to restart.
+                    if (holds && kept.Work) _work.Reattach(plugin.Manifest.Id, kept.Channel);
+                    continue;
+                }
 
                 var id = plugin.Manifest.Id;
                 var took = Stopwatch.StartNew();
@@ -795,6 +835,9 @@ public sealed class HookSet(
         return PluginEvents.Changed;
     }
 
+    /// <summary>A plugin's build, as <see cref="Why"/> tells an update: its version and when its folder was made (FABRIC-PERFORM1a, round 2).</summary>
+    private static string Build(PluginEntry plugin) => $"{plugin.Manifest.Version}\t{InstalledAt(plugin.Folder)?.UtcTicks}";
+
     /// <summary>When a plugin's install folder was made: an update replaces the folder whole (D103).</summary>
     private static DateTimeOffset? InstalledAt(string folder) => PluginFolders.MadeAt(folder);
 
@@ -855,10 +898,15 @@ public sealed class HookSet(
     /// One attempt sent to the plugin's current process (§D6), returning that process's generation once it acknowledged receipt. Refused
     /// where this loop does not hold the lease, the plugin's process is not up, or it did not name <c>work/perform</c> and its capability.
     /// </summary>
+    /// <remarks>
+    /// The answer is handed back only while the process that gave it is still the plugin's current generation (round 2): one stopped or
+    /// replaced while the call was out is refused here, never returned as the new process's. <see cref="ReconcileStepAsync"/> is fenced alike.
+    /// </remarks>
     public async Task<int> PerformAsync(string plugin, WorkPerformCall call, CancellationToken ct)
     {
         var (channel, generation) = Performer(plugin);
         await channel.PerformAsync(call, ct).ConfigureAwait(false);
+        HandedBack(plugin, channel, generation, HookPoints.Perform);
         return generation;
     }
 
@@ -866,7 +914,23 @@ public sealed class HookSet(
     public async Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct)
     {
         var (channel, generation) = Performer(plugin);
-        return (await channel.ReconcileStepAsync(call, ct).ConfigureAwait(false), generation);
+        var answer = await channel.ReconcileStepAsync(call, ct).ConfigureAwait(false);
+        HandedBack(plugin, channel, generation, PluginSteps.ReconcilePoint);
+        return (answer, generation);
+    }
+
+    /// <summary>
+    /// The generation fence (FABRIC-PERFORM1a, round 2): an answer is handed back while its process is the plugin's current one, and refused
+    /// as its process's exit otherwise. An answer read just before a stop, or from stdout buffered past an exit, completed after the next
+    /// start had been given the plugin's name.
+    /// </summary>
+    private void HandedBack(string plugin, IHookChannel channel, int generation, string point)
+    {
+        if (_work.IsCurrent(plugin, channel, generation)) return;
+        throw PluginFailures.Mark(
+            new DriverException(
+                $"plugin `{plugin}` answered `{point}` from its process of generation {generation}, which has since stopped: the answer is not taken."),
+            PluginEvents.Exited);
     }
 
     /// <summary>The plugin's current work process, where this loop may ask it to perform: refused with the reason otherwise.</summary>

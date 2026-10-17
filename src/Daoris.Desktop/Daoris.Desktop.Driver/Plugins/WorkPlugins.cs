@@ -15,7 +15,8 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Resync.</b> The first frame to each generation says <c>resync</c>, and so does the next after any drop (a frame too long, too
 /// many, the queue full, a frame that did not reach the plugin): at the next look a minute or more after the last resync, so a plugin that
-/// floods is not asked to flood again at once.</para>
+/// floods is not asked to flood again at once. The minute after a resync takes, beside its 60, one event per awaited step it named, and as many
+/// more wait, so a replay in a stable order is taken whole rather than losing its last at every resync (round 2).</para>
 ///
 /// <para><b>Kept in memory, as the loop's record of a plugin's health is</b> (D119 §2): a new loop starts every plugin at generation 1, with
 /// its waits afresh and nothing queued, so nothing a dead loop heard can be taken. Attempts are not recorded here (PERFORM1b).</para>
@@ -31,6 +32,12 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         public RefusalTally Tally { get; } = new();
 
         public Queue<(int Generation, JsonElement Params)> Waiting { get; } = new();
+
+        /// <summary>The steps the last resync told it of, one replayed event each: as many more are taken in its minute, and wait (round 2).</summary>
+        public int Replay { get; set; }
+
+        /// <summary>The version and install the catalogue last named for it: another is an update, which starts its record afresh.</summary>
+        public string? Build { get; set; }
 
         /// <summary>The last generation started.</summary>
         public int Generation { get; set; }
@@ -145,17 +152,55 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         lock (_gate) Of(id).Restarts.TryAgain();
     }
 
-    /// <summary>The plugins the catalogue still contributes: one switched off, updated or removed starts its waits afresh.</summary>
-    public void Keep(IEnumerable<string> contributing)
+    /// <summary>
+    /// The plugins the catalogue still contributes, each with its build (its version and install): one switched off or removed starts its
+    /// waits afresh, and so does one updated (FABRIC-PERFORM1a, round 2) — told here whether its process runs or not, since an unsound plugin's
+    /// does not, and an update is how its maker answers.
+    /// </summary>
+    public void Keep(IEnumerable<(string Id, string Build)> contributing)
     {
-        var kept = contributing.ToHashSet(StringComparer.Ordinal);
+        var kept = contributing.ToDictionary(plugin => plugin.Id, plugin => plugin.Build, StringComparer.Ordinal);
         lock (_gate)
         {
             foreach (var (id, state) in _states)
             {
-                if (!kept.Contains(id)) state.Restarts.TryAgain();
+                if (!kept.TryGetValue(id, out var build))
+                {
+                    state.Restarts.TryAgain();
+                    state.Build = null;
+                    continue;
+                }
+
+                if (state.Build is { } seen && seen != build) state.Restarts.TryAgain();
+                state.Build = build;
             }
         }
+    }
+
+    /// <summary>
+    /// A running process this loop did not listen to, now that the lease is its own again (FABRIC-PERFORM1a, round 2): a plugin kept for a
+    /// loop point while the lease was elsewhere is heard again on its own generation, and told the awaited set with a resync.
+    /// </summary>
+    public void Reattach(string id, IHookChannel channel)
+    {
+        lock (_gate)
+        {
+            if (!_states.TryGetValue(id, out var state) || state.Listened is not null || !channel.Alive) return;
+            var generation = state.Generation;
+            state.Listened = channel;
+            state.ResyncDue = true;
+            channel.Listen(@params => Arrive(id, generation, @params));
+            Tell(id, state);
+        }
+    }
+
+    /// <summary>
+    /// Whether an answer read from <paramref name="channel"/>, generation <paramref name="generation"/>, may be handed back now (round 2): that
+    /// process is still the plugin's current one, listened to. One stopped or replaced since the call was sent answers for nobody.
+    /// </summary>
+    public bool IsCurrent(string id, IHookChannel channel, int generation)
+    {
+        lock (_gate) return _states.TryGetValue(id, out var state) && ReferenceEquals(state.Listened, channel) && state.Generation == generation;
     }
 
     /// <summary>The events heard since the last take, by plugin and in the order they came; a stale or misshapen one is refused here.</summary>
@@ -237,7 +282,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
                 return;
             }
 
-            if (state.Waiting.Count >= WorkBounds.EventsWaiting)
+            if (state.Waiting.Count >= WorkBounds.EventsWaiting + state.Replay)
             {
                 state.Waiting.Dequeue();
                 Dropped(id, state, WorkRefusals.QueueFull, now);
@@ -271,7 +316,16 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
 
         state.Told = said;
         state.ResyncDue = false;
-        if (resync) state.Resynced = clock();
+        if (resync)
+        {
+            // Round 2: the replay this asks for is taken whole, one event per awaited step beyond the minute's 60, and waits whole. Admitting
+            // the first 60 of a stable replay dropped the same last ones at every resync, for ever. Daoris's own set sizes it, never the plugin.
+            var now = clock();
+            state.Resynced = now;
+            state.Replay = state.Awaited.Sum(unit => unit.Awaiting.Count);
+            state.Rate.Allow(state.Replay, now + WorkBounds.Minute);
+        }
+
         var generation = state.Generation;
         Task sending;
         try

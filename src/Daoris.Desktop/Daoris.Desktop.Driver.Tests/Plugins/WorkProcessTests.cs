@@ -160,4 +160,90 @@ public sealed class WorkProcessTests : IDisposable
         Assert.Equal("quest/huge", heard.Step.Branch);
         Assert.Contains(Lines(PluginEvents.Step), line => Code(line) == WorkRefusals.TooLong);
     }
+
+    /// <summary>A plugin of its own beside the stand-in, its program <paramref name="script"/>, as installed.</summary>
+    private PluginEntry Install(string id, string[] points, string script)
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, id);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new { id, hooks = new { command = new[] { "node", "${plugin}/hooks.mjs" }, points } }));
+        File.WriteAllText(Path.Combine(folder, "hooks.mjs"), script);
+        return PluginCatalog.Load(_home).Contributing.Single(plugin => plugin.Manifest.Id == id);
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: the 64 KB bound is the work wire's. A landing plugin, speaking no work point, that answers with a 70 KB
+    /// diagnostic is heard as it was before the bound — it had been dropped, and the landing waited out its patience.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_answer_over_64_KB_from_a_plugin_that_speaks_no_work_point_is_delivered()
+    {
+        var plugin = Install("acme.lands", [HookPoints.Land], """
+            import { createInterface } from 'node:readline';
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
+              else if (frame.method === 'hook/work/land') send({ jsonrpc: '2.0', id: frame.id, result: { pushed: false, message: 'pushed nothing', diagnostic: 'd'.repeat(70000) } });
+              else if (frame.method === 'shutdown') process.exit(0);
+            }
+            """);
+
+        await using var channel = await HookChannels.StartAsync(plugin, _home, _ => { }, CancellationToken.None, TimeSpan.FromSeconds(10));
+        var landed = await channel.LandAsync(new { }, CancellationToken.None);
+
+        Assert.Equal((false, "pushed nothing"), (landed.Pushed, landed.Message));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: a plugin that stops reading its stdin is ended within its grace. Its pipe full, a call's write held the wire,
+    /// and the disposal's `shutdown` waited on it with no bound: the process outlived the lease and the loop that owned it.
+    /// </summary>
+    [Fact]
+    public async Task A_plugin_that_stops_reading_is_ended_within_its_grace()
+    {
+        var plugin = Install("acme.deaf", [HookPoints.Watch], """
+            import { createInterface } from 'node:readline';
+            import { writeFileSync } from 'node:fs';
+            import { join } from 'node:path';
+            writeFileSync(join(process.env.DAORIS_PLUGIN_DATA, 'pid'), String(process.pid));
+            const lines = createInterface({ input: process.stdin });
+            lines.once('line', (line) => {
+              const frame = JSON.parse(line);
+              process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } }) + '\n');
+              // It stops reading: what Daoris writes next fills the pipe and waits there.
+              lines.close();
+              process.stdin.pause();
+            });
+            // Never past the test, whatever the test does.
+            setTimeout(() => process.exit(0), 90000);
+            """);
+
+        var channel = await HookChannels.StartAsync(plugin, _home, _ => { }, CancellationToken.None, TimeSpan.FromSeconds(60));
+        var pid = int.Parse(File.ReadAllText(Path.Combine(plugin.Data, "pid")), System.Globalization.CultureInfo.InvariantCulture);
+        var units = Enumerable.Range(0, 5000).Select(n => Unit($"quest/{n}")).ToList();
+        var stuck = channel.WatchAsync(new WorkWatchFrame(1, true, units), CancellationToken.None);
+        await Task.Delay(500);
+        Assert.False(stuck.IsCompleted);
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        await channel.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(20));
+
+        Assert.True(clock.Elapsed < HookProcess.Grace + TimeSpan.FromSeconds(5), $"the disposal took {clock.Elapsed.TotalSeconds:0.#}s");
+        for (var wait = 0; wait < 50 && Running(pid); wait++) await Task.Delay(100);
+        Assert.False(Running(pid));
+    }
+
+    private static bool Running(int pid)
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(pid);
+            return !process.HasExited;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
 }

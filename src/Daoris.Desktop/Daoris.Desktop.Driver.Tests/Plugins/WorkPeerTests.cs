@@ -42,7 +42,10 @@ public sealed class WorkPeerTests
 
         public TextWriter Outgoing { get; }
 
-        public void Push(string line) => _toHost.Writer.TryWrite(line + "\n");
+        /// <summary>What ends each line it writes: LF, or what another platform's plugin writes.</summary>
+        public string End { get; set; } = "\n";
+
+        public void Push(string line) => _toHost.Writer.TryWrite(line + End);
 
         public int Count(string method)
         {
@@ -189,6 +192,76 @@ public sealed class WorkPeerTests
 
         lock (lines) Assert.Contains(lines, line => line.Contains("64 KB", StringComparison.Ordinal) && line.Contains("dropped unread", StringComparison.Ordinal));
     }
+
+    /// <summary>FABRIC-PERFORM1a, round 2: a plugin that ends its lines with a bare CR is answered, as it was before the bound.</summary>
+    [Fact]
+    public async Task An_answer_ended_by_a_bare_CR_is_read()
+    {
+        var stand = new Stand((frame, _) => Answering(frame, """["work/watch","work/step","work/perform"]""")) { End = "\r" };
+
+        var peer = await Started(stand).WaitAsync(TimeSpan.FromSeconds(5));
+        await peer.WatchAsync(Nothing, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(Declared, peer.Points);
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: an answer too long to read fails its call at once, as the plugin's unreadable answer, wherever its id stands
+    /// in the frame — never left to wait out its patience as a late one — and the wire goes on.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_too_long_to_read_fails_its_call_at_once_and_the_wire_goes_on()
+    {
+        var pad = new string('p', WorkBounds.FrameBytes);
+        var stand = new Stand((frame, _) =>
+            Handshake(frame, """["work/watch","work/step","work/perform"]""", """["work.perform@1"]""")
+            ?? (Method(frame) == WorkWire.PerformMethod
+                ? frame.GetProperty("params").GetProperty("invocation").GetString() switch
+                {
+                    "first" => $$$"""{"jsonrpc":"2.0","id":{{{frame.GetProperty("id").GetRawText()}}},"result":{"invocation":"first","pad":"{{{pad}}}"}}""",
+                    "last" => $$"""{"jsonrpc":"2.0","result":{"invocation":"last","pad":"{{pad}}"},"id":{{frame.GetProperty("id").GetRawText()}}}""",
+                    var other => Ok(frame, $$"""{"invocation":"{{other}}"}"""),
+                }
+                : null));
+        var peer = await Started(stand);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+
+        foreach (var invocation in new[] { "first", "last" })
+        {
+            var error = await Assert.ThrowsAsync<DriverException>(() => peer.PerformAsync(Perform(invocation), CancellationToken.None));
+            Assert.Equal(PluginEvents.Unreadable, PluginFailures.KindOf(error, PluginEvents.Errored));
+            Assert.Contains("64 KB", error.Message, StringComparison.Ordinal);
+        }
+
+        Assert.True(clock.Elapsed < HookPeer.DefaultPatience, $"the calls waited {clock.Elapsed.TotalSeconds:0.#}s, as late ones do");
+        await peer.PerformAsync(Perform("next"), CancellationToken.None);
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: telling a plugin to go is bounded by its grace. A plugin that stopped reading its stdin held the write of
+    /// <c>shutdown</c>, and with it the disposal of its process, for ever.
+    /// </summary>
+    [Fact]
+    public async Task Telling_a_plugin_to_go_never_waits_past_its_grace_on_a_write_that_does_not_end()
+    {
+        var peer = new HookPeer(new StringReader(""), new Stuck(), "acme.deploy");
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+
+        await peer.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(15));
+
+        Assert.True(clock.Elapsed < HookProcess.Grace + TimeSpan.FromSeconds(3), $"the shutdown took {clock.Elapsed.TotalSeconds:0.#}s");
+    }
+
+    /// <summary>A writer whose every line waits for ever: the pipe of a plugin that no longer reads it, full.</summary>
+    private sealed class Stuck : TextWriter
+    {
+        public override Encoding Encoding => Encoding.UTF8;
+
+        public override Task WriteLineAsync(string? value) => new TaskCompletionSource().Task;
+    }
+
+    private static WorkPerformCall Perform(string invocation) =>
+        new("u1", "acme.deploy/deploy", 1, invocation, "k1", "r1", [], At.AddMinutes(10));
 
     [Fact]
     public async Task The_watch_frame_is_sent_and_its_answer_waited_for()

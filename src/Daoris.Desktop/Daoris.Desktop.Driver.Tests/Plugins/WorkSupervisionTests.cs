@@ -69,10 +69,19 @@ public sealed class WorkSupervisionTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task PerformAsync(WorkPerformCall call, CancellationToken ct)
+        /// <summary>Where set, every answer waits for it: an answer read from the process but not yet handed back.</summary>
+        public TaskCompletionSource? Holding { get; set; }
+
+        public async Task PerformAsync(WorkPerformCall call, CancellationToken ct)
         {
             Performed.Add(call);
-            return Task.CompletedTask;
+            if (Holding is { } holding) await holding.Task;
+        }
+
+        public async Task<WorkReconcileAnswer> ReconcileStepAsync(WorkReconcileCall call, CancellationToken ct)
+        {
+            if (Holding is { } holding) await holding.Task;
+            return new WorkReconcileAnswer(ReconcileStates.Running);
         }
 
         /// <summary>An event as the process sends it: through whatever listener the loop gave it, if any.</summary>
@@ -285,6 +294,74 @@ public sealed class WorkSupervisionTests : IDisposable
         Assert.False(set.IsUnsound(Deploy));
     }
 
+    /// <summary>FABRIC-PERFORM1a, round 2: choice 7's promise kept — an update (a new version or install) starts an unsound plugin's record afresh.</summary>
+    [Fact]
+    public async Task Updating_an_unsound_plugin_starts_it_again_with_its_record_afresh()
+    {
+        await using var set = Set();
+        set.Watch(Awaiting(Unit()));
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+        foreach (var wait in new[] { 1, 5, 0 })
+        {
+            _started[^1].Alive = false;
+            await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+            _now = _now.AddMinutes(wait);
+            await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+        }
+
+        Assert.True(set.IsUnsound(Deploy));
+        Assert.Equal(3, _started.Count);
+
+        // The update: the same plugin, a new version in its manifest.
+        var manifest = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Plugins, Deploy), "plugin.json");
+        File.WriteAllText(manifest, "{\"version\":\"2.0.0\"," + File.ReadAllText(manifest)[1..]);
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+
+        var updated = PluginCatalog.Load(_home).Plugins.Single();
+        Assert.True(updated.Contributes, updated.Problem);
+        Assert.Equal("2.0.0", updated.Manifest.Version);
+        Assert.False(set.IsUnsound(Deploy));
+        Assert.Equal(4, _started.Count);
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: a plugin speaking a loop point keeps its process while the lease is elsewhere, neither told nor heard; once
+    /// the lease is this loop's again, that same process is heard and told the set with a resync, on its own generation.
+    /// </summary>
+    [Fact]
+    public async Task A_hybrid_is_heard_and_told_again_once_the_lease_returns()
+    {
+        await using var set = Set();
+        set.Watch(Awaiting(Unit()));
+        var hybrid = Catalog((Deploy, [HookPoints.QuestConsider, HookPoints.Watch, HookPoints.Step]));
+        await set.ReconcileAsync(hybrid, CancellationToken.None);
+        var channel = Assert.Single(_started);
+
+        _holds = false;
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+        Assert.Null(channel.Steps);
+
+        _holds = true;
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+
+        Assert.Single(_started);
+        Assert.Equal(1, set.GenerationOf(Deploy));
+        Assert.Equal((2, true, 1), (channel.Told.Count, channel.Told[^1].Resync, channel.Told[^1].Generation));
+        channel.Send("e1");
+        Assert.Equal("e1", Assert.Single(set.TakeSteps()).Step.Id);
+    }
+
+    /// <summary>The frame bound a plugin is read under (FABRIC-PERFORM1a, round 2): 64 KB where it speaks a work point, else the answers' bound.</summary>
+    [Fact]
+    public void A_plugin_is_read_under_the_work_wire_s_bound_only_where_it_speaks_a_work_point()
+    {
+        var catalog = Catalog(("acme.lands", [HookPoints.Land, HookPoints.State]), (Deploy, [HookPoints.Land, HookPoints.Watch, HookPoints.Step]));
+
+        Assert.Equal(HookPeer.AnswerBytes, HookProcess.FrameLimit(catalog.Contributing.Single(p => p.Manifest.Id == "acme.lands")));
+        Assert.Equal(WorkBounds.FrameBytes, HookProcess.FrameLimit(catalog.Contributing.Single(p => p.Manifest.Id == Deploy)));
+        Assert.True(HookPeer.AnswerBytes >= 64 * WorkBounds.FrameBytes);
+    }
+
     // ——— generations: a stale answer refused
 
     [Fact]
@@ -310,7 +387,68 @@ public sealed class WorkSupervisionTests : IDisposable
         Assert.Equal((Deploy, WorkRefusals.NotSender), (Text(refused, "plugin"), Text(refused, "code")));
     }
 
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: an answer read from a process is handed back only while that process is still the plugin's current
+    /// generation. One that completes after its process was stopped and the next generation started is refused, never returned as the new one's.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_from_a_generation_since_replaced_is_refused_when_it_is_handed_back()
+    {
+        await using var set = Set();
+        set.Watch(Awaiting(Unit()));
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+        var first = _started[0];
+        first.Holding = new TaskCompletionSource();
+        var performing = set.PerformAsync(Deploy, new WorkPerformCall("u1", "acme.deploy/deploy", 1, "i1", "k1", "r1", [], _now.AddMinutes(10)), CancellationToken.None);
+        var reconciling = set.ReconcileStepAsync(Deploy, new WorkReconcileCall("u1", "acme.deploy/deploy", "i1", "k1", "r1"), CancellationToken.None);
+
+        // The lease goes and comes back: generation 1 stopped, generation 2 started; then generation 1's answers are handed back.
+        _holds = false;
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+        _holds = true;
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+        Assert.Equal(2, set.GenerationOf(Deploy));
+        first.Holding.SetResult();
+
+        Assert.Contains("generation 1", (await Assert.ThrowsAsync<DriverException>(() => performing)).Message, StringComparison.Ordinal);
+        Assert.Contains("generation 1", (await Assert.ThrowsAsync<DriverException>(() => reconciling)).Message, StringComparison.Ordinal);
+
+        // The current generation's are handed back with it.
+        Assert.Equal(2, await set.PerformAsync(Deploy, new WorkPerformCall("u1", "acme.deploy/deploy", 1, "i2", "k1", "r1", [], _now.AddMinutes(10)), CancellationToken.None));
+    }
+
     // ——— the bounds, and the resync after a drop
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: a resync's replay is admitted whole. A plugin replaying one event per awaited step in the same order each
+    /// time had its first 60 taken and the rest dropped at every resync, for ever; the minute after a resync now takes one more per awaited
+    /// step, and as many more wait.
+    /// </summary>
+    [Theory]
+    [InlineData(61)]
+    [InlineData(300)]
+    public async Task Every_awaited_step_replayed_at_a_resync_is_heard_however_many_there_are(int steps)
+    {
+        await using var set = Set();
+        set.Watch(Awaiting([.. Enumerable.Range(0, steps).Select(n => Unit($"quest/{n}"))]));
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+        var channel = _started[0];
+
+        for (var resync = 1; resync <= 3; resync++)
+        {
+            Assert.Equal((resync, true), (channel.Told.Count, channel.Told[^1].Resync));
+            for (var n = 0; n < steps; n++) channel.Send($"r{resync}-{n}");
+
+            var heard = set.TakeSteps();
+            Assert.Equal(steps, heard.Count);
+            Assert.Equal($"r{resync}-{steps - 1}", heard[^1].Step.Id);
+
+            // A frame dropped asks for the next resync, a minute on.
+            channel.Steps!(null);
+            _now = _now.AddMinutes(1);
+            await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+        }
+    }
 
     [Fact]
     public async Task Sixty_events_a_minute_are_heard_and_a_drop_is_answered_with_a_resync_a_minute_on()
@@ -320,9 +458,11 @@ public sealed class WorkSupervisionTests : IDisposable
         await set.ReconcileAsync(Performer(), CancellationToken.None);
         var channel = _started[0];
 
-        for (var at = 0; at <= WorkBounds.EventsPerMinute; at++) channel.Send($"e{at}");
+        // The minute of the start's resync takes one more beside its 60, for the one awaited step it named (round 2).
+        const int replay = 1;
+        for (var at = 0; at <= WorkBounds.EventsPerMinute + replay; at++) channel.Send($"e{at}");
 
-        Assert.Equal(WorkBounds.EventsPerMinute, set.TakeSteps().Count);
+        Assert.Equal(WorkBounds.EventsPerMinute + replay, set.TakeSteps().Count);
         var refused = Assert.Single(Lines(PluginEvents.Step));
         Assert.Equal((WorkRefusals.TooFast, 1), (Text(refused, "code"), Count(refused)));
 
@@ -348,9 +488,10 @@ public sealed class WorkSupervisionTests : IDisposable
             _now = _now.AddMinutes(1);
         }
 
+        // Beside the 256, room for the replay of the one awaited step the last resync named (round 2).
         var heard = set.TakeSteps();
-        Assert.Equal(WorkBounds.EventsWaiting, heard.Count);
-        Assert.Equal("e44", heard[0].Step.Id);
+        Assert.Equal(WorkBounds.EventsWaiting + 1, heard.Count);
+        Assert.Equal("e43", heard[0].Step.Id);
         Assert.Equal("e299", heard[^1].Step.Id);
         Assert.Contains(Lines(PluginEvents.Step), line => Text(line, "code") == WorkRefusals.QueueFull);
     }

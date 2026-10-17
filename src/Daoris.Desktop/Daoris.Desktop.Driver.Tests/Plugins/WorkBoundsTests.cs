@@ -47,12 +47,49 @@ public sealed class WorkBoundsTests
         Assert.Empty(await ReadAll(""));
     }
 
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: a line ends at LF, CRLF or a bare CR, as <see cref="TextReader.ReadLineAsync()"/> ends one, which the wire
+    /// read before the bound — a plugin answering <c>JSON\r</c> was answered, and must still be.
+    /// </summary>
+    [Fact]
+    public async Task A_bare_CR_ends_a_line_as_it_always_did()
+    {
+        Assert.Equal(["a", "b", "c", "", "d"], await ReadAll("a\rb\r\nc\n\rd\r"));
+
+        // A CR that ends one block and the LF that begins the next are one line's end, not two.
+        var block = new string('x', 4095);
+        Assert.Equal([block, "b"], await ReadAll($"{block}\r\nb"));
+    }
+
     [Fact]
     public async Task A_long_line_across_many_reads_is_dropped_whole()
     {
         var huge = new string('h', 1_000_000);
 
         Assert.Equal(["first", null, "last"], await ReadAll($"first\n{huge}\nlast", limit: 100));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: passing over a dropped frame keeps its top-level <c>id</c> and whether it named a <c>method</c>, wherever they
+    /// stand in it, so an answer too long to read fails its call at once; a nested <c>id</c> or <c>method</c> is not the frame's.
+    /// </summary>
+    [Fact]
+    public async Task A_dropped_frame_says_which_call_it_answered_wherever_its_id_stands()
+    {
+        var pad = new string('p', 500);
+        var text = string.Join("\n",
+            $$$"""{"jsonrpc":"2.0","id":7,"result":{"pad":"{{{pad}}}"}}""",
+            $$$"""{"jsonrpc":"2.0","result":{"id":5,"method":"x","pad":"{{{pad}}}\"}"},"id" : 12}""",
+            $$$"""{"jsonrpc":"2.0","method":"work/step","params":{"id":"{{{pad}}}"}}""",
+            pad);
+        var lines = new BoundedLines(new StringReader(text), 100);
+
+        var read = new List<BoundedLine>();
+        while (await lines.ReadAsync(CancellationToken.None) is { } line) read.Add(line);
+
+        Assert.Equal(
+            [new BoundedLine(null, 7), new BoundedLine(null, 12), new BoundedLine(null, null, Method: true), new BoundedLine(null)],
+            read);
     }
 
     [Fact]

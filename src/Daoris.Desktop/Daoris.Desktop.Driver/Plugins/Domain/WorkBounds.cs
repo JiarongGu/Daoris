@@ -49,16 +49,28 @@ public static class WorkRefusals
     public const string NotSender = "not-sender";
 }
 
-/// <summary>At most <see cref="WorkBounds.EventsPerMinute"/> in any minute (§C4), on the caller's clock.</summary>
+/// <summary>
+/// At most <see cref="WorkBounds.EventsPerMinute"/> in any minute (§C4), and a resync's replay beside them, on the caller's clock.
+/// </summary>
+/// <remarks>
+/// A resync asks for one event per awaited step at once (FABRIC-PERFORM1a, round 2). Held to the 60 alone, a replay of 61 in a stable order
+/// lost its last at every resync, which asked for the next: the minute after one admits as many more as the steps it named.
+/// </remarks>
 public sealed class EventRate
 {
     private readonly Queue<DateTimeOffset> _taken = new();
+    private int _replay;
+    private DateTimeOffset _replayUntil;
 
-    /// <summary>Whether one more is taken now: fewer than the bound were taken in the minute before it.</summary>
+    /// <summary>A resync told now: until <paramref name="until"/>, <paramref name="steps"/> more are taken beside the minute's bound.</summary>
+    public void Allow(int steps, DateTimeOffset until) => (_replay, _replayUntil) = (steps, until);
+
+    /// <summary>Whether one more is taken now: fewer than the bound were taken in the minute before it, or a resync's replay has room.</summary>
     public bool Admit(DateTimeOffset now)
     {
         while (_taken.Count > 0 && now - _taken.Peek() >= WorkBounds.Minute) _taken.Dequeue();
-        if (_taken.Count >= WorkBounds.EventsPerMinute) return false;
+        var bound = WorkBounds.EventsPerMinute + (now < _replayUntil ? _replay : 0);
+        if (_taken.Count >= bound) return false;
         _taken.Enqueue(now);
         return true;
     }
