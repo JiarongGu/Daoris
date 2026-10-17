@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A graph named for a take bound whichever take came, however late, and the store never upgraded its table (FABRIC-CLOSE1o)
+
+- **Symptom:** found by a pre-mortem of FABRIC-CLOSE1l before any install armed a closure graph (the owner's holds none). A pending
+  take-bind bound the next take of its quest id. That could be another session's take, a take of the same ask deleted and published
+  again, a take hours later, or one after the circle gained a remote. A store from before the row had an owner kept its rows as they
+  were.
+- **Root cause:** `quest_take_binds` held the quest id, the graph and a moment, and the take read it with `DELETE … RETURNING graph`
+  alone. The connector's session never reached the take. The remote was judged once, at the naming. The table was made by
+  `CREATE TABLE IF NOT EXISTS`, which upgrades nothing.
+- **Fix:** D173's FABRIC-CLOSE1o note. The row keeps its session, the publication's operation and an expiry. The take consumes it in its
+  own write and binds only where `PendingTakeBind.Judge` reads all of them, with the remotes map read there. The columns are added at
+  open, and a row without an owner is discarded. An expired, replaced or remote-since bind is said once, in the take's answer and on the
+  loop's end line.
+- **Verification:** red first: `QuestTakeBindTests` (five of six theory rows, an older build's row, a bind naming no session),
+  `QuestCloseTests` (1) and `ServiceClientClosureTests` (1). Then green with `Daoris.Service.Tests` (2214, 2205 before), the driver's
+  fast half (9225) and `Daoris.Service.Http.Tests`.
+
 ## 2026-10-18 — The merge tool's prune left merged agent worktrees and a half-removed folder standing (CLEANUP2)
 
 - **Symptom:** 24 worktrees stood with 3 agents running. 9 merged ones were kept as "locked, so in use", 5 for worker logs
