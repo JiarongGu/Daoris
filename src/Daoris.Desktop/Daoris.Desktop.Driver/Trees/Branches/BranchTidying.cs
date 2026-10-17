@@ -220,6 +220,14 @@ public sealed class BranchTidying(string home)
             foreach (var pass in passes)
             {
                 SayStrays(pass, log, met, lines);
+                // CLEANUP1: a recovery ref past its retention, gone. The report alone names it: a ref carries a branch's name, which may
+                // carry a title's words, so the machine log is not told (the machine-log design §5).
+                foreach (var gone in pass.Recovered)
+                {
+                    lines.Add($"tidy  {pass.Repository}: removed the recovery ref `{gone.Ref}`, past its {RecoveryRetention.Kept.TotalDays:0} days: "
+                        + $"`{ContentHolds.Named(gone.Holder)}` holds its commit {TextBounds.ShortCommit(gone.Commit, 8)}.");
+                }
+
                 if (pass.Held is { } held)
                 {
                     if (!First(met, pass.Repository, "", held)) continue;

@@ -5,6 +5,68 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A landing squash-merged on the platform, then deleted, read dropped with a recovery ref kept for ever (CLEANUP1c)
+
+- **Symptom:** found reading CLEANUP1 against the owner's install, before it ran there: a landing whose pull request the platform
+  squash-merged, its branch deleted by the person after the pull, would read *over without its result* in `work state`, and its
+  commits would be kept on a recovery ref held by nothing, so kept for ever and listed for the person to delete. Most of the
+  install's 18 deleted landings were squash-merged.
+- **Root cause:** CLEANUP1b judged a landing git says is missing by the line's ancestry of its recorded commit alone, and a squash
+  leaves no ancestry: the squash is a commit of its own. The content proof, which ends a standing landing after a squash
+  (`LandedProofs.ProveAsync`), was never read for a gone one, so CLEANUP1's `WentAsync` took it as dropped and kept its commit.
+- **Fix:** `EndJudgement.GatherAsync` reads a gone landing's content proof at its recorded commit where no ancestry holds it, and
+  `JudgeGone` ends it `on-line` only where that proof holds on a form of the line; content only a branch of the person's holds, and an
+  unread proof, end nothing. `EndKeeping.KeepGoneAsync` then keeps the fact as it retires, so no recovery ref is made. D173's CLEANUP1c
+  note has the detail.
+- **Verification:** red on CLEANUP1b's branch first, one in `EndJudgementTests` and one in `CleanupGitTests` (squash on the platform,
+  pull, delete: ended, clean-up completed, no recovery ref); two guards green before and after (a file still differing reads dropped and
+  kept; a commit git collected reads missing with nothing to keep). Then green with the driver's fast half and `CleanupGitTests`,
+  `EndJudgementGitTests` and `HeldFactsGitTests` by class under `git.process.runsettings`.
+
+## 2026-10-17 — A landing merged into the line, then deleted, read moved to the line for ever (CLEANUP1b)
+
+- **Symptom:** a landing branch whose pull request was merged with a merge commit and pulled, then deleted by the person before a look
+  judged it, read *moved to `main`* in `work state`: not ended, its clean-up pending for ever.
+- **Root cause:** CLEANUP1's `WentAsync` asks git which local branch holds the recorded tip once the branch is missing, and the line is
+  a local branch, so the line holding the work by ancestry read as a rename. The end judgement never saw it: `EndKeeping` judges only
+  a landing whose branch stands, and the judgement called a landing whose branch is not standing unknown.
+- **Fix:** a landing git says is missing is judged first through `EndJudgement` at the tip its landing recorded, by the line's ancestry
+  alone (`EndSubject.Gone`), and `EndKeeping.KeepGoneAsync` keeps the fact as it retires (`LandedBranches.HoldGone`), so the inventory
+  reads it ended with its clean-up completed. Only where no end is kept does `WentAsync` read where the work went. D173's CLEANUP1b
+  note has the detail.
+- **Verification:** red on CLEANUP1's branch first, one in `EndJudgementTests`, one in `HeldFactsTests` and three in
+  `CleanupGitTests`; then green with the driver's fast half and `CleanupGitTests`, `EndJudgementGitTests`, `HeldFactsGitTests` and
+  `TidyEffectGitTests` by class under `git.process.runsettings`.
+
+## 2026-10-17 — Work state listed leftovers that could never clear (CLEANUP1)
+
+- **Symptom:** the owner's `daoris-driver work state` listed 40 units no look would ever clear: 18 landings whose branch the person
+  deleted after its pull request (end *not reached: nothing was handed on*, clean-up pending for ever), and 7 recovery refs and 7
+  folders moved aside, each a unit of its own with its end unknown, which *What needs you* then listed as work nobody owns.
+- **Root cause:** the inventory read a landing retired as gone, with no proof that the line held it, as not ended, and nothing could
+  end it: the record kept no word of why it went, so git's own "missing" (the person's removal) read the same as a read that failed.
+  Recovery refs had no rule but "never deleted", and a recovery no record named was drafted as a unit with an unknown owner.
+- **Fix:** the landing keeps why it went (`GoneAs`: `missing` on `show-ref --exists`'s exit 2 with no name in another case, else
+  `stands`), written by the clean-up and once by the look; the inventory reads a unit whose landings all went as missing, nothing of
+  it standing, as dropped and retired, and keeps every doubt, saying which. A recovery ref whose commit a branch or a tag holds goes
+  after 30 days in a verified transaction; one nothing else holds is kept and says how to delete it. Recoveries no record names are
+  listed apart, not as units. D173's CLEANUP1 note and D102's have the detail.
+- **Verification:** red first, twelve of `CleanupLeftoversTests` and six of `CleanupGitTests`, the safety guards passing before and
+  after; then green with the driver's and the modules' fast halves, `CleanupGitTests` alone under `git.process.runsettings`, and the
+  milestone's web test in both languages.
+- **After review (a second maker's, four findings):** (1) the retention took a session branch as a holder, and the same look could
+  then remove that branch on a squash's record with no recovery, leaving the commit held by nothing: only a tag or a local branch of
+  the person's (outside `daoris/`, not a landing's) holds now. (2) A renamed landing branch read as dropped: where another local branch
+  holds the recorded tip it reads `moved`, kept and followed; and where no tag or recovery ref holds it, its commit is kept on a
+  recovery ref before the record retires. (3) The look's write applied by name, so an observation read before a new landing of the
+  same name retired the new one: each write now names the landing read, by identity and tip. (4) A folder moved aside whose purge a
+  later write, a link or a failed read blocks was listed as a recovery for ever: past its date it is a unit blocked on the person.
+  Red on round 1's branch first, five in `CleanupLeftoversTests` and four in `CleanupGitTests`; D173's and D102's CLEANUP1 notes,
+  *After review*, have the detail. The coordinator's re-check closed four more, each red first: a symbolic branch held a recovery ref
+  (now no symbolic ref holds, by git's `%(symref)`, in every proof by ancestry too); a moved-to name made again elsewhere was still
+  taken for the work, and a rename to `feature/HEAD` read dropped (the branch's commit is kept and compared, and only a remote's `HEAD`
+  is left out); the keep could follow a branch made again (it is made in one transaction verifying the branch absent); and a delete
+  the purge could not finish was invisible to the inventory (kept in `trees/.tidied/purge-failed.json`, read as blocked).
 ## 2026-10-17 — The HTTP host watched its content root as the connector had (HTTPWATCH1)
 
 - **Symptom:** none seen yet; KNOWWALK1's cause, found in the connector, stood in the other host Daoris builds.

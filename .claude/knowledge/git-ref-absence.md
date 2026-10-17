@@ -22,6 +22,10 @@ already", and RECORDUNREAD1 found three more paths that forgot or retired a reco
 | `for-each-ref <pattern>` | listed | not listed, exit 0 | not listed, a warning, exit 0 |
 | `show-ref --exists <ref>` (git 2.43+) | 0 | 2 | 1, with git's words |
 | `merge-base --is-ancestor <a> <b>` | 0 is an ancestor | 1 is not | 128 or another code: no answer |
+| `cat-file -e <full id>` (an object, not a ref) | 0 | 1, saying nothing | 128, a malformed name |
+
+`for-each-ref --contains <id>` exits 129 for an id the repository does not have, as for any other refusal: ask `cat-file -e` before
+reading that as "held by nothing" (CLEANUP1).
 
 Read on git 2.53 with a loose ref written over with text that is no commit. A git older than 2.43 has no
 `--exists` and refuses the option, so there a missing ref reads as unread: kept, never the other way. The
@@ -37,5 +41,13 @@ bundled MinGit is newer.
   says so, since the list skips a broken ref and still exits 0.
 - **An exit code is a word only where git defines it.** `merge-base --is-ancestor`'s 1 says "not an
   ancestor"; anything else is no answer, and is unread rather than "no longer holds it".
+- **Missing may still stand in another case.** On a disk blind to case, `show-ref --exists refs/heads/feature/x` exits 0 for a
+  loose `Feature/X` and 2 once it is packed (read on git 2.53, Windows): packed refs compare names exactly. Before forgetting on
+  "missing", look for the name in another case in the branches' list; one there is a doubt, kept (CLEANUP1).
 - **Unread keeps and says.** The record stays, the branch is kept, a recovery ref stays, and the answer says
   git could not read it, with git's first line.
+- **An act that rests on absence verifies it in its own transaction.** `update-ref --stdin` with `verify <ref>` and no id is git's
+  word that the ref does not exist, and refuses the whole transaction where it stands: put it beside the `create` that rests on the
+  absence, so a ref made again between the read and the act refuses the act (CLEANUP1's keep for a dropped landing).
+- **A holder is never a symbolic ref.** `for-each-ref --format='%(symref)'` names the target of one; a name that only points at
+  another ref holds nothing of its own (`ContentHolds.Unaliased`).

@@ -24,6 +24,8 @@ function endSentence(t: TFunction, unit: MilestoneUnit): string {
     ].filter(Boolean).join(' ');
     case 'handed': return t('work.milestone.end.handed', { said: unit.end.said });
     case 'unknown': return t('work.milestone.end.unknown', { said: unit.end.said });
+    // CLEANUP1: over without its result (the person removed its branch outside Daoris), never read as not reached.
+    case 'dropped': return t('work.milestone.end.dropped', { said: unit.end.said });
     default: return t('work.milestone.end.notEnded', { said: unit.end.said });
   }
 }
@@ -117,7 +119,7 @@ export function MilestoneLine({ unit, className }: { unit: MilestoneUnit; classN
   const { t } = useTranslation();
   const until = keptUntil(unit);
   const parts = [
-    t(`work.milestone.line.${({ ended: 'ended', handed: 'handed', unknown: 'unknown' } as Record<string, string>)[unit.end.state] ?? 'notEnded'}`),
+    t(`work.milestone.line.${({ ended: 'ended', handed: 'handed', unknown: 'unknown', dropped: 'dropped' } as Record<string, string>)[unit.end.state] ?? 'notEnded'}`),
     t(unit.cleanup.state === 'completed' ? 'work.milestone.line.cleanupCompleted' : 'work.milestone.line.cleanupPending'),
     until ? t('work.milestone.line.recoveryUntil', { when: moment(until) })
       : unit.recovery.length > 0 ? t('work.milestone.line.recovery') : null,

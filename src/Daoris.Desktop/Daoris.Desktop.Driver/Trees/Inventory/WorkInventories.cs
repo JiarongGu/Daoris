@@ -14,7 +14,18 @@ public static class WorkInventories
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread,
         CancellationToken ct = default, DateTimeOffset? now = null)
     {
-        var trees = await new SessionTrees(home).ListAsync(ct).ConfigureAwait(false);
+        var at = now ?? DateTimeOffset.UtcNow;
+        var sessionTrees = new SessionTrees(home);
+        // CLEANUP1, after review: a folder moved aside past its date that the purge keeps, read as the purge reads it, so it is said to the
+        // person. Only past its date, where the purge has decided: a folder it deletes is walked once more before the next pass takes it.
+        // Re-check: one whose delete the purge could not finish, which no read repeats, as the purge kept it.
+        var failed = sessionTrees.SetAsideFailed();
+        var trees = (await sessionTrees.ListAsync(ct).ConfigureAwait(false))
+            .Select(tree => tree.MovedAside is { } moved && at - moved >= BranchTidying.SetAsideFor
+                            && (sessionTrees.SetAsideKept(tree.Path, moved)?.Sentence ?? failed.GetValueOrDefault(Path.GetFullPath(tree.Path))) is { } kept
+                ? tree with { PurgeKept = kept }
+                : tree)
+            .ToList();
         var branches = new SessionBranches(home).Entries();
         var landings = new LandedBranches(home).Entries();
         var refs = new List<RecoveryRef>();
@@ -28,20 +39,28 @@ public static class WorkInventories
                 continue;
             }
 
-            var (code, listed, err) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)", "refs/daoris/discarded/"], ct).ConfigureAwait(false);
-            if (code != 0)
+            // CLEANUP1: each with its commit, its date and whether a branch or a tag of the person's holds it, which its retention reads.
+            var (listed, err) = await RecoveryRetention.ReadAsync(root, repository, RecoveryRetention.Made(landings, repository), ct).ConfigureAwait(false);
+            if (listed is null)
             {
-                unread.Add($"git could not list `{repository}`'s recovery refs: {err.Trim()}");
+                unread.Add($"git could not list `{repository}`'s recovery refs: {err}");
                 continue;
             }
 
-            refs.AddRange(listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(each => new RecoveryRef(repository, each)));
+            refs.AddRange(listed);
         }
 
         return new InventoryFacts(
             branches, landings, trees, new AutoLandings(home).All(), refs, inUse,
-            session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), now ?? DateTimeOffset.UtcNow);
+            session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at);
+    }
+
+    /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>
+    public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery)> ReadAsync(
+        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread, CancellationToken ct = default)
+    {
+        var facts = await GatherAsync(home, roots, inUse, unread, ct).ConfigureAwait(false);
+        return (WorkInventory.Derive(facts), WorkInventory.Recoveries(facts));
     }
 
     /// <summary>The milestone of every unit this home names.</summary>

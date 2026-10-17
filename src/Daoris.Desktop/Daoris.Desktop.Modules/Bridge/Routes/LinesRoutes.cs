@@ -404,8 +404,13 @@ public sealed class LinesRoutes(DriverContext context)
         }
 
         var unread = new List<string>();
-        var units = await WorkInventories.MilestonesAsync(_loop.Home, roots, inUse, unread, cancellationToken);
-        if (Optional(request, "unit") is { } named) units = WorkInventories.Named(units, named);
+        var (units, recovery) = await WorkInventories.ReadAsync(_loop.Home, roots, inUse, unread, cancellationToken);
+        if (Optional(request, "unit") is { } named)
+        {
+            units = WorkInventories.Named(units, named);
+            recovery = [];
+        }
+
         static object Entry(InventoryEntry each) => new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof };
         return new
         {
@@ -418,6 +423,8 @@ public sealed class LinesRoutes(DriverContext context)
                 Recovery = unit.Recovery.Select(Entry).ToArray(),
                 Entries = unit.Entries.Select(Entry).ToArray(),
             }).ToArray(),
+            // CLEANUP1, additive: Daoris's own recoveries no unit names (a folder moved aside, a recovery ref), each by its rule.
+            Recovery = recovery.Select(Entry).ToArray(),
             Unread = unread.ToArray(),
         };
     }
