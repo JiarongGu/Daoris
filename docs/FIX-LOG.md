@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The close's fresh fence read no branch tip, so a commit after a prerequisite's acceptance was closed on it (FABRIC-CLOSE1p)
+
+- **Symptom:** none on an install: no quest is bound to a closure graph there. Under one, a session branch that moved after the close's
+  prerequisite was accepted was closed on that acceptance. This held whether the branch moved between passes or between the pass's read
+  and the fence's.
+- **Root cause:** CLOSE1l's fence read the units again right before the close, but the loop's read (`DriverWatch`'s units callback)
+  passed no roots to the inventory, so it asked git nothing. A branch unit's `Subject.Revision` is its kept end fact's, which a commit
+  does not move. `QuestClosing.Revision` therefore digested records alone. `QuestCloseTests` handed in branch units with tips already
+  set, so it never saw this.
+- **Fix:** the read carries `NodeUnitsRead.Tips`, the tip of each branch a bound chain worked. `QuestClosing.TipsAsync` reads them
+  with one `RefSnapshot` per repository, per read. `Revision` digests those tips, and an unread tip leaves the close waiting
+  (`QuestClosing.Unread`). A fence that finds the unit moved ends its judgement for that pass. D173's FABRIC-CLOSE1p note has the
+  detail and the counts.
+- **Verification:** red first. `CloseFenceGitTests` (Git, real git through the production read) sent the close after the move; it
+  now sends none until the deploy is accepted again on the new tip. The same test counted three `for-each-ref` in the fenced pass
+  before the early end, and counts two now. `CloseTipsTests`' four tests were red on the members. The driver's fast half passes
+  9229 (9224 before).
+
 ## 2026-10-18 — The merge tool's prune left merged agent worktrees and a half-removed folder standing (CLEANUP2)
 
 - **Symptom:** 24 worktrees stood with 3 agents running. 9 merged ones were kept as "locked, so in use", 5 for worker logs
