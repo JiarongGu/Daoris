@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A close spoke for a later submission, and a held close took a plugin's words (FABRIC-CLOSE1q)
+
+- **Symptom:** found before any install armed a closure graph (the owner's holds none), by the row's pre-mortem checked against the
+  code. A close kept for one submission was read as the close of any later one. S2, the same commit made ready again and closed by the
+  person, reached its close node through S1's receipt (`ReachByChain`) and was never read as overridden. A close its door made, whose
+  answer its node could not take, was held and offered PERFORM1g's three words. *It did not* failed it as the person's and made it ready,
+  minting a second close under a new key; *it happened* stood in for the door. While it was held, the door's Done read as the person's.
+- **Root cause:** `QuestClosing.Naming` matched a close to a quest by its id alone. The held list and its two doors took Daoris's own
+  close for a plugin's attempt. `NodeRuntime.Settle` counted a closed or waiting close as the door's, and not a held one.
+- **Fix:** `QuestClosing.NamesCurrent` matches the quest, its submission's machine and its sequence, for `ReachByChain` and the
+  override alike; a held close with no refusal kept is the door's. A held close takes `record`, `resend` and `stop`
+  (`HeldResolutions.Of`, `QuestCloser.Resolve`); a plugin's word is refused at the door (`not-close-word`), and one recorded before is
+  taken back. D173's note "FABRIC-CLOSE1q" has the choices.
+- **Verification:** red first: `QuestCloseTests` (part 1's one; part 2's theory of three and one more), `NodeRuntimeTests` (a close's
+  word on a plugin's attempt, at the door and at the pass), `DriverModuleLinesTests` (the wire's `words`) and `WorkMilestone.test.tsx`
+  (two). Then green with the driver's fast half (9224 before, 9230 after), the modules' (1392, 1393) and the web's touched files with
+  its page-wide checks.
+
 ## 2026-10-18 — The merge tool's prune left merged agent worktrees and a half-removed folder standing (CLEANUP2)
 
 - **Symptom:** 24 worktrees stood with 3 agents running. 9 merged ones were kept as "locked, so in use", 5 for worker logs

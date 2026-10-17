@@ -470,6 +470,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         var now = clock();
         var unit = record.Unit;
         var word = attempt.Resolution!;
+
+        // FABRIC-CLOSE1q: a close's word is never a plugin attempt's; one no door would record is taken back, saying why.
+        if (WordRefused(attempt, word) is { } refused)
+        {
+            return (With(record, attempt, attempt with { Resolution = null, ResolvedAt = null, Code = refused }), new(unit, node.Id, PerformedWhat.Refused, refused));
+        }
+
         var status = StatusOf(record, node.Id);
         var current = status.Attempt == attempt.Attempt && status.State is NodeStates.Active or NodeStates.Unknown;
         var outcome = word switch { HeldResolutions.Happened => WorkStates.Reached, HeldResolutions.DidNot => WorkStates.Failed, _ => WorkStates.Unknown };

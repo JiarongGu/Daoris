@@ -642,6 +642,25 @@ public sealed class NodeRuntimeTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1q: a close's word found on a plugin's held attempt, which no door records, is taken back at the next pass saying why;
+    /// the attempt keeps its gate and its three words, and nothing is sent or moved.
+    /// </summary>
+    [Fact]
+    public async Task A_closes_word_on_a_plugins_held_attempt_is_taken_back_and_nothing_moves()
+    {
+        var (runtime, _) = await HeldAsync();
+        Files.Edit<bool>(Unit, record => (record with { Attempts = [.. record.Attempts.Select(each => each with { Resolution = HeldResolutions.Record })] }, true));
+
+        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+
+        var held = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal(((string?)null, WorkPerformer.NotOffered), (held.Resolution, held.Why));
+        Assert.Equal(HeldResolutions.Plugin, held.Words);
+        Assert.Single(_port.Sent);
+        Assert.Equal(NodeStates.Unknown, Record().Statuses["deploy"].State);
+    }
+
+    /// <summary>
     /// FABRIC-PERFORM1g: the door records the person's word only in the process holding the home's lease, on an attempt still held with no
     /// word, and says why otherwise; nothing is written.
     /// </summary>
