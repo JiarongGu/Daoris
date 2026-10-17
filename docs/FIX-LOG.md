@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A landing squash-merged on the platform, then deleted, read dropped with a recovery ref kept for ever (CLEANUP1c)
+
+- **Symptom:** found reading CLEANUP1 against the owner's install, before it ran there: a landing whose pull request the platform
+  squash-merged, its branch deleted by the person after the pull, would read *over without its result* in `work state`, and its
+  commits would be kept on a recovery ref held by nothing, so kept for ever and listed for the person to delete. Most of the
+  install's 18 deleted landings were squash-merged.
+- **Root cause:** CLEANUP1b judged a landing git says is missing by the line's ancestry of its recorded commit alone, and a squash
+  leaves no ancestry: the squash is a commit of its own. The content proof, which ends a standing landing after a squash
+  (`LandedProofs.ProveAsync`), was never read for a gone one, so CLEANUP1's `WentAsync` took it as dropped and kept its commit.
+- **Fix:** `EndJudgement.GatherAsync` reads a gone landing's content proof at its recorded commit where no ancestry holds it, and
+  `JudgeGone` ends it `on-line` only where that proof holds on a form of the line; content only a branch of the person's holds, and an
+  unread proof, end nothing. `EndKeeping.KeepGoneAsync` then keeps the fact as it retires, so no recovery ref is made. D173's CLEANUP1c
+  note has the detail.
+- **Verification:** red on CLEANUP1b's branch first, one in `EndJudgementTests` and one in `CleanupGitTests` (squash on the platform,
+  pull, delete: ended, clean-up completed, no recovery ref); two guards green before and after (a file still differing reads dropped and
+  kept; a commit git collected reads missing with nothing to keep). Then green with the driver's fast half and `CleanupGitTests`,
+  `EndJudgementGitTests` and `HeldFactsGitTests` by class under `git.process.runsettings`.
+
 ## 2026-10-17 — A landing merged into the line, then deleted, read moved to the line for ever (CLEANUP1b)
 
 - **Symptom:** a landing branch whose pull request was merged with a merge commit and pulled, then deleted by the person before a look

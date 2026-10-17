@@ -54,8 +54,9 @@ with the version and date at release.
   moved as the tree went.
 - Work whose landing branch you deleted yourself, after its pull request, now reads as over without its result (已结束，未留成果)
   and its clean-up as completed, rather than waiting for ever; where no ref of yours held its commits, Daoris first keeps them on a
-  recovery ref. Where your line holds its commits (a pull request merged with a merge commit, then pulled), it reads as ended, its
-  clean-up completed, rather than as moved to the line. Where anything leaves doubt (a branch of that name, a read git could not make, its session branch still there) it is
+  recovery ref. Where your line holds its work (a pull request merged with a merge commit, or squash-merged with every file it changed
+  reading the same on your line, then pulled), it reads as ended, its clean-up completed and no recovery ref made, rather than as moved
+  to the line or over without its result. Where anything leaves doubt (a branch of that name, a read git could not make, its session branch still there) it is
   kept and says why, and a landing branch you renamed is followed to its new name rather than read as over. A recovery ref whose
   commit a branch or tag of yours holds goes after 30 days (never one only a Daoris branch holds); one nothing of yours holds is kept
   and `daoris-driver work state` says how to delete it. Folders set aside and recovery refs no work names are listed as recovery kept
