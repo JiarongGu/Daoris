@@ -167,6 +167,12 @@ internal sealed record EndFacts(string? Line)
     /// <summary>The landing branch of a completed pull request that carried the tip, line and merge commit confirmed here.</summary>
     public string? Carrier { get; init; }
 
+    /// <summary>
+    /// The form of the line (<c>main</c>, <c>origin/main</c>) that carrier's merge commit was found on, as the carried proof rests on it
+    /// (<see cref="PullRequestCarrier.Rests"/>); null where it names none.
+    /// </summary>
+    public string? CarrierOn { get; init; }
+
     /// <summary>Whether the session's tip is at or under what the landing made: its branch, or the squash tip it recorded.</summary>
     public bool? Inside { get; init; }
 
@@ -296,7 +302,8 @@ internal static class EndJudgement
 
         if (facts.Carrier is { } carrier)
         {
-            return new(EndState.Ended, EndBy.Carried, carrier, $"a completed pull request, `{carrier}`, carried it and its merge commit is on the line");
+            return new(EndState.Ended, EndBy.Carried, facts.CarrierOn ?? carrier,
+                $"a completed pull request, `{carrier}`, carried it and its merge commit is on {(facts.CarrierOn is { } on ? $"`{on}`" : "the line")}");
         }
 
         if (facts.Ancestry.Found)
@@ -383,7 +390,11 @@ internal static class EndJudgement
         if (carriers is { Count: > 0 }
             && await PullRequestAsks.CarrierOfAsync(root, subject.Tip, carriers, ct).ConfigureAwait(false) is { } carrier)
         {
-            facts = facts with { Carrier = carrier.Entry.Branch };
+            // FABRIC-END2d, after the merge: the carried proof rests on the form of the line its merge commit was found on (and, through a
+            // cleared tip, on that branch at it), which the carried tidy verifies. The form stands once the platform and the person deleted the
+            // carrier's branch, so the kept fact names it, never the gone branch, whose commit no later look can read.
+            var on = forms.FirstOrDefault(form => carrier.Rests.Any(rest => string.Equals(rest.Ref, form.Ref, StringComparison.Ordinal)))?.Name;
+            facts = facts with { Carrier = carrier.Entry.Branch, CarrierOn = on };
         }
 
         var content = await ContentHolds.HeldByContentAsync(root, subject.Tip, line, notHolders, ct, refs).ConfigureAwait(false);

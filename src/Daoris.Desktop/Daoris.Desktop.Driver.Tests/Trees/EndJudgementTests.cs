@@ -285,6 +285,11 @@ public sealed class EndJudgementTests
     public void A_session_branch_a_completed_pull_request_carried_is_ended_as_carried()
     {
         var verdict = EndJudgement.Judge(EndCycle.NoLanding, Branch(EndRole.Session), Facts() with { Carrier = "feature/q1-work" });
+        // FABRIC-END2d, after the merge: the end rests on the form of the line its merge commit was found on, which stands once the
+        // platform and the person deleted the carrier's branch, so its fact can be kept; the carrier is still named.
+        var on = EndJudgement.Judge(EndCycle.NoLanding, Branch(EndRole.Session), Facts() with { Carrier = "feature/q1-work", CarrierOn = "origin/main" });
+        Assert.Equal((EndState.Ended, EndBy.Carried, "origin/main"), (on.State, on.By, on.Where));
+        Assert.Contains("feature/q1-work", on.Evidence, StringComparison.Ordinal);
 
         Assert.Equal((EndState.Ended, EndBy.Carried, "feature/q1-work"), (verdict.State, verdict.By, verdict.Where));
     }

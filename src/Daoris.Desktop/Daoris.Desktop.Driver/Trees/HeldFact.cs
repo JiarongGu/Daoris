@@ -14,7 +14,8 @@ namespace Daoris.Driver;
 /// <param name="By">The proof's code (<see cref="EndBy"/>): <c>empty</c>, <c>merged</c>, <c>on-line</c>, <c>pull-request</c>, <c>landed</c>, <c>carried</c>.</param>
 /// <param name="Tip">The commit judged.</param>
 /// <param name="Line">The line the cycle named.</param>
-/// <param name="On">Where the proof held: the form of the line (as <see cref="LandedBranch.RemovedOn"/> names it), or the landing branch that carried it.</param>
+/// <param name="On">Where the proof held: the form of the line (as <see cref="LandedBranch.RemovedOn"/> names it), a carrying pull request's merge
+/// commit included (FABRIC-END2d; a fact from before names the carrier's branch), or the landing branch it is landed through or inside.</param>
 /// <param name="OnAt">That form's commit when judged: a line rewound or replaced under it no longer descends from it.</param>
 /// <param name="Repository">The repository judged, by its common dir's folder identity (<see cref="FolderIdentity"/>), so one replaced at the same path is never read as the same.</param>
 public sealed record HeldFact(
