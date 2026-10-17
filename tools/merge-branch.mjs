@@ -27,7 +27,7 @@
  * 3. The commit check: every commit the branch adds carries its `Co-Authored-By:` line (a merge of main
  *    into the branch needs none), and the branch's worktree, if it has one, holds nothing uncommitted
  *    (work a hand-back calls done and left out of the merge). `--no-commit-check` skips it.
- * 4. The prune (below), unless `--no-prune`: one line per branch removed or kept.
+ * 4. The prune (below), unless `--no-prune`: one line per branch, and per half-removed folder, removed or kept.
  * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
  *    their `merge=union` attribute (D106). The orientation index is written from the merged tree and
@@ -111,14 +111,29 @@
  *
  * A candidate is a local branch merged into main, but main, the branch the main checkout has out, the one
  * this runs in, and a batch's branches still to merge. It goes with its worktree, if one has it out, only
- * when that worktree is not locked (the harness locks an agent's worktree while the agent runs, so a lock
- * is in use: a locked worktree is never looked into or unlocked, and a branch at main's tip is merged),
- * has no modified or staged tracked file, has no untracked file (`git worktree remove` refuses those
- * without `--force`, and one may be work), and holds nothing under its gitignored `local/` (an agent's
- * private output, which nothing else keeps). Removal is `git worktree remove`, never forced: ignored
- * build output does not stop it, and whatever does is work to keep. Then `git branch -d`, never `-D`,
- * and one `git worktree prune` at the end. What git refuses is kept and says why. A folder git does not
- * list is never touched. The prune never stops a merge: what it cannot do it says, and the merge goes on.
+ * when that worktree has no modified or staged tracked file, has no untracked file (`git worktree remove`
+ * refuses those without `--force`, and one may be work), and holds nothing under its gitignored `local/`
+ * but a worker's logs and scratch: `local/scratch/` and a `*.log` anywhere under `local/` go with it, and
+ * anything else there is an agent's private output, which nothing else keeps, and is named.
+ *
+ * A locked worktree is in use, never looked into or unlocked, but for the agent harness's own lock,
+ * `claude agent <id> (pid N)` (CLEANUP2): the harness holds it for its session's whole life, not only
+ * while the agent runs, and nine finished agents' merged worktrees stood under it. That lock is lifted
+ * (`git worktree unlock`, and locked again if the removal is refused) when, besides the rules above, the
+ * branch is not at main's tip, as a just-dispatched agent's is before its first commit, and no running
+ * process is inside: none whose executable path or command line names the folder, read once per prune
+ * (one CIM query on Windows, `ps` elsewhere) and only when a harness-locked worktree or a folder below
+ * needs it. Removal is `git worktree remove`, never forced: ignored build output does not stop it, and
+ * whatever does is work to keep. Then `git branch -d`, never `-D`, and one `git worktree prune` at the
+ * end. What git refuses is kept and says why.
+ *
+ * A folder directly under the main checkout's `.claude/worktrees/` that git does not list and that holds
+ * no `.git` is what a `git worktree remove` left when it could not finish (a 320 MB one, held by two
+ * processes a test leaked, stood when CLEANUP2 was built). It is removed, looked at again just before: a
+ * link (a reparse point) is never followed or removed, and a link inside it is removed as a link. One a
+ * running process is inside is kept, naming each pid and command line; a process is never stopped here.
+ * What cannot be removed is named, and the next prune tries again. Any other folder git does not list is
+ * never touched. The prune never stops a merge: what it cannot do it says, and the merge goes on.
  *
  * ## Flakes
  *
@@ -1561,7 +1576,9 @@ export function harnessLock(reason) {
  */
 export function parseProcesses(text, platform = process.platform) {
   if (platform === 'win32') {
-    const parsed = text.trim() ? JSON.parse(text) : [];
+    // Set to UTF-8, a console may write its preamble first, which JSON.parse refuses.
+    const json = text.replace(/^﻿/, '').trim();
+    const parsed = json ? JSON.parse(json) : [];
     return (Array.isArray(parsed) ? parsed : [parsed])
       .map((one) => ({ pid: Number(one.ProcessId), exe: one.ExecutablePath ?? '', command: one.CommandLine ?? one.ExecutablePath ?? '' }))
       .filter((one) => one.command);

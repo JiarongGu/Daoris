@@ -380,7 +380,7 @@ test('a harness-locked merged worktree goes, unlocked, only when it is clean, ho
   assert.equal(inside.remove, false);
   assert.match(inside.why, /locked by the agent harness \(claude agent agent-b \(pid 1\)\)/);
   assert.match(inside.why, /a running process is inside it \(pid 9: node land\.mjs\)/);
-  const unread = tool.pruneVerdict(at(), { ...clean, processes: undefined, processError: 'powershell could not start' });
+  const unread = tool.pruneVerdict(at(), { tracked: [], untracked: [], local: null, atTip: false, processError: 'powershell could not start' });
   assert.equal(unread.remove, false);
   assert.match(unread.why, /whether a process runs inside it could not be read \(powershell could not start\)/);
   // A just-dispatched agent's branch sits at main's tip before its first commit, and counts as merged.
@@ -414,8 +414,8 @@ test('the processes are read from a CIM query on Windows and ps elsewhere, and o
     { pid: 4120, exe: 'C:\\Program Files\\nodejs\\node.exe', command: '"C:\\Program Files\\nodejs\\node.exe" land.mjs' },
     { pid: 77, exe: 'C:\\Windows\\System32\\svchost.exe', command: 'C:\\Windows\\System32\\svchost.exe' },
   ], 'a process with neither path nor command line names no folder');
-  // PowerShell writes one object, not an array, for a single process.
-  assert.deepEqual(tool.parseProcesses(JSON.stringify({ ProcessId: 5, ExecutablePath: null, CommandLine: 'x' }), 'win32'), [{ pid: 5, exe: '', command: 'x' }]);
+  // PowerShell writes one object, not an array, for a single process, and a console set to UTF-8 may write its preamble.
+  assert.deepEqual(tool.parseProcesses(`﻿${JSON.stringify({ ProcessId: 5, ExecutablePath: null, CommandLine: 'x' })}\r\n`, 'win32'), [{ pid: 5, exe: '', command: 'x' }]);
   assert.deepEqual(tool.parseProcesses('    1 /sbin/init\n  234 node /work/x/land.mjs --flag\n\n', 'linux'), [
     { pid: 1, exe: '', command: '/sbin/init' }, { pid: 234, exe: '', command: 'node /work/x/land.mjs --flag' },
   ]);
@@ -471,7 +471,7 @@ test('a folder under .claude/worktrees/ git does not list goes when it holds no 
   assert.match(held.why, /pid 7: node land\.mjs; pid 8: x+…\)/);
   assert.match(held.why, /never stopped here: end it, and the next prune removes the folder/);
   assert.ok(held.why.length < 400, 'a long command line is cut short');
-  const unread = tool.folderVerdict({ ...half, processes: undefined, processError: 'ps could not start' });
+  const unread = tool.folderVerdict({ path: half.path, link: false, git: false, processError: 'ps could not start' });
   assert.equal(unread.remove, false);
   assert.match(unread.why, /could not be read \(ps could not start\)/);
 });
