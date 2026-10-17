@@ -30,8 +30,15 @@ When cleanup is part of an authorized task, remove its own generated scratch usi
 native filesystem command. An existing grant for the exact targets needs no repeated confirmation.
 Immediately before removal, resolve each target inside this checkout, confirm it is ignored and
 contains only disposable generated material, and reject reparse points. Preserve authored content,
-backups and evidence still needed by the task. For a leftover worktree directory, confirm it is empty
-and absent from `git worktree list`; registered managed worktrees use their owning lifecycle tool.
+backups and evidence still needed by the task.
+
+Agent worktrees and what they leave go by the merge tool's prune, which every merge runs and
+`node tools/merge-branch.mjs --prune [--plan]` runs alone; its rules are the tool header's GATE2. A
+merged worktree with no change and nothing under `local/` but logs and scratch is removed, the agent
+harness's lock lifted when no running process names its folder. A folder under `.claude/worktrees/`
+that `git worktree list` does not list and that holds no `.git` is a half-removed worktree, removed
+without following a reparse point. A process holding either is named with its pid, never stopped.
+Other registered worktrees use their owning lifecycle tool.
 
 Use literal targets and one shell throughout; verify absence afterward. If execution is rejected,
 record the action and exact reason, leave the task open, and resolve the actual permission setting

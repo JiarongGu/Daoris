@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The merge tool's prune left merged agent worktrees and a half-removed folder standing (CLEANUP2)
+
+- **Symptom:** 24 worktrees stood with 3 agents running. 9 merged ones were kept as "locked, so in use", 5 for worker logs
+  under `local/`, and a 320 MB folder under `.claude/worktrees/` that git no longer listed, held by two `node land.mjs` a
+  test had leaked on 10-16, was never looked at.
+- **Root cause:** GATE2 took the agent harness's lock (`claude agent <id> (pid N)`) to mean an agent was running. The harness
+  holds it for its session's whole life. Any file under `local/` counted as work, logs included. A folder git did not list
+  was outside the prune's rules by design, so a `git worktree remove` that could not finish left one for ever.
+- **Fix:** `tools/merge-branch.mjs` lifts the harness's lock from a merged worktree (`harnessLock`, `pruneVerdict`'s
+  `unlock`). Its branch must not be at main's tip, the tree must be clean, and no process may name its folder: one CIM
+  query per prune (`listProcesses`, `processesInside`). `local/scratch/` and `*.log` are disposable (`disposableLocal`). A
+  folder under `.claude/worktrees/` with no `.git` that git does not list is removed (`strayFolders`, `folderVerdict`,
+  `removeFolders`). Links are never followed, and a process found inside is named, never stopped. The leaked `land.mjs` had
+  already been fixed by 1f780e43e, which ends the plugin in a `finally`.
+- **Verification:** red first: five unit tests, and both `--prune` end-to-end tests in `merge-branch.test.ts`. Then 90 of
+  90 green (84 before), and `verify`. The end-to-end test holds a real process in a worktree and in a folder, links a
+  junction out of a half-removed folder, and keeps a folder that is a process's working folder on Windows.
+
 ## 2026-10-18 — The look stopped removing a session branch a completed pull request carried (FABRIC-END2d)
 
 - **Symptom:** the merge gate's Git half, after FABRIC-END2d merged: `PullRequestStateTests.The_look_takes_a_session_branch_a_kept_answer_carried`

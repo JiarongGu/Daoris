@@ -27,7 +27,7 @@
  * 3. The commit check: every commit the branch adds carries its `Co-Authored-By:` line (a merge of main
  *    into the branch needs none), and the branch's worktree, if it has one, holds nothing uncommitted
  *    (work a hand-back calls done and left out of the merge). `--no-commit-check` skips it.
- * 4. The prune (below), unless `--no-prune`: one line per branch removed or kept.
+ * 4. The prune (below), unless `--no-prune`: one line per branch, and per half-removed folder, removed or kept.
  * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
  *    their `merge=union` attribute (D106). The orientation index is written from the merged tree and
@@ -111,14 +111,29 @@
  *
  * A candidate is a local branch merged into main, but main, the branch the main checkout has out, the one
  * this runs in, and a batch's branches still to merge. It goes with its worktree, if one has it out, only
- * when that worktree is not locked (the harness locks an agent's worktree while the agent runs, so a lock
- * is in use: a locked worktree is never looked into or unlocked, and a branch at main's tip is merged),
- * has no modified or staged tracked file, has no untracked file (`git worktree remove` refuses those
- * without `--force`, and one may be work), and holds nothing under its gitignored `local/` (an agent's
- * private output, which nothing else keeps). Removal is `git worktree remove`, never forced: ignored
- * build output does not stop it, and whatever does is work to keep. Then `git branch -d`, never `-D`,
- * and one `git worktree prune` at the end. What git refuses is kept and says why. A folder git does not
- * list is never touched. The prune never stops a merge: what it cannot do it says, and the merge goes on.
+ * when that worktree has no modified or staged tracked file, has no untracked file (`git worktree remove`
+ * refuses those without `--force`, and one may be work), and holds nothing under its gitignored `local/`
+ * but a worker's logs and scratch: `local/scratch/` and a `*.log` anywhere under `local/` go with it, and
+ * anything else there is an agent's private output, which nothing else keeps, and is named.
+ *
+ * A locked worktree is in use, never looked into or unlocked, but for the agent harness's own lock,
+ * `claude agent <id> (pid N)` (CLEANUP2): the harness holds it for its session's whole life, not only
+ * while the agent runs, and nine finished agents' merged worktrees stood under it. That lock is lifted
+ * (`git worktree unlock`, and locked again if the removal is refused) when, besides the rules above, the
+ * branch is not at main's tip, as a just-dispatched agent's is before its first commit, and no running
+ * process is inside: none whose executable path or command line names the folder, read once per prune
+ * (one CIM query on Windows, `ps` elsewhere) and only when a harness-locked worktree or a folder below
+ * needs it. Removal is `git worktree remove`, never forced: ignored build output does not stop it, and
+ * whatever does is work to keep. Then `git branch -d`, never `-D`, and one `git worktree prune` at the
+ * end. What git refuses is kept and says why.
+ *
+ * A folder directly under the main checkout's `.claude/worktrees/` that git does not list and that holds
+ * no `.git` is what a `git worktree remove` left when it could not finish (a 320 MB one, held by two
+ * processes a test leaked, stood when CLEANUP2 was built). It is removed, looked at again just before: a
+ * link (a reparse point) is never followed or removed, and a link inside it is removed as a link. One a
+ * running process is inside is kept, naming each pid and command line; a process is never stopped here.
+ * What cannot be removed is named, and the next prune tries again. Any other folder git does not list is
+ * never touched. The prune never stops a merge: what it cannot do it says, and the merge goes on.
  *
  * ## Flakes
  *
@@ -184,7 +199,7 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import {
-  closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, writeSync,
+  closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
@@ -1548,25 +1563,124 @@ export function pruneCandidates({ merged, worktrees, current, hold = [] }) {
 const listed = (files, max = 3) => `${files.slice(0, max).join(', ')}${files.length > max ? `, … ${files.length - max} more` : ''}`;
 
 /**
+ * Whether a lock is the agent harness's own, `claude agent <id> (pid N)` (CLEANUP2). The harness holds it for its
+ * session's whole life, not only while the agent runs, so on a finished agent's worktree it says nothing of use.
+ */
+export function harnessLock(reason) {
+  return /^claude agent \S+ \(pid \d+\)$/.test(reason ?? '');
+}
+
+/**
+ * The running processes, read from the CIM query's JSON on Windows or `ps -A -o pid= -o args=` elsewhere: each one's
+ * pid, its executable's path ('' when not given) and its command line, or its path when the command line is not given.
+ * One with neither names no folder and is left out.
+ */
+export function parseProcesses(text, platform = process.platform) {
+  if (platform === 'win32') {
+    // Set to UTF-8, a console may write its preamble first, which JSON.parse refuses.
+    const json = text.replace(/^﻿/, '').trim();
+    const parsed = json ? JSON.parse(json) : [];
+    return (Array.isArray(parsed) ? parsed : [parsed])
+      .map((one) => ({ pid: Number(one.ProcessId), exe: one.ExecutablePath ?? '', command: one.CommandLine ?? one.ExecutablePath ?? '' }))
+      .filter((one) => one.command);
+  }
+  return lines(text).map((line) => /^\s*(\d+)\s+(.*)$/.exec(line)).filter(Boolean)
+    .map(([, pid, command]) => ({ pid: Number(pid), exe: '', command: command.trim() }));
+}
+
+/**
+ * The processes inside `folder`: each whose executable path or command line names it, as itself or a path under it,
+ * with `\` or `/`, and on Windows in any case and in the `/d/…` form a POSIX shell gives a drive. `agent-ab` is not
+ * inside `agent-a`: the folder's name must end where a path, a quote or a space would.
+ */
+export function processesInside(folder, processes, platform = process.platform) {
+  const windows = platform === 'win32';
+  const norm = (text) => {
+    const slashed = text.split('\\').join('/');
+    return windows ? slashed.toLowerCase() : slashed;
+  };
+  const base = norm(folder).replace(/\/+$/, '');
+  const forms = [base];
+  const drive = /^([a-z]):\//.exec(base);
+  if (windows && drive) forms.push(`/${drive[1]}/${base.slice(3)}`);
+  const names = (text) => {
+    const seen = norm(text);
+    return forms.some((form) => {
+      for (let at = seen.indexOf(form); at !== -1; at = seen.indexOf(form, at + 1)) {
+        const next = seen[at + form.length];
+        if (next === undefined || /[/"'\s]/.test(next)) return true;
+      }
+      return false;
+    });
+  };
+  return processes.filter((one) => names(one.command) || (one.exe && names(one.exe)));
+}
+
+/** One process, as a prune names it: its pid and its command line, cut short. */
+const processSaid = (one) => `pid ${one.pid}: ${one.command.length > 120 ? `${one.command.slice(0, 120)}…` : one.command}`;
+
+/**
+ * Whether a path under `local/` (as `local/…`, `/`-separated) is an agent's disposable output: logs and scratch under
+ * `local/scratch/`, and a `*.log` file anywhere under `local/`. Anything else there may be work, and keeps its worktree.
+ */
+export function disposableLocal(path, directory = false) {
+  if (path === 'local/scratch' || path.startsWith('local/scratch/')) return true;
+  return !directory && path.endsWith('.log');
+}
+
+/**
+ * Whether a folder under `.claude/worktrees/` that git does not list goes (CLEANUP2): what a `git worktree remove`
+ * left when it could not finish. It goes when it is no link (a reparse point is never followed), holds no `.git` (then
+ * it is no half-removed worktree), and no running process is inside it, which is never stopped here.
+ */
+export function folderVerdict(folder) {
+  if (folder.link) return { remove: false, why: 'a link (a reparse point), never followed or removed here' };
+  if (folder.git) return { remove: false, why: 'a folder git does not list, but it holds a .git, so it is no half-removed worktree and is never touched here' };
+  if (!folder.processes) {
+    return { remove: false, why: `a folder git does not list, kept: whether a process runs inside it could not be read (${folder.processError ?? 'not looked into'})` };
+  }
+  if (folder.processes.length) {
+    return {
+      remove: false,
+      why: `a folder git does not list, kept: a running process is inside it (${folder.processes.map(processSaid).join('; ')}), and a process is never stopped here: end it, and the next prune removes the folder`,
+    };
+  }
+  return { remove: true, why: '' };
+}
+
+/**
  * Whether a candidate goes, and if it stays, why. `facts` is what was found in its worktree, and null
- * where nothing was looked into: a locked worktree is in use, so the lock decides and what it holds does
- * not, and nothing runs in it. Every reason to keep is said, not only the first.
+ * where nothing was looked into: a worktree locked for any reason but the agent harness's is in use, so
+ * the lock decides and what it holds does not, and nothing runs in it. The harness's own lock (CLEANUP2)
+ * is lifted, `unlock`, when its branch is not at main's tip (a just-dispatched agent's is), it has no
+ * change, nothing under `local/` but logs and scratch, and no running process inside it. Every reason to
+ * keep is said, not only the first.
  */
 export function pruneVerdict(candidate, facts) {
   if (candidate.held) return { remove: false, why: candidate.held };
   const tree = candidate.worktree;
   if (!tree) return { remove: true, why: '' };
-  if (tree.locked) {
+  const harness = tree.locked && harnessLock(tree.lockReason);
+  if (tree.locked && !harness) {
     return { remove: false, why: `its worktree is locked, so in use${tree.lockReason ? ` (${tree.lockReason})` : ''}; it is never looked into or unlocked here` };
   }
   if (!facts) return { remove: false, why: 'its worktree was not looked into' };
-  if (facts.gone) return { remove: true, why: '', gone: true };
+  const unlock = harness ? { unlock: true } : {};
+  if (facts.gone) return { remove: true, why: '', gone: true, ...unlock };
   const has = [];
   if (facts.error) has.push(`a state git could not read (${facts.error})`);
   if (facts.tracked.length) has.push(`modified or staged tracked files (${listed(facts.tracked)})`);
   if (facts.local) has.push(`private output under local/ (${facts.local}), which nothing else keeps`);
   if (facts.untracked.length) has.push(`untracked files git removes only with --force (${listed(facts.untracked)})`);
-  return has.length ? { remove: false, why: `its worktree has ${has.join('; ')}` } : { remove: true, why: '' };
+  if (!harness) return has.length ? { remove: false, why: `its worktree has ${has.join('; ')}` } : { remove: true, why: '' };
+
+  const kept = [];
+  if (facts.atTip) kept.push("its branch is at main's tip, as a just-dispatched agent's is");
+  kept.push(...has.map((one) => `it has ${one}`));
+  if (!facts.processes) kept.push(`whether a process runs inside it could not be read (${facts.processError ?? 'not looked into'})`);
+  else if (facts.processes.length) kept.push(`a running process is inside it (${facts.processes.map(processSaid).join('; ')})`);
+  if (kept.length) return { remove: false, why: `its worktree is locked by the agent harness (${tree.lockReason}), and stays locked: ${kept.join('; ')}` };
+  return { remove: true, why: '', ...unlock };
 }
 
 /** The line of git's refusal worth printing: its `error:` or `fatal:` line, else its first. */
@@ -1582,9 +1696,11 @@ const samePath = (a, b) => {
 
 /**
  * The first file under `dir`, as a `/` path from the folder that holds it, or null when it holds none.
- * Links are not followed. A folder that cannot be read throws, and its worktree is kept.
+ * `skip` passes over a path (a folder's whole content with it). Links are not followed. A folder that
+ * cannot be read throws, and its worktree is kept.
  */
-export function firstFile(dir) {
+export function firstFile(dir, skip = () => false) {
+  const shownFrom = (path) => relative(dirname(dir), path).split('\\').join('/');
   const walk = (at) => {
     let entries;
     try {
@@ -1594,16 +1710,18 @@ export function firstFile(dir) {
       throw error;
     }
     for (const entry of entries) {
-      const found = entry.isDirectory() ? walk(join(at, entry.name)) : join(at, entry.name);
+      const path = join(at, entry.name);
+      if (skip(shownFrom(path), entry.isDirectory())) continue;
+      const found = entry.isDirectory() ? walk(path) : path;
       if (found) return found;
     }
     return null;
   };
   const found = walk(dir);
-  return found && relative(dirname(dir), found).split('\\').join('/');
+  return found && shownFrom(found);
 }
 
-/** What a prune needs to know of an unlocked worktree: its folder gone, its changes, its `local/`. */
+/** What a prune needs to know of a worktree it may remove: its folder gone, its changes, its `local/` but logs and scratch. */
 function inspectWorktree(tree) {
   if (tree.prunable || !existsSync(tree.path)) return { gone: true };
   const facts = { tracked: [], untracked: [], local: null };
@@ -1613,39 +1731,118 @@ function inspectWorktree(tree) {
   if (status.status !== 0) return { ...facts, error: gitSays(status.err || status.out) };
   for (const line of lines(status.out)) (line.startsWith('?? ') ? facts.untracked : facts.tracked).push(line.slice(3));
   try {
-    facts.local = firstFile(join(tree.path, 'local'));
+    facts.local = firstFile(join(tree.path, 'local'), disposableLocal);
   } catch (error) {
     facts.local = `local/ itself, which could not be read: ${error?.code ?? error?.message}`;
   }
   return facts;
 }
 
-/**
- * The prune's plan, changing nothing: every candidate with its verdict, and the branch the checkout this
- * runs in has out, since `git branch -d` asks whether a branch is merged into that one.
- */
-export function planPrune(root, { hold = [] } = {}) {
-  const merged = lines(git(root, ['for-each-ref', `--merged=refs/heads/${MAIN}`, '--format=%(refname)', 'refs/heads/']).out)
-    .map((ref) => ref.trim().replace(/^refs\/heads\//, ''));
-  const worktrees = parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out);
-  const current = worktrees.find((tree) => samePath(tree.path, root))?.branch ?? '';
-  const entries = pruneCandidates({ merged, worktrees, current, hold }).map((candidate) => {
-    const tree = candidate.worktree;
-    const facts = !candidate.held && tree && !tree.locked ? inspectWorktree(tree) : null;
-    return { ...candidate, ...pruneVerdict(candidate, facts) };
-  });
-  return { current, entries };
+// One CIM query lists every process with its path and command line (2.4 s on the machine it was built on);
+// `Get-Process` gives no command line. The encoding is set so a path that is not ASCII arrives whole.
+const PROCESS_QUERY = '[Console]::OutputEncoding = [Text.Encoding]::UTF8; '
+  + 'ConvertTo-Json -Compress -InputObject @(Get-CimInstance Win32_Process | Select-Object ProcessId,ExecutablePath,CommandLine)';
+
+/** The running processes but this one, or why they could not be read. Asked once per prune, and only when needed. */
+function listProcesses() {
+  const windows = process.platform === 'win32';
+  const result = windows
+    ? spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', PROCESS_QUERY], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true })
+    : spawnSync('ps', ['-A', '-o', 'pid=', '-o', 'args='], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const what = windows ? 'the process query' : 'ps';
+  if (result.error) return { error: `${what} could not start: ${result.error.message}` };
+  if (result.status !== 0) return { error: `${what} failed: ${gitSays(result.stderr || result.stdout || '')}` };
+  try {
+    return { processes: parseProcesses(result.stdout, process.platform).filter((one) => one.pid !== process.pid) };
+  } catch (error) {
+    return { error: `${what} answered what could not be read: ${error?.message ?? error}` };
+  }
 }
 
-/** One removal: the worktree, then the branch. What git refuses is kept, with git's own reason. */
+/** Where the agent harness makes its worktrees, under the main checkout. */
+const WORKTREES = join('.claude', 'worktrees');
+
+/**
+ * The folders under the main checkout's `.claude/worktrees/` that git does not list (CLEANUP2): each one's path,
+ * whether it is a link (a reparse point, never followed), and whether it holds a `.git`. A `.claude/worktrees/` that
+ * is itself a link, or resolves outside the checkout, is one such link and nothing under it is looked at.
+ */
+function strayFolders(mainCheckout, worktrees) {
+  const base = join(mainCheckout, WORKTREES);
+  let entries;
+  try {
+    if (lstatSync(base).isSymbolicLink() || !samePath(realpathSync(base), base)) return [{ path: base, link: true, git: false }];
+    entries = readdirSync(base, { withFileTypes: true });
+  } catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    throw error;
+  }
+  return entries.filter((entry) => entry.isDirectory() || entry.isSymbolicLink())
+    .map((entry) => join(base, entry.name))
+    .filter((path) => !worktrees.some((tree) => samePath(tree.path, path)))
+    .map((path) => {
+      const link = lstatSync(path).isSymbolicLink();
+      return { path, link, git: !link && existsSync(join(path, '.git')) };
+    });
+}
+
+/**
+ * The prune's plan, changing nothing: every candidate with its verdict, every folder under `.claude/worktrees/`
+ * git does not list with its own, and the branch the checkout this runs in has out, since `git branch -d`
+ * asks whether a branch is merged into that one. The processes are read once, and only when a
+ * harness-locked worktree or a folder is to be looked into.
+ */
+export function planPrune(root, { hold = [] } = {}) {
+  const refs = lines(git(root, ['for-each-ref', `--merged=refs/heads/${MAIN}`, '--format=%(objectname) %(refname)', 'refs/heads/']).out)
+    .map((line) => {
+      const [sha, ref] = line.trim().split(' ');
+      return { sha, branch: ref.replace(/^refs\/heads\//, '') };
+    });
+  const merged = refs.map((ref) => ref.branch);
+  const tip = refs.find((ref) => ref.branch === MAIN)?.sha;
+  const worktrees = parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out);
+  const current = worktrees.find((tree) => samePath(tree.path, root))?.branch ?? '';
+  let found = null;
+  const inside = (path) => {
+    found ??= listProcesses();
+    return found.error ? { processError: found.error } : { processes: processesInside(path, found.processes) };
+  };
+
+  const entries = pruneCandidates({ merged, worktrees, current, hold }).map((candidate) => {
+    const tree = candidate.worktree;
+    let facts = null;
+    if (!candidate.held && tree && (!tree.locked || harnessLock(tree.lockReason))) {
+      facts = inspectWorktree(tree);
+      if (tree.locked && !facts.gone) {
+        Object.assign(facts, { atTip: refs.find((ref) => ref.branch === candidate.branch)?.sha === tip }, inside(tree.path));
+      }
+    }
+    return { ...candidate, ...pruneVerdict(candidate, facts) };
+  });
+  const folders = strayFolders(worktrees[0]?.path ?? root, worktrees).map((folder) => {
+    const looked = folder.link || folder.git ? folder : { ...folder, ...inside(folder.path) };
+    return { ...looked, ...folderVerdict(looked) };
+  });
+  return { current, entries, folders };
+}
+
+/** One removal: the worktree, unlocked first when the harness's lock is lifted, then the branch. What git refuses is kept, with git's own reason. */
 function removeOne(root, entry) {
   const tree = entry.worktree;
   let left = '';
   if (tree) {
+    if (entry.unlock) {
+      const unlocked = git(root, ['worktree', 'unlock', tree.path], { allowFail: true });
+      if (unlocked.status !== 0) return { ...entry, remove: false, why: `git refused to unlock its worktree: ${gitSays(unlocked.err || unlocked.out)}` };
+    }
     const removed = git(root, ['worktree', 'remove', tree.path], { allowFail: true });
     if (removed.status !== 0) {
       const still = parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, tree.path));
-      if (still) return { ...entry, remove: false, why: `git refused to remove its worktree: ${gitSays(removed.err || removed.out)}` };
+      if (still) {
+        // A worktree that stays keeps the lock it had, so what the harness holds is never left unlocked.
+        if (entry.unlock) git(root, ['worktree', 'lock', '--reason', tree.lockReason, tree.path], { allowFail: true });
+        return { ...entry, remove: false, why: `git refused to remove its worktree: ${gitSays(removed.err || removed.out)}` };
+      }
       // git can let go of a worktree whose folder it could not wholly delete (a file held open): the
       // branch is free, and what is left of the folder is no longer git's.
       left = `; git could not delete all of its folder (${gitSays(removed.err || removed.out)}), and what is left is no longer git's`;
@@ -1673,12 +1870,55 @@ export function applyPrune(root, entries, onEach = () => {}) {
   return done;
 }
 
-function pruneHeader(entries, { plan = false, atMerge = false } = {}) {
+/**
+ * One half-removed folder's removal, looked at again first: git may list it by now, or it may hold a `.git` or be a
+ * link, and then it is not touched. A link inside it is removed as a link, never followed. What cannot be removed
+ * stays, and the next prune tries again.
+ */
+function removeFolder(folder, listedNow) {
+  if (listedNow.some((tree) => samePath(tree.path, folder.path))) {
+    return { ...folder, remove: false, why: 'git lists it now, so it is a worktree and is never touched here' };
+  }
+  let stat;
+  try {
+    stat = lstatSync(folder.path);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return { ...folder, removed: true };
+    return { ...folder, remove: false, why: `it could not be looked at again (${error?.code ?? error?.message}); the next prune tries again` };
+  }
+  if (stat.isSymbolicLink()) return { ...folder, remove: false, ...folderVerdict({ ...folder, link: true }) };
+  if (existsSync(join(folder.path, '.git'))) return { ...folder, remove: false, ...folderVerdict({ ...folder, git: true }) };
+  try {
+    rmSync(folder.path, { recursive: true, maxRetries: 2 });
+    return { ...folder, removed: true };
+  } catch (error) {
+    return {
+      ...folder,
+      remove: false,
+      why: `it could not be removed (${error?.code ?? 'error'}: ${error?.message ?? error}); no running process names it in its command line, so one holds it another way (its working folder, an open file); the next prune tries again`,
+    };
+  }
+}
+
+/** The half-removed folders the plan let go, removed, each heard by `onEach` as it ends. */
+export function removeFolders(root, folders, onEach = () => {}) {
+  const listedNow = folders.some((folder) => folder.remove) ? parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out) : [];
+  return folders.map((folder) => {
+    const outcome = folder.remove ? removeFolder(folder, listedNow) : folder;
+    onEach(outcome);
+    return outcome;
+  });
+}
+
+function pruneHeader(entries, { plan = false, atMerge = false, folders = [] } = {}) {
   const what = entries.length === 0
     ? `no branch but ${MAIN} is merged into ${MAIN}`
     : `${entries.length} ${entries.length === 1 ? 'branch' : 'branches'} merged into ${MAIN}`;
+  const stray = folders.length
+    ? `; ${folders.length} ${folders.length === 1 ? 'folder' : 'folders'} under ${WORKTREES.split('\\').join('/')}/ git does not list`
+    : '';
   const note = [atMerge && "at the merge's start", plan && 'a plan, so nothing is removed'].filter(Boolean).join('; ');
-  return `prune${note ? ` (${note})` : ''}: ${what}`;
+  return `prune${note ? ` (${note})` : ''}: ${what}${stray}`;
 }
 
 /** One branch's line, in the lane report's columns: what happens to it (or would), and why. */
@@ -1688,23 +1928,45 @@ function pruneLine(root, entry, applied) {
   let text = entry.why;
   if (goes) {
     const at = entry.worktree && shown(root, entry.worktree.path);
+    const unlocked = entry.unlock ? `, unlocked from the agent harness (${entry.worktree.lockReason}),` : '';
     if (!entry.worktree) text = 'the branch (no worktree has it checked out)';
-    else if (entry.gone) text = `its worktree's record (the folder ${at} is gone already) and the branch`;
-    else text = `its worktree ${at} and the branch${entry.left ?? ''}`;
+    else if (entry.gone) text = `its worktree's record (the folder ${at} is gone already)${unlocked} and the branch`;
+    else text = `its worktree ${at}${unlocked} and the branch${entry.left ?? ''}`;
   }
   return `  ${pad(verb, 8)} ${pad(entry.branch, 34)} ${text}`;
+}
+
+/** One half-removed folder's line, in the same columns. */
+function folderLine(root, folder, applied) {
+  const goes = applied ? folder.removed === true : folder.remove;
+  const verb = applied ? (goes ? 'removed' : 'kept') : (goes ? 'remove' : 'keep');
+  const text = goes ? 'a folder git does not list, with no .git: what a worktree removal that did not finish left' : folder.why;
+  return `  ${pad(verb, 8)} ${pad(shown(root, folder.path), 34)} ${text}`;
+}
+
+/** The plan's lines, changing nothing: each branch, then each folder. */
+function printPrunePlan(root, { entries, folders }, atMerge = false) {
+  console.log(pruneHeader(entries, { plan: true, atMerge, folders }));
+  for (const entry of entries) console.log(pruneLine(root, entry, false));
+  for (const folder of folders) console.log(folderLine(root, folder, false));
+}
+
+/** The plan applied, a line for each branch and folder as it ends. */
+function applyPrunePlan(root, { entries, folders }) {
+  console.log(pruneHeader(entries, { folders }));
+  applyPrune(root, entries, (entry) => console.log(pruneLine(root, entry, true)));
+  removeFolders(root, folders, (folder) => console.log(folderLine(root, folder, true)));
 }
 
 /** The prune a merge runs at its start and a batch at its end. It never stops the merge. */
 function pruneAround(root, hold) {
   try {
-    const { current, entries } = planPrune(root, { hold });
-    if (current !== MAIN) {
-      console.log(`prune: skipped: this checkout has ${current || 'a detached HEAD'} out, not ${MAIN}`);
+    const plan = planPrune(root, { hold });
+    if (plan.current !== MAIN) {
+      console.log(`prune: skipped: this checkout has ${plan.current || 'a detached HEAD'} out, not ${MAIN}`);
       return;
     }
-    console.log(pruneHeader(entries));
-    applyPrune(root, entries, (entry) => console.log(pruneLine(root, entry, true)));
+    applyPrunePlan(root, plan);
   } catch (error) {
     console.log(`prune: skipped (${error?.message ?? error})`);
   }
@@ -1712,17 +1974,15 @@ function pruneAround(root, hold) {
 
 /** `--prune`: the prune alone, or its plan. Applying it runs from main's checkout, as a merge does. */
 function pruneOnly(root, options) {
-  const { current, entries } = planPrune(root);
+  const plan = planPrune(root);
   if (options.plan) {
-    console.log(pruneHeader(entries, { plan: true }));
-    for (const entry of entries) console.log(pruneLine(root, entry, false));
+    printPrunePlan(root, plan);
     return 0;
   }
-  if (current !== MAIN) {
-    throw new Refusal(`--prune runs from ${MAIN}'s checkout: git branch -d asks whether a branch is merged into the one checked out, and here that is ${current || 'a detached HEAD'}`);
+  if (plan.current !== MAIN) {
+    throw new Refusal(`--prune runs from ${MAIN}'s checkout: git branch -d asks whether a branch is merged into the one checked out, and here that is ${plan.current || 'a detached HEAD'}`);
   }
-  console.log(pruneHeader(entries));
-  applyPrune(root, entries, (entry) => console.log(pruneLine(root, entry, true)));
+  applyPrunePlan(root, plan);
   return 0;
 }
 
@@ -2542,9 +2802,7 @@ function planOnly(root, options) {
   });
   console.log('');
   if (options.autoPrune) {
-    const { entries } = planPrune(root, { hold: options.branches });
-    console.log(pruneHeader(entries, { plan: true, atMerge: true }));
-    for (const entry of entries) console.log(pruneLine(root, entry, false));
+    printPrunePlan(root, planPrune(root, { hold: options.branches }), true);
   } else {
     console.log('prune: skipped (--no-prune)');
   }

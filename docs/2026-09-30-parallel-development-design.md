@@ -98,8 +98,10 @@ checks, or said why it stopped, has failed and is not run again. `--batch` is on
 not merge over an open merge and the tool never commits, so the parent commits each merge and
 `--continue` merges the next. The rehearsals run once, after the last. At each merge's start and a
 batch's end the tool prunes (GATE2): a branch merged into main goes with its worktree, unless the
-worktree is locked (an agent runs in it), holds changes or untracked files, or has anything under
-`local/`; it never forces and never uses `-D`. A worktree made by hand is locked by whoever made it. The brief is the local skill
+worktree is locked for any reason but the agent harness's (lifted when no running process names its
+folder), holds changes or untracked files, or has anything under `local/` but logs and scratch; it
+never forces and never uses `-D`. It also removes what a removal that did not finish left under `.claude/worktrees/`
+(CLEANUP2; the tool's header holds the rules). A worktree made by hand is locked by whoever made it. The brief is the local skill
 `dispatch-subagent`.
 
 **GATE3 and GATE4 (2026-10-04) narrow rule 6.** A merge runs the baseline (the universal gates, the code map,

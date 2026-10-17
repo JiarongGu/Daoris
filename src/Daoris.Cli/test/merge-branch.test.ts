@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync, writeSync } from 'node:fs';
+import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
+import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync, writeSync } from 'node:fs';
 import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture } from './_fixture.ts';
@@ -32,7 +32,14 @@ interface Schedule { light: Gate[]; process: Gate[]; waits: Record<string, { aft
 interface Beside { settled?: () => Promise<void> }
 interface Worktree { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean }
 interface Candidate { branch: string; worktree: Worktree | null; held: string | null }
-interface Facts { gone?: boolean; error?: string; tracked: string[]; untracked: string[]; local: string | null }
+/** CLEANUP2: what a prune knows of a harness-locked worktree beyond its changes: its branch at main's tip, the processes inside it. */
+interface Facts {
+  gone?: boolean; error?: string; tracked: string[]; untracked: string[]; local: string | null;
+  atTip?: boolean; processes?: Proc[]; processError?: string;
+}
+interface Proc { pid: number; exe: string; command: string }
+/** CLEANUP2: a folder under `.claude/worktrees/` that git does not list. */
+interface Folder { path: string; link: boolean; git: boolean; processes?: Proc[]; processError?: string }
 interface Slow { name: string; ms: number; tests: number }
 interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number; slowest?: Slow[]; trx?: string }
 type Step = (command: string, cwd: string, fd: number) => Promise<number>;
@@ -83,7 +90,13 @@ const tool = await import(
   isProcessGate: (gate: { name: string; run: string }) => boolean;
   parseWorktrees: (porcelain: string) => Worktree[];
   pruneCandidates: (facts: { merged: string[]; worktrees: Worktree[]; current: string; hold?: string[] }) => Candidate[];
-  pruneVerdict: (candidate: Candidate, facts: Facts | null) => { remove: boolean; why: string; gone?: boolean };
+  pruneVerdict: (candidate: Candidate, facts: Facts | null) => { remove: boolean; why: string; gone?: boolean; unlock?: boolean };
+  harnessLock: (reason: string) => boolean;
+  parseProcesses: (text: string, platform?: string) => Proc[];
+  processesInside: (folder: string, processes: Proc[], platform?: string) => Proc[];
+  disposableLocal: (path: string, directory?: boolean) => boolean;
+  firstFile: (dir: string, skip?: (path: string, directory: boolean) => boolean) => string | null;
+  folderVerdict: (folder: Folder) => { remove: boolean; why: string };
   BASELINE: readonly string[];
   GENERATED: readonly { folder: string; tool: string }[];
   isGenerated: (path: string) => boolean;
@@ -320,10 +333,11 @@ test('a merged branch goes with its worktree only when that is unlocked, has no 
   assert.deepEqual(tool.pruneVerdict(at({ prunable: true }), { ...clean, gone: true }), { remove: true, why: '', gone: true });
   assert.deepEqual(tool.pruneVerdict({ branch: 'b', worktree: null, held: 'named in this batch' }, null), { remove: false, why: 'named in this batch' });
 
-  // A branch at main's tip is merged; a locked worktree is in use however it looks, and is never looked into.
-  const locked = tool.pruneVerdict(at({ locked: true, lockReason: 'claude agent agent-b (pid 1)' }), null);
+  // A branch at main's tip is merged; a worktree locked for any reason but the agent harness's is in use however it
+  // looks, and is never looked into (CLEANUP2 lifts the harness's own lock, below).
+  const locked = tool.pruneVerdict(at({ locked: true, lockReason: 'the owner keeps this' }), null);
   assert.equal(locked.remove, false);
-  assert.match(locked.why, /locked, so in use \(claude agent agent-b \(pid 1\)\)/);
+  assert.match(locked.why, /locked, so in use \(the owner keeps this\)/);
   assert.equal(tool.pruneVerdict(at({ locked: true, prunable: true }), null).remove, false, 'a lock holds even when the folder is gone');
 
   const changed = tool.pruneVerdict(at(), { ...clean, tracked: ['src/a.ts', 'b.md', 'c.md', 'd.md'] });
@@ -341,6 +355,125 @@ test('a merged branch goes with its worktree only when that is unlocked, has no 
   assert.equal(tool.pruneVerdict(at(), null).remove, false, 'a worktree nobody looked into is kept');
   // Every reason is said, not only the first.
   assert.match(tool.pruneVerdict(at(), { ...clean, tracked: ['a'], local: 'local/x' }).why, /tracked files[\s\S]*local\//);
+});
+
+// CLEANUP2: the agent harness keeps its lock for its session's whole life, not only while the agent runs, so nine
+// finished agents' merged worktrees stood locked (2026-10-18). Its lock is lifted when nothing is left inside.
+test('the agent harness\'s lock is its own reason: claude agent, an agent id and a pid', () => {
+  assert.equal(tool.harnessLock('claude agent agent-a (pid 57256)'), true);
+  assert.equal(tool.harnessLock('claude agent agent-aa965da03c60bca87 (pid 1)'), true);
+  for (const other of ['', 'the owner keeps this', 'claude agent agent-a', 'claude agent agent-a (pid 1) for now', 'claude agent  (pid 1)']) {
+    assert.equal(tool.harnessLock(other), false, other);
+  }
+});
+
+test('a harness-locked merged worktree goes, unlocked, only when it is clean, holds nothing under local/ and no process runs inside', () => {
+  const clean: Facts = { tracked: [], untracked: [], local: null, atTip: false, processes: [] };
+  const reason = 'claude agent agent-b (pid 1)';
+  const at = (lockReason = reason): Candidate => ({ branch: 'b', worktree: tree('/r/w/b', 'b', { locked: true, lockReason }), held: null });
+
+  assert.deepEqual(tool.pruneVerdict(at(), clean), { remove: true, why: '', unlock: true });
+  assert.deepEqual(tool.pruneVerdict(at(), { ...clean, gone: true }), { remove: true, why: '', gone: true, unlock: true });
+  assert.equal(tool.pruneVerdict(at(), null).remove, false, 'a harness-locked worktree nobody looked into is kept');
+
+  const inside = tool.pruneVerdict(at(), { ...clean, processes: [{ pid: 9, exe: 'C:/node.exe', command: 'node land.mjs' }] });
+  assert.equal(inside.remove, false);
+  assert.match(inside.why, /locked by the agent harness \(claude agent agent-b \(pid 1\)\)/);
+  assert.match(inside.why, /a running process is inside it \(pid 9: node land\.mjs\)/);
+  const unread = tool.pruneVerdict(at(), { tracked: [], untracked: [], local: null, atTip: false, processError: 'powershell could not start' });
+  assert.equal(unread.remove, false);
+  assert.match(unread.why, /whether a process runs inside it could not be read \(powershell could not start\)/);
+  // A just-dispatched agent's branch sits at main's tip before its first commit, and counts as merged.
+  const fresh = tool.pruneVerdict(at(), { ...clean, atTip: true });
+  assert.equal(fresh.remove, false);
+  assert.match(fresh.why, /its branch is at main's tip, as a just-dispatched agent's is/);
+  // Every reason is said, not only the first.
+  const all = tool.pruneVerdict(at(), {
+    ...clean, tracked: ['a.ts'], untracked: ['n.txt'], local: 'local/notes.md', processes: [{ pid: 3, exe: '', command: 'code .' }],
+  });
+  assert.match(all.why, /tracked files \(a\.ts\)[\s\S]*local\/ \(local\/notes\.md\)[\s\S]*untracked files[\s\S]*pid 3: code \./);
+
+  // Any other lock is in use however the worktree looks, and is never looked into or unlocked.
+  for (const other of ['the owner keeps this', '']) {
+    const kept = tool.pruneVerdict(at(other), clean);
+    assert.equal(kept.remove, false, other);
+    assert.match(kept.why, /its worktree is locked, so in use/);
+    assert.match(kept.why, /never looked into or unlocked here/);
+    assert.equal('unlock' in kept, false);
+  }
+  assert.match(tool.pruneVerdict(at('the owner keeps this'), clean).why, /\(the owner keeps this\)/);
+});
+
+test('the processes are read from a CIM query on Windows and ps elsewhere, and one is inside a folder its path or command line names', () => {
+  const cim = JSON.stringify([
+    { ProcessId: 0, ExecutablePath: null, CommandLine: null },
+    { ProcessId: 4120, ExecutablePath: 'C:\\Program Files\\nodejs\\node.exe', CommandLine: '"C:\\Program Files\\nodejs\\node.exe" land.mjs' },
+    { ProcessId: 77, ExecutablePath: 'C:\\Windows\\System32\\svchost.exe', CommandLine: null },
+  ]);
+  assert.deepEqual(tool.parseProcesses(cim, 'win32'), [
+    { pid: 4120, exe: 'C:\\Program Files\\nodejs\\node.exe', command: '"C:\\Program Files\\nodejs\\node.exe" land.mjs' },
+    { pid: 77, exe: 'C:\\Windows\\System32\\svchost.exe', command: 'C:\\Windows\\System32\\svchost.exe' },
+  ], 'a process with neither path nor command line names no folder');
+  // PowerShell writes one object, not an array, for a single process, and a console set to UTF-8 may write its preamble.
+  assert.deepEqual(tool.parseProcesses(`﻿${JSON.stringify({ ProcessId: 5, ExecutablePath: null, CommandLine: 'x' })}\r\n`, 'win32'), [{ pid: 5, exe: '', command: 'x' }]);
+  assert.deepEqual(tool.parseProcesses('    1 /sbin/init\n  234 node /work/x/land.mjs --flag\n\n', 'linux'), [
+    { pid: 1, exe: '', command: '/sbin/init' }, { pid: 234, exe: '', command: 'node /work/x/land.mjs --flag' },
+  ]);
+
+  const folder = ['D:', 'work', 'repo', '.claude', 'worktrees', 'agent-a'].join('\\');
+  const proc = (pid: number, command: string, exe = ''): Proc => ({ pid, exe, command });
+  const found = tool.processesInside(folder, [
+    proc(1, `"C:\\node.exe" ${folder}\\examples\\plugins\\github-pull-request\\land.mjs`),
+    proc(2, 'node d:/WORK/repo/.claude/worktrees/agent-a/x.mjs'),
+    proc(3, `node ${folder}b\\x.mjs`),
+    proc(4, 'tool.exe --serve', `${folder}\\bin\\tool.exe`),
+    proc(5, 'bash -c cd /d/work/repo/.claude/worktrees/agent-a && ls'),
+    proc(6, `git -C "${folder}" status`),
+    proc(7, `git -C ${folder}`),
+    proc(8, 'node D:\\work\\repo\\tools\\merge-branch.mjs --prune'),
+  ], 'win32');
+  assert.deepEqual(found.map((p) => p.pid), [1, 2, 4, 5, 6, 7], 'agent-ab is not inside agent-a, and the checkout around it is not');
+  assert.deepEqual(tool.processesInside('/work/x', [proc(1, 'node /work/x/land.mjs'), proc(2, 'node /work/xy/a'), proc(3, 'node /WORK/x/a')], 'linux')
+    .map((p) => p.pid), [1], 'elsewhere a path is case-sensitive');
+});
+
+test('logs and scratch under local/ are an agent\'s disposable output; anything else there is kept and named', () => {
+  for (const path of ['local/scratch/a.md', 'local/scratch/deep/b.json', 'local/gate.log', 'local/runs/x.log']) assert.equal(tool.disposableLocal(path), true, path);
+  assert.equal(tool.disposableLocal('local/scratch', true), true, 'the scratch folder is not walked at all');
+  for (const path of ['local/out.md', 'local/scratchpad.md', 'local/a.log.md', 'local/notes/log']) assert.equal(tool.disposableLocal(path), false, path);
+  assert.equal(tool.disposableLocal('local/runs.log', true), false, 'a folder named like a log is walked');
+
+  const fx = makeFixture('merge-branch-local');
+  try {
+    fx.write('local/scratch/a.md', 'scratch\n');
+    fx.write('local/z.log', 'log\n');
+    fx.write('local/runs/gate.log', 'log\n');
+    assert.equal(tool.firstFile(join(fx.root, 'local'), tool.disposableLocal), null, 'only disposable output keeps nothing');
+    fx.write('local/keep/notes.md', 'mine\n');
+    assert.equal(tool.firstFile(join(fx.root, 'local'), tool.disposableLocal), 'local/keep/notes.md');
+    assert.equal(tool.firstFile(join(fx.root, 'local')) !== null, true, 'with no rule, any file is found');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a folder under .claude/worktrees/ git does not list goes when it holds no .git, is no link and no process runs inside', () => {
+  const half: Folder = { path: '/r/.claude/worktrees/agent-h', link: false, git: false, processes: [] };
+  assert.deepEqual(tool.folderVerdict(half), { remove: true, why: '' });
+  const link = tool.folderVerdict({ ...half, link: true });
+  assert.equal(link.remove, false);
+  assert.match(link.why, /a link \(a reparse point\), never followed or removed here/);
+  const git = tool.folderVerdict({ ...half, git: true });
+  assert.equal(git.remove, false);
+  assert.match(git.why, /holds a \.git/);
+  const held = tool.folderVerdict({ ...half, processes: [{ pid: 7, exe: '', command: 'node land.mjs' }, { pid: 8, exe: '', command: 'x'.repeat(400) }] });
+  assert.equal(held.remove, false);
+  assert.match(held.why, /pid 7: node land\.mjs; pid 8: x+…\)/);
+  assert.match(held.why, /never stopped here: end it, and the next prune removes the folder/);
+  assert.ok(held.why.length < 400, 'a long command line is cut short');
+  const unread = tool.folderVerdict({ path: half.path, link: false, git: false, processError: 'ps could not start' });
+  assert.equal(unread.remove, false);
+  assert.match(unread.why, /could not be read \(ps could not start\)/);
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -3155,14 +3288,14 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const plan = await repo.run(['--prune', '--plan']);
     assert.equal(plan.status, 0, plan.out);
     assert.match(plan.out, /prune \(a plan, so nothing is removed\): 9 branches merged into main/);
-    assert.match(plan.out, /\n\s+keep\s+fresh\s+its worktree is locked, so in use \(claude agent agent-y \(pid 2\)\)/);
+    assert.match(plan.out, /\n\s+keep\s+fresh\s+its worktree is locked by the agent harness \(claude agent agent-y \(pid 2\)\), and stays locked: its branch is at main's tip, as a just-dispatched agent's is\n/);
     assert.match(plan.out, /\n\s+remove\s+free\s+its worktree \.\.\/trees\/free and the branch\n/);
     assert.match(plan.out, /\n\s+remove\s+gone\s+its worktree's record \(the folder \.\.\/trees\/gone is gone already\) and the branch\n/);
     assert.match(plan.out, /\n\s+remove\s+plain\s+the branch \(no worktree has it checked out\)\n/);
     assert.match(plan.out, /\n\s+remove\s+tracking\s/, 'only the deletion itself can hear git refuse');
     const inUseLine = plan.out.split('\n').find((line) => /^\s+keep\s+in-use\s/.test(line)) ?? '';
-    assert.match(inUseLine, /its worktree is locked, so in use \(claude agent agent-x \(pid 1\)\)/);
-    assert.doesNotMatch(inUseLine, /tracked/, 'a locked worktree is never looked into');
+    assert.match(inUseLine, /its worktree is locked by the agent harness \(claude agent agent-x \(pid 1\)\), and stays locked: /);
+    assert.match(inUseLine, /main's tip, as a just-dispatched agent's is; it has modified or staged tracked files \(tracked\.txt\)$/, 'the harness\'s lock is looked behind (CLEANUP2)');
     assert.match(plan.out, /\n\s+keep\s+changed\s+its worktree has modified or staged tracked files \(tracked\.txt\)\n/);
     assert.match(plan.out, /\n\s+keep\s+private\s+its worktree has private output under local\/ \(local\/out\.md\), which nothing else keeps\n/);
     assert.match(plan.out, /\n\s+keep\s+stray\s+its worktree has untracked files git removes only with --force \(new\.txt\)\n/);
@@ -3186,5 +3319,121 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.ok(existsSync(join(kept, 'local', 'out.md')) && existsSync(join(stray, 'new.txt')));
     assert.equal(readFileSync(join(trees, 'orphan', 'keep.txt'), 'utf8'), 'mine\n');
     repo.cleanup();
+  });
+
+  // CLEANUP2: 24 worktrees stood with three agents running (2026-10-18): five kept for worker logs under local/, nine
+  // for the harness's lock, which it holds for its session's life, and one half-removed folder two leaked processes held.
+  test('--prune lifts the harness\'s lock from a merged worktree left with nothing, takes worker logs and half-removed folders, and names what holds the rest', async () => {
+    const repo = scratch('prune-leftovers', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\n.claude/worktrees/\n', 'tracked.txt': 'base\n' });
+    const trees = join(dirname(repo.root), 'trees');
+    const holders: ChildProcess[] = [];
+    // A process that names `named` in its command line, as the two `node land.mjs` a test left running named theirs.
+    const hold = (named: string, cwd = dirname(repo.root), args = [join(named, 'held')]): ChildProcess => {
+      const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)', ...args], { cwd, stdio: 'ignore' });
+      holders.push(child);
+      return child;
+    };
+    try {
+      const add = (name: string, reason?: string): string => {
+        const path = join(trees, name);
+        git(repo.root, 'worktree', 'add', '--quiet', '-b', name, path, 'main');
+        if (reason !== undefined) git(repo.root, 'worktree', 'lock', '--reason', reason, path);
+        return path;
+      };
+      const harness = (id: string) => `claude agent agent-${id} (pid 4242)`;
+      const done = add('done', harness('d'));
+      const busy = add('busy', harness('b'));
+      const busyHolder = hold(busy);
+      const logs = add('logs', harness('l'));
+      for (const path of ['local/scratch/run/out.md', 'local/gate.log']) {
+        mkdirSync(dirname(join(logs, path)), { recursive: true });
+        writeFileSync(join(logs, path), 'a worker wrote this\n');
+      }
+      const notes = add('notes');
+      for (const path of ['local/scratch/a.log', 'local/notes.md']) {
+        mkdirSync(dirname(join(notes, path)), { recursive: true });
+        writeFileSync(join(notes, path), 'a worker wrote this\n');
+      }
+      add('owned', 'the owner keeps this');
+      // Main moves on, so these merged branches stand behind its tip, as a finished agent's always does.
+      git(repo.root, 'commit', '--quiet', '--allow-empty', '-m', `main moves on${TRAILER}`);
+
+      const worktrees = join(repo.root, '.claude', 'worktrees');
+      const outside = join(dirname(repo.root), 'outside');
+      mkdirSync(outside, { recursive: true });
+      writeFileSync(join(outside, 'keep.txt'), 'never followed\n');
+      const half = join(worktrees, 'agent-h');
+      mkdirSync(join(half, 'examples', 'plugins', 'p'), { recursive: true });
+      writeFileSync(join(half, 'examples', 'plugins', 'p', 'land.mjs'), 'left\n');
+      symlinkSync(outside, join(half, 'linked'), 'junction');
+      symlinkSync(outside, join(worktrees, 'agent-link'), 'junction');
+      const held = join(worktrees, 'agent-held');
+      mkdirSync(held, { recursive: true });
+      writeFileSync(join(held, 'a.txt'), 'held\n');
+      const heldHolder = hold(held, held);
+      mkdirSync(join(worktrees, 'agent-git'), { recursive: true });
+      writeFileSync(join(worktrees, 'agent-git', '.git'), 'gitdir: elsewhere\n');
+      // Windows keeps a folder that is a process's working folder, and that process's command line need not name it.
+      const stuck = join(worktrees, 'agent-stuck');
+      const windows = process.platform === 'win32';
+      if (windows) {
+        mkdirSync(stuck, { recursive: true });
+        writeFileSync(join(stuck, 'b.txt'), 'stuck\n');
+        hold(stuck, stuck, []);
+      }
+      const folders = windows ? 5 : 4;
+
+      const branches = () => git(repo.root, 'branch', '--format=%(refname:short)').split('\n');
+      const every = branches();
+      const listing = () => tool.parseWorktrees(git(repo.root, 'worktree', 'list', '--porcelain'));
+      const before = listing();
+
+      const plan = await repo.run(['--prune', '--plan']);
+      assert.equal(plan.status, 0, plan.out);
+      assert.match(plan.out, new RegExp(`prune \\(a plan, so nothing is removed\\): 5 branches merged into main; ${folders} folders under \\.claude/worktrees/ git does not list\\n`));
+      assert.match(plan.out, /\n\s+remove\s+done\s+its worktree \.\.\/trees\/done, unlocked from the agent harness \(claude agent agent-d \(pid 4242\)\), and the branch\n/);
+      assert.match(plan.out, new RegExp(`\\n\\s+keep\\s+busy\\s+its worktree is locked by the agent harness \\(claude agent agent-b \\(pid 4242\\)\\), and stays locked: a running process is inside it \\(pid ${busyHolder.pid}: `));
+      assert.match(plan.out, /\n\s+remove\s+logs\s+its worktree \.\.\/trees\/logs, unlocked from the agent harness/, 'worker logs keep nothing');
+      assert.match(plan.out, /\n\s+keep\s+notes\s+its worktree has private output under local\/ \(local\/notes\.md\), which nothing else keeps\n/);
+      assert.match(plan.out, /\n\s+keep\s+owned\s+its worktree is locked, so in use \(the owner keeps this\); it is never looked into or unlocked here\n/);
+      assert.match(plan.out, /\n\s+remove\s+\.claude\/worktrees\/agent-h\s+a folder git does not list, with no \.git: what a worktree removal that did not finish left\n/);
+      assert.match(plan.out, /\n\s+keep\s+\.claude\/worktrees\/agent-link\s+a link \(a reparse point\), never followed or removed here\n/);
+      assert.match(plan.out, new RegExp(`\\n\\s+keep\\s+\\.claude/worktrees/agent-held\\s+.*a running process is inside it \\(pid ${heldHolder.pid}: `));
+      assert.match(plan.out, /\n\s+keep\s+\.claude\/worktrees\/agent-git\s+.*holds a \.git/);
+      if (windows) assert.match(plan.out, /\n\s+remove\s+\.claude\/worktrees\/agent-stuck\s/, 'only the removal itself finds the folder held');
+      assert.deepEqual(branches(), every, '--plan removes no branch');
+      assert.deepEqual(listing(), before, '--plan removes, unlocks and locks no worktree');
+      for (const path of [done, logs, half, held, join(worktrees, 'agent-link', 'keep.txt')]) assert.ok(existsSync(path), path);
+
+      const result = await repo.run(['--prune']);
+      assert.equal(result.status, 0, result.out);
+      assert.match(result.out, new RegExp(`prune: 5 branches merged into main; ${folders} folders under \\.claude/worktrees/ git does not list\\n`));
+      assert.match(result.out, /\n\s+removed\s+done\s+its worktree \.\.\/trees\/done, unlocked from the agent harness/);
+      assert.match(result.out, /\n\s+removed\s+logs\s/);
+      for (const name of ['busy', 'notes', 'owned']) assert.match(result.out, new RegExp(`\\n\\s+kept\\s+${name}\\s`));
+      assert.match(result.out, /\n\s+removed\s+\.claude\/worktrees\/agent-h\s/);
+      for (const name of ['agent-link', 'agent-held', 'agent-git']) assert.match(result.out, new RegExp(`\\n\\s+kept\\s+\\.claude/worktrees/${name}\\s`));
+      if (windows) {
+        assert.match(result.out, /\n\s+kept\s+\.claude\/worktrees\/agent-stuck\s+it could not be removed \(E[A-Z]+\b[^)]*\); no running process names it in its command line, so one holds it another way \(its working folder, an open file\); the next prune tries again\n/);
+      }
+
+      assert.deepEqual(branches(), ['busy', 'main', 'notes', 'owned']);
+      const after = listing();
+      assert.deepEqual(after.filter((t) => t.locked).map((t) => [t.branch, t.lockReason]).sort(), [['busy', harness('b')], ['owned', 'the owner keeps this']]);
+      assert.equal(existsSync(done), false);
+      assert.equal(existsSync(logs), false, 'the worker logs went with their worktree');
+      assert.equal(existsSync(half), false, 'the half-removed folder is gone');
+      assert.equal(readFileSync(join(outside, 'keep.txt'), 'utf8'), 'never followed\n', 'a link inside is removed, never followed');
+      assert.ok(existsSync(join(worktrees, 'agent-link')) && existsSync(join(held, 'a.txt')) && existsSync(join(worktrees, 'agent-git', '.git')));
+      assert.ok(existsSync(busy) && existsSync(join(notes, 'local', 'notes.md')));
+      assert.equal(busyHolder.exitCode, null, 'a process is never stopped by the prune');
+    } finally {
+      await Promise.all(holders.map((child) => new Promise<void>((done) => {
+        if (child.exitCode !== null || child.signalCode !== null) return done();
+        child.once('exit', () => done());
+        child.kill();
+      })));
+      repo.cleanup();
+    }
   });
 });
