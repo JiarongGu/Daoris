@@ -328,7 +328,7 @@ public sealed class LandedBranches(string home)
     /// </summary>
     internal void Gone(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null, string? movedToAt = null) => Edit(all =>
         [.. all.Select(each => each.GoneAt is null && SameLanding(each, entry)
-            ? each with { GoneAt = DateTimeOffset.UtcNow, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn }
+            ? each with { GoneAt = DateTimeOffset.UtcNow, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn, MovedToAt = movedToAt }
             : each)]);
 
     /// <summary>
@@ -343,7 +343,7 @@ public sealed class LandedBranches(string home)
         var now = DateTimeOffset.UtcNow;
         return [.. all.Select(each => SameLanding(each, entry) && each.RemovedAs is null && (each.GoneAs is null or LandedGone.Moved)
                                       && (each.GoneAt is not null || why is LandedGone.Missing or LandedGone.Moved)
-            ? each with { GoneAt = each.GoneAt ?? now, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn }
+            ? each with { GoneAt = each.GoneAt ?? now, GoneAs = why, MovedTo = movedTo, KeptOn = keptOn, MovedToAt = movedToAt }
             : each)];
     });
 
@@ -470,6 +470,7 @@ public sealed class LandedBranches(string home)
             if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
             if (entry.GoneAs is not null) writer.WriteString("goneAs", entry.GoneAs);
             if (entry.MovedTo is not null) writer.WriteString("movedTo", entry.MovedTo);
+            if (entry.MovedToAt is not null) writer.WriteString("movedToAt", entry.MovedToAt);
             if (entry.KeptOn is not null) writer.WriteString("keptOn", entry.KeptOn);
             if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
             if (entry.Rule is { } rule)
@@ -748,6 +749,7 @@ public sealed class LandedBranches(string home)
             RemovedOn = Text(element, "removedOn"),
             GoneAs = Text(element, "goneAs"),
             MovedTo = Text(element, "movedTo"),
+            MovedToAt = Text(element, "movedToAt"),
             KeptOn = Text(element, "keptOn"),
             AcceptedBy = Text(element, "acceptedBy"),
             Rule = element.TryGetProperty("rule", out var rule) && rule.ValueKind == JsonValueKind.Object

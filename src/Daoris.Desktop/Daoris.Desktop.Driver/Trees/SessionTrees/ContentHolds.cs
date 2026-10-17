@@ -209,6 +209,10 @@ internal sealed class ContentHolds(TreeContext context)
     /// proof compared files, and a commit's message, an empty commit and history the final tree does not show are held nowhere
     /// else. One ref per deletion, under the branch's name, a number after it where that name holds another commit already.
     /// </summary>
+    /// <param name="absent">
+    /// A ref git must say is absent as the recovery ref is made (CLEANUP1, re-check): a dropped landing's own branch, verified in the same
+    /// ref transaction as the create, so a branch made again after the look read it refuses the keep, and the landing is not retired.
+    /// </param>
     /// <returns>The ref, or null with git's reason; then nothing may be removed.</returns>
     internal static async Task<(string? Reference, string? Why)> KeepDiscardedAsync(
         string root, string branch, string judged, CancellationToken ct, string? absent = null)
@@ -217,12 +221,21 @@ internal sealed class ContentHolds(TreeContext context)
         for (var n = 1; n <= DiscardedNames; n++)
         {
             var reference = DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
-            // An empty old value: made only where no ref of that name exists, so none is ever moved.
-            var (code, _, err) = await WorkingTree.GitAsync(root, ["update-ref", reference, judged, ""], ct).ConfigureAwait(false);
+            // An empty old value: made only where no ref of that name exists, so none is ever moved. `verify <ref>` with no id: git's word
+            // that it does not exist, in the same transaction.
+            var (code, _, err) = absent is null
+                ? await WorkingTree.GitAsync(root, ["update-ref", reference, judged, ""], ct).ConfigureAwait(false)
+                : await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], $"verify {absent}\ncreate {reference} {judged}\n", ct).ConfigureAwait(false);
             if (code == 0) return (reference, null);
             var (exists, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
             if (exists != 0) return (null, FirstLine(err));
-            if (at.Trim() == judged) return (reference, null);
+            if (at.Trim() == judged)
+            {
+                if (absent is null) return (reference, null);
+                var (still, _, stillErr) = await WorkingTree.GitAsync(root, ["update-ref", "--stdin"], $"verify {absent}\n", ct).ConfigureAwait(false);
+                return still == 0 ? (reference, null) : (null, FirstLine(stillErr));
+            }
+
             why = FirstLine(err);
         }
 
@@ -289,16 +302,29 @@ internal sealed class ContentHolds(TreeContext context)
     /// <summary>
     /// The refs that hold <paramref name="tip"/> by ancestry, each at the commit this read found it at (FABRIC-END4a, third review): the read
     /// a proof by ancestry makes, which picks its holder from them (<see cref="HolderOf"/>) and returns it for the delete to verify. Never
-    /// <paramref name="branch"/> itself, a symbolic <c>HEAD</c>, or Daoris's own recovery refs.
+    /// <paramref name="branch"/> itself, a symbolic <c>HEAD</c>, Daoris's own recovery refs, or any symbolic ref (CLEANUP1, re-check: a
+    /// name that points at another branch holds nothing of its own, and the branch it points at may go in the same pass).
     /// </summary>
     /// <returns>Null where git could not read them, and then nothing is proven.</returns>
     internal static async Task<IReadOnlyList<(string Ref, string Commit)>?> HoldersAsync(string root, string tip, string branch, CancellationToken ct)
     {
-        var (code, containing, _) = await WorkingTree.GitAsync(
-            root, ["for-each-ref", "--contains", tip, "--format=%(objectname) %(refname)"], ct).ConfigureAwait(false);
+        var (code, containing, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", tip, $"--format={UnaliasedFormat}"], ct).ConfigureAwait(false);
         return code != 0 ? null
-            : [.. Pairs(containing).Where(pair => pair.Ref != $"refs/heads/{branch}" && !pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal) && AnyRef(pair.Ref))];
+            : [.. Unaliased(containing).Where(pair => pair.Ref != $"refs/heads/{branch}" && !pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal) && AnyRef(pair.Ref))];
     }
+
+    /// <summary>The listing <see cref="Unaliased"/> reads: each ref's commit, its name and, for a symbolic ref, the ref it points at, by tabs.</summary>
+    internal const string UnaliasedFormat = "%(objectname)%09%(refname)%09%(symref)";
+
+    /// <summary>
+    /// Each ref of a <see cref="UnaliasedFormat"/> listing with its commit, leaving out every symbolic ref (CLEANUP1, re-check), read by
+    /// git's own <c>%(symref)</c> rather than by its name: a ref name holds no tab.
+    /// </summary>
+    internal static IEnumerable<(string Ref, string Commit)> Unaliased(string listed) =>
+        listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(row => row.Split('\t'))
+            .Where(parts => parts.Length >= 2 && (parts.Length < 3 || parts[2].Trim().Length == 0))
+            .Select(parts => (parts[1].Trim(), parts[0].Trim()));
 
     /// <summary>
     /// The holder a proof by ancestry rests on (FABRIC-END4a, third review), out of what <see cref="HoldersAsync"/> read: a form of
@@ -322,12 +348,6 @@ internal sealed class ContentHolds(TreeContext context)
         reference.StartsWith("refs/heads/", StringComparison.Ordinal) ? reference["refs/heads/".Length..]
         : reference.StartsWith("refs/remotes/", StringComparison.Ordinal) ? reference["refs/remotes/".Length..]
         : reference;
-
-    private static IEnumerable<(string Ref, string Commit)> Pairs(string listed) =>
-        listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(row => row.Split(' ', 2))
-            .Where(parts => parts.Length == 2)
-            .Select(parts => (parts[1], parts[0]));
 
     /// <summary>D88's holder: a branch of the person's, local outside <c>daoris/</c> or remote-tracking outside <c>*/daoris/</c>.</summary>
     internal static bool PersonsRef(string reference) =>

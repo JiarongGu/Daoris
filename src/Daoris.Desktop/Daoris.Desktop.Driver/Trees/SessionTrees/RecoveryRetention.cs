@@ -12,7 +12,8 @@ public sealed record RecoveryGone(string Ref, string Commit, string Holder);
 /// 🔴 <b>Only the person's refs hold</b> (after review): a tag, or a local branch outside <c>daoris/</c> that no landing of Daoris's made
 /// (<see cref="Holds"/>). Never a session branch or a landing branch, which Daoris itself removes on a proof, a squash's record among them,
 /// so the same look could remove the holder after the ref; never a remote-tracking ref, which a fetch moves or prunes (SQUASHTIDY1c 6);
-/// never another recovery ref. A ref named by hand under the prefix is treated as Daoris's own, since git keeps no word of who made it
+/// never another recovery ref; and never a symbolic ref (re-check), whatever its name, read by git's own <c>%(symref)</c>: a name that
+/// points at a session branch would dangle once the sweep removes that branch. A ref named by hand under the prefix is treated as Daoris's own, since git keeps no word of who made it
 /// (no reflog is written outside <c>refs/heads/</c>): it goes only on the same rule, its commit kept by the person's own ref.
 /// </remarks>
 public static class RecoveryRetention
@@ -34,7 +35,8 @@ public static class RecoveryRetention
 
     /// <summary>
     /// Whether <paramref name="reference"/> may hold a recovery ref's commit (after review): a tag, or a local branch outside
-    /// <c>daoris/</c> that is not among <paramref name="landed"/>, compared in any case. Nothing else.
+    /// <c>daoris/</c> that is not among <paramref name="landed"/>, compared in any case. Nothing else; and its caller has left out every
+    /// symbolic ref already (<see cref="ContentHolds.Unaliased"/>), which a name cannot show.
     /// </summary>
     internal static bool Holds(string reference, IReadOnlyCollection<string> landed) =>
         reference.StartsWith("refs/tags/", StringComparison.Ordinal)
@@ -51,19 +53,30 @@ public static class RecoveryRetention
     internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread)> ReadAsync(
         string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct)
     {
+        // One listing of the recovery refs and of every branch and tag, each with whether it is symbolic (CLEANUP1, re-check), by tabs: a
+        // ref name holds none.
         var (code, listed, err) = await WorkingTree.GitAsync(
-            root, ["for-each-ref", "--format=%(objectname) %(committerdate:unix) %(refname)", ContentHolds.DiscardedPrefix], ct).ConfigureAwait(false);
+            root, ["for-each-ref", "--format=%(objectname)%09%(committerdate:unix)%09%(refname)%09%(symref)", ContentHolds.DiscardedPrefix, "refs/heads/", "refs/tags/"], ct)
+            .ConfigureAwait(false);
         if (code != 0) return (null, ContentHolds.Said(err));
-        var rows = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(row => row.Split(' ', 3)).Where(parts => parts.Length == 3 && WorkingTree.IsCommitId(parts[0])).ToList();
+        var all = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(row => row.Split('\t')).Where(parts => parts.Length >= 3).ToList();
+        var rows = all.Where(parts => parts[2].StartsWith(ContentHolds.DiscardedPrefix, StringComparison.Ordinal) && WorkingTree.IsCommitId(parts[0])).ToList();
         if (rows.Count == 0) return ([], null);
 
         // The commits they reach that no branch and no tag of the person's reaches: a ref whose own commit is among them is held by none.
-        // Session branches and the landings' branches are left out of `--branches` by name (git's `--exclude`, whose `*` crosses `/`, and
-        // a ref name holds no glob character); remote-tracking refs and the recovery refs themselves are never listed (Holds).
-        string[] excluded = [$"--exclude={TreeFollows.SessionPrefix}*", .. landed.Select(name => $"--exclude={name}")];
+        // Every branch that is no holder (Holds: a session branch, a landing's branch, compared in any case; a symbolic one), and every
+        // symbolic tag, is left out of `--branches` and `--tags` by its exact name (git's `--exclude`; a ref name holds no glob character).
+        // Remote-tracking refs and the recovery refs themselves are never listed.
+        static bool Symbolic(string[] parts) => parts.Length >= 4 && parts[3].Trim().Length > 0;
+        string[] heads = [.. all.Where(parts => parts[2].StartsWith("refs/heads/", StringComparison.Ordinal)
+                && !parts[2].StartsWith($"refs/heads/{TreeFollows.SessionPrefix}", StringComparison.Ordinal) && (Symbolic(parts) || !Holds(parts[2], landed)))
+            .Select(parts => $"--exclude={parts[2]["refs/heads/".Length..]}")];
+        string[] tags = [.. all.Where(parts => parts[2].StartsWith("refs/tags/", StringComparison.Ordinal) && Symbolic(parts))
+            .Select(parts => $"--exclude={parts[2]["refs/tags/".Length..]}")];
         var (listedCode, unheld, _) = await WorkingTree.GitAsync(
-            root, ["rev-list", .. rows.Select(parts => parts[0]).Distinct(StringComparer.Ordinal), "--not", .. excluded, "--branches", "--tags"], ct)
+            root, ["rev-list", .. rows.Select(parts => parts[0]).Distinct(StringComparer.Ordinal), "--not",
+                $"--exclude={TreeFollows.SessionPrefix}*", .. heads, "--branches", .. tags, "--tags"], ct)
             .ConfigureAwait(false);
         var alone = listedCode == 0
             ? unheld.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal)

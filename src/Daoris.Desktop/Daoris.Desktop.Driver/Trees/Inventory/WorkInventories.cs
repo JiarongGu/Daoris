@@ -18,9 +18,12 @@ public static class WorkInventories
         var sessionTrees = new SessionTrees(home);
         // CLEANUP1, after review: a folder moved aside past its date that the purge keeps, read as the purge reads it, so it is said to the
         // person. Only past its date, where the purge has decided: a folder it deletes is walked once more before the next pass takes it.
+        // Re-check: one whose delete the purge could not finish, which no read repeats, as the purge kept it.
+        var failed = sessionTrees.SetAsideFailed();
         var trees = (await sessionTrees.ListAsync(ct).ConfigureAwait(false))
-            .Select(tree => tree.MovedAside is { } moved && at - moved >= BranchTidying.SetAsideFor && sessionTrees.SetAsideKept(tree.Path, moved) is { } kept
-                ? tree with { PurgeKept = kept.Sentence }
+            .Select(tree => tree.MovedAside is { } moved && at - moved >= BranchTidying.SetAsideFor
+                            && (sessionTrees.SetAsideKept(tree.Path, moved)?.Sentence ?? failed.GetValueOrDefault(Path.GetFullPath(tree.Path))) is { } kept
+                ? tree with { PurgeKept = kept }
                 : tree)
             .ToList();
         var branches = new SessionBranches(home).Entries();

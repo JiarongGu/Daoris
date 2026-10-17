@@ -233,6 +233,7 @@ internal sealed class TreeSetAside(TreeContext context)
     {
         var results = new List<SetAside>();
         if (!Directory.Exists(SetAsideRoot)) return results;
+        var failed = new List<(string Folder, string Why)>();
         foreach (var workspace in Directory.EnumerateDirectories(SetAsideRoot))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
@@ -248,13 +249,87 @@ internal sealed class TreeSetAside(TreeContext context)
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
                     kept = (SetAsideKept.Unread, $"it could not be read or deleted ({error.Message.Trim()})");
+                    failed.Add((folder, kept.Value.Sentence));
                 }
             }
 
             results.Add(new SetAside(folder, moved, kept is null, kept?.Sentence, kept?.Code));
         }
 
+        KeepFailed(failed);
         return results;
+    }
+
+    /// <summary>
+    /// Where the purge keeps the folders whose delete it could not finish (CLEANUP1, re-check), beside them: a delete refused after the
+    /// read found nothing late (a file held open against it) shows in no read the inventory can repeat, so it is kept here, and the
+    /// inventory reads it (<see cref="Failed"/>). Each pass writes what it met, so a folder a later pass deletes leaves it.
+    /// </summary>
+    internal string FailedPath => Path.Combine(SetAsideRoot, "purge-failed.json");
+
+    /// <summary>The folders this pass could not delete, kept where the inventory reads them; written only where they changed, gone where none.</summary>
+    private void KeepFailed(IReadOnlyList<(string Folder, string Why)> failed)
+    {
+        try
+        {
+            if (failed.Count == 0)
+            {
+                if (File.Exists(FailedPath)) File.Delete(FailedPath);
+                return;
+            }
+
+            var text = JsonFile.Serialize(writer =>
+            {
+                writer.WriteStartObject();
+                writer.WriteStartArray("folders");
+                foreach (var (folder, why) in failed.OrderBy(each => each.Folder, StringComparer.Ordinal))
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("folder", Path.GetRelativePath(SetAsideRoot, folder).Replace('\\', '/'));
+                    writer.WriteString("why", why);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+            });
+            if (File.Exists(FailedPath) && File.ReadAllText(FailedPath) == text) return;
+            AtomicFile.WriteText(FailedPath, text);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The purge's own report still says each folder it kept; the inventory then reads it as before.
+        }
+    }
+
+    /// <summary>
+    /// The folders the last purge could not delete, by full path, each with the purge's reason (<see cref="FailedPath"/>); none where
+    /// nothing is kept or it does not read.
+    /// </summary>
+    internal IReadOnlyDictionary<string, string> Failed()
+    {
+        var found = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (!File.Exists(FailedPath)) return found;
+            using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(FailedPath));
+            if (!document.RootElement.TryGetProperty("folders", out var folders) || folders.ValueKind != System.Text.Json.JsonValueKind.Array) return found;
+            foreach (var each in folders.EnumerateArray())
+            {
+                if (each.ValueKind == System.Text.Json.JsonValueKind.Object
+                    && each.TryGetProperty("folder", out var folder) && folder.GetString() is { Length: > 0 } named
+                    && each.TryGetProperty("why", out var why) && why.GetString() is { Length: > 0 } said)
+                {
+                    found[Path.GetFullPath(Path.Combine(SetAsideRoot, named))] = said;
+                }
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidOperationException)
+        {
+            // A record that does not read claims nothing: each folder reads as its own read says.
+        }
+
+        return found;
     }
 
     /// <summary>

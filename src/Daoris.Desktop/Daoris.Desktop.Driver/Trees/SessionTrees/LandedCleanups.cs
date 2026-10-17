@@ -336,7 +336,10 @@ internal sealed class LandedCleanups(
             foreach (var (entry, why) in stale)
             {
                 if (why != LandedGone.Missing) context.Recorded.Gone(entry, why);
-                else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went) context.Recorded.Gone(entry, went.Why, went.MovedTo, went.KeptOn);
+                else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
+                {
+                    context.Recorded.Gone(entry, went.Why, went.MovedTo, went.KeptOn, went.MovedToAt);
+                }
             }
         }
 
@@ -511,8 +514,9 @@ internal sealed class LandedCleanups(
     internal async Task<int> MarkAbsentAsync(string root, string repository, CancellationToken ct, RefSnapshot? refs = null)
     {
         // Asked: a standing entry (its end held or not), and a trace that says no why, neither removed by Daoris; a held trace reads ended.
-        // And a trace that moved, once the refs no longer list the branch it moved to: read from the refs the look already holds, so a
-        // moved trace whose branch stands costs no git of its own.
+        // And a trace that moved, once the branch it moved to no longer stands at the commit it was found holding the work at (re-check:
+        // a name made again elsewhere resolves, and holds nothing of it): read from the refs the look already holds, so a moved trace whose
+        // branch stands still costs no git of its own, and one whose branch went on is asked once and written at its new commit.
         var entries = context.Recorded.Entries()
             .Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && each.RemovedAs is null)
             .ToList();
@@ -522,7 +526,8 @@ internal sealed class LandedCleanups(
         refs ??= RefSnapshot.Take(root);
         foreach (var each in moved)
         {
-            if (each.MovedTo is null || await TreeRefs.CommitOfAsync(root, $"refs/heads/{each.MovedTo}", ct, refs).ConfigureAwait(false) is null) asking.Add(each);
+            var at = each.MovedTo is null ? null : await TreeRefs.CommitOfAsync(root, $"refs/heads/{each.MovedTo}", ct, refs).ConfigureAwait(false);
+            if (at is null || !string.Equals(at, each.MovedToAt, StringComparison.OrdinalIgnoreCase)) asking.Add(each);
         }
 
         var written = 0;
@@ -542,7 +547,7 @@ internal sealed class LandedCleanups(
                 }
                 else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
                 {
-                    context.Recorded.GoneAs(entry, went.Why, went.MovedTo, went.KeptOn);
+                    context.Recorded.GoneAs(entry, went.Why, went.MovedTo, went.KeptOn, went.MovedToAt);
                 }
                 else
                 {
@@ -567,28 +572,41 @@ internal sealed class LandedCleanups(
     /// took once nothing held it, is missing with nothing to keep. Null, writing nothing, where git could not say or the ref was not made:
     /// asked again at the next look.
     /// </summary>
-    /// <remarks>One <c>for-each-ref --contains</c> for each landing read missing, once; one <c>update-ref</c> where nothing holds it.</remarks>
-    private static async Task<(string Why, string? MovedTo, string? KeptOn)?> WentAsync(string root, LandedBranch entry, CancellationToken ct)
+    /// <remarks>
+    /// <para>Re-check: a symbolic ref never holds (git's <c>%(symref)</c>, <see cref="ContentHolds.Unaliased"/>), and only a remote's
+    /// <c>HEAD</c> is left out by its name, so a local branch called <c>feature/HEAD</c> is a branch like any other. The branch moved to is
+    /// kept with the commit it held the work at (<see cref="LandedBranch.MovedToAt"/>). The recovery is made in one ref transaction with
+    /// git's word that the landing's own branch is still absent, so a branch made again after this read refuses it and nothing is written.</para>
+    /// <para>One <c>for-each-ref --contains</c> for each landing read missing, once; one <c>update-ref --stdin</c> where nothing holds it.</para>
+    /// </remarks>
+    private static async Task<(string Why, string? MovedTo, string? KeptOn, string? MovedToAt)?> WentAsync(string root, LandedBranch entry, CancellationToken ct)
     {
-        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", entry.Tip, "--format=%(refname)"], ct).ConfigureAwait(false);
+        var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", entry.Tip, $"--format={ContentHolds.UnaliasedFormat}"], ct)
+            .ConfigureAwait(false);
         if (code != 0)
         {
             // `cat-file -e` exits 1, saying nothing, for an object the repository does not have; every other failure is unread (git-ref-absence).
             var (has, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", entry.Tip], ct).ConfigureAwait(false);
-            return has == 1 && WorkingTree.IsCommitId(entry.Tip) ? (LandedGone.Missing, null, null) : null;
+            return has == 1 && WorkingTree.IsCommitId(entry.Tip) ? (LandedGone.Missing, null, null, null) : null;
         }
 
-        var holders = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(each => !each.EndsWith("/HEAD", StringComparison.Ordinal)).ToList();
-        var local = holders.Where(each => each.StartsWith("refs/heads/", StringComparison.Ordinal)).ToList();
-        if (local.Count > 0) return (LandedGone.Moved, ContentHolds.Named(local.Where(ContentHolds.PersonsRef).Concat(local).First()), null);
-        if (holders.Any(each => each.StartsWith("refs/tags/", StringComparison.Ordinal) || each.StartsWith(ContentHolds.DiscardedPrefix, StringComparison.Ordinal)))
+        var holders = ContentHolds.Unaliased(listed)
+            .Where(pair => !(pair.Ref.StartsWith("refs/remotes/", StringComparison.Ordinal) && pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal))).ToList();
+        var local = holders.Where(pair => pair.Ref.StartsWith("refs/heads/", StringComparison.Ordinal)).ToList();
+        if (local.Count > 0)
         {
-            return (LandedGone.Missing, null, null);
+            var to = local.Where(pair => ContentHolds.PersonsRef(pair.Ref)).Concat(local).First();
+            return (LandedGone.Moved, ContentHolds.Named(to.Ref), null, to.Commit);
         }
 
-        var (kept, _) = await ContentHolds.KeepDiscardedAsync(root, entry.Branch, entry.Tip, CancellationToken.None).ConfigureAwait(false);
-        return kept is null ? null : (LandedGone.Missing, null, kept);
+        if (holders.Any(pair => pair.Ref.StartsWith("refs/tags/", StringComparison.Ordinal) || pair.Ref.StartsWith(ContentHolds.DiscardedPrefix, StringComparison.Ordinal)))
+        {
+            return (LandedGone.Missing, null, null, null);
+        }
+
+        var (kept, _) = await ContentHolds.KeepDiscardedAsync(root, entry.Branch, entry.Tip, CancellationToken.None, absent: $"refs/heads/{entry.Branch}")
+            .ConfigureAwait(false);
+        return kept is null ? null : (LandedGone.Missing, null, kept, null);
     }
 
     /// <summary>
