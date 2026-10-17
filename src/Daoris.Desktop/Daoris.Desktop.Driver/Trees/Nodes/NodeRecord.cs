@@ -60,6 +60,13 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>When Daoris next asks after it by itself: a <c>running</c> answer waits to here.</summary>
     public DateTimeOffset? AskAt { get; init; }
+
+    /// <summary>
+    /// A <c>quest.close</c> attempt's close (FABRIC-CLOSE1b, §E5 step 1): its token and the quests it names with the submissions it judged,
+    /// persisted with its key before the first send, so a timeout or a restart sends the same close again; and a refusal's words once one
+    /// came. Null on a plugin's attempt, and on every attempt from before.
+    /// </summary>
+    public QuestCloseCall? Close { get; init; }
 }
 
 /// <summary>A status a move took away (<see cref="NodeMoved.Cleared"/>): kept as the attempt's history before the reset (§D3).</summary>

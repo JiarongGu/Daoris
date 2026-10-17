@@ -82,7 +82,8 @@ public static class NodeRuns
 /// <para><b>A wake runs only what it concerns:</b> the units its answers, reconciliations and retries named, and those owing a start; the
 /// look's deadline (<see cref="NodeRuntimeLook.Whole"/>) reads the units afresh and judges every governed one.</para>
 /// </remarks>
-public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null)
+public sealed class NodeRuntime(
+    NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null)
 {
     /// <summary>The units one pass evaluates at most, in id order; the rest are judged at the next.</summary>
     public const int UnitsPerPass = 32;

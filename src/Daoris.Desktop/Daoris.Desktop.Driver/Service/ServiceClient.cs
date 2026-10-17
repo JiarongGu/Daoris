@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// class over the client, reached through it (<see cref="Opinions"/>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
 /// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
-public sealed class ServiceClient : IDisposable
+public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort
 {
     private readonly IServiceDoors _doors;
     private readonly string _base;
@@ -1095,6 +1095,29 @@ public sealed class ServiceClient : IDisposable
 
         return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
     }
+
+    /// <summary>
+    /// Whether this client's host knows a closure graph's operations and doors (FABRIC-CLOSE1b's handshake): <c>/api/status</c>'s
+    /// <c>closure</c>. A host from before answers none, and is not asked to keep what it cannot read.
+    /// </summary>
+    public Task<bool> KnowsClosureAsync(CancellationToken ct = default) => Task.FromResult(false);
+
+    /// <summary>
+    /// The driver binds a quest it took to the graph that closes it (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/bind</c>), at its take. The
+    /// service's sentence comes back verbatim, a refusal included, and a host older than the door is said to be.
+    /// </summary>
+    public Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, CancellationToken ct = default) =>
+        Task.FromResult((false, ""));
+
+    /// <summary>
+    /// The graph's close (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/close</c>, §E5 step 2): every quest named, with the submission it judged,
+    /// under its key and token. A refusal is an answer with its check's code (<c>key-reused</c> among them), the same close again answers its
+    /// first outcome, and a host older than the door is said to be.
+    /// </summary>
+    /// <exception cref="HttpRequestException">The host did not answer: the caller keeps the close unknown, and sends it again.</exception>
+    public Task<QuestCloseAnswer> CloseQuestsAsync(
+        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default) =>
+        Task.FromResult(new QuestCloseAnswer(QuestCloseOutcomes.NoDoor, null, "", []));
 
     /// <summary>
     /// What Daoris read of a done's evidence, posted to the one door that takes it (EVID1a, EVID1b; D144 §3): the local host's

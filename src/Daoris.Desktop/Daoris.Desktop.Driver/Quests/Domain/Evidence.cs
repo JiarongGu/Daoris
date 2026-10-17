@@ -76,6 +76,9 @@ public static class EvidenceWords
     }
 }
 
+/// <summary>A submission by the machine and sequence that made it (FABRIC-CLOSE1e): what a verdict and a close name it by.</summary>
+public sealed record QuestSubmissionRef(string Machine, long Sequence);
+
 /// <summary>
 /// What Daoris read of a done's evidence (EVID1a, EVID1b; D144 §3, §5): the commit read and how it was chosen, the session
 /// whose end was read, and each item's code. The body the evidence door takes, and what a quest answers it last kept.
@@ -92,6 +95,12 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
 
     /// <summary>The machine that read it, as the quest answers it; null on a verdict not yet kept.</summary>
     public string? Machine { get; init; }
+
+    /// <summary>
+    /// The submission it was read for (FABRIC-CLOSE1e): a submitted quest's verdict names it, so the service applies it to that submission
+    /// alone; a done's names none, and neither does a verdict from before.
+    /// </summary>
+    public QuestSubmissionRef? Submission { get; init; }
 
     /// <summary>Whether every item was found: the one verdict that lets what the done held go on.</summary>
     public bool Found => Items.Count > 0 && Items.All(item => item.Result == EvidenceCodes.Found);
