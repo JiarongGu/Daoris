@@ -19,6 +19,32 @@ public sealed class PipeCensusTests
         Assert.Empty(PipeCensus.Daoris.Stale(DriverModule.Name, DriverModule.Routes));
     }
 
+    /// <summary>
+    /// The driver's twin of the census's classes (RPC1b, <c>RouteClass</c>) names each as the census does, so a verb reading its
+    /// route's class before it looks for the instance reads the census's word.
+    /// </summary>
+    [Fact]
+    public void The_driver_names_the_classes_as_the_census_does() =>
+        Assert.Equal(Enum.GetNames<PipeClass>(), Enum.GetNames<Daoris.Driver.RouteClass>());
+
+    /// <summary>
+    /// Each press of the <c>trees</c> verbs names its route and the class the census gives it (RPC1b, the terminal RPC design §7.2):
+    /// a verb whose route the census opens becomes the instance's client, so a route opened here fails until its verb's client
+    /// path is built, its words from the route's answer held to the alone path's (§7.3), and the table says so.
+    /// </summary>
+    [Fact]
+    public void Each_trees_press_names_its_route_as_the_census_classes_it()
+    {
+        Assert.Equal(DriverModule.Name, Daoris.Driver.TreesRoutes.DriverModule);
+        foreach (var (verb, route) in Daoris.Driver.TreesRoutes.Presses)
+        {
+            Assert.Contains(route.Route, DriverModule.Routes);
+            Assert.True(
+                PipeCensus.Daoris.Of(route.Module, route.Route)?.ToString() == route.Class.ToString(),
+                $"`{verb}` names {route.Route} {route.Class}, and the census classes it {PipeCensus.Daoris.Of(route.Module, route.Route)}.");
+        }
+    }
+
     /// <summary>The census fails on a route it does not class, and on a class that names no route: the check the test above runs.</summary>
     [Fact]
     public void The_census_names_a_route_it_does_not_class_and_a_class_that_names_none()
