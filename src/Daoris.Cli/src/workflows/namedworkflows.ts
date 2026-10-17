@@ -128,6 +128,8 @@ export interface NamedVersion {
   digest: string | null;
   /** A graph version's graph (schema 2, FABRIC-GRAPH1b): it holds no steps, and reads as a graph the steps-driven runtime does not run yet. */
   graph?: GraphForm;
+  /** Set where the driver reads the version and this build cannot write it as the driver does: a file holding one is never written over here. */
+  rewrites?: true;
 }
 
 /** Why a version cannot be run by the steps-driven runtime, or null where it can — the driver's `NamedVersion.Unrun`. */
@@ -245,6 +247,8 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
       }
 
       const read = readGraphForm(raw);
+      // The driver reads this graph and this build cannot write its options as the driver does: no digest, and no rewriting of the file.
+      if (read.lossy !== undefined) return { ...unread(`v${number}: its graph does not hold here: ${read.lossy}`), rewrites: true };
       return read.graph === null
         ? unread(`v${number}: its graph does not hold: ${read.problem}`)
         : { version: number, at, door, steps: null, problem: null, digest: graphFormDigest(read.graph), graph: read.graph };
@@ -849,6 +853,13 @@ export function planAddVersion(file: unknown, add: VersionAdded, kept: readonly 
   const read = readWorkflowFile(file);
   if (read.problem !== null) return refused(`nothing was written: the workflow's file cannot be read — ${read.problem}`);
   if (read.id !== add.id) return refused(`nothing was written: the file holds the workflow \`${read.id}\`, not \`${add.id}\`.`);
+  // A parse and a write of the file would change such a version's text, and with it the digest a run bound to it holds (FABRIC-GRAPH1b).
+  const lossy = read.versions.find((each) => each.rewrites === true);
+  if (lossy !== undefined) {
+    return refused(`nothing was written: v${lossy.version} holds a value this build would write differently than the driver does, and `
+      + 'the file is written whole; a version is added where it is read as written, by the driver.');
+  }
+
   version.version = read.versions[read.versions.length - 1]!.version + 1;
   const candidate = readVersion(version, version.version, read.versions.filter((each) => each.steps !== null));
   if (candidate.problem !== null) return refused(candidate.problem);

@@ -31,6 +31,7 @@ import {
 } from './workflowchoice.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowPluginsOf, workflowSaid, type CurrentWorkflow } from './workflows.ts';
+import { GRAPH_SCHEMA } from './graphversions.ts';
 import {
   WORKFLOW_PRESETS, field, isWorkflowId, kindOf, planAddVersion, readSteps, readWorkflowFile, rendered, unrun, versionDigest,
   withGates, workflowDiff, workflowIdProblem, workflowLine, type NamedStep, type NamedVersion, type SavedStep, type WorkflowRead,
@@ -354,7 +355,9 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       else {
         const found = load(chosen)!;
         const newest = found.read.versions[found.read.versions.length - 1]!;
-        write(`daoris: ${whose} now chooses \`${chosen}\`${forWhat} — ${found.read.name}, v${newest.version} now: ${workflowLine(newest.steps!)}`);
+        write(`daoris: ${whose} now chooses \`${chosen}\`${forWhat} — ${found.read.name}, v${newest.version} now: ${newest.graph !== undefined
+          ? `a graph (schema ${GRAPH_SCHEMA}) of ${newest.graph.nodes.length} nodes and ${newest.graph.wires.length} wires, digest ${newest.digest}, which this build reads and does not run yet.`
+          : workflowLine(newest.steps!)}`);
       }
       if (owner !== null) {
         write(after === undefined

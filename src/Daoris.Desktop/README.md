@@ -104,7 +104,7 @@ version that does not decode read as unreadable whole (FABRIC-WORKFLOW2); the CL
 `test/fixtures/workflow-graphs.json`. A named workflow's version may be a graph instead (schema 2, `graph` and no `steps`):
 `WorkflowNamed.ReadVersion` judges it by `NodeGraphs.Problems` and refuses it whole, its digest is `NodeGraphs.Digest` (what a run
 bound to it binds), and an older build reads it as unreadable since it reads `steps` alone (FABRIC-GRAPH1b); the CLI's
-`graphversions.ts` reads it too, judges none, and saves none, on `test/fixtures/workflow-graph-versions.json`.
+`graphversions.ts` reads it too, judges none, saves none, and reads as unreadable an option whose text it cannot write as the driver's compact writer does, on `test/fixtures/workflow-graph-versions.json`.
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
 second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,

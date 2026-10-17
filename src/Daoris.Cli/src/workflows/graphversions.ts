@@ -76,15 +76,67 @@ function list(parent: Record<string, unknown>, name: string, where: string): unk
   throw new Unread(`${where}'s \`${name}\``, 'list');
 }
 
-/** A map of names to text, or, with `anyValue`, to each value's compact JSON (an option's). */
+/**
+ * A place the driver reads and this build cannot write as the driver does (FABRIC-GRAPH1b's review): an option's value enters the digest
+ * as the driver's compact writer writes it, which parsed JSON cannot reproduce for a number (its own text, `1.0`, or past a double), an
+ * object's keys that are numbers (JavaScript writes them first, by value), or a character outside the basic plane (the driver writes a
+ * pair of escapes). Such a version is read as unreadable, and a file holding one is never written over by this build.
+ */
+class Lossy extends Error {
+  option: string | null;
+  node: string | null;
+
+  constructor(option: string | null = null, node: string | null = null) {
+    super('lossy');
+    this.option = option;
+    this.node = node;
+  }
+
+  /** The sentence for the node and option it is in. */
+  says(): string {
+    return `node \`${this.node}\`'s option \`${this.option}\` holds a value this build cannot write as the driver does (a number, a key that is a `
+      + 'number, or a character outside ASCII and Chinese); the driver reads it.';
+  }
+}
+
+/** A text this build and the driver's compact writer write alike: printable ASCII and the Chinese block, no more. */
+const ALIKE = /^[ -~一-鿿]*$/;
+
+/** An option's value as compact JSON, the driver's bytes, or a refusal where this build cannot write them alike. */
+function compact(value: unknown): string {
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'string') {
+    if (!ALIKE.test(value)) throw new Lossy();
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) return `[${value.map(compact).join(',')}]`;
+  if (isObject(value)) {
+    return `{${Object.entries(value).map(([key, each]) => {
+      if (!ALIKE.test(key) || /^(0|[1-9][0-9]*)$/.test(key)) throw new Lossy();
+      return `${JSON.stringify(key)}:${compact(each)}`;
+    }).join(',')}}`;
+  }
+
+  throw new Lossy();
+}
+
+/** A map of names to text, or, with `anyValue`, to each value's compact JSON (an option's). Its own keys only: `__proto__` is a name. */
 function names(parent: Record<string, unknown>, name: string, where: string, anyValue = false): Record<string, string> {
+  const map: Record<string, string> = Object.create(null) as Record<string, string>;
   const value = parent[name];
-  if (absent(value)) return {};
+  if (absent(value)) return map;
   if (!isObject(value)) throw new Unread(`${where}'s \`${name}\``, 'object');
-  const map: Record<string, string> = {};
   for (const [key, each] of Object.entries(value)) {
-    if (anyValue) map[key] = JSON.stringify(each);
-    else if (typeof each === 'string') map[key] = each;
+    if (anyValue) {
+      try {
+        map[key] = compact(each);
+      } catch (error) {
+        if (error instanceof Lossy) throw new Lossy(key, null);
+        throw error;
+      }
+    } else if (typeof each === 'string') map[key] = each;
     else throw new Unread(`${where}'s \`${name}.${key}\``, 'schema');
   }
   return map;
@@ -111,6 +163,14 @@ function nodeOf(raw: unknown, where: string): FormNode {
     if (value === null) throw new Unread(`${where}'s \`${name}\``, what);
     return value;
   };
+  let options: Record<string, string>;
+  try {
+    options = names(raw, 'options', where, true);
+  } catch (error) {
+    if (error instanceof Lossy) throw new Lossy(error.option, typeof raw['id'] === 'string' ? raw['id'] : where);
+    throw error;
+  }
+
   return {
     id: need(text(raw, 'id', where), 'id', 'text'),
     kind: need(text(raw, 'kind', where), 'kind', 'text'),
@@ -123,7 +183,7 @@ function nodeOf(raw: unknown, where: string): FormNode {
     skippable: flag(raw, 'skippable', where) ?? true,
     inputs: names(raw, 'inputs', where),
     outputs: names(raw, 'outputs', where),
-    options: names(raw, 'options', where, true),
+    options,
   };
 }
 
@@ -160,7 +220,7 @@ function wireOf(raw: unknown, where: string): FormWire {
 }
 
 /** A graph read from the version's JSON: whole, or the sentence saying where it is not a graph's shape. Never in part. */
-export function readGraphForm(value: unknown): { graph: GraphForm | null; problem: string | null } {
+export function readGraphForm(value: unknown): { graph: GraphForm | null; problem: string | null; lossy?: string } {
   try {
     if (!isObject(value)) throw new Unread('the graph', 'an object');
     const here = 'the graph';
@@ -187,6 +247,7 @@ export function readGraphForm(value: unknown): { graph: GraphForm | null; proble
     };
   } catch (error) {
     if (error instanceof Unread) return { graph: null, problem: error.message };
+    if (error instanceof Lossy) return { graph: null, problem: null, lossy: error.says() };
     throw error;
   }
 }
