@@ -660,6 +660,12 @@ public sealed class NodeRuntimeTests : IDisposable
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotAttempt), (other.What, other.Code));
         Assert.Contains("is not held now", HeldAttempts.Said(other, 2, HeldResolutions.DidNot));
         Assert.Equal(PerformedWhat.Refused, unknownWord.What);
+
+        // FABRIC-CLOSE1q: a close's words are not a plugin's attempt's, which keeps its three as they were.
+        var closeWord = Door().Word(Unit, "deploy", 1, HeldResolutions.Resend);
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotOffered), (closeWord.What, closeWord.Code));
+        Assert.Contains("happened, did-not or stop", HeldAttempts.Said(closeWord, 1, HeldResolutions.Resend), StringComparison.Ordinal);
+        Assert.Equal(HeldResolutions.Plugin, Assert.Single(HeldAttempts.Read(Files)).Words);
         Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit)));
 
         Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.Stop).What);

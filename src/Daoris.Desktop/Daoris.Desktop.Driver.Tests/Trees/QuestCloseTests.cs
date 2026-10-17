@@ -134,6 +134,32 @@ public sealed class QuestCloseTests : IDisposable
 
     private NodeRecord Record(string unit = Unit) => Files.Read(unit)!;
 
+    /// <summary>The close node's status with its binding set to <paramref name="binding"/>, written as another writer would.</summary>
+    private void Bind(NodeAcceptance? binding) => Files.Edit<bool>(Unit, record => (record with
+    {
+        Statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal) { ["close"] = record.Statuses["close"] with { Binding = binding } },
+    }, true));
+
+    /// <summary>
+    /// FABRIC-CLOSE1q: a door that closes, while its close is out, what the close's node needs to take the answer (its binding): the answer
+    /// does not bind, so the attempt is held. Returns the binding taken, to put back.
+    /// </summary>
+    private Func<NodeAcceptance?> ClosedUnbound()
+    {
+        NodeAcceptance? taken = null;
+        _door.Answer = sent =>
+        {
+            if (sent == 1)
+            {
+                taken = Record().Statuses["close"].Binding;
+                Bind(null);
+            }
+
+            return new(QuestCloseOutcomes.Closed, null, "Closed.", []);
+        };
+        return () => taken;
+    }
+
     [Fact]
     public async Task A_bound_quest_is_closed_once_its_submission_is_current_and_unheld_and_once_only()
     {
@@ -422,6 +448,92 @@ public sealed class QuestCloseTests : IDisposable
 
         static (string, string, string, string?, string) Kept(NodeAttempt attempt) =>
             (attempt.Call.Invocation, attempt.Plugin, attempt.State, attempt.Outcome, attempt.Call.IdempotencyKey);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1q, part 2: a close its door made, whose answer its node could not take, is held as the door's: no override is read and
+    /// no plugin's word offered. Each of its recoveries, said and then applied by a loop started again, keeps the one key: the answer
+    /// recorded again, asked for again with the same close, or its work's further nodes stopped with the close's answer kept. The quest's
+    /// Done stands, and no second close is made.
+    /// </summary>
+    [Theory]
+    [InlineData(HeldResolutions.Record, NodeStates.Reached, 1)]
+    [InlineData(HeldResolutions.Resend, NodeStates.Reached, 2)]
+    [InlineData(HeldResolutions.Stop, NodeStates.Stopped, 1)]
+    public async Task A_close_made_whose_answer_did_not_bind_is_held_as_the_doors_and_each_recovery_keeps_its_one_key(string word, string state, int sends)
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        var binding = ClosedUnbound();
+        var held = await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+
+        // The door closed it: the quest reads Done, and the close stays held as the door's, never the person's.
+        Quest(_quests["q7"] with { Status = "Done" });
+        var after = await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+        var listed = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((QuestClosing.Sender, WorkStates.Reached), (listed.Plugin, listed.Outcome));
+        Assert.Equal(HeldResolutions.Close, listed.Words);
+        Assert.Contains("was closed", HeldAttempts.WhySaid(listed), StringComparison.Ordinal);
+        Assert.Contains(HeldAttempts.Lines([listed]), line => line.EndsWith("record|resend|stop", StringComparison.Ordinal));
+        Assert.DoesNotContain(held.Said.Concat(after.Said), line => line.Contains("closed by you", StringComparison.Ordinal));
+
+        // The person's word, applied by a loop started again since.
+        if (word != HeldResolutions.Stop) Bind(binding());
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, Unit, "close", listed.Attempt, word, () => _now).What);
+        var restarted = Runtime();
+        var applied = await restarted.PassAsync(Look(Closing), CancellationToken.None);
+        await restarted.PassAsync(Look(Closing), CancellationToken.None);
+
+        Assert.Equal(sends, _door.Sent.Count);
+        Assert.All(_door.Sent, each => Assert.Equal((_door.Sent[0].Key, _door.Sent[0].Token), (each.Key, each.Token)));
+        Assert.All(_door.Sent, each => Assert.Equal(_door.Sent[0].Quests, each.Quests));
+        var status = Record().Statuses["close"];
+        Assert.Equal(state, status.State);
+        if (state == NodeStates.Reached) Assert.Equal((NodeSource.CloseDoor, "close:" + _door.Sent[0].Key), (status.By, status.Current!.Evidence!.Ref));
+        var attempt = Record().Attempts.Single(each => each.Plugin == QuestClosing.Sender);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Reached, (string?)null), (attempt.State, attempt.Outcome, attempt.Resolution));
+        Assert.Empty(HeldAttempts.Read(Files));
+        Assert.DoesNotContain(applied.Said, line => line.Contains("closed by you", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1q: neither of a plugin's words is a held close's, whose outcome is its door's answer: each is refused at the door, and one
+    /// recorded before this build is taken back, saying why, never failing the node or making a second close. <c>record</c> is offered only
+    /// where the door's answer is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_held_close_takes_no_plugin_word_and_one_recorded_before_is_taken_back_never_a_second_close()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        ClosedUnbound();
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        var held = Assert.Single(HeldAttempts.Read(Files));
+
+        foreach (var word in new[] { HeldResolutions.Happened, HeldResolutions.DidNot })
+        {
+            var refused = HeldAttempts.Word(Files, Unit, "close", held.Attempt, word, () => _now);
+            Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotCloseWord), (refused.What, refused.Code));
+            Assert.Contains("record, resend or stop", HeldAttempts.Said(refused, held.Attempt, word), StringComparison.Ordinal);
+        }
+
+        // A word FABRIC-PERFORM1g's build recorded on it: taken back, saying why; nothing failed, nothing sent.
+        Files.Edit<bool>(Unit, record => (record with { Attempts = [record.Attempts[0] with { Resolution = HeldResolutions.DidNot, ResolvedAt = _now }] }, true));
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+
+        var taken = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal(((string?)null, WorkPerformer.NotCloseWord), (taken.Resolution, taken.Why));
+        Assert.Contains("door", HeldAttempts.WhySaid(taken), StringComparison.Ordinal);
+        Assert.Single(_door.Sent);
+        Assert.Equal(1, Record().Statuses["close"].Attempt);
+        Assert.Contains(Record().Statuses["close"].State, new[] { NodeStates.Active, NodeStates.Unknown });
+
+        // A held close whose door's answer is not kept is asked for again or stopped; there is nothing to record again.
+        Files.Edit<bool>(Unit, record => (record with { Attempts = [record.Attempts[0] with { Outcome = null }] }, true));
+        Assert.Equal([HeldResolutions.Resend, HeldResolutions.Stop], Assert.Single(HeldAttempts.Read(Files)).Words);
+        var unkept = HeldAttempts.Word(Files, Unit, "close", held.Attempt, HeldResolutions.Record, () => _now);
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotKept), (unkept.What, unkept.Code));
+        Assert.Contains("say resend or stop", HeldAttempts.Said(unkept, held.Attempt, HeldResolutions.Record), StringComparison.Ordinal);
     }
 
     [Theory]
