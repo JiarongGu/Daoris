@@ -278,6 +278,30 @@ public sealed class InstallUpdaterTests : Bridge
         var plain = Logged("update.rolled-back", "warn").Single(line => line["build"]!.GetValue<string>() == "b3");
         Assert.Null(plain["holds"]);
         Assert.Null(plain["heldMs"]);
+        Assert.Null(rolledBack["held"]);
+        Assert.Null(rolledBack["heldBy"]);
+    }
+
+    /// <summary>
+    /// DEPLOYBUSY1: the longest hold's entry and the processes found holding it reach the line too, the entry by its name
+    /// alone, never a path: the rehearsal's <c>busy</c> said a hold of two minutes and nothing of what held it.
+    /// </summary>
+    [Fact]
+    public async Task The_line_that_says_how_a_swap_ended_names_what_held_its_longest_hold()
+    {
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.RolledBack, "b2", "0.0.3", null, Now, [], Reason: "busy", Detail: "a file the swap had to move was held.",
+            Holds:
+            [
+                new SwapHold("app", "update/previous/app", 2_000, 10, true, Held: "app", By: "git (pid 7)"),
+                new SwapHold("app", "update/previous/app", 120_141, 569, false, Held: "app/runtimes/win-x64/native/held.dll", By: "node (pid 4242)"),
+            ]));
+        using (var updater = Updater()) await updater.StartedAsync();
+
+        var rolledBack = Logged("update.rolled-back", "warn").Single();
+        Assert.Equal(120_141, rolledBack["heldMs"]!.GetValue<long>());
+        Assert.Equal("held.dll", rolledBack["held"]!.GetValue<string>());
+        Assert.Equal("node (pid 4242)", rolledBack["heldBy"]!.GetValue<string>());
     }
 
     /// <summary>

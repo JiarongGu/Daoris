@@ -303,6 +303,65 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
+    /// DEPLOYBUSY1: a hold that outlasts the wait names the file Windows found held and the process holding it, in the hold
+    /// and in the journal's detail, so a <c>busy</c> says who and not only that. The holder here is this test's own process.
+    /// </summary>
+    [Fact]
+    public void A_hold_that_outlasts_the_wait_names_the_file_held_and_the_process_holding_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Stage();
+        var now = Start;
+
+        using (new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            new InstallSwap(_install, start: _ => 1, alive: _ => true, clock: () => now, sleep: span => now += span).Run([]);
+        }
+
+        var journal = StagedBuild.ReadJournal(_install)!;
+        var hold = Assert.Single(journal.Holds!);
+        var me = $"(pid {Environment.ProcessId})";
+        Assert.Equal("app/Daoris.Desktop.App.dll", hold.Held);
+        Assert.Contains(me, hold.By);
+        Assert.Contains("app/Daoris.Desktop.App.dll held by ", journal.Detail);
+        Assert.Contains(me, journal.Detail);
+    }
+
+    /// <summary>
+    /// DEPLOYBUSY1: a hold that gave way still names what held it, found at the first refusal: the rehearsal's update met one
+    /// of forty-one seconds that let go, and the next one did not.
+    /// </summary>
+    [Fact]
+    public void A_hold_that_gave_way_still_names_what_held_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Stage();
+        var now = Start;
+        var held = new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None);
+        var tries = 0;
+
+        var outcome = new InstallSwap(_install, start: _ =>
+        {
+            Assert.True(StagedBuild.Confirm(_install, 4242));
+            return 4242;
+        }, alive: _ => true, clock: () => now, sleep: span => now += span)
+        {
+            Mover = (from, to, overwrite) =>
+            {
+                if (++tries == 3) held.Dispose();
+                InstallSwap.MoveOnDisk(from, to, overwrite);
+            },
+        }.Run([]);
+        held.Dispose();
+
+        Assert.Equal(SwapPhase.Installed, outcome.Phase);
+        var hold = Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!);
+        Assert.True(hold.Released);
+        Assert.Equal("app/Daoris.Desktop.App.dll", hold.Held);
+        Assert.Contains($"(pid {Environment.ProcessId})", hold.By);
+    }
+
+    /// <summary>
     /// The scanner opens a new build's files and lets go within seconds; a move it refuses for a moment is tried again,
     /// so an update is not rolled back for a hold that gives way (FIX-LOG 2026-10-07, the deployment rehearsal's update).
     /// </summary>
@@ -567,7 +626,13 @@ public sealed class StagedBuildTests : IDisposable
         Assert.DoesNotContain("holds", File.ReadAllText(StagedBuild.JournalOf(_install)));
         Assert.Null(StagedBuild.ReadJournal(_install)!.Holds);
 
-        SwapHold[] holds = [new("app", "update/previous/app", 12_345, 62, true), new("update/staged/app", "app", 120_000, 601, false)];
+        // DEPLOYBUSY1: what was found held, and by what, reads back too; a hold without them reads as it did.
+        SwapHold[] holds =
+        [
+            new("app", "update/previous/app", 12_345, 62, true),
+            new("update/staged/app", "app", 120_000, 601, false),
+            new("app", "update/previous/app", 120_000, 601, false, Held: "app", By: "node (pid 4242), git (pid 4343)"),
+        ];
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.RolledBack, "b1", "0.0.1", null, Start, [], Reason: "busy", Holds: holds));
 
         Assert.Equal(holds, StagedBuild.ReadJournal(_install)!.Holds);

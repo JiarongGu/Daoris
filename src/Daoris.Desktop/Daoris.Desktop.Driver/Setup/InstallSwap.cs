@@ -2,12 +2,28 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A move a held file still refused when the wait for it ran out (SWAP2): the swap's <c>busy</c>, and the only one. Any
-/// other failure of a move is thrown as it was.
+/// other failure of a move is thrown as it was. Its message names each process found holding it, with when it started and
+/// its command line (DEPLOYBUSY1), for the journal's detail.
 /// </summary>
-public sealed class HeldMoveException(SwapHold hold, Exception refusal)
-    : IOException($"{hold.Said} ({refusal.Message.TrimEnd('.')})", refusal)
+public sealed class HeldMoveException(SwapHold hold, Exception refusal, IReadOnlyList<FileHolder>? holders = null)
+    : IOException($"{hold.Said} ({refusal.Message.TrimEnd('.')}){Described(holders)}", refusal)
 {
     public SwapHold Hold { get; } = hold;
+
+    /// <summary>The most of a command line a detail carries.</summary>
+    private const int CommandMost = 300;
+
+    private static string Described(IReadOnlyList<FileHolder>? holders) =>
+        holders is { Count: > 0 }
+            ? "; " + string.Join("; ", holders.Select(holder =>
+                holder.Said
+                + (holder.Started is { } started
+                    ? " started " + started.ToString("HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture)
+                    : "")
+                + (holder.Command is { Length: > 0 } command
+                    ? ": " + (command.Length > CommandMost ? command[..CommandMost] + "…" : command)
+                    : "")))
+            : "";
 }
 
 /// <summary>
@@ -73,28 +89,32 @@ public sealed class InstallSwap(
 
     /// <summary>
     /// A folder or a file moved, tried again while a held file refuses it, for <see cref="HeldWithin"/>; every hold met is
-    /// kept with how long it lasted. A hold that outlasts the wait throws <see cref="HeldMoveException"/>; any other failure
-    /// throws at once.
+    /// kept with how long it lasted, and what was found holding it (DEPLOYBUSY1): asked at the first refusal, and again when
+    /// the wait gives up, since what holds it at the end is what made it <c>busy</c>. A hold that outlasts the wait throws
+    /// <see cref="HeldMoveException"/>; any other failure throws at once.
     /// </summary>
     private void MoveHeld(string source, string target, bool overwrite = false)
     {
         DateTimeOffset? since = null;
+        HeldEntry? found = null;
         for (var tries = 1; ; tries++)
         {
             try
             {
                 (Mover ?? MoveOnDisk)(source, target, overwrite);
-                if (since is { } first) _holds.Add(Hold(source, target, Now - first, tries, released: true));
+                if (since is { } first) _holds.Add(Hold(source, target, Now - first, tries, released: true, found));
                 return;
             }
             catch (Exception refusal) when (IsHeld(refusal))
             {
+                if (since is null) found = HeldFiles.Find(source, most: 1).FirstOrDefault();
                 since ??= Now;
                 if (Now - since.Value >= HeldWithin)
                 {
-                    var hold = Hold(source, target, Now - since.Value, tries, released: false);
+                    found = HeldFiles.Find(source, most: 1).FirstOrDefault() ?? found;
+                    var hold = Hold(source, target, Now - since.Value, tries, released: false, found);
                     _holds.Add(hold);
-                    throw new HeldMoveException(hold, refusal);
+                    throw new HeldMoveException(hold, refusal, found?.By);
                 }
 
                 Sleep(HeldWait);
@@ -102,8 +122,10 @@ public sealed class InstallSwap(
         }
     }
 
-    private SwapHold Hold(string source, string target, TimeSpan held, int tries, bool released) =>
-        new(Relative(source), Relative(target), (long)held.TotalMilliseconds, tries, released);
+    private SwapHold Hold(string source, string target, TimeSpan held, int tries, bool released, HeldEntry? found) =>
+        new(Relative(source), Relative(target), (long)held.TotalMilliseconds, tries, released,
+            found is null ? null : Relative(found.Path),
+            found is null ? null : string.Join(", ", found.By.Select(holder => holder.Said)));
 
     private string Relative(string full) => Path.GetRelativePath(install, full).Replace(Path.DirectorySeparatorChar, '/');
 

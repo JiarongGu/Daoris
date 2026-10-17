@@ -22,6 +22,9 @@
          and writes on the disk, and the swap. Each uses the base library alone; `StagedBuildTests` holds them. -->
     <Compile Include="..\Daoris.Desktop.Driver\Setup\StagedBuild.cs" Link="StagedBuild.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Setup\InstallSwap.cs" Link="InstallSwap.cs" />
+    <!-- What a move the swap was refused found held, and by which process (DEPLOYBUSY1). The base library and Windows'
+         own calls alone. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Setup\HeldFiles.cs" Link="HeldFiles.cs" />
     <!-- The marks of a process's own writes (FABRIC-EVENT4): `StagedBuild` marks the journal it writes, so the updater's watch
          wakes nothing on it. It uses the base library alone. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeWrites.cs" Link="HomeWrites.cs" />
