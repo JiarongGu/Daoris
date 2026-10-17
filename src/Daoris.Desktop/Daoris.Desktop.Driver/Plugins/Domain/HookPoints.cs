@@ -123,7 +123,8 @@ public static class HookFrames
 
     /// <summary>
     /// <see cref="HookPoints.Land"/>: the branch a landing just made (D100), or moved on (LAND2c): the pull request already open
-    /// from it, which a plugin grows rather than opening a second, and who accepted the work.
+    /// from it, which a plugin grows rather than opening a second, who accepted the work, and the commit judged, which it pushes
+    /// (LANDPIN2).
     /// </summary>
     public static object Land(LandingFrame frame) => new
     {
@@ -138,6 +139,7 @@ public static class HookFrames
         commits = frame.Commits.Select(commit => new { sha = commit.Sha, subject = commit.Subject }).ToArray(),
         pullRequest = frame.PullRequest,
         acceptedBy = frame.AcceptedBy,
+        tip = frame.Tip,
     };
 
     /// <summary>
