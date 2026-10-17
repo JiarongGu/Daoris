@@ -17,6 +17,10 @@
  * edit (`EditRefused`); a key the edit took that is already gone is nothing.
  */
 
+import { basename } from 'node:path';
+import { DaorisError } from './errors.ts';
+import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from './fsx.ts';
+
 /**
  * An edit refused, nothing written: it changes `editPath`, and `holder`, the value that path lies under, is no longer an object in the
  * file as it stands (the second re-check, finding 1), the driver's `JsonEditRefusedException`. Another writer made it a string, a number
@@ -70,6 +74,45 @@ export function keepEdits(original: string, read: Record<string, unknown>, edite
   const end = original.indexOf('\n');
   return end > 0 && original[end - 1] === '\r' ? text.replaceAll('\n', '\r\n') : text;
 }
+
+/**
+ * An edit of a home file made onto the file as it stands, and written (KEEPALL1): every file a door edits keeps what its writer does not
+ * own, as `driver.json` does through `writeDriverChoices`. `read` is the file as its reader understood it when it read it, and `edited`
+ * the edited choices, both built by one writer; only the key paths that differ between them are made, under `keepEdits`' rules, onto
+ * the file read again here. No edit writes nothing. `found` says a file was there at the read: where there was none then and is none
+ * now, `edited` is written whole in the writer's own layout, since there is nothing to keep. The driver's twin is `JsonKeeping.Save`.
+ *
+ * @throws DaorisError The file there now does not read, holds a key twice in one object, or holds no object where this edit changes
+ * something inside one; nothing was written.
+ */
+export function writeKeeping(path: string, found: boolean, read: Record<string, unknown>, edited: Record<string, unknown>): void {
+  if (JSON.stringify(read) === JSON.stringify(edited)) return;
+  const { problem, text } = readJsonObject(path);
+  const name = basename(path);
+  // The words every editor of a home file says over one that does not read (REV3, `writeJsonTextAtomic`).
+  if (problem !== null) {
+    throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — this command will not overwrite a file it could not understand.`);
+  }
+  if (text === undefined && !found) {
+    writeJsonAtomic(path, edited);
+    return;
+  }
+  const current = text ?? '{}\n';
+  const doubled = twice(current);
+  if (doubled !== null) {
+    throw new DaorisError(`${name} holds the key \`${doubled}\` twice in one object, so an edit cannot tell which it changes; this edit was not written. ${REMEDY}`);
+  }
+  let kept: string;
+  try {
+    kept = keepEdits(current, read, edited);
+  } catch (error) {
+    if (!(error instanceof EditRefused)) throw error;
+    throw new DaorisError(`${name} has changed under this edit: ${error.message}, so this edit was not written. ${REMEDY}`);
+  }
+  writeJsonTextAtomic(path, kept);
+}
+
+const REMEDY = 'Fix it, or delete it to start from nothing, then make the change again.';
 
 /**
  * The first key written twice in one object of `text`, a JSON text that parses, in the order the second is written; or null (the

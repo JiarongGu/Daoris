@@ -62,6 +62,15 @@ public sealed record PermissionFile(
     /// <summary>Whatever a newer build wrote here, kept on every write.</summary>
     internal JsonObject Rest { get; init; } = [];
 
+    /// <summary>
+    /// The file as <see cref="PermissionRules.Load"/> understood it, written, or null for rules built in memory (KEEPALL1): what an edit is
+    /// measured from, so a save makes only the edit onto the file as it stands.
+    /// </summary>
+    internal string? Understood { get; init; }
+
+    /// <summary>Whether a file was there when it was read (KEEPALL1): with none then and none now, the save writes the rules whole.</summary>
+    internal bool Found { get; init; }
+
     public static PermissionFile Empty { get; } = new(
         RuleLists.Empty,
         new Dictionary<string, RuleLists>(StringComparer.Ordinal),
@@ -243,7 +252,7 @@ public static class PermissionRules
     public static PermissionFile Load(string home)
     {
         var path = PathOf(home);
-        if (!File.Exists(path)) return PermissionFile.Empty;
+        if (!File.Exists(path)) return PermissionFile.Empty with { Understood = Written(PermissionFile.Empty) };
 
         try
         {
@@ -261,14 +270,16 @@ public static class PermissionRules
                 }
             }
 
-            return new PermissionFile(
+            var file = new PermissionFile(
                 Lists(root["machine"]),
                 Scopes(root["workspaces"]),
                 Scopes(root["repositories"]),
                 Json.TrimmedStrings(root["defaultsOff"]))
             {
                 Rest = rest,
+                Found = true,
             };
+            return file with { Understood = Written(file) };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -279,10 +290,17 @@ public static class PermissionRules
         }
     }
 
-    /// <summary>Written beside and renamed over, BOM-less and LF, keeping what a newer build wrote.</summary>
+    /// <summary>
+    /// Written beside and renamed over, BOM-less and LF, keeping what a newer build wrote: the edit from what was read made onto the file as
+    /// it stands (KEEPALL1, <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a
+    /// change another writer made since the read stays, and no edit writes nothing. Rebuilt from the fields it reads, it moved what it did
+    /// not know to the front and deleted a scope's own unknown keys. Rules built in memory are written whole. The CLI's
+    /// <c>writePermissions</c> does the same.
+    /// </summary>
     /// <exception cref="DriverException">
     /// The file could not be read when <paramref name="file"/> was loaded (REV3). What it holds is the
-    /// empty read, and writing it would drop every rule the file had. The CLI refuses the same edit.
+    /// empty read, and writing it would drop every rule the file had. The CLI refuses the same edit. Or the file there now does not read,
+    /// holds a key twice, or made a scope this edit changes no longer an object.
     /// </exception>
     public static void Save(string home, PermissionFile file)
     {
@@ -294,6 +312,15 @@ public static class PermissionRules
         }
 
         Directory.CreateDirectory(home);
+        if (file.Understood is { } understood) JsonKeeping.Save(PathOf(home), file.Found, understood, Written(file));
+        else JsonFile.Write(PathOf(home), Root(file));
+    }
+
+    /// <summary>The rules' own shape, written: what neither knows first, then each scope only where it holds a rule.</summary>
+    private static string Written(PermissionFile file) => JsonFile.Serialize(Root(file));
+
+    private static JsonObject Root(PermissionFile file)
+    {
         var root = new JsonObject();
         foreach (var (key, value) in file.Rest) root[key] = value?.DeepClone();
 
@@ -301,9 +328,7 @@ public static class PermissionRules
         if (ScopesNode(file.Workspaces) is { } workspaces) root["workspaces"] = workspaces;
         if (ScopesNode(file.Repositories) is { } repositories) root["repositories"] = repositories;
         if (file.DefaultsOff.Count > 0) root["defaultsOff"] = new JsonArray([.. file.DefaultsOff.Order(StringComparer.Ordinal).Select(id => (JsonNode)id)]);
-
-        var path = PathOf(home);
-        JsonFile.Write(path, root);
+        return root;
     }
 
     /// <summary>

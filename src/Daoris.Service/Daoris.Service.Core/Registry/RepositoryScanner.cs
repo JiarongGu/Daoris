@@ -48,6 +48,9 @@ namespace Daoris.Knowledge;
 /// <see cref="EntryKind.Index"/>. A folder the deployment named as its index is read a row at a time with its
 /// cells labelled, as it chose, and never at its headings beside.
 ///
+/// A folder walked for its records never enters or opens what git ignores within it (KNOWWALK1,
+/// <see cref="IgnoredPaths"/>): a docs site's packages and a person's ignored scratch are not the repository's.
+///
 /// Every entry keeps the lines of its file its body is (<see cref="KnowledgeEntry.Lines"/>, ORIENT2e), counted
 /// from the file's first line whatever the read trimmed above it, except a deployment's index row, which is its
 /// cells labelled by their columns and no line as written.
@@ -96,6 +99,8 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         var daorisLock = DaorisLock.Read(repositoryRoot);
         var layout = RepositoryLayout.Of(repositoryRoot, daorisLock);
         var entries = new List<KnowledgeEntry>();
+        // What git ignores, asked once and only when a folder of records is walked (KNOWWALK1).
+        var ignored = new Lazy<IgnoredPaths>(() => IgnoredPaths.Of(repositoryRoot));
 
         // The always-loaded tier, wherever this repository keeps it. A repository on the old layout
         // has files under `rules/`; one that has synced since D59 has a SPAN in the file every
@@ -134,7 +139,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         {
             if (Directory.Exists(Absolute(repositoryRoot, router)))
             {
-                Add(ScanFolder(repositoryRoot, name, router, EntryKind.Knowledge, indexed, byHeading: false));
+                Add(ScanFolder(repositoryRoot, name, router, EntryKind.Knowledge, indexed, byHeading: false, ignored));
             }
             else if (ReadDocumentAt(repositoryRoot, router) is { } read)
             {
@@ -161,7 +166,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             if (found is null || indexed.Contains(found)) continue;
 
             Add(Directory.Exists(Absolute(repositoryRoot, found))
-                ? ScanFolder(repositoryRoot, name, found, kind, indexed, byHeading: true)
+                ? ScanFolder(repositoryRoot, name, found, kind, indexed, byHeading: true, ignored)
                 : ScanLog(repositoryRoot, name, found, kind));
         }
 
@@ -170,21 +175,21 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         // declared index's own folder reads it as it always has (one file, one place).
         if (index is not null && Directory.Exists(Absolute(repositoryRoot, index)))
         {
-            Add(ScanIndex(repositoryRoot, name, index, indexed));
+            Add(ScanIndex(repositoryRoot, name, index, indexed, ignored));
         }
 
         // The index of where things are, declared and never guessed (ORIENT2e; D151 §6), as the router is: a
         // folder named like one may be anything. Every file of it the deployment did not read, at its headings.
         if (layout.PathOf("index") is { } declaredIndex)
         {
-            Add(ScanDeclaredIndex(repositoryRoot, name, declaredIndex, indexed));
+            Add(ScanDeclaredIndex(repositoryRoot, name, declaredIndex, indexed, ignored));
         }
 
         // Then the deployment's documents a section at a time, each file read once and the index never as a
         // document.
         if (documents is not null && Directory.Exists(Absolute(repositoryRoot, documents)))
         {
-            Add(ScanDocumentFolder(repositoryRoot, name, documents, indexed));
+            Add(ScanDocumentFolder(repositoryRoot, name, documents, indexed, ignored));
         }
 
         // The README, as the repository's own word until it adopts (WSSETUP8; D124 §5): what its authors
@@ -416,9 +421,9 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// their files as the knowledge tier's are (D122). The id is the path either way, so a title is never a key.
     /// </param>
     private static IEnumerable<KnowledgeEntry> ScanFolder(
-        string root, string repository, string folder, EntryKind kind, ISet<string> indexed, bool byHeading)
+        string root, string repository, string folder, EntryKind kind, ISet<string> indexed, bool byHeading, Lazy<IgnoredPaths> ignored)
     {
-        foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
+        foreach (var relative in Records(root, folder, ignored).Order(StringComparer.Ordinal))
         {
             if (indexed.Contains(relative)) continue;
             if (ReadDocumentAt(root, relative) is not { } read) continue;
@@ -477,17 +482,17 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// with (ORIENT2h5); text before any heading is the file's own, unanchored.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> ScanDeclaredIndex(
-        string root, string repository, string declared, ISet<string> indexed)
+        string root, string repository, string declared, ISet<string> indexed, Lazy<IgnoredPaths> ignored)
     {
         IEnumerable<string> files;
         if (Directory.Exists(Absolute(root, declared)))
         {
-            files = Records(root, declared);
+            files = Records(root, declared, ignored);
         }
         else if (File.Exists(Absolute(root, declared)))
         {
             var slash = declared.LastIndexOf('/');
-            files = slash < 0 ? [declared] : Records(root, declared[..slash]);
+            files = slash < 0 ? [declared] : Records(root, declared[..slash], ignored);
         }
         else
         {
@@ -526,9 +531,9 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// file's line as written, so it names no lines; its cells name the places themselves.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> ScanIndex(
-        string root, string repository, string folder, ISet<string> indexed)
+        string root, string repository, string folder, ISet<string> indexed, Lazy<IgnoredPaths> ignored)
     {
-        foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
+        foreach (var relative in Records(root, folder, ignored).Order(StringComparer.Ordinal))
         {
             if (indexed.Contains(relative)) continue;
             if (ReadDocument(root, relative) is not { } text) continue;
@@ -547,9 +552,9 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// what a question about it is answered by; the whole file buries the answer as a whole log would.
     /// </summary>
     private IEnumerable<KnowledgeEntry> ScanDocumentFolder(
-        string root, string repository, string folder, ISet<string> indexed)
+        string root, string repository, string folder, ISet<string> indexed, Lazy<IgnoredPaths> ignored)
     {
-        foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
+        foreach (var relative in Records(root, folder, ignored).Order(StringComparer.Ordinal))
         {
             if (indexed.Contains(relative)) continue;
             if (index is not null && RepositoryLayout.Within(relative.ToLowerInvariant(), index.ToLowerInvariant())) continue;
@@ -572,18 +577,27 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// The markdown files in a folder and below, repository-relative. A folder reached through a link is
     /// some other folder (LAYOUT4) and is never entered, so a link that loops back is never walked round.
     /// </summary>
-    private static IEnumerable<string> Records(string root, string folder)
+    /// <remarks>
+    /// What git ignores in the checkout is never entered or opened (KNOWWALK1): a docs site's <c>node_modules/</c>
+    /// under a documents folder is thousands of folders and READMEs that are not this repository's, and a person's
+    /// ignored scratch is not its record. Git is asked once per read, at the first record found
+    /// (<see cref="IgnoredPaths"/>); the folder the walk starts at is the one declared, and is read as it is.
+    /// </remarks>
+    private static IEnumerable<string> Records(string root, string folder, Lazy<IgnoredPaths> ignored)
     {
         if (RepositoryLinks.Crosses(root, folder)) yield break;
 
         var absolute = Absolute(root, folder);
         foreach (var file in Directory.EnumerateFiles(absolute, "*.md"))
         {
-            yield return $"{folder}/{Path.GetFileName(file)}";
+            var relative = $"{folder}/{Path.GetFileName(file)}";
+            if (!ignored.Value.Covers(relative)) yield return relative;
         }
         foreach (var below in Directory.EnumerateDirectories(absolute))
         {
-            foreach (var file in Records(root, $"{folder}/{Path.GetFileName(below)}")) yield return file;
+            var relative = $"{folder}/{Path.GetFileName(below)}";
+            if (ignored.Value.Covers($"{relative}/")) continue;
+            foreach (var file in Records(root, relative, ignored)) yield return file;
         }
     }
 

@@ -5,6 +5,115 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A landing squash-merged on the platform, then deleted, read dropped with a recovery ref kept for ever (CLEANUP1c)
+
+- **Symptom:** found reading CLEANUP1 against the owner's install, before it ran there: a landing whose pull request the platform
+  squash-merged, its branch deleted by the person after the pull, would read *over without its result* in `work state`, and its
+  commits would be kept on a recovery ref held by nothing, so kept for ever and listed for the person to delete. Most of the
+  install's 18 deleted landings were squash-merged.
+- **Root cause:** CLEANUP1b judged a landing git says is missing by the line's ancestry of its recorded commit alone, and a squash
+  leaves no ancestry: the squash is a commit of its own. The content proof, which ends a standing landing after a squash
+  (`LandedProofs.ProveAsync`), was never read for a gone one, so CLEANUP1's `WentAsync` took it as dropped and kept its commit.
+- **Fix:** `EndJudgement.GatherAsync` reads a gone landing's content proof at its recorded commit where no ancestry holds it, and
+  `JudgeGone` ends it `on-line` only where that proof holds on a form of the line; content only a branch of the person's holds, and an
+  unread proof, end nothing. `EndKeeping.KeepGoneAsync` then keeps the fact as it retires, so no recovery ref is made. D173's CLEANUP1c
+  note has the detail.
+- **Verification:** red on CLEANUP1b's branch first, one in `EndJudgementTests` and one in `CleanupGitTests` (squash on the platform,
+  pull, delete: ended, clean-up completed, no recovery ref); two guards green before and after (a file still differing reads dropped and
+  kept; a commit git collected reads missing with nothing to keep). Then green with the driver's fast half and `CleanupGitTests`,
+  `EndJudgementGitTests` and `HeldFactsGitTests` by class under `git.process.runsettings`.
+
+## 2026-10-17 — A landing merged into the line, then deleted, read moved to the line for ever (CLEANUP1b)
+
+- **Symptom:** a landing branch whose pull request was merged with a merge commit and pulled, then deleted by the person before a look
+  judged it, read *moved to `main`* in `work state`: not ended, its clean-up pending for ever.
+- **Root cause:** CLEANUP1's `WentAsync` asks git which local branch holds the recorded tip once the branch is missing, and the line is
+  a local branch, so the line holding the work by ancestry read as a rename. The end judgement never saw it: `EndKeeping` judges only
+  a landing whose branch stands, and the judgement called a landing whose branch is not standing unknown.
+- **Fix:** a landing git says is missing is judged first through `EndJudgement` at the tip its landing recorded, by the line's ancestry
+  alone (`EndSubject.Gone`), and `EndKeeping.KeepGoneAsync` keeps the fact as it retires (`LandedBranches.HoldGone`), so the inventory
+  reads it ended with its clean-up completed. Only where no end is kept does `WentAsync` read where the work went. D173's CLEANUP1b
+  note has the detail.
+- **Verification:** red on CLEANUP1's branch first, one in `EndJudgementTests`, one in `HeldFactsTests` and three in
+  `CleanupGitTests`; then green with the driver's fast half and `CleanupGitTests`, `EndJudgementGitTests`, `HeldFactsGitTests` and
+  `TidyEffectGitTests` by class under `git.process.runsettings`.
+
+## 2026-10-17 — Work state listed leftovers that could never clear (CLEANUP1)
+
+- **Symptom:** the owner's `daoris-driver work state` listed 40 units no look would ever clear: 18 landings whose branch the person
+  deleted after its pull request (end *not reached: nothing was handed on*, clean-up pending for ever), and 7 recovery refs and 7
+  folders moved aside, each a unit of its own with its end unknown, which *What needs you* then listed as work nobody owns.
+- **Root cause:** the inventory read a landing retired as gone, with no proof that the line held it, as not ended, and nothing could
+  end it: the record kept no word of why it went, so git's own "missing" (the person's removal) read the same as a read that failed.
+  Recovery refs had no rule but "never deleted", and a recovery no record named was drafted as a unit with an unknown owner.
+- **Fix:** the landing keeps why it went (`GoneAs`: `missing` on `show-ref --exists`'s exit 2 with no name in another case, else
+  `stands`), written by the clean-up and once by the look; the inventory reads a unit whose landings all went as missing, nothing of
+  it standing, as dropped and retired, and keeps every doubt, saying which. A recovery ref whose commit a branch or a tag holds goes
+  after 30 days in a verified transaction; one nothing else holds is kept and says how to delete it. Recoveries no record names are
+  listed apart, not as units. D173's CLEANUP1 note and D102's have the detail.
+- **Verification:** red first, twelve of `CleanupLeftoversTests` and six of `CleanupGitTests`, the safety guards passing before and
+  after; then green with the driver's and the modules' fast halves, `CleanupGitTests` alone under `git.process.runsettings`, and the
+  milestone's web test in both languages.
+- **After review (a second maker's, four findings):** (1) the retention took a session branch as a holder, and the same look could
+  then remove that branch on a squash's record with no recovery, leaving the commit held by nothing: only a tag or a local branch of
+  the person's (outside `daoris/`, not a landing's) holds now. (2) A renamed landing branch read as dropped: where another local branch
+  holds the recorded tip it reads `moved`, kept and followed; and where no tag or recovery ref holds it, its commit is kept on a
+  recovery ref before the record retires. (3) The look's write applied by name, so an observation read before a new landing of the
+  same name retired the new one: each write now names the landing read, by identity and tip. (4) A folder moved aside whose purge a
+  later write, a link or a failed read blocks was listed as a recovery for ever: past its date it is a unit blocked on the person.
+  Red on round 1's branch first, five in `CleanupLeftoversTests` and four in `CleanupGitTests`; D173's and D102's CLEANUP1 notes,
+  *After review*, have the detail. The coordinator's re-check closed four more, each red first: a symbolic branch held a recovery ref
+  (now no symbolic ref holds, by git's `%(symref)`, in every proof by ancestry too); a moved-to name made again elsewhere was still
+  taken for the work, and a rename to `feature/HEAD` read dropped (the branch's commit is kept and compared, and only a remote's `HEAD`
+  is left out); the keep could follow a branch made again (it is made in one transaction verifying the branch absent); and a delete
+  the purge could not finish was invisible to the inventory (kept in `trees/.tidied/purge-failed.json`, read as blocked).
+## 2026-10-17 — The HTTP host watched its content root as the connector had (HTTPWATCH1)
+
+- **Symptom:** none seen yet; KNOWWALK1's cause, found in the connector, stood in the other host Daoris builds.
+- **Root cause:** `WebApplication.CreateBuilder` in the HTTP host kept the default `appsettings.json` reload watch over its
+  content root, which is the project folder in development (`bin/` and `obj/` under it) and the install's `app/` when the
+  desktop hosts the service: exactly what an update swaps. The search of the source found no other generic or web host: the
+  desktop shell and the driver host build none (the driver's console is a plain process).
+- **Fix:** `HostRoot.Builder` takes the content root from `HostRoot.ContentRoot` (the binary's folder when it carries
+  `wwwroot`, else the working folder when it does, else the binary's) and passes `--hostBuilder:reloadConfigOnChange=false`
+  first among the arguments, so no file is watched and the environment and command line are read as before. The note
+  `.claude/knowledge/host-content-root.md` (HOSTROOT1) says it once for the next host. In development the content root is
+  still the project folder, which the SDK serves `wwwroot` from; only its watch is gone.
+- **Verification:** `HostRootTests` failed first on the unbuilt member; the host's file sources are not reloading and the
+  root is the binaries' folder, and the bundle choice is pinned in the three cases. Http service tests 280 to 282.
+
+## 2026-10-17 — Every knowledge connector watched its whole checkout, and walked each folder renamed in it (KNOWWALK1)
+
+- **Symptom:** the deployment rehearsal's swap of `_fixtures/deployment-rehearsal/install/app` was refused `busy`, and
+  DEPLOYBUSY1's diagnosis named `bin` held by `16075bf6 (pid 36544)`: a `dotnet` whose image an installer had replaced as it
+  ran (the `.rbf` name), running the workspace's knowledge connector build of 10-09, started by `tools/knowledge-server.mjs` on
+  10-10 for a session in this checkout. Asked again later, it held the checkout's root and nothing under `_fixtures/`: the hold
+  came and went.
+- **Root cause:** not the knowledge read. Neither the 10-09 build nor main reads outside the `.claude/` tiers, `docs/` and the
+  declared folders, and the 10-09 build had no watcher of its own. The connector's host did: `Host.CreateApplicationBuilder(args)`
+  takes the working folder, the session's checkout, for its content root, and its default configuration watches
+  `appsettings.json` there for a reload. The framework's `PhysicalFilesWatcher` watches that root with `IncludeSubdirectories`
+  set, and its `OnRenamed` lists everything in a renamed folder with `SearchOption.AllDirectories` (read from the IL of the
+  running build's own `Microsoft.Extensions.FileProviders.Physical.dll`). So every session's connector (23 processes held the
+  checkout's root when asked) heard every write in the checkout, ignored trees too, and walked each folder renamed in it. The
+  swap's rename of `app` set each one walking the renamed tree, holding `bin` as the swap's next move came. Two smaller causes
+  besides. On main only, EVENT6's recursive watch of `.claude/` reached `.claude/worktrees/`, so each agent's build and install
+  marked the reading stale. And, latent, the documents folder's walk (`RepositoryScanner.Records`) entered every folder, so a
+  docs site's `docs/node_modules/` would have been walked and its READMEs indexed.
+- **Fix:** `KnowledgeServer.HostBuilder` takes the build's own folder for the content root and sets
+  `hostBuilder:reloadConfigOnChange` false: no file is watched, and a repository's own `appsettings.json` no longer configures
+  the connector. `IgnoredPaths` asks git once (`ls-files -z --others --ignored --exclude-standard --directory`, ceilinged at the
+  root's parent), which names each ignored folder and not what is in it. `Records` skips what it names, asked at the first
+  record of a read. `CheckoutFreshness.OpenTree` watches a folder with an ignored one inside in parts. Where git cannot answer,
+  both are as they were. The cost is one git process, 0.1-0.34 s measured in a worktree on this machine under load: once per
+  read for the walk and once per process for the watch.
+- **Verification:** the members came first and each new test failed before the fix. `ConnectorHostTests`: all four file
+  sources were watched. `IgnoredPathsTests.A_read_of_a_checkouts_documents_opens_nothing_under_a_folder_git_ignores`: forty
+  ignored package folders under `docs/` and two files held with no sharing; the read threw the sharing violation before the
+  fix, and opens neither after it. `CheckoutFreshnessTests.A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard`:
+  writes in `.claude/worktrees/` marked stale before the fix. Service tests went from 2197 to 2203. A running connector keeps
+  the old host until its session restarts it on a build made after this fix.
+
 ## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
 
 - **Symptom:** twice in a row on main (3a0d0af, 6bd7e0e) the deployment rehearsal's 9e rolled `fails-to-start` back `busy`,
@@ -29,6 +138,8 @@ repository.
   again names the last holder and not the first (red with the ask made rare), the journal's new fields round-trip and an old
   one reads as before, the terminal's words and the log line's fields. `HeldFilesProcessTests` (Process): a `node` whose working
   folder is `app/` is named as holding `app` itself, and the folder's move is refused. Two deployment rehearsals, 115/115 each.
+- **Attributed, 2026-10-17 (KNOWWALK1):** the `dotnet` a rehearsal's hold named by its `.rbf` (`16075bf6`, pid 36544) was
+  this checkout's knowledge connector, walking the folder the swap had renamed; see that entry.
 ## 2026-10-17 — An unread ref forgot its record, and a detached tree's removal verified nothing (RECORDUNREAD1, DETACHTX1)
 
 - **Symptom:** a fifth review of FABRIC-END4a: a session branch whose ref git could not read was forgotten by LAND3's door as
@@ -160,6 +271,27 @@ repository.
   required (`no-revision`).
 - **Verification:** seven new tests, the evaluation's members added first without behaviour, each failed on its own defect at run
   time, then passed; the node and wire suites pass, and the driver's fast half.
+## 2026-10-17 — Switching a plugin, a permission rule or an API key deleted what its writer did not know (KEEPALL1)
+
+- **Symptom:** found by KEEPALL1's audit of every home file a door edits, after GRAPH1 fixed `driver.json`. Switching a plugin on or
+  off, from the Plugins page or `daoris plugin`, rewrote `plugins.json` as `{ "disabled": [...] }`, deleting every other key and
+  every entry of the list that was not text. A permission rule changed from Setup or `daoris permission` moved the keys it did not
+  know to the front and deleted a scope's own unknown keys (`machine.note`). The driver's API key door read a `keys.json` that did not
+  read as no keys and wrote the new key over it, deleting every other account's key, and threw on a value that was not text.
+- **Root cause:** each writer rebuilt its file from the fields its reader knew (`PluginState.Save`, `PermissionRules.Save`,
+  `HarnessKeys.Write`; the CLI's `writePluginState`, `writePermissions`, `writeKeys`), keeping at most the unknown keys of the top
+  level, and the driver's key reader swallowed a parse failure that its writer then overwrote.
+- **Fix:** D173's KEEPALL1 note. Both twins write those three files as GRAPH1's writers write `driver.json`: the edit, the key paths
+  that differ between the file as read and understood and the edited choices, is made onto the file read again at write
+  (`JsonKeeping.Save`, `jsonkeep.ts`' `writeKeeping`); a file that does not read then, holds a key twice in one object, or made a
+  changed object a scalar is refused and left as it is; CRLF kept; no edit writes nothing; a file at neither moment written whole.
+  The driver's key door writes the key before it makes the account's directory, as the CLI's does.
+- **Verification:** `HomeFilesKeepTests` and the CLI's `homefileskeep.test.ts` read one table, `home-files-keep.json` (each file in
+  the writer's layout with unknown keys at each level and numbers JavaScript cannot hold; 16 rows: no edit, an edit, CRLF, another
+  writer's change between the read and the write, a scope made a string, a key twice, a key over a torn file). Its 13 plugin and
+  permission rows failed in both twins before the change, and its 3 key rows in the driver's; all pass, with the driver's and the
+  modules' fast halves and the CLI's suite. Its row in `tools/merge-branch.mjs` and `merge-branch.test.ts`.
+
 ## 2026-10-17 — An edit of driver.json from Setup or Ask Daoris deleted the settings its writer did not know (FABRIC-GRAPH1's review)
 
 - **Symptom:** found by a second maker's review of FABRIC-GRAPH1, and live in the installed build: a key `driver.json` holds that the

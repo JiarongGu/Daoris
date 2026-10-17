@@ -130,7 +130,20 @@ public sealed record WorkMilestone(
 }
 
 /// <summary>A recovery ref a content-held removal kept (<c>refs/daoris/discarded/&lt;branch&gt;</c>), by its repository.</summary>
-public sealed record RecoveryRef(string Repository, string Ref);
+public sealed record RecoveryRef(string Repository, string Ref)
+{
+    /// <summary>The commit it keeps, where the read named one.</summary>
+    public string? Commit { get; init; }
+
+    /// <summary>That commit's date (<c>committerdate</c>): git keeps no date for a ref, which is made at or after it (CLEANUP1).</summary>
+    public DateTimeOffset? Dated { get; init; }
+
+    /// <summary>
+    /// Whether a branch or a tag of the person's holds its commit by ancestry (CLEANUP1, <see cref="RecoveryRetention.Holds"/>): true where
+    /// one does, false where none does, null where git could not say.
+    /// </summary>
+    public bool? Held { get; init; }
+}
 
 /// <summary>What the records, the disk and git said, gathered for <see cref="WorkInventory.Derive"/> to read: nothing here is judged.</summary>
 /// <param name="Branches">Every session branch entry, standing and traces.</param>
@@ -179,10 +192,19 @@ public static partial class WorkInventory
     public static IReadOnlyList<WorkMilestone> Derive(InventoryFacts facts) => [.. Units(facts).Select(WorkMilestone.Of)];
 
     /// <summary>
+    /// Daoris's own recoveries no record names a unit of (CLEANUP1): a folder moved aside with its purge date, and a recovery ref. Each is
+    /// kept by its own rule, owned by it, and waits on nobody, so it is no unit: the unit it came from retired and its trace went.
+    /// </summary>
+    public static IReadOnlyList<InventoryEntry> Recoveries(InventoryFacts facts) => Read(facts).Recoveries;
+
+    /// <summary>
     /// Every branch unit the records name, and a unit of its own for what no record names, oldest first (the branch adapter, §D2). A
     /// landing that carries one unit alone links it to the quest the landing names; one carrying several does not say which served it.
+    /// Daoris's own recoveries no record names are no unit (<see cref="Recoveries"/>).
     /// </summary>
-    public static IReadOnlyList<WorkUnit> Units(InventoryFacts facts)
+    public static IReadOnlyList<WorkUnit> Units(InventoryFacts facts) => Read(facts).Units;
+
+    private static (IReadOnlyList<WorkUnit> Units, IReadOnlyList<InventoryEntry> Recoveries) Read(InventoryFacts facts)
     {
         var drafts = new Dictionary<string, Draft>(StringComparer.Ordinal);
         foreach (var branch in facts.Branches)
@@ -213,13 +235,14 @@ public static partial class WorkInventory
             }
         }
 
-        var trees = AttachTrees(facts, drafts, out var treeOf);
+        var recoveries = new List<InventoryEntry>();
+        var trees = AttachTrees(facts, drafts, recoveries, out var treeOf);
         AttachAutoLandings(facts, drafts, treeOf);
-        AttachRefs(facts, drafts);
+        AttachRefs(facts, drafts, recoveries);
 
         var units = new List<WorkUnit>();
         foreach (var draft in drafts.Values) units.Add(Unit(draft, facts, trees.GetValueOrDefault(draft.Id) ?? []));
-        return units;
+        return (units, recoveries);
     }
 
     private static string Name(string path) => Path.GetFileName(Path.TrimEndingDirectorySeparator(path));
@@ -240,9 +263,13 @@ public static partial class WorkInventory
         catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException) { return path; }
     }
 
-    /// <summary>Each tree to the unit whose branch it is on, or to a unit of its own where no record names it.</summary>
+    /// <summary>
+    /// Each tree to the unit whose branch it is on, or to a unit of its own where no record names it. A folder moved aside with its purge
+    /// date that no record names is a recovery of no unit (CLEANUP1): its rule owns it, and it waits on nobody. One its purge keeps past
+    /// that date (<see cref="SessionTree.PurgeKept"/>, after review) is a unit of its own, since its rule can no longer finish it.
+    /// </summary>
     private static Dictionary<string, List<SessionTree>> AttachTrees(
-        InventoryFacts facts, Dictionary<string, Draft> drafts, out Dictionary<string, string> treeOf)
+        InventoryFacts facts, Dictionary<string, Draft> drafts, List<InventoryEntry> recoveries, out Dictionary<string, string> treeOf)
     {
         var attached = new Dictionary<string, List<SessionTree>>(StringComparer.Ordinal);
         treeOf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -254,6 +281,12 @@ public static partial class WorkInventory
                 && (aside || tree.Branch is SessionTree.NotATree or "(unreadable)"
                     ? branch.Branch == TreeFollows.SessionPrefix + name
                     : branch.GoneAt is null && (branch.Branch == tree.Branch || branch.Now == tree.Branch)));
+            if (found is null && aside && tree.MovedAside is not null && tree.PurgeKept is null)
+            {
+                recoveries.Add(AsideEntry("", tree));
+                continue;
+            }
+
             if (found is null)
             {
                 found = new Draft($"{(aside ? "aside" : "tree")}:{Full(tree.Path)}", tree.Repository, tree.Workspace) { Unowned = true };
@@ -295,7 +328,8 @@ public static partial class WorkInventory
     [GeneratedRegex(@"-\d+$")]
     private static partial Regex Numbered();
 
-    private static void AttachRefs(InventoryFacts facts, Dictionary<string, Draft> drafts)
+    /// <summary>Each recovery ref to the unit whose branch it kept; one no record names is a recovery of no unit (CLEANUP1), never guessed into one.</summary>
+    private static void AttachRefs(InventoryFacts facts, Dictionary<string, Draft> drafts, List<InventoryEntry> recoveries)
     {
         foreach (var each in facts.Refs)
         {
@@ -303,15 +337,29 @@ public static partial class WorkInventory
             var bare = Numbered().Replace(named, "");
             var draft = drafts.Values.FirstOrDefault(candidate => candidate.Branch is { } branch && SameRepository(branch.Repository, each.Repository)
                 && (branch.Branch == named || branch.Branch == bare));
-            if (draft is null)
-            {
-                draft = new Draft($"ref:{each.Repository.ToLowerInvariant()}/{named}", each.Repository, "default") { Unowned = true };
-                drafts[draft.Id] = draft;
-            }
-
-            draft.Extra.Add(new InventoryEntry(draft.Id, InventoryKind.RecoveryRef, each.Ref, InventoryRole.Recovery, InventoryDisposition.Retained,
-                "kept by its own rule: Daoris never deletes it, and the end never takes it"));
+            if (draft is null) recoveries.Add(RefEntry("", each, facts.Now));
+            else draft.Extra.Add(RefEntry(draft.Id, each, facts.Now));
         }
+    }
+
+    /// <summary>
+    /// A recovery ref by its rule (CLEANUP1, <see cref="RecoveryRetention"/>): one a branch or a tag here holds goes at the look's tidy
+    /// once past its retention; one nothing else holds is kept until the person deletes it, and says how; one whose holders git did not
+    /// read is kept.
+    /// </summary>
+    private static InventoryEntry RefEntry(string unit, RecoveryRef each, DateTimeOffset now)
+    {
+        var until = RecoveryRetention.Until(each);
+        var days = $"{RecoveryRetention.Kept.TotalDays:0}";
+        return new InventoryEntry(unit, InventoryKind.RecoveryRef, each.Ref, InventoryRole.Recovery, InventoryDisposition.Retained, each.Held switch
+        {
+            true when until is { } at && at <= now =>
+                $"a branch or a tag of yours holds its commit, and it is past its {days} days, so the look's tidy removes it at its next pass",
+            true when until is { } at => $"a branch or a tag of yours holds its commit, so the look's tidy removes it once it is {days} days old, from {Minute(at)} UTC",
+            false => $"no branch or tag of yours holds its commit, so Daoris keeps it until you delete it: `git update-ref -d {each.Ref}` in `{each.Repository}`",
+            _ => "kept by its own rule: whether a branch or a tag of yours holds its commit was not read, so it is kept, and the end never takes it",
+        })
+        { Until = until };
     }
 
     private const string ContentHoldsPrefix = "refs/daoris/discarded/";
@@ -343,8 +391,19 @@ public static partial class WorkInventory
         {
             if (landing.GoneAt is { } went)
             {
+                // CLEANUP1: where Daoris did not remove it, why it went, on git's word; never a claim that the line holds it.
+                var said = landing.RemovedAs is not null || landing.Held is not null ? $"went {Minute(went)} UTC"
+                    : landing.GoneAs switch
+                    {
+                        LandedGone.Missing when landing.KeptOn is { } kept =>
+                            $"removed outside Daoris; git said it is missing {Minute(went)} UTC, and no branch, tag or recovery ref held its commit, so Daoris kept it on `{kept}`",
+                        LandedGone.Missing => $"removed outside Daoris; git said it is missing {Minute(went)} UTC",
+                        LandedGone.Moved => $"went {Minute(went)} UTC outside Daoris; `{landing.MovedTo}` holds its recorded commit",
+                        LandedGone.Stands => $"went {Minute(went)} UTC; a branch of its name stands that is not the landing's",
+                        _ => $"went {Minute(went)} UTC",
+                    };
                 entries.Add(new InventoryEntry(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryRole.Temporary, InventoryDisposition.Removed,
-                    $"went {Minute(went)} UTC") { Proof = landing.RemovedAs is { } by ? ProofSaid(by, landing.RemovedOn) : landing.Held is { } held ? ProofSaid(held.By, held.On) : null });
+                    said) { Proof = landing.RemovedAs is { } by ? ProofSaid(by, landing.RemovedOn) : landing.Held is { } held ? ProofSaid(held.By, held.On) : null });
             }
             else if (landing.Held is { } line)
             {
@@ -389,17 +448,32 @@ public static partial class WorkInventory
         };
     }
 
-    private static InventoryEntry TreeEntry(Draft draft, SessionTree tree, InventoryFacts facts, bool ended)
+    /// <summary>
+    /// A folder moved aside: a recovery retained until its purge date, or, with no date in its name, never purged by itself. One past its
+    /// date that the purge keeps (after review: a write after the move, a link, a folder that cannot be read) is blocked on the person,
+    /// saying why: the purge compares with the move, so it never takes it.
+    /// </summary>
+    private static InventoryEntry AsideEntry(string unit, SessionTree tree)
     {
-        if (tree.Branch == SessionTree.SetAside)
+        var until = tree.MovedAside is { } moved ? moved + BranchTidying.SetAsideFor : (DateTimeOffset?)null;
+        if (tree.PurgeKept is { } kept)
         {
-            var until = tree.MovedAside is { } moved ? moved + BranchTidying.SetAsideFor : (DateTimeOffset?)null;
-            return new InventoryEntry(draft.Id, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Retained,
-                tree.MovedAside is { } at
-                    ? $"moved aside {Minute(at)} UTC; deleted once it is left untouched until {Minute(until!.Value)} UTC"
-                    : "moved aside; its name says no date, so the look's purge never takes it")
+            return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Blocked,
+                $"moved aside {Minute(tree.MovedAside ?? DateTimeOffset.MinValue)} UTC and past its date, but the look's purge keeps it, since {kept}; "
+                + "look at it, and delete it once it holds nothing you need")
             { Until = until };
         }
+
+        return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Retained,
+            tree.MovedAside is { } at
+                ? $"moved aside {Minute(at)} UTC; deleted once it is left untouched until {Minute(until!.Value)} UTC"
+                : "moved aside; its name says no date, so the look's purge never takes it")
+        { Until = until };
+    }
+
+    private static InventoryEntry TreeEntry(Draft draft, SessionTree tree, InventoryFacts facts, bool ended)
+    {
+        if (tree.Branch == SessionTree.SetAside) return AsideEntry(draft.Id, tree);
 
         if (draft.Unowned)
         {
@@ -462,9 +536,55 @@ public static partial class WorkInventory
             return new MilestoneEnd("handed", null, null, null, null, $"`{carrying.Branch}` carries it and the line does not hold that yet");
         }
 
+        if (draft.Landings.Count > 0) return GoneOutside(draft);
+
         return new MilestoneEnd("not-ended", null, null, null, null, draft.Branch?.GoneAt is not null
             ? "its branch went and nothing proved the line holds its work"
             : "nothing was handed on and the line does not hold it");
+    }
+
+    /// <summary>
+    /// The end of a unit whose every landing went where Daoris neither removed it nor proved the line holds it (CLEANUP1). Git said each
+    /// landing's branch is missing and nothing of the unit stands: the person removed it, which is the person's end of it, <i>dropped</i>
+    /// (§D3's "or the person drops it"), and nothing is left to clean. Any doubt keeps it, saying which: a branch of its name standing,
+    /// git not yet asked, or its session branch still standing, whose work nothing proved anywhere.
+    /// </summary>
+    private static MilestoneEnd GoneOutside(Draft draft)
+    {
+        var last = draft.Landings[^1];
+        var at = last.GoneAt ?? DateTimeOffset.MinValue;
+        if (draft.Landings.FirstOrDefault(landing => landing.GoneAs == LandedGone.Stands) is { } stands)
+        {
+            return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null,
+                $"a branch of `{stands.Branch}`'s name stands that is not the landing's, so whether the person ended it is not known: it is kept");
+        }
+
+        // After review: a branch that holds its recorded commit took the work on (a rename), so it is not the person's end of it.
+        if (draft.Landings.FirstOrDefault(landing => landing.GoneAs == LandedGone.Moved) is { } moved)
+        {
+            return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null,
+                $"`{moved.Branch}` went outside Daoris, and `{moved.MovedTo}` holds its recorded commit, so its work goes on there: it is kept");
+        }
+
+        if (draft.Landings.FirstOrDefault(landing => landing.GoneAs is null) is { } asked)
+        {
+            return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null,
+                $"`{asked.Branch}` went outside Daoris {Minute(asked.GoneAt ?? at)} UTC, and git has not yet said it is missing, so it is kept until the look asks");
+        }
+
+        if (draft.Branch is { GoneAt: null } standing)
+        {
+            return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null,
+                $"`{last.Branch}` was removed outside Daoris, and its session branch `{standing.Branch}` still stands, so it is kept");
+        }
+
+        var kept = draft.Landings.Select(landing => landing.KeptOn).OfType<string>().ToList();
+        return new MilestoneEnd(WorkEndState.Dropped, null, null, last.Tip, at,
+            $"`{last.Branch}` was removed outside Daoris, and git said it is missing {Minute(at)} UTC: the person's end of it. "
+            + (kept.Count > 0
+                ? $"No branch, tag or recovery ref held its commits, so Daoris kept them on {string.Join(", ", kept.Select(each => $"`{each}`"))} until you delete it; "
+                : "Its commits may survive only in the person's remote or on another branch; ")
+            + "Daoris does not claim the line holds them");
     }
 
     /// <summary>What a proof's code says it found, as the end judgement says it.</summary>
@@ -476,6 +596,7 @@ public static partial class WorkInventory
         EndBy.PullRequest => $"its pull request completed and its merge commit is on `{on}`",
         EndBy.Landed => $"its work is on `{on}`, which the line holds",
         EndBy.Carried => $"a completed pull request, `{on}`, carried it and its merge commit is on the line",
+        EndBy.Inside => $"it is inside `{on}`, whose work is on the line",
         _ => $"{by} on `{on}`",
     };
 

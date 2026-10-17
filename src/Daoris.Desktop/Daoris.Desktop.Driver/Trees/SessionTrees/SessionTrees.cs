@@ -45,6 +45,12 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 
     /// <summary>When the look moved it aside, read from its name; null for anything not moved aside.</summary>
     public DateTimeOffset? MovedAside { get; init; }
+
+    /// <summary>
+    /// A folder moved aside past its date that the look's purge keeps (CLEANUP1, after review): why, in its own clause (a later write, a
+    /// link, a folder that cannot be read). Null before its date, where the purge takes it, and for anything not moved aside.
+    /// </summary>
+    public string? PurgeKept { get; init; }
 }
 
 /// <summary>
@@ -161,7 +167,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private PassLeftovers Leftovers => _leftovers ??= new(_context, SetAsides);
 
     /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
-    private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps);
+    private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps, Ends);
 
     /// <summary>Each branch judged for the replay (WSR6).</summary>
     private BranchJudging Judging => _judging ??= new(_context, Cleanups);
@@ -650,6 +656,12 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <inheritdoc cref="TreeSetAside.PurgeSetAside"/>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after) => SetAsides.PurgeSetAside(now, after);
+
+    /// <inheritdoc cref="TreeSetAside.Kept"/>
+    internal (string Code, string Sentence)? SetAsideKept(string folder, DateTimeOffset moved) => SetAsides.Kept(folder, moved);
+
+    /// <inheritdoc cref="TreeSetAside.Failed"/>
+    internal IReadOnlyDictionary<string, string> SetAsideFailed() => SetAsides.Failed();
 
     /// <inheritdoc cref="LandedCleanups.CleanPlanAsync"/>
     public Task<SweepPlan> CleanPlanAsync(

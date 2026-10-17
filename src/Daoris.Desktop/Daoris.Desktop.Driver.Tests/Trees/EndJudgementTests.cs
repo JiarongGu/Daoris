@@ -119,6 +119,38 @@ public sealed class EndJudgementTests
         Assert.Equal((EndState.Ended, EndBy.PullRequest, "origin/main"), (ended.State, ended.By, ended.Where));
     }
 
+    /// <summary>
+    /// CLEANUP1b and CLEANUP1c: a landing whose branch git said is missing is judged at the tip its landing recorded. The line's ancestry of
+    /// that commit ends it, and so does its content proof on a form of the line (CLEANUP1c: a platform's squash leaves no ancestry). Content
+    /// only a branch of the person's holds, and a pull request's word, end nothing here; a branch standing again is not judged as gone, and
+    /// a line git could not read says nothing.
+    /// </summary>
+    [Fact]
+    public void A_landing_whose_branch_went_ends_by_the_lines_ancestry_or_its_content_on_the_line()
+    {
+        var entry = Landing() with { Plugin = "forge", PullRequestState = Done() };
+        var cycle = EndCycle.Recorded(entry);
+        var gone = Branch(landing: entry) with { Gone = true };
+        var away = Facts() with { Standing = false };
+
+        var merged = EndJudgement.Judge(cycle, gone, away with { Ancestry = Held.At("main") });
+        var content = EndJudgement.Judge(cycle, gone, away with { Content = Held.At("origin/main") });
+        var persons = EndJudgement.Judge(cycle, gone, away with { Content = Held.At("feature/other") });
+        var asked = EndJudgement.Judge(cycle, gone, away with
+        {
+            Verdict = PullRequestProof.Judge(Done(), new PullRequestFacts("main", "origin/main", true, true, true)),
+        });
+        var unread = EndJudgement.Judge(cycle, gone, away with { Ancestry = Held.Unread });
+        var again = EndJudgement.Judge(cycle, gone, Facts(Held.At("main")) with { Content = Held.At("main") });
+
+        Assert.Equal((EndState.Ended, EndBy.Merged, "main", Tip, "main"), (merged.State, merged.By, merged.Where, merged.Tip, merged.Line));
+        Assert.Equal((EndState.Ended, EndBy.OnLine, "origin/main", Tip), (content.State, content.By, content.Where, content.Tip));
+        Assert.Equal((EndState.Handed, (string?)null), (persons.State, persons.By));
+        Assert.Equal((EndState.Handed, (string?)null), (asked.State, asked.By));
+        Assert.Equal(EndState.Unknown, unread.State);
+        Assert.Equal(EndState.Unknown, again.State);
+    }
+
     [Fact]
     public void A_pull_request_the_branch_moved_beyond_is_handed_and_says_why()
     {
@@ -156,6 +188,45 @@ public sealed class EndJudgementTests
         var verdict = EndJudgement.Judge(EndCycle.Recorded(entry), Branch(EndRole.Session, entry), Facts() with { Inside = false, LandingEnd = landing });
 
         Assert.NotEqual(EndState.Ended, verdict.State);
+    }
+
+    /// <summary>A landing made later from this one's work, ended by its own proof (squash-merged on the platform, its files on the line).</summary>
+    private static EndHost Host(string by = EndBy.OnLine)
+    {
+        var entry = Landing(Later) with { Branch = "feature/q2-more" };
+        var end = new EndVerdict(EndState.Ended, by, by == EndBy.Inside ? "feature/q3-last" : "main", "") { Tip = Later, Line = "main" };
+        return new(entry, Later, end);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-END2d (D102's group, as the clean-up's <c>Inside</c> proves it): a landing whose files differ on the line, inside one whose own
+    /// proof ended it, is ended inside that one, which its fact names.
+    /// </summary>
+    [Fact]
+    public void A_landing_inside_one_its_own_proof_ended_is_ended_inside_it()
+    {
+        var verdict = EndJudgement.Judge(EndCycle.Recorded(Landing()), Branch(), Facts() with { Judgeable = true, Within = Host() });
+
+        Assert.Equal((EndState.Ended, EndBy.Inside, "feature/q2-more"), (verdict.State, verdict.By, verdict.Where));
+        // The inventory says the kept fact as the judgement said it.
+        Assert.StartsWith(WorkInventory.ProofSaid(EndBy.Inside, "feature/q2-more"), verdict.Evidence, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-END2d: never inside one ended only by being inside, nor one not ended, nor where its files were never compared (the clean-up's
+    /// <c>Judgeable</c>), nor for a landing whose branch went.
+    /// </summary>
+    [Fact]
+    public void A_landing_is_not_ended_inside_one_not_ended_by_its_own_proof_nor_where_its_files_were_not_compared()
+    {
+        var cycle = EndCycle.Recorded(Landing());
+        var handed = Host() with { End = new EndVerdict(EndState.Handed, null, null, "") };
+
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, Branch(), Facts() with { Judgeable = true, Within = Host(EndBy.Inside) }).State);
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, Branch(), Facts() with { Judgeable = true, Within = handed }).State);
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, Branch(), Facts() with { Judgeable = false, Within = Host() }).State);
+        var gone = Branch() with { Gone = true };
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, gone, Facts() with { Standing = false, Judgeable = true, Within = Host() }).State);
     }
 
     [Fact]
