@@ -56,7 +56,8 @@ public static class PluginKit
     /// <summary>A landing's branch, as the kit's samples say it.</summary>
     public static readonly LandingFrame SampleLanding = new(
         "engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "main", "Expose a streaming budget",
-        "0fda18", "s1a2b3c4", [new LandingCommit("3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", "Expose a streaming budget")]);
+        "0fda18", "s1a2b3c4", [new LandingCommit("3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", "Expose a streaming budget")],
+        Tip: "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a");
 
     /// <summary>A landed branch asked about, as the kit's samples say it (PLUGHOOK1a): pushed, with the pull request its plugin opened.</summary>
     public static readonly StateFrame SampleState = new(
@@ -111,7 +112,9 @@ public static class PluginKit
             "Once a landing has made its branch (only then, and only where a workspace's branch landing rule "
             + "names this plugin), it is started for that one landing, told the branch, and stopped. It pushes "
             + "the branch and opens the pull request for its platform, in `root`, with whatever that "
-            + "platform's tools are signed in as. Daoris itself never pushes. Where `pullRequest` is set, that pull "
+            + "platform's tools are signed in as. Daoris itself never pushes. Push `tip`, the commit the landing judged, "
+            + "to the branch (`<tip>:refs/heads/<branch>`), not the branch as it stands then: a commit made after the "
+            + "judgement must not ride the push. Where `pullRequest` is set, that pull "
             + "request is already open from the branch, which has moved on since: read its state, push only while "
             + "it is open, and open no second one. `acceptedBy` is `person` or `auto`.",
             """`{ "pushed": true, "pullRequest": "https://…", "message": "…" }`. `pushed` is required; the pull """
@@ -123,8 +126,8 @@ public static class PluginKit
             """
               // An act, once a landing has made its branch: push it and open the pull request for your
               // platform, in frame.root, and say what happened. The branch stands whatever this answers, and
-              // until it pushes it says so, since `pushed: false` is an honest answer. A push is
-              //   run('git', ['push', '--quiet', '-u', 'origin', frame.branch], frame.root)
+              // until it pushes it says so, since `pushed: false` is an honest answer. A push is of the commit judged:
+              //   run('git', ['push', '--quiet', 'origin', `${frame.tip}:refs/heads/${frame.branch}`], frame.root)
               'work/land': (frame) => ({
                 pushed: false,
                 pullRequest: null,

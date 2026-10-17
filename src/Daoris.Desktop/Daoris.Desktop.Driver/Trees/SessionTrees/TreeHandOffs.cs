@@ -165,7 +165,7 @@ internal sealed class TreeHandOffs(TreeContext context)
         var newest = entry.Advances.Count > 0 ? entry.Advances[^1].Session : entry.Session;
         return (new HandPlan(repository, branch, plugin, null, entry.PullRequest, commits.Count),
             new LandingFrame(repository, workspace, root, branch, line, entry.Title, entry.Quest, entry.Session, commits,
-                entry.Pushed ? entry.PullRequest : null, entry.AcceptedByOf(newest) ?? AcceptedBy.Person),
+                entry.Pushed ? entry.PullRequest : null, entry.AcceptedByOf(newest) ?? AcceptedBy.Person, Tip: tip),
             tip);
     }
 }

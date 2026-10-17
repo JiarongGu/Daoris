@@ -329,6 +329,16 @@ internal sealed class TreeLands(
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
+        // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note): one landing of one session's tree at a time, whichever door lands it. The
+        // second to come waits for the first, and where the first landed the session's work meanwhile, says so and lands nothing more:
+        // its plugin is never spoken to again. A landing that waited for nothing is judged as before.
+        using var hold = await LandingHolds.TakeAsync(context.Home, path, ct).ConfigureAwait(false);
+        if (hold is null) return new(false, StillLanding) { Refusal = AutoLandingCode.Refused };
+        if (hold.Since is { } since && context.Recorded.Landing(subject.Session) is { } meanwhile && meanwhile.AcceptedAt(subject.Session) >= since)
+        {
+            return LandedMeanwhile(meanwhile, subject.Session);
+        }
+
         TreeLanding landed;
         // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
         using (RepositoryHolds.Hold(context.Home, repository))
@@ -342,6 +352,23 @@ internal sealed class TreeLands(
         if (landed.Plugin is { Pushed: true, Failed: false }) PullRequestMoments.Pushed(context.Home, repository);
         return landed;
     }
+
+    /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/> (LANDRACE1).</summary>
+    internal static string StillLanding =>
+        $"another landing of this session's work was still under way after {(int)LandingHolds.Wait.TotalMinutes} minutes, so nothing was "
+        + "landed: accept it again once that one ends.";
+
+    /// <summary>
+    /// What a landing says that waited for another of its tree, which landed the session's work meanwhile (LANDRACE1): where it is, who
+    /// accepted it, and that nothing more was landed. Kept as <see cref="AutoLandingCode.Already"/>, as the look keeps a press's landing.
+    /// </summary>
+    private static TreeLanding LandedMeanwhile(LandedBranch landing, string session) => new(false,
+        $"another landing of this session finished while this one waited for it: its work is on `{landing.Branch}`, "
+        + (landing.AcceptedByOf(session) == AcceptedBy.Auto ? "accepted automatically when its quest was done" : "accepted by a press of Accept")
+        + ". Nothing more was landed.", landing.Branch)
+    {
+        Refusal = AutoLandingCode.Already,
+    };
 
     /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
     private async Task<TreeLanding> LandingAsync(
@@ -504,9 +531,11 @@ internal sealed class TreeLands(
                 var open = landed.AdvancedFrom is null ? null : context.Recorded.Of(repository, landed.Branch!) is { Pushed: true } entry ? entry.PullRequest : null;
                 // LANDGIT1: the plugin pushes with a git of its own, which no fact held here knows: dropped before and after it.
                 GitFacts.Dropped();
+                // LANDPIN2 (D173's FABRIC-END7 note): the commit the branch was judged and put at, which the plugin pushes, so a commit made
+                // after the judgement on a tree's own branch, for which no ref is made, never rides the push unseen.
                 var said = await context.Plugins.LandAsync(plugin, new LandingFrame(
                     repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
-                    subject.Session, branched.Commits, open, acceptedBy), ct).ConfigureAwait(false);
+                    subject.Session, branched.Commits, open, acceptedBy, tip), ct).ConfigureAwait(false);
                 GitFacts.Dropped();
                 landed = landed with
                 {
