@@ -101,7 +101,10 @@ a key it has no field for stays where it stands, a value no edit changed keeps i
 read stays; a file that does not read then is refused. The CLI's `jsonkeep.ts` is its twin (D173's FABRIC-GRAPH1 note says exactly
 what an edit keeps). `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
 version that does not decode read as unreadable whole (FABRIC-WORKFLOW2); the CLI's `workflowgraphs.ts` is its twin, on
-`test/fixtures/workflow-graphs.json`.
+`test/fixtures/workflow-graphs.json`. A named workflow's version may be a graph instead (schema 2, `graph` and no `steps`):
+`WorkflowNamed.ReadVersion` judges it by `NodeGraphs.Problems` and refuses it whole, its digest is `NodeGraphs.Digest` (what a run
+bound to it binds), and an older build reads it as unreadable since it reads `steps` alone (FABRIC-GRAPH1b); the CLI's
+`graphversions.ts` reads it too, judges none, and saves none, on `test/fixtures/workflow-graph-versions.json`.
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
 second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,

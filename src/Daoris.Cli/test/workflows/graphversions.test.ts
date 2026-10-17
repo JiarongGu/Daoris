@@ -1,0 +1,104 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { planAddVersion, readSteps, readVersion, readWorkflowFile, unrun } from '../../src/workflows/namedworkflows.ts';
+import { decodeVersion } from '../../src/workflows/workflowgraphs.ts';
+
+/**
+ * FABRIC-GRAPH1b: a named graph as a named workflow's version (schema 2), read as the driver reads it. One table,
+ * `fixtures/workflow-graph-versions.json`, row for row, the driver's `WorkflowGraphVersionsTests` reading it as this file does: each
+ * version's graph, its problem and the digest a run bound to it binds. A row the driver alone judges (`judged: "driver"`) is read here
+ * and its judgement left to the driver, which holds `NodeGraphs.Problems`.
+ */
+
+interface ReadRow {
+  name: string;
+  judged: 'both' | 'driver';
+  graph: boolean;
+  problem: string | null;
+  digest: string | null;
+  version: Record<string, unknown> & { version: number };
+  older: string | null;
+}
+
+interface AddRow { name: string; file: unknown; id: string; workflowName: string | null; door: string; at: string; graph: unknown; problem: string | null }
+interface BoundRow { name: string; file: unknown; version: number; digest: string; identity: string | null; unreadable: string | null }
+
+const here = dirname(dirname(fileURLToPath(import.meta.url)));
+const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'workflow-graph-versions.json'), 'utf8')) as {
+  graph: unknown; reads: ReadRow[]; adds: AddRow[]; bound: BoundRow[];
+};
+
+/** A row's JSON with each `"$graph"` the table's one graph. */
+function filled<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value), (_key, each) => (each === '$graph' ? structuredClone(TABLE.graph) : each)) as T;
+}
+
+test('graph-versions: each read row of the shared table reads as the driver reads it', () => {
+  assert.ok(TABLE.reads.length >= 10);
+  for (const row of TABLE.reads) {
+    const version = filled(row.version);
+    const read = readVersion(version, version.version, []);
+    if (row.judged === 'driver') {
+      // The CLI reads the graph's shape and digests it; whether it holds is the driver's (NodeGraphs.Problems).
+      assert.ok(read.graph !== undefined || read.problem === row.problem, `${row.name}: ${read.problem}`);
+      continue;
+    }
+
+    assert.equal(read.graph !== undefined, row.graph, row.name);
+    assert.equal(read.problem, row.problem, row.name);
+    assert.equal(read.digest, row.digest, row.name);
+  }
+});
+
+test('graph-versions: an older build, which reads a version\'s steps alone, reads each version as the table says', () => {
+  for (const row of TABLE.reads) {
+    const version = filled(row.version);
+    const older = readSteps(version['steps'] ?? undefined, version.version);
+    assert.equal(older.problem, row.older, row.name);
+    assert.equal(older.steps === null, row.older !== null, row.name);
+  }
+});
+
+test('graph-versions: a file holding a graph version reads its other versions and says why the graph is not run', () => {
+  const steps = TABLE.reads[1]!.version;
+  const file = filled({ id: 'docs-to-pr', name: 'Docs', versions: [steps, TABLE.reads[0]!.version, { ...steps, version: 3 }] });
+  const read = readWorkflowFile(file);
+  assert.equal(read.problem, null);
+  assert.deepEqual(read.versions.map((each) => each.steps !== null), [true, false, true]);
+  assert.ok(read.versions[1]!.graph !== undefined);
+  assert.equal(unrun(read.versions[1]!), 'v2: it is a graph (schema 2), which this build reads and does not run yet.');
+  assert.equal(unrun(read.versions[0]!), null);
+});
+
+test('graph-versions: a run bound to a version has its digest as its identity, a graph version\'s its graph digest', () => {
+  for (const row of TABLE.bound) {
+    const read = readWorkflowFile(filled(row.file));
+    const version = read.versions.find((each) => each.version === row.version)!;
+    const decoded = decodeVersion(version);
+    const digest = row.digest === '$digest' ? version.digest : row.digest;
+    if (row.unreadable === null) {
+      assert.equal(decoded.identity, digest, row.name);
+      assert.equal(decoded.identity, row.identity === '$digest' ? version.digest : row.identity, row.name);
+      if (version.graph !== undefined) assert.equal(decoded.graphDigest, version.digest, row.name);
+    } else {
+      // The binding's check is the driver's (`WorkflowGraphs.ForRun`); the identity a graph version has is not the steps' digest.
+      assert.notEqual(decoded.identity, digest, row.name);
+    }
+  }
+});
+
+test('graph-versions: the CLI saves no graph, and says where one is saved; steps are planned as before', () => {
+  for (const row of TABLE.adds) {
+    const plan = planAddVersion(filled(row.file), { id: row.id, name: row.workflowName, door: row.door, at: row.at, steps: null, graph: filled(row.graph) });
+    assert.equal(plan.result, null, row.name);
+    assert.match(plan.problem!, /a graph is saved where it is judged whole, by the driver/, row.name);
+  }
+
+  const steps = [{ id: 'work', kind: 'work' }, { id: 'land', kind: 'landing', form: 'merge', accept: 'you' }];
+  const plan = planAddVersion(null, { id: 'docs-to-pr', name: 'Docs', door: 'terminal', at: '2026-10-18T09:00:00Z', steps });
+  assert.equal(plan.problem, null);
+  assert.deepEqual(Object.keys((plan.result!['versions'] as object[])[0]!), ['version', 'at', 'door', 'steps']);
+});
