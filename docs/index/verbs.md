@@ -46,7 +46,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `sessions` | `Program.cs:474` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:180` · finish `SessionsCommand.cs:185` · decline `SessionsCommand.cs:192` · archive `SessionsCommand.cs:197` · unarchive `SessionsCommand.cs:206` · delete `SessionsCommand.cs:211` · say `SessionsCommand.cs:216` · take-back `SessionsCommand.cs:218` · reword `SessionsCommand.cs:226` · go-on-new `SessionsCommand.cs:231` · start-from `SessionsCommand.cs:236` · hand-over `SessionsCommand.cs:241` · helper `SessionsCommand.cs:248` |
 | `help` | `Program.cs:481` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:8` HelpConsole | list `HelpCommand.cs:65` · resume `HelpCommand.cs:65` · rename `HelpCommand.cs:65` · pin `HelpCommand.cs:65` · unpin `HelpCommand.cs:65` · delete `HelpCommand.cs:65` |
 | `history` | `Program.cs:489` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
-| `trees` | `Program.cs:496` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:133` · remove `TreesConsole.cs:161` · clean `TreesConsole.cs:177` · land `TreesConsole.cs:296` · hand `TreesConsole.cs:460` · state `TreesConsole.cs:521` · sync `TreesConsole.cs:239` |
+| `trees` | `Program.cs:496` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:133` · remove `TreesConsole.cs:161` · clean `TreesConsole.cs:177` · land `TreesConsole.cs:296` · hand `TreesConsole.cs:451` · state `TreesConsole.cs:512` · sync `TreesConsole.cs:239` |
 | `work state` | `Program.cs:502` | `Program.cs:502` (inline) | — |
 | `work held` | `Program.cs:508` | `Program.cs:508` (inline) | — |
 | `work recovery drop` | `Program.cs:514` | `Program.cs:514` (inline) | — |
@@ -85,13 +85,15 @@ Each a `case` in `tools/desktop.mjs`: `build` 854 · `run` 858 · `restart` 859 
 | `rehearse` | 16 | `node tools/release-rehearsal.mjs` |
 | `rehearse:family` | 17 | `node tools/family-rehearsal.mjs` |
 | `rehearse:deploy` | 18 | `node tools/deployment-rehearsal.mjs` |
-| `test:web` | 19 | `npm --prefix src/Daoris.Web run test && npm --prefix src/Daoris.Web…` |
-| `desktop` | 20 | `node tools/desktop.mjs` |
-| `testbed` | 21 | `node tools/testbed.mjs` |
-| `publish:service` | 22 | `node tools/service-publish.mjs` |
-| `knowledge:build` | 23 | `node tools/knowledge-server.mjs build` |
-| `publish:desktop` | 24 | `node tools/desktop-publish.mjs` |
-| `release-prep:check` | 25 | `node tools/release-prep.mjs --check` |
+| `test:web` | 19 | `npm run test:web:unit && npm run test:web:e2e` |
+| `test:web:unit` | 20 | `npm --prefix src/Daoris.Web run test` |
+| `test:web:e2e` | 21 | `npm --prefix src/Daoris.Web run build && dotnet build…` |
+| `desktop` | 22 | `node tools/desktop.mjs` |
+| `testbed` | 23 | `node tools/testbed.mjs` |
+| `publish:service` | 24 | `node tools/service-publish.mjs` |
+| `knowledge:build` | 25 | `node tools/knowledge-server.mjs build` |
+| `publish:desktop` | 26 | `node tools/desktop-publish.mjs` |
+| `release-prep:check` | 27 | `node tools/release-prep.mjs --check` |
 
 ## npm scripts in `src/Daoris.Web/package.json`
 

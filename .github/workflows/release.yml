@@ -305,8 +305,13 @@ jobs:
       - name: Playwright browser
         run: npm --prefix src/Daoris.Web exec -- playwright install --with-deps chromium
 
+      # The web gate's two halves as the declaration has them (WEBSPLIT1): the page's unit tests, which build nothing, then the
+      # build, the HTTP host's and Playwright. `npm run test:web` runs both, in this order.
+      - name: Web unit tests
+        run: npm run test:web:unit
+
       - name: Web end-to-end
-        run: npm run test:web
+        run: npm run test:web:e2e
 
       # Packed from the package directory, where `prepack` stages the canon, the
       # licence and the readme in from the workspace root.
