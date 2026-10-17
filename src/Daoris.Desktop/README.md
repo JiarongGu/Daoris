@@ -94,8 +94,10 @@ reconciles, makes retries due, evaluates the concerned units to settled with the
 the awaited set; one pass at a time, with the loop's one performer (FABRIC-RUN1, D173's note). A wake under other choices reads
 the units afresh, a disarm withdraws the awaited set before the plan's supervision, the units past 32 are taken in turn, reconciliation
 shares the pass's four sends, and the set is told only while the lease is held (FABRIC-RUN1e).
-A graph holding `quest.close` arms it too (`QuestCloser.cs`, FABRIC-CLOSE1b): a quest taken since the loop read that graph is bound to
-it (`ClosureBinding`, never against a host whose status does not say `closure`, nor in a workspace synced through a remote), and a bound
+A graph holding `quest.close` arms it too (`QuestCloser.cs`, FABRIC-CLOSE1b), and so does a closure graph the home keeps (`ClosureGraphs`,
+FABRIC-CLOSE1l). An open quest's first start names its graph for the take, which binds it in its own write, and its session says `ready`
+(`ClosureBinding.AtStartAsync`, never against a host whose status does not say `closure`, nor in a workspace synced through a remote by
+the map sync reads). A bound quest is closed by the graph it was bound to, its chain walked whole and read again right before the send; a bound
 quest's chain is closed at its last quest by one close, its key and token written before the send and the same close sent again after a
 timeout or a restart; a refusal is kept and said, the person's own done ends the graph as overridden, and a close found partial since is
 said once. Every other quest is read and written as before.

@@ -92,19 +92,19 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSettings.cs` | 49 | 951 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Rotation/AccountRotation.cs` | 70 | 1135 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 109 | 2188 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 117 | 2083 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 119 | 2109 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 112 | 2072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 924 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 169 | 2774 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 170 | 2782 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 784 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 42 | 745 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 42 | 744 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 78 | 1359 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 67 | 1098 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 58 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 76 | 1318 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 717 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 127 | 2290 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 128 | 2304 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 59 | 1282 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 76 | 1470 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 757 |
@@ -138,20 +138,20 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 82 | 1481 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 121 | 2220 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 179 | 3203 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 123 | 2260 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 182 | 3262 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 113 | 1951 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 56 | 669 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 56 | 671 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 143 | 2448 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 47 | 817 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 88 | 1785 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
-| `src/Daoris.Service/README.md` | 87 | 775 |
+| `src/Daoris.Service/README.md` | 88 | 775 |
 
 ### CLI (`cli`)
 
@@ -219,4 +219,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/2026-10-16-fabric-events-design.md` | 167 | 2051 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 91 | 517 |
+| `src/Daoris.Desktop/README.md` | 92 | 524 |
