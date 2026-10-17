@@ -546,7 +546,17 @@ public sealed class QuestStore
     /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
     private readonly ConnectionGate _db;
 
-    private QuestStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
+    /// <summary>
+    /// The clock a take measures its wait for the write on (FABRIC-CLOSE1w), so the bind named for it is judged at the moment the
+    /// write began, never at the caller's moment before it queued.
+    /// </summary>
+    private readonly TimeProvider _time;
+
+    private QuestStore(SqliteConnection connection, TimeProvider time)
+    {
+        _db = ConnectionGate.For(connection);
+        _time = time;
+    }
 
     /// <summary>
     /// This store's machine: the stable id every operation it writes is stamped with (D68 §2) — never
@@ -559,10 +569,13 @@ public sealed class QuestStore
     /// </remarks>
     public string Machine { get; private set; } = "";
 
-    public static Task<QuestStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
+    /// <param name="connection">The store's connection, opened.</param>
+    /// <param name="ct">Honoured while waiting for the connection's gate.</param>
+    /// <param name="time">The clock a take measures its wait on (FABRIC-CLOSE1w); the system's where none is named.</param>
+    public static Task<QuestStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default, TimeProvider? time = null) =>
         ConnectionGate.For(connection).RunAsync(async () =>
         {
-            var store = new QuestStore(connection);
+            var store = new QuestStore(connection, time ?? TimeProvider.System);
             await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
             store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
             await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
@@ -688,6 +701,18 @@ public sealed class QuestStore
                   published_machine  TEXT NULL,
                   published_sequence INTEGER NULL,
                   expires            TEXT NULL
+                );
+                -- The binds this build names, owned (FABRIC-CLOSE1w): the compatible-build boundary. A build before it knows only
+                -- quest_take_binds, so its upsert there can never replace an owned bind's graph, nor its take bind one by the id alone.
+                -- Every column is required, since no build that writes here leaves an owner out. Never pushed or served.
+                CREATE TABLE IF NOT EXISTS quest_owned_take_binds (
+                  id                 TEXT PRIMARY KEY,
+                  graph              TEXT NOT NULL,
+                  at                 TEXT NOT NULL,
+                  session            TEXT NOT NULL,
+                  published_machine  TEXT NOT NULL,
+                  published_sequence INTEGER NOT NULL,
+                  expires            TEXT NOT NULL
                 );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
