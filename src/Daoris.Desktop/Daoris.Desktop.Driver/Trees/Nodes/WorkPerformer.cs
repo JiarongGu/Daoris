@@ -257,7 +257,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
 
             // §C4's first rule: the sender is the process the frame was read from, the attempt's plugin's current one. A completion binds to
             // its invocation, not its generation, so a later process's replay of it is taken (PERFORM1a's review).
-            if (!string.Equals(each.Plugin, attempt.Plugin, StringComparison.Ordinal) || port.GenerationOf(attempt.Plugin) != each.Generation)
+            // FABRIC-CLOSE1b: a close's outcome is its door's answer alone; no plugin's frame speaks for it.
+            if (attempt.Plugin == QuestClosing.Sender || !string.Equals(each.Plugin, attempt.Plugin, StringComparison.Ordinal)
+                || port.GenerationOf(attempt.Plugin) != each.Generation)
             {
                 done.Add(new(unit, attempt.Node, PerformedWhat.NotTaken, WorkRefusals.NotSender));
                 continue;
@@ -295,7 +297,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         var now = clock();
         foreach (var record in records.All().Records)
         {
-            foreach (var attempt in record.Attempts.Where(attempt => Asked(attempt, now)).ToList())
+            // FABRIC-CLOSE1b: Daoris's own close is asked after by its closer, which sends the same close again; no plugin is asked about it.
+            foreach (var attempt in record.Attempts.Where(attempt => attempt.Plugin != QuestClosing.Sender && Asked(attempt, now)).ToList())
             {
                 // FABRIC-RUN1e: the pass's calls spent, the attempts left are asked at the next pass, still before any start there.
                 if (sends.Left <= 0) return done;
@@ -564,7 +567,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     }
 
     /// <summary>An attempt nothing establishes by itself: held for the person, its node left as it stands, its gate held (§D6).</summary>
-    private static (NodeRecord? Next, WorkPerformed Result) Hold(NodeRecord record, NodeAttempt attempt, string code) =>
+    internal static (NodeRecord? Next, WorkPerformed Result) Hold(NodeRecord record, NodeAttempt attempt, string code) =>
         (With(record, attempt, attempt with { State = AttemptStates.Held, Code = code }), new(record.Unit, attempt.Node, PerformedWhat.Held, code));
 
     /// <summary>
@@ -607,27 +610,27 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         lock (_sentHere) return _sentHere.Contains(invocation);
     }
 
-    private static NodeStatus StatusOf(NodeRecord record, string node) => record.Statuses.GetValueOrDefault(node) ?? NodeLifecycle.Start(record.Unit, node);
+    internal static NodeStatus StatusOf(NodeRecord record, string node) => record.Statuses.GetValueOrDefault(node) ?? NodeLifecycle.Start(record.Unit, node);
 
     /// <summary>The record with a move's status kept and what it cleared added to the history.</summary>
-    private static NodeRecord Kept(NodeRecord record, NodeMoved moved, string why, DateTimeOffset now) => !moved.Moved ? record : record with
+    internal static NodeRecord Kept(NodeRecord record, NodeMoved moved, string why, DateTimeOffset now) => !moved.Moved ? record : record with
     {
         Statuses = With(record.Statuses, moved.Status),
         History = moved.Cleared is { } cleared ? [.. record.History, new NodeHistory(now, why, cleared)] : record.History,
     };
 
-    private static Dictionary<string, NodeStatus> With(IReadOnlyDictionary<string, NodeStatus> statuses, NodeStatus status) =>
+    internal static Dictionary<string, NodeStatus> With(IReadOnlyDictionary<string, NodeStatus> statuses, NodeStatus status) =>
         new(statuses, StringComparer.Ordinal) { [status.Node] = status };
 
-    private static NodeRecord With(NodeRecord record, NodeAttempt was, NodeAttempt now) => record with
+    internal static NodeRecord With(NodeRecord record, NodeAttempt was, NodeAttempt now) => record with
     {
         Attempts = [.. record.Attempts.Select(attempt => string.Equals(attempt.Call.Invocation, was.Call.Invocation, StringComparison.Ordinal) ? now : attempt)],
     };
 
-    private static bool Same(NodeStatus one, NodeStatus other) =>
+    internal static bool Same(NodeStatus one, NodeStatus other) =>
         string.Equals(NodeRecordFiles.StatusText(one), NodeRecordFiles.StatusText(other), StringComparison.Ordinal);
 
-    private static TimeSpan Timeout(NodeDeclaration node) => node.TimeoutSeconds is { } seconds ? TimeSpan.FromSeconds(seconds) : DefaultTimeout;
+    internal static TimeSpan Timeout(NodeDeclaration node) => node.TimeoutSeconds is { } seconds ? TimeSpan.FromSeconds(seconds) : DefaultTimeout;
 
-    private static string Random(string prefix, int bytes) => prefix + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(bytes));
+    internal static string Random(string prefix, int bytes) => prefix + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(bytes));
 }

@@ -110,7 +110,7 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
 
     public bool Equals(EvidenceVerdict? other) =>
         other is not null && Commit == other.Commit && How == other.How && Session == other.Session && At == other.At
-        && Machine == other.Machine && Items.SequenceEqual(other.Items);
+        && Machine == other.Machine && Submission == other.Submission && Items.SequenceEqual(other.Items);
 
     public override int GetHashCode() => HashCode.Combine(Commit, How, Session, Items.Count);
 
@@ -142,6 +142,16 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
             }
 
             writer.WriteEndArray();
+
+            // FABRIC-CLOSE1e: the submission it was read for, written only when set, so a done's verdict is the body it always was.
+            if (Submission is { } submission)
+            {
+                writer.WriteStartObject("submission");
+                writer.WriteString("machine", submission.Machine);
+                writer.WriteNumber("sequence", submission.Sequence);
+                writer.WriteEndObject();
+            }
+
             writer.WriteEndObject();
         }
 
@@ -192,8 +202,17 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
             Session = Text(verdict, "session"),
             At = Moments.Read(Text(verdict, "at")),
             Machine = Text(verdict, "machine"),
+            Submission = SubmissionOf(verdict),
         };
     }
+
+    /// <summary>The submission a verdict names (FABRIC-CLOSE1e), or null: a done's, one from before, or one named only in half.</summary>
+    private static QuestSubmissionRef? SubmissionOf(JsonElement verdict) =>
+        verdict.TryGetProperty("submission", out var named) && named.ValueKind == JsonValueKind.Object
+        && Text(named, "machine") is { Length: > 0 } machine
+        && named.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number && sequence.TryGetInt64(out var number) && number > 0
+            ? new QuestSubmissionRef(machine, number)
+            : null;
 }
 
 /// <summary>

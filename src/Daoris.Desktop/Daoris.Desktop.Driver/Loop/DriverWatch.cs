@@ -345,8 +345,11 @@ public sealed class DriverWatch(
         }, CancellationToken.None);
         // FABRIC-RUN1, link 8: the evaluation runtime, after the plan on every wake it hears and at the look's deadline; only where this loop
         // holds a hook set, and its passes write only where it holds the home's lease. It reads nothing unless a graph naming a plugin's
-        // performed node governs a unit, and the next timer the node records persist wakes a plan at its moment.
-        var nodes = hooks is null ? null : new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home));
+        // performed node governs a unit, and the next timer the node records persist wakes a plan at its moment. FABRIC-CLOSE1b: a closure graph
+        // arms it too, and its `quest.close` is sent through this loop's service client, the local host's close door.
+        var nodes = hooks is null ? null : new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home), service,
+            // A circle synced through a remote, by this home's own remotes: its quests are never bound (ClosureBinding's remark).
+            workspace => RemoteTarget.Load(Environment.GetEnvironmentVariable, DaorisHome.Entry(home, HomeEntry.Remotes)).ContainsKey(workspace));
         using var nodesDue = new System.Threading.Timer(_ => Nudge(ChangeTopics.Nodes, "due"));
 
         TickReport? looked = null;
