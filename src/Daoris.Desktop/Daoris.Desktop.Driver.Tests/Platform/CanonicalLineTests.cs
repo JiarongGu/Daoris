@@ -105,7 +105,13 @@ public sealed class CanonicalLineTests : IDisposable
         Assert.Equal("develop", DriverConfig.Parse(config.ToJson()).WorkspaceLines["aurora"]);
 
         var cleared = config.WithLine("engine", null).WithWorkspaceLine("aurora", null);
-        Assert.DoesNotContain("lines", cleared.ToJson(), StringComparison.Ordinal);
+        var written = cleared.ToJson();
+        // FABRIC-GRAPH1's review: an entry the reader could not take (`odd`, a name git would refuse) is the person's text, kept as it
+        // stands and still not read; only what the edit changed goes.
+        Assert.Contains("\"odd\": \"has space\"", written, StringComparison.Ordinal);
+        Assert.DoesNotContain("engine", written, StringComparison.Ordinal);
+        Assert.DoesNotContain("workspaceLines", written, StringComparison.Ordinal);
+        Assert.False(DriverConfig.Parse(written).Lines.ContainsKey("odd"));
         Assert.Throws<DriverException>(() => config.WithLine("engine", "a..b"));
     }
 

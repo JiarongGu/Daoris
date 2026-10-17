@@ -119,6 +119,35 @@ public sealed class EndJudgementTests
         Assert.Equal((EndState.Ended, EndBy.PullRequest, "origin/main"), (ended.State, ended.By, ended.Where));
     }
 
+    /// <summary>
+    /// CLEANUP1b: a landing whose branch git said is missing is judged at the tip its landing recorded, and only the line's ancestry of that
+    /// commit ends it. Content and a pull request's word are read of a branch that stands, so they end nothing here; a branch standing
+    /// again is not judged as gone, and a line git could not read says nothing.
+    /// </summary>
+    [Fact]
+    public void A_landing_whose_branch_went_ends_only_by_the_lines_ancestry_of_its_recorded_tip()
+    {
+        var entry = Landing() with { Plugin = "forge", PullRequestState = Done() };
+        var cycle = EndCycle.Recorded(entry);
+        var gone = Branch(landing: entry) with { Gone = true };
+        var away = Facts() with { Standing = false };
+
+        var merged = EndJudgement.Judge(cycle, gone, away with { Ancestry = Held.At("main") });
+        var content = EndJudgement.Judge(cycle, gone, away with { Content = Held.At("main") });
+        var asked = EndJudgement.Judge(cycle, gone, away with
+        {
+            Verdict = PullRequestProof.Judge(Done(), new PullRequestFacts("main", "origin/main", true, true, true)),
+        });
+        var unread = EndJudgement.Judge(cycle, gone, away with { Ancestry = Held.Unread });
+        var again = EndJudgement.Judge(cycle, gone, Facts(Held.At("main")));
+
+        Assert.Equal((EndState.Ended, EndBy.Merged, "main", Tip, "main"), (merged.State, merged.By, merged.Where, merged.Tip, merged.Line));
+        Assert.Equal((EndState.Handed, (string?)null), (content.State, content.By));
+        Assert.Equal((EndState.Handed, (string?)null), (asked.State, asked.By));
+        Assert.Equal(EndState.Unknown, unread.State);
+        Assert.Equal(EndState.Unknown, again.State);
+    }
+
     [Fact]
     public void A_pull_request_the_branch_moved_beyond_is_handed_and_says_why()
     {

@@ -113,6 +113,12 @@ internal sealed record EndSubject(string Branch, string Tip, EndRole Role, Lande
 
     /// <summary>Whether its tree holds uncommitted work. It does not stop the committed tip's end; a reader says both (§B7).</summary>
     public bool? Uncommitted { get; init; }
+
+    /// <summary>
+    /// A landing whose branch git said is missing (CLEANUP1b, <see cref="LandedGone.Missing"/>), judged at the tip its landing recorded:
+    /// only the line's ancestry of that commit ends it.
+    /// </summary>
+    public bool Gone { get; init; }
 }
 
 /// <summary>One proof's read: found where, found nowhere, or not read.</summary>
@@ -197,6 +203,7 @@ internal static class EndJudgement
 
     private static EndVerdict JudgeLanding(EndCycle cycle, EndSubject subject, EndFacts facts)
     {
+        if (subject.Gone) return JudgeGone(facts);
         if (facts.Standing != true)
         {
             return new(EndState.Unknown, null, null, facts.Standing is null
@@ -219,6 +226,27 @@ internal static class EndJudgement
         if (!facts.Ancestry.Read) return new(EndState.Unknown, null, null, "git could not read the line, so whether it holds the branch is not said");
         var asked = facts.Verdict is { Clears: false, Code: { } code } ? $"; its pull request is not proof here ({code})" : "";
         return new(EndState.Handed, null, null, $"its landing made it and the line does not hold it yet{asked}");
+    }
+
+    /// <summary>
+    /// CLEANUP1b: a landing whose branch git said is missing, judged at the tip its landing recorded. The line's ancestry of that commit is
+    /// its end (§B5): every commit the landing recorded is on a form of the line. Content and a pull request's word are read of a branch that
+    /// stands, so they end nothing here. A branch of its name standing again holding that commit is judged as one that stands, never here.
+    /// </summary>
+    private static EndVerdict JudgeGone(EndFacts facts)
+    {
+        if (facts.Standing != false)
+        {
+            return new(EndState.Unknown, null, null, "its branch stands again holding what its landing made, so it is not judged as gone");
+        }
+
+        if (facts.Ancestry.Found)
+        {
+            return new(EndState.Ended, EndBy.Merged, facts.Ancestry.Where, $"every commit its landing recorded is on `{facts.Ancestry.Where}`, and its branch went");
+        }
+
+        if (!facts.Ancestry.Read) return new(EndState.Unknown, null, null, "git could not read the line, so whether it holds the branch is not said");
+        return new(EndState.Handed, null, null, "its branch went, and the line does not hold the commit its landing recorded");
     }
 
     private static EndVerdict JudgeSession(EndCycle cycle, EndSubject subject, EndFacts facts)
@@ -283,7 +311,8 @@ internal static class EndJudgement
         {
             var standing = await LandedProofs.StandingTipAsync(root, entry, ct, refs).ConfigureAwait(false);
             facts = facts with { Standing = standing is not null };
-            if (facts.Ancestry.Found || standing is null) return facts;
+            // CLEANUP1b: a landing whose branch went is judged by ancestry alone, so nothing read of a branch is asked for it.
+            if (subject.Gone || facts.Ancestry.Found || standing is null) return facts;
             // A proof Unknown is no proof: a read git could not make never ends it.
             var proof = await LandedProofs.ProveAsync(root, subject.Tip, line, forms, ct).ConfigureAwait(false);
             if (proof.Kind == LandedKind.OnLine && proof.Where is { } on) facts = facts with { Content = Held.At(on) };

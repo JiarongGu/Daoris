@@ -22,7 +22,7 @@ export type MilestoneEntry = {
 
 /** Whether the end was reached, and on what evidence. */
 export type MilestoneEnd = {
-  /** `ended`, `handed`, `not-ended` or `unknown`. */
+  /** `ended`, `handed`, `not-ended`, `dropped` (over without its result, CLEANUP1) or `unknown`. */
   state: string;
   /** The proof's code (`merged`, `empty`, `on-line`, `pull-request`, `landed`, `carried`) where ended. */
   by?: string | null;
