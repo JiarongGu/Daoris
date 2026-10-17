@@ -63,6 +63,9 @@ public sealed class NodeLifecycleTests
     /// <summary>The move a row asks for, as its cause would make it: the kind's own source, the attempt, a binding, a code, the person's words.</summary>
     private static NodeMove MoveFor(NodeTransition row, NodeAuthority authority, NodeStatus status) => (row.To, row.By) switch
     {
+        // FABRIC-PERFORM1g: the person settles a held attempt on their own word, their evidence the person's.
+        (NodeStates.Reached, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = OnWord(status.Attempt) },
+        (NodeStates.Failed, NodeCause.Person) => new NodeMove(row.To, row.By) { Source = NodeSource.Person, Attempt = status.Attempt, Code = HeldResolutions.DidNot },
         (NodeStates.Reached, _) => new NodeMove(row.To, row.By) { Source = authority.ReachBy, Attempt = status.Attempt, Acceptance = Accept(status.Attempt) },
         (NodeStates.Failed, _) => new NodeMove(row.To, row.By)
         {
@@ -78,6 +81,7 @@ public sealed class NodeLifecycleTests
     /// <summary>What a kind's authority forbids of a row, and nothing else: a person's judgement, a failure, a skip.</summary>
     private static string? Forbidden(NodeTransition row, NodeAuthority authority) => row.To switch
     {
+        NodeStates.Reached or NodeStates.Failed when row.By == NodeCause.Person && !authority.PersonSettles => NodeRefusal.NotSettled,
         NodeStates.Rejected when !authority.PersonJudges => NodeRefusal.NotJudged,
         NodeStates.Failed when authority.FailureBy is null => NodeRefusal.NoFailureAuthority,
         NodeStates.Skipped when !authority.PersonSkips => NodeRefusal.NotSkippable,
@@ -98,6 +102,8 @@ public sealed class NodeLifecycleTests
             "blocked>ready:daoris", "ready>blocked:daoris", "ready>active:daoris",
             "active>reached:authority", "active>failed:authority", "active>rejected:person", "active>unknown:daoris",
             "unknown>active:daoris", "unknown>reached:authority", "unknown>failed:authority",
+            // FABRIC-PERFORM1g (§D6, D173's note): the person settles what nothing else establishes.
+            "unknown>reached:person", "unknown>failed:person",
             "failed>ready:daoris", "failed>ready:person", "rejected>ready:person", "stopped>ready:person",
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
             "skipped>blocked:person", "skipped>invalidated:daoris",
@@ -154,6 +160,43 @@ public sealed class NodeLifecycleTests
                 }
             }
         }
+    }
+
+    /// <summary>That binding reached on the person's word (FABRIC-PERFORM1g): its evidence the person's, never a plugin's reference.</summary>
+    private static NodeAcceptance OnWord(int attempt) =>
+        Bind(attempt) with { Evidence = new NodePort(NodeSource.Person, $"person:n1#{attempt}", "tip-1", null) };
+
+    /// <summary>
+    /// FABRIC-PERFORM1g: the person's word settles a held attempt of a plugin's performed node, reached or failed as the person's and never
+    /// its plugin's; it reaches only a node exposing nothing a consumer reads, and it is never the plugin's source or another's evidence.
+    /// </summary>
+    [Fact]
+    public void The_persons_word_settles_a_held_attempt_as_theirs_and_reaches_only_a_node_exposing_nothing()
+    {
+        var node = Declared("acme.deploy/deploy");
+        var held = At(NodeStates.Unknown, unreconciled: 1);
+
+        var happened = NodeLifecycle.Apply(node, held, new NodeMove(NodeStates.Reached, NodeCause.Person) { Source = NodeSource.Person, Attempt = 1, Acceptance = OnWord(1) });
+        var didNot = NodeLifecycle.Apply(node, held, new NodeMove(NodeStates.Failed, NodeCause.Person) { Source = NodeSource.Person, Attempt = 1, Code = HeldResolutions.DidNot });
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Person, (int?)null), (happened.Status.State, happened.Status.By, happened.Status.Unreconciled));
+        Assert.Equal((NodeStates.Failed, NodeSource.Person, false, (int?)null), (didNot.Status.State, didNot.Status.By, didNot.Status.Transient, didNot.Status.Unreconciled));
+        // The person's new attempt from it counts afresh.
+        Assert.Equal((NodeStates.Ready, 0), (Moved(node, didNot.Status, new NodeMove(NodeStates.Ready, NodeCause.Person)).State, 0));
+
+        // Never on the plugin's source, nor with a plugin's reference for evidence, nor on an earlier attempt.
+        Assert.Equal(NodeRefusal.NotAuthority, NodeLifecycle.Apply(node, held, new NodeMove(NodeStates.Reached, NodeCause.Person) { Source = NodeSource.Plugin, Attempt = 1, Acceptance = OnWord(1) }).Refused);
+        Assert.Equal(NodeRefusal.NoEvidence, NodeLifecycle.Apply(node, held, new NodeMove(NodeStates.Reached, NodeCause.Person) { Source = NodeSource.Person, Attempt = 1, Acceptance = Accept(1) }).Refused);
+        Assert.Equal(NodeRefusal.StaleAttempt, NodeLifecycle.Apply(node, At(NodeStates.Unknown, attempt: 2), new NodeMove(NodeStates.Failed, NodeCause.Person) { Source = NodeSource.Person, Attempt = 1, Code = "x" }).Refused);
+
+        // A node declaring an output or an evidence schema is its plugin's to reach: the person's word makes no reference.
+        foreach (var exposing in new[] { node with { Outputs = new Dictionary<string, string> { ["artifact"] = "acme/artifact@1" } }, node with { Evidence = "acme/receipt@1" } })
+        {
+            Assert.Equal(NodeRefusal.NotOnWord, NodeLifecycle.Apply(exposing, held, new NodeMove(NodeStates.Reached, NodeCause.Person) { Source = NodeSource.Person, Attempt = 1, Acceptance = OnWord(1) }).Refused);
+        }
+
+        // A kind whose outcome its authority, a record or git says is never settled by a word.
+        Assert.Equal(NodeRefusal.NotSettled, NodeLifecycle.Apply(Declared(NodeKinds.WaitUnit), held, new NodeMove(NodeStates.Failed, NodeCause.Person) { Source = NodeSource.Person, Attempt = 1, Code = "x" }).Refused);
     }
 
     // ---- evidence authority

@@ -5,6 +5,40 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The look stopped removing a session branch a completed pull request carried (FABRIC-END2d)
+
+- **Symptom:** the merge gate's Git half, after FABRIC-END2d merged: `PullRequestStateTests.The_look_takes_a_session_branch_a_kept_answer_carried`
+  found nothing removed. A session branch whose pull request the platform squash-merged, its landing branch deleted, stood for ever.
+- **Root cause:** the end keeper proved such a branch `carried`, but named the carrier's landing branch as where the end held. Keeping a
+  fact needs that place's commit (`EndKeeping.Next`'s `OnAt`), and a deleted branch has none, so nothing was kept. END4a's review
+  fallback had judged every recorded branch with no fact again in the look, which hid it. END2d removed the fallback after comparing
+  the proofs, not whether each proof's fact could be kept.
+- **Fix:** the carried end rests on the form of the line the carrier's merge commit was found on (`EndFacts.CarrierOn`, from
+  `PullRequestCarrier.Rests`, what the carried tidy's delete verifies). The inventory's sentence names neither place, so a fact kept
+  before reads as it did. D173's note of 2026-10-18 has the detail.
+- **Verification:** red first: one in `EndJudgementTests`, and two in `PullRequestStateTests` (Git: the keeper keeps the end on
+  `origin/main`; the look takes the branch). Then green with the driver's fast half and every Git class over the tidy, the keeper and
+  landings, by class under `git.process.runsettings`.
+## 2026-10-18 — A closure graph's close was not safe to arm: eight fences missing, and its own node's record stopped reading after its Done (FABRIC-CLOSE1l)
+
+- **Symptom:** found by a second maker's review of FABRIC-CLOSE1b before any install armed a closure graph (the owner's holds none, so
+  nothing bound or closed there). An A → B → A chain closed its last A over a held first A. An agent's `done` could land between the
+  take and a bind made at a later look, and the session was told `done`. The remote exclusion read the home's map past
+  `DAORIS_REMOTE_CONFIG`. No fresh read fenced a commit made after the evaluation. A graph edit or removal stranded bound quests and
+  unanswered closes. A 503 page or a 500 read as terminal. An ancestor's released hold left the close failed. Building the fix found a
+  ninth: once the close wrote Done, the quest's revision moved, the reached close lapsed, and its record stopped reading.
+- **Root cause:** the chain walk stopped at another repository. The bind was a separate call after the take, inferred from `Updated`.
+  The runtime read its remote map by hand. The token checked the stored statuses only. Governance required the current graph's digest,
+  and arming was judged from the choices alone. The client read any non-200 as an answer. A quest unit's revision was its own `Updated`
+  alone. `ReachByChain` began a new attempt number with no attempt record, which `NodeRecordFiles.Consistent` refuses.
+- **Fix:** D173's CLOSE1b note, "After review", has each: the lineage walked whole; the bind named for the take and appended in the
+  take's write (`quest_take_binds`); `SessionTarget.Ready`; `RemoteTarget.Effective`; `QuestClosing.Revision` and a fresh read before the
+  send; `ClosureGraphs` kept by digest, arming a home that keeps one; only the door's coded answers settle; and a settled, never-sent
+  `QuestClosing.Chained` attempt for a node reached again on its chain.
+- **Verification:** each finding red on CLOSE1b's branch first: `QuestCloseTests` (7), `QuestClosureTests` (2), `ServiceClientClosureTests`
+  (5 rows), `RemoteTargetTests` (1). The ninth showed red as CLOSE1b's own first and chain tests once a closing quest's revision moved.
+  Then green with the driver's fast half (9083), `Daoris.Service.Tests` and `Daoris.Service.Http.Tests`.
+
 ## 2026-10-17 — The evaluation runtime could restart failed work for ever, judge under removed graphs and outrun its bounds (FABRIC-RUN1e)
 
 - **Symptom:** found by a second maker's review of FABRIC-RUN1 before any install armed a graph (the owner's names no performed node,

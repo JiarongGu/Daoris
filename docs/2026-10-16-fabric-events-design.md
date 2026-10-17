@@ -1447,6 +1447,7 @@ literally one, for every node.** What differs between kinds is only **evidence a
 | active → unknown | the outcome cannot be established now | Daoris |
 | unknown → active | reconciliation says it is running, or never started (redelivered with the same key, §D6) | Daoris, on the authority's answer |
 | unknown → reached or failed | reconciliation establishes the outcome | the authority |
+| unknown → reached or failed | an attempt held because nothing else can say what became of it (§D6), settled on the person's word, never as the plugin's: a plugin's performed node alone (D173's FABRIC-PERFORM1g note) | the person |
 | failed → ready | a declared retry: a `transient` code with attempts left (§D6), as a new attempt | Daoris, by the node's policy |
 | failed, rejected or stopped → ready | a new attempt the person asks for | the person |
 | ready, blocked or active → skipped | the person passes it over for this graph and run, with their words (D157's skip) | the person, where the node allows a skip |

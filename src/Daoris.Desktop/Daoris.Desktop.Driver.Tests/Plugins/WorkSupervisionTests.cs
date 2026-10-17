@@ -487,6 +487,24 @@ public sealed class WorkSupervisionTests : IDisposable
     }
 
     [Fact]
+    public async Task A_completion_the_performer_did_not_believe_is_a_plugin_step_line_of_its_code_once_a_minute()
+    {
+        await using var set = Set();
+        set.Watch(Awaiting(Unit()));
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+
+        // FABRIC-PERFORM1c: §C4's belief codes are counted with the transport's, by plugin and code, never with the frame's words.
+        set.Refused(Deploy, WorkRefusals.NotNamed);
+        set.Refused(Deploy, WorkRefusals.NotNamed);
+        set.Refused(Deploy, WorkRefusals.Stale);
+        set.Refused("other.plugin", WorkRefusals.Stale);
+
+        Assert.Equal<(string?, string?, int?)>(
+            [(Deploy, WorkRefusals.NotNamed, 1), (Deploy, WorkRefusals.Stale, 1)],
+            Lines(PluginEvents.Step).Select(line => (Text(line, "plugin"), Text(line, "code"), Count(line))));
+    }
+
+    [Fact]
     public async Task Sixty_events_a_minute_are_heard_and_a_drop_is_answered_with_a_resync_a_minute_on()
     {
         await using var set = Set();

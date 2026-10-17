@@ -1453,6 +1453,13 @@ public sealed class Driver(
             // holding the start, and its entry's mark moved once the record works, not before, so a start that fails hands it on.
             var channelDoors = new ServiceChannelDoors(service);
             var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, ct).ConfigureAwait(false) : null;
+            // FABRIC-CLOSE1l (CLOSE1f, CLOSE1g; the fabric events design §E5): a quest whose work cycle holds `quest.close` names its graph for
+            // the take as its first session opens, so the take binds it in its own write, and a bound quest's session says `ready`, never
+            // `done`. A circle synced through a remote, by the map sync reads, is never bound. No closure graph: nothing asked, nothing said.
+            var closure = await ClosureBinding.AtStartAsync(
+                service, config, quest, start.Workspace ?? RemoteTarget.DefaultWorkspace,
+                RemoteTarget.Effective(Environment.GetEnvironmentVariable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct)
+                .ConfigureAwait(false);
             var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
                 config), config, start.Workspace) with
@@ -1462,6 +1469,7 @@ public sealed class Driver(
                 WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did (SESS1).
                 Session = sessionId,
+                Ready = closure?.Bound == true,
                 Answered = answered,
                 // What cut the last session off, and what it left uncommitted (D80) — read by the
                 // driver, because the session may not run `git status` itself. An open quest's start, handed the words its

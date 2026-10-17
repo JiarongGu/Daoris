@@ -10,7 +10,7 @@ import type { SessionGrouping } from './groups';
 import { askName, questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import type { HelperWait } from './HelperAsks';
-import { entryName, type MilestoneUnit, waitsOnPerson } from './milestone';
+import { entryName, type HeldAttempt, heldWhy, type MilestoneUnit, waitsOnPerson } from './milestone';
 import { type OpinionWait, opinionState } from './opinion';
 import { opinionSays } from './OpinionGate';
 import { newestSetUp, setUpRef, waitsForLook } from './review';
@@ -94,7 +94,9 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
   | 'sign-in' | 'sign-in-new' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
-  | 'let-ask' | 'not-now';
+  | 'let-ask' | 'not-now'
+  // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them.
+  | 'happened' | 'did-not' | 'stop-step';
 
 /** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
 export type AttentionOffer = { act: AttentionActId; account?: string };
@@ -169,6 +171,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // A second opinion that waits on the person (XAGENT1g, §8.5): *Go on anyway…* only where no press of theirs is coming (the
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
     case 'opinion': return opinionOffers(item);
+    // A plugin step's attempt held for the person (FABRIC-PERFORM1g, §D6): their three words, until one is recorded and the driver's next
+    // look applies it. A unit's blocked clean-up has its session's page for its door, and no act.
+    case 'work': return item.held && !item.held.resolution ? plain('happened', 'did-not', 'stop-step') : [];
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
     default: return [];
@@ -323,6 +328,7 @@ export function needsAPerson(
   opinions: readonly OpinionWait[] = [],
   helpers: readonly HelperWait[] = [],
   works: readonly MilestoneUnit[] = [],
+  held: readonly HeldAttempt[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -563,6 +569,21 @@ export function needsAPerson(
     }];
   });
 
+  // A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6, §D3's *blocked, needs the person*): the
+  // step and its attempt, its unit, and why nothing else can say what became of it. Its gate holds until their word; a word recorded
+  // stays a row, saying so, until the driver's next look applies it.
+  const heldSteps = held.map((attempt): Attention => ({
+    id: `${attempt.unit}#${attempt.node}#${attempt.attempt}`,
+    kind: 'work',
+    title: i18n.t('work.milestone.held.title', { node: attempt.node, attempt: attempt.attempt }),
+    where: attempt.unit,
+    since: attempt.resolvedAt ?? attempt.at,
+    detail: attempt.resolution
+      ? i18n.t('work.milestone.held.worded', { node: attempt.node, attempt: attempt.attempt, word: i18n.t(`work.milestone.held.word.${attempt.resolution}`) })
+      : i18n.t('work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
+    held: attempt,
+  }));
+
   // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
   const accountRows = accountAttention(accounts, considered, quests, asks, registry);
 
@@ -573,7 +594,7 @@ export function needsAPerson(
     (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
   return [
     [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
-    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...helperAsks, ...blocked, ...unanswerable],
+    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...helperAsks, ...blocked, ...heldSteps, ...unanswerable],
     reviews,
   ].flatMap((group) => group.sort(oldestFirst));
 }

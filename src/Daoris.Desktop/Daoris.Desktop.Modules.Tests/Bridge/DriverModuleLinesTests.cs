@@ -330,6 +330,27 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Equal(0, answer.GetProperty("dropped").GetArrayLength());
     }
 
+    /// <summary>
+    /// The person's word on a held attempt (FABRIC-PERFORM1g): before the driver is up it is the cold-start sentence; a call naming no
+    /// attempt is malformed; and a process that does not hold the home records nothing and says so, as an answer. The work's state lists
+    /// none held where no unit keeps a node record, the owner's install among them.
+    /// </summary>
+    [Fact]
+    public async Task A_word_on_a_held_attempt_is_refused_cold_malformed_or_without_the_home_and_none_is_listed_unarmed()
+    {
+        var asked = new { unit = "quest:q7", node = "deploy", attempt = 1, resolution = "did-not" };
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "WORK_HELD", asked));
+        var module = await ModuleOverAsync(new DiscardService(root: Home));
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(module, "WORK_HELD", new { unit = "quest:q7", node = "deploy", resolution = "stop" }));
+
+        var answer = await AnswerAsync(module, "WORK_HELD", asked);
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal("not-held", answer.GetProperty("refused").GetString());
+        Assert.Contains("does not hold the home", answer.GetProperty("message").GetString());
+        Assert.Equal(0, (await AnswerAsync(module, "WORK_STATE", new { })).GetProperty("held").GetArrayLength());
+    }
+
     /// <summary>The route's module over a loop come up on <paramref name="service"/>, standing in for the service.</summary>
     private async Task<DriverModule> ModuleOverAsync(DiscardService service)
     {

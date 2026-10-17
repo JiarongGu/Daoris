@@ -154,7 +154,9 @@ in (`SET_THEME`, and `DAORIS.WINDOWS` for a secondary window, WINDOW2), and tell
 the kit's colour scheme (`useEngineTheme` in `bridge/windows.ts`, THEMESCHEME1), so Chromium's own UI and
 `prefers-color-scheme` follow an explicit light or dark, and *System* still follows the OS. The main window's page
 also tells its frame Overview's *What needs you* count (`useTaskbarCount` in `bridge/windows.ts`, `SET_BADGE`,
-NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does.
+NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. That
+count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
+their word (`useResolveHeld` in `bridge/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g).
 
 The build outputs into `../Daoris.Service/Daoris.Service.Http/wwwroot`, so the page and the API share one
 origin. That is what makes CORS unnecessary in a real deployment — the `DAORIS_WEB_ORIGIN` variable

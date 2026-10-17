@@ -24,6 +24,9 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => HomeLease.HeldHere(home));
 
+    /// <summary>The home the records are under: where a closure graph a quest was bound to is kept beside them (FABRIC-CLOSE1l).</summary>
+    public string Home => home;
+
     /// <summary>The folder the records sit in, beside D157's runs (<see cref="WorkflowRunBindings.FolderOf"/>).</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "units");
 
@@ -278,7 +281,58 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (attempt.Code is { } code) writer.WriteString("code", code);
         if (attempt.RetryAt is { } retryAt) writer.WriteString("retryAt", Moments.Write(retryAt));
         if (attempt.AskAt is { } askAt) writer.WriteString("askAt", Moments.Write(askAt));
+        if (attempt.Resolution is { } resolution) writer.WriteString("resolution", resolution);
+        if (attempt.ResolvedAt is { } resolvedAt) writer.WriteString("resolvedAt", Moments.Write(resolvedAt));
+
+        // FABRIC-CLOSE1b: a close's token and the quests it names, written only on a close's attempt, so every other reads as it did.
+        if (attempt.Close is { } close)
+        {
+            writer.WriteStartObject("close");
+            writer.WriteString("token", close.Token);
+            writer.WriteStartArray("quests");
+            foreach (var quest in close.Quests)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("id", quest.Id);
+                writer.WriteString("machine", quest.Machine);
+                writer.WriteNumber("sequence", quest.Sequence);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            if (close.Words is { } words) writer.WriteString("words", words);
+            writer.WriteEndObject();
+        }
+
         writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// A close's part of an attempt (FABRIC-CLOSE1b): absent is none, as on every plugin's attempt; present, it reads whole or the attempt
+    /// does not read, since a close sent again must be the same close.
+    /// </summary>
+    private static (bool Reads, QuestCloseCall? Close) ReadClose(JsonElement attempt)
+    {
+        if (!attempt.TryGetProperty("close", out var close)) return (true, null);
+        if (close.ValueKind != JsonValueKind.Object || Text(close, "token") is not { } token
+            || !close.TryGetProperty("quests", out var named) || named.ValueKind != JsonValueKind.Array)
+        {
+            return (false, null);
+        }
+
+        var quests = new List<QuestCloseItem>();
+        foreach (var quest in named.EnumerateArray())
+        {
+            if (quest.ValueKind != JsonValueKind.Object || Text(quest, "id") is not { } id || Text(quest, "machine") is not { } machine
+                || !quest.TryGetProperty("sequence", out var sequence) || sequence.ValueKind != JsonValueKind.Number || !sequence.TryGetInt64(out var number))
+            {
+                return (false, null);
+            }
+
+            quests.Add(new QuestCloseItem(id, machine, number));
+        }
+
+        return (true, new QuestCloseCall(token, quests) { Words = Text(close, "words") });
     }
 
     /// <summary>
@@ -448,10 +502,15 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             || Text(call, "unit") is not { } unit || Text(call, "step") is not { } step || Number(call, "stepVersion") is not { } stepVersion
             || Text(call, "invocation") is not { } invocation || Text(call, "idempotencyKey") is not { } key
             || Text(call, "subjectRevision") is not { } revision || Moments.Read(call, "deadlineAt") is not { } deadline || Texts(call, "inputs") is not { } inputs
-            || Moments.Read(element, "recordedAt") is not { } recordedAt || Number(element, "deliveries") is not { } deliveries)
+            || Moments.Read(element, "recordedAt") is not { } recordedAt || Number(element, "deliveries") is not { } deliveries
+            || ReadClose(element) is not (true, var close))
         {
             return null;
         }
+
+        // FABRIC-PERFORM1g: the person's word, absent on a record written before it; one no rule knows does not read, as a state's does.
+        var resolution = Text(element, "resolution");
+        if (resolution is not null && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return null;
 
         return new NodeAttempt(node, number, plugin, new WorkPerformCall(unit, step, stepVersion, invocation, key, revision, inputs, deadline), state)
         {
@@ -462,6 +521,9 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             Code = Text(element, "code"),
             RetryAt = Moments.Read(element, "retryAt"),
             AskAt = Moments.Read(element, "askAt"),
+            Resolution = resolution,
+            ResolvedAt = Moments.Read(element, "resolvedAt"),
+            Close = close,
         };
     }
 }

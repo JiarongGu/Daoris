@@ -132,7 +132,22 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 
     /// <summary>The person's verdicts on its review, oldest first (REVIEWENV1b); empty where none was given, and from a host before them.</summary>
     public IReadOnlyList<QuestReviewVerdictView> Verdicts { get; init; } = [];
+
+    /// <summary>
+    /// The digest of the graph that closes it (FABRIC-CLOSE1a, bound by the driver at its take, FABRIC-CLOSE1b), or null: a quest no
+    /// closure graph holds, every quest from before, and every quest a host from before answers.
+    /// </summary>
+    public string? Closure { get; init; }
+
+    /// <summary>
+    /// Its taker's current submission (FABRIC-CLOSE1a): the agent's <c>ready</c>, its result while it stays Taken, by the machine and
+    /// sequence a close and an evidence verdict name it by; null where there is none, and from a host before the field.
+    /// </summary>
+    public QuestSubmissionView? Submission { get; init; }
 }
+
+/// <summary>A taker's submission in a closure graph (FABRIC-CLOSE1a), as the service answers it: the operation that made it, when, and its note.</summary>
+public sealed record QuestSubmissionView(string Machine, long Sequence, DateTimeOffset? At, string? Note);
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
 public sealed record QuestRequirementView(string Quote, string Check)

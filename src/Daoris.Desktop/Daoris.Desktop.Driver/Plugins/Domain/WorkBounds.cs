@@ -29,10 +29,26 @@ public static class WorkBounds
 
 /// <summary>
 /// The codes a frame from a plugin is not taken with (FABRIC-PERFORM1a, §C4), each a <c>plugin.step</c> line with no words. Beside them
-/// stand §C4's belief codes (<c>not-named</c>, <c>not-declared</c>, <c>not-watched</c>, <c>stale</c>, <c>late</c>), PERFORM1c's.
+/// stand §C4's belief codes (<c>not-named</c>, <c>not-declared</c>, <c>not-watched</c>, <c>stale</c>, <c>late</c>), judged by
+/// <see cref="WorkBelief"/> (FABRIC-PERFORM1c).
 /// </summary>
 public static class WorkRefusals
 {
+    /// <summary>§C4's second rule: the frame names another step than its attempt's, or its node is no longer the sender's to reach.</summary>
+    public const string NotNamed = "not-named";
+
+    /// <summary>§C4's second rule: the step is no longer declared by its plugin, or no longer included by the cycle governing its unit.</summary>
+    public const string NotDeclared = "not-declared";
+
+    /// <summary>§C4's third rule: the unit is not one Daoris tells about, or the frame names another repository or branch than it.</summary>
+    public const string NotWatched = "not-watched";
+
+    /// <summary>§C4's fourth rule: the frame is bound to another commit than its work's, or the work has moved past its attempt's revision.</summary>
+    public const string Stale = "stale";
+
+    /// <summary>§C4's fifth rule: another outcome is already kept for that attempt, so this one came late.</summary>
+    public const string Late = "late";
+
     /// <summary>A frame over <see cref="WorkBounds.FrameBytes"/>, dropped unread.</summary>
     public const string TooLong = "too-long";
 

@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import i18n from '../locales/i18n';
-import { type MilestoneEntry, type MilestoneUnit, unitOfBranch, waitsOnPerson } from './milestone';
+import userEvent from '@testing-library/user-event';
+import { type HeldAttempt, type MilestoneEntry, type MilestoneUnit, readWorkState, unitOfBranch, waitsOnPerson } from './milestone';
 import { MilestoneLine, WorkMilestone } from './WorkMilestone';
+import { attentionActs, needsAPerson } from './attention';
+import { AttentionRow } from './AttentionRow';
 
 // The milestone on the work's foot (FABRIC-MILESTONE1b, the fabric events design §D0): a molecule over the driver's answer, each
 // state reached by its props. The driver's own clauses pass through as recorded; the labels and the proofs' codes are the page's.
@@ -138,5 +141,64 @@ describe('what of a unit waits on the person', () => {
     expect(unitOfBranch([held], 'Engine', 'daoris/s-1')).toBe(held);
     expect(unitOfBranch([held], 'engine', 'feature/x')).toBe(held);
     expect(unitOfBranch([held], 'other', 'feature/x')).toBeUndefined();
+  });
+});
+
+// FABRIC-PERFORM1g (the fabric events design §D6): a plugin step's attempt held for the person, shown where they look, What needs you's
+// row with their three words and the node's place on the work's foot, in both languages.
+const heldAttempt = (over: Partial<HeldAttempt> = {}): HeldAttempt => ({
+  unit: 'u1', node: 'deploy', attempt: 2, plugin: 'acme.deploy', step: 'acme.deploy/deploy', nodeState: 'unknown', why: 'unknown',
+  at: '2026-10-17T09:00:00Z', said: 'its plugin was asked and cannot say what became of it', ...over,
+});
+
+describe('an attempt held for the person', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('joins each unit its held attempts, keeps every one held of any unit, and reads none from an older shell', () => {
+    const read = readWorkState({ units: [unit()], recovery: [], unread: [], held: [heldAttempt(), heldAttempt({ unit: 'quest:q7' })] });
+    expect(read.held).toHaveLength(2);
+    expect(read.units[0]!.held).toEqual([heldAttempt()]);
+    expect(readWorkState({ units: [unit()] }).held).toEqual([]);
+  });
+
+  it('is a row in What needs you naming its step, its attempt and why, offering the three words until one is recorded', () => {
+    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldAttempt()]);
+    expect(row).toMatchObject({ kind: 'work', title: 'deploy, attempt 2', where: 'u1' });
+    expect(row!.detail).toContain('Its plugin was asked and cannot say what became of it');
+    expect(attentionActs(row!)).toEqual(['happened', 'did-not', 'stop-step']);
+
+    const [worded] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldAttempt({ resolution: 'did-not' })]);
+    expect(worded!.detail).toContain('your word “it did not” is recorded');
+    expect(attentionActs(worded!)).toEqual([]);
+  });
+
+  it('presses the person’s word for the row it is on', async () => {
+    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldAttempt()]);
+    const words: string[] = [];
+    render(<ul><AttentionRow item={row!} acts={{ held: (_, resolution) => words.push(resolution) }} /></ul>);
+    await userEvent.click(screen.getByRole('button', { name: 'It did not: try again' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop this step' }));
+    await userEvent.click(screen.getByRole('button', { name: 'It happened' }));
+    expect(words).toEqual(['did-not', 'stop', 'happened']);
+  });
+
+  it('takes its node’s place on the work’s foot, in English and in 中文', async () => {
+    const { unmount } = render(<WorkMilestone unit={unit({ held: [heldAttempt({ why: 'no-reconcile' })] })} />);
+    const region = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(within(region).getByText('Held for you')).toBeInTheDocument();
+    expect(region).toHaveTextContent('deploy, attempt 2: Its step declares no way to ask what became of it. It waits for your word.');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone unit={unit({ held: [heldAttempt({ why: 'acme-refused' })] })} />);
+    const zh = screen.getByRole('region', { name: '这项工作进展到哪里' });
+    expect(within(zh).getByText('等你定夺')).toBeInTheDocument();
+    expect(zh).toHaveTextContent('deploy，第 2 次尝试：它的插件的答复与它所针对的工作不符（acme-refused）。它在等你的答复。');
+  });
+
+  it('shows nothing held where the driver lists none, as on an install no plugin step governs', () => {
+    render(<WorkMilestone unit={unit({ held: [] })} />);
+    expect(screen.queryByText('Held for you')).not.toBeInTheDocument();
+    expect(needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [])).toEqual([]);
   });
 });

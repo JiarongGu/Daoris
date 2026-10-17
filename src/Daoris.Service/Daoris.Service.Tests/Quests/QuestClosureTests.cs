@@ -195,6 +195,47 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Single(await _quests.HistoryAsync(open.Id), op => op.Kind == QuestOperationKind.Bound);
     }
 
+    /// <summary>An open quest of the report's, as published and not yet taken.</summary>
+    private async Task<Quest> Open() => (await _desk.PublishAsync(
+        (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!.Id, "reports", Now,
+        draft: new AskDraft("Write the bridge report", "Through the bridge.") { Requirements = [Report, Bridge] })).Quest!;
+
+    [Fact]
+    public async Task A_take_the_driver_named_a_graph_for_binds_in_its_own_write_and_its_done_is_refused_naming_ready()
+    {
+        // FABRIC-CLOSE1l (CLOSE1f): the driver names the graph as it opens the first session; nothing is bound until the take.
+        var open = await Open();
+        var named = await _exchange.BindAsync(open.Id, Graph, Now, atTake: true);
+        Assert.Equal(QuestRespondRefusal.None, named.Refusal);
+        Assert.Null((await Find(open.Id)).Closure);
+
+        var take = await _exchange.RespondAsync(open.Id, "take", null, Now);
+
+        // The take answers bound, saying `ready`, with the bind appended in the take's own write: no done fits between them.
+        Assert.Equal(QuestRespondRefusal.None, take.Refusal);
+        Assert.Equal(Graph, take.Quest!.Closure);
+        Assert.Contains("`ready`", take.Message, StringComparison.Ordinal);
+        Assert.Equal([QuestOperationKind.Taken, QuestOperationKind.Bound], (await _quests.HistoryAsync(open.Id)).TakeLast(2).Select(op => op.Kind));
+        var done = await _exchange.RespondAsync(open.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
+        Assert.Equal(QuestRespondRefusal.ClosedByGraph, done.Refusal);
+        Assert.Contains("`ready`", done.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_take_no_graph_was_named_for_is_unbound_and_says_nothing_of_ready_and_a_taken_quest_takes_no_bind_at_its_take()
+    {
+        // The owner's install: no closure graph, so no bind is named, and the take and its done are today's.
+        var open = await Open();
+        var take = await _exchange.RespondAsync(open.Id, "take", null, Now);
+        Assert.Null(take.Quest!.Closure);
+        Assert.DoesNotContain("ready", take.Message, StringComparison.OrdinalIgnoreCase);
+
+        // Already taken: its take has passed, so a graph named for it now is refused and nothing is bound (§E5's cutover).
+        Assert.NotEqual(QuestRespondRefusal.None, (await _exchange.BindAsync(open.Id, Graph, Now, atTake: true)).Refusal);
+        Assert.DoesNotContain(await _quests.HistoryAsync(open.Id), op => op.Kind == QuestOperationKind.Bound);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(open.Id, "done", "Built.", Now, answers: [Met(1), Met(2)])).Refusal);
+    }
+
     // ——— The submission's holds, its replacement and its seal.
 
     [Fact]

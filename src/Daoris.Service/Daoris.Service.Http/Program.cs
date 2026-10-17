@@ -451,7 +451,9 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove),
     Home: homeId,
     // What this host is (WIRING1b): This Daoris shows it beside the tier, and a terminal's `daoris-driver wiring` reads it too.
-    Version: HostVersion.Stamped));
+    Version: HostVersion.Stamped,
+    // FABRIC-CLOSE1b's handshake: a driver binds a quest to a closure graph only against a host that says it knows one.
+    Closure: true));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -738,7 +740,7 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/quests/{id}/bind", async (
         ComposedService s, HttpContext http, string id, BindQuestRequest body, CancellationToken ct) =>
     {
-        var outcome = await s.Exchange.BindAsync(id, body.Graph, DateTimeOffset.UtcNow, ct);
+        var outcome = await s.Exchange.BindAsync(id, body.Graph, DateTimeOffset.UtcNow, ct, atTake: body.AtTake == true);
         return outcome.Refusal switch
         {
             QuestRespondRefusal.None => Results.Ok(
@@ -764,12 +766,14 @@ if (mode == ServiceMode.Local)
             return Results.Ok(new QuestCloseResponse(answered, outcome.Message));
         }
 
+        // FABRIC-CLOSE1b: each refusal names its check by a code (`key-reused`, `stale`, …), which the driver keeps beside the sentence.
+        var refused = new ErrorResponse(outcome.Message, QuestCloseCodes.Of(outcome.Refusal));
         return outcome.Refusal switch
         {
-            QuestCloseRefusal.Malformed => Results.BadRequest(new ErrorResponse(outcome.Message)),
-            QuestCloseRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            QuestCloseRefusal.Malformed => Results.BadRequest(refused),
+            QuestCloseRefusal.NotFound => Results.NotFound(refused),
             // A check that refused on a quest's state: stale, held, closed, unbound or not this machine's. Nothing was written.
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+            _ => Results.Conflict(refused),
         };
     });
 

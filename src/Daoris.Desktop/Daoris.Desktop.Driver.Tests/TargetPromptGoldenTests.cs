@@ -189,8 +189,32 @@ public sealed class TargetPromptGoldenTests
         "part" => Part,
         "part-alongside" => PartAlongside,
         "channel" => Channel,
+        // FABRIC-CLOSE1l (CLOSE1g): a quest its closure graph closes, bound at its take: its session says `ready`, never `done`.
+        "ready" => Bare with { Ready = true },
         _ => throw new ArgumentOutOfRangeException(nameof(which), which, null),
     };
+
+    /// <summary>
+    /// FABRIC-CLOSE1l (CLOSE1g): a bound quest's resume and carry-on say `ready` as its first start does, and every other quest's say `done`
+    /// as they did, so an install with no closure graph hands no `ready`.
+    /// </summary>
+    [Fact]
+    public void A_bound_quests_every_start_says_ready_and_every_other_quests_says_done()
+    {
+        var resumed = Bare with { Answered = new QuestView("q9", "console-ui", "console-api", "Which field?", "", "Done") { Note = "The note." } };
+        var carried = CarryOn;
+        foreach (var target in new[] { Bare, resumed, carried })
+        {
+            var ready = TargetPrompt.Compose(target with { Ready = true });
+            Assert.Contains("`ready` when its work is done", ready, StringComparison.Ordinal);
+            Assert.Contains("Never `done`", ready, StringComparison.Ordinal);
+            Assert.DoesNotContain("`done` when it has landed", ready, StringComparison.Ordinal);
+
+            var today = TargetPrompt.Compose(target);
+            Assert.Contains("`done` when it has landed", today, StringComparison.Ordinal);
+            Assert.DoesNotContain("`ready`", today, StringComparison.Ordinal);
+        }
+    }
 
     [Theory]
     [InlineData("bare")]
@@ -201,6 +225,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("part")]
     [InlineData("part-alongside")]
     [InlineData("channel")]
+    [InlineData("ready")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Compose(Of(which)));
@@ -243,6 +268,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("part")]
     [InlineData("part-alongside")]
     [InlineData("channel")]
+    [InlineData("ready")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
