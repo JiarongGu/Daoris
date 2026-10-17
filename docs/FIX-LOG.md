@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The HTTP host watched its content root as the connector had (HTTPWATCH1)
+
+- **Symptom:** none seen yet; KNOWWALK1's cause, found in the connector, stood in the other host Daoris builds.
+- **Root cause:** `WebApplication.CreateBuilder` in the HTTP host kept the default `appsettings.json` reload watch over its
+  content root, which is the project folder in development (`bin/` and `obj/` under it) and the install's `app/` when the
+  desktop hosts the service: exactly what an update swaps. The search of the source found no other generic or web host: the
+  desktop shell and the driver host build none (the driver's console is a plain process).
+- **Fix:** `HostRoot.Builder` takes the content root from `HostRoot.ContentRoot` (the binary's folder when it carries
+  `wwwroot`, else the working folder when it does, else the binary's) and passes `--hostBuilder:reloadConfigOnChange=false`
+  first among the arguments, so no file is watched and the environment and command line are read as before. The note
+  `.claude/knowledge/host-content-root.md` (HOSTROOT1) says it once for the next host. In development the content root is
+  still the project folder, which the SDK serves `wwwroot` from; only its watch is gone.
+- **Verification:** `HostRootTests` failed first on the unbuilt member; the host's file sources are not reloading and the
+  root is the binaries' folder, and the bundle choice is pinned in the three cases. Http service tests 280 to 282.
+
 ## 2026-10-17 — Every knowledge connector watched its whole checkout, and walked each folder renamed in it (KNOWWALK1)
 
 - **Symptom:** the deployment rehearsal's swap of `_fixtures/deployment-rehearsal/install/app` was refused `busy`, and
