@@ -32,18 +32,20 @@ export function writeTextAtomic(file: string, text: string): void {
  * value, a BOM is stripped because `File.ReadAllText` strips it on the other side, and anything that is
  * not a JSON object names why rather than reading as empty.
  */
-export function readJsonObject(path: string): { value: Record<string, unknown> | null; problem: string | null } {
+export function readJsonObject(path: string): { value: Record<string, unknown> | null; problem: string | null; text?: string } {
   if (!existsSync(path)) return { value: null, problem: null };
   let parsed: unknown;
+  // The text as it stands, its BOM apart: an editor that keeps what it does not own writes from it (FABRIC-GRAPH1's review).
+  const text = readFileSync(path, 'utf8').replace(/^﻿/, '');
   try {
-    parsed = JSON.parse(readText(path));
+    parsed = JSON.parse(text);
   } catch (error) {
     return { value: null, problem: `${path} is not readable JSON (${(error as Error).message})` };
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return { value: null, problem: `${path} is not a JSON object` };
   }
-  return { value: parsed as Record<string, unknown>, problem: null };
+  return { value: parsed as Record<string, unknown>, problem: null, text };
 }
 
 /**
@@ -56,12 +58,17 @@ export function readJsonObject(path: string): { value: Record<string, unknown> |
  * and reported success. Checking here holds every editor, including the next one.
  */
 export function writeJsonAtomic(path: string, value: unknown): void {
+  writeJsonTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+/** `writeJsonAtomic` for a file's whole text, composed by its editor (`jsonkeep.ts`'s `keepEdits`): refused the same way. */
+export function writeJsonTextAtomic(path: string, text: string): void {
   const { problem } = readJsonObject(path);
   if (problem !== null) {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
-  writeTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
+  writeTextAtomic(path, text);
 }
 
 export function sha256(text: string): string {

@@ -9,12 +9,15 @@
  * not its graph holds: the driver judges the graph where it reads it, and says one that does not hold. This module imports nothing
  * of `driverconfig.ts` but its types, which reads through it.
  */
-import { atName } from '../platform/casefold.ts';
+import { atName, findName } from '../platform/casefold.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import type { DriverChoices } from './driverconfig.ts';
 
-/** A cycle as the file holds it: a JSON object, kept whole. */
-export type Cycle = Record<string, unknown>;
+/**
+ * A cycle as the file holds it, kept whole: a graph's object, or anything else the file says there, which the driver says does not read
+ * (FABRIC-GRAPH1's review, finding 2). Only null is none.
+ */
+export type Cycle = unknown;
 
 /** The kinds `workCycles` keys — the driver's `NodeGraphHomes.WorkCycleKinds`. A branch's cycle is its landing rule's alone (§D7). */
 export const WORK_CYCLE_KINDS: readonly string[] = ['quest', 'ask'];
@@ -29,24 +32,28 @@ export interface CycleHome {
   cycle: Cycle | null;
 }
 
-/** A rule's `cycle` as the driver reads it: an object is kept whole, anything else is none. */
+/** A rule's `cycle` as the driver reads it: kept whole whatever it is, null and absence being none. */
 export function cycleOf(value: unknown): Cycle | undefined {
-  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Cycle : undefined;
+  return value === null ? undefined : value;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 /**
- * The work cycles under one key, as the driver's `WorkCycleMap` reads them: each owner's kinds, a kind read only where it is one of
- * `WORK_CYCLE_KINDS` and its cycle an object, kept as written; an owner left with none is not read.
+ * The work cycles under one key, as the driver's `WorkCycleMap` reads them: each owner's kinds, every kind kept as written, null being
+ * none, so an edit beside one keeps it (the review's finding 2); only `WORK_CYCLE_KINDS` govern, and `cycleStrays` says the rest. An owner
+ * naming no kind is not read, and the first owner written in any case governs (finding 3).
  */
 export function workCycleMap(value: unknown): Record<string, Record<string, Cycle>> {
   const held: Record<string, Record<string, Cycle>> = {};
-  if (cycleOf(value) === undefined) return held;
-  for (const [owner, kinds] of Object.entries(value as Record<string, unknown>)) {
-    if (cycleOf(kinds) === undefined) continue;
+  if (!isObject(value)) return held;
+  for (const [owner, kinds] of Object.entries(value)) {
+    if (!isObject(kinds) || findName(Object.keys(held), owner) !== null) continue;
     const read: Record<string, Cycle> = {};
-    for (const [kind, cycle] of Object.entries(kinds as Record<string, unknown>)) {
-      const object = cycleOf(cycle);
-      if (WORK_CYCLE_KINDS.includes(kind) && object !== undefined) read[kind] = object;
+    for (const [kind, cycle] of Object.entries(kinds)) {
+      if (cycle !== null) read[kind] = cycle;
     }
     if (Object.keys(read).length > 0) held[owner] = read;
   }
@@ -79,8 +86,40 @@ export interface CycleStray {
  * here: a kind with no work cycle, a branch's included; and a name an earlier entry of `landings`, `workspaceLandings` or the work cycles
  * spells in another case, where the first written governs. The driver's `NodeGraphHomes.Strays`, row for row (`graph-homes.json`'s `strays`).
  */
-export function cycleStrays(_choices: Pick<DriverChoices, 'source'>): CycleStray[] {
-  return [];
+export function cycleStrays(choices: Pick<DriverChoices, 'source' | 'landings' | 'workspaceLandings' | 'workCycles' | 'workspaceWorkCycles'>): CycleStray[] {
+  if (choices.source === undefined) return [];
+  const file = JSON.parse(choices.source) as Record<string, unknown>;
+  const strays: CycleStray[] = [];
+  const map = (name: string, read: string[], governing?: (owner: string, value: Record<string, unknown>) => void): void => {
+    const entries = file[name];
+    if (!isObject(entries)) return;
+    const seen: string[] = [];
+    for (const [entry, value] of Object.entries(entries)) {
+      // The entry its reader kept for this name in any case; entries before it did not read, and those after it are shadowed.
+      const governs = findName(read, entry);
+      if (governs === null) continue;
+      if (findName(seen, entry) !== null) {
+        strays.push({ at: [name, entry], code: 'shadowed',
+          words: `\`${entry}\` in \`${name}\` is spelled in another case by \`${governs}\` before it, which governs; it is kept as written, and nothing reads it.` });
+      } else if (entry === governs) {
+        seen.push(entry);
+        if (governing && isObject(value)) governing(entry, value);
+      }
+    }
+  };
+  const kinds = (name: string) => (owner: string, value: Record<string, unknown>): void => {
+    for (const [kind, cycle] of Object.entries(value)) {
+      if (cycle === null || WORK_CYCLE_KINDS.includes(kind)) continue;
+      strays.push({ at: [name, owner, kind], code: 'kind',
+        words: `\`${kind}\` under \`${owner}\` in \`${name}\` is no kind of work with a cycle of its own — ${WORK_CYCLE_KINDS.map((each) => `\`${each}\``).join(' or ')}; `
+          + 'a branch\'s is its landing rule\'s `cycle`. It is kept as written, and nothing reads it.' });
+    }
+  };
+  map('landings', Object.keys(choices.landings));
+  map('workspaceLandings', Object.keys(choices.workspaceLandings));
+  map('workCycles', Object.keys(choices.workCycles), kinds('workCycles'));
+  map('workspaceWorkCycles', Object.keys(choices.workspaceWorkCycles), kinds('workspaceWorkCycles'));
+  return strays;
 }
 
 /**

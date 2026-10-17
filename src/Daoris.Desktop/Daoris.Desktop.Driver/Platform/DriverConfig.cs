@@ -502,9 +502,11 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// The work cycles under <paramref name="name"/>: each repository's or workspace's kinds of work, a kind read only where it is one of
-    /// <see cref="NodeGraphHomes.WorkCycleKinds"/> and its cycle an object, kept as written, compact. Whether its graph holds is said where
-    /// it is read (<see cref="NodeGraphHomes.Work"/>), never by dropping it. The CLI's <c>cycles.ts</c> reads it the same way.
+    /// The work cycles under <paramref name="name"/>: each repository's or workspace's kinds of work, every kind kept as written, compact, null
+    /// being none (the review's finding 2: a kind with no work cycle, or a cycle that is not an object, was dropped by an edit beside it).
+    /// Only <see cref="NodeGraphHomes.WorkCycleKinds"/> govern; whether a graph holds is said where it is read (<see cref="NodeGraphHomes.Work"/>),
+    /// and a kind no unit reads by <see cref="NodeGraphHomes.Strays"/>. An owner naming no kind is not read, and the first owner written in
+    /// any case governs (finding 3). The CLI's <c>cycles.ts</c> reads it the same way.
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkCycleMap(JsonElement root, string name)
     {
@@ -512,11 +514,11 @@ public sealed record DriverConfig(
         if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
         foreach (var owner in element.EnumerateObject())
         {
-            if (owner.Value.ValueKind != JsonValueKind.Object) continue;
+            if (owner.Value.ValueKind != JsonValueKind.Object || map.ContainsKey(owner.Name)) continue;
             var kinds = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var kind in owner.Value.EnumerateObject())
             {
-                if (NodeGraphHomes.WorkCycleKinds.Contains(kind.Name) && kind.Value.ValueKind == JsonValueKind.Object) kinds[kind.Name] = NodeGraphHomes.Compact(kind.Value);
+                if (kind.Value.ValueKind != JsonValueKind.Null) kinds.TryAdd(kind.Name, NodeGraphHomes.Compact(kind.Value));
             }
 
             if (kinds.Count > 0) map[owner.Name] = kinds;
@@ -740,8 +742,16 @@ public sealed record DriverConfig(
         AtomicFile.WriteText(path, ToJson());
     }
 
-    /// <summary>The file's shape, written by hand for the same AOT reason it is read by hand.</summary>
-    public string ToJson()
+    /// <summary>
+    /// The file's text: the choices written over the text they were read from (<see cref="Source"/>), so every key this build does not own
+    /// stays where it stands and every value no edit changed stays as written (<see cref="JsonKeeping"/>, FABRIC-GRAPH1's review, finding 1);
+    /// read and written with no edit, the same bytes. A config built in memory is written whole.
+    /// </summary>
+    public string ToJson() =>
+        Source is null ? Written() : JsonKeeping.Kept(Source, (Parse(Source) with { Source = null }).Written(), Written());
+
+    /// <summary>The choices' own shape, written by hand for the same AOT reason it is read by hand.</summary>
+    private string Written()
     {
         return JsonFile.Serialize(writer =>
         {
@@ -1040,10 +1050,12 @@ public sealed record DriverConfig(
                 // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never
                 // drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
                 if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
-                // FABRIC-GRAPH1: an object is the cycle, kept as written whether or not its graph holds (said where it is read, so a
-                // mistyped end never changes how the work lands); anything else is none.
-                if (property.Value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind == JsonValueKind.Object) rule = rule with { Cycle = NodeGraphHomes.Compact(cycle) };
-                if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
+                // FABRIC-GRAPH1: the cycle is kept as written whether or not it is a graph that holds, said where it is read, so a
+                // mistyped end never changes how the work lands; only null is none (the review's finding 2: `[]` was dropped).
+                if (property.Value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = NodeGraphHomes.Compact(cycle) };
+                // The first rule written in any case governs, as the CLI reads it, and a later spelling is said (the review's finding 3:
+                // the driver kept the last and the terminal the first, so the two chose different graphs).
+                if (LandingRules.Problem(rule) is null && !map.ContainsKey(property.Name)) map[property.Name] = Kept(rule);
             }
         }
 
@@ -1148,6 +1160,8 @@ public sealed record DriverConfig(
             Strikes: Int(root, "strikes") ?? Empty.Strikes,
             Forgiven: ForgivenMap(root))
         {
+            // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
+            Source = json,
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
             IntakeAdapter = Json.NonEmpty(root,"intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
             // Absent means OFF, as the intake's does (D89).

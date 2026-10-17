@@ -10,7 +10,9 @@
 //
 // EVERY EDIT PRESERVES WHAT IT DID NOT TOUCH. The driver writes fields this build has no verb for
 // (`pollSeconds`, the per-adapter `commands` map), and an editor that rewrote the file from its own
-// idea of the shape would silently delete the command that makes the stub run.
+// idea of the shape would silently delete the command that makes the stub run. Since FABRIC-GRAPH1's
+// review the writer keeps them in their place, and every value no edit changed by its own text
+// (`jsonkeep.ts`, with the driver's `JsonKeeping`).
 //
 // A name or an id the file holds (a repository, a workspace, a quest, an ask, a plugin) is matched "in any case" as the
 // driver's `OrdinalIgnoreCase` matches it, through `casefold.ts` (CASEFOLD1): `straße` is not `STRASSE`, and `İzmir` is not
@@ -20,7 +22,8 @@ import { dirname } from 'node:path';
 import { requireHomeFile } from '../platform/home.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { flagValue, operands } from '../platform/args.ts';
-import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from '../platform/fsx.ts';
+import { keepEdits } from '../platform/jsonkeep.ts';
 import { atName, findName, sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.ts';
@@ -547,13 +550,18 @@ export function isBranchName(name: string): boolean {
  * up driving something nobody opted in.
  */
 export function readDriverChoices(path = driverConfigPath()): DriverChoices {
-  const { value: parsed, problem } = readJsonObject(path);
+  const { value: parsed, problem, text } = readJsonObject(path);
   if (problem !== null) {
     // A torn or hand-mangled file is reported, never silently replaced: rewriting it would destroy
     // whatever the person was in the middle of typing, and the driver reads the same file.
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
+  return parsed === null ? choicesOf(null) : { ...choicesOf(parsed), ...(text !== undefined ? { source: text } : {}) };
+}
+
+/** The choices a parsed file holds, as the driver reads them; null is the file that is not there. */
+function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
   if (parsed === null) {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
@@ -642,41 +650,44 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   };
 }
 
-/** Write them back, preserving anything this build did not put there. */
+/**
+ * Write them back over the text they were read from, keeping in its place every key this build does not own and every value no edit
+ * changed by its own text (`jsonkeep.ts`, FABRIC-GRAPH1's review, findings 1 and 5); read and written with no edit, the same bytes.
+ * Choices built here, with no text, are written whole.
+ */
 export function writeDriverChoices(path: string, choices: DriverChoices): void {
-  writeJsonAtomic(path, {
-    ...choices.rest,
+  if (choices.source === undefined) {
+    writeJsonAtomic(path, choicesWritten(choices));
+    return;
+  }
+  const read = choicesWritten(choicesOf(JSON.parse(choices.source) as Record<string, unknown>));
+  writeJsonTextAtomic(path, keepEdits(choices.source, read, choicesWritten(choices)));
+}
+
+/**
+ * The choices' own shape, in the driver's order (`DriverConfig.Written`), so a key an edit adds goes where the driver's would: what this
+ * build does not own after it, as the file holds it.
+ */
+function choicesWritten(choices: DriverChoices): Record<string, unknown> {
+  return {
     drivable: choices.drivable,
     holds: choices.holds,
     trees: choices.trees,
     cap: choices.cap,
     adapter: choices.adapter,
-    notify: choices.notify,
-    strikes: choices.strikes,
-    forgiven: choices.forgiven,
-    // Written only when set (SESSUX1b), as the driver writes it: absent is no release.
-    ...(Object.keys(choices.released).length > 0 ? { released: choices.released } : {}),
     // Written only when named — absent IS off, and the driver writes it the same way.
     ...(choices.intakeAdapter ? { intakeAdapter: choices.intakeAdapter } : {}),
     ...(choices.helperAdapter ? { helperAdapter: choices.helperAdapter } : {}),
+    notify: choices.notify,
     // Written only when set: absent is the driver's own default, and an edit elsewhere must not
     // pin today's default into a file that never chose it.
     ...(choices.timeoutMinutes !== null ? { timeoutMinutes: choices.timeoutMinutes } : {}),
+    strikes: choices.strikes,
     // Written only when set (TOOL4e), as the driver writes it: absent is the default hour.
     ...(choices.cooloff !== null ? { cooloff: choices.cooloff } : {}),
-    // Written only when set (WSR2): absent is the checkout's guess, and the driver writes them the same way.
-    ...(Object.keys(choices.lines).length > 0 ? { lines: choices.lines } : {}),
-    ...(Object.keys(choices.workspaceLines).length > 0 ? { workspaceLines: choices.workspaceLines } : {}),
-    // Written only when set (WSR1): absent is the merge it always was.
-    ...(Object.keys(choices.landings).length > 0 ? { landings: choices.landings } : {}),
-    ...(Object.keys(choices.workspaceLandings).length > 0 ? { workspaceLandings: choices.workspaceLandings } : {}),
-    // Written only when set (FABRIC-GRAPH1), as the driver writes them: absent is no cycle for a quest or an ask, today's.
-    ...(Object.keys(choices.workCycles).length > 0 ? { workCycles: choices.workCycles } : {}),
-    ...(Object.keys(choices.workspaceWorkCycles).length > 0 ? { workspaceWorkCycles: choices.workspaceWorkCycles } : {}),
-    // Written only when set (D107): absent is reading on and no relationship.
-    ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: choices.readAcross } : {}),
-    ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: choices.workspaceReadAcross } : {}),
-    ...(Object.keys(choices.writeAcross).length > 0 ? { writeAcross: choices.writeAcross } : {}),
+    forgiven: choices.forgiven,
+    // Written only when set (SESSUX1b), as the driver writes it: absent is no release.
+    ...(Object.keys(choices.released).length > 0 ? { released: choices.released } : {}),
     // Written only when set (KNOWUSE1b), each moment in UTC to the second, as the driver writes it: absent is none.
     ...(Object.keys(choices.standing).length > 0
       ? {
@@ -686,9 +697,18 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
           }])),
         }
       : {}),
+    // Written only when set (WSR2): absent is the checkout's guess, and the driver writes them the same way.
+    ...(Object.keys(choices.lines).length > 0 ? { lines: choices.lines } : {}),
+    ...(Object.keys(choices.workspaceLines).length > 0 ? { workspaceLines: choices.workspaceLines } : {}),
     // Written only when set (LANG1c), as the driver writes them: absent is no language, and no line handed.
     ...(Object.keys(choices.languages).length > 0 ? { languages: choices.languages } : {}),
     ...(Object.keys(choices.workspaceLanguages).length > 0 ? { workspaceLanguages: choices.workspaceLanguages } : {}),
+    // Written only when set (WSR1): absent is the merge it always was.
+    ...(Object.keys(choices.landings).length > 0 ? { landings: choices.landings } : {}),
+    ...(Object.keys(choices.workspaceLandings).length > 0 ? { workspaceLandings: choices.workspaceLandings } : {}),
+    // Written only when set (FABRIC-GRAPH1), as the driver writes them: absent is no cycle for a quest or an ask, today's.
+    ...(Object.keys(choices.workCycles).length > 0 ? { workCycles: choices.workCycles } : {}),
+    ...(Object.keys(choices.workspaceWorkCycles).length > 0 ? { workspaceWorkCycles: choices.workspaceWorkCycles } : {}),
     // Written only when set (REVIEWENV1a), as the driver writes them: absent is no review environment, today's behaviour.
     ...(Object.keys(choices.reviews).length > 0 ? { reviews: choices.reviews } : {}),
     ...(Object.keys(choices.workspaceReviews).length > 0 ? { workspaceReviews: choices.workspaceReviews } : {}),
@@ -704,7 +724,13 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     ...(Object.keys(choices.workflows).length > 0 ? { workflows: writtenChoices(choices.workflows, false) } : {}),
     ...(Object.keys(choices.workspaceWorkflows).length > 0
       ? { workspaceWorkflows: writtenChoices(choices.workspaceWorkflows, true) } : {}),
-  });
+    // Written only when set (D107): absent is reading on and no relationship.
+    ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: choices.readAcross } : {}),
+    ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: choices.workspaceReadAcross } : {}),
+    ...(Object.keys(choices.writeAcross).length > 0 ? { writeAcross: choices.writeAcross } : {}),
+    // What this build has no field for, as the file holds it (`pollSeconds`, `commands`, a pause, a newer build's keys).
+    ...choices.rest,
+  };
 }
 
 /** No way to read the records was handed in, so a retry that needs them is refused (RETRY1b). */
@@ -2101,7 +2127,8 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
     if (!rule || typeof rule !== 'object') continue;
     const { form, pattern, key, tidy, plugin, autoAccept, squash, cycle } = rule as Record<string, unknown>;
-    // An object is the cycle (FABRIC-GRAPH1), kept as written, as the driver reads it; anything else is none.
+    // The cycle (FABRIC-GRAPH1) is kept as written, as the driver reads it, whether or not it is a graph: only null is none (the
+    // review's finding 2), and the driver says one that does not read.
     const graph = cycleOf(cycle);
     const read: LandingRule = {
       form: typeof form === 'string' ? form : '',
@@ -2120,7 +2147,8 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
     // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
     // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
     if (read.key !== undefined && landingProblem(read) !== null) delete read.key;
-    if (landingProblem(read) === null) held[name] = kept(read);
+    // The first rule written in any case governs, as the driver reads it (the review's finding 3), and a later spelling is said.
+    if (landingProblem(read) === null && findName(Object.keys(held), name) === null) held[name] = kept(read);
   }
 
   return held;

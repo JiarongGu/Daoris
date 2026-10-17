@@ -221,16 +221,26 @@ public static class NodeGraphs
             }
         }
 
-        // D157 §2.2's protected order: the gates come before the landing. Of them only the look is a node yet (§E4), so a look must be
-        // reached before every landing starts: through wires a reach satisfies, never a failure's or a rejection's path.
-        var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
-        var landings = byId.Values.Where(node => node.Kind == NodeKinds.Handed).ToList();
-        foreach (var look in byId.Values.Where(node => node.Kind == NodeKinds.Look))
+        // D157 §2.2's protected order: the gates come before the landing. Of them only the look is a node yet (§E4), so every look reaches
+        // every landing through wires a reach satisfies, never a failure's or a rejection's path; and (the review's finding 4) no landing
+        // can start before a look has passed, whichever member of an `anyOf` a run takes. One problem a landing, naming the look.
+        var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
+        if (looks.Count > 0)
         {
-            var after = Reach([look.Id], ordered, forward: true);
-            if (landings.FirstOrDefault(landing => !after.Contains(landing.Id)) is { } early)
+            var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
+            var afterEach = looks.Select(look => (look, after: Reach([look.Id], ordered, forward: true))).ToList();
+            var unlooked = StartsWithNoLook(byId, starts, local);
+            foreach (var landing in byId.Values.Where(node => node.Kind == NodeKinds.Handed))
             {
-                Say(GraphRefusal.ProtectedOrder, null, look.Id, $"the look `{look.Id}` comes before the landing `{early.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
+                if (afterEach.FirstOrDefault(each => !each.after.Contains(landing.Id)).look is { } early)
+                {
+                    Say(GraphRefusal.ProtectedOrder, null, early.Id, $"the look `{early.Id}` comes before the landing `{landing.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
+                }
+                else if (unlooked.Contains(landing.Id))
+                {
+                    Say(GraphRefusal.ProtectedOrder, null, looks[0].Id, $"the landing `{landing.Id}` can start with no look passed, though `{looks[0].Id}` reaches it: every way to it "
+                        + "passes a look (D157 §2.2's order: holds, opinion, look, landing).");
+                }
             }
         }
 
@@ -273,6 +283,37 @@ public static class NodeGraphs
         }
 
         return problems;
+    }
+
+    /// <summary>
+    /// The nodes that can start while no look has passed (FABRIC-GRAPH1's review, finding 4): the entries, and each node whose eligibility
+    /// groups (<see cref="NodeWires.Groups"/>: all of an <c>allOf</c>, one of an <c>anyOf</c>, every group) and inputs can all be met so. A
+    /// reach's wire (<c>after</c>, <c>trigger</c>) or an input is met by a node that starts so and is no look; a failure's or a rejection's
+    /// by any node that starts so, a look included, since a look that fails has not passed.
+    /// </summary>
+    private static HashSet<string> StartsWithNoLook(Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local)
+    {
+        var started = new HashSet<string>(starts, StringComparer.Ordinal);
+        bool Met(Wire wire) => started.Contains(wire.From!.Node)
+            && (wire.Kind is WireKinds.Failed or WireKinds.Rejected || byId[wire.From.Node].Kind != NodeKinds.Look);
+        for (var moved = true; moved;)
+        {
+            moved = false;
+            foreach (var node in byId.Values.Where(node => !started.Contains(node.Id)))
+            {
+                var groups = NodeWires.Groups(node.Id, local);
+                var inputs = local.Where(wire => wire.Kind == WireKinds.Data && wire.To.Node == node.Id).ToList();
+                if (groups.Count + inputs.Count == 0 || !inputs.All(Met)) continue;
+                // A wire id twice is refused above (`wire-twice`); its first is read here, as a group reads it.
+                bool MetBy(string id) => Met(local.First(wire => wire.Id == id && wire.To.Node == node.Id));
+                if (groups.All(group => group.Mode == WireGroupModes.AnyOf ? group.Wires.Any(MetBy) : group.Wires.All(MetBy)))
+                {
+                    moved = started.Add(node.Id) || moved;
+                }
+            }
+        }
+
+        return started;
     }
 
     /// <summary>The nodes reached from <paramref name="from"/> along <paramref name="wires"/>, forward or back, the starts included.</summary>
@@ -649,7 +690,48 @@ public static class NodeGraphHomes
     /// entry of <c>landings</c>, <c>workspaceLandings</c> or the work cycles spells in another case, where the first written governs. The CLI's
     /// <c>cycleStrays</c> says the same, row for row (<c>graph-homes.json</c>'s <c>strays</c>).
     /// </summary>
-    public static IReadOnlyList<CycleStray> Strays(DriverConfig config) => [];
+    public static IReadOnlyList<CycleStray> Strays(DriverConfig config)
+    {
+        if (config.Source is null) return [];
+        using var document = JsonDocument.Parse(config.Source);
+        var strays = new List<CycleStray>();
+        void Map(string name, IEnumerable<string> read, Action<JsonProperty>? governing = null)
+        {
+            if (!document.RootElement.TryGetProperty(name, out var map) || map.ValueKind != JsonValueKind.Object) return;
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var entry in map.EnumerateObject())
+            {
+                // The entry its reader kept for this name in any case; entries before it did not read, and those after it are shadowed.
+                if (read.FirstOrDefault(key => string.Equals(key, entry.Name, StringComparison.OrdinalIgnoreCase)) is not { } governs) continue;
+                if (seen.Contains(entry.Name))
+                {
+                    strays.Add(new([name, entry.Name], CycleStray.Shadowed,
+                        $"`{entry.Name}` in `{name}` is spelled in another case by `{governs}` before it, which governs; it is kept as written, and nothing reads it."));
+                }
+                else if (entry.Name == governs)
+                {
+                    seen.Add(entry.Name);
+                    governing?.Invoke(entry);
+                }
+            }
+        }
+
+        void Kinds(string name, JsonProperty owner)
+        {
+            foreach (var kind in owner.Value.EnumerateObject().Where(kind => kind.Value.ValueKind != JsonValueKind.Null && !WorkCycleKinds.Contains(kind.Name)))
+            {
+                strays.Add(new([name, owner.Name, kind.Name], CycleStray.Kind,
+                    $"`{kind.Name}` under `{owner.Name}` in `{name}` is no kind of work with a cycle of its own — {string.Join(" or ", WorkCycleKinds.Select(each => $"`{each}`"))}; "
+                    + "a branch's is its landing rule's `cycle`. It is kept as written, and nothing reads it."));
+            }
+        }
+
+        Map("landings", config.Landings.Keys);
+        Map("workspaceLandings", config.WorkspaceLandings.Keys);
+        Map("workCycles", config.WorkCycles.Keys, owner => Kinds("workCycles", owner));
+        Map("workspaceWorkCycles", config.WorkspaceWorkCycles.Keys, owner => Kinds("workspaceWorkCycles", owner));
+        return strays;
+    }
 
     private static GraphHome Whole(string kind, string source, string cycle)
     {

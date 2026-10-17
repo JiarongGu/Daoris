@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_COOLOFF_MINUTES, SESSION_LANGUAGES, commandDriver, driverConfigPath, isBranchName, landingProblem, languageFor,
-  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem, writeDriverChoices,
+  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem, writeDriverChoices, type DriverChoices,
 } from '../../src/driver/driverconfig.ts';
 import {
   REVIEW_WAITING, applyReviewEdit, holdsProcedure, reviewFor, reviewGate, reviewRuleOf, reviewSays, type CheckoutsReader,
@@ -2195,11 +2195,19 @@ function writtenMaps(path: string): unknown {
   return { workflows: back.workflows ?? {}, workspaceWorkflows: back.workspaceWorkflows ?? {} };
 }
 
+/**
+ * The choices without the text they were read from, so the writer writes what its reader holds, whole: since FABRIC-GRAPH1's review it
+ * writes over that text, keeping what it did not read, and these tables say what is read.
+ */
+function readOnly({ source: _source, ...choices }: DriverChoices): DriverChoices {
+  return choices;
+}
+
 test('both workflow maps are read and written as the driver reads and writes them (the shared table)', () => {
   const fx = makeFixture('driver-workflow-read');
   for (const row of SELECTION_TABLE.read) {
     writeFileSync(at(fx), JSON.stringify(row.file), 'utf8');
-    writeDriverChoices(at(fx), readDriverChoices(at(fx)));
+    writeDriverChoices(at(fx), readOnly(readDriverChoices(at(fx))));
     assert.deepEqual(writtenMaps(at(fx)), row.read, row.name);
   }
   fx.cleanup();
@@ -2228,7 +2236,7 @@ test('a workflow edit is the driver\'s, or refused in its words (the shared tabl
     const edited = applyWorkflowEdit(choices, row.edit);
     assert.equal(edited.refusal, row.refusal, row.name);
     if (row.refusal !== null) continue;
-    writeDriverChoices(at(fx), { ...choices, ...edited.maps! });
+    writeDriverChoices(at(fx), readOnly({ ...choices, ...edited.maps! }));
     assert.deepEqual(writtenMaps(at(fx)), row.read, `${row.name}: the maps after`);
   }
   fx.cleanup();
