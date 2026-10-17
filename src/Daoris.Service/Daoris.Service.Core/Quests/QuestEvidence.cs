@@ -214,6 +214,9 @@ public enum QuestVerdictField
 
     /// <summary>An item's <c>spelled</c> is not a <c>case</c> read's spelling of the path it names.</summary>
     Spelled,
+
+    /// <summary>The submission it was asked for is half named: no machine, or a sequence below 1 (FABRIC-CLOSE1e).</summary>
+    Submission,
 }
 
 /// <summary>
@@ -269,6 +272,16 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
     }
 
     /// <summary>
+    /// Whether it was asked for what <paramref name="quest"/> stands on (FABRIC-CLOSE1e, §E5): its current submission, named by
+    /// machine and sequence, or no submission on a quest that has none, which is every done from before. Covering the same
+    /// requirements is not enough: a later ready replaces a submission without changing them, and a verdict read before it,
+    /// arriving after, would release a submission nobody read.
+    /// </summary>
+    public bool AskedFor(Quest quest) => quest.Submission is { } current
+        ? Submission is { } asked && asked.Machine == current.Machine && asked.Sequence == current.Sequence
+        : Submission is null;
+
+    /// <summary>
     /// Why this verdict is not one in shape, naming the first field at fault — or null when every field is one (REFAC3,
     /// D144 §3, §5). The one judge both doors call: the exchange, before it judges whether the verdict reads what the done
     /// waits on, and the wire (<see cref="Judged"/>), whose replay judges that by <see cref="Covers"/>. Whether the quest
@@ -279,6 +292,7 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         if (!QuestEvidenceCodes.IsObjectId(Commit)) return new(QuestVerdictField.Commit);
         if (!QuestEvidenceCodes.How.Contains(How ?? "")) return new(QuestVerdictField.How);
         if (Session is not null && !QuestEvidenceCodes.IsSessionId(Session)) return new(QuestVerdictField.Session);
+        if (Submission is { } asked && (string.IsNullOrWhiteSpace(asked.Machine) || asked.Sequence < 1)) return new(QuestVerdictField.Submission);
 
         foreach (var (item, number) in Items.Select((item, index) => (item, index + 1)))
         {
@@ -310,9 +324,9 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
 
     public bool Equals(QuestEvidenceVerdict? other) =>
         other is not null && Commit == other.Commit && How == other.How && Session == other.Session && At == other.At
-        && Machine == other.Machine && Items.SequenceEqual(other.Items);
+        && Machine == other.Machine && Submission == other.Submission && Items.SequenceEqual(other.Items);
 
-    public override int GetHashCode() => HashCode.Combine(Commit, How, Session, At, Machine, Items.Count);
+    public override int GetHashCode() => HashCode.Combine(Commit, How, Session, At, Machine, Submission, Items.Count);
 
     /// <summary>
     /// Its one shape in the log's payload, the quest's column and on the wire. When and which machine are the
@@ -324,6 +338,15 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         writer.WriteString("commit", Commit);
         writer.WriteString("how", How);
         if (Session is not null) writer.WriteString("session", Session);
+        // Written only when named (FABRIC-CLOSE1e), so a verdict from before reads as it did.
+        if (Submission is { } asked)
+        {
+            writer.WriteStartObject("submission");
+            writer.WriteString("machine", asked.Machine);
+            writer.WriteNumber("sequence", asked.Sequence);
+            writer.WriteEndObject();
+        }
+
         if (standing && At is { } at) writer.WriteString("at", Moments.Write(at));
         if (standing && Machine is not null) writer.WriteString("machine", Machine);
         writer.WriteStartArray("items");
@@ -362,6 +385,17 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
 
         var session = Text(verdict, "session");
         if (verdict.TryGetProperty("session", out _) && session is null) return null;
+        QuestOperationRef? asked = null;
+        if (verdict.TryGetProperty("submission", out var named))
+        {
+            if (named.ValueKind != JsonValueKind.Object || Text(named, "machine") is not { } machine
+                || Number(named, "sequence") is not { } sequence)
+            {
+                return null;
+            }
+
+            asked = new QuestOperationRef(machine, sequence);
+        }
 
         var read = new List<QuestEvidenceRead>();
         foreach (var item in items.EnumerateArray())
@@ -393,7 +427,7 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         var at = Moments.Read(verdict, "at");
         var judged = new QuestEvidenceVerdict(commit, how, read)
         {
-            Session = session, At = at, Machine = Text(verdict, "machine"),
+            Session = session, At = at, Machine = Text(verdict, "machine"), Submission = asked,
         };
         return judged.JudgeShape() is null ? judged with { Commit = commit.ToLowerInvariant() } : null;
     }

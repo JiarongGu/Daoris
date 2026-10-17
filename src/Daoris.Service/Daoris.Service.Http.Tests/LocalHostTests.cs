@@ -713,12 +713,27 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(400, unread.Status);
         Assert.Contains("`docs/report-bridge.md`", unread.Error);
 
+        // FABRIC-CLOSE1e: a verdict names the submission it was read for, and a done has none, so one naming a submission is
+        // read for something else (409); one half named is not a verdict (400).
+        var reportFound = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "found" } };
+        var elsewhere = await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = Commit, how = "terminal", items = reportFound, submission = new { machine = "m1", sequence = 4L },
+        });
+        Assert.Equal(409, elsewhere.Status);
+        Assert.Contains("submission", elsewhere.Error);
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = Commit, how = "terminal", items = reportFound, submission = new { machine = "m1" },
+        })).Status);
+
         var found = await host.PostAsync($"/api/quests/{quest}/evidence", new
         {
             commit = "0123456789abcdef0123456789abcdef01234567", how = "terminal",
             items = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "found", @object = "fedcba9876543210fedcba9876543210fedcba98", changed = true } },
         });
         Assert.Equal(200, found.Status);
+        Assert.False(found.Json.GetProperty("quest").GetProperty("evidence").TryGetProperty("submission", out _));
         Assert.False(found.Json.GetProperty("quest").GetProperty("held").GetBoolean());
         // Nothing holds it: the host leaves a null out, as it does every other.
         Assert.False(found.Json.GetProperty("quest").TryGetProperty("hold", out var hold) && hold.ValueKind != JsonValueKind.Null);
@@ -774,7 +789,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/close", new { token = "t", quests = new[] { named } })).Status);
         Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/close", new
         {
-            key = "k1", token = "t", quests = new[] { new { id = "feedfacecafe", machine = "m", sequence = 1L } },
+            key = "k404", token = "t", quests = new[] { new { id = "feedfacecafe", machine = "m", sequence = 1L } },
         })).Status);
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/close", new
         {
@@ -791,6 +806,17 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, again.Status);
         Assert.Contains("made already", again.Json.GetProperty("message").GetString());
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/close", new { key = "k2", token = "t", quests = new[] { named } })).Status);
+        // FABRIC-CLOSE1e: a key answers only its own close (409 sent with another token), and a refusal is its first outcome,
+        // so the stale close's key still answers stale.
+        var reused = await host.PostAsync($"/api/quests/{quest}/close", new { key = "k1", token = "another", quests = new[] { named } });
+        Assert.Equal(409, reused.Status);
+        Assert.Contains("`k1`", reused.Error);
+        var stale = await host.PostAsync($"/api/quests/{quest}/close", new
+        {
+            key = "k0", token = "t", quests = new[] { named with { sequence = named.sequence + 7 } },
+        });
+        Assert.Equal(409, stale.Status);
+        Assert.Contains("first sent", stale.Error);
     }
 
     /// <summary>

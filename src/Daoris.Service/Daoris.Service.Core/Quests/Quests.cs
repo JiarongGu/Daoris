@@ -383,8 +383,13 @@ public enum QuestCloseRefusal
 /// <param name="Refusal"><see cref="QuestCloseRefusal.None"/> when every named quest is Done.</param>
 /// <param name="Quest">The quest a refusal failed on, or null.</param>
 /// <param name="Quests">Every named quest as it now stands, in the order named; empty where one was not found.</param>
-/// <param name="Replayed">Whether this was the same key again, answered with the first close's outcome and writing nothing.</param>
-public sealed record QuestClosing(QuestCloseRefusal Refusal, Quest? Quest, IReadOnlyList<Quest> Quests, bool Replayed = false);
+/// <param name="Replayed">
+/// Whether this was the same close again, answered with its first outcome and writing nothing: a close, or a refusal
+/// (FABRIC-CLOSE1e) whose quest may have moved since.
+/// </param>
+/// <param name="On">The id a refusal failed on, kept with it, so a replayed refusal names it whether or not the quest is found.</param>
+public sealed record QuestClosing(
+    QuestCloseRefusal Refusal, Quest? Quest, IReadOnlyList<Quest> Quests, bool Replayed = false, string? On = null);
 
 /// <summary>What a dismissal did: the quest as it now stands (null when there is no such quest), and how many conflicts went.</summary>
 public sealed record QuestDismissal(Quest? Quest, int Dismissed);
@@ -559,6 +564,17 @@ public sealed class QuestStore
                 CREATE TABLE IF NOT EXISTS quest_forgotten (
                   id TEXT PRIMARY KEY,
                   at TEXT NOT NULL
+                );
+                -- Each closure graph's close this machine answered (FABRIC-CLOSE1e, §E5 step 4): its key, its token, the
+                -- submissions it named and how it ended, a refusal as much as a close, on which quest. The same close sent again
+                -- answers that first outcome. The Done keeps the key as provenance; this keeps the call. Never pushed or served.
+                CREATE TABLE IF NOT EXISTS quest_closes (
+                  key     TEXT PRIMARY KEY,
+                  token   TEXT NOT NULL,
+                  named   TEXT NOT NULL,
+                  refusal TEXT NOT NULL,
+                  quest   TEXT NULL,
+                  at      TEXT NOT NULL
                 );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -1333,8 +1349,10 @@ public sealed class QuestStore
     /// submission's note and answers and the close's key and token as provenance.
     /// </summary>
     /// <remarks>
-    /// The key is what makes a close once (§E5 step 4): a close whose key a named quest's Done already carries is the same close
-    /// sent again after a timeout or a lost answer, and is answered with what the first wrote, writing nothing.
+    /// The key is what makes a close once (§E5 step 4). Each outcome is kept under its key, a refusal as much as a close, beside
+    /// the token and the submissions named, in this store and never as an operation (FABRIC-CLOSE1e). The same close sent again
+    /// after a timeout or a lost answer (the same key, token and submissions) is answered with that first outcome, writing nothing,
+    /// though what refused it is gone since. Anything else sent with that key is not that close, and is refused.
     /// </remarks>
     public Task<QuestClosing> CloseAsync(
         IReadOnlyList<(string Id, QuestOperationRef Submission)> named, QuestClose close, DateTimeOffset now,
@@ -1342,22 +1360,40 @@ public sealed class QuestStore
         InTransactionAsync(async (transaction, inside) =>
         {
             var judged = new List<(Quest Quest, IReadOnlyList<QuestOperation> History)>();
+            string? missing = null;
             foreach (var (id, _) in named)
             {
                 var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
                 if (QuestLog.Replay(history) is not { } quest)
                 {
-                    return new QuestClosing(QuestCloseRefusal.NotFound, null, [.. judged.Select(each => each.Quest)]);
+                    missing = id;
+                    break;
                 }
 
                 judged.Add((quest, history));
             }
 
-            // The same close again: its key is on a named quest's Done already.
-            if (judged.Any(each => each.History.Any(op => op is { Kind: QuestOperationKind.Done } && op.Close?.Key == close.Key)))
+            var standing = judged.Select(each => each.Quest).ToList();
+            var invocation = Invocation(named);
+            if (await CloseKeptAsync(close.Key, transaction, inside).ConfigureAwait(false) is { } first)
             {
-                return new QuestClosing(QuestCloseRefusal.None, null, [.. judged.Select(each => each.Quest)], Replayed: true);
+                if (first.Token != close.Token || first.Named != invocation)
+                {
+                    return new QuestClosing(QuestCloseRefusal.KeyReused, null, standing);
+                }
+
+                return new QuestClosing(
+                    first.Refusal, standing.FirstOrDefault(quest => quest.Id == first.On), standing, Replayed: true, On: first.On);
             }
+
+            // Kept under its key in the same transaction as what it judged, so a retry answers this outcome and no other.
+            async Task<QuestClosing> Refuse(QuestCloseRefusal refusal, Quest? quest, string on)
+            {
+                await KeepCloseAsync(close, invocation, refusal, on, now, transaction, inside).ConfigureAwait(false);
+                return new QuestClosing(refusal, quest, standing, On: on);
+            }
+
+            if (missing is not null) return await Refuse(QuestCloseRefusal.NotFound, null, missing).ConfigureAwait(false);
 
             foreach (var ((quest, history), (_, submission)) in judged.Zip(named))
             {
@@ -1381,7 +1417,7 @@ public sealed class QuestStore
                     refusal = QuestCloseRefusal.Unsealed;
                 }
 
-                if (refusal != QuestCloseRefusal.None) return new QuestClosing(refusal, quest, [.. judged.Select(each => each.Quest)]);
+                if (refusal != QuestCloseRefusal.None) return await Refuse(refusal, quest, quest.Id).ConfigureAwait(false);
             }
 
             var closed = new List<Quest>();
@@ -1395,8 +1431,66 @@ public sealed class QuestStore
                 closed.Add(done);
             }
 
+            await KeepCloseAsync(close, invocation, QuestCloseRefusal.None, null, now, transaction, inside).ConfigureAwait(false);
             return new QuestClosing(QuestCloseRefusal.None, null, closed);
         }, ct);
+
+    /// <summary>
+    /// What a close named, as its record compares it (FABRIC-CLOSE1e): each quest with its submission, in the quests' order, so
+    /// the same close sent again names the same whatever order it lists them in.
+    /// </summary>
+    private static string Invocation(IReadOnlyList<(string Id, QuestOperationRef Submission)> named) =>
+        JsonFields.Written(writer =>
+        {
+            writer.WriteStartArray();
+            foreach (var (id, submission) in named.OrderBy(each => each.Id, StringComparer.Ordinal))
+            {
+                writer.WriteStartObject();
+                writer.WriteString("quest", id);
+                writer.WriteString("machine", submission.Machine);
+                writer.WriteNumber("sequence", submission.Sequence);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        });
+
+    /// <summary>A close's first outcome, as kept under its key: its token, what it named, how it ended and on which quest.</summary>
+    private sealed record KeptClose(string Token, string Named, QuestCloseRefusal Refusal, string? On);
+
+    /// <summary>The outcome kept under <paramref name="key"/>, or null where no close was sent with it.</summary>
+    private async Task<KeptClose?> CloseKeptAsync(string key, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.Transaction = transaction;
+        command.CommandText = "SELECT token, named, refusal, quest FROM quest_closes WHERE key = $key";
+        command.Parameters.AddWithValue("$key", key);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
+
+        // A refusal this build does not name is still a refusal: answered as a key that is not this close's, never as a close.
+        var refusal = Enum.TryParse<QuestCloseRefusal>(reader.GetString(2), out var kept) ? kept : QuestCloseRefusal.KeyReused;
+        return new KeptClose(reader.GetString(0), reader.GetString(1), refusal, reader.IsDBNull(3) ? null : reader.GetString(3));
+    }
+
+    /// <summary>Keep a close's outcome under its key (FABRIC-CLOSE1e): the store's own, never pushed or served.</summary>
+    private async Task KeepCloseAsync(
+        QuestClose close, string invocation, QuestCloseRefusal refusal, string? on, DateTimeOffset now,
+        SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.Transaction = transaction;
+        command.CommandText = """
+            INSERT INTO quest_closes (key, token, named, refusal, quest, at) VALUES ($key, $token, $named, $refusal, $quest, $at)
+            """;
+        command.Parameters.AddWithValue("$key", close.Key);
+        command.Parameters.AddWithValue("$token", close.Token);
+        command.Parameters.AddWithValue("$named", invocation);
+        command.Parameters.AddWithValue("$refusal", refusal.ToString());
+        command.Parameters.AddWithValue("$quest", (object?)on ?? DBNull.Value);
+        command.Parameters.AddWithValue("$at", Moments.Write(now));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// The person accepts a done as it stands (DRIFT1d, D133 §4; EVID1a, D144 §6): its departure, or its evidence unread
@@ -1966,10 +2060,11 @@ public sealed class QuestStore
 
                 // A submission that lost takes the step it published with it, its publication pending on the same take
                 // (FABRIC-CLOSE1a, §E5), and the take's conflict names it. One that lost to another machine's done leaves the
-                // step that done published, which is the same one.
+                // step that done published, which is the same one. The step goes even once this machine took it, and its
+                // take reads lost, so its session is stopped (FABRIC-CLOSE1e).
                 if (operation.Kind == QuestOperationKind.Submitted && quest is not { Status: QuestStatus.Done })
                 {
-                    await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+                    conflicts.AddRange(await ForgetStepsAsync(id, lostClaim, transaction, ct).ConfigureAwait(false));
                     submissionLost |= lostClaim;
                 }
 
@@ -2122,6 +2217,80 @@ public sealed class QuestStore
             drop.Parameters.AddWithValue("$id", child);
             await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// The steps a lost submission published (FABRIC-CLOSE1e, §E5), with what this machine did on them since, and the steps they
+    /// published in turn: each grew from a submission that no longer stands, so none was asked. A step is forgotten only while
+    /// every operation of it is this machine's and none was pushed; one a remote holds is every machine's, and stays.
+    /// </summary>
+    /// <remarks>
+    /// Where this machine took a step, its take is not forgotten but rewritten as a conflict, which the claim reads as lost
+    /// (<see cref="QuestLog.Claim"/>), so the driver stops the step's session as it stops any session whose take lost (D69). Its
+    /// publication gone, the conflict is on a quest no list shows and no push carries, as one on a quest deleted first is (D95),
+    /// and its note says why: the parent's submission went. Should the winner's chain publish the same step later (its id comes
+    /// from the parent and the step), the conflict stands on it and goes up, as any take that lost is shown on the winner's quest.
+    /// </remarks>
+    /// <returns>The takes rewritten, as the rebase reports its conflicts.</returns>
+    private async Task<IReadOnlyList<QuestOperation>> ForgetStepsAsync(
+        string parent, bool takeLost, SqliteTransaction transaction, CancellationToken ct)
+    {
+        var children = new List<string>();
+        await using (var command = _db.Command())
+        {
+            command.Transaction = transaction;
+            command.CommandText = "SELECT id FROM quests WHERE parent = $parent";
+            command.Parameters.AddWithValue("$parent", parent);
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) children.Add(reader.GetString(0));
+        }
+
+        var told = new List<QuestOperation>();
+        foreach (var child in children)
+        {
+            var history = await HistoryAsync(child, transaction, ct).ConfigureAwait(false);
+            if (history is not [{ Kind: QuestOperationKind.Published }, ..]
+                || history.Any(operation => operation.Number is not null || operation.Machine != Machine))
+            {
+                continue;
+            }
+
+            told.AddRange(await ForgetStepsAsync(child, takeLost, transaction, ct).ConfigureAwait(false));
+            foreach (var operation in history)
+            {
+                var position = (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false))!.Value;
+                if (operation.Kind != QuestOperationKind.Taken)
+                {
+                    await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
+                    continue;
+                }
+
+                var lost = operation with
+                {
+                    Kind = QuestOperationKind.Conflict, Attempted = QuestStatus.Taken, Note = StepWentWith(parent, takeLost, operation.Note),
+                    NoteParts = null, WhileOpen = false, Close = null,
+                };
+                await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
+                told.Add(lost);
+            }
+
+            await DropCacheAsync(child, transaction, ct).ConfigureAwait(false);
+        }
+
+        return told;
+    }
+
+    /// <summary>
+    /// A lost step's take's note as it was given, then why the step went (FABRIC-CLOSE1e): the parent's submission that published
+    /// it no longer stands, with the parent's take or to another machine's move on the parent.
+    /// </summary>
+    internal static string StepWentWith(string parent, bool takeLost, string? note)
+    {
+        var said = $"This quest was the next step of #{parent}'s submission, which "
+                   + (takeLost ? $"went with this machine's take of #{parent}: another machine's take reached the remote first"
+                               : $"lost to another machine's move on #{parent}")
+                   + ". The step went with it, so its work is not wanted.";
+        return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
     }
 
     private async Task NumberAsync(long position, long number, SqliteTransaction transaction, CancellationToken ct)

@@ -292,8 +292,10 @@ public static class QuestLog
         // never a move. A review's hold is the person's verdict's to lift, never a yes's (REVIEWENV1b, D154 point 9).
         QuestOperationKind.Accepted => quest?.Hold is QuestHold.Departed or QuestHold.EvidenceUnread or QuestHold.EvidenceMissing,
         // A verdict only while the done waits on its evidence, and only one that reads exactly that (EVID1a): a second
-        // machine's verdict on evidence already found is no move, and a verdict on what the done never named is none.
-        QuestOperationKind.Evidenced => quest is { AwaitsEvidence: true } && operation.Evidence?.Covers(quest) == true,
+        // machine's verdict on evidence already found is no move, and a verdict on what the done never named is none. On a
+        // submission, only one asked for that submission (FABRIC-CLOSE1e): one read before a later ready replaced it is none.
+        QuestOperationKind.Evidenced => quest is { AwaitsEvidence: true } && operation.Evidence is { } read
+                                        && read.Covers(quest) && read.AskedFor(quest),
         // A set-up only on a set-up step not declined, and a second post of one already kept is no move (REVIEWENV1b).
         QuestOperationKind.SetUp => quest is { SetUpIn: not null, Status: not QuestStatus.Declined }
                                     && operation.SetUp is { } setUp && !quest.SetUps.Any(setUp.Same),

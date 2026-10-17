@@ -463,12 +463,13 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(QuestCloseRefusal.Malformed, (await _exchange.CloseAsync(quest.Id, "k", "t", [], Now)).Refusal);
         Assert.Equal(QuestCloseRefusal.Malformed,
             (await _exchange.CloseAsync(quest.Id, "k", "t", [Named(submitted), Named(submitted)], Now)).Refusal);
+        // Each call is its own close, so each takes its own key (FABRIC-CLOSE1e): a malformed call is none, and keeps no key.
         Assert.Equal(QuestCloseRefusal.NotFound,
             (await _exchange.CloseAsync("feedfacecafe", "k", "t", [("feedfacecafe", new QuestOperationRef("m", 1))], Now)).Refusal);
 
         var unbound = await Taken(chain: false, title: "Another report");
         Assert.Equal(QuestCloseRefusal.NotBound,
-            (await _exchange.CloseAsync(unbound.Id, "k", "t", [(unbound.Id, new QuestOperationRef("m", 1))], Now)).Refusal);
+            (await _exchange.CloseAsync(unbound.Id, "k-unbound", "t", [(unbound.Id, new QuestOperationRef("m", 1))], Now)).Refusal);
 
         // The person's override: closed as theirs, and the graph's close finds it closed.
         await _exchange.PersonDoneAsync(quest.Id, null, Now);

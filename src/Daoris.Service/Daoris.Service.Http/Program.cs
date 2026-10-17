@@ -719,6 +719,8 @@ if (mode == ServiceMode.Local)
             }).ToList())
         {
             Session = body.Session,
+            // Half named, it arrives blank and is refused by the exchange naming the field (FABRIC-CLOSE1e).
+            Submission = body.Submission is { } asked ? new QuestOperationRef(asked.Machine ?? "", asked.Sequence ?? 0) : null,
         };
         var outcome = await s.Exchange.EvidenceAsync(id, verdict, DateTimeOffset.UtcNow, ct);
         return outcome.Refusal switch
@@ -2202,7 +2204,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
         ? new QuestEvidenceVerdictWire(
             read.Commit, read.How, read.Session,
             read.Items.Select(i => (QuestEvidenceReadWire?)new QuestEvidenceReadWire(i.Requirement, i.Path, i.Gate, i.Result, i.Object, i.Changed, i.Spelled)).ToList(),
-            read.At, read.Machine)
+            read.At, read.Machine,
+            read.Submission is { } asked ? new QuestSubmissionRefWire(asked.Machine, asked.Sequence) : null)
         : null,
     // The review on the record (REVIEWENV1b): names, words and codes, which every door may answer; a local set-up's address is
     // absent where it came from another machine, as the wire left it.

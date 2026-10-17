@@ -83,9 +83,13 @@ public sealed record QuestEvidenceWire(string? Path, string? Gate = null);
 public sealed record QuestEvidenceReadWire(
     int? Requirement, string? Path, string? Gate, string? Result, string? Object = null, bool? Changed = null,
     string? Spelled = null);
+// `Submission` (FABRIC-CLOSE1e) is the submission it was read for, both ways: a submission's verdict names it, and a done's names
+// none, so it is absent for every verdict from before.
 public sealed record QuestEvidenceVerdictWire(
     string? Commit, string? How, string? Session = null, IReadOnlyList<QuestEvidenceReadWire?>? Items = null,
-    DateTimeOffset? At = null, string? Machine = null);
+    DateTimeOffset? At = null, string? Machine = null, QuestSubmissionRefWire? Submission = null);
+// Which submission a verdict was read for, by the machine and sequence that made it, as a close names one (FABRIC-CLOSE1e).
+public sealed record QuestSubmissionRefWire(string? Machine, long? Sequence);
 // How a done answers one requirement (DRIFT1d, D133 §4): its number, and `Met` with how its check was met, or
 // `Departed` with the reason and `Quote`, the person's words it turns on — the same shape both ways. Nullable on the
 // way in and judged by the exchange, which refuses one that says both or neither, naming which.

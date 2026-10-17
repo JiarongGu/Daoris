@@ -1526,18 +1526,45 @@ public sealed class QuestExchange(
             return Malformed($"A close at `#{route}` names `#{route}` among the quests it closes.");
         }
 
-        var closing = await quests.CloseAsync(listed, new QuestClose(key.Trim(), token.Trim()), now, ct).ConfigureAwait(false);
-        // Not found: the first named quest the store did not find, since it answers those it found before it.
-        var on = listed.Select(each => each.Id).FirstOrDefault(each => closing.Quests.All(quest => quest.Id != each)) ?? route;
+        var close = new QuestClose(key.Trim(), token.Trim());
+        var closing = await quests.CloseAsync(listed, close, now, ct).ConfigureAwait(false);
+        var on = closing.On ?? route;
+        if (closing.Replayed && closing.Refusal != QuestCloseRefusal.None)
+        {
+            // The first outcome, though what refused it may be gone since (FABRIC-CLOSE1e): said as it was, not as it now stands.
+            return new(closing.Refusal,
+                $"This close was refused when it was first sent with key `{close.Key}`: {RefusedThen(closing.Refusal, on)} The same "
+                + "close sent again answers its first outcome, so a new attempt is sent with a new key. Nothing was closed.",
+                closing.Refusal == QuestCloseRefusal.NotFound ? [] : closing.Quests);
+        }
+
         return closing.Refusal switch
         {
             QuestCloseRefusal.None => new(QuestCloseRefusal.None, closing.Replayed
                 ? $"This close was made already: {Closed(closing.Quests)}. Nothing more was written."
                 : $"Closed {Closed(closing.Quests)}, each on the submission named.", closing.Quests),
             QuestCloseRefusal.NotFound => new(closing.Refusal, $"No quest `#{on}`. Ids come from `quest_list`. Nothing was closed.", []),
+            QuestCloseRefusal.KeyReused => new(closing.Refusal,
+                $"Key `{close.Key}` was sent with another close already, with another token or other submissions: a key answers "
+                + "only the close it was sent with. A new attempt is sent with a new key. Nothing was closed.", closing.Quests),
             _ => new(closing.Refusal, $"{Refused(closing.Refusal, closing.Quest!)} Nothing was closed.", closing.Quests),
         };
     }
+
+    /// <summary>
+    /// Which check refused a close when it was first sent (FABRIC-CLOSE1e), in words that hold however the quest has moved since.
+    /// </summary>
+    private static string RefusedThen(QuestCloseRefusal refusal, string on) => refusal switch
+    {
+        QuestCloseRefusal.NotFound => $"no quest `#{on}` was found.",
+        QuestCloseRefusal.Closed => $"quest `#{on}` was closed already.",
+        QuestCloseRefusal.NotBound => $"quest `#{on}` was in no graph that closes it.",
+        QuestCloseRefusal.NotHeld => $"quest `#{on}` was not this machine's.",
+        QuestCloseRefusal.Stale => $"quest `#{on}`'s current submission was not the one named.",
+        QuestCloseRefusal.Held => $"quest `#{on}`'s submission was held for the person.",
+        QuestCloseRefusal.Unsealed => $"quest `#{on}`'s next step was not published from its submission.",
+        _ => $"quest `#{on}` was refused.",
+    };
 
     /// <summary>The quests a close wrote Done, as an answer names them.</summary>
     private static string Closed(IReadOnlyList<Quest> quests) =>
@@ -1724,6 +1751,7 @@ public sealed class QuestExchange(
 
         if (NotAwaiting(quest) is { } why) return new(QuestRespondRefusal.NotAwaitingEvidence, why, Quest: null);
         if (JudgeVerdict(quest, verdict) is { } unfit) return new(QuestRespondRefusal.BadVerdict, unfit + " Nothing was kept.", Quest: null);
+        if (Unasked(quest, verdict) is { } other) return new(QuestRespondRefusal.NotAwaitingEvidence, other, Quest: null);
 
         var judged = verdict with { Commit = verdict.Commit.ToLowerInvariant() };
         var move = await quests.EvidenceAsync(name, judged, now, ct).ConfigureAwait(false);
@@ -1732,10 +1760,10 @@ public sealed class QuestExchange(
             return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
         }
 
-        // Judged again inside the write: another verdict or the person's yes may have come first.
+        // Judged again inside the write: another verdict, the person's yes or a later ready may have come first.
         if (!move.Moved)
         {
-            return new(QuestRespondRefusal.NotAwaitingEvidence, NotAwaiting(move.Quest)
+            return new(QuestRespondRefusal.NotAwaitingEvidence, NotAwaiting(move.Quest) ?? Unasked(move.Quest, judged)
                 ?? $"Quest `#{name}` no longer waits on what this verdict reads.", Quest: null);
         }
 
@@ -1754,6 +1782,27 @@ public sealed class QuestExchange(
             $"Quest `#{quest.Id}`'s evidence was already found, at `{Short(found.Commit)}`: nothing waits on it.",
         _ => $"Quest `#{quest.Id}`'s done names no evidence on a requirement it met: nothing waits on it.",
     };
+
+    /// <summary>
+    /// Why <paramref name="verdict"/> was not asked for what <paramref name="quest"/> stands on (FABRIC-CLOSE1e, §E5), or null
+    /// when it was: a submission's verdict names that submission, and a done's names none.
+    /// </summary>
+    private static string? Unasked(Quest quest, QuestEvidenceVerdict verdict) => verdict.AskedFor(quest)
+        ? null
+        : (quest.Submission, verdict.Submission) switch
+        {
+            ({ } current, { } asked) =>
+                $"This verdict was read for submission `{asked.Machine}` {asked.Sequence} of quest `#{quest.Id}`, and its current "
+                + $"submission is `{current.Machine}` {current.Sequence}: a later `ready` replaced the one read, so read the current "
+                + "one's evidence. Nothing was kept.",
+            ({ } current, null) =>
+                $"Quest `#{quest.Id}` waits on its submission's evidence, and a verdict names the submission it read: "
+                + $"`{current.Machine}` {current.Sequence} is current. Nothing was kept.",
+            (null, { } asked) =>
+                $"This verdict was read for submission `{asked.Machine}` {asked.Sequence}, and quest `#{quest.Id}` has none: "
+                + "a done's verdict names no submission. Nothing was kept.",
+            _ => null,
+        };
 
     /// <summary>
     /// Why <paramref name="verdict"/> does not read exactly what <paramref name="quest"/> waits on, naming the first fault
@@ -1805,6 +1854,8 @@ public sealed class QuestExchange(
                     $"A verdict names the commit it read by its full id (40 or 64 hex characters), and `{Clip(verdict.Commit ?? "")}` is not one.",
                 QuestVerdictField.How =>
                     $"A verdict says how its commit was chosen: `session-end`, `sweep` or `terminal`, and `{Clip(verdict.How ?? "")}` is none of them.",
+                QuestVerdictField.Submission =>
+                    "A verdict names the submission it was read for by the machine and the sequence that made it, as the quest answers them.",
                 _ => $"A verdict names the session whose end it read by its id, and `{Clip(verdict.Session ?? "")}` is not one.",
             };
         }
