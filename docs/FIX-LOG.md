@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — Durable execution could dispatch a node twice, take an outcome back, and settle an attempt nothing had answered (FABRIC-PERFORM1h)
+
+- **Symptom:** found by a second maker's review of FABRIC-PERFORM1b, before it was staged or called by any loop: two starts on one ready
+  node both dispatched; a send's receipt wrote back the record as it stood before the send, dropping another node's start made
+  meanwhile, and putting a node heard reached back to active; a `running` answer did the same to an outcome heard while it was awaited;
+  an `idempotent`-only attempt of a stopped node was settled as never started, its gate lifted while its effect might still run, and its
+  completion later dropped as a replay; a pending retry was trimmed away with its timer; `{"unit":"u"}` read as an empty record; and a
+  retry after a person's new attempt waited a later delay than its first.
+- **Root cause:** `NodeRecordFiles.Write` held the record's lock only for the final replace, so every caller read and decided outside
+  it, and the lease was asked nowhere in the record; the performer kept the record it read before an await and wrote it whole after;
+  idempotency alone was taken for a `not-started` answer; trimming judged an attempt by its state alone; the parser defaulted an absent
+  or mistyped container to empty and never checked the record against itself; the retry's delay was indexed by the attempt's lifetime
+  number, which grows across bindings and runs, where the bound counts tries.
+- **Fix:** D173's FABRIC-PERFORM1b note, choices 1, 4, 6, 8 and 9 changed and its "After review": `NodeRecordFiles.Edit`, one
+  read-modify-write in one hold of the lock with the lease asked inside; every receipt and answer applied after its await to its own
+  invocation, only while that attempt still waits for it; an `idempotent`-only attempt redelivered while current and held otherwise
+  (`not-current`); every attempt a status needs kept; a record whose structure does not hold or that disagrees with itself unreadable;
+  the delay by `Tries + 1`.
+- **Verification:** 24 fast tests (`WorkPerformerTests` 7, `NodeRecordFilesTests` 17 with the theory's rows), each seen failing on
+  PERFORM1b's code with only the new members added, then passing; the driver's fast half; `WorkPerformProcessTests` by class.
+
 ## 2026-10-17 — The work wire's bound lost valid landing answers, and its supervision could hang, starve or stay deaf (FABRIC-PERFORM1a)
 
 - **Symptom:** found by a second maker's review of FABRIC-PERFORM1a, before it was staged: a landing plugin's valid answer over 64 KB
