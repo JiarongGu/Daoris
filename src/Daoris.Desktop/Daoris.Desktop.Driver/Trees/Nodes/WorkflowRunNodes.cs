@@ -86,7 +86,7 @@ public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Versi
     public bool Readable => Version.Readable;
 
     /// <summary>Canary 38's equivalence: the graph's eligible nodes are exactly schema 1's <see cref="WorkflowRun.At"/>, and nothing differs.</summary>
-    public bool Agrees => Readable && Differences.Count == 0 && Frontier.SequenceEqual(Run.At is null ? [] : [Run.At]);
+    public bool Agrees => Readable && Run.Problem is null && Differences.Count == 0 && Frontier.SequenceEqual(Run.At is null ? [] : [Run.At]);
 }
 
 /// <summary>
@@ -142,7 +142,9 @@ public static class WorkflowRunNodes
     /// </summary>
     public static WorkflowRunProjection Project(WorkflowRun run, DecodedVersion version, string runId)
     {
-        if (version.Graph is not { } graph || version.GraphDigest is not { } digest)
+        // A run schema 1 does not read (held on its binding, a graph version held as unrun) has no steps to compare: nothing is read onto
+        // its graph, so an empty run never agrees by default.
+        if (version.Graph is not { } graph || version.GraphDigest is not { } digest || run.Problem is not null)
         {
             return new(run, version) { Steps = [.. run.Steps.Select(step => new WorkflowRunNode(step, null, null, false))] };
         }

@@ -314,6 +314,11 @@ public sealed class WorkflowRunNodesTests : IDisposable
         Assert.Equal(["work"], projection.Frontier);
         Assert.Equal(NodeStates.Blocked, projection.Statuses["land"].State);
         Assert.False(projection.Agrees);
+
+        // A run schema 1 does not read (a graph version held as unrun, a binding it holds) is not compared, so it never agrees by being empty.
+        var held = new WorkflowRun(Repo, Space, run.Current, [RunId], []) { Process = run.Process, Problem = "held as unrun" };
+        var unread = WorkflowRunNodes.Project(held, WorkflowGraphs.DecodeSteps(1, Basic), RunId);
+        Assert.True(unread is { Readable: true, Agrees: false, Frontier.Count: 0, Statuses.Count: 0, Differences.Count: 0 });
     }
 
     /// <summary>
