@@ -372,6 +372,8 @@ public sealed class DriverWatch(
                     {
                         Units = NodeUnitsAsync,
                         Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
+                        // FABRIC-PERFORM1i: an observed node's event is bound to its branch's tip read now, once per checkout per pass.
+                        Tips = NodeTips.ReadAsync,
                     }, token).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
