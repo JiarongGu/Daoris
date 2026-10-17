@@ -16,9 +16,10 @@ public sealed class PullRequestOccasionTests
 
     /// <summary>
     /// The occasions that may ask, each by the method it is asked from: LAND3's tidy, the clean-up's look, bringing up to date's
-    /// look after its fetch, and <i>Ask again</i> (PLUGHOOK1c). Nothing else joins them.
+    /// look after its fetch, <i>Ask again</i> (PLUGHOOK1c), and the due moments of FABRIC-END6 (the fabric events design §A4.3, the
+    /// owner's yes in D173's part C note), which amend D148 point 2's list. Nothing else joins them.
     /// </summary>
-    private static readonly string[] Occasions = ["TidyCarriedAsync", "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync"];
+    private static readonly string[] Occasions = ["TidyCarriedAsync", "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync", "AskAtMomentAsync"];
 
     [Fact]
     public void The_loop_keeps_no_process_for_the_query_and_has_nothing_to_ask_it()
@@ -109,6 +110,22 @@ public sealed class PullRequestOccasionTests
             .ToList();
 
         Assert.Equal(["TreesConsole.cs"], doors);
+    }
+
+    /// <summary>
+    /// FABRIC-END6 (§A4.3): the due moments ask from the moments alone, whose wakes are origin's line moving, Daoris's push and the
+    /// window's focus, never a press and never a deadline; the trees' front is a one-line call.
+    /// </summary>
+    [Fact]
+    public void The_due_moments_ask_from_the_moments_alone()
+    {
+        var doors = Calls(@"\bAskAtMomentAsync\s*\(")
+            .Where(call => call.Method != "AskAtMomentAsync")
+            .Select(call => Path.GetFileName(call.File))
+            .Distinct()
+            .ToList();
+
+        Assert.Equal(["PullRequestMoments.cs"], doors);
     }
 
     /// <summary>

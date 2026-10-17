@@ -95,6 +95,9 @@ public static class ChangeTopics
     /// wake of the evaluation runtime, link 8, at the moment the record names rather than at the look's deadline.
     /// </summary>
     public const string Nodes = "nodes";
+
+    /// <summary>The window has the person's focus (FABRIC-END6): a moment to ask about an open pull request, the shell's alone (link 6).</summary>
+    public const string Focus = "focus";
 }
 
 /// <summary>One judgement asked: of which topic's subject, and why. A subject is a name, never a path.</summary>

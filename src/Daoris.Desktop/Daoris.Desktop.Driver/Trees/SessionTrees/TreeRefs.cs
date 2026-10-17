@@ -83,16 +83,22 @@ internal static class TreeRefs
     /// moves only origin's own refs here. Null where it fetched; otherwise why not, in git's words — and origin's address.
     /// </summary>
     /// <remarks>
-    /// <b>It writes no <c>FETCH_HEAD</c></b> (WSR7): a fetch that fails empties that file and stamps it with the failure's
-    /// time, which made the person's own last fetch unreadable, and only origin's refs are the look's to move.
+    /// <para><b>It writes no <c>FETCH_HEAD</c></b> (WSR7): a fetch that fails empties that file and stamps it with the failure's
+    /// time, which made the person's own last fetch unreadable, and only origin's refs are the look's to move.</para>
+    /// <para><b>One at a time per line</b> (FABRIC-END6c): a fetch of the line already in flight, whichever path started it, is joined
+    /// rather than started again beside it (<see cref="RemoteFetches.OnceAsync"/>).</para>
     /// </remarks>
-    internal static async Task<(string? Failed, string? Url)> FetchAsync(string root, string? line, CancellationToken ct)
+    internal static async Task<(string? Failed, string? Url)> FetchAsync(string root, string? line, CancellationToken ct) =>
+        line is null ? (null, null) : await RemoteFetches.OnceAsync(root, line, token => FetchingAsync(root, line, token), ct).ConfigureAwait(false);
+
+    private static async Task<(string? Failed, string? Url)> FetchingAsync(string root, string line, CancellationToken ct)
     {
-        if (line is null) return (null, null);
         var (remote, url, _) = await WorkingTree.GitAsync(root, ["remote", "get-url", "origin"], ct).ConfigureAwait(false);
         if (remote != 0) return ("there is no `origin` remote here", null);
         var (code, _, err) = await WorkingTree.GitAsync(
             root, ["fetch", "--quiet", "--no-write-fetch-head", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
+        // FABRIC-END6: every fetch of the line counted, made or failed, so a moment inside its minute fetches nothing more (§A4.3).
+        RemoteFetches.Fetched(root, line, DateTimeOffset.UtcNow);
         return (code == 0 ? null : Failure(err), url.Trim());
     }
 

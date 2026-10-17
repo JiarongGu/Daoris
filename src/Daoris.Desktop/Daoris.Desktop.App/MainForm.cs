@@ -146,6 +146,8 @@ public sealed class MainForm : OptimizedForm
         {
             if (Visible) _mains?.Shown();
         };
+        // FABRIC-END6: the window's focus is a moment to ask about an open pull request (§A4.3); the driver bounds it to D148's minute.
+        Activated += (_, _) => _driver.Focused();
         FormClosed += (_, _) => _notifier.Dispose();
         FormClosed += (_, _) => _badge.Dispose();
 

@@ -23,6 +23,13 @@ with the version and date at release.
   plain browser asks as before.
 - The knowledge server reads a checkout again at the next search after its files or branches change, rather than once a
   minute, and at least every five minutes.
+- A pull request your landing's plugin opened is asked about when its answer may have changed:
+  - when your own fetch or pull moves the line;
+  - right after Daoris pushes;
+  - when you bring Daoris's window forward.
+
+  Each pull request is asked at most once a minute, and the line is fetched at most once a minute. A completed pull request
+  whose merge reaches this machine then ends its work, with no press.
 - A conversation whose turn ends with commits beyond its line now offers *Accept…* (采纳…) at the foot of the chat and in its
   head, as a driven session does, not only in the review's side bar; none is offered while a turn runs. Its *Accept* names the
   branch for the work's first commit, never for your opening words; a ticket you named in those words still names it.
