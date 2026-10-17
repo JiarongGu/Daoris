@@ -259,7 +259,9 @@ internal sealed class AutoTidies(
         // AUTOTIDY2b: the landings' branches first, as their own proof finds them before any session branch leans on them: one whose
         // work the line holds holds a session branch's work there too, so that session branch goes first, as the press takes it.
         var landed = entries.Count == 0 ? [] : await cleanups.JudgeLandedAsync(root, repository, space, entries, [], stale: null, ct, refs).ConfigureAwait(false);
-        var onLine = landed.Where(each => each.Line is not null).Select(each => new LineLanding(each.Item.Branch, each.Tip, each.Line!)).ToList();
+        // FABRIC-END4a, fourth review: each with what its own proof rested on, which a session branch's removal through it rests on too.
+        var onLine = landed.Where(each => each.Line is not null)
+            .Select(each => new LineLanding(each.Item.Branch, each.Tip, each.Line!) { Rests = each.Rests }).ToList();
         var plan = branches.Count == 0 ? []
             : await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true, onLine).ConfigureAwait(false);
         // What the press's judgement kept of the unproven is remembered at its tip and the line's commit, and not judged again until either moves.

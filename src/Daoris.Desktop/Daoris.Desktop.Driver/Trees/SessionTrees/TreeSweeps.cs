@@ -399,7 +399,9 @@ internal sealed class TreeSweeps(
         if (byItself && onLine is null && await LandingHoldingAsync(root, tip, landings, ct).ConfigureAwait(false) is { } landing)
         {
             onLine = landing.Line;
+            // FABRIC-END4a, fourth review: and on what that landing's proof rested on, so the line rewound since it was proved keeps it.
             rests?.Add(($"refs/heads/{landing.Branch}", landing.Tip));
+            rests?.AddRange(landing.Rests);
         }
 
         return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null }, tip);
@@ -427,11 +429,12 @@ internal sealed class TreeSweeps(
 
     /// <summary>
     /// The form of the line a landing's branch holding <paramref name="tip"/> was proven on (AUTOTIDY2b), the first that holds it;
-    /// null where none does, or git could not say. A removal on it rests on that branch at the tip judged (FABRIC-END4a, third review).
+    /// null where none does, or git could not say. A removal on it rests on that branch at the tip judged (FABRIC-END4a, third review), and
+    /// on what its own proof rested on (fourth review): a landing whose proof names nothing it rested on holds nothing here.
     /// </summary>
     private static async Task<LineLanding?> LandingHoldingAsync(string root, string tip, IReadOnlyList<LineLanding>? landings, CancellationToken ct)
     {
-        foreach (var landing in landings ?? [])
+        foreach (var landing in (landings ?? []).Where(each => each.Rests.Count > 0))
         {
             var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, landing.Tip], ct).ConfigureAwait(false);
             if (code == 0) return landing;
@@ -448,4 +451,11 @@ internal sealed class TreeSweeps(
 /// </summary>
 /// <param name="Tip">The commit it was judged at.</param>
 /// <param name="Line">The form of the line its proof named (<c>main</c>, <c>origin/main</c>).</param>
-internal sealed record LineLanding(string Branch, string Tip, string Line);
+internal sealed record LineLanding(string Branch, string Tip, string Line)
+{
+    /// <summary>
+    /// What its own proof rested on, each ref at the commit read (FABRIC-END4a, fourth review): the form of the line it was proved on. A
+    /// session branch's removal through it rests on these too, so the line rewound since keeps that branch. None, and it holds nothing.
+    /// </summary>
+    internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
+}

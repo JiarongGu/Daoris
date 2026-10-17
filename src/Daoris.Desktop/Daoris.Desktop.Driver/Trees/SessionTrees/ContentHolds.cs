@@ -365,15 +365,23 @@ internal sealed class ContentHolds(TreeContext context)
     /// it was judged, or a ref the proof rested on no longer at its commit; else git's own words. Nothing was deleted.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Gone only on git's own word</b> (third review): exit 1 from <c>rev-parse --verify --quiet</c> is git's "no such ref". Any other
-    /// failure is a read not made, which is never "gone": the branch is said kept, unread, and the caller keeps any recovery ref, since
-    /// <see cref="DropKeptAsync"/> drops one only where the branch is shown to hold its commit.
+    /// 🔴 <b>Gone only on git's own word</b> (third review): any failure to read is never "gone": the branch is said kept, unread, and the
+    /// caller keeps any recovery ref, since <see cref="DropKeptAsync"/> drops one only where the branch is shown to hold its commit. Exit 1
+    /// from <c>rev-parse --verify --quiet</c> is any failure to resolve, a broken ref's too (fourth review), so absence is asked of
+    /// <c>show-ref --exists</c>, whose exit 2 alone says the ref is missing. A git older than 2.43 has no <c>--exists</c>, and its refusal
+    /// reads as unread: the branch said kept where it went, never the other way.
     /// </remarks>
     private static async Task<string?> RefusedAsync(string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, string err)
     {
         var none = CancellationToken.None;
         var (exists, now, readErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], none).ConfigureAwait(false);
-        if (exists == 1) return null;
+        if (exists == 1)
+        {
+            var (missing, _, missingErr) = await WorkingTree.GitAsync(root, ["show-ref", "--exists", $"refs/heads/{branch}"], none).ConfigureAwait(false);
+            if (missing == 2) return null;
+            readErr = missingErr;
+        }
+
         if (exists != 0)
         {
             return $"git would not delete it ({FirstLine(err)}), and could not read whether it still stands ({Said(readErr)}), so it is kept as unread";

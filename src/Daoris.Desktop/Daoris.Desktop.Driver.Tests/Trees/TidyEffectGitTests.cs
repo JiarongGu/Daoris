@@ -110,6 +110,41 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
+    /// 🔴 The fourth review's P1 (AutoTidies.cs:262, TreeSweeps.cs:402): a session branch whose work the line holds through a landing's
+    /// branch rests on what that landing's proof rested on, the line at the commit read, as well as on the landing's branch. The line rewound
+    /// after the landing was proved keeps the session branch: its work is no longer on the line.
+    /// </summary>
+    [Fact]
+    public async Task A_line_rewound_after_a_landing_was_proved_keeps_the_session_branch_it_holds()
+    {
+        var root = await RepositoryAsync("engine");
+        var opened = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "a.txt", "a\n", "work on a");
+        var landed = await new SessionTrees(Home).LandAsync(opened.Path, new LandingSubject("s1", "q1", "First"), inUse: InUseAsync);
+        Assert.True(landed.Landed, landed.Message);
+        await GitAsync(root, "worktree", "remove", opened.Path);
+        await SquashAsync(root, landed.Branch!);
+        var tip = (await GitAsync(root, "rev-parse", opened.Branch)).Trim();
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        var rewound = false;
+        var trees = new SessionTrees(Home)
+        {
+            BeforeRefDeleted = async name =>
+            {
+                if (rewound || name != opened.Branch) return;
+                rewound = true;
+                await GitAsync(root, "reset", "--hard", "--quiet", "HEAD~1");
+            },
+        };
+
+        var pass = await TidyAsync(trees, root);
+
+        Assert.True(rewound, "the session branch's delete was reached");
+        Assert.DoesNotContain(pass.Results, result => result.Removed && result.Item.Branch == opened.Branch);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", opened.Branch)).Trim());
+    }
+
+    /// <summary>
     /// 🔴 The second review's P2 (TreeFollows.cs:82 and :101): a session branch the tidy removed while its tree had moved onto a branch of
     /// its own leaves a trace, and the live tree it names is still followed: its next switch is learned, and known once the tree is gone.
     /// </summary>
