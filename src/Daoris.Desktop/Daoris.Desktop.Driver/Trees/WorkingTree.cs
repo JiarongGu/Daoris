@@ -961,21 +961,22 @@ public static class WorkingTree
         string root, IReadOnlyList<string> arguments, string input, CancellationToken ct) =>
         GitAsync(root, arguments, environment: null, timeout: null, input, ct);
 
-    private static async Task<(int Code, string Stdout, string Stderr)> GitAsync(
+    private static Task<(int Code, string Stdout, string Stderr)> GitAsync(
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         string? input, CancellationToken ct)
     {
         // LANDGIT1: within a landing, a read of a ref or a repository is asked of git once; a call with a variable of its own or a
-        // bound (a fetch) and a test's stand-in answer are always asked as written.
-        var run = () => RunGitAsync(root, arguments, environment, timeout, ct);
-        return environment is null && timeout is null && Answered.Value is null
+        // bound (a fetch), one that writes git's input (END4a's `update-ref --stdin`) and a test's stand-in answer are always asked
+        // as written.
+        var run = () => RunGitAsync(root, arguments, environment, timeout, input, ct);
+        return environment is null && timeout is null && input is null && Answered.Value is null
             ? GitFacts.Asked(root, arguments, run) ?? run()
             : run();
     }
 
     private static async Task<(int Code, string Stdout, string Stderr)> RunGitAsync(
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
-        CancellationToken ct)
+        string? input, CancellationToken ct)
     {
         // LANDGIT1: a git that may move a ref drops what this flow was told, before it starts as well as after it ends.
         GitFacts.Ran(arguments);
