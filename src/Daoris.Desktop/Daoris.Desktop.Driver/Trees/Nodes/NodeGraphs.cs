@@ -90,7 +90,7 @@ public static class GraphRefusal
     /// <summary>A node no entry reaches.</summary>
     public const string Unreachable = "unreachable";
 
-    /// <summary>D157 §2.2's protected order broken: the look comes before the landing.</summary>
+    /// <summary>D157 §2.2's protected order broken: the opinion comes before the look, and both before the landing.</summary>
     public const string ProtectedOrder = "protected-order";
 
     /// <summary>A graph holding <c>quest.close</c> whose end is not it (§E5: in a graph that holds it, it is the end).</summary>
@@ -209,7 +209,9 @@ public static class NodeGraphs
         }
         else if (NodeAuthorities.Of(end) is { MayEnd: false })
         {
-            Say(GraphRefusal.EndKind, null, end.Id, $"`{end.Id}` is a `{end.Kind}`, which is never an end: it is reached on a claim, and an end on evidence.");
+            Say(GraphRefusal.EndKind, null, end.Id, end.Kind == NodeKinds.Stop
+                ? $"`{end.Id}` is a `{end.Kind}`, which is never an end: a failure stops the run there, short of its end."
+                : $"`{end.Id}` is a `{end.Kind}`, which is never an end: it is reached on a claim, and an end on evidence.");
         }
 
         if (starts.Count > 0)
@@ -221,16 +223,19 @@ public static class NodeGraphs
             }
         }
 
-        // D157 §2.2's protected order: the gates come before the landing. Of them only the look is a node yet (§E4), so a look must be
-        // reached before every landing starts: through wires a reach satisfies, never a failure's or a rejection's path.
+        // D157 §2.2's protected order: the gates come before the landing, the opinion before the look. Of them the opinion (FABRIC-WORKFLOW2)
+        // and the look are nodes (§E4), so each must be reached before every later gate and every landing starts: through wires a reach
+        // satisfies, never a failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet.
         var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
         var landings = byId.Values.Where(node => node.Kind == NodeKinds.Handed).ToList();
-        foreach (var look in byId.Values.Where(node => node.Kind == NodeKinds.Look))
+        var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
+        foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
         {
-            var after = Reach([look.Id], ordered, forward: true);
-            if (landings.FirstOrDefault(landing => !after.Contains(landing.Id)) is { } early)
+            var after = Reach([gate.Id], ordered, forward: true);
+            var later = gate.Kind == NodeKinds.Opinion ? looks.Select(look => ("look", look)).Concat(landings.Select(landing => ("landing", landing))) : landings.Select(landing => ("landing", landing));
+            if (later.FirstOrDefault(each => !after.Contains(each.Item2.Id)) is ({ } what, { } early))
             {
-                Say(GraphRefusal.ProtectedOrder, null, look.Id, $"the look `{look.Id}` comes before the landing `{early.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
+                Say(GraphRefusal.ProtectedOrder, null, gate.Id, $"the {gate.Kind} `{gate.Id}` comes before the {what} `{early.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
             }
         }
 

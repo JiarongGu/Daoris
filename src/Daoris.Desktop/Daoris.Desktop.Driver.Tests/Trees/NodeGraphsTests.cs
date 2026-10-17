@@ -111,6 +111,12 @@ public sealed class NodeGraphsTests
             (GraphRefusal.ProtectedOrder, null, "look")),
         ["the look beside the landing"] = (new NodeGraph([Node("landing", NodeKinds.Handed), Node("look", NodeKinds.Look)], [], ["landing", "look"], "landing"),
             (GraphRefusal.ProtectedOrder, null, "look")),
+        // FABRIC-WORKFLOW2: the opinion is a node, so D157 §2.2's order holds it before the look and the landing.
+        ["the opinion after the look"] = (new NodeGraph([Node("look", NodeKinds.Look), Node("opinion", NodeKinds.Opinion), Node("landing", NodeKinds.Handed)],
+            [After("a", "look", "opinion"), After("b", "opinion", "landing")], ["look"], "landing"), (GraphRefusal.ProtectedOrder, null, "opinion")),
+        ["the opinion after the landing"] = (new NodeGraph([Node("landing", NodeKinds.Handed), Node("opinion", NodeKinds.Opinion)], [After("a", "landing", "opinion")], ["landing"], "opinion"),
+            (GraphRefusal.ProtectedOrder, null, "opinion")),
+        ["a sink as the end"] = (new NodeGraph([Node("stopped", NodeKinds.Stop)], [], ["stopped"], "stopped"), (GraphRefusal.EndKind, null, "stopped")),
         ["the close not the end"] = (Example with { End = "deploy" }, (GraphRefusal.CloseEnd, null, "close")),
         ["a node after the close"] = (Adding(Node("notify", NodeKinds.Human), After("x", "close", "notify")), (GraphRefusal.AfterClose, "x", "close")),
         ["the quest's own done before its close"] = (Adding(Node("done", NodeKinds.Claimed), After("x", "done", "close")) with { Entries = ["line", "dependency", "done"] },

@@ -394,6 +394,67 @@ public sealed class WireEvaluationTests
         Assert.Equal((NodeStates.Reached, NodeSource.PluginRef, NodeStates.Ready), (g.State("p"), g.Statuses["p"].By, g.State("n")));
     }
 
+    /// <summary>
+    /// FABRIC-WORKFLOW2, canary 49: a decoded D157 version evaluates as its run did. A group skipped (its members, never its join) satisfies
+    /// what comes after it; a member failed fails the group under the group's policy (<c>wait</c>: the person's task), not the member's; and a
+    /// step's <c>stop</c> takes its sink while what follows waits.
+    /// </summary>
+    [Fact]
+    public void A_decoded_versions_skips_and_groups_evaluate_as_D157s_did()
+    {
+        static NamedStep Step(string id, string kind, params (string Name, object? Value)[] fields) =>
+            new(id, kind, [.. WorkflowKindTable.Of(kind)!.Fields.Select(field => new WorkflowSetting(field.Name, fields.FirstOrDefault(each => each.Name == field.Name) is { Name: not null } named ? named.Value : field.Default))]);
+
+        List<NamedStep> steps =
+        [
+            Step("work", WorkflowKinds.Work),
+            Step("land", WorkflowKinds.Landing, ("form", LandingForm.Merge), ("accept", "you")),
+            Step("lint", WorkflowKinds.Check, ("plugin", "acme.ci"), ("failed", "stop")),
+            Step("both", WorkflowKinds.All, ("failed", "wait"), ("steps", new List<NamedStep>
+            {
+                Step("unit", WorkflowKinds.Check, ("plugin", "acme.ci"), ("failed", "stop")),
+                Step("smoke", WorkflowKinds.Stage, ("plugin", "acme.deploy"), ("stage", "smoke"), ("start", "automatic")),
+            })),
+            Step("release", WorkflowKinds.Stage, ("plugin", "acme.deploy"), ("stage", "release"), ("start", "automatic")),
+        ];
+        var decoded = WorkflowGraphs.Graph(steps);
+        Graph Fresh()
+        {
+            var g = new Graph([.. decoded.Nodes], [.. decoded.Wires]);
+            g.Through("work");
+            g.Through("land");
+            return g;
+        }
+
+        // The group skipped: its members, so its join reaches on their skips and the next step is ready.
+        var skipped = Fresh();
+        skipped.Through("lint");
+        skipped.Evaluate();
+        foreach (var member in WorkflowGraphs.Skipped(steps, "both")) skipped.Skip(member);
+        skipped.Start(skipped.Evaluate(), "both");
+        skipped.Evaluate();
+        skipped.Evaluate();
+        Assert.Equal((NodeStates.Reached, NodeStates.Ready, NodeStates.Blocked), (skipped.State("both"), skipped.State("release"), skipped.State("both:failed")));
+
+        // A member failed: the group fails under its own policy, the person's task, whatever the member's `stop` says; release waits.
+        var failed = Fresh();
+        failed.Through("lint");
+        failed.Start(failed.Evaluate(), "unit");
+        failed.Fail("unit");
+        failed.Start(failed.Evaluate(), "both");
+        failed.Evaluate();
+        failed.Evaluate();
+        Assert.Equal((NodeStates.Failed, NodeStates.Ready, NodeStates.Blocked), (failed.State("both"), failed.State("both:failed"), failed.State("release")));
+        Assert.DoesNotContain(decoded.Wires, wire => wire.From!.Node == "unit" && wire.Kind == WireKinds.Failed);
+
+        // A step's `stop`: its sink is ready, and nothing after it starts.
+        var stopped = Fresh();
+        stopped.Start(stopped.Evaluate(), "lint");
+        stopped.Fail("lint");
+        stopped.Evaluate();
+        Assert.Equal((NodeStates.Ready, NodeStates.Blocked, NodeStates.Blocked), (stopped.State("lint:failed"), stopped.State("unit"), stopped.State("smoke")));
+    }
+
     /// <summary>A branch unit whose landing a plugin answered it pushed at <c>t1</c>.</summary>
     private static WorkUnit PushedUnit()
     {
