@@ -411,7 +411,7 @@ public sealed class LinesRoutes(DriverContext context)
             recovery = [];
         }
 
-        static object Entry(InventoryEntry each) => new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof, each.Repository };
+        static object Entry(InventoryEntry each) => new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof, each.Repository, each.Commit };
         return new
         {
             Units = units.Select(unit => new

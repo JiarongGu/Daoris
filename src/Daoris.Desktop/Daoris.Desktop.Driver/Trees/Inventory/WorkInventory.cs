@@ -76,6 +76,9 @@ public sealed record InventoryEntry(string Unit, string Kind, string Resource, s
     /// <summary>The repository a recovery belongs to (RECOVERYVIEW1), so a workspace's page lists its own; null for an entry that is no recovery.</summary>
     public string? Repository { get; init; }
 
+    /// <summary>The commit a recovery ref names (RECOVERYDROP1), which the person's delete is verified against; null for an entry that is no recovery ref.</summary>
+    public string? Commit { get; init; }
+
     /// <summary>A removal's proof, where its record kept one.</summary>
     public string? Proof { get; init; }
 }
@@ -362,7 +365,7 @@ public static partial class WorkInventory
             false => $"no branch or tag of yours holds its commit, so Daoris keeps it until you delete it: `git update-ref -d {each.Ref}` in `{each.Repository}`",
             _ => "kept by its own rule: whether a branch or a tag of yours holds its commit was not read, so it is kept, and the end never takes it",
         })
-        { Until = until, Repository = each.Repository };
+        { Until = until, Repository = each.Repository, Commit = each.Commit };
     }
 
     private const string ContentHoldsPrefix = "refs/daoris/discarded/";
