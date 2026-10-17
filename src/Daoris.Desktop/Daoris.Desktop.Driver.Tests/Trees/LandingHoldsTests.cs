@@ -3,13 +3,19 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDRACE1 (D145 point 2, D173's FABRIC-END7 note): one landing of one session's tree at a time, whichever door lands it, in this
-/// process and beside another, and a landing that waited knows when the landings it waited behind began. Files only, so it is the
-/// fast half's.
+/// LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, and one push of one
+/// landed branch, whichever door, in this process and beside another; a landing that waited reads what the one it waited behind kept.
+/// Files only, so it is the fast half's.
 /// </summary>
 public sealed class LandingHoldsTests : IDisposable
 {
     private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+
+    private static readonly LandingAttempt Landed = new("feature/own", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", AcceptedBy.Auto)
+    {
+        Plugin = "example.lands",
+        Said = new PluginLanding("example.lands", Pushed: false, PullRequest: null, "gh is not signed in.", Failed: true),
+    };
 
     private readonly string _scratch;
     private readonly string _home;
@@ -21,6 +27,7 @@ public sealed class LandingHoldsTests : IDisposable
         _home = Path.Combine(_scratch, "daoris-home");
         _tree = Path.Combine(_scratch, "trees", "aurora", "engine", "s-1");
         Directory.CreateDirectory(_home);
+        Directory.CreateDirectory(_tree);
     }
 
     public void Dispose()
@@ -29,53 +36,111 @@ public sealed class LandingHoldsTests : IDisposable
     }
 
     /// <summary>
-    /// A second landing of one tree waits for the first and takes the hold once it is let go, knowing when the first began; a landing
-    /// of another tree goes beside it, and one that waited for nothing knows of nothing.
+    /// A second landing of one tree waits for the first and takes the hold once it is let go, reading what the first kept; a landing of
+    /// another tree goes beside it, and one that waited for nothing reads nothing, whatever an older attempt kept.
     /// </summary>
     [Fact]
-    public async Task A_second_landing_of_one_tree_waits_for_the_first_and_knows_when_it_began()
+    public async Task A_second_landing_of_one_tree_waits_for_the_first_and_reads_what_it_kept()
     {
-        var began = DateTimeOffset.UtcNow;
         var first = await LandingHolds.TakeAsync(_home, _tree);
         Assert.NotNull(first);
-        Assert.Null(first.Since);
+        Assert.False(first.Waited);
+        Assert.Null(first.Before);
 
         var second = LandingHolds.TakeAsync(_home, _tree);
         Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, _tree) == 1, Bound), "the second waits for the first");
         Assert.False(second.IsCompleted);
-        using (var beside = await LandingHolds.TakeAsync(_home, Path.Combine(_scratch, "trees", "aurora", "engine", "s-2")).WaitAsync(Bound))
+        var other = Path.Combine(_scratch, "trees", "aurora", "engine", "s-2");
+        Directory.CreateDirectory(other);
+        using (var beside = await LandingHolds.TakeAsync(_home, other).WaitAsync(Bound))
         {
-            Assert.Null(beside!.Since);
+            Assert.False(beside!.Waited);
         }
 
-        var letGo = DateTimeOffset.UtcNow;
+        first.Keep(Landed);
         first.Dispose();
-        using var took = await second.WaitAsync(Bound);
-        Assert.NotNull(took!.Since);
-        Assert.InRange(took.Since.Value, began, letGo);
+        using (var took = await second.WaitAsync(Bound))
+        {
+            Assert.True(took!.Waited);
+            Assert.Equal(Landed, took.Before);
+        }
+
         Assert.Equal(0, LandingHolds.Waiting(_home, _tree));
+        using var later = await LandingHolds.TakeAsync(_home, _tree);
+        Assert.Null(later!.Before);
     }
 
     /// <summary>
-    /// 🔴 A third landing that waited behind the second, which itself waited behind the first, knows when the first began: the landing
-    /// the first recorded is what both later ones must find.
+    /// 🔴 A third landing that waited behind the second, which waited behind the first and kept nothing of its own, reads what the first
+    /// kept: the landing the first made is what both later ones must find. A later one that keeps its own outcome replaces it.
     /// </summary>
     [Fact]
-    public async Task Landings_that_waited_one_behind_another_each_know_when_the_first_began()
+    public async Task Landings_that_waited_one_behind_another_read_the_last_kept_outcome()
     {
         var first = (await LandingHolds.TakeAsync(_home, _tree))!;
-        var began = DateTimeOffset.UtcNow;
         var second = LandingHolds.TakeAsync(_home, _tree);
         var third = LandingHolds.TakeAsync(_home, _tree);
         Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, _tree) == 2, Bound));
 
+        first.Keep(Landed);
         first.Dispose();
         var next = await Task.WhenAny(second, third).WaitAsync(Bound);
         var heldNext = (await next)!;
-        Assert.True(heldNext.Since <= began);
+        Assert.Equal(Landed, heldNext.Before);
         heldNext.Dispose();
         using var last = await (next == second ? third : second).WaitAsync(Bound);
-        Assert.True(last!.Since <= began, "the third knows when the first began, not when the second did");
+        Assert.Equal(Landed, last!.Before);
+    }
+
+    /// <summary>
+    /// LANDRACE1's review, finding 2: the hold is the tree's, not its spelling. A second name for the same folder (here the long-path
+    /// form; a junction or a <c>subst</c> drive likewise) waits on the same hold, so one tree is never landed twice under two names.
+    /// </summary>
+    [Fact]
+    public async Task Two_names_for_one_tree_take_one_hold()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var alias = @"\\?\" + _tree;
+        Assert.True(Directory.Exists(alias));
+
+        using var first = await LandingHolds.TakeAsync(_home, _tree);
+        Assert.Null(await LandingHolds.TakeAsync(_home, alias, within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+
+        var linked = Path.Combine(_scratch, "linked");
+        try
+        {
+            Directory.CreateSymbolicLink(linked, _tree);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return; // This account may not make links: the long-path name stands for every alias.
+        }
+
+        Assert.Null(await LandingHolds.TakeAsync(_home, linked, within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+    }
+
+    /// <summary>
+    /// LANDRACE1's review, finding 4: one push of a landed branch at a time, the landing's plugin step and a hand-off alike, and the
+    /// one that waited reads the push the other kept. Another branch of the same repository goes beside it.
+    /// </summary>
+    [Fact]
+    public async Task One_push_of_a_landed_branch_at_a_time()
+    {
+        var root = Path.Combine(_scratch, "engine");
+        Directory.CreateDirectory(Path.Combine(root, ".git"));
+        var pushing = (await LandingHolds.BranchAsync(_home, root, "feature/x"))!;
+
+        var handing = LandingHolds.BranchAsync(_home, root, "feature/x");
+        Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, "feature/x") == 1, Bound), "the hand-off waits for the push");
+        using (var beside = await LandingHolds.BranchAsync(_home, root, "feature/y").WaitAsync(Bound))
+        {
+            Assert.False(beside!.Waited);
+        }
+
+        pushing.Keep(Landed);
+        pushing.Dispose();
+        using var handed = await handing.WaitAsync(Bound);
+        Assert.Equal(Landed, handed!.Before);
     }
 
     /// <summary>
@@ -97,7 +162,8 @@ public sealed class LandingHoldsTests : IDisposable
 
         await other.DisposeAsync();
         using var took = await waiting.WaitAsync(Bound);
-        Assert.NotNull(took!.Since);
+        Assert.True(took!.Waited);
+        Assert.Null(took.Before);
     }
 
     /// <summary>A landing waits only so long: past its bound it takes nothing, and says so as null, never "land anyway".</summary>

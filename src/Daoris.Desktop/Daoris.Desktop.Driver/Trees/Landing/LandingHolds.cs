@@ -96,7 +96,7 @@ internal static class LandingHolds
             var found = Read(file);
             // A chain of waits keeps the first one's moment; a hold that waited for nothing begins its own.
             if (!waited) Write(file, DateTimeOffset.UtcNow);
-            return new LandingHold(waited ? found ?? DateTimeOffset.MinValue : null, gate, file);
+            return new LandingHold(waited ? found ?? DateTimeOffset.MinValue : null, gate, file) { Waited = waited };
         }
         catch
         {
@@ -109,6 +109,13 @@ internal static class LandingHolds
 
     /// <summary>How many landings of the tree wait for its hold in this process now.</summary>
     public static int Waiting(string home, string tree) => Waiters.GetValueOrDefault(Key(home, tree));
+
+    /// <summary>Hold a landed branch for one push.</summary>
+    public static Task<LandingHold?> BranchAsync(string home, string root, string branch, CancellationToken ct = default, TimeSpan? within = null) =>
+        Task.FromResult<LandingHold?>(new LandingHold(null, new SemaphoreSlim(1, 1), null));
+
+    /// <summary>How many pushes of the branch wait for its hold in this process now.</summary>
+    public static int WaitingOn(string home, string root, string branch) => 0;
 
     /// <summary>
     /// Where the tree's hold is across processes: one file per tree under the home's <c>locks/landings/</c>, named by its full path's
@@ -160,9 +167,20 @@ internal static class LandingHolds
 }
 
 /// <summary>A landing's hold of its tree (<see cref="LandingHolds"/>), let go when disposed.</summary>
-internal sealed class LandingHold(DateTimeOffset? since, SemaphoreSlim gate, FileStream file) : IDisposable
+internal sealed class LandingHold(DateTimeOffset? since, SemaphoreSlim gate, FileStream? file) : IDisposable
 {
     private int _gone;
+
+    /// <summary>Whether it waited for another.</summary>
+    public bool Waited { get; init; }
+
+    /// <summary>What the attempt it waited behind kept; null where it waited for none, or that one kept nothing.</summary>
+    public LandingAttempt? Before { get; init; }
+
+    /// <summary>Keep what this attempt came to, for one that waits behind it.</summary>
+    public void Keep(LandingAttempt attempt)
+    {
+    }
 
     /// <summary>
     /// Where the landing waited for another of its tree: when the landings it waited behind began, the earliest moment where that could
@@ -173,7 +191,25 @@ internal sealed class LandingHold(DateTimeOffset? since, SemaphoreSlim gate, Fil
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _gone, 1) == 1) return;
-        file.Dispose();
+        file?.Dispose();
         gate.Release();
     }
+}
+
+/// <summary>
+/// What one landing or push of a hold came to, kept in the hold's file for the one waiting behind it (LANDRACE1's review).
+/// </summary>
+/// <param name="Branch">The branch the work is on.</param>
+/// <param name="Tip">The commit landed or pushed: a tree's hold keeps the session's tip landed, a branch's the branch's tip pushed.</param>
+/// <param name="AcceptedBy">Who accepted it (<see cref="Daoris.Driver.AcceptedBy"/>).</param>
+internal sealed record LandingAttempt(string Branch, string Tip, string AcceptedBy)
+{
+    /// <summary>The plugin the branch is handed to, where the rule names one.</summary>
+    public string? Plugin { get; init; }
+
+    /// <summary>What that plugin answered; null while it has not.</summary>
+    public PluginLanding? Said { get; init; }
+
+    /// <summary>Why its push was not tried, where the plugin could not land work here (D145 point 2).</summary>
+    public string? Unready { get; init; }
 }
