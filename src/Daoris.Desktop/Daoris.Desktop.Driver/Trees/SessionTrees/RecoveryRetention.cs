@@ -53,16 +53,30 @@ public static class RecoveryRetention
     internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread)> ReadAsync(
         string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct)
     {
+        var (refs, unread, _) = await ReadWithBranchesAsync(root, repository, landed, ct).ConfigureAwait(false);
+        return (refs, unread);
+    }
+
+    /// <summary>
+    /// <see cref="ReadAsync"/>, and the <c>daoris/*</c> branches the same listing names (FABRIC-UNKNOWN1): a projection of rows already
+    /// read, so no further git start, and never a holder (<see cref="Holds"/> leaves <c>daoris/</c> out), so never a recovery ref's keeper.
+    /// </summary>
+    internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread, IReadOnlyList<StandingBranch> Standing)> ReadWithBranchesAsync(
+        string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct)
+    {
         // One listing of the recovery refs and of every branch and tag, each with whether it is symbolic (CLEANUP1, re-check), by tabs: a
         // ref name holds none.
         var (code, listed, err) = await WorkingTree.GitAsync(
             root, ["for-each-ref", "--format=%(objectname)%09%(committerdate:unix)%09%(refname)%09%(symref)", ContentHolds.DiscardedPrefix, "refs/heads/", "refs/tags/"], ct)
             .ConfigureAwait(false);
-        if (code != 0) return (null, ContentHolds.Said(err));
+        if (code != 0) return (null, ContentHolds.Said(err), []);
         var all = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(row => row.Split('\t')).Where(parts => parts.Length >= 3).ToList();
+        var daoris = $"refs/heads/{TreeFollows.SessionPrefix}";
+        IReadOnlyList<StandingBranch> standing = [.. all.Where(parts => parts[2].StartsWith(daoris, StringComparison.Ordinal)
+            && !(parts.Length >= 4 && parts[3].Trim().Length > 0)).Select(parts => new StandingBranch(repository, parts[2]["refs/heads/".Length..]))];
         var rows = all.Where(parts => parts[2].StartsWith(ContentHolds.DiscardedPrefix, StringComparison.Ordinal) && WorkingTree.IsCommitId(parts[0])).ToList();
-        if (rows.Count == 0) return ([], null);
+        if (rows.Count == 0) return ([], null, standing);
 
         // The commits they reach that no branch and no tag of the person's reaches: a ref whose own commit is among them is held by none.
         // Every branch that is no holder (Holds: a session branch, a landing's branch, compared in any case; a symbolic one), and every
@@ -86,7 +100,7 @@ public static class RecoveryRetention
             Commit = parts[0],
             Dated = long.TryParse(parts[1], out var seconds) ? DateTimeOffset.FromUnixTimeSeconds(seconds) : null,
             Held = alone is null ? null : !alone.Contains(parts[0]),
-        })], null);
+        })], null, standing);
     }
 
     /// <summary>

@@ -273,6 +273,35 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         return (first - keeper, second - keeper);
     }
 
+    /// <summary>
+    /// FABRIC-UNKNOWN1 over real git: a <c>daoris/*</c> branch no record names, though the line holds all of it, is read by the
+    /// inventory as an unknown owner, blocked, and the look's tidy leaves it standing: only the person's press removes it.
+    /// </summary>
+    [Fact]
+    public async Task An_unrecorded_daoris_branch_is_named_blocked_and_the_look_never_removes_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var recorded = await WorkAsync(trees, root, "a.txt", merged: true);
+        await GitAsync(root, "branch", "daoris/orphan");
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        var unread = new List<string>();
+        var roots = new Dictionary<string, string> { ["engine"] = root };
+        var before = await WorkInventories.MilestonesAsync(Home, roots, NoneInUse, unread);
+        var pass = await TidyAsync(trees, root);
+        var after = await WorkInventories.MilestonesAsync(Home, roots, NoneInUse, unread);
+
+        var unit = Assert.Single(before, each => each.Branch == "daoris/orphan");
+        Assert.Equal("unknown", unit.End.State);
+        Assert.Equal("blocked", Assert.Single(unit.Cleanup.Waits).Disposition);
+        Assert.DoesNotContain(pass.Results, result => result.Item.Branch == "daoris/orphan");
+        Assert.True(await StandsAsync(root, "daoris/orphan"));
+        Assert.True(await StandsAsync(root, "daoris/orphan") && !await StandsAsync(root, recorded));
+        Assert.Contains(after, each => each.Branch == "daoris/orphan");
+        Assert.DoesNotContain(after, each => each.Branch == recorded && each.Entries.Any(entry => entry.Disposition == "blocked"));
+    }
+
     private static async Task<int> CountedAsync<T>(Func<Task<T>> act)
     {
         var started = 0;
