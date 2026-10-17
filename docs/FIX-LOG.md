@@ -90,6 +90,21 @@ repository.
   90 green (84 before), and `verify`. The end-to-end test holds a real process in a worktree and in a folder, links a
   junction out of a half-removed folder, and keeps a folder that is a process's working folder on Windows.
 
+## 2026-10-18 — The prune removed a live worker's tree under it (CLEANUP2b)
+
+- **Symptom:** a fresh worker fast-forwarded its branch to main's tip. Before its empty start commit, a merge moved main and the
+  next `--continue` pruned: the tree was removed under the working agent.
+- **Root cause:** CLEANUP2's rules read a harness-locked tree as finished when its branch was merged but not at main's tip, it
+  was clean, and no process named its folder. Main had moved past the fresh branch, so the tip guard no longer held. A command
+  line does not show a shell's working directory, and the harness lock is held for the agent's whole run, so nothing showed it.
+- **Fix:** `tools/merge-branch.mjs` keeps a harness-locked tree unless it is also idle: `newestWrite` reads the newest time of
+  the folder's top-level entries, those folders' children but build output, and the git folder's HEAD, index and HEAD log (no full
+  walk). `HARNESS_IDLE_MINUTES` (two hours) is the span. `--prune --plan` says "written N minutes ago, a worker may be in it". The
+  unlocked-tree and half-removed-folder rules are unchanged. `docs/development.md` and the GATE2 header say so; the brief tells a
+  worker to make its start commit before merging main.
+- **Verification:** red first (the new `pruneVerdict` cases and the prune end-to-end test, which added a young harness-locked tree
+  beside the aged ones); then `merge-branch.test.ts` 98 of 98 (97 before), and `verify`.
+
 ## 2026-10-18 — The look stopped removing a session branch a completed pull request carried (FABRIC-END2d)
 
 - **Symptom:** the merge gate's Git half, after FABRIC-END2d merged: `PullRequestStateTests.The_look_takes_a_session_branch_a_kept_answer_carried`
