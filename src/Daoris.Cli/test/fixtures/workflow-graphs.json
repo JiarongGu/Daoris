@@ -1,0 +1,127 @@
+{
+  "about": "FABRIC-WORKFLOW2: D157's stored versions and the graphs they decode to (the fabric events design §E7's migration contract). Read row for row by the CLI's workflowgraphs.test.ts and the driver's WorkflowGraphsTests. A row's `version` is a version as a workflow's file holds it. `read` is `version` (as the stored version reads in this build: a kind it does not run, or a version that does not read, is unreadable with its reason) or `shape` (its steps as their shape reads, every kind included: the mapping, for the build that runs them). `identity` is the version's digest (WorkflowNamed.Digest, unchanged), `graphDigest` the decoded graph's, derived from the version and the decoder's version; `graph` is the decoded graph, each node's options as JSON values.",
+  "decoderVersion": 1,
+  "rows": [
+    {
+      "name": "the smallest version: the work, then a merge landing",
+      "read": "version",
+      "version": { "version": 1, "at": "2026-10-09T09:12:00Z", "door": "screen", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ] },
+      "identity": "75906e6bfc40", "graphDigest": "gph-a165bc24ca1ef885986856aa914f1fc3",
+      "graph": { "schemaVersion": 2, "entries": ["work"], "end": "land", "cleanup": { "until": "held" },
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "land", "kind": "handed", "version": 1, "reach": "observed", "options": { "accept": "you", "form": "merge", "pattern": null, "plugin": null } } ],
+        "wires": [
+          { "id": "work>land", "kind": "after", "from": "work", "to": "land" } ] }
+    },
+    {
+      "name": "a field written as its default reads as one left out: the same identity and graph",
+      "read": "version",
+      "version": { "version": 2, "at": "2026-10-10T10:00:00Z", "door": "terminal", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "land", "kind": "landing", "form": "merge", "accept": "you", "pattern": null, "plugin": null } ] },
+      "identity": "75906e6bfc40", "graphDigest": "gph-a165bc24ca1ef885986856aa914f1fc3",
+      "graph": { "schemaVersion": 2, "entries": ["work"], "end": "land", "cleanup": { "until": "held" },
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "land", "kind": "handed", "version": 1, "reach": "observed", "options": { "accept": "you", "form": "merge", "pattern": null, "plugin": null } } ],
+        "wires": [
+          { "id": "work>land", "kind": "after", "from": "work", "to": "land" } ] }
+    },
+    {
+      "name": "every kind this build runs, in the order the runtime keeps, and a go-ahead's refusal each way",
+      "read": "version",
+      "version": { "version": 3, "at": "2026-10-11T08:30:00Z", "door": "ask-daoris:p-17", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "ask", "kind": "go-ahead", "act": "Spend the \"shared\" budget", "on": "the team's account", "refused": "wait" },
+        { "id": "second", "kind": "opinion", "reviewers": ["codex"], "required": true },
+        { "id": "see", "kind": "look", "environment": "staging" },
+        { "id": "land", "kind": "landing", "form": "branch", "accept": "automatic", "pattern": "feature/{quest}-{slug}", "plugin": "acme.pr" },
+        { "id": "pr", "kind": "pull-request" },
+        { "id": "ship", "kind": "go-ahead", "act": "Announce it", "on": "the team channel" } ] },
+      "identity": "f07e3afcf161", "graphDigest": "gph-db3fcf8fa807c524af599d172fddf430",
+      "graph": { "schemaVersion": 2, "entries": ["work"], "end": "ship", "cleanup": { "until": "held" },
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "ask", "kind": "go-ahead", "version": 1, "reach": "pressed", "options": { "act": "Spend the \"shared\" budget", "on": "the team's account", "refused": "wait" } },
+          { "id": "ask:rejected", "kind": "human", "version": 1, "reach": "pressed", "synthetic": true, "options": { "outcome": "rejected", "step": "ask" } },
+          { "id": "second", "kind": "opinion", "version": 1, "reach": "observed", "options": { "recheck": true, "required": true, "reviewers": ["codex"], "steps": false } },
+          { "id": "see", "kind": "look", "version": 1, "reach": "observed", "options": { "environment": "staging" } },
+          { "id": "land", "kind": "handed", "version": 1, "reach": "observed", "options": { "accept": "automatic", "form": "branch", "pattern": "feature/{quest}-{slug}", "plugin": "acme.pr" } },
+          { "id": "pr", "kind": "pull-request", "version": 1, "reach": "observed" },
+          { "id": "ship", "kind": "go-ahead", "version": 1, "reach": "pressed", "options": { "act": "Announce it", "on": "the team channel", "refused": "stop" } },
+          { "id": "ship:rejected", "kind": "stop", "version": 1, "reach": "observed", "synthetic": true, "options": { "outcome": "rejected", "step": "ship" } } ],
+        "wires": [
+          { "id": "work>ask", "kind": "after", "from": "work", "to": "ask" },
+          { "id": "ask>ask:rejected", "kind": "rejected", "from": "ask", "to": "ask:rejected" },
+          { "id": "ask>second", "kind": "after", "from": "ask", "to": "second" },
+          { "id": "second>see", "kind": "after", "from": "second", "to": "see" },
+          { "id": "see>land", "kind": "after", "from": "see", "to": "land" },
+          { "id": "land>pr", "kind": "after", "from": "land", "to": "pr" },
+          { "id": "pr>ship", "kind": "after", "from": "pr", "to": "ship" },
+          { "id": "ship>ship:rejected", "kind": "rejected", "from": "ship", "to": "ship:rejected" } ] }
+    },
+    {
+      "name": "a version naming a kind this build does not run: kept, and unreadable here with its reason",
+      "read": "version",
+      "version": { "version": 4, "at": "2026-10-12T12:00:00Z", "door": "screen", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "land", "kind": "landing", "form": "branch", "accept": "you" },
+        { "id": "ci", "kind": "check", "plugin": "acme.ci" } ] },
+      "unreadable": "v4, step `ci`: this build does not run a step of kind `check` yet."
+    },
+    {
+      "name": "a version that does not read: the look before the opinion, unreadable and never decoded in part",
+      "read": "version",
+      "version": { "version": 5, "at": "2026-10-12T12:30:00Z", "door": "screen", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "see", "kind": "look" },
+        { "id": "second", "kind": "opinion" },
+        { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ] },
+      "unreadable": "v5, step `second`: the second opinion is read before your look, so the `opinion` comes first."
+    },
+    {
+      "name": "a group and every `failed` policy, decoded from the shape for the build that runs them",
+      "read": "shape",
+      "version": { "version": 6, "at": "2026-10-13T07:00:00Z", "door": "screen", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "land", "kind": "landing", "form": "branch", "accept": "you", "plugin": "acme.ci" },
+        { "id": "lint", "kind": "check", "plugin": "acme.ci", "failed": "stop" },
+        { "id": "preview", "kind": "stage", "plugin": "acme.deploy", "stage": "preview", "start": "automatic", "failed": "send-back" },
+        { "id": "both", "kind": "all", "failed": "wait", "steps": [
+          { "id": "unit", "kind": "check", "plugin": "acme.ci", "checks": ["unit", "e2e"] },
+          { "id": "smoke", "kind": "stage", "plugin": "acme.deploy", "stage": "smoke", "start": "automatic" } ] },
+        { "id": "release", "kind": "stage", "plugin": "acme.deploy", "stage": "release" } ] },
+      "identity": "03076126957d", "graphDigest": "gph-812c7ba7366d4b6d95953beb75d06f4f",
+      "graph": { "schemaVersion": 2, "entries": ["work"], "end": "release", "cleanup": { "until": "held" },
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "land", "kind": "handed", "version": 1, "reach": "observed", "options": { "accept": "you", "form": "branch", "pattern": null, "plugin": "acme.ci" } },
+          { "id": "lint", "kind": "acme.ci/work.checks", "version": 1, "reach": "observed", "options": { "checks": "required", "failed": "stop", "plugin": "acme.ci" } },
+          { "id": "lint:failed", "kind": "stop", "version": 1, "reach": "observed", "synthetic": true, "options": { "outcome": "failed", "step": "lint" } },
+          { "id": "preview", "kind": "acme.deploy/preview", "version": 1, "reach": "performed", "options": { "failed": "send-back", "plugin": "acme.deploy", "stage": "preview", "start": "automatic" } },
+          { "id": "preview:failed", "kind": "human", "version": 1, "reach": "pressed", "synthetic": true, "options": { "outcome": "failed", "step": "preview" } },
+          { "id": "unit", "kind": "acme.ci/work.checks", "version": 1, "reach": "observed", "options": { "checks": ["unit", "e2e"], "failed": "wait", "plugin": "acme.ci" } },
+          { "id": "smoke", "kind": "acme.deploy/smoke", "version": 1, "reach": "performed", "options": { "failed": "wait", "plugin": "acme.deploy", "stage": "smoke", "start": "automatic" } },
+          { "id": "both", "kind": "all", "version": 1, "reach": "observed", "synthetic": true, "options": { "failed": "wait" } },
+          { "id": "both:failed", "kind": "human", "version": 1, "reach": "pressed", "synthetic": true, "options": { "outcome": "failed", "step": "both" } },
+          { "id": "release", "kind": "acme.deploy/release", "version": 1, "reach": "performed", "options": { "failed": "wait", "plugin": "acme.deploy", "stage": "release", "start": "you" } },
+          { "id": "release:failed", "kind": "human", "version": 1, "reach": "pressed", "synthetic": true, "options": { "outcome": "failed", "step": "release" } } ],
+        "wires": [
+          { "id": "work>land", "kind": "after", "from": "work", "to": "land" },
+          { "id": "land>lint", "kind": "after", "from": "land", "to": "lint" },
+          { "id": "lint>lint:failed", "kind": "failed", "from": "lint", "to": "lint:failed" },
+          { "id": "lint>preview", "kind": "after", "from": "lint", "to": "preview" },
+          { "id": "preview>preview:failed", "kind": "failed", "from": "preview", "to": "preview:failed" },
+          { "id": "preview>unit", "kind": "after", "from": "preview", "to": "unit" },
+          { "id": "preview>smoke", "kind": "after", "from": "preview", "to": "smoke" },
+          { "id": "unit>both", "kind": "after", "from": "unit", "to": "both" },
+          { "id": "smoke>both", "kind": "after", "from": "smoke", "to": "both" },
+          { "id": "both>both:failed", "kind": "failed", "from": "both", "to": "both:failed" },
+          { "id": "both>release", "kind": "after", "from": "both", "to": "release" },
+          { "id": "release>release:failed", "kind": "failed", "from": "release", "to": "release:failed" } ] }
+    }
+  ]
+}

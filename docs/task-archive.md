@@ -15915,3 +15915,129 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-NODE1e — a reach exposes its declared outputs** (driver; before WIRE1b; §E2, §E3). `NodeLifecycle.Apply` checked a reach's evidence schema but not its outputs. Proof: an undeclared output, a declared output at another schema, or a declared output missing is refused with a code.
 
 **Outcome** 2026-10-17: `NodeLifecycle.Apply` refuses a reach whose outputs are not exactly its node's declared ones (`undeclared-output`, `output-schema`, `no-output`), so WIRE1a's save-time schema check holds at run time. Built with WIRE1b. Detail: D173's FABRIC-WIRE1b note, its NODE1e point; FIX-LOG 2026-10-17.
+
+## FABRIC-END4a — the automatic tidy as a pending effect (2026-10-17, D173)
+
+> - [ ] **FABRIC-END4a — the automatic tidy as a pending effect** (driver; after END3, CYCLE0 and PLUGSTEP1e; §C3, §B8). The tidy becomes link 2's pending effect at *held*, waiting as the cycle configures, cleaning up everything except the result at a true end, judging again inside its hold; the sweep's press and LAND3's tidy unchanged. Proof: canaries 8, 15, 16, 17; git starts counted down; the tidy, sweep and LAND3 suites green.
+
+**Outcome** 2026-10-17: the automatic tidy, link 2 of §C6: candidates from the kept facts, `TidyEffect` on the ref watch's chain, each judged delete one `update-ref --stdin` transaction verifying exactly what its proof rested on. After five reviews by a second maker (merged once and reverted between): a landing's rests travel to the session branches it holds; LAND3's squash reads the branch it made at a commit holding the one the landing made, or judges nothing and says so; the carried tidy asks about the tip it read; only git's own "missing" reads as gone; a late checkout's window is an accepted risk; an unrecorded `daoris/*` branch waits for the press. On Opus: about 150 + 105 + 75 + 70 tool calls over five rounds. Detail: D173's FABRIC-END4a note (After review … After the fourth review); FIX-LOG 2026-10-17.
+
+## FABRIC-UNIT1d — the manifest twins (2026-10-17, D173)
+
+> - [ ] **FABRIC-UNIT1d — the manifest twins** (driver, cli; after NODE1; the fabric events design's rows table (§E10), §D6, §D9). `steps`/nodes, `resources`, `perform` with `idempotent`, `reconcile`, `transient`, in both twins.
+
+**Outcome** 2026-10-17: a plugin's manifest declares `steps`, each read into the one `NodeDeclaration` of the plugin's own kind `<plugin>/<step>` and judged by `NodeDeclarations.Problem`, which gains `Perform` (idempotent, reconcile, transient), checks that a retry can be taken, and compares declarations by what they say; and `resources` (schema, role, `work/cleanup`); both twins with a 63-row parity table; a problem refuses the plugin. On Opus: about 75 tool calls. Detail: D173's FABRIC-UNIT1d note (nine choices).
+
+## FABRIC-PERFORM1a — transport and supervision (2026-10-17, D173)
+
+> - [ ] **FABRIC-PERFORM1a — transport and supervision** (driver; after UNIT1d; the fabric events design's rows table (§E10), §C4, §D6). The reverse `work/step`, its bounds, the lease's loop owning the process, `work.perform@1`, generations and resync.
+
+**Outcome** 2026-10-17: the work wire's transport and supervision (`WorkWire`, `BoundedLines`, `WorkBounds`, `WorkPlugins` in `HookSet`): `work/watch`, `work/step`, `work/perform` and `work/reconcile` with `work.perform@1`; 64 KB frames for a plugin that speaks a work point and 4 MB for any other, an over-long answer failed at once; 60 events a minute beside a resync's replay; four calls in flight; the lease's loop starting, stopping and restarting work processes by generation, an answer handed back only while its generation is current; a performed step without `work/perform` refused in both twins. A review's seven findings fixed in a second round (two were regressions for existing plugins). On Opus: about 100 + 77 tool calls. Detail: D173's FABRIC-PERFORM1a note; FIX-LOG 2026-10-17.
+
+## FABRIC-PERFORM1b — durable execution (2026-10-17, D173)
+
+> - [ ] **FABRIC-PERFORM1b — durable execution** (driver; after GRAPH1 and PERFORM1a; the fabric events design's rows table (§E10), §D6). `work/perform` dispatch persisted before sending, one key per attempt, `work/reconcile` before a new attempt, retries by `transient`.
+
+**Outcome** 2026-10-17: a plugin's performed node is dispatched durably: `WorkPerformer` writes the start, its firings and the attempt (random key and invocation) on the unit's node record (`workflows/units/<digest>.json`) before `work/perform` is sent, reconciles a recorded, unknown, lost or late attempt before any new one, takes an answer only from the attempt's plugin's current process, and retries a declared transient code after a persisted delay; with PERFORM1h's fixes (one locked read-modify-write per change, replies applied after their await, no fabricated "not started"). On Opus: about 90 tool calls. Detail: D173's FABRIC-PERFORM1b note.
+
+## FABRIC-GRAPH1 — the graph and its homes (2026-10-17, D173)
+
+> - [ ] **FABRIC-GRAPH1 — the graph and its homes** (driver, cli; after WIRE1b; the fabric events design's rows table (§E10), §E7). The graph's shape and bounds, Current derived from the rules with the landing rule's `cycle`, `workCycles`, D164's inheritance, both twins.
+
+**Outcome** 2026-10-17: the graph and its homes (`Trees/Nodes/NodeGraphs.cs`, `NodeGraphHomes`, the CLI's `cycles.ts`): shape, bounds, 19 refusals, digest; Current derived from the landing rule's `cycle`, `workCycles` by kind, with D164's inheritance, in both twins; WIRE1d's `grouped-member`. Three review rounds fixed both twins' `driver.json` writers, which lost every setting they did not know (an installed defect): an edit is now the key paths it changed, made onto the file read again at write; a missing parent gets only the edit's keys, a never-read map is merged key by key; an unreadable file, a duplicated key or a changed object turned scalar is refused; CRLF kept; the CLI stages each write under its own name. On Opus: about 115 + 95 + 80 + 100 tool calls over four builds. Detail: D173's FABRIC-GRAPH1 note (After review, After the re-check, After the second re-check); FIX-LOG 2026-10-17.
+
+## FABRIC-WORKFLOW2 — D157's workflows read as graphs (2026-10-17, D173)
+
+> - [ ] **FABRIC-WORKFLOW2 — D157's workflows read as graphs** (driver, cli; after GRAPH1; the fabric events design's rows table (§E10), §E7). Every named version decoded, never rewritten, by the exact migration contract.
+
+**Outcome** 2026-10-17: D157's stored versions decode as graphs by §E7's migration contract, in both twins on one shared table (`WorkflowGraphs.cs`, `workflowgraphs.ts`); never written; a version that does not decode reads as unreadable whole; a bound run keeps its identity and binds the decoded graph's digest; two kinds added, `opinion` and the sink `stop`. On Opus: about 95 tool calls. Detail: D173's FABRIC-WORKFLOW2 note (eleven choices).
+
+## FABRIC-CLOSE1a — the submission, its holds and the close door (2026-10-17, D173)
+
+> - [ ] **FABRIC-CLOSE1a — the submission, its holds and the close door** (service; after GRAPH1 and WORKFLOW2; the fabric events design's rows table (§E10), §E5). `Submitted`, holds on the submission, the chain's advance sealed, `POST /api/quests/{id}/close` in one fenced transaction.
+
+**Outcome** 2026-10-17: `bound` and `submitted` join the quest's operations; the agent's `ready` keeps a closure-graph quest Taken with a submission, and the holds, evidence, review and chain advance hang on that submission; the driver's local-only `/bind` and `/close` doors, `/close` writing the whole chain's Done in one transaction fenced by the named submissions and a key; CLOSE1e's four fences added before any quest is bound. Unbound quests unchanged. On Opus: about 85 tool calls. Detail: D173's FABRIC-CLOSE1a note, D68's note.
+
+## FABRIC-END6 — a fetch and a plugin's ask when due (2026-10-17, D173)
+
+> - [ ] **FABRIC-END6 — a fetch and a plugin's ask when due** (driver; after END3; §A4.3; the owner said yes). Ask when origin's line moves, after Daoris pushes, at window focus while a pull request is open; fetch only where the occasion did not; within D148's minute; never at a removing press. Proof: each moment and its bound; no double fetch; an end with no press.
+
+**Outcome** 2026-10-17: a plugin is asked about an open pull request when origin's line is heard moving, right after Daoris pushes, and at the main window's focus (link 6, `PullRequestMoments`), fetching only where nothing fetched within D148's minute, never at a press; a completed answer holds the end with no press; with END6c's fixes (one fetch in flight per line, holds respected, one minute across occasions, ordered answers). On Opus: about 75 tool calls. Detail: D173's FABRIC-END6 note, D148's note.
+
+## FABRIC-WIRE1e — the wire evaluation's fixes before dispatch (2026-10-17, D173)
+
+> - [ ] **FABRIC-WIRE1e — the wire evaluation's fixes before dispatch** (driver; after WIRE1b, before PERFORM1a and CLOSE1b; §E2, §E3, D173's FABRIC-WIRE1b note). A failure's or rejection's receipt bound to its originating run; no start resting on a receipt the same evaluation would invalidate; a join's outcome from its members alone; waiting capacity apart from execution capacity; a complete revision snapshot required. Proof: a test per defect and per changed choice, red first.
+
+**Outcome** 2026-10-17: a failure's or a rejection's receipt is its attempt's run's alone; invalidations run before observation, so no start rests on a receipt the same evaluation would invalidate; a join fails on its members' failures alone; waited attempts limited apart from performed ones (`WaitLimit` 24, `Limit` 4); an incomplete revision snapshot refuses the evaluation. On Opus: about 55 tool calls. Detail: D173's FABRIC-WIRE1e note; FIX-LOG 2026-10-17.
+
+## FABRIC-WIRE1c — a run's reader, and its firings kept (2026-10-17, D173)
+
+> - [ ] **FABRIC-WIRE1c — a run's reader, and its firings kept** (driver; after GRAPH1 and PERFORM1a; §E3, §E2, canary 42). Nothing yet gathers WIRE1b's inputs (statuses, revisions, units, git reads, fired keys) from the unit's record and the look's git reads, or keeps a start's firings with its attempt, so a restart could fire a trigger twice. Proof: a run read from recorded fixtures evaluates as the in-memory one; a kept firing survives a restart. May fold into PERFORM1a.
+
+**Outcome** 2026-10-17: folded into FABRIC-RUN1: the runtime writes a start's firings in the same locked edit as the start and reads them back each round. Detail: D173's FABRIC-RUN1 note.
+
+## LANDGIT1 — a landing asks git once per fact (2026-10-17, D173)
+
+> - [ ] **LANDGIT1 — a landing asks git once per fact** (driver; D173's END7 note). A landing starts about 50 git processes, several asking one fact again, at about 450 ms a start on this machine. Cache only the landing's own planning reads, validated uncached before publishing, closed before the end keeping and the tidy. Proof: count tests with ceilings; an external ref move between a cached read and its use caught.
+
+**Outcome** 2026-10-17: a landing's planning asks git once per commit-id question: `GitFacts`, closed before the end keeping and the tidy, never holding a head or ref read (a second maker's review found a broader cache could let the cleanup act on a ref another process moved), takes the automatic landing from 61 to 52 git starts, the squash press from 54 to 51 and the merge press from 45 to 42. On Sonnet: about 75 + 40 tool calls. Detail: D173's LANDGIT1 note, `LandGitCountTests`.
+
+## FABRIC-WIRE1d — a join's member wires refuse a group (2026-10-17, D173)
+
+> - [ ] **FABRIC-WIRE1d — a join's member wires refuse a group** (driver; before GRAPH1). A group on an `after` wire into an `all` join said something the evaluation ignores.
+
+**Outcome** 2026-10-17: a group on an `after` wire into an `all` join is refused (`grouped-member`). Built with GRAPH1. Detail: D173's FABRIC-GRAPH1 note.
+
+## FABRIC-WIRE1f — an ended attempt kept from another run (2026-10-17, D173)
+
+> - [ ] **FABRIC-WIRE1f — an ended attempt kept from another run** (driver; with PERFORM1b; §E2, §E7). Decide whether a new run lapses a run-1 failure or rejection.
+
+**Outcome** 2026-10-17: a new run lapses a failure or a rejection kept from another run (`run-scope`) and the node starts afresh there; in its own run it is kept for the person. Built with PERFORM1b. Detail: D173's FABRIC-PERFORM1b note.
+
+## FABRIC-CLOSE1e — the close's fences before any quest is bound (2026-10-17, D173)
+
+> - [ ] **FABRIC-CLOSE1e — the close's fences before any quest is bound** (service; after CLOSE1a, before CLOSE1b; §E5). A verdict bound to its submission; a lost submission's taken successor forgotten with its take; a close replay matching its key, token and submissions; a refused close remembered.
+
+**Outcome** 2026-10-17: a verdict names the submission it was read for; a lost submission's steps go with it (a taken one's take becomes a conflict, stopping its session); each close outcome is kept under its key (`KeyReused` otherwise). On Opus: about 75 tool calls. Detail: D173's FABRIC-CLOSE1a note, *After review*; FIX-LOG 2026-10-17.
+
+## FABRIC-END6c — the due moments' fixes before plugin mode (2026-10-17, D173)
+
+> - [ ] **FABRIC-END6c — the due moments' fixes before plugin mode** (driver, modules; after END6; §A4.3, D148). One fetch reservation per line; ordered answers; each request's own time; a person's fetch from git's files; an early focus kept.
+
+**Outcome** 2026-10-17: every fetch of a line joins one in flight (`RemoteFetches.OnceAsync`); a moment skips a held repository and asks once it is let go (`RepositoryHolds`); one minute per pull request across occasions; an answer kept only if asked no earlier than the kept one, `completed` final; a person's fetch read from `FETCH_HEAD` and the line's log; an early focus kept. On Opus: about 80 tool calls. Detail: D173's FABRIC-END6 note, "After review"; FIX-LOG 2026-10-17.
+
+## FABRIC-PERFORM1h — durable execution's fixes before RUN1 (2026-10-17, D173)
+
+> - [ ] **FABRIC-PERFORM1h — durable execution's fixes before RUN1** (driver; after PERFORM1b; §D6, §E2). A second maker's six findings on PERFORM1b.
+
+**Outcome** 2026-10-17: one locked read-modify-write per record change with the lease asked inside (`NodeRecordFiles.Edit`); replies applied after their await only while their attempt still waits; an idempotent-only attempt held once not current; trimming keeps every attempt a status needs; a structurally unreadable record never empty; retry delays by the try within the binding. On Opus: about 75 tool calls. Detail: D173's FABRIC-PERFORM1b note; FIX-LOG 2026-10-17.
+
+## FABRIC-RUN1 — the evaluation runtime in the lease's loop (2026-10-17, D173)
+
+> - [ ] **FABRIC-RUN1 — the evaluation runtime in the lease's loop** (driver; after PERFORM1b, GRAPH1 and WORKFLOW2; §E2, §E7, §D6). The runtime that reads governing graphs, hears completions, reconciles, evaluates and starts performed nodes.
+
+**Outcome** 2026-10-17: the evaluation runtime runs in the lease's loop as link 8 (`NodeRuntime`, one per loop, one pass at a time): completions heard, attempts reconciled before any start, retries due, governed units evaluated to settled with their moves kept and starts made, the awaited set told, persisted timers waking a plan; off unless a graph naming a plugin's performed node governs a unit, so the owner's install reads, writes and starts nothing (proved by a count test); WIRE1c folded in. A review cleared it to stage unarmed; arming waits for RUN1e, PERFORM1c and PERFORM1g. On Opus: about 72 tool calls. Detail: D173's FABRIC-RUN1 note.
+
+## RECORDUNREAD1 — an unread read never forgets a record (2026-10-17, D173)
+
+> - [ ] **RECORDUNREAD1 — an unread read never forgets a record** (driver; after END4a). Three paths read a failed read as absence and forgot or retired a record.
+
+**Outcome** 2026-10-17: LAND3's door, the landings' clean-up and the session-branch record forget or retire a record only on git's own "missing" (`show-ref --exists` exit 2, `ContentHolds.MissingAsync`); any other failed read keeps it and says unread. On Opus: about 50 tool calls (with DETACHTX1). Detail: D173's note "RECORDUNREAD1 and DETACHTX1, after FABRIC-END4a"; FIX-LOG 2026-10-17.
+
+## DETACHTX1 — a detached tree's removal verifies its holder (2026-10-17, D173)
+
+> - [ ] **DETACHTX1 — a detached tree's removal verifies its holder** (driver; after END4a). A detached tree's removal skipped the transaction.
+
+**Outcome** 2026-10-17: a detached tree's commit is kept on a recovery ref before the tree goes, dropped only in one transaction verifying what its proof rested on; refused, the ref stays and the answer names it. Detail: the same note.
+
+## GITFACTS1 — git's exit codes for a ref's absence, written down (2026-10-17, D173)
+
+> - [ ] **GITFACTS1 — git's exit codes for a ref's absence, written down** (knowledge).
+
+**Outcome** 2026-10-17: `.claude/knowledge/git-ref-absence.md`: `rev-parse --verify --quiet` exits 1 on any failure; `show-ref --exists` 0 present, 2 missing, 1 any other error (git 2.43+). Built with RECORDUNREAD1.
+
+## DEPLOYBUSY1 — the update's swap held for 120 s after the app stopped (2026-10-17, D139)
+
+> - [ ] **DEPLOYBUSY1 — the update's swap held for 120 s after the app stopped** (desktop, driver; D139). The deployment rehearsal's rollback rolled back `busy` instead of `exited`.
+
+**Outcome** 2026-10-17: the swap's `busy` names the entry held and the process holding it (`HeldFiles`), in the journal, the detail, `daoris-driver update` and the log lines. The cause is not attributed: two worktree rehearsals passed 115/115; a hold seen was by a process outside Daoris on the development machine. On Opus: about 100 tool calls. Detail: FIX-LOG 2026-10-17 DEPLOYBUSY1, D139's note.

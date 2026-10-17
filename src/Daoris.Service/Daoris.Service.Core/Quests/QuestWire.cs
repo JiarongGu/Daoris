@@ -25,7 +25,8 @@ public static class QuestWire
         + "body, every file its name, sha256 and size, every step its to, title and body, and every requirement "
         + "its quote and check, and any evidence at most 5 items, each a repository-relative path or a gate's name; "
         + "a done's every answer names its requirement and says met or departed, a departure "
-        + "with its quote; a decline's whileOpen, where it says one, is true or false; a conflict names "
+        + "with its quote, and a done's close, where it says one, names its key and token; a decline's whileOpen, where it "
+        + "says one, is true or false; a conflict names "
         + "what it attempted; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
         + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
         + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
@@ -151,6 +152,10 @@ public static class QuestWire
             writer.WritePropertyName("answers");
             QuestStore.WriteAnswers(writer, answers);
         }
+
+        // A graph's close's provenance (FABRIC-CLOSE1a), only on its done: every other done crosses exactly as it did, and an
+        // older build reads the done without it.
+        if (operation is { Kind: QuestOperationKind.Done, Close: { } close }) QuestStore.WriteClose(writer, close);
 
         // An evidenced operation's verdict (EVID1a): names and codes only; its when and machine are the operation's.
         if (operation is { Kind: QuestOperationKind.Evidenced, Evidence: { } verdict })
@@ -450,9 +455,18 @@ public static class QuestWire
         var note = Text(item, "note");
         var parts = note is not null && item.TryGetProperty("noteParts", out var given) ? NoteParts.Normalize(given) : null;
 
+        // A close's provenance (FABRIC-CLOSE1a) is what a second close with the same key is answered by: one that is not
+        // whole makes the done half of one, which a replay could not tell from another close.
+        QuestClose? close = null;
+        if (kind == QuestOperationKind.Done && item.TryGetProperty("close", out var closing)
+            && (close = QuestStore.ReadClose(closing)) is null)
+        {
+            return null;
+        }
+
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts);
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close);
     }
 
 }

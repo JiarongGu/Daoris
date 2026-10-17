@@ -347,6 +347,7 @@ public sealed class RefWatch : IAsyncDisposable
             lock (_gate) _watched.TryGetValue(@event.Subject, out repository);
             if (repository is null) continue;
             Heard?.Invoke(repository.Repository);
+            PullRequestMoments.Moved(_home, repository); // FABRIC-END6: origin's line may have moved, link 6's moment.
             var written = await _keep(repository, ct).ConfigureAwait(false);
             if (written <= 0) continue;
             acted += written;

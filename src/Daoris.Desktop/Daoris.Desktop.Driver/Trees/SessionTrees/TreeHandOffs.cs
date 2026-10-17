@@ -67,6 +67,8 @@ internal sealed class TreeHandOffs(TreeContext context)
         try
         {
             context.Recorded.Pushed(entry.Repository, entry.Branch, said, tip!);
+            // FABRIC-END6: Daoris pushed, a moment to ask about the pull request the plugin opened (§A4.3).
+            PullRequestMoments.Pushed(context.Home, entry.Repository);
             return result;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

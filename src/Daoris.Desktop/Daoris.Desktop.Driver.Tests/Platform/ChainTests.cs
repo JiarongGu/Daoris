@@ -85,17 +85,25 @@ public sealed class ChainTests : IDisposable
 
     // The fixed table and its ranks.
 
-    /// <summary>§C6's seven links, ranked: each event a link may emit is heard only by links ranked above it, so none wakes itself.</summary>
+    /// <summary>
+    /// §C6's seven links and FABRIC-RUN1's eighth, ranked: each event a link may emit is heard only by links ranked above it, so none wakes
+    /// itself.
+    /// </summary>
     [Fact]
     public void The_fixed_table_is_ranked_so_that_no_link_hears_what_it_or_a_link_above_it_emits()
     {
         var table = ChainTable.Fixed;
 
         Assert.Empty(ChainTable.Check(table.Links));
-        Assert.Equal([1, 2, 3, 4, 5, 6, 7], table.Links.Select(link => link.Rank));
+        Assert.Equal([1, 2, 3, 4, 5, 6, 7, 8], table.Links.Select(link => link.Rank));
         Assert.Equal(
-            [ChainKind.Fact, ChainKind.Effect, ChainKind.Fact, ChainKind.Fact, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader],
+            [ChainKind.Fact, ChainKind.Effect, ChainKind.Fact, ChainKind.Fact, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader],
             table.Links.Select(link => link.Kind));
+
+        // The evaluation runtime hears what the plan hears, the look's deadline and a plugin's step, and emits nothing.
+        var nodes = Assert.Single(table.Links, link => link.Rank == ChainRanks.Nodes);
+        Assert.Equal([ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.TimerOf(ChangeTopics.Look)], nodes.On);
+        Assert.Empty(nodes.Emits);
         foreach (var link in table.Links)
         {
             foreach (var emitted in link.Emits)

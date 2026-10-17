@@ -22,6 +22,30 @@ repository.
   after; then green with the driver's and the modules' fast halves, `CleanupGitTests` alone under `git.process.runsettings`, and the
   milestone's web test in both languages.
 
+## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
+
+- **Symptom:** twice in a row on main (3a0d0af, 6bd7e0e) the deployment rehearsal's 9e rolled `fails-to-start` back `busy`,
+  not `exited`: the move of `app` was refused for its whole 120 s after `app.stopped`, while nothing ran from `app/` (the
+  launcher's own check had passed). The 9d swap before it met a 41 s hold that gave way. The journal said which move was held and
+  for how long, and nothing of which file or which process.
+- **Root cause:** not yet attributed; this entry is the diagnosis half. The launcher counts as *running from `app/`* only a
+  process whose image is under it, and any other process holding a handle there (a file open, a folder as its working folder, an
+  enumeration under way) refuses the folder's move unseen. Two rehearsals in a worktree with the diagnosis below passed 115/115.
+  The first met a 45 s hold in 9d, on `app`'s `bin`, held at the first refusal by a process outside Daoris (a long-running
+  `dotnet` of another tool on the machine, named by its image's installer rollback file, `<hex>.rbf`, since an update had
+  replaced that image as it ran); the second met no hold at all. No Daoris process was found holding `app/`, and the holds
+  come and go with what else runs on the machine, as SWAP2 measured.
+- **Fix:** the swap now names what it found held. `HeldFiles` asks Windows which processes hold the folder moved or an entry
+  within it (`FileProcessIdsUsingFileInformation`, the Restart Manager's own question, which also answers a folder that is some
+  process's working folder: `RmGetList` takes files alone). It is asked at the first refusal, every five seconds after and at the
+  give-up, keeping the last answer, since one moment's holder can be a passer-by. Each hold journals `held` (the entry),
+  `by` (`name (pid n)`) and `holders` (each with its start and command line, the journal's alone); `busy`'s detail and
+  `daoris-driver update` say them, and `update.installed`/`update.rolled-back` carry `held` (its name) and `heldBy`.
+- **Verification:** each new test failed first at run time (members added without behaviour), then passed: a file this process
+  holds is named with its pid, a held move's journal and detail name both, a hold that gave way keeps its holder, a hold asked
+  again names the last holder and not the first (red with the ask made rare), the journal's new fields round-trip and an old
+  one reads as before, the terminal's words and the log line's fields. `HeldFilesProcessTests` (Process): a `node` whose working
+  folder is `app/` is named as holding `app` itself, and the folder's move is refused. Two deployment rehearsals, 115/115 each.
 ## 2026-10-17 — An unread ref forgot its record, and a detached tree's removal verified nothing (RECORDUNREAD1, DETACHTX1)
 
 - **Symptom:** a fifth review of FABRIC-END4a: a session branch whose ref git could not read was forgotten by LAND3's door as
@@ -96,6 +120,144 @@ repository.
 - **Verification:** red first: `JudgedDeleteGitTests` (4), `TidyEffectGitTests` (the rewound row, the live tree's follow, the bound
   on the memory) and `TidyEffectTests` (the settled wake, the live tree's trace, the reason); then green, with the driver's fast half
   and the Git classes that reach the delete and the tidy.
+## 2026-10-17 — Durable execution could dispatch a node twice, take an outcome back, and settle an attempt nothing had answered (FABRIC-PERFORM1h)
+
+- **Symptom:** found by a second maker's review of FABRIC-PERFORM1b, before it was staged or called by any loop: two starts on one ready
+  node both dispatched; a send's receipt wrote back the record as it stood before the send, dropping another node's start made
+  meanwhile, and putting a node heard reached back to active; a `running` answer did the same to an outcome heard while it was awaited;
+  an `idempotent`-only attempt of a stopped node was settled as never started, its gate lifted while its effect might still run, and its
+  completion later dropped as a replay; a pending retry was trimmed away with its timer; `{"unit":"u"}` read as an empty record; and a
+  retry after a person's new attempt waited a later delay than its first.
+- **Root cause:** `NodeRecordFiles.Write` held the record's lock only for the final replace, so every caller read and decided outside
+  it, and the lease was asked nowhere in the record; the performer kept the record it read before an await and wrote it whole after;
+  idempotency alone was taken for a `not-started` answer; trimming judged an attempt by its state alone; the parser defaulted an absent
+  or mistyped container to empty and never checked the record against itself; the retry's delay was indexed by the attempt's lifetime
+  number, which grows across bindings and runs, where the bound counts tries.
+- **Fix:** D173's FABRIC-PERFORM1b note, choices 1, 4, 6, 8 and 9 changed and its "After review": `NodeRecordFiles.Edit`, one
+  read-modify-write in one hold of the lock with the lease asked inside; every receipt and answer applied after its await to its own
+  invocation, only while that attempt still waits for it; an `idempotent`-only attempt redelivered while current and held otherwise
+  (`not-current`); every attempt a status needs kept; a record whose structure does not hold or that disagrees with itself unreadable;
+  the delay by `Tries + 1`.
+- **Verification:** 24 fast tests (`WorkPerformerTests` 7, `NodeRecordFilesTests` 17 with the theory's rows), each seen failing on
+  PERFORM1b's code with only the new members added, then passing; the driver's fast half; `WorkPerformProcessTests` by class.
+
+## 2026-10-17 — The work wire's bound lost valid landing answers, and its supervision could hang, starve or stay deaf (FABRIC-PERFORM1a)
+
+- **Symptom:** found by a second maker's review of FABRIC-PERFORM1a, before it was staged: a landing plugin's valid answer over 64 KB
+  (a long diagnostic) was dropped and the landing waited out its patience, though the kit's trial passed it; a plugin answering
+  `JSON\r` timed out; an answer completed just before a stop was returned as the next generation's; 61 awaited steps replayed in a
+  stable order lost the 61st at every resync; an unsound plugin stayed unsound after its update; a hybrid plugin stayed deaf once the
+  lease returned; a plugin that stopped reading stdin held its disposal for ever. Running the Process class also showed a process that
+  exited partway through a look restarted at once, uncounted.
+- **Root cause:** one 64 KB reader served every plugin process, a dropped answer failed nothing, and the trial read whole; the reader
+  ended lines at LF alone; the hook set returned the generation it had snapshotted before the await; the rate admitted the first 60 of
+  each minute whatever a resync had asked for; `Keep` reset restarts only for an id that left the catalogue; a running process was
+  skipped when the lease returned; `shutdown` was written with no cancellation; and the look's exit snapshot and its removal read
+  `Alive` apart.
+- **Fix:** D173's FABRIC-PERFORM1a note, choices 5, 7 and 9 changed and its "After review": the bound by what a plugin speaks
+  (`HookProcess.FrameLimit`, 64 KB or 4 MB, the trial reading alike), an over-long answer failed at once as `unreadable`, LF, CRLF or
+  CR; the generation fence at hand-back; a resync's replay admitted and queued whole; the build kept per plugin; `Reattach`; one grace
+  for the whole disposal; an exit seen partway through a look counted.
+- **Verification:** twelve fast tests, each seen failing first (members added without behaviour), then passing; the three Process tests
+  (a 70 KB landing answer from a real process, a plugin that stops reading, the trial's long answer) seen failing against the old
+  behaviours, then passing; the driver's fast half and the Process classes that read through `HookProcess`.
+
+## 2026-10-17 — The wire evaluation leaked outcomes across runs and exposed receipts it would invalidate (FABRIC-WIRE1e)
+
+- **Symptom:** found by a second maker's review of FABRIC-WIRE1b, before any dispatch builds on it: a failure or a rejection kept
+  from run 1 took its `failed` or `rejected` path in run 2 of the same graph and revision; an active `pushed` bound to tip 1 and
+  observed after the unit moved to tip 2 reached, and a downstream node was offered a start on tip 2 resting on it; a join with a
+  reached member and an unrelated `failed` wire reported `member-failed`.
+- **Root cause:** the binding carried no run, so `WireEvaluation.Receipts` hashed the caller's current run into a failure's or a
+  rejection's receipt; the observation pass ran before the invalidations, and the invalidations exempted what it had moved; a
+  started join took any failure receipt in its binding for a member's.
+- **Fix:** D173's FABRIC-WIRE1e note: a start names its graph and run, kept as the status's scope, and only an outcome of that run is a
+  receipt; the invalidations run before the observation; a join fails on its members' receipts alone. Choices 2, 7 and 9 of the
+  WIRE1b note changed with it: `Settled` clarified, waiting capacity apart from execution capacity, and a complete revision snapshot
+  required (`no-revision`).
+- **Verification:** seven new tests, the evaluation's members added first without behaviour, each failed on its own defect at run
+  time, then passed; the node and wire suites pass, and the driver's fast half.
+## 2026-10-17 — An edit of driver.json from Setup or Ask Daoris deleted the settings its writer did not know (FABRIC-GRAPH1's review)
+
+- **Symptom:** found by a second maker's review of FABRIC-GRAPH1, and live in the installed build: a key `driver.json` holds that the
+  driver has no field for (a newer build's, a hand-written one, a landing rule's own) was gone after any edit at Setup or from Ask
+  Daoris's proposals, and every key moved to the writer's order. The terminal kept unknown top-level keys, but first, and dropped a
+  landing rule's; it also wrote `9007199254740993` back as `9007199254740992`. Both dropped a cycle that was not an object, a kind of
+  work no unit reads and an empty `workCycles` on an unrelated edit.
+- **Root cause:** `DriverConfig.ToJson` rebuilt the file from the fields it reads (`Platform/DriverConfig.cs`), so what it did not read
+  was never written; the CLI spread an untyped `rest` before its own fields and parsed through JavaScript's numbers. The tests that
+  claimed byte-for-byte writing built their input with the same writer, so they proved only that it was idempotent.
+- **Fix:** D173's FABRIC-GRAPH1 note, *After review*: both twins write an edit over the text they read (`Platform/JsonKeeping.cs`,
+  `platform/jsonkeep.ts`), from the file as it stands, the file as its reader understood it and the edited choices: what no edit changed
+  is written as the file has it, numbers by their own text; an object an edit changed is merged key by key; a key it adds goes after
+  the one before it in the writer's order; no edit is the file's own bytes. The cycle's homes keep every value raw. *After the
+  re-check* (D173's note): writing over the text read still lost a change another writer made between the read and the write, and the
+  driver overwrote a file that had since stopped reading. Both twins now read the file again at write and make the edit onto it
+  (`DriverConfig.Save`, `writeDriverChoices`); a file that does not read then, or holds a key twice in one object, is refused and left
+  as it is. An edit keeps the file's CRLF, and the CLI stages each write under its own name (`fsx.ts`), as `AtomicFile` does.
+  *After the second re-check* (D173's note): merging the edit over the file as it stands still wrote what the edit never touched. A
+  map another writer took out came back whole when this edit changed one entry in it, every other entry with it, and an object another
+  writer made a string was overwritten by the stale edited object. Choices read where no file was carried no text, so both twins wrote
+  them whole, over a file another writer made before the save, an unreadable one included in the driver's. An edit is now the set of key
+  paths it changed (`JsonKeeping.Plan`, `jsonkeep.ts`' `plan`): an object missing now is made again with only the edit's own keys, one
+  that is no longer an object refuses it, naming the path (`JsonEditRefusedException`, `EditRefused`), and a map the reader never saw is
+  merged key by key into one another writer wrote meanwhile, never written whole over it; a config read where no file was carries `{}`
+  and its path. The CLI writes its maps in the driver's order, so an entry an edit adds goes where the driver's goes.
+- **Verification:** `DriverConfigKeepsTests` and the CLI's `configkeeps.test.ts` read one table, `driver-config-keeps.json` (an
+  existing file in the writer's layout with unknown keys at the top, in a landing rule and a workspace rule, and numbers JavaScript
+  cannot hold; nine edits and the bytes both write): the table failed on GRAPH1's branch in both twins (all nine rows in the driver's)
+  and passes; the driver's and the modules' fast halves and the CLI's suite pass. The re-check's seven rows (another writer's change
+  between the read and the write, four ways; CRLF; a file left unreadable; a key written twice) and its `twice` read failed in the
+  driver's, each alone, and in the CLI's at its first such row, and pass; `fsx.test.ts`' two staging cases failed and pass. The second
+  re-check's six rows (a map taken out, a rule taken out, a map made a string, and a file another writer made, unreadable or with a key
+  twice, after this one found none) and a save where there still is none failed on round 2's branch in the driver's, each alone, and in
+  the CLI's, a test a row now, all but the unreadable one, which its whole write already refused; all pass, with the driver's and the
+  modules' fast halves and the CLI's suite. A further re-check's three rows (a map the reader never saw, written meanwhile by another
+  writer as an object, as nothing, as a string) failed in both twins where it was an object or a string, and pass; the row where
+  there is none was already right, the edit's keys alone, and holds it.
+## 2026-10-17 — The closure graph's close fenced too little: a stale verdict, a kept step, a key reused, a refusal forgotten (FABRIC-CLOSE1e)
+
+- **Symptom:** a second review of FABRIC-CLOSE1a, before any quest is bound, found four ways around the close. (1) An evidence
+  verdict read for a submission and arriving after a later `ready` released the replacement nobody read, and could publish and
+  seal its step. (2) A step a lost submission had published survived the rebase once this machine had taken it: it synced on its
+  own, and its session ran with a held claim. (3) A close sent with a key already used, naming another quest list, answered
+  success without closing the rest. (4) A refused close sent again with its key after the hold was released closed.
+- **Root cause:** (1) the replay judged a verdict by `Covers`, requirements and evidence names only, and a replacement has the
+  same ones; clearing `Evidence` on the replacement cannot fence a verdict arriving after it. (2) The submission's rebase reused
+  `ForgetFollowUpsAsync`, written for a lost done, which forgets a step only while its history is its single publication. (3) The
+  replay matched the key on any named quest's Done and compared nothing else. (4) Only a success left its key anywhere, on the Done.
+- **Fix:** D173's FABRIC-CLOSE1a note, its *After review*: a verdict names its submission and the replay and the door take it
+  for that one only (`QuestEvidenceVerdict.AskedFor`); `QuestStore.ForgetStepsAsync` forgets a lost submission's unpushed steps
+  with what this machine did on them, rewriting a take as a conflict on a quest no push carries; the store keeps every close
+  outcome, refusal or success, under its key in `quest_closes` with its token and submissions, answering only the same call with
+  it (`KeyReused` otherwise).
+- **Verification:** four tests (three in `QuestClosureTests`, one in `QuestSyncTests`) failed at run time on CLOSE1a with the
+  members added without behaviour, then passed. `Daoris.Service.Tests` (2197) and `Daoris.Service.Http.Tests` (280) pass, the
+  ordinary quest's suites unchanged.
+## 2026-10-17 — The due moments could fetch twice, overwrite a completed answer and drop the start's focus (FABRIC-END6c)
+
+- **Symptom:** a second review of FABRIC-END6, before plugin mode is relied on, found five faults:
+  - a moment could start a fetch beside a landing's fetch in flight, and run beside a removing press;
+  - a moment's slow `open` could return after a concurrent look's `completed` and overwrite it, and concurrent occasions each asked
+    inside the minute;
+  - every answer of an occasion was stamped with the occasion's start;
+  - a person's fetch that changed nothing was not counted;
+  - the main window's focus at a start was dropped before the moments existed.
+- **Root cause:**
+  - `RemoteFetches` stamped a fetch only once it ended, and nothing reserved a repository. `PullRequestMoments` serialised only the
+    moments themselves.
+  - `LandedBranches.Answered` saved unconditionally, and the minute was the record's alone plus the moments' own ledger.
+  - `PullRequestAsks.AskStatesAsync` took one time for the whole occasion.
+  - The moments counted a person's fetch only where origin's tip moved, and their ledger was the process's own.
+  - `DriverLoop.Focused` and `DriverWatch.Focused` dropped a focus while their listener was null.
+- **Fix:** D173's FABRIC-END6 note, its "After review": a fetch in flight is joined (`RemoteFetches.OnceAsync`); a moment skips a
+  repository that `RepositoryHolds` holds (the replay's lock, a landing) and asks once it is let go; `PullRequestMinute` is the one
+  minute of every occasion; an answer is kept only where asked no earlier than the kept one, and a completed one never replaced;
+  `StateAnswer.AskedAt` is each request's own time; `RemoteFetches.InGit` reads `FETCH_HEAD` and origin's line's log; `PendingFocus`
+  keeps one focus until it can be told.
+- **Verification:** the members were added first with no behaviour. Nine new fast tests failed at run time, as did the modules' focus
+  test and three new rows over real git. All then passed, with the driver's and the modules' fast halves and
+  `PullRequestStateTests` and `PullRequestMomentsGitTests`, each run once.
 
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 

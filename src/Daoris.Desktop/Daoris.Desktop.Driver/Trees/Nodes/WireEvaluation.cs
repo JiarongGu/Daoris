@@ -43,14 +43,23 @@ public sealed record WireRun(string GraphDigest, string Run)
 {
     public NodeScope Scope => new(GraphDigest, Run);
 
-    /// <summary>Each unit's current revision, by <see cref="WorkUnit.Id"/>: a branch's full tip, null for a unit with none (a quest's).</summary>
+    /// <summary>
+    /// Each unit's current revision, by <see cref="WorkUnit.Id"/>: a branch's full tip, null for a unit with none (a quest's). A complete
+    /// snapshot: a unit a node acts on that it leaves out, or a branch it names with none, refuses the evaluation (FABRIC-WIRE1e).
+    /// </summary>
     public IReadOnlyDictionary<string, string?> Revisions { get; init; } = ImmutableDictionary<string, string?>.Empty;
 
     /// <summary>The trigger firings already recorded (<see cref="WireFiring.Key"/>): a trigger fires once per receipt, whatever replays.</summary>
     public IReadOnlySet<string> Fired { get; init; } = ImmutableHashSet<string>.Empty;
 
-    /// <summary>How many dispatched attempts may run at once (§A3's local limits): a fork starts its targets within it.</summary>
+    /// <summary>How many performed attempts may run at once (§A3's local limits): a fork starts its targets within it.</summary>
     public int Limit { get; init; } = WireEvaluation.DefaultLimit;
+
+    /// <summary>
+    /// How many waited attempts may wait at once, apart from <see cref="Limit"/> (FABRIC-WIRE1e): a parked <c>wait.unit</c> runs no process,
+    /// so it never holds a performed node's slot.
+    /// </summary>
+    public int WaitLimit { get; init; } = WireEvaluation.DefaultWaitLimit;
 
     /// <summary>The units an observed built-in is read from, by id: where one is absent, its active node is not observed here.</summary>
     public IReadOnlyDictionary<string, WorkUnit> Units { get; init; } = ImmutableDictionary<string, WorkUnit>.Empty;
@@ -106,6 +115,12 @@ public static class WireWhy
     /// <summary>A skip of another graph or run: it holds for its own alone.</summary>
     public const string SkipScope = "skip-scope";
 
+    /// <summary>
+    /// A failure or a rejection of another run (FABRIC-WIRE1f): an attempt's outcome other than a reach is its own run's alone, so a new run
+    /// lapses it, as a skip of another run lapses, and the node is judged again in this run.
+    /// </summary>
+    public const string RunScope = "run-scope";
+
     /// <summary>An <c>all</c> join's members settled: every one reached or skipped, or one failed.</summary>
     public const string Members = "members";
 
@@ -122,7 +137,8 @@ public sealed record WireMove(string Node, NodeMove Move, NodeMoved Moved, strin
 
 /// <summary>
 /// A start the evaluation proposes (ready → active), for its caller to apply through <see cref="NodeLifecycle.Apply"/> when it observes,
-/// dispatches, offers the task or waits (PERFORM1, HUMAN1, WAITUNIT1). It carries the trigger firings it consumes, for the record writer.
+/// dispatches, offers the task or waits (PERFORM1, HUMAN1, WAITUNIT1). Its move names the binding and the run (FABRIC-WIRE1e); it carries
+/// the trigger firings it consumes, for the record writer.
 /// </summary>
 public sealed record WireStart(string Node, NodeMove Move)
 {
@@ -131,7 +147,7 @@ public sealed record WireStart(string Node, NodeMove Move)
 
 /// <summary>What one evaluation came to (FABRIC-WIRE1b).</summary>
 /// <param name="Statuses">Every node's status after the moves, by node id.</param>
-/// <param name="Moves">The moves made, in the order made: observations, invalidations, joins, then eligibility.</param>
+/// <param name="Moves">The moves made, in the order made: invalidations, observations, joins, then eligibility.</param>
 /// <param name="Refused">Moves the one table refused, kept apart: none is expected, and each is a defect to name.</param>
 /// <param name="Eligibility">Each node's eligibility on the statuses after the invalidations, in declaration order.</param>
 /// <param name="Starts">The ready nodes that may start now, in node-id order, within the limit.</param>
@@ -144,7 +160,20 @@ public sealed record WireEvaluated(
     IReadOnlyList<WireStart> Starts,
     IReadOnlyList<string> Queued)
 {
-    /// <summary>Whether nothing moved: evaluated again on the same statuses, it moves nothing.</summary>
+    /// <summary>
+    /// Why the evaluation judged nothing, or null (FABRIC-WIRE1e): <see cref="WireEvaluation.NoRevision"/> when the caller's revisions
+    /// are not a complete snapshot. A refused evaluation moves nothing, offers no start and returns the statuses as handed in.
+    /// </summary>
+    public string? Refusal { get; init; }
+
+    /// <summary>The units the refusal names, in ordinal order: each a unit a node acts on with no revision handed in for it.</summary>
+    public IReadOnlyList<string> Missing { get; init; } = [];
+
+    /// <summary>
+    /// Whether the evaluator moved nothing: evaluated again on the same statuses, it moves nothing. It says nothing of pending starts
+    /// (<see cref="Starts"/>, <see cref="Queued"/>) nor of execution finished (FABRIC-WIRE1e), and a refused evaluation moved nothing too:
+    /// read <see cref="Refusal"/> first.
+    /// </summary>
     public bool Settled => Moves.Count == 0;
 
     /// <summary>The eligibility of <paramref name="node"/>, or null for a node not evaluated.</summary>
@@ -157,25 +186,39 @@ public sealed record WireEvaluated(
 /// after them are returned for the record writer to keep.
 /// </summary>
 /// <remarks>
-/// <para><b>One evaluation, in four passes, one move per node at most:</b> the active observed built-ins read from their records with
-/// the caller's git reads; every bound node whose binding lapsed, or rests on a receipt or input no longer current, invalidated,
-/// transitively to a fixpoint; each started <c>all</c> join judged on its members; then each blocked, ready or invalidated node judged
-/// on its wires. A node invalidated here is judged again at the next evaluation, so the lapse is seen and no other witness is taken
-/// silently (canary 41). The caller evaluates again after applying what it starts, until <see cref="WireEvaluated.Settled"/>.</para>
+/// <para><b>One evaluation, in four passes, one move per node at most,</b> on a complete snapshot of the units' revisions or not at all
+/// (<see cref="WireEvaluated.Refusal"/>): every bound node whose binding lapsed, or rests on a receipt or input no longer current,
+/// invalidated, transitively to a fixpoint; the active observed built-ins still bound read from their records with the caller's git
+/// reads; each started <c>all</c> join judged on its members; then each blocked, ready or invalidated node judged on its wires. Validity
+/// comes before observation (FABRIC-WIRE1e), so no start rests on a receipt the same evaluation would invalidate. A node invalidated here
+/// is judged again at the next evaluation, so the lapse is seen and no other witness is taken silently (canary 41). The caller evaluates
+/// again after applying what it starts, until <see cref="WireEvaluated.Settled"/>.</para>
 /// <para><b>Receipts</b> (<see cref="WireReceipt"/>): a reach's acceptance; this run's skip; a failure whose declared retries are spent
-/// and a rejection, each on this graph's binding. Each wire kind reads its own: <c>after</c> a reach or a skip, <c>data</c> and
-/// <c>trigger</c> a reach, <c>failed</c> a failure, <c>rejected</c> a rejection.</para>
+/// and a rejection, each of an attempt started in this graph and run. Each wire kind reads its own: <c>after</c> a reach or a skip,
+/// <c>data</c> and <c>trigger</c> a reach, <c>failed</c> a failure, <c>rejected</c> a rejection.</para>
 /// <para><b>A trigger fires once per receipt</b>: it makes a blocked or invalidated target eligible only on a receipt it has not fired on
 /// (<see cref="WireRun.Fired"/>, or the receipt in the target's binding), keeps a ready target eligible (a declared retry or the
 /// person's new attempt is no second firing), and holds a started attempt that rests on it.</para>
 /// </remarks>
 public static class WireEvaluation
 {
-    /// <summary>Dispatched attempts at once, by default: PROC1a's measured limit of four process starts at once (§A3).</summary>
+    /// <summary>Performed attempts at once, by default: PROC1a's measured limit of four process starts at once (§A3).</summary>
     public const int DefaultLimit = 4;
+
+    /// <summary>
+    /// Waited attempts at once, by default: a graph's bound of 24 nodes (§E7), so every <c>wait.unit</c> of one graph may wait at once.
+    /// A wait starts no process; its adapter reads a local projection (§E6).
+    /// </summary>
+    public const int DefaultWaitLimit = 24;
 
     /// <summary>The <c>all</c> join's failure code when a member failed with its retries exhausted.</summary>
     public const string MemberFailed = "member-failed";
+
+    /// <summary>
+    /// The evaluation's refusal when a unit a node acts on has no revision handed in (FABRIC-WIRE1e): a unit missing from
+    /// <see cref="WireRun.Revisions"/>, or a branch's named with none. A quest's is null by design, and named so.
+    /// </summary>
+    public const string NoRevision = "no-revision";
 
     /// <summary>
     /// Evaluates <paramref name="wires"/> over <paramref name="nodes"/> and their <paramref name="statuses"/> for <paramref name="run"/>.
@@ -211,8 +254,36 @@ public static class WireEvaluation
             moves.Add(made);
         }
 
-        // 1. The observed built-ins, read from their records: NODE1's choice 8, with the caller's git reads.
+        // 0. FABRIC-WIRE1e: the revisions are a complete snapshot, or nothing is judged: a unit read as having none would bind and lapse
+        // on a guess. A quest's is named, as null.
+        var missing = declared.Select(node => now[node.Id].Unit).Distinct(StringComparer.Ordinal)
+            .Where(unit => !Revised(run, unit)).Order(StringComparer.Ordinal).ToList();
+        if (missing.Count > 0) return new(now, [], [], [], [], []) { Refusal = NoRevision, Missing = missing };
+
+        // 1. Invalidations, transitively, before anything is observed (FABRIC-WIRE1e): a node whose binding lapsed is invalidated, never
+        // observed, so no receipt the same evaluation would invalidate is exposed, and nothing starts on one. Each round takes away the
+        // receipts of what the last one lapsed, so it ends within the nodes.
+        var lapsing = new Dictionary<string, (string Why, string? Detail)>(StringComparer.Ordinal);
+        for (var found = true; found;)
+        {
+            found = false;
+            var current = Receipts(declared, now, run, lapsing.Keys).Values.Select(receipt => receipt.Id).ToHashSet(StringComparer.Ordinal);
+            foreach (var node in declared)
+            {
+                if (lapsing.ContainsKey(node.Id) || Lapse(node, now[node.Id], run, current) is not { } lapse) continue;
+                lapsing[node.Id] = lapse;
+                found = true;
+            }
+        }
+
         foreach (var node in declared)
+        {
+            if (lapsing.TryGetValue(node.Id, out var lapse)) Make(node, new NodeMove(NodeStates.Invalidated, NodeCause.Daoris), lapse.Why, lapse.Detail);
+        }
+
+        // 2. The observed built-ins still bound, read from their records: NODE1's choice 8, with the caller's git reads. An observation
+        // moves an active or unknown node, which holds no receipt, so it takes none away from what step 1 judged current.
+        foreach (var node in declared.Where(node => !moved.Contains(node.Id)))
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
@@ -226,32 +297,16 @@ public static class WireEvaluation
             Make(node, move, WireWhy.Observed, observation.Said);
         }
 
-        // 2. Invalidations, transitively: each round takes away the receipts of what the last one lapsed, so it ends within the nodes.
-        var lapsing = new Dictionary<string, (string Why, string? Detail)>(StringComparer.Ordinal);
-        for (var found = true; found;)
-        {
-            found = false;
-            var current = Receipts(declared, now, run, lapsing.Keys).Values.Select(receipt => receipt.Id).ToHashSet(StringComparer.Ordinal);
-            foreach (var node in declared)
-            {
-                if (lapsing.ContainsKey(node.Id) || moved.Contains(node.Id) || Lapse(node, now[node.Id], run, current) is not { } lapse) continue;
-                lapsing[node.Id] = lapse;
-                found = true;
-            }
-        }
-
-        foreach (var node in declared)
-        {
-            if (lapsing.TryGetValue(node.Id, out var lapse)) Make(node, new NodeMove(NodeStates.Invalidated, NodeCause.Daoris), lapse.Why, lapse.Detail);
-        }
-
-        // 3. Each started join, on its members' receipts: its binding's, every one still current, or it was invalidated above.
+        // 3. Each started join, on its members' receipts alone (FABRIC-WIRE1e): its binding's, every one still current, or it was
+        // invalidated above. A failure it consumed through its own failed wire is a condition of its start, never a member's failure.
         var receipts = Receipts(declared, now, run, []);
         foreach (var node in declared.Where(node => node.Kind == NodeKinds.All && !moved.Contains(node.Id)))
         {
             var status = now[node.Id];
             if (status.State != NodeStates.Active || status.Binding is not { } binding) continue;
-            var failure = binding.PrerequisiteReceipts.FirstOrDefault(id => receipts.Values.Any(receipt => receipt.Id == id && receipt.Kind == WireReceiptKinds.Failed));
+            var failure = Members(node.Id, wires)
+                .Select(member => receipts.GetValueOrDefault(member))
+                .FirstOrDefault(receipt => receipt is { Kind: WireReceiptKinds.Failed } && binding.PrerequisiteReceipts.Contains(receipt.Id, StringComparer.Ordinal))?.Id;
             Make(node, failure is null
                 ? new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = NodeSource.Members, Attempt = status.Attempt, Acceptance = binding }
                 : new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Members, Attempt = status.Attempt, Code = MemberFailed },
@@ -281,36 +336,61 @@ public static class WireEvaluation
             }
         }
 
-        // 5. The starts: every ready node, a dispatched one within the limit (§A3), in node-id order.
-        var running = declared.Count(node => NodeAuthorities.Of(node) is { Dispatches: true }
-            && (now[node.Id].State is NodeStates.Active or NodeStates.Unknown || now[node.Id].Unreconciled is not null));
-        var slots = Math.Max(0, run.Limit - running);
+        // 5. The starts: every ready node, a performed one within the execution limit and a waited one within the waiting limit (§A3;
+        // FABRIC-WIRE1e: a parked wait runs no process, so it never holds a performed node's slot), in node-id order.
+        var slots = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            [NodeReach.Performed] = Math.Max(0, run.Limit - Running(NodeReach.Performed)),
+            [NodeReach.Waited] = Math.Max(0, run.WaitLimit - Running(NodeReach.Waited)),
+        };
         var starts = new List<WireStart>();
         var queued = new List<string>();
         foreach (var judged in eligibility.OrderBy(each => each.Node, StringComparer.Ordinal))
         {
             var status = now[judged.Node];
             if (status.State != NodeStates.Ready || !judged.Eligible || judged.Binding is null || status.Unreconciled is not null) continue;
-            if (NodeAuthorities.Of(declared.First(node => node.Id == judged.Node)) is { Dispatches: true })
+            if (NodeAuthorities.Of(declared.First(node => node.Id == judged.Node)) is { Dispatches: true } authority)
             {
-                if (slots == 0)
+                if (slots[authority.Reach] == 0)
                 {
                     queued.Add(judged.Node);
                     continue;
                 }
 
-                slots--;
+                slots[authority.Reach]--;
             }
 
-            starts.Add(new WireStart(judged.Node, new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = judged.Binding }) { Firings = judged.Firings });
+            starts.Add(new WireStart(judged.Node, new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = judged.Binding, Scope = run.Scope })
+            {
+                Firings = judged.Firings,
+            });
         }
 
         return new(now, moves, refused, eligibility, starts, queued);
+
+        // The dispatched attempts of one reach not settled yet: active, unknown, or unreconciled whatever moved the node off it.
+        int Running(string reach) => declared.Count(node => NodeAuthorities.Of(node) is { Dispatches: true } authority && authority.Reach == reach
+            && (now[node.Id].State is NodeStates.Active or NodeStates.Unknown || now[node.Id].Unreconciled is not null));
     }
 
+    /// <summary>An <c>all</c> join's members, in wire-id order: its <c>after</c> wires' sources (§E7).</summary>
+    private static IEnumerable<string> Members(string join, IReadOnlyList<Wire> wires) =>
+        wires.Where(wire => wire.Kind == WireKinds.After && wire.To is { Unit: null } to && to.Node == join && wire.From is { Unit: null })
+            .OrderBy(wire => wire.Id, StringComparer.Ordinal)
+            .Select(wire => wire.From!.Node);
+
     /// <summary>
-    /// Each node's one current receipt, by node id: its reach, this run's skip, a spent failure or a rejection on this graph's binding.
-    /// The nodes in <paramref name="lapsing"/> have none, since they are about to be invalidated.
+    /// Whether the caller handed in a revision for <paramref name="unit"/> (FABRIC-WIRE1e): named in <see cref="WireRun.Revisions"/>, and not
+    /// null where <see cref="WireRun.Units"/> knows it is a branch. A quest's is null by design.
+    /// </summary>
+    private static bool Revised(WireRun run, string unit) =>
+        run.Revisions.TryGetValue(unit, out var revision)
+        && (revision is not null || !(run.Units.TryGetValue(unit, out var known) && known.Kind == WorkUnitKind.Branch));
+
+    /// <summary>
+    /// Each node's one current receipt, by node id: its reach, this run's skip, a spent failure or a rejection of an attempt started in
+    /// this graph and run (FABRIC-WIRE1e: the attempt's scope, never the caller's run hashed into another run's outcome). The nodes in
+    /// <paramref name="lapsing"/> have none, since they are about to be invalidated.
     /// </summary>
     private static Dictionary<string, WireReceipt> Receipts(
         List<NodeDeclaration> nodes, Dictionary<string, NodeStatus> statuses, WireRun run, IEnumerable<string> lapsing)
@@ -321,7 +401,7 @@ public static class WireEvaluation
         {
             var status = statuses[node.Id];
             if (gone.Contains(node.Id)) continue;
-            var ours = status.Binding is { } binding && binding.GraphDigest == run.GraphDigest ? binding : null;
+            var ours = status.Binding is { } binding && binding.GraphDigest == run.GraphDigest && status.Scope == run.Scope ? binding : null;
             WireReceipt? receipt = status.State switch
             {
                 NodeStates.Reached when status.Current is { } accepted => new(accepted.Id, WireReceiptKinds.Reached, node.Id) { Acceptance = accepted },
@@ -351,6 +431,9 @@ public static class WireEvaluation
         if (status.State == NodeStates.Skipped) return NodeLifecycle.Skips(status, run.Scope) ? null : (WireWhy.SkipScope, null);
         if (!NodeStates.Bound.Contains(status.State) || status.Binding is not { } binding) return null;
         if (NodeAcceptances.Lapsed(binding, Revision(run, binding.Unit), run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
+        // FABRIC-WIRE1f: a failure or a rejection is its attempt's run's alone (WIRE1e), so another run lapses it, as it lapses a skip, and the
+        // node is judged again there: a run is a pass the person or the rules began afresh. A reach is kept, its acceptance omitting the run.
+        if (status.State is NodeStates.Failed or NodeStates.Rejected && status.Scope != run.Scope) return (WireWhy.RunScope, status.Scope?.Run);
         var lost = binding.PrerequisiteReceipts.FirstOrDefault(receipt => !current.Contains(receipt))
             ?? binding.Inputs.Values.Select(port => port.Acceptance).FirstOrDefault(acceptance => acceptance is not null && !current.Contains(acceptance));
         return lost is null ? null : (WireWhy.Upstream, lost);

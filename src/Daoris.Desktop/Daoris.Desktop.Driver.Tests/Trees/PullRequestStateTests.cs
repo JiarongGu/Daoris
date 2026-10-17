@@ -481,6 +481,61 @@ public sealed class PullRequestStateTests : LandedFixture
         Assert.Equal(completed.Verdict, final.Verdict);
     }
 
+    /// <summary>
+    /// FABRIC-END6c, finding 2: two occasions at once share D148's minute. The first look's ask is in flight when the second looks, so
+    /// the second asks nothing, and the pull request is asked once.
+    /// </summary>
+    [Fact]
+    public async Task Two_looks_at_once_ask_a_pull_request_once()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var landed = await LandAsync(trees, root, "work.txt", "work\n", new LandingSubject("s1", "q1", "Work"));
+        _answers[landed.Branch!] = () => new PullRequestState(PullRequestStates.Open);
+        _held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var first = trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+        var second = trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+        // The look that did not ask ends while the other's ask is held; asked twice, both would wait here.
+        await Task.WhenAny(Task.WhenAny(first, second), Task.Delay(TimeSpan.FromSeconds(10)));
+        _held.SetResult();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(1, _asked);
+        Assert.Equal(PullRequestStates.Open, trees.Recorded.Landing("s1")!.PullRequestState!.State);
+    }
+
+    /// <summary>
+    /// FABRIC-END6c, finding 3: frames go one at a time, so each pull request's answer is kept with the time its own request was sent,
+    /// not the occasion's start: the minute counts from when it was actually asked.
+    /// </summary>
+    [Fact]
+    public async Task Each_pull_request_is_kept_with_its_own_request_s_time()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var clock = _now;
+        _onAsk = () => clock = clock.AddSeconds(25);
+        var trees = new SessionTrees(Home, new LandingPlugins(Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Platform(this)), clock: () => clock));
+        var a = await LandAsync(trees, root, "a.txt", "a\n", new LandingSubject("s1", "q1", "First"));
+        var b = await LandAsync(trees, root, "b.txt", "b\n", new LandingSubject("s2", "q2", "Second"));
+        _answers[a.Branch!] = () => new PullRequestState(PullRequestStates.Open);
+        _answers[b.Branch!] = () => new PullRequestState(PullRequestStates.Open);
+        var start = clock;
+
+        await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        Assert.Equal(2, _asked);
+        Assert.Equal(
+            [start, start.AddSeconds(25)],
+            new[] { trees.Recorded.Landing("s1")!, trees.Recorded.Landing("s2")! }.Select(entry => entry.PullRequestState!.AskedAt).Order());
+    }
+
+    /// <summary>A plugin's ask held until a test lets it go; null answers at once.</summary>
+    private TaskCompletionSource? _held;
+
+    /// <summary>What each ask does before it answers, as a slow platform's time passing; null does nothing.</summary>
+    private Action? _onAsk;
+
     /// <summary>The fake platform: a landing's push is a real one into the bare origin; a state is what the test says for the branch.</summary>
     private sealed class Platform(PullRequestStateTests test) : IHookChannel
     {
@@ -497,11 +552,13 @@ public sealed class PullRequestStateTests : LandedFixture
             return new PluginLanding(Plugin, Pushed: true, $"https://example.test/org/project/_git/engine/pullrequest/{branch.Length}", "pushed");
         }
 
-        public Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
+        public async Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
         {
-            test._asked++;
+            Interlocked.Increment(ref test._asked);
+            if (test._held is { } held) await held.Task.WaitAsync(ct);
+            test._onAsk?.Invoke();
             var branch = JsonSerializer.SerializeToElement(payload).GetProperty("branch").GetString()!;
-            return Task.FromResult(test._answers.TryGetValue(branch, out var answer) ? answer() : new PullRequestState(PullRequestStates.Unknown));
+            return test._answers.TryGetValue(branch, out var answer) ? answer() : new PullRequestState(PullRequestStates.Unknown);
         }
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;

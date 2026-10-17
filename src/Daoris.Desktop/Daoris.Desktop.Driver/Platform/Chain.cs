@@ -106,6 +106,12 @@ public static class ChainRanks
 
     /// <summary>A home folder's reader.</summary>
     public const int Read = 7;
+
+    /// <summary>
+    /// The evaluation runtime (FABRIC-RUN1, <see cref="NodeRuntime"/>): a reader of the units' node records, on every wake the local plan
+    /// hears and on the <c>look</c> topic's deadline, after the plan, so a session the plan ended is read by it in the same wake.
+    /// </summary>
+    public const int Nodes = 8;
 }
 
 /// <summary>
@@ -166,6 +172,9 @@ public sealed class ChainTable
             ChainEvents.TimerOf(ChangeTopics.Plugins), ChainEvents.TimerOf(ChangeTopics.Lines), ChainEvents.TimerOf(ChangeTopics.Words),
             ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help), ChainEvents.TimerOf(ChangeTopics.Gates),
         ], []),
+        // FABRIC-RUN1: the evaluation runtime hears what the plan hears, its deadline the look's, and a plugin's step; it writes only the
+        // units' node records, which no link hears, and emits nothing.
+        new(ChainRanks.Nodes, "nodes", ChainKind.Reader, [ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.TimerOf(ChangeTopics.Look)], []),
     ]);
 
     /// <summary>

@@ -165,7 +165,9 @@ public static class PluginHealthRules
         var listening = record.Up ? record.Listening : [];
         if (record.Failure is { } failure) return new(Failing, failure.At, failure, listening);
 
-        var speaksInLoop = entry.Manifest.Hooks?.Points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal)) == true;
+        // A process the loop keeps for the work wire (FABRIC-PERFORM1a) runs as one kept for a loop point does.
+        var speaksInLoop = entry.Manifest.Hooks?.Points.Any(point =>
+            HookPoints.Loop.Contains(point, StringComparer.Ordinal) || HookPoints.Work.Contains(point, StringComparer.Ordinal)) == true;
         return record.Up && speaksInLoop
             ? new(Running, record.UpSince, null, listening)
             : new(Ready, null, null, []);

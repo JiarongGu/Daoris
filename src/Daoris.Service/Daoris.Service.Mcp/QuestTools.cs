@@ -273,6 +273,16 @@ public sealed class QuestTools(
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
 
+                // FABRIC-CLOSE1a (§E5): a quest its graph closes, and its taker's result while it stays taken.
+                if (quest is { Closure: not null, Status: QuestStatus.Taken })
+                {
+                    text.AppendLine(quest.Submission is { } submitted
+                        ? "  submitted " + submitted.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
+                          + (submitted.Note is { Length: > 0 } said ? $": _{said}_" : "")
+                          + ". It stays taken until its graph closes it at the work's end, after its holds and gates."
+                        : "  its graph closes it: its taker says `ready`, never `done`, when the work is done.");
+                }
+
                 // How its done answered each (DRIFT1d), and whether a departure holds it for the person's yes.
                 foreach (var answer in quest.Answers)
                 {
@@ -325,14 +335,16 @@ public sealed class QuestTools(
         + "answers each one (answers). When your work needs something another repository "
         + "owns — a change there, or a fact about its code — publish the question to it with "
         + "quest_publish, then WAIT on that question here (action wait, on the question's id) and end "
-        + "your turn: your quest stays yours, and the driver resumes you in the same tree with the answer.")]
+        + "your turn: your quest stays yours, and the driver resumes you in the same tree with the answer. "
+        + "Where quest_list says its graph closes it, finish with ready instead of done: the same reason and answers, kept as "
+        + "your submission, and Daoris closes the quest at the work's end.")]
     public async Task<string> RespondToQuestAsync(
         [Description("The quest id, from quest_list.")] string id,
-        [Description("take, done, decline, or wait.")] string action,
+        [Description("take, done, ready, decline, or wait. ready finishes a quest its graph closes.")] string action,
         [Description("Required to decline; worth giving when finishing.")] string? reason = null,
         [Description("For wait: the id of the question you published to another repository.")] string? on = null,
         [Description(
-            "For done, on a quest that carries the person's requirements: one answer for each, by its number. Met, saying "
+            "For done or ready, on a quest that carries the person's requirements: one answer for each, by its number. Met, saying "
             + "how its check was met; or departed, with the reason and the person's own words it turns on (quote), "
             + "copied exactly. A done that leaves one unanswered is refused. A departure is shown to the person, and "
             + "what follows the quest waits for their yes. Where a met requirement names evidence, Daoris reads it in your "

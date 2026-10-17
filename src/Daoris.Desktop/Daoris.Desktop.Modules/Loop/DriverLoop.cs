@@ -215,6 +215,18 @@ public sealed class DriverLoop(
         _watch?.Said(session);
     }
 
+    /// <summary>
+    /// The main window has the person's focus (FABRIC-END6): the driver asks a plugin about each open pull request, within D148's minute.
+    /// No look and no nudge; returns at once, so the window's thread waits on nothing.
+    /// </summary>
+    public void Focused() => _focus.Focused();
+
+    /// <summary>Whether a focus heard before the watch existed waits to be told to it (FABRIC-END6c), which a test reads.</summary>
+    public bool FocusPending => _focus.Pending;
+
+    // The window's focus, kept until the watch exists (FABRIC-END6c): a start's window takes the focus before the loop makes its watch.
+    private readonly PendingFocus _focus = new();
+
     /// <summary>The machine's resume as the shell hears it (FABRIC-EVENT2d); null where the shell hears none, and the watch's overrun rule is all.</summary>
     public PowerResume? Power { get; set; }
 
@@ -635,6 +647,8 @@ public sealed class DriverLoop(
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
         };
+        // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
+        _focus.Ready(_watch.Focused);
         // FABRIC-EVENT4: and the record files' watchers, reopened at a resume as the requests folder's are.
         using var filesResumed = Power?.Hear(_watch.Resumed);
         await _watch.RunAsync(

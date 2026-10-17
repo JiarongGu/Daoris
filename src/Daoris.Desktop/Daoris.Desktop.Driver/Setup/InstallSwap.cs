@@ -2,10 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A move a held file still refused when the wait for it ran out (SWAP2): the swap's <c>busy</c>, and the only one. Any
-/// other failure of a move is thrown as it was.
+/// other failure of a move is thrown as it was. Its message names each process found holding it, with when it started and
+/// its command line (DEPLOYBUSY1), for the journal's detail.
 /// </summary>
 public sealed class HeldMoveException(SwapHold hold, Exception refusal)
-    : IOException($"{hold.Said} ({refusal.Message.TrimEnd('.')})", refusal)
+    : IOException($"{hold.Said} ({refusal.Message.TrimEnd('.')}){(hold.Holders is { } holders ? "; " + holders : "")}", refusal)
 {
     public SwapHold Hold { get; } = hold;
 }
@@ -71,28 +72,42 @@ public sealed class InstallSwap(
             && error is IOException and not FileNotFoundException and not DirectoryNotFoundException
             && (error.HResult & 0xFFFF) is 5 or 32 or 33 or 170);
 
+    /// <summary>How often a hold under way is asked again what holds it (DEPLOYBUSY1).</summary>
+    public TimeSpan HeldAskEvery { get; init; } = TimeSpan.FromSeconds(5);
+
     /// <summary>
     /// A folder or a file moved, tried again while a held file refuses it, for <see cref="HeldWithin"/>; every hold met is
-    /// kept with how long it lasted. A hold that outlasts the wait throws <see cref="HeldMoveException"/>; any other failure
-    /// throws at once.
+    /// kept with how long it lasted, and what was found holding it (DEPLOYBUSY1): asked at the first refusal, every
+    /// <see cref="HeldAskEvery"/> after, and when the wait gives up, keeping the last answer, since what still holds it is
+    /// what the hold was; one moment's answer can be a passer-by. A hold that outlasts the wait throws
+    /// <see cref="HeldMoveException"/>; any other failure throws at once.
     /// </summary>
     private void MoveHeld(string source, string target, bool overwrite = false)
     {
         DateTimeOffset? since = null;
+        DateTimeOffset? asked = null;
+        HeldEntry? found = null;
         for (var tries = 1; ; tries++)
         {
             try
             {
                 (Mover ?? MoveOnDisk)(source, target, overwrite);
-                if (since is { } first) _holds.Add(Hold(source, target, Now - first, tries, released: true));
+                if (since is { } first) _holds.Add(Hold(source, target, Now - first, tries, released: true, found));
                 return;
             }
             catch (Exception refusal) when (IsHeld(refusal))
             {
                 since ??= Now;
+                if (asked is null || Now - asked.Value >= HeldAskEvery)
+                {
+                    found = HeldFiles.Find(source, most: 1).FirstOrDefault() ?? found;
+                    asked = Now;
+                }
+
                 if (Now - since.Value >= HeldWithin)
                 {
-                    var hold = Hold(source, target, Now - since.Value, tries, released: false);
+                    found = HeldFiles.Find(source, most: 1).FirstOrDefault() ?? found;
+                    var hold = Hold(source, target, Now - since.Value, tries, released: false, found);
                     _holds.Add(hold);
                     throw new HeldMoveException(hold, refusal);
                 }
@@ -102,8 +117,11 @@ public sealed class InstallSwap(
         }
     }
 
-    private SwapHold Hold(string source, string target, TimeSpan held, int tries, bool released) =>
-        new(Relative(source), Relative(target), (long)held.TotalMilliseconds, tries, released);
+    private SwapHold Hold(string source, string target, TimeSpan held, int tries, bool released, HeldEntry? found) =>
+        new(Relative(source), Relative(target), (long)held.TotalMilliseconds, tries, released,
+            found is null ? null : Relative(found.Path),
+            found is null ? null : string.Join(", ", found.By.Select(holder => holder.Said)),
+            found is null ? null : string.Join("; ", found.By.Select(holder => holder.InFull)));
 
     private string Relative(string full) => Path.GetRelativePath(install, full).Replace(Path.DirectorySeparatorChar, '/');
 

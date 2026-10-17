@@ -293,6 +293,10 @@ public sealed class AutoLander(
     private async Task<string> LandOneAsync(AutoChoice choice, IAutoLandingWorld fresh, CancellationToken ct)
     {
         var entry = choice.Entry;
+        // LANDGIT1: the try's reads before the landing and the landing's own ask git's guess at the line once; the look the landing
+        // opens is this one's. The table of what ids answer is the planning's too, closed by the landing before the tidy.
+        using var look = trees.OneLook();
+        using var facts = GitFacts.Within();
 
         // D88's proof, read at that moment (design §2): work no branch of the person's holds. None is a done that made no
         // commits, or work a branch of theirs already holds, or a squashing landing's record does (PROCESS1b-ii).

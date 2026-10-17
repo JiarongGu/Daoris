@@ -115,11 +115,25 @@ public sealed record SwapRecord(
 /// A move the swap found held (SWAP2), relative to the install's root: how long it was refused, from the first refusal to
 /// the move or to the end of the wait, over how many tries, and whether it gave way. The measurement the wait is sized by.
 /// </summary>
-public sealed record SwapHold(string From, string To, long Ms, int Tries, bool Released)
+/// <param name="Held">
+/// The entry found held, relative to the install's root (DEPLOYBUSY1): the folder moved itself, or a file within it; null
+/// where Windows could not tell, and on a journal written before it.
+/// </param>
+/// <param name="By">The processes found holding <paramref name="Held"/>, each <c>name (pid n)</c>; null where none was found.</param>
+/// <param name="Holders">
+/// The same processes in full, each with when it started and its command line: the journal's alone, never a log line's,
+/// since a command line carries paths.
+/// </param>
+public sealed record SwapHold(
+    string From, string To, long Ms, int Tries, bool Released, string? Held = null, string? By = null, string? Holders = null)
 {
-    /// <summary>The hold in a terminal's words: <c>app for 12.3 s</c>, and whether it never gave way.</summary>
+    /// <summary>
+    /// The hold in a terminal's words: <c>app for 12.3 s</c>, what held it where that was found, and whether it never gave
+    /// way.
+    /// </summary>
     public string Said =>
         $"{From} for {(Ms / 1000.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)} s"
+        + (Held is { } held && By is { } by ? $", {held} held by {by}" : "")
         + (Released ? "" : ", and it did not give way");
 }
 
@@ -377,8 +391,10 @@ public static class StagedBuild
                     if (entry is JsonObject hold && Text(hold["from"]) is { } from && Text(hold["to"]) is { } to
                         && Number(hold["ms"]) is { } ms && Number(hold["tries"]) is { } tries)
                     {
+                        // What was found holding it (DEPLOYBUSY1), absent on a hold journalled before it.
                         holds.Add(new SwapHold(from, to, ms, (int)tries,
-                            hold["released"] is JsonValue released && released.TryGetValue<bool>(out var gave) && gave));
+                            hold["released"] is JsonValue released && released.TryGetValue<bool>(out var gave) && gave,
+                            Text(hold["held"]), Text(hold["by"]), Text(hold["holders"])));
                     }
                 }
             }
@@ -422,13 +438,20 @@ public static class StagedBuild
         if (record.Told) root["told"] = true;
         if (record.Holds is { Count: > 0 } holds)
         {
-            root["holds"] = new JsonArray(holds.Select(hold => (JsonNode)new JsonObject
+            root["holds"] = new JsonArray(holds.Select(hold =>
             {
-                ["from"] = hold.From,
-                ["to"] = hold.To,
-                ["ms"] = hold.Ms,
-                ["tries"] = hold.Tries,
-                ["released"] = hold.Released,
+                var written = new JsonObject
+                {
+                    ["from"] = hold.From,
+                    ["to"] = hold.To,
+                    ["ms"] = hold.Ms,
+                    ["tries"] = hold.Tries,
+                    ["released"] = hold.Released,
+                };
+                if (hold.Held is { } held) written["held"] = held;
+                if (hold.By is { } by) written["by"] = by;
+                if (hold.Holders is { } holders) written["holders"] = holders;
+                return (JsonNode)written;
             }).ToArray());
         }
 

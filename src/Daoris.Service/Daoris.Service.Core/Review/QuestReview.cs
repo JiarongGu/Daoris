@@ -129,9 +129,12 @@ public static class QuestReviewing
         Newest(quest)?.Ref is { } newest
         && quest.Verdicts.Any(verdict => verdict.Said == Reviews.Reviewed && verdict.SetUp == newest);
 
-    /// <summary>Whether a set-up step's done waits for the person's review: closed done, neither reviewed nor skipped.</summary>
+    /// <summary>
+    /// Whether a set-up step's done waits for the person's review: closed done, or submitted in a closure graph
+    /// (FABRIC-CLOSE1a, §E5), neither reviewed nor skipped.
+    /// </summary>
     public static bool Waits(Quest quest) =>
-        quest is { SetUpIn: not null, Status: QuestStatus.Done } && !Skipped(quest) && !Reviewed(quest);
+        quest is { SetUpIn: not null, Judged: true } && !Skipped(quest) && !Reviewed(quest);
 
     /// <summary>
     /// Whether <paramref name="verdict"/> moves the review of <paramref name="quest"/>: a skip once, and on a set-up step only

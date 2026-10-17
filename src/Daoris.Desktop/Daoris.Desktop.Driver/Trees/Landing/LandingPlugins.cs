@@ -177,10 +177,13 @@ public sealed class LandingPlugins(
         StateAsk ask, PluginCatalog catalog, Dictionary<string, (IHookChannel? Channel, string Id, string? Kind, string? Why)> held,
         CancellationToken ct)
     {
+        // When this entry was asked (FABRIC-END6c): the attempt's time, then, once its process listens, the time its own request went
+        // out, so each answer is stamped with its own and not the occasion's start.
+        var asked = _clock();
         StateAnswer Failed(string kind, string why)
         {
             Say(ask.Plugin, why);
-            return new(ask, null, kind, why);
+            return new(ask, null, kind, why) { AskedAt = asked };
         }
 
         // The handshake waits inside the first frame's bound (design §2.1).
@@ -220,13 +223,14 @@ public sealed class LandingPlugins(
         if (process.Kind is { } refused) return Failed(refused, process.Why!);
         where = HookPoints.State;
         took.Restart();
+        asked = _clock();
         try
         {
             var answer = await process.Channel!.StateAsync(HookFrames.State(ask.Frame), bound.Token).ConfigureAwait(false);
             // The answer's code, never its address or its words (D119 §4.2).
             _log.Called(process.Id, HookPoints.State, answer.State, took.ElapsedMilliseconds);
             Say(process.Id, $"answered for `{ask.Entry.Branch}`: {answer.State}" + (answer.Message is { } words ? $" — {words}" : ""));
-            return new(ask, answer with { Plugin = process.Id }, null);
+            return new(ask, answer with { Plugin = process.Id }, null) { AskedAt = asked };
         }
         catch (DriverException error)
         {

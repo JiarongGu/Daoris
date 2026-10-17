@@ -49,6 +49,15 @@ public sealed record LandingRule(
     bool Squash = false)
 {
     public static readonly LandingRule Merge = new(LandingForm.Merge);
+
+    /// <summary>
+    /// The work's cycle after the landing (FABRIC-GRAPH1; the fabric events design §C2, §E7): a graph fragment <c>{ nodes, wires, entries,
+    /// end, cleanup }</c>, its JSON text as the file holds it, compact. Null is the default, today's: ended when the line holds the work,
+    /// the cleanup at <i>held</i>. It rides the rule (D164's amendment), so a repository's own rule replaces its workspace's cycle with the
+    /// rest of it; a door with no field for it keeps it (<see cref="DriverConfig.WithLanding"/>). <see cref="NodeGraphHomes"/> reads it.
+    /// The CLI's <c>driverconfig.ts</c> keeps the same field.
+    /// </summary>
+    public string? Cycle { get; init; }
 }
 
 /// <summary>Where a landing rule came from, for the screen and the sentences that name it.</summary>

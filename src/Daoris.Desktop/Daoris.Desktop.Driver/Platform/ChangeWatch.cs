@@ -89,6 +89,15 @@ public static class ChangeTopics
 
     /// <summary>The staged update's folder and the person's request, the installing shell's alone (FABRIC-EVENT4, link 7).</summary>
     public const string Update = "update";
+
+    /// <summary>
+    /// A timer the units' node records persist came due (FABRIC-RUN1: a retry's delay, a running answer's wait, an attempt's deadline): a
+    /// wake of the evaluation runtime, link 8, at the moment the record names rather than at the look's deadline.
+    /// </summary>
+    public const string Nodes = "nodes";
+
+    /// <summary>The window has the person's focus (FABRIC-END6): a moment to ask about an open pull request, the shell's alone (link 6).</summary>
+    public const string Focus = "focus";
 }
 
 /// <summary>One judgement asked: of which topic's subject, and why. A subject is a name, never a path.</summary>

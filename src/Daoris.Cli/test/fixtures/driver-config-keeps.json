@@ -1,0 +1,516 @@
+{
+  "about": "FABRIC-GRAPH1's review, finding 1 (FIX-LOG 2026-10-17): a writer of driver.json keeps every key it does not own, in its place, and an edit changes only what it edits. Read row for row by the CLI's configkeeps.test.ts and the driver's DriverConfigKeepsTests. `file` is an existing file in the writer's layout, its lines joined by LF with one final LF: every key Setup and the terminal write, and keys neither twin knows at the top, in a landing rule and in a workspace rule, a cycle with numbers JavaScript cannot hold, a cycle that is not an object, a kind of work no unit reads and an empty map. A row's `edit` is one door's change (`op` and its fields); `changes` turn `file` into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. The re-check (finding 1, 3): a row's `between` is another writer's change, made to the file after this writer read it and before it writes, which the write keeps; a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says (empty: any refusal), the file left as `between` made it. `twice` is one rule for a key written twice in one object: read as its last value in its first place (JavaScript's own reading), and never edited. The second re-check: an edit is the set of key paths it changed, and touches those alone on the file as it stands, so an object another writer took out is made again with only the edit's own keys under it, never its old ones, and one another writer made a string or an array refuses the edit, naming the path; a row `missing` is read where no file was, and another writer's file made before the write is kept, or refused, as any other.",
+  "file": [
+    "{",
+    "  \"drivable\": [",
+    "    \"engine\",",
+    "    \"shop-api\"",
+    "  ],",
+    "  \"holds\": [],",
+    "  \"trees\": [",
+    "    \"engine\"",
+    "  ],",
+    "  \"cap\": 2,",
+    "  \"theme\": \"dark\",",
+    "  \"adapter\": \"claude-code\",",
+    "  \"helperAdapter\": \"claude-code\",",
+    "  \"notify\": true,",
+    "  \"timeoutMinutes\": 30,",
+    "  \"pollSeconds\": 15,",
+    "  \"strikes\": 3,",
+    "  \"forgiven\": {",
+    "    \"q7\": 2",
+    "  },",
+    "  \"released\": {",
+    "    \"q9\": \"s-41\"",
+    "  },",
+    "  \"standing\": {",
+    "    \"engine\": {",
+    "      \"says\": \"先在 dev 上测试\",",
+    "      \"at\": \"2026-10-02T09:20:00Z\"",
+    "    }",
+    "  },",
+    "  \"lines\": {",
+    "    \"engine\": \"main\"",
+    "  },",
+    "  \"languages\": {",
+    "    \"engine\": \"zh\"",
+    "  },",
+    "  \"landings\": {",
+    "    \"engine\": {",
+    "      \"form\": \"branch\",",
+    "      \"pattern\": \"work/{quest}\",",
+    "      \"plugin\": \"acme.pr\",",
+    "      \"reviewer\": \"kim\",",
+    "      \"cycle\": {",
+    "        \"nodes\": [",
+    "          {",
+    "            \"id\": \"qa\",",
+    "            \"kind\": \"human\",",
+    "            \"version\": 1,",
+    "            \"reach\": \"pressed\",",
+    "            \"options\": {",
+    "              \"limit\": 9007199254740993,",
+    "              \"ratio\": 1.50",
+    "            }",
+    "          }",
+    "        ],",
+    "        \"wires\": [",
+    "          {",
+    "            \"id\": \"a\",",
+    "            \"kind\": \"after\",",
+    "            \"from\": \"line\",",
+    "            \"to\": \"qa\"",
+    "          }",
+    "        ],",
+    "        \"end\": \"qa\"",
+    "      }",
+    "    },",
+    "    \"legacy\": {",
+    "      \"form\": \"merge\",",
+    "      \"cycle\": []",
+    "    }",
+    "  },",
+    "  \"workspaceLandings\": {",
+    "    \"shop\": {",
+    "      \"form\": \"merge\",",
+    "      \"tidy\": true,",
+    "      \"note\": \"kept by hand\"",
+    "    }",
+    "  },",
+    "  \"workCycles\": {",
+    "    \"engine\": {",
+    "      \"quest\": {",
+    "        \"entries\": [",
+    "          \"qa\"",
+    "        ],",
+    "        \"end\": \"qa\"",
+    "      },",
+    "      \"chore\": {",
+    "        \"end\": \"done\"",
+    "      }",
+    "    }",
+    "  },",
+    "  \"workspaceWorkCycles\": {},",
+    "  \"readAcross\": {",
+    "    \"shop-api\": false",
+    "  },",
+    "  \"writeAcross\": {",
+    "    \"engine\": [",
+    "      \"shop-api\"",
+    "    ]",
+    "  },",
+    "  \"commands\": {",
+    "    \"stub\": [",
+    "      \"node\",",
+    "      \"stub.mjs\"",
+    "    ]",
+    "  },",
+    "  \"budget\": 12345678901234567890",
+    "}"
+  ],
+  "rows": [
+    {
+      "name": "read and written with no edit: the same bytes",
+      "edit": { "op": "none" },
+      "changes": []
+    },
+    {
+      "name": "a repository made drivable: only `drivable` changes, every number written as it was",
+      "edit": { "op": "drivable", "repository": "orders", "on": true },
+      "changes": [
+        { "from": ["    \"shop-api\"", "  ],", "  \"holds\""], "to": ["    \"shop-api\",", "    \"orders\"", "  ],", "  \"holds\""] }
+      ]
+    },
+    {
+      "name": "a landing rule edited at Setup: the key it adds in its place, the rule's own unknown key and its cycle kept",
+      "edit": { "op": "landing", "repository": "engine", "rule": { "form": "branch", "pattern": "work/{quest}", "plugin": "acme.pr", "tidy": true } },
+      "changes": [
+        { "from": ["      \"plugin\": \"acme.pr\","], "to": ["      \"plugin\": \"acme.pr\",", "      \"tidy\": true,"] }
+      ]
+    },
+    {
+      "name": "a workspace rule edited: what the edit took goes, the rule's own unknown key stays",
+      "edit": { "op": "workspace-landing", "workspace": "shop", "rule": { "form": "merge" } },
+      "changes": [
+        { "from": ["      \"tidy\": true,", "      \"note\""], "to": ["      \"note\""] }
+      ]
+    },
+    {
+      "name": "a landing rule cleared: the rule goes whole, its unknown key and its cycle with it",
+      "edit": { "op": "landing-clear", "repository": "engine" },
+      "changes": [
+        {
+          "from": [
+            "  \"landings\": {",
+            "    \"engine\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"work/{quest}\",",
+            "      \"plugin\": \"acme.pr\",",
+            "      \"reviewer\": \"kim\",",
+            "      \"cycle\": {",
+            "        \"nodes\": [",
+            "          {",
+            "            \"id\": \"qa\",",
+            "            \"kind\": \"human\",",
+            "            \"version\": 1,",
+            "            \"reach\": \"pressed\",",
+            "            \"options\": {",
+            "              \"limit\": 9007199254740993,",
+            "              \"ratio\": 1.50",
+            "            }",
+            "          }",
+            "        ],",
+            "        \"wires\": [",
+            "          {",
+            "            \"id\": \"a\",",
+            "            \"kind\": \"after\",",
+            "            \"from\": \"line\",",
+            "            \"to\": \"qa\"",
+            "          }",
+            "        ],",
+            "        \"end\": \"qa\"",
+            "      }",
+            "    },",
+            "    \"legacy\": {"
+          ],
+          "to": ["  \"landings\": {", "    \"legacy\": {"]
+        }
+      ]
+    },
+    {
+      "name": "a line set: the entry it adds after the one before it",
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["    \"engine\": \"main\""], "to": ["    \"engine\": \"main\",", "    \"orders\": \"trunk\""] }
+      ]
+    },
+    {
+      "name": "the intake named where the file named none: in the writer's place, after the adapter",
+      "edit": { "op": "intake", "adapter": "codex" },
+      "changes": [
+        { "from": ["  \"adapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\",", "  \"intakeAdapter\": \"codex\","] }
+      ]
+    },
+    {
+      "name": "notifications off: the one value changes",
+      "edit": { "op": "notify", "on": false },
+      "changes": [
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "a quest's work cycle cleared: the kind no unit reads stays with its owner",
+      "edit": { "op": "work-cycle-clear", "repository": "engine", "kind": "quest" },
+      "changes": [
+        {
+          "from": ["    \"engine\": {", "      \"quest\": {", "        \"entries\": [", "          \"qa\"", "        ],", "        \"end\": \"qa\"", "      },", "      \"chore\": {"],
+          "to": ["    \"engine\": {", "      \"chore\": {"]
+        }
+      ]
+    },
+    {
+      "name": "another writer's edit between this one's read and its write survives",
+      "between": [{ "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }],
+      "edit": { "op": "drivable", "repository": "orders", "on": true },
+      "changes": [
+        { "from": ["    \"shop-api\"", "  ],", "  \"holds\""], "to": ["    \"shop-api\",", "    \"orders\"", "  ],", "  \"holds\""] },
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "another writer's edit inside the rule this one edits survives",
+      "between": [{ "from": ["      \"reviewer\": \"kim\","], "to": ["      \"reviewer\": \"lee\","] }],
+      "edit": { "op": "landing", "repository": "engine", "rule": { "form": "branch", "pattern": "work/{quest}", "plugin": "acme.pr", "tidy": true } },
+      "changes": [
+        { "from": ["      \"plugin\": \"acme.pr\",", "      \"reviewer\": \"kim\","], "to": ["      \"plugin\": \"acme.pr\",", "      \"tidy\": true,", "      \"reviewer\": \"lee\","] }
+      ]
+    },
+    {
+      "name": "a setting another writer took out stays out, though this writer read it",
+      "between": [{ "from": ["  \"adapter\": \"claude-code\",", "  \"helperAdapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\","] }],
+      "edit": { "op": "notify", "on": false },
+      "changes": [
+        { "from": ["  \"adapter\": \"claude-code\",", "  \"helperAdapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\","] },
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "another writer's entry beside the one this edit adds: both, the edit's after the one before it",
+      "between": [{ "from": ["    \"engine\": \"main\""], "to": ["    \"engine\": \"main\",", "    \"shop-api\": \"dev\""] }],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["    \"engine\": \"main\""], "to": ["    \"engine\": \"main\",", "    \"orders\": \"trunk\",", "    \"shop-api\": \"dev\""] }
+      ]
+    },
+    {
+      "name": "a file written with CRLF is written with CRLF",
+      "crlf": true,
+      "edit": { "op": "notify", "on": false },
+      "changes": [
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "a file another writer left unreadable refuses the write, and stays as it is",
+      "between": [{ "from": ["  \"theme\": \"dark\","], "to": ["  \"theme\": dark,"] }],
+      "edit": { "op": "notify", "on": false },
+      "refused": "",
+      "changes": [
+        { "from": ["  \"theme\": \"dark\","], "to": ["  \"theme\": dark,"] }
+      ]
+    },
+    {
+      "name": "a key another writer wrote twice in one object refuses the write, naming the key",
+      "between": [{ "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }],
+      "edit": { "op": "notify", "on": false },
+      "refused": "`quest`",
+      "changes": [
+        { "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }
+      ]
+    },
+    {
+      "name": "another writer took out `landings`, this edit sets one repository's rule: only that rule is written, no other comes back",
+      "between": [
+        {
+          "from": [
+            "  \"landings\": {",
+            "    \"engine\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"work/{quest}\",",
+            "      \"plugin\": \"acme.pr\",",
+            "      \"reviewer\": \"kim\",",
+            "      \"cycle\": {",
+            "        \"nodes\": [",
+            "          {",
+            "            \"id\": \"qa\",",
+            "            \"kind\": \"human\",",
+            "            \"version\": 1,",
+            "            \"reach\": \"pressed\",",
+            "            \"options\": {",
+            "              \"limit\": 9007199254740993,",
+            "              \"ratio\": 1.50",
+            "            }",
+            "          }",
+            "        ],",
+            "        \"wires\": [",
+            "          {",
+            "            \"id\": \"a\",",
+            "            \"kind\": \"after\",",
+            "            \"from\": \"line\",",
+            "            \"to\": \"qa\"",
+            "          }",
+            "        ],",
+            "        \"end\": \"qa\"",
+            "      }",
+            "    },",
+            "    \"legacy\": {",
+            "      \"form\": \"merge\",",
+            "      \"cycle\": []",
+            "    }",
+            "  },",
+            "  \"workspaceLandings\": {"
+          ],
+          "to": ["  \"workspaceLandings\": {"]
+        }
+      ],
+      "edit": { "op": "landing", "repository": "orders", "rule": { "form": "merge" } },
+      "changes": [
+        {
+          "from": [
+            "  \"landings\": {",
+            "    \"engine\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"work/{quest}\",",
+            "      \"plugin\": \"acme.pr\",",
+            "      \"reviewer\": \"kim\",",
+            "      \"cycle\": {",
+            "        \"nodes\": [",
+            "          {",
+            "            \"id\": \"qa\",",
+            "            \"kind\": \"human\",",
+            "            \"version\": 1,",
+            "            \"reach\": \"pressed\",",
+            "            \"options\": {",
+            "              \"limit\": 9007199254740993,",
+            "              \"ratio\": 1.50",
+            "            }",
+            "          }",
+            "        ],",
+            "        \"wires\": [",
+            "          {",
+            "            \"id\": \"a\",",
+            "            \"kind\": \"after\",",
+            "            \"from\": \"line\",",
+            "            \"to\": \"qa\"",
+            "          }",
+            "        ],",
+            "        \"end\": \"qa\"",
+            "      }",
+            "    },",
+            "    \"legacy\": {",
+            "      \"form\": \"merge\",",
+            "      \"cycle\": []",
+            "    }",
+            "  },"
+          ],
+          "to": ["  \"landings\": {", "    \"orders\": {", "      \"form\": \"merge\"", "    }", "  },"]
+        }
+      ]
+    },
+    {
+      "name": "another writer took out the rule this edit changes: the rule holds only the key the edit changed, never its old keys",
+      "between": [
+        {
+          "from": [
+            "    \"engine\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"work/{quest}\",",
+            "      \"plugin\": \"acme.pr\",",
+            "      \"reviewer\": \"kim\",",
+            "      \"cycle\": {",
+            "        \"nodes\": [",
+            "          {",
+            "            \"id\": \"qa\",",
+            "            \"kind\": \"human\",",
+            "            \"version\": 1,",
+            "            \"reach\": \"pressed\",",
+            "            \"options\": {",
+            "              \"limit\": 9007199254740993,",
+            "              \"ratio\": 1.50",
+            "            }",
+            "          }",
+            "        ],",
+            "        \"wires\": [",
+            "          {",
+            "            \"id\": \"a\",",
+            "            \"kind\": \"after\",",
+            "            \"from\": \"line\",",
+            "            \"to\": \"qa\"",
+            "          }",
+            "        ],",
+            "        \"end\": \"qa\"",
+            "      }",
+            "    },",
+            "    \"legacy\": {"
+          ],
+          "to": ["    \"legacy\": {"]
+        }
+      ],
+      "edit": { "op": "landing", "repository": "engine", "rule": { "form": "branch", "pattern": "work/{quest}", "plugin": "acme.pr", "tidy": true } },
+      "changes": [
+        {
+          "from": [
+            "    \"engine\": {",
+            "      \"form\": \"branch\",",
+            "      \"pattern\": \"work/{quest}\",",
+            "      \"plugin\": \"acme.pr\",",
+            "      \"reviewer\": \"kim\",",
+            "      \"cycle\": {",
+            "        \"nodes\": [",
+            "          {",
+            "            \"id\": \"qa\",",
+            "            \"kind\": \"human\",",
+            "            \"version\": 1,",
+            "            \"reach\": \"pressed\",",
+            "            \"options\": {",
+            "              \"limit\": 9007199254740993,",
+            "              \"ratio\": 1.50",
+            "            }",
+            "          }",
+            "        ],",
+            "        \"wires\": [",
+            "          {",
+            "            \"id\": \"a\",",
+            "            \"kind\": \"after\",",
+            "            \"from\": \"line\",",
+            "            \"to\": \"qa\"",
+            "          }",
+            "        ],",
+            "        \"end\": \"qa\"",
+            "      }",
+            "    },",
+            "    \"legacy\": {"
+          ],
+          "to": ["    \"engine\": {", "      \"tidy\": true", "    },", "    \"legacy\": {"]
+        }
+      ]
+    },
+    {
+      "name": "a map another writer turned into a string refuses the edit inside it, naming its path, and nothing is written",
+      "between": [{ "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },"], "to": ["  \"lines\": \"main\","] }],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "refused": "`lines.orders`",
+      "changes": [
+        { "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },"], "to": ["  \"lines\": \"main\","] }
+      ]
+    },
+    {
+      "name": "a file another writer wrote after this one found none: what it wrote stays, and the edit is made onto it",
+      "missing": true,
+      "between": [],
+      "edit": { "op": "notify", "on": false },
+      "changes": [
+        { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
+      ]
+    },
+    {
+      "name": "a file another writer left unreadable after this one found none refuses the write, and stays as it is",
+      "missing": true,
+      "between": [{ "from": ["  \"theme\": \"dark\","], "to": ["  \"theme\": dark,"] }],
+      "edit": { "op": "notify", "on": false },
+      "refused": "",
+      "changes": [
+        { "from": ["  \"theme\": \"dark\","], "to": ["  \"theme\": dark,"] }
+      ]
+    },
+    {
+      "name": "a map this writer never read, which another writer wrote meanwhile, takes the edit key by key: the other writer's entries stay",
+      "missing": true,
+      "between": [],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["  \"lines\": {", "    \"engine\": \"main\""], "to": ["  \"lines\": {", "    \"orders\": \"trunk\",", "    \"engine\": \"main\""] }
+      ]
+    },
+    {
+      "name": "a map neither this writer nor the other wrote is made with the edit's keys alone",
+      "missing": true,
+      "between": [{ "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },", "  \"languages\": {"], "to": ["  \"languages\": {"] }],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "changes": [
+        { "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },", "  \"languages\": {"], "to": ["  \"languages\": {"] },
+        { "from": ["  \"forgiven\": {", "    \"q7\": 2", "  },"], "to": ["  \"forgiven\": {", "    \"q7\": 2", "  },", "  \"lines\": {", "    \"orders\": \"trunk\"", "  },"] }
+      ]
+    },
+    {
+      "name": "a map this writer never read, which another writer wrote meanwhile as a string, refuses the edit, naming its path",
+      "missing": true,
+      "between": [{ "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },"], "to": ["  \"lines\": \"main\","] }],
+      "edit": { "op": "line", "repository": "orders", "branch": "trunk" },
+      "refused": "`lines.orders`",
+      "changes": [
+        { "from": ["  \"lines\": {", "    \"engine\": \"main\"", "  },"], "to": ["  \"lines\": \"main\","] }
+      ]
+    },
+    {
+      "name": "a file another writer wrote with a key twice after this one found none refuses the write, naming the key",
+      "missing": true,
+      "between": [{ "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }],
+      "edit": { "op": "notify", "on": false },
+      "refused": "`quest`",
+      "changes": [
+        { "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }
+      ]
+    }
+  ],
+  "twice": {
+    "changes": [
+      { "from": ["  \"notify\": true,"], "to": ["  \"notify\": true,", "  \"notify\": false,"] },
+      { "from": ["      \"chore\": {"], "to": ["      \"quest\": {", "        \"end\": \"close\"", "      },", "      \"chore\": {"] }
+    ],
+    "notify": false,
+    "workCycles": { "engine": { "quest": { "end": "close" }, "chore": { "end": "done" } } },
+    "refused": "`notify`"
+  }
+}

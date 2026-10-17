@@ -460,6 +460,9 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
         ["a commit not hex"] = (Verdict([Reported], commit: new string('g', 40)), false, QuestVerdictField.Commit, "full id"),
         ["an unknown how"] = (Verdict([Reported], how: "guessed"), false, QuestVerdictField.How, "`session-end`, `sweep` or `terminal`"),
         ["a session not an id"] = (Verdict([Reported]) with { Session = "s1 a2" }, false, QuestVerdictField.Session, "session"),
+        // The submission it was read for, half named (FABRIC-CLOSE1e).
+        ["a submission with no machine"] = (Verdict([Reported]) with { Submission = new QuestOperationRef(" ", 3) }, false, QuestVerdictField.Submission, "machine and the sequence"),
+        ["a submission numbered 0"] = (Verdict([Reported]) with { Submission = new QuestOperationRef("m1", 0) }, false, QuestVerdictField.Submission, "machine and the sequence"),
         ["requirement 0"] = (Verdict([Reported with { Requirement = 0 }]), false, QuestVerdictField.Requirement, "numbered from 1"),
         ["a path and a gate"] = (Verdict([Reported with { Gate = "web" }]), false, QuestVerdictField.PathOrGate, "exactly one of `path` or `gate`"),
         ["neither"] = (Verdict([Reported with { Path = null }]), false, QuestVerdictField.PathOrGate, "exactly one of `path` or `gate`"),

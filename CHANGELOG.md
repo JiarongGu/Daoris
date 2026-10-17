@@ -5,6 +5,18 @@ with the version and date at release.
 
 ## Unreleased
 
+- An update that could not move a file because another program held it now says which file and which program, in
+  `daoris-driver update` and in the window's note of the rolled-back update.
+- A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,
+  how it is retried, whether it is performed and how), and the `resources` they create with who cleans them. Daoris reads and
+  checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet. A plugin
+  with a step Daoris asks it to perform must list `work/perform` among its hook points, or it does not load.
+- A setting you add to `driver.json` by hand, or one a newer Daoris wrote there, now survives an edit from Setup, Ask Daoris or
+  the terminal: an edit changes only the settings it edits, the rest keep their values and their places, and a file read and
+  saved with no change keeps its bytes. A change one of them made while another was open survives that one's edit too; a file
+  that no longer reads, or names a setting twice in one place, is refused and left as it is; and Windows line endings are kept.
+  A rule or a group of settings another one removed meanwhile does not come back with an unrelated edit, one it turned into
+  something else refuses the edit by name, and the first save where there was no `driver.json` keeps one written meanwhile.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.
@@ -13,6 +25,13 @@ with the version and date at release.
   plain browser asks as before.
 - The knowledge server reads a checkout again at the next search after its files or branches change, rather than once a
   minute, and at least every five minutes.
+- A pull request your landing's plugin opened is asked about when its answer may have changed:
+  - when your own fetch or pull moves the line;
+  - right after Daoris pushes;
+  - when you bring Daoris's window forward.
+
+  Each pull request is asked at most once a minute, and the line is fetched at most once a minute. A completed pull request
+  whose merge reaches this machine then ends its work, with no press.
 - A conversation whose turn ends with commits beyond its line now offers *Accept…* (采纳…) at the foot of the chat and in its
   head, as a driven session does, not only in the review's side bar; none is offered while a turn runs. Its *Accept* names the
   branch for the work's first commit, never for your opening words; a ticket you named in those words still names it.

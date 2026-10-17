@@ -81,7 +81,27 @@ acceptances and their transitive invalidation (`NodeAcceptances`), and the built
 read from (`BuiltInNodes`). It is pure and writes nothing: a move returns what it cleared, and `NodeAcceptances.Keep` judges one
 result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c). The wires between nodes are judged there too:
 `NodeWires` names what a save refuses (FABRIC-WIRE1a), and `WireEvaluation` evaluates them over the nodes' statuses, moving each
-node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b). Both are pure as well.
+node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b), on a complete snapshot of the
+units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e), and a failure or a rejection kept from another
+run lapsed (`run-scope`, FABRIC-WIRE1f). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
+durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the attempt written with its start before
+`work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
+answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked
+read-modify-write with the lease asked inside it (`NodeRecordFiles.Edit`), and a reply is applied after its await to the record as
+it is then (FABRIC-PERFORM1h). `NodeRuntime` runs them in the lease's loop, link 8 of its chain (`ChainRanks.Nodes`, bound by
+`DriverWatch` where it holds a hook set): off unless a graph naming a plugin's performed node governs a unit, it hears completions,
+reconciles, makes retries due, evaluates the concerned units to settled with their moves kept and starts made, and tells the plugins
+the awaited set; one pass at a time, with the loop's one performer (FABRIC-RUN1, D173's note).
+`NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
+its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
+rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),
+and says what the file keeps there that no unit reads (`Strays`). The CLI's `cycles.ts` is its twin, and both read the CLI's
+`test/fixtures/graph-homes.json`. `DriverConfig.Save` makes an edit onto the file as it stands at write (`Platform/JsonKeeping`), so
+a key it has no field for stays where it stands, a value no edit changed keeps its value, and another writer's change made since the
+read stays; a file that does not read then is refused. The CLI's `jsonkeep.ts` is its twin (D173's FABRIC-GRAPH1 note says exactly
+what an edit keeps). `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
+version that does not decode read as unreadable whole (FABRIC-WORKFLOW2); the CLI's `workflowgraphs.ts` is its twin, on
+`test/fixtures/workflow-graphs.json`.
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
 second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,
@@ -331,8 +351,12 @@ executable, else beside the home), each with its README's requirement lines, and
 **The module keeps the onion for its model and rules alone** (STRUCT3a, D166's note; flattened by FLAT1a): `Plugins/Domain` is
 the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
 (`PluginCatalog`), the hook wire's words (`HookPoints`, `HookFrames`), the log's events, the health's rules, the activity's
-summary, the tools' table, and the icon's, the offer's, the source record's and the package's rules. The rest sits at the
-module's top, beside `plugin-kit/`: the home's plugin folders (`PluginFolders`), the hook process (`HookProcess`), the tool
+summary, the tools' table, the steps' and resources' (`PluginSteps`, FABRIC-UNIT1d: each step read into the node contract's
+`NodeDeclaration` and judged by its `Problem`), the work wire's contract and bounds (`WorkWire`, `WorkBounds`, FABRIC-PERFORM1a:
+`work.perform@1`'s messages, the 64 KB frame, 60 events a minute, the restarts' waits), and the icon's, the offer's, the source
+record's and the package's rules. The rest sits at the module's top, beside `plugin-kit/`: the home's plugin folders
+(`PluginFolders`), the hook process (`HookProcess`, its stdout read under the frame bound by `BoundedLines`), the work wire's
+supervision under the home's lease (`WorkPlugins`, which the hook set holds), the tool
 checks' runs, the kit's files and templates, a trial's process and the package file, and what other modules and the hosts call:
 the catalogue's reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop
 asks, the landing's start (`HookChannels`), the log writer and the terminal's commands, with the ports `IHookChannel` and

@@ -117,6 +117,17 @@ public sealed class UpdateCommandTests : IDisposable
         Assert.DoesNotContain("Held", Run().Said);
     }
 
+    /// <summary>DEPLOYBUSY1: a hold says what was found held, and by which process, where that was found; as before where not.</summary>
+    [Fact]
+    public void A_hold_says_what_held_it_where_that_was_found()
+    {
+        Assert.Equal("app for 120.1 s, app/Daoris.Desktop.App.dll held by node (pid 4242), and it did not give way",
+            new SwapHold("app", "update/previous/app", 120_141, 569, false, Held: "app/Daoris.Desktop.App.dll", By: "node (pid 4242)").Said);
+        Assert.Equal("app for 41.1 s, app held by git (pid 7)",
+            new SwapHold("app", "update/previous/app", 41_065, 200, true, Held: "app", By: "git (pid 7)").Said);
+        Assert.Equal("app for 41.1 s", new SwapHold("app", "update/previous/app", 41_065, 200, true).Said);
+    }
+
     [Fact]
     public void A_home_that_is_no_install_s_data_is_pointed_at_one_with_install_or_the_request_holds_for_whatever_is_staged()
     {

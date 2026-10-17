@@ -74,11 +74,17 @@ public sealed class ConfigReadTests : IDisposable
         Assert.Null(refused.Byte);
     }
 
-    /// <summary>A missing file is still the empty config, and a file that reads still reads (D46 §6).</summary>
+    /// <summary>
+    /// A missing file is still the empty config's choices, and a file that reads still reads (D46 §6). The missing one carries its path and
+    /// <c>{}</c> (FABRIC-GRAPH1's second re-check, finding 2), so its save is an edit like any other.
+    /// </summary>
     [Fact]
     public void A_missing_file_and_a_good_one_are_not_refused()
     {
-        Assert.Same(DriverConfig.Empty, DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig)));
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        var missing = DriverConfig.Load(path);
+        Assert.Equal(DriverConfig.Empty.ToJson(), (missing with { Source = null, SourceFile = null }).ToJson());
+        Assert.Equal(("{}", Path.GetFullPath(path)), (missing.Source, missing.SourceFile));
         Assert.Equal(["engine"], DriverConfig.Load(Written("""{ "drivable": ["engine"], "cap": 2 }""")).Drivable);
     }
 }
