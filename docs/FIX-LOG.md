@@ -2708,6 +2708,40 @@ whichever host makes it. *Four classes four at once in one host* (`LandedReviewT
 from 72 to about 47 minutes under the full set's load and from about 37 to about 24 on a quiet machine; ten minutes needs
 fewer starts and the serial classes shortened as well. The rows that follow are PROC1's split in the backlog.
 
+**Git for Windows' launcher, started past (GITSTART1, 2026-10-18).** Measured on its branch from `cb15ad7`, on PROC1a's
+machine and git, with other worktrees' builds and tests, and SourceTree's, a chat client's and an agent's own git,
+beside every run. *Two processes a git:* from PowerShell and from the installed window, `PATH` finds
+`C:\Program Files\Git\cmd\git.exe`, a launcher that starts `mingw64\bin\git.exe` as a second process. Git Bash's `PATH`
+finds the real git first, so a run started from Git Bash never met the launcher.
+
+*What the launcher hands its child*, read both ways by a `!cmd /d /c set` alias from a controlled environment:
+- `MSYSTEM=MINGW64`, over any value;
+- `PLINK_PROTOCOL=ssh` where unset, and one set empty is kept;
+- `HOME` where unset, from `HOMEDRIVE` and `HOMEPATH` where that is a folder and not System32, else `USERPROFILE`; one set
+  empty is kept;
+- `mingw64\bin;usr\bin;<HOME>\bin;` before `PATH`, which reads `\bin` where `HOME` is empty.
+
+The real git started with nothing set mends its own `PATH` only where `MSYSTEM` is unset, and puts `HOME\bin` first; with
+any `MSYSTEM` it leaves `PATH` alone, and `sh` goes unfound. This install has no `etc\git-bash.config`.
+`GitForWindowsProcessTests` holds the direct start's child to the launcher's, variable for variable, from four
+environments.
+
+*Bare starts* (`git --version` from a .NET 10 host, three warm-ups each way, then 40 each way interleaved; seconds for
+all 40, through the launcher against direct): 28.2 against 21.1 with the CPU load rising from 8% to 100% during the run,
+23.5 against 16.0 at 74–94%, and 17.6 against 10.9 at 53–97%. The direct start saves 110 to 180 ms a start, a quarter to
+two-fifths of it.
+
+*Four Git classes* (`LandedReviewTests`, `LandedBranchTests`, `ContentHeldTests`, `ReviewBaseTests`; 35 tests,
+`git.process.runsettings`, run from PowerShell so `PATH` finds the launcher, the load sampled every 15 s), before and
+after, interleaved: before, 437 s at a mean 68% and 488 s at 73%; after, 411 s at 74%, 527 s at 67% and 438 s at 68%. Each
+passed. The process table, sampled every 100 ms through a run of `ContentHeldTests` alone after, showed the test host's
+git children as `mingw64\bin\git.exe` and never as `cmd\git.exe`, so the change was live. At this load the class runs
+show no gain: the after build's five runs, these three and the two below, spanned 383 to 527 s, more than the second
+process costs a class.
+
+*`MaxParallelThreads` 6 and 8* on the same four classes after: 514 s at 59% and 383 s at 64%. Four classes cannot run
+more than four at once, so these are two more runs of one setting, and the knee is unmeasured. The setting stays at four.
+
 **The driver's Process half runs as two (PROC1b, PROC1c, 2026-10-15; a note on MOD8's rule).** A Process class that starts
 git and nothing a neighbour's load could fail also carries `Parallel=Git` (`Category.cs` says which may, `CategoryTests`
 holds the trait and the environment), and gate `driver-process-git` runs those classes four at once in one host

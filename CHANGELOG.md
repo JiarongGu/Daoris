@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- On Windows, where the git Daoris finds is Git for Windows', Daoris's own git commands now start one process where they
+  started two: the git behind the install's `cmd\git.exe` launcher starts directly, with the environment the launcher
+  would have given it, so hooks, `!` aliases and ssh find what they found before. A git you named as a file in Settings →
+  Tools, or a managed version, starts as it is.
 - A workspace's *Branches* now lists what Daoris keeps for recovery that no piece of work names: folders set aside until a
   date, and recovery refs with who holds them or the command to delete them. Ask Daoris says the same when asked where work
   has got to.
