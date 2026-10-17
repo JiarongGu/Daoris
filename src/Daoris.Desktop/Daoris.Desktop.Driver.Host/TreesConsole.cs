@@ -331,7 +331,14 @@ internal static class TreesConsole
                 foreach (var entry in entries)
                 {
                     // One repository's refusal, said or thrown, holds only its own entry; the next is landed all the same (point 4).
-                    landings.Add((entry.Repository, await TreesWords.LandEntryAsync(accepts, entry, rows, ask.LeaveOut, default).ConfigureAwait(false)));
+                    try
+                    {
+                        landings.Add((entry.Repository, await accepts.LandAsync(entry, rows, ask.LeaveOut, default).ConfigureAwait(false)));
+                    }
+                    catch (DriverException error)
+                    {
+                        landings.Add((entry.Repository, TreesWords.Unlanded(error.Message)));
+                    }
                 }
 
                 Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);

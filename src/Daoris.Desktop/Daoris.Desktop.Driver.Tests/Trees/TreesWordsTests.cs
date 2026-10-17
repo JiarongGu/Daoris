@@ -266,7 +266,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesWords.FollowMovedAsync(")]
     [InlineData("TreesWords.EntryLand(")]
     [InlineData("TreesWords.EntryNone(")]
-    [InlineData("TreesWords.LandEntryAsync(")]
+    [InlineData("TreesWords.Unlanded(")]
     [InlineData("TreesWords.NotAgain(")]
     [InlineData("TreesWords.NoTreeToLand(")]
     [InlineData("TreesWords.LandedBeforeAsync(")]

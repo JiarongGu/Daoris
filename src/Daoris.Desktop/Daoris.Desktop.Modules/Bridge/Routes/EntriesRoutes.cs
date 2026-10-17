@@ -91,7 +91,7 @@ public sealed class EntriesRoutes(DriverContext context)
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
-                landed = new EntryLanding(false, $"Nothing was landed: {error.Message}", null, []);
+                landed = TreesWords.Unlanded(error.Message);
             }
 
             done &= landed.Landed;
@@ -221,9 +221,18 @@ public sealed class EntriesRoutes(DriverContext context)
     }
 
     /// <summary>The press on one entry, which the terminal's lands too (<see cref="EntryAccepts.LandAsync"/>, ACCEPTALL1e).</summary>
-    private Task<EntryLanding> LandingAsync(
-        EntryAccepts accepts, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken) =>
-        TreesWords.LandEntryAsync(accepts, entry, rows, leaveOut, cancellationToken);
+    private static async Task<EntryLanding> LandingAsync(
+        EntryAccepts accepts, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await accepts.LandAsync(entry, rows, leaveOut, cancellationToken).ConfigureAwait(false);
+        }
+        catch (DriverException error)
+        {
+            return TreesWords.Unlanded(error.Message);
+        }
+    }
 
     /// <summary>The parts the person chose to leave out (point 3), as the page sends them; none where it sends none.</summary>
     private static IReadOnlySet<string> LeaveOut(IpcRequest request) =>

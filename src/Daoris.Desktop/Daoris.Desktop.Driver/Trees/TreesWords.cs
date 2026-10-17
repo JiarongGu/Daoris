@@ -224,21 +224,10 @@ public static class TreesWords
     }
 
     /// <summary>
-    /// One entry's press as both doors take it: a refusal the driver throws (a <see cref="DriverException"/>) holds only this entry and
-    /// is said as the landing's own sentence, never an error that stops the rest (D167's amendment point 4).
+    /// A refusal the driver threw for one entry's press, said as that entry's own landing: it holds only this entry and never stops
+    /// the rest (D167's amendment point 4). Both doors say it alike.
     /// </summary>
-    public static async Task<EntryLanding> LandEntryAsync(
-        EntryAccepts accepts, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken ct)
-    {
-        try
-        {
-            return await accepts.LandAsync(entry, rows, leaveOut, ct).ConfigureAwait(false);
-        }
-        catch (DriverException error)
-        {
-            return new EntryLanding(false, $"Nothing was landed: {error.Message}", null, []);
-        }
-    }
+    public static EntryLanding Unlanded(string reason) => new(false, $"Nothing was landed: {reason}", null, []);
 
     /// <summary>An entry's or an ask's Accept naming nothing with work to land here: a sentence on the error, exit 1.</summary>
     public static TreesSaid EntryNone(bool isAsk, string id) =>
