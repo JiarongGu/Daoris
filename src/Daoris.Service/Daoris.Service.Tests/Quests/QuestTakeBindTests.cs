@@ -67,9 +67,9 @@ public sealed class QuestTakeBindTests : IAsyncLifetime
     }
 
     /// <summary>The store opened over the connection as a host opens it, upgrading what it finds, and an exchange over it.</summary>
-    private async Task OpenAsync()
+    private async Task OpenAsync(TimeProvider? time = null)
     {
-        _quests = await QuestStore.OpenAsync(_connection);
+        _quests = await QuestStore.OpenAsync(_connection, time: time);
         _exchange = new QuestExchange(_service, _quests, remotes: _remotes);
     }
 
@@ -81,12 +81,30 @@ public sealed class QuestTakeBindTests : IAsyncLifetime
         await command.ExecuteNonQueryAsync();
     }
 
+    /// <summary>The pending binds, in the table builds before FABRIC-CLOSE1w write and in the one this build owns its binds in.</summary>
     private async Task<long> PendingAsync()
     {
         await using var command = _connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM quest_take_binds";
+        command.CommandText = "SELECT (SELECT COUNT(*) FROM quest_take_binds) + (SELECT COUNT(*) FROM quest_owned_take_binds)";
         return (long)(await command.ExecuteScalarAsync())!;
     }
+
+    private async Task<object?> ScalarAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
+        return await command.ExecuteScalarAsync();
+    }
+
+    /// <summary>How a build before FABRIC-CLOSE1o named a graph for a take: the quest's id, its graph and a moment, upserted.</summary>
+    private const string OlderNaming = "INSERT INTO quest_take_binds (id, graph, at) VALUES ($id, $graph, $at) "
+        + "ON CONFLICT(id) DO UPDATE SET graph = excluded.graph, at = excluded.at";
+
+    /// <summary>How a build before FABRIC-CLOSE1w read the graph at a take: whatever row the quest's id names, bound by the id alone.</summary>
+    private const string OlderTake = "DELETE FROM quest_take_binds WHERE id = $id RETURNING graph";
+
+    private const string OtherGraph = "gph-1111111111111111111111111111111111111111111111111111111111111111";
 
     [Theory]
     [InlineData("valid")]
@@ -226,6 +244,103 @@ public sealed class QuestTakeBindTests : IAsyncLifetime
         _remotes.Wired = false;
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(_open.Id, Graph, Now)).Refusal);
         Assert.Equal(Graph, (await _quests.FindAsync(_open.Id))!.Closure);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1w: a take asked before the bind's expiry that queues behind another write until past it is judged at the moment its
+    /// own write began, so it binds nothing, saying the bind expired, as a take asked late does.
+    /// </summary>
+    [Fact]
+    public async Task A_take_that_waits_for_its_write_past_the_expiry_binds_nothing()
+    {
+        var time = new WaitingTime();
+        await OpenAsync(time);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(_open.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+
+        // Another request holds the store's write; the take, asked a minute after the naming, queues behind it past the bind's life.
+        var release = new TaskCompletionSource();
+        var holding = ConnectionGate.For(_connection).RunAsync(() => release.Task, CancellationToken.None);
+        var asked = _exchange.RespondAsync(_open.Id, "take", null, Now.AddMinutes(1), session: Session);
+        time.Pass(QuestStore.TakeBindLife);
+        release.SetResult();
+        await holding;
+        var take = await asked;
+
+        Assert.Equal(QuestRespondRefusal.None, take.Refusal);
+        Assert.Equal(QuestOperationKind.Taken, (await _quests.HistoryAsync(_open.Id))[^1].Kind);
+        Assert.DoesNotContain(await _quests.HistoryAsync(_open.Id), op => op.Kind == QuestOperationKind.Bound);
+        Assert.Null(take.Quest!.Closure);
+        Assert.Contains("expired", take.Message, StringComparison.Ordinal);
+        Assert.Equal(0, await PendingAsync());
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1w: a build before FABRIC-CLOSE1o upserts a graph for the quest's id alone, so over a bind this build named it once
+    /// replaced the graph and kept the owner, and the owner's take bound the older build's graph. Its write now never reaches an owned
+    /// bind: the owner's take binds the graph named for it, and the older row is consumed with it, owning nothing.
+    /// </summary>
+    [Fact]
+    public async Task An_older_builds_naming_never_replaces_the_graph_an_owned_bind_names()
+    {
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(_open.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+        await ExecuteAsync(OlderNaming, ("$id", _open.Id), ("$graph", OtherGraph), ("$at", Now.AddSeconds(30).ToString("O")));
+
+        var take = await _exchange.RespondAsync(_open.Id, "take", null, Now.AddMinutes(1), session: Session);
+
+        Assert.Equal(QuestRespondRefusal.None, take.Refusal);
+        Assert.Equal(
+            [QuestOperationKind.Taken, QuestOperationKind.Bound], (await _quests.HistoryAsync(_open.Id)).Select(op => op.Kind).TakeLast(2));
+        Assert.Equal(Graph, take.Quest!.Closure);
+        Assert.Equal(0, await PendingAsync());
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1w: a build before this one takes by reading the row the quest's id names and binding its graph, whoever takes and
+    /// however late. An owned bind is never in the table it reads, so its take finds nothing to bind, and the bind still waits for the
+    /// session it was named for.
+    /// </summary>
+    [Fact]
+    public async Task An_older_builds_take_finds_no_owned_bind_to_bind_by_the_id_alone()
+    {
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(_open.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+
+        Assert.Null(await ScalarAsync(OlderTake, ("$id", _open.Id)));
+
+        Assert.Equal(1, await PendingAsync());
+        var take = await _exchange.RespondAsync(_open.Id, "take", null, Now.AddMinutes(1), session: Session);
+        Assert.Equal(Graph, take.Quest!.Closure);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1w: the owner's install names no graph. Opened by this build, a store holds no bind, its take is today's word for
+    /// word, and an older build's own naming and take over it land and read as they always did, refused nothing.
+    /// </summary>
+    [Fact]
+    public async Task An_unarmed_store_is_unchanged_for_its_own_take_and_for_an_older_build()
+    {
+        await OpenAsync();
+        Assert.Equal(0, await PendingAsync());
+
+        await ExecuteAsync(OlderNaming, ("$id", _open.Id), ("$graph", Graph), ("$at", Now.ToString("O")));
+        Assert.Equal(Graph, await ScalarAsync(OlderTake, ("$id", _open.Id)));
+
+        var take = await _exchange.RespondAsync(_open.Id, "take", null, Now, session: Session);
+        Assert.Equal(QuestRespondRefusal.None, take.Refusal);
+        Assert.Equal($"Quest `#{_open.Id}` is now Taken.", take.Message);
+        Assert.Equal([QuestOperationKind.Published, QuestOperationKind.Taken], (await _quests.HistoryAsync(_open.Id)).Select(op => op.Kind));
+        Assert.Equal(0, await PendingAsync());
+    }
+
+    /// <summary>A monotonic clock the test moves, standing for the time a take spent queued for its write.</summary>
+    private sealed class WaitingTime : TimeProvider
+    {
+        private long _ticks;
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp() => Interlocked.Read(ref _ticks);
+
+        public void Pass(TimeSpan span) => Interlocked.Add(ref _ticks, span.Ticks);
     }
 
     /// <summary>A machine's remotes map, read when asked, which the test wires after the graph was named.</summary>

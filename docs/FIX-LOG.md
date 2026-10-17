@@ -5,6 +5,45 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A redirect test's status call timed out under load before its listener was asked (TESTWAIT3)
+
+- **Defect:** `RunningServiceTests.A_redirect_is_no_answer` failed twice in the driver gate beside two other gates and passed alone.
+- **Root cause** (read from the code, not reproduced red): `RunningService.Status` has a fixed 2 s bound (`Within`); under load it
+  ends before the loopback listener accepts, `Status` returns null, the listener's answer fails on the closed socket, and
+  `Assert.True(await redirect, "the address was not asked")` fails.
+- **Fix:** the test reruns, up to three times, with fresh listeners when the redirect listener was not asked; an asked try keeps both
+  assertions. The product's bound is TESTWAIT3b's.
+- **Verify:** three rounds of the service suite and the modules fast half beside the driver fast half, all green.
+
+## 2026-10-18 — Two fast service tests asserted what a real observer or a process pipe had not yet delivered (TESTWAIT2)
+
+- **Symptom:** beside other gates (GATELANES2), `ChangeStreamTests.A_write_outside_every_family_wakes_nobody` failed at
+  `Assert.True(_stream.Seen > seen)` and `NewerIndexTests.The_connector_over_a_newer_index_starts_and_says_so_once` on its stderr
+  text; each passed alone.
+- **Root cause:** a positive effect read after a fixed clock or an unrelated signal: the change observer's count had not moved within a
+  600 ms wait, and the stderr line (read through `ErrorDataReceived`) lagged the `app.started` log line the test waited on.
+- **Fix:** the observer tests hold the wait open (10 s, with a token), poll `Seen` until it moves, then cancel the wait and read the
+  negative; the newer-index test polls the stderr buffer up to 15 s.
+- **Verify:** the service suite (2214) passed 3 of 3 beside the modules fast half (1404). Searched and not changed: negative windows
+  and holds in `CheckoutFreshnessTests`, `ChangeStreamTests`, `NewerIndexTests`, `SessionLockAcrossHostsTests`,
+  `AcpBackgroundTests` and `ChatTurnsTests`; `Daoris.Service.Http.Tests` not scanned.
+
+## 2026-10-18 — A take queued past its bind's expiry bound it, and an older build's naming could replace an owned bind's graph (FABRIC-CLOSE1w)
+
+- **Symptom:** none on an install: no install names a graph for a take. Found by the read-only review of the close path. A take asked
+  before the bind's expiry and kept waiting for the store's write past it still bound the graph. A build before FABRIC-CLOSE1o, naming a
+  graph for the same quest, replaced the graph of an owned bind and kept its owner, so the owner's take bound the older build's graph;
+  and an older build's take bound an owned bind by the quest's id alone, whoever took and however late.
+- **Root cause:** `QuestStore.MoveAsync` judged the expiry on the `now` its caller took before the write's gate and `BEGIN IMMEDIATE`
+  (`Quests/Quests.cs`). The owned binds shared `quest_take_binds` with the builds before them, whose upsert names only `graph` and `at`
+  and whose take deletes and binds whatever row the id names.
+- **Fix:** the take measures its wait for the write on the store's monotonic clock and judges the bind at its caller's moment plus that
+  wait. Binds are now named in `quest_owned_take_binds`, a table no older build knows; a row in `quest_take_binds` is an older
+  build's, consumed at a take as owning nothing and discarded at the open. D173's FABRIC-CLOSE1w note has the choice.
+- **Verification:** red first: `QuestTakeBindTests`' take queued past the expiry bound, the owner's take after an older build's naming
+  bound the older graph, and an older build's take read the owned bind; the unarmed store's take and an older build's own statements,
+  green before and after. Then the service suite passes 2223 (2219 before), and its HTTP suite 283 (283).
+
 ## 2026-10-18 — The close door closed a bound quest of no chain the close was at (FABRIC-CLOSE1v)
 
 - **Symptom:** none on an install: no quest is bound to a closure graph there, and the driver names only its own chain's quests. Found by
