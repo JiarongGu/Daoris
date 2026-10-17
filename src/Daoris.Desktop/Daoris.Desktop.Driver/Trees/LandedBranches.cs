@@ -54,6 +54,18 @@ public sealed record LandedBranch(
     public string? GoneAs { get; init; }
 
     /// <summary>
+    /// Where <see cref="GoneAs"/> is <see cref="LandedGone.Moved"/> (CLEANUP1, after review): the local branch that held its recorded tip
+    /// when git said its own branch is missing. The look asks again once that branch is gone too.
+    /// </summary>
+    public string? MovedTo { get; init; }
+
+    /// <summary>
+    /// Where <see cref="GoneAs"/> is <see cref="LandedGone.Missing"/> and no ref held its recorded tip (CLEANUP1, after review): the recovery
+    /// ref Daoris kept that commit on before the record was retired, so the record never goes as the only breadcrumb to it.
+    /// </summary>
+    public string? KeptOn { get; init; }
+
+    /// <summary>
     /// Who accepted it (LAND2b, D145 point 6), one of <see cref="Daoris.Driver.AcceptedBy"/>: the person's press, or the rule's switch at
     /// the quest's done. Null for a landing recorded before it was kept, which a reader says is not kept (D143 point 3).
     /// </summary>
@@ -308,6 +320,8 @@ public sealed class LandedBranches(string home)
     /// where git said the branch is missing, a standing entry of that name becomes a trace with it. A trace that already says why, one Daoris
     /// removed, and a standing entry where the name stands, are left as they are.
     /// </summary>
+    public void GoneAs(LandedBranch entry, string why, string? movedTo = null, string? keptOn = null) => GoneAs(entry.Repository, entry.Branch, why);
+
     public void GoneAs(string repository, string branch, string why) => Edit(all =>
     {
         var now = DateTimeOffset.UtcNow;

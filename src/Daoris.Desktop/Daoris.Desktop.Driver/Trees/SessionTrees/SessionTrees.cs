@@ -45,6 +45,12 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 
     /// <summary>When the look moved it aside, read from its name; null for anything not moved aside.</summary>
     public DateTimeOffset? MovedAside { get; init; }
+
+    /// <summary>
+    /// A folder moved aside past its date that the look's purge keeps (CLEANUP1, after review): why, in its own clause (a later write, a
+    /// link, a folder that cannot be read). Null before its date, where the purge takes it, and for anything not moved aside.
+    /// </summary>
+    public string? PurgeKept { get; init; }
 }
 
 /// <summary>

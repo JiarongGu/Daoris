@@ -20,12 +20,18 @@ public static class RecoveryRetention
     /// </summary>
     public static DateTimeOffset? Until(RecoveryRef each) => each is { Held: true, Dated: { } dated } ? dated + Kept : null;
 
+    /// <summary>The branches Daoris's landings made in <paramref name="repository"/>, standing and traces: never a recovery ref's holder.</summary>
+    internal static IReadOnlySet<string> Made(IEnumerable<LandedBranch> landings, string repository) =>
+        landings.Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            .Select(each => each.Branch).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Every recovery ref of one checkout, with its commit, that commit's date, and whether a branch or a tag holds it: one
     /// <c>for-each-ref</c>, and one <c>rev-list</c> where there are refs. Null with git's words where the list did not read; where the
     /// holders did not read, each ref's <see cref="RecoveryRef.Held"/> is null, never false (D57).
     /// </summary>
-    internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread)> ReadAsync(string root, string repository, CancellationToken ct)
+    internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread)> ReadAsync(
+        string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct)
     {
         var (code, listed, err) = await WorkingTree.GitAsync(
             root, ["for-each-ref", "--format=%(objectname) %(committerdate:unix) %(refname)", ContentHolds.DiscardedPrefix], ct).ConfigureAwait(false);
@@ -54,9 +60,10 @@ public static class RecoveryRetention
     /// verifies that holder at the commit read (<see cref="ContentHolds.DropKeptVerifiedAsync"/>), so a holder moved off it meanwhile keeps
     /// the ref. Nothing else goes: a ref whose commit nothing else holds is never removed without the person.
     /// </summary>
-    internal static async Task<IReadOnlyList<RecoveryGone>> TidyAsync(string root, string repository, DateTimeOffset now, CancellationToken ct)
+    internal static async Task<IReadOnlyList<RecoveryGone>> TidyAsync(
+        string root, string repository, IReadOnlyCollection<string> landed, DateTimeOffset now, CancellationToken ct)
     {
-        var (refs, _) = await ReadAsync(root, repository, ct).ConfigureAwait(false);
+        var (refs, _) = await ReadAsync(root, repository, landed, ct).ConfigureAwait(false);
         var gone = new List<RecoveryGone>();
         foreach (var each in refs ?? [])
         {

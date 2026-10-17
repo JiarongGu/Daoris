@@ -51,6 +51,12 @@ public static class LandedGone
 
     /// <summary>A branch of its name stands that is not the landing's (another commit, or the name in another case): kept, the person's to say.</summary>
     public const string Stands = "stands";
+
+    /// <summary>
+    /// git says its branch is missing, and another local branch holds the landing's recorded tip by ancestry (CLEANUP1, after review): the
+    /// work moved there, a rename or a branch made from it, so it is kept, never read as the person's end (<see cref="LandedBranch.MovedTo"/>).
+    /// </summary>
+    public const string Moved = "moved";
 }
 
 /// <param name="Where">On the line: the form of the line it was proven on (`main`, `origin/main`). Inside: the branch it is inside. Leaned on: the session branch.</param>

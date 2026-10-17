@@ -13,6 +13,9 @@ public sealed class CleanupGitTests : LandedFixture
 {
     private static Task<IReadOnlySet<string>> NoneAsync(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
+    /// <summary>No branch a landing made: the retention's holders are every branch and tag of the person's.</summary>
+    private static readonly IReadOnlySet<string> NoneMade = new HashSet<string>();
+
     /// <summary>A branch git cannot read: its loose ref written over with something that is no commit.</summary>
     private static void Break(string root, string branch)
     {
@@ -91,6 +94,7 @@ public sealed class CleanupGitTests : LandedFixture
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        await SessionGoneAsync(root);
         await GitAsync(root, "branch", "-D", landed.Branch!);
         new LandedBranches(Home).Gone("engine", [landed.Branch!]);
 
@@ -143,7 +147,107 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.DoesNotContain(await MilestonesAsync(root), unit => unit.End.State == WorkEndState.Dropped);
     }
 
+    /// <summary>
+    /// 🔴 After review: the person renamed the landing branch. git calls the recorded name missing, but the new name holds the recorded
+    /// tip: the work moved, so it is kept and says where, never read as dropped, and no recovery ref is made since a branch holds it.
+    /// </summary>
+    [Fact]
+    public async Task A_renamed_landing_branch_reads_moved_not_dropped()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        await SessionGoneAsync(root);
+        await GitAsync(root, "branch", "-m", landed.Branch!, "feature/renamed");
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Moved, "feature/renamed", (string?)null), (trace.GoneAs, trace.MovedTo, trace.KeptOn));
+        var unit = Assert.Single(await MilestonesAsync(root), each => each.Entries.Any(entry => entry.Resource == landed.Branch));
+        Assert.Equal(WorkEndState.NotEnded, unit.End.State);
+        Assert.Contains("`feature/renamed`", unit.End.Said, StringComparison.Ordinal);
+        Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
+    }
+
+    /// <summary>
+    /// 🔴 After review: the person deleted the landing branch after Daoris removed the session branch, and no ref holds the recorded tip.
+    /// Before the record is retired, Daoris keeps that commit on a recovery ref, held by nothing so kept at any age, and lists it with its
+    /// delete command.
+    /// </summary>
+    [Fact]
+    public async Task A_dropped_landing_whose_tip_nothing_holds_gets_a_recovery_ref_first()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        var tip = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
+        await SessionGoneAsync(root);
+        await GitAsync(root, "branch", "-D", landed.Branch!);
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Missing, $"refs/daoris/discarded/{landed.Branch}"), (trace.GoneAs, trace.KeptOn));
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", trace.KeptOn!)).Trim());
+        var (units, recovery) = await WorkInventories.ReadAsync(Home, new Dictionary<string, string> { ["engine"] = root }, new HashSet<string>(), new List<string>());
+        Assert.Equal(WorkEndState.Dropped, Assert.Single(units, each => each.Entries.Any(entry => entry.Resource == landed.Branch)).End.State);
+        Assert.Contains(recovery, entry => entry.Resource == trace.KeptOn && entry.Detail.Contains($"git update-ref -d {trace.KeptOn}", StringComparison.Ordinal));
+    }
+
+    /// <summary>A moved landing is followed: once the branch it moved to is gone too, the look asks again, keeps its commit, and reads it dropped.</summary>
+    [Fact]
+    public async Task A_moved_landing_is_asked_again_once_the_branch_it_moved_to_is_gone()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        await SessionGoneAsync(root);
+        await GitAsync(root, "branch", "-m", landed.Branch!, "feature/renamed");
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+            await GitAsync(root, "branch", "-D", "feature/renamed");
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
+        Assert.Equal((LandedGone.Missing, $"refs/daoris/discarded/{landed.Branch}"), (trace.GoneAs, trace.KeptOn));
+    }
+
     // ---- (2) recovery refs past their retention
+
+    /// <summary>
+    /// 🔴 After review: only a branch or a tag of the person's holds a recovery ref's commit. A session branch, which the same look may
+    /// remove on a squash's record, and a branch Daoris's landing made, never do, so a ref only they hold is kept at any age.
+    /// </summary>
+    [Fact]
+    public async Task A_session_branch_or_a_landing_branch_is_never_a_recovery_refs_holder()
+    {
+        var root = await RepositoryAsync("engine");
+        var main = (await GitAsync(root, "rev-parse", "main")).Trim();
+        var bySession = await OldCommitAsync(root, main, "work a session branch holds");
+        var byLanding = await OldCommitAsync(root, main, "work a landing branch holds");
+        await GitAsync(root, "update-ref", "refs/heads/daoris/s-other", bySession);
+        await GitAsync(root, "update-ref", "refs/heads/feature/landed", byLanding);
+        await GitAsync(root, "update-ref", "refs/daoris/discarded/daoris/s-a", bySession);
+        await GitAsync(root, "update-ref", "refs/daoris/discarded/daoris/s-b", byLanding);
+        var made = new HashSet<string> { "feature/landed" };
+
+        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", made, DateTimeOffset.UtcNow, CancellationToken.None));
+
+        Assert.Equal(bySession, (await GitAsync(root, "rev-parse", "refs/daoris/discarded/daoris/s-a")).Trim());
+        Assert.Equal(byLanding, (await GitAsync(root, "rev-parse", "refs/daoris/discarded/daoris/s-b")).Trim());
+        var (refs, unread) = await RecoveryRetention.ReadAsync(root, "engine", made, CancellationToken.None);
+        Assert.Null(unread);
+        Assert.All(refs!, each => Assert.False(each.Held));
+    }
 
     /// <summary>The line holds it and it is past its retention: removed, the holder verified in the same transaction.</summary>
     [Fact]
@@ -155,7 +259,7 @@ public sealed class CleanupGitTests : LandedFixture
         await GitAsync(root, "update-ref", "refs/heads/main", old, main);
         await GitAsync(root, "update-ref", "refs/daoris/discarded/daoris/s-old", old);
 
-        var gone = await RecoveryRetention.TidyAsync(root, "engine", DateTimeOffset.UtcNow, CancellationToken.None);
+        var gone = await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow, CancellationToken.None);
 
         var one = Assert.Single(gone);
         Assert.Equal(("refs/daoris/discarded/daoris/s-old", old, "refs/heads/main"), (one.Ref, one.Commit, one.Holder));
@@ -171,10 +275,10 @@ public sealed class CleanupGitTests : LandedFixture
         var alone = await OldCommitAsync(root, main, "work nothing else holds");
         await GitAsync(root, "update-ref", "refs/daoris/discarded/daoris/s-alone", alone);
 
-        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", DateTimeOffset.UtcNow, CancellationToken.None));
+        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow, CancellationToken.None));
 
         Assert.Equal(alone, (await GitAsync(root, "rev-parse", "refs/daoris/discarded/daoris/s-alone")).Trim());
-        var (refs, unread) = await RecoveryRetention.ReadAsync(root, "engine", CancellationToken.None);
+        var (refs, unread) = await RecoveryRetention.ReadAsync(root, "engine", NoneMade, CancellationToken.None);
         Assert.Null(unread);
         var read = Assert.Single(refs!);
         Assert.Equal((false, alone), (read.Held, read.Commit));
@@ -189,9 +293,9 @@ public sealed class CleanupGitTests : LandedFixture
         var main = (await GitAsync(root, "rev-parse", "main")).Trim();
         await GitAsync(root, "update-ref", "refs/daoris/discarded/daoris/s-young", main);
 
-        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", DateTimeOffset.UtcNow, CancellationToken.None));
+        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow, CancellationToken.None));
 
-        var read = Assert.Single((await RecoveryRetention.ReadAsync(root, "engine", CancellationToken.None)).Refs!);
+        var read = Assert.Single((await RecoveryRetention.ReadAsync(root, "engine", NoneMade, CancellationToken.None)).Refs!);
         Assert.True(read.Held);
         Assert.True(RecoveryRetention.Until(read) > DateTimeOffset.UtcNow);
     }

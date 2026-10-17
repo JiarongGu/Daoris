@@ -24,8 +24,9 @@ public sealed class CleanupLeftoversTests : IDisposable
     private static GrownBranch Grown(string branch = "daoris/s1", string unit = "unit-a", DateTimeOffset? gone = null) =>
         new("engine", "default", branch, "main", "f0", null, Then) { Unit = unit, GoneAt = gone };
 
-    private static LandedBranch Landed(string branch = "feature/x", string unit = "unit-a", DateTimeOffset? gone = null, string? goneAs = null) =>
-        new("engine", "default", branch, "main", "t1", "s1", null, null, Then) { Units = [unit], GoneAt = gone, GoneAs = goneAs };
+    private static LandedBranch Landed(
+        string branch = "feature/x", string unit = "unit-a", DateTimeOffset? gone = null, string? goneAs = null, string tip = "t1", DateTimeOffset? at = null) =>
+        new("engine", "default", branch, "main", tip, "s1", null, null, at ?? Then) { Units = [unit], GoneAt = gone, GoneAs = goneAs };
 
     private static SessionTree Aside(string name, DateTimeOffset? at) =>
         new(Path.Combine(Trees, ".tidied", $"{name}-{(at ?? Then):yyyyMMdd'T'HHmmssfff'Z'}"), "default", "engine", SessionTree.SetAside) { MovedAside = at };
@@ -88,6 +89,32 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Equal(WorkEndState.NotEnded, milestone.End.State);
         Assert.Contains("stands", milestone.End.Said, StringComparison.Ordinal);
         Assert.DoesNotContain("nothing was handed on", milestone.End.Said, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 After review: a landing whose branch went while another local branch holds its recorded tip moved (a rename): kept, saying where
+    /// its work goes on, never read as the person's end.
+    /// </summary>
+    [Fact]
+    public void A_landing_whose_work_moved_to_another_branch_is_kept_and_says_where()
+    {
+        var milestone = Assert.Single(WorkInventory.Derive(Facts(landings: [Landed(gone: Then, goneAs: LandedGone.Moved) with { MovedTo = "feature/renamed" }])));
+
+        Assert.Equal(WorkEndState.NotEnded, milestone.End.State);
+        Assert.Contains("`feature/renamed`", milestone.End.Said, StringComparison.Ordinal);
+        Assert.Equal("pending", milestone.Cleanup.State);
+        Assert.DoesNotContain(milestone.Cleanup.Waits, wait => wait.Disposition == InventoryDisposition.Blocked);
+    }
+
+    /// <summary>A dropped landing whose commits no ref held says the recovery ref Daoris kept them on, not that they may survive elsewhere.</summary>
+    [Fact]
+    public void A_dropped_landing_whose_commits_daoris_kept_names_the_ref()
+    {
+        var milestone = Assert.Single(WorkInventory.Derive(Facts(
+            landings: [Landed(gone: Then, goneAs: LandedGone.Missing) with { KeptOn = "refs/daoris/discarded/feature/x" }])));
+
+        Assert.Equal(WorkEndState.Dropped, milestone.End.State);
+        Assert.Contains("`refs/daoris/discarded/feature/x`", milestone.End.Said, StringComparison.Ordinal);
     }
 
     /// <summary>A trace from before the field, or one git could not read the absence of: kept, saying git has not said it is missing.</summary>
@@ -157,6 +184,36 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Equal(("moved-aside", "recovery", "retained", Then + BranchTidying.SetAsideFor), (entry.Kind, entry.Role, entry.Disposition, entry.Until));
     }
 
+    /// <summary>
+    /// 🔴 After review: one past its date whose purge a later write blocks is never finished by its own rule (the purge compares with the
+    /// move), so it is a unit in What needs you, saying why; one past its date with nothing written since stays a recovery, which the next
+    /// purge takes. Read from the home's own folders, as the gather reads them.
+    /// </summary>
+    [Fact]
+    public async Task A_moved_aside_folder_whose_purge_a_late_write_blocked_needs_the_person()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var moved = now.AddDays(-15);
+        var stamp = moved.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture);
+        var engine = DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine");
+        var written = Path.Combine(engine, $"s-late-{stamp}");
+        Directory.CreateDirectory(written);
+        await File.WriteAllTextAsync(Path.Combine(written, "late.db"), "a write that came after the move\n");
+        var quiet = Path.Combine(engine, $"s-quiet-{stamp}");
+        Directory.CreateDirectory(quiet);
+        await File.WriteAllTextAsync(Path.Combine(quiet, "old.txt"), "written before the move\n");
+        File.SetLastWriteTimeUtc(Path.Combine(quiet, "old.txt"), moved.AddDays(-1).UtcDateTime);
+
+        var facts = await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>(), now: now);
+        var units = WorkInventory.Derive(facts);
+
+        var unit = Assert.Single(units);
+        var wait = Assert.Single(unit.Cleanup.Waits);
+        Assert.Equal((InventoryKind.MovedAside, InventoryDisposition.Blocked, written), (wait.Kind, wait.Disposition, wait.Resource));
+        Assert.Contains("late.db", wait.Detail, StringComparison.Ordinal);
+        Assert.Contains(quiet, WorkInventory.Recoveries(facts).Select(entry => entry.Resource));
+    }
+
     /// <summary>One whose name says no date is never purged by itself, so it stays a unit whose owner is unknown: it does need the person.</summary>
     [Fact]
     public void A_moved_aside_folder_with_no_date_stays_a_unit_its_owner_unknown()
@@ -206,18 +263,43 @@ public sealed class CleanupLeftoversTests : IDisposable
         var landings = new LandedBranches(_home);
         landings.Record(Landed("feature/x", "unit-a"));
         landings.Record(Landed("feature/y", "unit-b"));
+        landings.Record(Landed("feature/z", "unit-c"));
         landings.Removed("engine", "feature/y", LandedKind.OnLine, "main");
 
-        landings.GoneAs("engine", "feature/x", LandedGone.Missing);
-        landings.GoneAs("engine", "feature/y", LandedGone.Missing);
+        landings.GoneAs(Landed("feature/x", "unit-a"), LandedGone.Missing, keptOn: "refs/daoris/discarded/feature/x");
+        landings.GoneAs(Landed("feature/y", "unit-b"), LandedGone.Missing);
+        landings.GoneAs(Landed("feature/z", "unit-c"), LandedGone.Moved, movedTo: "feature/z2");
 
         var read = new LandedBranches(_home).Entries();
         var x = Assert.Single(read, each => each.Branch == "feature/x");
         Assert.NotNull(x.GoneAt);
-        Assert.Equal(LandedGone.Missing, x.GoneAs);
+        Assert.Equal((LandedGone.Missing, "refs/daoris/discarded/feature/x"), (x.GoneAs, x.KeptOn));
         var y = Assert.Single(read, each => each.Branch == "feature/y");
         Assert.Null(y.GoneAs);
         Assert.Equal(LandedKind.OnLine, y.RemovedAs);
+        var z = Assert.Single(read, each => each.Branch == "feature/z");
+        Assert.Equal((LandedGone.Moved, "feature/z2"), (z.GoneAs, z.MovedTo));
         Assert.Empty(new LandedBranches(_home).All());
+    }
+
+    /// <summary>
+    /// 🔴 After review: an observation applies to the landing it was made of, by its identity (repository, branch, session, when recorded,
+    /// and the tip read), never by name: a new landing of the same name recorded since keeps its standing.
+    /// </summary>
+    [Fact]
+    public void An_old_observation_never_retires_a_new_landing_of_the_same_name()
+    {
+        var landings = new LandedBranches(_home);
+        var observed = Landed("feature/x", "unit-a");
+        landings.Record(observed);
+        var newer = Landed("feature/x", "unit-b", tip: "t2", at: Then.AddHours(1));
+        landings.Record(newer);
+
+        landings.GoneAs(observed, LandedGone.Missing);
+
+        var standing = Assert.Single(new LandedBranches(_home).Entries(), each => each.Branch == "feature/x");
+        Assert.Equal("t2", standing.Tip);
+        Assert.Null(standing.GoneAt);
+        Assert.Null(standing.GoneAs);
     }
 }

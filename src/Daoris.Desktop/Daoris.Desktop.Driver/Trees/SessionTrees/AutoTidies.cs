@@ -208,7 +208,11 @@ internal sealed class AutoTidies(
             // CLEANUP1: a landing's branch the person removed is said on git's word, once (the person's end of it), and a recovery ref past
             // its retention that a branch or a tag holds goes, at most once a day for each repository in a process.
             await cleanups.MarkAbsentAsync(root, repository, ct, refs).ConfigureAwait(false);
-            if (RetentionDue(repository)) recovered = await RecoveryRetention.TidyAsync(root, repository, context.Clock(), ct).ConfigureAwait(false);
+            if (RetentionDue(repository))
+            {
+                recovered = await RecoveryRetention.TidyAsync(
+                    root, repository, RecoveryRetention.Made(context.Recorded.Entries(), repository), context.Clock(), ct).ConfigureAwait(false);
+            }
         }
 
         var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;

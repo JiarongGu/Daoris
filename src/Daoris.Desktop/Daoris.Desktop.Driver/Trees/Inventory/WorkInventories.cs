@@ -29,7 +29,7 @@ public static class WorkInventories
             }
 
             // CLEANUP1: each with its commit, its date and whether a branch or a tag holds it, which its retention reads.
-            var (listed, err) = await RecoveryRetention.ReadAsync(root, repository, ct).ConfigureAwait(false);
+            var (listed, err) = await RecoveryRetention.ReadAsync(root, repository, RecoveryRetention.Made(landings, repository), ct).ConfigureAwait(false);
             if (listed is null)
             {
                 unread.Add($"git could not list `{repository}`'s recovery refs: {err}");
