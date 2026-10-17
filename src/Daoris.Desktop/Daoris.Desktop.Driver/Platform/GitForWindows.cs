@@ -23,8 +23,18 @@ public static class GitForWindows
     /// <summary>The folders under an install's top that hold its git, in the order looked for.</summary>
     public static readonly IReadOnlyList<string> Prefixes = ["mingw64", "clangarm64", "mingw32"];
 
-    /// <summary>The longest <c>HOME</c> whose <c>bin</c> the launcher puts on <c>PATH</c>: its buffer is 260 characters.</summary>
-    private const int LongestHome = 252;
+    /// <summary>
+    /// The longest <c>HOME</c> whose <c>bin</c> the launcher puts on <c>PATH</c>: its <c>MAX_PATH</c> is 4,096, not
+    /// Windows' 260, so a <c>HOME</c> of 4,088 characters still does and 4,089 does not (measured).
+    /// </summary>
+    private const int LongestHome = 4088;
+
+    /// <summary>
+    /// The longest <c>PATH</c> this start hands git: the largest value Windows sets in a variable, 32,767 characters with
+    /// its terminator. Past it the launcher's own setting fails, and git's reader has no more room either, so a start
+    /// whose <c>PATH</c> would be longer keeps the launcher, exactly as before.
+    /// </summary>
+    public const int LongestVariable = 32766;
 
     /// <summary>The real git behind the launcher at <paramref name="file"/>, or null where it is not one.</summary>
     public static GitBehind? Behind(string file)
@@ -90,16 +100,15 @@ public static class GitForWindows
     /// <summary>
     /// Start the real git where <paramref name="info"/> names the launcher, handed the launcher's variables over the
     /// environment <paramref name="info"/> already holds (the tools' <c>PATH</c> included); true where it now does.
-    /// Any other start is left as it was.
+    /// Any other start is left as it was, and so is one whose <c>PATH</c> would pass <see cref="LongestVariable"/>.
     /// </summary>
     public static bool Direct(ProcessStartInfo info)
     {
         if (Behind(info.FileName) is not { } behind) return false;
         var environment = info.Environment;
-        foreach (var (name, value) in ChildEnvironment(behind, key => environment.TryGetValue(key, out var held) ? held : null))
-        {
-            environment[name] = value;
-        }
+        var child = ChildEnvironment(behind, key => environment.TryGetValue(key, out var held) ? held : null);
+        if (child["PATH"].Length > LongestVariable) return false;
+        foreach (var (name, value) in child) environment[name] = value;
 
         info.FileName = behind.Git;
         return true;

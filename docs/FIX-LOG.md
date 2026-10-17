@@ -2778,6 +2778,17 @@ any `MSYSTEM` it leaves `PATH` alone, and `sh` goes unfound. This install has no
 `GitForWindowsProcessTests` holds the direct start's child to the launcher's, variable for variable, from four
 environments.
 
+*Two edges, found by Codex's review of the branch and measured after* (the global and XDG configuration named apart, so a
+`HOME` that is not there is never read):
+- A `HOME` of 4,088 characters still puts its `bin` on the child's `PATH` through the launcher, and one of 4,089 does
+  not; 252, 253 and 300 all do. The launcher's `MAX_PATH` is 4,096 (`git-wrapper.c`), not Windows' 260, and the branch's
+  first cut-off of 252 would have left a long `HOME`'s `bin` off where the launcher puts it.
+- A long inherited `PATH`: 20,000 to 32,600 characters ran and got the launcher's folders first. From 32,690 characters
+  git exited `0xC0000017` (out of memory) both through the launcher and started directly, before its alias ran. The
+  launcher's own setting of `PATH` fails past 32,767 characters, and git 2.53's environment reader has a 32,768-character
+  buffer with no check. So a start whose `PATH` would pass 32,766 characters once the folders are put first keeps the
+  launcher, and fails or runs exactly as before.
+
 *Bare starts* (`git --version` from a .NET 10 host, three warm-ups each way, then 40 each way interleaved; seconds for
 all 40, through the launcher against direct): 28.2 against 21.1 with the CPU load rising from 8% to 100% during the run,
 23.5 against 16.0 at 74–94%, and 17.6 against 10.9 at 53–97%. The direct start saves 110 to 180 ms a start, a quarter to

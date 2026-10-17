@@ -130,6 +130,32 @@ public sealed class GitForWindowsTests : IDisposable
         Assert.Equal(Folders() + userHome + @"\bin;C:\a;C:\b", info.Environment["PATH"]);
     }
 
+    [Fact]
+    public void A_PATH_too_long_for_one_variable_once_the_launchers_folders_are_put_first_keeps_the_launcher()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var launcher = Lay();
+        var userHome = Path.Combine(_root, "user");
+        var added = (Folders() + userHome + @"\bin;").Length;
+        ProcessStartInfo Start(int expanded)
+        {
+            var info = new ProcessStartInfo(launcher);
+            info.Environment["HOME"] = userHome;
+            info.Environment["PATH"] = @"C:\" + new string('p', expanded - added - 3);
+            return info;
+        }
+
+        var fits = Start(GitForWindows.LongestVariable);
+        var tooLong = Start(GitForWindows.LongestVariable + 1);
+        var held = tooLong.Environment.ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        Assert.True(GitForWindows.Direct(fits));
+        Assert.Equal(GitForWindows.LongestVariable, fits.Environment["PATH"]!.Length);
+        Assert.False(GitForWindows.Direct(tooLong));
+        Assert.Equal(launcher, tooLong.FileName);
+        Assert.Equal(held, tooLong.Environment.ToDictionary(pair => pair.Key, pair => pair.Value));
+    }
+
     // ── The launcher's variables (measured: FIX-LOG, GITSTART1) ─────────────────────────────────────
 
     [Theory]
@@ -214,8 +240,9 @@ public sealed class GitForWindowsTests : IDisposable
     public void A_HOME_too_long_for_the_launchers_buffer_puts_no_bin_on_PATH()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var fits = @"C:\" + new string('h', 249);
-        var tooLong = @"C:\" + new string('h', 250);
+        // Measured: the launcher's buffer is 4,096 characters, so a HOME of 4,088 still puts its bin first and 4,089 does not.
+        var fits = @"C:\" + new string('h', 4085);
+        var tooLong = @"C:\" + new string('h', 4086);
 
         Assert.Equal(Folders() + fits + @"\bin;C:\a", GitForWindows.ChildEnvironment(Behind(), Variables(("PATH", @"C:\a"), ("HOME", fits)))["PATH"]);
         Assert.Equal(Folders() + @"C:\a", GitForWindows.ChildEnvironment(Behind(), Variables(("PATH", @"C:\a"), ("HOME", tooLong)))["PATH"]);
