@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The wire evaluation leaked outcomes across runs and exposed receipts it would invalidate (FABRIC-WIRE1e)
+
+- **Symptom:** found by a second maker's review of FABRIC-WIRE1b, before any dispatch builds on it: a failure or a rejection kept
+  from run 1 took its `failed` or `rejected` path in run 2 of the same graph and revision; an active `pushed` bound to tip 1 and
+  observed after the unit moved to tip 2 reached, and a downstream node was offered a start on tip 2 resting on it; a join with a
+  reached member and an unrelated `failed` wire reported `member-failed`.
+- **Root cause:** the binding carried no run, so `WireEvaluation.Receipts` hashed the caller's current run into a failure's or a
+  rejection's receipt; the observation pass ran before the invalidations, and the invalidations exempted what it had moved; a
+  started join took any failure receipt in its binding for a member's.
+- **Fix:** D173's FABRIC-WIRE1e note: a start names its graph and run, kept as the status's scope, and only an outcome of that run is a
+  receipt; the invalidations run before the observation; a join fails on its members' receipts alone. Choices 2, 7 and 9 of the
+  WIRE1b note changed with it: `Settled` clarified, waiting capacity apart from execution capacity, and a complete revision snapshot
+  required (`no-revision`).
+- **Verification:** seven new tests, the evaluation's members added first without behaviour, each failed on its own defect at run
+  time, then passed; the node and wire suites pass, and the driver's fast half.
+
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
 - **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node

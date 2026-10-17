@@ -34,7 +34,7 @@ public sealed class NodeLifecycleTests
     private static NodeAcceptance Accept(int attempt, string node = "n1") =>
         Bind(attempt, node) with { Evidence = new NodePort("acme/receipt@1", $"{node}#{attempt}", "tip-1", null) };
 
-    private static NodeMove Start(int attempt) => new(NodeStates.Active, NodeCause.Daoris) { Binding = Bind(attempt) };
+    private static NodeMove Start(int attempt) => new(NodeStates.Active, NodeCause.Daoris) { Binding = Bind(attempt), Scope = Run };
 
     private static NodeStatus At(string state, int attempt = 1, int tries = 1, bool transient = true, int? unreconciled = null) =>
         new(Unit, "n1", state)
@@ -67,7 +67,7 @@ public sealed class NodeLifecycleTests
         (NodeStates.Rejected, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt, Words = "not what was asked" },
         (NodeStates.Skipped, _) => new NodeMove(row.To, row.By) { Words = "not what was asked", Scope = Run },
         (NodeStates.Unknown, _) => new NodeMove(row.To, row.By) { Attempt = status.Attempt },
-        (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1) },
+        (NodeStates.Active, _) => new NodeMove(row.To, row.By) { Binding = Bind(status.Attempt + 1), Scope = Run },
         _ => new NodeMove(row.To, row.By),
     };
 
@@ -398,6 +398,30 @@ public sealed class NodeLifecycleTests
     }
 
     /// <summary>
+    /// FABRIC-WIRE1e: a start names the graph and run its attempt belongs to, as a skip does, and the status keeps it through the attempt's
+    /// outcome, so a failure or a rejection is a receipt in that run alone. A start naming none, or another graph than its binding's, is
+    /// refused.
+    /// </summary>
+    [Fact]
+    public void A_start_names_the_run_its_attempt_belongs_to()
+    {
+        var node = Declared("acme.deploy/deploy", rejectable: true);
+        var ready = At(NodeStates.Ready, attempt: 0, tries: 0);
+
+        Assert.Equal(NodeRefusal.NoScope, NodeLifecycle.Apply(node, ready, Start(1) with { Scope = null }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(node, ready, Start(1) with { Scope = Run with { GraphDigest = "graph-0" } }).Refused);
+        var active = Moved(node, ready, Start(1));
+        Assert.Equal(Run, active.Scope);
+
+        var failed = Moved(node, active, new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = 1, Code = "deploy-failed" });
+        var rejected = Moved(node, active, new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = 1, Words = "not this" });
+        Assert.Equal((Run, Run), (failed.Scope, rejected.Scope));
+
+        var again = Moved(node, Moved(node, failed, new NodeMove(NodeStates.Ready, NodeCause.Person)), Start(2) with { Scope = Run with { Run = "run-2" } });
+        Assert.Equal(Run with { Run = "run-2" }, again.Scope);
+    }
+
+    /// <summary>
     /// Defect 3: a reach is the binding its attempt started on, whole. An old graph, revision or node version, other inputs or receipts,
     /// another node's declaration, or no evidence where the kind needs it is refused; a start brings this node's next attempt at its
     /// declared version.
@@ -408,7 +432,7 @@ public sealed class NodeLifecycleTests
         var node = Declared("acme.deploy/deploy") with { Evidence = "acme/receipt@1" };
         var ready = At(NodeStates.Ready, attempt: 0, tries: 0);
         var binding = Bind(1) with { PrerequisiteReceipts = ["acc-build"] };
-        var start = new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = binding };
+        var start = new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = binding, Scope = Run };
 
         Assert.Equal(NodeRefusal.NoBinding, NodeLifecycle.Apply(node, ready, start with { Binding = null }).Refused);
         Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(node, ready, start with { Binding = binding with { NodeVersion = 2 } }).Refused);

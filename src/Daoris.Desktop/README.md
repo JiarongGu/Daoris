@@ -81,7 +81,8 @@ acceptances and their transitive invalidation (`NodeAcceptances`), and the built
 read from (`BuiltInNodes`). It is pure and writes nothing: a move returns what it cleared, and `NodeAcceptances.Keep` judges one
 result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c). The wires between nodes are judged there too:
 `NodeWires` names what a save refuses (FABRIC-WIRE1a), and `WireEvaluation` evaluates them over the nodes' statuses, moving each
-node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b). Both are pure as well.
+node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b), on a complete snapshot of the
+units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e). Both are pure as well.
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
 its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
 rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1).
