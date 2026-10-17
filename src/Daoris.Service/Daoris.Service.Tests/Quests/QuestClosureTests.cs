@@ -73,14 +73,17 @@ public sealed class QuestClosureTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(dir, "daoris.json"), $$"""{ "source": "s", "packs": [], "domain": {{domain}} }""");
     }
 
-    /// <summary>The report quest, naming its file as evidence, with a verifying step to follow when asked, and taken.</summary>
-    private async Task<Quest> Taken(bool chain = true, string title = "Write the bridge report")
+    /// <summary>
+    /// The report quest, naming its file as evidence, with a verifying step to follow when asked, and taken. The step asks
+    /// <paramref name="next"/>: the checker by default, the report's own repository for a chain closed there (FABRIC-CLOSE1v).
+    /// </summary>
+    private async Task<Quest> Taken(bool chain = true, string title = "Write the bridge report", string next = "checker")
     {
         var ask = (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!;
         var published = await _desk.PublishAsync(ask.Id, "reports", Now, draft: new AskDraft(title, "Through the bridge.")
         {
             Requirements = [Report, Bridge],
-            Then = chain ? [new QuestStep("checker", "Verify {parent} in the browser", "Open it and look.")] : [],
+            Then = chain ? [new QuestStep(next, "Verify {parent} in the browser", "Open it and look.")] : [],
         });
         Assert.Equal(AskRefusal.None, published.Refusal);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(published.Quest!.Id, "take", null, Now)).Refusal);
@@ -88,10 +91,10 @@ public sealed class QuestClosureTests : IAsyncLifetime
     }
 
     /// <summary>A taken quest bound to the closure graph, as the driver binds one at its run's first start.</summary>
-    private async Task<Quest> Bound(bool chain = true, string title = "Write the bridge report")
+    private async Task<Quest> Bound(bool chain = true, string title = "Write the bridge report", string next = "checker", string graph = Graph)
     {
-        var quest = await Taken(chain, title);
-        var bound = await _exchange.BindAsync(quest.Id, Graph, Now);
+        var quest = await Taken(chain, title, next);
+        var bound = await _exchange.BindAsync(quest.Id, graph, Now);
         Assert.Equal(QuestRespondRefusal.None, bound.Refusal);
         return bound.Quest!;
     }
@@ -116,8 +119,9 @@ public sealed class QuestClosureTests : IAsyncLifetime
     private static (string, QuestOperationRef) Named(Quest quest) =>
         (quest.Id, new QuestOperationRef(quest.Submission!.Machine, quest.Submission.Sequence));
 
+    /// <summary>A close at the last quest named, as the driver closes a chain at its last quest here (FABRIC-CLOSE1v).</summary>
     private Task<QuestCloseOutcome> Close(string key, params Quest[] quests) =>
-        _exchange.CloseAsync(quests[0].Id, key, "token-" + key, [.. quests.Select(Named)], Now);
+        _exchange.CloseAsync(quests[^1].Id, key, "token-" + key, [.. quests.Select(Named)], Now);
 
     private async Task<Quest> Find(string id) => (await _quests.FindAsync(id))!;
 
@@ -336,19 +340,128 @@ public sealed class QuestClosureTests : IAsyncLifetime
 
     // ——— The close door.
 
-    /// <summary>Canary 48: a two-step chain advances on the first step's unheld submission, and the close closes both in order.</summary>
-    private async Task<(Quest First, Quest Second)> Chain()
+    /// <summary>
+    /// Canary 48: a two-step chain advances on the first step's unheld submission, and the close closes both in order. The step stays in
+    /// the report's repository, as a close names only its own repository's chain (FABRIC-CLOSE1v), so it inherits the requirements with
+    /// their evidence, and its own submission is released by its own read.
+    /// </summary>
+    private async Task<(Quest First, Quest Second)> Chain(string firstGraph = Graph)
+    {
+        var first = await Bound(next: "reports", graph: firstGraph);
+        await Ready(first);
+        await Found(first);
+        var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
+        Assert.Equal("reports", second.To);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(second.Id, Graph, Now)).Refusal);
+        Assert.Equal(QuestHold.EvidenceUnread, (await Ready(second)).Quest!.Hold);
+        Assert.Equal(QuestRespondRefusal.None, (await Found(second)).Refusal);
+        var submitted = await Find(second.Id);
+        Assert.Null(submitted.Hold);
+        return (await Find(first.Id), submitted);
+    }
+
+    /// <summary>
+    /// A chain across two repositories (FABRIC-CLOSE1v): the report's quest, and its verifying step in the checker, each bound, submitted and
+    /// unheld. The step to another repository inherits the requirements without their evidence, so nothing holds its submission.
+    /// </summary>
+    private async Task<(Quest First, Quest Second)> ChainAcross()
     {
         var first = await Bound();
         await Ready(first);
         await Found(first);
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
+        Assert.Equal("checker", second.To);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(second.Id, Graph, Now)).Refusal);
-        // The step to another repository inherits the requirements without their evidence: nothing holds its submission.
         var submitted = await Ready(second);
         Assert.Null(submitted.Quest!.Hold);
         return (await Find(first.Id), submitted.Quest);
+    }
+
+    /// <summary>What a close wrote on <paramref name="quests"/>: none of them Done, each still Taken, no Done in any history.</summary>
+    private async Task NothingClosed(params Quest[] quests)
+    {
+        foreach (var quest in quests)
+        {
+            Assert.Equal(QuestStatus.Taken, (await Find(quest.Id)).Status);
+            Assert.DoesNotContain(await _quests.HistoryAsync(quest.Id), op => op.Kind == QuestOperationKind.Done);
+        }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1v: the door holds its own scope, not only the driver's filter. A quest bound, submitted and unheld, but of no chain the
+    /// close's quest grew from, is refused by its own code, the whole close with it, and nothing is written; the same close again answers it.
+    /// </summary>
+    [Fact]
+    public async Task A_close_naming_an_unrelated_bound_quest_is_refused_whole_and_writes_nothing()
+    {
+        var unrelated = await Bound(chain: false, title: "Write the other report");
+        await Ready(unrelated);
+        await Found(unrelated);
+        var own = await Bound(chain: false);
+        await Ready(own);
+        await Found(own);
+        var (stray, terminal) = (await Find(unrelated.Id), await Find(own.Id));
+        Assert.Null(stray.Hold);
+        Assert.Null(terminal.Hold);
+
+        var refused = await Close("k1", stray, terminal);
+
+        Assert.Equal(QuestCloseRefusal.NotInChain, refused.Refusal);
+        Assert.Equal("not-in-chain", QuestCloseCodes.Of(refused.Refusal));
+        Assert.Contains($"#{stray.Id}", refused.Message, StringComparison.Ordinal);
+        Assert.Contains($"#{terminal.Id}", refused.Message, StringComparison.Ordinal);
+        await NothingClosed(stray, terminal);
+
+        var again = await Close("k1", stray, terminal);
+        Assert.Equal(QuestCloseRefusal.NotInChain, again.Refusal);
+        Assert.Contains("first sent", again.Message, StringComparison.Ordinal);
+        await NothingClosed(stray, terminal);
+
+        // Its own quest alone is its close.
+        Assert.Equal(QuestCloseRefusal.None, (await Close("k2", terminal)).Refusal);
+        await NothingClosed(stray);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1v: a close is one repository's. A chain's quest in another repository, its parent or its step, is refused by its own
+    /// code wherever the close is at, though it is bound to the same graph, held here and unheld.
+    /// </summary>
+    [Fact]
+    public async Task A_close_naming_another_repositorys_quest_of_the_chain_is_refused_whole_and_writes_nothing()
+    {
+        var (first, second) = await ChainAcross();
+
+        var atTheStep = await Close("k1", first, second);
+        var atTheFirst = await _exchange.CloseAsync(first.Id, "k2", "token-k2", [Named(first), Named(second)], Now);
+
+        Assert.Equal(QuestCloseRefusal.OtherRepository, atTheStep.Refusal);
+        Assert.Equal("other-repository", QuestCloseCodes.Of(atTheStep.Refusal));
+        Assert.StartsWith($"Quest `#{first.Id}` asks `reports`", atTheStep.Message, StringComparison.Ordinal);
+        Assert.Contains("`checker`", atTheStep.Message, StringComparison.Ordinal);
+        Assert.Equal(QuestCloseRefusal.OtherRepository, atTheFirst.Refusal);
+        Assert.StartsWith($"Quest `#{second.Id}` asks `checker`", atTheFirst.Message, StringComparison.Ordinal);
+        await NothingClosed(first, second);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1v: one graph's close is its own. A quest of the chain here bound to another graph is refused by its own code, the whole
+    /// close with it, though it is held here, submitted and unheld.
+    /// </summary>
+    [Fact]
+    public async Task A_close_naming_a_quest_bound_to_another_graph_is_refused_whole_and_writes_nothing()
+    {
+        var (first, second) = await Chain(firstGraph: "sha256:another");
+        Assert.Equal("sha256:another", first.Closure);
+
+        var refused = await Close("k1", first, second);
+
+        Assert.Equal(QuestCloseRefusal.OtherGraph, refused.Refusal);
+        Assert.Equal("other-graph", QuestCloseCodes.Of(refused.Refusal));
+        Assert.Contains($"#{first.Id}", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("sha256:another", refused.Message, StringComparison.Ordinal);
+        await NothingClosed(first, second);
     }
 
     [Fact]
@@ -447,7 +560,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
             (await _exchange.CloseAsync(quest.Id, "k1", "another-token", [Named(held)], Now)).Refusal);
         // Kept in the store: a store opened again answers it alike.
         var reopened = await QuestStore.OpenAsync(_connection);
-        var kept = await reopened.CloseAsync([Named(held)], new QuestClose("k1", "token-k1"), Now);
+        var kept = await reopened.CloseAsync(held.Id, [Named(held)], new QuestClose("k1", "token-k1"), Now);
         Assert.Equal((QuestCloseRefusal.Held, true), (kept.Refusal, kept.Replayed));
 
         var fresh = await Close("k2", held);
@@ -476,7 +589,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
     [Fact]
     public async Task A_held_submission_refuses_the_close_and_no_quest_of_the_chain_is_done()
     {
-        var first = await Bound();
+        var first = await Bound(next: "reports");
         await Ready(first);
         await Found(first);
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);

@@ -1407,6 +1407,13 @@ public sealed class QuestExchange(
 
         if (atTake) return await BindAtTakeAsync(name, graph.Trim(), session ?? "", now, ct).ConfigureAwait(false);
 
+        // FABRIC-CLOSE1v: the plain bind reads the remote map the take's bind reads (FABRIC-CLOSE1o), so neither door binds a quest whose
+        // circle syncs through a remote. An unknown id falls through to the store, which answers it as before.
+        if (await quests.FindAsync(name, ct).ConfigureAwait(false) is { } found && SyncsThroughRemote(found.Workspace))
+        {
+            return new(QuestRespondRefusal.NotInGraph, ThroughRemote(name), Quest: null);
+        }
+
         var move = await quests.BindAsync(name, graph.Trim(), now, ct).ConfigureAwait(false);
         if (move.Quest is not { } standing)
         {
@@ -1452,11 +1459,7 @@ public sealed class QuestExchange(
         }
 
         // The map sync reads, as the driver read it before naming the graph, and as the take reads it again (FABRIC-CLOSE1o).
-        if (SyncsThroughRemote(found.Workspace))
-        {
-            return new(QuestRespondRefusal.NotInGraph, $"Quest `#{name}` syncs through a remote, whose machines this host cannot say know a "
-                + "bound quest: it closes by its done. Nothing moved.", Quest: null);
-        }
+        if (SyncsThroughRemote(found.Workspace)) return new(QuestRespondRefusal.NotInGraph, ThroughRemote(name), Quest: null);
 
         var move = await quests.BindAtTakeAsync(name, graph, session.Trim(), now, ct).ConfigureAwait(false);
         if (move.Quest is not { } standing)
@@ -1498,6 +1501,10 @@ public sealed class QuestExchange(
     /// sync reads, as the driver read it before naming a graph. A circle with a remote is never bound, whoever of it is joined.
     /// </summary>
     private bool SyncsThroughRemote(string workspace) => remotes?.For(workspace) is not null;
+
+    /// <summary>Why a bind, at the take or not, is refused a quest whose circle syncs through a remote (FABRIC-CLOSE1o, CLOSE1v).</summary>
+    private static string ThroughRemote(string name) =>
+        $"Quest `#{name}` syncs through a remote, whose machines this host cannot say know a bound quest: it closes by its done. Nothing moved.";
 
     /// <summary>
     /// The agent's <c>ready</c> in a closure graph (FABRIC-CLOSE1a, §E5): its result, carrying exactly what a done carries, its
@@ -1605,7 +1612,7 @@ public sealed class QuestExchange(
         }
 
         var close = new QuestClose(key.Trim(), token.Trim());
-        var closing = await quests.CloseAsync(listed, close, now, ct).ConfigureAwait(false);
+        var closing = await quests.CloseAsync(route, listed, close, now, ct).ConfigureAwait(false);
         var on = closing.On ?? route;
         if (closing.Replayed && closing.Refusal != QuestCloseRefusal.None)
         {
@@ -1625,7 +1632,9 @@ public sealed class QuestExchange(
             QuestCloseRefusal.KeyReused => new(closing.Refusal,
                 $"Key `{close.Key}` was sent with another close already, with another token or other submissions: a key answers "
                 + "only the close it was sent with. A new attempt is sent with a new key. Nothing was closed.", closing.Quests),
-            _ => new(closing.Refusal, $"{Refused(closing.Refusal, closing.Quest!)} Nothing was closed.", closing.Quests),
+            _ => new(closing.Refusal,
+                $"{Refused(closing.Refusal, closing.Quest!, closing.Quests.FirstOrDefault(quest => quest.Id == route))} Nothing was closed.",
+                closing.Quests),
         };
     }
 
@@ -1641,6 +1650,9 @@ public sealed class QuestExchange(
         QuestCloseRefusal.Stale => $"quest `#{on}`'s current submission was not the one named.",
         QuestCloseRefusal.Held => $"quest `#{on}`'s submission was held for the person.",
         QuestCloseRefusal.Unsealed => $"quest `#{on}`'s next step was not published from its submission.",
+        QuestCloseRefusal.OtherRepository => $"quest `#{on}` asked another repository than the quest the close was at.",
+        QuestCloseRefusal.NotInChain => $"quest `#{on}` was not of the chain the quest the close was at grew from.",
+        QuestCloseRefusal.OtherGraph => $"quest `#{on}` was bound to another graph than the quest the close was at.",
         _ => $"quest `#{on}` was refused.",
     };
 
@@ -1648,9 +1660,18 @@ public sealed class QuestExchange(
     private static string Closed(IReadOnlyList<Quest> quests) =>
         string.Join(", ", quests.Select(quest => $"`#{quest.Id}` is {quest.Status}"));
 
-    /// <summary>Which of the close's checks refused it, on which quest (FABRIC-CLOSE1a, §E5 step 2).</summary>
-    private static string Refused(QuestCloseRefusal refusal, Quest quest) => refusal switch
+    /// <summary>
+    /// Which of the close's checks refused it, on which quest (FABRIC-CLOSE1a, §E5 step 2). A scope check (FABRIC-CLOSE1v) also names the
+    /// quest the close is at, <paramref name="at"/>, whose repository, chain and graph are the close's.
+    /// </summary>
+    private static string Refused(QuestCloseRefusal refusal, Quest quest, Quest? at) => refusal switch
     {
+        QuestCloseRefusal.OtherRepository => $"Quest `#{quest.Id}` asks `{quest.To}`, and the close at `#{at?.Id}` closes its chain in "
+                                             + $"`{at?.To}`: a close names only its own repository's quests, and another's graph closes its own.",
+        QuestCloseRefusal.NotInChain => $"Quest `#{quest.Id}` is not of the chain `#{at?.Id}` grew from: a close at a quest names only that "
+                                        + "quest and the ones before it in its chain.",
+        QuestCloseRefusal.OtherGraph => $"Quest `#{quest.Id}` closes through graph `{quest.Closure}`, and the close at `#{at?.Id}` closes "
+                                        + $"through `{at?.Closure}`: a close names only quests bound to its own graph.",
         QuestCloseRefusal.Closed => $"Quest `#{quest.Id}` is {quest.Status} already, by another close, the person or another machine.",
         QuestCloseRefusal.NotBound => $"Quest `#{quest.Id}` is in no graph that closes it: its taker's driver never bound it.",
         QuestCloseRefusal.NotHeld => $"Quest `#{quest.Id}` is not this machine's: it was never taken here, or another machine's take "

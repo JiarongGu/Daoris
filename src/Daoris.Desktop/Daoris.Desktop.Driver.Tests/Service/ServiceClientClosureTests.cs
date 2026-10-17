@@ -107,6 +107,25 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1v: the door's scope checks, a quest of another repository, of no chain the close's quest grew from, or bound to another
+    /// graph, are its own coded refusals, so each settles the close as refused and it is not sent again.
+    /// </summary>
+    [Theory]
+    [InlineData("other-repository")]
+    [InlineData("not-in-chain")]
+    [InlineData("other-graph")]
+    public async Task A_scope_refusal_of_the_door_settles_the_close_as_refused(string code)
+    {
+        var doors = new Doors((_, _, _) => new ServiceReply(409, $$"""{ "error": "Quest `#q6` is refused.", "code": "{{code}}" }"""));
+        using var client = new ServiceClient(doors);
+
+        var refused = await client.CloseQuestsAsync("q7", "k-1", "ctk-1", [new("q6", "desk", 40), new("q7", "desk", 41)]);
+
+        Assert.Equal((QuestCloseOutcomes.Refused, code, "Quest `#q6` is refused."), (refused.Outcome, refused.Code, refused.Message));
+        Assert.Single(doors.Asked);
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1l, the review's finding 7: an answer that is not the close door's own coded refusal proves nothing about whether its
     /// transaction committed (a proxy's 503 page, the host's 500, a bare 404 from a host restarting, a 409 naming no check), so the close is
     /// unknown, thrown as the host not answering, and the closer sends the same close again.
