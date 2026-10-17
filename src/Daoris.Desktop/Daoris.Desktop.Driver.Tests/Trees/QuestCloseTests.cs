@@ -51,7 +51,7 @@ public sealed class QuestCloseTests : IDisposable
 
         public Task<bool> KnowsClosureAsync(CancellationToken ct) => Task.FromResult(true);
 
-        public Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, CancellationToken ct)
+        public Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, string session, CancellationToken ct)
         {
             Bound.Add((id, graph));
             return Task.FromResult((true, "bound"));
@@ -589,7 +589,8 @@ public sealed class QuestCloseTests : IDisposable
         Assert.False(Directory.Exists(ClosureGraphs.FolderOf(_home)));
 
         var first = new Binds(knows: true);
-        var named = await ClosureBinding.AtStartAsync(first, DriverConfig.Parse(Closing), open, "default", remote: false, _home, CancellationToken.None);
+        var named = await ClosureBinding.AtStartAsync(
+            first, DriverConfig.Parse(Closing), open, "default", remote: false, _home, CancellationToken.None, session: "ses-q7");
         Assert.True(named!.Bound);
         Assert.Equal([("q7", digest)], first.Bound);
         Assert.Equal(digest, NodeGraphs.Digest(ClosureGraphs.Read(_home, digest)!));
@@ -612,17 +613,56 @@ public sealed class QuestCloseTests : IDisposable
 
         public List<(string Id, string Graph)> Bound { get; } = [];
 
+        /// <summary>The session each bind was named for (FABRIC-CLOSE1o).</summary>
+        public List<string> Sessions { get; } = [];
+
         public Task<bool> KnowsClosureAsync(CancellationToken ct)
         {
             Asked++;
             return Task.FromResult(knows);
         }
 
-        public Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, CancellationToken ct)
+        public Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, string session, CancellationToken ct)
         {
             Bound.Add((id, graph));
+            Sessions.Add(session);
             return Task.FromResult(ok ? (true, $"Quest `#{id}` closes through graph `{graph}`.") : (false, $"Quest `#{id}` is taken on another machine."));
         }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1o: the graph is named for the session opening, whose take alone binds it, and a start that names no session names no
+    /// graph, so its quest closes by its done. The loop's line says once, at that session's end, that its take left the quest unbound.
+    /// </summary>
+    [Fact]
+    public async Task A_start_names_its_graph_for_its_own_session_and_its_end_says_once_a_take_left_unbound()
+    {
+        var digest = Digest(Closing);
+        var open = new QuestView("q7", "game", "engine", "Ship q7", "", "Open");
+
+        var named = new Binds(knows: true);
+        var bound = await ClosureBinding.AtStartAsync(
+            named, DriverConfig.Parse(Closing), open, "default", remote: false, _home, CancellationToken.None, session: "ses-q7");
+        Assert.True(bound!.Bound);
+        Assert.Equal(["ses-q7"], named.Sessions);
+
+        var nameless = new Binds(knows: true);
+        var unnamed = await ClosureBinding.AtStartAsync(nameless, DriverConfig.Parse(Closing), open, "default", remote: false, _home, CancellationToken.None);
+        Assert.False(unnamed!.Bound);
+        Assert.Contains("session", unnamed.Said, StringComparison.Ordinal);
+        Assert.Empty(nameless.Bound);
+
+        // The take went unbound (its bind expired, say): the end's line says so, naming the graph's done; a bound take says nothing.
+        var said = ClosureBinding.UnboundAtEnd(bound, Taken("q7", null));
+        Assert.NotNull(said);
+        Assert.Contains("#q7", said, StringComparison.Ordinal);
+        Assert.Contains("done", said, StringComparison.Ordinal);
+        Assert.Null(ClosureBinding.UnboundAtEnd(bound, Taken("q7", digest)));
+        // Never taken, nothing named, or named and refused at the start: nothing to say at the end.
+        Assert.Null(ClosureBinding.UnboundAtEnd(bound, open));
+        Assert.Null(ClosureBinding.UnboundAtEnd(null, Taken("q7", null)));
+        Assert.Null(ClosureBinding.UnboundAtEnd(unnamed, Taken("q7", null)));
+        Assert.Null(ClosureBinding.UnboundAtEnd(bound, null));
     }
 
     [Fact]
@@ -651,12 +691,14 @@ public sealed class QuestCloseTests : IDisposable
 
         // A host that knows it, alone: bound once, to the graph's digest.
         var knowing = new Binds(knows: true);
-        var bound = await ClosureBinding.AtTakeAsync(knowing, DriverConfig.Parse(Closing), quest, "default", remote: false, CancellationToken.None);
+        var bound = await ClosureBinding.AtTakeAsync(
+            knowing, DriverConfig.Parse(Closing), quest, "default", remote: false, CancellationToken.None, session: "ses-q7");
         Assert.True(bound!.Bound);
         Assert.Equal([("q7", Digest(Closing))], knowing.Bound);
 
         // The service refusing the bind is said in its words, and the quest closes by its done as today.
-        var taken = await ClosureBinding.AtTakeAsync(new Binds(knows: true, ok: false), DriverConfig.Parse(Closing), quest, "default", remote: false, CancellationToken.None);
+        var taken = await ClosureBinding.AtTakeAsync(
+            new Binds(knows: true, ok: false), DriverConfig.Parse(Closing), quest, "default", remote: false, CancellationToken.None, session: "ses-q7");
         Assert.False(taken!.Bound);
         Assert.Contains("taken on another machine", taken.Said, StringComparison.Ordinal);
     }
