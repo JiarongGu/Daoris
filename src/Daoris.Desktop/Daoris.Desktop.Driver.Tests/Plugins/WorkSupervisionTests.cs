@@ -45,7 +45,25 @@ public sealed class WorkSupervisionTests : IDisposable
 
         public IReadOnlyList<string> Capabilities => capabilities;
 
-        public bool Alive { get; set; } = true;
+        private bool _alive = true;
+
+        /// <summary>Where set, it is alive for this many reads more and then exited: an exit that lands partway through a look.</summary>
+        public int? DiesAfterReads { get; set; }
+
+        public bool Alive
+        {
+            get
+            {
+                if (DiesAfterReads is { } reads)
+                {
+                    if (reads <= 0) _alive = false;
+                    else DiesAfterReads = reads - 1;
+                }
+
+                return _alive;
+            }
+            set => _alive = value;
+        }
 
         public bool Disposed { get; private set; }
 
@@ -241,6 +259,24 @@ public sealed class WorkSupervisionTests : IDisposable
         Assert.Equal(2, set.GenerationOf(Deploy));
         var told = Assert.Single(_started[1].Told);
         Assert.Equal((2, true), (told.Generation, told.Resync));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1a, round 2: a process that exits after a look has noted which had exited, and before it judges which go, is an unasked
+    /// exit all the same. It was removed uncounted and started again in the same look, so a plugin crashing on what it is told never waited.
+    /// </summary>
+    [Fact]
+    public async Task An_exit_partway_through_a_look_waits_as_any_unasked_exit()
+    {
+        await using var set = Set();
+        set.Watch(Awaiting(Unit()));
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+        _started[0].DiesAfterReads = 1;
+
+        var lines = await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+
+        Assert.Single(_started);
+        Assert.Contains(lines, line => line.Contains(Deploy, StringComparison.Ordinal) && line.Contains("1 minute", StringComparison.Ordinal));
     }
 
     [Fact]

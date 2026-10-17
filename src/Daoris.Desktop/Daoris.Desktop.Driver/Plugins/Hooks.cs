@@ -721,6 +721,10 @@ public sealed class HookSet(
                 }
                 var wasAlive = held.Channel.Alive;
                 var code = held.Channel.ExitCode;
+
+                // FABRIC-PERFORM1a, round 2: one that exited after this look noted the exits is an unasked exit all the same, its wait from
+                // now. It was removed uncounted and started again below, so a plugin crashing on what it was told never waited.
+                if (held.Work && !wasAlive && !waits.ContainsKey(id)) waits[id] = _work.Exited(id, now);
                 if (held.Work) _work.Stopped(id);
                 await held.Channel.DisposeAsync().ConfigureAwait(false);
                 var waited = waits.TryGetValue(id, out var wait);
@@ -760,6 +764,8 @@ public sealed class HookSet(
                 }
 
                 var id = plugin.Manifest.Id;
+                // Its wait asked again: an exit counted partway through this look holds it from this start.
+                if (WorkPlugins.Speaks(plugin) && !_work.MayStart(id, now)) continue;
                 var took = Stopwatch.StartNew();
                 try
                 {
