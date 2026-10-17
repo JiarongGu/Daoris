@@ -242,7 +242,9 @@ public sealed class LinesRoutes(DriverContext context)
     [OneFlight("SWEEP_PLAN")]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
+        // RPC1b3: `trees clean --workspace` takes one workspace's checkouts alone, as that workspace's Branches tab does; none takes every one.
+        var workspace = Optional(request, "workspace");
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken, workspace);
         var trees = new SessionTrees(_loop.Home);
 
         if (request.Type == "SWEEP_PLAN")
@@ -266,6 +268,17 @@ public sealed class LinesRoutes(DriverContext context)
             only = named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal);
         }
 
+        // A workspace the registry does not name is refused, naming the ones it does, rather than clean nothing and say all is well.
+        if (workspace is not null && TreesCommand.Take(
+                await (_loop.Service ?? throw NotReady()).RegistryAsync(cancellationToken), new TreesAsk(TreesLook.Clean) { Workspace = workspace }).Refusal is { } refusal)
+        {
+            return new
+            {
+                Results = Array.Empty<object>(), Landed = Array.Empty<object>(), Folders = Array.Empty<string>(), Removed = 0,
+                Said = TreesWords.Refused($"trees: {refusal}").ToWire(),
+            };
+        }
+
         var done = await trees.CleanAsync(repositories, inUse, only, cancellationToken);
         _loop.Nudge();
         return new
@@ -275,6 +288,8 @@ public sealed class LinesRoutes(DriverContext context)
             // The empty folders trees left where something held them open, each removed or still held (WSR6's first run).
             Folders = done.Folders ?? [],
             Removed = done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed),
+            // RPC1b3: what `trees clean --yes` prints, each branch removed or kept with why, and the count (§7.3).
+            Said = TreesWords.Clean(done).ToWire(),
         };
     }
 
@@ -302,7 +317,7 @@ public sealed class LinesRoutes(DriverContext context)
 
         var removal = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardAsync(service, repository, branch, force, cancellationToken);
         _loop.Nudge();
-        return new { Repository = repository, Branch = branch, Done = removal.Removed, removal.Message };
+        return new { Repository = repository, Branch = branch, Done = removal.Removed, removal.Message, Said = TreesWords.Remove(removal).ToWire() };
     }
 
     // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): CLEANUP1 keeps such a ref at any
@@ -420,15 +435,39 @@ public sealed class LinesRoutes(DriverContext context)
         // The sessions in use, asked again while each repository's trees are held for its replays (LEFT2): the
         // driver may have opened one in a listed tree between the list and this press.
         var service = _loop.Service ?? throw NotReady();
-        var done = await trees.SyncAsync(repositories, inUse, only, fetch: false, cancellationToken,
+
+        // RPC1b3: `trees sync --yes` takes the checkouts its words name, as the verb takes them, and says so where it takes none: a
+        // workspace the registry does not name, or no checkout of the repository named.
+        var ask = new TreesAsk(TreesLook.Sync) { Repository = named, Workspace = Optional(request, "workspace"), All = Flag(request, "all") };
+        if (repositories.Count == 0)
+        {
+            var taken = TreesCommand.Take(await service.RegistryAsync(cancellationToken), ask);
+            return new
+            {
+                Lines = Array.Empty<object>(), Rebases = Array.Empty<object>(), Deletes = Array.Empty<object>(), Changed = 0,
+                Apart = Array.Empty<object>(), Followed = Array.Empty<string>(),
+                Said = TreesWords.Refused(taken.Refusal is { } refusal ? $"trees: {refusal}" : TreesCommand.NothingToSync(ask)).ToWire(),
+            };
+        }
+
+        // The verb fetches as it presses (`fetch`); the page's press acts on what its list fetched, and sends none. The lines the press
+        // moved are followed by the registry at once where the verb asks (`follow`), as the page's next look would (WSSETUP5).
+        var done = await trees.SyncAsync(repositories, inUse, only, fetch: Flag(request, "fetch"), cancellationToken,
             inUseNow: async token => await InUseAsync(service, token), scope: scope);
         _loop.Nudge();
+        var followed = Flag(request, "follow")
+            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
+            : null;
         return new
         {
             Lines = done.Lines.Select(result => new { Line = Pull(result.Pull), result.Moved, result.Message }).ToArray(),
             Rebases = done.Rebases.Select(result => new { Branch = RebaseRow(result.Item), result.Replayed, result.Message }).ToArray(),
             Deletes = done.Deletes.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
             Changed = done.Lines.Count(result => result.Moved) + done.Rebases.Count(result => result.Replayed) + done.Deletes.Count(result => result.Removed),
+            // What the press left apart (WSR7, D112) and the lines the registry followed, which the verb says; the page ignores both.
+            Apart = done.Apart.Select(Repository).ToArray(),
+            Followed = followed?.Out ?? [],
+            Said = TreesWords.Sync(done, DateTimeOffset.UtcNow, followed).ToWire(),
         };
     }
 

@@ -471,11 +471,23 @@ public sealed class TreesRoutes(DriverLoop loop)
     [Publishes("DISCARD_SESSION_TREE", Discards, Session = "id")]
     private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        // RPC1b3: `trees remove <path>` names a tree by its path, where the page names its session. A tree by its path is removed as
+        // the verb removes it, and its session, where the records name one, is answered; the page's `id` is read as it always was.
+        var path = Optional(request, "path");
+        var id = path is null ? PayloadHelper.GetRequiredValue<string>(request.Payload, "id") : null;
         var force = Flag(request, "force");
 
         var service = _loop.Service ?? throw NotReady();
 
+        if (path is not null)
+        {
+            var owner = SessionBranchDoors.SessionOfTree(await SessionBranchDoors.RecordsOrNoneAsync(service, cancellationToken), path)?.Id;
+            var removed = await new SessionTrees(_loop.Home).RemoveAsync(path, force, cancellationToken);
+            _loop.Nudge();
+            return new { Session = owner, Done = removed.Removed, removed.Message, Said = TreesWords.Remove(removed).ToWire() };
+        }
+
+        id = id!;
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
         if (string.IsNullOrWhiteSpace(tree))
         {
@@ -490,7 +502,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         // `driver.json`. Derived rather than stored twice, so one answer cannot drift from the other.
         var removal = await new SessionTrees(_loop.Home).RemoveAsync(tree, force, cancellationToken);
         _loop.Nudge();
-        return new { Session = id, Done = removal.Removed, removal.Message };
+        return new { Session = id, Done = removal.Removed, removal.Message, Said = TreesWords.Remove(removal).ToWire() };
     }
 
     /// <summary>
@@ -532,8 +544,10 @@ public sealed class TreesRoutes(DriverLoop loop)
         var records = await service.SessionRecordsAsync(cancellationToken);
         // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100); what the
         // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
+        // RPC1b3: the lines also go into the answer (`said`), so a terminal that sent the press prints them as the alone path does.
+        var pluginLines = new List<string>();
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health));
+            _loop.Home, say: SayTo(pluginLines), log: _loop.Log, health: _loop.Health));
 
         // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
         // and the press refuses it.
@@ -586,6 +600,8 @@ public sealed class TreesRoutes(DriverLoop loop)
             // LANDSYNC1: what it left out, and the conflict that refused it with the words the review offers to say to the session.
             LeftOut = LeftOut(landed.LeftOut),
             Conflict = Conflict(landed.Conflict),
+            // RPC1b3: what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
+            Said = TreesWords.Land(landed, pluginLines).ToWire(),
         };
     }
 
@@ -867,28 +883,55 @@ public sealed class TreesRoutes(DriverLoop loop)
     [Publishes("HANDOFF", StateScopes.HandOff | StateScopes.Sweep, Session = "id")]
     private async Task<object?> HandOffAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        // RPC1b3: `trees hand <branch>` names a landed branch (and its repository where two hold one) where the page names a session.
+        // The page's `id` reads as it always did; a `branch` is found as the verb finds it, by the record's session or branch.
+        var branch = Optional(request, "branch");
+        var id = branch is null ? PayloadHelper.GetRequiredValue<string>(request.Payload, "id") : Optional(request, "id");
         var named = Optional(request, "plugin");
         var service = _loop.Service ?? throw NotReady();
+        // The plugin's lines go into the answer too (`said`), so a terminal that sent the press prints them as the alone path does.
+        var pluginLines = new List<string>();
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health));
+            _loop.Home, say: SayTo(pluginLines), log: _loop.Log, health: _loop.Health));
 
         // The session's newest landing: a session lands once, and a second press is refused while its branch stands.
-        var entry = trees.Recorded.Find(id).FirstOrDefault(each => string.Equals(each.Session, id, StringComparison.OrdinalIgnoreCase));
-        if (entry is null)
+        LandedBranch? entry;
+        if (id is not null && branch is null)
         {
-            return request.Type == "HANDOFF_PLAN"
-                ? new { Session = id, Branch = (string?)null }
-                : (object)new { Session = id, Done = false, Message = TreeHand.NotLanded(id), Branch = (string?)null };
+            entry = trees.Recorded.Find(id).FirstOrDefault(each => string.Equals(each.Session, id, StringComparison.OrdinalIgnoreCase));
+        }
+        else
+        {
+            var found = trees.Recorded.Find(branch ?? id!, Optional(request, "repository"));
+            var repositories = found.Select(each => each.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (repositories.Count > 1)
+            {
+                // A branch name in two repositories means the person says which, as the verb says (`--repository`).
+                var several = TreesWords.NamesSeveral(branch ?? id!, repositories);
+                return request.Type == "HANDOFF_PLAN"
+                    ? new { Session = id, Branch = (string?)null }
+                    : (object)new { Session = id, Done = false, Message = several, Branch = (string?)null, Said = TreesWords.HandRefused(several).ToWire() };
+            }
+
+            entry = found.FirstOrDefault();
         }
 
+        if (entry is null)
+        {
+            var asked = branch ?? id!;
+            return request.Type == "HANDOFF_PLAN"
+                ? new { Session = id, Branch = (string?)null }
+                : (object)new { Session = id, Done = false, Message = TreeHand.NotLanded(asked), Branch = (string?)null, Said = TreesWords.HandRefused(TreeHand.NotLanded(asked)).ToWire() };
+        }
+
+        id ??= entry.Session;
         var root = await CheckoutOfAsync(service, entry.Repository, cancellationToken);
         if (root is null)
         {
-            var none = $"`{entry.Repository}` has no checkout on this machine, so there is no `{entry.Branch}` here to hand on.";
+            var none = TreesWords.HandNoCheckout(entry.Repository, entry.Branch);
             return request.Type == "HANDOFF_PLAN"
                 ? new { Session = id, Branch = (string?)entry.Branch, entry.Repository, Plugin = (string?)null, Problem = (string?)none, entry.PullRequest, Commits = 0 }
-                : (object)new { Session = id, Done = false, Message = none, Branch = (string?)entry.Branch };
+                : (object)new { Session = id, Done = false, Message = none, Branch = (string?)entry.Branch, Said = TreesWords.HandRefused(none).ToWire() };
         }
 
         if (request.Type == "HANDOFF_PLAN")
@@ -905,8 +948,20 @@ public sealed class TreesRoutes(DriverLoop loop)
             Plugin = handed.Plugin is { } said
                 ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed }
                 : null,
+            // RPC1b3: what `trees hand` prints, the plugin's lines first, and its exit code (§7.3).
+            Said = TreesWords.Hand(handed, pluginLines).ToWire(),
         };
     }
+
+    /// <summary>
+    /// A plugin's own lines, said as they come on the loop's output under its name (D64 §4) and kept in <paramref name="lines"/> for the
+    /// answer's words (RPC1b3). A method, so the construction of a <c>LandingPlugins</c> reads whole to <c>PluginRecordWiringTests</c>.
+    /// </summary>
+    private Action<string, string> SayTo(List<string> lines) => (plugin, line) =>
+    {
+        lines.Add(TreesWords.PluginLine(plugin, line));
+        _loop.Output.Append($"plugin:{plugin}", line);
+    };
 
     /// <summary>A repository's checkout here, from the registry — or null where it has none on this machine.</summary>
     internal static async Task<string?> CheckoutOfAsync(ServiceClient service, string repository, CancellationToken cancellationToken)
