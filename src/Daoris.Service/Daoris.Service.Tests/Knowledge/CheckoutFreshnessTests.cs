@@ -11,10 +11,7 @@ public sealed class CheckoutFreshnessTests : IDisposable
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-fresh-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
-    }
+    public void Dispose() => GitCheckouts.Delete(_root);
 
     private string Write(string relative, string content)
     {
@@ -166,6 +163,32 @@ public sealed class CheckoutFreshnessTests : IDisposable
         using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: null);
 
         Write("common/refs/heads/main", "2222222222222222222222222222222222222222\n");
+        await Heard(freshness);
+    }
+
+    [Fact]
+    public async Task A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard()
+    {
+        // KNOWWALK1: `.claude/` is watched for the knowledge in it, and `.claude/worktrees/` beneath it holds every agent's
+        // checkout, written by each build and each install; none of it is this checkout's knowledge.
+        var checkout = Path.Combine(_root, "served");
+        Write("served/.gitignore", ".claude/worktrees/\n");
+        Write("served/.claude/knowledge/twins.md", "# Twins\n");
+        Write("served/.claude/worktrees/side/AGENTS.md", "# A worktree's brief\n");
+        Write("served/docs/design.md", "# The probe lock\n");
+        GitCheckouts.Init(checkout);
+        using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: null);
+        Assert.True(freshness.Watching);
+        await Task.Delay(500);
+        freshness.Take();
+
+        Write("served/.claude/worktrees/side/AGENTS.md", "# A worktree's brief, changed on its branch\n");
+        Write("served/.claude/worktrees/side/src/bin/Daoris.dll", "built");
+        Write("served/.claude/worktrees/other/AGENTS.md", "# Another agent's checkout\n");
+        await Task.Delay(1500);
+        Assert.False(freshness.IsStale, "a write under .claude/worktrees/, which git ignores, marked the reading stale");
+
+        Write("served/.claude/knowledge/twins.md", "# Twins, changed\n");
         await Heard(freshness);
     }
 

@@ -1,6 +1,8 @@
 using System.Text;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace Daoris.Knowledge.Mcp;
 
@@ -52,6 +54,31 @@ public static class KnowledgeServer
         typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),
     ];
+
+    /// <summary>
+    /// The connector's host, before its services are added: its configuration read from the folder its build is in, and no
+    /// file of it watched (KNOWWALK1).
+    /// </summary>
+    /// <remarks>
+    /// The generic host's defaults take the working folder for the content root and watch it, with everything below it, for
+    /// <c>appsettings.json</c> to change; and the framework's watcher walks the whole of each folder renamed anywhere beneath.
+    /// A session starts its connector in its checkout, so each connector heard every write in the checkout, its ignored trees
+    /// too, and walked each folder a build, an install or a rehearsal's swap renamed there, holding the folders it walked
+    /// while the next move of the swap was refused (DEPLOYBUSY1 named the connector). The connector reads no settings file:
+    /// a repository's own <c>appsettings.json</c> is that repository's, never this host's, and the build's folder is where one
+    /// of the connector's own would be. Nothing reloads it.
+    /// </remarks>
+    public static HostApplicationBuilder HostBuilder(string[] args)
+    {
+        var configuration = new ConfigurationManager();
+        configuration.AddInMemoryCollection([new("hostBuilder:reloadConfigOnChange", "false")]);
+        return Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+        {
+            Args = args,
+            ContentRootPath = AppContext.BaseDirectory,
+            Configuration = configuration,
+        });
+    }
 
     /// <summary>
     /// Registers every class in <see cref="ToolTypes"/>, and the workspace scope the search and quest tools share, which is
