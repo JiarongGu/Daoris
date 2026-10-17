@@ -128,9 +128,12 @@ public sealed class QuestCloseTests : IDisposable
                         Links = [new WorkLink(WorkRelation.ProducedBy, "quest:" + branch.Value.Quest)],
                     }),
                 ],
-                new Dictionary<string, string> { ["engine"] = "checkout" }));
+                new Dictionary<string, string> { ["engine"] = "checkout" }) { Tips = _tips is null ? null : new Dictionary<string, string?>(_tips) });
         },
     };
+
+    /// <summary>What git answered of each branch's tip at a read (FABRIC-CLOSE1p), by its unit's id; null, a read that asked no git.</summary>
+    private Dictionary<string, string?>? _tips;
 
     private NodeRecord Record(string unit = Unit) => Files.Read(unit)!;
 
@@ -295,6 +298,34 @@ public sealed class QuestCloseTests : IDisposable
         await runtime.PassAsync(Look(Closing), CancellationToken.None);
         Assert.Single(_door.Sent);
         Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1p: a branch whose tip git did not answer at the read right before the close leaves the close waiting, said naming the branch,
+    /// and read once per pass; once git answers it, the close is sent.
+    /// </summary>
+    [Fact]
+    public async Task A_branch_tip_git_did_not_answer_leaves_the_close_waiting_until_it_does()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        _branches["daoris/q7"] = ("q7", "c1");
+        _tips = new() { ["branch:engine/daoris/q7"] = "c1" };
+        // The fresh read right before the close finds git could not say where the branch stands.
+        _onRead = read =>
+        {
+            if (read == 2) _tips["branch:engine/daoris/q7"] = null;
+        };
+        var runtime = Runtime();
+
+        var waiting = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Empty(_door.Sent);
+        Assert.Equal(2, _reads);
+        Assert.Single(waiting.Said, line => line.Contains("git did not say where `daoris/q7`", StringComparison.Ordinal));
+
+        _onRead = null;
+        _tips["branch:engine/daoris/q7"] = "c1";
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Single(_door.Sent);
     }
 
     /// <summary>FABRIC-CLOSE1l, the review's finding 6: a graph edited since a quest was bound leaves it closed by the graph it was bound to.</summary>

@@ -13,7 +13,15 @@ public interface IWorkRuntimePort : IWorkPerformPort
 }
 
 /// <summary>The units a pass reads (<see cref="WorkUnits"/>), and each repository's checkout here, which the awaited set names.</summary>
-public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDictionary<string, string> Roots);
+public sealed record NodeUnitsRead(IReadOnlyList<WorkUnit> Units, IReadOnlyDictionary<string, string> Roots)
+{
+    /// <summary>
+    /// The tip of each branch a bound quest's chain worked, as git answered this one read (FABRIC-CLOSE1p, <see cref="QuestClosing.TipsAsync"/>),
+    /// by the branch unit's id: a commit, empty where the branch is not there, null where git did not say. What a closing quest's revision digests
+    /// (<see cref="QuestClosing.Revision"/>). Null where the read asked no git at all, and a branch's revision is its record's.
+    /// </summary>
+    public IReadOnlyDictionary<string, string?>? Tips { get; init; }
+}
 
 /// <summary>
 /// One pass's reading (FABRIC-RUN1): the standing choices, whether it is the look's deadline (every governed unit judged) or a wake (only
@@ -178,7 +186,8 @@ public sealed class NodeRuntime(
                 }
 
                 // Its revision is its chain's and its branches' (the review's findings 5 and 8), so a commit or an ancestor's move lapses it.
-                if (closes) unit = unit with { Subject = unit.Subject with { Revision = QuestClosing.Revision(quest, quests, read.Units) } };
+                // FABRIC-CLOSE1p: the branches' tips as git answered this read, never their records' kept revisions.
+                if (closes) unit = unit with { Subject = unit.Subject with { Revision = QuestClosing.Revision(quest, quests, read.Units, read.Tips) } };
             }
 
             if (graph is null || (!Performs(graph) && !closes)) continue;
@@ -370,6 +379,10 @@ public sealed class NodeRuntime(
                     var closed = await CloseAsync(governed, node, start, evaluated.Statuses[start.Node], sends, said, units, ct).ConfigureAwait(false);
                     if (closed is not null) done.Add(closed);
                     started |= closed is { What: not PerformedWhat.Refused };
+
+                    // FABRIC-CLOSE1p: a fence that found the unit moved (CloseAsync dropped what this pass governs) ends its judgement here: the
+                    // next pass reads it again, and no further round reads git again only to find the same stale revision.
+                    if (_governed is null) return;
                 }
                 else if (node.Reach == NodeReach.Observed && BuiltInNodes.Observed.Contains(node.Kind))
                 {
@@ -416,12 +429,14 @@ public sealed class NodeRuntime(
         // FABRIC-CLOSE1l, the review's finding 5 (§E5 step 1): git (each branch's tip, a fresh read of its refs), the binding and the chain
         // are read again right before the close. The same revision means every prerequisite acceptance bound to it still stands, since this
         // loop is the record's one writer; another means a commit, a submission or a hold moved since the evaluation, and the close waits for
-        // the next pass to judge it on what is there now.
+        // the next pass to judge it on what is there now. FABRIC-CLOSE1p: the tips are this read's own snapshot, and one git did not answer
+        // leaves the close waiting.
         var again = await units(ct).ConfigureAwait(false);
         var quests = Quests(again);
         var stale = !quests.TryGetValue(quest.Id, out var now) ? "its quest was not read again"
             : !string.Equals(now.Closure, governed.GraphDigest, StringComparison.Ordinal) ? "its binding moved"
-            : QuestClosing.Revision(now, quests, again.Units) != governed.Unit.Subject.Revision ? "its chain or a branch it worked moved since it was judged"
+            : QuestClosing.Unread(now, quests, again.Units, again.Tips) is { } unread ? $"git did not say where `{unread}`, a branch it worked, stands"
+            : QuestClosing.Revision(now, quests, again.Units, again.Tips) != governed.Unit.Subject.Revision ? "its chain or a branch it worked moved since it was judged"
             : !QuestClosing.Judge(now, quests).Named.SequenceEqual(judged.Named) ? "what it would close moved"
             : null;
         if (stale is not null)
