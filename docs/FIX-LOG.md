@@ -2805,6 +2805,24 @@ process costs a class.
 *`MaxParallelThreads` 6 and 8* on the same four classes after: 514 s at 59% and 383 s at 64%. Four classes cannot run
 more than four at once, so these are two more runs of one setting, and the knee is unmeasured. The setting stays at four.
 
+**A repository copied from a seed (PROC1h, 2026-10-18).** `LandedFixture.RepositoryAsync` and `RepositoryWithOriginAsync` (284 and 73
+calls of `"engine"` in the driver's tests, the shape every other name follows) made each test's repositories with `init`, two
+`config`, a commit, and for an origin a bare `init`, `remote add` and `push`. `GitSeed` builds a shape once per test run, at its first
+asker (a lazy task per shape, so the git half's four classes at once in one host share it), in `_fixtures/seeds/<run>` removed at the
+host's exit, and a test's own repositories are plain file copies of it: files keep their times, a `.git/worktrees` folder is not
+copied, hooks and config come as the seed had them, and the origin's one `url` line is written again as the copy's own bare
+repository. No git runs in a copy. `BuildRepositoryAsync(name)` is the old step by step build, for a test that reads a fresh
+repository's commit ids or times; none in the classes run needed it, so none uses it yet. The seed's one commit is the same id in
+every copy. `GitSeedTests` (3, no git) holds the copy, the repair and the one build. *Measured* on `LandedReviewTests`,
+`LandedBranchTests`, `ContentHeldTests` and `ReviewBaseTests` (35 tests, `git.process.runsettings`, `DAORIS_HOME` on scratch, from
+PowerShell, one run each before and after, wall including the build): fixture starts (`FixtureSpawns`) 437 → 258, with `init` 42 →
+0, `config` 66 → 0, `remote` 9 → 0 and `push` 20 → 12 (the others a test's own); the starts' own run times summed over the four
+classes 264 s → 239 s; wall 409 s at a mean 64% CPU (26 samples, 15 s apart, other worktrees' builds beside) → 403 s at 56% (25
+samples); test time 5 m 56 s → 6 m 7 s; all 35 passed both times. *So* the saving is real in starts (41%) and small in the wall: at
+four classes at once the wall is the longest class's product starts, and a run varies by more than the 6 s. `LandedProofTests`,
+`LandedKeepTests`, `LandingSquashTests` and `ContentOfferTests` (24 tests) passed on the copies too. `BranchTidyingFixture` and
+`LandingPluginFixture` keep their own builds: their classes were not run, and the plugin's shape differs (no push, another README); a row below takes them.
+
 **The driver's Process half runs as two (PROC1b, PROC1c, 2026-10-15; a note on MOD8's rule).** A Process class that starts
 git and nothing a neighbour's load could fail also carries `Parallel=Git` (`Category.cs` says which may, `CategoryTests`
 holds the trait and the environment), and gate `driver-process-git` runs those classes four at once in one host
