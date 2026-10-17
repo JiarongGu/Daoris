@@ -233,7 +233,11 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
             // FABRIC-RUN1e: one count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
             var done = new List<WorkPerformed>();
-            done.AddRange(_performer.Hear(port.TakeSteps(), Declared));
+            // FABRIC-PERFORM1c: a completion is believed only for a node its plugin still declares under the cycle governing its unit (§C4's
+            // second rule), on that unit as the plugins are told it now (the third and fourth).
+            NodeDeclaration? Performed(string unit, string node) =>
+                governed.TryGetValue(unit, out var each) && each.Dispatchable.Contains(node) ? each.Declared[node] : null;
+            done.AddRange(_performer.Hear(port.TakeSteps(), Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
 

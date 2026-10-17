@@ -77,7 +77,18 @@ public sealed class WorkPerformerTests : IDisposable
         }
 
         public int? GenerationOf(string plugin) => Generation;
+
+        /// <summary>The frames not believed, by plugin and code (FABRIC-PERFORM1c): what the hook set counts as <c>plugin.step</c> lines.</summary>
+        public List<(string Plugin, string Code)> Refusals { get; } = [];
+
+        public void Refused(string plugin, string code) => Refusals.Add((plugin, code));
     }
+
+    /// <summary>The unit's revision as the runtime last read it (FABRIC-PERFORM1c): a test moves it, as a new tip moves a branch.</summary>
+    private string _revision = Tip;
+
+    /// <summary>The unit as Daoris tells its plugin about it: the one a completion must name, at its current revision.</summary>
+    private WatchedUnit? Watched(string unit) => unit == Unit ? new WatchedUnit("engine", "default", "checkout", "", _revision, null, null, []) : null;
 
     private NodeRecordFiles Files => new(_home, () => _held);
 
@@ -186,7 +197,7 @@ public sealed class WorkPerformerTests : IDisposable
         await StartAsync(performer);
         var invocation = Assert.Single(_port.Sent).Call.Invocation;
 
-        var heard = performer.Hear([Heard(invocation, Reached), Heard(invocation, Reached, id: "e2")], Declared);
+        var heard = performer.Hear([Heard(invocation, Reached), Heard(invocation, Reached, id: "e2")], Declared, Watched);
 
         Assert.Equal([PerformedWhat.Applied, PerformedWhat.Replay], heard.Select(each => each.What));
         Assert.Equal(NodeStates.Reached, Status().State);
@@ -203,17 +214,17 @@ public sealed class WorkPerformerTests : IDisposable
         var invocation = Assert.Single(_port.Sent).Call.Invocation;
         _port.Generation = 2;
 
-        var stale = Assert.Single(performer.Hear([Heard(invocation, Reached, generation: 1)], Declared));
+        var stale = Assert.Single(performer.Hear([Heard(invocation, Reached, generation: 1)], Declared, Watched));
         Assert.Equal((PerformedWhat.NotTaken, WorkRefusals.NotSender), (stale.What, stale.Code));
         Assert.Equal(NodeStates.Active, Status().State);
 
-        var other = Assert.Single(performer.Hear([new WorkStepHeard("other.plugin", 2, Heard(invocation, Reached).Step)], Declared));
+        var other = Assert.Single(performer.Hear([new WorkStepHeard("other.plugin", 2, Heard(invocation, Reached).Step)], Declared, Watched));
         Assert.Equal((PerformedWhat.NotTaken, WorkRefusals.NotSender), (other.What, other.Code));
 
-        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation, Reached, generation: 2)], Declared)).What);
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation, Reached, generation: 2)], Declared, Watched)).What);
         Assert.Equal(NodeStates.Reached, Status().State);
-        Assert.Equal(PerformedWhat.Replay, Assert.Single(performer.Hear([Heard(invocation, Reached, generation: 2, id: "e3")], Declared)).What);
-        var none = Assert.Single(performer.Hear([Heard("i-unknown", Reached, generation: 2)], Declared));
+        Assert.Equal(PerformedWhat.Replay, Assert.Single(performer.Hear([Heard(invocation, Reached, generation: 2, id: "e3")], Declared, Watched)).What);
+        var none = Assert.Single(performer.Hear([Heard("i-unknown", Reached, generation: 2)], Declared, Watched));
         Assert.Equal((PerformedWhat.NotTaken, WorkPerformer.NotAttempt), (none.What, none.Code));
     }
 
@@ -224,7 +235,7 @@ public sealed class WorkPerformerTests : IDisposable
         await StartAsync(performer);
         var first = Assert.Single(_port.Sent).Call;
 
-        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(first.Invocation, new(WorkStates.Failed, Code: "unavailable"))], Declared)).What);
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(first.Invocation, new(WorkStates.Failed, Code: "unavailable"))], Declared, Watched)).What);
         Assert.Equal((NodeStates.Failed, true), (Status().State, Status().Transient));
         Assert.Equal(_now.AddSeconds(30), Record().Invoked(first.Invocation)!.RetryAt);
 
@@ -251,7 +262,7 @@ public sealed class WorkPerformerTests : IDisposable
         await StartAsync(performer);
         var call = Assert.Single(_port.Sent).Call;
 
-        performer.Hear([Heard(call.Invocation, new(WorkStates.Failed, Code: "denied"))], Declared);
+        performer.Hear([Heard(call.Invocation, new(WorkStates.Failed, Code: "denied"))], Declared, Watched);
         _now = _now.AddHours(1);
 
         Assert.Empty(Performer().Due(Declared));
@@ -374,7 +385,7 @@ public sealed class WorkPerformerTests : IDisposable
         };
 
         var sending = performer.StartAsync(Deploy, start, CancellationToken.None);
-        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation!, Reached)], Declared)).What);
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation!, Reached)], Declared, Watched)).What);
         receipt.SetResult();
         await sending;
 
@@ -395,7 +406,7 @@ public sealed class WorkPerformerTests : IDisposable
         // A restart asks after the attempt sent by the loop that ended; its outcome is heard while the question is out.
         var again = Performer();
         var reconciling = again.ReconcileAsync(Declared, CancellationToken.None);
-        Assert.Equal(PerformedWhat.Applied, Assert.Single(again.Hear([Heard(invocation, Reached)], Declared)).What);
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(again.Hear([Heard(invocation, Reached)], Declared, Watched)).What);
         answer.SetResult();
         await reconciling;
 
@@ -425,7 +436,7 @@ public sealed class WorkPerformerTests : IDisposable
         Assert.Empty(_port.Asked);
 
         // Its late completion is still taken, as a stale attempt's: it settles the attempt and lifts the gate.
-        Assert.Equal(PerformedWhat.Stale, Assert.Single(Performer().Hear([Heard(sent.Invocation, Reached)], Declared)).What);
+        Assert.Equal(PerformedWhat.Stale, Assert.Single(Performer().Hear([Heard(sent.Invocation, Reached)], Declared, Watched)).What);
         Assert.Null(Status().Unreconciled);
         Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (Record().Attempts[0].State, Record().Attempts[0].Outcome));
     }
@@ -435,16 +446,138 @@ public sealed class WorkPerformerTests : IDisposable
     {
         var performer = Performer();
         await StartAsync(performer);
-        performer.Hear([Heard(_port.Sent[0].Call.Invocation, new(WorkStates.Failed, Code: "denied"))], Declared);
+        performer.Hear([Heard(_port.Sent[0].Call.Invocation, new(WorkStates.Failed, Code: "denied"))], Declared, Watched);
 
         // The person asks for a new attempt: its tries count afresh while its attempt number grows.
         Move(new NodeMove(NodeStates.Ready, NodeCause.Person));
         await StartAsync(performer);
         Assert.Equal((2, 1), (Status().Attempt, Status().Tries));
         var second = _port.Sent[1].Call.Invocation;
-        performer.Hear([Heard(second, new(WorkStates.Failed, Code: "unavailable"))], Declared);
+        performer.Hear([Heard(second, new(WorkStates.Failed, Code: "unavailable"))], Declared, Watched);
 
         // Its first retry waits the first delay (30 s), not the second (60 s) its lifetime number would index.
         Assert.Equal(_now.AddSeconds(30), Record().Invoked(second)!.RetryAt);
+    }
+
+    [Fact]
+    public async Task A_reach_whose_evidence_is_not_of_its_declared_schema_is_held_and_reaches_nothing()
+    {
+        // FABRIC-PERFORM1c: the evidence is the plugin's reference at the schema the node declares, never stamped with it.
+        _deploy = Deploy with { Evidence = "acme.deploy/receipt@1" };
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Assert.Single(_port.Sent).Call.Invocation;
+
+        var other = Assert.Single(performer.Hear(
+            [Heard(invocation, new(WorkStates.Reached, Evidence: new WorkEvidence("acme.deploy/log@1:l1", null, null, "deployed")))], Declared, Watched));
+        Assert.Equal((PerformedWhat.Held, NodeRefusal.NoEvidence), (other.What, other.Code));
+        Assert.Equal(NodeStates.Active, Status().State);
+
+        var none = Assert.Single(performer.Hear([Heard(invocation, new(WorkStates.Reached), id: "e2")], Declared, Watched));
+        Assert.Equal((PerformedWhat.Held, NodeRefusal.NoEvidence), (none.What, none.Code));
+        Assert.Equal(NodeStates.Active, Status().State);
+
+        // Its declared schema's reference reaches it, kept as the plugin's word.
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation, Reached, id: "e3")], Declared, Watched)).What);
+        var evidence = Status().Acceptance!.Evidence!;
+        Assert.Equal(("acme.deploy/receipt@1", "acme.deploy/receipt@1:r1"), (evidence.Schema, evidence.Ref));
+    }
+
+    [Fact]
+    public async Task A_completion_not_believed_moves_nothing_and_is_counted_by_its_code()
+    {
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Assert.Single(_port.Sent).Call.Invocation;
+        WorkStepHeard Frame(string step = "deploy", DateTimeOffset? at = null, string? repository = null, string? commit = null) =>
+            new(Plugin, 1, new WorkStepFrame(step, Reached, at ?? _now, "e1", repository, null, commit, invocation));
+
+        var refused = performer.Hear(
+            [Frame("notify"), Frame(repository: "other"), Frame(commit: new string('f', 40)), Frame(at: _now.AddMinutes(2)), Heard("i-unknown", Reached)],
+            Declared, Watched);
+
+        Assert.Equal(
+            [WorkRefusals.NotNamed, WorkRefusals.NotWatched, WorkRefusals.Stale, WorkRefusals.Shape, WorkPerformer.NotAttempt], refused.Select(done => done.Code));
+        Assert.All(refused, done => Assert.Equal(PerformedWhat.NotTaken, done.What));
+        Assert.Equal((NodeStates.Active, AttemptStates.Sent), (Status().State, Assert.Single(Record().Attempts).State));
+        Assert.Equal(refused.Select(done => (Plugin, done.Code!)), _port.Refusals);
+    }
+
+    [Fact]
+    public async Task A_completion_heard_after_its_work_moved_settles_its_attempt_as_a_stale_ones_and_reaches_nothing()
+    {
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Assert.Single(_port.Sent).Call.Invocation;
+
+        // The unit moved on (a new tip) before the completion of the attempt dispatched on the old one was heard.
+        _revision = new string('f', 40);
+        var heard = Assert.Single(performer.Hear([Heard(invocation, Reached)], Declared, Watched));
+
+        Assert.Equal((PerformedWhat.Stale, WorkRefusals.Stale), (heard.What, heard.Code));
+        var status = Status();
+        Assert.Equal((NodeStates.Invalidated, (int?)null), (status.State, status.Unreconciled));
+        Assert.Null(status.Acceptance);
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (attempt.State, attempt.Outcome));
+    }
+
+    [Fact]
+    public async Task Another_outcome_after_one_is_kept_is_late_and_the_same_one_a_replay()
+    {
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Assert.Single(_port.Sent).Call.Invocation;
+        performer.Hear([Heard(invocation, Reached)], Declared, Watched);
+
+        var late = Assert.Single(performer.Hear([Heard(invocation, new(WorkStates.Failed, Code: "denied"), id: "e2")], Declared, Watched));
+
+        Assert.Equal((PerformedWhat.NotTaken, WorkRefusals.Late), (late.What, late.Code));
+        Assert.Equal(PerformedWhat.Replay, Assert.Single(performer.Hear([Heard(invocation, Reached, id: "e3")], Declared, Watched)).What);
+        Assert.Equal(NodeStates.Reached, Status().State);
+        Assert.Equal([(Plugin, WorkRefusals.Late)], _port.Refusals);
+    }
+
+    /// <summary>A build whose artifact a deploy takes as its release (FABRIC-PERFORM1c): a data wire, read from the build's acceptance.</summary>
+    private static readonly NodeGraph Pipeline = NodeGraphs.Read("""
+        { "schemaVersion": 2, "entries": ["build"], "end": "deploy",
+          "nodes": [
+            { "id": "build", "kind": "acme.deploy/build", "version": 1, "reach": "performed", "outputs": { "artifact": "acme.deploy/artifact@1" } },
+            { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "inputs": { "release": "acme.deploy/artifact@1" } } ],
+          "wires": [{ "id": "w1", "kind": "data", "from": "build.artifact", "to": "deploy.release" }] }
+        """).Graph!;
+
+    [Fact]
+    public async Task A_start_whose_input_is_no_longer_its_producers_current_output_is_refused_and_nothing_is_sent()
+    {
+        var nodes = Pipeline.Nodes.Select(node => node with { Perform = Deploy.Perform }).ToList();
+        var performer = Performer();
+        NodeDeclaration? Of(string unit, string id) => nodes.FirstOrDefault(node => node.Id == id);
+        WireEvaluated Evaluated()
+        {
+            var record = Files.Read(Unit) ?? new NodeRecord(Unit);
+            var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(Unit, node.Id), StringComparer.Ordinal);
+            var evaluated = WireEvaluation.Evaluate(nodes, Pipeline.Wires, before, Run(record));
+            performer.Keep(before, evaluated);
+            return evaluated;
+        }
+
+        await performer.StartAsync(nodes[0], Assert.Single(Evaluated().Starts), CancellationToken.None);
+        var build = Assert.Single(_port.Sent).Call.Invocation;
+        var outputs = new Dictionary<string, WorkOutput> { ["artifact"] = new("acme.deploy/artifact@1:a1", null) };
+        performer.Hear([new(Plugin, 1, new WorkStepFrame("build", new(WorkStates.Reached, Outputs: outputs), _now, "e1", Invocation: build))], Of, Watched);
+        var start = Assert.Single(Evaluated().Starts);
+        Assert.Equal("acme.deploy/artifact@1:a1", start.Move.Binding!.Inputs["release"].Ref);
+
+        // Between the evaluation and the dispatch, the build's acceptance stops being current.
+        var record = Record();
+        var lapsed = NodeLifecycle.Apply(nodes[0], record.Statuses["build"], new NodeMove(NodeStates.Invalidated, NodeCause.Daoris));
+        Files.Write(record with { Statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal) { ["build"] = lapsed.Status } });
+
+        var refused = await performer.StartAsync(nodes[1], start, CancellationToken.None);
+
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.StaleInput), (refused.What, refused.Code));
+        Assert.Single(_port.Sent);
+        Assert.Equal(NodeStates.Ready, Record().Statuses["deploy"].State);
     }
 }

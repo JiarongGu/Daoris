@@ -373,6 +373,14 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// reconciliation establishes how that attempt ended, no new attempt starts, whatever moved the node off it (FABRIC-NODE1c).
     /// </summary>
     public bool Dispatches => Reach is NodeReach.Performed or NodeReach.Waited;
+
+    /// <summary>
+    /// Whether a plugin's frame, once §C4's belief rules hold, is itself the reach (FABRIC-PERFORM1c; §C4's trust, §E2's authority by kind): a
+    /// plugin's own node alone, its evidence kept as the plugin's word (D143). <c>pushed</c> needs Daoris's own reading of git's
+    /// remote-tracking ref beside the plugin's answer, and <c>pull-request</c> the plugin's answer to Daoris's own ask (<c>work/state</c>, with
+    /// D148 point 4's checks) kept on the landing, so a frame naming either is never their outcome; nor is it git's, a person's or a record's.
+    /// </summary>
+    public bool OnPluginWord => ReachBy == NodeSource.Plugin && NodeKinds.IsPlugin(Kind);
 }
 
 /// <summary>The authority by kind (§E2): the built-ins' table, and a plugin's own node's from its declaration.</summary>

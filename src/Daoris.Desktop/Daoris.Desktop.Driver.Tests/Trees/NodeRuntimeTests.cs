@@ -136,9 +136,83 @@ public sealed class NodeRuntimeTests : IDisposable
         Steps = () =>
         {
             Interlocked.Increment(ref _stepsRead);
-            return [Step];
+            return [Step, Build];
         },
     };
+
+    /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>
+    private static readonly NodeDeclaration Build = Step with { Id = Plugin + "/build", Kind = Plugin + "/build" };
+
+    /// <summary>
+    /// A repository's quests governed by a build whose artifact the deploy takes (FABRIC-PERFORM1c): a <c>data</c> wire, read from the build's
+    /// accepted output, its evidence the plugin's receipt.
+    /// </summary>
+    private const string Pipeline = """
+        { "workCycles": { "engine": { "quest": {
+            "schemaVersion": 2, "entries": ["build"], "end": "deploy",
+            "nodes": [
+              { "id": "build", "kind": "acme.deploy/build", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1",
+                "outputs": { "artifact": "acme.deploy/artifact@1" } },
+              { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "inputs": { "release": "acme.deploy/artifact@1" } } ],
+            "wires": [{ "id": "w1", "kind": "data", "from": "build.artifact", "to": "deploy.release" }] } } } }
+        """;
+
+    /// <summary>The build's completion for its attempt still waiting, with its receipt as evidence and its artifact as its output.</summary>
+    private WorkStepHeard Built(string evidence, string artifact) =>
+        new(Plugin, 1, new WorkStepFrame("build", new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence(evidence, null, null, "built"),
+            Outputs: new Dictionary<string, WorkOutput> { ["artifact"] = new(artifact, null) }), _now, "e-" + artifact,
+            Invocation: Assert.Single(Record().Attempts, attempt => attempt.Node == "build" && attempt.State != AttemptStates.Settled).Call.Invocation));
+
+    [Fact]
+    public async Task A_reach_on_evidence_not_authorised_starts_nothing_downstream_and_an_authorised_ones_output_is_read_by_the_next_node()
+    {
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+        Assert.Equal([Plugin + "/build"], _port.Sent.Select(call => call.Step));
+
+        // A receipt of another schema than the build declares: not its evidence, so the build is held and the deploy never starts.
+        _port.Heard.Enqueue(Built("acme.deploy/log@1:l1", "acme.deploy/artifact@1:a1"));
+        var held = await runtime.PassAsync(Look(Pipeline, whole: false), CancellationToken.None);
+        await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+
+        Assert.Contains(held.Performed, done => (done.Node, done.What, done.Code) == ("build", PerformedWhat.Held, NodeRefusal.NoEvidence));
+        Assert.Equal(NodeStates.Active, Record().Statuses["build"].State);
+        Assert.Single(_port.Sent);
+
+        // The build's own receipt: reached, and its accepted artifact is the deploy's release.
+        _port.Heard.Enqueue(Built("acme.deploy/receipt@1:b1", "acme.deploy/artifact@1:a1"));
+        await runtime.PassAsync(Look(Pipeline, whole: false), CancellationToken.None);
+
+        Assert.Equal(NodeStates.Reached, Record().Statuses["build"].State);
+        var deploy = Assert.Single(_port.Sent, call => call.Step == Plugin + "/deploy");
+        Assert.Equal(["acme.deploy/artifact@1:a1"], deploy.Inputs);
+    }
+
+    [Fact]
+    public async Task An_output_accepted_on_a_revision_the_work_has_moved_past_is_never_read()
+    {
+        // A revision the test moves, as a new tip moves a branch: the runtime reads every unit's revision alike.
+        _units = [Quest with { Subject = new WorkSubject("#q7", "r1") }];
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+
+        // The work moves to r2 before the build's completion on r1 is heard: its outcome is a stale attempt's, and the build starts again.
+        _units = [Quest with { Subject = new WorkSubject("#q7", "r2") }];
+        _port.Heard.Enqueue(Built("acme.deploy/receipt@1:b1", "acme.deploy/artifact@1:a1"));
+        var moved = await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+
+        Assert.Contains(moved.Performed, done => (done.Node, done.What, done.Code) == ("build", PerformedWhat.Stale, WorkRefusals.Stale));
+        Assert.DoesNotContain(_port.Sent, call => call.Step == Plugin + "/deploy");
+        Assert.Equal(["r1", "r2"], _port.Sent.Select(call => call.SubjectRevision));
+
+        // The build on r2 reaches: the deploy reads its artifact, never r1's.
+        _port.Heard.Enqueue(Built("acme.deploy/receipt@1:b2", "acme.deploy/artifact@1:a2"));
+        await runtime.PassAsync(Look(Pipeline, whole: false), CancellationToken.None);
+
+        var deploy = Assert.Single(_port.Sent, call => call.Step == Plugin + "/deploy");
+        Assert.Equal(["acme.deploy/artifact@1:a2"], deploy.Inputs);
+        Assert.Equal("r2", deploy.SubjectRevision);
+    }
 
     private NodeRecord Record() => Files.Read(Unit)!;
 

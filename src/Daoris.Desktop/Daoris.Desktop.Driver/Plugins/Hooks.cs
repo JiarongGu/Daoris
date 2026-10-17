@@ -891,6 +891,12 @@ public sealed class HookSet(
     /// </summary>
     public IReadOnlyList<WorkStepHeard> TakeSteps() => _work.TakeSteps();
 
+    /// <summary>
+    /// A step event the performer did not believe (FABRIC-PERFORM1c, §C4's belief codes): counted with the transport's refusals, a
+    /// <c>plugin.step</c> line of plugin, code and count at most once a minute per plugin and code, never the frame's words.
+    /// </summary>
+    public void Refused(string plugin, string code) => _work.Refused(plugin, code);
+
     /// <summary>The generation of the plugin's work process while one is up and listened to, else null.</summary>
     public int? GenerationOf(string plugin) => _work.GenerationOf(plugin);
 
