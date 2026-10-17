@@ -381,6 +381,13 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// D148 point 4's checks) kept on the landing, so a frame naming either is never their outcome; nor is it git's, a person's or a record's.
     /// </summary>
     public bool OnPluginWord => ReachBy == NodeSource.Plugin && NodeKinds.IsPlugin(Kind);
+
+    /// <summary>
+    /// Whether the person may settle an attempt whose outcome nothing else establishes (FABRIC-PERFORM1g; §D6, <i>unknown stops the step,
+    /// and the person sees it</i>): a plugin's performed node alone, whose attempt the performer holds when reconciliation cannot say. Its
+    /// <c>unknown → reached</c> and <c>unknown → failed</c> by the person are the person's word, never the plugin's (<see cref="NodeSource.Person"/>).
+    /// </summary>
+    public bool PersonSettles => Reach == NodeReach.Performed && NodeKinds.IsPlugin(Kind);
 }
 
 /// <summary>The authority by kind (§E2): the built-ins' table, and a plugin's own node's from its declaration.</summary>

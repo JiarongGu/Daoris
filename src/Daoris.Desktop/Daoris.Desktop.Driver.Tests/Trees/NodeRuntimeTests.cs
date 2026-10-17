@@ -572,4 +572,99 @@ public sealed class NodeRuntimeTests : IDisposable
         Assert.Single(_port.Sent);
         Assert.Empty(_port.Told);
     }
+
+    /// <summary>A sent attempt held for the person: the next loop asks after it, and its plugin cannot say (§D6's <c>unknown</c>).</summary>
+    private async Task<(NodeRuntime Runtime, WorkPerformCall Sent)> HeldAsync()
+    {
+        await Runtime().PassAsync(Look(Governed), CancellationToken.None);
+        var sent = Assert.Single(_port.Sent);
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        Assert.Equal(AttemptStates.Held, Assert.Single(Record().Attempts).State);
+        return (runtime, sent);
+    }
+
+    /// <summary>The person's door: a performer over the same records, which asks the lease inside the record's lock.</summary>
+    private WorkPerformer Door(bool holdsLease = true) => new(new NodeRecordFiles(_home, () => holdsLease), _port, () => _now);
+
+    /// <summary>
+    /// FABRIC-PERFORM1g: a held attempt is listed with its node, its attempt and why, and keeps its gate across passes; the person's *it did
+    /// not* settles it as theirs (failed, never the plugin's word), and the node starts again as a new attempt with a new key.
+    /// </summary>
+    [Fact]
+    public async Task A_held_attempt_is_listed_and_the_persons_did_not_restarts_it_with_a_new_key()
+    {
+        var (runtime, sent) = await HeldAsync();
+
+        var held = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((Unit, "deploy", 1, Plugin, ReconcileStates.Unknown, NodeStates.Unknown, (string?)null),
+            (held.Unit, held.Node, held.Attempt, held.Plugin, held.Why, held.NodeState, held.Resolution));
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        Assert.Single(_port.Sent);
+
+        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.DidNot).What);
+        Assert.Equal(HeldResolutions.DidNot, Assert.Single(HeldAttempts.Read(Files)).Resolution);
+        var pass = await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+
+        Assert.Contains(pass.Performed, done => done.What == PerformedWhat.Resolved);
+        Assert.Equal(2, _port.Sent.Count);
+        Assert.NotEqual(sent.IdempotencyKey, _port.Sent[1].IdempotencyKey);
+        Assert.NotEqual(sent.Invocation, _port.Sent[1].Invocation);
+        var first = Record().Attempts.Single(attempt => attempt.Attempt == 1);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Failed, HeldResolutions.DidNot), (first.State, first.Outcome, first.Resolution));
+        Assert.Contains(Record().History, entry => entry.Was is { State: NodeStates.Failed, By: NodeSource.Person });
+        Assert.Equal((NodeStates.Active, 2), (Record().Statuses["deploy"].State, Record().Statuses["deploy"].Attempt));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1g: *it happened* reaches the node on the person's word, its evidence the person's; *stop* stops it with the outcome
+    /// settled as the person's to answer for. Either lifts the gate, and neither sends anything.
+    /// </summary>
+    [Theory]
+    [InlineData(HeldResolutions.Happened, NodeStates.Reached, WorkStates.Reached)]
+    [InlineData(HeldResolutions.Stop, NodeStates.Stopped, WorkStates.Unknown)]
+    public async Task The_persons_happened_and_stop_settle_the_held_attempt_as_theirs(string word, string state, string outcome)
+    {
+        var (runtime, _) = await HeldAsync();
+
+        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, word).What);
+        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+
+        Assert.Single(_port.Sent);
+        var status = Record().Statuses["deploy"];
+        Assert.Equal((state, NodeSource.Person, (int?)null), (status.State, status.By, status.Unreconciled));
+        if (word == HeldResolutions.Happened) Assert.Equal(NodeSource.Person, status.Current!.Evidence!.Schema);
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Settled, outcome, word), (attempt.State, attempt.Outcome, attempt.Resolution));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1g: the door records the person's word only in the process holding the home's lease, on an attempt still held with no
+    /// word, and says why otherwise; nothing is written.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_word_is_refused_without_the_lease_or_on_an_attempt_not_held()
+    {
+        await HeldAsync();
+        var before = File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit));
+
+        var unleased = Door(holdsLease: false).Word(Unit, "deploy", 1, HeldResolutions.DidNot);
+        var other = Door().Word(Unit, "deploy", 2, HeldResolutions.DidNot);
+        var unknownWord = Door().Word(Unit, "deploy", 1, "maybe");
+
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotHeld), (unleased.What, unleased.Code));
+        Assert.Contains("does not hold the home", HeldAttempts.Said(unleased, 1, HeldResolutions.DidNot));
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotAttempt), (other.What, other.Code));
+        Assert.Contains("is not held now", HeldAttempts.Said(other, 2, HeldResolutions.DidNot));
+        Assert.Equal(PerformedWhat.Refused, unknownWord.What);
+        Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit)));
+
+        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.Stop).What);
+        var again = Door().Word(Unit, "deploy", 1, HeldResolutions.DidNot);
+        Assert.Equal(PerformedWhat.Refused, again.What);
+        Assert.Contains("already has your word", HeldAttempts.Said(again, 1, HeldResolutions.DidNot));
+    }
 }

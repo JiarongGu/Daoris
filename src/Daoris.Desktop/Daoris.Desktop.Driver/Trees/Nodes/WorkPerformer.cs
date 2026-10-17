@@ -67,6 +67,12 @@ public static class PerformedWhat
     /// from its records at the next evaluation.
     /// </summary>
     public const string Begun = "begun";
+
+    /// <summary>The person's word on a held attempt was recorded (FABRIC-PERFORM1g): the runtime applies it under the node's declaration.</summary>
+    public const string Worded = "worded";
+
+    /// <summary>The person's word was applied (FABRIC-PERFORM1g): the attempt settled by the person, its node moved through the one table.</summary>
+    public const string Resolved = "resolved";
 }
 
 /// <summary>One thing the performer did, on one unit's node.</summary>
@@ -150,6 +156,12 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// superseded), so it is not delivered again, and idempotency does not say whether its effect began.
     /// </summary>
     public const string NotCurrent = "not-current";
+
+    /// <summary>A word the person's door does not know (FABRIC-PERFORM1g): nothing is recorded.</summary>
+    public const string NotResolution = "not-resolution";
+
+    /// <summary>The held attempt already has the person's word, which the runtime applies at its next pass (FABRIC-PERFORM1g).</summary>
+    public const string Worded = "worded";
 
     /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
@@ -362,6 +374,124 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         }
 
         return done;
+    }
+
+    /// <summary>
+    /// The person's word on a held attempt (FABRIC-PERFORM1g, one of <see cref="HeldResolutions"/>), from their door: written on the attempt
+    /// while it is still held and has no word, under the record's lock with the lease asked inside it, so only the lease's holder records it.
+    /// Applied by <see cref="Resolve"/> under the node's declaration, which only the runtime holds.
+    /// </summary>
+    public WorkPerformed Word(string unit, string node, int attempt, string resolution)
+    {
+        if (!HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
+        var now = clock();
+        return Edited(unit, node, record =>
+        {
+            var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
+            if (held is not { State: AttemptStates.Held }) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
+            if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
+            return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
+        });
+    }
+
+    /// <summary>
+    /// Every word the person gave on a held attempt, applied under the node's declaration (FABRIC-PERFORM1g): the attempt settled by the
+    /// person, never as its plugin's word, and its node moved through the one table. A node no declaration names waits with its word.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Its node still on it</b> (active, or unknown, on that attempt): an active one is first unknown (its outcome did not bind, so
+    /// it cannot be established now), then <i>it happened</i> reaches it on the person's word, <i>it did not</i> fails it and makes it ready
+    /// for the person's new attempt, which the next evaluation starts with a new key, and <i>stop</i> stops it.</para>
+    /// <para><b>Its node moved off it</b> (stopped, skipped, rejected, invalidated): the word settles the attempt as a stale one's (§D3) and
+    /// lifts the gate, moving nothing; <i>stop</i> stops a node still live.</para>
+    /// <para><b>A word the one table refuses</b> (<i>it happened</i> on a node exposing an output or an evidence schema, the plugin's to give)
+    /// leaves the attempt held with the refusal's code and the word taken back, so the person sees why and says another.</para>
+    /// </remarks>
+    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
+    {
+        var done = new List<WorkPerformed>();
+        foreach (var read in records.All().Records)
+        {
+            if (!read.Attempts.Any(HasWord)) continue;
+            var (refused, resolved) = records.Edit<List<WorkPerformed>>(read.Unit, current =>
+            {
+                var said = new List<WorkPerformed>();
+                var record = current;
+                foreach (var attempt in current.Attempts.Where(HasWord))
+                {
+                    if (declared(record.Unit, attempt.Node) is not { } node) continue;
+                    var (next, result) = Settle(record, attempt, node);
+                    record = next;
+                    said.Add(result);
+                }
+
+                return (ReferenceEquals(record, current) ? null : record, said);
+            });
+            if (refused is not null) done.Add(new(read.Unit, "", PerformedWhat.Refused, refused));
+            else done.AddRange(resolved!);
+        }
+
+        return done;
+
+        static bool HasWord(NodeAttempt attempt) => attempt is { State: AttemptStates.Held, Resolution: not null };
+    }
+
+    /// <summary>One word applied (<see cref="Resolve"/>): the record after it, and what it came to.</summary>
+    private (NodeRecord Next, WorkPerformed Result) Settle(NodeRecord record, NodeAttempt attempt, NodeDeclaration node)
+    {
+        var now = clock();
+        var unit = record.Unit;
+        var word = attempt.Resolution!;
+        var status = StatusOf(record, node.Id);
+        var current = status.Attempt == attempt.Attempt && status.State is NodeStates.Active or NodeStates.Unknown;
+        var outcome = word switch { HeldResolutions.Happened => WorkStates.Reached, HeldResolutions.DidNot => WorkStates.Failed, _ => WorkStates.Unknown };
+        var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome };
+
+        if (!current || word == HeldResolutions.Stop)
+        {
+            // §D3: a word on an attempt its node moved off settles it as a stale one's; a stop stops a node still live. Either lifts the gate.
+            if (word == HeldResolutions.Stop && NodeStates.Live.Contains(status.State))
+            {
+                record = Kept(record, NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Stopped, NodeCause.Person)), "person-stop", now);
+            }
+
+            var after = StatusOf(record, node.Id);
+            record = With(record, attempt, settled);
+            return (record with { Statuses = With(record.Statuses, NodeLifecycle.Reconciled(after, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Resolved, word));
+        }
+
+        // An outcome that did not bind left its node active: it cannot be established now, so it is unknown before the person settles it.
+        if (status.State == NodeStates.Active)
+        {
+            var unknown = NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Unknown, NodeCause.Daoris) { Attempt = attempt.Attempt });
+            record = Kept(record, unknown, "unknown", now);
+            status = StatusOf(record, node.Id);
+        }
+
+        var move = word == HeldResolutions.Happened
+            ? new NodeMove(NodeStates.Reached, NodeCause.Person)
+            {
+                Source = NodeSource.Person, Attempt = attempt.Attempt,
+                Acceptance = status.Binding is { } binding
+                    ? binding with { Evidence = new NodePort(NodeSource.Person, $"{NodeSource.Person}:{attempt.Call.Invocation}", binding.SubjectRevision, null) }
+                    : null,
+            }
+            : new NodeMove(NodeStates.Failed, NodeCause.Person) { Source = NodeSource.Person, Attempt = attempt.Attempt, Code = HeldResolutions.DidNot };
+        var moved = NodeLifecycle.Apply(node, status, move);
+        if (!moved.Moved)
+        {
+            // The word cannot be taken (the one table's refusal): the attempt stays held, saying why, and the word is taken back for another.
+            return (With(record, attempt, attempt with { Code = moved.Refused, Resolution = null, ResolvedAt = null }), new(unit, node.Id, PerformedWhat.Refused, moved.Refused));
+        }
+
+        record = Kept(record, moved, "person-" + word, now);
+        if (word == HeldResolutions.DidNot)
+        {
+            // The person's new attempt (§E2's failed → ready by the person): the next evaluation starts it with a new key.
+            record = Kept(record, NodeLifecycle.Apply(node, moved.Status, new NodeMove(NodeStates.Ready, NodeCause.Person)), "person-again", now);
+        }
+
+        return (With(record, attempt, settled), new(unit, node.Id, PerformedWhat.Resolved, word));
     }
 
     private static bool Retrying(NodeStatus status) => status is { State: NodeStates.Failed, Transient: true };

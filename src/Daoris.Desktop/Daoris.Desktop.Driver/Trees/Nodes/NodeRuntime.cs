@@ -238,6 +238,8 @@ public sealed class NodeRuntime(NodeRecordFiles records, IWorkRuntimePort port, 
             NodeDeclaration? Performed(string unit, string node) =>
                 governed.TryGetValue(unit, out var each) && each.Dispatchable.Contains(node) ? each.Declared[node] : null;
             done.AddRange(_performer.Hear(port.TakeSteps(), Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
+            // FABRIC-PERFORM1g: the person's word on a held attempt, applied under the declaration governing now, before any new attempt.
+            done.AddRange(_performer.Resolve(Declared));
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
 
