@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// not the home's writers at all:</para>
 /// <list type="bullet">
 /// <item><b>Reads</b>: <c>trace</c>, <c>git</c>, <c>logs</c>, <c>workflow run</c>, the lists (<c>sessions</c>, <c>history</c>,
-/// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
+/// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
 /// <c>help list</c>, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
 /// the usage.</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
@@ -48,7 +48,7 @@ public static class VerbLeases
             "history" => next == "clear",
             "trees" => next is not (null or "list" or "state"),
             // `work state` is a look; `work recovery drop` deletes refs (RECOVERYDROP1), which only the lease's holder does.
-            "work" => next == "recovery",
+            "work" => next == "recovery" || (next == "held" && args.Skip(2).Any(arg => HeldResolutions.All.Contains(arg))),
             "plugins" => next is "install" or "new" or "try",
             "sync" => next != "status",
             "help" => next is "rename" or "pin" or "unpin" or "delete",
@@ -70,7 +70,7 @@ public static class VerbLeases
         "land", "remove", "clean", "sync", "hand", "stop", "finish", "decline", "say", "take-back", "reword", "archive",
         "unarchive", "delete", "go-on-new", "helper", "pause", "resume", "abandon", "clear", "rename", "pin", "unpin", "ask",
         "anyway", "myself", "install", "new", "try", "keep", "dismiss", "--pause", "--resume", "--abandon", "--clear",
-        "--workspace", "--when-idle", "--now", "--cancel", "recovery",
+        "--workspace", "--when-idle", "--now", "--cancel", "recovery", "held",
     };
 
     private static bool IsWord(string value) => value.Length > 0 && value.All(c => c is >= 'a' and <= 'z' or '-');

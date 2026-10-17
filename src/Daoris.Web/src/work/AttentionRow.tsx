@@ -7,6 +7,7 @@ import { shellWord } from '../lib/shellWord';
 import type { TrustHold } from '../data/signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../design/ui';
 import type { AccountRowFacts } from './accountAttention';
+import type { HeldAttempt, HeldResolution } from './milestone';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from './Note';
 import { type Answered, InlineConfirm } from './InlineConfirm';
@@ -71,6 +72,8 @@ export type Attention = {
   session?: string | null;
   /** An `opinion` row's work and its gate (XAGENT1g): what its presses act on, and whether a press of the person's is coming. */
   opinion?: OpinionWait;
+  /** A `work` row's plugin step's attempt held for the person (FABRIC-PERFORM1g): what their word is on. */
+  held?: HeldAttempt;
   /** A `proposal`'s receivers, as its declarations named them: what *Publish to …* publishes to, in one press. */
   publishTo?: string[];
   /** A `proposal`'s other receivers: every repository its workspace can ask, which *Choose…* offers. */
@@ -144,6 +147,8 @@ export type AttentionActs = {
   opinionAnyway?: (item: Attention, words: string | undefined, answered: Answered) => void;
   /** An agent's ask for a helper said yes or no to (MIXAGENT2c, D163 point 3): its session's page's own presses. */
   helper?: (item: Attention, yes: boolean) => void;
+  /** The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): `daoris-driver work held`'s. */
+  held?: (item: Attention, resolution: HeldResolution) => void;
 };
 
 /** Which handler each act needs. */
@@ -168,6 +173,9 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'opinion-anyway': 'opinionAnyway',
   'let-ask': 'helper',
   'not-now': 'helper',
+  happened: 'held',
+  'did-not': 'held',
+  'stop-step': 'held',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -261,6 +269,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'show-again') acts.showAgain?.(item);
     else if (act === 'opinion-again') acts.opinionAgain?.(item);
     else if (act === 'let-ask' || act === 'not-now') acts.helper?.(item, act === 'let-ask');
+    else if (act === 'happened' || act === 'did-not') acts.held?.(item, act);
+    else if (act === 'stop-step') acts.held?.(item, 'stop');
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -292,6 +302,10 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'opinion-anyway': return t('opinion.act.anyway');
       case 'let-ask': return t('work.helper.approve');
       case 'not-now': return t('work.helper.decline');
+      // FABRIC-PERFORM1g: each says what it does, as `daoris-driver work held` names it.
+      case 'happened': return t('work.milestone.held.act.happened');
+      case 'did-not': return t('work.milestone.held.act.did-not');
+      case 'stop-step': return t('work.milestone.held.act.stop');
     }
   };
 

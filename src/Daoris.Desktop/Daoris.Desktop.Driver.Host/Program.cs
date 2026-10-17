@@ -179,6 +179,10 @@ using Daoris.Driver;
 //                 each unit of work's milestone (FABRIC-MILESTONE1a): its end reached, the result kept, the cleanup pending or
 //                 completed, the recovery retained, derived read-only from the tree lifecycle's records; `trees state` says the same.
 //
+//   work held [--unit <id>]  |  work held <unit> <node> <attempt> happened|did-not|stop
+//                 the plugin steps whose attempt is held for the person, and why; with a word, theirs on one (FABRIC-PERFORM1g):
+//                 it happened, it did not (a new attempt with a new key), or stop; only the process holding the home records it.
+//
 //   work recovery drop <ref>... --repository <name> | --unheld [--repository <name>] [--plan]
 //                 delete the recovery refs (`refs/daoris/discarded/*`) no branch or tag of yours holds, which Daoris keeps at any
 //                 age until you say so (RECOVERYDROP1, CLEANUP1): each in one transaction that verifies the commit it names, a ref
@@ -496,6 +500,12 @@ try
     if (args is ["work", "state", .. var stateArgs])
     {
         return await Daoris.Driver.Host.WorkConsole.MilestonesAsync(stateArgs);
+    }
+
+    // The attempts held for the person, and their word on one (FABRIC-PERFORM1g, D50): What needs you's presses are the other door.
+    if (args is ["work", "held", .. var heldArgs])
+    {
+        return HeldAttempts.Run(DriverConfig.HomeOf(DriverConfig.ResolvePath()), heldArgs, Console.Out, Console.Error);
     }
 
     // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D50): the workspace's Branches press is the other door.

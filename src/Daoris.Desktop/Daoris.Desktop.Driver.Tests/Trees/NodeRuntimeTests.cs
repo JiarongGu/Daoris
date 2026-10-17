@@ -136,9 +136,83 @@ public sealed class NodeRuntimeTests : IDisposable
         Steps = () =>
         {
             Interlocked.Increment(ref _stepsRead);
-            return [Step];
+            return [Step, Build];
         },
     };
+
+    /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>
+    private static readonly NodeDeclaration Build = Step with { Id = Plugin + "/build", Kind = Plugin + "/build" };
+
+    /// <summary>
+    /// A repository's quests governed by a build whose artifact the deploy takes (FABRIC-PERFORM1c): a <c>data</c> wire, read from the build's
+    /// accepted output, its evidence the plugin's receipt.
+    /// </summary>
+    private const string Pipeline = """
+        { "workCycles": { "engine": { "quest": {
+            "schemaVersion": 2, "entries": ["build"], "end": "deploy",
+            "nodes": [
+              { "id": "build", "kind": "acme.deploy/build", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1",
+                "outputs": { "artifact": "acme.deploy/artifact@1" } },
+              { "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "inputs": { "release": "acme.deploy/artifact@1" } } ],
+            "wires": [{ "id": "w1", "kind": "data", "from": "build.artifact", "to": "deploy.release" }] } } } }
+        """;
+
+    /// <summary>The build's completion for its attempt still waiting, with its receipt as evidence and its artifact as its output.</summary>
+    private WorkStepHeard Built(string evidence, string artifact) =>
+        new(Plugin, 1, new WorkStepFrame("build", new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence(evidence, null, null, "built"),
+            Outputs: new Dictionary<string, WorkOutput> { ["artifact"] = new(artifact, null) }), _now, "e-" + artifact,
+            Invocation: Assert.Single(Record().Attempts, attempt => attempt.Node == "build" && attempt.State != AttemptStates.Settled).Call.Invocation));
+
+    [Fact]
+    public async Task A_reach_on_evidence_not_authorised_starts_nothing_downstream_and_an_authorised_ones_output_is_read_by_the_next_node()
+    {
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+        Assert.Equal([Plugin + "/build"], _port.Sent.Select(call => call.Step));
+
+        // A receipt of another schema than the build declares: not its evidence, so the build is held and the deploy never starts.
+        _port.Heard.Enqueue(Built("acme.deploy/log@1:l1", "acme.deploy/artifact@1:a1"));
+        var held = await runtime.PassAsync(Look(Pipeline, whole: false), CancellationToken.None);
+        await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+
+        Assert.Contains(held.Performed, done => (done.Node, done.What, done.Code) == ("build", PerformedWhat.Held, NodeRefusal.NoEvidence));
+        Assert.Equal(NodeStates.Active, Record().Statuses["build"].State);
+        Assert.Single(_port.Sent);
+
+        // The build's own receipt: reached, and its accepted artifact is the deploy's release.
+        _port.Heard.Enqueue(Built("acme.deploy/receipt@1:b1", "acme.deploy/artifact@1:a1"));
+        await runtime.PassAsync(Look(Pipeline, whole: false), CancellationToken.None);
+
+        Assert.Equal(NodeStates.Reached, Record().Statuses["build"].State);
+        var deploy = Assert.Single(_port.Sent, call => call.Step == Plugin + "/deploy");
+        Assert.Equal(["acme.deploy/artifact@1:a1"], deploy.Inputs);
+    }
+
+    [Fact]
+    public async Task An_output_accepted_on_a_revision_the_work_has_moved_past_is_never_read()
+    {
+        // A revision the test moves, as a new tip moves a branch: the runtime reads every unit's revision alike.
+        _units = [Quest with { Subject = new WorkSubject("#q7", "r1") }];
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+
+        // The work moves to r2 before the build's completion on r1 is heard: its outcome is a stale attempt's, and the build starts again.
+        _units = [Quest with { Subject = new WorkSubject("#q7", "r2") }];
+        _port.Heard.Enqueue(Built("acme.deploy/receipt@1:b1", "acme.deploy/artifact@1:a1"));
+        var moved = await runtime.PassAsync(Look(Pipeline), CancellationToken.None);
+
+        Assert.Contains(moved.Performed, done => (done.Node, done.What, done.Code) == ("build", PerformedWhat.Stale, WorkRefusals.Stale));
+        Assert.DoesNotContain(_port.Sent, call => call.Step == Plugin + "/deploy");
+        Assert.Equal(["r1", "r2"], _port.Sent.Select(call => call.SubjectRevision));
+
+        // The build on r2 reaches: the deploy reads its artifact, never r1's.
+        _port.Heard.Enqueue(Built("acme.deploy/receipt@1:b2", "acme.deploy/artifact@1:a2"));
+        await runtime.PassAsync(Look(Pipeline, whole: false), CancellationToken.None);
+
+        var deploy = Assert.Single(_port.Sent, call => call.Step == Plugin + "/deploy");
+        Assert.Equal(["acme.deploy/artifact@1:a2"], deploy.Inputs);
+        Assert.Equal("r2", deploy.SubjectRevision);
+    }
 
     private NodeRecord Record() => Files.Read(Unit)!;
 
@@ -497,5 +571,100 @@ public sealed class NodeRuntimeTests : IDisposable
 
         Assert.Single(_port.Sent);
         Assert.Empty(_port.Told);
+    }
+
+    /// <summary>A sent attempt held for the person: the next loop asks after it, and its plugin cannot say (§D6's <c>unknown</c>).</summary>
+    private async Task<(NodeRuntime Runtime, WorkPerformCall Sent)> HeldAsync()
+    {
+        await Runtime().PassAsync(Look(Governed), CancellationToken.None);
+        var sent = Assert.Single(_port.Sent);
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        Assert.Equal(AttemptStates.Held, Assert.Single(Record().Attempts).State);
+        return (runtime, sent);
+    }
+
+    /// <summary>The person's door: a performer over the same records, which asks the lease inside the record's lock.</summary>
+    private WorkPerformer Door(bool holdsLease = true) => new(new NodeRecordFiles(_home, () => holdsLease), _port, () => _now);
+
+    /// <summary>
+    /// FABRIC-PERFORM1g: a held attempt is listed with its node, its attempt and why, and keeps its gate across passes; the person's *it did
+    /// not* settles it as theirs (failed, never the plugin's word), and the node starts again as a new attempt with a new key.
+    /// </summary>
+    [Fact]
+    public async Task A_held_attempt_is_listed_and_the_persons_did_not_restarts_it_with_a_new_key()
+    {
+        var (runtime, sent) = await HeldAsync();
+
+        var held = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((Unit, "deploy", 1, Plugin, ReconcileStates.Unknown, NodeStates.Unknown, (string?)null),
+            (held.Unit, held.Node, held.Attempt, held.Plugin, held.Why, held.NodeState, held.Resolution));
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        Assert.Single(_port.Sent);
+
+        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.DidNot).What);
+        Assert.Equal(HeldResolutions.DidNot, Assert.Single(HeldAttempts.Read(Files)).Resolution);
+        var pass = await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+
+        Assert.Contains(pass.Performed, done => done.What == PerformedWhat.Resolved);
+        Assert.Equal(2, _port.Sent.Count);
+        Assert.NotEqual(sent.IdempotencyKey, _port.Sent[1].IdempotencyKey);
+        Assert.NotEqual(sent.Invocation, _port.Sent[1].Invocation);
+        var first = Record().Attempts.Single(attempt => attempt.Attempt == 1);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Failed, HeldResolutions.DidNot), (first.State, first.Outcome, first.Resolution));
+        Assert.Contains(Record().History, entry => entry.Was is { State: NodeStates.Failed, By: NodeSource.Person });
+        Assert.Equal((NodeStates.Active, 2), (Record().Statuses["deploy"].State, Record().Statuses["deploy"].Attempt));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1g: *it happened* reaches the node on the person's word, its evidence the person's; *stop* stops it with the outcome
+    /// settled as the person's to answer for. Either lifts the gate, and neither sends anything.
+    /// </summary>
+    [Theory]
+    [InlineData(HeldResolutions.Happened, NodeStates.Reached, WorkStates.Reached)]
+    [InlineData(HeldResolutions.Stop, NodeStates.Stopped, WorkStates.Unknown)]
+    public async Task The_persons_happened_and_stop_settle_the_held_attempt_as_theirs(string word, string state, string outcome)
+    {
+        var (runtime, _) = await HeldAsync();
+
+        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, word).What);
+        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+
+        Assert.Single(_port.Sent);
+        var status = Record().Statuses["deploy"];
+        Assert.Equal((state, NodeSource.Person, (int?)null), (status.State, status.By, status.Unreconciled));
+        if (word == HeldResolutions.Happened) Assert.Equal(NodeSource.Person, status.Current!.Evidence!.Schema);
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Settled, outcome, word), (attempt.State, attempt.Outcome, attempt.Resolution));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1g: the door records the person's word only in the process holding the home's lease, on an attempt still held with no
+    /// word, and says why otherwise; nothing is written.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_word_is_refused_without_the_lease_or_on_an_attempt_not_held()
+    {
+        await HeldAsync();
+        var before = File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit));
+
+        var unleased = Door(holdsLease: false).Word(Unit, "deploy", 1, HeldResolutions.DidNot);
+        var other = Door().Word(Unit, "deploy", 2, HeldResolutions.DidNot);
+        var unknownWord = Door().Word(Unit, "deploy", 1, "maybe");
+
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotHeld), (unleased.What, unleased.Code));
+        Assert.Contains("does not hold the home", HeldAttempts.Said(unleased, 1, HeldResolutions.DidNot));
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotAttempt), (other.What, other.Code));
+        Assert.Contains("is not held now", HeldAttempts.Said(other, 2, HeldResolutions.DidNot));
+        Assert.Equal(PerformedWhat.Refused, unknownWord.What);
+        Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit)));
+
+        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.Stop).What);
+        var again = Door().Word(Unit, "deploy", 1, HeldResolutions.DidNot);
+        Assert.Equal(PerformedWhat.Refused, again.What);
+        Assert.Contains("already has your word", HeldAttempts.Said(again, 1, HeldResolutions.DidNot));
     }
 }
