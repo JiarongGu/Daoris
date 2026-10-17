@@ -190,6 +190,45 @@ public sealed class EndJudgementTests
         Assert.NotEqual(EndState.Ended, verdict.State);
     }
 
+    /// <summary>A landing made later from this one's work, ended by its own proof (squash-merged on the platform, its files on the line).</summary>
+    private static EndHost Host(string by = EndBy.OnLine)
+    {
+        var entry = Landing(Later) with { Branch = "feature/q2-more" };
+        var end = new EndVerdict(EndState.Ended, by, by == EndBy.Inside ? "feature/q3-last" : "main", "") { Tip = Later, Line = "main" };
+        return new(entry, Later, end);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-END2d (D102's group, as the clean-up's <c>Inside</c> proves it): a landing whose files differ on the line, inside one whose own
+    /// proof ended it, is ended inside that one, which its fact names.
+    /// </summary>
+    [Fact]
+    public void A_landing_inside_one_its_own_proof_ended_is_ended_inside_it()
+    {
+        var verdict = EndJudgement.Judge(EndCycle.Recorded(Landing()), Branch(), Facts() with { Judgeable = true, Within = Host() });
+
+        Assert.Equal((EndState.Ended, EndBy.Inside, "feature/q2-more"), (verdict.State, verdict.By, verdict.Where));
+        // The inventory says the kept fact as the judgement said it.
+        Assert.StartsWith(WorkInventory.ProofSaid(EndBy.Inside, "feature/q2-more"), verdict.Evidence, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-END2d: never inside one ended only by being inside, nor one not ended, nor where its files were never compared (the clean-up's
+    /// <c>Judgeable</c>), nor for a landing whose branch went.
+    /// </summary>
+    [Fact]
+    public void A_landing_is_not_ended_inside_one_not_ended_by_its_own_proof_nor_where_its_files_were_not_compared()
+    {
+        var cycle = EndCycle.Recorded(Landing());
+        var handed = Host() with { End = new EndVerdict(EndState.Handed, null, null, "") };
+
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, Branch(), Facts() with { Judgeable = true, Within = Host(EndBy.Inside) }).State);
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, Branch(), Facts() with { Judgeable = true, Within = handed }).State);
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, Branch(), Facts() with { Judgeable = false, Within = Host() }).State);
+        var gone = Branch() with { Gone = true };
+        Assert.NotEqual(EndState.Ended, EndJudgement.Judge(cycle, gone, Facts() with { Standing = false, Judgeable = true, Within = Host() }).State);
+    }
+
     [Fact]
     public void Accept_at_done_ends_as_the_form_it_landed_by()
     {

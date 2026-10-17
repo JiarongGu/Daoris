@@ -6,7 +6,7 @@ import { cn } from '../lib/cn';
 import { entryName, type MilestoneUnit } from './milestone';
 
 /** The proofs the driver names by code (`EndBy`): any other code is said by the driver's own sentence. */
-const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried'] as const;
+const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried', 'inside'] as const;
 
 const what = entryName;
 

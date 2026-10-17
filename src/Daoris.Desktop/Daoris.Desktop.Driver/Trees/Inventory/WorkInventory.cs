@@ -596,6 +596,7 @@ public static partial class WorkInventory
         EndBy.PullRequest => $"its pull request completed and its merge commit is on `{on}`",
         EndBy.Landed => $"its work is on `{on}`, which the line holds",
         EndBy.Carried => $"a completed pull request, `{on}`, carried it and its merge commit is on the line",
+        EndBy.Inside => $"it is inside `{on}`, whose work is on the line",
         _ => $"{by} on `{on}`",
     };
 
