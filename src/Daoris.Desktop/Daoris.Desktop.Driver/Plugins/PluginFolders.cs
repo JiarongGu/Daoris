@@ -63,6 +63,30 @@ internal static class PluginFolders
     /// <summary>A file inside a staged copy, which moves whole; written beside and renamed all the same, as UTF-8 with no byte-order mark (DEDUP3a).</summary>
     public static void WriteFile(string path, string text) => AtomicFile.WriteText(path, text);
 
+    /// <summary>
+    /// Whether two folders hold the same files, byte for byte, by relative path, leaving out the install's own record of where it came
+    /// from (<see cref="PluginSource.FileName"/>), which an install writes and an offer never has (LANDPIN3).
+    /// </summary>
+    public static bool SameFiles(string left, string right)
+    {
+        static List<string> Files(string root) => [.. Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Select(file => Path.GetRelativePath(root, file).Replace('\\', '/'))
+            .Where(relative => relative != PluginSource.FileName)
+            .Order(StringComparer.Ordinal)];
+
+        try
+        {
+            var (a, b) = (Files(left), Files(right));
+            return a.SequenceEqual(b, StringComparer.Ordinal)
+                && a.All(relative => File.ReadAllBytes(Path.Combine(left, relative)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(right, relative))));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // What cannot be read cannot be said the same: the copy is said as changed, and never replaced unread.
+            return false;
+        }
+    }
+
     /// <summary>A folder made, with every folder above it.</summary>
     public static void Make(string folder) => Directory.CreateDirectory(folder);
 
