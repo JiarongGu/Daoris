@@ -381,6 +381,49 @@ public sealed class QuestCloseTests : IDisposable
         Assert.DoesNotContain(again.Said, line => line.Contains("closed by you", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1q, part 1: a close's authority is the submission it judged, not the quest's id. The same commit made ready again is
+    /// another submission (another operation, its machine and sequence), so the person's done on it is theirs, never reached through the
+    /// close kept for the one before.
+    /// </summary>
+    [Fact]
+    public async Task A_close_kept_for_one_submission_is_never_the_authority_for_another_of_the_same_commit()
+    {
+        var digest = Digest(Closing);
+        var runtime = Runtime();
+
+        // S1 closed by the close, and its Done read.
+        Quest(Taken("q7", digest, Ready41));
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Quest(_quests["q7"] with { Status = "Done" });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        var key = Assert.Single(_door.Sent).Key;
+        Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+        var kept = Record().Attempts.ToList();
+
+        // Its take lost since, then taken again here: S2, the same commit made ready again by a new operation, its evidence not read yet.
+        Quest(_quests["q7"] with { Status = "Taken", Submission = null });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        var s2 = new QuestSubmissionView("desk", 43, null, "ready");
+        Quest(_quests["q7"] with { Submission = s2, Held = true, Hold = "evidence-unread" });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        // The person closes S2 before the close does: overridden, its pending node stopped, and S1's close never borrowed.
+        Quest(_quests["q7"] with { Status = "Done", Submission = s2, Held = false, Hold = null });
+        var closed = await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        Assert.Contains(closed.Said, line => line.Contains("closed by you before its end", StringComparison.Ordinal));
+        Assert.Equal(NodeStates.Stopped, Record().Statuses["close"].State);
+        Assert.NotEqual(NodeSource.CloseDoor, Record().Statuses["close"].By);
+        Assert.Single(_door.Sent);
+        Assert.DoesNotContain(Record().Attempts.Skip(kept.Count), attempt => attempt.Call.IdempotencyKey == key);
+        Assert.Equal(kept.Select(Kept), Record().Attempts.Take(kept.Count).Select(Kept));
+
+        static (string, string, string, string?, string) Kept(NodeAttempt attempt) =>
+            (attempt.Call.Invocation, attempt.Plugin, attempt.State, attempt.Outcome, attempt.Call.IdempotencyKey);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("gph-another")]

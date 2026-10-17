@@ -181,10 +181,23 @@ public static class QuestClosing
         return "crv-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())))[..32];
     }
 
-    /// <summary>The close attempts kept on <paramref name="records"/> that name <paramref name="quest"/>.</summary>
-    public static IEnumerable<NodeAttempt> Naming(IEnumerable<NodeRecord> records, string quest) =>
-        records.SelectMany(record => record.Attempts)
-            .Where(attempt => attempt.Close?.Quests.Any(named => string.Equals(named.Id, quest, StringComparison.Ordinal)) == true);
+    /// <summary>
+    /// The close attempts kept on <paramref name="records"/> that name <paramref name="quest"/> at the submission it stands on now
+    /// (<see cref="NamesCurrent"/>): the only ones whose close may speak for it.
+    /// </summary>
+    public static IEnumerable<NodeAttempt> Naming(IEnumerable<NodeRecord> records, QuestView quest) =>
+        records.SelectMany(record => record.Attempts).Where(attempt => NamesCurrent(attempt, quest));
+
+    /// <summary>
+    /// Whether a close attempt names <paramref name="quest"/> at its current submission (FABRIC-CLOSE1q): its id, and the machine and
+    /// sequence of the operation that made the submission. The same commit made ready again is another submission, so a close kept for
+    /// the one before (its id, its commit, a sequence of another machine's) is never its authority. A quest with no submission has none.
+    /// </summary>
+    public static bool NamesCurrent(NodeAttempt attempt, QuestView quest) =>
+        quest.Submission is { } current
+        && attempt.Close?.Quests.Any(named => string.Equals(named.Id, quest.Id, StringComparison.Ordinal)
+                                              && string.Equals(named.Machine, current.Machine, StringComparison.Ordinal)
+                                              && named.Sequence == current.Sequence) == true;
 }
 
 /// <summary>
