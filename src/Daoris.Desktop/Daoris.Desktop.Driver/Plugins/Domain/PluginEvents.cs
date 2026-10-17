@@ -50,6 +50,14 @@ public static class PluginEvents
 
     public const string Ended = "ended";
 
+    /// <summary>Why the loop stopped a work process (FABRIC-PERFORM1a): no unit awaits its steps, or this process no longer holds the home.</summary>
+    public const string Idle = "idle";
+
+    public const string NotHeld = "not-held";
+
+    /// <summary>A frame from a plugin not taken (FABRIC-PERFORM1a, §C4): its code (<see cref="WorkRefusals"/>) and how many it stands for.</summary>
+    public const string Step = "plugin.step";
+
     /// <summary>Where a failure happened, besides a point's name: the start, or the process between calls.</summary>
     public const string AtStart = "start";
 
@@ -65,6 +73,9 @@ public static class PluginEvents
     public const string Unreadable = "unreadable";
 
     public const string Errored = "errored";
+
+    /// <summary>Three unasked exits of its work process within an hour (FABRIC-PERFORM1a): not started again until the person tries again.</summary>
+    public const string Unsound = "unsound";
 
     /// <summary>What a plugin answered: a decision's word, an observation's, or what a landing did.</summary>
     public const string Allow = "allow";

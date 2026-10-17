@@ -53,6 +53,13 @@ public sealed class PluginLog(MachineLog? log, PluginHealth? health = null)
         health?.Observe(new PluginWord(PluginEvents.Failed, plugin, By: by, Where: where, Kind: kind));
     }
 
+    /// <summary>
+    /// Frames from a plugin not taken (FABRIC-PERFORM1a, §C4): one line per code at most once a minute, with how many it stands for. The frame
+    /// is never a parameter, so nothing it says reaches the line; the record of the plugin's health is not fed, as an event is not its work.
+    /// </summary>
+    public void Refused(string plugin, string code, int count) =>
+        log?.Warn(PluginEvents.Step, ("plugin", Name(plugin)), ("code", Name(code)), ("count", count));
+
     /// <param name="handed">False for a server withheld from the session, as one that drives Daoris's browser is where no shell answers (D78).</param>
     public void Served(string plugin, string server, string session, bool handed) =>
         log?.Info(PluginEvents.Served, ("plugin", Name(plugin)), ("server", Name(server)), ("session", Name(session)), ("handed", handed));

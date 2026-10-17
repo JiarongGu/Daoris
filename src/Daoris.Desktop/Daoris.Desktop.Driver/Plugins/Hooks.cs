@@ -573,12 +573,23 @@ public sealed class HookSet(
     // The process's machine log (PLUGUI1d), where what the set did with each plugin is written. Null writes none.
     MachineLog? log = null,
     // The loop's own record of each plugin's health (D119 §2). Null keeps none.
-    PluginHealth? health = null) : IAsyncDisposable
+    PluginHealth? health = null,
+    // FABRIC-PERFORM1a: whether this process holds the home's lease, asked at each look. Only the lease's loop starts a plugin for the
+    // work wire, listens to its events and tells it what is awaited; a `--share` loop, which holds nothing, never does.
+    Func<bool>? holdsHome = null,
+    // The clock the work wire's waits and bounds are read on.
+    Func<DateTimeOffset>? clock = null) : IAsyncDisposable
 {
     /// <summary>A running plugin's process, with what it was started from: what a stop's reason is judged against.</summary>
-    private sealed record Held(string Signature, string Version, DateTimeOffset? Installed, IHookChannel Channel);
+    /// <param name="Work">Whether the plugin speaks the work wire (FABRIC-PERFORM1a): its starts are supervised by <see cref="WorkPlugins"/>.</param>
+    private sealed record Held(string Signature, string Version, DateTimeOffset? Installed, IHookChannel Channel, bool Work = false);
 
     private readonly Dictionary<string, Held> _running = new(StringComparer.Ordinal);
+
+    // FABRIC-PERFORM1a: the work wire's side, its lease and its clock. Its own writer of the same lines, since a field cannot read `Log`.
+    private readonly Func<bool> _holdsHome = holdsHome ?? (() => HomeLease.HeldHere(home));
+    private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
+    private readonly WorkPlugins _work = new(new PluginLog(log, health), clock ?? (() => DateTimeOffset.UtcNow));
     private readonly SemaphoreSlim _reconciling = new(1, 1);
 
     // Stopped by a removal or an update (StopAsync) before the catalogue says which: written at the next look.
@@ -627,10 +638,23 @@ public sealed class HookSet(
         await _reconciling.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            // FABRIC-PERFORM1a (§C4): the work wire is the lease's loop's alone, asked at each look. An exit nobody asked for, of a plugin
+            // on it, is told before what is wanted is judged, so its wait holds from this look.
+            var now = _clock();
+            var holds = _holdsHome();
+            List<string> exited;
+            lock (_running) exited = [.. _running.Where(pair => pair.Value.Work && !pair.Value.Channel.Alive).Select(pair => pair.Key)];
+            var waits = exited.ToDictionary(id => id, id => _work.Exited(id, now), StringComparer.Ordinal);
+            _work.Keep(catalog.Contributing.Select(p => p.Manifest.Id));
+
             // Only a plugin the loop has something to ask: one that speaks at a landing alone is started
-            // by the landing, for that landing (D100), and a process kept beside the ticks would idle.
+            // by the landing, for that landing (D100), and a process kept beside the ticks would idle. One on the work wire is
+            // started where this loop holds the lease and a unit awaits its steps, once its wait after an unasked exit is over.
             var wanted = catalog.Contributing
-                .Where(p => p.Manifest.Hooks is { } hooks && hooks.Points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal)))
+                .Where(p => p.Manifest.Hooks is { } hooks
+                    && (hooks.Points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal))
+                        || (holds && WorkPlugins.Speaks(p) && _work.Awaits(p.Manifest.Id))))
+                .Where(p => !WorkPlugins.Speaks(p) || _work.MayStart(p.Manifest.Id, now))
                 .ToDictionary(p => p.Manifest.Id, p => p, StringComparer.Ordinal);
 
             // The stops a removal or an update asked for, said now that the catalogue says which it was.
@@ -663,12 +687,23 @@ public sealed class HookSet(
                 }
                 var wasAlive = held.Channel.Alive;
                 var code = held.Channel.ExitCode;
+                if (held.Work) _work.Stopped(id);
                 await held.Channel.DisposeAsync().ConfigureAwait(false);
-                lines.Add(wasAlive
-                    ? $"plugin  {id}: stopped."
+                var waited = waits.TryGetValue(id, out var wait);
+                lines.Add(wasAlive ? $"plugin  {id}: stopped."
+                    : waited ? Waiting(id, wait)
                     : $"plugin  {id}: its hook process had exited — it will be started again if it is still enabled.");
-                if (wasAlive) Log.Stopped(id, Why(id, held, catalog), PluginEvents.ByLoop);
+                if (wasAlive) Log.Stopped(id, WorkWhy(id, held, catalog, holds) ?? Why(id, held, catalog), PluginEvents.ByLoop);
                 else Log.Failed(id, PluginEvents.AtProcess, PluginEvents.Exited, code, ms: null, PluginEvents.ByLoop);
+                if (waited && wait is null) Log.Failed(id, PluginEvents.AtProcess, PluginEvents.Unsound, code: null, ms: null, PluginEvents.ByLoop);
+            }
+
+            // A plugin kept for another point while this loop does not hold the lease is neither told nor heard (§C4).
+            if (!holds)
+            {
+                List<string> work;
+                lock (_running) work = [.. _running.Where(pair => pair.Value.Work).Select(pair => pair.Key)];
+                foreach (var id in work) _work.Stopped(id);
             }
 
             // A plugin whose start failed and that the loop no longer keeps: its record ends as a stop's would.
@@ -689,7 +724,10 @@ public sealed class HookSet(
                 try
                 {
                     var channel = await _start(plugin, line => Say(id, line), ct).ConfigureAwait(false);
-                    lock (_running) _running[id] = new Held(Signature(plugin), plugin.Manifest.Version, InstalledAt(plugin.Folder), channel);
+                    // FABRIC-PERFORM1a: its next generation, heard and told only where this loop holds the lease.
+                    var work = WorkPlugins.Speaks(plugin);
+                    if (work) _work.Started(id, channel, listen: holds, now);
+                    lock (_running) _running[id] = new Held(Signature(plugin), plugin.Manifest.Version, InstalledAt(plugin.Folder), channel, work);
                     lines.Add($"plugin  {id}: started, listening on {(channel.Points.Count > 0 ? string.Join(", ", channel.Points) : "nothing")}.");
                     _unstarted.Remove(id);
                     Log.Started(id, channel.Points, took.ElapsedMilliseconds, PluginEvents.ByLoop);
@@ -706,8 +744,17 @@ public sealed class HookSet(
                     }
 
                     _unstarted[id] = kind;
+
+                    // FABRIC-PERFORM1a: a start that failed waits as an unasked exit does, so it is not tried at every look.
+                    if (WorkPlugins.Speaks(plugin) && _work.Exited(id, now) is null)
+                    {
+                        lines.Add(Waiting(id, null));
+                        Log.Failed(id, PluginEvents.AtStart, PluginEvents.Unsound, code: null, ms: null, PluginEvents.ByLoop);
+                    }
                 }
             }
+
+            _work.Look(now);
         }
         finally
         {
@@ -716,6 +763,20 @@ public sealed class HookSet(
 
         return lines;
     }
+
+    /// <summary>What a person reads of a work process's unasked exit (FABRIC-PERFORM1a): when it starts again, or that it does not.</summary>
+    private static string Waiting(string id, TimeSpan? wait) => wait is { } after
+        ? $"plugin  {id}: its hook process had exited — it is started again in {(after.TotalMinutes == 1 ? "1 minute" : $"{after.TotalMinutes:0} minutes")}."
+        : $"plugin  {id}: its hook process exited {WorkBounds.ExitsUnsound} times within an hour — it is not started again until you try again.";
+
+    /// <summary>
+    /// Why a work process the catalogue still has, unchanged, was stopped (FABRIC-PERFORM1a): this loop no longer holds the home, or no unit
+    /// awaits its steps. Null for any other plugin or reason, which <see cref="Why"/> says.
+    /// </summary>
+    private static string? WorkWhy(string id, Held held, PluginCatalog catalog, bool holds) =>
+        held.Work && catalog.Contributing.FirstOrDefault(p => p.Manifest.Id == id) is { } entry && Signature(entry) == held.Signature
+            ? holds ? PluginEvents.Idle : PluginEvents.NotHeld
+            : null;
 
     /// <summary>
     /// Why a plugin's process was stopped, from what the catalogue now says of it: gone from it, switched off, a
@@ -759,6 +820,7 @@ public sealed class HookSet(
                 _stopped[id] = held;
             }
 
+            if (held.Work) _work.Stopped(id);
             await held.Channel.DisposeAsync().ConfigureAwait(false);
             return true;
         }
@@ -766,6 +828,64 @@ public sealed class HookSet(
         {
             _reconciling.Release();
         }
+    }
+
+    /// <summary>
+    /// What each plugin's steps are awaited by, whole (FABRIC-PERFORM1a, §C4): a plugin not named awaits nothing. A changed set is told to a
+    /// running process at once; one not running is started at the next look, where the lease is held here.
+    /// </summary>
+    public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited) => _work.Watch(awaited);
+
+    /// <summary>
+    /// The step events heard since the last take, each with its plugin and the generation of the process it came from, in the order they came.
+    /// An event from a process since restarted or stopped is refused here (<see cref="WorkRefusals.NotSender"/>), as is one not of its shape.
+    /// </summary>
+    public IReadOnlyList<WorkStepHeard> TakeSteps() => _work.TakeSteps();
+
+    /// <summary>The generation of the plugin's work process while one is up and listened to, else null.</summary>
+    public int? GenerationOf(string plugin) => _work.GenerationOf(plugin);
+
+    /// <summary>Whether three unasked exits within an hour have marked the plugin unsound, so the loop does not start it again.</summary>
+    public bool IsUnsound(string plugin) => _work.IsUnsound(plugin);
+
+    /// <summary>The person's <i>Try again</i> (D119): an unsound plugin is started again at the next look, its waits afresh.</summary>
+    public void TryAgain(string plugin) => _work.TryAgain(plugin);
+
+    /// <summary>
+    /// One attempt sent to the plugin's current process (§D6), returning that process's generation once it acknowledged receipt. Refused
+    /// where this loop does not hold the lease, the plugin's process is not up, or it did not name <c>work/perform</c> and its capability.
+    /// </summary>
+    public async Task<int> PerformAsync(string plugin, WorkPerformCall call, CancellationToken ct)
+    {
+        var (channel, generation) = Performer(plugin);
+        await channel.PerformAsync(call, ct).ConfigureAwait(false);
+        return generation;
+    }
+
+    /// <summary>What became of one attempt, asked of the plugin's current process (§D6), with that process's generation.</summary>
+    public async Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct)
+    {
+        var (channel, generation) = Performer(plugin);
+        return (await channel.ReconcileStepAsync(call, ct).ConfigureAwait(false), generation);
+    }
+
+    /// <summary>The plugin's current work process, where this loop may ask it to perform: refused with the reason otherwise.</summary>
+    private (IHookChannel Channel, int Generation) Performer(string plugin)
+    {
+        if (!_holdsHome())
+        {
+            throw new DriverException($"plugin `{plugin}` is asked to perform only by the loop that holds this home, and this process does not hold it.");
+        }
+
+        var (channel, generation) = _work.Performer(plugin)
+            ?? throw new DriverException($"plugin `{plugin}`'s work process is not running.");
+        if (!channel.Points.Contains(HookPoints.Perform, StringComparer.Ordinal) || !channel.Capabilities.Contains(WorkWire.Capability, StringComparer.Ordinal))
+        {
+            throw new DriverException(
+                $"plugin `{plugin}` did not name `{HookPoints.Perform}` and `{WorkWire.Capability}` at its handshake: it is never asked to perform.");
+        }
+
+        return (channel, generation);
     }
 
     /// <summary>The waterfall, for one planned start.</summary>
@@ -901,9 +1021,11 @@ public sealed class HookSet(
     /// <summary>Every process stopped with the loop, and said so: a stop a removal or an update asked for, by what the catalogue says now.</summary>
     public async ValueTask DisposeAsync()
     {
-        // The changes waiting go with the set (STATEHUB1g): its teller is stopped before the processes it would tell.
+        // The changes waiting go with the set (STATEHUB1g): its teller is stopped before the processes it would tell, and so is the work
+        // wire's (FABRIC-PERFORM1a): a frame not yet sent is not sent.
         _changes.Writer.TryComplete();
         await _going.CancelAsync().ConfigureAwait(false);
+        _work.Dispose();
         Task? telling;
         lock (_tellingGate) telling = _telling;
         if (telling is not null) await telling.ConfigureAwait(false);
