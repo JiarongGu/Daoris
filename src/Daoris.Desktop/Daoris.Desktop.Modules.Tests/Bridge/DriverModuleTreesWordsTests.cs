@@ -143,6 +143,96 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(answer.GetProperty("done").GetBoolean() ? 0 : 1, Said(answer).Code);
     }
 
+    /// <summary><c>trees remove &lt;named&gt;</c> (RPC1b4): a session or a branch by one name, with the repository only where it must say.</summary>
+    [Fact]
+    public async Task A_branch_discard_naming_a_branch_or_a_session_says_what_the_verb_says()
+    {
+        var module = await ComeUpAsync();
+
+        var branch = await AnswerAsync(module, "DISCARD_SESSION_BRANCH", new { named = "s-1a2b3c4d", force = true });
+        var (output, _, code) = Said(branch);
+        const string unrecorded = "`s-1a2b3c4d` names no session branch this machine recorded — say which repository holds it with `--repository <name>`.";
+        Assert.Equal([$"trees: {unrecorded}"], output);
+        Assert.Equal(1, code);
+        Assert.False(branch.GetProperty("done").GetBoolean());
+        Assert.Equal(unrecorded, branch.GetProperty("message").GetString());
+
+        var session = await AnswerAsync(module, "DISCARD_SESSION_BRANCH", new { named = "s1a2b3c4", force = true });
+        Assert.Equal(["trees: session `s1a2b3c4` names no working tree on this machine, so it left no session branch here."], Said(session).Out);
+        Assert.Equal(1, Said(session).Code);
+    }
+
+    [Fact]
+    public async Task A_branch_discard_naming_nothing_is_refused_as_before()
+    {
+        var refusal = await RefusalAsync(await ComeUpAsync(), "DISCARD_SESSION_BRANCH", new { force = true });
+
+        Assert.Contains("repository", refusal);
+    }
+
+    /// <summary><c>trees land --entry</c> and <c>--ask</c> (RPC1b4): the verbs' words beside the page's fields, a refusal as words.</summary>
+    [Fact]
+    public async Task An_entry_naming_no_work_here_is_said_as_the_verb_says_it()
+    {
+        var answer = await AnswerAsync(await ComeUpAsync(), "LAND_ENTRY", new { entry = "e-1", leaveOut = new[] { "s2" } });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        var (output, error, code) = Said(answer);
+        Assert.Empty(output);
+        Assert.Equal(TreesWords.EntryNone(isAsk: false, "e-1").Error, error);
+        Assert.Equal(1, code);
+    }
+
+    [Fact]
+    public async Task An_ask_naming_no_work_here_is_said_as_the_verb_says_it_and_keeps_the_pages_fields()
+    {
+        var answer = await AnswerAsync(await ComeUpAsync(), "LAND_ASK", new { ask = "a1b2c3" });
+
+        Assert.Equal(["ask", "done", "repositories", "said"], answer.EnumerateObject().Select(each => each.Name));
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal(TreesWords.EntryNone(isAsk: true, "a1b2c3").Error, Said(answer).Error);
+        Assert.Equal(1, Said(answer).Code);
+    }
+
+    /// <summary><c>trees land &lt;session&gt;</c> (RPC1b4): the refusals the verb says as words, where the route threw or landed nothing said.</summary>
+    [Fact]
+    public async Task A_landing_of_a_session_with_no_tree_is_the_verbs_sentence_exit_1_not_an_error()
+    {
+        var answer = await AnswerAsync(await ComeUpAsync(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        var (output, error, code) = Said(answer);
+        Assert.Empty(output);
+        Assert.Equal(TreesWords.NoTreeToLand("s1a2b3c4").Error, error);
+        Assert.Equal(1, code);
+    }
+
+    [Fact]
+    public async Task A_landing_the_review_already_reads_as_landed_is_not_again_exit_1()
+    {
+        new SessionTrees(Home).Recorded.Record(new LandedBranch(
+            "engine", "aurora", "daoris/s-landed00", "main", "abc123", "s1a2b3c4", null, "work", DateTimeOffset.UtcNow));
+
+        var answer = await AnswerAsync(await ComeUpAsync(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        var (output, error, code) = Said(answer);
+        Assert.Single(output);
+        Assert.StartsWith("trees: ", output[0]);
+        Assert.Contains("Nothing was landed again: its tree is gone.", output[0]);
+        Assert.Empty(error);
+        Assert.Equal(1, code);
+        Assert.Contains("Nothing was landed again", answer.GetProperty("message").GetString());
+    }
+
+    [Fact]
+    public async Task A_plan_of_a_session_with_no_tree_is_still_the_refusal_the_page_reads()
+    {
+        var refusal = await RefusalAsync(await ComeUpAsync(), "LANDING", new { id = "s1a2b3c4" });
+
+        Assert.Contains("no working tree", refusal);
+    }
+
     private sealed class StandInService : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
