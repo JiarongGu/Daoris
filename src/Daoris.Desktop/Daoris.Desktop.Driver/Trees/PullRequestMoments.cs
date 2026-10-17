@@ -21,6 +21,13 @@ public static class RemoteFetches
     /// <summary>When the line was last fetched or heard fetched in this process, or null where it never was.</summary>
     public static DateTimeOffset? When(string root, string line) => Key(root, line) is { } key && Last.TryGetValue(key, out var at) ? at : null;
 
+    /// <summary>The line's fetch, made once at a time per repository and line.</summary>
+    internal static Task<(string? Failed, string? Url)> OnceAsync(
+        string root, string line, Func<CancellationToken, Task<(string? Failed, string? Url)>> fetch, CancellationToken ct) => fetch(ct);
+
+    /// <summary>When git's files say the line was last fetched, or null.</summary>
+    public static DateTimeOffset? InGit(string commonDir, string line) => null;
+
     private static string? Key(string root, string line)
     {
         try

@@ -278,4 +278,8 @@ public sealed record StateFrame(
 
 /// <summary>What came of one ask: the answer, or the failure's code and Daoris's sentence, or not asked this time.</summary>
 /// <param name="Failure">One of <see cref="PluginEvents"/>' failure kinds, or <see cref="PullRequestCodes.NotAsked"/>; null where it answered.</param>
-public sealed record StateAnswer(StateAsk Ask, PullRequestState? Answer, string? Failure, string? Sentence = null);
+public sealed record StateAnswer(StateAsk Ask, PullRequestState? Answer, string? Failure, string? Sentence = null)
+{
+    /// <summary>When its own request was sent, or null where none was.</summary>
+    public DateTimeOffset? AskedAt { get; init; }
+}

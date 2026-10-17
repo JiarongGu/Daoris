@@ -96,6 +96,24 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
         Assert.Equal(2, _asked);
     }
 
+    /// <summary>
+    /// FABRIC-END6c, finding 4: the person's fetch that changed nothing moves no line for the ref watch to hear, and is still a fetch: git's
+    /// <c>FETCH_HEAD</c> says when, which a later Daoris reads as this one does.
+    /// </summary>
+    [Fact]
+    public async Task A_person_s_fetch_that_changed_nothing_is_read_from_git_s_files()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        await GitAsync(root, "fetch", "--quiet", "origin");
+        var before = DateTimeOffset.UtcNow.AddSeconds(-2);
+
+        await GitAsync(root, "fetch", "--quiet", "origin");
+
+        var read = RemoteFetches.InGit(new RefRepository("engine", "aurora", root).CommonDir, "main");
+        Assert.NotNull(read);
+        Assert.True(read >= before, $"read {read:O}, fetched after {before:O}");
+    }
+
     private static async Task Step(PullRequestMoments moments)
     {
         moments.Changes.Pump();

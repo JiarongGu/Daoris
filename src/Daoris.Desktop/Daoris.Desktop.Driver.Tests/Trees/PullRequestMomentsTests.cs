@@ -249,6 +249,59 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-END6c, finding 1: a removing press, bringing up to date or a landing holding the repository, a moment skips it, fetching
+    /// and asking nothing, rather than run beside it; it is owed, and asked once the hold is let go, whatever moment it was.
+    /// </summary>
+    [Fact]
+    public async Task A_moment_skips_a_held_repository_and_asks_once_it_is_let_go()
+    {
+        _world.Entries.AddRange([Landing("engine", "feature/a"), Landing("tools", "feature/t")]);
+        _world.Registry.AddRange([Repository("engine"), Repository("tools")]);
+        await using var moments = await Opened();
+
+        using (RepositoryHolds.Hold(_home, "engine"))
+        {
+            PullRequestMoments.Pushed(_home, "engine");
+            await Step(moments);
+            moments.Focused();
+            await Step(moments);
+            Assert.Equal(["feature/t"], _world.Asked);
+            Assert.Equal(["tools"], _world.Fetches);
+        }
+
+        await Step(moments);
+        Assert.Equal(["feature/t", "feature/a"], _world.Asked);
+        Assert.Equal(["tools", "engine"], _world.Fetches);
+
+        // Owed once: the next wake inside the minute asks nothing more.
+        PullRequestMoments.Pushed(_home, "engine");
+        await Step(moments);
+        Assert.Equal(2, _world.Asked.Count);
+    }
+
+    /// <summary>
+    /// FABRIC-END6c, finding 2: D148's minute is shared with every other occasion in this process. A look asking the pull request now
+    /// leaves a moment nothing to ask, and a moment's ask leaves the look's minute taken.
+    /// </summary>
+    [Fact]
+    public async Task Another_occasion_s_minute_bounds_a_moment_and_a_moment_s_bounds_another_occasion()
+    {
+        var a = Landing("engine", "feature/a");
+        var b = Landing("engine", "feature/b");
+        _world.Entries.AddRange([a, b]);
+        _world.Registry.Add(Repository("engine"));
+        _world.Keeps = false;
+        await using var moments = await Opened();
+
+        Assert.True(PullRequestMinute.TryTake(_home, a, _now));
+        moments.Focused();
+        await Step(moments);
+
+        Assert.Equal(["feature/b"], _world.Asked);
+        Assert.False(PullRequestMinute.TryTake(_home, b, _now.AddSeconds(30)));
+    }
+
+    /// <summary>
     /// A completed answer judges the repository's ends again at once, as Daoris's own move does, so its end is reached with no press;
     /// an answer that is not completed judges nothing.
     /// </summary>

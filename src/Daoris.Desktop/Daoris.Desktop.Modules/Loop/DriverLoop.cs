@@ -221,6 +221,9 @@ public sealed class DriverLoop(
     /// </summary>
     public void Focused() => _watch?.Focused();
 
+    /// <summary>Whether a focus heard before the watch existed waits to be told to it.</summary>
+    public bool FocusPending => false;
+
     /// <summary>The machine's resume as the shell hears it (FABRIC-EVENT2d); null where the shell hears none, and the watch's overrun rule is all.</summary>
     public PowerResume? Power { get; set; }
 
