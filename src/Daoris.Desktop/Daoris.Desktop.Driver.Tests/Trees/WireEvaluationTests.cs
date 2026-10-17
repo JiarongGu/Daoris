@@ -469,8 +469,9 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1e, defect 1: a failure is a receipt in its attempt's run alone. Kept from run 1 and evaluated in run 2 of the same graph
-    /// and revision, it takes no <c>failed</c> path; in its own run it does.
+    /// FABRIC-WIRE1e, defect 1: a failure is a receipt in its attempt's run alone. In its own run it takes the <c>failed</c> path; kept
+    /// from run 1 and evaluated in run 2 of the same graph and revision, it takes none (and FABRIC-WIRE1f lapses it there). A run never
+    /// returns to an earlier one, so the own run is evaluated first.
     /// </summary>
     [Fact]
     public void A_failure_in_one_run_is_no_receipt_in_another()
@@ -479,16 +480,15 @@ public sealed class WireEvaluationTests
         g.Start(g.Evaluate(), "d");
         g.Fail("d");
 
+        var own = g.Evaluate();
+        Assert.Equal(NodeStates.Ready, g.State("roll"));
+        Assert.StartsWith("fld-", Assert.Single(own.Of("roll")!.Receipts), StringComparison.Ordinal);
+
         g.Run = Base with { Run = "run-2" };
         var other = g.Evaluate();
         Assert.Equal(NodeStates.Blocked, g.State("roll"));
         Assert.Empty(other.Of("roll")!.Receipts);
         Assert.Equal(["w1"], other.Of("roll")!.Waiting);
-
-        g.Run = Base;
-        var own = g.Evaluate();
-        Assert.Equal(NodeStates.Ready, g.State("roll"));
-        Assert.StartsWith("fld-", Assert.Single(own.Of("roll")!.Receipts), StringComparison.Ordinal);
     }
 
     /// <summary>FABRIC-WIRE1e, defect 1: a rejection likewise is a receipt in its attempt's run alone.</summary>
@@ -499,15 +499,77 @@ public sealed class WireEvaluationTests
         g.Start(g.Evaluate(), "d");
         g.Reject("d");
 
+        var own = g.Evaluate();
+        Assert.Equal(NodeStates.Ready, g.State("redo"));
+        Assert.StartsWith("rej-", Assert.Single(own.Of("redo")!.Receipts), StringComparison.Ordinal);
+
         g.Run = Base with { Run = "run-2" };
         var other = g.Evaluate();
         Assert.Equal(NodeStates.Blocked, g.State("redo"));
         Assert.Empty(other.Of("redo")!.Receipts);
+    }
 
-        g.Run = Base;
-        var own = g.Evaluate();
-        Assert.Equal(NodeStates.Ready, g.State("redo"));
-        Assert.StartsWith("rej-", Assert.Single(own.Of("redo")!.Receipts), StringComparison.Ordinal);
+    /// <summary>
+    /// FABRIC-WIRE1f: an attempt's outcome other than a reach is its own run's alone, so a new run lapses a failure kept from another
+    /// (<c>run-scope</c>), as it lapses a skip, keeping it as history; the node is judged again and started afresh in this run, its attempt
+    /// numbers still growing (WIRE1e's note) and its tries counted afresh.
+    /// </summary>
+    [Fact]
+    public void A_new_run_lapses_another_runs_failure_and_starts_the_node_afresh()
+    {
+        var g = new Graph([Node("d")], []);
+        g.Start(g.Evaluate(), "d");
+        g.Fail("d");
+
+        g.Run = Base with { Run = "run-2" };
+        var lapsed = g.Evaluate();
+        var move = Assert.Single(lapsed.Moves);
+        Assert.Equal(("d", NodeStates.Invalidated, WireWhy.RunScope), (move.Node, move.Move.To, move.Why));
+        Assert.Empty(lapsed.Starts);
+
+        var again = g.Evaluate();
+        var ready = Assert.Single(again.Moves);
+        Assert.Equal((NodeStates.Ready, "deploy-failed"), (ready.Move.To, ready.Moved.Cleared?.Code));
+        var start = Assert.Single(again.Starts);
+        Assert.Equal((2, "run-2"), (start.Move.Binding!.Attempt, start.Move.Scope!.Run));
+        g.Start(again, "d");
+        Assert.Equal((2, 1), (g.Statuses["d"].Attempt, g.Statuses["d"].Tries));
+    }
+
+    /// <summary>FABRIC-WIRE1f, the other direction: in its own run a failure Daoris will not retry is kept for the person, however often evaluated.</summary>
+    [Fact]
+    public void In_its_own_run_a_failure_is_kept_for_the_person()
+    {
+        var g = new Graph([Node("d")], []);
+        g.Start(g.Evaluate(), "d");
+        g.Fail("d");
+
+        for (var pass = 0; pass < 2; pass++)
+        {
+            var evaluated = g.Evaluate();
+            Assert.Empty(evaluated.Moves);
+            Assert.Empty(evaluated.Starts);
+        }
+
+        Assert.Equal(NodeStates.Failed, g.State("d"));
+    }
+
+    /// <summary>FABRIC-WIRE1f: a rejection kept from another run lapses the same way, and a reach is kept, its acceptance omitting the run (§E2).</summary>
+    [Fact]
+    public void A_new_run_lapses_another_runs_rejection_and_keeps_its_reach()
+    {
+        var g = new Graph([Node("d") with { Rejectable = true }, Node("e")], []);
+        var first = g.Evaluate();
+        g.Start(first, "d");
+        g.Start(first, "e");
+        g.Reject("d");
+        g.Reach("e");
+
+        g.Run = Base with { Run = "run-2" };
+        var lapsed = g.Evaluate();
+
+        Assert.Equal([("d", WireWhy.RunScope)], lapsed.Moves.Select(each => (each.Node, each.Why)));
+        Assert.Equal(NodeStates.Reached, g.State("e"));
     }
 
     /// <summary>

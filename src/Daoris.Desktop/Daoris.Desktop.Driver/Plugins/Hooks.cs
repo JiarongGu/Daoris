@@ -612,7 +612,7 @@ public sealed class HookSet(
     // work wire, listens to its events and tells it what is awaited; a `--share` loop, which holds nothing, never does.
     Func<bool>? holdsHome = null,
     // The clock the work wire's waits and bounds are read on.
-    Func<DateTimeOffset>? clock = null) : IAsyncDisposable
+    Func<DateTimeOffset>? clock = null) : IAsyncDisposable, IWorkPerformPort
 {
     /// <summary>A running plugin's process, with what it was started from: what a stop's reason is judged against.</summary>
     /// <param name="Work">Whether the plugin speaks the work wire (FABRIC-PERFORM1a): its starts are supervised by <see cref="WorkPlugins"/>.</param>

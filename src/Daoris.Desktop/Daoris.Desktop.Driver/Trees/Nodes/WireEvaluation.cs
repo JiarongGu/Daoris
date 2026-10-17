@@ -115,6 +115,12 @@ public static class WireWhy
     /// <summary>A skip of another graph or run: it holds for its own alone.</summary>
     public const string SkipScope = "skip-scope";
 
+    /// <summary>
+    /// A failure or a rejection of another run (FABRIC-WIRE1f): an attempt's outcome other than a reach is its own run's alone, so a new run
+    /// lapses it, as a skip of another run lapses, and the node is judged again in this run.
+    /// </summary>
+    public const string RunScope = "run-scope";
+
     /// <summary>An <c>all</c> join's members settled: every one reached or skipped, or one failed.</summary>
     public const string Members = "members";
 
@@ -425,6 +431,9 @@ public static class WireEvaluation
         if (status.State == NodeStates.Skipped) return NodeLifecycle.Skips(status, run.Scope) ? null : (WireWhy.SkipScope, null);
         if (!NodeStates.Bound.Contains(status.State) || status.Binding is not { } binding) return null;
         if (NodeAcceptances.Lapsed(binding, Revision(run, binding.Unit), run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
+        // FABRIC-WIRE1f: a failure or a rejection is its attempt's run's alone (WIRE1e), so another run lapses it, as it lapses a skip, and the
+        // node is judged again there: a run is a pass the person or the rules began afresh. A reach is kept, its acceptance omitting the run.
+        if (status.State is NodeStates.Failed or NodeStates.Rejected && status.Scope != run.Scope) return (WireWhy.RunScope, status.Scope?.Run);
         var lost = binding.PrerequisiteReceipts.FirstOrDefault(receipt => !current.Contains(receipt))
             ?? binding.Inputs.Values.Select(port => port.Acceptance).FirstOrDefault(acceptance => acceptance is not null && !current.Contains(acceptance));
         return lost is null ? null : (WireWhy.Upstream, lost);
