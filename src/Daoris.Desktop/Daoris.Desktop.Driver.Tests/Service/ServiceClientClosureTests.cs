@@ -107,6 +107,28 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1v: the door's scope checks, a quest of another repository, of no chain the close's quest grew from, or bound to another
+    /// graph, are its own coded refusals, so each settles the close as refused, whether sent or asked after, and it is not sent again.
+    /// </summary>
+    [Theory]
+    [InlineData("other-repository")]
+    [InlineData("not-in-chain")]
+    [InlineData("other-graph")]
+    public async Task A_scope_refusal_of_the_door_settles_the_close_as_refused(string code)
+    {
+        var doors = new Doors((_, _, _) => new ServiceReply(409, $$"""{ "error": "Quest `#q6` is refused.", "code": "{{code}}" }"""));
+        using var client = new ServiceClient(doors);
+        IReadOnlyList<QuestCloseItem> named = [new("q6", "desk", 40), new("q7", "desk", 41)];
+
+        var refused = await client.CloseQuestsAsync("q7", "k-1", "ctk-1", named);
+        var asked = await client.CloseOutcomeAsync("q7", "k-1", "ctk-1", named);
+
+        Assert.Equal((QuestCloseOutcomes.Refused, code, "Quest `#q6` is refused."), (refused.Outcome, refused.Code, refused.Message));
+        Assert.Equal((QuestCloseOutcomes.Refused, code), (asked.Outcome, asked.Code));
+        Assert.Equal(2, doors.Asked.Count);
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1u: what became of a close is asked at its own door with the close as it was sent, and read as a close is: its first outcome,
     /// or refused <c>withdrawn</c> where the door never took the key, which the close door says too of a send of that key arriving after. A
     /// host before the question answers it as no door of its own, so the close stays unknown.

@@ -818,6 +818,19 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             key = "k0", token = "t", quests = new[] { named with { sequence = named.sequence + 7 } },
         })).Status);
 
+        // FABRIC-CLOSE1v: a quest of no chain this one grew from is refused by its own code, the whole close with it.
+        var otherAsk = (await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the stray report for the weekly review." }))
+            .Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var other = (await host.PostAsync($"/api/asks/{otherAsk}/publish", new { to = "Keeper", title = "Write the stray report", body = "For the review." }))
+            .Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var stray = await host.PostAsync($"/api/quests/{quest}/close", new
+        {
+            key = "k-stray", token = "t", quests = new[] { new { id = other, machine = "m", sequence = 1L }, named },
+        });
+        Assert.Equal(409, stray.Status);
+        Assert.Equal("not-in-chain", stray.Json.GetProperty("code").GetString());
+        Assert.Contains($"#{other}", stray.Error);
+
         var closed = await host.PostAsync($"/api/quests/{quest}/close", new { key = "k1", token = "t", quests = new[] { named } });
         Assert.Equal(200, closed.Status);
         var doneQuest = Assert.Single(closed.Json.GetProperty("quests").EnumerateArray().ToList());
