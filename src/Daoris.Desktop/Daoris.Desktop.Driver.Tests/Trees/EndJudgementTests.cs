@@ -120,12 +120,13 @@ public sealed class EndJudgementTests
     }
 
     /// <summary>
-    /// CLEANUP1b: a landing whose branch git said is missing is judged at the tip its landing recorded, and only the line's ancestry of that
-    /// commit ends it. Content and a pull request's word are read of a branch that stands, so they end nothing here; a branch standing
-    /// again is not judged as gone, and a line git could not read says nothing.
+    /// CLEANUP1b and CLEANUP1c: a landing whose branch git said is missing is judged at the tip its landing recorded. The line's ancestry of
+    /// that commit ends it, and so does its content proof on a form of the line (CLEANUP1c: a platform's squash leaves no ancestry). Content
+    /// only a branch of the person's holds, and a pull request's word, end nothing here; a branch standing again is not judged as gone, and
+    /// a line git could not read says nothing.
     /// </summary>
     [Fact]
-    public void A_landing_whose_branch_went_ends_only_by_the_lines_ancestry_of_its_recorded_tip()
+    public void A_landing_whose_branch_went_ends_by_the_lines_ancestry_or_its_content_on_the_line()
     {
         var entry = Landing() with { Plugin = "forge", PullRequestState = Done() };
         var cycle = EndCycle.Recorded(entry);
@@ -133,16 +134,18 @@ public sealed class EndJudgementTests
         var away = Facts() with { Standing = false };
 
         var merged = EndJudgement.Judge(cycle, gone, away with { Ancestry = Held.At("main") });
-        var content = EndJudgement.Judge(cycle, gone, away with { Content = Held.At("main") });
+        var content = EndJudgement.Judge(cycle, gone, away with { Content = Held.At("origin/main") });
+        var persons = EndJudgement.Judge(cycle, gone, away with { Content = Held.At("feature/other") });
         var asked = EndJudgement.Judge(cycle, gone, away with
         {
             Verdict = PullRequestProof.Judge(Done(), new PullRequestFacts("main", "origin/main", true, true, true)),
         });
         var unread = EndJudgement.Judge(cycle, gone, away with { Ancestry = Held.Unread });
-        var again = EndJudgement.Judge(cycle, gone, Facts(Held.At("main")));
+        var again = EndJudgement.Judge(cycle, gone, Facts(Held.At("main")) with { Content = Held.At("main") });
 
         Assert.Equal((EndState.Ended, EndBy.Merged, "main", Tip, "main"), (merged.State, merged.By, merged.Where, merged.Tip, merged.Line));
-        Assert.Equal((EndState.Handed, (string?)null), (content.State, content.By));
+        Assert.Equal((EndState.Ended, EndBy.OnLine, "origin/main", Tip), (content.State, content.By, content.Where, content.Tip));
+        Assert.Equal((EndState.Handed, (string?)null), (persons.State, persons.By));
         Assert.Equal((EndState.Handed, (string?)null), (asked.State, asked.By));
         Assert.Equal(EndState.Unknown, unread.State);
         Assert.Equal(EndState.Unknown, again.State);

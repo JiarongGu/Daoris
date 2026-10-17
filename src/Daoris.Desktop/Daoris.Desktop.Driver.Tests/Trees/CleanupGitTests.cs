@@ -384,6 +384,93 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.Equal(WorkEndState.NotEnded, (await UnitOfAsync(root, landed.Branch!)).End.State);
     }
 
+    // ---- CLEANUP1c: a squashed landing whose deleted branch's recorded commit reads on the line by content
+
+    /// <summary>
+    /// The landing branch pushed, squash-merged on the platform and deleted there (<paramref name="then"/>: the line moving on after it),
+    /// then the person pulls with a prune and deletes the branch here: the line holds its work by content and never by ancestry.
+    /// </summary>
+    private async Task<(string Root, SessionTrees Trees, string Branch, string Tip)> SquashedAndDeletedAsync((string File, string Content)? then = null)
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = new SessionTrees(Home);
+        var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        var tip = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
+        await SessionGoneAsync(root);
+        await GitAsync(root, "push", "--quiet", "origin", landed.Branch!);
+        await SquashOnPlatformAsync(origin, landed.Branch!, then: then);
+        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
+        await GitAsync(root, "merge", "--quiet", "--ff-only", "origin/main");
+        await GitAsync(root, "branch", "-D", landed.Branch!);
+        return (root, trees, landed.Branch!, tip);
+    }
+
+    private async Task LookAsync(SessionTrees trees, string root)
+    {
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            await trees.TidyEmptyAsync(root, "engine", "aurora", NoneAsync, CancellationToken.None);
+        }
+    }
+
+    /// <summary>
+    /// 🔴 CLEANUP1c: the platform squash-merged the landing's pull request, and the person pulled and deleted its branch. No ancestry holds
+    /// its recorded commit, but every file it changed reads on the line as it left them, so its end is kept by content as the look retires
+    /// it: ended, its clean-up completed, and no recovery ref, since the line holds its work.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_the_platform_squashed_and_the_person_deleted_reads_ended_by_content_with_no_recovery_ref()
+    {
+        var (root, trees, branch, tip) = await SquashedAndDeletedAsync();
+
+        await LookAsync(trees, root);
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == branch);
+        Assert.Equal((LandedGone.Missing, (string?)null, (string?)null), (trace.GoneAs, trace.MovedTo, trace.KeptOn));
+        Assert.Equal((EndBy.OnLine, tip, "main", "main"), (trace.Held?.By, trace.Held?.Tip, trace.Held?.Line, trace.Held?.On));
+        var unit = await UnitOfAsync(root, branch);
+        Assert.Equal((WorkEndState.Ended, "completed"), (unit.End.State, unit.Cleanup.State));
+        Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
+    }
+
+    /// <summary>
+    /// CLEANUP1c's guard: the line moved on after the squash and a file the landing changed reads otherwise there, so its content proof
+    /// does not hold. It still reads as CLEANUP1 says: dropped, its commit kept on a recovery ref first, and no end kept.
+    /// </summary>
+    [Fact]
+    public async Task A_squashed_landing_whose_file_still_differs_on_the_line_reads_dropped_and_kept()
+    {
+        var (root, trees, branch, tip) = await SquashedAndDeletedAsync(then: ("shared.txt", "three\n"));
+
+        await LookAsync(trees, root);
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == branch);
+        Assert.Equal((LandedGone.Missing, $"refs/daoris/discarded/{branch}", (HeldFact?)null), (trace.GoneAs, trace.KeptOn, trace.Held));
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", trace.KeptOn!)).Trim());
+        Assert.Equal(WorkEndState.Dropped, (await UnitOfAsync(root, branch)).End.State);
+    }
+
+    /// <summary>
+    /// CLEANUP1c's guard: the recorded commit is no longer in the object store (git's own collection took it once nothing held it), so
+    /// no content proof can be read of it, and an unread proof never ends anything. It reads as CLEANUP1 says: missing, with nothing to keep.
+    /// </summary>
+    [Fact]
+    public async Task A_squashed_landing_whose_commit_git_collected_reads_as_cleanup1_says()
+    {
+        var (root, trees, branch, tip) = await SquashedAndDeletedAsync();
+        await GitAsync(root, "reflog", "expire", "--expire=now", "--expire-unreachable=now", "--all");
+        await GitAsync(root, "gc", "--quiet", "--prune=now");
+        var (has, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", tip], CancellationToken.None);
+        Assert.True(has == 1, $"git's collection took {tip}");
+
+        await LookAsync(trees, root);
+
+        var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == branch);
+        Assert.Equal((LandedGone.Missing, (string?)null, (HeldFact?)null), (trace.GoneAs, trace.KeptOn, trace.Held));
+        Assert.Equal(WorkEndState.Dropped, (await UnitOfAsync(root, branch)).End.State);
+        Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
+    }
+
     /// <summary>
     /// 🔴 Re-check: the recovery for a dropped landing is made in one transaction with git's word that its branch is still absent, so a
     /// branch made again between the look's read and the keep refuses it: no ref, and nothing written for the landing.
