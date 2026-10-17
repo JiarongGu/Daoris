@@ -35,7 +35,10 @@ map found this first (WSP3), and every twin since was built the same way for the
   refuse", "half a remote pair is no remote": the answers for a missing file or field are where the
   twins drifted most.
 - **An editor preserves what it has no field for.** A twin that rewrote the file from its own idea of
-  the shape would delete what the other side wrote.
+  the shape would delete what the other side wrote. `driver.json`'s writers show the way (FABRIC-GRAPH1's
+  review): write the edit over the text read, from the file, the file as read and written again, and the
+  edited choices (`JsonKeeping.cs`, `jsonkeep.ts`). Prove it on a file the writer did not write, with keys
+  neither side knows at each level: a byte test whose input the new writer made proves only idempotence.
 - **A constant both sides need is duplicated deliberately**, with a comment naming the other copy,
   never imported across.
 - **A twin reads the other side's file by its name, never its folder** (STRUCT1, D166): the CLI's `driverFile` and
