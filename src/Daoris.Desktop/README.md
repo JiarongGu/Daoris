@@ -86,7 +86,9 @@ units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1
 run lapsed (`run-scope`, FABRIC-WIRE1f). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
 durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the attempt written with its start before
 `work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
-answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note).
+answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked
+read-modify-write with the lease asked inside it (`NodeRecordFiles.Edit`), and a reply is applied after its await to the record as
+it is then (FABRIC-PERFORM1h).
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
 its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
 rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),
