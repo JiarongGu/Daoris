@@ -73,6 +73,12 @@ public static class PerformedWhat
 
     /// <summary>The person's word was applied (FABRIC-PERFORM1g): the attempt settled by the person, its node moved through the one table.</summary>
     public const string Resolved = "resolved";
+
+    /// <summary>
+    /// A believed event that establishes nothing (FABRIC-PERFORM1i): an observed step's <c>unknown</c>, which moves no node and is not kept,
+    /// so no later word is ordered behind it.
+    /// </summary>
+    public const string Noted = "noted";
 }
 
 /// <summary>One thing the performer did, on one unit's node.</summary>
@@ -281,7 +287,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// The step events heard (<see cref="HookSet.TakeSteps"/>): each completion applied to the attempt its invocation names, once
     /// <see cref="WorkBelief.Completion"/> believes it (FABRIC-PERFORM1c: §C4's five rules, the unit as <paramref name="watched"/> tells it now);
     /// one not believed moves nothing and is counted by its code (<see cref="IWorkPerformPort.Refused"/>). An event naming no invocation is an
-    /// observed plugin node's, which no node of this build takes yet.
+    /// observed plugin node's, passed over here and judged by <see cref="WorkObserver"/> (FABRIC-PERFORM1i).
     /// </summary>
     public IReadOnlyList<WorkPerformed> Hear(
         IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, WatchedUnit?> watched)
@@ -404,7 +410,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return Edited(unit, node, record =>
         {
             var held = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
-            if (held is not { State: AttemptStates.Held }) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
+
+            // FABRIC-CLOSE1u: an unknown close its node is still on is the person's too, with a held close's words.
+            if (held is null || (held.State != AttemptStates.Held && !QuestClosing.Unanswered(record, held)))
+            {
+                return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
+            }
+
             if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
 
             // FABRIC-CLOSE1q: each attempt takes its own words. A close's outcome is its door's answer, so a plugin's words are never taken on
@@ -668,7 +680,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             case WorkStates.Reached:
                 move = new NodeMove(NodeStates.Reached, NodeCause.Authority)
                 {
-                    Source = NodeSource.Plugin, Attempt = attempt.Attempt, Acceptance = status.Binding is { } binding ? Accepted(node, attempt, binding, outcome) : null,
+                    Source = NodeSource.Plugin, Attempt = attempt.Attempt, Acceptance = status.Binding is { } binding ? Accepted(node, attempt.Call.Invocation, binding, outcome) : null,
                 };
                 break;
             case WorkStates.Failed:
@@ -731,9 +743,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// <see cref="WorkBelief.Evidence"/>) and its outputs, each at the schema its reference names (§D6's <c>&lt;schema&gt;:&lt;id&gt;</c>), so
     /// the one table refuses evidence of another schema than the node declares, and an output undeclared or of another schema.
     /// </summary>
-    private static NodeAcceptance Accepted(NodeDeclaration node, NodeAttempt attempt, NodeAcceptance binding, WorkOutcome outcome) => binding with
+    /// <param name="word">What stands for the plugin's word where it gave no reference: an attempt's invocation, an event's id (FABRIC-PERFORM1i).</param>
+    internal static NodeAcceptance Accepted(NodeDeclaration node, string word, NodeAcceptance binding, WorkOutcome outcome) => binding with
     {
-        Evidence = WorkBelief.Evidence(node, attempt.Call.Invocation, binding.SubjectRevision, outcome.Evidence),
+        Evidence = WorkBelief.Evidence(node, word, binding.SubjectRevision, outcome.Evidence),
         Outputs = (outcome.Outputs ?? new Dictionary<string, WorkOutput>()).ToDictionary(
             output => output.Key,
             output => new NodePort(WorkBelief.SchemaOf(output.Value.Ref) ?? "", output.Value.Ref, output.Value.Revision ?? binding.SubjectRevision, null),

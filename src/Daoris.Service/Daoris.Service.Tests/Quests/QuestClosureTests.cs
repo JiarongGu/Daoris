@@ -455,6 +455,52 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(new QuestClose("k2", "token-k2"), Assert.Single(await _quests.HistoryAsync(quest.Id), op => op.Kind == QuestOperationKind.Done).Close);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1u: what became of a close is answered from its key, executing nothing. A key never taken is withdrawn in that
+    /// answer's transaction, so its close never runs: the same close arriving after is refused under it, the quest left taken. A
+    /// key taken answers its first outcome, a close as a refusal, and another call under it is refused as one; asked again, the
+    /// same answer, and nothing is written.
+    /// </summary>
+    [Fact]
+    public async Task What_became_of_a_close_is_answered_from_its_key_and_a_key_never_taken_is_withdrawn_so_its_close_never_runs()
+    {
+        var quest = await Bound(chain: false);
+        await Ready(quest, new QuestAnswer(1, null, Departed: "No report this time.", Quote: Report.Quote), Met(2));
+        await _exchange.AcceptAsync(quest.Id, Now);
+        var submitted = await Find(quest.Id);
+        var written = (await _quests.HistoryAsync(quest.Id)).Count;
+        Task<QuestCloseOutcome> Asked(string key, string? token = null) =>
+            _exchange.CloseOutcomeAsync(quest.Id, key, token ?? "token-" + key, [Named(submitted)], Now);
+
+        // Never taken: withdrawn, and the close it names never runs, though it would close the quest now.
+        var withdrawn = await Asked("k1");
+        Assert.Equal(QuestCloseRefusal.Withdrawn, withdrawn.Refusal);
+        Assert.Contains("k1", withdrawn.Message, StringComparison.Ordinal);
+        var late = await Close("k1", submitted);
+        Assert.Equal(QuestCloseRefusal.Withdrawn, late.Refusal);
+        Assert.Contains("withdrawn", late.Message, StringComparison.Ordinal);
+        Assert.Equal(QuestStatus.Taken, (await Find(quest.Id)).Status);
+        Assert.Equal(written, (await _quests.HistoryAsync(quest.Id)).Count);
+        Assert.Equal(QuestCloseRefusal.Withdrawn, (await Asked("k1")).Refusal);
+
+        // Taken and closed: the close is its answer, however often it is asked, and nothing more is written.
+        Assert.Equal(QuestCloseRefusal.None, (await Close("k2", submitted)).Refusal);
+        var closed = await Asked("k2");
+        Assert.Equal(QuestCloseRefusal.None, closed.Refusal);
+        Assert.Equal(QuestStatus.Done, Assert.Single(closed.Quests).Status);
+        Assert.Equal(QuestCloseRefusal.None, (await Asked("k2")).Refusal);
+        Assert.Single(await _quests.HistoryAsync(quest.Id), op => op.Kind == QuestOperationKind.Done);
+
+        // Another call under a key is not that close; a refusal kept is answered as it was.
+        Assert.Equal(QuestCloseRefusal.KeyReused, (await Asked("k2", "another-token")).Refusal);
+        Assert.Equal(QuestCloseRefusal.Closed, (await Close("k3", submitted)).Refusal);
+        Assert.Equal(QuestCloseRefusal.Closed, (await Asked("k3")).Refusal);
+
+        // A question that is not one asks nothing and keeps no key.
+        Assert.Equal(QuestCloseRefusal.Malformed, (await _exchange.CloseOutcomeAsync(quest.Id, "", "t", [Named(submitted)], Now)).Refusal);
+        Assert.Equal(QuestCloseRefusal.Malformed, (await _exchange.CloseOutcomeAsync(quest.Id, "k4", "t", [], Now)).Refusal);
+    }
+
     /// <summary>Canary 45: a close naming a submission no longer current writes nothing.</summary>
     [Fact]
     public async Task A_close_naming_a_submission_no_longer_current_writes_nothing()

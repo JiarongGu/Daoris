@@ -19,8 +19,8 @@ import { fileURLToPath } from 'node:url';
 import { createServer as createTcpServer } from 'node:net';
 import { portIsFree } from './cdp.mjs';
 import {
-  ACP_STUB_AGENT, PORT_BAND, STUB_COMMIT, checkFolderName, evidenceFolder, gitRefusal, keepEvidence, makeChecker, portHolder,
-  portRefusal, rehearsalRun, restartBetweenRequests, takePorts, waitFor,
+  ACP_STUB_AGENT, PORT_BAND, STUB_COMMIT, checkFolderName, evidenceFolder, gitRefusal, keepEvidence, makeChecker, ownBuild,
+  ownBuildRoot, ownBuilt, portHolder, portRefusal, rehearsalRun, restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -63,6 +63,17 @@ test("a run's folder sits beside the transcripts and is named for the rehearsal 
   assert.equal(
     evidenceFolder('/repo', 'family', new Date('2026-10-07T09:04:27.824Z')),
     join('/repo', '_fixtures', 'rehearsal-logs', 'family-2026-10-07T09-04-27-824Z'));
+});
+
+// REHLANE1: a rehearsal that runs beside the driver's git half builds the desktop's projects where no Process half builds or runs.
+test("a rehearsal's own build output is a folder of its own beside its scratch, and its build and its files are under it", () => {
+  const root = ownBuildRoot('/repo', 'family');
+  assert.equal(root, join('/repo', '_fixtures', 'rehearsal-builds', 'family'), 'kept across runs, which wipe the scratch, so a build is incremental');
+  const project = join('/repo', 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
+  // The SDK's own option: every project the build reaches puts its obj/ and bin/ under the root, never under its folder.
+  assert.equal(ownBuild(project, root), `dotnet build "${project}" --artifacts-path "${root}"`);
+  // The SDK's artifacts layout: bin/<the project's name>/<configuration, lower case>/, measured on the driver host.
+  assert.equal(ownBuilt(root, project, 'daoris-driver.dll'), join(root, 'bin', 'Daoris.Desktop.Driver.Host', 'debug', 'daoris-driver.dll'));
 });
 
 test('a failed check keeps its print and a copy of each file it names, under a folder named for it', () => {
