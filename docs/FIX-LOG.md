@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A tidy could rest on a landing's branch alone, a replaced holder or a live name (FABRIC-END4a, fourth review)
+
+- **Symptom:** a fourth review, before staging: the automatic tidy removed a session branch held through a landing's branch after the
+  line rewound past that landing; LAND3's squash path cleared a chain's earlier branch on a landing branch made again elsewhere; the
+  carried tidy took a branch at A on the proof of B, where it moved A to B and back as it was asked; a ref broken as its delete was
+  refused read as gone; and an unread landing branch left every other branch unjudged with nothing said.
+- **Root cause:** what a removal rests on was still cut short or unbound in three places: `AutoTidies` rebuilt each landing as a
+  `LineLanding` with its tip and line but not its proof's rests; `TidyHeldAsync` compared the other branches with the squashed session
+  tip while reading the holder at whatever commit it then stood; and `TidyCarriedAsync` handed `CarrierOfAsync` the branch's live name.
+  `RefusedAsync` read `rev-parse`'s exit 1 as "no such ref", though git exits 1 on any failure to resolve. `TidiedSaid` had no words
+  for a branch nobody judged.
+- **Fix:** `LineLanding.Rests` carried to the delete; the holder read at a commit that is or contains the one the squash made
+  (`madeAt`), else nothing judged and each standing branch said as not judged (`TidiedBranch.Unjudged`); the carrier asked about the
+  tip read; absence asked of `show-ref --exists`, exit 2 alone. D173's FABRIC-END4a note, "After the fourth review", has the detail.
+- **Verification:** red first on round 4's branch: `TidyEffectGitTests`' rewound landing, three `JudgedDeleteGitTests` and
+  `PullRequestStateTests`' moved carried branch; then green, with the driver's fast half and the Git classes that reach the delete and
+  the tidy.
+
 ## 2026-10-17 — A removal could rest on a holder that was gone, or verify a line it never compared (FABRIC-END4a, third review)
 
 - **Symptom:** a third review, before staging: a branch of the person's that held a session branch by ancestry, deleted between the

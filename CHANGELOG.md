@@ -24,7 +24,8 @@ with the version and date at release.
   session leaves a tree that kept it, rather than at the next five-minute pass. The pass no longer reads every branch the line
   holds none of again (about nine git commands fewer for each), and the work's state names what kept a tree and why, such as a
   session still in it or uncommitted work. A branch goes only while the line still holds what its removal was judged against: git
-  checks both together, so a line moved at that moment keeps the branch.
+  checks both together, so a line moved at that moment keeps the branch. Where a landing's clean-up cannot tell what holds the
+  other branches, it keeps them and says it could not judge them.
 - A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
 - A terminal's `sessions stop`, `say` or `take-back`, and its `trees` presses, reach the running Daoris as they are written
   (about a third of a second), where Daoris used to look for them once a second; it still looks every 3 s in case one is
