@@ -195,12 +195,12 @@ public sealed class HeldFactsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 FABRIC-END2d (a): a session branch recorded before END2, with no unit, whose squashing landing's branch the line holds, is kept ended
-    /// through that landing, as the squash's record proves it (<c>TreeSquashes.SquashedHoldAsync</c>): its fact rests on the landing's branch at
-    /// the commit read. Neither the line's ancestry nor the content proof holds its own commit.
+    /// FABRIC-END2d (a), a guard green before and after: a session branch recorded before END2, with no unit, whose squashing landing's branch
+    /// the line holds, is kept ended with no unit naming its landing. The line holds the squash commit, whose tree is the session's own, so
+    /// the content proof ends it on the line, as the clean-up's press proves it there (<c>SquashedHoldAsync</c>, then the content).
     /// </summary>
     [Fact]
-    public async Task A_session_branch_from_before_units_is_kept_ended_through_the_squash_landing_the_line_holds()
+    public async Task A_session_branch_from_before_units_whose_squash_landing_the_line_holds_is_kept_ended()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
@@ -212,7 +212,7 @@ public sealed class HeldFactsGitTests : LandedFixture
 
         var held = Entry(branch).Held;
         Assert.NotNull(held);
-        Assert.Equal((EndBy.Landed, landing, (await GitAsync(root, "rev-parse", landing)).Trim()), (held.By, held.On, held.OnAt));
+        Assert.Equal((EndBy.OnLine, "main"), (held.By, held.On));
         Assert.Equal(EndBy.Merged, new LandedBranches(Home).Of("engine", landing)!.Held?.By);
     }
 
@@ -228,9 +228,8 @@ public sealed class HeldFactsGitTests : LandedFixture
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
-        var (a, b) = await InsideLandingAsync(trees, root);
+        var (a, b, _, first) = await InsideLandingAsync(trees, root);
         if (!units) ForgetUnits();
-        var first = Grown.Entries().First().Branch;
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         await KeepAsync(trees, root);

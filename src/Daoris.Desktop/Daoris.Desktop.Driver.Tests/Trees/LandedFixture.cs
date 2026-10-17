@@ -81,8 +81,9 @@ public abstract class LandedFixture : IDisposable
 
     /// <summary>
     /// A squashing landing from before FABRIC-END2 (the review of FABRIC-END4a's older squash record): a session's tree with one commit, landed
-    /// under a squash rule, its landing branch merged onto the line, and the line then changing the session's file again, so neither the
-    /// line's ancestry nor the content proof holds the session's own commit; only the squash's record does. The units are forgotten.
+    /// under a squash rule, its landing branch merged onto the line, and the line then changing the session's file again, so the line's
+    /// ancestry does not hold the session's own commit and its file differs on the line. The squash commit the line holds has the session's
+    /// own tree, which the content proof reads (SQUASHTIDY1, the commit's tree). The units are forgotten.
     /// </summary>
     /// <returns>The session's tree, its branch, and the branch the landing made.</returns>
     protected async Task<(string Tree, string Branch, string Landing)> OlderSquashAsync(SessionTrees trees, string root)
@@ -93,8 +94,6 @@ public abstract class LandedFixture : IDisposable
         await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
         var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1", "q1", "Fix the gap"));
         Assert.True(landed.Landed, landed.Message);
-        // The line gains a file first, so no commit of it has the session's own tree (SQUASHTIDY1's proof by the commit's tree).
-        await CommitAsync(root, "other.txt", "the line's own\n", "the line moves on");
         await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", $"merge {landed.Branch}", landed.Branch!);
         await CommitAsync(root, "work.txt", "the work, changed again\n", "the line changes it again");
         ForgetUnits();
@@ -105,12 +104,17 @@ public abstract class LandedFixture : IDisposable
     /// The first real ticket's case (<c>LandedBranchTests</c>): a landing made A; a later landing made B from A's branch; B was squash-merged
     /// onto the line, so B's files read there and A's shared file does not, and A is inside B.
     /// </summary>
-    protected static async Task<(TreeLanding A, TreeLanding B)> InsideLandingAsync(SessionTrees trees, string root)
+    /// <returns>Both landings, and the first session's tree and branch, whose commit only A and B hold.</returns>
+    protected static async Task<(TreeLanding A, TreeLanding B, string Tree, string Branch)> InsideLandingAsync(SessionTrees trees, string root)
     {
-        var a = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"), extra: ("a.txt", "a\n"));
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(first.Path, "shared.txt"), "one\ntwo\n");
+        await CommitAsync(first.Path, "a.txt", "a\n", "First");
+        var a = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "First"));
+        Assert.True(a.Landed, a.Message);
         var b = await LandAsync(trees, root, "shared.txt", "one\ntwo\nthree\n", new LandingSubject("s2", "q2", "Second"), from: a.Branch, extra: ("b.txt", "b\n"));
         await SquashAsync(root, b.Branch!);
-        return (a, b);
+        return (a, b, first.Path, first.Branch);
     }
 
     /// <summary>A squash merge onto the checkout's own line, as a platform's "squash and merge" leaves it.</summary>

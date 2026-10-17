@@ -120,18 +120,20 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
             // The landing that carries its unit's work, where one stands: its cycle is what that landing recorded (§B3).
             var landing = grown.Unit is { } unit ? landings.LastOrDefault(entry => entry.Units.Contains(unit, StringComparer.Ordinal)) : null;
             var landingEnd = landing is not null && ends.TryGetValue(landing.Branch, out var its) ? its.End : null;
-            // FABRIC-END2d: where no unit names a landing (an install from before END2), or the one it names has not ended, the landing whose
-            // record holds its work and whose own proof ended it carries it, as the squash's record vouches for its session (SquashedHoldAsync)
-            // and a landing's branch holds a session's commits.
-            if (landingEnd is not { Ended: true } && await EndJudgement.HolderAsync(root, tip, hosts, ct).ConfigureAwait(false) is { } holder)
-            {
-                (landing, landingEnd) = (holder.Entry, holder.End);
-            }
-
             var cycle = landing is not null ? EndCycle.Recorded(landing) : EndCycle.Accepts(config ??= context.Config(), repository, workspace);
             carriers ??= await asks.CarriersAsync(root, repository, line, ct, refs).ConfigureAwait(false);
             var subject = new EndSubject(grown.Branch, tip, EndRole.Session, landing) { Worked = !string.Equals(tip, grown.From, StringComparison.Ordinal) };
             var verdict = await EndJudgement.JudgeAsync(root, cycle, subject, line, notHolders, carriers, ct, refs, landingEnd).ConfigureAwait(false);
+            // FABRIC-END2d: where its own proofs and its unit's landing end nothing (no unit names a landing on an install from before END2, or the
+            // one it names has not ended), the landing whose record holds its work and whose own proof ended it carries it: what the clean-up's
+            // press finds as the landing holding its tip (TreeSweeps.LandingHoldingAsync), and the squash's record vouching for its session
+            // (SquashedHoldAsync). HolderAsync's ancestry is the inside fact the landed proof reads, so the verdict is judged on it alone.
+            if (!verdict.Ended && landingEnd is not { Ended: true } && await EndJudgement.HolderAsync(root, tip, hosts, ct).ConfigureAwait(false) is { } holder)
+            {
+                verdict = EndJudgement.Judge(EndCycle.Recorded(holder.Entry), subject with { Landing = holder.Entry },
+                    new EndFacts(line) { Inside = true, LandingEnd = holder.End });
+            }
+
             var next = Next(grown.Held, verdict, await OnAtAsync(verdict).ConfigureAwait(false), identity, now);
             if (next == grown.Held) continue;
             context.Grown.Hold(grown.Repository, grown.Branch, next);

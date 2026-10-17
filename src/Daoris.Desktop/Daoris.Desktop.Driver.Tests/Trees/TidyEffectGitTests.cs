@@ -199,8 +199,8 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 FABRIC-END2d, the review's older squash record (D173's FABRIC-END4a note, "After review"): a session branch from before units whose
-    /// squashing landing the line holds goes at the look's tidy, as before, now on the fact the keeper keeps for it.
+    /// FABRIC-END2d, the review's older squash record (D173's FABRIC-END4a note, "After review"), a guard green before and after: a session
+    /// branch from before units whose squashing landing the line holds goes at the look's tidy, on the fact the keeper keeps for it.
     /// </summary>
     [Fact]
     public async Task An_older_squash_records_session_branch_goes_once_the_line_holds_its_landing()
@@ -218,15 +218,15 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 FABRIC-END2d, the review's landing inside another: it goes at the look's tidy with the one it is inside, as before, now on the fact
-    /// the keeper keeps for it.
+    /// FABRIC-END2d, the review's landing inside another, green before (END4a's fallback) and after: it goes at the look's tidy with the one it
+    /// is inside, now on the fact the keeper keeps for it.
     /// </summary>
     [Fact]
     public async Task A_landing_inside_another_the_line_holds_goes_with_it()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
-        var (a, b) = await InsideLandingAsync(trees, root);
+        var (a, b, _, _) = await InsideLandingAsync(trees, root);
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var pass = await TidyAsync(trees, root);
@@ -237,21 +237,24 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The second review's P2 (AutoTidies.cs:263, :268, :320), now with no memory at all (FABRIC-END2d): a recorded branch the press kept
-    /// because its tree held uncommitted work goes at the next pace once the tree is clean, with neither its tip nor the line moved. END4a's
-    /// fallback remembered it at its tip and the line's commit and judged it again only after the <c>refs</c> deadline.
+    /// 🔴 The second review's P2 (AutoTidies.cs:263, :268, :320), now with no memory at all (FABRIC-END2d): a session branch from before units
+    /// whose work only a landing inside another holds, which the press kept because its tree held uncommitted work, goes at the next pace once
+    /// the tree is clean, with neither its tip nor the line moved. END4a's fallback remembered it at its tip and the line's commit and judged
+    /// it again only once the <c>refs</c> deadline passed; the keeper now keeps its end (through the landing whose branch holds it), so it is
+    /// a candidate at every pace.
     /// </summary>
     [Fact]
-    public async Task A_kept_older_squash_branch_goes_at_the_next_pace_once_its_tree_is_clean()
+    public async Task A_kept_unproven_branch_goes_at_the_next_pace_once_its_tree_is_clean()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
-        var (tree, branch, _) = await OlderSquashAsync(trees, root);
-        await File.WriteAllTextAsync(Path.Combine(tree, "work.txt"), "not yet committed\n");
+        var (_, _, tree, branch) = await InsideLandingAsync(trees, root);
+        ForgetUnits();
+        await File.WriteAllTextAsync(Path.Combine(tree, "a.txt"), "not yet committed\n");
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
         var kept = await TidyAsync(trees, root);
         Assert.DoesNotContain(kept.Results, result => result.Removed && result.Item.Branch == branch);
-        await GitAsync(tree, "checkout", "--", "work.txt");
+        await GitAsync(tree, "checkout", "--", "a.txt");
 
         var next = await TidyAsync(trees, root);
 
