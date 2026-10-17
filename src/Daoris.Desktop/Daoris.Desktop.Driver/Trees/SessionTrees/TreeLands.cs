@@ -341,6 +341,8 @@ internal sealed class TreeLands(
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
+        // LANDGIT1: and what a commit's id answers, once, in the planning up to the branch made (GitFacts); closed before the tidy.
+        using var facts = GitFacts.Within();
         var full = Path.GetFullPath(path);
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
         // lands nothing either.
@@ -491,9 +493,12 @@ internal sealed class TreeLands(
                 // An advance grows the pull request its first landing opened (LAND2c, D149 point 4): the plugin is told it, so it
                 // pushes and opens no second one, and is told who accepted the work, so its description says so truly.
                 var open = landed.AdvancedFrom is null ? null : context.Recorded.Of(repository, landed.Branch!) is { Pushed: true } entry ? entry.PullRequest : null;
+                // LANDGIT1: the plugin pushes with a git of its own, which no fact held here knows: dropped before and after it.
+                GitFacts.Dropped();
                 var said = await context.Plugins.LandAsync(plugin, new LandingFrame(
                     repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
                     subject.Session, branched.Commits, open, acceptedBy), ct).ConfigureAwait(false);
+                GitFacts.Dropped();
                 landed = landed with
                 {
                     Plugin = said,
@@ -519,6 +524,10 @@ internal sealed class TreeLands(
                     : landed.Message + decided,
             };
         }
+
+        // LANDGIT1: the planning's table ends here. What follows moves the tree, judges and removes (the end keeping, the tidy's proof
+        // and its delete): each of those reads git as it stands, never what the planning was told.
+        GitFacts.Close();
 
         // LANDSYNC1 (D87's amendment point 7): the session follows what landed, so its next turn starts in sync with the line. Before the
         // rule's tidy, whose proof then finds the tree's branch inside what landed; where it cannot move, the landing stands and says why.
