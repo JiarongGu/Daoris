@@ -426,12 +426,16 @@ public sealed class InstallUpdater(
 
     /// <summary>
     /// A line about how a swap ended, with what it found held (SWAP2): the launcher writes no log, so its journal's holds are
-    /// said here, a count and the longest in milliseconds, and nothing of them when it met none.
+    /// said here, a count and the longest in milliseconds, and nothing of them when it met none. The longest hold's entry, by
+    /// its name alone, and the processes found holding it, where the swap found them (DEPLOYBUSY1).
     /// </summary>
-    private static (string Key, object? Value)[] Ending(SwapRecord record, params (string Key, object? Value)[] data) =>
-        record.Holds is { Count: > 0 } holds
-            ? [.. data, ("holds", holds.Count), ("heldMs", holds.Max(hold => hold.Ms))]
-            : data;
+    private static (string Key, object? Value)[] Ending(SwapRecord record, params (string Key, object? Value)[] data)
+    {
+        if (record.Holds is not { Count: > 0 } holds) return data;
+        var longest = holds.MaxBy(hold => hold.Ms)!;
+        (string Key, object? Value)[] said = [.. data, ("holds", holds.Count), ("heldMs", longest.Ms)];
+        return longest is { Held: { } held, By: { } by } ? [.. said, ("held", Path.GetFileName(held)), ("heldBy", by)] : said;
+    }
 
     /// <summary>
     /// How the journal's swap ended, told or not (UPDATE1d): installed, rolled back or refused as written; confirmed by this

@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
+
+- **Symptom:** twice in a row on main (3a0d0af, 6bd7e0e) the deployment rehearsal's 9e rolled `fails-to-start` back `busy`,
+  not `exited`: the move of `app` was refused for its whole 120 s after `app.stopped`, while nothing ran from `app/` (the
+  launcher's own check had passed). The 9d swap before it met a 41 s hold that gave way. The journal said which move was held and
+  for how long, and nothing of which file or which process.
+- **Root cause:** not yet attributed; this entry is the diagnosis half. The launcher counts as *running from `app/`* only a
+  process whose image is under it, and any other process holding a handle there (a file open, a folder as its working folder, an
+  enumeration under way) refuses the folder's move unseen. Two rehearsals in a worktree with the diagnosis below passed 115/115.
+  The first met a 45 s hold in 9d, on `app`'s `bin`, held at the first refusal by a process outside Daoris (a long-running
+  `dotnet` of another tool on the machine, named by its image's installer rollback file, `<hex>.rbf`, since an update had
+  replaced that image as it ran); the second met no hold at all. No Daoris process was found holding `app/`, and the holds
+  come and go with what else runs on the machine, as SWAP2 measured.
+- **Fix:** the swap now names what it found held. `HeldFiles` asks Windows which processes hold the folder moved or an entry
+  within it (`FileProcessIdsUsingFileInformation`, the Restart Manager's own question, which also answers a folder that is some
+  process's working folder: `RmGetList` takes files alone). It is asked at the first refusal, every five seconds after and at the
+  give-up, keeping the last answer, since one moment's holder can be a passer-by. Each hold journals `held` (the entry),
+  `by` (`name (pid n)`) and `holders` (each with its start and command line, the journal's alone); `busy`'s detail and
+  `daoris-driver update` say them, and `update.installed`/`update.rolled-back` carry `held` (its name) and `heldBy`.
+- **Verification:** each new test failed first at run time (members added without behaviour), then passed: a file this process
+  holds is named with its pid, a held move's journal and detail name both, a hold that gave way keeps its holder, a hold asked
+  again names the last holder and not the first (red with the ask made rare), the journal's new fields round-trip and an old
+  one reads as before, the terminal's words and the log line's fields. `HeldFilesProcessTests` (Process): a `node` whose working
+  folder is `app/` is named as holding `app` itself, and the folder's move is refused. Two deployment rehearsals, 115/115 each.
+
 ## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
 
 - **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node
