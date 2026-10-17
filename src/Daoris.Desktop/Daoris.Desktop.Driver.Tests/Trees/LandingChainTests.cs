@@ -339,6 +339,24 @@ public sealed class LandingChainTests : IDisposable
         Assert.Equal(AcceptedBy.Person, sample["acceptedBy"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// LANDPIN2 (D173's FABRIC-END7 note): the frame names the commit the landing judged, which a plugin pushes to the branch rather than
+    /// the branch as it stands at the push. A frame from before it says none, and the kit's sample says its own commit.
+    /// </summary>
+    [Fact]
+    public void The_landing_frame_carries_the_commit_judged()
+    {
+        var judged = Frame(new LandingFrame("engine", "aurora", "/root", "feature/x", "main", "Fix", "q1", "s1",
+            [new LandingCommit("3f2a9c1e", "Fix")], Tip: "3f2a9c1e"));
+        Assert.Equal("3f2a9c1e", judged.GetProperty("tip").GetString());
+
+        var before = Frame(new LandingFrame("engine", "aurora", "/root", "feature/x", "main", "Fix", "q1", "s1", []));
+        Assert.Equal(JsonValueKind.Null, before.GetProperty("tip").ValueKind);
+
+        var sample = PluginKit.Find(HookPoints.Land)!.Frame;
+        Assert.Equal(PluginKit.SampleLanding.Commits[^1].Sha, sample["tip"]!.GetValue<string>());
+    }
+
     private static JsonElement Frame(LandingFrame frame) =>
         JsonDocument.Parse(JsonSerializer.Serialize(HookFrames.Land(frame))).RootElement.Clone();
 }

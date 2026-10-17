@@ -329,11 +329,23 @@ internal sealed class TreeLands(
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
+        // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
+        // lands it. The second to come waits for the first, and where the first landed the very commit this one would land, says what
+        // came of it, its plugin's answer included, and lands nothing more. A later commit lands as any landing does; a landing that
+        // waited for nothing is judged as before, and reads nothing more of git.
+        using var hold = await LandingHolds.TakeAsync(context.Home, path, ct).ConfigureAwait(false);
+        if (hold is null) return new(false, StillLanding) { Refusal = AutoLandingCode.Refused };
+        if (hold.Before is { } before && await JudgedAsync(path, gate, ct).ConfigureAwait(false) is { } asked
+            && string.Equals(asked, before.Tip, StringComparison.OrdinalIgnoreCase))
+        {
+            return LandedMeanwhile(before, subject.Session);
+        }
+
         TreeLanding landed;
         // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
         using (RepositoryHolds.Hold(context.Home, repository))
         {
-            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched).ConfigureAwait(false);
+            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold).ConfigureAwait(false);
         }
 
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
@@ -343,10 +355,48 @@ internal sealed class TreeLands(
         return landed;
     }
 
+    /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/> (LANDRACE1).</summary>
+    internal static string StillLanding =>
+        $"another landing of this session's work was still under way after {(int)LandingHolds.Wait.TotalMinutes} minutes, so nothing was "
+        + "landed: accept it again once that one ends.";
+
+    /// <summary>
+    /// The commit a landing that waited would land (LANDRACE1's review): the tip its door judged, where the door pinned one, else the
+    /// tree's head as it stands. Read only after a wait; null where git cannot say, which lands nothing as `already`.
+    /// </summary>
+    private static async Task<string?> JudgedAsync(string path, LandingGate? gate, CancellationToken ct)
+    {
+        if (gate?.Tip is { } pinned) return pinned;
+        var (code, head, _) = await WorkingTree.GitAsync(Path.GetFullPath(path), ["rev-parse", "--verify", "--quiet", "HEAD"], ct).ConfigureAwait(false);
+        return code == 0 ? head.Trim() : null;
+    }
+
+    /// <summary>
+    /// What a landing says that waited for another of its tree, which landed this very commit meanwhile (LANDRACE1 and its review): where
+    /// it is, who accepted it, what its plugin answered (a failure said as a landing says it, with how the branch is pushed), and that
+    /// nothing more was landed. Kept as <see cref="AutoLandingCode.Already"/>, as the look keeps a press's landing.
+    /// </summary>
+    private static TreeLanding LandedMeanwhile(LandingAttempt before, string session)
+    {
+        var who = before.AcceptedBy == AcceptedBy.Auto ? "accepted automatically when its quest was done" : "accepted by a press of Accept";
+        var plugin = before.Said is { } said ? $" {Said(said, before.Branch)}"
+            : before.Unready is { } unready ? $" Its push was not tried: {Sentence(unready)}"
+            : before.Plugin is { } named ? $" Plugin `{named}` had not answered when that landing ended: `daoris-driver trees hand {session}` hands it the branch."
+            : "";
+        return new(false,
+            $"another landing of this session finished while this one waited for it: its work is on `{before.Branch}` at "
+            + $"{TextBounds.ShortCommit(before.Tip, 8)}, {who}.{plugin} Nothing more was landed.", before.Branch)
+        {
+            Refusal = AutoLandingCode.Already,
+            Plugin = before.Said,
+        };
+    }
+
     /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
+    /// <param name="hold">The tree's hold (LANDRACE1), which keeps what this landing came to for a door waiting behind it.</param>
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
-        string acceptedBy, LandingGate? gate, bool joins, bool fetched)
+        string acceptedBy, LandingGate? gate, bool joins, bool fetched, LandingHold? hold)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -486,6 +536,13 @@ internal sealed class TreeLands(
                 }));
             }
 
+            // LANDRACE1's review: kept for a door waiting behind this one the moment the work is on its branch, by the session's tip it
+            // landed, then again with the plugin's answer, so one that ended before its plugin answered is still read as landed.
+            var kept = landed.Landed && tip is not null
+                ? new LandingAttempt(landed.Branch!, branched.Squashed ?? tip, acceptedBy) { Plugin = plugin, Unready = unready }
+                : null;
+            if (kept is not null) hold?.Keep(kept);
+
             if (landed.Landed && unready is not null)
             {
                 // At done (D145 point 2): the branch is the half Daoris owns, so it stands, and the hand-off pushes it later (D102).
@@ -499,25 +556,50 @@ internal sealed class TreeLands(
             }
             else if (landed.Landed && plugin is not null)
             {
-                // An advance grows the pull request its first landing opened (LAND2c, D149 point 4): the plugin is told it, so it
-                // pushes and opens no second one, and is told who accepted the work, so its description says so truly.
-                var open = landed.AdvancedFrom is null ? null : context.Recorded.Of(repository, landed.Branch!) is { Pushed: true } entry ? entry.PullRequest : null;
-                // LANDGIT1: the plugin pushes with a git of its own, which no fact held here knows: dropped before and after it.
-                GitFacts.Dropped();
-                var said = await context.Plugins.LandAsync(plugin, new LandingFrame(
-                    repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
-                    subject.Session, branched.Commits, open, acceptedBy), ct).ConfigureAwait(false);
-                GitFacts.Dropped();
+                // LANDRACE1's review: one push of the branch at a time, this one's and a hand-off's alike (TreeHandOffs.HandAsync). A
+                // hand-off that pushed this very commit while this waited is this push's answer, and the plugin is not told again.
+                using var pushing = await LandingHolds.BranchAsync(context.Home, branched.Root, landed.Branch!, ct).ConfigureAwait(false);
+                var handed = pushing?.Before is { Said: { Pushed: true, Failed: false } pushed } other && tip is not null
+                    && string.Equals(other.Tip, tip, StringComparison.OrdinalIgnoreCase) ? pushed : null;
+                PluginLanding said;
+                if (pushing is null)
+                {
+                    said = new PluginLanding(plugin, false, null,
+                        $"another push of `{landed.Branch}` was still under way after {(int)LandingHolds.Wait.TotalMinutes} minutes, so this one was not tried",
+                        Failed: true);
+                }
+                else if (handed is not null)
+                {
+                    said = handed;
+                }
+                else
+                {
+                    // An advance grows the pull request its first landing opened (LAND2c, D149 point 4), read under the hold, so one a
+                    // hand-off opened meanwhile is grown too: the plugin pushes and opens no second one, and is told who accepted the work.
+                    var open = context.Recorded.Of(repository, landed.Branch!) is { Pushed: true } entry ? entry.PullRequest : null;
+                    // LANDGIT1: the plugin pushes with a git of its own, which no fact held here knows: dropped before and after it.
+                    GitFacts.Dropped();
+                    // LANDPIN2 (D173's FABRIC-END7 note): the commit the branch was judged and put at, which the plugin pushes, so a commit
+                    // made after the judgement on a tree's own branch, for which no ref is made, never rides the push unseen.
+                    said = await context.Plugins.LandAsync(plugin, new LandingFrame(
+                        repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
+                        subject.Session, branched.Commits, open, acceptedBy, tip), ct).ConfigureAwait(false);
+                    GitFacts.Dropped();
+                    if (tip is not null) pushing.Keep(new LandingAttempt(landed.Branch!, tip, acceptedBy) { Plugin = plugin, Said = said });
+                }
+
                 landed = landed with
                 {
                     Plugin = said,
                     // The plugin's word goes before the sentence about the tree, which a tidy may take out.
                     Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + " " + Said(said, landed.Branch!) + TreeStays,
                 };
-                if (said is { Pushed: true, Failed: false } && tip is not null)
+                if (said is { Pushed: true, Failed: false } && tip is not null && handed is null)
                 {
                     landed = Remember(landed, () => context.Recorded.Pushed(repository, landed.Branch!, said, tip));
                 }
+
+                if (kept is not null) hold?.Keep(kept with { Said = said });
             }
         }
 
