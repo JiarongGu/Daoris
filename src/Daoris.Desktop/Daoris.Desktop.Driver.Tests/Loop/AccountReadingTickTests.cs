@@ -190,7 +190,7 @@ public sealed class AccountReadingTickTests : IDisposable
     {
         var info = new ProcessStartInfo("git") { WorkingDirectory = cwd, UseShellExecute = false, RedirectStandardOutput = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         process.StandardOutput.ReadToEnd();
         process.WaitForExit();
     }

@@ -235,7 +235,7 @@ public sealed class OpinionLookTests : IDisposable
             RedirectStandardError = true,
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await Task.WhenAll(stdout, stderr);

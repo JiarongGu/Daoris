@@ -354,7 +354,7 @@ public sealed class LandingTidyTests : IDisposable
             RedirectStandardError = true,
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var stdout = await process.StandardOutput.ReadToEndAsync();
         await process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

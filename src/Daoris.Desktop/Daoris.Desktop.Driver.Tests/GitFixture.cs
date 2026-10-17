@@ -16,6 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 ///
 /// Both streams are read as UTF-8, which is what git writes. Nothing here judges the exit: a step whose failure matters
 /// asserts on <see cref="GitRun.ExitCode"/> itself.
+///
+/// Each start goes past Git for Windows' launcher (<see cref="TestGit"/>, GITSTART1), as a class's own runner's does.
 /// </remarks>
 internal static class GitFixture
 {
@@ -62,6 +64,7 @@ internal static class GitFixture
             info.StandardInputEncoding = Utf8;
         }
 
+        TestGit.Past(info);
         var (beganUtc, began) = (DateTime.UtcNow, Stopwatch.GetTimestamp());
         using var process = Process.Start(info) ?? throw new InvalidOperationException($"git did not start in {info.WorkingDirectory}");
         var started = Stopwatch.GetTimestamp();
