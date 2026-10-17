@@ -36,7 +36,7 @@ public static class WorkInventories
                 continue;
             }
 
-            // CLEANUP1: each with its commit, its date and whether a branch or a tag holds it, which its retention reads.
+            // CLEANUP1: each with its commit, its date and whether a branch or a tag of the person's holds it, which its retention reads.
             var (listed, err) = await RecoveryRetention.ReadAsync(root, repository, RecoveryRetention.Made(landings, repository), ct).ConfigureAwait(false);
             if (listed is null)
             {

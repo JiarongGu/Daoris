@@ -139,8 +139,8 @@ public sealed record RecoveryRef(string Repository, string Ref)
     public DateTimeOffset? Dated { get; init; }
 
     /// <summary>
-    /// Whether a branch or a tag here holds its commit by ancestry (CLEANUP1, <see cref="RecoveryRetention"/>): true where one does, false
-    /// where none does, null where git could not say.
+    /// Whether a branch or a tag of the person's holds its commit by ancestry (CLEANUP1, <see cref="RecoveryRetention.Holds"/>): true where
+    /// one does, false where none does, null where git could not say.
     /// </summary>
     public bool? Held { get; init; }
 }
@@ -396,7 +396,7 @@ public static partial class WorkInventory
                     : landing.GoneAs switch
                     {
                         LandedGone.Missing when landing.KeptOn is { } kept =>
-                            $"removed outside Daoris; git said it is missing {Minute(went)} UTC, and no ref held its commit, so Daoris kept it on `{kept}`",
+                            $"removed outside Daoris; git said it is missing {Minute(went)} UTC, and no branch, tag or recovery ref held its commit, so Daoris kept it on `{kept}`",
                         LandedGone.Missing => $"removed outside Daoris; git said it is missing {Minute(went)} UTC",
                         LandedGone.Moved => $"went {Minute(went)} UTC outside Daoris; `{landing.MovedTo}` holds its recorded commit",
                         LandedGone.Stands => $"went {Minute(went)} UTC; a branch of its name stands that is not the landing's",
@@ -582,7 +582,7 @@ public static partial class WorkInventory
         return new MilestoneEnd(WorkEndState.Dropped, null, null, last.Tip, at,
             $"`{last.Branch}` was removed outside Daoris, and git said it is missing {Minute(at)} UTC: the person's end of it. "
             + (kept.Count > 0
-                ? $"No ref held its commits, so Daoris kept them on {string.Join(", ", kept.Select(each => $"`{each}`"))} until you delete it; "
+                ? $"No branch, tag or recovery ref held its commits, so Daoris kept them on {string.Join(", ", kept.Select(each => $"`{each}`"))} until you delete it; "
                 : "Its commits may survive only in the person's remote or on another branch; ")
             + "Daoris does not claim the line holds them");
     }

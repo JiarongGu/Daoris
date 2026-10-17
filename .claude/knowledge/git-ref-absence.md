@@ -22,6 +22,10 @@ already", and RECORDUNREAD1 found three more paths that forgot or retired a reco
 | `for-each-ref <pattern>` | listed | not listed, exit 0 | not listed, a warning, exit 0 |
 | `show-ref --exists <ref>` (git 2.43+) | 0 | 2 | 1, with git's words |
 | `merge-base --is-ancestor <a> <b>` | 0 is an ancestor | 1 is not | 128 or another code: no answer |
+| `cat-file -e <full id>` (an object, not a ref) | 0 | 1, saying nothing | 128, a malformed name |
+
+`for-each-ref --contains <id>` exits 129 for an id the repository does not have, as for any other refusal: ask `cat-file -e` before
+reading that as "held by nothing" (CLEANUP1).
 
 Read on git 2.53 with a loose ref written over with text that is no commit. A git older than 2.43 has no
 `--exists` and refuses the option, so there a missing ref reads as unread: kept, never the other way. The

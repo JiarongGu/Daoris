@@ -21,6 +21,15 @@ repository.
 - **Verification:** red first, twelve of `CleanupLeftoversTests` and six of `CleanupGitTests`, the safety guards passing before and
   after; then green with the driver's and the modules' fast halves, `CleanupGitTests` alone under `git.process.runsettings`, and the
   milestone's web test in both languages.
+- **After review (a second maker's, four findings):** (1) the retention took a session branch as a holder, and the same look could
+  then remove that branch on a squash's record with no recovery, leaving the commit held by nothing: only a tag or a local branch of
+  the person's (outside `daoris/`, not a landing's) holds now. (2) A renamed landing branch read as dropped: where another local branch
+  holds the recorded tip it reads `moved`, kept and followed; and where no tag or recovery ref holds it, its commit is kept on a
+  recovery ref before the record retires. (3) The look's write applied by name, so an observation read before a new landing of the
+  same name retired the new one: each write now names the landing read, by identity and tip. (4) A folder moved aside whose purge a
+  later write, a link or a failed read blocks was listed as a recovery for ever: past its date it is a unit blocked on the person.
+  Red on round 1's branch first, five in `CleanupLeftoversTests` and four in `CleanupGitTests`; D173's and D102's CLEANUP1 notes,
+  *After review*, have the detail.
 
 ## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
 

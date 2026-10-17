@@ -48,7 +48,8 @@ public sealed record LandedBranch(
 
     /// <summary>
     /// Why this machine found it gone where Daoris did not remove it (CLEANUP1, <see cref="LandedGone"/>): git said its branch is missing,
-    /// or a branch of its name stands that is not the landing's. Null where Daoris removed it, while it stands, and for a trace from
+    /// another branch holding its recorded tip or not, or a branch of its name stands that is not the landing's. Null where Daoris removed
+    /// it, while it stands, and for a trace from
     /// before it was kept, which the look asks git about once (<see cref="LandedCleanups.MarkAbsentAsync"/>).
     /// </summary>
     public string? GoneAs { get; init; }
