@@ -109,4 +109,58 @@ public sealed class NodeAcceptancesTests
         Assert.Equal((NodeStates.Invalidated, qa.Id), (moved.Status.State, moved.Status.Acceptance?.Id));
         Assert.Null(moved.Status.Current);
     }
+
+    /// <summary>
+    /// FABRIC-NODE1c, defect 5: an issued id never changes. The inputs, receipts and outputs an acceptance was made of are copied, so
+    /// changing the collections that were supplied changes nothing of it.
+    /// </summary>
+    [Fact]
+    public void An_issued_acceptance_keeps_its_id_when_what_was_supplied_changes()
+    {
+        var inputs = new Dictionary<string, NodePort> { ["release"] = new("acme/artifact@1", "build.artifact", "tip-1", "acc-y") };
+        var receipts = new List<string> { "acc-x" };
+        var outputs = new Dictionary<string, NodePort> { ["preview"] = new("acme/preview@1", "deploy.preview", "tip-1", null) };
+        var accepted = new NodeAcceptance("unit-a", "tip-1", "graph-1", "deploy", 1, 1) { Inputs = inputs, PrerequisiteReceipts = receipts, Outputs = outputs };
+        var issued = accepted.Id;
+
+        inputs["release"] = new("acme/artifact@1", "build.other", "tip-2", "acc-z");
+        inputs["extra"] = new("acme/artifact@1", "build.extra", "tip-2", "acc-z");
+        receipts.Add("acc-w");
+        outputs.Clear();
+
+        Assert.Equal(issued, accepted.Id);
+        Assert.Equal(new[] { "acc-x" }, accepted.PrerequisiteReceipts);
+        Assert.Equal(("build.artifact", 1), (accepted.Inputs["release"].Ref, accepted.Inputs.Count));
+        Assert.Single(accepted.Outputs);
+        Assert.Equal(issued, (accepted with { Evidence = null }).Id);
+    }
+
+    /// <summary>
+    /// FABRIC-NODE1c, defect 6: one immutable result per binding. The evidence and outputs are not in the id, so a replay of the same
+    /// result is kept once, and a second, different one is refused, never overwritten. Another attempt is another binding.
+    /// </summary>
+    [Fact]
+    public void A_binding_keeps_one_result_and_refuses_a_second_different_one()
+    {
+        var binding = new NodeAcceptance("unit-a", "tip-1", "graph-1", "deploy", 1, 1);
+        NodeAcceptance Result(string receipt) => binding with { Evidence = new NodePort("acme/receipt@1", receipt, "tip-1", binding.Id) };
+        var first = Result("deploy#r1");
+
+        var kept = NodeAcceptances.Keep([], first);
+        Assert.Equal(((string?)null, 1), (kept.Refused, kept.Kept.Count));
+
+        var replay = NodeAcceptances.Keep(kept.Kept, Result("deploy#r1"));
+        Assert.Equal(((string?)null, 1), (replay.Refused, replay.Kept.Count));
+
+        var other = NodeAcceptances.Keep(kept.Kept, Result("deploy#r2"));
+        Assert.Equal(NodeRefusal.OtherResult, other.Refused);
+        Assert.Same(first, Assert.Single(other.Kept));
+
+        var otherOutputs = NodeAcceptances.Keep(kept.Kept,
+            first with { Outputs = new Dictionary<string, NodePort> { ["preview"] = new("acme/preview@1", "deploy.preview", "tip-1", binding.Id) } });
+        Assert.Equal(NodeRefusal.OtherResult, otherOutputs.Refused);
+
+        var next = NodeAcceptances.Keep(kept.Kept, Result("deploy#r2") with { Attempt = 2 });
+        Assert.Equal(((string?)null, 2), (next.Refused, next.Kept.Count));
+    }
 }
