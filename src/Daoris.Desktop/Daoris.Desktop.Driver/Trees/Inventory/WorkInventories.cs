@@ -28,20 +28,28 @@ public static class WorkInventories
                 continue;
             }
 
-            var (code, listed, err) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)", "refs/daoris/discarded/"], ct).ConfigureAwait(false);
-            if (code != 0)
+            // CLEANUP1: each with its commit, its date and whether a branch or a tag holds it, which its retention reads.
+            var (listed, err) = await RecoveryRetention.ReadAsync(root, repository, ct).ConfigureAwait(false);
+            if (listed is null)
             {
-                unread.Add($"git could not list `{repository}`'s recovery refs: {err.Trim()}");
+                unread.Add($"git could not list `{repository}`'s recovery refs: {err}");
                 continue;
             }
 
-            refs.AddRange(listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(each => new RecoveryRef(repository, each)));
+            refs.AddRange(listed);
         }
 
         return new InventoryFacts(
             branches, landings, trees, new AutoLandings(home).All(), refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), now ?? DateTimeOffset.UtcNow);
+    }
+
+    /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>
+    public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery)> StateAsync(
+        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread, CancellationToken ct = default)
+    {
+        var facts = await GatherAsync(home, roots, inUse, unread, ct).ConfigureAwait(false);
+        return (WorkInventory.Derive(facts), WorkInventory.Recoveries(facts));
     }
 
     /// <summary>The milestone of every unit this home names.</summary>

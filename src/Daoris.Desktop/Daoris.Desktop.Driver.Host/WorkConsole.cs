@@ -16,6 +16,13 @@ internal static class WorkConsole
     /// </summary>
     internal static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<string> Unread)> ReadAsync(string home)
     {
+        var (units, _, unread) = await ReadStateAsync(home).ConfigureAwait(false);
+        return (units, unread);
+    }
+
+    /// <summary><see cref="ReadAsync"/>, with Daoris's own recoveries no unit names (CLEANUP1, <see cref="WorkInventory.Recoveries"/>).</summary>
+    internal static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<string> Unread)> ReadStateAsync(string home)
+    {
         var unread = new List<string>();
         var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var inUse = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -37,8 +44,8 @@ internal static class WorkConsole
             unread.Add($"the service did not answer ({error.Message}), so recovery refs were not read and a tree a session holds may read as idle");
         }
 
-        var units = await WorkInventories.MilestonesAsync(home, roots, inUse, unread).ConfigureAwait(false);
-        return (units, unread);
+        var (units, recovery) = await WorkInventories.StateAsync(home, roots, inUse, unread).ConfigureAwait(false);
+        return (units, recovery, unread);
     }
 
     /// <summary>
@@ -58,7 +65,7 @@ internal static class WorkConsole
         }
 
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
-        var (units, unread) = await ReadAsync(home).ConfigureAwait(false);
+        var (units, recovery, unread) = await ReadStateAsync(home).ConfigureAwait(false);
         foreach (var line in unread) Console.Error.WriteLine($"work: {line}");
         if (words.Count == 1) units = WorkInventories.Named(units, words[0]);
         if (words.Count == 1 && units.Count == 0)
@@ -68,6 +75,13 @@ internal static class WorkConsole
         }
 
         foreach (var line in WorkWords.All(units, entries || words.Count == 1)) Console.WriteLine(line);
+        // CLEANUP1: the recoveries no unit names, each by its rule, after the units; a named unit's look says only that unit.
+        if (words.Count == 0 && recovery.Count > 0)
+        {
+            Console.WriteLine();
+            foreach (var line in WorkWords.Recovery(recovery)) Console.WriteLine(line);
+        }
+
         return 0;
     }
 

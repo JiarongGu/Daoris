@@ -40,6 +40,26 @@ public sealed class CleanupGitTests : LandedFixture
 
     // ---- (1) a landing whose branch the person removed
 
+    /// <summary>The session's tree and branch gone, as the look takes them once a landing holds them: the landing alone stands.</summary>
+    private static async Task SessionGoneAsync(string root)
+    {
+        foreach (var line in (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n'))
+        {
+            if (line.StartsWith("worktree ", StringComparison.Ordinal) && !SamePath(line["worktree ".Length..].Trim(), root))
+            {
+                await GitAsync(root, "worktree", "remove", "--force", line["worktree ".Length..].Trim());
+            }
+        }
+
+        foreach (var branch in (await GitAsync(root, "for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/")).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            await GitAsync(root, "branch", "-D", branch);
+        }
+
+        static bool SamePath(string a, string b) =>
+            string.Equals(Path.GetFullPath(a).TrimEnd('\\', '/'), Path.GetFullPath(b).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>The owner's 18: the person deleted the landing branch after its pull request; the look marks it missing and it reads dropped.</summary>
     [Fact]
     public async Task A_landing_branch_the_person_deleted_is_marked_missing_and_reads_as_the_persons_end()
@@ -47,6 +67,7 @@ public sealed class CleanupGitTests : LandedFixture
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s1", "q1", "First"));
+        await SessionGoneAsync(root);
         await GitAsync(root, "branch", "-D", landed.Branch!);
 
         using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))

@@ -15,6 +15,7 @@ public static class WorkWords
             "ended" => $"  end       reached: {unit.End.Said}",
             "handed" => $"  end       not reached: handed on; {unit.End.Said}",
             "unknown" => $"  end       unknown: {unit.End.Said}",
+            WorkEndState.Dropped => $"  end       dropped: {unit.End.Said}",
             _ => $"  end       not reached: {unit.End.Said}",
         };
         yield return unit.Result.Count == 0
@@ -57,7 +58,9 @@ public static class WorkWords
     /// <summary>The recoveries no unit names (CLEANUP1, <see cref="WorkInventory.Recoveries"/>), each with its rule; nothing where there are none.</summary>
     public static IEnumerable<string> Recovery(IReadOnlyList<InventoryEntry> recoveries)
     {
-        yield break;
+        if (recoveries.Count == 0) yield break;
+        yield return "recovery kept, which no unit names any more (each by its own rule, waiting on nobody):";
+        foreach (var each in recoveries) yield return $"  {each.Kind} `{each.Resource}`: {each.Detail}";
     }
 
     /// <summary>Every unit's milestone, a blank line between; the sentence for none.</summary>

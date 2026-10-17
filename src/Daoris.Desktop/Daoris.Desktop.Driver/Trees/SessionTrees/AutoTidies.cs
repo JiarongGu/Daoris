@@ -157,6 +157,19 @@ internal sealed class AutoTidies(
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> Tidying = new(StringComparer.OrdinalIgnoreCase);
 
+    // CLEANUP1: when each repository's recovery refs were last held to their retention (home|repository). In memory: a restart asks once.
+    // Retention counts in days, so a pace's pass and link 2's tries need not ask git again within one.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> Retained = new(StringComparer.OrdinalIgnoreCase);
+
+    private bool RetentionDue(string repository)
+    {
+        var key = $"{Path.GetFullPath(context.Home)}|{repository}";
+        var now = context.Clock();
+        if (Retained.TryGetValue(key, out var last) && now - last < TimeSpan.FromDays(1)) return false;
+        Retained[key] = now;
+        return true;
+    }
+
     // FABRIC-END4a review: each recorded branch the keeper could not prove and the press's judgement kept, at the tip and line commit it
     // was judged at, and when (home|repository|branch). In memory: a restart judges each once again. 🔴 Never for good (second review): a
     // busy, dirty or checked-out tree, or a landing checked out inside another, can clear with neither commit moving, so an entry older than
@@ -167,8 +180,9 @@ internal sealed class AutoTidies(
         string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, CancellationToken ct)
     {
         var space = RemoteTarget.Workspace(workspace);
+        IReadOnlyList<RecoveryGone> recovered = [];
         TidyPass Pass(IReadOnlyList<SweepResult> results, string? held = null, string? detail = null, string? cause = null) =>
-            new(results, held, detail) { Repository = repository, Workspace = space, Cause = cause };
+            new(results, held, detail) { Repository = repository, Workspace = space, Cause = cause, Recovered = recovered };
 
         // A main checkout's `.git` is a folder; a linked worktree's is a file, and a folder inside a repository has none. Asked
         // before any git, so a root that cannot hold session branches costs nothing.
@@ -189,6 +203,14 @@ internal sealed class AutoTidies(
         using var look = context.OneLook();
         // The refs read once for the judgement before the hold (PROC1d-ii); the press's path inside it reads its own again.
         var refs = RefSnapshot.Take(root);
+        if (HomeLease.HeldHere(context.Home))
+        {
+            // CLEANUP1: a landing's branch the person removed is said on git's word, once (the person's end of it), and a recovery ref past
+            // its retention that a branch or a tag holds goes, at most once a day for each repository in a process.
+            await cleanups.MarkAbsentAsync(root, repository, ct, refs).ConfigureAwait(false);
+            if (RetentionDue(repository)) recovered = await RecoveryRetention.TidyAsync(root, repository, context.Clock(), ct).ConfigureAwait(false);
+        }
+
         var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct, refs).ConfigureAwait(false);
         if (against is null) return Pass([]);

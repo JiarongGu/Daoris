@@ -296,17 +296,26 @@ public sealed class LandedBranches(string home)
     /// again (REVIEW2, D113). Until D113 they were forgotten, and the review of the session that landed one then had
     /// nothing to say of where its work went.
     /// </summary>
-    public void Gone(string repository, IReadOnlyCollection<string> branches) => Edit(all =>
+    /// <param name="why">Why each went, where git said (CLEANUP1, <see cref="LandedGone"/>); null where the caller does not say.</param>
+    public void Gone(string repository, IReadOnlyCollection<string> branches, string? why = null) => Edit(all =>
         [.. all.Select(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                && each.GoneAt is null && branches.Contains(each.Branch, StringComparer.Ordinal)
-            ? each with { GoneAt = DateTimeOffset.UtcNow }
+            ? each with { GoneAt = DateTimeOffset.UtcNow, GoneAs = why }
             : each)]);
 
     /// <summary>
-    /// Why a branch Daoris did not remove went (CLEANUP1, <see cref="LandedGone"/>): a standing entry becomes a trace with it, and a trace
-    /// that has none yet gains it. A trace that already says why, or that Daoris removed, is left as it is.
+    /// Why a branch Daoris did not remove went (CLEANUP1, <see cref="LandedGone"/>), said once: a trace that says no why yet gains it, and,
+    /// where git said the branch is missing, a standing entry of that name becomes a trace with it. A trace that already says why, one Daoris
+    /// removed, and a standing entry where the name stands, are left as they are.
     /// </summary>
-    public void GoneAs(string repository, string branch, string why) => Edit(all => all);
+    public void GoneAs(string repository, string branch, string why) => Edit(all =>
+    {
+        var now = DateTimeOffset.UtcNow;
+        return [.. all.Select(each => Same(each, repository, branch) && each.RemovedAs is null && each.GoneAs is null
+                                      && (each.GoneAt is not null || why == LandedGone.Missing)
+            ? each with { GoneAt = each.GoneAt ?? now, GoneAs = why }
+            : each)];
+    });
 
     /// <summary>A branch the clean-up removed once its work read on the line (WSR5): a trace, with what the proof found and where.</summary>
     public void Removed(string repository, string branch, string kind, string? where) => Edit(all =>
