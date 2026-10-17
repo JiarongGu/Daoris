@@ -290,25 +290,35 @@ public static class NodeGraphs
     /// groups (<see cref="NodeWires.Groups"/>: all of an <c>allOf</c>, one of an <c>anyOf</c>, every group) and inputs can all be met so. A
     /// reach's wire (<c>after</c>, <c>trigger</c>) or an input is met by a node that starts so and is no look; a failure's or a rejection's
     /// by any node that starts so, a look included, since a look that fails has not passed.
+    /// <para>An <c>all</c> join follows <see cref="WireEvaluation"/> (the re-check's finding 4): its <c>after</c> wires are its members and
+    /// no group's, and it starts once every member is reached or skipped, or once any one has failed. All its members met so, it starts as
+    /// any node does. A member that starts so and may fail (a look among them) starts it too, but only to fail at once while the rest
+    /// still wait: then only its failure's and rejection's paths are met, never its pass, so a landing on them passes no look.</para>
     /// </summary>
     private static HashSet<string> StartsWithNoLook(Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local)
     {
         var started = new HashSet<string>(starts, StringComparer.Ordinal);
-        bool Met(Wire wire) => started.Contains(wire.From!.Node)
-            && (wire.Kind is WireKinds.Failed or WireKinds.Rejected || byId[wire.From.Node].Kind != NodeKinds.Look);
+        var failing = new HashSet<string>(StringComparer.Ordinal);
+        bool Met(Wire wire) => wire.Kind is WireKinds.Failed or WireKinds.Rejected
+            ? started.Contains(wire.From!.Node) || failing.Contains(wire.From!.Node)
+            : started.Contains(wire.From!.Node) && byId[wire.From.Node].Kind != NodeKinds.Look;
         for (var moved = true; moved;)
         {
             moved = false;
             foreach (var node in byId.Values.Where(node => !started.Contains(node.Id)))
             {
-                var groups = NodeWires.Groups(node.Id, local);
+                var join = node.Kind == NodeKinds.All;
+                var members = join ? local.Where(wire => wire.Kind == WireKinds.After && wire.To.Node == node.Id).ToList() : [];
+                var groups = NodeWires.Groups(node.Id, join ? [.. local.Where(wire => !members.Contains(wire))] : local);
                 var inputs = local.Where(wire => wire.Kind == WireKinds.Data && wire.To.Node == node.Id).ToList();
-                if (groups.Count + inputs.Count == 0 || !inputs.All(Met)) continue;
+                if (groups.Count + inputs.Count + members.Count == 0 || !inputs.All(Met)) continue;
                 // A wire id twice is refused above (`wire-twice`); its first is read here, as a group reads it.
                 bool MetBy(string id) => Met(local.First(wire => wire.Id == id && wire.To.Node == node.Id));
-                if (groups.All(group => group.Mode == WireGroupModes.AnyOf ? group.Wires.Any(MetBy) : group.Wires.All(MetBy)))
+                if (!groups.All(group => group.Mode == WireGroupModes.AnyOf ? group.Wires.Any(MetBy) : group.Wires.All(MetBy))) continue;
+                if (members.All(Met)) moved = started.Add(node.Id) || moved;
+                else if (members.Any(member => started.Contains(member.From!.Node) || failing.Contains(member.From!.Node)))
                 {
-                    moved = started.Add(node.Id) || moved;
+                    moved = failing.Add(node.Id) || moved;
                 }
             }
         }

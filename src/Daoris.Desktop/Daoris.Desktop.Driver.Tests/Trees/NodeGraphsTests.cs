@@ -115,6 +115,14 @@ public sealed class NodeGraphsTests
         ["a way to the landing past the look"] = (new NodeGraph([Node("look", NodeKinds.Look), Node("bypass", NodeKinds.Human), Node("landing", NodeKinds.Handed)],
             [After("a", "look", "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) }, After("b", "bypass", "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) }],
             ["look", "bypass"], "landing"), (GraphRefusal.ProtectedOrder, null, "look")),
+        // FABRIC-GRAPH1's re-check, finding 4: a look and a plugin in an `all` join, the landing on the join's pass or its failure. The plugin
+        // fails, the join fails at once while the look still waits (WireEvaluation's early failure), and its failure's wire releases the landing.
+        ["a landing on a join's early failure"] = (new NodeGraph(
+            [Node("look", NodeKinds.Look), Node("check", "acme/check"), Node("checks", NodeKinds.All), Node("landing", NodeKinds.Handed)],
+            [After("a", "look", "checks"), After("b", "check", "checks"),
+                After("c", "checks", "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) },
+                new Wire("d", WireKinds.Failed, new("checks"), new("landing")) { Group = new WireGroup("g", WireGroupModes.AnyOf) }],
+            ["look", "check"], "landing"), (GraphRefusal.ProtectedOrder, null, "look")),
         ["the close not the end"] = (Example with { End = "deploy" }, (GraphRefusal.CloseEnd, null, "close")),
         ["a node after the close"] = (Adding(Node("notify", NodeKinds.Human), After("x", "close", "notify")), (GraphRefusal.AfterClose, "x", "close")),
         ["the quest's own done before its close"] = (Adding(Node("done", NodeKinds.Claimed), After("x", "done", "close")) with { Entries = ["line", "dependency", "done"] },
@@ -159,6 +167,23 @@ public sealed class NodeGraphsTests
     {
         var (graph, expected) = Cases[name];
         AssertAlone(name, NodeGraphs.Problems(graph), expected);
+    }
+
+    /// <summary>
+    /// The re-check's finding 4, its other side: the same join with only its pass into the landing holds, since the join passes only once
+    /// every member has, the look among them; and its failure's path may go anywhere but the landing.
+    /// </summary>
+    [Fact]
+    public void A_join_holding_a_look_releases_the_landing_only_on_its_pass()
+    {
+        var (graph, _) = Cases["a landing on a join's early failure"];
+        Assert.Empty(NodeGraphs.Problems(graph with { Wires = [.. graph.Wires.Where(wire => wire.Id != "d")] }));
+        var retry = graph with
+        {
+            Nodes = [.. graph.Nodes, Node("fix", NodeKinds.Human)],
+            Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), new Wire("d", WireKinds.Failed, new("checks"), new("fix"))],
+        };
+        Assert.Empty(NodeGraphs.Problems(retry));
     }
 
     /// <summary>Each fragment's refusal, alone, through the landing rule that holds it.</summary>
