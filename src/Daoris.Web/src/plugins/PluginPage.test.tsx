@@ -98,6 +98,38 @@ describe("a plugin's page", () => {
     expect(within(header()).queryByText('update available')).toBeNull();
   });
 
+  /**
+   * LANDPIN3: a copy of the install's own plugin older than the shipped one says both versions and what the newer brings, and
+   * its Update… is there though it has no record of its own to update from.
+   */
+  it('says a copy older than the one the install ships with both versions and what it brings, and offers Update…', () => {
+    const shipped = { state: 'older', installed: '1.2.0', shipped: '1.3.0', changes: 'Pushes the commit judged.' } as const;
+    page({ plugin: { ...PLUGIN, source: { kind: 'none' }, shipped } });
+
+    expect(within(header()).getByText('update available')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: "This install's copy" })).toHaveTextContent(
+      'This is 1.2.0; this install ships 1.3.0. The newer one: Pushes the commit judged.');
+    expect(acts()).toContain('Update…');
+  });
+
+  it('says a copy whose files were changed as changed, and offers no Update… to replace them', () => {
+    const shipped = { state: 'changed', installed: '1.3.0', shipped: '1.3.0' } as const;
+    page({ plugin: { ...PLUGIN, source: { kind: 'offer', offer: 'acme.gate' }, shipped } });
+
+    expect(within(header()).getByText('changed here')).toBeInTheDocument();
+    expect(within(header()).queryByText('update available')).toBeNull();
+    expect(screen.getByRole('region', { name: "This install's copy" })).toHaveTextContent(
+      'Its files differ from the 1.3.0 this install ships, so Daoris leaves them as they are.');
+    expect(acts()).not.toContain('Update…');
+  });
+
+  it('says nothing of a copy that is the shipped one', () => {
+    page({ plugin: { ...PLUGIN, shipped: null } });
+
+    expect(screen.queryByRole('region', { name: "This install's copy" })).toBeNull();
+    expect(within(header()).queryByText('changed here')).toBeNull();
+  });
+
   /** D140 §3.1: an icon's problem never refuses the plugin; its Source says why, in the reader's sentence, verbatim. */
   it('says in its Source why its declared icon is not drawn, and nothing where it draws', () => {
     const problem = "`icon` `icon.svg` is not a file in the plugin's folder.";

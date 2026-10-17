@@ -58,6 +58,20 @@ public static class PluginOffers
         return offers;
     }
 
+    /// <summary>
+    /// What an installed plugin is against the offer of its own id (LANDPIN3): <see cref="PluginShipped"/> where it is older than the
+    /// one this install ships, or the same version with files that differ; null where it needs no word, and where there is no
+    /// sound offer of its id.
+    /// </summary>
+    public static PluginShipped? ShippedOf(string installFolder, PluginManifest installed, PluginOffer? offer) =>
+        offer is { Problem: null } && string.Equals(offer.Id, installed.Id, StringComparison.OrdinalIgnoreCase)
+            ? PluginShipped.Judge(
+                installed.Version,
+                offer.Manifest.Version,
+                () => PluginFolders.SameFiles(installFolder, offer.Folder),
+                PluginFolders.TextIfThere(Path.Combine(offer.Folder, PluginCatalog.ManifestName)) is { } text ? PluginShipped.ChangesIn(text) : null)
+            : null;
+
     /// <summary>What a plugin needs on the machine, in its README's words (<see cref="PluginOffer.NeedsIn"/>); none without one.</summary>
     public static IReadOnlyList<string> Needs(string folder) =>
         PluginFolders.TextIfThere(Path.Combine(folder, "README.md")) is { } readme ? PluginOffer.NeedsIn(readme) : [];

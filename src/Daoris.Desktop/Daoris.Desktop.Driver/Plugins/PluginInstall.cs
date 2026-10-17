@@ -133,7 +133,7 @@ public static class PluginInstall
     /// </summary>
     /// <param name="offers">The install's offers folder, where an offer's source is found; null is the one beside the home.</param>
     public static (PluginUpdatePlan? Plan, string? Refusal) PlanUpdate(
-        string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null)
+        string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null, bool shipped = false)
     {
         var reserved = reservedHarnesses.ToList();
         static (PluginUpdatePlan?, string?) Refuse(string refusal) => (null, refusal);
@@ -143,7 +143,40 @@ public static class PluginInstall
         if (entry is null) return Refuse($"no plugin `{id}` on this machine — `daoris plugin list` shows what there is.");
         var installed = Path.GetFileName(entry.Folder)!;
 
-        var (source, problem) = PluginSource.Read(entry.Folder);
+        // LANDPIN3: the person's press to take the install's own copy of an example they hold an older copy of, whatever record
+        // the copy has or lacks. A copy whose files they changed is never replaced, and one not older is never taken back.
+        PluginSource? source;
+        string? problem;
+        string? shippedFrom = null;
+        if (shipped)
+        {
+            var folder = offers ?? PluginOffers.BesideHome(home);
+            var offer = PluginOffers.Load(folder, home, reserved).FirstOrDefault(each => string.Equals(each.Id, installed, StringComparison.OrdinalIgnoreCase));
+            if (offer is not { Problem: null })
+            {
+                return Refuse($"Daoris's own `{installed}` is not offered by this install, so there is no shipped copy to take. "
+                    + $"`daoris plugin remove {installed}` takes the installed one out.");
+            }
+
+            var (written, _) = PluginCatalog.ReadAsWritten(installed, Path.Combine(entry.Folder, PluginCatalog.ManifestName));
+            switch (PluginOffers.ShippedOf(entry.Folder, written, offer)?.State)
+            {
+                case PluginShipped.Changed:
+                    return Refuse($"plugin `{installed}` has files changed here that this install's {offer.Manifest.Version} does not have, "
+                        + "so it is left as it is. Move your changes out, `daoris plugin remove` it and install it again to take the shipped one.");
+                case PluginShipped.Older:
+                    break;
+                default:
+                    return Refuse($"plugin `{installed}` is not older than the {offer.Manifest.Version} this install ships, so there is nothing to take.");
+            }
+
+            (source, problem, shippedFrom) = (PluginSource.FromOffer(installed), null, offer.Folder);
+        }
+        else
+        {
+            (source, problem) = PluginSource.Read(entry.Folder);
+        }
+
         if (problem is not null)
         {
             return Refuse($"plugin `{installed}`'s record of where it came from does not read, so there is nothing to update "
@@ -167,7 +200,11 @@ public static class PluginInstall
         }
 
         string from;
-        if (source.Offer is { } offer)
+        if (shippedFrom is not null)
+        {
+            from = shippedFrom;
+        }
+        else if (source.Offer is { } offer)
         {
             from = Path.Combine(offers ?? PluginOffers.BesideHome(home), offer);
             if (!PluginFolders.HasFile(Path.Combine(from, PluginCatalog.ManifestName)))
@@ -213,9 +250,9 @@ public static class PluginInstall
     /// the new one at its next look.
     /// </summary>
     /// <exception cref="DriverException">Refused, or its folder is held open; the installed version is untouched.</exception>
-    public static PluginUpdatePlan Update(string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null)
+    public static PluginUpdatePlan Update(string home, string id, IEnumerable<string> reservedHarnesses, string? offers = null, bool shipped = false)
     {
-        var (plan, refusal) = PlanUpdate(home, id, reservedHarnesses, offers);
+        var (plan, refusal) = PlanUpdate(home, id, reservedHarnesses, offers, shipped);
         if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
 
         var root = DaorisHome.Entry(home, HomeEntry.Plugins);
