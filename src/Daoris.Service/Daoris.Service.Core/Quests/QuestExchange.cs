@@ -1269,6 +1269,7 @@ public sealed class QuestExchange(
             return new(
                 QuestRespondRefusal.None,
                 $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{await AnsweredAsync(move.Quest, ct).ConfigureAwait(false)}"
+                + BoundAtTake(move.Quest)
                 // Only the next sync can say whether another machine took it first (PAUSE1c), so the answer says
                 // what that would mean; a quest nobody shares has no other machine to take it.
                 + (whileOpen && await SharedAtAsync(move.Quest, ct).ConfigureAwait(false) is not null
@@ -1389,13 +1390,15 @@ public sealed class QuestExchange(
     /// The same graph again is the same bind, answered as it stands; another graph is refused, as a quest follows the graph
     /// bound at its start. It commits here and travels like any verb (D68).
     /// </remarks>
-    public async Task<QuestRespondOutcome> BindAsync(string id, string? graph, DateTimeOffset now, CancellationToken ct = default)
+    public async Task<QuestRespondOutcome> BindAsync(string id, string? graph, DateTimeOffset now, CancellationToken ct = default, bool atTake = false)
     {
         var name = id.TrimStart('#');
         if (string.IsNullOrWhiteSpace(graph))
         {
             return new(QuestRespondRefusal.NotInGraph, "A bind names the graph's digest (`graph`). Nothing moved.", Quest: null);
         }
+
+        if (atTake) return await BindAtTakeAsync(name, graph.Trim(), now, ct).ConfigureAwait(false);
 
         var move = await quests.BindAsync(name, graph.Trim(), now, ct).ConfigureAwait(false);
         if (move.Quest is not { } standing)
@@ -1420,6 +1423,43 @@ public sealed class QuestExchange(
             _ => $"Quest `#{name}` is {standing.Status}: a graph binds a quest once it is taken, at its run's first start. Nothing moved.",
         }, Quest: null);
     }
+
+    /// <summary>
+    /// The graph named for an open quest's take (FABRIC-CLOSE1l, folding CLOSE1f): the driver names it as it opens the quest's first
+    /// session, and the take on this machine binds it in the take's own write. Refused on a quest no longer open, whose take has passed
+    /// (§E5's cutover: it keeps today's done), and on a quest that leaves this machine for a remote, whose other machines no host here
+    /// can say run a build that knows a bound quest (FABRIC-CLOSE1e's compatibility).
+    /// </summary>
+    private async Task<QuestRespondOutcome> BindAtTakeAsync(string name, string graph, DateTimeOffset now, CancellationToken ct)
+    {
+        if (await quests.FindAsync(name, ct).ConfigureAwait(false) is not { } found)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (await SharedAtAsync(found, ct).ConfigureAwait(false) is not null)
+        {
+            return new(QuestRespondRefusal.NotInGraph, $"Quest `#{name}` syncs through a remote, whose machines this host cannot say know a "
+                + "bound quest: it closes by its done. Nothing moved.", Quest: null);
+        }
+
+        var move = await quests.BindAtTakeAsync(name, graph, now, ct).ConfigureAwait(false);
+        if (move.Quest is not { } standing)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        return move.Moved
+            ? new(QuestRespondRefusal.None, $"Quest `#{name}` binds to graph `{graph}` at its take: its taker says `ready`.", standing)
+            : new(QuestRespondRefusal.NotInGraph, $"Quest `#{name}` is {standing.Status}: its take has passed, so it keeps the done it started "
+                + "with. Nothing moved.", Quest: null);
+    }
+
+    /// <summary>What a take bound at its take tells its taker (FABRIC-CLOSE1l, CLOSE1g): its result is `ready`, never `done`.</summary>
+    private static string BoundAtTake(Quest quest) => quest is { Status: QuestStatus.Taken, Closure: { } graph }
+        ? $" It closes through its graph `{graph}`: when its work is done, say `ready` with your note and an answer for each requirement, "
+          + "never `done`; the graph writes its Done at the work's end, once its holds and gates are through."
+        : "";
 
     /// <summary>
     /// The agent's <c>ready</c> in a closure graph (FABRIC-CLOSE1a, §E5): its result, carrying exactly what a done carries, its

@@ -38,6 +38,24 @@ public sealed class RemoteTargetTests : IDisposable
         Assert.Empty(RemoteTarget.Load(Env(), ConfigPath));
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1l: the map a bind at the take reads is the one sync reads, the file <c>DAORIS_REMOTE_CONFIG</c> names before the home's,
+    /// and the environment's pair before both; a circle synced through a remote named there is never bound.
+    /// </summary>
+    [Fact]
+    public void The_effective_map_is_the_one_DAORIS_REMOTE_CONFIG_names_before_the_homes()
+    {
+        var home = Path.Combine(_dir, "home");
+        Directory.CreateDirectory(home);
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Remotes), """{ "tools": { "url": "https://tools.example.com", "key": "dk_toolskey" } }""");
+        File.WriteAllText(ConfigPath, """{ "aurora": { "url": "https://aurora.example.com", "key": "dk_aurorakey" } }""");
+
+        Assert.Equal(["aurora"], RemoteTarget.Effective(name => name == RemoteTarget.PathVariable ? ConfigPath : null, home).Keys);
+        Assert.Equal(["tools"], RemoteTarget.Effective(_ => null, home).Keys);
+        Assert.Equal(["default"], RemoteTarget.Effective(
+            name => name == RemoteTarget.PathVariable ? ConfigPath : Env("https://env.example.com", "dk_envkey")(name), home).Keys);
+    }
+
     [Fact]
     public void The_file_names_a_remote_per_workspace()
     {

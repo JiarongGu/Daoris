@@ -19,6 +19,25 @@ repository.
 - **Verification:** red first: one in `EndJudgementTests`, and two in `PullRequestStateTests` (Git: the keeper keeps the end on
   `origin/main`; the look takes the branch). Then green with the driver's fast half and every Git class over the tidy, the keeper and
   landings, by class under `git.process.runsettings`.
+## 2026-10-18 — A closure graph's close was not safe to arm: eight fences missing, and its own node's record stopped reading after its Done (FABRIC-CLOSE1l)
+
+- **Symptom:** found by a second maker's review of FABRIC-CLOSE1b before any install armed a closure graph (the owner's holds none, so
+  nothing bound or closed there). An A → B → A chain closed its last A over a held first A. An agent's `done` could land between the
+  take and a bind made at a later look, and the session was told `done`. The remote exclusion read the home's map past
+  `DAORIS_REMOTE_CONFIG`. No fresh read fenced a commit made after the evaluation. A graph edit or removal stranded bound quests and
+  unanswered closes. A 503 page or a 500 read as terminal. An ancestor's released hold left the close failed. Building the fix found a
+  ninth: once the close wrote Done, the quest's revision moved, the reached close lapsed, and its record stopped reading.
+- **Root cause:** the chain walk stopped at another repository. The bind was a separate call after the take, inferred from `Updated`.
+  The runtime read its remote map by hand. The token checked the stored statuses only. Governance required the current graph's digest,
+  and arming was judged from the choices alone. The client read any non-200 as an answer. A quest unit's revision was its own `Updated`
+  alone. `ReachByChain` began a new attempt number with no attempt record, which `NodeRecordFiles.Consistent` refuses.
+- **Fix:** D173's CLOSE1b note, "After review", has each: the lineage walked whole; the bind named for the take and appended in the
+  take's write (`quest_take_binds`); `SessionTarget.Ready`; `RemoteTarget.Effective`; `QuestClosing.Revision` and a fresh read before the
+  send; `ClosureGraphs` kept by digest, arming a home that keeps one; only the door's coded answers settle; and a settled, never-sent
+  `QuestClosing.Chained` attempt for a node reached again on its chain.
+- **Verification:** each finding red on CLOSE1b's branch first: `QuestCloseTests` (7), `QuestClosureTests` (2), `ServiceClientClosureTests`
+  (5 rows), `RemoteTargetTests` (1). The ninth showed red as CLOSE1b's own first and chain tests once a closing quest's revision moved.
+  Then green with the driver's fast half (9083), `Daoris.Service.Tests` and `Daoris.Service.Http.Tests`.
 
 ## 2026-10-17 — The evaluation runtime could restart failed work for ever, judge under removed graphs and outrun its bounds (FABRIC-RUN1e)
 

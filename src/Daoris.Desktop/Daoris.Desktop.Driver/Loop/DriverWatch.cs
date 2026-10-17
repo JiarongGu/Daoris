@@ -345,8 +345,10 @@ public sealed class DriverWatch(
         }, CancellationToken.None);
         // FABRIC-RUN1, link 8: the evaluation runtime, after the plan on every wake it hears and at the look's deadline; only where this loop
         // holds a hook set, and its passes write only where it holds the home's lease. It reads nothing unless a graph naming a plugin's
-        // performed node governs a unit, and the next timer the node records persist wakes a plan at its moment.
-        var nodes = hooks is null ? null : new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home));
+        // performed node governs a unit, and the next timer the node records persist wakes a plan at its moment. FABRIC-CLOSE1b: a closure graph
+        // arms it too, and its `quest.close` is sent through this loop's service client, the local host's close door. FABRIC-CLOSE1l: a quest is
+        // bound at its take, as its first session opens (Driver's start), never here.
+        var nodes = hooks is null ? null : new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home), service);
         using var nodesDue = new System.Threading.Timer(_ => Nudge(ChangeTopics.Nodes, "due"));
 
         TickReport? looked = null;

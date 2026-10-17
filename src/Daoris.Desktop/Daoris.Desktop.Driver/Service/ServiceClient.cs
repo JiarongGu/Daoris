@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// class over the client, reached through it (<see cref="Opinions"/>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
 /// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
-public sealed class ServiceClient : IDisposable
+public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort
 {
     private readonly IServiceDoors _doors;
     private readonly string _base;
@@ -1097,6 +1097,91 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// Whether this client's host knows a closure graph's operations and doors (FABRIC-CLOSE1b's handshake): <c>/api/status</c>'s
+    /// <c>closure</c>. A host from before answers none, and is not asked to keep what it cannot read.
+    /// </summary>
+    public async Task<bool> KnowsClosureAsync(CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/status", ct).ConfigureAwait(false));
+        return Flag(document.RootElement, "closure");
+    }
+
+    /// <summary>
+    /// The driver binds a quest it took to the graph that closes it (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/bind</c>), at its take. The
+    /// service's sentence comes back verbatim, a refusal included, and a host older than the door is said to be.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("graph", graph);
+            // FABRIC-CLOSE1l (CLOSE1f): named for the take as the first session opens, never bound after it; a host before it refuses an
+            // open quest's bind as not taken, and the quest closes by its done.
+            writer.WriteBoolean("atTake", true);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/bind", body, ct).ConfigureAwait(false);
+        if (root is not { } answer)
+        {
+            return (false, $"the service at {_base} has no bind door ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
+    /// The graph's close (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/close</c>, §E5 step 2): every quest named, with the submission it judged,
+    /// under its key and token. A refusal is an answer with its check's code (<c>key-reused</c> among them), the same close again answers its
+    /// first outcome, and a host older than the door is said to be.
+    /// </summary>
+    /// <exception cref="HttpRequestException">The host did not answer: the caller keeps the close unknown, and sends it again.</exception>
+    public async Task<QuestCloseAnswer> CloseQuestsAsync(
+        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("key", key);
+            writer.WriteString("token", token);
+            writer.WriteStartArray("quests");
+            foreach (var each in quests)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("id", each.Id);
+                writer.WriteString("machine", each.Machine);
+                writer.WriteNumber("sequence", each.Sequence);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/close", body, ct).ConfigureAwait(false);
+
+        // FABRIC-CLOSE1l, the review's finding 7: only the door's own answer settles a close, its close or its coded refusal. Anything
+        // else (a proxy's page, the host's 500, a bare 404, a refusal naming no check of the door's) proves nothing about whether its
+        // transaction committed, so the close is unknown and the same close is sent again, whose key answers its first outcome.
+        if (root is { ValueKind: JsonValueKind.Object } answer)
+        {
+            if (ok && answer.TryGetProperty("quests", out var named) && named.ValueKind == JsonValueKind.Array)
+            {
+                return new(QuestCloseOutcomes.Closed, null, Text(answer, "message") ?? "", ReadQuests(named.GetRawText()));
+            }
+
+            if (status is 400 or 404 or 409 && Text(answer, "code") is { } code && QuestCloseOutcomes.Codes.Contains(code))
+            {
+                return new(QuestCloseOutcomes.Refused, code, Text(answer, "error") ?? payload, []);
+            }
+        }
+
+        throw new HttpRequestException($"the close door at {_base} answered {status}, which is not its own answer, so whether it closed is unknown: "
+                                       + TextBounds.Clip(payload, 200));
+    }
+
+    /// <summary>
     /// What Daoris read of a done's evidence, posted to the one door that takes it (EVID1a, EVID1b; D144 §3): the local host's
     /// <c>POST /api/quests/{id}/evidence</c>, with this client's key, as records are written. A refusal is an answer, in the
     /// service's words: the done no longer waits on evidence (409), the verdict does not read what it waits on (400), or no
@@ -1388,6 +1473,10 @@ public sealed class ServiceClient : IDisposable
                 SetUpIn = Text(quest, "setUpIn"),
                 SetUps = ReadSetUps(quest),
                 Verdicts = ReadVerdicts(quest),
+                // FABRIC-CLOSE1a: the graph that closes it and its taker's current submission. Absent for a quest no closure graph holds,
+                // and from a host before them; a submission named only in half is none.
+                Closure = Text(quest, "closure") is { Length: > 0 } closure ? closure : null,
+                Submission = ReadSubmission(quest),
             });
         }
 
@@ -1981,6 +2070,15 @@ public sealed class ServiceClient : IDisposable
     private static QuestReviewChoiceView? ReadReviewChoice(JsonElement quest) =>
         quest.TryGetProperty("review", out var review) && Text(review, "choice") is { Length: > 0 } choice
             ? new QuestReviewChoiceView(choice, Text(review, "words"))
+            : null;
+
+    /// <summary>A taker's current submission (FABRIC-CLOSE1a), or null: none, from a host before it, or named only in half.</summary>
+    private static QuestSubmissionView? ReadSubmission(JsonElement quest) =>
+        quest.TryGetProperty("submission", out var submission) && submission.ValueKind == JsonValueKind.Object
+        && Text(submission, "machine") is { Length: > 0 } machine
+        && submission.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
+        && sequence.TryGetInt64(out var number) && number > 0
+            ? new QuestSubmissionView(machine, number, Moment(submission, "at"), Text(submission, "note"))
             : null;
 
     /// <summary>A set-up step's set-ups (<c>setUps</c>), each with a full commit: one without is half of one.</summary>
