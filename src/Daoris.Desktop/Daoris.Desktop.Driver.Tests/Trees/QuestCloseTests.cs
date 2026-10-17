@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-CLOSE1b (the fabric events design §E5; D173's FABRIC-CLOSE1a and CLOSE1e notes): <c>quest.close</c> as the graph's end, run by the
 /// evaluation runtime over a stand-in close door. A bound quest is closed once its submission is current and unheld, and once only; an
-/// unanswered close is sent again with the same key, after a restart too; a refusal is kept with its words and said; a chain closed only in
+/// unanswered close is asked after by its key, never sent again blind (FABRIC-CLOSE1u); a refusal is kept with its words and said; a chain closed only in
 /// part is said, naming the quest; the person's own done ends the graph as overridden and stops its nodes; an unbound quest is unchanged; and a
 /// quest is bound at its take only where its host and its circle know a bound quest.
 /// </summary>

@@ -449,6 +449,7 @@ public static class QuestCloseCodes
         QuestCloseRefusal.Held => "held",
         QuestCloseRefusal.Unsealed => "unsealed",
         QuestCloseRefusal.KeyReused => "key-reused",
+        QuestCloseRefusal.Withdrawn => "withdrawn",
         _ => "refused",
     };
 }
@@ -1685,11 +1686,39 @@ public sealed class QuestStore
             writer.WriteEndArray();
         });
 
-    /// <summary>What became of a close sent with <paramref name="close"/>'s key (FABRIC-CLOSE1u): not answered yet.</summary>
+    /// <summary>
+    /// What became of a close sent with <paramref name="close"/>'s key (FABRIC-CLOSE1u; §E5 step 4), answered in one transaction
+    /// from what is kept under the key, never by judging or writing a Done: the first outcome where the key was taken (a close, a
+    /// refusal, or <see cref="QuestCloseRefusal.KeyReused"/> where this is not that close), replayed as a send of it again would
+    /// be. A key never taken is <see cref="QuestCloseRefusal.Withdrawn"/>, kept under it in the same transaction with the token and
+    /// submissions named, so the close it names never runs: a send of it still on its way is answered that refusal.
+    /// </summary>
+    /// <remarks>
+    /// The driver asks this of every close whose answer it does not hold, before anything else, and never sends that close again:
+    /// one never delivered was judged on evidence that may have moved since, and a key's idempotency protects an outcome already
+    /// kept, not a key never used. Its close is judged again on what is there now, under a new key.
+    /// </remarks>
     public Task<QuestClosing> CloseOutcomeAsync(
         IReadOnlyList<(string Id, QuestOperationRef Submission)> named, QuestClose close, DateTimeOffset now,
         CancellationToken ct = default) =>
-        throw new NotImplementedException();
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var standing = new List<Quest>();
+            foreach (var (id, _) in named)
+            {
+                if (QuestLog.Replay(await HistoryAsync(id, transaction, inside).ConfigureAwait(false)) is { } quest) standing.Add(quest);
+            }
+
+            var invocation = Invocation(named);
+            if (await CloseKeptAsync(close.Key, transaction, inside).ConfigureAwait(false) is not { } first)
+            {
+                await KeepCloseAsync(close, invocation, QuestCloseRefusal.Withdrawn, null, now, transaction, inside).ConfigureAwait(false);
+                return new QuestClosing(QuestCloseRefusal.Withdrawn, null, standing);
+            }
+
+            if (first.Token != close.Token || first.Named != invocation) return new QuestClosing(QuestCloseRefusal.KeyReused, null, standing);
+            return new QuestClosing(first.Refusal, standing.FirstOrDefault(quest => quest.Id == first.On), standing, Replayed: true, On: first.On);
+        }, ct);
 
     /// <summary>A close's first outcome, as kept under its key: its token, what it named, how it ended and on which quest.</summary>
     private sealed record KeptClose(string Token, string Named, QuestCloseRefusal Refusal, string? On);

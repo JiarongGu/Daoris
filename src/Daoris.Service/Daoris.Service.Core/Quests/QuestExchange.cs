@@ -1579,9 +1579,35 @@ public sealed class QuestExchange(
         string id, string? key, string? token, IReadOnlyList<(string Id, QuestOperationRef Submission)> named,
         DateTimeOffset now, CancellationToken ct = default)
     {
+        var (malformed, close, listed, route) = Call(id, key, token, named);
+        if (malformed is not null) return malformed;
+        return Answered(await quests.CloseAsync(listed, close!, now, ct).ConfigureAwait(false), close!, route);
+    }
+
+    /// <summary>
+    /// What became of a close sent with <paramref name="key"/> (FABRIC-CLOSE1u, §E5 step 4): the driver's question, at the close
+    /// door's side, before it would ever send a close it holds no answer to again. Answered from what the store keeps under the
+    /// key, in the words the close door answers that close with, never by judging or writing a Done; a key never taken is
+    /// withdrawn as it is answered, so its close never runs (<see cref="QuestStore.CloseOutcomeAsync"/>).
+    /// </summary>
+    /// <remarks>The same call as the close names (its key, token and every quest with its submission), checked alike.</remarks>
+    public async Task<QuestCloseOutcome> CloseOutcomeAsync(
+        string id, string? key, string? token, IReadOnlyList<(string Id, QuestOperationRef Submission)> named,
+        DateTimeOffset now, CancellationToken ct = default)
+    {
+        var (malformed, close, listed, route) = Call(id, key, token, named);
+        if (malformed is not null) return malformed;
+        return Answered(await quests.CloseOutcomeAsync(listed, close!, now, ct).ConfigureAwait(false), close!, route);
+    }
+
+    /// <summary>A close's call as the door reads it, or why it is not one: a malformed call names no key and keeps none.</summary>
+    private static (QuestCloseOutcome? Malformed, QuestClose? Close, List<(string Id, QuestOperationRef Submission)> Listed, string Route) Call(
+        string id, string? key, string? token, IReadOnlyList<(string Id, QuestOperationRef Submission)> named)
+    {
         var route = id.TrimStart('#');
         var listed = named.Select(each => (Id: each.Id.TrimStart('#'), each.Submission)).ToList();
-        QuestCloseOutcome Malformed(string why) => new(QuestCloseRefusal.Malformed, why + " Nothing was closed.", []);
+        (QuestCloseOutcome?, QuestClose?, List<(string Id, QuestOperationRef Submission)>, string) Malformed(string why) =>
+            (new(QuestCloseRefusal.Malformed, why + " Nothing was closed.", []), null, listed, route);
 
         if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(token))
         {
@@ -1604,9 +1630,24 @@ public sealed class QuestExchange(
             return Malformed($"A close at `#{route}` names `#{route}` among the quests it closes.");
         }
 
-        var close = new QuestClose(key.Trim(), token.Trim());
-        var closing = await quests.CloseAsync(listed, close, now, ct).ConfigureAwait(false);
+        return (null, new QuestClose(key.Trim(), token.Trim()), listed, route);
+    }
+
+    /// <summary>What the close door answers for <paramref name="closing"/>, the close made or refused now, or its first outcome.</summary>
+    private static QuestCloseOutcome Answered(QuestClosing closing, QuestClose close, string route)
+    {
         var on = closing.On ?? route;
+
+        // FABRIC-CLOSE1u: a key never taken before the driver asked after it is withdrawn, whether this is the question's answer or a
+        // send of it arriving after: said alike, since that close never ran.
+        if (closing.Refusal == QuestCloseRefusal.Withdrawn)
+        {
+            return new(closing.Refusal,
+                $"Key `{close.Key}` was not taken by this door before Daoris asked what became of it, so its close never ran, and the key "
+                + "is withdrawn: it closes nothing, now or later. The close is judged again and sent with a new key. Nothing was closed.",
+                closing.Quests);
+        }
+
         if (closing.Replayed && closing.Refusal != QuestCloseRefusal.None)
         {
             // The first outcome, though what refused it may be gone since (FABRIC-CLOSE1e): said as it was, not as it now stands.
@@ -1628,12 +1669,6 @@ public sealed class QuestExchange(
             _ => new(closing.Refusal, $"{Refused(closing.Refusal, closing.Quest!)} Nothing was closed.", closing.Quests),
         };
     }
-
-    /// <summary>What became of a close sent with <paramref name="key"/> (FABRIC-CLOSE1u): not answered yet.</summary>
-    public Task<QuestCloseOutcome> CloseOutcomeAsync(
-        string id, string? key, string? token, IReadOnlyList<(string Id, QuestOperationRef Submission)> named,
-        DateTimeOffset now, CancellationToken ct = default) =>
-        throw new NotImplementedException();
 
     /// <summary>
     /// Which check refused a close when it was first sent (FABRIC-CLOSE1e), in words that hold however the quest has moved since.
