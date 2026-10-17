@@ -20,11 +20,23 @@ public sealed class WorkPerformerTests : IDisposable
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: ["unavailable"]),
     };
 
+    /// <summary>A second performed node on the same unit (FABRIC-PERFORM1h): its record is the one both nodes' attempts share.</summary>
+    private static readonly NodeDeclaration Notify = new("notify", Plugin + "/notify", 1, NodeReach.Performed)
+    {
+        Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
+    };
+
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-perform-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Port _port = new();
 
     private DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
+
+    /// <summary>Whether this process holds the home's lease, as the record's edits ask it.</summary>
+    private bool _held = true;
+
+    /// <summary>The deploy node as the test declares it: a test may take its <c>reconcile</c> away.</summary>
+    private NodeDeclaration _deploy = Deploy;
 
     public void Dispose()
     {
@@ -42,6 +54,9 @@ public sealed class WorkPerformerTests : IDisposable
 
         public Func<WorkPerformCall, Task>? OnPerform { get; set; }
 
+        /// <summary>What a reconciliation waits on before it answers: a test hears an outcome meanwhile (FABRIC-PERFORM1h).</summary>
+        public Func<WorkReconcileCall, Task>? OnReconcile { get; set; }
+
         public Func<WorkReconcileCall, WorkReconcileAnswer> Answer { get; set; } = _ => new(ReconcileStates.Unknown);
 
         public async Task<int> PerformAsync(string plugin, WorkPerformCall call, CancellationToken ct)
@@ -49,50 +64,61 @@ public sealed class WorkPerformerTests : IDisposable
             Assert.Equal(Plugin, plugin);
             if (OnPerform is { } before) await before(call);
             var generation = Generation ?? throw new DriverException("not running");
-            Sent.Add((call, generation));
+            lock (Sent) Sent.Add((call, generation));
             return generation;
         }
 
-        public Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct)
+        public async Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct)
         {
+            if (OnReconcile is { } before) await before(call);
             var generation = Generation ?? throw new DriverException("not running");
             Asked.Add(call);
-            return Task.FromResult((Answer(call), generation));
+            return (Answer(call), generation);
         }
 
         public int? GenerationOf(string plugin) => Generation;
     }
 
-    private NodeRecordFiles Files => new(_home);
+    private NodeRecordFiles Files => new(_home, () => _held);
 
     /// <summary>A new performer over the same home: what a loop started again after a restart holds.</summary>
     private WorkPerformer Performer() => new(Files, _port, () => _now);
 
-    private static NodeDeclaration? Declared(string unit, string node) => unit == Unit && node == Deploy.Id ? Deploy : null;
+    private NodeDeclaration? Declared(string unit, string node) =>
+        unit != Unit ? null : node == Deploy.Id ? _deploy : node == Notify.Id ? Notify : null;
 
     private NodeRecord Record() => Files.Read(Unit)!;
 
     private NodeStatus Status() => Record().Statuses[Deploy.Id];
 
     /// <summary>The evaluation as the loop runs it: the statuses from the record, their moves kept on it.</summary>
-    private WireEvaluated Evaluate(WorkPerformer performer, string run = "run-1")
+    private WireEvaluated Evaluate(WorkPerformer performer, IReadOnlyList<NodeDeclaration>? nodes = null, string run = "run-1")
     {
+        nodes ??= [_deploy];
         var record = Record();
-        var before = new Dictionary<string, NodeStatus>(StringComparer.Ordinal)
-        {
-            [Deploy.Id] = record.Statuses.GetValueOrDefault(Deploy.Id) ?? NodeLifecycle.Start(Unit, Deploy.Id),
-        };
-        var evaluated = WireEvaluation.Evaluate([Deploy], [], before,
-            new WireRun("graph-1", run) { Revisions = new Dictionary<string, string?> { [Unit] = Tip }, Fired = record.Fired.ToHashSet(StringComparer.Ordinal) });
+        var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(Unit, node.Id), StringComparer.Ordinal);
+        var evaluated = WireEvaluation.Evaluate(nodes, [], before, Run(record, run));
         Assert.Null(evaluated.Refusal);
         performer.Keep(before, evaluated);
         return evaluated;
     }
 
+    private static WireRun Run(NodeRecord record, string run = "run-1") =>
+        new("graph-1", run) { Revisions = new Dictionary<string, string?> { [Unit] = Tip }, Fired = record.Fired.ToHashSet(StringComparer.Ordinal) };
+
     private async Task<WorkPerformed> StartAsync(WorkPerformer performer)
     {
         var start = Assert.Single(Evaluate(performer).Starts);
-        return await performer.StartAsync(Deploy, start, CancellationToken.None);
+        return await performer.StartAsync(_deploy, start, CancellationToken.None);
+    }
+
+    /// <summary>A move the person makes on the deploy node (a stop, a new attempt), kept on its record.</summary>
+    private void Move(NodeMove move)
+    {
+        var record = Record();
+        var moved = NodeLifecycle.Apply(_deploy, record.Statuses[Deploy.Id], move);
+        Assert.True(moved.Moved, moved.Refused);
+        Files.Write(record with { Statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal) { [Deploy.Id] = moved.Status } });
     }
 
     private WorkStepHeard Heard(string invocation, WorkOutcome outcome, int generation = 1, string id = "e1") =>
@@ -265,5 +291,160 @@ public sealed class WorkPerformerTests : IDisposable
         Assert.Equal(PerformedWhat.Applied, Assert.Single(reconciled).What);
         Assert.Equal(NodeStates.Reached, Status().State);
         Assert.Equal(AttemptStates.Settled, Assert.Single(Record().Attempts).State);
+    }
+
+    // ——— FABRIC-PERFORM1h: the review's findings, each seen failing on PERFORM1b first
+
+    [Fact]
+    public async Task Two_starts_on_one_ready_node_dispatch_one_attempt()
+    {
+        var start = Assert.Single(Evaluate(Performer()).Starts);
+        Task<WorkPerformed> one, two;
+
+        // Both starts reach the record while another edit holds its lock: each must read what the other wrote.
+        using (RecordLock.Take(RecordLock.PathOf(_home, "units-" + NodeRecordFiles.KeyOf(Unit))))
+        {
+            one = Task.Run(() => Performer().StartAsync(Deploy, start, CancellationToken.None));
+            two = Task.Run(() => Performer().StartAsync(Deploy, start, CancellationToken.None));
+            await Task.Delay(TimeSpan.FromMilliseconds(300));
+        }
+
+        var done = await Task.WhenAll(one, two);
+
+        Assert.Single(done, each => each.What == PerformedWhat.Sent);
+        Assert.Single(done, each => each.What == PerformedWhat.Refused);
+        Assert.Single(_port.Sent);
+        Assert.Equal(_port.Sent[0].Call.Invocation, Assert.Single(Record().Attempts).Call.Invocation);
+        Assert.Equal((NodeStates.Active, 1, 1), (Status().State, Status().Attempt, Status().Tries));
+    }
+
+    [Fact]
+    public async Task Without_the_lease_no_move_is_kept_and_no_attempt_is_written_or_sent()
+    {
+        var performer = Performer();
+        var fresh = new Dictionary<string, NodeStatus>(StringComparer.Ordinal) { [Deploy.Id] = NodeLifecycle.Start(Unit, Deploy.Id) };
+        var evaluated = WireEvaluation.Evaluate([Deploy], [], fresh, Run(Record()));
+        _held = false;
+
+        var kept = Assert.Single(performer.Keep(fresh, evaluated));
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotHeld), (kept.What, kept.Code));
+        Assert.Empty(Record().Statuses);
+
+        _held = true;
+        performer.Keep(fresh, evaluated);
+        _held = false;
+        var started = await performer.StartAsync(Deploy, Assert.Single(evaluated.Starts), CancellationToken.None);
+
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotHeld), (started.What, started.Code));
+        Assert.Empty(_port.Sent);
+        Assert.Empty(Record().Attempts);
+        Assert.Equal(NodeStates.Ready, Status().State);
+    }
+
+    [Fact]
+    public async Task A_receipt_awaited_while_another_node_of_its_unit_starts_keeps_that_nodes_attempt()
+    {
+        var performer = Performer();
+        var starts = Evaluate(performer, [Deploy, Notify]).Starts;
+        var receipt = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _port.OnPerform = call => call.Step == Deploy.Kind ? receipt.Task : Task.CompletedTask;
+
+        var deploying = performer.StartAsync(Deploy, starts.Single(start => start.Node == Deploy.Id), CancellationToken.None);
+        Assert.Equal(PerformedWhat.Sent, (await performer.StartAsync(Notify, starts.Single(start => start.Node == Notify.Id), CancellationToken.None)).What);
+        receipt.SetResult();
+        Assert.Equal(PerformedWhat.Sent, (await deploying).What);
+
+        var record = Record();
+        Assert.Equal(2, record.Attempts.Count);
+        Assert.All(record.Attempts, attempt => Assert.Equal((AttemptStates.Sent, 1), (attempt.State, attempt.Deliveries)));
+        Assert.Equal((NodeStates.Active, NodeStates.Active), (record.Statuses[Deploy.Id].State, record.Statuses[Notify.Id].State));
+    }
+
+    [Fact]
+    public async Task A_receipt_after_its_outcome_was_heard_never_takes_the_outcome_back()
+    {
+        var performer = Performer();
+        var start = Assert.Single(Evaluate(performer).Starts);
+        var receipt = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        string? invocation = null;
+        _port.OnPerform = call =>
+        {
+            invocation = call.Invocation;
+            return receipt.Task;
+        };
+
+        var sending = performer.StartAsync(Deploy, start, CancellationToken.None);
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(performer.Hear([Heard(invocation!, Reached)], Declared)).What);
+        receipt.SetResult();
+        await sending;
+
+        Assert.Equal((NodeStates.Reached, (int?)null), (Status().State, Status().Unreconciled));
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (attempt.State, attempt.Outcome));
+    }
+
+    [Fact]
+    public async Task A_running_answer_awaited_while_the_outcome_is_heard_never_takes_the_outcome_back()
+    {
+        await StartAsync(Performer());
+        var invocation = Assert.Single(_port.Sent).Call.Invocation;
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _port.OnReconcile = _ => answer.Task;
+        _port.Answer = _ => new(ReconcileStates.Running);
+
+        // A restart asks after the attempt sent by the loop that ended; its outcome is heard while the question is out.
+        var again = Performer();
+        var reconciling = again.ReconcileAsync(Declared, CancellationToken.None);
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(again.Hear([Heard(invocation, Reached)], Declared)).What);
+        answer.SetResult();
+        await reconciling;
+
+        Assert.Equal((NodeStates.Reached, (int?)null), (Status().State, Status().Unreconciled));
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (attempt.State, attempt.Outcome));
+        Assert.Empty(await Performer().ReconcileAsync(Declared, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task An_idempotent_only_attempt_no_longer_current_is_held_and_never_settled_as_not_started()
+    {
+        _deploy = Deploy with { Perform = new NodePerform(Idempotent: true, Reconcile: false, Transient: ["unavailable"]) };
+        await StartAsync(Performer());
+        var sent = Assert.Single(_port.Sent).Call;
+
+        // The person stops the node while its attempt is out; a restart then finds the attempt sent by a loop since ended.
+        Move(new NodeMove(NodeStates.Stopped, NodeCause.Person));
+        var reconciled = Assert.Single(await Performer().ReconcileAsync(Declared, CancellationToken.None));
+
+        // Idempotency allows the same key again; it does not say the effect never began. Nothing establishes it, so it is the person's.
+        Assert.Equal(PerformedWhat.Held, reconciled.What);
+        var attempt = Assert.Single(Record().Attempts);
+        Assert.Equal((AttemptStates.Held, (string?)null), (attempt.State, attempt.Outcome));
+        Assert.Equal((NodeStates.Stopped, (int?)1), (Status().State, Status().Unreconciled));
+        Assert.Single(_port.Sent);
+        Assert.Empty(_port.Asked);
+
+        // Its late completion is still taken, as a stale attempt's: it settles the attempt and lifts the gate.
+        Assert.Equal(PerformedWhat.Stale, Assert.Single(Performer().Hear([Heard(sent.Invocation, Reached)], Declared)).What);
+        Assert.Null(Status().Unreconciled);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (Record().Attempts[0].State, Record().Attempts[0].Outcome));
+    }
+
+    [Fact]
+    public async Task A_retry_waits_the_delay_of_its_retry_within_the_binding_not_of_its_lifetime_attempt()
+    {
+        var performer = Performer();
+        await StartAsync(performer);
+        performer.Hear([Heard(_port.Sent[0].Call.Invocation, new(WorkStates.Failed, Code: "denied"))], Declared);
+
+        // The person asks for a new attempt: its tries count afresh while its attempt number grows.
+        Move(new NodeMove(NodeStates.Ready, NodeCause.Person));
+        await StartAsync(performer);
+        Assert.Equal((2, 1), (Status().Attempt, Status().Tries));
+        var second = _port.Sent[1].Call.Invocation;
+        performer.Hear([Heard(second, new(WorkStates.Failed, Code: "unavailable"))], Declared);
+
+        // Its first retry waits the first delay (30 s), not the second (60 s) its lifetime number would index.
+        Assert.Equal(_now.AddSeconds(30), Record().Invoked(second)!.RetryAt);
     }
 }

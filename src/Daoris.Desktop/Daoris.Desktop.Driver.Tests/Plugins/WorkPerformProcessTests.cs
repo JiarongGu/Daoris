@@ -127,14 +127,14 @@ public sealed class WorkPerformProcessTests : IDisposable
 
         // The first loop sends the attempt and ends before any completion comes.
         var first = await LoopAsync();
-        var before = new WorkPerformer(new NodeRecordFiles(_home), first, () => _now);
+        var before = new WorkPerformer(new NodeRecordFiles(_home, () => true), first, () => _now);
         Assert.Equal(PerformedWhat.Sent, (await before.StartAsync(step, Assert.Single(Evaluate(before, step).Starts), CancellationToken.None)).What);
         await first.DisposeAsync();
         var key = Assert.Single(Lines("effects.log"));
 
         // The next loop: no new attempt is offered, and the attempt is asked after with its key; the plugin's answer is recorded.
         await using var second = await LoopAsync();
-        var after = new WorkPerformer(new NodeRecordFiles(_home), second, () => _now);
+        var after = new WorkPerformer(new NodeRecordFiles(_home, () => true), second, () => _now);
         Assert.Empty(Evaluate(after, step).Starts);
         var reconciled = Assert.Single(await after.ReconcileAsync(Declared, CancellationToken.None));
 

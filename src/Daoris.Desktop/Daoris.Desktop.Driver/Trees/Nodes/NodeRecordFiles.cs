@@ -8,12 +8,22 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The units' node records under a home (FABRIC-PERFORM1b; §E7, <i>unit records keep §D6's attempts</i>): one file per unit,
-/// <c>&lt;home&gt;/workflows/units/&lt;key&gt;.json</c>, its key a digest of the unit's id, which the file holds. Written whole, atomically,
-/// BOM-less and LF, under the record's lock; the driver's alone to write, in the loop that holds the home's lease, and machine-local,
-/// never on the wire (D47 §4). A file that does not read is never taken for an empty record: an attempt it may hold could be sent twice.
+/// <c>&lt;home&gt;/workflows/units/&lt;key&gt;.json</c>, its key a digest of the unit's id, which the file holds. Changed only by
+/// <see cref="Edit{T}"/>: read, judged and written whole in one hold of the record's lock, the lease asked inside it (FABRIC-PERFORM1h);
+/// atomically, BOM-less and LF; the driver's alone to write, in the loop that holds the home's lease, and machine-local, never on the wire
+/// (D47 §4). A file that does not read is never taken for an empty record: an attempt it may hold could be sent twice.
 /// </summary>
-public sealed class NodeRecordFiles(string home)
+/// <param name="home">The home the records are under.</param>
+/// <param name="holdsLease">Whether this process holds the home's lease, asked inside each edit's lock; by default the home's lease file.</param>
+public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 {
+    /// <summary>Why an edit wrote nothing: the record's file does not read, or this process does not hold the home's lease.</summary>
+    public const string Unreadable = "unreadable";
+
+    public const string NotHeld = "not-held";
+
+    private readonly Func<bool> _holdsLease = holdsLease ?? (() => HomeLease.HeldHere(home));
+
     /// <summary>The folder the records sit in, beside D157's runs (<see cref="WorkflowRunBindings.FolderOf"/>).</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "units");
 
@@ -63,27 +73,61 @@ public sealed class NodeRecordFiles(string home)
         return (records, unreadable);
     }
 
-    /// <summary>The record written whole over its file, atomically, under its lock, and marked as this process's own write.</summary>
-    public void Write(NodeRecord record)
+    /// <summary>
+    /// One change of a unit's record (FABRIC-PERFORM1h, as <see cref="RecordList{T}.Edit"/> is for a list): the record's lock held, the
+    /// lease asked, the record read as it is now, <paramref name="change"/> judged on it, and the record it returns written whole, atomically,
+    /// and marked as this process's own write; a null record writes nothing. Two callers that read the same record therefore never both
+    /// decide on it: the second reads what the first wrote. Nothing is awaited inside it.
+    /// </summary>
+    /// <returns>Why nothing was judged (<see cref="NotHeld"/>, <see cref="Unreadable"/>), else null with what the change said.</returns>
+    /// <exception cref="IOException">Another edit held the record's lock for the whole of <see cref="RecordLock.Wait"/>.</exception>
+    public (string? Refused, T? Result) Edit<T>(string unit, Func<NodeRecord, (NodeRecord? Next, T Result)> change)
     {
-        var path = PathOf(home, record.Unit);
-        Directory.CreateDirectory(FolderOf(home));
-        using (RecordLock.Take(RecordLock.PathOf(home, "units-" + KeyOf(record.Unit))))
+        var path = PathOf(home, unit);
+        using (RecordLock.Take(RecordLock.PathOf(home, "units-" + KeyOf(unit))))
         {
-            AtomicFile.WriteText(path, ToJson(Trimmed(record)));
+            // The lease is asked here, under the lock, so a loop that lost it between its look and its write writes nothing.
+            if (!_holdsLease()) return (NotHeld, default);
+            if (Read(unit) is not { } record) return (Unreadable, default);
+            var (next, result) = change(record);
+            if (next is null) return (null, result);
+            if (!string.Equals(next.Unit, unit, StringComparison.Ordinal)) throw new InvalidOperationException($"a change of unit `{unit}`'s record named another unit");
+            Directory.CreateDirectory(FolderOf(home));
+            AtomicFile.WriteText(path, ToJson(Trimmed(next)));
+            HomeWrites.Mine(path);
+            return (null, result);
         }
-
-        HomeWrites.Mine(path);
     }
 
-    /// <summary>Every unsettled attempt and the newest settled ones; the newest history (<see cref="NodeRecord.SettledKept"/>).</summary>
+    /// <summary>
+    /// A whole record put over its unit's, through <see cref="Edit{T}"/>: a test's, or a person's mend. Over a file that does not read, or
+    /// without the lease, it writes nothing and says so.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Nothing was written, and why.</exception>
+    public void Write(NodeRecord record)
+    {
+        if (Edit(record.Unit, _ => (record, true)).Refused is { } refused)
+        {
+            throw new InvalidOperationException($"unit `{record.Unit}`'s node record was not written: {refused}");
+        }
+    }
+
+    /// <summary>
+    /// Every attempt a status still needs, and the newest <see cref="NodeRecord.SettledKept"/> settled others; the newest history. Needed:
+    /// one not settled (recorded, sent, unknown or held), each node's current one (a pending retry is its failed node's current attempt,
+    /// what <see cref="WorkPerformer.Due"/> reads its delay from), and one a node holds unreconciled (FABRIC-PERFORM1h).
+    /// </summary>
     private static NodeRecord Trimmed(NodeRecord record)
     {
-        var settled = record.Attempts.Where(attempt => attempt.State == AttemptStates.Settled).ToList();
-        var dropped = settled.Take(Math.Max(0, settled.Count - NodeRecord.SettledKept)).ToHashSet();
+        bool Needed(NodeAttempt attempt) =>
+            attempt.State != AttemptStates.Settled
+            || record.Statuses.GetValueOrDefault(attempt.Node) is { } status && (status.Attempt == attempt.Attempt || status.Unreconciled == attempt.Attempt);
+
+        var spare = record.Attempts.Where(attempt => !Needed(attempt)).ToList();
+        var dropped = spare.Take(Math.Max(0, spare.Count - NodeRecord.SettledKept)).Select(attempt => attempt.Call.Invocation).ToHashSet(StringComparer.Ordinal);
         return record with
         {
-            Attempts = [.. record.Attempts.Where(attempt => !dropped.Contains(attempt))],
+            Attempts = [.. record.Attempts.Where(attempt => !dropped.Contains(attempt.Call.Invocation))],
             History = [.. record.History.Skip(Math.Max(0, record.History.Count - NodeRecord.HistoryKept))],
         };
     }
@@ -237,30 +281,39 @@ public sealed class NodeRecordFiles(string home)
         writer.WriteEndObject();
     }
 
-    /// <summary>A record's file read back whole: null where it is not JSON, or any part misses what that part always says.</summary>
+    /// <summary>
+    /// A record's file read back whole: null where it is not JSON, where any part misses what that part always says or holds it as another
+    /// type (a container absent, a list holding a number, a state no rule knows), or where the record does not agree with itself
+    /// (<see cref="Consistent"/>). A record's structure is never defaulted to empty (FABRIC-PERFORM1h): <c>{"unit":"u"}</c> does not read.
+    /// </summary>
     public static NodeRecord? Parse(string json)
     {
         try
         {
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object || Text(root, "unit") is not { } unit) return null;
+            if (root.ValueKind != JsonValueKind.Object || Text(root, "unit") is not { } unit || Properties(root, "nodes") is not { } nodes
+                || Items(root, "attempts") is not { } attemptItems || Items(root, "history") is not { } historyItems || Texts(root, "fired") is not { } fired)
+            {
+                return null;
+            }
+
             var statuses = new Dictionary<string, NodeStatus>(StringComparer.Ordinal);
-            foreach (var each in Objects(root, "nodes"))
+            foreach (var each in nodes)
             {
                 if (ReadStatus(each.Value) is not { } status || status.Node != each.Name) return null;
                 statuses[each.Name] = status;
             }
 
             var attempts = new List<NodeAttempt>();
-            foreach (var each in Items(root, "attempts"))
+            foreach (var each in attemptItems)
             {
                 if (ReadAttempt(each) is not { } attempt) return null;
                 attempts.Add(attempt);
             }
 
             var history = new List<NodeHistory>();
-            foreach (var each in Items(root, "history"))
+            foreach (var each in historyItems)
             {
                 if (Moments.Read(each, "at") is not { } at || Text(each, "why") is not { } why
                     || !each.TryGetProperty("was", out var was) || ReadStatus(was) is not { } status)
@@ -271,13 +324,9 @@ public sealed class NodeRecordFiles(string home)
                 history.Add(new NodeHistory(at, why, status));
             }
 
-            return new NodeRecord(unit)
-            {
-                Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal),
-                Attempts = attempts,
-                Fired = [.. Items(root, "fired").Where(key => key.ValueKind == JsonValueKind.String).Select(key => key.GetString()!)],
-                History = history,
-            };
+            return Consistent(unit, statuses, attempts)
+                ? new NodeRecord(unit) { Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history }
+                : null;
         }
         catch (Exception error) when (error is JsonException or InvalidOperationException or FormatException)
         {
@@ -285,11 +334,36 @@ public sealed class NodeRecordFiles(string home)
         }
     }
 
-    private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array ? items.EnumerateArray() : [];
+    /// <summary>
+    /// Whether a record agrees with itself (FABRIC-PERFORM1h): every status and every attempt's call on its unit; each invocation once;
+    /// each attempt's node holding a status, never numbered past it; and a node with attempts holding the one its status names, its current
+    /// one, which trimming always keeps. A node with no attempts is a built-in's, whose attempts are not dispatched and not kept here.
+    /// </summary>
+    private static bool Consistent(string unit, IReadOnlyDictionary<string, NodeStatus> statuses, IReadOnlyList<NodeAttempt> attempts)
+    {
+        if (statuses.Values.Any(status => !string.Equals(status.Unit, unit, StringComparison.Ordinal))) return false;
+        var invocations = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var attempt in attempts)
+        {
+            if (!invocations.Add(attempt.Call.Invocation) || !string.Equals(attempt.Call.Unit, unit, StringComparison.Ordinal)) return false;
+            if (!statuses.TryGetValue(attempt.Node, out var status) || attempt.Attempt > status.Attempt) return false;
+        }
 
-    private static IEnumerable<JsonProperty> Objects(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Object ? items.EnumerateObject() : [];
+        return attempts.GroupBy(attempt => attempt.Node, StringComparer.Ordinal)
+            .All(node => node.Any(attempt => attempt.Attempt == statuses[node.Key].Attempt));
+    }
+
+    /// <summary>An array the record always writes, or null where it is absent or another type.</summary>
+    private static List<JsonElement>? Items(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array ? [.. items.EnumerateArray()] : null;
+
+    /// <summary>An object the record always writes, its properties, or null where it is absent or another type.</summary>
+    private static List<JsonProperty>? Properties(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Object ? [.. items.EnumerateObject()] : null;
+
+    /// <summary>An array of texts the record always writes, or null where it is absent, another type, or holds anything but a text.</summary>
+    private static List<string>? Texts(JsonElement element, string name) =>
+        Items(element, name) is { } items && items.All(item => item.ValueKind == JsonValueKind.String) ? [.. items.Select(item => item.GetString()!)] : null;
 
     private static int? Number(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number) ? number : null;
@@ -297,7 +371,8 @@ public sealed class NodeRecordFiles(string home)
     private static NodeStatus? ReadStatus(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object || Text(element, "unit") is not { } unit || Text(element, "node") is not { } node
-            || Text(element, "state") is not { } state || Number(element, "attempt") is not { } attempt || Number(element, "tries") is not { } tries)
+            || Text(element, "state") is not { } state || !NodeStates.All.Contains(state, StringComparer.Ordinal)
+            || Number(element, "attempt") is not { } attempt || Number(element, "tries") is not { } tries)
         {
             return null;
         }
@@ -331,7 +406,7 @@ public sealed class NodeRecordFiles(string home)
     {
         if (element.ValueKind != JsonValueKind.Object || Text(element, "unit") is not { } unit || Text(element, "graph") is not { } graph
             || Text(element, "node") is not { } node || Number(element, "version") is not { } version || Number(element, "attempt") is not { } attempt
-            || ReadPorts(element, "inputs") is not { } inputs || ReadPorts(element, "outputs") is not { } outputs)
+            || ReadPorts(element, "inputs") is not { } inputs || ReadPorts(element, "outputs") is not { } outputs || Texts(element, "receipts") is not { } receipts)
         {
             return null;
         }
@@ -341,7 +416,7 @@ public sealed class NodeRecordFiles(string home)
         return new NodeAcceptance(unit, Text(element, "revision"), graph, node, version, attempt)
         {
             Inputs = inputs,
-            PrerequisiteReceipts = [.. Items(element, "receipts").Where(receipt => receipt.ValueKind == JsonValueKind.String).Select(receipt => receipt.GetString()!)],
+            PrerequisiteReceipts = receipts,
             Evidence = evidence,
             Outputs = outputs,
         };
@@ -349,8 +424,9 @@ public sealed class NodeRecordFiles(string home)
 
     private static Dictionary<string, NodePort>? ReadPorts(JsonElement element, string name)
     {
+        if (Properties(element, name) is not { } properties) return null;
         var ports = new Dictionary<string, NodePort>(StringComparer.Ordinal);
-        foreach (var each in Objects(element, name))
+        foreach (var each in properties)
         {
             if (ReadPort(each.Value) is not { } port) return null;
             ports[each.Name] = port;
@@ -367,17 +443,16 @@ public sealed class NodeRecordFiles(string home)
     private static NodeAttempt? ReadAttempt(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object || Text(element, "node") is not { } node || Number(element, "attempt") is not { } number
-            || Text(element, "plugin") is not { } plugin || Text(element, "state") is not { } state
+            || Text(element, "plugin") is not { } plugin || Text(element, "state") is not { } state || !AttemptStates.All.Contains(state, StringComparer.Ordinal)
             || !element.TryGetProperty("call", out var call) || call.ValueKind != JsonValueKind.Object
             || Text(call, "unit") is not { } unit || Text(call, "step") is not { } step || Number(call, "stepVersion") is not { } stepVersion
             || Text(call, "invocation") is not { } invocation || Text(call, "idempotencyKey") is not { } key
-            || Text(call, "subjectRevision") is not { } revision || Moments.Read(call, "deadlineAt") is not { } deadline
+            || Text(call, "subjectRevision") is not { } revision || Moments.Read(call, "deadlineAt") is not { } deadline || Texts(call, "inputs") is not { } inputs
             || Moments.Read(element, "recordedAt") is not { } recordedAt || Number(element, "deliveries") is not { } deliveries)
         {
             return null;
         }
 
-        var inputs = Items(call, "inputs").Where(input => input.ValueKind == JsonValueKind.String).Select(input => input.GetString()!).ToList();
         return new NodeAttempt(node, number, plugin, new WorkPerformCall(unit, step, stepVersion, invocation, key, revision, inputs, deadline), state)
         {
             RecordedAt = recordedAt,

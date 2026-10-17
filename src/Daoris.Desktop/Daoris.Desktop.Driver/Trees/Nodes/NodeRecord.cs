@@ -22,6 +22,10 @@ public static class AttemptStates
     /// <c>reconcile</c>, or its outcome did not bind. The person sees it, and no new attempt is made by itself (§D6).
     /// </summary>
     public const string Held = "held";
+
+    /// <summary>Every state an attempt may be in: a record holding another does not read (FABRIC-PERFORM1h), since none of the performer's
+    /// rules would ask after it.</summary>
+    public static readonly IReadOnlyList<string> All = [Recorded, Sent, Unknown, Settled, Held];
 }
 
 /// <summary>
@@ -72,7 +76,10 @@ public sealed record NodeHistory(DateTimeOffset At, string Why, NodeStatus Was);
 /// <param name="Unit">The unit (<see cref="WorkUnit.Id"/>).</param>
 public sealed record NodeRecord(string Unit)
 {
-    /// <summary>How many settled attempts are kept beside every unsettled one, and how many history entries: the newest.</summary>
+    /// <summary>
+    /// How many settled attempts are kept beside every attempt a status still needs (an unsettled one, each node's current one, which a
+    /// pending retry is, and one a node holds unreconciled), and how many history entries: the newest.
+    /// </summary>
     public const int SettledKept = 50;
 
     public const int HistoryKept = 200;

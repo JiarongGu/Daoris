@@ -269,11 +269,15 @@ public static class NodeLifecycle
     /// <summary>A node not yet eligible, on the unit it acts on.</summary>
     public static NodeStatus Start(string unit, string node) => new(unit, node, NodeStates.Blocked);
 
-    /// <summary>The delay before attempt <paramref name="attempt"/> (from 2) under the node's retry: its delays in order, the last repeating.</summary>
-    public static TimeSpan DelayBefore(NodeDeclaration node, int attempt) =>
-        attempt < 2 || node.Retry is not { DelaysSeconds.Count: > 0 } retry
+    /// <summary>
+    /// The delay before try <paramref name="tryNumber"/> (from 2) under the node's retry: its delays in order, the last repeating. A try is
+    /// counted within its binding (<see cref="NodeStatus.Tries"/>), never by the attempt's lifetime number, which keeps growing across
+    /// bindings and runs (FABRIC-PERFORM1h).
+    /// </summary>
+    public static TimeSpan DelayBefore(NodeDeclaration node, int tryNumber) =>
+        tryNumber < 2 || node.Retry is not { DelaysSeconds.Count: > 0 } retry
             ? TimeSpan.Zero
-            : TimeSpan.FromSeconds(retry.DelaysSeconds[Math.Min(attempt - 2, retry.DelaysSeconds.Count - 1)]);
+            : TimeSpan.FromSeconds(retry.DelaysSeconds[Math.Min(tryNumber - 2, retry.DelaysSeconds.Count - 1)]);
 
     /// <summary>
     /// An earlier attempt's outcome established after it stopped being current (a stopped, skipped, rejected or superseded attempt's
