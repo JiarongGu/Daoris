@@ -736,6 +736,10 @@ public sealed partial class HelpCoverageTests
         // HIST1e (D153): a workspace's *Clear history…*, and a quest's and an ask's clears pressed through the same owner; the
         // `clear` kind's doors since HIST1f-b, the hook's scope telling them apart (The_history_clear_is_the_clear_kinds_door…).
         ("projects", "useClearHistory", null, ClearWorkspaceDoor),
+        // RECOVERYDROP1 (D102's CLEANUP1 note): the Branches' *Delete the ones nothing holds*, `daoris-driver work recovery drop`'s twin.
+        ("projects", "useDropRecoveries", null, new Exempt(
+            "it deletes the recovery refs nothing holds, whose commits may then be lost from this machine, a discard, which stays the "
+            + "person's own press (D89), as the clean-up beside it does.")),
         ("projects", "useDiscardSessionBranch", null, new Exempt(
             "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
             + "(D89), as the clean-up beside it does.")),

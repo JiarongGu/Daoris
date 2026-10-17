@@ -10,7 +10,11 @@ public sealed record RecoveryDropped(string Ref, string Commit);
 public sealed record RecoverySkipped(string Ref, string Why);
 
 /// <summary>What a press deleted and what it skipped.</summary>
-public sealed record RecoveryDrops(IReadOnlyList<RecoveryDropped> Dropped, IReadOnlyList<RecoverySkipped> Skipped);
+public sealed record RecoveryDrops(IReadOnlyList<RecoveryDropped> Dropped, IReadOnlyList<RecoverySkipped> Skipped)
+{
+    /// <summary>Why the press did nothing at all (no lease, no checkout), where it did not get as far as any ref.</summary>
+    public string? Refused { get; init; }
+}
 
 /// <summary>
 /// The person's press to delete the recovery refs nothing holds (RECOVERYDROP1, amending D102's CLEANUP1 note): the one way past
@@ -100,9 +104,50 @@ public static class RecoveryDropping
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// The press of both doors: refused unless this process holds the home, else <paramref name="asked"/> or, where null, every unheld ref
+    /// of <paramref name="repository"/>, in its checkout <paramref name="root"/> (null where it has none here).
+    /// </summary>
+    public static async Task<RecoveryDrops> PressAsync(
+        string home, string? root, string repository, IReadOnlyList<RecoveryDrop>? asked, CancellationToken ct)
+    {
+        if (WithoutHome(home) is { } refused) return new([], []) { Refused = refused };
+        if (root is null) return new([], []) { Refused = $"`{repository}` has no checkout on this machine, so its recovery refs cannot be deleted here." };
+        var landed = RecoveryRetention.Made(new LandedBranches(home).Entries(), repository);
+        return asked is null
+            ? await DropUnheldAsync(root, repository, landed, ct).ConfigureAwait(false)
+            : await DropAsync(root, repository, landed, asked, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What a press would do now, a line each recovery ref of <paramref name="repository"/> (<c>--plan</c>): it changes nothing, so it
+    /// needs no lease.
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> PlanAsync(string home, string root, string repository, CancellationToken ct)
+    {
+        var (refs, unread) = await RecoveryRetention.ReadAsync(root, repository, RecoveryRetention.Made(new LandedBranches(home).Entries(), repository), ct)
+            .ConfigureAwait(false);
+        if (refs is null) return [$"git could not list `{repository}`'s recovery refs ({unread})."];
+        return refs.Count == 0
+            ? [$"`{repository}` has no recovery ref."]
+            : [.. refs.Select(each => each.Held switch
+            {
+                false => $"would delete `{each.Ref}` in `{repository}`: no branch or tag of yours holds its commit.",
+                true => $"would keep `{each.Ref}` in `{repository}`: a branch or a tag of yours holds its commit.",
+                _ => $"would keep `{each.Ref}` in `{repository}`: whether a branch or a tag of yours holds its commit was not read.",
+            })];
+    }
+
     /// <summary>The words of an answer, a line each: what was deleted and what was skipped and why.</summary>
     public static IEnumerable<string> Words(string repository, RecoveryDrops drops)
     {
+        if (drops.Refused is { } refused)
+        {
+            yield return refused;
+            yield break;
+        }
+
+        if (drops.Dropped.Count == 0 && drops.Skipped.Count == 0) yield return $"nothing to delete in `{repository}`: no recovery ref there is held by nothing.";
         foreach (var each in drops.Dropped)
         {
             yield return $"deleted `{each.Ref}` from `{repository}` (it named {TextBounds.ShortCommit(each.Commit, 8)}): its commit may now be lost from this machine once git collects it.";

@@ -10,7 +10,7 @@ import type { OpinionChange, RepositoryOpinion } from '../settings/Opinions';
 import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
-import { readWorkState } from '../work/milestone';
+import { readWorkState, type RecoveryDropGroup, type RecoveryDropResult } from '../work/milestone';
 import { call, lookBound, pressBound } from './call';
 import { type DriverState, useDriverChange } from './driver';
 
@@ -116,6 +116,35 @@ export const useDiscardSessionBranch = () =>
   useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
       call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
+  });
+
+type RecoveryDropAnswer = {
+  repository: string;
+  done: boolean;
+  refused?: string | null;
+  dropped: { ref: string; commit: string }[];
+  skipped: { ref: string; why: string }[];
+};
+
+/**
+ * The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): the screen's half of `daoris-driver
+ * work recovery drop`. One call per repository, in turn, each naming the refs with the commits the page showed, which the driver
+ * verifies in the delete itself; a ref a holder keeps or that moved is skipped and its reason is the answer's. What it moved is asked
+ * again by the state hub, as the route declares it, and never by this hook (STATEHUB1f).
+ */
+export const useDropRecoveries = () =>
+  useMutation({
+    mutationFn: async (groups: RecoveryDropGroup[]): Promise<RecoveryDropResult> => {
+      const result: RecoveryDropResult = { dropped: [], skipped: [], refused: [] };
+      for (const { repository, refs } of groups) {
+        const answer = await call<RecoveryDropAnswer>('RECOVERY_DROP', { repository, refs });
+        if (answer.refused) result.refused.push(answer.refused);
+        result.dropped.push(...(answer.dropped ?? []).map((each) => ({ repository, ...each })));
+        result.skipped.push(...(answer.skipped ?? []).map((each) => ({ repository, ...each })));
+      }
+
+      return result;
+    },
   });
 
 /**

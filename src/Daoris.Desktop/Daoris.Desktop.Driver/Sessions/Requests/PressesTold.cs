@@ -59,8 +59,11 @@ public sealed partial class PressesTold(string home)
     /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept (ACCEPTALL1e).</summary>
     public const string LandAsk = "LAND_ASK";
 
+    /// <summary><c>work recovery drop</c>: the person's delete of the recovery refs nothing holds (RECOVERYDROP1).</summary>
+    public const string RecoveryDrop = "RECOVERY_DROP";
+
     /// <summary>Every route a terminal tells: the modules hold each to a route that declares what it changes.</summary>
-    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk];
+    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk, RecoveryDrop];
 
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";

@@ -325,5 +325,14 @@
   "projects.recoveries.unheld": "nothing of yours holds its commit, so it stays until you delete it:",
   "projects.recoveries.copy": "Copy the command",
   "projects.recoveries.copyShort": "Copy",
-  "projects.recoveries.copied": "Copied"
+  "projects.recoveries.copied": "Copied",
+  "projects.recoveries.drop": "Delete the ones nothing holds",
+  "projects.recoveries.dropTitle": "delete the recovery refs nothing holds",
+  "projects.recoveries.dropSays": "Deletes {{count}} recovery ref that no branch or tag of yours holds:",
+  "projects.recoveries.dropSays_other": "Deletes {{count}} recovery refs that no branch or tag of yours holds:",
+  "projects.recoveries.dropLoss": "Their commits may then be lost from this machine, once git's garbage collection runs, and nothing of Daoris's brings them back. A git remote may still have the work.",
+  "projects.recoveries.dropMeanIt": "Delete them",
+  "projects.recoveries.deleted": "Deleted {{count}} recovery ref.",
+  "projects.recoveries.deleted_other": "Deleted {{count}} recovery refs.",
+  "projects.recoveries.kept": "Kept {{ref}}: {{why}}"
 }

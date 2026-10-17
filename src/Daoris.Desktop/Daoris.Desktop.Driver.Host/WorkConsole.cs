@@ -85,6 +85,64 @@ internal static class WorkConsole
         return 0;
     }
 
+    /// <summary>
+    /// <c>daoris-driver work recovery drop &lt;ref&gt;... --repository &lt;name&gt; | --unheld [--repository &lt;name&gt;] [--plan]</c> (RECOVERYDROP1,
+    /// D50): the person's delete of the recovery refs nothing holds, the screen's <c>RECOVERY_DROP</c> being the other door. Only the
+    /// lease's holder acts (<see cref="RecoveryDropping.WithoutHome"/>); <c>--plan</c> lists what it would do and changes nothing. Exit
+    /// 0 clean; 1 where it was refused or a ref named was kept; 2 for words not understood or a service that did not answer.
+    /// </summary>
+    public static async Task<int> RecoveryDropAsync(string[] args)
+    {
+        if (RecoveryCommand.Read(args, out var problem) is not { } ask)
+        {
+            Console.Error.WriteLine($"daoris-driver: {problem}");
+            Console.Error.WriteLine(RecoveryCommand.Usage);
+            return 2;
+        }
+
+        var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
+        IReadOnlyList<(string Repository, string Root)> checkouts;
+        try
+        {
+            using var service = ServiceClient.FromEnvironment();
+            checkouts = [.. (await service.RegistryAsync().ConfigureAwait(false))
+                .Where(row => !string.IsNullOrWhiteSpace(row.Root) && Directory.Exists(row.Root)
+                              && (ask.Repository is null || string.Equals(row.Repository, ask.Repository, StringComparison.OrdinalIgnoreCase)))
+                .Select(row => (row.Repository, row.Root!)).DistinctBy(row => row.Repository, StringComparer.OrdinalIgnoreCase)];
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or TaskCanceledException)
+        {
+            Console.Error.WriteLine($"daoris-driver: the service did not answer ({error.Message}), so no checkout is known to delete in.");
+            return 2;
+        }
+
+        if (checkouts.Count == 0)
+        {
+            Console.Error.WriteLine($"work: {(ask.Repository is { } named ? $"`{named}` has no checkout on this machine" : "no repository has a checkout on this machine")}, so no recovery ref is read.");
+            return 1;
+        }
+
+        var kept = false;
+        var dropped = 0;
+        foreach (var (repository, root) in checkouts)
+        {
+            if (ask.Plan)
+            {
+                foreach (var line in await RecoveryDropping.PlanAsync(home, root, repository, CancellationToken.None).ConfigureAwait(false)) Console.WriteLine(line);
+                continue;
+            }
+
+            var done = await RecoveryDropping.PressAsync(
+                home, root, repository, ask.Unheld ? null : [.. ask.Refs.Select(each => new RecoveryDrop(each, null))], CancellationToken.None).ConfigureAwait(false);
+            foreach (var line in RecoveryDropping.Words(repository, done)) Console.WriteLine(line);
+            dropped += done.Dropped.Count;
+            kept |= done.Refused is not null || (!ask.Unheld && done.Skipped.Count > 0);
+        }
+
+        if (dropped > 0) new PressesTold(home).Tell(new PressTold(PressesTold.RecoveryDrop, null, DateTimeOffset.UtcNow));
+        return kept ? 1 : 0;
+    }
+
     public static async Task<int> RunAsync(WorkScope scope, string[] args, MachineLog log)
     {
         // The usage before the service is asked for: a mistyped line needs no service to be told so.

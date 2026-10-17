@@ -20,6 +20,19 @@ export type MilestoneEntry = {
   proof?: string | null;
   /** The repository a recovery belongs to (RECOVERYVIEW1); a shell older than it answers none. */
   repository?: string | null;
+  /** The commit a recovery ref names (RECOVERYDROP1), which a delete is verified against; a shell older than it answers none. */
+  commit?: string | null;
+};
+
+/** The recovery refs of one repository a press of the delete names, each with the commit the page showed (RECOVERYDROP1). */
+export type RecoveryDropGroup = { repository: string; refs: { ref: string; commit: string }[] };
+
+/** What a press of the delete answered across its repositories: what went, what was kept and why, and what refused the whole. */
+export type RecoveryDropResult = {
+  dropped: { repository: string; ref: string; commit: string }[];
+  skipped: { repository: string; ref: string; why: string }[];
+  /** A repository's whole press refused: not the lease's holder, or no checkout here. The driver's own sentence. */
+  refused: string[];
 };
 
 /** Whether the end was reached, and on what evidence. */

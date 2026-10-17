@@ -305,6 +305,64 @@ public sealed class LinesRoutes(DriverContext context)
         return new { Repository = repository, Branch = branch, Done = removal.Removed, removal.Message };
     }
 
+    // The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): CLEANUP1 keeps such a ref at any
+    // age until they say so, and this is their saying, the page's half of `daoris-driver work recovery drop`. Both doors end in
+    // RecoveryDropping.PressAsync, which re-reads the holders at the moment of the delete.
+    /// <summary>
+    /// Delete the recovery refs the page listed, `refs` each with the commit it was shown at, in `repository`'s checkout.
+    /// </summary>
+    /// <remarks>
+    /// A refusal is an ANSWER, as a discard's is: `{ done, refused, dropped, skipped, message }`. A ref a branch or a tag now holds,
+    /// one that moved since the page read it, and one gone already are in `skipped` with why; only the lease's holder acts.
+    /// </remarks>
+    [DriverRoute("RECOVERY_DROP")]
+    [Publishes("RECOVERY_DROP", Moves)]
+    private async Task<object?> DropRecoveriesAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var asked = RecoveriesAsked(request.Payload);
+        var service = _loop.Service ?? throw NotReady();
+
+        var root = Checkouts(await service.RegistryAsync(cancellationToken), repository, null)
+            .Select(row => row.Root).FirstOrDefault(path => Directory.Exists(path));
+        var done = await RecoveryDropping.PressAsync(_loop.Home, root, repository, asked, cancellationToken);
+        _loop.Nudge();
+        return RecoveryDropAnswer(repository, done);
+    }
+
+    /// <summary>The refs a press names, each with the commit the page showed (<c>{ ref, commit }</c>); a call naming none is malformed.</summary>
+    public static IReadOnlyList<RecoveryDrop> RecoveriesAsked(JsonElement? payload)
+    {
+        if (payload is not { ValueKind: JsonValueKind.Object } body || !body.TryGetProperty("refs", out var refs) || refs.ValueKind != JsonValueKind.Array)
+        {
+            throw new ArgumentException("`refs` must name the recovery refs to delete.");
+        }
+
+        var asked = new List<RecoveryDrop>();
+        foreach (var each in refs.EnumerateArray())
+        {
+            if (each.ValueKind != JsonValueKind.Object || !each.TryGetProperty("ref", out var named) || named.ValueKind != JsonValueKind.String)
+            {
+                throw new ArgumentException("each of `refs` must be `{ ref, commit }`.");
+            }
+
+            asked.Add(new(named.GetString()!, each.TryGetProperty("commit", out var shown) && shown.ValueKind == JsonValueKind.String ? shown.GetString() : null));
+        }
+
+        return asked;
+    }
+
+    /// <summary>What a delete of recovery refs became on the wire: what went, what was kept and why, and the sentence the terminal says.</summary>
+    public static object RecoveryDropAnswer(string repository, RecoveryDrops done) => new
+    {
+        Repository = repository,
+        Done = done.Refused is null && done.Dropped.Count > 0,
+        done.Refused,
+        Dropped = done.Dropped.Select(each => new { each.Ref, each.Commit }).ToArray(),
+        Skipped = done.Skipped.Select(each => new { each.Ref, each.Why }).ToArray(),
+        Message = string.Join("\n", RecoveryDropping.Words(repository, done)),
+    };
+
     // Bringing repositories up to date after a pull request merged (WSR6, D109): the list, which fetches each line —
     // moving only origin's refs — and the press, which does not fetch again: it acts on what the list fetched, and
     // only on the rows the page listed (`only`). `daoris-driver trees sync` is the terminal's door (D50).
