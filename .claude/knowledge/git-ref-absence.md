@@ -37,5 +37,8 @@ bundled MinGit is newer.
   says so, since the list skips a broken ref and still exits 0.
 - **An exit code is a word only where git defines it.** `merge-base --is-ancestor`'s 1 says "not an
   ancestor"; anything else is no answer, and is unread rather than "no longer holds it".
+- **Missing may still stand in another case.** On a disk blind to case, `show-ref --exists refs/heads/feature/x` exits 0 for a
+  loose `Feature/X` and 2 once it is packed (read on git 2.53, Windows): packed refs compare names exactly. Before forgetting on
+  "missing", look for the name in another case in the branches' list; one there is a doubt, kept (CLEANUP1).
 - **Unread keeps and says.** The record stays, the branch is kept, a recovery ref stays, and the answer says
   git could not read it, with git's first line.

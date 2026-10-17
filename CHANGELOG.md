@@ -28,6 +28,12 @@ with the version and date at release.
   other branches, it keeps them and says it could not judge them. A branch git cannot read, such as a broken ref, is kept and
   said unread rather than forgotten as gone, and a detached tree's removal keeps its commit at a recovery ref where what held it
   moved as the tree went.
+- Work whose landing branch you deleted yourself, after its pull request, now reads as over without its result (已结束，未留成果)
+  and its clean-up as completed, rather than waiting for ever; where anything leaves doubt (a branch of that name, a read git could
+  not make, its session branch still there) it is kept and says why. A recovery ref whose commit another branch or tag holds goes
+  after 30 days; one nothing else holds is kept and `daoris-driver work state` says how to delete it. Folders set aside and
+  recovery refs no work names are listed as recovery kept until their date, no longer as work with an unknown owner in *What needs
+  you*.
 - A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
 - A terminal's `sessions stop`, `say` or `take-back`, and its `trees` presses, reach the running Daoris as they are written
   (about a third of a second), where Daoris used to look for them once a second; it still looks every 3 s in case one is

@@ -44,7 +44,7 @@ internal static class WorkConsole
             unread.Add($"the service did not answer ({error.Message}), so recovery refs were not read and a tree a session holds may read as idle");
         }
 
-        var (units, recovery) = await WorkInventories.StateAsync(home, roots, inUse, unread).ConfigureAwait(false);
+        var (units, recovery) = await WorkInventories.ReadAsync(home, roots, inUse, unread).ConfigureAwait(false);
         return (units, recovery, unread);
     }
 

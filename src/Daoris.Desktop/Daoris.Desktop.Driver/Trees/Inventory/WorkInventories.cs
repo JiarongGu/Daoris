@@ -45,7 +45,7 @@ public static class WorkInventories
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>
-    public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery)> StateAsync(
+    public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery)> ReadAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread, CancellationToken ct = default)
     {
         var facts = await GatherAsync(home, roots, inUse, unread, ct).ConfigureAwait(false);

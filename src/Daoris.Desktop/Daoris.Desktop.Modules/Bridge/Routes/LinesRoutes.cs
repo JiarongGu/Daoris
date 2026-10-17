@@ -404,7 +404,7 @@ public sealed class LinesRoutes(DriverContext context)
         }
 
         var unread = new List<string>();
-        var (units, recovery) = await WorkInventories.StateAsync(_loop.Home, roots, inUse, unread, cancellationToken);
+        var (units, recovery) = await WorkInventories.ReadAsync(_loop.Home, roots, inUse, unread, cancellationToken);
         if (Optional(request, "unit") is { } named)
         {
             units = WorkInventories.Named(units, named);
