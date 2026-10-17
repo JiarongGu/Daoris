@@ -180,7 +180,9 @@ public sealed class ChangeStreamTests : IAsyncLifetime
 
         var since = await Bootstrap();
         var seen = _stream.Seen;
-        var waiting = _stream.WaitAsync(since, TimeSpan.FromSeconds(2));
+        // TESTWAIT2: held open until the observer has seen the passes' writes, then cancelled, as in the test below.
+        using var release = new CancellationTokenSource();
+        var waiting = _stream.WaitAsync(since, Long, release.Token);
 
         // Two passes: the first pushes what this machine made, the second finds nothing to do. Each records itself.
         for (var pass = 0; pass < 2; pass++)
@@ -189,10 +191,14 @@ public sealed class ChangeStreamTests : IAsyncLifetime
             Assert.Null((await SessionSync.RunAsync(_sessions, _quests, service, remote, Workspaces.Default)).Problem);
         }
 
-        var answer = await waiting;
+        var deadline = DateTime.UtcNow + Long;
+        while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
+        var observed = _stream.Seen > seen;
+        release.Cancel();
+        var answer = await waiting.WaitAsync(Long);
         Assert.Empty(answer.Moved);
         Assert.Equal(since, answer.Since);
-        Assert.True(_stream.Seen > seen, "the passes' writes were never seen, so the canary proves nothing");
+        Assert.True(observed, "the passes' writes were never seen, so the canary proves nothing");
     }
 
     /// <summary>At most eight waits are held: a ninth is answered at once with the current cursor, and the eight still wake.</summary>
@@ -355,13 +361,21 @@ public sealed class ChangeStreamTests : IAsyncLifetime
     {
         var since = await Bootstrap();
         var seen = _stream.Seen;
-        var waiting = _stream.WaitAsync(since, TimeSpan.FromMilliseconds(600));
+        // TESTWAIT2: the wait is held open until the observer has seen the write (its count moving, bounded by Long), then
+        // cancelled: a cancelled wait answers what it would have answered then, so the negative is read at the moment of the
+        // positive, not after a clock the load can outrun.
+        using var release = new CancellationTokenSource();
+        var waiting = _stream.WaitAsync(since, Long, release.Token);
 
         await Execute("CREATE TABLE IF NOT EXISTS scratch (x INTEGER); INSERT INTO scratch VALUES (1);");
-        var answer = await waiting;
+        var deadline = DateTime.UtcNow + Long;
+        while (_stream.Seen <= seen && DateTime.UtcNow < deadline) await Task.Delay(20);
+        var observed = _stream.Seen > seen;
+        release.Cancel();
+        var answer = await waiting.WaitAsync(Long);
 
+        Assert.True(observed);
         Assert.Empty(answer.Moved);
-        Assert.True(_stream.Seen > seen);
     }
 
     private async Task Execute(string sql)
