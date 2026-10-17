@@ -16,6 +16,10 @@
     <!-- Built first and never referenced (DRV8a): its tests start `daoris-driver` itself, to hold that a
          bare invocation starts nothing and a held home is refused before the service is reached. -->
     <ProjectReference Include="..\Daoris.Desktop.Driver.Host\Daoris.Desktop.Driver.Host.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first and never referenced (LAUNCHGATE1): the launcher compiles driver files in by link and references nothing,
+         so a driver change it cannot compile (a type the base library lacks) surfaced only in the publish. The driver gate
+         builds it here, a compile of six files. -->
+    <ProjectReference Include="..\Daoris.Desktop.Launcher\Daoris.Desktop.Launcher.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

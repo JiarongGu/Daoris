@@ -15,6 +15,12 @@ public interface IAutoLandingWorld : IOpinionWorld
 
     /// <summary>The trees sessions still running or waiting name, which the rule's tidy keeps (LAND3).</summary>
     Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct);
+
+    /// <summary>
+    /// A world that reads the service afresh (FABRIC-END7's review): each chosen entry is judged again from it just before its own
+    /// landing. A world that keeps nothing between reads answers itself.
+    /// </summary>
+    IAutoLandingWorld Again() => this;
 }
 
 /// <summary>The world over this machine's service: the quests read once per instance, since a look builds one.</summary>
@@ -44,6 +50,9 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
         (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
+    public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
 }
 
 /// <summary>A due session the look chose to try, with what it read of it there: its quest, and its tree's tip and status.</summary>
@@ -95,138 +104,145 @@ public sealed class AutoLander(
     /// The look's half: every open entry read against its rule, its records, its quest and its tree. What can no longer land is
     /// closed and said, a hold is kept once, uncommitted work is a try of its own, and the rest that is worth a try is chosen.
     /// </summary>
-    public async Task<AutoChosen> ChooseAsync(DriverConfig config, CancellationToken ct = default)
+    /// <param name="woke">
+    /// The wakes a plan was woken by (FABRIC-END7): only the entries they can release are read (<see cref="LandingConcerns"/>), found
+    /// without git, so a wake that concerns none starts no process. Null, the whole look, reads every entry: the deadline.
+    /// </param>
+    public async Task<AutoChosen> ChooseAsync(DriverConfig config, CancellationToken ct = default, IReadOnlyCollection<LandingWake>? woke = null)
     {
         var open = Due.Open();
         if (open.Count == 0) return new([], []);
 
         var said = new List<string>();
         var chosen = new List<AutoChoice>();
-        IReadOnlyList<SessionRecord>? records = null;
+        var records = new LookRecords(world);
         foreach (var entry in open)
         {
-            // The switch is read as it stands now: switched off, the person's press is the way again. Under a named workflow it is
-            // its run's bound version's landing step (WORKFLOW1f), read once here and handed to the gate below; a workflow that
-            // cannot be read here holds the entry at the gate, never closes it as off.
-            var process = await WorkflowProcesses.ReadAsync(home, config, world, entry.Quest, entry.Repository, entry.Workspace, ct)
-                .ConfigureAwait(false);
-            var rule = process.Landing.Rule;
-            if (process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true })
-            {
-                said.Add(Closed(entry, AutoLandingCode.Off));
-                continue;
-            }
-
-            // Landed since another way: the person's press lands it at once, whatever the last try was (design §2). A press that
-            // moved a chain's branch on lands it too, so its own acceptance is what is compared (LAND2c).
-            var since = entry.Last is { } last && last.At > entry.DueAt ? last.At : entry.DueAt;
-            if (trees.Recorded.Landing(entry.Session) is { } landing && landing.AcceptedAt(entry.Session) >= since)
-            {
-                said.Add(Closed(entry, AutoLandingCode.Already, branch: landing.Branch));
-                continue;
-            }
-
-            if (TreeFolders.TreeGone(entry.Tree))
-            {
-                said.Add(Closed(entry, AutoLandingCode.Gone));
-                continue;
-            }
-
-            // ReviewableTree's rule: a live session in the tree is using it, and a newer session on it stands for it now.
-            records ??= await world.RecordsAsync(ct).ConfigureAwait(false);
-            var onTree = records.Where(record => !record.Teammate && record.Tree is { } tree && SameTree(tree, entry.Tree)).ToList();
-            if (onTree.Any(record => record.Live)) continue;
-            var newest = onTree.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).FirstOrDefault();
-            if (newest is not null && !string.Equals(newest.Id, entry.Session, StringComparison.OrdinalIgnoreCase))
-            {
-                said.Add(Closed(entry, AutoLandingCode.Superseded));
-                continue;
-            }
-
-            var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
-            if (quest is not { Status: "Done" })
-            {
-                said.Add(Closed(entry, AutoLandingCode.Undone));
-                continue;
-            }
-
-            // Held for the person's yes (D133) or evidence's verdict (D144): kept once, and read again at every look. A set-up step
-            // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c).
-            if (quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
-            {
-                if (entry.Last?.Code != AutoLandingCode.Held) said.Add(Tried(entry, AutoLandingCode.Held, tip: null, status: null));
-                continue;
-            }
-
-            var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
-            if (!AutoLandingRules.ShouldTry(entry, tip, status)) continue;
-
-            // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f).
-            var gate = await trees.GateAsync(entry.Tree, entry.Quest, world, entry.Session, ct, process).ConfigureAwait(false);
-
-            // The run's own part first (WORKFLOW1f, the workflow design §3.7, §4.4): a workflow that cannot be read here, or a kind's
-            // paths, holds it, said once. Kept with no tip and no status, so the next look reads the gate again, and lands it once
-            // nothing holds it: what moves it is a declaration or the person's say-so, never the tree.
-            if (gate.Workflow is { LetsGo: false } workflow)
-            {
-                if (Workflow(entry, workflow, workflow.Says, step: null) is { } held) said.Add(held);
-                continue;
-            }
-
-            // The second opinion. Where the level says one is read before landing, the session stays due as `opinion`, said once and
-            // read again at every look, until it is settled or the person answers it; a chain step whose chain has a later step here
-            // waits for that step (§8.1).
-            if (!gate.Opinion.LetsGo)
-            {
-                if (entry.Last?.Code != AutoLandingCode.Opinion)
-                {
-                    said.Add(Tried(entry, AutoLandingCode.Opinion, tip, status,
-                        new TreeLanding(false, gate.Opinion.Says) { Refusal = AutoLandingCode.Opinion }));
-                    log?.Invoke(OpinionLines.Held(entry.Session, entry.Repository, entry.Workspace, gate.Opinion, ReviewDoors.Look));
-                }
-
-                continue;
-            }
-
-            // The review's gate (REVIEWENV1c, design §3.1): where the level says review, the session stays due as `unreviewed`, said
-            // once and read again at every look, until the person's reviewed on a set-up that holds its tip, or their skip.
-            var review = gate.Review;
-            if (!review.LetsGo)
-            {
-                if (entry.Last?.Code != AutoLandingCode.Unreviewed)
-                {
-                    said.Add(Tried(entry, AutoLandingCode.Unreviewed, tip, status,
-                        new TreeLanding(false, review.Says) { Refusal = AutoLandingCode.Unreviewed }));
-                    log?.Invoke(ReviewLines.Held(entry.Session, entry.Repository, entry.Workspace, review, ReviewDoors.Look));
-                }
-
-                continue;
-            }
-
-            // The named workflow's landing step, last before the landing (WORKFLOW1f, design §3.7): one that cannot start sits.
-            if (gate.Process?.LandingCannot is not null && gate.Workflow is { } landingStep)
-            {
-                if (Workflow(entry, landingStep, WorkflowGate.LandingSays(landingStep.Process), WorkflowKinds.Landing) is { } held) said.Add(held);
-                continue;
-            }
-
-            // Uncommitted work would not travel with the branch (design §5): it stays to review, with the count of its paths.
-            if (uncommitted > 0)
-            {
-                said.Add(Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted));
-                continue;
-            }
-
-            chosen.Add(new AutoChoice(entry, quest, tip, status) { Gate = gate });
+            if (!LandingConcerns.Concerns(entry, woke, TreeTips.Read)) continue;
+            var (line, choice) = await JudgeAsync(entry, config, world, records, ct).ConfigureAwait(false);
+            if (line is not null) said.Add(line);
+            if (choice is not null) chosen.Add(choice);
         }
 
         return new(chosen, said);
+    }
+
+    /// <summary>The service's session records, read once for a look's entries, and only once one needs them.</summary>
+    private sealed class LookRecords(IAutoLandingWorld world)
+    {
+        private IReadOnlyList<SessionRecord>? _read;
+
+        public async Task<IReadOnlyList<SessionRecord>> ReadAsync(CancellationToken ct) =>
+            _read ??= await world.RecordsAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// One entry judged against its rule, its records, its quest, its tree and its gate, as they stand now: the look's line for it where
+    /// one is said, and the choice where it is worth a try. The look judges with it, and the landing again just before each landing.
+    /// </summary>
+    private async Task<(string? Said, AutoChoice? Choice)> JudgeAsync(
+        AutoLanding entry, DriverConfig config, IAutoLandingWorld world, LookRecords looked, CancellationToken ct)
+    {
+        // The switch is read as it stands now: switched off, the person's press is the way again. Under a named workflow it is
+        // its run's bound version's landing step (WORKFLOW1f), read once here and handed to the gate below; a workflow that
+        // cannot be read here holds the entry at the gate, never closes it as off.
+        var process = await WorkflowProcesses.ReadAsync(home, config, world, entry.Quest, entry.Repository, entry.Workspace, ct)
+            .ConfigureAwait(false);
+        var rule = process.Landing.Rule;
+        if (process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true })
+        {
+            return (Closed(entry, AutoLandingCode.Off), null);
+        }
+
+        // Landed since another way: the person's press lands it at once, whatever the last try was (design §2). A press that
+        // moved a chain's branch on lands it too, so its own acceptance is what is compared (LAND2c).
+        var since = entry.Last is { } last && last.At > entry.DueAt ? last.At : entry.DueAt;
+        if (trees.Recorded.Landing(entry.Session) is { } landing && landing.AcceptedAt(entry.Session) >= since)
+        {
+            return (Closed(entry, AutoLandingCode.Already, branch: landing.Branch), null);
+        }
+
+        if (TreeFolders.TreeGone(entry.Tree)) return (Closed(entry, AutoLandingCode.Gone), null);
+
+        // ReviewableTree's rule: a live session in the tree is using it, and a newer session on it stands for it now.
+        var records = await looked.ReadAsync(ct).ConfigureAwait(false);
+        var onTree = records.Where(record => !record.Teammate && record.Tree is { } tree && SameTree(tree, entry.Tree)).ToList();
+        if (onTree.Any(record => record.Live)) return (null, null);
+        var newest = onTree.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).FirstOrDefault();
+        if (newest is not null && !string.Equals(newest.Id, entry.Session, StringComparison.OrdinalIgnoreCase))
+        {
+            return (Closed(entry, AutoLandingCode.Superseded), null);
+        }
+
+        var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
+        if (quest is not { Status: "Done" }) return (Closed(entry, AutoLandingCode.Undone), null);
+
+        // Held for the person's yes (D133) or evidence's verdict (D144): kept once, and read again at every look. A set-up step
+        // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c).
+        if (quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
+        {
+            return (entry.Last?.Code != AutoLandingCode.Held ? Tried(entry, AutoLandingCode.Held, tip: null, status: null) : null, null);
+        }
+
+        var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
+        if (!AutoLandingRules.ShouldTry(entry, tip, status)) return (null, null);
+
+        // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f).
+        var gate = await trees.GateAsync(entry.Tree, entry.Quest, world, entry.Session, ct, process).ConfigureAwait(false);
+
+        // The run's own part first (WORKFLOW1f, the workflow design §3.7, §4.4): a workflow that cannot be read here, or a kind's
+        // paths, holds it, said once. Kept with no tip and no status, so the next look reads the gate again, and lands it once
+        // nothing holds it: what moves it is a declaration or the person's say-so, never the tree.
+        if (gate.Workflow is { LetsGo: false } workflow) return (Workflow(entry, workflow, workflow.Says, step: null), null);
+
+        // The second opinion. Where the level says one is read before landing, the session stays due as `opinion`, said once and
+        // read again at every look, until it is settled or the person answers it; a chain step whose chain has a later step here
+        // waits for that step (§8.1).
+        if (!gate.Opinion.LetsGo)
+        {
+            if (entry.Last?.Code == AutoLandingCode.Opinion) return (null, null);
+            var waits = Tried(entry, AutoLandingCode.Opinion, tip, status,
+                new TreeLanding(false, gate.Opinion.Says) { Refusal = AutoLandingCode.Opinion });
+            log?.Invoke(OpinionLines.Held(entry.Session, entry.Repository, entry.Workspace, gate.Opinion, ReviewDoors.Look));
+            return (waits, null);
+        }
+
+        // The review's gate (REVIEWENV1c, design §3.1): where the level says review, the session stays due as `unreviewed`, said
+        // once and read again at every look, until the person's reviewed on a set-up that holds its tip, or their skip.
+        var review = gate.Review;
+        if (!review.LetsGo)
+        {
+            if (entry.Last?.Code == AutoLandingCode.Unreviewed) return (null, null);
+            var waits = Tried(entry, AutoLandingCode.Unreviewed, tip, status,
+                new TreeLanding(false, review.Says) { Refusal = AutoLandingCode.Unreviewed });
+            log?.Invoke(ReviewLines.Held(entry.Session, entry.Repository, entry.Workspace, review, ReviewDoors.Look));
+            return (waits, null);
+        }
+
+        // The named workflow's landing step, last before the landing (WORKFLOW1f, design §3.7): one that cannot start sits.
+        if (gate.Process?.LandingCannot is not null && gate.Workflow is { } landingStep)
+        {
+            return (Workflow(entry, landingStep, WorkflowGate.LandingSays(landingStep.Process), WorkflowKinds.Landing), null);
+        }
+
+        // Uncommitted work would not travel with the branch (design §5): it stays to review, with the count of its paths.
+        if (uncommitted > 0) return (Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted), null);
+
+        // The tip judged is pinned into the landing (FABRIC-END7's review): a commit made after this judgement is refused, never landed unseen.
+        return (null, new AutoChoice(entry, quest, tip, status) { Gate = gate with { Tip = tip } });
     }
 
     /// <summary>
     /// The half beside the look: each chosen session landed as the review's Accept lands it, behind D88's proof read at that
     /// moment, and each try kept, said in the conversation and logged. Never throws for one session's sake.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Each is judged again just before its own landing</b> (FABRIC-END7's review, finding 1): a pass lands its choices one after
+    /// another, and an earlier one's plugin may take minutes, so the quest, the holds, the records, the switch, the tree and the gate
+    /// the look read are read again, from a fresh world, and what moved since is said with the look's own words. The gate handed to
+    /// the landing is the one read here, pinned to the tip read here (<see cref="LandingGate.Tip"/>). It costs the tree's two reads
+    /// and the gate's own again for each landing, where the look read them a moment before.
+    /// </remarks>
     public async Task<IReadOnlyList<string>> LandAsync(IReadOnlyList<AutoChoice> chosen, CancellationToken ct = default)
     {
         var said = new List<string>();
@@ -234,7 +250,9 @@ public sealed class AutoLander(
         {
             try
             {
-                said.Add(await LandOneAsync(choice, ct).ConfigureAwait(false));
+                var (line, again, fresh) = await AgainAsync(choice, ct).ConfigureAwait(false);
+                if (line is not null) said.Add(line);
+                if (again is not null) said.Add(await LandOneAsync(again, fresh, ct).ConfigureAwait(false));
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                               or IOException or UnauthorizedAccessException)
@@ -258,7 +276,21 @@ public sealed class AutoLander(
         return said;
     }
 
-    private async Task<string> LandOneAsync(AutoChoice choice, CancellationToken ct)
+    /// <summary>
+    /// The choice judged again from what stands now (FABRIC-END7's review): the entry as the due list holds it, the rule as the home's
+    /// configuration says it, and the service read afresh. Null where it is no longer the due list's to land, or no longer worth a try.
+    /// </summary>
+    private async Task<(string? Said, AutoChoice? Choice, IAutoLandingWorld World)> AgainAsync(AutoChoice choice, CancellationToken ct)
+    {
+        var fresh = world.Again();
+        if (Due.Of(choice.Entry.Session) is not { Closed: null } entry) return (null, null, fresh);
+        var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
+        var (said, again) = await JudgeAsync(entry, config, fresh, new LookRecords(fresh), ct).ConfigureAwait(false);
+        return (said, again, fresh);
+    }
+
+    /// <param name="fresh">The world the choice was judged again from, which names the landing and the trees in use.</param>
+    private async Task<string> LandOneAsync(AutoChoice choice, IAutoLandingWorld fresh, CancellationToken ct)
     {
         var entry = choice.Entry;
 
@@ -275,10 +307,10 @@ public sealed class AutoLander(
         // part, on the entry's one branch, joining it where it ran alongside (ACCEPTALL1f, D167's 2026-10-15 amendment point 2): the
         // press's own call, over the records as they stand now.
         var subject = await trees.OwnSubjectAsync(
-            entry.Tree, entry.Session, entry.Quest, await world.RecordsAsync(ct).ConfigureAwait(false), id => world.QuestAsync(id, ct),
+            entry.Tree, entry.Session, entry.Quest, await fresh.RecordsAsync(ct).ConfigureAwait(false), id => fresh.QuestAsync(id, ct),
             named => events.Openings([named]).GetValueOrDefault(named), choice.Gate?.Process, ct).ConfigureAwait(false);
         var plan = await trees.PlanAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins).ConfigureAwait(false);
+        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins).ConfigureAwait(false);
         var code = AutoLandingRules.CodeOf(landed);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
     }
