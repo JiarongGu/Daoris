@@ -209,7 +209,7 @@ public abstract class LandedFixture : IDisposable
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         var (beganUtc, began) = (DateTime.UtcNow, Stopwatch.GetTimestamp());
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var started = Stopwatch.GetTimestamp();
         // Both reads start before the wait: a child that fills the pipe nobody reads waits on it forever (TESTGIT1).
         var stdout = process.StandardOutput.ReadToEndAsync();
@@ -228,7 +228,7 @@ public abstract class LandedFixture : IDisposable
     {
         var info = new ProcessStartInfo { FileName = "git", WorkingDirectory = cwd, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var stderr = process.StandardError.ReadToEndAsync();
         process.StandardOutput.ReadToEnd();
         stderr.GetAwaiter().GetResult();

@@ -249,7 +249,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
     {
         var info = new System.Diagnostics.ProcessStartInfo { FileName = "git", WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in new[] { "merge-tree", "--write-tree", ours, theirs }) info.ArgumentList.Add(argument);
-        using var process = System.Diagnostics.Process.Start(info)!;
+        using var process = System.Diagnostics.Process.Start(TestGit.Past(info))!;
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

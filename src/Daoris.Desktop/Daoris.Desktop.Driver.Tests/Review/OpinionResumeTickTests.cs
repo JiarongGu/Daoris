@@ -293,7 +293,7 @@ public sealed class OpinionResumeTickTests : IDisposable
     {
         var info = new ProcessStartInfo("git") { WorkingDirectory = folder, UseShellExecute = false, RedirectStandardOutput = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
         return output;

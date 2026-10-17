@@ -188,7 +188,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         {
             WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true,
         };
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
         return [.. output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order()];
@@ -201,7 +201,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         {
             WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true,
         };
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
         return [.. output.Split('\n', StringSplitOptions.RemoveEmptyEntries).Where(line => line.StartsWith("worktree ", StringComparison.Ordinal)).Order()];
@@ -514,7 +514,7 @@ public sealed class SessionMessagesTickTests : IDisposable
     {
         var info = new ProcessStartInfo("git") { WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         process.StandardOutput.ReadToEnd();
         process.WaitForExit();
     }

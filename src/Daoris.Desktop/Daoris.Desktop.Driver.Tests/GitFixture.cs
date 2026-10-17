@@ -62,6 +62,7 @@ internal static class GitFixture
             info.StandardInputEncoding = Utf8;
         }
 
+        TestGit.Past(info);
         var (beganUtc, began) = (DateTime.UtcNow, Stopwatch.GetTimestamp());
         using var process = Process.Start(info) ?? throw new InvalidOperationException($"git did not start in {info.WorkingDirectory}");
         var started = Stopwatch.GetTimestamp();

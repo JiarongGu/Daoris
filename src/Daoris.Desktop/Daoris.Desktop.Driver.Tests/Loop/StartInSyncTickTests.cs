@@ -284,7 +284,7 @@ public sealed class StartInSyncTickTests : IDisposable
     {
         var info = new ProcessStartInfo("git") { WorkingDirectory = place, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         var stderr = process.StandardError.ReadToEndAsync();
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();

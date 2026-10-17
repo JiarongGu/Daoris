@@ -752,7 +752,7 @@ public sealed class AutoLandingTests : IDisposable
             RedirectStandardError = true,
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(TestGit.Past(info))!;
         // 🔴 Both streams are read at once, before the wait: read one after the other, a git that writes more than a pipe's
         // worth of warnings to the second blocks on it while the first is still being read (FIX-LOG 2026-10-04).
         var stdout = process.StandardOutput.ReadToEndAsync();

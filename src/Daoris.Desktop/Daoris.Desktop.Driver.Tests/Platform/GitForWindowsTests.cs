@@ -220,6 +220,26 @@ public sealed class GitForWindowsTests : IDisposable
         Assert.Equal(Folders() + @"C:\a", GitForWindows.ChildEnvironment(Behind(), Variables(("PATH", @"C:\a"), ("HOME", tooLong)))["PATH"]);
     }
 
+    // ── A fixture's git (TestGit) ───────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void A_fixtures_bare_git_is_the_one_PATH_finds_past_the_launcher()
+    {
+        var info = TestGit.Past(new ProcessStartInfo("git"));
+        var found = CommandPresence.Resolve("git", startable: true);
+
+        Assert.Equal(found is null ? "git" : GitForWindows.Behind(found)?.Git ?? found, info.FileName);
+    }
+
+    [Fact]
+    public void A_fixtures_start_of_a_named_file_is_left_as_it_was()
+    {
+        var file = Lay();
+        var info = TestGit.Past(new ProcessStartInfo(file));
+
+        Assert.Equal(file, info.FileName);
+    }
+
     // ── The person's git (TOOLS5) ───────────────────────────────────────────────────────────────────
 
     [Fact]
