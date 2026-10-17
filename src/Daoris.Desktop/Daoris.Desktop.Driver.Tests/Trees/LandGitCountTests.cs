@@ -110,6 +110,69 @@ public sealed class LandGitCountTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 What another process can move is never kept (the review of LANDGIT1): the session's head, a branch's tip, and the commits
+    /// no branch holds. Each is moved from outside between its asking and its use, and the second asking sees the move.
+    /// </summary>
+    [Fact]
+    public async Task What_another_process_moves_is_asked_of_git_each_time()
+    {
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "branch", "side");
+        var tipA = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        using var facts = GitFacts.Within();
+
+        // The head: another process commits between the two askings (a replay would be built from the first answer).
+        var head = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], default);
+        await CommitAsync(root, "b.txt", "b", "b");
+        var headNow = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], default);
+        Assert.Equal(tipA, head.Stdout.Trim());
+        Assert.NotEqual(tipA, headNow.Stdout.Trim());
+
+        // A branch's tip, as the tidy's freshness check reads it.
+        var side = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", "refs/heads/side^{commit}"], default);
+        await GitAsync(root, "update-ref", "refs/heads/side", headNow.Stdout.Trim());
+        var sideNow = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", "refs/heads/side^{commit}"], default);
+        Assert.NotEqual(side.Stdout.Trim(), sideNow.Stdout.Trim());
+
+        // What no branch holds: the landing branch is deleted from outside, and the cleanup's proof must see it.
+        var held = await WorkingTree.GitAsync(root, ["log", "--oneline", tipA, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"], default);
+        await GitAsync(root, "branch", "-D", "side");
+        await GitAsync(root, "checkout", "-q", "--detach", "HEAD");
+        await GitAsync(root, "branch", "-D", "main");
+        var heldNow = await WorkingTree.GitAsync(root, ["log", "--oneline", tipA, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"], default);
+        Assert.Equal("", held.Stdout.Trim());
+        Assert.NotEqual("", heldNow.Stdout.Trim());
+    }
+
+    /// <summary>A table that was closed answers nothing, wherever a child task still holds it, and a child never inherits a live one.</summary>
+    [Fact]
+    public async Task A_closed_table_is_inert_in_every_flow_that_holds_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var sha = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        string[] ask = ["merge-base", sha, sha];
+        var starts = new List<string>();
+        Task child;
+        using (Counting(starts))
+        {
+            var scope = GitFacts.Within();
+            await WorkingTree.GitAsync(root, ask, default);
+            var gate = new TaskCompletionSource();
+            child = Task.Run(async () =>
+            {
+                await gate.Task;
+                await WorkingTree.GitAsync(root, ask, default);
+            });
+            scope.Dispose();
+            gate.SetResult();
+            await child;
+        }
+
+        // The first ask, and the child's after the scope closed: neither was answered from the table.
+        Assert.Equal(2, starts.Count);
+    }
+
+    /// <summary>
     /// 🔴 A fact is kept only until a git of the landing's own may move a ref: the branch made answers the question it was asked
     /// before it was made, and a plugin's push (<see cref="GitFacts.Dropped"/>) drops what was held.
     /// </summary>
@@ -118,24 +181,22 @@ public sealed class LandGitCountTests : IDisposable
     {
         var root = await RepositoryAsync("engine");
         var starts = new List<string>();
-        string[] ask = ["rev-parse", "--verify", "--quiet", "refs/heads/made^{commit}"];
+        var sha = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        string[] ask = ["merge-base", sha, sha];
         using (Counting(starts))
         using (GitFacts.Within())
         {
-            var before = await WorkingTree.GitAsync(root, ask, default);
-            var again = await WorkingTree.GitAsync(root, ask, default);
-            Assert.Equal((1, 1), (before.Code, again.Code));
+            await WorkingTree.GitAsync(root, ask, default);
+            await WorkingTree.GitAsync(root, ask, default);
             Assert.Single(starts);
 
             await WorkingTree.GitAsync(root, ["branch", "made", "HEAD"], default);
-            var after = await WorkingTree.GitAsync(root, ask, default);
-            Assert.Equal(0, after.Code);
+            await WorkingTree.GitAsync(root, ask, default);
             Assert.Equal(3, starts.Count);
 
             // A write that is not git's: dropped by its caller, as the plugin's push is.
-            await GitAsync(root, "branch", "-D", "made");
             GitFacts.Dropped();
-            Assert.Equal(1, (await WorkingTree.GitAsync(root, ask, default)).Code);
+            await WorkingTree.GitAsync(root, ask, default);
             Assert.Equal(4, starts.Count);
         }
 
@@ -150,20 +211,21 @@ public sealed class LandGitCountTests : IDisposable
         Assert.Equal(2, starts.Count);
     }
 
-    // Git starts of one landing on this fixture, before LANDGIT1 and after: the look's automatic landing 61 and 34, the press on a
-    // squash rule 54 and 42, the press on a merge rule 45 and 34. The tidy's own reads (its proof and its delete) are asked as they
-    // were: what they repeat of the head is read after the landing's writes, so it is read again.
-    private const int AutomaticCeiling = 34;
-    private const int SquashCeiling = 42;
-    private const int MergeCeiling = 34;
+    // Git starts of one landing on this fixture, before LANDGIT1 and after: the look's automatic landing 61 and 52, the press on a
+    // squash rule 54 and 51, the press on a merge rule 45 and 42. A first version kept every ref and head read and reached 34, 42 and
+    // 34; its review found each a stale answer a judgement or a delete could act on, so only what an id answers is kept now.
+    private const int AutomaticCeiling = 52;
+    private const int SquashCeiling = 51;
+    private const int MergeCeiling = 42;
 
     private static void Judge(List<string> starts, int ceiling)
     {
         var git = starts.Where(each => each.StartsWith("git ", StringComparison.Ordinal)).ToList();
         var report = $"{git.Count} git starts:\n{string.Join('\n', git)}";
-        // A command asked again is a repeat unless a git that may move a ref ran between its two askings: what the landing wrote is
-        // read again, as a later step depends on it. `status` is the files', never a ref's: each gate that refuses on uncommitted work
-        // reads it as it acts, so two of them are two askings by design.
+        // A question of commits by their ids is asked once unless a git that may move a ref ran between its two askings. What names a
+        // ref or the head is never kept (another process moves it, and a judgement or a delete must see the move), so those are asked
+        // as often as the steps ask them; `status` too is the files'. Layout reads are kept only in the planning, so the tidy's own
+        // askings, after the table is closed, are not repeats of it.
         var repeated = new List<string>();
         var since = new HashSet<string>(StringComparer.Ordinal);
         foreach (var each in git)
@@ -173,7 +235,11 @@ public sealed class LandGitCountTests : IDisposable
             var command = each.Split("  @ ")[0];
             var arguments = command["git ".Length..].Split(' ');
             if (RefSnapshot.MayWrite(arguments)) since.Clear();
-            else if (!command.StartsWith("git status ", StringComparison.Ordinal) && !since.Add(command)) repeated.Add(each);
+            else if (GitFacts.Kept(arguments) && !command.Contains("--show-toplevel") && !command.Contains("--git-common-dir")
+                     && !command.Contains("origin/HEAD") && !since.Add(command))
+            {
+                repeated.Add(each);
+            }
         }
 
         Assert.True(repeated.Count == 0, $"repeated without a write between: {string.Join("; ", repeated)}\n{report}");

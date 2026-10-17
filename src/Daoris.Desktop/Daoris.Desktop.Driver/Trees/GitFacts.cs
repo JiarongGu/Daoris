@@ -1,10 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One landing asks git once per fact (LANDGIT1, after STARTGIT1): within it, a read of git's answer that names a ref or a
-/// repository (`rev-parse`, `symbolic-ref`, `merge-base`, `log`, `for-each-ref`) is asked of git once for the same folder and the
-/// same arguments, and every later asker in the flow is handed the answer. A landing was about 50 git starts, some facts asked
-/// five times by the steps that each read what they needed (`rev-parse --show-toplevel`, `symbolic-ref --short -q HEAD`).
+/// One landing's planning asks git once per fact (LANDGIT1, after STARTGIT1): within it, a read whose answer an id or the layout
+/// decides (a commit's `merge-base` or `log` by full ids, `--show-toplevel`, `--git-common-dir`, origin's HEAD) is asked of git once,
+/// and every later asker in the flow is handed the answer.
+/// <b>Nothing another process moves is kept</b>: a read naming `HEAD` or a ref is always git's, so a judgement, a replay's source
+/// and the tidy's re-reads see what is there. The landing closes the table (<see cref="Close"/>) before the end keeping and the tidy.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Never kept across a write.</b> Every git this flow starts that may move a ref or an upstream
@@ -30,18 +31,35 @@ internal sealed class GitFacts
     /// </summary>
     internal static IDisposable Within()
     {
-        if (Current.Value is not null) return Nothing.Instance;
-        Current.Value = new GitFacts();
-        return new Ending();
+        if (Live is not null) return Nothing.Instance;
+        var facts = new GitFacts();
+        Current.Value = facts;
+        return new Ending(facts);
     }
 
+    /// <summary>
+    /// End the planning's table now, whoever opened it (a landing the look opened the table for ends it too): what follows asks git
+    /// as it stands. The opener's own dispose is then no more than the end of its scope.
+    /// </summary>
+    internal static void Close()
+    {
+        if (Live is { } facts) facts._closed = true;
+        Current.Value = null;
+    }
+
+    // Closed by whoever ends the scope, so a child task that inherited the async local after it began never answers from it: the
+    // value is cleared only in the context that disposes, which no child shares.
+    private volatile bool _closed;
+
+    private static GitFacts? Live => Current.Value is { _closed: false } facts ? facts : null;
+
     /// <summary>Drop every fact this flow holds: the next ask is git's. For a write that is not a git (a plugin pushing).</summary>
-    internal static void Dropped() => Current.Value?.Drop();
+    internal static void Dropped() => Live?.Drop();
 
     /// <summary>What <see cref="WorkingTree"/>'s runner calls around each git it runs: a write drops this flow's facts.</summary>
     internal static void Ran(IReadOnlyList<string> arguments)
     {
-        if (Current.Value is not { } facts || !RefSnapshot.MayWrite(arguments)) return;
+        if (Live is not { } facts || !RefSnapshot.MayWrite(arguments)) return;
         facts.Drop();
         // A working tree added, moved or removed changes which folders belong to a repository: the pairs are read again.
         if (Command(arguments) == "worktree") facts.Unpair();
@@ -54,7 +72,7 @@ internal sealed class GitFacts
     /// </summary>
     internal static void SameRepository(string folder, string commonDir)
     {
-        if (Current.Value is not { } facts) return;
+        if (Live is not { } facts) return;
         var dir = Path.TrimEndingDirectorySeparator(commonDir.Trim());
         if (!string.Equals(Path.GetFileName(dir), ".git", StringComparison.Ordinal) || Path.GetDirectoryName(dir) is not { } checkout) return;
         var (tree, root) = (Folder(folder), Folder(checkout));
@@ -78,7 +96,7 @@ internal sealed class GitFacts
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
         string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
     {
-        if (Current.Value is not { } facts || !Kept(arguments)) return null;
+        if (Live is not { } facts || !Kept(arguments)) return null;
         var folder = Folder(root);
         // A question of refs and commits by full name is the repository's, whichever of its working trees asked it.
         var wide = RepositoryWide(arguments);
@@ -143,29 +161,40 @@ internal sealed class GitFacts
     // Folder to the checkout of the repository it is a working tree of (SameRepository).
     private readonly Dictionary<string, string> _pairs = new(StringComparer.Ordinal);
 
-    // `rev-parse --verify --quiet <ref or commit>`, `merge-base`, `log` and `symbolic-ref` of full names: no HEAD, no path, no
-    // layout option (`--show-toplevel`, `--git-dir`, `--abbrev-ref`), so no answer that depends on which working tree asked.
+    // A commit or tree by its full id: what it names never changes, and no working tree reads it differently.
     private static readonly System.Text.RegularExpressions.Regex Whole = new(
-        @"^(refs/(heads|remotes|tags)/\S+|[0-9a-f]{40}|[0-9a-f]{64})(\^\{(commit|tree)\})?$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        @"^([0-9a-f]{40}|[0-9a-f]{64})(\^\{(commit|tree)\})?$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// A question of commits by their full ids alone (`rev-parse --verify`, `merge-base`, `log` of them or of a range between them):
+    /// no ref, no HEAD, no path, and no option that reads the refs (`--branches`, `--remotes`, `--all`, `--tags`, `--glob`). Its answer
+    /// is the repository's and does not move while the objects stay, so whichever working tree asked it, and when, it is one fact.
+    /// </summary>
     private static bool RepositoryWide(IReadOnlyList<string> arguments)
     {
         var at = CommandAt(arguments);
+        if (at >= arguments.Count) return false;
         var rest = arguments.Skip(at + 1).ToList();
-        if (rest.Any(each => each == "--")) return false;
         var positional = rest.Where(each => !each.StartsWith('-')).ToList();
-        if (positional.Count == 0) return false;
+        if (positional.Count == 0 || positional.Any(each => !Names(each))) return false;
+        var options = rest.Where(each => each.StartsWith('-')).ToList();
         return arguments[at] switch
         {
-            "rev-parse" => rest.Where(each => each.StartsWith('-')).All(each => each is "--verify" or "--quiet" or "-q") && positional.All(Names),
-            "merge-base" or "log" or "symbolic-ref" => positional.All(Names),
-            "for-each-ref" => positional.All(each => each.StartsWith("refs/", StringComparison.Ordinal)),
+            "rev-parse" => options.All(each => each is "--verify" or "--quiet" or "-q"),
+            "merge-base" => options.All(each => each is "--is-ancestor" or "--all"),
+            "log" => options.All(each => each is "--reverse" or "--no-merges" or "--oneline" or "--not"
+                || each.StartsWith("--format=", StringComparison.Ordinal)),
             _ => false,
         };
 
         // A range names its two ends.
         static bool Names(string each) => each.Split(["...", ".."], StringSplitOptions.None).All(end => Whole.IsMatch(end));
     }
+
+    // What no write of ours changes and no other process moves: where a folder's working tree and repository are.
+    private static bool Layout(IReadOnlyList<string> arguments) =>
+        arguments is ["rev-parse", "--show-toplevel"] or ["rev-parse", "--path-format=absolute", "--git-common-dir"]
+        or ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"];
 
     private static int CommandAt(IReadOnlyList<string> arguments)
     {
@@ -181,23 +210,15 @@ internal sealed class GitFacts
     private static string? Command(IReadOnlyList<string> arguments) => CommandAt(arguments) is var at && at < arguments.Count ? arguments[at] : null;
 
     /// <summary>The reads whose answer is a ref's or a repository's and never the files': git's own options before the command are skipped.</summary>
-    internal static bool Kept(IReadOnlyList<string> arguments)
-    {
-        var at = CommandAt(arguments);
-        if (at >= arguments.Count) return false;
-        // A command that reads its revisions from the input is not a question of its arguments alone.
-        if (arguments.Skip(at + 1).Any(each => each is "--stdin" or "--batch" or "--batch-check")) return false;
-        return arguments[at] switch
-        {
-            "rev-parse" or "merge-base" or "log" or "for-each-ref" => true,
-            "symbolic-ref" => !RefSnapshot.MayWrite(arguments),
-            _ => false,
-        };
-    }
+    internal static bool Kept(IReadOnlyList<string> arguments) => RepositoryWide(arguments) || Layout(arguments);
 
-    private sealed class Ending : IDisposable
+    private sealed class Ending(GitFacts facts) : IDisposable
     {
-        public void Dispose() => Current.Value = null;
+        public void Dispose()
+        {
+            facts._closed = true;
+            Current.Value = null;
+        }
     }
 
     private sealed class Nothing : IDisposable

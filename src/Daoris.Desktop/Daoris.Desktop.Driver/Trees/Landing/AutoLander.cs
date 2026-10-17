@@ -261,8 +261,8 @@ public sealed class AutoLander(
     private async Task<string> LandOneAsync(AutoChoice choice, CancellationToken ct)
     {
         var entry = choice.Entry;
-        // LANDGIT1: the try's reads before the landing and the landing's own ask git's guess at the line and each ref once, until a
-        // git of the landing's own moves a ref (GitFacts); the look the landing opens is this one's.
+        // LANDGIT1: the try's reads before the landing and the landing's own ask git's guess at the line once; the look the landing
+        // opens is this one's. The table of what ids answer is the planning's too, closed by the landing before the tidy.
         using var look = trees.OneLook();
         using var facts = GitFacts.Within();
 
