@@ -750,6 +750,15 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     public Task<PullRequestAskedAgain> AskAgainAsync(string root, LandedBranch entry, CancellationToken ct = default) =>
         Asks.AskAgainAsync(root, entry, ct);
 
+    /// <inheritdoc cref="PullRequestAsks.AskAtMomentAsync"/>
+    internal Task<int> AskAtMomentAsync(
+        string root, string repository, string? workspace, IReadOnlyCollection<LandedBranch> entries, CancellationToken ct = default) =>
+        Asks.AskAtMomentAsync(root, repository, RemoteTarget.Workspace(workspace), entries, ct);
+
+    /// <summary>A repository's line as the asks and the tidy read it (FABRIC-END6): the person's choice, else git's guess; null where none.</summary>
+    internal async Task<string?> LineOfAsync(string root, string repository, string? workspace, CancellationToken ct = default) =>
+        (await _context.LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
+
     /// <inheritdoc cref="TreeHandOffs.HandPlanAsync"/>
     public Task<HandPlan> HandPlanAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default) =>
         HandOffs.HandPlanAsync(root, entry, plugin, ct);

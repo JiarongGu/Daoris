@@ -145,6 +145,15 @@ public sealed class DriverWatch(
     /// </summary>
     public void Said(string session) => Nudge(ChangeTopics.Requests, session);
 
+    // The due moments of a pull request's ask (FABRIC-END6); null until the loop starts.
+    private PullRequestMoments? _moments;
+
+    /// <summary>
+    /// The window has the person's focus (FABRIC-END6, §A4.3): a moment to ask about each open pull request, within D148's minute. It wakes
+    /// no look; nothing where the loop has not started.
+    /// </summary>
+    public void Focused() => _moments?.Focused();
+
     // What the last nudge said woke the loop: null for a plain nudge, which means everything.
     private Wake? _woke;
 
@@ -269,6 +278,13 @@ public sealed class DriverWatch(
         // session's end, which a change watch's pump does not, so the watch under the chain is never started.
         await using var queue = new ChangeWatch();
         var chain = new Chain(queue) { Log = Log };
+
+        // A plugin asked about an open pull request when the remote's facts may have moved (FABRIC-END6, §A4.3, link 6): origin's line
+        // heard by the ref watch below, Daoris's push and the window's focus, within D148's minute. Made first, so the ref watch's first
+        // judgements read each line's baseline.
+        await using var moments = PullRequestMoments.ForDriver(home, service.RegistryAsync, Log);
+        _moments = moments;
+        moments.Start();
 
         // The home's record files heard, not found at the pace (FABRIC-EVENT4, §A4.1, link 7): the configuration, the plugins folder,
         // the moved lines and the held words each wake the local plan by their topic, and the pace stays their deadline. Both

@@ -13,8 +13,9 @@ public sealed record PullRequestCarrier(LandedBranch Entry, string Source, strin
 /// here, and the completed pull requests that carried work. Over the trees' context for the wire, the record and the line.
 /// </summary>
 /// <remarks>
-/// The occasions that ask are the clean-up's look, bringing up to date's look, LAND3's tidy and <i>Ask again</i>, each by its
-/// method's name (<c>PullRequestOccasionTests</c>): <see cref="AskStatesAsync"/> is called from those alone.
+/// The occasions that ask are the clean-up's look, bringing up to date's look, LAND3's tidy, <i>Ask again</i> and the due moments
+/// (FABRIC-END6, <see cref="PullRequestMoments"/>), each by its method's name (<c>PullRequestOccasionTests</c>):
+/// <see cref="AskStatesAsync"/> is called from those alone.
 /// </remarks>
 internal sealed class PullRequestAsks(TreeContext context)
 {
@@ -33,15 +34,19 @@ internal sealed class PullRequestAsks(TreeContext context)
     /// <i>Ask again</i> (PLUGHOOK1c, design §2.1 occasion 4): this one entry alone, asked whatever its kept answer's age and
     /// whether or not its answer could remove something now, since a person asked. Completed is final and still asked no more.
     /// </param>
+    /// <param name="moment">
+    /// A due moment's entries (FABRIC-END6): these alone, each still due by D148's minute, asked whether or not the answer could remove
+    /// something now.
+    /// </param>
     internal async Task<IReadOnlyList<StateAnswer>> AskStatesAsync(
         IEnumerable<(string Root, string Repository, string Workspace)> repositories, bool landedMayGo, CancellationToken ct,
-        LandedBranch? again = null)
+        LandedBranch? again = null, IReadOnlyCollection<LandedBranch>? moment = null)
     {
         var now = context.Plugins.Now;
         var asks = new List<StateAsk>();
         foreach (var (root, repository, workspace) in repositories)
         {
-            asks.AddRange(await DueAsksAsync(root, repository, workspace, now, landedMayGo, again, ct).ConfigureAwait(false));
+            asks.AddRange(await DueAsksAsync(root, repository, workspace, now, landedMayGo, again, ct, moment).ConfigureAwait(false));
         }
 
         var answers = await context.Plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
@@ -72,7 +77,8 @@ internal sealed class PullRequestAsks(TreeContext context)
     /// <paramref name="again"/>, that entry alone, due whatever its kept answer's age.
     /// </summary>
     private async Task<IReadOnlyList<StateAsk>> DueAsksAsync(
-        string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, LandedBranch? again, CancellationToken ct)
+        string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, LandedBranch? again, CancellationToken ct,
+        IReadOnlyCollection<LandedBranch>? moment = null)
     {
         var rule = LandingRules.Choose(context.Config(), repository, workspace).Rule;
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
@@ -86,7 +92,9 @@ internal sealed class PullRequestAsks(TreeContext context)
         {
             if (!PullRequestAsking.Due(entry, now, again is not null)) continue;
             if (PullRequestAsking.PluginFor(entry, rule) is not { } plugin) continue;
-            if (again is null)
+            // A due moment's own entries alone, its answer now feeding the end as well as a removal (FABRIC-END6).
+            if (moment is not null && !moment.Any(each => SameLanding(each, entry))) continue;
+            if (again is null && moment is null)
             {
                 forms ??= await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
                 unlanded ??= await UnlandedSessionTipsAsync(root, ct, refs).ConfigureAwait(false);
@@ -98,6 +106,20 @@ internal sealed class PullRequestAsks(TreeContext context)
         }
 
         return asks;
+    }
+
+    /// <summary>
+    /// A due moment's asks (FABRIC-END6, the design §A4.3, link 6): origin's line moved, Daoris pushed, or the window's focus, as
+    /// <see cref="PullRequestMoments"/> judged it. These entries alone, each still due by D148's minute as the record keeps it, are asked
+    /// of their plugin whether or not the answer could remove something now, since it now feeds the end (§B) as well as a removal. Kept
+    /// as an occasion keeps it; it removes nothing. How many came back completed where the kept answer was not.
+    /// </summary>
+    internal async Task<int> AskAtMomentAsync(
+        string root, string repository, string workspace, IReadOnlyCollection<LandedBranch> entries, CancellationToken ct)
+    {
+        var answers = await AskStatesAsync([(root, repository, workspace)], landedMayGo: false, ct, moment: entries).ConfigureAwait(false);
+        return answers.Count(answer => answer.Answer?.State == PullRequestStates.Completed
+            && answer.Ask.Entry.PullRequestState?.State != PullRequestStates.Completed);
     }
 
     /// <summary>The same landing, standing or a trace: its repository, its branch, the session that made it, and when.</summary>

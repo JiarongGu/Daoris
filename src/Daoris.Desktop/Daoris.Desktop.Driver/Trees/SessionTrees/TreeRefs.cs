@@ -93,6 +93,8 @@ internal static class TreeRefs
         if (remote != 0) return ("there is no `origin` remote here", null);
         var (code, _, err) = await WorkingTree.GitAsync(
             root, ["fetch", "--quiet", "--no-write-fetch-head", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
+        // FABRIC-END6: every fetch of the line counted, made or failed, so a moment inside its minute fetches nothing more (§A4.3).
+        RemoteFetches.Fetched(root, line, DateTimeOffset.UtcNow);
         return (code == 0 ? null : Failure(err), url.Trim());
     }
 

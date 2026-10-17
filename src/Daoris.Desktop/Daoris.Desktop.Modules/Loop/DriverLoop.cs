@@ -215,6 +215,12 @@ public sealed class DriverLoop(
         _watch?.Said(session);
     }
 
+    /// <summary>
+    /// The main window has the person's focus (FABRIC-END6): the driver asks a plugin about each open pull request, within D148's minute.
+    /// No look and no nudge; returns at once, so the window's thread waits on nothing.
+    /// </summary>
+    public void Focused() => _watch?.Focused();
+
     /// <summary>The machine's resume as the shell hears it (FABRIC-EVENT2d); null where the shell hears none, and the watch's overrun rule is all.</summary>
     public PowerResume? Power { get; set; }
 

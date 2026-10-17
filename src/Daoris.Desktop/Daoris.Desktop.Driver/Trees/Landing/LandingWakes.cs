@@ -120,8 +120,22 @@ public static class TreeTips
             var head = File.ReadAllText(Path.Combine(own, "HEAD")).Trim();
             if (!head.StartsWith("ref:", StringComparison.Ordinal)) return Commit(head);
 
-            var name = head["ref:".Length..].Trim();
-            var common = Common(own);
+            return Named(Common(own), head["ref:".Length..].Trim());
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The commit <paramref name="name"/> (<c>refs/…</c>) stands at in the common directory <paramref name="common"/>, lower case: a loose
+    /// ref, else a line of <c>packed-refs</c>. Null where the files cannot say it (FABRIC-END6 reads origin's line by it).
+    /// </summary>
+    public static string? Named(string common, string name)
+    {
+        try
+        {
             if (!name.StartsWith("refs/", StringComparison.Ordinal) || name.Contains("..", StringComparison.Ordinal)
                 || Directory.Exists(Path.Combine(common, "reftable")))
             {
