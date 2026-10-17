@@ -192,6 +192,33 @@ public sealed class NodeGraphsTests
         Assert.Empty(NodeGraphs.Problems(retry));
     }
 
+    /// <summary>
+    /// The second re-check's finding 3: a member fails a join only where its kind's authority lets something fail it, so a join of a look
+    /// and a person's press, neither of which anything fails, has no failed path, and its failure's wire beside its pass into the landing
+    /// holds. A join of joins asks the same of its members' members: one holding a plugin may fail, and its failure into the landing is
+    /// refused as before.
+    /// </summary>
+    [Fact]
+    public void A_join_none_of_whose_members_can_fail_has_no_failed_path()
+    {
+        var (graph, _) = Cases["a landing on a join's early failure"];
+        var pressed = graph with
+        {
+            Nodes = [.. graph.Nodes.Select(node => node.Id == "check" ? Node("check", NodeKinds.Human) : node)],
+        };
+        Assert.Empty(NodeGraphs.Problems(pressed));
+
+        NodeGraph Nested(NodeDeclaration inner) => pressed with
+        {
+            Nodes = [.. pressed.Nodes, Node("inner", NodeKinds.All), inner],
+            Wires = [.. pressed.Wires.Where(wire => wire.Id != "b"), After("b", "inner", "checks"), After("e", "check", "inner"), After("f", inner.Id, "inner")],
+            Entries = ["look", "check", inner.Id],
+        };
+        Assert.Empty(NodeGraphs.Problems(Nested(Node("sign", NodeKinds.GoAhead))));
+        Assert.Equal(new (string, string?)[] { (GraphRefusal.ProtectedOrder, "look") },
+            NodeGraphs.Problems(Nested(Node("scan", "acme/scan"))).Select(problem => (problem.Code, problem.Node)));
+    }
+
     /// <summary>Each fragment's refusal, alone, through the landing rule that holds it.</summary>
     [Theory]
     [MemberData(nameof(FragmentCaseNames))]

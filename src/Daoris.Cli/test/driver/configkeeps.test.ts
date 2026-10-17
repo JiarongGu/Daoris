@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { landingEdited, readDriverChoices, writeDriverChoices, type DriverChoices, type LandingRule } from '../../src/driver/driverconfig.ts';
@@ -14,7 +14,7 @@ import { makeFixture } from '../_fixture.ts';
 
 type Edit = { op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string };
 type Change = { from: string[]; to: string[] };
-type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string };
+type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string; missing?: boolean };
 type Twice = { changes: Change[]; notify: boolean; workCycles: Record<string, Record<string, unknown>>; refused: string };
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -52,18 +52,30 @@ function expected(changes: Change[], crlf = false): string {
   return crlf ? text.replaceAll('\n', '\r\n') : text;
 }
 
-test('configkeeps: each row of the shared table writes the bytes the driver writes', () => {
-  const fx = makeFixture('config-keeps');
-  for (const row of TABLE.rows) {
+// A test a row, so each row passes or fails on its own (the second re-check's rows were each seen red alone).
+TABLE.rows.forEach((row, index) => {
+  test(`configkeeps: the shared table writes the bytes the driver writes: ${row.name}`, () => {
+    const fx = makeFixture(`config-keeps-${index}`);
     const path = fx.write('driver.json', expected([], row.crlf));
+    // The second re-check's finding 2: a row `missing` is read where no file was.
+    if (row.missing === true) rmSync(path);
     const choices = readDriverChoices(path);
     // The re-check's finding 1: another writer's change, made after this one read the file and before it writes.
     if (row.between !== undefined) fx.write('driver.json', expected(row.between, row.crlf));
     const write = () => writeDriverChoices(path, applied(choices, row.edit));
     if (row.refused === undefined) write();
     else assert.throws(write, (error: Error) => error.message.includes(row.refused!), row.name);
-    assert.equal(`${row.name}\n${fx.read('driver.json')}`, `${row.name}\n${expected(row.changes, row.crlf)}`);
-  }
+    assert.equal(fx.read('driver.json'), expected(row.changes, row.crlf));
+  });
+});
+
+test('configkeeps: choices read where no file was, written where there still is none, write the edit\'s keys alone', () => {
+  const fx = makeFixture('config-keeps-none');
+  const path = join(fx.root, 'driver.json');
+  const choices = readDriverChoices(path);
+  assert.equal(choices.source, '{}');
+  writeDriverChoices(path, { ...choices, notify: false });
+  assert.equal(fx.read('driver.json'), '{\n  "notify": false\n}\n');
 });
 
 test('configkeeps: a key written twice in one object reads as its last, in its first place, and refuses every edit naming it', () => {

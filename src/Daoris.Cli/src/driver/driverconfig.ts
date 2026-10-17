@@ -23,7 +23,7 @@ import { requireHomeFile } from '../platform/home.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { flagValue, operands } from '../platform/args.ts';
 import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from '../platform/fsx.ts';
-import { keepEdits, twice } from '../platform/jsonkeep.ts';
+import { EditRefused, keepEdits, twice } from '../platform/jsonkeep.ts';
 import { atName, findName, sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.ts';
@@ -547,7 +547,9 @@ export function isBranchName(name: string): boolean {
  * @remarks
  * A missing file is a machine that has opted nothing in — the driver's own reading of it, held here
  * too because two artefacts disagreeing about what an absent file means is exactly how a machine ends
- * up driving something nobody opted in.
+ * up driving something nobody opted in. Its choices carry `{}` as their text (FABRIC-GRAPH1's second
+ * re-check, finding 2), so their write is an edit like any other: read without one, they were written
+ * whole over a file another writer made before the write, as the driver's `DriverConfig.Load` says.
  */
 export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   const { value: parsed, problem, text } = readJsonObject(path);
@@ -557,7 +559,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
-  return parsed === null ? choicesOf(null) : { ...choicesOf(parsed), ...(text !== undefined ? { source: text } : {}) };
+  return parsed === null ? { ...choicesOf(null), source: '{}' } : { ...choicesOf(parsed), ...(text !== undefined ? { source: text } : {}) };
 }
 
 /** The choices a parsed file holds, as the driver reads them; null is the file that is not there. */
@@ -658,8 +660,9 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
  * @remarks
  * 🔴 The edit is what changed between the text read (`source`) and the choices, made onto the file read again here (the re-check's
  * finding 1): written over the text read, a change another writer made in between was lost. A file that no longer reads, or holds a key
- * twice in one object, is refused and left as it is, never overwritten; one that is gone is written from nothing. The driver's
- * `DriverConfig.Save` does the same.
+ * twice in one object, is refused and left as it is, never overwritten; one that is gone is written from nothing. The edit touches only
+ * the key paths it changed (the second re-check, finding 1): an object taken out since is made again with only the edit's keys, and one
+ * that is no longer an object refuses it. The driver's `DriverConfig.Save` does the same.
  */
 export function writeDriverChoices(path: string, choices: DriverChoices): void {
   if (choices.source === undefined) {
@@ -678,7 +681,16 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
       + 'this edit was not written. Fix it, or delete it to start from nothing.');
   }
   const read = choicesWritten(choicesOf(JSON.parse(choices.source) as Record<string, unknown>));
-  writeJsonTextAtomic(path, keepEdits(current, read, choicesWritten(choices)));
+  let kept: string;
+  try {
+    kept = keepEdits(current, read, choicesWritten(choices));
+  } catch (error) {
+    // The second re-check's finding 1: another writer made a value this edit changes something inside no longer an object.
+    if (!(error instanceof EditRefused)) throw error;
+    throw new DaorisError(`${path} has changed under this edit: ${error.message}, so this edit was not written. `
+      + 'Fix it, or delete it to start from nothing.');
+  }
+  writeJsonTextAtomic(path, kept);
 }
 
 /**
@@ -702,52 +714,66 @@ function choicesWritten(choices: DriverChoices): Record<string, unknown> {
     strikes: choices.strikes,
     // Written only when set (TOOL4e), as the driver writes it: absent is the default hour.
     ...(choices.cooloff !== null ? { cooloff: choices.cooloff } : {}),
-    forgiven: choices.forgiven,
+    forgiven: ordered(choices.forgiven),
     // Written only when set (SESSUX1b), as the driver writes it: absent is no release.
-    ...(Object.keys(choices.released).length > 0 ? { released: choices.released } : {}),
+    ...(Object.keys(choices.released).length > 0 ? { released: ordered(choices.released) } : {}),
     // Written only when set (KNOWUSE1b), each moment in UTC to the second, as the driver writes it: absent is none.
     ...(Object.keys(choices.standing).length > 0
       ? {
-          standing: Object.fromEntries(Object.entries(choices.standing).map(([repository, answer]) => [repository, {
+          standing: ordered(Object.fromEntries(Object.entries(choices.standing).map(([repository, answer]) => [repository, {
             says: answer.says,
             ...(answer.at ? { at: answer.at.toISOString().replace(/\.\d{3}Z$/, 'Z') } : {}),
-          }])),
+          }]))),
         }
       : {}),
     // Written only when set (WSR2): absent is the checkout's guess, and the driver writes them the same way.
-    ...(Object.keys(choices.lines).length > 0 ? { lines: choices.lines } : {}),
-    ...(Object.keys(choices.workspaceLines).length > 0 ? { workspaceLines: choices.workspaceLines } : {}),
+    ...(Object.keys(choices.lines).length > 0 ? { lines: ordered(choices.lines) } : {}),
+    ...(Object.keys(choices.workspaceLines).length > 0 ? { workspaceLines: ordered(choices.workspaceLines) } : {}),
     // Written only when set (LANG1c), as the driver writes them: absent is no language, and no line handed.
-    ...(Object.keys(choices.languages).length > 0 ? { languages: choices.languages } : {}),
-    ...(Object.keys(choices.workspaceLanguages).length > 0 ? { workspaceLanguages: choices.workspaceLanguages } : {}),
+    ...(Object.keys(choices.languages).length > 0 ? { languages: ordered(choices.languages) } : {}),
+    ...(Object.keys(choices.workspaceLanguages).length > 0 ? { workspaceLanguages: ordered(choices.workspaceLanguages) } : {}),
     // Written only when set (WSR1): absent is the merge it always was.
-    ...(Object.keys(choices.landings).length > 0 ? { landings: choices.landings } : {}),
-    ...(Object.keys(choices.workspaceLandings).length > 0 ? { workspaceLandings: choices.workspaceLandings } : {}),
+    ...(Object.keys(choices.landings).length > 0 ? { landings: ordered(choices.landings) } : {}),
+    ...(Object.keys(choices.workspaceLandings).length > 0 ? { workspaceLandings: ordered(choices.workspaceLandings) } : {}),
     // Written only when set (FABRIC-GRAPH1), as the driver writes them: absent is no cycle for a quest or an ask, today's.
-    ...(Object.keys(choices.workCycles).length > 0 ? { workCycles: choices.workCycles } : {}),
-    ...(Object.keys(choices.workspaceWorkCycles).length > 0 ? { workspaceWorkCycles: choices.workspaceWorkCycles } : {}),
+    ...(Object.keys(choices.workCycles).length > 0 ? { workCycles: orderedCycles(choices.workCycles) } : {}),
+    ...(Object.keys(choices.workspaceWorkCycles).length > 0 ? { workspaceWorkCycles: orderedCycles(choices.workspaceWorkCycles) } : {}),
     // Written only when set (REVIEWENV1a), as the driver writes them: absent is no review environment, today's behaviour.
-    ...(Object.keys(choices.reviews).length > 0 ? { reviews: choices.reviews } : {}),
-    ...(Object.keys(choices.workspaceReviews).length > 0 ? { workspaceReviews: choices.workspaceReviews } : {}),
+    ...(Object.keys(choices.reviews).length > 0 ? { reviews: ordered(choices.reviews) } : {}),
+    ...(Object.keys(choices.workspaceReviews).length > 0 ? { workspaceReviews: ordered(choices.workspaceReviews) } : {}),
     // Written only when set (XAGENT1a), as the driver writes them: absent is no second opinion, today's behaviour.
-    ...(Object.keys(choices.opinions).length > 0 ? { opinions: choices.opinions } : {}),
-    ...(Object.keys(choices.workspaceOpinions).length > 0 ? { workspaceOpinions: choices.workspaceOpinions } : {}),
+    ...(Object.keys(choices.opinions).length > 0 ? { opinions: ordered(choices.opinions) } : {}),
+    ...(Object.keys(choices.workspaceOpinions).length > 0 ? { workspaceOpinions: ordered(choices.workspaceOpinions) } : {}),
     // Written only when set (MIXAGENT2a-i), as the driver writes them: absent is the default, `ask`.
-    ...(Object.keys(choices.helpers).length > 0 ? { helpers: choices.helpers } : {}),
-    ...(Object.keys(choices.workspaceHelpers).length > 0 ? { workspaceHelpers: choices.workspaceHelpers } : {}),
-    ...(Object.keys(choices.commits).length > 0 ? { commits: choices.commits } : {}),
-    ...(Object.keys(choices.workspaceCommits).length > 0 ? { workspaceCommits: choices.workspaceCommits } : {}),
+    ...(Object.keys(choices.helpers).length > 0 ? { helpers: ordered(choices.helpers) } : {}),
+    ...(Object.keys(choices.workspaceHelpers).length > 0 ? { workspaceHelpers: ordered(choices.workspaceHelpers) } : {}),
+    ...(Object.keys(choices.commits).length > 0 ? { commits: ordered(choices.commits) } : {}),
+    ...(Object.keys(choices.workspaceCommits).length > 0 ? { workspaceCommits: ordered(choices.workspaceCommits) } : {}),
     // Written only when set (WORKFLOW1e), as the driver writes them: absent is Current, today's behaviour.
-    ...(Object.keys(choices.workflows).length > 0 ? { workflows: writtenChoices(choices.workflows, false) } : {}),
+    ...(Object.keys(choices.workflows).length > 0 ? { workflows: ordered(writtenChoices(choices.workflows, false)) } : {}),
     ...(Object.keys(choices.workspaceWorkflows).length > 0
-      ? { workspaceWorkflows: writtenChoices(choices.workspaceWorkflows, true) } : {}),
+      ? { workspaceWorkflows: ordered(writtenChoices(choices.workspaceWorkflows, true)) } : {}),
     // Written only when set (D107): absent is reading on and no relationship.
-    ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: choices.readAcross } : {}),
-    ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: choices.workspaceReadAcross } : {}),
-    ...(Object.keys(choices.writeAcross).length > 0 ? { writeAcross: choices.writeAcross } : {}),
+    ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: ordered(choices.readAcross) } : {}),
+    ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: ordered(choices.workspaceReadAcross) } : {}),
+    ...(Object.keys(choices.writeAcross).length > 0 ? { writeAcross: ordered(choices.writeAcross) } : {}),
     // What this build has no field for, as the file holds it (`pollSeconds`, `commands`, a pause, a newer build's keys).
     ...choices.rest,
   };
+}
+
+/**
+ * A map in the driver's order, its names as `StringComparer.Ordinal` sorts them (UTF-16 code units, as `<` compares strings), so an entry
+ * an edit adds goes where the driver's goes (FABRIC-GRAPH1's second re-check): written in the order it was set, a rule set again went
+ * after its neighbours here and before them there. A name JavaScript reads as an array index still goes first (`jsonkeep.ts`).
+ */
+function ordered<T>(map: Record<string, T>): Record<string, T> {
+  return Object.fromEntries(Object.entries(map).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+}
+
+/** Work cycles in the driver's order: owners, then each owner's kinds (`DriverConfig.WriteWorkCycles`). */
+function orderedCycles(map: Record<string, Record<string, Cycle>>): Record<string, Record<string, Cycle>> {
+  return Object.fromEntries(Object.entries(ordered(map)).map(([owner, kinds]) => [owner, ordered(kinds)]));
 }
 
 /** No way to read the records was handed in, so a retry that needs them is refused (RETRY1b). */

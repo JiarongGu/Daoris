@@ -304,14 +304,20 @@ public static class NodeGraphs
     /// no group's, and it starts once every member is reached or skipped, or once any one has failed. All its members met so, it starts as
     /// any node does. A member that starts so and may fail (a look among them) starts it too, but only to fail at once while the rest
     /// still wait: then only its failure's and rejection's paths are met, never its pass, so a landing on them passes no look.</para>
+    /// <para>A node fails only where its kind's authority lets something fail it, and a join only where a member may (the second re-check,
+    /// finding 3: <see cref="MayFail"/>): a join of a look and a person's press has no failed path, so its failure's wire is never met.</para>
     /// </summary>
     private static HashSet<string> StartsWithNoLook(Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local)
     {
         var started = new HashSet<string>(starts, StringComparer.Ordinal);
         var failing = new HashSet<string>(StringComparer.Ordinal);
-        bool Met(Wire wire) => wire.Kind is WireKinds.Failed or WireKinds.Rejected
-            ? started.Contains(wire.From!.Node) || failing.Contains(wire.From!.Node)
-            : started.Contains(wire.From!.Node) && byId[wire.From.Node].Kind != NodeKinds.Look;
+        var mayFail = MayFail(byId, local);
+        bool Met(Wire wire) => wire.Kind switch
+        {
+            WireKinds.Failed => mayFail.Contains(wire.From!.Node) && (started.Contains(wire.From.Node) || failing.Contains(wire.From.Node)),
+            WireKinds.Rejected => started.Contains(wire.From!.Node) || failing.Contains(wire.From!.Node),
+            _ => started.Contains(wire.From!.Node) && byId[wire.From.Node].Kind != NodeKinds.Look,
+        };
         for (var moved = true; moved;)
         {
             moved = false;
@@ -326,7 +332,7 @@ public static class NodeGraphs
                 bool MetBy(string id) => Met(local.First(wire => wire.Id == id && wire.To.Node == node.Id));
                 if (!groups.All(group => group.Mode == WireGroupModes.AnyOf ? group.Wires.Any(MetBy) : group.Wires.All(MetBy))) continue;
                 if (members.All(Met)) moved = started.Add(node.Id) || moved;
-                else if (members.Any(member => started.Contains(member.From!.Node) || failing.Contains(member.From!.Node)))
+                else if (members.Any(member => mayFail.Contains(member.From!.Node) && (started.Contains(member.From.Node) || failing.Contains(member.From.Node))))
                 {
                     moved = failing.Add(node.Id) || moved;
                 }
@@ -334,6 +340,27 @@ public static class NodeGraphs
         }
 
         return started;
+    }
+
+    /// <summary>
+    /// The nodes something may fail (the second re-check, finding 3): each whose kind's authority names who fails it
+    /// (<see cref="NodeAuthorities"/>: not git's proofs, nor the person's kinds, a look among them), and each <c>all</c> join one of whose
+    /// members may fail, since <see cref="WireEvaluation"/> fails a join only on a member's failure.
+    /// </summary>
+    private static HashSet<string> MayFail(Dictionary<string, NodeDeclaration> byId, IReadOnlyList<Wire> local)
+    {
+        var may = byId.Values.Where(node => node.Kind != NodeKinds.All && NodeAuthorities.Of(node) is { FailureBy: not null })
+            .Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
+        for (var moved = true; moved;)
+        {
+            moved = false;
+            foreach (var join in byId.Values.Where(node => node.Kind == NodeKinds.All && !may.Contains(node.Id)))
+            {
+                if (local.Any(wire => wire.Kind == WireKinds.After && wire.To.Node == join.Id && may.Contains(wire.From!.Node))) moved = may.Add(join.Id) || moved;
+            }
+        }
+
+        return may;
     }
 
     /// <summary>The nodes reached from <paramref name="from"/> along <paramref name="wires"/>, forward or back, the starts included.</summary>
