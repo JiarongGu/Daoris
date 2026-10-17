@@ -162,8 +162,14 @@ public static class WorkflowGraphs
     /// A decoded graph's digest (§E7: derived from the stored version and the decoder's version): <c>gph-</c> and 32 hex of a SHA-256 over
     /// the decoder's version, the version's identity and the graph's own <see cref="NodeGraphs.Digest"/>, so neither moves without it.
     /// </summary>
-    public static string GraphDigest(string identity, NodeGraph graph) =>
-        "gph-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"workflow-graph\n{DecoderVersion}\n{identity}\n{NodeGraphs.Digest(graph)}\n")))[..32];
+    public static string GraphDigest(string identity, NodeGraph graph) => GraphDigest(identity, graph, DecoderVersion);
+
+    /// <summary>
+    /// The digest a decoder numbered <paramref name="decoder"/> would derive (FABRIC-WORKFLOW2b): what a changed mapping binds afresh, while
+    /// the version's identity and its stored bytes stay as they are.
+    /// </summary>
+    internal static string GraphDigest(string identity, NodeGraph graph, int decoder) =>
+        "gph-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"workflow-graph\n{decoder}\n{identity}\n{NodeGraphs.Digest(graph)}\n")))[..32];
 
     /// <summary>
     /// The nodes a person's skip of <paramref name="step"/> moves (§E7's last row): a group's members, since its join is never skipped
