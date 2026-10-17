@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The work wire's bound lost valid landing answers, and its supervision could hang, starve or stay deaf (FABRIC-PERFORM1a)
+
+- **Symptom:** found by a second maker's review of FABRIC-PERFORM1a, before it was staged: a landing plugin's valid answer over 64 KB
+  (a long diagnostic) was dropped and the landing waited out its patience, though the kit's trial passed it; a plugin answering
+  `JSON\r` timed out; an answer completed just before a stop was returned as the next generation's; 61 awaited steps replayed in a
+  stable order lost the 61st at every resync; an unsound plugin stayed unsound after its update; a hybrid plugin stayed deaf once the
+  lease returned; a plugin that stopped reading stdin held its disposal for ever. Running the Process class also showed a process that
+  exited partway through a look restarted at once, uncounted.
+- **Root cause:** one 64 KB reader served every plugin process, a dropped answer failed nothing, and the trial read whole; the reader
+  ended lines at LF alone; the hook set returned the generation it had snapshotted before the await; the rate admitted the first 60 of
+  each minute whatever a resync had asked for; `Keep` reset restarts only for an id that left the catalogue; a running process was
+  skipped when the lease returned; `shutdown` was written with no cancellation; and the look's exit snapshot and its removal read
+  `Alive` apart.
+- **Fix:** D173's FABRIC-PERFORM1a note, choices 5, 7 and 9 changed and its "After review": the bound by what a plugin speaks
+  (`HookProcess.FrameLimit`, 64 KB or 4 MB, the trial reading alike), an over-long answer failed at once as `unreadable`, LF, CRLF or
+  CR; the generation fence at hand-back; a resync's replay admitted and queued whole; the build kept per plugin; `Reattach`; one grace
+  for the whole disposal; an exit seen partway through a look counted.
+- **Verification:** twelve fast tests, each seen failing first (members added without behaviour), then passing; the three Process tests
+  (a 70 KB landing answer from a real process, a plugin that stops reading, the trial's long answer) seen failing against the old
+  behaviours, then passing; the driver's fast half and the Process classes that read through `HookProcess`.
+
 ## 2026-10-17 — The wire evaluation leaked outcomes across runs and exposed receipts it would invalidate (FABRIC-WIRE1e)
 
 - **Symptom:** found by a second maker's review of FABRIC-WIRE1b, before any dispatch builds on it: a failure or a rejection kept
