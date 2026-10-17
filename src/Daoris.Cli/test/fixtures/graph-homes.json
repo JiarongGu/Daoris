@@ -11,7 +11,7 @@
       "name": "the repository's own rule with no cycle: the default, never its workspace's cycle",
       "config": {
         "landings": { "engine": { "form": "merge" } },
-        "workspaceLandings": { "shop": { "form": "branch", "pattern": "feature/{slug}", "plugin": "acme.pr", "cycle": { "end": "pull-request" } } }
+        "workspaceLandings": { "shop": { "form": "branch", "pattern": "feature/{quest}-{slug}", "plugin": "acme.pr", "cycle": { "end": "pull-request" } } }
       },
       "repository": "engine", "workspace": "shop", "kind": "branch",
       "source": "repository", "cycle": null
@@ -20,7 +20,7 @@
       "name": "no rule of its own: its workspace's, the cycle with it",
       "config": {
         "landings": { "engine": { "form": "merge" } },
-        "workspaceLandings": { "shop": { "form": "branch", "pattern": "feature/{slug}", "plugin": "acme.pr", "cycle": { "end": "pull-request" } } }
+        "workspaceLandings": { "shop": { "form": "branch", "pattern": "feature/{quest}-{slug}", "plugin": "acme.pr", "cycle": { "end": "pull-request" } } }
       },
       "repository": "orders", "workspace": "shop", "kind": "branch",
       "source": "workspace", "cycle": { "end": "pull-request" }

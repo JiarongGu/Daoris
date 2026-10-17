@@ -12,12 +12,13 @@ public sealed class NodeGraphHomesTests
 {
     private const string QaCycle = """{ "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed" } ], "wires": [ { "id": "a", "kind": "after", "from": "line", "to": "qa" } ], "end": "qa" }""";
 
-    private static readonly LandingRule Pulled = new(LandingForm.Branch, "feature/{slug}", Plugin: "acme.pr");
+    private static readonly LandingRule Pulled = new(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.pr");
 
-    private static (string[] Nodes, (string Kind, string From, string To)[] Wires, string[] Entries, string End, GraphCleanup Cleanup) Shape(NodeGraph graph) =>
-        ([.. graph.Nodes.Select(node => $"{node.Id}:{node.Kind}")],
-         [.. graph.Wires.Select(wire => (wire.Kind, wire.From!.Node, wire.To.Node))],
-         [.. graph.Entries], graph.End, graph.Cleanup);
+    /// <summary>A graph's shape in words a tuple compares by value: its nodes, its wires, its entries, its end and its cleanup.</summary>
+    private static (string Nodes, string Wires, string Entries, string End, GraphCleanup Cleanup) Shape(NodeGraph graph) =>
+        (string.Join(" ", graph.Nodes.Select(node => $"{node.Id}:{node.Kind}")),
+         string.Join(" ", graph.Wires.Select(wire => $"{wire.From!.Node}-{wire.Kind}->{wire.To.Node}")),
+         string.Join(" ", graph.Entries), graph.End, graph.Cleanup);
 
     /// <summary>
     /// An install's existing <c>driver.json</c>, with no <c>cycle</c> and no <c>workCycles</c>, reads exactly as today: the landing as its
@@ -35,22 +36,19 @@ public sealed class NodeGraphHomesTests
 
         var merged = NodeGraphHomes.Current(config, "engine", "shop");
         Assert.Equal((LandingSource.Repository, (string?)null, true), (merged.Source, merged.Cycle, merged.Readable));
-        Assert.Equal(
-            (new[] { "handed:handed", "line:line" }, new[] { (WireKinds.After, "handed", "line") }, new[] { "handed" }, "line", GraphCleanup.Held),
-            Shape(merged.Graph!));
+        Assert.Equal(("handed:handed line:line", "handed-after->line", "handed", "line", GraphCleanup.Held), Shape(merged.Graph!));
 
         var pulled = NodeGraphHomes.Current(config, "orders", "shop");
         Assert.Equal(LandingSource.Workspace, pulled.Source);
         Assert.Equal(
-            (new[] { "handed:handed", "pushed:pushed", "pull-request:pull-request", "line:line" },
-             new[] { (WireKinds.After, "handed", "pushed"), (WireKinds.After, "pushed", "pull-request"), (WireKinds.After, "pull-request", "line") },
-             new[] { "handed" }, "line", GraphCleanup.Held),
+            ("handed:handed pushed:pushed pull-request:pull-request line:line", "handed-after->pushed pushed-after->pull-request pull-request-after->line",
+             "handed", "line", GraphCleanup.Held),
             Shape(pulled.Graph!));
 
         var none = NodeGraphHomes.Current(config, "elsewhere", "another");
         Assert.Equal((LandingSource.Default, true), (none.Source, none.Readable));
         Assert.Equal(NodeGraphs.Digest(merged.Graph!), NodeGraphs.Digest(none.Graph!));
-        Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{slug}"))), NodeGraphs.Digest(none.Graph!));
+        Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))), NodeGraphs.Digest(none.Graph!));
 
         foreach (var kind in NodeGraphHomes.WorkCycleKinds)
         {
@@ -87,7 +85,7 @@ public sealed class NodeGraphHomesTests
         var cycled = NodeGraphHomes.Current(config, "shell", "shop");
         Assert.Equal((LandingSource.Repository, "qa"), (cycled.Source, cycled.Graph!.End));
         Assert.Equal(
-            (new[] { "handed:handed", "line:line", "qa:human" }, new[] { (WireKinds.After, "handed", "line"), (WireKinds.After, "line", "qa") }, new[] { "handed" }, "qa", GraphCleanup.Held),
+            ("handed:handed line:line qa:human", "handed-after->line line-after->qa", "handed", "qa", GraphCleanup.Held),
             Shape(cycled.Graph!));
     }
 
