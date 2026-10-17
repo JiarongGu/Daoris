@@ -24,6 +24,9 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => HomeLease.HeldHere(home));
 
+    /// <summary>The home the records are under: where a closure graph a quest was bound to is kept beside them (FABRIC-CLOSE1l).</summary>
+    public string Home => home;
+
     /// <summary>The folder the records sit in, beside D157's runs (<see cref="WorkflowRunBindings.FolderOf"/>).</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "units");
 

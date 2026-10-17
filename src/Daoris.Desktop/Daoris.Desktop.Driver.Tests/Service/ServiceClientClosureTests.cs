@@ -81,7 +81,6 @@ public sealed class ServiceClientClosureTests
             new(200, """{ "quests": [{ "id": "q6", "from": "a", "to": "engine", "title": "t", "body": "", "status": "Done" }], "message": "Closed #q6." }"""),
             new(409, """{ "error": "Key `k-1` was sent with another close already.", "code": "key-reused" }"""),
             new(409, """{ "error": "This close was refused when it was first sent with key `k-1`: quest `#q6`'s submission was held.", "code": "held" }"""),
-            new(404, "Not Found"),
         ]);
         var doors = new Doors((_, _, _) => replies.Dequeue());
         using var client = new ServiceClient(doors);
@@ -90,14 +89,12 @@ public sealed class ServiceClientClosureTests
         var closed = await client.CloseQuestsAsync("q7", "k-1", "ctk-1", named);
         var reused = await client.CloseQuestsAsync("q7", "k-1", "ctk-2", named);
         var replayed = await client.CloseQuestsAsync("q7", "k-1", "ctk-1", named);
-        var older = await client.CloseQuestsAsync("q7", "k-1", "ctk-1", named);
 
         Assert.Equal((QuestCloseOutcomes.Closed, null, "Closed #q6."), (closed.Outcome, closed.Code, closed.Message));
         Assert.Equal("Done", Assert.Single(closed.Quests).Status);
         Assert.Equal((QuestCloseOutcomes.Refused, "key-reused"), (reused.Outcome, reused.Code));
         Assert.Equal((QuestCloseOutcomes.Refused, "held"), (replayed.Outcome, replayed.Code));
         Assert.StartsWith("This close was refused when it was first sent", replayed.Message, StringComparison.Ordinal);
-        Assert.Equal(QuestCloseOutcomes.NoDoor, older.Outcome);
 
         var (verb, path, json) = doors.Asked[0];
         Assert.Equal((ServiceVerb.Post, "/api/quests/q7/close"), (verb, path));
@@ -107,6 +104,24 @@ public sealed class ServiceClientClosureTests
             ["q6/desk/40", "q7/desk/41"],
             body.RootElement.GetProperty("quests").EnumerateArray()
                 .Select(q => $"{q.GetProperty("id").GetString()}/{q.GetProperty("machine").GetString()}/{q.GetProperty("sequence").GetInt64()}"));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1l, the review's finding 7: an answer that is not the close door's own coded refusal proves nothing about whether its
+    /// transaction committed (a proxy's 503 page, the host's 500, a bare 404 from a host restarting, a 409 naming no check), so the close is
+    /// unknown, thrown as the host not answering, and the closer sends the same close again.
+    /// </summary>
+    [Theory]
+    [InlineData(503, "<html><body>Service Unavailable</body></html>")]
+    [InlineData(500, """{ "error": "An error occurred while saving the entity changes." }""")]
+    [InlineData(404, "Not Found")]
+    [InlineData(409, """{ "error": "Stand down." }""")]
+    [InlineData(200, "<html></html>")]
+    public async Task An_answer_that_is_not_the_doors_own_coded_refusal_leaves_the_close_unknown(int status, string payload)
+    {
+        using var client = new ServiceClient(new Doors((_, _, _) => new ServiceReply(status, payload)));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.CloseQuestsAsync("q7", "k-1", "ctk-1", [new("q7", "desk", 41)]));
     }
 
     [Fact]
@@ -131,6 +146,8 @@ public sealed class ServiceClientClosureTests
         Assert.Contains("no bind door", older.Message, StringComparison.Ordinal);
         Assert.Equal("/api/quests/q7/bind", doors.Asked[0].Path);
         Assert.Equal("gph-1", JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("graph").GetString());
+        // FABRIC-CLOSE1l: the driver binds only at the take, naming the graph for it as the first session opens.
+        Assert.True(JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("atTake").GetBoolean());
     }
 
     [Theory]

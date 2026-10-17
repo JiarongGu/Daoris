@@ -90,14 +90,13 @@ public static class NodeRuns
 /// look's deadline (<see cref="NodeRuntimeLook.Whole"/>) reads the units afresh and judges every governed one.</para>
 /// </remarks>
 /// <remarks>
-/// <para><b>Closure graphs</b> (FABRIC-CLOSE1b): with a close door (<paramref name="closes"/>), a graph holding <c>quest.close</c> arms it too. A quest
-/// taken while this loop reads such a graph governing it is bound to it at the first look that reads the take (the door's
-/// <see cref="IClosureBindPort"/>, where it has one; <paramref name="remote"/> names a circle synced through a remote, never bound), and a bound
-/// quest is closed by its node.</para>
+/// <para><b>Closure graphs</b> (FABRIC-CLOSE1b, CLOSE1l): with a close door (<paramref name="closes"/>), a graph holding <c>quest.close</c> arms it
+/// too, and so does a closure graph this home keeps (<see cref="ClosureGraphs"/>), so a close in flight is reconciled and a bound quest closed
+/// whatever the choices say since. A quest is bound at its take, in the take's own write (<see cref="ClosureBinding.AtStartAsync"/>), never
+/// here; a bound quest is closed by the graph it was bound to.</para>
 /// </remarks>
 public sealed class NodeRuntime(
-    NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null,
-    Func<string, bool>? remote = null)
+    NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null)
 {
     /// <summary>The units one pass evaluates at most, in id order; the rest are judged at the next.</summary>
     public const int UnitsPerPass = 32;
@@ -115,15 +114,6 @@ public sealed class NodeRuntime(
 
     /// <summary>Every quest the last look read, by id: a close's chain, and what its quests now read (FABRIC-CLOSE1b).</summary>
     private Dictionary<string, QuestView> _quests = new(StringComparer.Ordinal);
-
-    /// <summary>
-    /// When this loop first read each closure graph governing a repository's quests, by digest (FABRIC-CLOSE1b's cutover): only a quest taken
-    /// since is bound, so a quest in flight before the graph governed it, or before this loop began, keeps today's done.
-    /// </summary>
-    private readonly Dictionary<string, DateTimeOffset> _closingSince = new(StringComparer.Ordinal);
-
-    /// <summary>The quests this loop asked to bind: each asked once, its answer said once.</summary>
-    private readonly HashSet<string> _bindAsked = new(StringComparer.Ordinal);
 
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
@@ -163,18 +153,35 @@ public sealed class NodeRuntime(
     /// <c>perform</c>, and its retry, timeout and evidence where the graph's node declares none. A node whose plugin declares no such step at
     /// the graph's version and reach is never sent.
     /// </summary>
-    public static IReadOnlyList<GovernedUnit> Govern(DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps)
+    /// <param name="kept">The closure graph this home keeps under a digest (<see cref="ClosureGraphs.Read"/>), or null where it keeps none.</param>
+    public static IReadOnlyList<GovernedUnit> Govern(
+        DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null)
     {
         var governed = new List<GovernedUnit>();
-        foreach (var unit in read.Units.OrderBy(unit => unit.Id, StringComparer.Ordinal))
+        var quests = Quests(read);
+        foreach (var each in read.Units.OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
+            var unit = each;
             var repository = unit.Owner.Repository ?? "";
-            if (NodeGraphHomes.Work(config, repository, unit.Owner.Workspace, unit.Kind).Graph is not { } graph) continue;
+            var graph = NodeGraphHomes.Work(config, repository, unit.Owner.Workspace, unit.Kind).Graph;
 
             // FABRIC-CLOSE1b: a closure graph governs a quest bound to it at its take, and only that quest; any other keeps today's done.
-            var closes = unit.Kind == WorkUnitKind.Quest && QuestClosing.Holds(graph)
-                         && string.Equals(unit.Records.Quest?.Closure, NodeGraphs.Digest(graph), StringComparison.Ordinal);
-            if (!Performs(graph) && !closes) continue;
+            // FABRIC-CLOSE1l, the review's finding 6: the graph it was bound to, kept by this home where the choices hold another or none.
+            var closes = false;
+            if (unit.Kind == WorkUnitKind.Quest && unit.Records.Quest is { Closure: { Length: > 0 } bound } quest)
+            {
+                if (graph is not null && QuestClosing.Holds(graph) && NodeGraphs.Digest(graph) == bound) closes = true;
+                else if (kept?.Invoke(bound) is { } bin)
+                {
+                    graph = bin;
+                    closes = true;
+                }
+
+                // Its revision is its chain's and its branches' (the review's findings 5 and 8), so a commit or an ancestor's move lapses it.
+                if (closes) unit = unit with { Subject = unit.Subject with { Revision = QuestClosing.Revision(quest, quests, read.Units) } };
+            }
+
+            if (graph is null || (!Performs(graph) && !closes)) continue;
             var dispatchable = new HashSet<string>(StringComparer.Ordinal);
             var declared = new Dictionary<string, NodeDeclaration>(StringComparer.Ordinal);
             foreach (var node in graph.Nodes)
@@ -211,7 +218,7 @@ public sealed class NodeRuntime(
     /// </summary>
     public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
     {
-        if (Armed(config)) return false;
+        if (Armed(config) || KeepsClosures) return false;
         if (!Holding) return true;
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -225,6 +232,18 @@ public sealed class NodeRuntime(
 
         return true;
     }
+
+    /// <summary>
+    /// Whether this loop closes quests and its home keeps a closure graph a quest was bound to (FABRIC-CLOSE1l, the review's finding 6): it stays
+    /// armed whatever the choices say, so a close in flight is reconciled and a bound quest closed by its graph. One stat; a home that never
+    /// bound a quest keeps none, and is judged by its choices alone.
+    /// </summary>
+    private bool KeepsClosures => _closer is not null && ClosureGraphs.Any(records.Home);
+
+    /// <summary>Every quest a read holds, by id.</summary>
+    private static Dictionary<string, QuestView> Quests(NodeUnitsRead read) =>
+        read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>()
+            .GroupBy(quest => quest.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
 
     /// <summary>Whether the runtime holds anything a disarm withdraws: an awaited set told, units governed, a timer.</summary>
     private bool Holding => _told || _governed is not null || NextDue is not null || _toldText.Length > 0;
@@ -257,14 +276,14 @@ public sealed class NodeRuntime(
             // ones it was judged under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged.
             var choices = look.Config.Source ?? look.Config.ToJson();
             var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal);
-            IReadOnlyList<string> bound = [];
             if (fresh)
             {
                 var read = await look.Units(ct).ConfigureAwait(false);
-                (_governed, _choices) = (Govern(look.Config, read, look.Steps()).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
-                _quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>()
-                    .GroupBy(quest => quest.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
-                bound = await BindAsync(look.Config, read, ct).ConfigureAwait(false);
+                var home = records.Home;
+                var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
+                (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
+                _quests = Quests(read);
+                if (_closer is not null) Keep(look.Config, _governed.Values);
             }
 
             var governed = _governed!;
@@ -277,7 +296,7 @@ public sealed class NodeRuntime(
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
 
-            var said = new List<string>(bound);
+            var said = new List<string>();
 
             // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is sent again, the same close, before anything new starts.
             if (_closer is not null)
@@ -291,7 +310,7 @@ public sealed class NodeRuntime(
             foreach (var each in concerned)
             {
                 if (each.Closes) Settle(each, done, said);
-                await EvaluateAsync(each, sends, done, said, ct).ConfigureAwait(false);
+                await EvaluateAsync(each, sends, done, said, look.Units, ct).ConfigureAwait(false);
             }
 
             var changed = Tell(governed.Values);
@@ -307,7 +326,9 @@ public sealed class NodeRuntime(
     /// One unit's graph evaluated to <see cref="WireEvaluated.Settled"/>, at most a round per node and one more: each round on the record as
     /// it is then, its moves kept and its starts made, each send taking one of the pass's <paramref name="sends"/>.
     /// </summary>
-    private async Task EvaluateAsync(GovernedUnit governed, WorkSends sends, List<WorkPerformed> done, List<string> said, CancellationToken ct)
+    private async Task EvaluateAsync(
+        GovernedUnit governed, WorkSends sends, List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units,
+        CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
@@ -340,7 +361,7 @@ public sealed class NodeRuntime(
                 var node = governed.Declared[start.Node];
                 if (node.Kind == NodeKinds.QuestClose)
                 {
-                    var closed = await CloseAsync(governed, node, start, evaluated.Statuses[start.Node], sends, said, ct).ConfigureAwait(false);
+                    var closed = await CloseAsync(governed, node, start, evaluated.Statuses[start.Node], sends, said, units, ct).ConfigureAwait(false);
                     if (closed is not null) done.Add(closed);
                     started |= closed is { What: not PerformedWhat.Refused };
                 }
@@ -371,7 +392,8 @@ public sealed class NodeRuntime(
     /// already closed its quest; left ready while it waits. Null where nothing was done.
     /// </summary>
     private async Task<WorkPerformed?> CloseAsync(
-        GovernedUnit governed, NodeDeclaration node, WireStart start, NodeStatus evaluated, WorkSends sends, List<string> said, CancellationToken ct)
+        GovernedUnit governed, NodeDeclaration node, WireStart start, NodeStatus evaluated, WorkSends sends, List<string> said,
+        Func<CancellationToken, Task<NodeUnitsRead>> units, CancellationToken ct)
     {
         if (_closer is null || !governed.Closes || governed.Unit.Records.Quest is not { } quest) return null;
         var judged = QuestClosing.Judge(quest, _quests);
@@ -384,35 +406,41 @@ public sealed class NodeRuntime(
         }
 
         if (judged.Waits is not null || !sends.Take()) return null;
+
+        // FABRIC-CLOSE1l, the review's finding 5 (§E5 step 1): git (each branch's tip, a fresh read of its refs), the binding and the chain
+        // are read again right before the close. The same revision means every prerequisite acceptance bound to it still stands, since this
+        // loop is the record's one writer; another means a commit, a submission or a hold moved since the evaluation, and the close waits for
+        // the next pass to judge it on what is there now.
+        var again = await units(ct).ConfigureAwait(false);
+        var quests = Quests(again);
+        var stale = !quests.TryGetValue(quest.Id, out var now) ? "its quest was not read again"
+            : !string.Equals(now.Closure, governed.GraphDigest, StringComparison.Ordinal) ? "its binding moved"
+            : QuestClosing.Revision(now, quests, again.Units) != governed.Unit.Subject.Revision ? "its chain or a branch it worked moved since it was judged"
+            : !QuestClosing.Judge(now, quests).Named.SequenceEqual(judged.Named) ? "what it would close moved"
+            : null;
+        if (stale is not null)
+        {
+            _governed = null;
+            said.Add($"work  {governed.Unit.Id}: its close was not sent: {stale}, so it is judged again on what is there now.");
+            return null;
+        }
+
         var sent = await _closer.StartAsync(node, start, evaluated, judged.Named, ct).ConfigureAwait(false);
         said.AddRange(_closer.TakeSaid());
         return sent;
     }
 
     /// <summary>
-    /// The bind at the take (FABRIC-CLOSE1b; D173's CLOSE1b note, choice 3): each quest a look reads taken, unbound and not yet submitted, under
-    /// a closure graph its repository's work cycle holds, and taken since this loop first read that graph, asked once through
-    /// <see cref="ClosureBinding.AtTakeAsync"/>. What each answered is said once. Nothing is asked without a bind door.
+    /// Keeps each closure graph a governed quest is closed by, as the choices hold it now (FABRIC-CLOSE1l, the review's finding 6): a quest
+    /// bound before a graph was edited or removed is closed by the graph it was bound to. Kept once, by its digest.
     /// </summary>
-    private async Task<IReadOnlyList<string>> BindAsync(DriverConfig config, NodeUnitsRead read, CancellationToken ct)
+    private void Keep(DriverConfig config, IEnumerable<GovernedUnit> governed)
     {
-        if (closes is not IClosureBindPort binds) return [];
-        var said = new List<string>();
-        var now = clock();
-        foreach (var unit in read.Units.Where(unit => unit.Kind == WorkUnitKind.Quest).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+        foreach (var each in governed.Where(each => each.Closes))
         {
-            var home = NodeGraphHomes.Work(config, unit.Owner.Repository ?? "", unit.Owner.Workspace, WorkUnitKind.Quest);
-            if (!QuestClosing.Holds(home.Graph)) continue;
-            var since = _closingSince.TryGetValue(NodeGraphs.Digest(home.Graph!), out var first) ? first : _closingSince[NodeGraphs.Digest(home.Graph!)] = now;
-            if (unit.Records.Quest is not { Status: "Taken", Closure: null, Submission: null, Updated: { } took } quest || took < since) continue;
-            if (!_bindAsked.Add(quest.Id)) continue;
-            if (await ClosureBinding.AtTakeAsync(binds, config, quest, unit.Owner.Workspace, remote?.Invoke(unit.Owner.Workspace) ?? false, ct).ConfigureAwait(false) is { } answered)
-            {
-                said.Add($"work  {unit.Id}: {answered.Said}");
-            }
+            var home = NodeGraphHomes.Work(config, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, WorkUnitKind.Quest);
+            if (home.Graph is { } graph && home.Cycle is { } json && NodeGraphs.Digest(graph) == each.GraphDigest) ClosureGraphs.Keep(records.Home, each.GraphDigest, json);
         }
-
-        return said;
     }
 
     /// <summary>A close attempt that closed what it named.</summary>

@@ -28,8 +28,14 @@ public static class QuestCloseOutcomes
     /// <summary>A check refused it, now or when it was first sent under this key, or the key went with another close: nothing was written.</summary>
     public const string Refused = "refused";
 
-    /// <summary>The host has no close door: it is older than this driver.</summary>
-    public const string NoDoor = "no-door";
+    /// <summary>
+    /// The checks the close door names a refusal by (the service's <c>QuestCloseCodes</c>): only a refusal naming one of these is the door's
+    /// own, and settles the close (FABRIC-CLOSE1l, the review's finding 7). Any other answer leaves the close unknown.
+    /// </summary>
+    public static IReadOnlySet<string> Codes { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "malformed", "not-found", "not-bound", "not-held", "closed", "stale", "held", "unsealed", "key-reused", "refused",
+    };
 }
 
 /// <summary>The close door's answer (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/close</c>), as the driver reads it.</summary>
@@ -66,6 +72,9 @@ public static class QuestClosing
     /// <summary>The sender an attempt of Daoris's own close names: never a plugin's, so no plugin's frame is taken about it.</summary>
     public const string Sender = NodeKinds.QuestClose;
 
+    /// <summary>The sender a close node's attempt reached on its chain's close names (FABRIC-CLOSE1l): never sent, reconciled or said.</summary>
+    public const string Chained = NodeKinds.QuestClose + "/chain";
+
     /// <summary>The history entry a graph ended by the person's own done keeps: what says it once.</summary>
     public const string Overridden = "overridden";
 
@@ -90,7 +99,10 @@ public static class QuestClosing
     /// <summary>Which quests the close of <paramref name="quest"/>'s unit names now, or why it waits, or that every one is Done already.</summary>
     public static QuestCloseJudged Judge(QuestView quest, IReadOnlyDictionary<string, QuestView> quests)
     {
-        var chain = Chain(quest, quests);
+        // FABRIC-CLOSE1l, the review's finding 1: the whole ancestry is walked, through other repositories' steps, so an A → B → A chain's last
+        // A closes with its first; an ancestor not read leaves the chain unjudged, never judged without it.
+        var (chain, unread) = Lineage(quest, quests);
+        if (unread is not null) return new([], $"#{unread}, which #{quest.Id}'s chain grew from, was not read, so the chain is not judged whole", false);
         var open = chain.Where(each => each.Status != Done).ToList();
         if (open.Count == 0) return new([], null, true);
         if (quest.Status != Done && quest.Then.Any(step => string.Equals(step.To, quest.To, StringComparison.Ordinal)))
@@ -100,6 +112,11 @@ public static class QuestClosing
 
         foreach (var each in open)
         {
+            if (!string.Equals(each.Closure, quest.Closure, StringComparison.Ordinal))
+            {
+                return new([], $"#{each.Id}, of the same chain here, is not bound to this graph, so it closes by its own end first", false);
+            }
+
             if (each.Status != Taken) return new([], $"#{each.Id} is {each.Status}", false);
             if (each.Submission is null) return new([], $"#{each.Id} has no submission yet: its taker says `ready` when its work is done", false);
             if (each.Held) return new([], $"#{each.Id}'s submission is held ({each.Hold ?? "for the person"})", false);
@@ -108,19 +125,60 @@ public static class QuestClosing
         return new([.. open.Select(each => new QuestCloseItem(each.Id, each.Submission!.Machine, each.Submission.Sequence))], null, false);
     }
 
-    /// <summary>The quest and each quest it grew from in this repository under the same graph, oldest first.</summary>
-    private static List<QuestView> Chain(QuestView quest, IReadOnlyDictionary<string, QuestView> quests)
+    /// <summary>
+    /// The quest and every quest of its chain in this repository it grew from, oldest first, walked through every repository's steps; and
+    /// the first ancestor named and not read, or null.
+    /// </summary>
+    public static (List<QuestView> Chain, string? Unread) Lineage(QuestView quest, IReadOnlyDictionary<string, QuestView> quests)
     {
         var chain = new List<QuestView> { quest };
         var seen = new HashSet<string>(StringComparer.Ordinal) { quest.Id };
-        for (var at = quest; at.Parent is { } parent && quests.TryGetValue(parent, out var before)
-             && string.Equals(before.To, quest.To, StringComparison.Ordinal) && string.Equals(before.Closure, quest.Closure, StringComparison.Ordinal)
-             && seen.Add(before.Id); at = before)
+        for (var at = quest; at.Parent is { Length: > 0 } parent && seen.Add(parent);)
         {
-            chain.Insert(0, before);
+            if (!quests.TryGetValue(parent, out var before)) return (chain, parent);
+            if (string.Equals(before.To, quest.To, StringComparison.Ordinal)) chain.Insert(0, before);
+            at = before;
         }
 
-        return chain;
+        return (chain, null);
+    }
+
+    /// <summary>
+    /// A closing quest's revision (FABRIC-CLOSE1l, the review's findings 5 and 8): what its close judges, as one digest of every quest of its
+    /// chain here (its moment, its status, its binding, its submission and its hold) and the tip of each branch their sessions worked. A
+    /// commit, a new submission, or a hold gained or released anywhere in the chain moves it, which lapses every acceptance bound to the
+    /// revision before (WIRE1e), a close refused on it included, so a fresh close is made under a fresh key.
+    /// </summary>
+    public static string Revision(QuestView quest, IReadOnlyDictionary<string, QuestView> quests, IReadOnlyList<WorkUnit> units)
+    {
+        var (chain, unread) = Lineage(quest, quests);
+        var text = new StringBuilder("quest-close-revision\n").Append(unread ?? "").Append('\n');
+
+        // Closed, every quest of it here: what it closed on is all that stays, so nothing after its end (a landing moving a branch) reads as
+        // new work; its Done itself moves it once, and the close's node is reached again on that close.
+        if (unread is null && chain.All(each => each.Status == Done))
+        {
+            foreach (var each in chain) text.Append(each.Id).Append('\t').Append(each.Submission is { } closed ? $"{closed.Machine}/{closed.Sequence}" : "").Append('\n');
+            return "crv-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())))[..32];
+        }
+
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var each in chain)
+        {
+            ids.Add(QuestUnits.IdOf(each.Id));
+            text.Append(each.Id).Append('\t').Append(each.Status).Append('\t').Append(each.Updated is { } moved ? Moments.Write(moved) : "")
+                .Append('\t').Append(each.Closure ?? "").Append('\t').Append(each.Submission is { } submitted ? $"{submitted.Machine}/{submitted.Sequence}" : "")
+                .Append('\t').Append(each.Held ? each.Hold ?? "held" : "").Append('\n');
+        }
+
+        foreach (var branch in units.Where(unit => unit.Kind == WorkUnitKind.Branch
+                                                    && unit.Links.Any(link => link.Relation == WorkRelation.ProducedBy && ids.Contains(link.Unit)))
+                     .Select(unit => $"{unit.Id}\t{unit.Subject.Revision}").Order(StringComparer.Ordinal))
+        {
+            text.Append(branch).Append('\n');
+        }
+
+        return "crv-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())))[..32];
     }
 
     /// <summary>The close attempts kept on <paramref name="records"/> that name <paramref name="quest"/>.</summary>
@@ -143,11 +201,8 @@ public static class QuestClosing
 /// </remarks>
 public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, Func<DateTimeOffset> clock)
 {
-    /// <summary>A refused close is never a transient failure: a new close is the person's, under a new key.</summary>
+    /// <summary>A refused close is never a transient failure: a new close is made under a new key once what refused it moves.</summary>
     public const string Refused = "refused";
-
-    /// <summary>Why a close attempt is held: its host has no close door.</summary>
-    public const string NoDoor = QuestCloseOutcomes.NoDoor;
 
     private readonly List<string> _said = [];
 
@@ -225,7 +280,18 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
             var reached = NodeLifecycle.Apply(node, begun.Status, Reach(node, begun.Status, chained.Call.IdempotencyKey));
             if (!reached.Moved) return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Refused, reached.Refused));
             var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
-            return (WorkPerformer.Kept(WorkPerformer.Kept(record, begun, "start", now), reached, "chain", now) with { Fired = fired },
+
+            // FABRIC-CLOSE1l: a node with attempts of its own (the close's own node, started again once its quest's Done moved its revision)
+            // keeps one for the attempt started here, settled on the chain's close and never sent, so its record still agrees with itself
+            // (each node's attempts end at its status's) and reads; marked as the chain's, so nothing reconciles or says it.
+            var attempts = record.Attempts.Any(attempt => attempt.Node == node.Id)
+                ? [.. record.Attempts, chained with
+                {
+                    Node = node.Id, Attempt = begun.Status.Attempt, Plugin = QuestClosing.Chained, State = AttemptStates.Settled, RecordedAt = now,
+                    Outcome = WorkStates.Reached, Code = null, Call = chained.Call with { Unit = unit, Invocation = WorkPerformer.Random("i-", 12) },
+                }]
+                : record.Attempts;
+            return (WorkPerformer.Kept(WorkPerformer.Kept(record, begun, "start", now), reached, "chain", now) with { Fired = fired, Attempts = attempts },
                 new WorkPerformed(unit, node.Id, PerformedWhat.Applied, WorkStates.Reached));
         });
         return refused is null ? result! : new(unit, node.Id, PerformedWhat.Refused, refused);
@@ -269,7 +335,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
             ? Outcome(record, current, node, answer)
             : (null, new WorkPerformed(unit, node.Id, PerformedWhat.NotTaken, WorkPerformer.Moved)));
         if (refused is not null) return new(unit, node.Id, PerformedWhat.Unknown, refused);
-        if (result is { What: PerformedWhat.Applied, Code: WorkStates.Failed } || answer.Outcome == QuestCloseOutcomes.NoDoor)
+        if (result is { What: PerformedWhat.Applied, Code: WorkStates.Failed })
         {
             _said.Add($"work  {unit}: its close was not made ({answer.Code ?? answer.Outcome}): {answer.Message}");
         }
@@ -279,15 +345,14 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
 
     /// <summary>
     /// The door's answer applied to its attempt's node through the one table: closed is the reach, on the close's key as its evidence; refused
-    /// is the failure, with the door's code and its words kept; no door holds the attempt for the person. An attempt its node has moved off is
-    /// settled as a stale one's, lifting the gate it held (§D3).
+    /// is the failure, with the door's code and its words kept. An answer that is neither never reaches here: the client throws it as unanswered
+    /// (FABRIC-CLOSE1l). An attempt its node has moved off is settled as a stale one's, lifting the gate it held (§D3).
     /// </summary>
     private (NodeRecord? Next, WorkPerformed Result) Outcome(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, QuestCloseAnswer answer)
     {
         var unit = record.Unit;
         var now = clock();
         var delivered = attempt with { Deliveries = attempt.Deliveries + 1 };
-        if (answer.Outcome == QuestCloseOutcomes.NoDoor) return WorkPerformer.Hold(record, delivered, NoDoor);
         var closed = answer.Outcome == QuestCloseOutcomes.Closed;
         var code = closed ? null : answer.Code ?? Refused;
         var settled = delivered with
@@ -330,6 +395,49 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
 /// <summary>Whether a quest was bound to its closure graph at its take, and what is said (<see cref="ClosureBinding.AtTakeAsync"/>).</summary>
 public sealed record ClosureBound(bool Bound, string Said);
 
+/// <summary>
+/// The closure graphs this machine bound a quest to, kept by digest beside the node records (FABRIC-CLOSE1l; the fabric events design §E5's
+/// cutover: "removing `quest.close` from a graph changes nothing for runs already bound"). A quest bound to a graph since edited or removed is
+/// closed by the graph it was bound to, read from here; a home that never bound one keeps nothing, and nothing here is read.
+/// </summary>
+public static class ClosureGraphs
+{
+    /// <summary>The folder the kept graphs sit in, beside the node records (<see cref="NodeRecordFiles.FolderOf"/>).</summary>
+    public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "closures");
+
+    /// <summary>Whether this home keeps any closure graph: one stat, so a home that never bound a quest reads no record.</summary>
+    public static bool Any(string home) => Directory.Exists(FolderOf(home));
+
+    /// <summary>Keeps the graph <paramref name="json"/> spells under its digest, once; a graph whose digest is not that is never kept.</summary>
+    public static void Keep(string home, string digest, string json)
+    {
+        if (!IsDigest(digest) || File.Exists(PathOf(home, digest))) return;
+        if (NodeGraphs.Read(json).Graph is not { } graph || NodeGraphs.Digest(graph) != digest || !QuestClosing.Holds(graph)) return;
+        Directory.CreateDirectory(FolderOf(home));
+        AtomicFile.WriteText(PathOf(home, digest), json.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>The graph kept under <paramref name="digest"/>, or null where none is, or it does not read as that digest.</summary>
+    public static NodeGraph? Read(string home, string digest)
+    {
+        if (!IsDigest(digest) || !File.Exists(PathOf(home, digest))) return null;
+        try
+        {
+            return NodeGraphs.Read(File.ReadAllText(PathOf(home, digest))).Graph is { } graph && NodeGraphs.Digest(graph) == digest ? graph : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static string PathOf(string home, string digest) => Path.Combine(FolderOf(home), digest + ".json");
+
+    /// <summary>A digest as <see cref="NodeGraphs.Digest"/> writes it, so no name the service answers is read as a path.</summary>
+    private static bool IsDigest(string digest) =>
+        digest.StartsWith("gph-", StringComparison.Ordinal) && digest.Length > 4 && digest[4..].All(char.IsAsciiHexDigitLower);
+}
+
 /// <summary>The service's two doors a bind reads and writes (FABRIC-CLOSE1b): the handshake, and the bind itself. A port, so a bind is proved without a host.</summary>
 public interface IClosureBindPort
 {
@@ -350,9 +458,22 @@ public interface IClosureBindPort
 /// </remarks>
 public static class ClosureBinding
 {
+    /// <summary>
+    /// What a session's start owes its quest's closure graph (FABRIC-CLOSE1l, folding CLOSE1f and CLOSE1g): a quest bound already says
+    /// `ready` (a resume, a carry-on), asking nothing; an open quest's first start names its graph for the take
+    /// (<see cref="AtTakeAsync"/>), and says `ready` only where the host took that; a quest taken unbound keeps today's done. Null where no
+    /// closure graph governs the quest and it is bound to none: nothing is asked, kept or said (the owner's install).
+    /// </summary>
+    public static async Task<ClosureBound?> AtStartAsync(
+        IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, string? home, CancellationToken ct)
+    {
+        if (quest.Closure is { Length: > 0 } bound) return new(true, $"#{quest.Id} closes through its graph `{bound}`: its session says `ready`.");
+        return quest.Status == "Open" ? await AtTakeAsync(port, config, quest, workspace, remote, ct, home).ConfigureAwait(false) : null;
+    }
+
     /// <summary>The bind for a quest just taken, or null where no closure graph governs it: nothing is asked, nothing changes.</summary>
     public static async Task<ClosureBound?> AtTakeAsync(
-        IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, CancellationToken ct)
+        IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, CancellationToken ct, string? keepIn = null)
     {
         var home = NodeGraphHomes.Work(config, quest.To, workspace, WorkUnitKind.Quest);
         if (!QuestClosing.Holds(home.Graph)) return null;
@@ -385,7 +506,22 @@ public static class ClosureBinding
                               + $"than this driver), {AsToday}");
         }
 
-        var (ok, message) = await port.BindQuestAsync(quest.Id, digest, ct).ConfigureAwait(false);
+        // FABRIC-CLOSE1l: kept by its digest before it is named, so the quest is closed by this graph whatever the choices say later.
+        if (keepIn is not null && home.Cycle is { } json) ClosureGraphs.Keep(keepIn, digest, json);
+        bool ok;
+        string message;
+        try
+        {
+            (ok, message) = await port.BindQuestAsync(quest.Id, digest, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
+                                      || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            // Unanswered: its session is told `done`. Were the graph named after all, the take binds it, and the service refuses that done
+            // naming `ready`, so nothing closes past the graph.
+            (ok, message) = (false, $"the service did not answer ({error.Message}).");
+        }
+
         return ok
             ? new(true, $"#{quest.Id} closes through its graph `{digest}`: its session says `ready`, and the graph writes its Done at the work's end.")
             : new(false, $"#{quest.Id} is not bound to its closure graph `{digest}`: {message} It closes by its done, as today.");

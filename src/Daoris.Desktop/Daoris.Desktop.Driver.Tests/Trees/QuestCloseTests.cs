@@ -102,13 +102,34 @@ public sealed class QuestCloseTests : IDisposable
 
     private void Quest(QuestView quest) => _quests[quest.Id] = quest;
 
+    /// <summary>Each session branch the pass reads, by name: the quest whose sessions worked it, and its tip.</summary>
+    private readonly Dictionary<string, (string Quest, string Tip)> _branches = [];
+
+    /// <summary>How many times the units were read, and what happens at each read: the fresh read right before a close is one.</summary>
+    private int _reads;
+
+    private Action<int>? _onRead;
+
     private NodeRuntimeLook Look(string config) => new(DriverConfig.Parse(config), Whole: true)
     {
-        Units = _ => Task.FromResult(new NodeUnitsRead(
-            [.. _quests.Values.Select(quest => new WorkUnit("quest:" + quest.Id, WorkUnitKind.Quest,
-                new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter), new WorkSubject("#" + quest.Id, null),
-                new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []) { Records = new WorkUnitRecords(null, [], quest) })],
-            new Dictionary<string, string> { ["engine"] = "checkout" })),
+        Units = _ =>
+        {
+            _onRead?.Invoke(++_reads);
+            return Task.FromResult(new NodeUnitsRead(
+                [
+                    .. _quests.Values.Select(quest => new WorkUnit("quest:" + quest.Id, WorkUnitKind.Quest,
+                        new WorkOwner(quest.To, "default", WorkRecord.Quests, WorkRecord.ServiceWriter),
+                        new WorkSubject("#" + quest.Id, quest.Updated is { } moved ? Moments.Write(moved) : null),
+                        new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []) { Records = new WorkUnitRecords(null, [], quest) }),
+                    .. _branches.Select(branch => new WorkUnit("branch:engine/" + branch.Key, WorkUnitKind.Branch,
+                        new WorkOwner("engine", "default", "trees", WorkRecord.DriverWriter), new WorkSubject(branch.Key, branch.Value.Tip),
+                        new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
+                    {
+                        Links = [new WorkLink(WorkRelation.ProducedBy, "quest:" + branch.Value.Quest)],
+                    }),
+                ],
+                new Dictionary<string, string> { ["engine"] = "checkout" }));
+        },
     };
 
     private NodeRecord Record(string unit = Unit) => Files.Read(unit)!;
@@ -225,6 +246,120 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Single(_door.Sent);
     }
 
+    /// <summary>FABRIC-CLOSE1l, the review's finding 1: a chain that leaves this repository and comes back is walked whole.</summary>
+    [Fact]
+    public async Task A_chain_that_leaves_this_repository_and_comes_back_closes_at_its_last_quest_here_only_with_its_first()
+    {
+        var digest = Digest(Closing);
+        // A → B → A: q5 here, q6 in another repository, q7 here again; the first A held for the person since.
+        Quest(Taken("q5", digest, Ready40) with
+        {
+            Then = [new QuestStepView("ui", "Ship q6", ""), new QuestStepView("engine", "Ship q7", "")], Held = true, Hold = "unreviewed",
+        });
+        Quest(new QuestView("q6", "game", "ui", "Ship q6", "", "Done") { Parent = "q5", Then = [new QuestStepView("engine", "Ship q7", "")] });
+        Quest(Taken("q7", digest, Ready41) with { Parent = "q6" });
+        var runtime = Runtime();
+
+        // The first A is held: the last A's close waits for it, and nothing is sent.
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Empty(_door.Sent);
+
+        // Released: one close from the last A names both A's, oldest first, and not B, which is its own repository's.
+        Quest(_quests["q5"] with { Held = false, Hold = null });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        var (quest, _, _, named) = Assert.Single(_door.Sent);
+        Assert.Equal("q7", quest);
+        Assert.Equal([new QuestCloseItem("q5", "desk", 40), new QuestCloseItem("q7", "desk", 41)], named);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1l, the review's finding 5 (§E5 step 1): git, the binding and the chain are read again right before the close, so a commit
+    /// landing after the evaluation judged the close never closes on that stale judgement; the next pass judges the new tip and closes.
+    /// </summary>
+    [Fact]
+    public async Task A_commit_after_the_evaluations_read_refuses_the_close_and_the_next_pass_closes_at_the_new_tip()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        _branches["daoris/q7"] = ("q7", "c1");
+        // The session commits once more between the pass's read and the close: the second read is the fresh one before it.
+        _onRead = read =>
+        {
+            if (read == 2) _branches["daoris/q7"] = ("q7", "c2");
+        };
+        var runtime = Runtime();
+
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Empty(_door.Sent);
+        Assert.Empty(Record().Attempts);
+
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Single(_door.Sent);
+        Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+    }
+
+    /// <summary>FABRIC-CLOSE1l, the review's finding 6: a graph edited since a quest was bound leaves it closed by the graph it was bound to.</summary>
+    [Fact]
+    public async Task A_graph_edit_leaves_a_bound_quest_closed_by_the_graph_it_was_bound_to()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q7", digest));
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        // The person puts a task before the close since: the quest bound to the graph before it closes by that graph, without the task.
+        Quest(Taken("q7", digest, Ready41));
+        await runtime.PassAsync(Look(Reviewed), CancellationToken.None);
+
+        var (_, _, token, named) = Assert.Single(_door.Sent);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 41)], named);
+        Assert.False(Record().Statuses.ContainsKey("qa"));
+        Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+        Assert.NotNull(token);
+    }
+
+    /// <summary>FABRIC-CLOSE1l, the review's finding 6: an unanswered close is reconciled whether or not a closure graph still arms the runtime.</summary>
+    [Fact]
+    public async Task A_close_unanswered_is_reconciled_after_the_last_closure_graph_is_removed()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        _door.Answer = sent => sent == 1 ? throw new HttpRequestException("the host did not answer in time") : new(QuestCloseOutcomes.Closed, null, "Closed.", []);
+        await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+
+        // The graph removed, and the loop started again: the same close, its key and token, is still sent before anything else.
+        await Runtime().PassAsync(Look("{}"), CancellationToken.None);
+
+        Assert.Equal(2, _door.Sent.Count);
+        Assert.Equal((_door.Sent[0].Key, _door.Sent[0].Token), (_door.Sent[1].Key, _door.Sent[1].Token));
+        Assert.Equal(AttemptStates.Settled, Assert.Single(Record().Attempts).State);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1l, the review's finding 8: a hold an ancestor gained between the read and the send refuses the close; once it is
+    /// released, the refusal's cause is gone and the close is made again under a fresh key, as the terminal quest's own release does.
+    /// </summary>
+    [Fact]
+    public async Task An_ancestors_hold_released_after_a_held_refusal_is_retried_with_a_fresh_key()
+    {
+        var digest = Digest(Closing);
+        Quest(Taken("q6", digest, Ready40) with { Then = [new QuestStepView("engine", "Ship q7", "")], Updated = _now });
+        Quest(Taken("q7", digest, Ready41) with { Parent = "q6", Updated = _now });
+        _door.Answer = sent => sent == 1
+            ? new(QuestCloseOutcomes.Refused, "held", "Quest `#q6`'s submission is held for the person.", [])
+            : new(QuestCloseOutcomes.Closed, null, "Closed.", []);
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Equal(NodeStates.Failed, Record().Statuses["close"].State);
+
+        // q6's hold gained and released since: it moved, and nothing holds it now.
+        Quest(_quests["q6"] with { Updated = _now.AddMinutes(2) });
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        Assert.Equal(2, _door.Sent.Count);
+        Assert.NotEqual(_door.Sent[0].Key, _door.Sent[1].Key);
+        Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+    }
+
     [Fact]
     public async Task The_persons_own_done_ends_the_graph_as_overridden_and_stops_its_nodes()
     {
@@ -263,23 +398,56 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Empty(pass.Said.Concat(done.Said));
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1l, the review's findings 2 and 3: the bind is the take's own (CLOSE1f), so the runtime binds no quest it reads taken, at
+    /// whatever moment; a quest taken unbound keeps today's done.
+    /// </summary>
     [Fact]
-    public async Task A_quest_taken_while_the_loop_reads_its_closure_graph_is_bound_once_and_one_in_flight_before_is_not()
+    public async Task The_runtime_binds_no_quest_it_reads_taken_since_the_bind_is_the_takes_own()
     {
         var runtime = Runtime();
-
-        // Taken before this loop read the graph: in flight before the cutover, it keeps today's done.
-        Quest(Taken("q6", null) with { Updated = _now.AddMinutes(-5) });
-        await runtime.PassAsync(Look(Closing), CancellationToken.None);
-
-        // Taken since: bound at the first look that reads the take, once.
         Quest(Taken("q7", null) with { Updated = _now });
+
         var pass = await runtime.PassAsync(Look(Closing), CancellationToken.None);
         await runtime.PassAsync(Look(Closing), CancellationToken.None);
 
-        Assert.Equal([("q7", Digest(Closing))], _door.Bound);
-        Assert.Contains(pass.Said, line => line.Contains("quest:q7", StringComparison.Ordinal) && line.Contains("closes through its graph", StringComparison.Ordinal));
+        Assert.Empty(_door.Bound);
         Assert.Empty(_door.Sent);
+        Assert.DoesNotContain(pass.Said, line => line.Contains("closes through its graph", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1l (CLOSE1f, CLOSE1g): what a session's start owes its quest's closure graph. The owner's install, with no closure graph,
+    /// asks, binds and keeps nothing and says no `ready`; an open quest's first start names its graph for the take and keeps it; a quest
+    /// bound already says `ready` asking nothing; a quest taken unbound keeps today's done.
+    /// </summary>
+    [Fact]
+    public async Task A_start_names_its_graph_for_the_take_only_under_a_closure_graph_and_says_ready_only_where_bound()
+    {
+        var digest = Digest(Closing);
+        var open = new QuestView("q7", "game", "engine", "Ship q7", "", "Open");
+
+        var none = new Binds(knows: true);
+        Assert.Null(await ClosureBinding.AtStartAsync(none, DriverConfig.Parse("{}"), open, "default", remote: false, _home, CancellationToken.None));
+        Assert.Null(await ClosureBinding.AtStartAsync(none, DriverConfig.Parse("{}"), Taken("q7", null), "default", remote: false, _home, CancellationToken.None));
+        Assert.Equal((0, 0), (none.Asked, none.Bound.Count));
+        Assert.False(Directory.Exists(ClosureGraphs.FolderOf(_home)));
+
+        var first = new Binds(knows: true);
+        var named = await ClosureBinding.AtStartAsync(first, DriverConfig.Parse(Closing), open, "default", remote: false, _home, CancellationToken.None);
+        Assert.True(named!.Bound);
+        Assert.Equal([("q7", digest)], first.Bound);
+        Assert.Equal(digest, NodeGraphs.Digest(ClosureGraphs.Read(_home, digest)!));
+
+        var unbound = new Binds(knows: true);
+        Assert.Null(await ClosureBinding.AtStartAsync(unbound, DriverConfig.Parse(Closing), Taken("q7", null), "default", remote: false, _home, CancellationToken.None));
+        var resumed = await ClosureBinding.AtStartAsync(unbound, DriverConfig.Parse("{}"), Taken("q7", digest), "default", remote: false, _home, CancellationToken.None);
+        Assert.True(resumed!.Bound);
+        Assert.Equal((0, 0), (unbound.Asked, unbound.Bound.Count));
+
+        var remote = new Binds(knows: true);
+        Assert.False((await ClosureBinding.AtStartAsync(remote, DriverConfig.Parse(Closing), open, "default", remote: true, _home, CancellationToken.None))!.Bound);
+        Assert.Empty(remote.Bound);
     }
 
     /// <summary>The host's two doors a bind reads and writes, each counted.</summary>

@@ -1116,6 +1116,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             writer.WriteStartObject();
             writer.WriteString("graph", graph);
+            // FABRIC-CLOSE1l (CLOSE1f): named for the take as the first session opens, never bound after it; a host before it refuses an
+            // open quest's bind as not taken, and the quest closes by its done.
+            writer.WriteBoolean("atTake", true);
             writer.WriteEndObject();
         });
         var (ok, status, payload, root) = await PostJsonAsync(
@@ -1157,14 +1160,25 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         });
         var (ok, status, payload, root) = await PostJsonAsync(
             $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/close", body, ct).ConfigureAwait(false);
-        if (root is not { } answer || answer.ValueKind != JsonValueKind.Object)
+
+        // FABRIC-CLOSE1l, the review's finding 7: only the door's own answer settles a close, its close or its coded refusal. Anything
+        // else (a proxy's page, the host's 500, a bare 404, a refusal naming no check of the door's) proves nothing about whether its
+        // transaction committed, so the close is unknown and the same close is sent again, whose key answers its first outcome.
+        if (root is { ValueKind: JsonValueKind.Object } answer)
         {
-            return new(QuestCloseOutcomes.NoDoor, null, $"the service at {_base} has no close door ({status}) — is it older than this driver?", []);
+            if (ok && answer.TryGetProperty("quests", out var named) && named.ValueKind == JsonValueKind.Array)
+            {
+                return new(QuestCloseOutcomes.Closed, null, Text(answer, "message") ?? "", ReadQuests(named.GetRawText()));
+            }
+
+            if (status is 400 or 404 or 409 && Text(answer, "code") is { } code && QuestCloseOutcomes.Codes.Contains(code))
+            {
+                return new(QuestCloseOutcomes.Refused, code, Text(answer, "error") ?? payload, []);
+            }
         }
 
-        if (!ok) return new(QuestCloseOutcomes.Refused, Text(answer, "code"), Text(answer, "error") ?? payload, []);
-        var answered = answer.TryGetProperty("quests", out var named) && named.ValueKind == JsonValueKind.Array ? ReadQuests(named.GetRawText()) : [];
-        return new(QuestCloseOutcomes.Closed, null, Text(answer, "message") ?? "", answered);
+        throw new HttpRequestException($"the close door at {_base} answered {status}, which is not its own answer, so whether it closed is unknown: "
+                                       + TextBounds.Clip(payload, 200));
     }
 
     /// <summary>
