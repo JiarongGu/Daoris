@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A removal could rest on a holder that was gone, or verify a line it never compared (FABRIC-END4a, third review)
+
+- **Symptom:** a third review, before staging: a branch of the person's that held a session branch by ancestry, deleted between the
+  judgement and the delete, let the unchanged line authorize the delete; a content holder, a landing an `Inside` branch rested on and
+  a squashing landing's branch moved as the branch went, and it went; the line rewound between a landed branch's proof and its
+  recovery ref was verified at its rewound commit; a read that failed after a refused delete counted as the branch gone; and one name
+  recorded and removed again and again kept every one of its traces from pruning.
+- **Root cause:** what a removal rested on was derived again after its proof (`ContentHolds.ProofRefsAsync` read the holders afresh,
+  and fell back to the line's forms where it found none; the landings' clean-up read the line after making the recovery ref, which
+  drops the judgement's snapshot), and the proofs asked refs by their live names, so the commit verified was not always the commit
+  proved. `RefusedAsync` read any non-zero exit as "no such ref". `Bounded` exempted every trace whose name's tree folder stood.
+- **Fix:** each proof returns its dependencies, each ref at the commit it read (`HoldersAsync`/`HolderOf`, `ContentProof.At`,
+  `SquashedHoldAsync`, `PullRequestCarrier.Rests`, `LandedProofs.Proof.Rests` with `LineForm.At`, `Judged.Rests`), and the delete's
+  transaction verifies exactly those; the after-the-fact reads are gone, and a delete handed nothing refuses. Only exit 1 reads as gone.
+  Only the newest trace of a name where none stands is exempt. D173's FABRIC-END4a note, "After the third review", has the detail.
+- **Verification:** red first on round 3's branch: six `JudgedDeleteGitTests` and `TidyEffectTests`'s repeated re-record; then green,
+  with the driver's fast half and the Git classes that reach the delete and the tidy.
+
 ## 2026-10-17 — The look's tidy could take a branch the line had stopped holding, and say a failed put-back worked (FABRIC-END4a)
 
 - **Symptom:** a second review of END4a's fixes, before it was staged (its merge was reverted): the delete's look-again caught two
