@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The close door closed a bound quest of no chain the close was at (FABRIC-CLOSE1v)
+
+- **Symptom:** none on an install: no quest is bound to a closure graph there, and the driver names only its own chain's quests. Found by
+  the read-only review of the close path. A close at one quest naming another bound, submitted and unheld quest, of another chain,
+  another repository or another graph, closed both. A plain bind in a workspace syncing through a remote bound the quest.
+- **Root cause:** `QuestStore.CloseAsync` judged each named quest's own state alone (`Quests/Quests.cs`), so the driver's filter
+  (`QuestClosing.Judge`) was the close's only scope. The plain bind in `QuestExchange.BindAsync` never read the remote map that the bind
+  at the take reads.
+- **Fix:** the store takes the quest the close is at and refuses, before any quest's state, a quest of another repository, of no chain
+  it grew from (`LineageAsync`, the driver's `Lineage` twin), or bound to another graph, by its own code, whole, kept under its key. The
+  plain bind reads `remotes` as the take's does. The driver knows the three codes. D173's FABRIC-CLOSE1v note has the choices.
+- **Verification:** red first: three `QuestClosureTests` closed what they named, `QuestTakeBindTests` bound through a remote, and the
+  client's theory left each code unknown. Then the service suite passes 2219 (2215 on main), its HTTP suite 283 (283), and the driver's
+  fast half 9396 (9393 on main).
+
 ## 2026-10-18 — A close never delivered was sent after a restart on the evidence it was recorded on (FABRIC-CLOSE1u)
 
 - **Symptom:** none on an install: no quest is bound to a closure graph there. Found by the read-only review of the close path. A

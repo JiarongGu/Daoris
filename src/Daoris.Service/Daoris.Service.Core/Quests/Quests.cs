@@ -428,11 +428,27 @@ public enum QuestCloseRefusal
     /// by its name; a build before it reads the name as no refusal it knows, which it answers as a key not that close's.
     /// </summary>
     Withdrawn,
+
+    /// <summary>
+    /// A named quest asks another repository than the quest the close is at (FABRIC-CLOSE1v): a close is one repository's, the chain's
+    /// quests there, never another's, whose own graph closes them.
+    /// </summary>
+    OtherRepository,
+
+    /// <summary>
+    /// A named quest is not of the chain the quest the close is at grew from (FABRIC-CLOSE1v): neither that quest nor one of its ancestors,
+    /// walked through its parents as the driver walks them (<c>QuestClosing.Lineage</c>).
+    /// </summary>
+    NotInChain,
+
+    /// <summary>A named quest is bound to another graph than the quest the close is at (FABRIC-CLOSE1v): one graph's close is its own.</summary>
+    OtherGraph,
 }
 
 /// <summary>
 /// A close's refusal as the close door names it on the wire (FABRIC-CLOSE1b): the driver keeps the code beside the sentence, so it tells a key
-/// gone with another close from a check a quest's state failed without reading the words.
+/// gone with another close from a check a quest's state failed without reading the words. 🔴 The driver's <c>QuestCloseOutcomes.Codes</c>
+/// lists each code (twins): a code it does not know leaves the close unknown, so a code added here is added there.
 /// </summary>
 public static class QuestCloseCodes
 {
@@ -450,6 +466,9 @@ public static class QuestCloseCodes
         QuestCloseRefusal.Unsealed => "unsealed",
         QuestCloseRefusal.KeyReused => "key-reused",
         QuestCloseRefusal.Withdrawn => "withdrawn",
+        QuestCloseRefusal.OtherRepository => "other-repository",
+        QuestCloseRefusal.NotInChain => "not-in-chain",
+        QuestCloseRefusal.OtherGraph => "other-graph",
         _ => "refused",
     };
 }
@@ -1584,12 +1603,22 @@ public sealed class QuestStore
     /// the token and the submissions named, in this store and never as an operation (FABRIC-CLOSE1e). The same close sent again
     /// after a timeout or a lost answer (the same key, token and submissions) is answered with that first outcome, writing nothing,
     /// though what refused it is gone since. Anything else sent with that key is not that close, and is refused.
+    /// <para>FABRIC-CLOSE1v: the close holds its own scope before any quest's state, so no driver's filter is its only guard. Every quest
+    /// named asks <paramref name="at"/>'s repository, is <paramref name="at"/> or one it grew from (<see cref="LineageAsync"/>), and is
+    /// bound to its graph; else the close is refused on that quest, by its own code, kept under its key, and nothing is written.</para>
     /// </remarks>
+    /// <param name="at">The quest the close is at, the route's: its chain's last quest here, which must be among those named.</param>
     public Task<QuestClosing> CloseAsync(
-        IReadOnlyList<(string Id, QuestOperationRef Submission)> named, QuestClose close, DateTimeOffset now,
+        string at, IReadOnlyList<(string Id, QuestOperationRef Submission)> named, QuestClose close, DateTimeOffset now,
         CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
         {
+            // The exchange refuses such a call as malformed before it gets here, keeping no key.
+            if (!named.Any(each => string.Equals(each.Id, at, StringComparison.Ordinal)))
+            {
+                throw new ArgumentException($"A close at `#{at}` names `#{at}` among its quests.", nameof(at));
+            }
+
             var judged = new List<(Quest Quest, IReadOnlyList<QuestOperation> History)>();
             string? missing = null;
             foreach (var (id, _) in named)
@@ -1625,6 +1654,28 @@ public sealed class QuestStore
             }
 
             if (missing is not null) return await Refuse(QuestCloseRefusal.NotFound, null, missing).ConfigureAwait(false);
+
+            // FABRIC-CLOSE1v: the close's scope, before any quest's state. It is one repository's, one chain's and one graph's: those of
+            // the quest it is at. A quest outside it is refused whatever its state, so a close naming one is never made in part.
+            var terminal = standing.First(quest => string.Equals(quest.Id, at, StringComparison.Ordinal));
+            IReadOnlySet<string>? lineage = null;
+            foreach (var quest in standing)
+            {
+                if (ReferenceEquals(quest, terminal)) continue;
+                lineage ??= await LineageAsync(terminal, transaction, inside).ConfigureAwait(false);
+                var scope = quest switch
+                {
+                    // The service's own rule for one tree, as a chain's next step reads it (NextStep).
+                    _ when !string.Equals(quest.To, terminal.To, StringComparison.OrdinalIgnoreCase) => QuestCloseRefusal.OtherRepository,
+                    _ when !lineage.Contains(quest.Id) => QuestCloseRefusal.NotInChain,
+                    // An unbound quest is the state check's NotBound, below: it names the bind missing, not another graph.
+                    { Closure: { } graph } when terminal.Closure is { } own && !string.Equals(graph, own, StringComparison.Ordinal)
+                        => QuestCloseRefusal.OtherGraph,
+                    _ => QuestCloseRefusal.None,
+                };
+
+                if (scope != QuestCloseRefusal.None) return await Refuse(scope, quest, quest.Id).ConfigureAwait(false);
+            }
 
             foreach (var ((quest, history), (_, submission)) in judged.Zip(named))
             {
@@ -1665,6 +1716,23 @@ public sealed class QuestStore
             await KeepCloseAsync(close, invocation, QuestCloseRefusal.None, null, now, transaction, inside).ConfigureAwait(false);
             return new QuestClosing(QuestCloseRefusal.None, null, closed);
         }, ct);
+
+    /// <summary>
+    /// The ids of <paramref name="quest"/> and every quest it grew from (FABRIC-CLOSE1v), walked through its parents in every repository as
+    /// the driver's <c>QuestClosing.Lineage</c> walks the quests this store lists: the chain a close at it may name. A parent this store does
+    /// not hold ends the walk, so what lies above it is not shown to be of the chain; a parent seen twice, which no chain makes, ends it too.
+    /// </summary>
+    private async Task<IReadOnlySet<string>> LineageAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct)
+    {
+        var lineage = new HashSet<string>(StringComparer.Ordinal) { quest.Id };
+        for (var at = quest; at.Parent is { Length: > 0 } parent && lineage.Add(parent);)
+        {
+            if (await FindAsync(parent, transaction, ct).ConfigureAwait(false) is not { } before) break;
+            at = before;
+        }
+
+        return lineage;
+    }
 
     /// <summary>
     /// What a close named, as its record compares it (FABRIC-CLOSE1e): each quest with its submission, in the quests' order, so

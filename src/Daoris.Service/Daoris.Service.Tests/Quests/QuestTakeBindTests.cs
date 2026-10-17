@@ -205,6 +205,29 @@ public sealed class QuestTakeBindTests : IAsyncLifetime
         Assert.Equal(0, await PendingAsync());
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1v: the plain bind, on a quest already taken, reads the same remote map the take's bind reads, so a workspace that syncs
+    /// through a remote is refused it and its quest closes by its done. Off a remote, the same bind lands, as it did.
+    /// </summary>
+    [Fact]
+    public async Task A_plain_bind_in_a_workspace_with_a_remote_is_refused_and_appends_nothing()
+    {
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(_open.Id, "take", null, Now)).Refusal);
+        _remotes.Wired = true;
+
+        var refused = await _exchange.BindAsync(_open.Id, Graph, Now);
+
+        Assert.Equal(QuestRespondRefusal.NotInGraph, refused.Refusal);
+        Assert.Contains("remote", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("closes by its done", refused.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(await _quests.HistoryAsync(_open.Id), op => op.Kind == QuestOperationKind.Bound);
+        Assert.Null((await _quests.FindAsync(_open.Id))!.Closure);
+
+        _remotes.Wired = false;
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(_open.Id, Graph, Now)).Refusal);
+        Assert.Equal(Graph, (await _quests.FindAsync(_open.Id))!.Closure);
+    }
+
     /// <summary>A machine's remotes map, read when asked, which the test wires after the graph was named.</summary>
     private sealed class Remotes : IRemotes
     {

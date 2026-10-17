@@ -36,11 +36,14 @@ public static class QuestCloseOutcomes
 
     /// <summary>
     /// The checks the close door names a refusal by (the service's <c>QuestCloseCodes</c>): only a refusal naming one of these is the door's
-    /// own, and settles the close (FABRIC-CLOSE1l, the review's finding 7). Any other answer leaves the close unknown.
+    /// own, and settles the close (FABRIC-CLOSE1l, the review's finding 7). Any other answer leaves the close unknown. 🔴 Twins: a code the
+    /// door adds is added here, or its refusal leaves the close unknown; FABRIC-CLOSE1v added the door's scope checks, a quest of another
+    /// repository, of another chain, or bound to another graph.
     /// </summary>
     public static IReadOnlySet<string> Codes { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
         "malformed", "not-found", "not-bound", "not-held", "closed", "stale", "held", "unsealed", "key-reused", "refused", Withdrawn,
+        "other-repository", "not-in-chain", "other-graph",
     };
 }
 
