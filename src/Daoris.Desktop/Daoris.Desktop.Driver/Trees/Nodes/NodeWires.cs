@@ -174,6 +174,12 @@ public static class WireRefusal
     /// <summary>A group gathering wires into more than one node: a group is one node's.</summary>
     public const string GroupSplit = "group-split";
 
+    /// <summary>
+    /// A group on an <c>after</c> wire into an <c>all</c> join (FABRIC-WIRE1d): every such wire's source is a member whatever its group
+    /// (WIRE1b's choice 6), so a group there says something the evaluation ignores.
+    /// </summary>
+    public const string GroupedMember = "grouped-member";
+
     /// <summary>A <c>failed</c> wire from a node nothing can fail: not yet is pending, so it would never be taken.</summary>
     public const string NeverFails = "never-fails";
 
@@ -347,6 +353,13 @@ public static class NodeWires
         {
             return Refuse(WireRefusal.GroupedInput, to.Id,
                 $"a `{wire.Kind}` wire is `{to.Id}`'s input, mandatory whatever the groups say; only `after`, `trigger`, `failed` and `rejected` wires are grouped.");
+        }
+
+        // FABRIC-WIRE1d: WIRE1b reads every `after` wire into a join as a member whatever its group, so a group there says nothing it keeps.
+        if (wire.Kind == WireKinds.After && to.Kind == NodeKinds.All)
+        {
+            return Refuse(WireRefusal.GroupedMember, to.Id,
+                $"`{to.Id}` is an `all` join, and every `after` wire into it is a member whatever its group; its members are wired plain.");
         }
 
         if (string.IsNullOrWhiteSpace(group.Id) || !WireGroupModes.All.Contains(group.Mode))

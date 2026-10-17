@@ -56,7 +56,16 @@ public static class NodeKinds
     /// <summary>A join of a group's members, keeping its identity and failure policy (§E7).</summary>
     public const string All = "all";
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All];
+    /// <summary>The second opinion's gate (D155 §8.2, §E4): observed, before the look and the landing in D157 §2.2's order (FABRIC-WORKFLOW2).</summary>
+    public const string Opinion = "opinion";
+
+    /// <summary>
+    /// Where a failure or a refusal stops the run short of its end: a decoded D157 version's <c>stop</c>, §E7's synthetic sink
+    /// (FABRIC-WORKFLOW2). Reached on the receipt of the path into it; never a graph's end.
+    /// </summary>
+    public const string Stop = "stop";
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -159,6 +168,12 @@ public static class NodeSource
 
     /// <summary>The agent's own word, the ledger's done: a claim, never another node's evidence.</summary>
     public const string Ledger = "ledger";
+
+    /// <summary>The second opinion's gate as the driver keeps it (D155 §8.2): an answer covering the tip with no dispute open, or the person's answer in its place.</summary>
+    public const string Opinion = "opinion";
+
+    /// <summary>The path into a sink (§E7): the failure or the refusal whose receipt leads there, as a join's members reach it.</summary>
+    public const string Path = "path";
 }
 
 /// <summary>A node's declared retry (§D4, §D6): how many attempts it may take on one binding, and the delay before each new one.</summary>
@@ -173,6 +188,44 @@ public sealed record NodeRetry(int MaxAttempts, IReadOnlyList<int> DelaysSeconds
 
     private static ImmutableArray<int> Copied(IReadOnlyList<int> delays) =>
         ImmutableArray.CreateRange(delays ?? throw new ArgumentNullException(nameof(delays)));
+
+    // FABRIC-UNIT1d: equal by what it says, so a manifest's declaration is the one built by hand.
+    public bool Equals(NodeRetry? other) =>
+        other is not null && MaxAttempts == other.MaxAttempts && DelaysSeconds.SequenceEqual(other.DelaysSeconds);
+
+    public override int GetHashCode() => DelaysSeconds.Aggregate(MaxAttempts.GetHashCode(), HashCode.Combine);
+}
+
+/// <summary>
+/// How a plugin's performed node is performed (FABRIC-UNIT1d; the fabric events design §D6, <i>the performer's contract</i>): what the
+/// kit promises and PERFORM1 dispatches by. Only a plugin's own <c>performed</c> node declares one; a manifest spells it in the step's
+/// <c>perform</c>, its point <c>work/perform</c>.
+/// </summary>
+/// <param name="Idempotent">The plugin deduplicates a redelivered idempotency key durably: the same key never makes a second external effect.</param>
+/// <param name="Reconcile">The plugin answers <c>work/reconcile</c>: what became of an attempt whose outcome is unknown.</param>
+/// <param name="Transient">
+/// The failure codes worth retrying, under the node's <see cref="NodeDeclaration.Retry"/>; any other code stops it for the person. A
+/// copy of what was set.
+/// </param>
+public sealed record NodePerform(bool Idempotent, bool Reconcile, IReadOnlyList<string> Transient)
+{
+    /// <summary>A failure code's shape (§D6's <c>unavailable</c>, <c>rate-limited</c>): lowercase letters, digits and dashes, at most 40.</summary>
+    public static readonly System.Text.RegularExpressions.Regex CodeShape =
+        new(@"^[a-z0-9][a-z0-9-]{0,39}\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private readonly IReadOnlyList<string> transient = Copied(Transient);
+
+    public IReadOnlyList<string> Transient { get => transient; init => transient = Copied(value); }
+
+    private static ImmutableArray<string> Copied(IReadOnlyList<string> codes) =>
+        ImmutableArray.CreateRange(codes ?? throw new ArgumentNullException(nameof(codes)));
+
+    public bool Equals(NodePerform? other) =>
+        other is not null && Idempotent == other.Idempotent && Reconcile == other.Reconcile
+        && Transient.SequenceEqual(other.Transient, StringComparer.Ordinal);
+
+    public override int GetHashCode() =>
+        Transient.Aggregate(HashCode.Combine(Idempotent, Reconcile), (hash, code) => HashCode.Combine(hash, StringComparer.Ordinal.GetHashCode(code)));
 }
 
 /// <summary>
@@ -235,6 +288,68 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// (FABRIC-NODE1c). A built-in kind's skip is the kind's, never a declaration's.
     /// </summary>
     public bool Skippable { get; init; } = true;
+
+    /// <summary>
+    /// How a plugin's own <c>performed</c> node is performed (FABRIC-UNIT1d, §D6), or null: none declared, which is dispatched and never
+    /// redelivered by itself. Every other node declares none.
+    /// </summary>
+    public NodePerform? Perform { get; init; }
+
+    private readonly IReadOnlyDictionary<string, string> options = NoPorts;
+
+    /// <summary>
+    /// Its adapter's options by name (§E2's <c>options</c>, as a human node's <c>brief</c>), each its JSON value's text as written: what
+    /// the adapter reads, never a condition (FABRIC-GRAPH1). A copy of what was set, in name order, so a graph's digest holds it.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Options { get => options; init => options = Frozen(value); }
+
+    /// <summary>
+    /// Made by decoding a D157 version (a sink, a person's task or a join, §E7), never authored: counted apart from a graph's 24-node
+    /// bound (FABRIC-GRAPH1, <see cref="NodeGraphs.MaxNodes"/>). A graph read from a person's file declares none.
+    /// </summary>
+    public bool Synthetic { get; init; }
+
+    /// <summary>
+    /// FABRIC-UNIT1d: two declarations are equal where they say the same, whoever built their collections, so a manifest's step is the
+    /// declaration built by hand and a graph compares declarations by what they say (GRAPH1's options and synthetic mark included).
+    /// </summary>
+    public bool Equals(NodeDeclaration? other) =>
+        other is not null
+        && string.Equals(Id, other.Id, StringComparison.Ordinal) && string.Equals(Kind, other.Kind, StringComparison.Ordinal)
+        && Version == other.Version && string.Equals(Reach, other.Reach, StringComparison.Ordinal)
+        && Same(Inputs, other.Inputs) && Same(Outputs, other.Outputs)
+        && string.Equals(Evidence, other.Evidence, StringComparison.Ordinal) && Equals(Retry, other.Retry)
+        && TimeoutSeconds == other.TimeoutSeconds && Rejectable == other.Rejectable && Skippable == other.Skippable
+        && Equals(Perform, other.Perform) && Same(Options, other.Options) && Synthetic == other.Synthetic;
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Id, StringComparer.Ordinal);
+        hash.Add(Kind, StringComparer.Ordinal);
+        hash.Add(Version);
+        hash.Add(Reach, StringComparer.Ordinal);
+        foreach (var (name, schema) in Inputs.Concat(Outputs).Concat(Options))
+        {
+            hash.Add(name, StringComparer.Ordinal);
+            hash.Add(schema, StringComparer.Ordinal);
+        }
+
+        hash.Add(Evidence, StringComparer.Ordinal);
+        hash.Add(Retry);
+        hash.Add(TimeoutSeconds);
+        hash.Add(Rejectable);
+        hash.Add(Skippable);
+        hash.Add(Perform);
+        hash.Add(Synthetic);
+        return hash.ToHashCode();
+    }
+
+    // Both are ordinal-sorted copies (FABRIC-NODE1d), so the same ports are in the same order.
+    private static bool Same(IReadOnlyDictionary<string, string> ports, IReadOnlyDictionary<string, string> others) =>
+        ports.Count == others.Count && ports.Zip(others).All(pair =>
+            string.Equals(pair.First.Key, pair.Second.Key, StringComparison.Ordinal)
+            && string.Equals(pair.First.Value, pair.Second.Value, StringComparison.Ordinal));
 }
 
 /// <summary>
@@ -265,7 +380,8 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
 /// <para><b>Skips</b> (§E2 leaves which nodes allow one to the node; FABRIC-NODE1's reading, D173's note): git's proofs
 /// (<c>claimed</c>, <c>handed</c>, <c>line</c>) are never skipped, since <i>held</i> and the cleanup rest on them and a skip would read
 /// as evidence; nor is <c>quest.close</c>, whose override is the person's own done (§E5), nor a join, whose members are skipped
-/// instead. Every other kind may be, and a plugin's own node unless its declaration forbids it (FABRIC-NODE1c).</para>
+/// instead, nor a <c>stop</c>, which is the run stopped (FABRIC-WORKFLOW2). Every other kind may be, and a plugin's own node unless
+/// its declaration forbids it (FABRIC-NODE1c).</para>
 /// </remarks>
 public static class NodeAuthorities
 {
@@ -283,6 +399,10 @@ public static class NodeAuthorities
         [NodeKinds.WaitUnit] = new(NodeKinds.WaitUnit, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, true, true, true),
         [NodeKinds.QuestClose] = new(NodeKinds.QuestClose, NodeReach.Performed, NodeSource.CloseDoor, NodeSource.CloseDoor, false, false, true, true),
         [NodeKinds.All] = new(NodeKinds.All, NodeReach.Observed, NodeSource.Members, NodeSource.Members, false, false, true, false),
+        // FABRIC-WORKFLOW2: D157's opinion never fails (a required one waits), and the person may pass it over, as its gate's
+        // unavailable reads as skipped today. A sink is the run stopped: never skipped, never the end, its receipt its path's.
+        [NodeKinds.Opinion] = new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, null, false, true, true, true),
+        [NodeKinds.Stop] = new(NodeKinds.Stop, NodeReach.Observed, NodeSource.Path, null, false, false, MayEnd: false, Evidenced: false),
     };
 
     /// <summary>
@@ -303,7 +423,10 @@ public static class NodeDeclarations
     /// What does not hold, by its field, or null: a kind this build does not know (<see cref="NodeRefusal.UnknownKind"/>), a reach not
     /// the kind's (a plugin's is observed or performed), a version below 1, a retry of fewer than one attempt or on a kind nothing can
     /// fail, a timeout not above zero, an output named <c>evidence</c> (the evidence port's name, <see cref="WireEnd.Evidence"/>), or a
-    /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's).
+    /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's). Then
+    /// FABRIC-UNIT1d's (§D6): a <c>perform</c> on any node but a plugin's performed one, a transient code not of
+    /// <see cref="NodePerform.CodeShape"/> or named twice, transient codes with no retry to take them, and a plugin's retry of more
+    /// than one attempt that nothing could take: a transient code, on a node that is idempotent or reconciled.
     /// </summary>
     public static string? Problem(NodeDeclaration node)
     {
@@ -319,6 +442,25 @@ public static class NodeDeclarations
         if (node.Outputs.ContainsKey(WireEnd.Evidence)) return "outputs";
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
+
+        // FABRIC-UNIT1d (§D6): how a plugin performs its node is that node's alone, and a retry or a transient code is refused where
+        // it could never be taken, as a retry on a kind nothing can fail is. Daoris's own performed kind's retry stays its kind's.
+        if (node.Perform is { } perform)
+        {
+            if (builtIn || node.Reach != NodeReach.Performed) return "perform";
+            if (perform.Transient.Any(code => code is null || !NodePerform.CodeShape.IsMatch(code))
+                || perform.Transient.Distinct(StringComparer.Ordinal).Count() != perform.Transient.Count
+                || (perform.Transient.Count > 0 && node.Retry is not { MaxAttempts: > 1 }))
+            {
+                return "transient";
+            }
+        }
+
+        if (!builtIn && node.Retry is { MaxAttempts: > 1 } && !(node.Perform is { Transient.Count: > 0 } taken && (taken.Idempotent || taken.Reconcile)))
+        {
+            return "retry";
+        }
+
         return null;
     }
 }

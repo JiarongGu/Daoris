@@ -362,7 +362,7 @@ public sealed class WireEvaluationTests
         Assert.Equal(["w2"], first.Of("x")!.Waiting);
 
         g.Move("x", new NodeMove(NodeStates.Ready, NodeCause.Daoris));
-        g.Move("x", new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = new NodeAcceptance(Unit, "tip-1", "graph-1", "x", 1, 1) });
+        g.Move("x", new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = new NodeAcceptance(Unit, "tip-1", "graph-1", "x", 1, 1), Scope = Base.Scope });
         g.Reach("x");
         g.Evaluate();
         Assert.Equal((NodeStates.Reached, NodeStates.Ready), (g.State("x"), g.State("y")));
@@ -376,19 +376,12 @@ public sealed class WireEvaluationTests
     [Fact]
     public void An_observed_built_in_takes_the_callers_git_reads()
     {
-        var landing = new LandedBranch("engine", "default", "feature/x", "main", "t1", "s1", "q1", null, Then)
-        {
-            Units = [Unit], Pushed = true, PushedTip = "t1", Plugin = "acme-pr",
-        };
-        var grown = new GrownBranch("engine", "default", "daoris/s1", "main", "f0", null, Then) { Unit = Unit };
-        var unit = Assert.Single(WorkInventory.Units(new InventoryFacts([grown], [landing], [], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
-        Assert.Equal(Unit, unit.Id);
         var g = new Graph([new NodeDeclaration("p", NodeKinds.Pushed, 1, NodeReach.Observed), Node("n")], [After("w1", "p", "n")])
         {
             Run = Base with
             {
                 Revisions = new Dictionary<string, string?> { [Unit] = "t1" },
-                Units = new Dictionary<string, WorkUnit> { [Unit] = unit },
+                Units = new Dictionary<string, WorkUnit> { [Unit] = PushedUnit() },
             },
         };
         g.Start(g.Evaluate(), "p");
@@ -399,5 +392,285 @@ public sealed class WireEvaluationTests
         g.Run = g.Run with { Git = new NodeGitReads(RemoteTip: _ => "t1") };
         g.Evaluate();
         Assert.Equal((NodeStates.Reached, NodeSource.PluginRef, NodeStates.Ready), (g.State("p"), g.Statuses["p"].By, g.State("n")));
+    }
+
+    /// <summary>
+    /// FABRIC-WORKFLOW2, canary 49: a decoded D157 version evaluates as its run did. A group skipped (its members, never its join) satisfies
+    /// what comes after it; a member failed fails the group under the group's policy (<c>wait</c>: the person's task), not the member's; and a
+    /// step's <c>stop</c> takes its sink while what follows waits.
+    /// </summary>
+    [Fact]
+    public void A_decoded_versions_skips_and_groups_evaluate_as_D157s_did()
+    {
+        static NamedStep Step(string id, string kind, params (string Name, object? Value)[] fields) =>
+            new(id, kind, [.. WorkflowKindTable.Of(kind)!.Fields.Select(field => new WorkflowSetting(field.Name, fields.FirstOrDefault(each => each.Name == field.Name) is { Name: not null } named ? named.Value : field.Default))]);
+
+        List<NamedStep> steps =
+        [
+            Step("work", WorkflowKinds.Work),
+            Step("land", WorkflowKinds.Landing, ("form", LandingForm.Merge), ("accept", "you")),
+            Step("lint", WorkflowKinds.Check, ("plugin", "acme.ci"), ("failed", "stop")),
+            Step("both", WorkflowKinds.All, ("failed", "wait"), ("steps", new List<NamedStep>
+            {
+                Step("unit", WorkflowKinds.Check, ("plugin", "acme.ci"), ("failed", "stop")),
+                Step("smoke", WorkflowKinds.Stage, ("plugin", "acme.deploy"), ("stage", "smoke"), ("start", "automatic")),
+            })),
+            Step("release", WorkflowKinds.Stage, ("plugin", "acme.deploy"), ("stage", "release"), ("start", "automatic")),
+        ];
+        var decoded = WorkflowGraphs.Graph(steps);
+        Graph Fresh()
+        {
+            var g = new Graph([.. decoded.Nodes], [.. decoded.Wires]);
+            g.Through("work");
+            g.Through("land");
+            return g;
+        }
+
+        // The group skipped: its members, so its join reaches on their skips and the next step is ready.
+        var skipped = Fresh();
+        skipped.Through("lint");
+        skipped.Evaluate();
+        foreach (var member in WorkflowGraphs.Skipped(steps, "both")) skipped.Skip(member);
+        skipped.Start(skipped.Evaluate(), "both");
+        skipped.Evaluate();
+        skipped.Evaluate();
+        Assert.Equal((NodeStates.Reached, NodeStates.Ready, NodeStates.Blocked), (skipped.State("both"), skipped.State("release"), skipped.State("both:failed")));
+
+        // A member failed: the group fails under its own policy, the person's task, whatever the member's `stop` says; release waits.
+        var failed = Fresh();
+        failed.Through("lint");
+        failed.Start(failed.Evaluate(), "unit");
+        failed.Fail("unit");
+        failed.Start(failed.Evaluate(), "both");
+        failed.Evaluate();
+        failed.Evaluate();
+        Assert.Equal((NodeStates.Failed, NodeStates.Ready, NodeStates.Blocked), (failed.State("both"), failed.State("both:failed"), failed.State("release")));
+        Assert.DoesNotContain(decoded.Wires, wire => wire.From!.Node == "unit" && wire.Kind == WireKinds.Failed);
+
+        // A step's `stop`: its sink is ready, and nothing after it starts.
+        var stopped = Fresh();
+        stopped.Start(stopped.Evaluate(), "lint");
+        stopped.Fail("lint");
+        stopped.Evaluate();
+        Assert.Equal((NodeStates.Ready, NodeStates.Blocked, NodeStates.Blocked), (stopped.State("lint:failed"), stopped.State("unit"), stopped.State("smoke")));
+    }
+
+    /// <summary>A branch unit whose landing a plugin answered it pushed at <c>t1</c>.</summary>
+    private static WorkUnit PushedUnit()
+    {
+        var landing = new LandedBranch("engine", "default", "feature/x", "main", "t1", "s1", "q1", null, Then)
+        {
+            Units = [Unit], Pushed = true, PushedTip = "t1", Plugin = "acme-pr",
+        };
+        var grown = new GrownBranch("engine", "default", "daoris/s1", "main", "f0", null, Then) { Unit = Unit };
+        var unit = Assert.Single(WorkInventory.Units(new InventoryFacts([grown], [landing], [], [], [], new HashSet<string>(), _ => false, Then.AddDays(1))));
+        Assert.Equal((Unit, WorkUnitKind.Branch), (unit.Id, unit.Kind));
+        return unit;
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1e, defect 1: a failure is a receipt in its attempt's run alone. In its own run it takes the <c>failed</c> path; kept
+    /// from run 1 and evaluated in run 2 of the same graph and revision, it takes none (and FABRIC-WIRE1f lapses it there). A run never
+    /// returns to an earlier one, so the own run is evaluated first.
+    /// </summary>
+    [Fact]
+    public void A_failure_in_one_run_is_no_receipt_in_another()
+    {
+        var g = new Graph([Node("d"), Node("roll", NodeKinds.Human)], [Failed("w1", "d", "roll")]);
+        g.Start(g.Evaluate(), "d");
+        g.Fail("d");
+
+        var own = g.Evaluate();
+        Assert.Equal(NodeStates.Ready, g.State("roll"));
+        Assert.StartsWith("fld-", Assert.Single(own.Of("roll")!.Receipts), StringComparison.Ordinal);
+
+        g.Run = Base with { Run = "run-2" };
+        var other = g.Evaluate();
+        Assert.Equal(NodeStates.Blocked, g.State("roll"));
+        Assert.Empty(other.Of("roll")!.Receipts);
+        Assert.Equal(["w1"], other.Of("roll")!.Waiting);
+    }
+
+    /// <summary>FABRIC-WIRE1e, defect 1: a rejection likewise is a receipt in its attempt's run alone.</summary>
+    [Fact]
+    public void A_rejection_in_one_run_is_no_receipt_in_another()
+    {
+        var g = new Graph([Node("d") with { Rejectable = true }, Node("redo", NodeKinds.Human)], [Rejected("w1", "d", "redo")]);
+        g.Start(g.Evaluate(), "d");
+        g.Reject("d");
+
+        var own = g.Evaluate();
+        Assert.Equal(NodeStates.Ready, g.State("redo"));
+        Assert.StartsWith("rej-", Assert.Single(own.Of("redo")!.Receipts), StringComparison.Ordinal);
+
+        g.Run = Base with { Run = "run-2" };
+        var other = g.Evaluate();
+        Assert.Equal(NodeStates.Blocked, g.State("redo"));
+        Assert.Empty(other.Of("redo")!.Receipts);
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1f: an attempt's outcome other than a reach is its own run's alone, so a new run lapses a failure kept from another
+    /// (<c>run-scope</c>), as it lapses a skip, keeping it as history; the node is judged again and started afresh in this run, its attempt
+    /// numbers still growing (WIRE1e's note) and its tries counted afresh.
+    /// </summary>
+    [Fact]
+    public void A_new_run_lapses_another_runs_failure_and_starts_the_node_afresh()
+    {
+        var g = new Graph([Node("d")], []);
+        g.Start(g.Evaluate(), "d");
+        g.Fail("d");
+
+        g.Run = Base with { Run = "run-2" };
+        var lapsed = g.Evaluate();
+        var move = Assert.Single(lapsed.Moves);
+        Assert.Equal(("d", NodeStates.Invalidated, WireWhy.RunScope), (move.Node, move.Move.To, move.Why));
+        Assert.Empty(lapsed.Starts);
+
+        var again = g.Evaluate();
+        var ready = Assert.Single(again.Moves);
+        Assert.Equal((NodeStates.Ready, "deploy-failed"), (ready.Move.To, ready.Moved.Cleared?.Code));
+        var start = Assert.Single(again.Starts);
+        Assert.Equal((2, "run-2"), (start.Move.Binding!.Attempt, start.Move.Scope!.Run));
+        g.Start(again, "d");
+        Assert.Equal((2, 1), (g.Statuses["d"].Attempt, g.Statuses["d"].Tries));
+    }
+
+    /// <summary>FABRIC-WIRE1f, the other direction: in its own run a failure Daoris will not retry is kept for the person, however often evaluated.</summary>
+    [Fact]
+    public void In_its_own_run_a_failure_is_kept_for_the_person()
+    {
+        var g = new Graph([Node("d")], []);
+        g.Start(g.Evaluate(), "d");
+        g.Fail("d");
+
+        for (var pass = 0; pass < 2; pass++)
+        {
+            var evaluated = g.Evaluate();
+            Assert.Empty(evaluated.Moves);
+            Assert.Empty(evaluated.Starts);
+        }
+
+        Assert.Equal(NodeStates.Failed, g.State("d"));
+    }
+
+    /// <summary>FABRIC-WIRE1f: a rejection kept from another run lapses the same way, and a reach is kept, its acceptance omitting the run (§E2).</summary>
+    [Fact]
+    public void A_new_run_lapses_another_runs_rejection_and_keeps_its_reach()
+    {
+        var g = new Graph([Node("d") with { Rejectable = true }, Node("e")], []);
+        var first = g.Evaluate();
+        g.Start(first, "d");
+        g.Start(first, "e");
+        g.Reject("d");
+        g.Reach("e");
+
+        g.Run = Base with { Run = "run-2" };
+        var lapsed = g.Evaluate();
+
+        Assert.Equal([("d", WireWhy.RunScope)], lapsed.Moves.Select(each => (each.Node, each.Why)));
+        Assert.Equal(NodeStates.Reached, g.State("e"));
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1e, defect 2: validity is judged before anything is observed. A push of tip 1 observed after the unit moved to tip 2 is
+    /// invalidated, never reached, so no receipt of tip 1 makes a node eligible on tip 2, and nothing starts on one in that evaluation.
+    /// </summary>
+    [Fact]
+    public void An_observation_on_a_moved_tip_gives_no_receipt_and_no_start()
+    {
+        var g = new Graph([new NodeDeclaration("p", NodeKinds.Pushed, 1, NodeReach.Observed), Node("n")], [After("w1", "p", "n")])
+        {
+            Run = Base with
+            {
+                Revisions = new Dictionary<string, string?> { [Unit] = "t1" },
+                Units = new Dictionary<string, WorkUnit> { [Unit] = PushedUnit() },
+                Git = new NodeGitReads(RemoteTip: _ => "t1"),
+            },
+        };
+        g.Start(g.Evaluate(), "p");
+
+        g.Run = g.Run with { Revisions = new Dictionary<string, string?> { [Unit] = "t2" } };
+        var moved = g.Evaluate();
+        var lapse = moved.Moves.Single(move => move.Node == "p");
+        Assert.Equal((NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Revision), (g.State("p"), lapse.Why, lapse.Detail));
+        Assert.Equal(NodeStates.Blocked, g.State("n"));
+        Assert.Empty(moved.Of("n")!.Receipts);
+        Assert.DoesNotContain(moved.Starts, start => start.Node == "n");
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1e, defect 3: an <c>all</c> join's outcome is its members' alone. A failure it consumes through its own <c>failed</c>
+    /// wire from a node that is no member is a condition of its start, never a member's failure.
+    /// </summary>
+    [Fact]
+    public void A_join_is_not_failed_by_a_failure_that_is_no_members()
+    {
+        var g = new Graph([Node("m"), Node("x"), Node("j", NodeKinds.All)], [After("w1", "m", "j"), Failed("w2", "x", "j")]);
+        var first = g.Evaluate();
+        g.Start(first, "m");
+        g.Start(first, "x");
+        g.Reach("m");
+        g.Fail("x");
+
+        var eligible = g.Evaluate();
+        Assert.Equal((NodeStates.Ready, 2), (g.State("j"), eligible.Of("j")!.Receipts.Count));
+        g.Start(eligible, "j");
+        var joined = g.Evaluate();
+        Assert.Equal((NodeStates.Reached, WireWhy.Members, (string?)null), (g.State("j"), joined.Moves.Single(move => move.Node == "j").Why, g.Statuses["j"].Code));
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1e, choice 7 changed: waiting capacity is apart from execution capacity. Parked <c>wait.unit</c> attempts, as many as the
+    /// performed limit, never queue a performed node; waits are bounded by their own limit.
+    /// </summary>
+    [Fact]
+    public void Parked_waits_do_not_queue_a_performed_node()
+    {
+        string[] waits = ["u1", "u2", "u3", "u4", "u5"];
+        var g = new Graph([.. waits.Select(id => Node(id, NodeKinds.WaitUnit)), Node("h", NodeKinds.Human), Node("p")], [After("w1", "h", "p")])
+        {
+            Run = Base with { WaitLimit = 4 },
+        };
+        var first = g.Evaluate();
+        Assert.Equal(["h", "u1", "u2", "u3", "u4"], first.Starts.Select(start => start.Node));
+        Assert.Equal(["u5"], first.Queued);
+
+        foreach (var start in first.Starts) g.Start(first, start.Node);
+        g.Reach("h");
+        var parked = g.Evaluate();
+        Assert.Equal(Base.Limit, waits.Count(id => g.State(id) == NodeStates.Active));
+        Assert.Equal(["p"], parked.Starts.Select(start => start.Node));
+        Assert.Equal(["u5"], parked.Queued);
+    }
+
+    /// <summary>
+    /// FABRIC-WIRE1e, choice 9 changed: the revisions are a complete snapshot. A unit a node acts on that they leave out, or a branch they
+    /// name with none, refuses the evaluation with its code and the units it names: nothing moves and nothing starts. A quest's is null by
+    /// design, and named so.
+    /// </summary>
+    [Fact]
+    public void A_missing_branch_revision_refuses_the_evaluation()
+    {
+        var g = new Graph([Node("a"), Node("b")], [After("w1", "a", "b")]) { Run = Base with { Revisions = new Dictionary<string, string?>() } };
+        var unnamed = g.Evaluate();
+        Assert.Equal((WireEvaluation.NoRevision, Unit), (unnamed.Refusal, Assert.Single(unnamed.Missing)));
+        Assert.Equal((0, 0, 0), (unnamed.Moves.Count, unnamed.Starts.Count, unnamed.Eligibility.Count));
+        Assert.Equal((NodeStates.Blocked, NodeStates.Blocked), (g.State("a"), g.State("b")));
+
+        g.Run = Base with
+        {
+            Revisions = new Dictionary<string, string?> { [Unit] = null },
+            Units = new Dictionary<string, WorkUnit> { [Unit] = PushedUnit() },
+        };
+        var none = g.Evaluate();
+        Assert.Equal((WireEvaluation.NoRevision, Unit), (none.Refusal, Assert.Single(none.Missing)));
+        Assert.Empty(none.Starts);
+
+        const string Quest = "quest:q1";
+        var quest = WireEvaluation.Evaluate([Node("c")], [], new Dictionary<string, NodeStatus> { ["c"] = NodeLifecycle.Start(Quest, "c") },
+            Base with { Revisions = new Dictionary<string, string?> { [Quest] = null } });
+        Assert.Null(quest.Refusal);
+        Assert.Null(Assert.Single(quest.Starts).Move.Binding!.SubjectRevision);
     }
 }

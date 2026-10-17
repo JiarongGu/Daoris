@@ -105,8 +105,10 @@ public sealed class WorkflowSelectionTests
             """);
 
         Assert.Equal(["feature", "docs"], config.WorkspaceWorkflows["work"].Kinds.Select(pair => pair.Key));
-        Assert.Contains("\"feature\": {", config.ToJson(), StringComparison.Ordinal);
-        Assert.True(config.ToJson().IndexOf("\"feature\"", StringComparison.Ordinal) < config.ToJson().IndexOf("\"docs\"", StringComparison.Ordinal));
+        // The choices as the writer writes them, the text they were read from apart (FABRIC-GRAPH1's review: an unedited file is its own bytes).
+        var written = (config with { Source = null }).ToJson();
+        Assert.Contains("\"feature\": {", written, StringComparison.Ordinal);
+        Assert.True(written.IndexOf("\"feature\"", StringComparison.Ordinal) < written.IndexOf("\"docs\"", StringComparison.Ordinal));
     }
 
     /// <summary>🔴 Each writer keeps the other's sections: a file the driver saves for another setting keeps both maps.</summary>
@@ -125,7 +127,9 @@ public sealed class WorkflowSelectionTests
 
     private static JsonObject Maps(DriverConfig config)
     {
-        var written = JsonNode.Parse(config.ToJson())!.AsObject();
+        // What the reader holds, as the writer writes it: the text it was read from apart, which the writer keeps what it did not read from
+        // (FABRIC-GRAPH1's review, finding 1).
+        var written = JsonNode.Parse((config with { Source = null }).ToJson())!.AsObject();
         return new JsonObject
         {
             ["workflows"] = written["workflows"]?.DeepClone() ?? new JsonObject(),
