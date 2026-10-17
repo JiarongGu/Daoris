@@ -46,6 +46,52 @@ repository.
   and the Git classes that reach the delete and the tidy.
 
 ## 2026-10-17 — The publish failed: the launcher compiled a driver file that named a type it did not carry (FABRIC-EVENT4)
+## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
+
+- **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node
+  never declared, a declared output at another schema, or none of a declared output, and `Apply` kept it. WIRE1a's save-time check
+  that a `data` wire's output schema is its input's would then say nothing about what a consumer received.
+- **Root cause:** `NodeLifecycle.Apply` judged a reach's evidence against the declaration (`no-evidence`) but compared its outputs
+  with nothing; NODE1d checked only the acceptance each port names.
+- **Fix:** D173's FABRIC-WIRE1b note, its NODE1e point: a reach exposes exactly its declared outputs, each at its declared schema;
+  an undeclared output (`undeclared-output`), another schema (`output-schema`) and a declared output missing (`no-output`) are
+  refused. NODE1d's own test now declares the output it reaches with.
+- **Verification:** the new test failed at run time on the three codes added without behaviour (an undeclared output was
+  accepted), then passed; the node suites pass, and the driver's fast half.
+
+## 2026-10-17 — A node declaration moved with its caller's collections, and a reach's ports could name another acceptance (FABRIC-NODE1d)
+
+- **Symptom:** found by FABRIC-NODE1c's hand-back before GRAPH1 digests declarations: a caller mutating the dictionaries or the
+  delay list it handed a `NodeDeclaration` changed the declaration afterwards, and could turn a declaration that passed its
+  `Problem` into one that would not (a negative delay); a reach whose evidence or output port named another acceptance was kept as
+  it was, so a consumer of that port would rest on, and be invalidated with, the wrong acceptance.
+- **Root cause:** NODE1c copied `NodeAcceptance`'s collections when set but not `NodeDeclaration`'s `Inputs` and `Outputs` or
+  `NodeRetry.DelaysSeconds`; and `Apply` checked a reach's evidence for its presence and schema only, never for the acceptance a
+  port names, which is what `NodeAcceptances.Invalidate` follows downstream.
+- **Fix:** D173's FABRIC-WIRE1a note, its NODE1d point: the declaration copies its inputs and outputs into ordinal-sorted immutable
+  dictionaries and the retry its delays into an immutable array, at construction and at `with`; a reach whose evidence or an output
+  names another acceptance is refused (`other-acceptance`), and a port naming none is kept naming the reach's own.
+- **Verification:** both tests failed at run time on the existing members (the mutated declaration read `acme/other@1`; the foreign
+  port was accepted), then passed; the node suites pass, and the driver's fast half.
+
+## 2026-10-17 — The node contract let a late outcome land on the wrong attempt and a dispatch be duplicated (FABRIC-NODE1c)
+
+- **Symptom:** a second maker's review of FABRIC-NODE1, before any wire read it: a failure of attempt 1 arriving during attempt 2
+  failed attempt 2; a dispatched attempt stopped while its answer was pending let attempt 2 start at once; a reach with an old
+  graph, revision or node version, or no evidence, was accepted; mutating a dictionary handed to an acceptance changed its issued
+  id; an observed built-in's acceptance could not carry its prerequisite receipts, so invalidating a QA wired before `handed`
+  missed `handed`.
+- **Root cause:** the lifecycle judged an outcome by the status's state alone. A failure carried no attempt; a reach was checked
+  for unit, node and attempt only, since the status held no expected binding; `Unreconciled` was set only on entering *unknown*,
+  so an attempt moved off *active* by a stop, a skip, a rejection or an invalidation was forgotten. `NodeAcceptance` kept the
+  caller's collections, and `Observe` built its acceptance from a graph digest and an attempt alone.
+- **Fix:** D173's FABRIC-NODE1c note: every outcome names its attempt; the start carries the evaluated binding and a reach must be
+  it, whole, with its kind's evidence; a dispatching kind's start sets `Unreconciled` until its authority's outcome or a
+  reconciliation; acceptances copy their collections; `Keep` refuses a second result per binding; `Apply` returns what it cleared;
+  `Observe` takes the evaluated binding.
+- **Verification:** each defect's test failed on the contract's surface without the behaviour, then passed; the three node suites
+  pass (55), and the driver's fast half.
+
 
 - **Symptom:** the merge gate's deployment rehearsal failed at its first check, `publish:desktop --service exits 0`, on main
   3b2e1fbc5, and again when re-run alone; the rehearsal keeps only the publish's last 12 lines, a stack's tail, so the cause

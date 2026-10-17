@@ -1449,7 +1449,9 @@ literally one, for every node.** What differs between kinds is only **evidence a
 | unknown → reached or failed | reconciliation establishes the outcome | the authority |
 | failed → ready | a declared retry: a `transient` code with attempts left (§D6), as a new attempt | Daoris, by the node's policy |
 | failed, rejected or stopped → ready | a new attempt the person asks for | the person |
-| ready, blocked or active → skipped | the person passes it over for this work, with their words (D157's skip) | the person, where the node allows a skip |
+| ready, blocked or active → skipped | the person passes it over for this graph and run, with their words (D157's skip) | the person, where the node allows a skip |
+| skipped → blocked | the person withdraws their skip; it is judged again | the person |
+| skipped → invalidated | its graph or run is another: a skip holds for its own alone | Daoris |
 | any live state → stopped | the person stops this node | the person |
 | any bound state → invalidated | its binding changed. History is kept, and unresolved attempts are superseded (§D3) | Daoris |
 | invalidated → blocked or ready | judged again on a fresh binding | Daoris |
@@ -1470,7 +1472,9 @@ literally one, for every node.** What differs between kinds is only **evidence a
   It produces no outputs, so a `data` wire from it is never satisfied.
 - **A `wait` wire targets `wait.unit` only.** It is that boundary adapter's input, not a special case in the lifecycle.
   Every other wire connects any nodes alike.
-- **An unknown outcome** is reconciled before any new attempt.
+- **An unknown outcome** is reconciled before any new attempt, and so is a dispatched attempt (a performed or waited node's)
+  moved off `active` before its authority answered. Every outcome names its attempt, and a reach must be the binding its
+  attempt started on (D173's FABRIC-NODE1c note).
 - **An acceptance binds** `{ unit, subjectRevision, graphDigest, nodeVersion, inputs, prerequisiteReceipts, attempt }`. A
   branch's revision is its repository's identity and its full tip.
 - **A changed dependency invalidates every acceptance downstream, transitively.** Old answers and resource receipts stay

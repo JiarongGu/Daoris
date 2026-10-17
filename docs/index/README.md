@@ -107,7 +107,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 56 | 993 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 62 | 1110 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 46 | 766 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 64 | 1015 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 65 | 1017 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/WorkingTree.cs` | 55 | 1122 |
 
 ### Desktop modules (`modules`)
@@ -172,7 +172,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 340 | 5984 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 144 | 2593 |
+| `tools/merge-branch.mjs` | 144 | 2596 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
@@ -208,6 +208,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
-| `docs/2026-10-16-fabric-events-design.md` | 166 | 2047 |
+| `docs/2026-10-16-fabric-events-design.md` | 167 | 2051 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 87 | 488 |
+| `src/Daoris.Desktop/README.md` | 87 | 491 |
