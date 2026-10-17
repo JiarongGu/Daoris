@@ -83,6 +83,13 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// here, so its opinion stays pending, never guessed.
     /// </summary>
     public IReadOnlyDictionary<string, OpinionGateState> Opinions { get; init; } = ImmutableDictionary<string, OpinionGateState>.Empty;
+
+    /// <summary>
+    /// The review's gate for each unit's work, by <see cref="WorkUnit.Id"/>, as <see cref="ReviewGate"/> read it: the caller's read, which a
+    /// <c>look</c> node observes only for the choice that turns the look off (FABRIC-WIRE1h, <see cref="LookNode"/>). A unit it leaves out
+    /// has no read, so its look stays the person's to answer.
+    /// </summary>
+    public IReadOnlyDictionary<string, ReviewGateState> Reviews { get; init; } = ImmutableDictionary<string, ReviewGateState>.Empty;
 }
 
 /// <summary>One trigger's firing (§E3): its wire started its target on one receipt. Its key is what the record writer keeps.</summary>
@@ -306,14 +313,17 @@ public static class WireEvaluation
         {
             var status = now[node.Id];
             if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
-                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind == NodeKinds.Opinion) || !run.Units.TryGetValue(status.Unit, out var unit))
+                || !(BuiltInNodes.Observed.Contains(node.Kind) || node.Kind is NodeKinds.Opinion or NodeKinds.Look) || !run.Units.TryGetValue(status.Unit, out var unit))
             {
                 continue;
             }
 
-            var observation = node.Kind == NodeKinds.Opinion
-                ? OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(status.Unit))
-                : BuiltInNodes.Observe(unit, node, binding, run.Git);
+            var observation = node.Kind switch
+            {
+                NodeKinds.Opinion => OpinionNode.Observe(unit, node, binding, run.Opinions.GetValueOrDefault(status.Unit)),
+                NodeKinds.Look => LookNode.Observe(unit, node, binding, run.Reviews.GetValueOrDefault(status.Unit)),
+                _ => BuiltInNodes.Observe(unit, node, binding, run.Git),
+            };
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs.

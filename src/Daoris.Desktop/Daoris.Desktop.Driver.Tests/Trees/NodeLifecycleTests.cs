@@ -330,6 +330,36 @@ public sealed class NodeLifecycleTests
         }
     }
 
+    /// <summary>
+    /// FABRIC-WIRE1h: the look's gate passes its attempt over where the choice turns it off, and the landing record passes a pull request over
+    /// where no branch or nothing landed: each by its own record alone, no words kept, the attempt current and the run the attempt's, and
+    /// never by the other's source or the person's.
+    /// </summary>
+    [Theory]
+    [InlineData(NodeKinds.Look, NodeSource.Review, NodeSource.Landing)]
+    [InlineData(NodeKinds.PullRequest, NodeSource.Landing, NodeSource.Review)]
+    public void Each_kinds_record_passes_its_attempt_over_by_its_own_source_alone(string kind, string own, string other)
+    {
+        var node = Declared(kind);
+        var active = At(NodeStates.Active) with { Scope = Run };
+        var skip = new NodeMove(NodeStates.Skipped, NodeCause.Authority) { Source = own, Attempt = 1, Scope = Run, Words = "made up" };
+
+        var skipped = Moved(node, active, skip);
+        Assert.Equal((NodeStates.Skipped, own, (string?)null, Run), (skipped.State, skipped.By, skipped.Words, skipped.Scope));
+        Assert.True(NodeLifecycle.Skips(skipped, Run));
+        Assert.False(NodeLifecycle.Skips(skipped, Run with { Run = "run-2" }));
+
+        foreach (var source in new[] { other, NodeSource.Person, NodeSource.Opinion, null })
+        {
+            Assert.Equal((kind, source, NodeRefusal.NotAuthority), (kind, source, NodeLifecycle.Apply(node, active, skip with { Source = source }).Refused));
+        }
+
+        Assert.Equal(NodeRefusal.StaleAttempt, NodeLifecycle.Apply(node, active, skip with { Attempt = 0 }).Refused);
+        Assert.Equal(NodeRefusal.NoScope, NodeLifecycle.Apply(node, active, skip with { Scope = null }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(node, active, skip with { Scope = Run with { Run = "run-2" } }).Refused);
+        Assert.Equal(NodeRefusal.NotCause, NodeLifecycle.Apply(node, At(NodeStates.Ready), skip).Refused);
+    }
+
     // ---- retries
 
     /// <summary>Daoris retries only a declared transient failure with attempts left; each start is a new attempt, counted.</summary>

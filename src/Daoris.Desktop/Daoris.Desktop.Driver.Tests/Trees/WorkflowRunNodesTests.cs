@@ -139,8 +139,8 @@ public sealed class WorkflowRunNodesTests : IDisposable
         {
             Review = Review(ReviewStates.NotYet) with { Verdict = new QuestReviewVerdictView(ReviewVerdicts.NotYet) { Words = "the button is off" } },
         }, "see", ["see"], [("work", Reached), ("see", NodeStates.Rejected), ("land", Blocked)], []),
-        ["the chain's choice turns the look off, which no node's authority passes over"] = new(Looked, facts => Done(facts) with { Review = Off },
-            "land", ["see"], [("work", Reached), ("see", Active), ("land", Blocked)], [(WorkflowRunDifferences.PassedByRule, "see")]),
+        ["the chain's choice turns the look off: its gate passes it over"] = new(Looked, facts => Done(facts) with { Review = Off },
+            "land", ["land"], [("work", Reached), ("see", NodeStates.Skipped), ("land", Active)], []),
         ["a look the chain's choice added for this work is no node of the version"] = new(Basic, facts => Done(facts) with
         {
             Review = Review(ReviewStates.NotShown, ReviewLevels.Chain),
@@ -222,8 +222,12 @@ public sealed class WorkflowRunNodesTests : IDisposable
                 PullRequestAskFailed = new PullRequestAskFailed("timeout", "example.pull-request", T.AddMinutes(1)),
             }],
         }, "pr", ["pr"], [("land", Reached), ("pr", NodeStates.Unknown)], []),
-        ["landed into the line: no pull request opens, which no node's authority passes over"] = new(Pulled, Accepted,
-            null, ["pr"], [("work", Reached), ("land", Reached), ("pr", Active)], [(WorkflowRunDifferences.PassedByRule, "pr")]),
+        ["nothing to land: no pull request opens, and the landing record passes it over"] = new(Pulled, facts => facts with
+        {
+            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed") with { Evidence = "no commits landed" }],
+        }, null, [], [("work", Reached), ("land", Reached), ("pr", NodeStates.Skipped)], []),
+        ["landed into the line: no pull request opens, and the landing record passes it over"] = new(Pulled, Accepted,
+            null, [], [("work", Reached), ("land", Reached), ("pr", NodeStates.Skipped)], []),
     };
 
     public static TheoryData<string> RunNames() => [.. Runs.Keys];
