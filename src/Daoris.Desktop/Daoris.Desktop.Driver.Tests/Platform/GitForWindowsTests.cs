@@ -117,16 +117,17 @@ public sealed class GitForWindowsTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         var info = new ProcessStartInfo(Lay());
-        var home = Path.Combine(_root, "home");
+        // The person's HOME, not a Daoris home: its bin is the launcher's folder, so it is spelled whole.
+        var userHome = Path.Combine(_root, "user");
         info.Environment.Remove("MSYSTEM");
-        info.Environment["HOME"] = home;
+        info.Environment["HOME"] = userHome;
         info.Environment["PATH"] = @"C:\a;C:\b";
 
         Assert.True(GitForWindows.Direct(info));
         Assert.Equal(Behind().Git, info.FileName);
         Assert.Equal("MINGW64", info.Environment["MSYSTEM"]);
-        Assert.Equal(home, info.Environment["HOME"]);
-        Assert.Equal(Folders() + Path.Combine(home, "bin") + @";C:\a;C:\b", info.Environment["PATH"]);
+        Assert.Equal(userHome, info.Environment["HOME"]);
+        Assert.Equal(Folders() + userHome + @"\bin;C:\a;C:\b", info.Environment["PATH"]);
     }
 
     // ── The launcher's variables (measured: FIX-LOG, GITSTART1) ─────────────────────────────────────
@@ -171,15 +172,15 @@ public sealed class GitForWindowsTests : IDisposable
     public void An_unset_HOME_is_HOMEDRIVE_and_HOMEPATH_where_that_is_a_folder()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var home = Path.Combine(_root, "home");
-        Directory.CreateDirectory(home);
-        var drive = Path.GetPathRoot(home)!.TrimEnd('\\');
+        var userHome = Path.Combine(_root, "user");
+        Directory.CreateDirectory(userHome);
+        var drive = Path.GetPathRoot(userHome)!.TrimEnd('\\');
 
         var child = GitForWindows.ChildEnvironment(Behind(),
-            Variables(("PATH", @"C:\a"), ("HOMEDRIVE", drive), ("HOMEPATH", home[drive.Length..]), ("USERPROFILE", @"C:\u")));
+            Variables(("PATH", @"C:\a"), ("HOMEDRIVE", drive), ("HOMEPATH", userHome[drive.Length..]), ("USERPROFILE", @"C:\u")));
 
-        Assert.Equal(home, child["HOME"]);
-        Assert.Equal(Folders() + Path.Combine(home, "bin") + @";C:\a", child["PATH"]);
+        Assert.Equal(userHome, child["HOME"]);
+        Assert.Equal(Folders() + userHome + @"\bin;C:\a", child["PATH"]);
     }
 
     [Fact]
