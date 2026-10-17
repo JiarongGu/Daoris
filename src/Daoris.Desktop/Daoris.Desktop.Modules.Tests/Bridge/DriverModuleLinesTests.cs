@@ -351,6 +351,28 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Equal(0, (await AnswerAsync(module, "WORK_STATE", new { })).GetProperty("held").GetArrayLength());
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1q: each held attempt carries, additively, the words the person may say of it: a plugin's three as they were, and on a
+    /// held close its recoveries and its stop, never a plugin's word, so the page offers a close only what the close takes.
+    /// </summary>
+    [Fact]
+    public void A_held_attempt_carries_the_words_offered_on_it_a_close_its_own()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var plugin = new HeldAttempt("unit:1", "deploy", 1, "acme.deploy", "acme.deploy/deploy", NodeStates.Unknown, "unknown");
+        var close = new HeldAttempt("quest:q7", "close", 1, QuestClosing.Sender, NodeKinds.QuestClose, NodeStates.Unknown, "no-acceptance")
+        {
+            Outcome = WorkStates.Reached, Words = HeldResolutions.Close,
+        };
+
+        var rows = JsonSerializer.SerializeToElement(LinesRoutes.HeldAnswer([plugin, close]), camel).EnumerateArray()
+            .Select(row => row.GetProperty("words").EnumerateArray().Select(word => word.GetString()).ToArray()).ToArray();
+
+        Assert.Equal(["happened", "did-not", "stop"], rows[0]);
+        Assert.Equal(["record", "resend", "stop"], rows[1]);
+        Assert.Contains("was closed", HeldAttempts.WhySaid(close), StringComparison.Ordinal);
+    }
+
     /// <summary>The route's module over a loop come up on <paramref name="service"/>, standing in for the service.</summary>
     private async Task<DriverModule> ModuleOverAsync(DiscardService service)
     {

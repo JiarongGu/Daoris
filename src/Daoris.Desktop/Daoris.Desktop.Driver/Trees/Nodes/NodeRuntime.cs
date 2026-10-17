@@ -299,6 +299,8 @@ public sealed class NodeRuntime(
             done.AddRange(_performer.Hear(port.TakeSteps(), Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
             // FABRIC-PERFORM1g: the person's word on a held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(_performer.Resolve(Declared));
+            // FABRIC-CLOSE1q: the person's word on a held close, a close's recovery, before the closer sends any close again below.
+            if (_closer is not null) done.AddRange(_closer.Resolve(Declared));
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
 
@@ -405,8 +407,9 @@ public sealed class NodeRuntime(
         var judged = QuestClosing.Judge(quest, _quests);
         if (judged.Overridden)
         {
-            // Done by its chain's close: reached on that close, never sent. Done otherwise is the person's, which Settle reads.
-            return QuestClosing.Naming(records.All().Records, quest.Id).FirstOrDefault(Closed) is { } chained
+            // Done by its chain's close: reached on that close, never sent. Done otherwise is the person's, which Settle reads. FABRIC-CLOSE1q:
+            // only a close naming the quest at the submission it stands on now is that close; one kept for an earlier submission is not.
+            return QuestClosing.Naming(records.All().Records, quest).FirstOrDefault(Closed) is { } chained
                 ? _closer.ReachByChain(node, start, evaluated, chained)
                 : null;
         }
@@ -480,8 +483,14 @@ public sealed class NodeRuntime(
         }
 
         if (quest.Status != "Done" || !QuestClosing.Judge(quest, _quests).Overridden) return;
-        var naming = QuestClosing.Naming(all, quest.Id).ToList();
-        if (naming.Any(attempt => Closed(attempt) || attempt.State is AttemptStates.Recorded or AttemptStates.Unknown or AttemptStates.Sent)) return;
+        // FABRIC-CLOSE1q: a close of the submission the quest stands on now that closed it, still waits for its answer, or is held with no
+        // refusal kept (its door may have closed it) is the door's, never the person's; one kept for an earlier submission speaks for none.
+        var naming = QuestClosing.Naming(all, quest).ToList();
+        if (naming.Any(attempt => Closed(attempt) || attempt.State is AttemptStates.Recorded or AttemptStates.Unknown or AttemptStates.Sent
+                                  || attempt is { State: AttemptStates.Held, Outcome: not WorkStates.Failed }))
+        {
+            return;
+        }
 
         // §E5's override: the person closed every quest the close would close. Its pending nodes are stopped, an attempt in flight still reconciled.
         var (_, stopped) = records.Edit<List<string>>(unit, record =>
