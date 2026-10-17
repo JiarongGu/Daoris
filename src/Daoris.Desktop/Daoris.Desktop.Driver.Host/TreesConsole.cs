@@ -15,18 +15,7 @@ namespace Daoris.Driver.Host;
 internal static class TreesConsole
 {
     /// <summary>One branch of the clean-up's list, in words: whose, which, and what it holds.</summary>
-    internal static string Describe(SweepItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
-    {
-        SweepKind.Empty => $"nothing beyond `{item.Where}`",
-        SweepKind.Landed => item.HeldBy is { } held ? held.Said : $"landed{(item.Where is { } where ? $" on `{where}`" : "")}",
-        SweepKind.Unlanded => item.Commits > 0
-            ? $"{item.Commits} commit(s) no branch of yours holds"
-            : $"unlanded — {item.Detail}",
-        SweepKind.Carried => $"{item.Commits} commit(s) `{item.Where}`'s completed pull request carried",
-        SweepKind.Dirty => $"its tree has uncommitted work ({item.Detail})",
-        SweepKind.InUse => "a session still running or waiting holds its tree",
-        _ => item.Kind,
-    };
+    internal static string Describe(SweepItem item) => TreesWords.Describe(item);
 
     /// <summary>
     /// What a press changed, told to the open windows (STATEHUB1e, D169 point 8): this process has no bus of the desktop's, so it leaves
@@ -124,20 +113,9 @@ internal static class TreesConsole
     /// </summary>
     internal static async Task FollowMovedLinesAsync(ServiceClient service, string home, MachineLog? log)
     {
-        var due = RegistryFollowing.Due(home);
-        if (due.Count == 0) return;
-        if (log is not null) service.RegistryFollowed += followed => SessionLog.WriteFollowed(log, followed);
-        try
-        {
-            var config = DriverConfig.Load(DriverConfig.ResolvePath());
-            var report = await RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), due).ConfigureAwait(false);
-            foreach (var line in report.Followed.Select(RegistrationFollow.EventLine).OfType<string>()) Console.WriteLine($"  {line}");
-            if (report.Refresh is { } refresh) Console.WriteLine($"  registry  the index was not read again after registering: {refresh}");
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
-        {
-            Console.Error.WriteLine($"trees: the registry did not follow the lines this moved ({error.Message}); the driver follows them at its next look.");
-        }
+        var followed = await TreesWords.FollowMovedAsync(service, home, () => DriverConfig.Load(DriverConfig.ResolvePath()), log).ConfigureAwait(false);
+        foreach (var line in followed.Out) Console.WriteLine(line);
+        foreach (var line in followed.Error) Console.Error.WriteLine(line);
     }
 
     /// <param name="log">This host's machine log: a landing's and a hand-off's plugin frame is written there (PLUGUI1d).</param>
@@ -187,9 +165,10 @@ internal static class TreesConsole
                     ? await trees.RemoveAsync(named, force).ConfigureAwait(false)
                     : await RemoveSessionBranchAsync(trees, named, Option(args, "--repository"), force).ConfigureAwait(false);
                 Told(home, LooksLikePath(named) ? PressesTold.DiscardTree : PressesTold.DiscardBranch);
-                Console.WriteLine($"trees: {removal.Message}");
-                // A refusal that preserves work is policy doing its job, not a tool error.
-                return removal.Removed ? 0 : 1;
+                // A refusal that preserves work is policy doing its job, not a tool error. The words are the routes' too (RPC1b3).
+                var said = TreesWords.Remove(removal);
+                said.Print(Console.Out, Console.Error);
+                return said.Code;
             }
 
             // The clean-up (WSR3, D88): the list first, and with --yes the press — a workspace's Branches tab is the
@@ -246,24 +225,10 @@ internal static class TreesConsole
 
                 var done = await trees.CleanAsync(repositories, inUse).ConfigureAwait(false);
                 Told(home, PressesTold.Sweep);
-                foreach (var result in done.Sessions)
-                {
-                    // A removal on content says where its commits stay (SQUASHTIDY1c); every other removal says nothing more.
-                    Console.WriteLine($"  {(result.Removed ? "removed" : "kept   ")} {Describe(result.Item)}"
-                        + ((result.Removed && result.Item.HeldBy is null) || result.Message == "kept" ? "" : $" — {result.Message}"));
-                }
-
-                foreach (var result in done.Landed)
-                {
-                    Console.WriteLine($"  {(result.Removed ? "removed" : "kept   ")} {LandedWords.Describe(result.Item)}"
-                        + (result.Removed || result.Message == "kept" ? "" : $" — {result.Message}"));
-                }
-
-                // Folders trees left behind where something held them open, tried again.
-                foreach (var folder in done.Folders ?? []) Console.WriteLine($"  {folder}");
-                var total = done.Sessions.Count + done.Landed.Count;
-                Console.WriteLine($"trees: removed {done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed)} of {total}.");
-                return 0;
+                // The words are the route's too (RPC1b3): each removal or keeping, the folders left, the count.
+                var said = TreesWords.Clean(done);
+                said.Print(Console.Out, Console.Error);
+                return said.Code;
             }
 
             // Bringing repositories up to date after a pull request merged (WSR6, D109): the list first — it fetches
@@ -318,25 +283,12 @@ internal static class TreesConsole
                         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                         .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope).ConfigureAwait(false);
                 Told(home, PressesTold.TreesSync);
-                foreach (var line in SyncWords.NotFetched([.. done.Lines.Select(result => result.Pull)], DateTimeOffset.UtcNow)) Console.WriteLine(line);
-                foreach (var result in done.Lines) Console.WriteLine($"  {(result.Moved ? "moved " : "stayed")}  {result.Pull.Repository}  {result.Message}");
-                foreach (var result in done.Rebases) Console.WriteLine($"  {(result.Replayed ? "moved " : "stayed")}  {result.Item.Repository}  {result.Message}");
-                foreach (var result in done.Deletes)
-                {
-                    Console.WriteLine($"  {(result.Removed ? "removed" : "kept   ")} {LandedWords.Describe(result.Item)}"
-                        + (result.Removed || result.Message == "kept" ? "" : $" — {result.Message}"));
-                }
-
-                if (SyncWords.Apart(done.Apart) is { } untouched) Console.WriteLine(untouched);
-                await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
-
-                // 1 where something the proofs cleared did not happen: a conflict, or a branch or line that moved since.
-                var missed = done.Lines.Count(result => result.Pull.Moves && !result.Moved)
-                             + done.Rebases.Count(result => result.Item.Replays && !result.Replayed)
-                             + done.Deletes.Count(result => result.Item.Removable && !result.Removed);
-                Console.WriteLine($"trees: {done.Lines.Count(r => r.Moved)} line(s) moved, {done.Rebases.Count(r => r.Replayed)} branch(es) replayed, "
-                    + $"{done.Deletes.Count(r => r.Removed)} removed." + (missed > 0 ? $" {missed} did not happen, each said above." : ""));
-                return missed > 0 ? 1 : 0;
+                // The words are the route's too (RPC1b3): what was not fetched, each row, what was left apart, the registry's
+                // following of the lines moved, and the count, 1 where something the proofs cleared did not happen.
+                var followed = await TreesWords.FollowMovedAsync(service, home, () => DriverConfig.Load(DriverConfig.ResolvePath()), log).ConfigureAwait(false);
+                var said = TreesWords.Sync(done, DateTimeOffset.UtcNow, followed);
+                said.Print(Console.Out, Console.Error);
+                return said.Code;
             }
 
             // A line of work's one Accept, or an ask's (ACCEPTALL1e, D167's amendment, D50): the page's `LAND_ENTRY` and `LAND_ASK` from a
@@ -488,7 +440,9 @@ internal static class TreesConsole
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins).ConfigureAwait(false);
                 Told(home, PressesTold.Land, session);
-                Console.WriteLine($"trees: {landed.Message}");
+                // The plugin's lines were said as they came; the landing's sentence and the exit are the route's words too (RPC1b3).
+                var said = TreesWords.Land(landed, []);
+                said.Print(Console.Out, Console.Error);
                 if (log is not null && LandingGateWords.Held(session, landing.Owner(tree), gate, landed, ReviewDoors.Terminal) is { } held)
                 {
                     SessionLog.WriteLanding(log, held);
@@ -497,7 +451,7 @@ internal static class TreesConsole
                 if (landed.Landed) events.Keep(session, LandingRules.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
                 await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
                 // 1 where the step the rule asked for did not happen: refused, or the plugin did not push.
-                return landed.Landed && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1;
+                return said.Code;
             }
 
             // A branch a landing made, handed to a landing plugin afterwards (WSR5b): the review's *hand it to*,
@@ -518,8 +472,7 @@ internal static class TreesConsole
                 var repositories = found.Select(entry => entry.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 if (repositories.Count > 1)
                 {
-                    Console.Error.WriteLine($"trees: `{named}` names a landed branch in {string.Join(", ", repositories.Select(r => $"`{r}`"))} — "
-                        + "say which with `--repository <name>`.");
+                    Console.Error.WriteLine($"trees: {TreesWords.NamesSeveral(named, repositories)}");
                     return 1;
                 }
 
@@ -529,7 +482,7 @@ internal static class TreesConsole
                     .FirstOrDefault(row => string.Equals(row.Repository, entry.Repository, StringComparison.OrdinalIgnoreCase))?.Root;
                 if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
                 {
-                    Console.Error.WriteLine($"trees: `{entry.Repository}` has no checkout on this machine, so there is no `{entry.Branch}` here to hand on.");
+                    Console.Error.WriteLine($"trees: {TreesWords.HandNoCheckout(entry.Repository, entry.Branch)}");
                     return 1;
                 }
 
@@ -545,7 +498,9 @@ internal static class TreesConsole
                 using var waiting = LandingHoldNotice.Told(now => { if (now) Console.WriteLine(WaitingBehind); });
                 var handed = await handing.HandAsync(root, entry, plugin).ConfigureAwait(false);
                 Told(home, PressesTold.HandOff, entry.Session);
-                Console.WriteLine($"trees: {handed.Message}");
+                // The plugin's lines were said as they came; the hand-off's sentence and the exit are the route's words too (RPC1b3).
+                var said = TreesWords.Hand(handed, []);
+                said.Print(Console.Out, Console.Error);
                 // Kept where the conversation is kept, as the review's press keeps it (D100).
                 if (handed.Plugin is not null)
                 {
@@ -554,7 +509,7 @@ internal static class TreesConsole
                 }
 
                 // 1 where the branch was not pushed: refused, or the plugin's step did not complete.
-                return handed.Handed ? 0 : 1;
+                return said.Code;
             }
 
             // Ask again (PLUGHOOK1c, D148 point 2, design §2.1 occasion 4): the review's press, from a terminal (D50). The landed

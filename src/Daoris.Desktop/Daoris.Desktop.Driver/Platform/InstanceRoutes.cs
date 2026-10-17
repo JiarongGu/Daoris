@@ -31,7 +31,8 @@ public sealed record InstanceRoute(string Module, string Route, RouteClass Class
 /// 🔴 Every one is the person's (D171's RPC1a note: a landing is the person's yes, a discard and a sweep their deletes, and
 /// <c>TREES_SYNC</c> moves their lines and branches), so each waits for RPC1c, which confirms a person's press in the window. A
 /// route the census opens fails <c>PipeCensusTests</c> here, naming the verb that then owes its client path: its words from the
-/// route's answer, held to the alone path's case for case (§7.3).
+/// route's answer, held to the alone path's case for case (§7.3). RPC1b3 built the words: each route answers them as <c>said</c>,
+/// which <see cref="TreesSaid.Words"/> prints and <see cref="TreesWords"/> builds for the alone path and the route alike.
 /// </remarks>
 public static class TreesRoutes
 {
