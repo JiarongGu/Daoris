@@ -247,9 +247,9 @@ internal sealed class AutoTidies(
             if (await HeldHereAsync(entry.Branch, entry.Held).ConfigureAwait(false)) entries.Add(entry);
         }
 
-        // FABRIC-END2d: END4a's review judged the recorded branches the keeper could not prove here again, by the press's own judgement,
-        // once per tip and line commit. The keeper proves them now (an older squash with no unit through its landing, a landing inside
-        // another, EndBy.Inside), so the candidates are the kept facts alone, the first pass as every later one.
+        // FABRIC-END2d: no recorded branch without a kept fact is judged here. The keeper proves what END4a's review fallback judged
+        // (a landing inside another, EndBy.Inside; a session branch only such a landing holds, through it), so the candidates are the
+        // kept facts alone, the first pass as every later one.
         var branches = held.Select(branch => $"{repository}:{branch}").ToHashSet(StringComparer.Ordinal);
         if (branches.Count == 0 && entries.Count == 0) return Pass([]);
 

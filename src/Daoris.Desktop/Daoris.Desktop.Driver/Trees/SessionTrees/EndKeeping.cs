@@ -15,7 +15,8 @@ namespace Daoris.Driver;
 /// across processes by their lock (<see cref="RecordLock"/>) whoever makes them.</para>
 ///
 /// <para><b>A fact lapses on a standing branch only</b> (canary 7): its tip moved, its cycle names another line, its line's form no longer
-/// descends from the commit it held at (rewound or replaced), or the repository at the path is another. It is then judged again: held
+/// descends from the commit it held at (rewound or replaced), or the repository at the path is another; one that rests on a landing's end
+/// (<see cref="EndBy.Inside"/>, <see cref="EndBy.Landed"/>) also lapses once that end no longer holds this pass (FABRIC-END2d). It is then judged again: held
 /// anew, or cleared, which a reader reads as not known. A trace is never judged again. A fact that still holds is not written again, so a
 /// look that changes nothing writes nothing.</para>
 ///

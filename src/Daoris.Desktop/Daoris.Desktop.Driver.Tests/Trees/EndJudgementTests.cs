@@ -208,7 +208,8 @@ public sealed class EndJudgementTests
         var verdict = EndJudgement.Judge(EndCycle.Recorded(Landing()), Branch(), Facts() with { Judgeable = true, Within = Host() });
 
         Assert.Equal((EndState.Ended, EndBy.Inside, "feature/q2-more"), (verdict.State, verdict.By, verdict.Where));
-        Assert.Contains("feature/q2-more", verdict.Evidence, StringComparison.Ordinal);
+        // The inventory says the kept fact as the judgement said it.
+        Assert.StartsWith(WorkInventory.ProofSaid(EndBy.Inside, "feature/q2-more"), verdict.Evidence, StringComparison.Ordinal);
     }
 
     /// <summary>

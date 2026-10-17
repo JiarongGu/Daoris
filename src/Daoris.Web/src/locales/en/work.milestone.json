@@ -13,6 +13,7 @@
   "work.milestone.by.pull-request": "its pull request completed and its merge commit is on {{on}}",
   "work.milestone.by.landed": "its work is on {{on}}, which the line holds",
   "work.milestone.by.carried": "a completed pull request carried it and its merge commit is on the line",
+  "work.milestone.by.inside": "it is inside {{on}}, whose work is on the line",
   "work.milestone.result.label": "Result",
   "work.milestone.result.none": "None kept yet",
   "work.milestone.result.kept": "Kept: {{what}}",

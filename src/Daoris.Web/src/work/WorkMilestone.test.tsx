@@ -93,6 +93,16 @@ describe('the milestone on the work’s foot', () => {
     expect(i18n.t('work.milestone.end.dropped', { said: 'x' })).not.toBe(i18n.t('work.milestone.end.dropped', { said: 'x', lng: 'en' }));
   });
 
+  // FABRIC-END2d: a landing ended inside another landing is said by the page's words for its code, in both languages.
+  it('says an end inside another landing in the page’s words, never the driver’s sentence', async () => {
+    const inside = unit({ end: { state: 'ended', by: 'inside', on: 'feature/q2-more', said: 'it is inside `feature/q2-more`, whose work is on the line' } });
+    render(<WorkMilestone unit={inside} />);
+    const region = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(region).toHaveTextContent('Reached: it is inside feature/q2-more, whose work is on the line');
+    await i18n.changeLanguage('zh');
+    expect(i18n.t('work.milestone.by.inside', { on: 'x' })).not.toBe(i18n.t('work.milestone.by.inside', { on: 'x', lng: 'en' }));
+  });
+
   it('is said in Chinese by the same facts', async () => {
     await i18n.changeLanguage('zh');
     render(<WorkMilestone unit={unit({
