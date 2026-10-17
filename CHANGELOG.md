@@ -7,7 +7,8 @@ with the version and date at release.
 
 - A plugin's manifest may declare `steps`, each one step of a piece of work as Daoris's own steps are (what it takes and makes,
   how it is retried, whether it is performed and how), and the `resources` they create with who cleans them. Daoris reads and
-  checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet.
+  checks them, and a broken declaration keeps the plugin from loading, saying which field is wrong; none is run yet. A plugin
+  with a step Daoris asks it to perform must list `work/perform` among its hook points, or it does not load.
 - Each piece of work says where it has got to: a session's foot shows its *End* (结束), *Result* (成果), *Clean-up* (清理) and
   *Recovery* (找回); *What needs you* lists work whose clean-up waits on you; *Branches* gives each tidied branch a line; and
   Ask Daoris can answer where your work has got to.

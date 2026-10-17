@@ -132,7 +132,15 @@ repository names one, and a scratch run redirects it with everything else.
   delaysSeconds }`, `timeoutSeconds`, `skippable`, `rejectable`, and on a performed step `perform: { point: "work/perform",
   idempotent, reconcile: "work/reconcile", transient: [codes] }`. **`resources`** names what the steps create, each
   `{ schema, role: "temporary" | "result", cleanup: "work/cleanup" }`. A problem in either refuses the plugin, naming the field.
-  Reading a manifest starts nothing; the fabric events design's §D6 and §D9 are their contract.
+  Reading a manifest starts nothing; the fabric events design's §D6 and §D9 are their contract. *(FABRIC-PERFORM1a)* A
+  performed step is asked at `work/perform`, so its manifest's `hooks.points` must name that point, or the plugin is refused.
+
+- *(D173, FABRIC-PERFORM1a)* **The work wire.** `hooks.points` may name `work/watch` (which units await the plugin's steps,
+  the whole set each time it changes, with the process's generation and `resync`), `work/step` (the plugin's event, a
+  notification it sends unasked) and `work/perform` (one attempt, acknowledged on receipt), and the handshake may name the
+  capability `work.perform@1`. Only the loop holding the home's lease starts such a process, while a unit awaits one of its
+  steps, and restarts an exit it did not ask for after 1, 5 and 15 minutes. `WorkWire` is the messages' one writer and
+  reader; D173's FABRIC-PERFORM1a note is its contract as built.
 
 A plugin with only `harnesses` never runs anything — it is Yaorin's `definitions: true`, and most
 plugins will be that.
