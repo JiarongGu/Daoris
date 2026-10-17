@@ -136,20 +136,20 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 82 | 1481 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 105 | 1953 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 150 | 2695 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 121 | 2220 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 178 | 3180 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 107 | 1855 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 53 | 645 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 140 | 2399 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 112 | 1944 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 55 | 667 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 143 | 2448 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 47 | 817 |
-| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 85 | 1745 |
+| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 88 | 1785 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
-| `src/Daoris.Service/README.md` | 86 | 772 |
+| `src/Daoris.Service/README.md` | 87 | 773 |
 
 ### CLI (`cli`)
 

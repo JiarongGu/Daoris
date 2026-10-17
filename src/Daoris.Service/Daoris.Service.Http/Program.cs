@@ -719,6 +719,8 @@ if (mode == ServiceMode.Local)
             }).ToList())
         {
             Session = body.Session,
+            // Half named, it arrives blank and is refused by the exchange naming the field (FABRIC-CLOSE1e).
+            Submission = body.Submission is { } asked ? new QuestOperationRef(asked.Machine ?? "", asked.Sequence ?? 0) : null,
         };
         var outcome = await s.Exchange.EvidenceAsync(id, verdict, DateTimeOffset.UtcNow, ct);
         return outcome.Refusal switch
@@ -729,6 +731,49 @@ if (mode == ServiceMode.Local)
             // Nothing waits on evidence: a state, the lock's own shape.
             QuestRespondRefusal.NotAwaitingEvidence => Results.Conflict(new ErrorResponse(outcome.Message)),
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
+    });
+
+    // A closure graph's bind and its close (FABRIC-CLOSE1a, the fabric events design §E5): the driver binds a taken quest to the
+    // graph that closes it at its run's first start, and closes every quest of the chain at the graph's end, in one transaction
+    // under the unit's record lock, which the driver holds. LOCAL mode only, as the evidence door is: the graph and its lock are
+    // the machine's, and the Done travels from there as an operation (D68). No connector tool reaches either: an agent's result
+    // is its `ready`, through respond.
+    app.MapPost("/api/quests/{id}/bind", async (
+        ComposedService s, HttpContext http, string id, BindQuestRequest body, CancellationToken ct) =>
+    {
+        var outcome = await s.Exchange.BindAsync(id, body.Graph, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(
+                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // Not taken, already submitted, another graph's, or a take this machine lost: a state, the lock's own shape.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
+
+    app.MapPost("/api/quests/{id}/close", async (
+        ComposedService s, HttpContext http, string id, CloseQuestRequest body, CancellationToken ct) =>
+    {
+        // A half-named submission arrives blank and is refused by the exchange, which says what a close names.
+        var named = (body.Quests ?? [])
+            .Select(q => (q?.Id ?? "", new QuestOperationRef(q?.Machine ?? "", q?.Sequence ?? 0)))
+            .ToList();
+        var outcome = await s.Exchange.CloseAsync(id, body.Key, body.Token, named, DateTimeOffset.UtcNow, ct);
+        if (outcome.Refusal == QuestCloseRefusal.None)
+        {
+            var answered = new List<QuestResponse>();
+            foreach (var quest in outcome.Quests) answered.Add(await QuestAnswerAsync(s, http, quest, ct));
+            return Results.Ok(new QuestCloseResponse(answered, outcome.Message));
+        }
+
+        return outcome.Refusal switch
+        {
+            QuestCloseRefusal.Malformed => Results.BadRequest(new ErrorResponse(outcome.Message)),
+            QuestCloseRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // A check that refused on a quest's state: stale, held, closed, unbound or not this machine's. Nothing was written.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
         };
     });
 
@@ -2159,7 +2204,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
         ? new QuestEvidenceVerdictWire(
             read.Commit, read.How, read.Session,
             read.Items.Select(i => (QuestEvidenceReadWire?)new QuestEvidenceReadWire(i.Requirement, i.Path, i.Gate, i.Result, i.Object, i.Changed, i.Spelled)).ToList(),
-            read.At, read.Machine)
+            read.At, read.Machine,
+            read.Submission is { } asked ? new QuestSubmissionRefWire(asked.Machine, asked.Sequence) : null)
         : null,
     // The review on the record (REVIEWENV1b): names, words and codes, which every door may answer; a local set-up's address is
     // absent where it came from another machine, as the wire left it.
@@ -2173,7 +2219,10 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
         : q.Verdicts.Select(v => new QuestReviewVerdictWire(
             v.Said, v.SetUp is { } named ? new QuestSetUpRefWire(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList(),
     // The note's parts (QUESTCLOSE1b1): a code and someone's words, as the note already travels to every door, uncleaned.
-    NoteParts.Element(q.NoteParts));
+    NoteParts.Element(q.NoteParts),
+    // A closure graph's digest and its taker's submission (FABRIC-CLOSE1a): names and words, which every door may answer.
+    q.Closure,
+    q.Submission is { } submitted ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note) : null);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item
