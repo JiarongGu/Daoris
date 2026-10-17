@@ -205,6 +205,8 @@ public sealed class HelpRoutes(DriverContext context)
         // WORK_STATE route read it; null where the service or git could not be read, and the room says so.
         IReadOnlyList<WorkMilestone>? work = null;
         var workUnread = new List<string>();
+        // Daoris's own recoveries no unit names (RECOVERYASK1, CLEANUP1), read in the same pass.
+        IReadOnlyList<InventoryEntry> workRecovery = [];
         try
         {
             var (checkouts, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, null, cancellationToken).ConfigureAwait(false);
@@ -214,7 +216,7 @@ public sealed class HelpRoutes(DriverContext context)
                 if (!string.IsNullOrWhiteSpace(root)) roots.TryAdd(repository, root);
             }
 
-            work = await WorkInventories.MilestonesAsync(_loop.Home, roots, inUse, workUnread, cancellationToken).ConfigureAwait(false);
+            (work, workRecovery) = await WorkInventories.ReadAsync(_loop.Home, roots, inUse, workUnread, cancellationToken).ConfigureAwait(false);
         }
         catch (DriverException)
         {
@@ -239,7 +241,7 @@ public sealed class HelpRoutes(DriverContext context)
             // The named workflows saved here, so each repository's Workflow column names the version it follows (WORKFLOW1h-c).
             WorkflowStore.List(_loop.Home),
             // What the person approved of the servers plugins offer it (HELPPLUG1a's tightening, D170's note).
-            HelpGrants.Read(_loop.Home, plugins), work, workUnread);
+            HelpGrants.Read(_loop.Home, plugins), work, workUnread, workRecovery);
     }
 
     /// <summary>

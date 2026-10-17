@@ -73,6 +73,9 @@ public sealed record InventoryEntry(string Unit, string Kind, string Resource, s
     /// <summary>A recovery's purge date: retained until then.</summary>
     public DateTimeOffset? Until { get; init; }
 
+    /// <summary>The repository a recovery belongs to (RECOVERYVIEW1), so a workspace's page lists its own; null for an entry that is no recovery.</summary>
+    public string? Repository { get; init; }
+
     /// <summary>A removal's proof, where its record kept one.</summary>
     public string? Proof { get; init; }
 }
@@ -359,7 +362,7 @@ public static partial class WorkInventory
             false => $"no branch or tag of yours holds its commit, so Daoris keeps it until you delete it: `git update-ref -d {each.Ref}` in `{each.Repository}`",
             _ => "kept by its own rule: whether a branch or a tag of yours holds its commit was not read, so it is kept, and the end never takes it",
         })
-        { Until = until };
+        { Until = until, Repository = each.Repository };
     }
 
     private const string ContentHoldsPrefix = "refs/daoris/discarded/";
@@ -461,14 +464,14 @@ public static partial class WorkInventory
             return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Blocked,
                 $"moved aside {Minute(tree.MovedAside ?? DateTimeOffset.MinValue)} UTC and past its date, but the look's purge keeps it, since {kept}; "
                 + "look at it, and delete it once it holds nothing you need")
-            { Until = until };
+            { Until = until, Repository = tree.Repository };
         }
 
         return new InventoryEntry(unit, InventoryKind.MovedAside, tree.Path, InventoryRole.Recovery, InventoryDisposition.Retained,
             tree.MovedAside is { } at
                 ? $"moved aside {Minute(at)} UTC; deleted once it is left untouched until {Minute(until!.Value)} UTC"
                 : "moved aside; its name says no date, so the look's purge never takes it")
-        { Until = until };
+        { Until = until, Repository = tree.Repository };
     }
 
     private static InventoryEntry TreeEntry(Draft draft, SessionTree tree, InventoryFacts facts, bool ended)
