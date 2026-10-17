@@ -1,5 +1,5 @@
 {
-  "about": "FABRIC-GRAPH1: which cycle governs a unit, and from where (the fabric events design §C2, §D7, §E7; D164's whole-rule inheritance). Read row for row by the CLI's cycles.test.ts and the driver's NodeGraphHomesTests. A row's config is a driver.json; `cycle` is the governing cycle as the file holds it, null where none is set; `source` is repository, workspace or default.",
+  "about": "FABRIC-GRAPH1: which cycle governs a unit, and from where (the fabric events design §C2, §D7, §E7; D164's whole-rule inheritance). Read row for row by the CLI's cycles.test.ts and the driver's NodeGraphHomesTests. A row's config is a driver.json; `cycle` is the governing cycle as the file holds it, null where none is set; `source` is repository, workspace or default. `strays` (the review's findings 2 and 3) are what the file keeps that no unit reads, each said: `at` its place from the file's top, `code` `kind` (a kind with no work cycle) or `shadowed` (a name an earlier entry spells in another case, which governs).",
   "rows": [
     {
       "name": "nothing set: the default, today's",
