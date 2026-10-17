@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A take queued past its bind's expiry bound it, and an older build's naming could replace an owned bind's graph (FABRIC-CLOSE1w)
+
+- **Symptom:** none on an install: no install names a graph for a take. Found by the read-only review of the close path. A take asked
+  before the bind's expiry and kept waiting for the store's write past it still bound the graph. A build before FABRIC-CLOSE1o, naming a
+  graph for the same quest, replaced the graph of an owned bind and kept its owner, so the owner's take bound the older build's graph;
+  and an older build's take bound an owned bind by the quest's id alone, whoever took and however late.
+- **Root cause:** `QuestStore.MoveAsync` judged the expiry on the `now` its caller took before the write's gate and `BEGIN IMMEDIATE`
+  (`Quests/Quests.cs`). The owned binds shared `quest_take_binds` with the builds before them, whose upsert names only `graph` and `at`
+  and whose take deletes and binds whatever row the id names.
+- **Fix:** the take measures its wait for the write on the store's monotonic clock and judges the bind at its caller's moment plus that
+  wait. Binds are now named in `quest_owned_take_binds`, a table no older build knows; a row in `quest_take_binds` is an older
+  build's, consumed at a take as owning nothing and discarded at the open. D173's FABRIC-CLOSE1w note has the choice.
+- **Verification:** red first: `QuestTakeBindTests`' take queued past the expiry bound, the owner's take after an older build's naming
+  bound the older graph, and an older build's take read the owned bind; the unarmed store's take and an older build's own statements,
+  green before and after. Then the service suite passes 2223 (2219 before), and its HTTP suite 283 (283).
+
 ## 2026-10-18 — The close door closed a bound quest of no chain the close was at (FABRIC-CLOSE1v)
 
 - **Symptom:** none on an install: no quest is bound to a closure graph there, and the driver names only its own chain's quests. Found by
