@@ -640,7 +640,9 @@ public static partial class WorkInventory
         EndBy.OnLine => $"its files read on `{on}` as it left them",
         EndBy.PullRequest => $"its pull request completed and its merge commit is on `{on}`",
         EndBy.Landed => $"its work is on `{on}`, which the line holds",
-        EndBy.Carried => $"a completed pull request, `{on}`, carried it and its merge commit is on the line",
+        // FABRIC-END2d, after the merge: a carried fact rests on the form of the line its merge commit is on; one kept before named the
+        // carrier's branch. Neither is said as the pull request, so both read as they are.
+        EndBy.Carried => "a completed pull request carried it and its merge commit is on the line",
         EndBy.Inside => $"it is inside `{on}`, whose work is on the line",
         _ => $"{by} on `{on}`",
     };
