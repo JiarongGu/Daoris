@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addRule, readPermissions, removeRule, switchDefault, writePermissions, type PermissionFile } from '../src/agents/permissions.ts';
 import { addKeyAccount, profileHome, replaceKeyAccount } from '../src/agents/toolchain.ts';
+import { homeEntry } from '../src/platform/home.ts';
 import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
 import { makeFixture } from './_fixture.ts';
 
@@ -50,7 +51,7 @@ function applied(home: string, row: Row, between: () => void): void {
     return;
   }
   if (row.file === 'permissions.json') {
-    const path = join(home, 'permissions.json');
+    const path = homeEntry(home, 'permissions');
     const read = readPermissions(path);
     between();
     const edited: PermissionFile = edit.op === 'none' ? read

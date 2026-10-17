@@ -160,6 +160,27 @@ repository.
   required (`no-revision`).
 - **Verification:** seven new tests, the evaluation's members added first without behaviour, each failed on its own defect at run
   time, then passed; the node and wire suites pass, and the driver's fast half.
+## 2026-10-17 — Switching a plugin, a permission rule or an API key deleted what its writer did not know (KEEPALL1)
+
+- **Symptom:** found by KEEPALL1's audit of every home file a door edits, after GRAPH1 fixed `driver.json`. Switching a plugin on or
+  off, from the Plugins page or `daoris plugin`, rewrote `plugins.json` as `{ "disabled": [...] }`, deleting every other key and
+  every entry of the list that was not text. A permission rule changed from Setup or `daoris permission` moved the keys it did not
+  know to the front and deleted a scope's own unknown keys (`machine.note`). The driver's API key door read a `keys.json` that did not
+  read as no keys and wrote the new key over it, deleting every other account's key, and threw on a value that was not text.
+- **Root cause:** each writer rebuilt its file from the fields its reader knew (`PluginState.Save`, `PermissionRules.Save`,
+  `HarnessKeys.Write`; the CLI's `writePluginState`, `writePermissions`, `writeKeys`), keeping at most the unknown keys of the top
+  level, and the driver's key reader swallowed a parse failure that its writer then overwrote.
+- **Fix:** D173's KEEPALL1 note. Both twins write those three files as GRAPH1's writers write `driver.json`: the edit, the key paths
+  that differ between the file as read and understood and the edited choices, is made onto the file read again at write
+  (`JsonKeeping.Save`, `jsonkeep.ts`' `writeKeeping`); a file that does not read then, holds a key twice in one object, or made a
+  changed object a scalar is refused and left as it is; CRLF kept; no edit writes nothing; a file at neither moment written whole.
+  The driver's key door writes the key before it makes the account's directory, as the CLI's does.
+- **Verification:** `HomeFilesKeepTests` and the CLI's `homefileskeep.test.ts` read one table, `home-files-keep.json` (each file in
+  the writer's layout with unknown keys at each level and numbers JavaScript cannot hold; 16 rows: no edit, an edit, CRLF, another
+  writer's change between the read and the write, a scope made a string, a key twice, a key over a torn file). Its 13 plugin and
+  permission rows failed in both twins before the change, and its 3 key rows in the driver's; all pass, with the driver's and the
+  modules' fast halves and the CLI's suite. Its row in `tools/merge-branch.mjs` and `merge-branch.test.ts`.
+
 ## 2026-10-17 — An edit of driver.json from Setup or Ask Daoris deleted the settings its writer did not know (FABRIC-GRAPH1's review)
 
 - **Symptom:** found by a second maker's review of FABRIC-GRAPH1, and live in the installed build: a key `driver.json` holds that the
