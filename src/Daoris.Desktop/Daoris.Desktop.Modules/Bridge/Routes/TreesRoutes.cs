@@ -564,6 +564,8 @@ public sealed class TreesRoutes(DriverLoop loop)
 
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
         PressSteps.Reach(PressSteps.Landing);
+        // LANDHOLD2: a landing of this tree still under way holds the press for up to five minutes; the page is told it waits.
+        using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
         var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
             joins: subject.Joins);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
@@ -898,6 +900,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         }
 
         PressSteps.Reach(PressSteps.HandOff);
+        using var waiting = PressSteps.WhileWaiting(PressSteps.HandOff);
         var handed = await HandAsync(_loop, trees, root, entry, named, cancellationToken);
         return new
         {

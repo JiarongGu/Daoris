@@ -237,6 +237,60 @@ public sealed class LandingHoldsTests : IDisposable
         Assert.False(next!.Waited);
     }
 
+    /// <summary>
+    /// LANDHOLD2: a door that waits for a tree's hold says so before it waits and says it stopped once it has the hold; one that waits
+    /// for nothing says nothing; one that gives up at its bound says it stopped too. Branch holds say the same.
+    /// </summary>
+    [Fact]
+    public async Task A_door_that_waits_says_so_once_and_says_when_it_stops_and_one_that_waits_for_nothing_says_nothing()
+    {
+        var said = new List<bool>();
+        using var told = LandingHoldNotice.Told(waiting => { lock (said) said.Add(waiting); });
+
+        using (var alone = await LandingHolds.TakeAsync(_home, _tree)) Assert.False(alone!.Waited);
+        Assert.Empty(said);
+
+        var first = (await LandingHolds.TakeAsync(_home, _tree))!;
+        var second = LandingHolds.TakeAsync(_home, _tree);
+        Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, _tree) == 1, Bound));
+        Assert.Equal([true], Snapshot(said));
+        first.Dispose();
+        using (await second.WaitAsync(Bound)) { }
+        Assert.Equal([true, false], Snapshot(said));
+
+        said.Clear();
+        using var holding = await LandingHolds.TakeAsync(_home, _tree);
+        Assert.Null(await LandingHolds.TakeAsync(_home, _tree, within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+        Assert.Equal([true, false], Snapshot(said));
+
+        said.Clear();
+        var root = Path.Combine(_scratch, "engine");
+        Directory.CreateDirectory(Path.Combine(root, ".git"));
+        using var pushing = await LandingHolds.BranchAsync(_home, root, "feature/x");
+        Assert.Null(await LandingHolds.BranchAsync(_home, root, "feature/x", within: TimeSpan.FromMilliseconds(200)).WaitAsync(Bound));
+        Assert.Equal([true, false], Snapshot(said));
+    }
+
+    /// <summary>LANDHOLD2: a callback is for the call that handed it: a door outside it, and one after it is disposed, tell nobody.</summary>
+    [Fact]
+    public async Task A_waiting_door_outside_the_call_that_handed_a_callback_tells_nobody()
+    {
+        var said = new List<bool>();
+        var first = (await LandingHolds.TakeAsync(_home, _tree))!;
+        Task<LandingHold?> second;
+        using (LandingHoldNotice.Told(waiting => { lock (said) said.Add(waiting); })) { }
+        second = LandingHolds.TakeAsync(_home, _tree);
+        Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, _tree) == 1, Bound));
+        first.Dispose();
+        using (await second.WaitAsync(Bound)) { }
+        Assert.Empty(said);
+    }
+
+    private static bool[] Snapshot(List<bool> said)
+    {
+        lock (said) return [.. said];
+    }
+
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
     private static string RepoRoot()
     {

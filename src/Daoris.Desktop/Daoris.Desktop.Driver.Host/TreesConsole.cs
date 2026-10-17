@@ -54,6 +54,9 @@ internal static class TreesConsole
         return await new SessionBranchDiscard(trees).DiscardNamedAsync(service, named, repository, force).ConfigureAwait(false);
     }
 
+    /// <summary>What a `trees land` or `trees hand` says once before it waits behind another landing or push (LANDHOLD2).</summary>
+    internal const string WaitingBehind = "trees: waiting for another landing of this work to end…";
+
     /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it (D100).</summary>
     internal static string Planned(string session, LandingPlan plan)
     {
@@ -478,6 +481,8 @@ internal static class TreesConsole
                     return 0;
                 }
 
+                // LANDHOLD2: said once where the landing has to wait behind another landing of this session's work.
+                using var waiting = LandingHoldNotice.Told(now => { if (now) Console.WriteLine(WaitingBehind); });
                 // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
                 var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
@@ -537,6 +542,7 @@ internal static class TreesConsole
                     return 0;
                 }
 
+                using var waiting = LandingHoldNotice.Told(now => { if (now) Console.WriteLine(WaitingBehind); });
                 var handed = await handing.HandAsync(root, entry, plugin).ConfigureAwait(false);
                 Told(home, PressesTold.HandOff, entry.Session);
                 Console.WriteLine($"trees: {handed.Message}");

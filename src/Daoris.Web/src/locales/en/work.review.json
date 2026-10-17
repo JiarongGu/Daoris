@@ -65,6 +65,8 @@
   "work.review.handProblem": "A hand-off would be refused now: {{problem}}",
   "work.review.accepting": "Landing…",
   "work.review.acceptingGate": "Checking…",
+  "work.review.acceptingWaiting": "Waiting its turn…",
+  "work.review.handingWaiting": "Waiting its turn…",
   "work.review.sendBack": "Send back…",
   "work.review.discard": "Discard tree",
   "work.review.discardTitle": "discard this tree",

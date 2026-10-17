@@ -357,7 +357,20 @@ public static class PressSteps
     /// <summary>A landed branch handed to its plugin.</summary>
     public const string HandOff = "handOff";
 
+    /// <summary>
+    /// A landing or hand-off waits behind another one's hold (LANDHOLD2, D145 point 2): said before it waits, and the step it was at
+    /// is said again when it has the hold.
+    /// </summary>
+    public const string Waiting = "waiting";
+
     private static readonly AsyncLocal<Action<string>?> Current = new();
+
+    /// <summary>
+    /// For the landing or hand-off this call makes (LANDHOLD2): where its hold is waited for, the press says <see cref="Waiting"/>, and
+    /// <paramref name="back"/> again once the wait is over. A press that waits for nothing says nothing more.
+    /// </summary>
+    public static IDisposable WhileWaiting(string back) =>
+        LandingHoldNotice.Told(waiting => Reach(waiting ? Waiting : back));
 
     /// <summary>The press this call runs in has reached <paramref name="step"/>; nothing where it runs in none.</summary>
     public static void Reach(string step) => Current.Value?.Invoke(step);
