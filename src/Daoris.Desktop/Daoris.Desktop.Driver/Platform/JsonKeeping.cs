@@ -46,6 +46,69 @@ public static class JsonKeeping
     }
 
     /// <summary>
+    /// An edit of a home file made onto the file as it stands, and written (KEEPALL1): every file a door edits keeps what its writer does
+    /// not own, as <c>driver.json</c> does through <see cref="DriverConfig.Save"/>. <paramref name="understood"/> is the file as its reader
+    /// understood it when it read it, and <paramref name="edited"/> the edited choices, both written by one writer; only the key paths that
+    /// differ between them are made, under <see cref="Kept"/>'s rules, onto the file read again here. No edit writes nothing.
+    /// <paramref name="found"/> says a file was there at the read: where there was none then and is none now, <paramref name="edited"/> is
+    /// written whole in the writer's own layout, since there is nothing to keep. The CLI's twin is <c>jsonkeep.ts</c>' <c>writeKeeping</c>.
+    /// </summary>
+    /// <exception cref="DriverException">
+    /// The file there now does not read, holds a key twice in one object, or holds no object where this edit changes something inside one;
+    /// nothing was written.
+    /// </exception>
+    public static void Save(string path, bool found, string understood, string edited)
+    {
+        if (understood == edited) return;
+        var name = Path.GetFileName(path);
+        string? current = null;
+        try
+        {
+            if (File.Exists(path)) current = File.ReadAllText(path);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            throw new DriverException($"{name} could not be read ({error.Message.TrimEnd('.')}), so this edit was not written. {Remedy}");
+        }
+
+        string text;
+        if (current is null && !found) text = edited;
+        else
+        {
+            current ??= "{}\n";
+            try
+            {
+                using var _ = JsonDocument.Parse(current);
+            }
+            catch (JsonException error)
+            {
+                throw new DriverException(
+                    $"{name} is not readable JSON now ({error.Message}), so this edit was not written: a file that does not read is never overwritten. {Remedy}");
+            }
+
+            if (Twice(current) is { } key)
+            {
+                throw new DriverException($"{name} holds the key `{key}` twice in one object, so an edit cannot tell which it changes; this edit was not written. {Remedy}");
+            }
+
+            try
+            {
+                text = Kept(current, understood, edited);
+            }
+            catch (JsonEditRefusedException refused)
+            {
+                throw new DriverException($"{name} has changed under this edit: {refused.Message}, so this edit was not written. {Remedy}");
+            }
+        }
+
+        var folder = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
+        AtomicFile.WriteText(path, text);
+    }
+
+    private const string Remedy = "Fix it, or delete it to start from nothing, then make the change again.";
+
+    /// <summary>
     /// The first key written twice in one object of <paramref name="text"/>, a JSON text, in the order the second is written; or null (the
     /// re-check's finding 3; the CLI's <c>twice</c>). An edit cannot tell which of the two it changes: this writer kept both and edited
     /// each, the CLI's kept the last, so neither edits a file holding one.
