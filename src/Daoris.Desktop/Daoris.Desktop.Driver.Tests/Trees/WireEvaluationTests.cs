@@ -260,11 +260,12 @@ public sealed class WireEvaluationTests
         Assert.Equal((NodeStates.Blocked, NodeStates.Blocked, NodeStates.Ready), (g.State("roll"), g.State("next"), g.State("redo")));
         Assert.StartsWith("rej-", Assert.Single(rejected.Of("redo")!.Receipts), StringComparison.Ordinal);
 
+        // FABRIC-RUN1e: a graph edit restarts no rejected or failed work. The rejection stays for the person, and is no receipt in the new
+        // graph, so its `rejected` wire fires nothing there.
         g.Run = g.Run with { GraphDigest = "graph-2" };
         var other = g.Evaluate();
-        var lapsed = other.Moves.Single(move => move.Node == "d");
-        Assert.Equal((NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Graph), (g.State("d"), lapsed.Why, lapsed.Detail));
-        Assert.Equal(NodeStates.Blocked, g.State("redo"));
+        Assert.DoesNotContain(other.Moves, move => move.Node == "d");
+        Assert.Equal((NodeStates.Rejected, NodeStates.Blocked), (g.State("d"), g.State("redo")));
     }
 
     /// <summary>§E3: a fork starts every eligible target within the limit, which counts dispatched attempts alone; the rest wait their turn.</summary>
@@ -510,30 +511,49 @@ public sealed class WireEvaluationTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1f: an attempt's outcome other than a reach is its own run's alone, so a new run lapses a failure kept from another
-    /// (<c>run-scope</c>), as it lapses a skip, keeping it as history; the node is judged again and started afresh in this run, its attempt
-    /// numbers still growing (WIRE1e's note) and its tries counted afresh.
+    /// FABRIC-RUN1e, in place of WIRE1f's lapse: a failure kept from another run or graph stays for the person, however often the graph is
+    /// edited back and forth, since a run begins at a graph edit and a Setup save can edit the derived graph; only the person's new attempt
+    /// starts it afresh, in this run, its tries counted afresh and its attempt numbers still growing (WIRE1e's note).
     /// </summary>
     [Fact]
-    public void A_new_run_lapses_another_runs_failure_and_starts_the_node_afresh()
+    public void Another_runs_or_graphs_failure_is_kept_for_the_person_until_they_restart_it()
     {
         var g = new Graph([Node("d")], []);
         g.Start(g.Evaluate(), "d");
         g.Fail("d");
 
-        g.Run = Base with { Run = "run-2" };
-        var lapsed = g.Evaluate();
-        var move = Assert.Single(lapsed.Moves);
-        Assert.Equal(("d", NodeStates.Invalidated, WireWhy.RunScope), (move.Node, move.Move.To, move.Why));
-        Assert.Empty(lapsed.Starts);
+        foreach (var run in new[] { Base with { Run = "run-2" }, Base with { GraphDigest = "graph-2", Run = "run-3" }, Base, Base with { Run = "run-2" } })
+        {
+            g.Run = run;
+            var kept = g.Evaluate();
+            Assert.Empty(kept.Moves);
+            Assert.Empty(kept.Starts);
+            Assert.Equal(NodeStates.Failed, g.State("d"));
+        }
 
+        g.Move("d", new NodeMove(NodeStates.Ready, NodeCause.Person));
         var again = g.Evaluate();
-        var ready = Assert.Single(again.Moves);
-        Assert.Equal((NodeStates.Ready, "deploy-failed"), (ready.Move.To, ready.Moved.Cleared?.Code));
         var start = Assert.Single(again.Starts);
         Assert.Equal((2, "run-2"), (start.Move.Binding!.Attempt, start.Move.Scope!.Run));
         g.Start(again, "d");
         Assert.Equal((2, 1), (g.Statuses["d"].Attempt, g.Statuses["d"].Tries));
+    }
+
+    /// <summary>
+    /// FABRIC-RUN1e: a new revision is new work, so it still lapses a failure kept from another graph, as it lapses one of this graph
+    /// (WIRE1e): the node is judged again on the new tip.
+    /// </summary>
+    [Fact]
+    public void A_new_revision_lapses_a_failure_kept_from_another_graph()
+    {
+        var g = new Graph([Node("d")], []);
+        g.Start(g.Evaluate(), "d");
+        g.Fail("d");
+
+        g.Run = Base with { GraphDigest = "graph-2", Run = "run-2", Revisions = new Dictionary<string, string?> { [Unit] = "tip-2" } };
+        var lapsed = g.Evaluate();
+        var move = Assert.Single(lapsed.Moves);
+        Assert.Equal(("d", NodeStates.Invalidated, WireWhy.Lapsed, NodeLapse.Revision), (move.Node, move.Move.To, move.Why, move.Detail));
     }
 
     /// <summary>FABRIC-WIRE1f, the other direction: in its own run a failure Daoris will not retry is kept for the person, however often evaluated.</summary>
@@ -554,9 +574,9 @@ public sealed class WireEvaluationTests
         Assert.Equal(NodeStates.Failed, g.State("d"));
     }
 
-    /// <summary>FABRIC-WIRE1f: a rejection kept from another run lapses the same way, and a reach is kept, its acceptance omitting the run (§E2).</summary>
+    /// <summary>FABRIC-RUN1e: a rejection kept from another run stays for the person the same way, and a reach is kept, its acceptance omitting the run (§E2).</summary>
     [Fact]
-    public void A_new_run_lapses_another_runs_rejection_and_keeps_its_reach()
+    public void Another_runs_rejection_is_kept_for_the_person_and_its_reach_kept()
     {
         var g = new Graph([Node("d") with { Rejectable = true }, Node("e")], []);
         var first = g.Evaluate();
@@ -566,10 +586,10 @@ public sealed class WireEvaluationTests
         g.Reach("e");
 
         g.Run = Base with { Run = "run-2" };
-        var lapsed = g.Evaluate();
+        var kept = g.Evaluate();
 
-        Assert.Equal([("d", WireWhy.RunScope)], lapsed.Moves.Select(each => (each.Node, each.Why)));
-        Assert.Equal(NodeStates.Reached, g.State("e"));
+        Assert.Empty(kept.Moves);
+        Assert.Equal((NodeStates.Rejected, NodeStates.Reached), (g.State("d"), g.State("e")));
     }
 
     /// <summary>

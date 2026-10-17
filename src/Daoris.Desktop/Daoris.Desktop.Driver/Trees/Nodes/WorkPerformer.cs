@@ -65,6 +65,28 @@ public static class PerformedWhat
 public sealed record WorkPerformed(string Unit, string Node, string What, string? Code = null);
 
 /// <summary>
+/// The attempts one pass may call a plugin's work process about (FABRIC-RUN1e): a new start's send, and each attempt a reconciliation asks
+/// after or delivers again, take one each from the same count, so <see cref="NodeRuntime.SendsPerPass"/> bounds the whole pass, not its
+/// starts alone. What is left over waits for the next pass.
+/// </summary>
+public sealed class WorkSends(int left)
+{
+    /// <summary>No bound: a caller outside a pass (a test, a tool) that asks after every attempt due.</summary>
+    public static WorkSends Unbounded => new(int.MaxValue);
+
+    /// <summary>The calls still allowed in this pass.</summary>
+    public int Left { get; private set; } = left;
+
+    /// <summary>Takes one call, or says none is left.</summary>
+    public bool Take()
+    {
+        if (Left <= 0) return false;
+        Left--;
+        return true;
+    }
+}
+
+/// <summary>
 /// Durable execution of a plugin's performed nodes (FABRIC-PERFORM1b; the fabric events design §D6, §E2): each attempt written on its unit's
 /// record with its start and the trigger firings it consumes before <c>work/perform</c> is sent, one idempotency key per attempt and its
 /// invocation bound to it there; on a restart, a lost process, a deadline or an unknown outcome, <c>work/reconcile</c> before any new
@@ -260,7 +282,14 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// Asks after every attempt whose outcome is not established and is due (§D6: after a restart with an unresolved attempt, after its
     /// deadline, after a lost connection), before any new attempt: the one table refuses a start while its node holds it unreconciled.
     /// </summary>
-    public async Task<IReadOnlyList<WorkPerformed>> ReconcileAsync(Func<string, string, NodeDeclaration?> declared, CancellationToken ct)
+    public Task<IReadOnlyList<WorkPerformed>> ReconcileAsync(Func<string, string, NodeDeclaration?> declared, CancellationToken ct) =>
+        ReconcileAsync(declared, WorkSends.Unbounded, ct);
+
+    /// <summary>
+    /// <see cref="ReconcileAsync(Func{string, string, NodeDeclaration?}, CancellationToken)"/> within a pass's calls (FABRIC-RUN1e): each attempt
+    /// asked after or delivered again takes one of <paramref name="sends"/>, and the attempts past them are asked at the next pass.
+    /// </summary>
+    public async Task<IReadOnlyList<WorkPerformed>> ReconcileAsync(Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct)
     {
         var done = new List<WorkPerformed>();
         var now = clock();
@@ -268,8 +297,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         {
             foreach (var attempt in record.Attempts.Where(attempt => Asked(attempt, now)).ToList())
             {
+                // FABRIC-RUN1e: the pass's calls spent, the attempts left are asked at the next pass, still before any start there.
+                if (sends.Left <= 0) return done;
                 if (declared(record.Unit, attempt.Node) is not { } node) continue;
-                done.Add(await ReconcileOneAsync(record.Unit, attempt.Call.Invocation, node, ct).ConfigureAwait(false));
+                done.Add(await ReconcileOneAsync(record.Unit, attempt.Call.Invocation, node, sends, ct).ConfigureAwait(false));
             }
         }
 
@@ -318,7 +349,11 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         _ => false,
     };
 
-    private async Task<WorkPerformed> ReconcileOneAsync(string unit, string invocation, NodeDeclaration node, CancellationToken ct)
+    /// <remarks>
+    /// FABRIC-RUN1e: an attempt called about takes one of <paramref name="sends"/>, its question and the redelivery that answer may bring
+    /// together; one held with no call takes none, and neither does one whose plugin's process is not up, which is not asked now.
+    /// </remarks>
+    private async Task<WorkPerformed> ReconcileOneAsync(string unit, string invocation, NodeDeclaration node, WorkSends sends, CancellationToken ct)
     {
         var now = clock();
 
@@ -355,9 +390,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                 return (Kept(record, NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Active, NodeCause.Daoris)), "redeliver", now),
                     new WorkPerformed(unit, node.Id, PerformedWhat.Redelivered));
             }));
-            return decided.What == PerformedWhat.Redelivered ? await SendAsync(unit, asked, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false) : decided;
+            return decided.What == PerformedWhat.Redelivered && sends.Take() ? await SendAsync(unit, asked, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false) : decided;
         }
 
+        if (port.GenerationOf(asked.Plugin) is null || !sends.Take()) return new(unit, node.Id, PerformedWhat.Unanswered);
         WorkReconcileAnswer answer;
         int generation;
         try

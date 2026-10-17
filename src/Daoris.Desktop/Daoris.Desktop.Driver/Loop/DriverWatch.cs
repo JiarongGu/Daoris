@@ -343,18 +343,22 @@ public sealed class DriverWatch(
                 Log?.Failed("the start's reconciliation of the tidy", error);
             }
         }, CancellationToken.None);
-        TickReport? looked = null;
-        chain.Bind(ChainRanks.Plan, async (heard, token) =>
-        {
-            looked = await LookAsync(heard.Any(cause => cause.Key == Whole) ? LookPart.Look : LookPart.Plan, token).ConfigureAwait(false);
-            return new ChainFired(looked.Progressed ? 1 : 0, []);
-        });
-
         // FABRIC-RUN1, link 8: the evaluation runtime, after the plan on every wake it hears and at the look's deadline; only where this loop
         // holds a hook set, and its passes write only where it holds the home's lease. It reads nothing unless a graph naming a plugin's
         // performed node governs a unit, and the next timer the node records persist wakes a plan at its moment.
         var nodes = hooks is null ? null : new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home));
         using var nodesDue = new System.Threading.Timer(_ => Nudge(ChangeTopics.Nodes, "due"));
+
+        TickReport? looked = null;
+        chain.Bind(ChainRanks.Plan, async (heard, token) =>
+        {
+            // FABRIC-RUN1e: choices that no longer arm the runtime withdraw its awaited set before the plan's supervision reads it, so the
+            // look that reads the last graph's removal starts no plugin for it; link 8 then reads nothing.
+            if (nodes is not null) await nodes.WithdrawAsync(config, token).ConfigureAwait(false);
+            looked = await LookAsync(heard.Any(cause => cause.Key == Whole) ? LookPart.Look : LookPart.Plan, token).ConfigureAwait(false);
+            return new ChainFired(looked.Progressed ? 1 : 0, []);
+        });
+
         if (nodes is not null)
         {
             chain.Bind(ChainRanks.Nodes, async (heard, token) =>
