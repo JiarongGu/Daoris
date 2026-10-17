@@ -135,10 +135,14 @@ once three batches hold the targets (MODELROLE1).
      never let it through unrecorded.
    - The gate prunes (GATE2) at each merge's start, after its refusals, and at a batch's last
      `--continue`. Each local branch merged into main is deleted with its worktree, one line each. It
-     keeps, and says why, a worktree that is locked (an agent runs in it, even at main's tip), one with
-     modified, staged or untracked files, one with anything under `local/`, and whatever git refuses. It
-     never forces a removal or uses `-D`. `--prune --plan` shows it, `--prune` runs it alone, and
-     `--no-prune` skips it for one merge, for an agent you mean to continue in its worktree.
+     keeps, and says why, a worktree locked for any reason but the agent harness's, one with modified,
+     staged or untracked files, one with anything under `local/` but logs and scratch, and whatever git
+     refuses. The harness's lock (`claude agent <id> (pid N)`), held for its session's life, is lifted
+     when the branch is not at main's tip and no running process names the folder (CLEANUP2). A folder
+     under `.claude/worktrees/` git does not list, with no `.git`, is removed; one a process holds is named
+     with its pid, and the process is never stopped. It never forces a removal or uses `-D`. `--prune
+     --plan` shows it, `--prune` runs it alone, and `--no-prune` skips it for one merge, for an agent you
+     mean to continue in its worktree.
      🔴 **Lock a worktree you make by hand** (`git worktree add --lock …`, or `git worktree lock` after):
      an integration worktree at main's tip before its first commit counts as merged and clean, and the
      next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
@@ -156,10 +160,10 @@ once three batches hold the targets (MODELROLE1).
    **Scan what you staged first** (`daoris-devkit scan`): records written after the gates, and every records
    commit made outside a merge, are the one change no universal gate reads before it is committed. A
    backlog row quoting a window's caption put a private name into history that way (2026-10-08).
-   **Then remove the worker's worktree and branch**, in the same sitting: `git worktree remove <path>` (no `--force`: it
-   refuses a tree with uncommitted work) and `git branch -d <branch>` (it refuses one main lacks); a worktree the harness
-   locked for an agent that has finished is `git worktree unlock`ed first. What made them cleans them up: 43 subagent
-   worktrees had piled up by 2026-10-15, the same leftover the owner had to clear by hand from Daoris's own sessions.
+   **The next merge's prune removes the worker's worktree and branch**, its harness lock with them, once nothing is
+   left inside; `--prune` does it at once. Read the kept lines: each names what holds a tree (work, a file under
+   `local/`, a running process), and what holds it is yours to settle. 43 subagent worktrees had piled up by
+   2026-10-15, and 24 stood with three agents running on 2026-10-18, the leftover the owner cleared by hand.
 8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this
    repository> --since <the batch's first day>` prints each agent type and model's turns and its context
    at the start, at the first edit and at the end. Feed the hand-back's *pack's gaps* into the next pack.

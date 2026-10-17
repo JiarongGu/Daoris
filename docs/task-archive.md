@@ -16131,3 +16131,39 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RECOVERYDROP1 — the person's press to delete the recovery refs nothing holds** (driver, modules, web-shell; after RECOVERYVIEW1; D102's CLEANUP1 note). CLEANUP1 keeps a recovery ref nothing of the person's holds until the person deletes it; the owner's install listed 18. Give them one press.
 
 **Outcome** 2026-10-17: the person deletes the recovery refs nothing holds in one press, on the workspace's Branches ("Delete the ones nothing holds", behind a confirmation saying the commits may be lost from this machine and a remote may still have them) or by terminal (`daoris-driver work recovery drop`), each ref verified at the commit shown and skipped with its reason if it moved or a holder now keeps it, only the lease's holder acting. On Sonnet: about 150 tool calls. Detail: D102's RECOVERYDROP1 note, `RecoveryDropping.cs`.
+
+## FABRIC-PERFORM1c — evidence authorization (2026-10-18, D173)
+
+> - [ ] **FABRIC-PERFORM1c — evidence authorization** (driver; after PERFORM1b; the fabric events design's rows table (§E10), §C4, §D4). The belief rules, evidence binding, outputs resolved from a current acceptance.
+
+**Outcome** 2026-10-18: a plugin's completion moves its node only once `WorkBelief` believes it by §C4's five rules (each refusal counted as a `plugin.step` line); a completion after the work moved settles as a stale attempt's; evidence must be the declared schema's reference; a start's inputs are re-read at dispatch from the producer's current acceptance. The owner's unarmed install unchanged. On Opus: about 70 tool calls. Detail: D173's FABRIC-PERFORM1c note.
+
+## FABRIC-PERFORM1g — a held attempt shown, and the person's way on (2026-10-18, D173)
+
+> - [ ] **FABRIC-PERFORM1g — a held attempt shown, and the person's way on** (driver, modules, web-shell; after RUN1; §D6, §E2, §D3). An attempt held keeps its gate and no move of the person's lifts it: the person's resolution, its door, the help coverage row, en and zh. Proof: a held attempt resolved and restarted with a new key; the installed window.
+
+**Outcome** 2026-10-18: a plugin step's attempt held for the person is listed (`WORK_STATE`'s additive `held`, `daoris-driver work held`, a What needs you `work` row, the work's foot) and settled by the person's word (happened, did-not, stop) through `WORK_HELD` or its terminal twin, recorded only by the lease's holder and applied by the runtime under the governing declaration; did-not restarts the node with a new key. Nothing shows on an unarmed install. On Opus: about 115 tool calls. Detail: D173's FABRIC-PERFORM1g note.
+
+## FABRIC-CLOSE1b — the close's execution and recovery (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1b — the close's execution and recovery** (driver; after WIRE1b, CLOSE1a and PERFORM1b; the fabric events design's rows table (§E10), §E5). `quest.close` as the graph's end, the driver's fence steps, the person's override, partially closed.
+
+**Outcome** 2026-10-18: `quest.close` runs in the node runtime (`Trees/Nodes/QuestCloser.cs`): a chain is closed at its last quest by one close whose key and token are stored before the send and sent again unchanged after a timeout or a restart; a refusal is kept with its words; the person's own done ends the graph as overridden; a partial close is reported once. `ServiceClient` reads `closure` and `submission` and calls bind and close; the close door answers each refusal's `code`. A Codex review found it safe unarmed and not ready to arm; FABRIC-CLOSE1l made it ready. On Opus: about 112 tool calls. Detail: D173's FABRIC-CLOSE1b note.
+
+## RPC1b — the trees verbs are the running Daoris's clients (2026-10-18, D171)
+
+> - [ ] **RPC1b — the trees verbs are the running Daoris's clients** (driver host/driver; after RPC1a). `InstanceClient` finds the instance (the RPC design §7.4; a workspace build reads no file) and switches as §7.2's table does; of `trees land`, `remove`, `clean`, `sync` and `hand`, each whose route the census classes `open` sends it and prints its answer in today's words, a `person` one waits for RPC1c; the told notes go with the last of them. Proof: host tests per §7.2 row against a stand-in server, the lost answer never acted alone among them; each verb's text the same from the route's answer as alone.
+
+**Outcome** 2026-10-18: the driver library's `InstanceDoor` and `InstanceClient` find the running Daoris (§7.4; `DAORIS_INSTANCE` for a workspace build, which reads no address file) and switch as §7.2 does, a lost answer asked for by `RESULT` with its key and never done alone, held row by row by `InstanceDoorTests` against `InstanceStandIn`. The trees presses' routes are named in `TreesRoutes` and held to the census, every one the person's (RPC1a's review), so `TreesConsole` is unchanged; the row's same-text proof waits for a verb that sends (RPC1b3, RPC1c), and the told notes stay for RPC1c. On Opus: about 75 tool calls. Detail: D171's RPC1b note.
+
+## FABRIC-GRAPH1b — a named graph as a named workflow's version (2026-10-18, D173)
+
+> - [ ] **FABRIC-GRAPH1b — a named graph as a named workflow's version** (driver, cli; after GRAPH1, beside WORKFLOW2; §E7, D157 §2.4, §5.2). A version gains a graph form (schema 2) read by both twins; an older build reads it as unreadable, never in part. Proof: a graph version saved and read by both twins from one table; schema-1 versions unchanged.
+
+**Outcome** 2026-10-18: a named workflow's version may be a graph (schema 2, `graph` and no `steps`): judged by `NodeGraphs.Problems` and refused whole, digested as `NodeGraphs.Digest` (what a bound run binds), read by an older build as unreadable where it holds no steps, schema-1 versions byte for byte unchanged. The driver saves one; the CLI reads and digests one, refuses option values it cannot write as the driver does, and saves none (FABRIC-GRAPH1f); the steps-driven runtime holds a run on one as unrun (FABRIC-CUTOVER1). A Codex review's three defects (twin digests, `use` on a graph, an option named `__proto__`) were fixed before the merge. On Sonnet: about 140 tool calls. Detail: D173's FABRIC-GRAPH1b note.
+
+## FABRIC-CLOSE1l — the close ready to arm (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1l — the close ready to arm** (driver, service; after CLOSE1b; §E5). A Codex review found CLOSE1b safe to stage unarmed and not safe to arm, on seven P1 findings and one P2; fix them, and fold in the bind at the take and the session's `ready` (proposed with CLOSE1b), before anyone arms a closure graph.
+
+**Outcome** 2026-10-18: the close is ready to arm: the bind is named as the first session opens and appended in the take's own write; a bound quest's session says `ready`; the chain is walked whole; a fresh read of git, the binding and the chain fences the send; the bound graph is kept by digest and closes and reconciles after edits or removal; only the door's coded answer settles a close; an ancestor's released hold retries under a fresh key; a close node reached again on its chain keeps its record readable. Ordinary quests unchanged. A Codex re-check found it safe unarmed, with the gaps FABRIC-CLOSE1o holds before arming. Merged onto PERFORM1g: a node attempt keeps both the person's held word and a close's call, and a close attempt is refused as not its sender before PERFORM1c's rules. On Opus. Detail: D173's FABRIC-CLOSE1b note, "After review (FABRIC-CLOSE1l)"; FIX-LOG 2026-10-18.

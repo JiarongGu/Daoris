@@ -39,9 +39,13 @@ public static class WorkflowGraphs
     /// included) is unreadable with that reason, kept as it is; one that reads is decoded whole, or is unreadable with its graph's problem.
     /// </summary>
     public static DecodedVersion Decode(NamedVersion version) =>
-        version.Steps is null || version.Problem is not null
-            ? new DecodedVersion(version.Version, null, null, null, version.Problem ?? $"v{version.Version}: it does not read.")
-            : DecodeSteps(version.Version, version.Steps);
+        version.Graph is { } graph && version.Digest is { } digest
+            // A graph version (schema 2, FABRIC-GRAPH1b) is a graph already, judged where it was read: its identity is its own digest,
+            // which is what a run on it binds, so nothing derives from a decoder.
+            ? new DecodedVersion(version.Version, digest, graph, digest, null)
+            : version.Steps is null || version.Problem is not null
+                ? new DecodedVersion(version.Version, null, null, null, version.Problem ?? $"v{version.Version}: it does not read.")
+                : DecodeSteps(version.Version, version.Steps);
 
     /// <summary>
     /// Steps decoded as a version numbered <paramref name="version"/>: the graph and its digest where the graph holds

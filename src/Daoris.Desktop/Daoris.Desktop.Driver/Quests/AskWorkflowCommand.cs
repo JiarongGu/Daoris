@@ -99,7 +99,7 @@ public static class AskWorkflowCommand
 
         if (found.Read.Problem is { } unread) return $"`{workflow}` cannot be read: {unread} Nothing was kept.";
         var newest = found.Read.Versions[^1];
-        return newest.Steps is null
+        return newest.Steps is null && newest.Graph is null
             ? $"`{workflow}` v{newest.Version} cannot be read here: {newest.Problem} Nothing was kept."
             : null;
     }

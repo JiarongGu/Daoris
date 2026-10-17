@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandDriver } from '../../src/driver/driverconfig.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
@@ -80,6 +81,29 @@ test('use names a workflow saved here for a repository, says what it replaces, a
   assert.match(cleared.out,
     /^daoris: `web-app` no longer chooses a workflow as its default\.\n {2}`web-app` names no workflow now, so its workspace's choice reaches it again\./);
   assert.deepEqual(choices(fx).workflows, { 'notes-site': { default: 'current' } });
+  fx.cleanup();
+});
+
+test('use names a workflow whose newest version is a graph, in words of its own, with --plan and without (FABRIC-GRAPH1b)', async () => {
+  const fx = makeFixture('workflowchoice-use-graph');
+  await run(fx, ['new', 'docs-to-pr', '--from', 'pull-request-no-press', '--name', 'Documentation to a pull request']);
+  const file = JSON.parse(fx.read('workflows/docs-to-pr.json')) as { versions: unknown[] };
+  const table = JSON.parse(readFileSync(join(process.cwd(), 'test', 'fixtures', 'workflow-graph-versions.json'), 'utf8')) as { graph: unknown };
+  file.versions.push({ version: 2, at: '2026-10-18T09:00:00Z', door: 'terminal', schema: 2, graph: table.graph });
+  fx.write('workflows/docs-to-pr.json', JSON.stringify(file, null, 2) + '\n');
+  const said = /v2 now: a graph \(schema 2\) of 5 nodes and 5 wires, digest gph-255acb35b9aa16275f47d33dfdda1c50, which this build reads and does not run yet\./;
+
+  for (const where of [['--repository', 'web-app'], ['--workspace', 'work']]) {
+    const plan = await run(fx, ['use', 'docs-to-pr', ...where, '--plan'], registry('work'));
+    assert.equal(plan.code, 0);
+    assert.match(plan.out, said);
+  }
+
+  const done = await run(fx, ['use', 'docs-to-pr', '--repository', 'web-app']);
+  assert.equal(done.code, 0);
+  assert.match(done.out, said);
+  const workspace = await run(fx, ['use', 'docs-to-pr', '--workspace', 'work'], registry('work'));
+  assert.match(workspace.out, said);
   fx.cleanup();
 });
 
