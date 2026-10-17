@@ -48,8 +48,15 @@ export type MilestoneEnd = {
   said: string;
 };
 
-/** The person's words on a held attempt (FABRIC-PERFORM1g): it happened, it did not (a new attempt), or stop the step. */
-export type HeldResolution = 'happened' | 'did-not' | 'stop';
+/**
+ * The person's words on a held attempt (FABRIC-PERFORM1g): it happened, it did not (a new attempt), or stop the step. On Daoris's own
+ * close (FABRIC-CLOSE1q), whose outcome is its door's answer and never the person's word: record that answer again, ask for it again
+ * with the same close, or stop the rest of the work.
+ */
+export type HeldResolution = 'happened' | 'did-not' | 'stop' | 'record' | 'resend';
+
+/** The sender Daoris's own close is held under (FABRIC-CLOSE1q): never a plugin's. */
+export const CLOSE_SENDER = 'quest.close';
 
 /**
  * A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6): nothing else can say what became of it,
@@ -71,6 +78,8 @@ export type HeldAttempt = {
   resolution?: HeldResolution | null;
   resolvedAt?: string | null;
   said: string;
+  /** The words the driver offers on it (FABRIC-CLOSE1q): a plugin's three, or a held close's own; absent from a driver before the field. */
+  words?: HeldResolution[] | null;
 };
 
 export type MilestoneUnit = {
@@ -97,10 +106,24 @@ export type WorkState = { units: MilestoneUnit[]; recovery: MilestoneEntry[]; un
 /** The why codes the page has words for; any other is the one table's refusal of an outcome, said with its code. */
 const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word'] as const;
 
-/** Why an attempt is held, in the reader's language (FABRIC-PERFORM1g). */
+/** Why an attempt is held, in the reader's language (FABRIC-PERFORM1g); a held close by what its door answered (FABRIC-CLOSE1q). */
 export function heldWhy(t: TFunction, held: HeldAttempt): string {
+  if (held.plugin === CLOSE_SENDER) {
+    if (held.why === 'not-close-word') return t('work.milestone.held.close.why.notCloseWord');
+    const answer = held.outcome === 'reached' ? 'closed' : held.outcome === 'failed' ? 'refused' : 'unanswered';
+    return t(`work.milestone.held.close.why.${answer}`, { code: held.why });
+  }
   const code = HELD_WHY.find((one) => one === held.why);
   return code ? t(`work.milestone.held.why.${code}`) : t('work.milestone.held.why.other', { code: held.why });
+}
+
+/**
+ * The words offered on a held attempt (FABRIC-CLOSE1q): the driver's, where it names them; a plugin's three from a driver before the
+ * field, and none on a close there, since such a driver would take a plugin's word for its door's answer.
+ */
+export function heldWords(held: HeldAttempt): HeldResolution[] {
+  if (held.words) return held.words;
+  return held.plugin === CLOSE_SENDER ? [] : ['happened', 'did-not', 'stop'];
 }
 
 /** A held attempt in one line: its step, its attempt, and why, or the person's word waiting for the next look. */

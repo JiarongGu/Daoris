@@ -396,17 +396,7 @@ public sealed class DriverWatch(
             if (lines.Count > 0 && looked is not null) looked = looked with { Events = [.. looked.Events, .. lines] };
         }
 
-        // The units a pass reads, and each repository's checkout the awaited set names. No roots go to the inventory, so the runtime starts
-        // no git: the recovery refs are the inventory's entries, not a node's.
-        async Task<NodeUnitsRead> NodeUnitsAsync(CancellationToken token)
-        {
-            var unread = new List<string>();
-            var units = await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token).ConfigureAwait(false);
-            var registry = await service.RegistryAsync(token).ConfigureAwait(false);
-            var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
-                .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
-            return new NodeUnitsRead(units, roots);
-        }
+        Task<NodeUnitsRead> NodeUnitsAsync(CancellationToken token) => ReadNodeUnitsAsync(home, service, token);
 
         // One look of the part link 5 heard, asked once whether an update drains, so the plan and what the report says of it
         // agree (UPDATE1).
@@ -610,6 +600,26 @@ public sealed class DriverWatch(
     /// <summary>What link 8 counts as acting (FABRIC-RUN1): an attempt sent or delivered again, an outcome applied, a retry made ready, a start.</summary>
     private static readonly HashSet<string> Acted =
         new([PerformedWhat.Sent, PerformedWhat.Redelivered, PerformedWhat.Applied, PerformedWhat.Retry, PerformedWhat.Begun], StringComparer.Ordinal);
+
+    /// <summary>
+    /// The units a pass of the evaluation runtime reads (link 8's <see cref="NodeRuntimeLook.Units"/>), each repository's checkout the awaited
+    /// set names, and the tip of each branch a bound quest's chain worked (FABRIC-CLOSE1p).
+    /// </summary>
+    /// <remarks>
+    /// No roots go to the inventory: its recovery refs are its own entries, not a node's, and gathering them (a listing and a <c>rev-list</c> of
+    /// every repository the home names) on every read would be git starts nothing here reads. The tips are one <see cref="RefSnapshot"/> per
+    /// repository a bound quest's chain worked in, taken for this read alone (<see cref="QuestClosing.TipsAsync"/>): a home with no quest
+    /// bound to a closure graph, the owner's install, starts no git here.
+    /// </remarks>
+    internal static async Task<NodeUnitsRead> ReadNodeUnitsAsync(string home, ServiceClient service, CancellationToken token)
+    {
+        var unread = new List<string>();
+        var units = await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token).ConfigureAwait(false);
+        var registry = await service.RegistryAsync(token).ConfigureAwait(false);
+        var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
+        return new NodeUnitsRead(units, roots) { Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false) };
+    }
 
     /// <summary>What a person reads of a pass (FABRIC-RUN1): each attempt sent, answered, retried, unknown or held, and what the pass said.</summary>
     internal static IReadOnlyList<string> NodeRuntimeLines(NodeRuntimePass pass) =>

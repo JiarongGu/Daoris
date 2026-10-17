@@ -56,6 +56,9 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             Assert.True(preview.GetProperty("workflow").GetProperty("holds").GetBoolean());
             Assert.Equal(preview.GetProperty("workflow").GetRawText(), press.GetProperty("workflow").GetRawText());
             Assert.False(press.GetProperty("done").GetBoolean());
+            // RPC1b3: the refusal is also said in `trees land`'s words, exit 1, beside the page's fields.
+            Assert.Equal([$"trees: {press.GetProperty("message").GetString()}"], press.GetProperty("said").GetProperty("out").EnumerateArray().Select(line => line.GetString()));
+            Assert.Equal(1, press.GetProperty("said").GetProperty("code").GetInt32());
             Assert.Empty(new LandedBranches(Home).Entries());
             var branches = await GitAsync(root, "branch", "--list", "feature/*");
             Assert.True(string.IsNullOrWhiteSpace(branches));

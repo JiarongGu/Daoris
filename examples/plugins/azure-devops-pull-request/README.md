@@ -26,10 +26,14 @@ and stopped; and a look that may remove a branch it pushed starts it once for th
 In the repository's own checkout, after Daoris has made the branch:
 
 ```sh
-git push --quiet -u origin <branch>
+git push --quiet origin <tip>:refs/heads/<branch>
 az repos pr create --source-branch <branch> --title <title> --output json --target-branch <base> \
   --description <line> <line> …
 ```
+
+What it pushes is the commit Daoris judged and landed, the frame's `tip`, never the branch as it stands
+at the push: a commit made on the branch after the landing judged it (an agent's, in a tree on a branch
+of its own) stays behind for the next landing. A frame from a Daoris before `tip` pushes `<branch>`.
 
 The organization, project and repository are the ones `az` detects from the checkout's `origin`
 (`--detect`, on by default), so nothing here names them. The title is the quest's (or what you first
@@ -48,7 +52,7 @@ its address ends in, and pushes only while it is `active`:
 
 ```sh
 az repos pr show --id <number> --output json
-git push --quiet origin <branch>
+git push --quiet origin <tip>:refs/heads/<branch>
 ```
 
 A pull request that is completed or abandoned, or a status `az` cannot read, answers *not pushed*,
@@ -107,10 +111,11 @@ calls above, the checks, and the version question Daoris asks.
   needs Azure CLI 2.0.49. `az extension add` takes the newest one the CLI can run: 0.17.0 on 2.0.79,
   whose arguments read the same, and 1.0 from 2.30.0. A reading of the extension's source and its index:
   no Azure CLI that old was run.
-- **Git 1.7.0**: `git push`'s `-u` and `--quiet` are both in 1.7.0's options
-  ([`builtin-push.c` at v1.7.0](https://github.com/git/git/blob/v1.7.0/builtin-push.c)), and its
-  [release notes](https://github.com/git/git/blob/master/Documentation/RelNotes/1.7.0.adoc) name
-  `--set-upstream`. A reading of the source: no Git that old was run.
+- **Git 1.7.0**: `git push`'s `--quiet` is in 1.7.0's options
+  ([`builtin-push.c` at v1.7.0](https://github.com/git/git/blob/v1.7.0/builtin-push.c)), and a refspec
+  whose source is a commit's id is in its documentation there
+  ([`git-push.txt` at v1.7.0](https://github.com/git/git/blob/v1.7.0/Documentation/git-push.txt)). A
+  reading of the source: no Git that old was run.
 - **Node.js 16.6.0**: `land.mjs` takes a command's last line with `Array.prototype.at`, which came with V8
   9.2 in [Node.js 16.6.0](https://nodejs.org/en/blog/release/v16.6.0). That everything else it uses is
   older is a reading of the script, not a run on 16.6.0.

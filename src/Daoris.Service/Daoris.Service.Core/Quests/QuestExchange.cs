@@ -1162,7 +1162,9 @@ public sealed class QuestExchange(
         // How a `done` answers each of the quest's requirements (DRIFT1d, D133 §4).
         IReadOnlyList<QuestAnswer>? answers = null,
         // A decline that applies only while the quest is open (PAUSE1c, D132 point 10): an abandon's.
-        bool whileOpen = false)
+        bool whileOpen = false,
+        // The session answering, as its connector's intake names it (FABRIC-CLOSE1o): a take binds the graph named for that session only.
+        string? session = null)
     {
         // Answers are a done's (DRIFT1d): carried by any other verb, a wait included, they would be dropped, and
         // dropped looks kept.
@@ -1237,8 +1239,11 @@ public sealed class QuestExchange(
 
         // Every verb commits here, shared or not (D68): the next sync carries it to the remote, where the
         // first push wins and a later one is kept as a conflict rather than lost (design §5).
+        // A take judges the graph named for it inside its own write (FABRIC-CLOSE1o): by the session taking, and by the remotes map as
+        // it reads at that moment, never by a look taken here before it.
         var move = await quests.MoveAsync(
-                id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen, byAgent: status == QuestStatus.Done)
+                id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen, byAgent: status == QuestStatus.Done,
+                taker: status == QuestStatus.Taken ? new QuestTaker(session, SyncsThroughRemote) : null)
             .ConfigureAwait(false);
 
         if (move.Quest is null)
@@ -1270,6 +1275,7 @@ public sealed class QuestExchange(
                 QuestRespondRefusal.None,
                 $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{await AnsweredAsync(move.Quest, ct).ConfigureAwait(false)}"
                 + BoundAtTake(move.Quest)
+                + UnboundAtTake(move.TakeBind)
                 // Only the next sync can say whether another machine took it first (PAUSE1c), so the answer says
                 // what that would mean; a quest nobody shares has no other machine to take it.
                 + (whileOpen && await SharedAtAsync(move.Quest, ct).ConfigureAwait(false) is not null
@@ -1390,7 +1396,8 @@ public sealed class QuestExchange(
     /// The same graph again is the same bind, answered as it stands; another graph is refused, as a quest follows the graph
     /// bound at its start. It commits here and travels like any verb (D68).
     /// </remarks>
-    public async Task<QuestRespondOutcome> BindAsync(string id, string? graph, DateTimeOffset now, CancellationToken ct = default, bool atTake = false)
+    public async Task<QuestRespondOutcome> BindAsync(
+        string id, string? graph, DateTimeOffset now, CancellationToken ct = default, bool atTake = false, string? session = null)
     {
         var name = id.TrimStart('#');
         if (string.IsNullOrWhiteSpace(graph))
@@ -1398,7 +1405,7 @@ public sealed class QuestExchange(
             return new(QuestRespondRefusal.NotInGraph, "A bind names the graph's digest (`graph`). Nothing moved.", Quest: null);
         }
 
-        if (atTake) return await BindAtTakeAsync(name, graph.Trim(), now, ct).ConfigureAwait(false);
+        if (atTake) return await BindAtTakeAsync(name, graph.Trim(), session ?? "", now, ct).ConfigureAwait(false);
 
         var move = await quests.BindAsync(name, graph.Trim(), now, ct).ConfigureAwait(false);
         if (move.Quest is not { } standing)
@@ -1430,20 +1437,28 @@ public sealed class QuestExchange(
     /// (§E5's cutover: it keeps today's done), and on a quest that leaves this machine for a remote, whose other machines no host here
     /// can say run a build that knows a bound quest (FABRIC-CLOSE1e's compatibility).
     /// </summary>
-    private async Task<QuestRespondOutcome> BindAtTakeAsync(string name, string graph, DateTimeOffset now, CancellationToken ct)
+    private async Task<QuestRespondOutcome> BindAtTakeAsync(string name, string graph, string session, DateTimeOffset now, CancellationToken ct)
     {
         if (await quests.FindAsync(name, ct).ConfigureAwait(false) is not { } found)
         {
             return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
         }
 
-        if (await SharedAtAsync(found, ct).ConfigureAwait(false) is not null)
+        // FABRIC-CLOSE1o: named for one session, whose take alone binds it; a driver before it names none, and its quest closes by its done.
+        if (string.IsNullOrWhiteSpace(session))
+        {
+            return new(QuestRespondRefusal.NotInGraph, $"Quest `#{name}`'s graph is named for its take by the session that will take it "
+                + "(`session`), and this names none: it closes by its done. Nothing moved.", Quest: null);
+        }
+
+        // The map sync reads, as the driver read it before naming the graph, and as the take reads it again (FABRIC-CLOSE1o).
+        if (SyncsThroughRemote(found.Workspace))
         {
             return new(QuestRespondRefusal.NotInGraph, $"Quest `#{name}` syncs through a remote, whose machines this host cannot say know a "
                 + "bound quest: it closes by its done. Nothing moved.", Quest: null);
         }
 
-        var move = await quests.BindAtTakeAsync(name, graph, now, ct).ConfigureAwait(false);
+        var move = await quests.BindAtTakeAsync(name, graph, session.Trim(), now, ct).ConfigureAwait(false);
         if (move.Quest is not { } standing)
         {
             return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
@@ -1460,6 +1475,29 @@ public sealed class QuestExchange(
         ? $" It closes through its graph `{graph}`: when its work is done, say `ready` with your note and an answer for each requirement, "
           + "never `done`; the graph writes its Done at the work's end, once its holds and gates are through."
         : "";
+
+    /// <summary>
+    /// What a take that went unbound tells the session its graph was named for (FABRIC-CLOSE1o), once, in its own answer: that session
+    /// was told `ready` at its start, and finishes with `done`, as any quest. Nothing for a take no graph was named for, nor for another
+    /// session's take or an unowned row's, whose sessions were told nothing of a graph.
+    /// </summary>
+    private static string UnboundAtTake(QuestTakeBind bind)
+    {
+        var why = bind switch
+        {
+            QuestTakeBind.Expired => "its closure graph was named for this take, and that naming expired before the take came",
+            QuestTakeBind.Replaced => "its closure graph was named for an earlier publication of this quest, deleted and asked again since",
+            QuestTakeBind.Remote => "its workspace syncs through a remote since its closure graph was named for this take",
+            _ => null,
+        };
+        return why is null ? "" : $" It is not bound to a graph: {why}. Finish it with `done` when its work is done, as any quest, whatever your instruction said.";
+    }
+
+    /// <summary>
+    /// Whether <paramref name="workspace"/> syncs through a remote by this machine's map, read when asked (FABRIC-CLOSE1o): the map
+    /// sync reads, as the driver read it before naming a graph. A circle with a remote is never bound, whoever of it is joined.
+    /// </summary>
+    private bool SyncsThroughRemote(string workspace) => remotes?.For(workspace) is not null;
 
     /// <summary>
     /// The agent's <c>ready</c> in a closure graph (FABRIC-CLOSE1a, §E5): its result, carrying exactly what a done carries, its

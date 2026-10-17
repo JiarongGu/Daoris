@@ -65,6 +65,8 @@
   "work.review.handProblem": "现在交接会被拒绝：{{problem}}",
   "work.review.accepting": "落地中…",
   "work.review.acceptingGate": "检查中…",
+  "work.review.acceptingWaiting": "排队中…",
+  "work.review.handingWaiting": "排队中…",
   "work.review.sendBack": "退回…",
   "work.review.discard": "丢弃工作树",
   "work.review.discardTitle": "丢弃这个工作树",

@@ -751,6 +751,28 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// The close door writes it Done on the submission named, answers the same key again with the first outcome, and refuses a
     /// call that is not one (400), an unknown quest (404) and a stale or closed one (409).
     /// </summary>
+    /// <summary>
+    /// FABRIC-CLOSE1o: the bind door reads the session a graph is named for at the take, and refuses a bind at the take that names none,
+    /// as a driver before it sends; a take through the respond door names no session, so it is not that session's, and goes unbound.
+    /// </summary>
+    [Fact]
+    public async Task A_bind_at_the_take_names_its_session_and_a_take_that_is_not_that_session_s_goes_unbound()
+    {
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the owned bind report for the weekly review." });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new { to = "Keeper", title = "Write the owned bind report", body = "For the review." });
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        const string Graph = "gph-0f1e2d3c4b5a6978";
+
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = Graph, atTake = true })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = Graph, atTake = true, session = "ses-owned" })).Status);
+
+        var take = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" });
+        Assert.Equal(200, take.Status);
+        Assert.False(take.Json.GetProperty("quest").TryGetProperty("closure", out var closure) && closure.ValueKind == JsonValueKind.String);
+    }
+
     [Fact]
     public async Task A_bound_quest_is_submitted_with_ready_and_closed_once_by_the_close_door()
     {

@@ -163,6 +163,23 @@ public static class TreeTips
 
     private static string? Commit(string text) => EvidenceCodes.IsObjectId(text) ? text.ToLowerInvariant() : null;
 
+    /// <summary>
+    /// The repository's common git directory for a checkout, read from git's own files with no process: the checkout's git directory
+    /// (<see cref="GitBranches.GitDirectory"/>), and the one its <c>commondir</c> names where it is a linked worktree's. Null where the
+    /// files cannot say it. What LANDRACE1's branch hold names a repository by, whichever checkout a door holds.
+    /// </summary>
+    public static string? CommonDirectory(string checkout)
+    {
+        try
+        {
+            return GitBranches.GitDirectory(checkout) is { } own ? Common(own) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>A linked tree's git directory names the repository's in <c>commondir</c>; any other is its own.</summary>
     private static string Common(string own)
     {

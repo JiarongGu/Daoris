@@ -202,6 +202,23 @@ describe('the Plugins view', () => {
     expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^acme\.gate is updated/));
   });
 
+  /** LANDPIN3: a copy with no record of its own, older than the install's, takes the install's copy by the person's press. */
+  it('updates an older copy of a shipped plugin from the install by two presses, asking for the shipped copy', async () => {
+    answer([{ ...GATE, source: { kind: 'none' }, shipped: { state: 'older', installed: '1.2.0', shipped: '1.3.0', changes: 'Pushes the commit judged.' } }]);
+    routes.PLUGIN_UPDATE = ({ id, apply }) => (apply
+      ? { id, applied: true, changes: [] }
+      : { id, applied: false, changes: [{ what: 'version', was: '1.2.0', now: '1.3.0' }] });
+    window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');
+    show();
+
+    await userEvent.click(within(await screenHeader()).getByRole('button', { name: 'Update acme.gate' }));
+    const plan = await within(main()).findByRole('region', { name: 'What an update changes' });
+    expect(calls('PLUGIN_UPDATE')).toEqual([{ id: 'acme.gate', shipped: true }]);
+
+    await userEvent.click(within(plan).getByRole('button', { name: 'Update now' }));
+    await waitFor(() => expect(calls('PLUGIN_UPDATE')).toEqual([{ id: 'acme.gate', shipped: true }, { id: 'acme.gate', apply: true, shipped: true }]));
+  });
+
   it('installs an offer, and the list chooses the plugin it became', async () => {
     routes.PLUGIN_INSTALL = ({ offer }) => {
       answer([GATE, FUTURE, BROWSER], [{ ...BROWSER_OFFER, installed: true }]);

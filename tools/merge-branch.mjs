@@ -154,8 +154,9 @@
  * The real-process halves and the rehearsals start real processes and run one at a time (AGENTS.md); the other gates
  * start none, and a full set of about 55 minutes waited about ten of them on those. So the gates run in two lanes at
  * once: the Process lane (`isProcessLane`: a gate run with a `process.runsettings` file, or an `npm run rehearse*`
- * script), one gate at a time, and the light lane beside it, one gate at a time too. The lane is read from what a gate
- * runs, as `isProcessGate` is, rather than declared: the workflow's own rehearsals are in no declaration.
+ * script), one gate at a time, and the light lane beside it, up to three gates at once (GATELANES2, below). The lane is
+ * read from what a gate runs, as `isProcessGate` is, rather than declared: the workflow's own rehearsals are in no
+ * declaration.
  *
  * Two builds of one .NET project at once fight over its `obj/` and `bin/`. So a Process-lane gate starts only once the
  * light gates of its component (`dotnetComponent`: the first two folders of the project its command names) have ended,
@@ -174,6 +175,29 @@
  * `--keep-going`, starts nothing more in either lane, and the gate running in the other lane runs to its end and keeps
  * its verdict: a gate is never stopped midway. `--one-at-a-time` runs every gate in turn in the plan's order, as before,
  * for a loaded machine; a batch keeps it once given. The web gate keeps its own cap on its workers (WEBGATE1).
+ *
+ * ## The light lane's gates side by side (GATELANES2)
+ *
+ * A merge's light gates ran one at a time, 394 to 434 s on 2026-10-18, and in a full set every Process gate waited for
+ * the heavy ones. So up to `LIGHT_WIDTH` (three) light gates run at once, each starting, in the light lane's order, once
+ * a place is free and no gate running builds a component it builds. A gate's components (`gateComponents`) are its
+ * command's and those of the root scripts it names, read through: the CLI's `npm run verify` ends in the devkit's
+ * universal gates, so it runs in turn with universal, code-map and devkit; `npm run test:web` builds the HTTP host its
+ * own build writes into, so it runs in turn with service; driver and modules share the desktop's. A gate that builds
+ * none (orient-index) runs beside any. `LIGHT_WIDTH` says why three. Each gate keeps its own process, log, verdict and
+ * line; the lines print as gates end, and the summary in the plan's order. The first failure starts nothing more, and
+ * the gates running end and keep their verdicts. GATEORDER1's waits are unchanged, and `--one-at-a-time` is as before.
+ * A run of one light gate alone, or of Process gates alone, runs in turn.
+ *
+ * ## A Process half on its fast half's build (GATEBUILD1)
+ *
+ * Each `dotnet test` gate built its project again. A Process half whose test project's fast half (`reuses`: the light
+ * gate whose `testBuild` is the same, the project and every option but `--filter`, `--settings` and the logger) passed
+ * in this run, on the tree the half starts on, runs with `--no-build`, and its line says whose build it ran
+ * (`no build: driver built this tree in this run`). The tree is the one each verdict is recorded with (`contentTree`), so
+ * a changed tree, or one git cannot name, builds. A `--rerun` or `--stale` that names a Process half without its fast
+ * half has no fast half in its run, and builds; one that names both reuses as a full set does. The flake re-run alone
+ * was `--no-build` already. One at a time reuses too.
  *
  * ## A batch
  *
@@ -273,16 +297,86 @@ export function dotnetComponent(run) {
 }
 
 /**
+ * How many light gates run at once (GATELANES2). This repository's light gates build three components between them
+ * (the devkit's, with the CLI's verify, which ends in its universal gates; the service's, with the web gate, which builds
+ * the HTTP host its own build writes into; the desktop's) and one builds none (orient-index, 2 to 3 s). So three places
+ * let each component's gates run in their own while a fourth would only ever hold orient-index. Measured from the
+ * 2026-10-18 merges' logs: the seven light gates of a merge took 394 to 434 s in turn; two places would take the longer
+ * of the devkit's 175 s and the service's and the desktop's together, 257 s; three take the devkit's 175 s. A full set
+ * that runs the web gate ends no sooner with three than with two (the service's gates then web, about 10 minutes under
+ * load, are its floor), so three is the width, on 22 logical processors.
+ */
+export const LIGHT_WIDTH = 3;
+
+/** The root script an `npm run <script>` command names, past its flags, or null. */
+const scriptNamed = (command) => /^npm\s+run\s+(?:-\S+\s+)*([^\s-]\S*)/.exec(command.trim())?.[1] ?? null;
+
+/**
+ * The .NET components a gate builds (GATELANES2): its command's (`dotnetComponent`), and each one a root script it names
+ * builds, read through the scripts those name in turn. The CLI's `npm run verify` ends in the devkit's universal gates
+ * and `npm run test:web` builds the HTTP host, so each shares a component with a .NET gate, and no two gates that build
+ * one component run at once. A gate that builds none (orient-index) is a component of its own.
+ */
+export function gateComponents(gate, scripts = {}) {
+  const found = new Set();
+  const read = (command, seen) => {
+    const own = dotnetComponent(command);
+    if (own) found.add(own);
+    const script = scriptNamed(command);
+    if (!script || seen.has(script) || typeof scripts[script] !== 'string') return;
+    for (const part of scripts[script].split(/&&|\|\||;/)) read(part, new Set([...seen, script]));
+  };
+  read(gate.run, new Set());
+  return [...found];
+}
+
+/** The options of `dotnet test` that change what it runs, not what it builds: each takes a value. */
+const RUN_ONLY = new Set(['--filter', '--settings', '-s', '--logger', '-l', '--results-directory']);
+
+/**
+ * What a `dotnet test <project>` command builds (GATEBUILD1), as a key two commands share when they build the same: the
+ * project, its path's separators and quotes read away, and every option but those that only choose what runs. A Process
+ * half and the fast half of one test project differ by their `--filter` and `--settings` alone. Null for any other
+ * command, and for one whose project is not its first word: a build this cannot read is a build that runs.
+ */
+export function testBuild(run) {
+  const words = run.trim().match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
+  if (words[0] !== 'dotnet' || words[1] !== 'test' || !words[2] || words[2].startsWith('-')) return null;
+  const project = words[2].replace(/^["']|["']$/g, '').split(/[\\/]+/).filter((part) => part && part !== '.').join('/');
+  const options = [];
+  for (let i = 3; i < words.length; i += 1) {
+    const [name] = words[i].split('=');
+    if (!RUN_ONLY.has(name)) options.push(words[i]);
+    else if (!words[i].includes('=')) i += 1;
+  }
+  return ['dotnet test', project, ...options].join(' ');
+}
+
+/** A `dotnet test` command that runs what is already built (GATEBUILD1). */
+export const noBuildCommand = (run) => `${run.trim()} --no-build`;
+
+/**
+ * Whether a Process half runs its fast half's build (GATEBUILD1): only when that half passed in this run on the tree the
+ * Process half starts on. A changed tree builds, and so does a tree git could not name.
+ */
+export const reuseBuild = (built, tree) => Boolean(built?.tree && tree && built.tree === tree);
+
+/**
  * The two lanes of a run (GATELANES1), and what each Process-lane gate starts after. Two builds of one project at once
  * fight over its `obj/` and `bin/`, so a Process-lane gate whose command names a component waits for the light gates of
  * that component, which run first in their lane, and one that names none (a rehearsal: it builds the hosts behind its
  * script's name, and the deployment rehearsal shuts the build servers down) waits for the whole light lane. Within each
  * rule, the plan's order holds.
+ *
+ * GATELANES2: up to `width` light gates run at once, never two that build one component (`components`, read through
+ * the root `scripts` a gate names). GATEBUILD1: `reuses` names, for each Process half, the light gate that builds the
+ * same test project the same way (`testBuild`), its fast half.
  */
-export function laneSchedule(gates) {
+export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH } = {}) {
   const process = gates.filter(isProcessLane);
   const planned = gates.filter((gate) => !isProcessLane(gate));
-  const sharing = (component) => planned.filter((other) => component !== null && dotnetComponent(other.run) === component);
+  const components = Object.fromEntries(planned.map((gate) => [gate.name, gateComponents(gate, scripts)]));
+  const sharing = (component) => planned.filter((other) => component !== null && components[other.name].includes(component));
   const first = new Set(process.flatMap((gate) => sharing(dotnetComponent(gate.run))).map((gate) => gate.name));
   const light = [...planned.filter((gate) => first.has(gate.name)), ...planned.filter((gate) => !first.has(gate.name))];
   const waits = Object.fromEntries(process.map((gate) => {
@@ -291,7 +385,23 @@ export function laneSchedule(gates) {
     const after = component === null ? light : light.filter((other) => sharing(component).includes(other) || isHeavyGate(other));
     return [gate.name, { after: after.map((other) => other.name), component }];
   }));
-  return { light, process, waits };
+  const reuses = {};
+  for (const gate of process) {
+    const build = testBuild(gate.run);
+    const fast = build && planned.find((other) => testBuild(other.run) === build);
+    if (fast) reuses[gate.name] = fast.name;
+  }
+  return { light, process, waits, width: Math.max(1, width), components, reuses };
+}
+
+/** The root `package.json`'s scripts, which `gateComponents` reads behind a gate's `npm run`; none when it has none. */
+function rootScripts(root) {
+  try {
+    const { scripts } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+    return scripts && typeof scripts === 'object' ? scripts : {};
+  } catch {
+    return {};
+  }
 }
 
 export const USAGE = [
@@ -2083,15 +2193,18 @@ function runSteps(root, gate, log, step, command = gate.run) {
 
 /**
  * One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. `settled`, handed to a
- * Process-lane gate, resolves once the light lane beside it has ended (GATELANES1).
+ * Process-lane gate, resolves once the light lane beside it has ended (GATELANES1). `noBuild` runs a `dotnet test`
+ * gate with `--no-build`, on the build `built` (its fast half's pass in this run) made, and its note says so (GATEBUILD1).
  */
-export async function runGate(root, gate, dir, { step = runStep, settled = null } = {}) {
+export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null } = {}) {
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
   // PROC1: a Process half also leaves each test's duration beside its log, read once it ends.
   const trx = isProcessGate(gate) ? join(dir, `${gate.name}.trx`) : null;
   if (trx) rmSync(trx, { force: true });
-  const code = await runSteps(root, gate, log, step, trx ? trxCommand(gate.run, trx) : gate.run);
+  const reused = noBuild && testBuild(gate.run) !== null;
+  const command = reused ? noBuildCommand(gate.run) : gate.run;
+  const code = await runSteps(root, gate, log, step, trx ? trxCommand(command, trx) : command);
   const result = { gate, code, log, verdict: code === 0 ? 'PASS' : 'FAIL', note: code === 0 ? '' : `exit ${code}` };
   if (trx && existsSync(trx)) Object.assign(result, { trx, slowest: slowestClasses(readFileSync(trx, 'utf8')) });
   if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
@@ -2128,6 +2241,7 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null 
       }
     }
   }
+  if (reused) result.note = [result.note, `no build: ${built?.gate ?? 'its fast half'} built this tree in this run`].filter(Boolean).join('; ');
   result.ms = Date.now() - started;
   return result;
 }
@@ -2158,11 +2272,18 @@ function signal() {
 /** What a two-lane run says before it starts: each lane, and what each Process-lane gate waits for and why. */
 function laneLines(schedule) {
   const names = (list) => list.join(', ');
-  const out = [
-    '  two lanes at once (--one-at-a-time runs every gate in turn, for a loaded machine):',
-    `    light    ${names(schedule.light.map((gate) => gate.name))}`,
-    `    Process  ${names(schedule.process.map((gate) => gate.name))}, one at a time`,
-  ];
+  const turn = '--one-at-a-time runs every gate in turn, for a loaded machine';
+  const out = schedule.process.length
+    ? [`  two lanes at once, the light one up to ${schedule.width} gates wide (${turn}):`]
+    : [`  the light lane, up to ${schedule.width} gates at once (${turn}):`];
+  out.push(`    light    ${names(schedule.light.map((gate) => gate.name))}`);
+  if (schedule.process.length) out.push(`    Process  ${names(schedule.process.map((gate) => gate.name))}, one at a time`);
+  // GATELANES2: the light gates that build one component, which run in turn.
+  const building = new Map();
+  for (const gate of schedule.light) {
+    for (const component of schedule.components[gate.name] ?? []) building.set(component, [...(building.get(component) ?? []), gate.name]);
+  }
+  for (const [component, gates] of building) if (gates.length > 1) out.push(`    ${names(gates)} build ${component}: one at a time`);
   const groups = new Map();
   for (const gate of schedule.process) {
     const { after, component } = schedule.waits[gate.name];
@@ -2173,21 +2294,33 @@ function laneLines(schedule) {
   }
   for (const { after, component, gates } of groups.values()) {
     const verb = gates.length === 1 ? 'starts' : 'start';
-    const runs = new Map(schedule.light.map((gate) => [gate.name, gate.run]));
-    const own = after.filter((name) => dotnetComponent(runs.get(name)) === component);
+    const own = after.filter((name) => schedule.components[name]?.includes(component));
     const loud = after.filter((name) => !own.includes(name));
     out.push(component === null
       ? `    ${names(gates)} ${verb} once the light lane has ended: a rehearsal builds what its command does not name`
       : `    ${names(gates)} ${verb} once ${names(after)} ${after.length === 1 ? 'has' : 'have'} ended: ${own.length ? `${names(own)} build ${component} first${loud.length ? ', ' : ''}` : ''}${loud.length ? `${names(loud)} load${loud.length === 1 ? 's' : ''} the machine` : ''}`);
   }
+  // GATEBUILD1: the Process halves that run their fast half's build.
+  const reusing = new Map();
+  for (const gate of schedule.process) {
+    const fast = schedule.reuses[gate.name];
+    if (fast) reusing.set(fast, [...(reusing.get(fast) ?? []), gate.name]);
+  }
+  for (const [fast, gates] of reusing) {
+    out.push(`    ${names(gates)} ${gates.length === 1 ? 'runs' : 'run'} --no-build when ${fast} has passed in this run on the tree ${gates.length === 1 ? 'it starts' : 'they start'} on`);
+  }
   return out;
 }
 
-/** One gate after another, in the plan's order: every run before GATELANES1, and `--one-at-a-time`. */
-async function runInTurn(root, gates, dir, { keepGoing, run, print }) {
+/**
+ * One gate after another, in the plan's order: every run before GATELANES1, and `--one-at-a-time`. `beside` names what
+ * each gate is handed (GATEBUILD1: a Process half, its fast half's pass), and `heard` hears each result.
+ */
+async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {} }) {
   const results = [];
   for (let i = 0; i < gates.length; i += 1) {
-    const result = await run(root, gates[i], dir, {});
+    const result = await run(root, gates[i], dir, beside(gates[i]));
+    heard(result);
     results.push(result);
     print(resultLine(root, result));
     for (const line of slowestLines(root, result)) print(line);
@@ -2203,14 +2336,29 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print }) {
  * The gates, one line each as it ends (and a Process gate's slowest classes under it). The first failure starts
  * nothing more and every gate not started is named as not run, unless `keepGoing`.
  *
- * GATELANES1: the light lane runs beside the Process lane (`laneSchedule`), each one gate at a time, and once both have
- * ended every gate's line is printed again in the plan's order. A failure in either lane starts nothing more in either;
- * the gate running in the other lane runs to its end and keeps its verdict, since a gate is never stopped midway. A run
- * with one lane, or `oneAtATime`, runs every gate in turn as before. The results are in the plan's order.
+ * GATELANES1: the light lane runs beside the Process lane (`laneSchedule`), and once both have ended every gate's line
+ * is printed again in the plan's order. A failure in either lane starts nothing more in either; the gates running run to
+ * their end and keep their verdicts, since a gate is never stopped midway. `oneAtATime`, or a run with no light gate
+ * or one light gate alone, runs every gate in turn as before. The results are in the plan's order.
+ *
+ * GATELANES2: the light lane runs up to `width` gates at once, each starting, in the lane's order, once a place is free
+ * and no gate running builds a component it builds; the Process lane stays one gate at a time. `scripts` are the root
+ * scripts a gate's `npm run` is read through, the root `package.json`'s unless given.
+ *
+ * GATEBUILD1: a Process half is handed `built`, its fast half's pass in this run and the tree that ran on, which the
+ * runner compares with the tree the half starts on (`reuseBuild`). A run with no fast half (a `--rerun` or `--stale`
+ * that names a Process half alone) hands none, and the half builds.
  */
-export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, run = runGate, print = console.log } = {}) {
-  const schedule = laneSchedule(gates);
-  if (oneAtATime || !schedule.light.length || !schedule.process.length) return runInTurn(root, gates, dir, { keepGoing, run, print });
+export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log } = {}) {
+  const schedule = laneSchedule(gates, { scripts: scripts ?? rootScripts(root), width });
+  const passed = new Map();
+  const heard = (result) => {
+    if (result.verdict === 'PASS' && !isProcessLane(result.gate)) passed.set(result.gate.name, { gate: result.gate.name, tree: result.tree ?? null });
+  };
+  const built = (gate) => (passed.has(schedule.reuses[gate.name]) ? { built: passed.get(schedule.reuses[gate.name]) } : {});
+  if (oneAtATime || !schedule.light.length || (schedule.light.length === 1 && !schedule.process.length)) {
+    return runInTurn(root, gates, dir, { keepGoing, run, print, beside: built, heard });
+  }
 
   for (const line of laneLines(schedule)) print(line);
   const results = new Map();
@@ -2222,34 +2370,51 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
     try {
       result = await run(root, gate, dir, beside);
     } catch (error) {
-      // A tool error ends the run as it always did, once the other lane's gate has ended.
+      // A tool error ends the run as it always did, once the gates running beside it have ended.
       stopped = true;
       throw error;
     }
     results.set(gate.name, result);
+    heard(result);
     print(resultLine(root, result));
     for (const line of slowestLines(root, result)) print(line);
     if (result.verdict === 'FAIL' && !keepGoing) stopped = true;
   };
   const light = (async () => {
+    const waiting = [...schedule.light];
+    const running = new Map();
+    const held = new Set();
+    let thrown = null;
     try {
-      for (const gate of schedule.light) {
-        if (stopped) break;
-        await one(gate, {});
-        ended.get(gate.name).resolve();
+      for (;;) {
+        for (const gate of [...waiting]) {
+          if (stopped || running.size >= schedule.width) break;
+          const builds = schedule.components[gate.name];
+          if (builds.some((component) => held.has(component))) continue;
+          waiting.splice(waiting.indexOf(gate), 1);
+          for (const component of builds) held.add(component);
+          running.set(gate.name, one(gate, {}).catch((error) => { thrown ??= error; }).finally(() => {
+            for (const component of builds) held.delete(component);
+            running.delete(gate.name);
+            ended.get(gate.name).resolve();
+          }));
+        }
+        if (!running.size) break;
+        await Promise.race(running.values());
       }
     } finally {
       // A gate the stop left unstarted has ended too, for whatever waits on it.
       for (const each of ended.values()) each.resolve();
       lightEnded.resolve();
     }
+    if (thrown) throw thrown;
   })();
   const settled = () => lightEnded.promise;
   const processLane = (async () => {
     for (const gate of schedule.process) {
       await Promise.all(schedule.waits[gate.name].after.map((name) => ended.get(name).promise));
       if (stopped) break;
-      await one(gate, { settled });
+      await one(gate, { settled, ...built(gate) });
     }
   })();
   const outcomes = await Promise.allSettled([light, processLane]);
@@ -2363,7 +2528,8 @@ function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, 
     run: async (where, gate, logs, beside) => {
       const tree = contentTree(where);
       const started = nowIso();
-      const result = await runGate(where, gate, logs, beside);
+      // GATEBUILD1: a Process half runs its fast half's build when that passed in this run on this same tree.
+      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree) });
       Object.assign(result, { tree, at: started });
       addVerdicts(where, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
       onResult(result);

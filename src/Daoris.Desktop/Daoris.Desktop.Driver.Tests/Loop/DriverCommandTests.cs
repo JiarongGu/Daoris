@@ -99,8 +99,11 @@ public sealed class DriverCommandTests
         Assert.Contains("case [\"sync\", ..]", program);
         Assert.Contains("var scope = TreesCommand.Scope(ask);", program);
         Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]]", program);
-        // WSR7: what was not fetched is said once, first, on the list and on the press alike.
-        Assert.Equal(2, program.Split("SyncWords.NotFetched(").Length - 1);
+        // WSR7: what was not fetched is said once, first, on the list and on the press alike: the list's here, the press's in the
+        // words the route answers too (RPC1b3, `TreesWords.Sync`).
+        Assert.Equal(1, program.Split("SyncWords.NotFetched(").Length - 1);
+        Assert.Contains("TreesWords.Sync(done", program);
+        Assert.Contains("SyncWords.NotFetched(", File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesWords.cs")));
     }
 
     /// <summary>

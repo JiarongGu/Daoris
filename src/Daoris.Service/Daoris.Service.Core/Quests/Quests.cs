@@ -332,7 +332,50 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
     /// stands on the submission it grew from. Null on every other move.
     /// </summary>
     public string? SealedBy { get; init; }
+
+    /// <summary>
+    /// What a take made of the closure graph named for it (FABRIC-CLOSE1o, §E5's cutover): <see cref="QuestTakeBind.None"/> on every
+    /// other move and on a take no graph was named for.
+    /// </summary>
+    public QuestTakeBind TakeBind { get; init; }
 }
+
+/// <summary>
+/// What a take made of the closure graph the driver named for it (FABRIC-CLOSE1o, §E5's cutover), judged and consumed in the take's
+/// own write: bound, or why not. Only <see cref="Bound"/> appends the bind; every other reading leaves the take unbound, closing by
+/// its done as any quest.
+/// </summary>
+public enum QuestTakeBind
+{
+    /// <summary>No graph was named for this take: the owner's install, and every take before a closure graph.</summary>
+    None,
+
+    /// <summary>Bound in the take's own write.</summary>
+    Bound,
+
+    /// <summary>A pending row whose owner cannot be shown, written before the owner was kept or by a build before it: discarded.</summary>
+    Unowned,
+
+    /// <summary>Named for another session than the one taking.</summary>
+    OtherSession,
+
+    /// <summary>Named for a publication of this id since replaced, by a delete and the same ask again.</summary>
+    Replaced,
+
+    /// <summary>Named longer ago than <see cref="QuestStore.TakeBindLife"/> before the take.</summary>
+    Expired,
+
+    /// <summary>The quest's circle syncs through a remote now, enabled since the graph was named.</summary>
+    Remote,
+}
+
+/// <summary>
+/// Who takes a quest (FABRIC-CLOSE1o): the session the authenticated intake names, null for a door that names none, and how this
+/// machine's remotes read at the moment of the take, by circle. What a take needs to judge the bind named for it, inside its write.
+/// </summary>
+/// <param name="Session">The taking session, from its connector's intake (<c>DAORIS_SESSION_ID</c>); null where no session is named.</param>
+/// <param name="Remote">Whether a circle syncs through a remote, by the map sync reads, asked inside the take's write; null reads none.</param>
+public sealed record QuestTaker(string? Session, Func<string, bool>? Remote = null);
 
 /// <summary>
 /// A taker's submission in a closure graph (FABRIC-CLOSE1a, the fabric events design §E5): the operation that made it, by the
@@ -466,6 +509,12 @@ public sealed class QuestStore
 
     /// <summary>What an id was before it widened — a quest published then keeps the id it was quoted by.</summary>
     private const int LegacyIdLength = 6;
+
+    /// <summary>
+    /// How long a graph named for a quest's take waits for it (FABRIC-CLOSE1o): the driver names it as the quest's first session
+    /// opens, whose first act is the take, so a take later than this is not that start's, and goes unbound, saying so.
+    /// </summary>
+    public static readonly TimeSpan TakeBindLife = TimeSpan.FromHours(1);
 
     /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
     private readonly ConnectionGate _db;
@@ -601,11 +650,17 @@ public sealed class QuestStore
                 );
                 -- The closure graph each open quest binds at its take (FABRIC-CLOSE1l, §E5's cutover), as the driver named it
                 -- when it opened the quest's first session: the take on this machine binds it in the take's own write, and
-                -- the row goes with it. Never pushed or served.
+                -- the row goes with it. Never pushed or served. Its owner (FABRIC-CLOSE1o): the session it was named for, the
+                -- publication it was named on and when it lapses, nullable so a build before them still writes its three columns, and
+                -- a row without them owns nothing.
                 CREATE TABLE IF NOT EXISTS quest_take_binds (
                   id    TEXT PRIMARY KEY,
                   graph TEXT NOT NULL,
-                  at    TEXT NOT NULL
+                  at    TEXT NOT NULL,
+                  session            TEXT NULL,
+                  published_machine  TEXT NULL,
+                  published_sequence INTEGER NULL,
+                  expires            TEXT NULL
                 );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -694,9 +749,27 @@ public sealed class QuestStore
             ("quests", "closure", "closure TEXT NULL"),
             ("quests", "submission", "submission TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
+            // A bind named for a take, owned (FABRIC-CLOSE1o): CLOSE1l's rows named only the quest. `CREATE TABLE IF NOT EXISTS`
+            // upgrades nothing, so the columns are added here, on a local store and a shared one alike.
+            ("quest_take_binds", "session", "session TEXT NULL"),
+            ("quest_take_binds", "published_machine", "published_machine TEXT NULL"),
+            ("quest_take_binds", "published_sequence", "published_sequence INTEGER NULL"),
+            ("quest_take_binds", "expires", "expires TEXT NULL"),
         })
         {
             await SchemaColumns.EnsureAsync(_db, table, column, definition, ct).ConfigureAwait(false);
+        }
+
+        // FABRIC-CLOSE1o: a pending bind whose owner cannot be shown, kept before the owner was or written since by a build before it,
+        // is discarded, since no take can show it is the one it was named for. The quest and its history are untouched: nothing is
+        // bound until a take, so its take is today's, closing by its done.
+        await using (var unowned = _db.Command())
+        {
+            unowned.CommandText = """
+                DELETE FROM quest_take_binds
+                WHERE session IS NULL OR published_machine IS NULL OR published_sequence IS NULL OR expires IS NULL
+                """;
+            await unowned.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
         // The mirror is gone (design §8). Its rows were copies of a remote's quests, so they are
@@ -1233,9 +1306,14 @@ public sealed class QuestStore
     /// An agent's done (FABRIC-CLOSE1a, §E5): refused here, with <see cref="QuestMove.ClosedByGraph"/>, on a quest a closure
     /// graph binds, judged inside the write so a bind landing a moment earlier is seen. The person's done is never one.
     /// </param>
+    /// <param name="taker">
+    /// Who takes (FABRIC-CLOSE1o): a take binds the graph named for it only for the session it was named for, on the publication it
+    /// was named on, before it expires, and where the quest's circle still syncs through no remote. Null names no session.
+    /// </param>
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
-        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? noteParts = null, bool byAgent = false) =>
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? noteParts = null, bool byAgent = false,
+        QuestTaker? taker = null) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
@@ -1281,14 +1359,21 @@ public sealed class QuestStore
             var moved = QuestLog.Replay([.. history, operation])!;
 
             // FABRIC-CLOSE1l (CLOSE1f): a take whose graph the driver named binds in this same write, judged by the replay's rule as
-            // every bind is, so no agent's done can land between the take and its bind.
-            if (status == QuestStatus.Taken && await TakeBindAsync(id, transaction, inside).ConfigureAwait(false) is { } graph)
+            // every bind is, so no agent's done can land between the take and its bind. FABRIC-CLOSE1o: the row is consumed here
+            // whatever it makes of it, and binds only for its owner, judged at the take's own moment, never by a look before it.
+            var takeBind = QuestTakeBind.None;
+            if (status == QuestStatus.Taken && await TakeBindAsync(id, transaction, inside).ConfigureAwait(false) is { } named)
             {
-                var bind = new QuestOperation(id, QuestOperationKind.Bound, Machine, 0, now, graph);
-                if (QuestLog.Applies(moved, bind))
+                takeBind = named.Judge(taker, history, moved.Workspace, now);
+                var bind = new QuestOperation(id, QuestOperationKind.Bound, Machine, 0, now, named.Graph);
+                if (takeBind == QuestTakeBind.Bound && QuestLog.Applies(moved, bind))
                 {
-                    var bound = await AppendAsync(id, QuestOperationKind.Bound, now, graph, null, transaction, inside).ConfigureAwait(false);
+                    var bound = await AppendAsync(id, QuestOperationKind.Bound, now, named.Graph, null, transaction, inside).ConfigureAwait(false);
                     moved = QuestLog.Replay([.. history, operation, bound])!;
+                }
+                else if (takeBind == QuestTakeBind.Bound)
+                {
+                    takeBind = QuestTakeBind.None;
                 }
             }
 
@@ -1304,7 +1389,7 @@ public sealed class QuestStore
                 followUp = await PublishNextAsync(moved, now, transaction, inside).ConfigureAwait(false);
             }
 
-            return new QuestMove(moved, Moved: true, followUp);
+            return new QuestMove(moved, Moved: true, followUp) { TakeBind = takeBind };
         }, ct);
 
     /// <summary>
@@ -1332,38 +1417,94 @@ public sealed class QuestStore
     /// Name the closure graph an open quest binds at its take (FABRIC-CLOSE1l, folding CLOSE1f; §E5's cutover): kept in this store
     /// alone, so the take on this machine appends the bind in its own write (<see cref="MoveAsync"/>), and no agent's `done` can
     /// land between the take and the bind. The same graph again is the same; another replaces it, since nothing is bound yet.
+    /// FABRIC-CLOSE1o: owned by <paramref name="session"/>, the session it is named for, and by the quest's publication as it stands,
+    /// and lapsing <see cref="TakeBindLife"/> after <paramref name="now"/>; naming it again names it anew, for the session named then.
     /// </summary>
     /// <returns>The quest as it stands and whether the graph is named now; unmoved where it is not open, a null quest for no such id.</returns>
-    public Task<QuestMove> BindAtTakeAsync(string id, string graph, DateTimeOffset now, CancellationToken ct = default) =>
+    public Task<QuestMove> BindAtTakeAsync(string id, string graph, string session, DateTimeOffset now, CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
             if (held is null) return new QuestMove(null, Moved: false);
             var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
-            var standing = history.Count == 0 ? held : QuestLog.Replay(history);
-            if (standing is not { Status: QuestStatus.Open }) return new QuestMove(held, Moved: false);
+            // A row the log never saw is given its history now, as a move gives it: its publication is what the bind is owned by.
+            if (history.Count == 0) history = await GiveHistoryAsync(held, transaction, inside).ConfigureAwait(false);
+            var standing = QuestLog.Replay(history);
+            if (standing is not { Status: QuestStatus.Open } || PublicationOf(history) is not { } publication)
+            {
+                return new QuestMove(held, Moved: false);
+            }
 
             await using var command = _db.Command();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT INTO quest_take_binds (id, graph, at) VALUES ($id, $graph, $at)
-                ON CONFLICT(id) DO UPDATE SET graph = excluded.graph, at = excluded.at
+                INSERT INTO quest_take_binds (id, graph, at, session, published_machine, published_sequence, expires)
+                VALUES ($id, $graph, $at, $session, $machine, $sequence, $expires)
+                ON CONFLICT(id) DO UPDATE SET graph = excluded.graph, at = excluded.at, session = excluded.session,
+                  published_machine = excluded.published_machine, published_sequence = excluded.published_sequence,
+                  expires = excluded.expires
                 """;
             command.Parameters.AddWithValue("$id", id);
             command.Parameters.AddWithValue("$graph", graph);
             command.Parameters.AddWithValue("$at", Moments.Write(now));
+            command.Parameters.AddWithValue("$session", session);
+            command.Parameters.AddWithValue("$machine", publication.Machine);
+            command.Parameters.AddWithValue("$sequence", publication.Sequence);
+            command.Parameters.AddWithValue("$expires", Moments.Write(now + TakeBindLife));
             await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             return new QuestMove(held, Moved: true);
         }, ct);
 
-    /// <summary>The graph named for <paramref name="id"/>'s take, taken from the store in the caller's transaction; null where none was.</summary>
-    private async Task<string?> TakeBindAsync(string id, SqliteTransaction transaction, CancellationToken ct)
+    /// <summary>
+    /// The operation that published the quest as it now stands (FABRIC-CLOSE1o): the latest Published in its history, since a quest
+    /// deleted while open and asked again under the same id is published anew. Null where the history holds none.
+    /// </summary>
+    private static QuestOperationRef? PublicationOf(IReadOnlyList<QuestOperation> history) =>
+        history.LastOrDefault(operation => operation.Kind == QuestOperationKind.Published) is { } published
+            ? new QuestOperationRef(published.Machine, published.Sequence)
+            : null;
+
+    /// <summary>
+    /// The bind named for <paramref name="id"/>'s take, taken from the store in the caller's transaction, owned or not; null where none
+    /// was. Consumed by the take whatever the take makes of it (FABRIC-CLOSE1o), so no row outlives the take it was named for.
+    /// </summary>
+    private async Task<PendingTakeBind?> TakeBindAsync(string id, SqliteTransaction transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
-        command.CommandText = "DELETE FROM quest_take_binds WHERE id = $id RETURNING graph";
+        command.CommandText = """
+            DELETE FROM quest_take_binds WHERE id = $id
+            RETURNING graph, session, published_machine, published_sequence, expires
+            """;
         command.Parameters.AddWithValue("$id", id);
-        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) as string;
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
+        return new PendingTakeBind(
+            reader.GetString(0),
+            reader.IsDBNull(1) ? null : reader.GetString(1),
+            reader.IsDBNull(2) || reader.IsDBNull(3) ? null : new QuestOperationRef(reader.GetString(2), reader.GetInt64(3)),
+            reader.IsDBNull(4) ? null : Moments.Read(reader.GetString(4)));
+    }
+
+    /// <summary>
+    /// A bind named for a take, as the take reads it (FABRIC-CLOSE1o): its graph, and its owner where one was kept: the session it was
+    /// named for, the publication it was named on and when it lapses.
+    /// </summary>
+    private sealed record PendingTakeBind(string Graph, string? Session, QuestOperationRef? Publication, DateTimeOffset? Expires)
+    {
+        /// <summary>
+        /// What the take makes of it, inside the take's write: bound only for the session it was named for, on the publication it was
+        /// named on, before it lapses at <paramref name="now"/>, the take's own moment, and where the circle syncs through no remote.
+        /// </summary>
+        public QuestTakeBind Judge(QuestTaker? taker, IReadOnlyList<QuestOperation> history, string workspace, DateTimeOffset now)
+        {
+            if (Session is null || Publication is null || Expires is null) return QuestTakeBind.Unowned;
+            if (!string.Equals(taker?.Session, Session, StringComparison.Ordinal)) return QuestTakeBind.OtherSession;
+            if (PublicationOf(history) != Publication) return QuestTakeBind.Replaced;
+            if (now >= Expires) return QuestTakeBind.Expired;
+            if (taker?.Remote?.Invoke(workspace) == true) return QuestTakeBind.Remote;
+            return QuestTakeBind.Bound;
+        }
     }
 
     /// <summary>

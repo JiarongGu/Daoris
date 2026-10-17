@@ -26,10 +26,22 @@ interface Options {
   branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
   full: boolean; rerun: string[]; passed: boolean; stale: boolean; oneAtATime: boolean;
 }
-/** GATELANES1: the two lanes, the light one's run order, and what each Process-lane gate starts after. */
-interface Schedule { light: Gate[]; process: Gate[]; waits: Record<string, { after: string[]; component: string | null }> }
-/** What a lane runner hands a gate: when the light lane has ended, for a Process gate's re-run alone. */
-interface Beside { settled?: () => Promise<void> }
+/**
+ * GATELANES1: the two lanes, the light one's run order, and what each Process-lane gate starts after. GATELANES2: how
+ * many light gates run at once, and the components each builds, of which no two gates hold one at once. GATEBUILD1: the
+ * fast half whose build each Process half reuses.
+ */
+interface Schedule {
+  light: Gate[]; process: Gate[]; waits: Record<string, { after: string[]; component: string | null }>;
+  width: number; components: Record<string, string[]>; reuses: Record<string, string>;
+}
+/** GATEBUILD1: the fast half that passed in this run, and the tree it ran on. */
+interface Built { gate: string; tree: string | null }
+/**
+ * What a lane runner hands a gate: when the light lane has ended, for a Process gate's re-run alone; and to a Process
+ * half whose fast half passed in this run, that pass (GATEBUILD1).
+ */
+interface Beside { settled?: () => Promise<void>; built?: Built }
 interface Worktree { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean }
 interface Candidate { branch: string; worktree: Worktree | null; held: string | null }
 /** CLEANUP2: what a prune knows of a harness-locked worktree beyond its changes: its branch at main's tip, the processes inside it. */
@@ -57,17 +69,24 @@ const tool = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
   '../../../tools/merge-branch.mjs') as {
   parseArgs: (argv: string[]) => Options;
-  runGate: (root: string, gate: Gate, dir: string, options?: { step?: Step } & Beside) => Promise<GateResult>;
+  runGate: (root: string, gate: Gate, dir: string, options?: { step?: Step; noBuild?: boolean } & Beside) => Promise<GateResult>;
   runGates: (root: string, gates: Gate[], dir: string, options?: {
     keepGoing?: boolean;
     oneAtATime?: boolean;
+    width?: number;
+    scripts?: Record<string, string>;
     run?: (root: string, gate: Gate, dir: string, beside?: Beside) => Promise<GateResult>;
     print?: (line: string) => void;
   }) => Promise<GateResult[]>;
   isProcessLane: (gate: { name: string; run: string }) => boolean;
   dotnetComponent: (run: string) => string | null;
   isHeavyGate: (gate: { name: string; run: string }) => boolean;
-  laneSchedule: (gates: Gate[]) => Schedule;
+  laneSchedule: (gates: Gate[], options?: { scripts?: Record<string, string> }) => Schedule;
+  LIGHT_WIDTH: number;
+  gateComponents: (gate: { name: string; run: string }, scripts?: Record<string, string>) => string[];
+  testBuild: (run: string) => string | null;
+  noBuildCommand: (run: string) => string;
+  reuseBuild: (built: Built | undefined, tree: string | null) => boolean;
   gateKind: (run: string) => string;
   gatePlan: (declared: { name: string; run: string }[], workflow?: string) => Gate[];
   readPlan: (root: string) => Gate[];
@@ -1777,18 +1796,21 @@ function fakeStep(answer: (command: string) => { out: string; code: number }): {
 test('the first failing gate stops the run and names every gate after it; --keep-going runs them all', async () => {
   const root = join(repoRoot, 'scratch-root');
   const dir = join(root, 'local', 'scratch', 'merge-x');
-  const gates = ['a', 'b', 'c'].map((name) => planned(name, `node ${name}.mjs`));
+  // GATELANES2: three builds of one component, so the light lane runs them in turn and the third is not yet started.
+  const gates = ['a', 'b', 'c'].map((name) => planned(name, `dotnet build src/S/${name}`));
   const run = async (_root: string, gate: Gate, at: string): Promise<GateResult> => {
     const failed = gate.name === 'b';
     return { gate, code: failed ? 3 : 0, log: join(at, `${gate.name}.log`), verdict: failed ? 'FAIL' : 'PASS', note: failed ? 'exit 3' : '', ms: 1000 };
   };
 
-  const printed: string[] = [];
-  const results = await tool.runGates(root, gates, dir, { run, print: (line) => printed.push(line) });
-  assert.deepEqual(results.map((result) => result.gate.name), ['a', 'b']);
-  assert.match(printed[0]!, /PASS\s+a\s+1 s\s+local\/scratch\/merge-x\/a\.log$/);
-  assert.match(printed[1]!, /FAIL\s+b\s.*local\/scratch\/merge-x\/b\.log\s+\(exit 3\)/);
-  assert.match(printed[2]!, /NOT RUN\s+c/);
+  for (const oneAtATime of [false, true]) {
+    const printed: string[] = [];
+    const results = await tool.runGates(root, gates, dir, { run, oneAtATime, print: (line) => printed.push(line) });
+    assert.deepEqual(results.map((result) => result.gate.name), ['a', 'b']);
+    assert.ok(printed.some((line) => /PASS\s+a\s+1 s\s+local\/scratch\/merge-x\/a\.log$/.test(line)), printed.join('\n'));
+    assert.ok(printed.some((line) => /FAIL\s+b\s.*local\/scratch\/merge-x\/b\.log\s+\(exit 3\)/.test(line)), printed.join('\n'));
+    assert.match(printed.at(-1)!, /NOT RUN\s+c/);
+  }
 
   const all = await tool.runGates(root, gates, dir, { run, keepGoing: true, print: () => {} });
   assert.deepEqual(all.map((result) => result.gate.name), ['a', 'b', 'c']);
@@ -1918,8 +1940,9 @@ function summary(printed: string[]): string[] {
   return printed.slice(at + 1).map((line) => /^\s+(PASS|FAIL|FLAKE|NOT RUN)\s+(\S+)/.exec(line)!.slice(1).join(' '));
 }
 
+// a and b build one component, so the light lane runs them in turn (GATELANES2), as both lanes' tests below need.
 const laneGates = (): Gate[] => [
-  planned('a', 'node a.mjs'), planned('b', 'node b.mjs'), planned('p', processRun('fake/P.Tests')), planned('q', processRun('fake/Q.Tests')),
+  planned('a', 'dotnet build src/L/A'), planned('b', 'dotnet build src/L/B'), planned('p', processRun('fake/P.Tests')), planned('q', processRun('fake/Q.Tests')),
 ];
 
 test("the light lane runs beside the Process lane: both at once, each verdict its own, the summary in the plan's order", async () => {
@@ -2017,6 +2040,175 @@ test('--one-at-a-time runs every gate in turn, in the plan\'s order, as before t
   assert.match(printed[3]!, /NOT RUN\s+q/);
   assert.equal(printed.length, 4, 'no lanes and no summary: the lines are already in order');
   assert.equal(lanes.heard['a']!.settled, undefined);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// GATELANES2: the light lane's gates of different components side by side; GATEBUILD1: a Process half reuses its fast half's build
+
+test("a gate's components are what its command builds, and what the root scripts it names build", () => {
+  const scripts = {
+    verify: 'npm test -w x && node tools/as-merged.mjs dotnet run --project src/K/K.Cli -- verify',
+    'test:web': 'npm --prefix w run build && dotnet build src/S/S.Http && npm --prefix w run e2e',
+    lint: 'node lint.mjs',
+    all: 'npm run lint && npm run -s verify',
+    loop: 'npm run loop',
+  };
+  assert.deepEqual(tool.gateComponents({ name: 'cli', run: 'npm run verify' }, scripts), ['src/K']);
+  assert.deepEqual(tool.gateComponents({ name: 'web', run: 'npm run test:web' }, scripts), ['src/S']);
+  assert.deepEqual(tool.gateComponents({ name: 'service', run: 'dotnet test src/S' }, scripts), ['src/S']);
+  assert.deepEqual(tool.gateComponents({ name: 'universal', run: 'node tools/as-merged.mjs dotnet run --project src/K/K.Cli -- verify' }, scripts), ['src/K']);
+  assert.deepEqual(tool.gateComponents({ name: 'all', run: 'npm run all' }, scripts), ['src/K'], 'a script that names another is read through');
+  assert.deepEqual(tool.gateComponents({ name: 'loop', run: 'npm run loop' }, scripts), [], 'a script that names itself is read once');
+  assert.deepEqual(tool.gateComponents({ name: 'lint', run: 'npm run lint' }, scripts), []);
+  assert.deepEqual(tool.gateComponents({ name: 'index', run: 'node tools/orient-index.mjs --check' }, scripts), []);
+  assert.deepEqual(tool.gateComponents({ name: 'gone', run: 'npm run gone' }, scripts), [], 'npm refuses a script the workspace does not declare');
+});
+
+test("this repository's light gates run three at once, never two that build one component, the CLI's verify and web read behind their names", () => {
+  const scripts = (JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
+  const schedule = tool.laneSchedule(repoPlan, { scripts });
+  assert.equal(tool.LIGHT_WIDTH, 3);
+  assert.equal(schedule.width, tool.LIGHT_WIDTH);
+  const building = (component: string) => schedule.light.filter((gate) => schedule.components[gate.name]!.includes(component)).map((gate) => gate.name);
+  assert.deepEqual(building('src/Daoris.Desktop'), ['driver', 'modules']);
+  // The CLI's verify ends in the devkit's universal gates, and the web gate builds the HTTP host its own build writes into.
+  assert.deepEqual(building('src/Daoris.Devkit'), ['universal', 'code-map', 'cli', 'devkit']);
+  assert.deepEqual(building('src/Daoris.Service'), ['service', 'web']);
+  assert.deepEqual(schedule.components['orient-index'], []);
+  // GATELANES1's light order and GATEORDER1's waits hold.
+  assert.deepEqual(schedule.light.map((gate) => gate.name), ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'service', 'devkit', 'web']);
+  assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'cli', 'service', 'devkit', 'web']);
+  // GATEBUILD1: each Process half reuses the build of its own test project's fast half.
+  assert.deepEqual(schedule.reuses, { 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
+});
+
+test("light gates of different components run at once, up to the width, two of one component never; the summary keeps the plan's order", async () => {
+  const gates = [
+    planned('a1', 'dotnet test src/A/A1.Tests'), planned('a2', 'dotnet test src/A/A2.Tests'),
+    planned('b', 'dotnet test src/B/B.Tests'), planned('c', 'node c.mjs'), planned('d', 'node d.mjs'),
+  ];
+  const counted = (lanes: ReturnType<typeof laneRun>) => {
+    const seen = { now: 0, most: 0 };
+    const run = async (root: string, gate: Gate, at: string, beside?: Beside) => {
+      seen.now += 1;
+      seen.most = Math.max(seen.most, seen.now);
+      try {
+        return await lanes.run(root, gate, at, beside);
+      } finally {
+        seen.now -= 1;
+      }
+    };
+    return { seen, run };
+  };
+  const lanes = laneRun(['a1', 'a2', 'b', 'c', 'd']);
+  // a1 ends only once b has ended with c beside it, b once c has started: one gate at a time, none of them would.
+  lanes.until['a1'] = () => Promise.all([lanes.ended['b']!.promise, lanes.started['c']!.promise]);
+  lanes.until['b'] = () => lanes.started['c']!.promise;
+  lanes.until['c'] = () => lanes.ended['a1']!.promise;
+  const printed: string[] = [];
+  const { seen, run } = counted(lanes);
+  const results = await tool.runGates('root', gates, 'logs', { run, scripts: {}, print: (line) => printed.push(line) });
+  const at = (event: string) => lanes.events.indexOf(event);
+  assert.equal(seen.most, 3, `three at once, and never more: ${lanes.events.join(', ')}`);
+  assert.ok(at('start a2') > at('end a1'), `a1 and a2 build src/A, so never at once: ${lanes.events.join(', ')}`);
+  assert.ok(at('start d') > at('end b'), `d waited for a place: ${lanes.events.join(', ')}`);
+  assert.match(printed[0]!, /the light lane, up to 3 gates at once \(--one-at-a-time runs every gate in turn/);
+  assert.match(printed.join('\n'), /light\s+a1, a2, b, c, d\n/);
+  assert.match(printed.join('\n'), /a1, a2 build src\/A: one at a time/);
+  assert.match(printed.find((line) => /^\s+(PASS|FAIL)/.test(line))!, /PASS\s+b\s/, 'each line is printed as its gate ends');
+  assert.deepEqual(summary(printed), ['PASS a1', 'PASS a2', 'PASS b', 'PASS c', 'PASS d']);
+  assert.deepEqual(results.map((result) => result.gate.name), ['a1', 'a2', 'b', 'c', 'd'], "the results in the plan's order");
+
+  // A narrower lane holds to its width.
+  const narrow = laneRun(['a1', 'a2', 'b', 'c', 'd']);
+  for (const name of ['a1', 'a2', 'b', 'c', 'd']) narrow.until[name] = () => new Promise((done) => setTimeout(done, 5));
+  const two = counted(narrow);
+  await tool.runGates('root', gates, 'logs', { run: two.run, width: 2, scripts: {}, print: () => {} });
+  assert.equal(two.seen.most, 2, narrow.events.join(', '));
+});
+
+test('a failure starts no more light gates; the gates running beside it end and keep their verdicts', async () => {
+  const gates = [planned('x1', 'dotnet test src/X/X1.Tests'), planned('y', 'dotnet test src/Y/Y.Tests'), planned('x2', 'dotnet test src/X/X2.Tests')];
+  const lanes = laneRun(['x1', 'y', 'x2']);
+  lanes.failing.add('x1');
+  lanes.until['x1'] = () => lanes.started['y']!.promise;
+  lanes.until['y'] = () => lanes.ended['x1']!.promise;
+  const printed: string[] = [];
+  const results = await tool.runGates('root', gates, 'logs', { run: lanes.run, scripts: {}, print: (line) => printed.push(line) });
+  assert.deepEqual(results.map((result) => `${result.verdict} ${result.gate.name}`), ['FAIL x1', 'PASS y']);
+  assert.deepEqual(summary(printed), ['FAIL x1', 'PASS y', 'NOT RUN x2']);
+  assert.equal(lanes.events.includes('start x2'), false);
+});
+
+test("a Process half's build is its own test project's, with the same build options; --no-build only when its fast half passed on this tree", () => {
+  const fast = 'dotnet test src/X/X.Tests --filter Category!=Process';
+  assert.ok(tool.testBuild(fast));
+  assert.equal(tool.testBuild(processRun('src/X/X.Tests')), tool.testBuild(fast));
+  assert.equal(tool.testBuild('dotnet test "src\\X\\X.Tests\\" -s src/X/git.process.runsettings --logger "trx;LogFileName=a b.trx"'), tool.testBuild(fast));
+  assert.notEqual(tool.testBuild(processRun('src/X/M.Tests')), tool.testBuild(fast));
+  assert.notEqual(tool.testBuild('dotnet test src/X/X.Tests -c Release --settings src/X/process.runsettings'), tool.testBuild(fast), 'a build option one side lacks');
+  for (const run of ['npm run test:web', 'dotnet build src/X/X.Tests', 'dotnet test', 'dotnet test --filter Category!=Process']) {
+    assert.equal(tool.testBuild(run), null, run);
+  }
+  assert.equal(tool.noBuildCommand(`${processRun('src/X/X.Tests')} `), `${processRun('src/X/X.Tests')} --no-build`);
+  // A changed tree always builds, and so does a tree git could not name.
+  assert.equal(tool.reuseBuild({ gate: 'd', tree: 't1' }, 't1'), true);
+  assert.equal(tool.reuseBuild({ gate: 'd', tree: 't1' }, 't2'), false);
+  assert.equal(tool.reuseBuild({ gate: 'd', tree: null }, null), false);
+  assert.equal(tool.reuseBuild(undefined, 't1'), false);
+});
+
+test("a Process half is handed its fast half's pass in this run and the tree it ran on; nothing when that failed or did not run", async () => {
+  const gates = [
+    planned('d', 'dotnet test src/X/X.Tests --filter Category!=Process'), planned('m', 'dotnet test src/X/M.Tests --filter Category!=Process'),
+    planned('dp', processRun('src/X/X.Tests')), planned('dg', 'dotnet test src/X/X.Tests --settings src/X/git.process.runsettings'),
+    planned('mp', processRun('src/X/M.Tests')),
+  ];
+  assert.deepEqual(tool.laneSchedule(gates).reuses, { dp: 'd', dg: 'd', mp: 'm' });
+  const names = gates.map((gate) => gate.name);
+  const treed = (lanes: ReturnType<typeof laneRun>) => async (root: string, gate: Gate, at: string, beside?: Beside) => ({ ...(await lanes.run(root, gate, at, beside)), tree: 't1' });
+
+  for (const oneAtATime of [false, true]) {
+    const lanes = laneRun(names);
+    await tool.runGates('root', gates, 'logs', { run: treed(lanes), oneAtATime, scripts: {}, print: () => {} });
+    assert.deepEqual(lanes.heard['dp']!.built, { gate: 'd', tree: 't1' }, `one at a time: ${oneAtATime}`);
+    assert.deepEqual(lanes.heard['dg']!.built, { gate: 'd', tree: 't1' });
+    assert.deepEqual(lanes.heard['mp']!.built, { gate: 'm', tree: 't1' });
+    assert.equal(lanes.heard['d']!.built, undefined, 'a fast half builds');
+  }
+
+  // A fast half that failed: its Process halves build (--keep-going ran them), the other component's reuse.
+  let lanes = laneRun(names);
+  lanes.failing.add('d');
+  await tool.runGates('root', gates, 'logs', { run: treed(lanes), keepGoing: true, scripts: {}, print: () => {} });
+  assert.equal(lanes.heard['dp']!.built, undefined);
+  assert.equal(lanes.heard['dg']!.built, undefined);
+  assert.deepEqual(lanes.heard['mp']!.built, { gate: 'm', tree: 't1' });
+
+  // --rerun or --stale naming the Process halves alone: no fast half ran in this run, so they build.
+  lanes = laneRun(['dp', 'mp']);
+  await tool.runGates('root', gates.filter((gate) => ['dp', 'mp'].includes(gate.name)), 'logs', { run: treed(lanes), scripts: {}, print: () => {} });
+  assert.equal(lanes.heard['dp']!.built, undefined);
+  assert.equal(lanes.heard['mp']!.built, undefined);
+});
+
+test("a Process half told not to build runs its command with --no-build and says whose build it ran; its re-run alone is as before", async () => {
+  const fx = makeFixture('merge-branch-no-build');
+  const { asked, step } = fakeStep(() => ({ out: 'Passed!\n', code: 0 }));
+  const dp = planned('dp', processRun('src/X/X.Tests'));
+  const result = await tool.runGate(fx.root, dp, fx.root, { step, noBuild: true, built: { gate: 'd', tree: 't1' } });
+  assert.equal(asked[0], tool.trxCommand(tool.noBuildCommand(dp.run), join(fx.root, 'dp.trx')));
+  assert.equal(result.verdict, 'PASS');
+  assert.match(result.note, /no build: d built this tree in this run/);
+  assert.match(readFileSync(join(fx.root, 'dp.log'), 'utf8'), /^\$ dotnet test src\/X\/X\.Tests --settings \S+ --no-build --logger/);
+
+  const built = await tool.runGate(fx.root, dp, fx.root, { step });
+  assert.equal(asked[1], tool.trxCommand(dp.run, join(fx.root, 'dp.trx')));
+  assert.equal(built.note, '');
+  // Only a dotnet test command is told so.
+  await tool.runGate(fx.root, planned('r', 'npm run rehearse'), fx.root, { step, noBuild: true, built: { gate: 'd', tree: 't1' } });
+  assert.equal(asked[2], 'npm run rehearse');
+  fx.cleanup();
 });
 
 test("a gate's whole output is kept in its log, and the build servers are shut down before the deployment rehearsal", async () => {
@@ -2545,6 +2737,9 @@ const FAKE_DOTNET = [
   '',
 ].join('\n');
 
+/** What ran, or what was recorded, in name order: light gates that build nothing in common run side by side (GATELANES2). */
+const unordered = (list: string[]): string[] => [...list].sort();
+
 interface Scratch { root: string; run(args: string[], extra?: Record<string, string>): Promise<{ status: number | null; out: string }>; ran(): string[]; cleanup(): void }
 
 function scratch(name: string, gates: { name: string; run: string }[], files: Record<string, string> = {}): Scratch {
@@ -2662,7 +2857,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  test('a clean merge prints its lanes, runs every gate in order, keeps each whole output, and never commits', async () => {
+  test('a clean merge prints its lanes, runs every gate, keeps each whole output, and never commits', async () => {
     const repo = scratch('clean', [
       { name: 'first', run: 'node gate.mjs first' },
       { name: 'second', run: 'node gate.mjs second' },
@@ -2694,8 +2889,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.doesNotMatch(result.out, /crosses/, "the steward's lane is not a crossing: it is named on its own");
     assert.match(result.out, /outside every lane\s+1 file: notes\.txt/);
     // The steward's `gates` is for a landing of its lane alone (the queue's, D115): this tool chooses by its
-    // own lane table, which names neither gate here, so both run.
-    assert.deepEqual(repo.ran(), ['first', 'second']);
+    // own lane table, which names neither gate here, so both run: side by side, as they build nothing (GATELANES2).
+    assert.deepEqual(unordered(repo.ran()), ['first', 'second']);
     assert.match(result.out, /PASS\s+first\s.*local\/scratch\/merge-feature-one\/first\.log/);
     assert.match(result.out, /PASS\s+second\s.*local\/scratch\/merge-feature-one\/second\.log/);
 
@@ -2905,10 +3100,10 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // --full: the real-process half and the deployment rehearsal run in the full set only (GATE5).
     let result = await repo.run(['one', '--batch', 'two', '--full']);
     assert.equal(result.status, 0, result.out);
-    // GATELANES1: the Process half runs beside the light lane, so only each lane's own order is fixed.
+    // GATELANES1: the Process half runs beside the light lane, so only the Process lane's own order is fixed; and the
+    // check and the CLI's gate build nothing in common, so they run side by side too (GATELANES2).
     const ran = repo.ran();
-    assert.deepEqual([...ran].sort(), ['cli', 'dotnet-run', 'dotnet-test'], 'the rehearsals wait for the last branch');
-    assert.ok(ran.indexOf('dotnet-run') < ran.indexOf('cli'), 'the check runs first in the light lane');
+    assert.deepEqual(unordered(ran), ['cli', 'dotnet-run', 'dotnet-test'], 'the rehearsals wait for the last branch');
     assert.match(result.out, /light\s+check, cli\n.*Process\s+driver/);
     assert.match(result.out, /in the plan's order:\n\s+PASS\s+check\s[^\n]*\n\s+PASS\s+cli\s[^\n]*\n\s+PASS\s+driver\s/);
     assert.match(result.out, /--continue/);
@@ -3007,7 +3202,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(repo.ran(), []);
     git(repo.root, 'merge', '--abort');
 
-    result = await repo.run(['fix']);
+    // One at a time, which the batch keeps, so the failure leaves the third gate unstarted: side by side, the three
+    // build nothing in common and would start together (GATELANES2).
+    result = await repo.run(['fix', '--one-at-a-time']);
     assert.equal(result.status, 1, result.out);
     assert.deepEqual(repo.ran(), ['first', 'second']);
     assert.match(result.out, /NOT RUN\s+third/);
@@ -3047,13 +3244,14 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     branch(repo.root, 'both', { [spec]: 'one\n', [driverTest]: 'one\n' });
     let result = await repo.run(['both']);
     assert.equal(result.status, 1, result.out);
-    assert.deepEqual(repo.ran(), ['cli', 'driver', 'driver-process', 'web']);
+    // Side by side, as they build nothing (GATELANES2): which ran counts here, not in what order.
+    assert.deepEqual(unordered(repo.ran()), ['cli', 'driver', 'driver-process', 'web']);
 
     // The browser test fixed in the merge: the web gate, and the baseline every path reaches; the driver's verdicts are kept.
     writeFileSync(join(repo.root, spec), 'two\n');
     result = await repo.run(['--rerun', 'web']);
     assert.equal(result.status, 0, result.out);
-    assert.deepEqual(repo.ran().slice(4), ['cli', 'web']);
+    assert.deepEqual(unordered(repo.ran().slice(4)), ['cli', 'web']);
     assert.match(result.out, /re-run on the merge of both: web, then cli, whose verdict a changed path reaches; 2 verdicts kept/);
     assert.match(result.out, /stale\s+cli\s+PASS\s+from \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC: src\/Daoris\.Web\/e2e\/platform\.spec\.ts changed since, which reaches it/);
     assert.match(result.out, /kept\s+driver\s+PASS\s+from .*no path changed since reaches it/);
@@ -3064,7 +3262,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     writeFileSync(join(repo.root, driverTest), 'two\n');
     result = await repo.run(['--rerun', 'cli']);
     assert.equal(result.status, 0, result.out);
-    assert.deepEqual(repo.ran().slice(6), ['cli', 'driver', 'driver-process']);
+    assert.deepEqual(unordered(repo.ran().slice(6)), ['cli', 'driver', 'driver-process']);
     assert.match(result.out, /stale\s+driver\s+PASS\s+from .*: src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\/LandingTests\.cs changed since, which reaches it/);
     assert.match(result.out, /kept\s+web\s+PASS/);
     repo.cleanup();
@@ -3083,12 +3281,13 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
     result = await repo.run(['--full']);
     assert.equal(result.status, 0, result.out);
-    assert.deepEqual(repo.ran(), ['first', 'second']);
+    // Side by side, as they build nothing (GATELANES2), so each verdict is recorded as its gate ends, in either order.
+    assert.deepEqual(unordered(repo.ran()), ['first', 'second']);
     assert.match(result.out, /PASS\s+first\s.*local\/scratch\/full-[0-9a-f]{7}\/first\.log/);
     assert.equal(merging(repo.root), false, '--full alone merges nothing');
     const record = JSON.parse(readFileSync(join(repo.root, 'local', 'gate-verdicts.json'), 'utf8')) as { schema: number; verdicts: Verdict[] };
     assert.equal(record.schema, 1);
-    assert.deepEqual(record.verdicts.map((verdict) => [verdict.gate, verdict.verdict]), [['first', 'PASS'], ['second', 'PASS']]);
+    assert.deepEqual(unordered(record.verdicts.map((verdict) => `${verdict.gate} ${verdict.verdict}`)), ['first PASS', 'second PASS']);
     assert.equal(record.verdicts[0]!.tree, git(repo.root, 'rev-parse', 'HEAD^{tree}'), 'the tree that was gated, the clean checkout\'s');
     assert.equal(record.verdicts[0]!.commit, git(repo.root, 'rev-parse', 'HEAD'));
 
@@ -3186,7 +3385,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
     result = await repo.run(['--stale']);
     assert.equal(result.status, 0, result.out);
-    assert.deepEqual(repo.ran().slice(4), ['cli', 'web'], "the baseline and the web gate; the driver's verdicts stand");
+    assert.deepEqual(unordered(repo.ran().slice(4)), ['cli', 'web'], "the baseline and the web gate; the driver's verdicts stand");
     assert.match(result.out, /stale\s+web\s+PASS\s+from .* UTC: src\/Daoris\.Web\/e2e\/platform\.spec\.ts changed since, which reaches it/);
     assert.match(result.out, /driver-process\s+PASS .* UTC\s+on a tree that differs from this one only by paths it does not reach/);
     assert.match(result.out, /2 gates run and passed on [0-9a-f]{7}; the full set has passed this checkout: 4 of 4 gates\. A stage of this tree is allowed\./);
@@ -3211,7 +3410,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     ], { 'code.txt': 'base\n' });
     let result = await repo.run(['--full', '--keep-going']);
     assert.equal(result.status, 1, result.out);
-    assert.deepEqual(repo.ran(), ['first', 'second', 'third']);
+    assert.deepEqual(unordered(repo.ran()), ['first', 'second', 'third']);
     assert.match(result.out, /\n {2}Run the gate it lacks on it: node tools\/merge-branch\.mjs --rerun second\n/, 'the failed full set names the smaller command');
 
     result = await repo.run(['--passed']);

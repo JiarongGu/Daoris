@@ -1456,9 +1456,11 @@ public sealed class Driver(
             // FABRIC-CLOSE1l (CLOSE1f, CLOSE1g; the fabric events design §E5): a quest whose work cycle holds `quest.close` names its graph for
             // the take as its first session opens, so the take binds it in its own write, and a bound quest's session says `ready`, never
             // `done`. A circle synced through a remote, by the map sync reads, is never bound. No closure graph: nothing asked, nothing said.
+            // FABRIC-CLOSE1o: named for this session, whose take alone binds it, the service judging it again at the take.
             var closure = await ClosureBinding.AtStartAsync(
                 service, config, quest, start.Workspace ?? RemoteTarget.DefaultWorkspace,
-                RemoteTarget.Effective(Environment.GetEnvironmentVariable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct)
+                RemoteTarget.Effective(Environment.GetEnvironmentVariable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
+                session: sessionId)
                 .ConfigureAwait(false);
             var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
@@ -1631,8 +1633,11 @@ public sealed class Driver(
                     var where = opened is not null ? $" [own tree: {opened.Path}]"
                         : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
                         : "";
+                    // FABRIC-CLOSE1o: a take its start named a graph for that went unbound (an expired bind, a remote since) is said
+                    // here once, beside its take's own answer, since its next start reads it unbound and names nothing.
                     return new StartRun(
-                        $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
+                        $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}"
+                        + ClosureBinding.UnboundAtEnd(closure, after),
                         true,
                         // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
                         // one that outranks the observation above. Read once, used for both. A park is

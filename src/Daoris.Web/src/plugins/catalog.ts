@@ -50,6 +50,9 @@ export type PluginOfferShown = {
   iconProblem?: string | null;
 };
 
+/** An installed copy of one of the install's own plugins that is older than the shipped one, or changed from it (LANDPIN3). */
+export type PluginShippedShown = { state: 'older' | 'changed'; installed: string; shipped: string; changes?: string | null };
+
 /**
  * One installed plugin as the driver's `PLUGINS` answers it (D64). The bridge's own type is the same shape; the
  * view's molecules name their props here rather than reach the bridge.
@@ -80,6 +83,11 @@ export type PluginShown = {
    * the same, null with no record that reads. An older shell sends none.
    */
   update?: 'waits' | 'current' | null;
+  /**
+   * Against the install's own plugin of its id (LANDPIN3): `older` with both versions and what the newer brings, or `changed`
+   * where its files are not the shipped ones; null where it needs no word. An older shell sends none.
+   */
+  shipped?: PluginShippedShown | null;
   /** Its declared icon as its bytes, a data URI the driver built (D140 §3.2); none from a shell older than PLUGUI2b. */
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
@@ -175,8 +183,19 @@ const SOURCE_WORD: Record<PluginSourceShown['kind'], string> = {
 export const sourceWord = (source: PluginSourceShown | undefined): string | null =>
   (source && Object.hasOwn(SOURCE_WORD, source.kind) ? SOURCE_WORD[source.kind] : null);
 
-/** An update waits: its source declares something different (D119 §2). Not a state, since it waits on nobody. */
-export const updateWaits = (plugin: Pick<PluginShown, 'update'>): boolean => plugin.update === 'waits';
+/** An update waits: its source declares something different (D119 §2), or it is older than the install's own copy (LANDPIN3). Not a state, since it waits on nobody. */
+export const updateWaits = (plugin: Pick<PluginShown, 'update' | 'shipped'>): boolean =>
+  plugin.update === 'waits' || plugin.shipped?.state === 'older';
+
+/** It is a copy of one of the install's own plugins whose files the person changed (LANDPIN3): said, and never replaced by a press. */
+export const shippedChanged = (plugin: Pick<PluginShown, 'shipped'>): boolean => plugin.shipped?.state === 'changed';
+
+/**
+ * Its press takes the install's own copy (LANDPIN3): it is older than the one the install ships and has no record of its own to
+ * update from. A plugin whose record is a folder or an offer is updated from it, as before.
+ */
+export const takesShipped = (plugin: Pick<PluginShown, 'shipped' | 'source'>): boolean =>
+  plugin.shipped?.state === 'older' && plugin.source?.kind !== 'folder' && plugin.source?.kind !== 'offer';
 
 const OFFER = 'offer:';
 

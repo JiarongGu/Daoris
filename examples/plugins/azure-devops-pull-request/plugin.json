@@ -2,7 +2,8 @@
   "id": "azure-devops-pull-request",
   "apiVersion": 1,
   "name": "Azure DevOps pull request",
-  "version": "1.3.0",
+  "version": "1.4.0",
+  "changes": "Pushes the commit the landing judged, not the branch by name, so a commit made after the judgement waits for the next landing.",
   "description": "Once a branch rule's landing has made its branch, pushes it to origin and opens a pull request with the az CLI's devops extension; and, where a look may remove a landed branch, says whether its pull request completed and with which commit.",
   "hooks": {
     "command": ["node", "${plugin}/land.mjs"],
@@ -10,7 +11,7 @@
   },
   "tools": [
     { "id": "node", "versions": ">=16.6.0", "for": "Runs the plugin's land.mjs." },
-    { "id": "git", "versions": ">=1.7.0", "for": "Pushes the branch to origin." },
+    { "id": "git", "versions": ">=1.7.0", "for": "Pushes the commit the landing judged to the branch on origin." },
     {
       "id": "az",
       "versions": ">=2.0.79",

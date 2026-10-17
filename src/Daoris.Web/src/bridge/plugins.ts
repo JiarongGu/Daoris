@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
-import type { HelpServerShown, PluginOfferShown, SkillShown } from '../plugins/catalog';
+import type { HelpServerShown, PluginOfferShown, PluginShippedShown, SkillShown } from '../plugins/catalog';
 import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
 
@@ -37,6 +37,8 @@ export type PluginEntry = {
   source?: PluginSourceShown;
   /** Whether an update waits (PLUGUI1e): `waits`, `current`, or null with no record that reads. */
   update?: 'waits' | 'current' | null;
+  /** Against the install's own plugin of its id (LANDPIN3): older, or changed from it; null where it needs no word. */
+  shipped?: PluginShippedShown | null;
   /**
    * Its declared icon as its own bytes, a `data:image/svg+xml` or `data:image/png` URI (PLUGUI2, D140 §3.2), never a
    * path. Null, or absent from a host older than PLUGUI2b, and the page draws the monogram.
@@ -94,7 +96,7 @@ export const usePluginAction = () => useMutation({
  * press asks them again too.
  */
 export const usePluginUpdate = () => useMutation({
-  mutationFn: (target: { id: string; apply?: boolean }) => call<PluginUpdatePlanShown>('PLUGIN_UPDATE', target),
+  mutationFn: (target: { id: string; apply?: boolean; shipped?: boolean }) => call<PluginUpdatePlanShown>('PLUGIN_UPDATE', target),
 });
 
 /**

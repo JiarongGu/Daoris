@@ -10,7 +10,9 @@ import type { PluginUpdatePlanShown } from './PluginUpdate';
 import type { Answered } from '../work/InlineConfirm';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
-import { chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type SkillShown } from './catalog';
+import {
+  chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type SkillShown, takesShipped,
+} from './catalog';
 import { OfferPage } from './OfferPage';
 import { PluginList, PluginStrip } from './PluginList';
 import { type HelpPress, PluginMainNotice, PluginPage } from './PluginPage';
@@ -166,11 +168,16 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     return kept;
   });
   // The first press asks what would change; the plan's own press makes it.
-  const askUpdate = (id: string) => updating.mutate({ id }, {
+  // LANDPIN3: a copy older than the install's own, with no record to update from, asks for the install's copy.
+  const shippedFor = (id: string) => {
+    const found = plugins.find((each) => each.id === id);
+    return found && takesShipped(found) ? { shipped: true } : {};
+  };
+  const askUpdate = (id: string) => updating.mutate({ id, ...shippedFor(id) }, {
     onSuccess: (plan) => setPlans((was) => ({ ...was, [id]: { ...plan, changes: list(plan.changes) } })),
     onError: failed,
   });
-  const update = (id: string) => updating.mutate({ id, apply: true }, {
+  const update = (id: string) => updating.mutate({ id, apply: true, ...shippedFor(id) }, {
     onSuccess: () => {
       putAway(id);
       notify(t('plugin.update.done', { id }));

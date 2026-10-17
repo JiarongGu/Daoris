@@ -296,6 +296,40 @@ for (const plugin of ['github-pull-request', 'azure-devops-pull-request'] as con
   });
 }
 
+// ——— LANDPIN2 (D173's FABRIC-END7 note): the commit the landing judged is what is pushed, never the branch as it stands at the push
+
+/** A commit on the branch after the landing judged it, as an agent in a tree on that branch makes one: its id. */
+function movedOn(root: string, file: string): string {
+  git(root, 'checkout', '--quiet', BRANCH);
+  writeFileSync(join(root, file), `${file}\n`);
+  git(root, 'add', '-A');
+  git(root, 'commit', '--quiet', '-m', `made after the judgement: ${file}`);
+  git(root, 'checkout', '--quiet', 'main');
+  return git(root, 'rev-parse', BRANCH);
+}
+
+for (const plugin of ['github-pull-request', 'azure-devops-pull-request'] as const) {
+  test(`the ${plugin} plugin pushes the commit the frame's tip names, not one the branch gained after the judgement`, async () => {
+    const fx = makeFixture(`landing-plugin-tip-${plugin}`);
+    const { root, origin } = repository(fx);
+    const bin = fakes(fx);
+
+    const judged = git(root, 'rev-parse', BRANCH);
+    const late = movedOn(root, 'late.txt');
+    const first = await land(plugin, fx, bin, { ...frame(root), tip: judged });
+    assert.equal(first.answer.pushed, true, String(first.answer.message));
+    assert.equal(git(origin, 'rev-parse', `refs/heads/${BRANCH}`), judged);
+
+    // At an advance too: the open pull request grows by the commit judged, and the one made after it stays behind.
+    const later = movedOn(root, 'later.txt');
+    const advance = await land(plugin, fx, bin, { ...frame(root), tip: late, pullRequest: PULL[plugin] });
+    assert.equal(advance.answer.pushed, true, String(advance.answer.message));
+    assert.equal(git(origin, 'rev-parse', `refs/heads/${BRANCH}`), late);
+    assert.equal(git(root, 'rev-parse', BRANCH), later);
+    fx.cleanup();
+  });
+}
+
 test('the description each plugin writes says who accepted the work', async () => {
   const fx = makeFixture('landing-plugin-accepted');
   const { root } = repository(fx);
