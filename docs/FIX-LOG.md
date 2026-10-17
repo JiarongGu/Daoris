@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — An unread ref forgot its record, and a detached tree's removal verified nothing (RECORDUNREAD1, DETACHTX1)
+
+- **Symptom:** a fifth review of FABRIC-END4a: a session branch whose ref git could not read was forgotten by LAND3's door as
+  "gone already", and by each look's and press's clean-up of the record; a landing's branch that did not read was retired as gone;
+  and a detached tree whose holder was rewound after its proof was removed, leaving the commit it had out on no ref.
+- **Root cause:** each path read a failed read as absence. `rev-parse --verify --quiet` exits 1 on any failure to resolve, a broken
+  ref's too, and `for-each-ref` leaves a broken ref out of its list and exits 0, so the door, `ForgetGoneAsync` and
+  `JudgeLandedAsync` saw "missing" where git had said nothing of the kind; `merge-base --is-ancestor`'s 128 was read as "not the
+  landing's". A detached tree's removal deletes no branch, so no ref transaction verified what its proof rested on.
+- **Fix:** absence asked of `show-ref --exists`, exit 2 alone (`ContentHolds.MissingAsync`, the knowledge note `git-ref-absence`);
+  anything else keeps the record and says unread, a landing as kind `unknown`. A detached tree's commit kept on a recovery ref
+  before the tree goes, dropped only in one transaction verifying what its proof rested on (`DropKeptVerifiedAsync`). D173's
+  RECORDUNREAD1 and DETACHTX1 note has the detail.
+- **Verification:** red first on END4a's branch, six tests: `UnreadRecordGitTests`' five broken reads and `JudgedDeleteGitTests`'
+  detached holder rewound as the tree went; then green, with the driver's fast half and the Git classes that reach the door, the
+  clean-up, the tidy and the delete.
+
 ## 2026-10-17 — A tidy could rest on a landing's branch alone, a replaced holder or a live name (FABRIC-END4a, fourth review)
 
 - **Symptom:** a fourth review, before staging: the automatic tidy removed a session branch held through a landing's branch after the

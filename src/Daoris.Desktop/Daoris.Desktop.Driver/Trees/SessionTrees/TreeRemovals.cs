@@ -240,8 +240,8 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                  && !await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false))
         {
             // DETACHTX1: not cancelled, as a judged delete is not: the ref goes only where the transaction showed the holder standing.
-            return new(true, $"removed the session tree at {path}. The commit it had out stays at `{recovery}` until you delete that ref: what "
-                + "its proof rested on did not stand where the proof read it as the tree went." + (left is null ? "" : $" {left}"));
+            return new(true, $"removed the session tree at {path}. The commit it had out stays at `{recovery}` until you delete that ref: git "
+                + "would not show what its proof rested on standing where the proof read it, once the tree went." + (left is null ? "" : $" {left}"));
         }
 
         if (stays is not null)
