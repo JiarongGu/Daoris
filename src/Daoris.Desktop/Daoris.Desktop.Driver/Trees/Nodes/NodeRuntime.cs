@@ -128,6 +128,9 @@ public sealed class NodeRuntime(
     /// <summary>The loop's one performer (PERFORM1h's "for RUN1"): its delivered invocations live as long as the loop.</summary>
     private readonly WorkPerformer _performer = new(records, port, clock);
 
+    /// <summary>The loop's one observer (FABRIC-PERFORM1i): an observed plugin node reached by its believed event.</summary>
+    private readonly WorkObserver _observer = new(records, port, clock);
+
     /// <summary>Daoris's own close (FABRIC-CLOSE1b), where the loop holds the close door; none, and no quest is closed by a graph.</summary>
     private readonly QuestCloser? _closer = closes is null ? null : new QuestCloser(records, closes, clock);
 
@@ -160,11 +163,15 @@ public sealed class NodeRuntime(
     /// Whether any graph the choices set names a plugin's performed node: a landing rule's <c>cycle</c>, a repository's or a workspace's
     /// <c>workCycles</c>. Read from the choices alone, so an install that names none is judged without a file, a git call or a process.
     /// </summary>
+    /// <remarks>
+    /// FABRIC-PERFORM1i: a plugin's observed node arms it too, the parent's ruling for the row (the owner's aim, "maximize the automation", and a
+    /// graph a person wrote naming the step): RUN1 armed on performed nodes alone. Choices naming neither still read, tell, write and start nothing.
+    /// </remarks>
     public static bool Armed(DriverConfig config) =>
         config.Landings.Values.Concat(config.WorkspaceLandings.Values)
-            .Any(rule => rule.Cycle is not null && Performs(NodeGraphHomes.OfLanding(rule, LandingSource.Repository).Graph))
+            .Any(rule => rule.Cycle is not null && Acts(NodeGraphHomes.OfLanding(rule, LandingSource.Repository).Graph))
         || config.WorkCycles.Values.Concat(config.WorkspaceWorkCycles.Values).SelectMany(kinds => kinds.Values)
-            .Any(json => NodeGraphs.Read(json).Graph is var graph && (Performs(graph) || QuestClosing.Holds(graph)));
+            .Any(json => NodeGraphs.Read(json).Graph is var graph && (Acts(graph) || QuestClosing.Holds(graph)));
 
     /// <summary>
     /// The units a graph naming a plugin's performed node governs (<see cref="NodeGraphHomes.Work"/>), in id order, each with its graph, run
@@ -177,6 +184,7 @@ public sealed class NodeRuntime(
         DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null)
     {
         var governed = new List<GovernedUnit>();
+        var identities = new Dictionary<string, string>(StringComparer.Ordinal);
         var quests = Quests(read);
         foreach (var each in read.Units.OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
@@ -200,13 +208,15 @@ public sealed class NodeRuntime(
                 if (closes) unit = unit with { Subject = unit.Subject with { Revision = QuestClosing.Revision(quest, quests, read.Units) } };
             }
 
-            if (graph is null || (!Performs(graph) && !closes)) continue;
+            if (graph is null || (!Acts(graph) && !closes)) continue;
             var dispatchable = new HashSet<string>(StringComparer.Ordinal);
+            var observable = new HashSet<string>(StringComparer.Ordinal);
             var declared = new Dictionary<string, NodeDeclaration>(StringComparer.Ordinal);
             foreach (var node in graph.Nodes)
             {
                 declared[node.Id] = node;
-                if (!Performs(node) || steps.FirstOrDefault(step => step.Kind == node.Kind) is not { } step || step.Version != node.Version || step.Reach != node.Reach)
+                if (!(Performs(node) || Observes(node)) || steps.FirstOrDefault(step => step.Kind == node.Kind) is not { } step
+                    || step.Version != node.Version || step.Reach != node.Reach)
                 {
                     continue;
                 }
@@ -218,13 +228,22 @@ public sealed class NodeRuntime(
                 };
                 if (NodeDeclarations.Problem(under) is not null) continue;
                 declared[node.Id] = under;
-                dispatchable.Add(node.Id);
+                (Performs(node) ? dispatchable : observable).Add(node.Id);
             }
 
+            // FABRIC-PERFORM1i: the host's half of the frame, the unit it is told for and its repository's identity, read once per checkout.
             var digest = NodeGraphs.Digest(graph);
-            var watched = new WatchedUnit(repository, unit.Owner.Workspace, read.Roots.GetValueOrDefault(repository) ?? "",
-                unit.Kind == WorkUnitKind.Branch ? unit.Subject.Artifact ?? "" : "", unit.Subject.Revision ?? "", null, null, []);
-            governed.Add(new GovernedUnit(unit, graph, digest, NodeRuns.Of(unit.Id, digest), declared, dispatchable, watched) { Closes = closes });
+            var root = read.Roots.GetValueOrDefault(repository) ?? "";
+            if (!identities.TryGetValue(root, out var identity)) identities[root] = identity = RepositoryIdentity.Of(root);
+            var watched = new WatchedUnit(repository, unit.Owner.Workspace, root,
+                unit.Kind == WorkUnitKind.Branch ? unit.Subject.Artifact ?? "" : "", unit.Subject.Revision ?? "", null, null, [])
+            {
+                Unit = unit.Id, Identity = identity,
+            };
+            governed.Add(new GovernedUnit(unit, graph, digest, NodeRuns.Of(unit.Id, digest), declared, dispatchable, watched)
+            {
+                Closes = closes, Observable = observable,
+            });
         }
 
         return governed;
@@ -315,7 +334,11 @@ public sealed class NodeRuntime(
             // second rule), on that unit as the plugins are told it now (the third and fourth).
             NodeDeclaration? Performed(string unit, string node) =>
                 governed.TryGetValue(unit, out var each) && each.Dispatchable.Contains(node) ? each.Declared[node] : null;
-            done.AddRange(_performer.Hear(port.TakeSteps(), Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
+            var heard = port.TakeSteps();
+            done.AddRange(_performer.Hear([.. heard.Where(each => each.Step.Invocation is not null)], Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
+            // FABRIC-PERFORM1i: an event naming no invocation is an observed node's, bound to the frame its process was sent and the tips read
+            // now, and written before the evaluation below fires its wires.
+            done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], governed, look.Tips, ct).ConfigureAwait(false));
             // FABRIC-PERFORM1g: the person's word on a held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(_performer.Resolve(Declared));
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
@@ -390,8 +413,10 @@ public sealed class NodeRuntime(
                     if (closed is not null) done.Add(closed);
                     started |= closed is { What: not PerformedWhat.Refused };
                 }
-                else if (node.Reach == NodeReach.Observed && BuiltInNodes.Observed.Contains(node.Kind))
+                else if (node.Reach == NodeReach.Observed && (BuiltInNodes.Observed.Contains(node.Kind) || governed.Observable.Contains(node.Id)))
                 {
+                    // FABRIC-PERFORM1i: a plugin's observed node starts as a built-in does, ready to active with its firings written, and is
+                    // published to its plugin only after (Tell, below).
                     var begun = _performer.Begin(node, start, evaluated.Statuses[start.Node]);
                     done.Add(begun);
                     started |= begun.What == PerformedWhat.Begun;
@@ -548,7 +573,7 @@ public sealed class NodeRuntime(
     /// <summary>Whether a unit's record holds one of its dispatchable nodes ready: a start owed, judged at a wake as well as at the look.</summary>
     private bool OwesStart(GovernedUnit governed) =>
         records.Read(governed.Unit.Id) is { } record
-        && governed.Dispatchable.Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
+        && governed.Dispatchable.Concat(governed.Observable).Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
 
     /// <summary>
     /// The awaited set told (§C4's <c>work/watch</c>, PERFORM1a's supervision): each governed unit with a dispatchable node ready, active or
@@ -568,10 +593,12 @@ public sealed class NodeRuntime(
         {
             if (records.Read(each.Unit.Id) is not { } record) continue;
             var steps = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
-            foreach (var id in each.Dispatchable)
+            foreach (var id in each.Dispatchable.Concat(each.Observable))
             {
+                // FABRIC-PERFORM1i: an observed node is published once begun, never while ready, so an event never precedes its start.
                 var waiting = record.Attempts.Any(attempt => attempt.Node == id && attempt.State is AttemptStates.Recorded or AttemptStates.Sent or AttemptStates.Unknown);
-                if (!waiting && record.Statuses.GetValueOrDefault(id)?.State is not (NodeStates.Ready or NodeStates.Active or NodeStates.Unknown)) continue;
+                var state = record.Statuses.GetValueOrDefault(id)?.State;
+                if (each.Observable.Contains(id) ? state != NodeStates.Active : !waiting && state is not (NodeStates.Ready or NodeStates.Active or NodeStates.Unknown)) continue;
                 var kind = each.Declared[id].Kind;
                 var plugin = PluginOf(kind);
                 if (!steps.TryGetValue(plugin, out var named)) steps[plugin] = named = new SortedSet<string>(StringComparer.Ordinal);
@@ -617,5 +644,8 @@ public sealed class NodeRuntime(
 
     private static bool Performs(NodeDeclaration node) => node.Reach == NodeReach.Performed && NodeKinds.IsPlugin(node.Kind);
 
-    private static bool Performs(NodeGraph? graph) => graph?.Nodes.Any(Performs) == true;
+    private static bool Observes(NodeDeclaration node) => node.Reach == NodeReach.Observed && NodeKinds.IsPlugin(node.Kind);
+
+    /// <summary>Whether a graph names a plugin's performed or observed node: what arms the runtime and makes a unit governed (FABRIC-PERFORM1i).</summary>
+    private static bool Acts(NodeGraph? graph) => graph?.Nodes.Any(node => Performs(node) || Observes(node)) == true;
 }

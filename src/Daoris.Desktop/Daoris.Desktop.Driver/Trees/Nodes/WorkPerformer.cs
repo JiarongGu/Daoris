@@ -643,7 +643,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             case WorkStates.Reached:
                 move = new NodeMove(NodeStates.Reached, NodeCause.Authority)
                 {
-                    Source = NodeSource.Plugin, Attempt = attempt.Attempt, Acceptance = status.Binding is { } binding ? Accepted(node, attempt, binding, outcome) : null,
+                    Source = NodeSource.Plugin, Attempt = attempt.Attempt, Acceptance = status.Binding is { } binding ? Accepted(node, attempt.Call.Invocation, binding, outcome) : null,
                 };
                 break;
             case WorkStates.Failed:
@@ -706,9 +706,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// <see cref="WorkBelief.Evidence"/>) and its outputs, each at the schema its reference names (§D6's <c>&lt;schema&gt;:&lt;id&gt;</c>), so
     /// the one table refuses evidence of another schema than the node declares, and an output undeclared or of another schema.
     /// </summary>
-    private static NodeAcceptance Accepted(NodeDeclaration node, NodeAttempt attempt, NodeAcceptance binding, WorkOutcome outcome) => binding with
+    /// <param name="word">What stands for the plugin's word where it gave no reference: an attempt's invocation, an event's id (FABRIC-PERFORM1i).</param>
+    internal static NodeAcceptance Accepted(NodeDeclaration node, string word, NodeAcceptance binding, WorkOutcome outcome) => binding with
     {
-        Evidence = WorkBelief.Evidence(node, attempt.Call.Invocation, binding.SubjectRevision, outcome.Evidence),
+        Evidence = WorkBelief.Evidence(node, word, binding.SubjectRevision, outcome.Evidence),
         Outputs = (outcome.Outputs ?? new Dictionary<string, WorkOutput>()).ToDictionary(
             output => output.Key,
             output => new NodePort(WorkBelief.SchemaOf(output.Value.Ref) ?? "", output.Value.Ref, output.Value.Revision ?? binding.SubjectRevision, null),

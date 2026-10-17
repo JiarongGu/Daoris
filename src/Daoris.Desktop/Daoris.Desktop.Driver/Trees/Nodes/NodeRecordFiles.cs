@@ -168,6 +168,28 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         }
 
         writer.WriteEndArray();
+
+        // FABRIC-PERFORM1i: the events observed nodes were taken on, written only where there are some, so every other record reads as it did.
+        if (record.Observations.Count > 0)
+        {
+            writer.WriteStartArray("observations");
+            foreach (var each in record.Observations)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("plugin", each.Plugin);
+                writer.WriteString("repository", each.Repository);
+                writer.WriteString("step", each.Step);
+                writer.WriteString("commit", each.Commit);
+                writer.WriteString("id", each.Id);
+                writer.WriteString("state", each.State);
+                writer.WriteString("at", Moments.Write(each.At));
+                writer.WriteString("node", each.Node);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     });
 
@@ -378,8 +400,30 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 history.Add(new NodeHistory(at, why, status));
             }
 
+            // FABRIC-PERFORM1i: absent in a record written before them, and read whole where present.
+            var observations = new List<ObservedEvent>();
+            if (root.TryGetProperty("observations", out var observed))
+            {
+                if (observed.ValueKind != JsonValueKind.Array) return null;
+                foreach (var each in observed.EnumerateArray())
+                {
+                    if (each.ValueKind != JsonValueKind.Object || Text(each, "plugin") is not { } plugin || Text(each, "repository") is not { } repository
+                        || Text(each, "step") is not { } step || Text(each, "commit") is not { } commit || Text(each, "id") is not { } id
+                        || Text(each, "state") is not { } state || Moments.Read(each, "at") is not { } at || Text(each, "node") is not { } node)
+                    {
+                        return null;
+                    }
+
+                    observations.Add(new ObservedEvent(plugin, repository, step, commit, id, state, at, node));
+                }
+            }
+
             return Consistent(unit, statuses, attempts)
-                ? new NodeRecord(unit) { Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history }
+                ? new NodeRecord(unit)
+                {
+                    Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history,
+                    Observations = observations,
+                }
                 : null;
         }
         catch (Exception error) when (error is JsonException or InvalidOperationException or FormatException)
