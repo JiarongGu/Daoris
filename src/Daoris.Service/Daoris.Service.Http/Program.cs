@@ -753,12 +753,20 @@ if (mode == ServiceMode.Local)
 
     app.MapPost("/api/quests/{id}/close", async (
         ComposedService s, HttpContext http, string id, CloseQuestRequest body, CancellationToken ct) =>
+        await CloseAnswerAsync(s, http, await s.Exchange.CloseAsync(id, body.Key, body.Token, CloseNamed(body), DateTimeOffset.UtcNow, ct), ct));
+
+    // FABRIC-CLOSE1u: what became of a close's key, asked by the driver before it would ever send that close again; answered from
+    // the store's record of the key, in the close door's own shape, and a key never taken withdrawn so its close never runs.
+    app.MapPost("/api/quests/{id}/close/outcome", async (
+        ComposedService s, HttpContext http, string id, CloseQuestRequest body, CancellationToken ct) =>
+        await CloseAnswerAsync(s, http, await s.Exchange.CloseOutcomeAsync(id, body.Key, body.Token, CloseNamed(body), DateTimeOffset.UtcNow, ct), ct));
+
+    // A half-named submission arrives blank and is refused by the exchange, which says what a close names.
+    static List<(string, QuestOperationRef)> CloseNamed(CloseQuestRequest body) =>
+        [.. (body.Quests ?? []).Select(q => (q?.Id ?? "", new QuestOperationRef(q?.Machine ?? "", q?.Sequence ?? 0)))];
+
+    async Task<IResult> CloseAnswerAsync(ComposedService s, HttpContext http, QuestCloseOutcome outcome, CancellationToken ct)
     {
-        // A half-named submission arrives blank and is refused by the exchange, which says what a close names.
-        var named = (body.Quests ?? [])
-            .Select(q => (q?.Id ?? "", new QuestOperationRef(q?.Machine ?? "", q?.Sequence ?? 0)))
-            .ToList();
-        var outcome = await s.Exchange.CloseAsync(id, body.Key, body.Token, named, DateTimeOffset.UtcNow, ct);
         if (outcome.Refusal == QuestCloseRefusal.None)
         {
             var answered = new List<QuestResponse>();
@@ -772,10 +780,11 @@ if (mode == ServiceMode.Local)
         {
             QuestCloseRefusal.Malformed => Results.BadRequest(refused),
             QuestCloseRefusal.NotFound => Results.NotFound(refused),
-            // A check that refused on a quest's state: stale, held, closed, unbound or not this machine's. Nothing was written.
+            // A check that refused on a quest's state: stale, held, closed, unbound or not this machine's; a key not that close's or
+            // withdrawn (FABRIC-CLOSE1u). Nothing was written.
             _ => Results.Conflict(refused),
         };
-    });
+    }
 
     // A set-up on a set-up step (REVIEWENV1b, design §2.6, §3.3): the driver posts each set-up a session said, with the commit it
     // read from the step's tree, or the person records their own. LOCAL mode only, as the evidence door is: the commit is read

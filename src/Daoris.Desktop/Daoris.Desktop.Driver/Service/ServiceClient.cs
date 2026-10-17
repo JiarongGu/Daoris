@@ -1138,9 +1138,24 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// under its key and token. A refusal is an answer with its check's code (<c>key-reused</c> among them), the same close again answers its
     /// first outcome, and a host older than the door is said to be.
     /// </summary>
-    /// <exception cref="HttpRequestException">The host did not answer: the caller keeps the close unknown, and sends it again.</exception>
-    public async Task<QuestCloseAnswer> CloseQuestsAsync(
-        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default)
+    /// <exception cref="HttpRequestException">The host did not answer: the caller keeps the close unknown, and asks what became of it (FABRIC-CLOSE1u).</exception>
+    public Task<QuestCloseAnswer> CloseQuestsAsync(
+        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default) =>
+        CloseDoorAsync("close", quest, key, token, quests, ct);
+
+    /// <summary>
+    /// What became of a close sent with <paramref name="key"/> (FABRIC-CLOSE1u, <c>POST /api/quests/{id}/close/outcome</c>): the close as it was
+    /// sent, answered from the door's own record and read as the close is: its first outcome, or refused <c>withdrawn</c> where it never took
+    /// the key. A host before the question has no such door, which proves nothing, so the close stays unknown.
+    /// </summary>
+    /// <exception cref="HttpRequestException">The host did not answer, or answered as no door of its own: the close stays unknown.</exception>
+    public Task<QuestCloseAnswer> CloseOutcomeAsync(
+        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default) =>
+        CloseDoorAsync("close/outcome", quest, key, token, quests, ct);
+
+    /// <summary>One call at the close door's <paramref name="door"/>: the close as it is named, and the door's own answer, else a throw.</summary>
+    private async Task<QuestCloseAnswer> CloseDoorAsync(
+        string door, string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct)
     {
         var body = WriteJson(writer =>
         {
@@ -1161,7 +1176,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             writer.WriteEndObject();
         });
         var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/close", body, ct).ConfigureAwait(false);
+            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/{door}", body, ct).ConfigureAwait(false);
 
         // FABRIC-CLOSE1l, the review's finding 7: only the door's own answer settles a close, its close or its coded refusal. Anything
         // else (a proxy's page, the host's 500, a bare 404, a refusal naming no check of the door's) proves nothing about whether its

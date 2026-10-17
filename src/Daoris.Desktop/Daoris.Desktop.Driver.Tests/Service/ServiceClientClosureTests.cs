@@ -107,6 +107,41 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1u: what became of a close is asked at its own door with the close as it was sent, and read as a close is: its first outcome,
+    /// or refused <c>withdrawn</c> where the door never took the key, which the close door says too of a send of that key arriving after. A
+    /// host before the question answers it as no door of its own, so the close stays unknown.
+    /// </summary>
+    [Fact]
+    public async Task What_became_of_a_close_is_asked_with_its_key_and_read_as_a_close_is()
+    {
+        var replies = new Queue<ServiceReply>(
+        [
+            new(200, """{ "quests": [{ "id": "q7", "from": "a", "to": "engine", "title": "t", "body": "", "status": "Done" }], "message": "This close was made already." }"""),
+            new(409, """{ "error": "Key `k-2` was never taken by this door, and is withdrawn.", "code": "withdrawn" }"""),
+            new(409, """{ "error": "This close was refused when it was first sent with key `k-2`: its key was withdrawn.", "code": "withdrawn" }"""),
+            new(404, ""),
+        ]);
+        var doors = new Doors((_, _, _) => replies.Dequeue());
+        using var client = new ServiceClient(doors);
+        IReadOnlyList<QuestCloseItem> named = [new("q7", "desk", 41)];
+
+        var closed = await client.CloseOutcomeAsync("q7", "k-1", "ctk-1", named);
+        var withdrawn = await client.CloseOutcomeAsync("q7", "k-2", "ctk-1", named);
+        var late = await client.CloseQuestsAsync("q7", "k-2", "ctk-1", named);
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.CloseOutcomeAsync("q7", "k-3", "ctk-1", named));
+
+        Assert.Equal((QuestCloseOutcomes.Closed, null), (closed.Outcome, closed.Code));
+        Assert.Equal((QuestCloseOutcomes.Refused, QuestCloseOutcomes.Withdrawn), (withdrawn.Outcome, withdrawn.Code));
+        Assert.Equal((QuestCloseOutcomes.Refused, QuestCloseOutcomes.Withdrawn), (late.Outcome, late.Code));
+        var (verb, path, json) = doors.Asked[0];
+        Assert.Equal((ServiceVerb.Post, "/api/quests/q7/close/outcome"), (verb, path));
+        using var body = JsonDocument.Parse(json!);
+        Assert.Equal(("k-1", "ctk-1", "q7/desk/41"), (body.RootElement.GetProperty("key").GetString(), body.RootElement.GetProperty("token").GetString(),
+            string.Join(",", body.RootElement.GetProperty("quests").EnumerateArray()
+                .Select(q => $"{q.GetProperty("id").GetString()}/{q.GetProperty("machine").GetString()}/{q.GetProperty("sequence").GetInt64()}"))));
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1l, the review's finding 7: an answer that is not the close door's own coded refusal proves nothing about whether its
     /// transaction committed (a proxy's 503 page, the host's 500, a bare 404 from a host restarting, a 409 naming no check), so the close is
     /// unknown, thrown as the host not answering, and the closer sends the same close again.
