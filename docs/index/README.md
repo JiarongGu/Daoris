@@ -155,10 +155,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/agents/toolchain.ts` | 151 | 2910 |
+| `src/Daoris.Cli/src/agents/toolchain.ts` | 151 | 2915 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 124 | 2232 |
-| `src/Daoris.Cli/src/plugins/plugins.ts` | 79 | 1544 |
+| `src/Daoris.Cli/src/plugins/plugins.ts` | 80 | 1550 |
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 40 | 821 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 103 | 1974 |
@@ -166,7 +166,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 839 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 135 | 2476 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 207 | 3185 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 207 | 3188 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 
@@ -179,7 +179,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 340 | 5984 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 145 | 2599 |
+| `tools/merge-branch.mjs` | 145 | 2600 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
@@ -188,7 +188,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 98 | 168 |
+| `.claude/knowledge/twins.md` | 99 | 169 |
 | `docs/2026-09-19-platform-ux.md` | 65 | 679 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |

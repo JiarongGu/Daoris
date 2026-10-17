@@ -60,7 +60,8 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameS
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { foldName, sameName } from '../platform/casefold.ts';
 import { DaorisError } from '../platform/errors.ts';
-import { onPath, readJsonObject, readText, renameHeld, writeJsonAtomic } from '../platform/fsx.ts';
+import { onPath, readJsonObject, readText, renameHeld } from '../platform/fsx.ts';
+import { writeKeeping } from '../platform/jsonkeep.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { daorisHome, HOME_SENTENCE, homeEntry } from '../platform/home.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
@@ -352,22 +353,27 @@ export function readPluginState(home: string): { disabled: string[] } {
 
 /**
  * Written beside and renamed over, like every file Daoris owns — and never over a file it could not
- * read, which would switch back on every plugin the person had switched off.
+ * read, which would switch back on every plugin the person had switched off. The edit from `read` is made onto the file as it stands
+ * (KEEPALL1, `jsonkeep.ts`' `writeKeeping`), so a key this build has no field for stays where it is, as written: rebuilt from
+ * `disabled` alone, it deleted every other key the file held. The driver's `PluginState` does the same.
  */
-export function writePluginState(home: string, state: { disabled: string[] }): void {
-  const disabled = [...new Set(state.disabled)].sort();
-  writeJsonAtomic(homeEntry(home, 'plugin-state'), { disabled });
+export function writePluginState(home: string, state: { disabled: string[] }, read: { disabled: string[] }): void {
+  const path = homeEntry(home, 'plugin-state');
+  const written = (each: { disabled: string[] }) => ({ disabled: [...new Set(each.disabled)].sort() });
+  writeKeeping(path, existsSync(path), written(read), written(state));
 }
 
 // An id or a name compares as the driver's `PluginCatalog.Same` compares it, by `OrdinalIgnoreCase` (CASEFOLD1).
 const same = sameName;
 
 export function disablePlugin(home: string, id: string): void {
-  writePluginState(home, { disabled: [...readPluginState(home).disabled.filter((d) => !same(d, id)), id] });
+  const read = readPluginState(home);
+  writePluginState(home, { disabled: [...read.disabled.filter((d) => !same(d, id)), id] }, read);
 }
 
 export function enablePlugin(home: string, id: string): void {
-  writePluginState(home, { disabled: readPluginState(home).disabled.filter((d) => !same(d, id)) });
+  const read = readPluginState(home);
+  writePluginState(home, { disabled: read.disabled.filter((d) => !same(d, id)) }, read);
 }
 
 function text(row: unknown, name: string): string | null {
