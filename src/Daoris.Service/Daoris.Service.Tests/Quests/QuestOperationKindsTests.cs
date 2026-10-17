@@ -63,10 +63,12 @@ public sealed class QuestOperationKindsTests
             Published = Asked with { Filed = At(s), Updated = At(s) },
         },
         [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session." },
+        // The close's provenance is a done's (FABRIC-CLOSE1a), so the sample carries it, and the wire and the log are held to it.
         [QuestOperationKind.Done] = s => Op(QuestOperationKind.Done, s) with
         {
             Note = "The person marked this done: Built.", NoteParts = DoneParts,
             Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")],
+            Close = new QuestClose("close-7", "token-0f1e2d"),
         },
         [QuestOperationKind.Declined] = s => Op(QuestOperationKind.Declined, s) with { Note = "Abandoned.", WhileOpen = true },
         // A move that lost keeps its note's parts in the log, as a rebase rewrites it (QUESTCLOSE1b1).
@@ -110,6 +112,13 @@ public sealed class QuestOperationKindsTests
                 SetUp = new QuestOperationRef("m1", 4), Commit = Commit, Words = "That is the setting.",
             },
         },
+        // The closure graph's digest, as the driver binds a taken quest (FABRIC-CLOSE1a).
+        [QuestOperationKind.Bound] = s => Op(QuestOperationKind.Bound, s) with { Note = "sha256:0f1e2d3c4b5a6978" },
+        // A ready's note and answers, as a done carries them (FABRIC-CLOSE1a).
+        [QuestOperationKind.Submitted] = s => Op(QuestOperationKind.Submitted, s) with
+        {
+            Note = "Built.", Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")],
+        },
     };
 
     /// <summary>The kind's sample, or a failure saying where a new kind goes before it is given one.</summary>
@@ -134,6 +143,9 @@ public sealed class QuestOperationKindsTests
             ("done, departed", [published, taken, Departure()]),
             ("done, shown for review", [published, taken, Departure(), Sample(QuestOperationKind.SetUp, 4)]),
             ("declined", [published, Sample(QuestOperationKind.Declined, 2) with { WhileOpen = false }]),
+            // FABRIC-CLOSE1a: a taken quest a closure graph binds, and one whose agent submitted, waiting on its evidence.
+            ("taken, bound to a closure graph", [published, taken, Sample(QuestOperationKind.Bound, 3)]),
+            ("taken, submitted", [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4)]),
         ];
     }
 

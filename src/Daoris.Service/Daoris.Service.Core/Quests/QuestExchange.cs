@@ -229,12 +229,35 @@ public enum QuestRespondRefusal
     /// named, one already reviewed or skipped; a set-up step after work that is not done, or after one already composed.
     /// </summary>
     ReviewRefused,
+
+    /// <summary>
+    /// An agent's done on a quest a closure graph holds (FABRIC-CLOSE1a, §E5): it says <c>ready</c>, and the graph's close
+    /// writes the Done at the work's end.
+    /// </summary>
+    ClosedByGraph,
+
+    /// <summary>
+    /// A <c>ready</c> where no closure graph holds the quest (FABRIC-CLOSE1a, §E5): not taken, or never bound by its taker's
+    /// driver. A bind on a quest that is not taken, already submitted, or bound to another graph.
+    /// </summary>
+    NotInGraph,
+
+    /// <summary>
+    /// A <c>ready</c> on a submission that already published its chain's next step (FABRIC-CLOSE1a, §E5): sealed while that
+    /// step stands, and reopened only by the person.
+    /// </summary>
+    Sealed,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
 /// <param name="Message">The full answer, phrased once here.</param>
 /// <param name="Quest">The quest as it now stands, when the status moved.</param>
 public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Message, Quest? Quest);
+
+/// <param name="Refusal"><see cref="QuestCloseRefusal.None"/> when every named quest is Done.</param>
+/// <param name="Message">The full answer, phrased once here: what closed, or which check refused, on which quest.</param>
+/// <param name="Quests">Every named quest as it now stands, when the close wrote them or answered its first outcome again.</param>
+public sealed record QuestCloseOutcome(QuestCloseRefusal Refusal, string Message, IReadOnlyList<Quest> Quests);
 
 /// <summary>Why a delete did not delete — or <see cref="None"/> when it did (D95).</summary>
 public enum QuestDeleteRefusal
@@ -1167,6 +1190,11 @@ public sealed class QuestExchange(
             return await WaitAsync(id.TrimStart('#'), on?.TrimStart('#'), now, ct).ConfigureAwait(false);
         }
 
+        if (string.Equals(action, "ready", StringComparison.OrdinalIgnoreCase))
+        {
+            return await ReadyAsync(id.TrimStart('#'), reason, answers ?? [], now, ct).ConfigureAwait(false);
+        }
+
         var status = action.ToLowerInvariant() switch
         {
             "take" => QuestStatus.Taken,
@@ -1179,7 +1207,7 @@ public sealed class QuestExchange(
         {
             return new(
                 QuestRespondRefusal.UnknownAction,
-                $"Unknown action '{action}' — one of: take, done, decline, wait.",
+                $"Unknown action '{action}' — one of: take, done, ready, decline, wait.",
                 Quest: null);
         }
 
@@ -1209,12 +1237,23 @@ public sealed class QuestExchange(
 
         // Every verb commits here, shared or not (D68): the next sync carries it to the remote, where the
         // first push wins and a later one is kept as a conflict rather than lost (design §5).
-        var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen)
+        var move = await quests.MoveAsync(
+                id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen, byAgent: status == QuestStatus.Done)
             .ConfigureAwait(false);
 
         if (move.Quest is null)
         {
             return new(QuestRespondRefusal.NotFound, $"No quest `#{id.TrimStart('#')}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        // A done where the quest's graph closes it (FABRIC-CLOSE1a, §E5): the result is a submission, said as the action to take.
+        if (move.ClosedByGraph)
+        {
+            return new(
+                QuestRespondRefusal.ClosedByGraph,
+                $"Quest `#{move.Quest.Id}` closes through its graph: say `ready` with the same note and answers, and the graph "
+                + "writes its Done at the work's end, once its holds and gates are through. Nothing moved.",
+                Quest: null);
         }
 
         if (move.Moved && status == QuestStatus.Taken
@@ -1341,6 +1380,183 @@ public sealed class QuestExchange(
     internal static string LostTake(string id, string what) =>
         $"Quest `#{id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, "
         + $"{what} Stand down rather than doubling the work.";
+
+    /// <summary>
+    /// The driver binds a taken quest to the graph that closes it (FABRIC-CLOSE1a, §E5), at the run's first start.
+    /// </summary>
+    /// <remarks>
+    /// The driver's door, never an agent's: no connector tool reaches it, since the graph is the workspace's, set by the person.
+    /// The same graph again is the same bind, answered as it stands; another graph is refused, as a quest follows the graph
+    /// bound at its start. It commits here and travels like any verb (D68).
+    /// </remarks>
+    public async Task<QuestRespondOutcome> BindAsync(string id, string? graph, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var name = id.TrimStart('#');
+        if (string.IsNullOrWhiteSpace(graph))
+        {
+            return new(QuestRespondRefusal.NotInGraph, "A bind names the graph's digest (`graph`). Nothing moved.", Quest: null);
+        }
+
+        var move = await quests.BindAsync(name, graph.Trim(), now, ct).ConfigureAwait(false);
+        if (move.Quest is not { } standing)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (move.ClaimLost)
+        {
+            return new(QuestRespondRefusal.AlreadyTaken, LostTake(name, "so no graph of this machine's closes it. Nothing moved."), Quest: null);
+        }
+
+        if (move.Moved) return new(QuestRespondRefusal.None, $"Quest `#{name}` closes through graph `{graph.Trim()}`: its taker says `ready`.", standing);
+        if (standing.Closure == graph.Trim()) return new(QuestRespondRefusal.None, $"Quest `#{name}` already closes through graph `{standing.Closure}`.", standing);
+        return new(QuestRespondRefusal.NotInGraph, standing switch
+        {
+            { Closure: { } other } => $"Quest `#{name}` closes through graph `{other}`, bound at its start: a quest follows the graph "
+                                      + "it started under. Nothing moved.",
+            { Status: QuestStatus.Taken, Submission: null } => $"Quest `#{name}` is taken on another machine: its graph is that "
+                                                               + "machine's to bind. Nothing moved.",
+            { Status: QuestStatus.Taken } => $"Quest `#{name}` already has a submission: a graph binds a quest at its start. Nothing moved.",
+            _ => $"Quest `#{name}` is {standing.Status}: a graph binds a quest once it is taken, at its run's first start. Nothing moved.",
+        }, Quest: null);
+    }
+
+    /// <summary>
+    /// The agent's <c>ready</c> in a closure graph (FABRIC-CLOSE1a, §E5): its result, carrying exactly what a done carries, its
+    /// note and an answer to each requirement, kept as a submission while the quest stays taken. Its holds are a done's, and an
+    /// unheld one publishes the chain's next step, which seals it. Refused where no closure graph holds the quest, on a take this
+    /// machine lost, and on a sealed submission.
+    /// </summary>
+    private async Task<QuestRespondOutcome> ReadyAsync(
+        string id, string? note, IReadOnlyList<QuestAnswer> answers, DateTimeOffset now, CancellationToken ct)
+    {
+        if (await quests.FindAsync(id, ct).ConfigureAwait(false) is not { } live)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{id}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (NotReady(live) is { } why) return new(QuestRespondRefusal.NotInGraph, why, Quest: null);
+
+        // A done's own judgements, unchanged (§E5): a set-up step's result has a set-up, and each requirement is answered.
+        if (await reviews.NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown) return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
+        var judged = await JudgeAnswersAsync(live, answers, ct).ConfigureAwait(false);
+        if (judged.Refusal is { } refusal) return new(refusal, judged.Message!, Quest: null);
+
+        var move = await quests.SubmitAsync(id, note, judged.Answers, now, ct).ConfigureAwait(false);
+        if (move.Quest is not { } standing)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{id}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (move.ClaimLost)
+        {
+            return new(QuestRespondRefusal.AlreadyTaken, LostTake(id, "so this ready is not this machine's to say. Nothing moved."), Quest: null);
+        }
+
+        if (move.SealedBy is { } successor)
+        {
+            return new(
+                QuestRespondRefusal.Sealed,
+                $"Quest `#{id}`'s submission already published its next step, `#{successor}`, which stands on it: a later `ready` "
+                + "would change the work that step grew from. Nothing moved. Only the person can reopen it.",
+                Quest: null);
+        }
+
+        if (!move.Moved)
+        {
+            return new(QuestRespondRefusal.NotInGraph, NotReady(standing)
+                ?? $"Quest `#{id}` is taken on another machine: its `ready` is that machine's to say. Nothing moved.", Quest: null);
+        }
+
+        return new(
+            QuestRespondRefusal.None,
+            $"Quest `#{id}` is submitted: it stays Taken, and its graph writes its Done at the work's end, once its holds and gates "
+            + $"are through. A later `ready` replaces this one until its next step is published.{await AnsweredAsync(standing, ct).ConfigureAwait(false)}"
+            + Then(move.FollowUp),
+            standing);
+    }
+
+    /// <summary>Why a <c>ready</c> on <paramref name="quest"/> is refused as a state (FABRIC-CLOSE1a) — or null where one may be said.</summary>
+    private static string? NotReady(Quest quest) => quest switch
+    {
+        { Status: QuestStatus.Taken, Closure: not null } => null,
+        { Status: QuestStatus.Taken } =>
+            $"Quest `#{quest.Id}` is not in a graph that closes it: say `done` when its work is done. Nothing moved.",
+        _ => $"Quest `#{quest.Id}` is {quest.Status}: `ready` submits a taken quest's work in a graph that closes it. Nothing moved.",
+    };
+
+    /// <summary>
+    /// The graph's close door (FABRIC-CLOSE1a, §E5): every quest of the chain this repository holds, Done in one transaction,
+    /// each on the submission named.
+    /// </summary>
+    /// <remarks>
+    /// <para>The driver's door, never an agent's or a shared host's: it runs under the unit's record lock, which the driver
+    /// holds across the whole close (the fence's steps 1 and 3), and this is step 2, one SQLite transaction over every quest
+    /// named. A remote judges the Done it pushes quest by quest (D68), where a take lost meanwhile leaves the chain partially
+    /// closed, which the driver shows (FABRIC-CLOSE1b).</para>
+    ///
+    /// <para><paramref name="id"/> is the quest the route names, which must be among those named: the close is the unit's.</para>
+    /// </remarks>
+    public async Task<QuestCloseOutcome> CloseAsync(
+        string id, string? key, string? token, IReadOnlyList<(string Id, QuestOperationRef Submission)> named,
+        DateTimeOffset now, CancellationToken ct = default)
+    {
+        var route = id.TrimStart('#');
+        var listed = named.Select(each => (Id: each.Id.TrimStart('#'), each.Submission)).ToList();
+        QuestCloseOutcome Malformed(string why) => new(QuestCloseRefusal.Malformed, why + " Nothing was closed.", []);
+
+        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(token))
+        {
+            return Malformed("A close names its key, which a second send of the same close repeats, and its close token.");
+        }
+
+        if (listed.Count == 0) return Malformed("A close names each quest it closes, with the submission it judged.");
+        if (listed.Any(each => string.IsNullOrWhiteSpace(each.Submission.Machine) || each.Submission.Sequence < 1))
+        {
+            return Malformed("Each quest a close names comes with its submission's machine and sequence.");
+        }
+
+        if (listed.Select(each => each.Id).Distinct(StringComparer.Ordinal).Count() != listed.Count)
+        {
+            return Malformed("A close names each quest once.");
+        }
+
+        if (!listed.Any(each => string.Equals(each.Id, route, StringComparison.Ordinal)))
+        {
+            return Malformed($"A close at `#{route}` names `#{route}` among the quests it closes.");
+        }
+
+        var closing = await quests.CloseAsync(listed, new QuestClose(key.Trim(), token.Trim()), now, ct).ConfigureAwait(false);
+        // Not found: the first named quest the store did not find, since it answers those it found before it.
+        var on = listed.Select(each => each.Id).FirstOrDefault(each => closing.Quests.All(quest => quest.Id != each)) ?? route;
+        return closing.Refusal switch
+        {
+            QuestCloseRefusal.None => new(QuestCloseRefusal.None, closing.Replayed
+                ? $"This close was made already: {Closed(closing.Quests)}. Nothing more was written."
+                : $"Closed {Closed(closing.Quests)}, each on the submission named.", closing.Quests),
+            QuestCloseRefusal.NotFound => new(closing.Refusal, $"No quest `#{on}`. Ids come from `quest_list`. Nothing was closed.", []),
+            _ => new(closing.Refusal, $"{Refused(closing.Refusal, closing.Quest!)} Nothing was closed.", closing.Quests),
+        };
+    }
+
+    /// <summary>The quests a close wrote Done, as an answer names them.</summary>
+    private static string Closed(IReadOnlyList<Quest> quests) =>
+        string.Join(", ", quests.Select(quest => $"`#{quest.Id}` is {quest.Status}"));
+
+    /// <summary>Which of the close's checks refused it, on which quest (FABRIC-CLOSE1a, §E5 step 2).</summary>
+    private static string Refused(QuestCloseRefusal refusal, Quest quest) => refusal switch
+    {
+        QuestCloseRefusal.Closed => $"Quest `#{quest.Id}` is {quest.Status} already, by another close, the person or another machine.",
+        QuestCloseRefusal.NotBound => $"Quest `#{quest.Id}` is in no graph that closes it: its taker's driver never bound it.",
+        QuestCloseRefusal.NotHeld => $"Quest `#{quest.Id}` is not this machine's: it was never taken here, or another machine's take "
+                                     + "reached the remote first.",
+        QuestCloseRefusal.Stale => quest.Submission is null
+            ? $"Quest `#{quest.Id}` has no submission: its taker has not said `ready`."
+            : $"Quest `#{quest.Id}`'s current submission is not the one named: the close's binding is stale, so judge it again.",
+        QuestCloseRefusal.Held => $"Quest `#{quest.Id}`'s submission is held for the person ({QuestEvidenceCodes.Spell(quest.Hold!.Value)}).",
+        QuestCloseRefusal.Unsealed => $"Quest `#{quest.Id}`'s next step is not published from its submission, so the submission is not sealed.",
+        _ => $"Quest `#{quest.Id}` was refused.",
+    };
 
     /// <summary>The chain's next step a close or a yes published (D65 §4), said so whoever moved it knows whose it now is.</summary>
     internal static string Then(Quest? followUp) => followUp is { } next
