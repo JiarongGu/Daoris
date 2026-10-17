@@ -130,7 +130,20 @@ public sealed record WorkMilestone(
 }
 
 /// <summary>A recovery ref a content-held removal kept (<c>refs/daoris/discarded/&lt;branch&gt;</c>), by its repository.</summary>
-public sealed record RecoveryRef(string Repository, string Ref);
+public sealed record RecoveryRef(string Repository, string Ref)
+{
+    /// <summary>The commit it keeps, where the read named one.</summary>
+    public string? Commit { get; init; }
+
+    /// <summary>That commit's date (<c>committerdate</c>): git keeps no date for a ref, which is made at or after it (CLEANUP1).</summary>
+    public DateTimeOffset? Dated { get; init; }
+
+    /// <summary>
+    /// Whether a branch or a tag here holds its commit by ancestry (CLEANUP1, <see cref="RecoveryRetention"/>): true where one does, false
+    /// where none does, null where git could not say.
+    /// </summary>
+    public bool? Held { get; init; }
+}
 
 /// <summary>What the records, the disk and git said, gathered for <see cref="WorkInventory.Derive"/> to read: nothing here is judged.</summary>
 /// <param name="Branches">Every session branch entry, standing and traces.</param>
@@ -177,6 +190,12 @@ public static partial class WorkInventory
 
     /// <summary>The milestone of every unit the records name, and of what no record names, oldest first: each read from its unit.</summary>
     public static IReadOnlyList<WorkMilestone> Derive(InventoryFacts facts) => [.. Units(facts).Select(WorkMilestone.Of)];
+
+    /// <summary>
+    /// Daoris's own recoveries no record names a unit of (CLEANUP1): a folder moved aside with its purge date, and a recovery ref. Each is
+    /// kept by its own rule, owned by it, and waits on nobody, so it is no unit: the unit it came from retired and its trace went.
+    /// </summary>
+    public static IReadOnlyList<InventoryEntry> Recoveries(InventoryFacts facts) => [];
 
     /// <summary>
     /// Every branch unit the records name, and a unit of its own for what no record names, oldest first (the branch adapter, §D2). A

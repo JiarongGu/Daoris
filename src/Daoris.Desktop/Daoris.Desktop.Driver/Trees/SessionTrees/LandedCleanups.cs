@@ -37,6 +37,22 @@ public static class LandedKind
     public const string Unknown = "unknown";
 }
 
+/// <summary>
+/// Why a landing's branch went where Daoris did not remove it (CLEANUP1, <see cref="LandedBranch.GoneAs"/>), each on git's own word
+/// (the knowledge note <c>git-ref-absence</c>).
+/// </summary>
+public static class LandedGone
+{
+    /// <summary>
+    /// git says its branch is missing (<c>show-ref --exists</c> exit 2), and no branch of its name in another case stands: the person
+    /// removed it, which is the person's end of it.
+    /// </summary>
+    public const string Missing = "missing";
+
+    /// <summary>A branch of its name stands that is not the landing's (another commit, or the name in another case): kept, the person's to say.</summary>
+    public const string Stands = "stands";
+}
+
 /// <param name="Where">On the line: the form of the line it was proven on (`main`, `origin/main`). Inside: the branch it is inside. Leaned on: the session branch.</param>
 /// <param name="Files">Differs: the files it changed that read otherwise on the line.</param>
 /// <param name="Detail">Git's own words where it could not say.</param>
@@ -468,6 +484,16 @@ internal sealed class LandedCleanups(
         items.AddRange(unread);
         return items;
     }
+
+    /// <summary>
+    /// The landings of one repository whose branch went outside Daoris, said on git's own word (CLEANUP1): a standing entry whose branch the
+    /// refs do not list is retired as a trace once git says it is missing, and a trace from before <see cref="LandedBranch.GoneAs"/> was kept
+    /// is asked once. Missing, with no branch of its name in another case standing, is <see cref="LandedGone.Missing"/>, the person's end of
+    /// it; a branch of its name standing is <see cref="LandedGone.Stands"/>; a read git could not make writes nothing, and is asked again at
+    /// the next look. No git where nothing needs asking.
+    /// </summary>
+    /// <returns>How many entries were written.</returns>
+    internal Task<int> MarkAbsentAsync(string root, string repository, CancellationToken ct, RefSnapshot? refs = null) => Task.FromResult(0);
 
     /// <summary>
     /// A recorded branch git could not read (RECORDUNREAD1): kept as <see cref="LandedKind.Unknown"/> with why, at no tip, so no removal and

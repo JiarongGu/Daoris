@@ -36,6 +36,9 @@ public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held =
     /// its session branches: each moved aside, or kept and why (<see cref="TreeStrays"/>).
     /// </summary>
     public IReadOnlyList<StrayResult> Strays { get; init; } = [];
+
+    /// <summary>The recovery refs the look removed past their retention, each with the branch or tag that holds its commit (CLEANUP1).</summary>
+    public IReadOnlyList<RecoveryGone> Recovered { get; init; } = [];
 }
 
 /// <summary>

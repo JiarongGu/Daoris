@@ -47,6 +47,13 @@ public sealed record LandedBranch(
     public string? RemovedOn { get; init; }
 
     /// <summary>
+    /// Why this machine found it gone where Daoris did not remove it (CLEANUP1, <see cref="LandedGone"/>): git said its branch is missing,
+    /// or a branch of its name stands that is not the landing's. Null where Daoris removed it, while it stands, and for a trace from
+    /// before it was kept, which the look asks git about once (<see cref="LandedCleanups.MarkAbsentAsync"/>).
+    /// </summary>
+    public string? GoneAs { get; init; }
+
+    /// <summary>
     /// Who accepted it (LAND2b, D145 point 6), one of <see cref="Daoris.Driver.AcceptedBy"/>: the person's press, or the rule's switch at
     /// the quest's done. Null for a landing recorded before it was kept, which a reader says is not kept (D143 point 3).
     /// </summary>
@@ -295,6 +302,12 @@ public sealed class LandedBranches(string home)
             ? each with { GoneAt = DateTimeOffset.UtcNow }
             : each)]);
 
+    /// <summary>
+    /// Why a branch Daoris did not remove went (CLEANUP1, <see cref="LandedGone"/>): a standing entry becomes a trace with it, and a trace
+    /// that has none yet gains it. A trace that already says why, or that Daoris removed, is left as it is.
+    /// </summary>
+    public void GoneAs(string repository, string branch, string why) => Edit(all => all);
+
     /// <summary>A branch the clean-up removed once its work read on the line (WSR5): a trace, with what the proof found and where.</summary>
     public void Removed(string repository, string branch, string kind, string? where) => Edit(all =>
         [.. all.Select(each => Standing(each, repository, branch)
@@ -396,6 +409,7 @@ public sealed class LandedBranches(string home)
             if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
             if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
             if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
+            if (entry.GoneAs is not null) writer.WriteString("goneAs", entry.GoneAs);
             if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
             if (entry.Rule is { } rule)
             {
@@ -671,6 +685,7 @@ public sealed class LandedBranches(string home)
             GoneAt = Moments.Read(Text(element, "goneAt")),
             RemovedAs = Text(element, "removedAs"),
             RemovedOn = Text(element, "removedOn"),
+            GoneAs = Text(element, "goneAs"),
             AcceptedBy = Text(element, "acceptedBy"),
             Rule = element.TryGetProperty("rule", out var rule) && rule.ValueKind == JsonValueKind.Object
                 ? new LandedRule(
