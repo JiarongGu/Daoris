@@ -5,6 +5,79 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — A reach could expose outputs its node never declared (FABRIC-NODE1e)
+
+- **Symptom:** found by FABRIC-WIRE1a's hand-back before WIRE1b reads outputs at run time: a reach could carry an output the node
+  never declared, a declared output at another schema, or none of a declared output, and `Apply` kept it. WIRE1a's save-time check
+  that a `data` wire's output schema is its input's would then say nothing about what a consumer received.
+- **Root cause:** `NodeLifecycle.Apply` judged a reach's evidence against the declaration (`no-evidence`) but compared its outputs
+  with nothing; NODE1d checked only the acceptance each port names.
+- **Fix:** D173's FABRIC-WIRE1b note, its NODE1e point: a reach exposes exactly its declared outputs, each at its declared schema;
+  an undeclared output (`undeclared-output`), another schema (`output-schema`) and a declared output missing (`no-output`) are
+  refused. NODE1d's own test now declares the output it reaches with.
+- **Verification:** the new test failed at run time on the three codes added without behaviour (an undeclared output was
+  accepted), then passed; the node suites pass, and the driver's fast half.
+
+## 2026-10-17 — A node declaration moved with its caller's collections, and a reach's ports could name another acceptance (FABRIC-NODE1d)
+
+- **Symptom:** found by FABRIC-NODE1c's hand-back before GRAPH1 digests declarations: a caller mutating the dictionaries or the
+  delay list it handed a `NodeDeclaration` changed the declaration afterwards, and could turn a declaration that passed its
+  `Problem` into one that would not (a negative delay); a reach whose evidence or output port named another acceptance was kept as
+  it was, so a consumer of that port would rest on, and be invalidated with, the wrong acceptance.
+- **Root cause:** NODE1c copied `NodeAcceptance`'s collections when set but not `NodeDeclaration`'s `Inputs` and `Outputs` or
+  `NodeRetry.DelaysSeconds`; and `Apply` checked a reach's evidence for its presence and schema only, never for the acceptance a
+  port names, which is what `NodeAcceptances.Invalidate` follows downstream.
+- **Fix:** D173's FABRIC-WIRE1a note, its NODE1d point: the declaration copies its inputs and outputs into ordinal-sorted immutable
+  dictionaries and the retry its delays into an immutable array, at construction and at `with`; a reach whose evidence or an output
+  names another acceptance is refused (`other-acceptance`), and a port naming none is kept naming the reach's own.
+- **Verification:** both tests failed at run time on the existing members (the mutated declaration read `acme/other@1`; the foreign
+  port was accepted), then passed; the node suites pass, and the driver's fast half.
+
+## 2026-10-17 — The node contract let a late outcome land on the wrong attempt and a dispatch be duplicated (FABRIC-NODE1c)
+
+- **Symptom:** a second maker's review of FABRIC-NODE1, before any wire read it: a failure of attempt 1 arriving during attempt 2
+  failed attempt 2; a dispatched attempt stopped while its answer was pending let attempt 2 start at once; a reach with an old
+  graph, revision or node version, or no evidence, was accepted; mutating a dictionary handed to an acceptance changed its issued
+  id; an observed built-in's acceptance could not carry its prerequisite receipts, so invalidating a QA wired before `handed`
+  missed `handed`.
+- **Root cause:** the lifecycle judged an outcome by the status's state alone. A failure carried no attempt; a reach was checked
+  for unit, node and attempt only, since the status held no expected binding; `Unreconciled` was set only on entering *unknown*,
+  so an attempt moved off *active* by a stop, a skip, a rejection or an invalidation was forgotten. `NodeAcceptance` kept the
+  caller's collections, and `Observe` built its acceptance from a graph digest and an attempt alone.
+- **Fix:** D173's FABRIC-NODE1c note: every outcome names its attempt; the start carries the evaluated binding and a reach must be
+  it, whole, with its kind's evidence; a dispatching kind's start sets `Unreconciled` until its authority's outcome or a
+  reconciliation; acceptances copy their collections; `Keep` refuses a second result per binding; `Apply` returns what it cleared;
+  `Observe` takes the evaluated binding.
+- **Verification:** each defect's test failed on the contract's surface without the behaviour, then passed; the three node suites
+  pass (55), and the driver's fast half.
+
+## 2026-10-17 — An automatic landing could land on stale facts, from a loop that did not hold the home, and wakes were lost (FABRIC-END7's review)
+
+- **Symptom:** a second maker's review, from source, would not stage END7 with auto-landing on. A look chose two due entries. While
+  the first one's plugin ran, the second's quest could be held again, or its tree could gain commits that needed another review;
+  the second then landed anyway. A `drive --share` loop beside the desktop could land the same due entry. And a quest's release
+  heard while a landing ran waited for the whole look.
+- **Root cause:**
+  - The landing at done is two halves, a look that chooses and a pass beside it that lands. The pass handed `TreeLands` the gate
+    the look had read, and `TreeLands` checks a supplied gate's refusal; it does not read it again. Nothing between the two halves
+    read the quest, the holds or the tree again.
+  - Auto-landing was guarded per process (`RunningSessions`), but the home's lease, which the end keeper checks, was never asked.
+  - END7 took each topic's wakes before the tick and emptied their store whatever followed. A failed tick lost them, and so did a
+    selection skipped because a landing ran.
+- **Fix:**
+  - Each choice is judged again just before its own landing, from a fresh world, and its gate is pinned to the tip read there
+    (`LandingGate.Tip`). The branch is made or advanced to that commit, or refused where the tree moved past it.
+  - Only `HomeLease.HeldHere` selects or launches an automatic landing.
+  - A wake is spent only where a selection judged with it: otherwise it goes back, and a running landing's end offers it again.
+
+  D173's FABRIC-END7 note, *After review*, has the detail.
+- **Verification:** eight new tests, each red against END7 first, then green:
+  - Fast: `AutoLandingLookTests` (2), `LandingWakesTests` (2), `RunningSessionsTests` (1).
+  - Git: `AutoLandingTests` (2), `ReviewLandingTests` (1).
+
+  The landing's Git classes (`AutoLandingTests`, `AutoLandingWakesTests`, `ReviewLandingTests`, `OpinionLandingTests`, 37 tests)
+  pass once, by class.
+
 ## 2026-10-17 — The publish failed: the launcher compiled a driver file that named a type it did not carry (FABRIC-EVENT4)
 
 - **Symptom:** the merge gate's deployment rehearsal failed at its first check, `publish:desktop --service exits 0`, on main

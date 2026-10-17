@@ -649,6 +649,13 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
     /// <summary>The process the gate was read with, which the landing lands by; null where none was read.</summary>
     public WorkflowProcess? Process => Workflow?.Process;
 
+    /// <summary>
+    /// The tree's tip the gate was judged at, where the door pins it (FABRIC-END7's review: the look's automatic landing): the landing
+    /// lands exactly that commit, or refuses where the tree moved past it, so a commit made after the judgement never lands unseen. Null
+    /// lands the tree as it stands, as the person's press does.
+    /// </summary>
+    public string? Tip { get; init; }
+
     /// <summary>Whether the work may land: every part lets it go.</summary>
     public bool LetsGo => Refusal is null;
 

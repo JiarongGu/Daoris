@@ -61,6 +61,9 @@ dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Pr
 dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process
 ```
 
+The driver's tests project also builds the launcher (a build-only reference, LAUNCHGATE1), which compiles driver files in
+by link, so a driver file naming a type the launcher lacks fails this gate rather than the publish.
+
 Real-process suites use `src/Daoris.Desktop/process.runsettings`; they run serially and may take
 substantial time. The driver's git-only Process classes, marked `Parallel=Git` beside `Category=Process`,
 run four at once in one host with `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`,

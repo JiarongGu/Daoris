@@ -61,6 +61,8 @@ public sealed class OpinionGates(string home)
             var key = all.Keys.FirstOrDefault(name => string.Equals(name, repository, StringComparison.OrdinalIgnoreCase)) ?? repository;
             all[key] = change(all.GetValueOrDefault(key) ?? OpinionGateKept.None);
             OpinionGateFiles.WriteGates(path, chain, all);
+            // This process's own write wakes no landing (FABRIC-END7, EVENT2's rule): another's, a terminal's answer, is heard.
+            HomeWrites.Mine(path);
         }
     }
 }

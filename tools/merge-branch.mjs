@@ -572,6 +572,7 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/landing-says.json'], gates: ['driver'], why: "the driver's LandingSaysTwinTests read the shared landing, helpers and commits sentences (TWINWORDS1)" },
   { paths: ['src/Daoris.Cli/test/fixtures/usage-curves.json'], gates: ['driver', 'web'], why: "the driver's UsageCurvesTwinTests and the page's usageCurves twin read the shared usage curve table (SWITCH1b-iii, SWITCH1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/graph-homes.json'], gates: ['driver'], why: "the driver's NodeGraphHomesTests reads the shared table of which cycle governs a unit (FABRIC-GRAPH1)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/fence-cases.json'],
     gates: ['service', 'driver'],
@@ -620,6 +621,9 @@ export const REACH = Object.freeze([
     gates: DRIVER_READERS,
     why: 'the modules build on it, the family rehearsal drives its headless host, and the deployed shell runs its loop (D60): ServiceHostLocator, the staged build, a session',
   },
+  // LAUNCHGATE1: the driver's tests project builds the launcher (it compiles driver files in by link), so a launcher change
+  // is compiled by the driver gate as well as by the publish. A path rule replaces its lane's, so the modules' readers stay.
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Launcher/**'], gates: [...MODULES_READERS, 'driver'], why: 'the modules lane\'s own, and the driver gate builds the launcher, which links driver files (LAUNCHGATE1)' },
   { lane: 'modules', gates: MODULES_READERS, why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
   {
     lane: 'service',

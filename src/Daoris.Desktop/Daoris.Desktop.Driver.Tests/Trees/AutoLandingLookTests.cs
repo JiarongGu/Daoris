@@ -33,6 +33,8 @@ public sealed class AutoLandingLookTests : IDisposable
     [Fact]
     public async Task A_look_works_the_due_list_and_says_what_it_closed()
     {
+        // The home's lease, as the loop that lands holds it (FABRIC-END7's review).
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
         var due = new AutoLandings(_home);
         due.Due(new AutoLanding("s8", "q8", "engine", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-8"), At));
         due.Due(new AutoLanding("s9", "q9", "tools", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "tools", "s-9"), At));
@@ -56,5 +58,68 @@ public sealed class AutoLandingLookTests : IDisposable
         // Closed is closed: the next look says nothing more of them.
         var next = await driver.TickAsync().WaitAsync(Bound);
         Assert.DoesNotContain(next.Events, line => line.StartsWith("landing  ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FABRIC-END7's review, finding 2: only the process holding the home's lease selects or launches an automatic landing. A loop beside
+    /// it (<c>drive --share</c>) reads nothing of the due list and says nothing of it; its wakes are spent, since they are not its to land.
+    /// </summary>
+    [Fact]
+    public async Task A_loop_that_does_not_hold_the_home_s_lease_lands_nothing_automatically()
+    {
+        var due = new AutoLandings(_home);
+        due.Due(new AutoLanding("s8", "q8", "engine", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "s-8"), At));
+        var config = DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}"));
+
+        using var service = _ledger.Client();
+        var beside = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            Woke = [new(ChangeTopics.Ledger, "quests")],
+        };
+        var look = await beside.TickAsync().WaitAsync(Bound);
+
+        Assert.DoesNotContain(look.Events, line => line.StartsWith("landing  ", StringComparison.Ordinal));
+        Assert.Null(Assert.Single(due.Open()).Last);
+        Assert.True(beside.WokeSpent);
+        Assert.False(beside.Running.Landing);
+
+        // The holder's look reads it, and closes it as the rule now says.
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        var holder = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var held = await holder.TickAsync().WaitAsync(Bound);
+        Assert.Contains(held.Events, line => line.StartsWith("landing  session s8 (#q8 → engine): its repository's rule no longer accepts automatically", StringComparison.Ordinal));
+        Assert.Empty(due.Open());
+    }
+
+    /// <summary>
+    /// FABRIC-END7's review, finding 3: a look whose landing is still running judges nothing, and leaves its wakes unspent, held back for
+    /// that landing's end; the entry they concern is not read.
+    /// </summary>
+    [Fact]
+    public async Task A_look_while_a_landing_runs_judges_nothing_and_leaves_its_wakes_unspent()
+    {
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        var due = new AutoLandings(_home);
+        due.Due(new AutoLanding("s8", "q8", "engine", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "s-8"), At));
+        var config = DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}"));
+
+        using var service = _ledger.Client();
+        var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            Woke = [new(ChangeTopics.Ledger, "quests")],
+        };
+        var landing = new TaskCompletionSource<IReadOnlyList<string>>();
+        Assert.True(driver.Running.Beside(_ => landing.Task, CancellationToken.None));
+
+        var look = await driver.TickAsync().WaitAsync(Bound);
+        landing.SetResult([]);
+
+        Assert.DoesNotContain(look.Events, line => line.StartsWith("landing  ", StringComparison.Ordinal));
+        Assert.Null(Assert.Single(due.Open()).Last);
+        Assert.False(driver.WokeSpent);
+        Assert.True(driver.LandingBusy);
     }
 }

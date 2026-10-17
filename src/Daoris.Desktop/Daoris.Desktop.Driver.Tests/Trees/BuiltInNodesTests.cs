@@ -30,15 +30,19 @@ public sealed class BuiltInNodesTests
 
     private static NodeDeclaration Node(string kind) => new(kind, kind, 1, NodeReach.Observed);
 
-    private static NodeStatus Observing(WorkUnit unit, string kind) => new(unit.Id, kind, NodeStates.Active) { Attempt = 1, Tries = 1 };
+    /// <summary>The binding Daoris evaluated when the node started: the unit's live tip, as the reader hands it in.</summary>
+    private static NodeAcceptance Binding(WorkUnit unit, string kind, string? tip = "t1") => new(unit.Id, tip, Graph, kind, 1, 1);
+
+    private static NodeStatus Observing(WorkUnit unit, string kind, string? tip = "t1") =>
+        new(unit.Id, kind, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = Binding(unit, kind, tip) };
 
     /// <summary>The observation applied as any node's report is: through the one table, by its authority.</summary>
-    private static NodeMoved Applied(WorkUnit unit, string kind, NodeGitReads? git = null)
+    private static NodeMoved Applied(WorkUnit unit, string kind, NodeGitReads? git = null, string? tip = "t1")
     {
         var observation = BuiltInNodes.Observe(unit, Node(kind), Graph, 1, git);
         Assert.Null(observation.Refused);
         Assert.NotNull(observation.Move);
-        return NodeLifecycle.Apply(Node(kind), Observing(unit, kind), observation.Move);
+        return NodeLifecycle.Apply(Node(kind), Observing(unit, kind, tip), observation.Move);
     }
 
     /// <summary>
@@ -139,7 +143,8 @@ public sealed class BuiltInNodesTests
 
         foreach (var held in new[] { false, true })
         {
-            var moved = Applied(QuestUnit(Quest("Done", held)), NodeKinds.Claimed);
+            var done = QuestUnit(Quest("Done", held));
+            var moved = Applied(done, NodeKinds.Claimed, tip: done.Subject.Revision);
             Assert.Equal((NodeStates.Reached, NodeSource.Ledger), (moved.Status.State, moved.Status.By));
             Assert.Equal(("quest:q1", "quests#q1"), (moved.Status.Current?.Unit, moved.Status.Current?.Evidence?.Ref));
         }
@@ -163,5 +168,34 @@ public sealed class BuiltInNodesTests
             var refused = BuiltInNodes.Observe(branch, new NodeDeclaration("n", kind, 1, NodeReach.Performed), Graph, 1);
             Assert.Equal((kind, NodeRefusal.NotObserved, (NodeMove?)null), (kind, refused.Refused, refused.Move));
         }
+    }
+
+    /// <summary>
+    /// FABRIC-NODE1c, defect 4: an observation takes the binding Daoris evaluated, its inputs and receipts with it. A QA wired before
+    /// <c>handed</c> is in <c>handed</c>'s acceptance, so invalidating the QA reaches it. A binding of another unit, node or version is no
+    /// observation, and evidence at another tip than the binding's is not this binding's reach.
+    /// </summary>
+    [Fact]
+    public void An_observation_takes_its_evaluated_binding_so_an_upstream_invalidation_reaches_it()
+    {
+        var unit = Unit(Grown(Held()), Landed(held: Held()));
+        var qa = new NodeAcceptance(unit.Id, "t1", Graph, "qa", 1, 1);
+        var binding = Binding(unit, NodeKinds.Handed) with { PrerequisiteReceipts = [qa.Id] };
+
+        var observed = BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding);
+        Assert.Equal(new[] { qa.Id }, observed.Acceptance?.PrerequisiteReceipts);
+        var moved = NodeLifecycle.Apply(Node(NodeKinds.Handed), Observing(unit, NodeKinds.Handed) with { Binding = binding }, observed.Move!);
+        Assert.Equal(((string?)null, NodeStates.Reached, binding.Id), (moved.Refused, moved.Status.State, moved.Status.Current?.Id));
+        Assert.Contains(NodeAcceptances.Invalidate([qa, moved.Status.Current!], each => each.Id == qa.Id ? NodeLapse.Revision : null),
+            each => each.Acceptance == binding.Id && each.Upstream == qa.Id);
+
+        var newer = binding with { SubjectRevision = "t2" };
+        var stale = NodeLifecycle.Apply(Node(NodeKinds.Handed), Observing(unit, NodeKinds.Handed) with { Binding = newer },
+            BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), newer).Move!);
+        Assert.Equal(NodeRefusal.NotBound, stale.Refused);
+
+        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding with { Unit = "unit-b" }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding with { Node = NodeKinds.Line }).Refused);
+        Assert.Equal(NodeRefusal.NotBound, BuiltInNodes.Observe(unit, Node(NodeKinds.Handed), binding with { NodeVersion = 2 }).Refused);
     }
 }
