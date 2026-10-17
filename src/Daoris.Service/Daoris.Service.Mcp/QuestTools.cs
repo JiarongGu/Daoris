@@ -357,7 +357,10 @@ public sealed class QuestTools(
         var answered = (answers ?? [])
             .Select(answer => new QuestAnswer(answer.Requirement ?? 0, answer.Met, answer.Departed, answer.Quote))
             .ToList();
-        var outcome = await exchange.RespondAsync(id, action, reason, DateTimeOffset.UtcNow, ct, on: on, answers: answered)
+        // The session the driver started, as its connector was spawned naming it (FABRIC-CLOSE1o): a take binds the graph named for that
+        // session alone.
+        var outcome = await exchange.RespondAsync(
+                id, action, reason, DateTimeOffset.UtcNow, ct, on: on, answers: answered, session: intake?.Session)
             .ConfigureAwait(false);
 
         // A take by a session the driver started is written on its record (STANDDOWN2): how its end is
