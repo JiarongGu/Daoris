@@ -891,6 +891,9 @@ public sealed class HookSet(
     /// </summary>
     public IReadOnlyList<WorkStepHeard> TakeSteps() => _work.TakeSteps();
 
+    /// <summary>The last <c>work/watch</c> frame whose send to that process completed (FABRIC-PERFORM1i, §C4's third rule), or null.</summary>
+    public WorkWatchFrame? SentTo(string plugin, int generation) => _work.SentTo(plugin, generation);
+
     /// <summary>
     /// A step event the performer did not believe (FABRIC-PERFORM1c, §C4's belief codes): counted with the transport's refusals, a
     /// <c>plugin.step</c> line of plugin, code and count at most once a minute per plugin and code, never the frame's words.

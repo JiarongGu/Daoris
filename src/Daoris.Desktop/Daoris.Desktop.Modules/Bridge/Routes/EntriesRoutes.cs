@@ -42,9 +42,12 @@ public sealed class EntriesRoutes(DriverContext context)
         var entry = entries.FirstOrDefault() ?? new SessionEntry(key, "", "", SessionGroup.Ended, "", []);
         if (request.Type == "ENTRY_LANDING") return await PlanAsync(service, entry, rows, cancellationToken).ConfigureAwait(false);
 
-        var landed = await LandAsync(service, entry, rows, LeaveOut(request), cancellationToken).ConfigureAwait(false);
+        // RPC1b4: what `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
+        var (plugins, notes) = (new List<string>(), new List<string>());
+        var landed = await LandingAsync(Accepts(service, plugins, notes), entry, rows, LeaveOut(request), cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
-        return landed;
+        var said = entries.Count == 0 ? TreesWords.EntryNone(isAsk: false, key) : TreesWords.EntryLand([(entry.Repository, landed)], plugins, notes);
+        return LandedSaid(entry.Key, entry.Repository, landed, said);
     }
 
     /// <summary>
@@ -74,25 +77,32 @@ public sealed class EntriesRoutes(DriverContext context)
 
         var leaveOut = LeaveOut(request);
         var answers = new List<object>();
+        var landings = new List<(string Repository, EntryLanding Landed)>();
+        var (plugins, notes) = (new List<string>(), new List<string>());
+        var accepts = Accepts(service, plugins, notes);
         var done = true;
         foreach (var entry in own.Where(entry => PartsOf(entry, rows).Count > 0))
         {
             // One repository's refusal, said or thrown, holds only its own entry (point 4): the next is landed all the same.
+            EntryLanding landed;
             try
             {
-                var landed = await LandingAsync(service, entry, rows, leaveOut, cancellationToken).ConfigureAwait(false);
-                done &= landed.Landed;
-                answers.Add(Landed(entry.Key, entry.Repository, landed));
+                landed = await LandingAsync(accepts, entry, rows, leaveOut, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
-                done = false;
-                answers.Add(Landed(entry.Key, entry.Repository, new EntryLanding(false, $"Nothing was landed: {error.Message}", null, [])));
+                landed = TreesWords.Unlanded(error.Message);
             }
+
+            done &= landed.Landed;
+            landings.Add((entry.Repository, landed));
+            answers.Add(Landed(entry.Key, entry.Repository, landed));
         }
 
         _loop.Nudge();
-        return new { Ask = ask, Done = done && answers.Count > 0, Repositories = answers };
+        // RPC1b4: what `trees land --ask` prints beside the page's fields, or its sentence where no entry of the ask has work to land.
+        var said = landings.Count == 0 ? TreesWords.EntryNone(isAsk: true, ask) : TreesWords.EntryLand(landings, plugins, notes);
+        return new { Ask = ask, Done = done && answers.Count > 0, Repositories = answers, Said = said.ToWire() };
     }
 
     /// <summary>The parts of <paramref name="entry"/> whose tree offers work to land, in the entry's order: what its Accept lands.</summary>
@@ -141,18 +151,32 @@ public sealed class EntriesRoutes(DriverContext context)
         Done = landed.Landed,
         landed.Message,
         landed.Branch,
-        Parts = landed.Parts.Select(part => new
-        {
-            part.Session,
-            part.Outcome,
-            Done = part.Landing?.Landed,
-            part.Landing?.Message,
-            part.Landing?.Branch,
-            Plugin = part.Landing?.Plugin is { } said ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed } : null,
-            LeftOut = TreesRoutes.LeftOut(part.Landing?.LeftOut),
-            Conflict = TreesRoutes.Conflict(part.Landing?.Conflict),
-        }).ToArray(),
+        Parts = Parts(landed),
     };
+
+    /// <summary><c>LAND_ENTRY</c>'s answer: <see cref="Landed"/>'s fields, and the words <c>trees land --entry</c> prints beside them (RPC1b4).</summary>
+    public static object LandedSaid(string entry, string repository, EntryLanding landed, TreesSaid said) => new
+    {
+        Entry = entry,
+        Repository = repository,
+        Done = landed.Landed,
+        landed.Message,
+        landed.Branch,
+        Parts = Parts(landed),
+        Said = said.ToWire(),
+    };
+
+    private static object[] Parts(EntryLanding landed) => landed.Parts.Select(part => (object)new
+    {
+        part.Session,
+        part.Outcome,
+        Done = part.Landing?.Landed,
+        part.Landing?.Message,
+        part.Landing?.Branch,
+        Plugin = part.Landing?.Plugin is { } said ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed } : null,
+        LeftOut = TreesRoutes.LeftOut(part.Landing?.LeftOut),
+        Conflict = TreesRoutes.Conflict(part.Landing?.Conflict),
+    }).ToArray();
 
     /// <summary>The entries asked about, from one look whose git walk is only theirs, and their parts' rows.</summary>
     private async Task<(IReadOnlyList<SessionEntry> Entries, IReadOnlyList<SessionGrouping> Rows)> LookAsync(
@@ -168,12 +192,27 @@ public sealed class EntriesRoutes(DriverContext context)
     /// own: a rule's plugin says its lines on the console under its name, as a landing's do (D64 §4, D100); a landed part's note is
     /// kept where its conversation is; a held gate is logged at the screen's door.
     /// </summary>
-    private EntryAccepts Accepts(ServiceClient service) => new(
+    /// <param name="plugins">Where a plugin's lines are also kept, for the answer's words (RPC1b4); null keeps none.</param>
+    /// <param name="notes">Where a landed part's note is also kept, for the answer's words; null keeps none.</param>
+    private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null, List<string>? notes = null) => new(
         service, _loop.Home,
-        new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health)),
-        _loop.Events, (session, line) => _loop.Output.Append(session, line),
+        new SessionTrees(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(plugins), log: _loop.Log, health: _loop.Health)),
+        _loop.Events, KeptTo(notes),
         async token => await LinesRoutes.InUseAsync(service, token), _loop.Log, ReviewDoors.Screen);
+
+    /// <summary>A plugin's lines, said on the loop's output under its name and kept in <paramref name="lines"/> as the terminal says them.</summary>
+    private Action<string, string> SayTo(List<string>? lines) => (plugin, line) =>
+    {
+        lines?.Add(TreesWords.PluginLine(plugin, line));
+        _loop.Output.Append($"plugin:{plugin}", line);
+    };
+
+    /// <summary>A landed part's note, kept where its conversation is and in <paramref name="lines"/> as the terminal says it.</summary>
+    private Action<string, string> KeptTo(List<string>? lines) => (session, line) =>
+    {
+        lines?.Add($"trees: {line}");
+        _loop.Output.Append(session, line);
+    };
 
     private async Task<object> PlanAsync(ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
     {
@@ -181,14 +220,19 @@ public sealed class EntriesRoutes(DriverContext context)
         return Plan(entry.Key, entry.Repository, plan, held);
     }
 
-    private async Task<object> LandAsync(
-        ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken) =>
-        Landed(entry.Key, entry.Repository, await LandingAsync(service, entry, rows, leaveOut, cancellationToken).ConfigureAwait(false));
-
     /// <summary>The press on one entry, which the terminal's lands too (<see cref="EntryAccepts.LandAsync"/>, ACCEPTALL1e).</summary>
-    private Task<EntryLanding> LandingAsync(
-        ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken) =>
-        Accepts(service).LandAsync(entry, rows, leaveOut, cancellationToken);
+    private static async Task<EntryLanding> LandingAsync(
+        EntryAccepts accepts, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await accepts.LandAsync(entry, rows, leaveOut, cancellationToken).ConfigureAwait(false);
+        }
+        catch (DriverException error)
+        {
+            return TreesWords.Unlanded(error.Message);
+        }
+    }
 
     /// <summary>The parts the person chose to leave out (point 3), as the page sends them; none where it sends none.</summary>
     private static IReadOnlySet<string> LeaveOut(IpcRequest request) =>

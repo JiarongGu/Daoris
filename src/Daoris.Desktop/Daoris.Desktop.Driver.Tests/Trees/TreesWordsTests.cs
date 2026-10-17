@@ -180,6 +180,70 @@ public sealed class TreesWordsTests : IAsyncLifetime
         Assert.Contains("say which with `--repository <name>`", TreesWords.HandRefused(TreesWords.NamesSeveral("feature/x", ["engine", "game"])).Error[0]);
     }
 
+    // trees land --entry / --ask (RPC1b4): LAND_ENTRY and LAND_ASK.
+    private static EntryLanding Entered(bool landed) => new(
+        landed, landed ? "Landed 2 parts on `main`." : "Nothing was landed: a part conflicts.", "main",
+        [new EntryPartLanding("s1a2b3c4", "landed", new TreeLanding(true, "Landed `s1a2b3c4`.")), new EntryPartLanding("s5d6e7f8", "left out")]);
+
+    [Fact]
+    public void An_entrys_landing_says_each_repository_and_each_part_under_it_with_the_plugins_lines_first()
+    {
+        var said = TreesWords.EntryLand(
+            [("engine", Entered(true)), ("game", Entered(false))], [TreesWords.PluginLine("example.lands", "pushing")], ["trees: kept the note"]);
+
+        Assert.Equal(
+            [
+                "  plugin:example.lands  pushing",
+                "trees: engine: Landed 2 parts on `main`.",
+                "  landed     s1a2b3c4  Landed `s1a2b3c4`.",
+                "  left out   s5d6e7f8",
+                "trees: game: Nothing was landed: a part conflicts.",
+                "  landed     s1a2b3c4  Landed `s1a2b3c4`.",
+                "  left out   s5d6e7f8",
+            ], said.Out);
+        Assert.Equal(["trees: kept the note"], said.Error);
+        Assert.Equal(1, said.Code);
+        Assert.Equal(0, TreesWords.EntryLand([("engine", Entered(true))], [], []).Code);
+    }
+
+    [Fact]
+    public async Task An_entrys_landing_and_the_refusal_of_one_naming_nothing_are_said_as_the_terminal_says_them()
+    {
+        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(true))], [TreesWords.PluginLine("example.lands", "pushing")], []));
+        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(false))], [], ["trees: a note"]));
+        var none = TreesWords.EntryNone(isAsk: false, "e-1");
+        Assert.Equal(["trees: no entry `e-1` has work to land on this machine."], none.Error);
+        Assert.Equal(["trees: no ask `a1b2c3` has work to land on this machine."], TreesWords.EntryNone(isAsk: true, "a1b2c3").Error);
+        Assert.Equal(1, none.Code);
+        await AssertSameAsync(none);
+    }
+
+    // trees land <session> refused where the route used to throw, or to say nothing (RPC1b4).
+    [Fact]
+    public async Task A_session_with_no_tree_to_land_is_a_sentence_on_the_error_exit_1()
+    {
+        var said = TreesWords.NoTreeToLand("s1a2b3c4");
+
+        Assert.Equal(["trees: session `s1a2b3c4` names no working tree on this machine, so there is nothing here to land."], said.Error);
+        Assert.Empty(said.Out);
+        Assert.Equal(1, said.Code);
+        await AssertSameAsync(said);
+    }
+
+    [Fact]
+    public async Task A_landing_the_review_reads_as_landed_says_not_again_on_the_output_exit_1()
+    {
+        var entry = new LandedBranch("engine", "aurora", "daoris/s-landed00", "main", "abc123", "s1a2b3c4", null, "work", new DateTimeOffset(2026, 10, 18, 9, 0, 0, TimeSpan.Zero));
+        var review = new LandedReview(entry, LandedState.Standing);
+
+        var said = TreesWords.NotAgain("s1a2b3c4", review, treeGone: false);
+
+        Assert.Equal([$"trees: {LandedReviewWords.NotAgain("s1a2b3c4", review, false)}"], said.Out);
+        Assert.Empty(said.Error);
+        Assert.Equal(1, said.Code);
+        await AssertSameAsync(said);
+    }
+
     // An instance from before the words: its answer is the page's fields only.
     [Fact]
     public async Task An_answer_with_no_words_is_said_so_and_nothing_is_done_alone()
@@ -200,6 +264,12 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesWords.Sync(")]
     [InlineData("TreesWords.Hand(")]
     [InlineData("TreesWords.FollowMovedAsync(")]
+    [InlineData("TreesWords.EntryLand(")]
+    [InlineData("TreesWords.EntryNone(")]
+    [InlineData("TreesWords.Unlanded(")]
+    [InlineData("TreesWords.NotAgain(")]
+    [InlineData("TreesWords.NoTreeToLand(")]
+    [InlineData("TreesWords.LandedBeforeAsync(")]
     public void TreesConsoleUsesTheWords(string call)
     {
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));

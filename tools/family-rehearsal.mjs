@@ -22,8 +22,8 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
 import {
-  ACP_STUB_AGENT, STUB_COMMIT, capture, evidenceFolder, makeChecker, openTranscript, portRefusal, rehearsalRun,
-  restartBetweenRequests, takePorts, waitFor,
+  ACP_STUB_AGENT, STUB_COMMIT, capture, evidenceFolder, makeChecker, openTranscript, ownBuild, ownBuildRoot, ownBuilt, portRefusal,
+  rehearsalRun, restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 import {
   SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup, withFirstOnPath,
@@ -37,7 +37,11 @@ const httpProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http
 const httpDll = join(httpProject, 'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
 const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
 const connectorProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
-const driverDll = join(driverProject, 'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
+// REHLANE1: this rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own folders,
+// so the driver host is built into an output of this rehearsal's own. The HTTP host and the connector stay where the driver
+// finds a development build (ServiceHostLocator, KnowledgeConnector): the service's folders, which no Process half builds.
+const ownOutput = ownBuildRoot(repoRoot, 'family');
+const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
 
@@ -700,7 +704,7 @@ section('7. The driver starts what should start (D46)');
 // The newcomer is the drivable one: it was born in scratch and connected FROM scratch, so its
 // registered root is a tree the rehearsal owns — never the tracked examples, which connect from the
 // real repository and must never be spawned into by a test.
-const driverBuild = run(`dotnet build "${driverProject}"`, repoRoot);
+const driverBuild = run(ownBuild(driverProject, ownOutput), repoRoot);
 check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
 // The connector the protocol door hands every session (ACP4), which the driver finds as a development build. Section 17 reads that
 // it is offered, and 17e's stub calls it (REVIEWENV1h), so it is built here: one another gate built may be older than the tools a

@@ -310,9 +310,25 @@ public sealed class LinesRoutes(DriverContext context)
     [Publishes("DISCARD_SESSION_BRANCH", Moves)]
     private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // RPC1b4: `trees remove <named>` names a session or a branch by one name, as the verb takes it, with `repository` only where it
+        // must say which; the page's `repository` and `branch` read as they always did.
+        var named = Optional(request, "named");
+        var force = Flag(request, "force");
+        if (named is not null)
+        {
+            var kept = _loop.Service ?? throw NotReady();
+            var asked = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardNamedAsync(
+                kept, named, Optional(request, "repository"), force, cancellationToken);
+            _loop.Nudge();
+            return new
+            {
+                Repository = Optional(request, "repository"), Branch = (string?)null, Done = asked.Removed, asked.Message,
+                Said = TreesWords.Remove(asked).ToWire(),
+            };
+        }
+
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
-        var force = Flag(request, "force");
         var service = _loop.Service ?? throw NotReady();
 
         var removal = await new SessionBranchDiscard(new SessionTrees(_loop.Home)).DiscardAsync(service, repository, branch, force, cancellationToken);
