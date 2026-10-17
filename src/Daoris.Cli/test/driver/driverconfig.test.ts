@@ -315,6 +315,26 @@ test('landing sets a repository\'s rule, a workspace\'s, and clears either', () 
   fx.cleanup();
 });
 
+test('landing keeps the cycle a rule carries, which it has no field for, and clearing the rule takes it (FABRIC-GRAPH1)', () => {
+  const fx = makeFixture('driver-landing-cycle');
+  const cycle = { nodes: [{ id: 'qa', kind: 'human', version: 1, reach: 'pressed' }], wires: [{ id: 'a', kind: 'after', from: 'line', to: 'qa' }], end: 'qa' };
+  writeFileSync(at(fx), JSON.stringify({
+    landings: { Engine: { form: 'merge', cycle } },
+    workspaceLandings: { aurora: { form: 'merge', cycle: { end: 'handed' } } },
+  }));
+
+  run(['landing', 'engine', 'merge', '--tidy'], at(fx));
+  run(['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}'], at(fx));
+  const kept = readDriverChoices(at(fx));
+  // Matched in any case, as the driver matches it; the verb writes the name as given, as it always has.
+  assert.deepEqual(kept.landings, { engine: { form: 'merge', tidy: true, cycle } });
+  assert.deepEqual(kept.workspaceLandings, { aurora: { form: 'branch', pattern: 'feature/{quest}-{slug}', cycle: { end: 'handed' } } });
+
+  run(['landing', 'engine', '--clear'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {});
+  fx.cleanup();
+});
+
 test('landing --tidy asks for the tree and branch to go once the work lands, and is written only when on (D88)', () => {
   const fx = makeFixture('driver-landing-tidy');
 
