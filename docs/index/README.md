@@ -50,7 +50,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 52 | 1022 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 307 | 5759 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 124 | 2220 |
-| `src/Daoris.Web/src/work/attention.test.ts` | 46 | 922 |
+| `src/Daoris.Web/src/work/attention.test.ts` | 48 | 943 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 55 | 1044 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 70 | 1045 |
@@ -97,7 +97,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 924 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 169 | 2774 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 784 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 42 | 738 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 42 | 742 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 78 | 1359 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 67 | 1098 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
@@ -219,4 +219,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/2026-10-16-fabric-events-design.md` | 167 | 2051 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 91 | 515 |
+| `src/Daoris.Desktop/README.md` | 91 | 517 |

@@ -715,6 +715,27 @@ describe('the groups', () => {
   });
 
   /**
+   * FABRIC-UNKNOWN1 (design §D3): a daoris/* branch no record names is a unit with an unknown owner and a blocked clean-up; its row
+   * says why and which press removes it, with no session to open (nothing records one).
+   */
+  it('lists an unrecorded daoris branch as an unknown owner, with the reason and the press', () => {
+    const why = 'its owner is unknown: Daoris did not record `daoris/orphan`, so nothing here is cleaned; only your Discard branch press removes it';
+    const entry: MilestoneEntry = {
+      unit: 'unknown-branch:engine/daoris/orphan', kind: 'session-branch', resource: 'daoris/orphan', role: 'temporary', disposition: 'blocked', detail: why,
+    };
+    const rows = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [{
+      unit: entry.unit, repository: 'engine', branch: 'daoris/orphan', session: null,
+      end: { state: 'unknown', said: 'no record names its unit, so its end is not said' },
+      result: [], cleanup: { state: 'pending', waits: [entry], gone: [] }, recovery: [], entries: [entry],
+    }]);
+
+    expect(rows.map((row) => `${row.kind}:${row.id}`)).toEqual([`work:${entry.unit}`]);
+    expect(rows[0]).toMatchObject({ title: 'daoris/orphan', where: 'engine', session: null });
+    expect(rows[0]!.detail).toContain('Nothing records whose work this is');
+    expect(rows[0]!.detail).toContain(why);
+  });
+
+  /**
    * MIXAGENT2c (D168, D163 point 3): an agent's ask for a helper the driver's look holds waiting on the person's word waits for
    * their word, beside a rule an agent proposed: its question's first line, the session that asked and its repository, since it
    * was asked, with *Let it ask* and *Not now*, the session's page its door. From the driver's own list (`HELPER_WAITS`).

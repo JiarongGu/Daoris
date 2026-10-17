@@ -117,7 +117,8 @@ public static class WireWhy
 
     /// <summary>
     /// A failure or a rejection of another run (FABRIC-WIRE1f): an attempt's outcome other than a reach is its own run's alone, so a new run
-    /// lapses it, as a skip of another run lapses, and the node is judged again in this run.
+    /// lapsed it, as a skip of another run lapses, and the node was judged again in this run. No longer given since FABRIC-RUN1e, which keeps
+    /// such a failure for the person; kept so a history entry written with it still reads.
     /// </summary>
     public const string RunScope = "run-scope";
 
@@ -430,10 +431,17 @@ public static class WireEvaluation
     {
         if (status.State == NodeStates.Skipped) return NodeLifecycle.Skips(status, run.Scope) ? null : (WireWhy.SkipScope, null);
         if (!NodeStates.Bound.Contains(status.State) || status.Binding is not { } binding) return null;
+
+        // FABRIC-RUN1e, in place of WIRE1f's lapse of another run's failure: a failure or a rejection of another graph or run is kept for the
+        // person, since a run begins at a graph edit and a Setup save can edit a derived graph, so edits back and forth would restart failed
+        // work past its retry bound for ever. Only a new revision, which is new work, lapses it, as in its own graph and run; the person's new
+        // attempt restarts it. It is no receipt here (Receipts reads this graph's and run's alone), so nothing fires on it.
+        if (status.State is NodeStates.Failed or NodeStates.Rejected && (binding.GraphDigest != run.GraphDigest || status.Scope != run.Scope))
+        {
+            return string.Equals(binding.SubjectRevision, Revision(run, binding.Unit), StringComparison.Ordinal) ? null : (WireWhy.Lapsed, NodeLapse.Revision);
+        }
+
         if (NodeAcceptances.Lapsed(binding, Revision(run, binding.Unit), run.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
-        // FABRIC-WIRE1f: a failure or a rejection is its attempt's run's alone (WIRE1e), so another run lapses it, as it lapses a skip, and the
-        // node is judged again there: a run is a pass the person or the rules began afresh. A reach is kept, its acceptance omitting the run.
-        if (status.State is NodeStates.Failed or NodeStates.Rejected && status.Scope != run.Scope) return (WireWhy.RunScope, status.Scope?.Run);
         var lost = binding.PrerequisiteReceipts.FirstOrDefault(receipt => !current.Contains(receipt))
             ?? binding.Inputs.Values.Select(port => port.Acceptance).FirstOrDefault(acceptance => acceptance is not null && !current.Contains(acceptance));
         return lost is null ? null : (WireWhy.Upstream, lost);

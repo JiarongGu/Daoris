@@ -29,6 +29,7 @@ public static class WorkInventories
         var branches = new SessionBranches(home).Entries();
         var landings = new LandedBranches(home).Entries();
         var refs = new List<RecoveryRef>();
+        var standing = new List<StandingBranch>();
         var repositories = branches.Select(entry => entry.Repository).Concat(landings.Select(entry => entry.Repository))
             .Concat(trees.Select(entry => entry.Repository)).Distinct(StringComparer.OrdinalIgnoreCase);
         foreach (var repository in repositories)
@@ -40,7 +41,8 @@ public static class WorkInventories
             }
 
             // CLEANUP1: each with its commit, its date and whether a branch or a tag of the person's holds it, which its retention reads.
-            var (listed, err) = await RecoveryRetention.ReadAsync(root, repository, RecoveryRetention.Made(landings, repository), ct).ConfigureAwait(false);
+            // FABRIC-UNKNOWN1: the same listing names the repository's daoris/* branches, so they cost no further git start.
+            var (listed, err, branchesHere) = await RecoveryRetention.ReadWithBranchesAsync(root, repository, RecoveryRetention.Made(landings, repository), ct).ConfigureAwait(false);
             if (listed is null)
             {
                 unread.Add($"git could not list `{repository}`'s recovery refs: {err}");
@@ -48,11 +50,13 @@ public static class WorkInventories
             }
 
             refs.AddRange(listed);
+            standing.AddRange(branchesHere);
         }
 
         return new InventoryFacts(
             branches, landings, trees, new AutoLandings(home).All(), refs, inUse,
-            session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at);
+            session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
+        { Standing = standing };
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>

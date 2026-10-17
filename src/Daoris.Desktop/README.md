@@ -83,7 +83,7 @@ result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c)
 `NodeWires` names what a save refuses (FABRIC-WIRE1a), and `WireEvaluation` evaluates them over the nodes' statuses, moving each
 node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b), on a complete snapshot of the
 units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e), and a failure or a rejection kept from another
-run lapsed (`run-scope`, FABRIC-WIRE1f). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
+graph or run kept for the person, lapsed by a new revision alone (FABRIC-RUN1e, in place of WIRE1f's `run-scope`). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
 durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the attempt written with its start before
 `work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
 answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked
@@ -91,7 +91,9 @@ read-modify-write with the lease asked inside it (`NodeRecordFiles.Edit`), and a
 it is then (FABRIC-PERFORM1h). `NodeRuntime` runs them in the lease's loop, link 8 of its chain (`ChainRanks.Nodes`, bound by
 `DriverWatch` where it holds a hook set): off unless a graph naming a plugin's performed node governs a unit, it hears completions,
 reconciles, makes retries due, evaluates the concerned units to settled with their moves kept and starts made, and tells the plugins
-the awaited set; one pass at a time, with the loop's one performer (FABRIC-RUN1, D173's note).
+the awaited set; one pass at a time, with the loop's one performer (FABRIC-RUN1, D173's note). A wake under other choices reads
+the units afresh, a disarm withdraws the awaited set before the plan's supervision, the units past 32 are taken in turn, reconciliation
+shares the pass's four sends, and the set is told only while the lease is held (FABRIC-RUN1e).
 `NodeGraphs` holds the graph they make: its bounds, entries, end and cleanup, the refusals a save adds to theirs, its digest, and
 its reading from JSON; `NodeGraphHomes` derives the graph that governs a unit from the driver's choices, a branch's from its landing
 rule and that rule's `cycle`, a quest's or an ask's from `workCycles`, a repository's own replacing its workspace's (FABRIC-GRAPH1),
