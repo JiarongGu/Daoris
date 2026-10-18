@@ -152,6 +152,12 @@ public sealed record AutoLanding(string Session, string Quest, string Repository
 
     /// <summary>Its last try, or null before the first.</summary>
     public AutoTry? Last => Tries.Count == 0 ? null : Tries[^1];
+
+    /// <summary>
+    /// Whether a new conclusion made it due again after a try that closed it (FABRIC-CLOSE1h6): open, with a last try whose code
+    /// closes. Only <see cref="AutoLandings.Due"/> opens a closed entry, so that try was the earlier due's, and this one is judged afresh.
+    /// </summary>
+    public bool Reopened => false;
 }
 
 /// <summary>How a concluded record stands to the switch (<see cref="AutoLandingRules.Concluded"/>).</summary>

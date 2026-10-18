@@ -248,6 +248,63 @@ public sealed class AutoLandingRulesTests : IDisposable
         Assert.Equal([AutoLandingCode.Landed], entry.Tries.Select(each => each.Code));
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h6 (D137; D173's FABRIC-CLOSE1h note, *Enrolled and kept due*): a session due again after a try that closed its
+    /// entry is judged afresh, whatever that try's code, with its tree as it stood: the closed try was the earlier due's. Every wake
+    /// looks at it, as at a first try. Its earlier tries stay as history.
+    /// </summary>
+    [Theory]
+    [InlineData(AutoLandingCode.Landed)]
+    [InlineData(AutoLandingCode.Advanced)]
+    [InlineData(AutoLandingCode.Nothing)]
+    [InlineData(AutoLandingCode.PluginUnready)]
+    [InlineData(AutoLandingCode.PluginFailed)]
+    [InlineData(AutoLandingCode.Already)]
+    [InlineData(AutoLandingCode.Superseded)]
+    [InlineData(AutoLandingCode.Gone)]
+    [InlineData(AutoLandingCode.Undone)]
+    [InlineData(AutoLandingCode.Off)]
+    [InlineData(AutoLandingCode.Carried)]
+    public void A_session_due_again_after_a_try_that_closed_it_is_judged_afresh(string code)
+    {
+        var due = new AutoLandings(_home);
+        due.Due(Due("s1"));
+        due.Tried("s1", new AutoTry(At, code) { Tip = "tip1", Status = "clean" }, close: AutoLandingCode.Closes(code));
+        Assert.False(due.Of("s1")!.Reopened, "a closed entry is no due one");
+
+        due.Due(Due("s1") with { DueAt = At.AddHours(1) });
+
+        var entry = Assert.Single(due.Open());
+        Assert.True(entry.Reopened);
+        Assert.True(AutoLandingRules.ShouldTry(entry, "tip1", "clean"));
+        Assert.Equal(LandingWaits.First, LandingWaits.Of(entry));
+        Assert.Equal([code], entry.Tries.Select(each => each.Code));
+    }
+
+    /// <summary>
+    /// An entry still due on its own last try keeps today's rule when its session concludes again (FABRIC-CLOSE1h6): a refusal waits for
+    /// its tree to move, and a hold or a push held back is read at every look, as before.
+    /// </summary>
+    [Theory]
+    [InlineData(AutoLandingCode.Uncommitted, false)]
+    [InlineData(AutoLandingCode.Exists, false)]
+    [InlineData(AutoLandingCode.Completed, false)]
+    [InlineData(AutoLandingCode.Refused, false)]
+    [InlineData(AutoLandingCode.Held, true)]
+    [InlineData(AutoLandingCode.PushHeld, true)]
+    public void An_entry_still_due_on_its_last_try_keeps_its_rule_when_due_again(string code, bool tried)
+    {
+        var due = new AutoLandings(_home);
+        due.Due(Due("s1"));
+        due.Tried("s1", new AutoTry(At, code) { Tip = "tip1", Status = "clean" }, close: AutoLandingCode.Closes(code));
+
+        due.Due(Due("s1") with { DueAt = At.AddHours(1) });
+
+        var entry = Assert.Single(due.Open());
+        Assert.False(entry.Reopened);
+        Assert.Equal(tried, AutoLandingRules.ShouldTry(entry, "tip1", "clean"));
+    }
+
     /// <summary>A file that does not read is no due list, never a failure; and a closed entry beyond the bound is dropped, an open one never.</summary>
     [Fact]
     public void A_file_that_does_not_read_is_none_and_closed_entries_are_bounded()
