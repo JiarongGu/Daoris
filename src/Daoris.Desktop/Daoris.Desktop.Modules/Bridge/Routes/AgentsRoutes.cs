@@ -148,6 +148,9 @@ public sealed class AgentsRoutes(DriverContext context)
                     // accounts" to an owner who was logged in.
                     OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
                     report.OwnAccount,
+                    // Its organisation and plan (ACCOUNTID1), as an account's.
+                    report.OwnOrg,
+                    report.OwnPlan,
                     // When the tool's own sign-in was last read: only at a person's press (TOOL6g), so null before one.
                     report.OwnRead,
                     // Which circles run this harness as which account (D49 §4): the terminal
@@ -191,6 +194,10 @@ public sealed class AgentsRoutes(DriverContext context)
         // Who is signed in there, by the tool's own answer (D66 §3), read fresh and written nowhere: what the page offers as
         // the account's name at a sign-in's end (ACCT2), never kept without the person.
         profile.Account,
+        // The organisation and the plan the tool names beside who (ACCOUNTID1), read and kept as who is: what tells two
+        // sign-ins of one email apart. Null where it names none.
+        profile.Org,
+        profile.Plan,
         // An account that is a key, by its handle only (AGT3). Never the key.
         profile.Key,
         // The account's own model and effort, read fresh from the tool's file each time (AGT6): the file is the truth, and

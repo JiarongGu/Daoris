@@ -191,6 +191,40 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
+    /// ACCOUNTID1: a second sign-in of an email another account is already named, in another organisation, is a second
+    /// account. Its end says the organisation and the plan beside who, and offers the email with the organisation beside it,
+    /// since the email names the first: a name the rename takes. Offered, never written (D66 §3); the roster says each one's.
+    /// </summary>
+    [Fact]
+    public async Task A_second_sign_in_of_a_named_email_in_another_organisation_is_offered_a_name_telling_them_apart()
+    {
+        var module = ModuleWithStubHarness("""
+            writeFileSync(home + '/credentials.json', 'person@example.invalid\norg: Org B\nplan: max');
+            process.exit(0);
+            """);
+        Directory.CreateDirectory(ProfileAt("stub", "acct-0000000a"));
+        File.WriteAllText(Path.Combine(ProfileAt("stub", "acct-0000000a"), "credentials.json"), "person@example.invalid\norg: Org A\nplan: max");
+        AccountNames.Rename(Home, "stub", HarnessSettings.Profiles(Home, "stub"), "acct-0000000a", "person@example.invalid");
+
+        var made = (await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login-new" })).GetProperty("profile").GetString()!;
+        await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
+
+        var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
+        Assert.Equal("person@example.invalid", ended.GetProperty("Account").GetString());
+        Assert.Equal(("Org B", "max"), (ended.GetProperty("Org").GetString(), ended.GetProperty("Plan").GetString()));
+        Assert.Equal("person@example.invalid·Org-B", ended.GetProperty("Offered").GetString());
+        Assert.Null(AccountNames.NameOf(Home, "stub", made));
+        var listed = (await AnswerAsync(module, "HARNESSES")).GetProperty("harnesses").EnumerateArray()
+            .Single(h => h.GetProperty("harness").GetString() == "stub").GetProperty("profiles").EnumerateArray()
+            .Single(p => p.GetProperty("name").GetString() == made);
+        Assert.Equal("Org B", listed.GetProperty("org").GetString());
+
+        var renamed = await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-rename", profile = made, name = "person@example.invalid·Org-B" });
+        Assert.Equal("person@example.invalid·Org-B", renamed.GetProperty("name").GetString());
+    }
+
+    /// <summary>
     /// CODEXACCT1: *Add an account…* on Agents → Codex runs <c>codex login --device-auth</c> (CODEXACCT2) — a stand-in named
     /// for <c>codex</c>, answering in the words <c>codex login status</c> printed on the install — into a new folder under
     /// <c>codex</c>'s accounts, with that folder as its <c>CODEX_HOME</c>, and keeps it once the status reads it signed in.

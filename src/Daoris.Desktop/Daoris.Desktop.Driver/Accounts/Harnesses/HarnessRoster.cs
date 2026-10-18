@@ -36,9 +36,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
     private sealed record Binary(bool Present, string? Version, string? Problem);
 
-    // Who each reading this process made said is signed in, by owner and account (its moment beside it): read fresh and
-    // written nowhere (D66 §3), so a reading kept from before this process says its state and when, and who once read again.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTimeOffset At, string? Who)> _who =
+    // Who each reading this process made said is signed in, with the organisation and the plan beside them (ACCOUNTID1), by
+    // owner and account (its moment beside it): read fresh and written nowhere (D66 §3), so a reading kept from before this
+    // process says its state and when, and who once read again.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTimeOffset At, LoginRead Said)> _who =
         new(StringComparer.OrdinalIgnoreCase);
 
     // Accounts a provider refused (AGT3b), by owner and profile — "" for the tool's own home — with
@@ -149,7 +150,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     {
         if (CoolingAgent(adapters.Resolve(adapter)) is not { } owner) return;
         var before = profile is null ? null : AccountReads.Of(Home, owner).Accounts.GetValueOrDefault(profile);
-        Keep(owner, profile, LoginState.Out, who: null, Clock());
+        Keep(owner, profile, new LoginRead(LoginState.Out, null), Clock());
         if (profile is not null && before is { Login: LoginState.In }
             && !(_fresh.TryGetValue(AccountKey(owner, profile), out var made) && made == before.At))
         {
@@ -411,14 +412,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             name, toolchain, config.Commands.GetValueOrDefault(name), Settings, Home, CancellationToken.None,
             busy: account => Busy(owner, account), prior: prior, own: own && holder is null,
             asks: holder is null ? null : _ => false, clock: Clock,
-            answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
+            answered: (account, said, at) => Keep(owner, account, said, at)).ConfigureAwait(false);
         _binaries[name] = new Binary(report.Present, report.Version, report.Problem);
         if (holder is { } agent)
         {
             await HarnessProbe.ProbeAsync(
                 agent.Name, agent.Toolchain, config.Commands.GetValueOrDefault(agent.Name), Settings, Home, CancellationToken.None,
                 busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
-                answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
+                answered: (account, said, at) => Keep(owner, account, said, at)).ConfigureAwait(false);
         }
         // And each account's windows, where its agent's server is asked them (CODEXUSE1), and the own sign-in's where the
         // press was for it too (CODEXUSE3).
@@ -453,12 +454,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             var read = reads.Accounts.GetValueOrDefault(account);
             var held = HarnessKeys.Of(Home, owner, account);
+            var who = WhoOf(owner, account, read);
             return new ProfileReport(
                 account, HarnessSettings.ProfileHome(Home, owner, account), read?.Login ?? LoginState.Unknown,
-                WhoOf(owner, account, read), held is null ? null : HarnessKeys.Handle(held), read?.At,
-                names.GetValueOrDefault(account));
+                who?.Account, held is null ? null : HarnessKeys.Handle(held), read?.At,
+                names.GetValueOrDefault(account), who?.Org, who?.Plan);
         }).ToList();
 
+        var own = WhoOf(owner, null, reads.Own);
         return new HarnessReport(
             name,
             binary.Present,
@@ -468,24 +471,34 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             Settings.Defaults.TryGetValue(owner, out var machine) ? machine : null,
             profiles,
             reads.Own?.Login ?? LoginState.Unknown,
-            WhoOf(owner, null, reads.Own),
-            reads.Own?.At);
+            own?.Account,
+            reads.Own?.At,
+            own?.Org,
+            own?.Plan);
     }
 
-    /// <summary>Who the reading this process made of an account said is signed in, where that reading is the one kept.</summary>
-    private string? WhoOf(string owner, string? account, AccountRead? read) =>
-        read is not null && _who.TryGetValue(AccountKey(owner, account), out var said) && Second(said.At) == read.At ? said.Who : null;
+    /// <summary>
+    /// Who the reading this process made of an account said is signed in, with the organisation and the plan beside them
+    /// (ACCOUNTID1), where that reading is the one kept and said yes; null otherwise.
+    /// </summary>
+    private LoginRead? WhoOf(string owner, string? account, AccountRead? read) =>
+        read is not null && _who.TryGetValue(AccountKey(owner, account), out var said) && Second(said.At) == read.At
+        && said.Said.Login == LoginState.In
+            ? said.Said
+            : null;
 
     private static DateTimeOffset Second(DateTimeOffset at) =>
         new(at.UtcTicks - (at.UtcTicks % TimeSpan.TicksPerSecond), TimeSpan.Zero);
 
     /// <summary>
     /// A reading of one account, or with <paramref name="account"/> null the tool's own (ROSTER1): kept under the home, so a
-    /// restart starts from it; who, in memory alone (D66 §3). A reading not written costs a restart's knowledge, never the answer.
+    /// restart starts from it; who, the organisation and the plan, in memory alone (D66 §3, ACCOUNTID1). A reading not
+    /// written costs a restart's knowledge, never the answer.
     /// </summary>
-    private void Keep(string owner, string? account, LoginState login, string? who, DateTimeOffset at)
+    private void Keep(string owner, string? account, LoginRead said, DateTimeOffset at)
     {
-        _who[AccountKey(owner, account)] = (at, login == LoginState.In ? who : null);
+        var login = said.Login;
+        _who[AccountKey(owner, account)] = (at, login == LoginState.In ? said : new LoginRead(login, null));
         // A newer word on the account settles a fresh reading a refusal owed it (TOOL6h).
         _owed.TryRemove(AccountKey(owner, account), out _);
         try
@@ -612,13 +625,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             : await HarnessProbe.AskAccountAsync(
                 adapter, toolchain, config.Commands.GetValueOrDefault(adapter), Settings, Home,
                 HarnessSettings.ProfileHome(Home, owner, account), ct, ProbeLock.PathOf(Home, owner, account), key,
-                busy: () => Busy(owner, account), kept: (before?.Login ?? LoginState.Unknown, null)).ConfigureAwait(false);
+                busy: () => Busy(owner, account), kept: new LoginRead(before?.Login ?? LoginState.Unknown, null)).ConfigureAwait(false);
         // A mark this question answered is spent, whatever the file's clock says against the roster's.
         var asked = Clock();
         if (ProbeLock.SignedIn(Home, owner, account) is { } marked && marked > asked) asked = marked;
         _askedAt[AccountKey(owner, account)] = asked;
 
-        if (answer.Asked) Keep(owner, account, answer.Login, answer.Account, Clock());
+        if (answer.Asked) Keep(owner, account, answer.Said, Clock());
         return answer.Login;
     }
 
@@ -642,13 +655,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
     /// <summary>
     /// What the harness says about ONE of its profiles — the question a sign-in asks as it ends
-    /// (D66 §3), answered without probing every other account to learn it, and kept as that account's reading (ROSTER1).
+    /// (D66 §3), answered without probing every other account to learn it, and kept as that account's reading (ROSTER1):
+    /// who signed in, with the organisation and the plan beside them (ACCOUNTID1).
     /// </summary>
-    public async Task<(LoginState Login, string? Account)> LoginOfAsync(
+    public async Task<LoginRead> LoginOfAsync(
         string adapter, DriverConfig config, string profile, CancellationToken ct = default)
     {
         var resolved = adapters.Resolve(adapter);
-        if (resolved.Toolchain is not { } toolchain) return (LoginState.Unknown, null);
+        if (resolved.Toolchain is not { } toolchain) return new LoginRead(LoginState.Unknown, null);
 
         // A door's account is its owner's (AGT7), asked the way the owner asks when this build has it.
         var owner = toolchain.Owner(resolved.Name);
@@ -656,8 +670,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var answer = await HarnessProbe.AskAccountAsync(
             asker.Name, asker.Toolchain, config.Commands.GetValueOrDefault(asker.Name), Settings, Home,
             HarnessSettings.ProfileHome(Home, owner, profile), ct, ProbeLock.PathOf(Home, owner, profile), key: null).ConfigureAwait(false);
-        if (answer.Asked) Keep(owner, profile, answer.Login, answer.Account, Clock());
-        return (answer.Login, answer.Account);
+        if (answer.Asked) Keep(owner, profile, answer.Said, Clock());
+        return answer.Said;
     }
 
     /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried or declared.</summary>
