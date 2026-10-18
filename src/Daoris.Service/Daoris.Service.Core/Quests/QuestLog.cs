@@ -329,9 +329,31 @@ public static class QuestLog
         // A submission only on a taken quest a closure graph binds (§E5). A later one replaces it; whether its successor seals it
         // is the store's to judge inside the write, since only the take's machine makes one.
         QuestOperationKind.Submitted => quest is { Status: QuestStatus.Taken, Closure: not null },
+        // The person's reopen (FABRIC-CLOSE1c, §E5): of the current submission, on the taken quest that made it; or on the open or
+        // taken step that submission published, named by the submission it grew from (a step from before names none, and grew
+        // from its parent's), not already withdrawn by it. A step closed stays closed: a reopen takes no close back.
+        QuestOperationKind.Reopened => quest is { Status: QuestStatus.Taken or QuestStatus.Open } && operation.Submission is { } named
+                                       && (SubmittedHere(quest, named) || GrewFromIt(quest, named)),
+        // A rebind only lets go a step its source's reopen withdrew or held, onto another submission than the one reopened.
+        QuestOperationKind.Rebound => quest is { Status: QuestStatus.Taken or QuestStatus.Open, SourceReopened: { } reopened }
+                                      && operation.Submission is { } grows && grows != reopened,
+        // A withdrawn step is taken by nobody until it is rebound (FABRIC-CLOSE1c): a take after the reopen loses, everywhere.
+        QuestOperationKind.Taken => quest is { Status: QuestStatus.Open, SourceReopened: null },
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
+
+    /// <summary>Whether <paramref name="named"/> is <paramref name="quest"/>'s own current submission, on its take (FABRIC-CLOSE1c).</summary>
+    private static bool SubmittedHere(Quest quest, QuestOperationRef named) =>
+        quest is { Status: QuestStatus.Taken, Submission: { } current }
+        && current.Machine == named.Machine && current.Sequence == named.Sequence;
+
+    /// <summary>
+    /// Whether <paramref name="quest"/> is a step <paramref name="named"/> published and still stands on (FABRIC-CLOSE1c): the
+    /// submission it grew from, or any of its parent's where it names none, as every step from before does.
+    /// </summary>
+    private static bool GrewFromIt(Quest quest, QuestOperationRef named) =>
+        quest.SourceReopened is null && (quest.GrewFrom is { } from ? from == named : quest.Parent is { Length: > 0 });
 
     /// <summary>
     /// Where <paramref name="machine"/>'s claim on a quest stands, read from the quest's operations (D68 §4, D69): held once
@@ -431,6 +453,14 @@ public static class QuestLog
             Submission = new QuestSubmission(operation.Machine, operation.Sequence, operation.At, operation.Note),
             Answers = operation.Answers ?? [], Accepted = null, Evidence = null, Updated = operation.At,
         },
+        // FABRIC-CLOSE1c: on the quest that submitted it, the submission is current no more and its answers, yes and verdict go with
+        // it, so the next ready is judged from the start; on the step it published, the step stands withdrawn or held for the person.
+        QuestOperationKind.Reopened when SubmittedHere(quest!, operation.Submission!) => quest! with
+        {
+            Submission = null, Answers = [], Accepted = null, Evidence = null, Updated = operation.At,
+        },
+        QuestOperationKind.Reopened => quest! with { SourceReopened = operation.Submission, Updated = operation.At },
+        QuestOperationKind.Rebound => quest! with { GrewFrom = operation.Submission, SourceReopened = null, Updated = operation.At },
         // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none. The note's parts are the
         // move's own, so a note written without them clears the last one's (QUESTCLOSE1b1, D142 point 2). A close also clears
         // the question the quest waited on: it names one only while taken, the Waited operation staying in the history (AWAITSTALE1, D79).
@@ -467,11 +497,13 @@ public static class QuestLog
         // posted first elsewhere, or one made on this machine's take that lost (REVIEWENV1b). A review's verdict another
         // machine's came before, or on a set-up a newer one stands beside. A closure graph's bind or submission once its quest
         // is no longer taken, or made on this machine's take that lost (FABRIC-CLOSE1a, §E5): the take's conflict names a lost
-        // submission, and the step a submission published goes with it (QuestStore.RebaseAsync).
+        // submission, and the step a submission published goes with it (QuestStore.RebaseAsync). A reopen once the submission it
+        // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c).
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
             or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
             or QuestOperationKind.SetUp or QuestOperationKind.Verdict
-            or QuestOperationKind.Bound or QuestOperationKind.Submitted => QuestLoss.Forgotten,
+            or QuestOperationKind.Bound or QuestOperationKind.Submitted
+            or QuestOperationKind.Reopened or QuestOperationKind.Rebound => QuestLoss.Forgotten,
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind), kind,
             "A rebase has no rule for this kind of quest operation; .claude/knowledge/quest-operations.md names every place a kind goes."),

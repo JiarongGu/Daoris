@@ -221,7 +221,10 @@ public sealed record Quest(
     /// submission as it holds a done (FABRIC-CLOSE1a, §E5).
     /// </summary>
     public QuestHold? Hold =>
-        !Judged ? null
+        // A step whose source the person reopened (FABRIC-CLOSE1c, §E5): held while it is live, whatever else it carries, since
+        // what it stands on is gone; once closed, its close is what stands.
+        SourceReopened is not null && Status is QuestStatus.Open or QuestStatus.Taken ? QuestHold.SourceReopened
+        : !Judged ? null
         : Accepted is null && Answers.Any(answer => answer.IsDeparture) ? QuestHold.Departed
         : AwaitsEvidence ? Evidence is null ? QuestHold.EvidenceUnread : QuestHold.EvidenceMissing
         : QuestReviewing.Waits(this) ? QuestHold.Unreviewed
@@ -811,7 +814,9 @@ public sealed class QuestStore
                   verdicts    TEXT NOT NULL DEFAULT '[]',
                   note_parts  TEXT NULL,
                   closure     TEXT NULL,
-                  submission  TEXT NULL
+                  submission  TEXT NULL,
+                  grew_from   TEXT NULL,
+                  source_reopened TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -859,6 +864,10 @@ public sealed class QuestStore
             // A closure graph's binding and its current submission (FABRIC-CLOSE1a); a quest from before has neither.
             ("quests", "closure", "closure TEXT NULL"),
             ("quests", "submission", "submission TEXT NULL"),
+            // The submission a step grew from, and the one its source's reopen withdrew it from (FABRIC-CLOSE1c); a quest from before
+            // has neither, which reads as before.
+            ("quests", "grew_from", "grew_from TEXT NULL"),
+            ("quests", "source_reopened", "source_reopened TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
             // A bind named for a take, owned (FABRIC-CLOSE1o): CLOSE1l's rows named only the quest. `CREATE TABLE IF NOT EXISTS`
             // upgrades nothing, so the columns are added here, on a local store and a shared one alike. FABRIC-CLOSE1w keeps them for
@@ -1149,7 +1158,8 @@ public sealed class QuestStore
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
-        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null)
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
+        QuestOperationRef? submission = null)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -1174,8 +1184,10 @@ public sealed class QuestStore
         var parts = note is null ? null : NoteParts.Normalize(NoteParts.Element(noteParts));
         // A close's provenance is a done's alone (FABRIC-CLOSE1a).
         var closed = kind == QuestOperationKind.Done ? close : null;
+        // The submission a reopen or a rebind names is theirs alone (FABRIC-CLOSE1c).
+        var named = Names(kind) ? submission : null;
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed));
+            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed, named));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
@@ -1191,8 +1203,12 @@ public sealed class QuestStore
             SetUp: shown,
             Verdict: said,
             NoteParts: parts,
-            Close: closed);
+            Close: closed,
+            Submission: named);
     }
+
+    /// <summary>The kinds that name a submission (FABRIC-CLOSE1c): a reopen, and a rebind.</summary>
+    internal static bool Names(QuestOperationKind kind) => kind is QuestOperationKind.Reopened or QuestOperationKind.Rebound;
 
     /// <summary>
     /// Keep an operation another machine made, under ITS machine and sequence — what a remote receives
@@ -1223,7 +1239,8 @@ public sealed class QuestStore
                 operation.Kind == QuestOperationKind.SetUp ? operation.SetUp : null,
                 operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null,
                 operation.NoteParts,
-                operation.Kind == QuestOperationKind.Done ? operation.Close : null));
+                operation.Kind == QuestOperationKind.Done ? operation.Close : null,
+                Names(operation.Kind) ? operation.Submission : null));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -1251,8 +1268,8 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, note_parts = excluded.note_parts, filed = excluded.filed, updated = excluded.updated,
@@ -1262,9 +1279,16 @@ public sealed class QuestStore
               requirements = excluded.requirements, answers = excluded.answers, accepted = excluded.accepted,
               held = excluded.held, short_title = excluded.short_title, evidence = excluded.evidence,
               review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts,
-              closure = excluded.closure, submission = excluded.submission
+              closure = excluded.closure, submission = excluded.submission,
+              grew_from = excluded.grew_from, source_reopened = excluded.source_reopened
             """;
         command.Parameters.AddWithValue("$closure", (object?)quest.Closure ?? DBNull.Value);
+        command.Parameters.AddWithValue("$grewFrom", quest.GrewFrom is { } from
+            ? JsonFields.Written(writer => { writer.WriteStartObject(); WriteRefFields(writer, from); writer.WriteEndObject(); })
+            : DBNull.Value);
+        command.Parameters.AddWithValue("$sourceReopened", quest.SourceReopened is { } reopened
+            ? JsonFields.Written(writer => { writer.WriteStartObject(); WriteRefFields(writer, reopened); writer.WriteEndObject(); })
+            : DBNull.Value);
         command.Parameters.AddWithValue("$submission", quest.Submission is { } submitted
             ? JsonFields.Written(writer =>
             {
@@ -1374,6 +1398,8 @@ public sealed class QuestStore
         {
             Then = parent.Then.Skip(1).ToList(),
             Parent = parent.Id,
+            // The submission that publishes it (FABRIC-CLOSE1c, §E5): what a reopen names it by, and what seals it. A done names none.
+            GrewFrom = parent is { Status: QuestStatus.Taken, Submission: { } from } ? new QuestOperationRef(from.Machine, from.Sequence) : null,
             Requirements = left.Count == 0
                 ? parent.Requirements
                 : [.. parent.Requirements.Select(requirement => requirement with { Evidence = [] })],
@@ -1454,11 +1480,22 @@ public sealed class QuestStore
             var judged = new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open);
             if (!QuestLog.Applies(standing, judged))
             {
-                return new QuestMove(held, Moved: false);
+                // FABRIC-CLOSE1c: a step its source's reopen withdrew is taken by nobody, said apart so the answer can say why.
+                return new QuestMove(held, Moved: false)
+                {
+                    SourceReopened = status == QuestStatus.Taken && standing is { Status: QuestStatus.Open, SourceReopened: not null },
+                };
             }
 
             // A close on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
             if (QuestLog.OnALostTake(standing, history, judged)) return new QuestMove(held, Moved: false) { ClaimLost = true };
+
+            // FABRIC-CLOSE1c: a step its source's reopen held goes no further by its agent's done; the person chooses whether it goes
+            // on. Their own done and any decline stay theirs.
+            if (byAgent && status == QuestStatus.Done && standing is { SourceReopened: not null })
+            {
+                return new QuestMove(held, Moved: false) { SourceReopened = true };
+            }
 
             // An agent's done where the graph closes the quest (FABRIC-CLOSE1a): its result is a submission, so no done slips past.
             if (byAgent && status == QuestStatus.Done && standing is { Closure: not null })
@@ -1512,11 +1549,41 @@ public sealed class QuestStore
     /// The chain's next step after <paramref name="closed"/>, published in the caller's transaction — or the one
     /// already published, since the id is the ask — or null when the chain ends here.
     /// </summary>
-    private async Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct) =>
-        NextStep(closed, now) is { } next
-            ? await FindAsync(next.Step.Id, transaction, ct).ConfigureAwait(false)
-              ?? await PublishInAsync(next.Step, transaction, ct, next.Left).ConfigureAwait(false)
-            : null;
+    private async Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
+    {
+        if (NextStep(closed, now) is not { } next) return null;
+        if (await FindAsync(next.Step.Id, transaction, ct).ConfigureAwait(false) is not { } standing)
+        {
+            return await PublishInAsync(next.Step, transaction, ct, next.Left).ConfigureAwait(false);
+        }
+
+        // FABRIC-CLOSE1c: a step its source's reopen withdrew, never taken, is the same step again: rebound to the submission that
+        // publishes it now, keeping its id and its history, so no second quest is asked and no withdrawal outlives the work it named.
+        // A started one waits for the person's word (ContinueAsync).
+        if (standing is { Status: QuestStatus.Open, SourceReopened: not null } && next.Step.GrewFrom is { } from)
+        {
+            return await ReboundInAsync(standing.Id, from, now, transaction, ct).ConfigureAwait(false) ?? standing;
+        }
+
+        return standing;
+    }
+
+    /// <summary>
+    /// A <see cref="QuestOperationKind.Rebound"/> on <paramref name="id"/>, naming <paramref name="from"/>, judged by the replay's rule
+    /// in the caller's transaction (FABRIC-CLOSE1c); the step as it then stands, or null where the rule refused it.
+    /// </summary>
+    private async Task<Quest?> ReboundInAsync(
+        string id, QuestOperationRef from, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
+    {
+        var history = await HistoryAsync(id, transaction, ct).ConfigureAwait(false);
+        var standing = QuestLog.Replay(history);
+        if (!QuestLog.Applies(standing, new QuestOperation(id, QuestOperationKind.Rebound, Machine, 0, now, Submission: from))) return null;
+        var operation = await AppendAsync(
+            id, QuestOperationKind.Rebound, now, null, null, transaction, ct, submission: from).ConfigureAwait(false);
+        var rebound = QuestLog.Step(standing, operation)!;
+        await WriteCacheAsync(rebound, transaction, ct).ConfigureAwait(false);
+        return rebound;
+    }
 
     /// <summary>
     /// Bind a taken quest to the graph that closes it (FABRIC-CLOSE1a, §E5): a <see cref="QuestOperationKind.Bound"/> operation
@@ -1676,10 +1743,16 @@ public sealed class QuestStore
 
             // Sealed (§E5): a submission whose successor stands takes no later one, so the step never stands on work replaced
             // under it. Only the take's machine submits, so this machine's store is where the seal is judged.
-            if (judged.Kind == QuestOperationKind.Submitted && standing!.Submission is not null
-                && await SuccessorAsync(standing, transaction, inside).ConfigureAwait(false) is { } successor)
+            if (judged.Kind == QuestOperationKind.Submitted
+                && await SealingAsync(standing!, transaction, inside).ConfigureAwait(false) is { } successor)
             {
                 return new QuestMove(held, Moved: false) { SealedBy = successor.Id };
+            }
+
+            // FABRIC-CLOSE1c: a step its source's reopen holds goes no further; the person chooses whether it goes on.
+            if (judged.Kind == QuestOperationKind.Submitted && standing!.SourceReopened is not null)
+            {
+                return new QuestMove(held, Moved: false) { SourceReopened = true };
             }
 
             var operation = await AppendAsync(
@@ -1702,16 +1775,108 @@ public sealed class QuestStore
     /// <see cref="QuestOperationKind.Reopened"/> on the quest, which leaves it taken with no current submission, and one on the step
     /// that submission published, which withdraws it while open and holds it while taken.
     /// </summary>
+    /// <remarks>
+    /// Judged inside the write, so a close or a <c>ready</c> landing a moment earlier is seen: a close first leaves the quest Done,
+    /// and the reopen is refused; a reopen first leaves the close naming a submission that is current no more, and the close door
+    /// refuses it as stale. A step closed on the submission refuses the reopen: a reopen takes no close back, and a push made is
+    /// never retracted.
+    /// </remarks>
     public Task<QuestReopening> ReopenAsync(
         string id, QuestOperationRef submission, string? note, DateTimeOffset now, CancellationToken ct = default) =>
-        Task.FromResult(new QuestReopening(QuestReopenRefusal.NotFound, null, null));
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
+            if (held is null) return new QuestReopening(QuestReopenRefusal.NotFound, null, null);
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (history.Count == 0) history = await GiveHistoryAsync(held, transaction, inside).ConfigureAwait(false);
+            var standing = QuestLog.Replay(history)!;
+
+            QuestReopening Refused(QuestReopenRefusal refusal, Quest? step = null) => new(refusal, standing, step);
+            if (standing.Status != QuestStatus.Taken) return Refused(QuestReopenRefusal.NotTaken);
+            // Only the take's machine submits, so only its store judges the seal (CLOSE1a's choice 3).
+            if (QuestLog.OnALostTake(standing, history, new QuestOperation(id, QuestOperationKind.Done, Machine, 0, now))
+                || QuestLog.Claim(history, Machine) is not (QuestClaim.Held or QuestClaim.Unconfirmed))
+            {
+                return Refused(QuestReopenRefusal.NotHeld);
+            }
+
+            // The quest's own current submission, never one it grew from: that is its source's to reopen.
+            if (standing.Submission is not { } current || current.Machine != submission.Machine || current.Sequence != submission.Sequence)
+            {
+                return Refused(QuestReopenRefusal.NotCurrent);
+            }
+
+            var step = await SuccessorAsync(standing, transaction, inside).ConfigureAwait(false);
+            if (step is { Status: QuestStatus.Done or QuestStatus.Declined } && Grows(step, submission))
+            {
+                return Refused(QuestReopenRefusal.StepClosed, step);
+            }
+
+            if (step is null || await SealingAsync(standing, transaction, inside).ConfigureAwait(false) is null)
+            {
+                return Refused(QuestReopenRefusal.NotSealed, step);
+            }
+
+            var operation = await AppendAsync(
+                id, QuestOperationKind.Reopened, now, note, null, transaction, inside, submission: submission).ConfigureAwait(false);
+            var reopened = QuestLog.Step(standing, operation)!;
+            await WriteCacheAsync(reopened, transaction, inside).ConfigureAwait(false);
+
+            // The step it published, in the same write: withdrawn while open, held while taken, by the same submission's name.
+            var stepHistory = await HistoryAsync(step.Id, transaction, inside).ConfigureAwait(false);
+            var stepStanding = QuestLog.Replay(stepHistory);
+            var onStep = await AppendAsync(
+                step.Id, QuestOperationKind.Reopened, now, null, null, transaction, inside, submission: submission).ConfigureAwait(false);
+            var withdrawn = QuestLog.Step(stepStanding, onStep)!;
+            await WriteCacheAsync(withdrawn, transaction, inside).ConfigureAwait(false);
+            return new QuestReopening(QuestReopenRefusal.None, reopened, withdrawn);
+        }, ct);
 
     /// <summary>
     /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): a <see cref="QuestOperationKind.Rebound"/>
     /// naming the source's current submission, once that is unheld.
     /// </summary>
     public Task<QuestReopening> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
-        Task.FromResult(new QuestReopening(QuestReopenRefusal.NotFound, null, null));
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
+            if (held is null) return new QuestReopening(QuestReopenRefusal.NotFound, null, null);
+            var standing = QuestLog.Replay(await HistoryAsync(id, transaction, inside).ConfigureAwait(false)) ?? held;
+            if (standing is not { Status: QuestStatus.Open or QuestStatus.Taken, SourceReopened: not null })
+            {
+                return new QuestReopening(QuestReopenRefusal.NotWithdrawn, standing, null);
+            }
+
+            // The source as this store holds it: its current submission, unheld, is what the step grows from now. Another machine's
+            // submission reaches this store by sync, and the word waits for it.
+            var source = standing.Parent is { Length: > 0 } parent ? await FindAsync(parent, transaction, inside).ConfigureAwait(false) : null;
+            if (source is not { Status: QuestStatus.Taken, Submission: { } current, Held: false })
+            {
+                return new QuestReopening(QuestReopenRefusal.SourceNotReady, standing, source);
+            }
+
+            var rebound = await ReboundInAsync(id, new QuestOperationRef(current.Machine, current.Sequence), now, transaction, inside)
+                .ConfigureAwait(false);
+            return rebound is null
+                ? new QuestReopening(QuestReopenRefusal.SourceNotReady, standing, source)
+                : new QuestReopening(QuestReopenRefusal.None, rebound, source);
+        }, ct);
+
+    /// <summary>
+    /// The step that seals <paramref name="quest"/>'s current submission (FABRIC-CLOSE1a, FABRIC-CLOSE1c; §E5): its chain's next step,
+    /// standing on that submission, withdrawn by no reopen. Null where none does, so a later <c>ready</c> replaces it, and the close
+    /// door reads it unsealed. A step from before names no submission, and seals whichever is current, as it always did.
+    /// </summary>
+    private async Task<Quest?> SealingAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
+        quest.Submission is { } current
+        && await SuccessorAsync(quest, transaction, ct).ConfigureAwait(false) is { } step
+        && Grows(step, new QuestOperationRef(current.Machine, current.Sequence))
+            ? step
+            : null;
+
+    /// <summary>Whether <paramref name="step"/> stands on <paramref name="submission"/> (FABRIC-CLOSE1c): grown from it, no reopen since.</summary>
+    private static bool Grows(Quest step, QuestOperationRef submission) =>
+        step.SourceReopened is null && (step.GrewFrom is not { } from || from == submission);
 
     /// <summary>
     /// The graph's close (FABRIC-CLOSE1a, §E5): every named quest Done, each on its named submission, in one transaction. Each
@@ -1816,7 +1981,7 @@ public sealed class QuestStore
                 };
 
                 if (refusal == QuestCloseRefusal.None && quest.Then.Count > 0
-                    && await SuccessorAsync(quest, transaction, inside).ConfigureAwait(false) is null)
+                    && await SealingAsync(quest, transaction, inside).ConfigureAwait(false) is null)
                 {
                     refusal = QuestCloseRefusal.Unsealed;
                 }
@@ -3195,6 +3360,8 @@ public sealed class QuestStore
         Verdicts = ReadList(reader.GetString(reader.GetOrdinal("verdicts")), Reviews.JudgedVerdict),
         Closure = reader.IsDBNull(reader.GetOrdinal("closure")) ? null : reader.GetString(reader.GetOrdinal("closure")),
         Submission = reader.IsDBNull(reader.GetOrdinal("submission")) ? null : ReadSubmission(reader.GetString(reader.GetOrdinal("submission"))),
+        GrewFrom = ReadRefColumn(reader, "grew_from"),
+        SourceReopened = ReadRefColumn(reader, "source_reopened"),
     };
 
     /// <summary>A current submission as this store's own column keeps it (FABRIC-CLOSE1a).</summary>
@@ -3268,6 +3435,8 @@ public sealed class QuestStore
                 // Absent from every publish before reviews, and from one that chose none or is no set-up step (REVIEWENV1b).
                 Review = payload.TryGetProperty("review", out var chosen) ? Reviews.JudgedReview(chosen) : null,
                 SetUpIn = payload.TryGetProperty("setUpIn", out var setUpIn) ? setUpIn.GetString() : null,
+                // Absent from every publish but a step a submission published (FABRIC-CLOSE1c).
+                GrewFrom = payload.TryGetProperty("grewFrom", out var grew) ? ReadRef(grew) : null,
             };
 
         QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
@@ -3292,7 +3461,9 @@ public sealed class QuestStore
             // Absent from every operation before note parts, and from every note written without them (QUESTCLOSE1b1).
             note is not null && payload.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null,
             // Absent from every done but a graph's close's (FABRIC-CLOSE1a), which this store wrote whole.
-            kind == QuestOperationKind.Done && payload.TryGetProperty("close", out var close) ? ReadClose(close) : null);
+            kind == QuestOperationKind.Done && payload.TryGetProperty("close", out var close) ? ReadClose(close) : null,
+            // A reopen's or a rebind's submission (FABRIC-CLOSE1c), which this store wrote whole.
+            Names(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null);
     }
 
     /// <summary>A close's provenance (FABRIC-CLOSE1a), or null where it is not whole: a key and a token, both strings.</summary>
@@ -3323,7 +3494,8 @@ public sealed class QuestStore
     private static string PayloadJson(
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
-        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null) =>
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
+        QuestOperationRef? submission = null) =>
         JsonFields.Written(writer =>
     {
         if (dismisses is not null)
@@ -3389,6 +3561,9 @@ public sealed class QuestStore
             }
 
             if (published.SetUpIn is not null) writer.WriteString("setUpIn", published.SetUpIn);
+
+            // Only on a step a submission published (FABRIC-CLOSE1c), for the lanes' reason: every other publish reads as it did.
+            if (published.GrewFrom is { } from) WriteRef(writer, "grewFrom", from);
         }
 
         if (note is not null) writer.WriteString("note", note);
@@ -3427,8 +3602,47 @@ public sealed class QuestStore
         // Only on a done the graph's close wrote (FABRIC-CLOSE1a): every other done reads as it did.
         if (close is not null) WriteClose(writer, close);
 
+        // Only on a reopen or a rebind (FABRIC-CLOSE1c), for the lanes' reason: every other operation reads as it did.
+        if (submission is not null) WriteRef(writer, "submission", submission);
+
         writer.WriteEndObject();
     });
+
+    /// <summary>An operation named by its machine and sequence, as the log and the wire write it (FABRIC-CLOSE1c).</summary>
+    internal static void WriteRef(System.Text.Json.Utf8JsonWriter writer, string name, QuestOperationRef named)
+    {
+        writer.WriteStartObject(name);
+        WriteRefFields(writer, named);
+        writer.WriteEndObject();
+    }
+
+    private static void WriteRefFields(System.Text.Json.Utf8JsonWriter writer, QuestOperationRef named)
+    {
+        writer.WriteString("machine", named.Machine);
+        writer.WriteNumber("sequence", named.Sequence);
+    }
+
+    /// <summary>An operation's name as this store's own column keeps it (FABRIC-CLOSE1c).</summary>
+    private static QuestOperationRef? ReadRefColumn(SqliteDataReader reader, string column)
+    {
+        var at = reader.GetOrdinal(column);
+        if (reader.IsDBNull(at)) return null;
+        using var document = System.Text.Json.JsonDocument.Parse(reader.GetString(at));
+        return ReadRef(document.RootElement);
+    }
+
+    /// <summary>
+    /// An operation's name as the log and the wire hold it (FABRIC-CLOSE1c), or null where it is not whole: a machine that is a
+    /// non-empty string, and a positive sequence.
+    /// </summary>
+    internal static QuestOperationRef? ReadRef(System.Text.Json.JsonElement named) =>
+        named.ValueKind == System.Text.Json.JsonValueKind.Object
+        && named.TryGetProperty("machine", out var machine) && machine.ValueKind == System.Text.Json.JsonValueKind.String
+        && machine.GetString() is { Length: > 0 } at
+        && named.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == System.Text.Json.JsonValueKind.Number
+        && sequence.TryGetInt64(out var count) && count > 0
+            ? new QuestOperationRef(at, count)
+            : null;
 
     /// <summary>
     /// A note's parts beside it (QUESTCLOSE1b1, D142 point 2): a list, only where the note was written with some, so an

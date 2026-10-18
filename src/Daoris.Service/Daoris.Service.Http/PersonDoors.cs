@@ -214,6 +214,9 @@ public static class PersonDoors
         new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel"),
         new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure"),
         new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own"),
+        // FABRIC-CLOSE1c (§E5): only the person reopens a sealed submission, and only they choose whether its held step goes on.
+        new("POST", "/api/quests/{id}/reopen", DoorClass.Person, "a submission's reopen"),
+        new("POST", "/api/quests/{id}/continue", DoorClass.Person, "the word to go on with a step its source's reopen held"),
         new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer"),
         new("POST", "/api/sessions/{id}/added", DoorClass.Person, "words added to a running session"),
         new("POST", "/api/sessions/{id}/say", DoorClass.Person, "words to a session"),

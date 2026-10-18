@@ -659,7 +659,8 @@ app.MapPost("/api/quests/{id}/respond", async (
         QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         // The refused transition is a state conflict, not a bad request: the losing side of the
         // cross-machine race reads 409 as "someone got there first" and stands down (D47 §5).
-        QuestRespondRefusal.AlreadyTaken or QuestRespondRefusal.Closed =>
+        // FABRIC-CLOSE1c: a step whose source the person reopened is a stand-down too: withdrawn, or held for their choice.
+        QuestRespondRefusal.AlreadyTaken or QuestRespondRefusal.Closed or QuestRespondRefusal.SourceReopened =>
             Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
@@ -700,6 +701,25 @@ if (mode == ServiceMode.Local)
             _ => Results.Conflict(new ErrorResponse(outcome.Message)),
         };
     });
+
+    // The person's reopen of a sealed submission, and their word to go on with the step it held (FABRIC-CLOSE1c, §E5). LOCAL mode
+    // only, as the yes is: the seal is judged on the machine holding the take, and the reopen travels from there as operations (D68).
+    // No connector tool reaches either: only the person reopens, and only they choose whether the step goes on.
+    app.MapPost("/api/quests/{id}/reopen", async (
+        ComposedService s, HttpContext http, string id, ReopenQuestRequest body, CancellationToken ct) =>
+    {
+        if (body.Submission is not { Machine: { Length: > 0 } machine, Sequence: > 0 and var sequence })
+        {
+            return Results.BadRequest(new ErrorResponse(
+                "A reopen names the submission it reopens: `submission` with its `machine` and `sequence`, as the quest answers it."));
+        }
+
+        var outcome = await s.Exchange.ReopenAsync(id, new QuestOperationRef(machine, sequence!.Value), body.Note, DateTimeOffset.UtcNow, ct);
+        return await PersonMoveAnswerAsync(s, http, outcome, ct);
+    });
+
+    app.MapPost("/api/quests/{id}/continue", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
+        await PersonMoveAnswerAsync(s, http, await s.Exchange.ContinueAsync(id, DateTimeOffset.UtcNow, ct), ct));
 
     // What the driver read of a done's evidence (EVID1a, D144 §3): its verdict at the end of the session that made the
     // done, the sweep's, or the person's check at the terminal. LOCAL mode only, as the yes is: the commit is read on the
@@ -764,6 +784,16 @@ if (mode == ServiceMode.Local)
     // A half-named submission arrives blank and is refused by the exchange, which says what a close names.
     static List<(string, QuestOperationRef)> CloseNamed(CloseQuestRequest body) =>
         [.. (body.Quests ?? []).Select(q => (q?.Id ?? "", new QuestOperationRef(q?.Machine ?? "", q?.Sequence ?? 0)))];
+
+    // A person's reopen or word to go on (FABRIC-CLOSE1c): the quest as it now stands, or why nothing moved, a state in the lock's shape.
+    async Task<IResult> PersonMoveAnswerAsync(ComposedService s, HttpContext http, QuestRespondOutcome outcome, CancellationToken ct) =>
+        outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(
+                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
 
     async Task<IResult> CloseAnswerAsync(ComposedService s, HttpContext http, QuestCloseOutcome outcome, CancellationToken ct)
     {
@@ -2231,7 +2261,10 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     NoteParts.Element(q.NoteParts),
     // A closure graph's digest and its taker's submission (FABRIC-CLOSE1a): names and words, which every door may answer.
     q.Closure,
-    q.Submission is { } submitted ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note) : null);
+    q.Submission is { } submitted ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note) : null,
+    // The submission a step grew from, and the one reopened under it (FABRIC-CLOSE1c): names, which every door may answer.
+    q.GrewFrom is { } grew ? new QuestSubmissionRefWire(grew.Machine, grew.Sequence) : null,
+    q.SourceReopened is { } reopened ? new QuestSubmissionRefWire(reopened.Machine, reopened.Sequence) : null);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item

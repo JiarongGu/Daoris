@@ -1263,6 +1263,12 @@ public sealed class QuestExchange(
             return new(QuestRespondRefusal.NotFound, $"No quest `#{id.TrimStart('#')}`. Ids come from `quest_list`.", Quest: null);
         }
 
+        // A take or an agent's done on a step whose source the person reopened (FABRIC-CLOSE1c): a stand-down, with its reason.
+        if (move.SourceReopened)
+        {
+            return new(QuestRespondRefusal.SourceReopened, SourceReopenedWords(move.Quest), Quest: null);
+        }
+
         // A done where the quest's graph closes it (FABRIC-CLOSE1a, §E5): the result is a submission, said as the action to take.
         if (move.ClosedByGraph)
         {
@@ -1559,6 +1565,8 @@ public sealed class QuestExchange(
                 Quest: null);
         }
 
+        if (move.SourceReopened) return new(QuestRespondRefusal.SourceReopened, SourceReopenedWords(standing), Quest: null);
+
         if (!move.Moved)
         {
             return new(QuestRespondRefusal.NotInGraph, NotReady(standing)
@@ -1806,16 +1814,96 @@ public sealed class QuestExchange(
     /// took it, and held with its reason if somebody did. Only the machine holding the take reopens, as only it submits.
     /// </summary>
     /// <remarks>The person's door, never an agent's: no connector tool reaches it. It commits here and travels like any verb (D68).</remarks>
-    public Task<QuestRespondOutcome> ReopenAsync(
-        string id, QuestOperationRef submission, string? note, DateTimeOffset now, CancellationToken ct = default) =>
-        Task.FromResult(new QuestRespondOutcome(QuestRespondRefusal.NotFound, "", null));
+    public async Task<QuestRespondOutcome> ReopenAsync(
+        string id, QuestOperationRef submission, string? note, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var quest = id.TrimStart('#');
+        var reopening = await quests.ReopenAsync(
+            quest, submission, string.IsNullOrWhiteSpace(note) ? null : note.Trim(), now, ct).ConfigureAwait(false);
+        var standing = reopening.Quest;
+        var step = reopening.Step;
+        return reopening.Refusal switch
+        {
+            QuestReopenRefusal.None => new(
+                QuestRespondRefusal.None,
+                $"Reopened quest `#{quest}`'s submission: it stays Taken with none current, so its graph closes nothing on it, and its "
+                + "agent's next `ready` is judged from the start."
+                + (step is { Status: QuestStatus.Taken }
+                    ? $" Its next step, `#{step!.Id}`, was already taken: it is held, its session goes no further, and you choose to go "
+                      + "on with it once the new work is ready, or to abandon it."
+                    : $" Its next step, `#{step!.Id}`, is withdrawn: no session takes it, and the next unheld submission publishes it "
+                      + "again as the same quest."),
+                standing),
+            QuestReopenRefusal.NotFound => new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", null),
+            QuestReopenRefusal.NotTaken => new(
+                QuestRespondRefusal.Closed,
+                $"Quest `#{quest}` is {standing!.Status}: only a taken quest's submission is reopened"
+                + (standing.Status == QuestStatus.Done ? ", and its close stands" : "") + ". Nothing moved.",
+                null),
+            QuestReopenRefusal.NotHeld => new(
+                QuestRespondRefusal.AlreadyTaken,
+                $"Quest `#{quest}` is taken on another machine, or this machine's take on it lost: its submission is reopened on the "
+                + "machine that made it. Nothing moved.",
+                null),
+            QuestReopenRefusal.NotCurrent => new(
+                QuestRespondRefusal.NotSealed,
+                standing!.Submission is null
+                    ? $"Quest `#{quest}` has no current submission to reopen: its agent's next `ready` makes one. Nothing moved."
+                    : $"Quest `#{quest}`'s current submission is not the one named: only the current one is reopened. Nothing moved.",
+                null),
+            QuestReopenRefusal.StepClosed => new(
+                QuestRespondRefusal.NotSealed,
+                $"Quest `#{quest}`'s next step, `#{step!.Id}`, is already {step.Status} on that submission, and a reopen takes no "
+                + $"close back. Nothing moved. Close `#{quest}` yourself, or ask anew.",
+                null),
+            _ => new(
+                QuestRespondRefusal.NotSealed,
+                $"Quest `#{quest}`'s submission published no step that stands on it, so nothing seals it: its agent's next `ready` "
+                + "replaces it. Nothing moved.",
+                null),
+        };
+    }
 
     /// <summary>
     /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): it grows from the source's current
     /// submission once that is unheld, its hold let go. To abandon it instead is their decline, at the decline's own door.
     /// </summary>
-    public Task<QuestRespondOutcome> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
-        Task.FromResult(new QuestRespondOutcome(QuestRespondRefusal.NotFound, "", null));
+    public async Task<QuestRespondOutcome> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var quest = id.TrimStart('#');
+        var going = await quests.ContinueAsync(quest, now, ct).ConfigureAwait(false);
+        var parent = going.Quest?.Parent;
+        return going.Refusal switch
+        {
+            QuestReopenRefusal.None => new(
+                QuestRespondRefusal.None,
+                $"Quest `#{quest}` goes on: it grows from `#{parent}`'s current submission now, and its hold is let go. Its work "
+                + "stands on what was reopened, so bring its branch up to date with that submission first.",
+                going.Quest),
+            QuestReopenRefusal.NotFound => new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", null),
+            QuestReopenRefusal.NotWithdrawn => new(
+                QuestRespondRefusal.NotHeld,
+                $"Quest `#{quest}` is {going.Quest!.Status}, and no reopen of the work it grew from holds it: nothing waits for your "
+                + "word to go on.",
+                null),
+            _ => new(
+                QuestRespondRefusal.NotSealed,
+                $"Quest `#{quest}` grew from `#{parent}`, whose work has no unheld submission here yet: it can go on once that work is "
+                + "ready again. Nothing moved.",
+                null),
+        };
+    }
+
+    /// <summary>
+    /// Why a session's take, done or <c>ready</c> on a step moved nothing (FABRIC-CLOSE1c): the work it grew from was reopened, and
+    /// the person chooses. Said as a stand-down, since its session should go no further.
+    /// </summary>
+    private static string SourceReopenedWords(Quest step) =>
+        $"Quest `#{step.Id}` grew from `#{step.Parent}`'s work, which the person reopened: "
+        + (step.Status == QuestStatus.Open
+            ? "it is withdrawn, and no session takes it"
+            : "it is held, and goes no further")
+        + " until they choose to go on with it on the new work or to abandon it. Nothing moved. Stop here.";
 
     /// <summary>
     /// The sentence a person's done writes on its quest (QUESTCLOSE1, D126's note): theirs, with their words after it where
