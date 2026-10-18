@@ -1420,7 +1420,8 @@ public static class Planner
     /// <remarks>
     /// A session the reopen stopped is carried on instead (<see cref="StoppedByReopen"/>), and a cut-off, a stop, a stand-down, a record
     /// with words waiting and a running one read as before. <b>Once</b>, with nothing kept: the record that goes on moves after the step,
-    /// and a <c>ready</c> gives the step a result again. A step whose session ran across the go-on is not read here (a row).
+    /// and a <c>ready</c> gives the step a result again. A step whose session ran across the go-on is not read here: its record ended after
+    /// the step moved.
     /// </remarks>
     internal static bool GoneOnSince(QuestView step, PriorSession last) =>
         step is { Status: "Taken", Awaits: null or "", HeldByReopen: false, Submission: null, Reopened: null, GrewFrom: not null, Parent: { Length: > 0 } }

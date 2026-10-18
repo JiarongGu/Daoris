@@ -49,7 +49,7 @@ public sealed class ServiceReopenDoors(ServiceClient service) : IReopenDoors
 /// <para><b>The step's go-on</b> (FABRIC-CLOSE1c13): a step the person went on with after its last session here had ended normally,
 /// parked after its <c>ready</c> or completed (<see cref="Planner.GoneOnSince"/>), is told so in that session with Daoris's words, and
 /// the start that goes on with them brings its branch up to date with the source's new submission first (<see cref="BringsToSource"/>).
-/// Once with no mark: the told record has words waiting, and once it goes on it moves after the step. Nothing more is read.</para>
+/// Once with no mark, by the fact itself; nothing more is read.</para>
 /// </remarks>
 public sealed class ReopenTelling(ReopenMarks marks)
 {
