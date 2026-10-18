@@ -42,7 +42,10 @@ log's reader and the wire all ask: `QuestStore.JudgedOpen` (a rebind's `whileOpe
 **An existing kind's effect changing** touches row 2 alone, and no shape changes, so an older build reads the same log as a
 different quest without refusing anything. The remote and every machine take the change together, as for a new kind, and a row
 an older build cached reads as it was until the quest's next operation replays it. Prove the change on two machines and the
-remote, as `QuestReopenSyncTests` does for FABRIC-CLOSE1c10's `rebound`, which now clears a held step's result.
+remote, as `QuestReopenSyncTests` does for FABRIC-CLOSE1c10's `rebound`, which now clears a held step's result. The orders a plain
+pass never meets have fakes there (FABRIC-CLOSE1c21): `RacedRemote` lands another machine's push between a fetch and the push, and
+`InterruptedRemote` stops a push before it reaches the remote or before its answer; a trigger on `quest_cursor` stops the integration
+before its commit, and a restart is the store opened again on its connection.
 
 ### The places
 
