@@ -202,8 +202,8 @@ public static class AutoLandingRules
     public static bool ShouldTry(AutoLanding entry, string? tip, string status) => entry.Last switch
     {
         null => true,
-        // FABRIC-CLOSE1h6: a new conclusion (D137's words that went on, a closure graph's next `ready`) made it due again, so the
-        // closed try was the earlier due's and says nothing of this one. The landing's own checks keep a commit from landing twice.
+        // FABRIC-CLOSE1h6: due again by D137's words that went on, or a closure graph's next `ready`. The landing's own checks keep a
+        // commit from landing twice.
         _ when entry.Reopened => true,
         { Code: var code } last when AutoLandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
