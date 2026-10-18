@@ -408,7 +408,8 @@ public sealed record QuestTake(string Claim, bool Took = false, string? Teammate
 /// </param>
 /// <param name="Session">That teammate's session, as <c>origin/id</c>, where a record names one; null otherwise.</param>
 /// <param name="Here">Taken on this machine after <paramref name="Last"/> ended, which no record here marks: a chat's or work outside Daoris.</param>
-public sealed record TakenBy(string Last, string? Machine = null, string? Session = null, bool Here = false);
+/// <param name="Reopened">The take was lost to the person's reopen of the work the step grew from, not to another machine (FABRIC-CLOSE1c23).</param>
+public sealed record TakenBy(string Last, string? Machine = null, string? Session = null, bool Here = false, bool Reopened = false);
 
 /// <summary>
 /// Why the planner sits a review set-up step it cannot show (<see cref="StartVerdict.CannotShow"/>), as a fact the page words
@@ -1117,6 +1118,13 @@ public static class Planner
             if (!snapshot.Takes.TryGetValue(quest.Id, out var take)) return null;
 
             var over = $"the take is theirs, so session `{cutOff.Session}` is not carried on over it.";
+            if (take.Reopened)
+                return new(quest, StartVerdict.TakenElsewhere,
+                    $"Quest `#{quest.Id}` was lost to your reopen of the work it grew from: the take is not this machine's, so session `{cutOff.Session}` is not carried on over it.")
+                {
+                    TakenBy = new TakenBy(cutOff.Session, Reopened: true),
+                };
+
             if (!take.Here)
             {
                 var machine = take.Teammate?.Split('/')[0];

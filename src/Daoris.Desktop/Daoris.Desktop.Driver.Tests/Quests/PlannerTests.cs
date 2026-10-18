@@ -815,6 +815,31 @@ public sealed class PlannerTests
         Assert.Equal("Quest `#q1` is taken on another machine: the take is theirs, so session `s1` is not carried on over it.", only.Reason);
     }
 
+    /// <summary>A take lost to the person's own reopen (FABRIC-CLOSE1c23) is said as that, never as another machine's.</summary>
+    [Fact]
+    public void A_cut_off_whose_take_was_lost_to_the_reopen_sits_saying_the_reopen()
+    {
+        var only = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("lost", Why: "source-reopened")), Config()));
+
+        Assert.Equal(StartVerdict.TakenElsewhere, only.Verdict);
+        Assert.Equal(
+            "Quest `#q1` was lost to your reopen of the work it grew from: the take is not this machine's, so session `s1` is not carried on over it.",
+            only.Reason);
+        Assert.DoesNotContain("another machine", only.Reason);
+        Assert.True(only.TakenBy!.Reopened);
+        Assert.Null(only.TakenBy.Machine);
+    }
+
+    /// <summary>A lost claim with another reason, or none, still reads as another machine's (FABRIC-CLOSE1c23).</summary>
+    [Fact]
+    public void A_cut_off_whose_take_was_lost_for_another_reason_still_sits_naming_another_machine()
+    {
+        var only = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("lost", Why: "taken")), Config()));
+
+        Assert.Contains("taken on another machine", only.Reason);
+        Assert.False(only.TakenBy!.Reopened);
+    }
+
     /// <summary>A take made here after the session ended, which no record here marks, is a chat's or work outside Daoris.</summary>
     [Fact]
     public void A_take_made_here_after_the_session_ended_that_no_record_marks_sits()
