@@ -37,7 +37,13 @@ sample is the kind's own sample with the field set. Check too the places that ca
 row: `KeepAsync` and `RewriteAsync` (a lost move rewritten as a conflict), and any note rewrite on the way (QUESTCLOSE1b1's
 `noteParts` is the worked example, D126's note). An existing field a further kind carries is named by one predicate the payload, the
 log's reader and the wire all ask: `QuestStore.JudgedOpen` (a rebind's `whileOpen`, FABRIC-CLOSE1c15) and `QuestStore.Carries` (a take's
-`submission`, its step's source as found, FABRIC-CLOSE1c18), and the rebase's conflict drops it as the log does.
+`submission`, its step's source as found, FABRIC-CLOSE1c18), and the rebase's conflict drops it as the log does. A field that gives the
+quest nothing new skips rows 6, 7 and 10: a dismissal's `forward` (SYNCMERGE1a) removes the conflict as a plain dismissal does.
+A field can also change whose an operation is. `forward` makes a dismissal the taker's own, so `QuestLog.TakersOwn(QuestOperation)`
+names it, and `OnALostTake` and the rebase ask about the operation, never its kind alone. Where the field ties two operations of one
+write together (the mark and the fresh take it made), the rebase judges the pair at the first. A pending take whose marked dismissal
+would land nowhere loses with it (`RebaseAsync`'s `unbrought`, `QuestLog.Brings`). Prove an older build reading the field as absent
+with `OlderRemote`, which strips the field it is given, on the push or the fetch.
 
 **An existing kind's effect changing** touches row 2 alone, and no shape changes, so an older build reads the same log as a
 different quest without refusing anything. The remote and every machine take the change together, as for a new kind, and a row
