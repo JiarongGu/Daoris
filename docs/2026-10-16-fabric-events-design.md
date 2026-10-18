@@ -1674,6 +1674,10 @@ reopen is refused once the step closed on the submission.
 submission as its done. The automatic landing is judged again once it holds its tree, before anything is made: its commitment point. A
 hold or reopen before it stops the landing; one after it applies to what follows, and a push made is never retracted.
 
+**Amended (FABRIC-CLOSE1h2, D173's note).** The automatic landing is judged once more just before its plugin is told, so its commitment
+point is the push: a hold, a reopen or a later submission there leaves the branch made and recorded and pushes nothing (`push-held`). The
+first look once the quest stands hands the branch on, one push; where the work went on past it, the look lands that on the made branch.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
