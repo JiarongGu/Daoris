@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The person's go-on kept a held step's result made on the reopened work (FABRIC-CLOSE1c10)
+
+- **Symptom:** a step that had said `ready` before the person reopened its source went on, at the person's word (`continue`), with that
+  submission still current, its answers, yes and verdict with it: its close could take work made on the reopened source as finished, with
+  nothing submitted again.
+- **Root cause:** CLOSE1c's `rebound` step in `QuestLog.Step` moved `grewFrom` and let the hold go, and touched nothing else, while the
+  reopen and the `submitted` steps both clear a quest's result.
+- **Fix:** the `rebound` step clears the step's submission, answers, yes and verdict too; the continue answer says so, and that the step
+  must submit again. D173's FABRIC-CLOSE1c10 note has the behaviour.
+- **Verification:** red first: `QuestReopenTests` (2) and `QuestReopenSyncTests` (1) failing, then green. `Daoris.Service.Tests` is 2252
+  (2249 before) and `Daoris.Service.Http.Tests` 287 (286 before), all passing.
+
 ## 2026-10-18 — A hand-off that waited behind another push told its plugin of a result taken back meanwhile (FABRIC-CLOSE1h8)
 
 - **Symptom:** handing a landed branch on (`HANDOFF`, Ask Daoris's card, `trees hand`), or the look's hand-on of a push held back, waiting
