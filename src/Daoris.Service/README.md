@@ -462,6 +462,7 @@ words only, and re-read at the next search once the checkout moved (a watch of i
 FABRIC-EVENT6) or its reading is five minutes old, a minute where nothing could be watched. Its instructions say so before the first search.
 A folder of documents or records is walked without entering what git ignores, the watch is opened around it (KNOWWALK1), and
 the host itself watches no file in the folder it starts in.
+A running session moves onto the build a merge made, its handshake replayed, within a minute (KNOWHOLD1).
 A session a driver started keeps the environment it was handed and runs the machine's host first. With no
 build the launcher answers the protocol itself: the handshake says why and lists no tool, and the session
 works as before. Measured on the first build: the first search of a process, which reads the checkout, 1.2

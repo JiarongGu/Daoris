@@ -5,6 +5,41 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The dev knowledge server ran the build it started on for nine days, a fixed host's watch with it (KNOWHOLD1)
+
+- **Symptom:** twice (the full set of 2026-10-18 on bbc1a24, and again on 10-19) the deployment rehearsal's swap under
+  `local/gate-tree/` rolled back `busy`: `app` held for 636.8 s, then 590.4 s, with `app/cli/node_modules` held by
+  `16075bf6 (pid 36544)` (its swap journal's `heldBy`), while the dev knowledge server served this checkout's sessions.
+- **Which handle:** pid 36544 is `dotnet local/knowledge-server/builds/20261009T121055Z-cac379e1/daoris-knowledge.dll`,
+  started on 10-10 by `node tools/knowledge-server.mjs` for the parent's session and still running on 10-19: the process
+  KNOWWALK1 named. Its build predates KNOWWALK1's fix of 10-17, so its host still watches the checkout's root with every
+  folder below it, `local/gate-tree/` too, and walks each folder renamed there (KNOWWALK1's reading of the framework's
+  IL). Asked on 10-19 it held the checkout's root and nothing else, and six renames of a 300-package tree under an ignored
+  folder of a worktree caught it in none: the walk comes with the rehearsal's load and goes, as KNOWWALK1 saw.
+- **Root cause:** not the source's reading or watching. Main's connector opens nothing under `local/`, `node_modules/`
+  or `_fixtures/`: its host watches no file, the freshness watch takes the root alone and hears only its records, and
+  the walks skip what git ignores. Git's own answer opens none of them either: `ls-files --ignored --directory` visited
+  398 folders with and without a 600-folder tree under `local/`. The cause is that a session's server ran the build it
+  started on until the session ended: `serve` handed the build the session's own streams, and nothing moved it, so a
+  merge's build reached new sessions only, and the parent's session kept a fixed host's watch for nine days.
+- **Fix:** `relayServer` in `tools/knowledge-server.mjs` stands between the session and its server, a message a line.
+  When `current.json` names a build other than the one serving, it moves the session at a request that arrives with
+  nothing owed either way, or at its own look each minute while the session is idle. The new server is handed the
+  session's own `initialize` under an id of the relay's, then its `initialized`; once it answers it serves, the session is
+  sent `notifications/tools/list_changed` (the server advertises it), and the old server's input is ended, as a session's
+  end ends it, with a kill after ten seconds. A build that does not answer in 30 s is left, and not tried again. A driven
+  session's machine host is not followed: it is the install's. Nothing is stopped to pass a gate. The server running now
+  runs the old relay too, so it moves only once its session reconnects it (`/mcp`), which is the owner's call.
+- **Verification:** `knowledge-server.test.ts`, 13 tests to 18: the five relay tests failed first on a stub (the session
+  was never answered), then passed: a move at the next request with the handshake replayed and nothing answered twice, a
+  request still owed holding the move, an idle session moved by the look with the old server's input ended, a build that
+  will not answer left and not retried, and a server that cannot start answering in the protocol. A smoke with the real
+  connector in a worktree: two builds, `current.json` repointed mid-session, the search after it answered by the second
+  build's process, the first ended, the relay's exit 0. `CheckoutFreshnessTests.A_checkouts_ignored_folders_at_its_top_are_neither_read_nor_watched`
+  guards the read and the watch of `local/`, `node_modules/` and `_fixtures/`, files held unshared and the install's `app/`
+  moved aside and back: green on arrival, red with the root watched whole as the old host watched it. Service tests
+  2325 to 2326. The deployment rehearsal with the dev server running is the merge's, once pid 36544 has been replaced.
+
 ## 2026-10-19 — A session that went on after its landing had its later done's opinion closed before the loop asked it (FABRIC-CLOSE1h18)
 
 - **Symptom:** under *Accept automatically* and an opinion rule, a session that landed, went on with the person's words (D137) and
@@ -737,6 +772,8 @@ repository.
   fix, and opens neither after it. `CheckoutFreshnessTests.A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard`:
   writes in `.claude/worktrees/` marked stale before the fix. Service tests went from 2197 to 2203. A running connector keeps
   the old host until its session restarts it on a build made after this fix.
+- **Followed, 2026-10-19 (KNOWHOLD1):** the same pid 36544, still on the build of 10-09, held `app/cli/node_modules` in two
+  later rehearsals; a running session now follows the current build. See that entry.
 
 ## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
 

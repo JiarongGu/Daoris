@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { createInterface } from 'node:readline';
+import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, type Fixture } from './_fixture.ts';
 import { homeEntry } from '../src/platform/home.ts';
@@ -32,6 +35,15 @@ const tool = await import('../../../tools/knowledge-server.mjs') as {
   sourceDigest: (checkout: string) => string;
   buildPlan: (checkout: string, digest: string) => { needed: boolean; why: string };
   pruneBuilds: (builds: string, keep: number, remove?: (path: string) => void) => { removed: string[]; kept: { name: string; why: string }[] };
+  relayServer: (options: {
+    input: NodeJS.ReadableStream;
+    output: NodeJS.WritableStream;
+    first: string;
+    start: (entry: string) => FakeServer;
+    current?: () => string | null;
+    unstarted?: (error: Error) => string;
+    say?: (line: string) => void;
+  }) => { done: Promise<number>; check: () => Promise<void> };
 };
 
 const toolPath = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'knowledge-server.mjs');
@@ -250,6 +262,200 @@ test('started with no build anywhere, it speaks the protocol on its standard str
   assert.match(err, /not built/, 'and the same sentence on standard error, for the person reading the server log');
   assert.equal(existsSync(join(fx.root, tool.SERVER)), false, 'nothing was built at the start');
   fx.cleanup();
+});
+
+// ---------------------------------------------------------------------------------------------------
+// A running session follows the current build (KNOWHOLD1)
+//
+// A fix to the host reaches a running session only if the relay moves it onto the build a merge made: a server left on its
+// first build kept a fixed host's whole-checkout watch, and held a rehearsal's swap (the fix log's KNOWHOLD1 entry).
+
+/** A server as the relay sees one: its streams, its end, and the requests it was handed. */
+type FakeServer = EventEmitter & {
+  stdin: PassThrough;
+  stdout: PassThrough;
+  kill: () => boolean;
+  heard: Message[];
+  release: () => void;
+};
+
+/**
+ * A server of one build: it answers each request with its build's name, and `slow` only once released. One that `exits`
+ * ends at the first line it hears without a word; one that is `silent` hears and never answers.
+ */
+function fakeServer(build: string, { mode = 'answers' }: { mode?: 'answers' | 'exits' | 'silent' } = {}): FakeServer {
+  const server = Object.assign(new EventEmitter(), {
+    stdin: new PassThrough(),
+    stdout: new PassThrough(),
+    heard: [] as Message[],
+    release: () => {},
+    kill: () => {
+      server.emit('exit', null);
+      return true;
+    },
+  }) as FakeServer;
+  const held: Message[] = [];
+  const answer = (message: Message) => {
+    const result = message.method === 'initialize'
+      ? { protocolVersion: '2025-06-18', capabilities: { tools: { listChanged: true } }, serverInfo: { name: 'daoris-knowledge', version: build } }
+      : { content: [{ type: 'text', text: `answered by ${build}` }] };
+    server.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', id: message.id, result })}\n`);
+  };
+  server.release = () => held.splice(0).forEach(answer);
+  const lines = createInterface({ input: server.stdin, crlfDelay: Infinity });
+  lines.on('line', (line) => {
+    const message = JSON.parse(line) as Message;
+    server.heard.push(message);
+    if (mode === 'exits') setImmediate(() => server.emit('exit', 1));
+    if (mode !== 'answers' || message.id === undefined) return;
+    if (message.params?.['name'] === 'slow') held.push(message);
+    else answer(message);
+  });
+  lines.on('close', () => setImmediate(() => server.emit('exit', 0)));
+  return server;
+}
+
+/** A session's side of the relay: what it sends, and each line it was answered with. */
+function session(options: { current: () => string | null; start?: (entry: string) => FakeServer; first?: string }) {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  const lines: Reply[] = [];
+  createInterface({ input: output, crlfDelay: Infinity }).on('line', (line) => lines.push(JSON.parse(line) as Reply));
+  const servers = new Map<string, FakeServer>();
+  const started: string[] = [];
+  const start = options.start ?? ((entry: string) => {
+    const server = fakeServer(entry);
+    servers.set(entry, server);
+    return server;
+  });
+  const relay = tool.relayServer({
+    input,
+    output,
+    first: options.first ?? 'b1',
+    start: (entry) => {
+      started.push(entry);
+      return start(entry);
+    },
+    current: options.current,
+    unstarted: (error) => `the knowledge server could not start (${error.message})`,
+  });
+  const send = (message: Record<string, unknown>) => input.write(`${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`);
+  const call = (id: number, name = 'knowledge_search') => send({ id, method: 'tools/call', params: { name } });
+  const answered = async (id: number) => {
+    for (let waited = 0; waited < 200; waited++) {
+      const reply = lines.find((line) => line.id === id);
+      if (reply) return reply;
+      await new Promise((done) => setTimeout(done, 5));
+    }
+    assert.fail(`no answer to ${id}; the session read ${JSON.stringify(lines)}`);
+  };
+  const text = (reply: Reply) => ((reply.result?.['content'] as { text: string }[] | undefined)?.[0]?.text ?? '');
+  const hello = async () => {
+    send({ id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '0' } } });
+    send({ method: 'notifications/initialized' });
+    await answered(1);
+  };
+  return { input, lines, servers, started, relay, send, call, answered, text, hello };
+}
+
+test('a session moves onto the build made after its server started, at its next request, and never sees the handshake again', async () => {
+  let current = 'b1';
+  const s = session({ current: () => current });
+  await s.hello();
+  s.call(2);
+  assert.equal(s.text(await s.answered(2)), 'answered by b1');
+
+  current = 'b2';
+  s.call(3);
+  assert.equal(s.text(await s.answered(3)), 'answered by b2', 'the request after a build was made is answered by that build');
+
+  const b2 = s.servers.get('b2')!;
+  assert.deepEqual(b2.heard.map((message) => message.method), ['initialize', 'notifications/initialized', 'tools/call'],
+    'the new server was handed the session\'s own handshake before its request');
+  assert.notEqual(b2.heard[0]?.id, 1, 'under an id of the relay\'s own');
+  assert.deepEqual(b2.heard[0]?.params, s.servers.get('b1')!.heard[0]?.params);
+  assert.deepEqual(s.lines.filter((line) => line.id !== undefined).map((line) => line.id), [1, 2, 3],
+    'one answer a request, and none for the replayed handshake');
+  assert.ok(s.lines.some((line) => (line as unknown as Message).method === 'notifications/tools/list_changed'),
+    'the session is told its tools may have changed, as the server said it would');
+  s.input.end();
+  assert.equal(await s.relay.done, 0);
+  assert.deepEqual(s.started, ['b1', 'b2']);
+});
+
+test('a request still unanswered holds the move until its answer, so no answer is lost with the old server', async () => {
+  let current = 'b1';
+  const s = session({ current: () => current });
+  await s.hello();
+  s.call(2, 'slow');
+  const b1 = s.servers.get('b1')!;
+  for (let waited = 0; waited < 200 && !b1.heard.some((message) => message.id === 2); waited++) {
+    await new Promise((done) => setTimeout(done, 5));
+  }
+  current = 'b2';
+  s.call(3);
+  assert.equal(s.text(await s.answered(3)), 'answered by b1', 'the old server still owed an answer, so it kept the session');
+  assert.deepEqual(s.started, ['b1']);
+
+  b1.release();
+  assert.equal(s.text(await s.answered(2)), 'answered by b1');
+  s.call(4);
+  assert.equal(s.text(await s.answered(4)), 'answered by b2');
+  s.input.end();
+  await s.relay.done;
+});
+
+test('an idle session moves at the relay\'s look, and the server it leaves is ended', async () => {
+  let current = 'b1';
+  const s = session({ current: () => current });
+  await s.hello();
+  current = 'b2';
+  await s.relay.check();
+  assert.deepEqual(s.started, ['b1', 'b2'], 'moved with no request from the session');
+  const b1 = s.servers.get('b1')!;
+  assert.equal(b1.stdin.writableEnded, true, 'the old server\'s input was ended, so it exits as a session\'s end ends it');
+
+  s.call(2);
+  assert.equal(s.text(await s.answered(2)), 'answered by b2');
+  s.input.end();
+  await s.relay.done;
+});
+
+test('a build that will not answer the handshake is not moved to, and not tried again', async () => {
+  let current = 'b1';
+  const s = session({
+    current: () => current,
+    // The broken build ends without a word, as a host that cannot start does.
+    start: (entry) => fakeServer(entry, { mode: entry === 'broken' ? 'exits' : 'answers' }),
+  });
+  await s.hello();
+  current = 'broken';
+  await s.relay.check();
+  s.call(2);
+  assert.equal(s.text(await s.answered(2)), 'answered by b1', 'the session kept the server it had');
+  s.call(3);
+  await s.answered(3);
+  assert.equal(s.started.filter((entry) => entry === 'broken').length, 1, 'a build that failed once is not started again');
+  s.input.end();
+  await s.relay.done;
+});
+
+test('a server that cannot start answers the session in the protocol, saying why', async () => {
+  const s = session({
+    current: () => null,
+    start: () => {
+      const server = fakeServer('never', { mode: 'silent' });
+      setImmediate(() => server.emit('error', Object.assign(new Error('spawn dotnet ENOENT'), { code: 'ENOENT' })));
+      return server;
+    },
+  });
+  s.send({ id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18' } });
+  const hello = await s.answered(1);
+  assert.match(String(hello.result?.['instructions']), /could not start \(spawn dotnet ENOENT\)/);
+  s.send({ id: 2, method: 'tools/list' });
+  assert.deepEqual((await s.answered(2)).result, { tools: [] });
+  s.input.end();
+  assert.equal(await s.relay.done, 0);
 });
 
 // ---------------------------------------------------------------------------------------------------
