@@ -714,7 +714,7 @@ if (mode == ServiceMode.Local)
                 "A reopen names the submission it reopens: `submission` with its `machine` and `sequence`, as the quest answers it."));
         }
 
-        var outcome = await s.Exchange.ReopenAsync(id, new QuestOperationRef(machine, sequence!.Value), body.Note, DateTimeOffset.UtcNow, ct);
+        var outcome = await s.Exchange.ReopenAsync(id, new QuestOperationRef(machine, sequence), body.Note, DateTimeOffset.UtcNow, ct);
         return await PersonMoveAnswerAsync(s, http, outcome, ct);
     });
 
