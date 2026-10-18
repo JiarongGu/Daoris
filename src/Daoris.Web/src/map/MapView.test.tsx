@@ -416,6 +416,25 @@ describe('the workspace map', () => {
     expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
   });
 
+  // FABRIC-CLOSE1d2: a line's quests read as the quest's page does; a quest no closure holds reads as before.
+  it('says submitted and source reopened on a line\'s quests, and taken for a quest no closure holds', () => {
+    const base = { from: 'game', to: 'engine', body: '', status: 'Taken', filed: '', updated: '' };
+    const quests = [
+      { ...base, id: 'm1', title: 'Submitted one', closure: 'gph-1', submission: { machine: 'desk', sequence: 1, at: '' } },
+      { ...base, id: 'm2', title: 'Reopened one', hold: 'source-reopened' },
+      { ...base, id: 'm3', title: 'Plain one' },
+    ] as never[];
+    const registry = ['engine', 'game'].map((repository) => ({
+      repository, adopted: true, registered: true, summary: '', owns: [], accepts: [], packs: [], entries: 1,
+    })) as never[];
+    render(<MapDetail topology={buildTopology(registry, quests, [], [])} selected={{ kind: 'quests', from: 'game', to: 'engine' }} />);
+
+    const rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent(/^submittedSubmitted one/);
+    expect(rows[1]).toHaveTextContent(/^takensource reopenedReopened one/);
+    expect(rows[2]).toHaveTextContent(/^takenPlain one/);
+  });
+
   // ——— One level in: a repository's own code map (MAP3a).
 
   const openCode = async (repository: 'engine' | 'game') => {

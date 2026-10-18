@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest } from '../data/api';
 import { Button } from '../design/ui';
 import { cn } from '../lib/cn';
+import { shownStatus } from '../quests/records';
 import { questName } from '../work/identity';
 import type { ChainStep } from './chain';
 
@@ -54,7 +55,14 @@ function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => 
   }
 
   const { quest, current } = step;
-  const status = <span className={cn('shrink-0 text-meta', WORD[quest.status])}>{t(`status.${quest.status}`)}</span>;
+  // The words the quest's page reads (FABRIC-CLOSE1d2), in the same plain ink: submitted is a taken quest's, and a step held for
+  // its source reopened says so after its status.
+  const status = (
+    <>
+      <span className={cn('shrink-0 text-meta', WORD[quest.status])}>{t(`status.${shownStatus(quest)}`)}</span>
+      {quest.hold === 'source-reopened' && <span className="shrink-0 text-meta text-ink-open">{t('quests.card.reopened')}</span>}
+    </>
+  );
   if (current) {
     return <span className="inline-flex items-baseline gap-1.5"><span className="font-semibold text-ink">{t('chain.current')}</span>{status}</span>;
   }

@@ -81,4 +81,23 @@ describe('who a session worked with', () => {
       await i18n.changeLanguage('en');
     }
   });
+
+  // FABRIC-CLOSE1d2: what it asked of others reads as the quest's page does.
+  it('says submitted for a submitted quest it asked, source reopened beside a step held so, and taken for any other', () => {
+    const submission = { machine: 'desk', sequence: 1, at: '2026-09-29T02:00:00Z' };
+    const submitted = quest({ id: 'q1', status: 'Taken', closure: 'gph-1', submission });
+    const reopened = quest({ id: 'q2', status: 'Taken', hold: 'source-reopened' });
+    const plain = quest({ id: 'q3', status: 'Taken' });
+    render(
+      <SessionRelations
+        relations={{ askedBy: null, resumedAfter: null, asked: [submitted, reopened, plain].map((q) => ({ quest: q, question: false })) }}
+      />,
+    );
+
+    const rows = screen.getAllByRole('definition');
+    expect(rows[0]).toHaveTextContent(/^submitted/);
+    expect(rows[1]).toHaveTextContent(/^taken.*source reopened/);
+    expect(rows[2]).toHaveTextContent(/^taken/);
+    expect(rows[2]).not.toHaveTextContent(/submitted|source reopened/);
+  });
 });

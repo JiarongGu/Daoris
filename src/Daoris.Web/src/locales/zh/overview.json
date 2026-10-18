@@ -16,6 +16,7 @@
   "overview.outstanding.ask": "提需求",
   "overview.outstanding.filed": "{{ago}} 发起",
   "overview.outstanding.taken": "{{ago}} 接下",
+  "overview.outstanding.submitted": "{{ago}} 已交付",
   "overview.outstanding.more": "……另有 {{count}} 条，见“委托”。",
   "overview.outstanding.sitting": "搁置 — {{reason}}",
   "overview.outstanding.sittingTip": "本机驱动上次查看时为何没有启动它——以它自己的话说。",

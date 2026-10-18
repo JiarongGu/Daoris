@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import type { Quest } from '../data/api';
+import { QuestStatus } from '../quests/QuestStatus';
 import { type Consideration, sittingBecause, sittingSentence } from '../data/signals';
-import { Inline, Pill, QUEST_TONE, SESSION_TONE, type ShownState } from '../design/ui';
+import { Inline, Pill, SESSION_TONE, type ShownState } from '../design/ui';
 import type { WorkPlanSession } from '../work/pausing';
 import { whyItSits, type WorkItem } from './workTree';
 
@@ -12,6 +14,8 @@ type Shared = {
   ask: string;
   considered: readonly Consideration[];
   questTitles: Record<string, string>;
+  /** The quests the page holds, by id: what says a quest is submitted, or held for its source reopened (FABRIC-CLOSE1d2). */
+  quests?: Readonly<Record<string, Quest>>;
   onOpenQuest: (id: string) => void;
   onAttend?: (session: string) => void;
 };
@@ -47,7 +51,8 @@ export function AskWork({ items, ...shared }: Shared & { items: readonly WorkIte
 function WorkRow({ item, ...shared }: Shared & { item: WorkItem }) {
   const { t } = useTranslation();
   const { quest, sessions, questions } = item;
-  const { ask, considered, questTitles, onOpenQuest, onAttend } = shared;
+  const { ask, considered, questTitles, quests, onOpenQuest, onAttend } = shared;
+  const held = quests?.[quest.quest];
   const why = whyItSits(item, sittingBecause(considered, quest.quest), ask);
   const sentence = why === null ? null : 'line' in why ? t(why.line.key, why.line.values) : sittingSentence(why.sitting);
   const asked = t('asks.work.asked', { count: questions.length });
@@ -55,7 +60,8 @@ function WorkRow({ item, ...shared }: Shared & { item: WorkItem }) {
   return (
     <li className="min-w-0">
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-        <Pill tone={QUEST_TONE[quest.status]}>{t(`status.${quest.status}`)}</Pill>
+        {/* What the page holds of the quest says its submission and hold; the plan's own word where it holds none. */}
+        <QuestStatus quest={{ status: quest.status, submission: held?.submission, hold: held?.hold }} />
         <span className="shrink-0 font-mono text-meta text-ink-faint">#{quest.quest.slice(0, 6)}</span>
         {/* A door only onto a quest the page holds: a question to a repository in another workspace is named, not opened. */}
         {questTitles[quest.quest] ? (

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { Ask } from '../data/api';
+import type { Ask, Quest } from '../data/api';
 import i18n from '../locales/i18n';
 import type { Consideration } from '../data/signals';
 import type { WorkDoor } from '../work/pausing';
@@ -23,11 +23,12 @@ const door = (over: Partial<WorkDoor> = {}): WorkDoor => ({
 
 const ASK: Ask = { ...PUBLISHED, id: 'a1b2c3', quests: ['9a8b7c', '5e4f3d', '2d3e4f', '3c2b1a'] };
 
-const page = ({ work = door(), considered = LISTED_CONSIDERED, attend = true, titles = { '9a8b7c': 'Cap chunk hydration per frame' } }: {
+const page = ({ work = door(), considered = LISTED_CONSIDERED, attend = true, titles = { '9a8b7c': 'Cap chunk hydration per frame' }, quests }: {
   work?: WorkDoor | undefined; considered?: Consideration[]; attend?: boolean; titles?: Record<string, string>;
+  quests?: Record<string, Quest>;
 } = {}) => {
   const props = {
-    ask: ASK, receivers: ['engine'], questTitles: titles, onPublish: vi.fn(), onClose: vi.fn(), onDelete: vi.fn(),
+    ask: ASK, receivers: ['engine'], questTitles: titles, quests, onPublish: vi.fn(), onClose: vi.fn(), onDelete: vi.fn(),
     onOpenQuest: vi.fn(), onAttend: attend ? vi.fn() : undefined, work, considered,
   };
   render(<AskPage {...props} />);
@@ -110,6 +111,23 @@ describe("an ask's page lists its work", () => {
     expect(section()).not.toHaveTextContent('what a pause or an abandon reaches');
     expect(within(section()).getByRole('button', { name: /Cap chunk hydration per frame/ })).toBeInTheDocument();
     expect(within(section()).getByText('#5e4f3d')).toBeInTheDocument();
+  });
+
+  // FABRIC-CLOSE1d2: a quest of the work reads as the quest's page does, from the quests the page holds.
+  it('says submitted and source reopened for the work\'s quests the page holds so, and taken for the rest', () => {
+    const held = (id: string, over: Partial<Quest>): Quest => ({
+      id, from: 'ask #a1b2c3', to: 'engine', title: id, body: '', status: 'Taken', filed: '2026-10-01T00:00:00Z', updated: '2026-10-01T00:00:00Z', ...over,
+    });
+    page({
+      quests: {
+        '9a8b7c': held('9a8b7c', { closure: 'gph-1', submission: { machine: 'desk', sequence: 1, at: '2026-10-01T01:00:00Z' } }),
+        '5e4f3d': held('5e4f3d', { hold: 'source-reopened' }),
+      },
+    });
+    expect(entry('9a8b7c').querySelector('p')!.textContent).toMatch(/^submitted#9a8b7c/);
+    expect(entry('5e4f3d').querySelector('p')!.textContent).toMatch(/^taken.*source reopened#5e4f3d/);
+    // Not among the quests the page holds: as the plan says it.
+    expect(entry('3c2b1a').querySelector('p')!.textContent).toMatch(/^taken#3c2b1a/);
   });
 
   it('says its work in 中文', async () => {

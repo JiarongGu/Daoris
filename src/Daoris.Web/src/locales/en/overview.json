@@ -16,6 +16,7 @@
   "overview.outstanding.ask": "Ask for something",
   "overview.outstanding.filed": "filed {{ago}}",
   "overview.outstanding.taken": "taken {{ago}}",
+  "overview.outstanding.submitted": "submitted {{ago}}",
   "overview.outstanding.more": "…and {{count}} more in Quests.",
   "overview.outstanding.sitting": "sitting — {{reason}}",
   "overview.outstanding.sittingTip": "why this machine's driver is not starting it, in its own words, as of its last look.",

@@ -94,7 +94,7 @@ export function questStanding(quest: Quest | undefined, read: boolean): ChoiceSt
 /** What a quest's pill says (FABRIC-CLOSE1d, §E5): its status, or `Submitted` for a taken quest with a current submission. */
 export type QuestShown = Quest['status'] | 'Submitted';
 
-export function shownStatus(quest: Quest): QuestShown {
+export function shownStatus(quest: Pick<Quest, 'status' | 'submission'>): QuestShown {
   // A submission is not a status (§E5): the quest stays taken, and only what it reads says where its work stands.
   return quest.status === 'Taken' && quest.submission ? 'Submitted' : quest.status;
 }
