@@ -76,7 +76,7 @@ public sealed class SessionRequestTickTests : IDisposable
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Requests, "s1.json")));
 
         // 3. The next look holds the quest, as a person's stop holds it, and starts nothing.
-        var held = await Driver(service, config).TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        var held = await Driver(service, config).TickAsync().WaitAsync(Poll.Patience);
         Assert.Equal(StartVerdict.Stopped, Assert.Single(held.Considerations, c => c.Quest.Id == "q1").Verdict);
         Assert.Equal(1, service.SessionCount);
     }
@@ -105,7 +105,7 @@ public sealed class SessionRequestTickTests : IDisposable
 
     private static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");

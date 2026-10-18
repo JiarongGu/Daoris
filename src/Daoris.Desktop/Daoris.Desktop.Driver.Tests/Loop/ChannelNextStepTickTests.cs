@@ -91,14 +91,14 @@ public sealed class ChannelNextStepTickTests : IDisposable
 
         var look = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
-        await Poll.Until(() => Prompts().Length == 2, () => $"no second prompt was sent; look: {string.Join(" | ", look.Events)}", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Prompts().Length == 2, () => $"no second prompt was sent; look: {string.Join(" | ", look.Events)}", Poll.Patience);
         Assert.Contains(look.Events, line => line.Contains("message `m1`", StringComparison.Ordinal) && line.Contains("at its next step", StringComparison.Ordinal));
         var claim = Prompts()[1]["blocks"]!.AsArray().Select(block => block!.GetValue<string>()).Single();
         Assert.StartsWith("Another session says, on the ask's channel (", claim, StringComparison.Ordinal);
         Assert.Contains(Words, claim, StringComparison.Ordinal);
         Assert.Contains("that agent's claim, not the person's words", claim, StringComparison.Ordinal);
 
-        await Poll.Until(() => service.Mark == at, () => $"the mark never moved: {service.Mark}", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => service.Mark == at, () => $"the mark never moved: {service.Mark}", Poll.Patience);
         await Poll.Until(() => service.State("s1") == "completed", () => $"the run never ended: {service.Record("s1")}", TimeSpan.FromSeconds(60));
 
         var turns = Events("s1").Where(e => e is { Kind: SessionEventKind.User } && e.Text?.Contains(Words, StringComparison.Ordinal) == true).ToList();

@@ -48,7 +48,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
                 });
             }
 
-            SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, TimeSpan.FromSeconds(30));
+            SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, Poll.Patience);
         };
 
         await lander.LandAsync(chosen);
@@ -90,7 +90,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
                 press = Task.Run(() => new SessionTrees(_home, Plugins()).LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap")));
             }
 
-            SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, TimeSpan.FromSeconds(30));
+            SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, Poll.Patience);
         };
 
         await lander.LandAsync(chosen);
@@ -125,7 +125,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
                 press = Task.Run(() => new SessionTrees(_home, Plugins()).LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap")));
             }
 
-            SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, TimeSpan.FromSeconds(30));
+            SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0 || press.IsCompleted, Poll.Patience);
         };
 
         await lander.LandAsync(chosen);
@@ -174,7 +174,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
                 hand = Task.Run(() => new SessionTrees(_home, Plugins()).HandAsync(root, recorded));
             }
 
-            SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, branch) > 0 || hand.IsCompleted, TimeSpan.FromSeconds(30));
+            SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, branch) > 0 || hand.IsCompleted, Poll.Patience);
         };
 
         await lander.LandAsync(chosen);
@@ -252,7 +252,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
                 press = Task.Run(() => PressAsync(tree, change == "conversation" ? null : "q1"));
             }
 
-            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0, TimeSpan.FromSeconds(30)), "the press waits for its tree");
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0, Poll.Patience), "the press waits for its tree");
             var quest = _world.Quests["q1"];
             _world.Quests["q1"] = change switch
             {
@@ -305,7 +305,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
             }
 
             Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || press.IsCompleted,
-                TimeSpan.FromSeconds(60)), "the push waits for its branch");
+                Poll.Patience), "the push waits for its branch");
             var quest = _world.Quests["q1"];
             _world.Quests["q1"] = change switch
             {
@@ -365,7 +365,7 @@ public sealed class AutoLandingPressTests : AutoLandingFixture
             }
 
             Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || landing.IsCompleted,
-                TimeSpan.FromSeconds(60)), "the first part's push waits for its branch");
+                Poll.Patience), "the first part's push waits for its branch");
             _world.Quests["q1"] = _world.Quests["q1"] with { Submission = null };
         }
 

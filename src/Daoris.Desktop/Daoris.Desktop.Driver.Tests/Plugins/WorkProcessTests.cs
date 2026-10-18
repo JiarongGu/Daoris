@@ -227,7 +227,7 @@ public sealed class WorkProcessTests : IDisposable
         Assert.False(stuck.IsCompleted);
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        await channel.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(20));
+        await channel.DisposeAsync().AsTask().WaitAsync(Poll.Patience);
 
         Assert.True(clock.Elapsed < HookProcess.Grace + TimeSpan.FromSeconds(5), $"the disposal took {clock.Elapsed.TotalSeconds:0.#}s");
         for (var wait = 0; wait < 50 && Running(pid); wait++) await Task.Delay(100);

@@ -15,7 +15,7 @@ public sealed class HarnessRunTests
 {
     private static readonly HarnessToolchain Node = new(Binary: ["node"], VersionArguments: ["--version"]);
 
-    private static Task Until(Func<bool> condition) => Poll.Until(condition, within: TimeSpan.FromSeconds(15));
+    private static Task Until(Func<bool> condition) => Poll.Until(condition, within: Poll.Patience);
 
     [Fact]
     public async Task A_prompt_with_no_newline_is_delivered_and_the_answer_sent_reaches_the_process()

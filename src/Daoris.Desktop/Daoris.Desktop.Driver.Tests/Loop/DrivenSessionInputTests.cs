@@ -198,7 +198,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Empty(processes.Running);
         var heartbeat = Path.Combine(_repository, "heartbeat.txt");
@@ -220,7 +220,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Driver("claude_code", Path.Combine(_home, "heard.txt"), service, processes);
 
-        var report = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        var report = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Contains(report.Events, line => line.StartsWith("held", StringComparison.Ordinal) && line.Contains("claude_code"));
         Assert.Empty(processes.Running);

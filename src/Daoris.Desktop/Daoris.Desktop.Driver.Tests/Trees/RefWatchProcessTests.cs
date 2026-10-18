@@ -44,7 +44,7 @@ public sealed class RefWatchProcessTests(ITestOutputHelper output) : LandedFixtu
             return written;
         });
         watch.Start();
-        await Poll.Until(() => watch.Watched.Count == 1, () => "the repository was never watched", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => watch.Watched.Count == 1, () => "the repository was never watched", Poll.Patience);
         await Task.Delay(ChangeWatch.Cap);
         var before = Judged().Length;
 
@@ -91,7 +91,7 @@ public sealed class RefWatchProcessTests(ITestOutputHelper output) : LandedFixtu
 
         var watch = new RefWatch(Home, _ => Task.FromResult<IReadOnlyList<RefRepository>>(watched), (_, _) => Task.FromResult(0));
         watch.Start();
-        await Poll.Until(() => watch.Watched.Count == Repositories, () => $"{watch.Watched.Count} watched", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => watch.Watched.Count == Repositories, () => $"{watch.Watched.Count} watched", Poll.Patience);
         var open = Measure(self);
 
         await watch.DisposeAsync();
@@ -112,7 +112,7 @@ public sealed class RefWatchProcessTests(ITestOutputHelper output) : LandedFixtu
         var before = Judged().Length;
         await write();
         var exited = Stopwatch.GetTimestamp();
-        await Poll.Until(() => Judged().Length > before, () => $"{what} was never judged", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Judged().Length > before, () => $"{what} was never judged", Poll.Patience);
         var (began, ended, written) = Judged()[before];
         await Task.Delay(ChangeWatch.Cap + ChangeWatch.Quiet);
 

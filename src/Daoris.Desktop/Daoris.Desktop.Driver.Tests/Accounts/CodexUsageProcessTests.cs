@@ -138,7 +138,7 @@ public sealed class CodexUsageProcessTests : IDisposable
             CodexUsage.Prepare(["node", Script, "app-server"], Toolchain, home), TimeSpan.FromSeconds(2), CancellationToken.None);
 
         Assert.Null(readings);
-        Assert.InRange(timer.Elapsed, TimeSpan.Zero, TimeSpan.FromSeconds(20));
+        Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
         Assert.Equal(["hangs app-server"], AskedLines());
     }
 
