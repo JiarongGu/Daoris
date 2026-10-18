@@ -252,7 +252,7 @@ public sealed class CodexUsageTests
         var readings = await CodexUsage.AskWithinAsync(server.Incoming, server.Outgoing, TimeSpan.FromMilliseconds(200), CancellationToken.None);
 
         Assert.Null(readings);
-        Assert.InRange(timer.Elapsed, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+        Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
     }
 
     [Fact]

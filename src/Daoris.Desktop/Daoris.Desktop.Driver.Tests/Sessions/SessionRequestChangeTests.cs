@@ -49,7 +49,7 @@ public sealed class SessionRequestChangeTests : IDisposable
         _source.On(Requests.Folder)!.Raise(Path.GetFileName(Requests.PathOf(request)), ChangeKind.Renamed);
         // The answer is written beside the request once the words are held, so it is what is waited for, read once.
         WordsHeld? answer = null;
-        await Poll.Until(() => (answer = Requests.AnswerOf(request)) is not null, () => "the words were never answered", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => (answer = Requests.AnswerOf(request)) is not null, () => "the words were never answered", Poll.Patience);
 
         Assert.True(answer!.Sent);
         Assert.Equal("also the changelog; 中文 too.", Assert.Single(inbox.State.Queued).Text);
@@ -84,7 +84,7 @@ public sealed class SessionRequestChangeTests : IDisposable
                     .Select(line => line.GetProperty("data")),
             ]
             : [];
-        await Poll.Until(() => Fired().Length > 0, () => "the take was never written as the chain's", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Fired().Length > 0, () => "the take was never written as the chain's", Poll.Patience);
 
         var fired = Assert.Single(Fired());
         Assert.Equal(ChainRanks.Read, fired.GetProperty("link").GetInt32());
@@ -111,7 +111,7 @@ public sealed class SessionRequestChangeTests : IDisposable
         var request = Say("s1");
         Requests.Write(request);
         handle!.Raise(Path.GetFileName(Requests.PathOf(request)), ChangeKind.Renamed);
-        await Poll.Until(() => Requests.AnswerOf(request) is not null, () => "the words were never answered", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Requests.AnswerOf(request) is not null, () => "the words were never answered", Poll.Patience);
         Assert.Single(inbox.State.Queued);
     }
 
@@ -126,7 +126,7 @@ public sealed class SessionRequestChangeTests : IDisposable
 
         watch.Resumed();
 
-        await Poll.Until(() => first!.Disposed && _source.On(Requests.Folder) is { } now && now != first, () => "the watcher was never reopened", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => first!.Disposed && _source.On(Requests.Folder) is { } now && now != first, () => "the watcher was never reopened", Poll.Patience);
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public sealed class SessionRequestChangeTests : IDisposable
         Requests.Write(request);
 
         var asked = Stopwatch.StartNew();
-        await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the listing never took the words", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the listing never took the words", Poll.Patience);
 
         Assert.Equal(TimeSpan.FromSeconds(3), SessionRequestWatch.Listing);
         Assert.True(asked.Elapsed < TimeSpan.FromSeconds(10), $"{asked.Elapsed} waited");
@@ -182,8 +182,8 @@ public sealed class SessionRequestChangeTests : IDisposable
         var handle = _source.On(Requests.Folder)!;
         var name = Path.GetFileName(Requests.PathOf(request));
         handle.Raise(name, ChangeKind.Renamed);
-        await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the words were never taken", TimeSpan.FromSeconds(30));
-        await Poll.Until(() => watch.Changes!.Judgements == 1 && !watch.Changes.Judging, within: TimeSpan.FromSeconds(30));
+        await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the words were never taken", Poll.Patience);
+        await Poll.Until(() => watch.Changes!.Judgements == 1 && !watch.Changes.Judging, within: Poll.Patience);
 
         handle.Raise(name + ".0a1b2c3d.taking", ChangeKind.Renamed);
         handle.Raise(name, ChangeKind.Deleted);

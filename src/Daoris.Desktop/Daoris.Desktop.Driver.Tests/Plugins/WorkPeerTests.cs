@@ -247,7 +247,7 @@ public sealed class WorkPeerTests
         var peer = new HookPeer(new StringReader(""), new Stuck(), "acme.deploy");
         var clock = System.Diagnostics.Stopwatch.StartNew();
 
-        await peer.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(15));
+        await peer.DisposeAsync().AsTask().WaitAsync(Poll.Patience);
 
         Assert.True(clock.Elapsed < HookProcess.Grace + TimeSpan.FromSeconds(3), $"the shutdown took {clock.Elapsed.TotalSeconds:0.#}s");
     }

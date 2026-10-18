@@ -46,7 +46,7 @@ public sealed class ProcessStartsTests
             }
 
             // A CreateProcess an antivirus hook holds, as long as the test says.
-            held.Wait(TimeSpan.FromSeconds(30));
+            held.Wait(Poll.Patience);
             Interlocked.Decrement(ref inside);
             return null;
         });
@@ -70,7 +70,7 @@ public sealed class ProcessStartsTests
         Assert.Equal(4, Volatile.Read(ref inside));
 
         held.Set();
-        await Task.WhenAll(calls).WaitAsync(TimeSpan.FromSeconds(30));
+        await Task.WhenAll(calls).WaitAsync(Poll.Patience);
 
         Assert.Equal(4, most);
         Assert.Equal(0, onCaller);
@@ -85,7 +85,7 @@ public sealed class ProcessStartsTests
         var starts = new ProcessStarts(1, _ =>
         {
             Interlocked.Increment(ref ran);
-            held.Wait(TimeSpan.FromSeconds(30));
+            held.Wait(Poll.Patience);
             return null;
         });
 
@@ -96,7 +96,7 @@ public sealed class ProcessStartsTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
         held.Set();
-        Assert.Null(await first.WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Null(await first.WaitAsync(Poll.Patience));
         Assert.Equal(1, ran);
         Assert.Equal(1, starts.Free);
     }

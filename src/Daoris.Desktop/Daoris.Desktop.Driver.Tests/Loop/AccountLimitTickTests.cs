@@ -98,7 +98,7 @@ public sealed class AccountLimitTickTests : IDisposable
         // The looks that follow start nothing, and the quest waits for an account, never parked.
         for (var look = 0; look < 2; look++)
         {
-            var held = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            var held = await driver.TickAsync().WaitAsync(Poll.Patience);
             said.AddRange(attention.Observe(held));
 
             Assert.Equal(2, service.SessionCount);

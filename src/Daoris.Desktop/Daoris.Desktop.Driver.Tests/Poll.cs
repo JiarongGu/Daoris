@@ -16,13 +16,13 @@ internal static class Poll
     /// <summary>Wait until <paramref name="condition"/> holds, or fail saying what was seen.</summary>
     /// <param name="seen">What the test saw, for the failure: the state the condition was waiting on.</param>
     /// <param name="within">
-    /// How long, 30 seconds unless the caller says. Counted in polls rather than read off the clock, as
+    /// How long, <see cref="Patience"/> unless the caller says. Counted in polls rather than read off the clock, as
     /// every copy this replaced counted: a clock deadline is stricter under a loaded run, where each
     /// look at the condition is slower, and a loaded run is where these tests already struggle.
     /// </param>
     public static async Task Until(Func<bool> condition, Func<string>? seen = null, TimeSpan? within = null)
     {
-        var limit = (within ?? TimeSpan.FromSeconds(30)).TotalMilliseconds;
+        var limit = (within ?? Patience).TotalMilliseconds;
         for (var waited = 0; !condition(); waited += 50)
         {
             if (waited > limit)
