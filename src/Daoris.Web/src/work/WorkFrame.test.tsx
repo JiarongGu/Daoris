@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import realUserEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -57,6 +57,16 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import { watchScreen } from '../test/onScreen';
 import { WorkFrame } from './WorkFrame';
 import { DiffPane } from './DiffPane';
+
+// WEBSPEED1: user-event's default waits one macrotask between keys and each key re-renders the whole frame, which
+// made this file the slowest in the web unit set. `delay: null` keeps every key event and drops only the waits; a
+// fresh instance per direct call keeps the pointer and keyboard state of one call from leaking into the next.
+// Only typing and key presses drop the wait: a click with no wait did not open the review tab before its test read it.
+const userEvent = {
+  ...realUserEvent,
+  type: (...args: Parameters<typeof realUserEvent.type>) => realUserEvent.setup({ delay: null }).type(...args),
+  keyboard: (...args: Parameters<typeof realUserEvent.keyboard>) => realUserEvent.setup({ delay: null }).keyboard(...args),
+};
 
 const DRIVER_STATE = { drivable: ['engine'], holds: [], trees: [], running: ['s1a2b3c4'] };
 
