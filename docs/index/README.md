@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (164)
+## Files over 40 KB (165)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -77,13 +77,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginCatalogTests.cs` | 40 | 795 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs` | 50 | 1012 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Quests/IntakeTests.cs` | 47 | 991 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Quests/PlannerTests.cs` | 67 | 1358 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Quests/PlannerTests.cs` | 77 | 1526 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs` | 69 | 1393 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/AbandonTests.cs` | 44 | 791 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/HistoryClearingTests.cs` | 49 | 886 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsCommandTests.cs` | 46 | 904 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs` | 56 | 1147 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/TraceTests.cs` | 41 | 691 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 40 | 828 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/AutoLandingTests.cs` | 62 | 1182 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 46 | 821 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 55 | 857 |
@@ -97,16 +98,16 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 119 | 2109 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 112 | 2072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 924 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 171 | 2789 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 171 | 2791 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 785 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 43 | 757 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 78 | 1359 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 67 | 1098 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 68 | 1104 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1155 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 77 | 1330 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 80 | 1375 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 718 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 130 | 2334 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 130 | 2335 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 59 | 1282 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 76 | 1470 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 757 |

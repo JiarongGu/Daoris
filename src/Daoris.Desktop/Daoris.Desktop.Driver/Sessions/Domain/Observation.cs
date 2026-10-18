@@ -71,9 +71,14 @@ public static class Observation
     /// a session holding the quest it took from one that found it taken.
     /// </param>
     /// <param name="lastWords">The agent's own last words, which a park quotes for the person.</param>
+    /// <param name="reopenedFrom">
+    /// The step before, where the person's reopen of the work this quest grew from holds it as the session ends (FABRIC-CLOSE1c2,
+    /// <see cref="QuestView.HeldByReopen"/>); null otherwise.
+    /// </param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
-        string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null) => questStatus switch
+        string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null,
+        string? reopenedFrom = null) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -96,6 +101,16 @@ public static class Observation
         "Open" when turnFailed is { Length: > 0 }
             => SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedTurnFailedOpen, "the agent's turn failed before it took its quest:")
                 .Then(" ", Noted.Said(turnFailed, NoteBy.Agent))),
+
+        // FABRIC-CLOSE1c2 (§E5): the person reopened the work its quest grew from, and the service told it so at its step and refused
+        // its done and its ready. It stopped holding its quest for their choice: a good ending, as a wait is, read before the park, which
+        // would ask them what only the step's go-on or abandon answers. Their go-on carries it on in the same tree.
+        "Taken" when exitCode == 0 && reopenedFrom is { Length: > 0 } source
+            => SessionConclusion.Of("completed", Noted.Of(
+                NoteCodes.EndedSourceReopened,
+                $"stopped with its quest still taken: the work of `#{source}` it grew from was reopened, and it goes on in the same tree "
+                + "once the person goes on with it on the new work.",
+                ("quest", source))),
 
         // 🔴 A session that holds its own quest and ended its turn cleanly is WAITING ON THE PERSON
         // (STANDDOWN2): it took the quest itself, or resumed or carried on one this machine already
