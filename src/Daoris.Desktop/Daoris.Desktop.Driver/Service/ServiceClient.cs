@@ -152,7 +152,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>
     /// This machine's claim on each taken quest a look would carry on (CARRY2b): one that waits on nothing, whose last session
     /// here ended as a carry-on goes on from (<see cref="Planner.CarriesOn"/>), a stop the person still holds included, which
-    /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before.
+    /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before. A
+    /// step the person's reopen holds is not asked (FABRIC-CLOSE1c2): nothing carries it on until their go-on, which the next look reads.
     /// </summary>
     private async Task<IReadOnlyDictionary<string, string>> CarryOnClaimsAsync(
         IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, CancellationToken ct)
@@ -160,7 +161,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in quests)
         {
-            if (quest is not { Status: "Taken", Awaits: null or "" }
+            if (quest is not { Status: "Taken", Awaits: null or "", HeldByReopen: false }
                 || !lastRun.TryGetValue(quest.Id, out var last) || !Planner.CarriesOn(last))
             {
                 continue;
@@ -1494,6 +1495,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 // and from a host before them; a submission named only in half is none.
                 Closure = Text(quest, "closure") is { Length: > 0 } closure ? closure : null,
                 Submission = ReadSubmission(quest),
+                // FABRIC-CLOSE1c, read for FABRIC-WORKFLOW2d's seal: the submission a step grew from and the reopen standing on it. Absent
+                // from a step a done published and from a host before them; one named in half is none.
+                GrewFrom = ReadSubmissionRef(quest, "grewFrom"),
+                SourceReopened = ReadSubmissionRef(quest, "sourceReopened"),
             });
         }
 
@@ -2096,6 +2101,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         && submission.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
         && sequence.TryGetInt64(out var number) && number > 0
             ? new QuestSubmissionView(machine, number, Moment(submission, "at"), Text(submission, "note"))
+            : null;
+
+    /// <summary>A submission a quest names by its machine and sequence (FABRIC-CLOSE1c), or null: none, from a host before it, or named only in half.</summary>
+    private static QuestSubmissionRef? ReadSubmissionRef(JsonElement quest, string name) =>
+        quest.TryGetProperty(name, out var named) && named.ValueKind == JsonValueKind.Object
+        && Text(named, "machine") is { Length: > 0 } machine
+        && named.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
+        && sequence.TryGetInt64(out var number) && number > 0
+            ? new QuestSubmissionRef(machine, number)
             : null;
 
     /// <summary>A set-up step's set-ups (<c>setUps</c>), each with a full commit: one without is half of one.</summary>

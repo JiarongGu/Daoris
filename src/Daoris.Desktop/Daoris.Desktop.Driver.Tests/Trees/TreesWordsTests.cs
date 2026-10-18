@@ -244,6 +244,44 @@ public sealed class TreesWordsTests : IAsyncLifetime
         await AssertSameAsync(said);
     }
 
+    // The presses that land carry the registry's followed lines (RPC1b5): said after the sentence, as the alone path says them.
+    private sealed class EmptyRegistry : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]", System.Text.Encoding.UTF8, "application/json"),
+            });
+    }
+
+    [Fact]
+    public void The_registrys_followed_lines_are_said_after_a_landings_words_and_the_code_is_the_landings()
+    {
+        var landed = TreesWords.Land(new TreeLanding(true, "Landed `main`."), [TreesWords.PluginLine("example.lands", "pushing")]);
+        var said = landed.Followed(new FollowedSaid(["  registry  engine: registered"], ["trees: the registry did not follow"]));
+
+        Assert.Equal(["  plugin:example.lands  pushing", "trees: Landed `main`.", "  registry  engine: registered"], said.Out);
+        Assert.Equal(["trees: the registry did not follow"], said.Error);
+        Assert.Equal(0, said.Code);
+        Assert.Same(landed, landed.Followed(null));
+        Assert.Equal(landed.Out, landed.Followed(new FollowedSaid([], [])).Out);
+    }
+
+    [Fact]
+    public async Task A_landing_whose_line_the_stand_in_registry_followed_is_said_from_the_answer_as_the_alone_path_says_it()
+    {
+        RegistryFollowing.Moved(_home, "engine", DateTimeOffset.UtcNow);
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new EmptyRegistry()));
+        var followed = await TreesWords.FollowMovedAsync(service, _home, () => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig)), null);
+        Assert.Single(followed.Out);
+        Assert.StartsWith("  registry  engine: ", followed.Out[0]);
+
+        await AssertSameAsync(TreesWords.Land(new TreeLanding(true, "Landed `main`."), []).Followed(followed));
+        await AssertSameAsync(TreesWords.EntryLand([("engine", Entered(true))], [], []).Followed(followed));
+        var alone = Alone(TreesWords.EntryLand([("engine", Entered(true))], [], []).Followed(followed));
+        Assert.EndsWith(followed.Out[0] + Environment.NewLine, alone.Out);
+    }
+
     // An instance from before the words: its answer is the page's fields only.
     [Fact]
     public async Task An_answer_with_no_words_is_said_so_and_nothing_is_done_alone()

@@ -617,13 +617,14 @@ public static class OpinionGate
         if (at < 0) return null;
         foreach (var later in chain.Skip(at + 1))
         {
-            if (later.SetUpIn is null && later.Status is "Open" or "Taken" && string.Equals(later.To, repository, StringComparison.OrdinalIgnoreCase))
+            // FABRIC-CLOSE1h (§E5): a step a closure graph holds has run at its submission, and published its steps there, as a done has.
+            if (later.SetUpIn is null && QuestResults.Status(later) is "Open" or "Taken" && string.Equals(later.To, repository, StringComparison.OrdinalIgnoreCase))
             {
                 return later.Id;
             }
         }
 
-        foreach (var open in chain.Where(each => each.Status is "Open" or "Taken"))
+        foreach (var open in chain.Where(each => QuestResults.Status(each) is "Open" or "Taken"))
         {
             if (open.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return open.Id;
         }

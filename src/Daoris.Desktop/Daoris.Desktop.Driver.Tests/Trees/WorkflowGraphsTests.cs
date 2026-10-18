@@ -86,7 +86,8 @@ public sealed class WorkflowGraphsTests : IDisposable
         }
 
         Assert.Null(decoded.Unreadable);
-        Assert.Empty(NodeGraphs.Problems(decoded.Graph!));
+        // As the decoder judges it (`saved: false`): a version's two steps of one plugin kind are valid schema 1 (FABRIC-GRAPH1g refuses them in an authored graph).
+        Assert.Empty(NodeGraphs.Problems(decoded.Graph!, saved: false));
         var compact = new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
         Assert.Equal(JsonNode.Parse(row.GetProperty("graph").GetRawText())!.ToJsonString(compact), ToJson(decoded.Graph!).ToJsonString(compact));
         Assert.Equal((row.GetProperty("identity").GetString(), row.GetProperty("graphDigest").GetString()), (decoded.Identity, decoded.GraphDigest));
@@ -133,7 +134,7 @@ public sealed class WorkflowGraphsTests : IDisposable
         var decoded = WorkflowGraphs.DecodeSteps(1, steps);
         Assert.Null(decoded.Unreadable);
         var graph = decoded.Graph!;
-        Assert.Empty(NodeGraphs.Problems(graph));
+        Assert.Empty(NodeGraphs.Problems(graph, saved: false));
         var authored = graph.Nodes.Count(node => !node.Synthetic);
         Assert.Equal(WorkflowKindTable.MaxSteps - groups, authored);
         Assert.InRange(graph.Nodes.Count - authored, groups, NodeGraphs.SyntheticPerNode * authored);
@@ -174,7 +175,7 @@ public sealed class WorkflowGraphsTests : IDisposable
         var graph = WorkflowGraphs.Graph(steps);
         var decoded = graph.Nodes.Single(each => each.Id == step.Id);
         Assert.Equal((node, reach, kind == WorkflowKinds.All), (decoded.Kind, decoded.Reach, decoded.Synthetic));
-        Assert.Empty(NodeGraphs.Problems(graph));
+        Assert.Empty(NodeGraphs.Problems(graph, saved: false));
     }
 
     /// <summary>
@@ -247,7 +248,7 @@ public sealed class WorkflowGraphsTests : IDisposable
             ["work>ask", "ask>second", "work>second", "second>see", "work>see", "see>land", "work>land", "second>land", "land>pr", "pr>lint"],
             graph.Wires.Where(wire => wire.Kind == WireKinds.After).Select(wire => wire.Id));
         Assert.Equal(graph.Wires.Count, graph.Wires.Select(wire => wire.Id).Distinct(StringComparer.Ordinal).Count());
-        Assert.Empty(NodeGraphs.Problems(graph));
+        Assert.Empty(NodeGraphs.Problems(graph, saved: false));
         Assert.Equal(["work>land"], WorkflowGraphs.Graph([Step("work", WorkflowKinds.Work), Landing()]).Wires.Select(wire => wire.Id));
     }
 
@@ -311,7 +312,8 @@ public sealed class WorkflowGraphsTests : IDisposable
             var binding = runs.Read(run)!;
             var decoded = WorkflowGraphs.ForRun(store.Load("careful")!.Read, binding)!;
             Assert.Equal((binding.Version!.Value, binding.Digest, (string?)null), (decoded.Version, decoded.Identity, decoded.Unreadable));
-            Assert.Empty(NodeGraphs.Problems(decoded.Graph!));
+            // As the decoder judges it (`saved: false`): a version's two steps of one plugin kind are valid schema 1 (FABRIC-GRAPH1g refuses them in an authored graph).
+        Assert.Empty(NodeGraphs.Problems(decoded.Graph!, saved: false));
         }
 
         Assert.Null(WorkflowGraphs.ForRun(read, new WorkflowRunBinding("run3", "engine", "aurora", WorkflowSelection.Current, WorkflowLevels.Current, At)));
