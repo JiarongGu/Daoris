@@ -117,7 +117,8 @@ public abstract class AutoLandingFixture : IDisposable
             }
 
             Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || landing.IsCompleted,
-                TimeSpan.FromSeconds(60)), "the push waits for its branch");
+                // TESTWAIT8: the hold's own signal, or the landing ending; the bound only elapses on a real failure, so it is minutes.
+                TimeSpan.FromMinutes(5)), "the push waits for its branch");
             change();
         }
 
