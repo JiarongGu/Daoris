@@ -235,7 +235,7 @@ public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskS
     private static QuestRespondOutcome? SetUpRefused(Quest quest, QuestMove move) =>
         move.Quest is null ? new(QuestRespondRefusal.NotFound, $"No quest `#{quest.Id}`. Ids come from `quest_list`.", Quest: null)
         : move.ClaimLost ? new(QuestRespondRefusal.AlreadyTaken, LostTake(quest.Id, "so its set-up is not this machine's to post. Nothing was kept.",
-            reopened: move.Quest.Status == QuestStatus.Open), Quest: null)
+            move), Quest: null)
         : move.Quest.Status == QuestStatus.Declined
             ? new(QuestRespondRefusal.Closed, $"Set-up step `#{quest.Id}` is Declined: nothing is shown on it now. Nothing was kept.", Quest: null)
         : null;
