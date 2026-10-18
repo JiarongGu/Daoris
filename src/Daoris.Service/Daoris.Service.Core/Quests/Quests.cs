@@ -193,6 +193,18 @@ public sealed record Quest(
     public QuestSubmission? Submission { get; init; }
 
     /// <summary>
+    /// The commit its current submission was read at (FABRIC-CLOSE1c5, §E5): the evidence verdict read for that submission, by its
+    /// machine and sequence (FABRIC-CLOSE1e), which is the one place a submission's commit is known. Null with no submission, before
+    /// its evidence is read, where its requirements name none, and once a later <c>ready</c> replaced it. Read, never stored: the
+    /// submission's column and its operation are as they were.
+    /// </summary>
+    public string? SubmissionCommit =>
+        Submission is { } current && Evidence is { Submission: { } asked } read
+        && asked.Machine == current.Machine && asked.Sequence == current.Sequence
+            ? read.Commit
+            : null;
+
+    /// <summary>
     /// The submission of its <see cref="Parent"/> it grew from (FABRIC-CLOSE1c, §E5's <c>publishedBy: { quest, submission }</c>), by
     /// the machine and sequence that name it: set where a submission published the step, moved by a <see cref="QuestOperationKind.Rebound"/>.
     /// Null for a step a done published, for every other quest, and for every step from before. <see cref="PublishedBy"/> stays the

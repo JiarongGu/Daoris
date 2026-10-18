@@ -56,6 +56,47 @@ public static class TreeStartWords
 
     /// <summary>The line holds none of the tree's work, said only where the fetch failed, so the session knows what it was judged against.</summary>
     public static string HoldsNone(string line) => $"Before this turn Daoris judged this tree against `{line}`, and the line holds none of its work.";
+
+    /// <summary>
+    /// A step the person went on with was brought up to date with its source's new submission (FABRIC-CLOSE1c5): <paramref name="kept"/>
+    /// of its own commits replayed onto <paramref name="commit"/>, as a tree is replayed onto the line.
+    /// </summary>
+    public static string OntoSubmission(string source, string commit, int kept) =>
+        $"Before this turn Daoris brought this tree up to date with `{source}`'s new submission (`{commit}`): its {kept} commit(s) of its "
+        + "own were replayed onto that commit, as a tree is brought up to date with the line. Read the log before you go on: the commits "
+        + "you made have new ids.";
+
+    /// <summary>
+    /// The step's tree was left exactly as it was (FABRIC-CLOSE1c5): a conflict in git's words, or why it was left; nothing else was
+    /// brought up to date, the line included. A conflict is the person's to resolve, and the session is told to say so.
+    /// </summary>
+    public static string NotOntoSubmission(string source, string commit, string why, bool conflict) =>
+        $"Daoris could not bring this tree up to date with `{source}`'s new submission (`{commit}`) before this turn: "
+        + $"{why.Trim().TrimEnd('.')}. The tree is exactly as it was, and nothing else was brought up to date. " + (conflict
+            ? $"The person must resolve this conflict: tell them what conflicted, and build nothing on `{source}`'s new work until they have."
+            : $"Tell the person why, and build nothing on `{source}`'s new work until the tree holds it.");
+
+    /// <summary>The host names no commit for the new submission (FABRIC-CLOSE1c5): only the line was synced, as a carry-on's start is.</summary>
+    public static string NoSubmissionCommit(string source) =>
+        $"Daoris could not bring this tree up to date with `{source}`'s new submission: the service names no commit for it (a host before "
+        + $"it, or a submission no evidence was read for), so only the line was brought up to date. Read what `{source}` now holds before "
+        + "you build on its work.";
+
+    /// <summary>The new submission's commit is not in this repository (FABRIC-CLOSE1c5): only the line was synced.</summary>
+    public static string SubmissionNotHere(string source, string commit) =>
+        $"Daoris could not bring this tree up to date with `{source}`'s new submission (`{commit}`): this repository does not hold that "
+        + $"commit (its work is in another repository, or was not fetched here), so only the line was brought up to date. Read what "
+        + $"`{source}` now holds before you build on its work.";
+}
+
+/// <summary>
+/// What a go-on's start did with a step's tree against its source's new submission (FABRIC-CLOSE1c5), before the line's sync.
+/// </summary>
+/// <param name="Stops">The tree was left for a reason that changes nothing else: the line's sync is not asked.</param>
+internal sealed record SubmissionOnto(TreeMoved? Moved, string? Told, bool Stops)
+{
+    /// <summary>Nothing to do and nothing to tell: not a tree of this home's, or one that holds the commit already.</summary>
+    public static SubmissionOnto Nothing { get; } = new(null, null, false);
 }
 
 /// <summary>Why a tree is not brought up to date, in the order the press asks (REVIEWBASE2-i): the first found is the answer.</summary>

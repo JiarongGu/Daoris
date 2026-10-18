@@ -77,6 +77,28 @@ public sealed class ServiceClientClosureTests
         Assert.All(quests.Skip(1), quest => Assert.True(quest is { GrewFrom: null, SourceReopened: null }, quest.Id));
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c5: a submission's commit, its evidence's (§E5), read by its full id; absent from a host before it, and none where
+    /// it is no commit's id.
+    /// </summary>
+    [Fact]
+    public void A_submissions_commit_is_read_and_absent_from_a_host_before_it()
+    {
+        var quests = ServiceClient.ReadQuests(
+            $$"""
+            [{ "id": "q7", "from": "game", "to": "engine", "title": "Ship it", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 41, "note": "ready", "commit": "{{Commit.ToUpperInvariant()}}" } },
+             { "id": "q8", "from": "game", "to": "engine", "title": "Older", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 42, "note": "ready" } },
+             { "id": "q9", "from": "game", "to": "engine", "title": "Odd", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 43, "note": "ready", "commit": "main" } }]
+            """);
+
+        Assert.Equal(new QuestSubmissionView("desk", 41, null, "ready", Commit), quests[0].Submission);
+        Assert.Equal(new QuestSubmissionView("desk", 42, null, "ready"), quests[1].Submission);
+        Assert.Equal(new QuestSubmissionView("desk", 43, null, "ready"), quests[2].Submission);
+    }
+
     [Fact]
     public void A_verdict_read_for_a_submission_names_it_and_a_dones_names_none()
     {
