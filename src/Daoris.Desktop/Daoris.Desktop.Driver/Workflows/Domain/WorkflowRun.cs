@@ -82,6 +82,18 @@ public static class WorkflowRunDetails
     /// <summary>Every quest of it here is done, and none is held.</summary>
     public const string Finished = "finished";
 
+    /// <summary>
+    /// Every quest of it here is finished, and some by a submission (FABRIC-WORKFLOW2d, §E5): bound to a closure graph, its current
+    /// submission unheld and sealed. The graph's close writes their Done at its end.
+    /// </summary>
+    public const string Submitted = "submitted";
+
+    /// <summary>
+    /// The person reopened the submission of a quest of it (FABRIC-CLOSE1c, FABRIC-WORKFLOW2d): its step stands withdrawn or held, and the
+    /// quest, taken with no submission, waits for its agent's next <c>ready</c>.
+    /// </summary>
+    public const string Reopened = "reopened";
+
     // The second opinion: its details are its gate's own states (OpinionGateStates, XAGENT1f), and one more.
     /// <summary>The work landed, and its landing record keeps no word of the opinion that let it go.</summary>
     public const string Landed = "landed";
@@ -163,6 +175,12 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
 
     /// <summary>The chain's quests in this repository, in the chain's order: its work, and any set-up step of its review.</summary>
     public IReadOnlyList<QuestView> Quests { get; init; } = [];
+
+    /// <summary>
+    /// The whole chain, every repository's steps (FABRIC-WORKFLOW2d): where a submission's successor is read, which seals it (§E5). Empty
+    /// reads <see cref="Quests"/>, so a run gathered without it judges a seal by this repository's steps alone.
+    /// </summary>
+    public IReadOnlyList<QuestView> Chain { get; init; } = [];
 
     /// <summary>The session records on those quests, closed ones included, in any order.</summary>
     public IReadOnlyList<TracedSession> Sessions { get; init; } = [];
