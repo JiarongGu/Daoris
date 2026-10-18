@@ -161,8 +161,8 @@ public sealed class AutoLander(
         }
 
         // FABRIC-CLOSE1h2: its branch is made and recorded and its push was held back, so it is handed on, never made again.
-        if (entry.Last is { Code: AutoLandingCode.PushHeld } held
-            && await PushHeldAsync(entry, held, world, looked, ct).ConfigureAwait(false) is { } handOn)
+        if (entry.Last is { Code: AutoLandingCode.PushHeld } pushHeld
+            && await PushHeldAsync(entry, pushHeld, world, looked, process, ct).ConfigureAwait(false) is { } handOn)
         {
             return handOn;
         }
@@ -203,42 +203,27 @@ public sealed class AutoLander(
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!AutoLandingRules.ShouldTry(entry, tip, status)) return (null, null);
 
-        // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f).
-        var gate = await trees.GateAsync(entry.Tree, entry.Quest, world, entry.Session, ct, process).ConfigureAwait(false);
+        // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f), by the one
+        // helper the push and a push held back's recovery read it with (FABRIC-CLOSE1h12). Its first part that holds, in §7's order:
+        var (gate, held, line) = await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
 
         // The run's own part first (WORKFLOW1f, the workflow design §3.7, §4.4): a workflow that cannot be read here, or a kind's
-        // paths, holds it, said once. Kept with no tip and no status, so the next look reads the gate again, and lands it once
-        // nothing holds it: what moves it is a declaration or the person's say-so, never the tree.
-        if (gate.Workflow is { LetsGo: false } workflow) return (Workflow(entry, workflow, workflow.Says, step: null), null);
+        // paths, holds it, said once; and the named workflow's landing step, last before the landing: one that cannot start sits. Kept
+        // with no tip and no status, so the next look reads the gate again, and lands it once nothing holds it: what moves it is a
+        // declaration or the person's say-so, never the tree.
+        if (held is { Refusal: AutoLandingCode.Refused }) return (Workflow(entry, held, line), null);
 
         // The second opinion. Where the level says one is read before landing, the session stays due as `opinion`, said once and
         // read again at every look, until it is settled or the person answers it; a chain step whose chain has a later step here
-        // waits for that step (§8.1).
-        if (!gate.Opinion.LetsGo)
+        // waits for that step (§8.1). The review's gate (REVIEWENV1c, design §3.1): where the level says review, the session stays
+        // due as `unreviewed`, said once and read again at every look, until the person's reviewed on a set-up that holds its tip,
+        // or their skip.
+        if (held is { Refusal: { } waiting })
         {
-            if (entry.Last?.Code == AutoLandingCode.Opinion) return (null, null);
-            var waits = Tried(entry, AutoLandingCode.Opinion, tip, status,
-                new TreeLanding(false, gate.Opinion.Says) { Refusal = AutoLandingCode.Opinion });
-            log?.Invoke(OpinionLines.Held(entry.Session, entry.Repository, entry.Workspace, gate.Opinion, ReviewDoors.Look));
+            if (entry.Last?.Code == waiting) return (null, null);
+            var waits = Tried(entry, waiting, tip, status, held);
+            if (line is not null) log?.Invoke(line);
             return (waits, null);
-        }
-
-        // The review's gate (REVIEWENV1c, design §3.1): where the level says review, the session stays due as `unreviewed`, said
-        // once and read again at every look, until the person's reviewed on a set-up that holds its tip, or their skip.
-        var review = gate.Review;
-        if (!review.LetsGo)
-        {
-            if (entry.Last?.Code == AutoLandingCode.Unreviewed) return (null, null);
-            var waits = Tried(entry, AutoLandingCode.Unreviewed, tip, status,
-                new TreeLanding(false, review.Says) { Refusal = AutoLandingCode.Unreviewed });
-            log?.Invoke(ReviewLines.Held(entry.Session, entry.Repository, entry.Workspace, review, ReviewDoors.Look));
-            return (waits, null);
-        }
-
-        // The named workflow's landing step, last before the landing (WORKFLOW1f, design §3.7): one that cannot start sits.
-        if (gate.Process?.LandingCannot is not null && gate.Workflow is { } landingStep)
-        {
-            return (Workflow(entry, landingStep, WorkflowGate.LandingSays(landingStep.Process), WorkflowKinds.Landing), null);
         }
 
         // Uncommitted work would not travel with the branch (design §5): it stays to review, with the count of its paths.
@@ -380,26 +365,42 @@ public sealed class AutoLander(
     /// every time, by the same rule (taken back or held stops the push). The landing's own push passes the choice's session.
     /// </param>
     /// <returns>Why the push is held back, as the landing's sentence says it; null where it goes on.</returns>
+    /// <remarks>
+    /// FABRIC-CLOSE1h12 (D173's note): where the quest is read again, and stands, the landing's gate is read again too, for the same
+    /// session, its quest and its tree (<see cref="GateAsync"/>), so an opinion, a review or the run's workflow that started holding
+    /// after the look chose the landing holds its push back as a hold does. The review's own <c>unreviewed</c> hold is the gate's to
+    /// judge, read here. Where the quest is not read again, neither is the gate, so an uncontended landing of a plain done reads nothing more.
+    /// </remarks>
     private async Task<string?> BeforePushAsync(AutoChoice choice, string last, bool waited, CancellationToken ct)
     {
-        var later = !string.Equals(last, choice.Entry.Session, StringComparison.OrdinalIgnoreCase);
+        var entry = choice.Entry;
+        var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
         if (!later && !waited && !QuestResults.Submitted(choice.Quest)) return null;
         var fresh = world.Again();
         // A later session on no quest holds the push to nothing, as at the person's door: its work landed by the person's own press.
-        if ((later ? QuestOf(await fresh.RecordsAsync(ct).ConfigureAwait(false), last) : choice.Entry.Quest) is not { } id) return null;
+        var record = later ? RecordOf(await fresh.RecordsAsync(ct).ConfigureAwait(false), last) : null;
+        if ((later ? record?.Quest : entry.Quest) is not { } id) return null;
         var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
         var why = !QuestResults.Judged(quest) ? "its quest was taken back"
             : !later && !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
             : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
             : null;
-        return why is null ? null
-            : $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first look once its quest stands "
-              + $"again hands it on, or `daoris-driver trees hand {last}` does now";
+        if (why is not null)
+        {
+            return $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first look once its quest stands "
+                + $"again hands it on, or `daoris-driver trees hand {last}` does now";
+        }
+
+        var (_, held, line) = await GateAsync(entry, last, id, record?.Tree ?? entry.Tree, fresh, ct).ConfigureAwait(false);
+        if (held is null) return null;
+        if (line is not null) log?.Invoke(line);
+        return "its landing's gate held it before its plugin was told, so its push was not tried: the branch stands, and the first look "
+            + $"once the gate lets it go hands it on, or `daoris-driver trees hand {last}` does now. {held.Message}";
     }
 
-    /// <summary>The quest a session's record names, null where it names none or the records hold no such session.</summary>
-    private static string? QuestOf(IReadOnlyList<SessionRecord> records, string session) =>
-        records.FirstOrDefault(record => string.Equals(record.Id, session, StringComparison.OrdinalIgnoreCase))?.Quest;
+    /// <summary>A session's record, null where the records hold no such session.</summary>
+    private static SessionRecord? RecordOf(IReadOnlyList<SessionRecord> records, string session) =>
+        records.FirstOrDefault(record => string.Equals(record.Id, session, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>A quest the look would land on now: its result in, and no hold for the person's yes but the review's own.</summary>
     private static bool Stands([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] QuestView? quest) =>
@@ -413,8 +414,14 @@ public sealed class AutoLander(
     /// branch on and pushes the whole once. Where a later session's done moved the branch on since (FABRIC-CLOSE1h10), its work rides
     /// the hand-on, so that session's quest is read too and must stand as well.
     /// </summary>
+    /// <remarks>
+    /// FABRIC-CLOSE1h12 (D173's note): the landing's gate is read again before a hand-on is chosen, for the session whose work the push
+    /// carries, so a gate that started holding while the push was held back, or before a restart, holds the hand-on as the push would.
+    /// Held there, it waits as the quest's wait does, said once already at the push.
+    /// </remarks>
+    /// <param name="process">The run's process the look read for the entry's quest (WORKFLOW1f), handed to the gate where it is read for it.</param>
     private async Task<(string? Said, AutoChoice? Choice)?> PushHeldAsync(
-        AutoLanding entry, AutoTry held, IAutoLandingWorld world, LookRecords looked, CancellationToken ct)
+        AutoLanding entry, AutoTry held, IAutoLandingWorld world, LookRecords looked, WorkflowProcess process, CancellationToken ct)
     {
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
         if (!Stands(quest)) return (null, null);
@@ -429,15 +436,19 @@ public sealed class AutoLander(
         // FABRIC-CLOSE1h10: a hand-on its later session's quest would hold back again (BeforePushAsync, under the branch's hold) waits
         // instead, said once already, so no look keeps a try of it while that quest is held or taken back.
         var last = landing.LastSession();
-        if (!string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase)
-            && QuestOf(await looked.ReadAsync(ct).ConfigureAwait(false), last) is { } later
-            && !Stands(await world.QuestAsync(later, ct).ConfigureAwait(false)))
-        {
-            return (null, null);
-        }
+        var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
+        var record = later ? RecordOf(await looked.ReadAsync(ct).ConfigureAwait(false), last) : null;
+        if (record?.Quest is { } laterQuest && !Stands(await world.QuestAsync(laterQuest, ct).ConfigureAwait(false))) return (null, null);
 
         var (tip, status, _) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!string.Equals(tip, held.Tip, StringComparison.OrdinalIgnoreCase)) return null;
+
+        // FABRIC-CLOSE1h12: the gate, for the session whose work the hand-on pushes, as BeforePushAsync reads it: a later session on no
+        // quest, whose push is held to nothing, reads no part that needs one.
+        var (_, gateHeld, _) = later
+            ? await GateAsync(entry, last, record?.Quest, record?.Tree ?? entry.Tree, world, ct).ConfigureAwait(false)
+            : await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
+        if (gateHeld is not null) return (null, null);
         return (null, new AutoChoice(entry, quest, tip, status) { Hands = landing });
     }
 
@@ -508,15 +519,37 @@ public sealed class AutoLander(
     /// What the run's named workflow holds (WORKFLOW1f): a refusal kept once, with no tip and no status, which a refused landing
     /// always has, so the next look reads the gate again whatever the tree does, and says nothing more while it still holds.
     /// </summary>
-    /// <param name="step">The kind of step that cannot start, for the landing's own; null for the run's part.</param>
+    /// <param name="held">The gate's refusal (<see cref="LandingGate.Refusal"/>), the run's part's or its landing step's.</param>
+    /// <param name="line">The machine log's line for it (<see cref="LandingGateWords.Held"/>), which names which of the two held.</param>
     /// <returns>The look's line, or null where it was said already.</returns>
-    private string? Workflow(AutoLanding entry, WorkflowGateState gate, string sentence, string? step)
+    private string? Workflow(AutoLanding entry, TreeLanding held, LandingLine? line)
     {
         // Said once: a hold kept as a refusal with no tip and no status is the workflow's (a refused landing is kept with both).
         if (entry.Last is { Code: AutoLandingCode.Refused, Tip: null, Status: null }) return null;
-        var line = Tried(entry, AutoLandingCode.Refused, tip: null, status: null, new TreeLanding(false, sentence) { Refusal = AutoLandingCode.Refused });
-        log?.Invoke(WorkflowLines.Held(entry.Session, entry.Repository, entry.Workspace, gate, ReviewDoors.Look, step));
-        return line;
+        var said = Tried(entry, AutoLandingCode.Refused, tip: null, status: null, held);
+        if (line is not null) log?.Invoke(line);
+        return said;
+    }
+
+    /// <summary>
+    /// The landing gate read for one of the look's landings, and what of it holds the work (FABRIC-CLOSE1h12, out of the look's
+    /// judgement): the gate as every landing door reads it (XAGENT1f), its first part that holds as a landing's refusal in §7's order
+    /// (<see cref="LandingGate.Refusal"/>: the run's own part, the second opinion, the review, the landing step), and the machine log's
+    /// line for that part. The look, the push and a push held back's recovery judge by it alike, so a gate that starts holding after the
+    /// look chose a landing holds its push too.
+    /// </summary>
+    /// <param name="session">The session whose work would land: the entry's, or a later one whose done moved its branch on (CLOSE1h10).</param>
+    /// <param name="quest">That session's quest, whose chain the opinion and the review read; null reads no part that needs one.</param>
+    /// <param name="tree">That session's tree, whose tip the opinion and the review judge.</param>
+    /// <param name="process">The run's process where the caller read it already (WORKFLOW1f); otherwise the gate reads it, once.</param>
+    private async Task<(LandingGate Gate, TreeLanding? Held, LandingLine? Line)> GateAsync(
+        AutoLanding entry, string session, string? quest, string tree, IAutoLandingWorld world, CancellationToken ct,
+        WorkflowProcess? process = null)
+    {
+        var gate = await trees.GateAsync(tree, quest, world, session, ct, process).ConfigureAwait(false);
+        return gate.Refusal is { } held
+            ? (gate, held, LandingGateWords.Held(session, (entry.Workspace, entry.Repository), gate, held, ReviewDoors.Look))
+            : (gate, null, null);
     }
 
     /// <summary>What the look's line says of a code the conversation is not told of.</summary>
