@@ -10,7 +10,10 @@ with the version and date at release.
   goes to any agent until `brainstorm send <id>`. Each named agent then proposes once, in a folder holding only that packet,
   answers that break the proposal schema get one retry, one agent ranks the proposals without knowing whose they are, and the ranked
   document, saying who proposed what, is kept on this machine until `brainstorm clear <id>`. It changes nothing in any repository.
-  This first slice runs on the stub agents only: a real agent has no tool to answer through yet, so its pass fails and says so.
+  An agent answers through two tools of Daoris's connector, which say a malformed answer's faults back so it can answer again,
+  and that connector is the only one it is handed. Claude Code is also held by Daoris's rules to reading that folder and calling
+  its one tool: no edits, no commands, no web. Another agent is given only what the folder holds, and whether it stays inside
+  is not measured yet. A machine with no connector starts no pass. No real agent has run one yet.
 
 - The desktop names two sign-ins of one email apart too. An agent's page, its own sign-in, the start's account picker, *What
   needs you* and a session's account say the organisation after the email where another sign-in shares it (else the plan),

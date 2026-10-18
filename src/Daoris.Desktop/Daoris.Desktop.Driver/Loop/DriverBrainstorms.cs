@@ -29,6 +29,9 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>Each turn's minutes, until the policy names them (D176 point 9's proposed default: ten).</summary>
     internal const int TurnMinutes = 10;
 
+    /// <summary>The code of a turn not started because this machine has no connector to hand it, so no result tool (BRAINSTORM1a2).</summary>
+    internal const string NoConnector = "no-connector";
+
     private static string Claim(string id) => $"brainstorm:{id}";
 
     /// <summary>
@@ -301,12 +304,25 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// One real turn (BRAINSTORM1a): the agent's account by the walk, its spawn prepared as any session's, the reviewer's read-only
-    /// rules held to its room, one turn framed as one prompt, no connector beyond its result, and its own minutes. Its record is the
-    /// brainstorm's own, under the home's data: no session record is opened on the service, and nothing of it syncs.
+    /// One real turn (BRAINSTORM1a, BRAINSTORM1a2): the agent's account by the walk, its spawn prepared as any session's, the
+    /// <c>brainstorm</c> posture held to its room, one turn framed as one prompt, its connector its only one and carrying the turn so
+    /// its result tool writes the answer file, and its own minutes. Its record is the brainstorm's own, under the home's data: no
+    /// session record is opened on the service, and nothing of it syncs.
     /// </summary>
     internal async Task<BrainstormTurnRun> TurnAsync(BrainstormTurn turn, CancellationToken ct)
     {
+        var sessionId = $"brainstorm-{turn.Id}-{turn.Turn}";
+        // Its connector, and no plugin's server beside it (D176 point 2): the turn whole on it, so `brainstorm_give` or
+        // `brainstorm_synthesize` writes the file the driver reads and judges it against the room. A pass answers through that tool
+        // alone, so on a machine with no connector it is not started, and no account is spent on a turn that cannot answer.
+        var scope = BrainstormVariables.Scope(turn);
+        var connector = _driver.Connector(sessionId, scope);
+        if (connector is null)
+        {
+            return new BrainstormTurnRun(false, null, NoConnector,
+                $"held  brainstorm turn {turn.Turn}: this machine has no connector, and a pass answers only through its tool");
+        }
+
         ISessionAdapter adapter;
         HarnessSelection selection;
         try
@@ -326,7 +342,6 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }
 
         var files = new BrainstormFiles(_context.Home);
-        var sessionId = $"brainstorm-{turn.Id}-{turn.Turn}";
         var target = new SessionTarget(QuestId: "", "Brainstorm", "", "Daoris", "", turn.Room, "")
         {
             Brainstorm = turn.Id,
@@ -338,11 +353,14 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         var (info, notice) = _driver.Prepare(adapter, target, selection);
         var transcript = files.PathOf(turn.Id, "passes", $"{turn.Turn}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
-        var rules = _driver.HandRules(adapter, info, sessionId, null, null, tree: turn.Room, kept: null, opinion: true);
+        // The protocol door carries the connector on the wire, with the same scope; the pipe door takes a file under the home.
+        var handed = SpawnServers.Hand(adapter, info, _context.Home, sessionId, [connector]);
+        var rules = _driver.HandRules(
+            adapter, info, sessionId, null, null, tree: turn.Room, kept: null, brainstorm: BrainstormPermissions.ToolOf(turn.Turn));
         try
         {
             return await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: null,
+                adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: handed,
                 refusesInput: "a brainstorm's pass is one turn, and takes no words",
                 conclude: (exitCode, used, turnFailed, _) =>
                 {
@@ -356,7 +374,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         : exitCode != 0 ? "exited" : null;
                     return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, code, $"{code ?? "completed"}  brainstorm turn {turn.Turn}"));
                 },
-                ct, handedServers: [], minutes: turn.Minutes, noConnector: "a brainstorm's pass is handed no connector here", movedFirst: true)
+                ct, scope: scope, handedServers: [], minutes: turn.Minutes,
+                noConnector: "— this machine has no connector, so this pass cannot give its answer.", movedFirst: true)
                 .ConfigureAwait(false);
         }
         finally

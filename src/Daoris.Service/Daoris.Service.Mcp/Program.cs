@@ -133,6 +133,8 @@ builder.Services.AddSingleton(RuleProposalBox.FromEnvironment());
 builder.Services.AddSingleton(HelpProposalBox.FromEnvironment());
 // And a working session's ask for a helper, and a helper's answer (MIXAGENT2a-i), under the same home: a file each.
 builder.Services.AddSingleton(HelperBox.FromEnvironment());
+// And a brainstorm pass's answer (BRAINSTORM1a2): the one file the driver names on the connector it offers the pass, else none.
+builder.Services.AddSingleton(BrainstormBox.FromEnvironment());
 
 // The ambient scope (D48 §4): this process is spawned BY a repository's session, so its working
 // directory is that repository — which is the one thing that makes "my own circle" answerable without

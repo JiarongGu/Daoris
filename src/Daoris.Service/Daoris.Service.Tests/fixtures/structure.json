@@ -91,6 +91,7 @@
     "OneCheckoutTests.cs": "Knowledge",
     "ProbeLockQuestionTests.cs": "Knowledge",
     "ServiceDegradationTests.cs": "Knowledge",
+    "McpBrainstormToolTests.cs": "Mcp",
     "McpHelperToolTests.cs": "Mcp",
     "McpOpinionToolTests.cs": "Mcp",
     "McpToolDescriptionTests.cs": "Mcp",
