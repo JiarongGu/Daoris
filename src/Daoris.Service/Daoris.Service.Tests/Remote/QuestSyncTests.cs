@@ -1429,6 +1429,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
         await SyncAsync(_a);
         Assert.Equal(QuestStatus.Taken, Assert.Single((await SyncAsync(_b)).Conflicts).Attempted);
         Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+        // Lost to another machine's take, never to a reopen (FABRIC-CLOSE1c18).
+        Assert.False(await _b.LostToTheReopenAsync(quest.Id));
 
         var question = await Publish(_b, "B's question for its owner");
         var note = said ?? question.Id;

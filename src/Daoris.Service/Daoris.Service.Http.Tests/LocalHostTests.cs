@@ -69,6 +69,42 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// 🔴 A root never leaves the machine (D46): a caller off it is answered the row, and no path — not
     /// in the field, and not anywhere else in the body.
     /// </summary>
+    /// <summary>
+    /// FABRIC-CLOSE1c18: the claim's answer says why a lost take lost where it lost to the person's reopen of the work its step grew
+    /// from, so the driver stops its session in words that are true. A take lost to another machine's is answered as before, with none.
+    /// </summary>
+    [Fact]
+    public async Task The_claim_answers_why_a_take_lost_where_the_persons_reopen_moved_its_step()
+    {
+        var now = DateTimeOffset.Parse("2026-10-18T12:00:00Z");
+        var machine = host.Composed.Quests.Machine;
+        var source = new QuestOperationRef("m2", 5);
+        const string reopened = "c1a1d0000001", taken = "c1a1d0000002";
+        Quest Asked(string id) =>
+            new(id, "Asker", "Keeper", "A step grown from a submission", "why", QuestStatus.Open, null, now, now, "claimed")
+            {
+                Parent = "feedfeedfeed", GrewFrom = source,
+            };
+
+        await host.Composed.Quests.IntegrateAsync("claimed",
+        [
+            new QuestOperation(reopened, QuestOperationKind.Published, "m2", 10, now, Published: Asked(reopened), Number: 1),
+            new QuestOperation(reopened, QuestOperationKind.Reopened, "m2", 11, now, "Build it again.", Submission: source, Number: 2),
+            new QuestOperation(reopened, QuestOperationKind.Conflict, machine, 900001, now, "This machine's session.",
+                Attempted: QuestStatus.Taken, Number: 3),
+            new QuestOperation(taken, QuestOperationKind.Published, "m2", 12, now, Published: Asked(taken), Number: 4),
+            new QuestOperation(taken, QuestOperationKind.Taken, "m3", 1, now, Submission: source, Number: 5),
+            new QuestOperation(taken, QuestOperationKind.Conflict, machine, 900002, now, "This machine's session.",
+                Attempted: QuestStatus.Taken, Number: 6),
+        ], 6);
+
+        var toTheReopen = (await host.GetAsync($"/api/quests/{reopened}/claim")).Json;
+        Assert.Equal(("lost", "source-reopened"), (toTheReopen.GetProperty("claim").GetString(), toTheReopen.GetProperty("why").GetString()));
+        var toATake = (await host.GetAsync($"/api/quests/{taken}/claim")).Json;
+        Assert.Equal("lost", toATake.GetProperty("claim").GetString());
+        Assert.True(!toATake.TryGetProperty("why", out var why) || why.ValueKind == JsonValueKind.Null);
+    }
+
     [Fact]
     public async Task A_registrations_root_is_never_answered_to_a_caller_off_this_machine()
     {

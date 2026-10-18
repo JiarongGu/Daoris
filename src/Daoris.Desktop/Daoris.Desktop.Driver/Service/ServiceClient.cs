@@ -486,6 +486,16 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<string> ClaimAsync(string id, CancellationToken ct = default) =>
         RemoteSyncPayloads.Claim(await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false));
 
+    /// <summary>
+    /// <see cref="ClaimAsync"/>, with why a lost claim lost where the host says (FABRIC-CLOSE1c18): <c>source-reopened</c> where the take
+    /// lost to the person's reopen of the work its step grew from; null otherwise, and from a host before it.
+    /// </summary>
+    public async Task<(string Claim, string? Why)> ClaimStandingAsync(string id, CancellationToken ct = default)
+    {
+        var json = await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false);
+        return (RemoteSyncPayloads.Claim(json), RemoteSyncPayloads.ClaimWhy(json));
+    }
+
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
     /// <param name="setup">
     /// That the quest is a set-up (<see cref="SetupQuests"/>), for the watchers alone (WSSETUP11): the
