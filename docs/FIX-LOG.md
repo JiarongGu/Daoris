@@ -22,6 +22,23 @@ repository.
   guards. Then the driver's fast half 9687 of 9687 (9682 before), and the `AutoLanding` Git classes, run once by filter with
   `git.process.runsettings`, 85 of 85, this row's 6 among them.
 
+## 2026-10-19 — A step's take that went with its source take still closed the step the winner's chain published anew (FABRIC-CLOSE1c24)
+
+- **Symptom:** B took a source, bound, submitted and took the step its submission published, all before syncing, while C's take of
+  the source reached the remote first. B's take of the step went with its submission, and C's chain then published the same step
+  anew under the same id. B's session, still running until its driver's next look, could close, decline or set up that open step:
+  B's store kept the move, a remote kept it from an older build, and B's rebase pushed one an older build left pending.
+- **Root cause:** `QuestLog.OnALostTake` judged an open step lost only where the machine's take lost to the person's reopen
+  (FABRIC-CLOSE1c18, CLOSE1c22), since an open quest is otherwise nobody's work (D95). A take that went with its source's take to
+  another machine's take left nothing that reading could see, so the move counted as one on nobody's work.
+- **Fix:** `QuestLog.LostOnTheOpenStep` reads where the machine's latest take conflict landed: on the step open, the take was made on
+  work the step no longer stands on (withdrawn by a reopen, grown from another submission, or published anew after its submission
+  went). `OnALostTake`'s open branch reads it beside `LostToTheReopen`, so the store, the remote and the rebase refuse alike. The
+  refusal reads the reopen from the history (`QuestMove.LostToTheReopen`), and otherwise says the step was published anew on other work.
+- **Verification:** `QuestSyncTests`, done, decline and set-up, the step published anew after B's pass and before it: the store's
+  refusal red, the remote's red with it set aside, the rebase's red with both, then green; a done after a take lost to a delete still
+  lands (D95). Service tests 2325 before, 2332 after, all passed; HTTP tests 292, all passed.
+
 ## 2026-10-19 — A next step's take that went with a take lost to the reopen was stopped in another machine's words (FABRIC-CLOSE1c22)
 
 - **Symptom:** B took a step before A's reopen of its source reached it, submitted, and took the next step its submission published,
