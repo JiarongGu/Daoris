@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../data/api';
 import { elapsed, sessionTool } from '../locales/format';
 import type { AccountNamer } from '../agents/tools';
-import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../design/ui';
+import { Pill, SectionTitle, SESSION_TONE } from '../design/ui';
+import { QuestStatus } from '../quests/QuestStatus';
 import { cn } from '../lib/cn';
 import { questName } from '../work/identity';
 import type { ChainStep } from './chain';
@@ -135,7 +136,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
     <div className="grid min-w-0 gap-1">
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {title}
-        <Pill tone={QUEST_TONE[quest.status]}>{t(`status.${quest.status}`)}</Pill>
+        <QuestStatus quest={quest} />
         {current && <span className="text-meta text-ink-faint">{t('chain.current')}</span>}
       </p>
       <p className="m-0 font-mono text-meta text-ink-faint">

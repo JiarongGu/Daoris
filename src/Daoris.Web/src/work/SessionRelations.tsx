@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../data/api';
-import { Pill, QUEST_TONE, SectionTitle } from '../design/ui';
+import { SectionTitle } from '../design/ui';
+import { QuestStatus } from '../quests/QuestStatus';
 import { questName } from './identity';
 import { Note } from './Note';
 import type { Relations } from './relations';
@@ -77,7 +78,7 @@ export function SessionRelations({ relations, onQuest, onSession }: {
             {asked.map(({ quest, question }) => (
               <dd key={quest.id} className="m-0 grid gap-0.5">
                 <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                  <Pill tone={QUEST_TONE[quest.status]}>{t(`status.${quest.status}`)}</Pill>
+                  <QuestStatus quest={quest} />
                   <span className="text-meta text-accent">→ {quest.to}</span>
                   {title(quest)}
                   {question && <span className="text-meta text-ink-faint">{t('work.relations.question')}</span>}

@@ -205,4 +205,23 @@ describe("Overview's lead, What needs you", () => {
       '`engine` is not an adopted repository in `default` — only an adopter can be asked.', 'error'));
     expect(within(row).getByRole('button', { name: 'Publish to engine' })).toBeEnabled();
   });
+
+  // FABRIC-CLOSE1d2: an outstanding quest reads as the quest's page does, timed by its submission.
+  it('says submitted, timed by the submission, and source reopened; a quest no closure holds reads taken as before', async () => {
+    const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
+    const base = { from: 'game', to: 'engine', body: '', status: 'Taken', filed: hoursAgo(30), updated: hoursAgo(20) };
+    QUESTS = [
+      { ...base, id: 'aa11aa', title: 'Submitted one', closure: 'gph-1', submission: { machine: 'desk', sequence: 1, at: hoursAgo(2) } },
+      { ...base, id: 'bb22bb', title: 'Reopened one', hold: 'source-reopened' },
+      { ...base, id: 'cc33cc', title: 'Plain one' },
+    ];
+    show();
+    const row = async (title: string) => (await screen.findByText(title)).closest('button')!;
+
+    expect(await row('Submitted one')).toHaveTextContent(/^submittedSubmitted one.*submitted 2h ago/);
+    expect(await row('Reopened one')).toHaveTextContent(/^takensource reopenedReopened one.*taken 20h ago/);
+    const plain = await row('Plain one');
+    expect(plain).toHaveTextContent(/^takenPlain one.*taken 20h ago/);
+    expect(plain).not.toHaveTextContent(/submitted|source reopened/);
+  });
 });

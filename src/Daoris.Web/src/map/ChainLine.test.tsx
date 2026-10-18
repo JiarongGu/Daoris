@@ -37,4 +37,24 @@ describe('the chain line', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show how it ran' }));
     expect(onExpand).toHaveBeenCalled();
   });
+
+  // FABRIC-CLOSE1d2: the words the quest's page reads, in the line's plain ink.
+  it('says submitted for a closure graph\'s submitted quest, and source reopened for a step held so', () => {
+    const quests = [
+      quest('a', { status: 'Taken', closure: 'gph-1', submission: { machine: 'desk', sequence: 1, at: '2026-09-23T02:00:00Z' } }),
+      quest('b', { parent: 'a', status: 'Taken', hold: 'source-reopened' }),
+    ];
+    render(<ChainLine chain={buildChain('b', quests, [])} onExpand={() => {}} />);
+
+    const line = screen.getByRole('navigation', { name: 'How this work ran' });
+    expect(line.textContent).toMatch(/submitted.*this quest.*taken.*source reopened/);
+  });
+
+  it('keeps a quest no closure holds reading taken', () => {
+    render(<ChainLine chain={buildChain('a', [quest('a', { status: 'Taken' })], [])} onExpand={() => {}} />);
+
+    const line = screen.getByRole('navigation', { name: 'How this work ran' });
+    expect(line.textContent).toMatch(/this quest.*taken/);
+    expect(line.textContent).not.toMatch(/submitted|source reopened/);
+  });
 });

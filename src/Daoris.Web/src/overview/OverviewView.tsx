@@ -5,9 +5,10 @@ import { ranked, widest } from './overview';
 import { useConsidered } from '../bridge/shell';
 import { sittingBecause, sittingSentence } from '../data/signals';
 import {
-  Card, CardHeader, Button, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
+  Card, CardHeader, Button, EmptyState, Icon, Inline, type Notify, PageHeader,
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from '../design/ui';
+import { QuestStatus } from '../quests/QuestStatus';
 import { AttentionBand, type AttentionDoors } from '../work/AttentionBand';
 import { questName } from '../work/identity';
 
@@ -129,14 +130,15 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
                     onClick={() => onOpenQuest(quest.id)}
                     className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-body hover:bg-accent-soft"
                   >
-                    <Pill tone={QUEST_TONE[quest.status]}>
-                      {t(`status.${quest.status}`)}
-                    </Pill>
+                    <QuestStatus quest={quest} />
                     <span title={quest.title} className="font-medium">{questName(quest)}</span>
                     <span className="ml-auto font-mono text-meta text-ink-faint">
                       {quest.from} → {quest.to} · {quest.status === 'Open'
                         ? t('overview.outstanding.filed', { ago: ago(quest.filed) })
-                        : t('overview.outstanding.taken', { ago: ago(quest.updated) })}
+                        : quest.status === 'Taken' && quest.submission
+                          // Timed by the submission's moment (FABRIC-CLOSE1d2): the quest's own record moved at the take.
+                          ? t('overview.outstanding.submitted', { ago: ago(quest.submission.at) })
+                          : t('overview.outstanding.taken', { ago: ago(quest.updated) })}
                     </span>
                     {/* WHY it is sitting, on the desktop only (a browser has no driver): the driver's
                         own sentence from its last look — which is the answer to the question this

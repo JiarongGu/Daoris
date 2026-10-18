@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Ask, DeclarationMatch, Session } from '../data/api';
+import type { Ask, DeclarationMatch, Quest, Session } from '../data/api';
 import { ago, sessionTool, size, stamp } from '../locales/format';
 import { ExternalLink } from '../design/links';
 import type { Consideration } from '../data/signals';
@@ -99,7 +99,7 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  * Props only, no hook from the query layer or the shell (components §2).
  */
 export function AskPage({
-  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
+  ask, receivers, questTitles, quests, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
   work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel,
 }: {
   /**
@@ -140,6 +140,8 @@ export function AskPage({
   receivers: string[];
   /** Titles of the quests this page holds, by id — one it has not loaded is named by its id, and not opened. */
   questTitles: Record<string, string>;
+  /** The quests this page holds, by id: what its work reads a quest's submission and hold from (FABRIC-CLOSE1d2). */
+  quests?: Readonly<Record<string, Quest>>;
   /** The record of the intake session that served it (INT4d), when the page holds it. */
   intake?: Session | null;
   /** The door into Sessions — absent where there are none, which is a browser. */
@@ -484,7 +486,7 @@ export function AskPage({
         /* What a pause or an abandon reaches, before either is pressed (PAUSE1h, D132 §7.1). */
         <PageSection title={t('asks.record.quests')}>
           <AskWork
-            items={items} ask={ask.id} considered={considered} questTitles={questTitles} onOpenQuest={onOpenQuest} onAttend={onAttend}
+            items={items} ask={ask.id} considered={considered} questTitles={questTitles} quests={quests} onOpenQuest={onOpenQuest} onAttend={onAttend}
           />
         </PageSection>
       ) : ask.quests.length > 0 && (

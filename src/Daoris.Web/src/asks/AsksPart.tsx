@@ -187,6 +187,7 @@ export function useAsksPart({
     return [...new Set(rules.flatMap((rule) => (rule.none ? [] : rule.environments.map((each) => each.name))))].sort();
   };
   // Each quest the page holds by its name (SESSUX1j): the short title, else the title.
+  const questsById = Object.fromEntries((quests ?? []).map((quest) => [quest.id, quest]));
   const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, questName(quest)]));
   const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending
     || chooseReview.isPending || chooseKind.isPending || reading;
@@ -320,6 +321,7 @@ export function useAsksPart({
           ask={shown}
           receivers={receiversIn(shown.workspace)}
           questTitles={questTitles}
+          quests={questsById}
           intake={intakeOf(shown)}
           lines={askLines(entries, shown.id)}
           channel={channelDoor(shown)}

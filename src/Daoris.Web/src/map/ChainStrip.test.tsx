@@ -139,4 +139,26 @@ describe('the chain strip', () => {
 
     expect(screen.queryAllByRole('button')).toEqual([]);
   });
+
+  // FABRIC-CLOSE1d2: a submission is not a status (§E5), but what is drawn says it, as the quest's page does.
+  it('says submitted for a closure graph\'s submitted quest, and source reopened for a step held so', () => {
+    const quests = [
+      quest('a', { status: 'Taken', closure: 'gph-1', submission: { machine: 'desk', sequence: 1, at: '2026-09-23T02:00:00Z' } }),
+      quest('b', { parent: 'a', status: 'Taken', hold: 'source-reopened' }),
+    ];
+    render(<ChainStrip chain={buildChain('b', quests, [])} />);
+
+    const steps = within(screen.getByRole('region', { name: 'How this work ran' })).getAllByRole('listitem');
+    expect(steps[0]!.textContent).toMatch(/submitted/);
+    expect(steps[0]!.textContent).not.toMatch(/taken/);
+    expect(steps[1]!.textContent).toMatch(/taken.*source reopened/);
+  });
+
+  it('keeps a quest no closure holds reading taken', () => {
+    render(<ChainStrip chain={buildChain('a', [quest('a', { status: 'Taken' })], [])} />);
+
+    const steps = within(screen.getByRole('region', { name: 'How this work ran' })).getAllByRole('listitem');
+    expect(steps[0]!.textContent).toMatch(/taken/);
+    expect(steps[0]!.textContent).not.toMatch(/submitted|source reopened/);
+  });
 });
