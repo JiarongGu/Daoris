@@ -80,7 +80,12 @@ public sealed class QuestOperationKindsTests
         {
             Note = "The person marked this done: Built.", NoteParts = DoneParts, Attempted = QuestStatus.Done, LostToTheReopen = true,
         },
-        [QuestOperationKind.Dismissed] = s => Op(QuestOperationKind.Dismissed, s) with { Dismisses = new QuestOperationRef("m2", 7) },
+        // Marked as brought forward with the fresh take it made (SYNCMERGE1a, D178 point 5): the conflict and the take the state below
+        // shows at sequences 2 and 3, since a marked dismissal applies only while the take it resolves stands unsettled.
+        [QuestOperationKind.Dismissed] = s => Op(QuestOperationKind.Dismissed, s) with
+        {
+            Dismisses = new QuestOperationRef("m1", 2), Forward = new QuestOperationRef("m1", 3),
+        },
         [QuestOperationKind.Waited] = s => Op(QuestOperationKind.Waited, s) with { Note = "fedcbafedcba" },
         [QuestOperationKind.Deleted] = s => Op(QuestOperationKind.Deleted, s),
         [QuestOperationKind.Accepted] = s => Op(QuestOperationKind.Accepted, s),
@@ -171,6 +176,10 @@ public sealed class QuestOperationKindsTests
             // FABRIC-CLOSE1c: a step its source's reopen withdrew, the reopen naming the submission it grew from.
             ("open, withdrawn by its source's reopen",
                 [published, Sample(QuestOperationKind.Reopened, 2) with { Submission = new QuestOperationRef("m9", 3) }]),
+            // SYNCMERGE1a: a take of this machine's that lost, kept as a conflict, and the fresh take its bring-forward made.
+            ("taken afresh, its earlier take lost",
+                [published, Op(QuestOperationKind.Conflict, 2) with { Attempted = QuestStatus.Taken, Note = "The owner's session." },
+                    Sample(QuestOperationKind.Taken, 3)]),
         ];
     }
 
@@ -331,6 +340,32 @@ public sealed class QuestOperationKindsTests
         // On any other kind it is no field of the kind's, and is not read.
         var take = QuestWire.ReadPush(Conflict(""", "lostToTheReopen": true""").Replace("\"conflict\"", "\"taken\""));
         Assert.False(Assert.Single(take!.Value.Operations).LostToTheReopen);
+    }
+
+    /// <summary>
+    /// SYNCMERGE1a (D178 point 5): a dismissal's mark that it brought its machine's lost take forward is optional, since a plain dismissal
+    /// and every one from before carries none, and a marked one crosses naming the fresh take it made. One present and not whole makes
+    /// the dismissal half of one: read as plain, it would settle the conflict wherever it landed, where its take lost as well.
+    /// </summary>
+    [Fact]
+    public void A_dismissals_forward_mark_is_optional_on_the_wire_and_one_not_whole_makes_the_dismissal_not_whole()
+    {
+        string Dismissal(string mark) => $$"""
+            { "base": 0, "operations": [{ "machine": "m1", "sequence": 4, "quest": "{{Id}}", "kind": "dismissed",
+              "at": "2026-10-07T09:00:00Z", "dismisses": { "machine": "m1", "sequence": 2 }{{mark}} }] }
+            """;
+
+        Assert.Null(Assert.Single(QuestWire.ReadPush(Dismissal(""))!.Value.Operations).Forward);
+        Assert.Equal(new QuestOperationRef("m1", 3),
+            Assert.Single(QuestWire.ReadPush(Dismissal(""", "forward": { "machine": "m1", "sequence": 3 }"""))!.Value.Operations).Forward);
+        Assert.Null(QuestWire.ReadPush(Dismissal(""", "forward": { "machine": "m1" }""")));
+        Assert.Null(QuestWire.ReadPush(Dismissal(""", "forward": true""")));
+        // On any other kind it is no field of the kind's, and is not read.
+        var take = QuestWire.ReadPush(Dismissal(""", "forward": { "machine": "m1", "sequence": 3 }""").Replace("\"dismissed\"", "\"taken\""));
+        Assert.Null(Assert.Single(take!.Value.Operations).Forward);
+        // A plain dismissal crosses exactly as it did: no `forward` written.
+        var plain = new QuestOperation(Id, QuestOperationKind.Dismissed, "m1", 4, Now, Dismisses: new QuestOperationRef("m1", 2));
+        Assert.DoesNotContain("forward", QuestWire.Push(0, [plain]), StringComparison.Ordinal);
     }
 
     // ——— The log and the cache: QuestStore's payload, its reader, and the row the replay writes.

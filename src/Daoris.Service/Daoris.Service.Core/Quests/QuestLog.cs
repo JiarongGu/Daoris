@@ -165,6 +165,13 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// (FABRIC-CLOSE1c22). The step's publication went too, so its history holds nothing the reopen could be read from, and the conflict
 /// says it instead, for <see cref="QuestLog.LostToTheReopen"/>. False on every other conflict, every one from before, and every other kind.
 /// </param>
+/// <param name="Forward">
+/// For a <see cref="QuestOperationKind.Dismissed"/>: the fresh take it made where it brings its machine's lost take forward (SYNCMERGE1a,
+/// D178 point 5), written beside it in the same write; its presence is the mark. A marked dismissal is the taker's own
+/// (<see cref="QuestLog.TakersOwn(QuestOperation)"/>): it applies only where that take stands, on its machine's own take conflict still
+/// on the quest, and a rebase loses it with the take. Null on a plain dismissal, every one from before, and every other kind, which an
+/// older build reads every dismissal as.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -185,7 +192,8 @@ public sealed record QuestOperation(
     QuestClose? Close = null,
     QuestOperationRef? Submission = null,
     string? Session = null,
-    bool LostToTheReopen = false);
+    bool LostToTheReopen = false,
+    QuestOperationRef? Forward = null);
 
 /// <summary>
 /// What a graph's close names its Done by (FABRIC-CLOSE1a, the fabric events design §E5): the invocation's key, which the
@@ -314,11 +322,13 @@ public static class QuestLog
     /// people dismissing one conflict is one dismissal, never a refusal or a new conflict. A delete
     /// applies only to an open quest: taken, somebody's work stands on it (D95). So does a decline made
     /// while open (PAUSE1c): it was judged on an open quest, so after a take the take stands, and the
-    /// rebase keeps the decline as a conflict (D68 rule 2).
+    /// rebase keeps the decline as a conflict (D68 rule 2). A dismissal that brings its machine's lost take forward applies only to that
+    /// machine's own take conflict, still on the quest, beside a take of its own (SYNCMERGE1a, <see cref="Brings"/>).
     /// </summary>
     public static bool Applies(Quest? quest, QuestOperation operation) => operation.Kind switch
     {
         QuestOperationKind.Declined when operation.WhileOpen => quest is { Status: QuestStatus.Open },
+        QuestOperationKind.Dismissed when operation.Forward is not null => Brings(quest, operation),
         QuestOperationKind.Published => quest is null,
         QuestOperationKind.Conflict or QuestOperationKind.Dismissed => quest is not null,
         // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.
@@ -364,6 +374,19 @@ public static class QuestLog
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
+
+    /// <summary>
+    /// Whether a dismissal marked as bringing its machine's lost take forward (SYNCMERGE1a, D178 point 5) applies to
+    /// <paramref name="quest"/>: the conflict it names is its own machine's take that lost, still on the quest, and the take it names is
+    /// that machine's too. A conflict already settled, by a plain dismissal or this one, authorizes no take, so the mark lands nowhere
+    /// there, and a rebase loses the take it made with it (<see cref="QuestStore"/>'s rebase). Whether the take itself stands is the
+    /// claim's: the mark is the taker's own (<see cref="TakersOwn(QuestOperation)"/>, <see cref="OnALostTake"/>).
+    /// </summary>
+    public static bool Brings(Quest? quest, QuestOperation dismissal) =>
+        quest is not null && dismissal is { Dismisses: { } named, Forward: { } take }
+        && named.Machine == dismissal.Machine && take.Machine == dismissal.Machine
+        && quest.Conflicts.Any(conflict => conflict.Machine == named.Machine && conflict.Sequence == named.Sequence
+                                           && conflict.Attempted == QuestStatus.Taken);
 
     /// <summary>Whether <paramref name="named"/> is <paramref name="quest"/>'s own current submission, on its take (FABRIC-CLOSE1c).</summary>
     private static bool SubmittedHere(Quest quest, QuestOperationRef named) =>
@@ -417,9 +440,11 @@ public static class QuestLog
     /// <see cref="LostOnTheOpenStep"/>): applied, it would close the winner's step on the loser's work. An open quest is otherwise
     /// nobody's work, as above. A take is never judged so: a fresh one of the open step is that machine's to make, and its claim reads by
     /// it from then on.</para>
+    /// <para>A dismissal marked as bringing the take forward (SYNCMERGE1a) is judged so too, being made on the fresh take beside it: where
+    /// that take lost, the conflict it was to resolve stays, and the mark is refused at a remote as a done is. A plain one never is.</para>
     /// </remarks>
     public static bool OnALostTake(Quest? standing, IEnumerable<QuestOperation> history, QuestOperation operation) =>
-        TakersOwn(operation.Kind) && standing switch
+        TakersOwn(operation) && standing switch
         {
             { Status: QuestStatus.Taken } => Claim(history, operation.Machine) == QuestClaim.Lost,
             { Status: QuestStatus.Open } => operation.Kind != QuestOperationKind.Taken
@@ -486,11 +511,21 @@ public static class QuestLog
     /// <summary>
     /// Whether a kind is made on a take, by the machine holding it: a move, a wait, a set-up (WAITCLAIM1, REVIEWENV1b), or a
     /// closure graph's bind and submission (FABRIC-CLOSE1a, §E5). One list for <see cref="OnALostTake"/> and for a rebase's
-    /// losing of what a lost take made.
+    /// losing of what a lost take made, both through <see cref="TakersOwn(QuestOperation)"/>, which adds the one operation of another kind
+    /// that is a taker's.
     /// </summary>
     public static bool TakersOwn(QuestOperationKind kind) =>
         QuestTransitions.Target(kind) is not null
         || kind is QuestOperationKind.Waited or QuestOperationKind.SetUp or QuestOperationKind.Bound or QuestOperationKind.Submitted;
+
+    /// <summary>
+    /// Whether an operation is made on a take, by the machine holding it: every kind <see cref="TakersOwn(QuestOperationKind)"/> names,
+    /// and a dismissal marked as bringing that machine's lost take forward (SYNCMERGE1a, <see cref="QuestOperation.Forward"/>), which is
+    /// written with its fresh take and stands or falls with it. A plain dismissal is no move on a take, and is no taker's. What
+    /// <see cref="OnALostTake"/> and a rebase's losing of what a lost take made read.
+    /// </summary>
+    public static bool TakersOwn(QuestOperation operation) =>
+        TakersOwn(operation.Kind) || operation is { Kind: QuestOperationKind.Dismissed, Forward: not null };
 
     /// <summary>The quest after an operation that <see cref="Applies"/> — none after a delete.</summary>
     public static Quest? Step(Quest? quest, QuestOperation operation) => operation.Kind switch
@@ -589,7 +624,9 @@ public static class QuestLog
         // It applies to any quest there is, so it is lost only with its quest (D95), and kept so that machine's claim
         // still reads lost.
         QuestOperationKind.Conflict => QuestLoss.Kept,
-        // Nothing left to say. A dismissal is lost only with its quest. A wait, once its quest is no longer taken: another
+        // Nothing left to say. A dismissal is lost only with its quest; one bringing a lost take forward also with the take it made, or
+        // on a conflict another machine settled first (SYNCMERGE1a), so a failed bring-forward never reads as resolved, and the conflict
+        // it was to resolve stays. A wait, once its quest is no longer taken: another
         // machine closed or deleted it first (QUESTOP1); or made on this machine's take that lost, which the take's
         // conflict names (WAITCLAIM1, QuestStore.RebaseAsync), or which an older build made after that conflict was written
         // and the remote never kept (WAITCLAIM4). A delete that lost to a take, or that another machine's delete

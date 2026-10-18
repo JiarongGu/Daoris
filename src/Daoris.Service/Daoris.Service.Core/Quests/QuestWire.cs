@@ -27,7 +27,8 @@ public static class QuestWire
         + "a done's every answer names its requirement and says met or departed, a departure "
         + "with its quote, and a done's close, where it says one, names its key and token; a decline's or a rebind's "
         + "whileOpen, where it says one, is true or false; a conflict names "
-        + "what it attempted, and its lostToTheReopen, where it says one, is true or false; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
+        + "what it attempted, and its lostToTheReopen, where it says one, is true or false; a dismissal names the conflict's machine and sequence, "
+        + "and its forward, where it says one, names a take's machine and sequence; an evidenced verdict names "
         + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
         + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
         + "name, and a set-up step's environment is a name that never reads as production; a set-up names its full "
@@ -199,6 +200,10 @@ public static class QuestWire
             writer.WriteNumber("sequence", named.Sequence);
             writer.WriteEndObject();
         }
+
+        // Only when set, and only on a dismissal (SYNCMERGE1a): a plain one crosses exactly as it did, and an older build reads a marked
+        // one as plain, so a mixed family degrades to the conflict dismissed, with no push refused (D178 point 5).
+        if (operation is { Kind: QuestOperationKind.Dismissed, Forward: { } forward }) QuestStore.WriteRef(writer, "forward", forward);
         if (operation.Published is { } asked)
         {
             writer.WriteStartObject("asked");
@@ -323,6 +328,15 @@ public static class QuestWire
             }
 
             dismisses = new QuestOperationRef(conflictMachine, conflictSequence);
+        }
+
+        // The take a dismissal brought forward (SYNCMERGE1a), where it says one. One present and not whole makes the dismissal half of
+        // one: read as plain, it would settle the conflict wherever it landed, where the take it was made with lost as well.
+        QuestOperationRef? forward = null;
+        if (kind == QuestOperationKind.Dismissed && item.TryGetProperty("forward", out var brought)
+            && (forward = QuestStore.ReadRef(brought)) is null)
+        {
+            return null;
         }
 
         Quest? published = null;
@@ -519,7 +533,7 @@ public static class QuestWire
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
             dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission, session,
-            lostToTheReopen);
+            lostToTheReopen, forward);
     }
 
 }
