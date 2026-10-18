@@ -753,6 +753,59 @@ describe('the Agents place', () => {
     expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).getByText('owner@example.invalid')).toBeTruthy();
   });
 
+  /** ACCOUNTID1b: one email signed in to two organisations, and the agent's own sign-in in a third, each row told apart. */
+  it('tells two sign-ins of one email apart by their organisations, each said once', async () => {
+    const home = (id: string) => `C:/somewhere/.daoris/harnesses/claude-code/${id}`;
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{
+          ...ROSTER.harnesses[0],
+          ownAccount: 'person@example.invalid', ownOrg: 'Org C', ownPlan: 'pro',
+          profiles: [
+            { name: 'acct-0000000a', home: home('acct-0000000a'), login: 'in', account: 'person@example.invalid', org: 'Org A', plan: 'max' },
+            { name: 'acct-0000000b', displayName: 'person@example.invalid·Org-B', home: home('acct-0000000b'), login: 'in', account: 'person@example.invalid', org: 'Org B', plan: 'max' },
+            { name: 'acct-0000000d', displayName: 'work', home: home('acct-0000000d'), login: 'in', account: 'person@example.invalid', org: 'Org D' },
+          ],
+        }],
+      }
+      : WIRING));
+    place();
+
+    const a = await screen.findByRole('listitem', { name: 'person@example.invalid · Org A' });
+    expect(within(a).getByText('Org A')).toBeTruthy();
+    // A name that says both repeats neither.
+    const b = screen.getByRole('listitem', { name: 'person@example.invalid·Org-B' });
+    expect(within(b).queryByText(/Org B/)).toBeNull();
+    expect(within(screen.getByRole('listitem', { name: 'work' })).getByText('person@example.invalid · Org D')).toBeTruthy();
+    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).getByText('person@example.invalid · Org C')).toBeTruthy();
+  });
+
+  /** ACCOUNTID1b: the add flow's last step offers the name the driver offered at the sign-in's end, and no third copy of its rule. */
+  it('offers the name the sign-in’s end offered, and none where it offered none', async () => {
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: options?.payload?.action, started: true };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    place();
+    const signIn = async (offered: string | null) => {
+      await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
+      await act(async () => {
+        eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+          harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+          account: 'person@example.invalid', org: 'Org B', plan: 'max', offered, kept: true, places: [],
+        });
+      });
+      return within(await screen.findByRole('region', { name: 'Add an account' })).getByRole('textbox', { name: /Its name/ });
+    };
+
+    expect(await signIn('person@example.invalid·Org-B')).toHaveValue('person@example.invalid·Org-B');
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
+    expect(await signIn(null)).toHaveValue('');
+  });
+
   /** ACCT2's rename, from an account's ⋯: the person's name, sent as `daoris agent profile rename` sends it, and said once. */
   it('renames an account from its ⋯, and an emptied name gives it none', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {

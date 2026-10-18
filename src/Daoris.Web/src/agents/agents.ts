@@ -328,12 +328,20 @@ export function accountLabel(account: Named, among?: Among | null): string {
   return apart && who && says(name, who) && !says(name, apart) ? `${name} · ${apart}` : name;
 }
 
-/** Who is signed in to the agent's own home, with what tells it apart from an account of the same email (ACCOUNTID1b). */
-export function ownWho(tool: Among): string | null {
-  const who = tool.ownAccount?.trim();
+/**
+ * Who signed in, with what tells the sign-in apart from another of its agent of the same email after it (ACCOUNTID1b), for a
+ * line that says who and no name: *Signed in as …*, the agent's own sign-in. Null for a key, or where the agent said nobody.
+ */
+export function whoApart(account: Named, among?: Among | null): string | null {
+  const who = account.key ? null : account.account?.trim();
   if (!who) return null;
-  const apart = apartOf({ name: '', account: who, org: tool.ownOrg, plan: tool.ownPlan }, tool);
+  const apart = apartOf(account, among);
   return apart ? `${who} · ${apart}` : who;
+}
+
+/** Who is signed in to the agent's own home, told apart from an account of the same email (ACCOUNTID1b). */
+export function ownWho(tool: Among): string | null {
+  return whoApart({ name: '', account: tool.ownAccount, org: tool.ownOrg, plan: tool.ownPlan }, tool);
 }
 
 /**

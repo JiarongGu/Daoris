@@ -56,6 +56,22 @@ export const CODEX_TOOL = TOOLS.find((tool) => tool.name === 'codex')!;
 export const DSH_TOOL = TOOLS.find((tool) => tool.name === 'dsh')!;
 
 /**
+ * One email signed in to Claude Code in three organisations (ACCOUNTID1b): the tool's own sign-in in `Org A`, a fresh account
+ * nobody named in `Org B`, one named as the sign-in's end offered it in `Org C`, and one the person named `work` whose answer
+ * named no organisation, only its plan. Each row says what tells it apart, once.
+ */
+const ORGS_HOME = 'C:/somewhere/data/harnesses/claude-code';
+export const ORGS_TOOL: Tool = byTool([{
+  ...CLAUDE, machineDefault: null, workspaceDefaults: [], ownLogin: 'in', ownAccount: 'person@example.invalid', ownOrg: 'Org A',
+  ownPlan: 'max',
+  profiles: [
+    { name: 'acct-0000000b', home: `${ORGS_HOME}/acct-0000000b`, login: 'in', account: 'person@example.invalid', org: 'Org B', plan: 'max', read: READ },
+    { name: 'acct-0000000c', displayName: 'person@example.invalid·Org-C', home: `${ORGS_HOME}/acct-0000000c`, login: 'in', account: 'person@example.invalid', org: 'Org C', plan: 'team', read: READ },
+    { name: 'acct-0000000d', displayName: 'work', home: `${ORGS_HOME}/acct-0000000d`, login: 'out', account: 'person@example.invalid', org: null, plan: 'pro', read: READ },
+  ],
+}])[0]!;
+
+/**
  * How Claude Code's accounts are used: this machine's list of three, `work` on its own two, account-2 cooling. No account is
  * ready, so each next start waits for account-2's reset, sooner for a sign-in (TOOL6e), and no row is marked first (ACCTUX4b).
  */

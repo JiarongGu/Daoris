@@ -119,10 +119,15 @@ function stateWhy(t: (key: string) => string, state: AccountState, now?: Date): 
  * why a state reads as it does (a cool-off's whose-time, a key's check or refusal) opens under the row from a press a
  * keyboard reaches, where it was a tip on hover alone.
  */
-export function AccountRow({ name, who, id, home, why, state, runs, current, usage, act, menu, now, children }: {
+export function AccountRow({ name, label = name, who, id, home, why, state, runs, current, usage, act, menu, now, children }: {
   /** What leads: the person's name for it, a key's handle, who signed in for a fresh id, its id, or *Your own sign-in*. */
   name: string;
-  /** Who signed in, beside the name where the two differ. */
+  /**
+   * The row's name for a reader: its name, with what tells it apart where another sign-in of its agent reads alike
+   * (ACCOUNTID1b, `accountLabel`), so no two rows are one name to a screen reader. Absent, the name.
+   */
+  label?: string;
+  /** Who signed in, beside the name where the two differ, and the organisation where it tells two apart (ACCOUNTID1b). */
   who?: string | null;
   /** Its id, which a terminal types, on the name's tip with its directory; absent for your own sign-in. */
   id?: string;
@@ -159,7 +164,7 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, usa
   const time = <span className="text-small text-ink-soft">{when}</span>;
   return (
     <li
-      aria-label={name}
+      aria-label={label}
       // A line at 1546 px (D152 §4.2, a row at most 36 px): the act's own padding is the row's air, so the row adds little.
       className="grid grid-cols-[minmax(0,1fr)_auto_1.75rem] items-center gap-x-3 gap-y-0.5 border-t border-line py-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid-cols-subgrid @min-[40rem]/main:py-0.5"
     >

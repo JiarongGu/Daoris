@@ -431,6 +431,22 @@ describe('a signed-out account a list holds', () => {
     expect(attentionOffers(rows[1]!)).toEqual([]);
   });
 
+  /** ACCOUNTID1b: two fresh accounts signed in as one email in two organisations read alike; each row says its own. */
+  it('tells two signed-out accounts of one email apart by their organisations', () => {
+    const email = 'person@example.invalid';
+    const tools = byTool([door({
+      profiles: [
+        { name: 'acct-0000000a', home: 'H/a', login: 'out', read: READ, account: email, org: 'Org A' },
+        { name: 'acct-0000000b', home: 'H/b', login: 'out', read: READ, account: email, org: 'Org B' },
+      ],
+    })]);
+    const use = answer([scope(), scope({ workspace: 'work', list: ['acct-0000000a', 'acct-0000000b'] })]);
+    const rows = derive(known({ tools, use }));
+
+    expect(rows.map(({ title }) => title)).toEqual([`${email} · Org A`, `${email} · Org B`]);
+    expect(rows[1]!.account!.named).toEqual([expect.objectContaining({ id: 'acct-0000000b', label: `${email} · Org B` })]);
+  });
+
   it('says no wait however recently it was read again', () => {
     const tools = byTool([door({
       profiles: door().profiles!.map((profile) => (profile.name === 'account-1' ? { ...profile, read: NOW.toISOString() } : profile)),
