@@ -23,6 +23,34 @@ repository.
   `OpinionGateTests`'), `OpinionLookTests` 6 of 6 (4 before), and the `AutoLanding` classes, run once by filter with
   `git.process.runsettings`, 72 of 75 (74 before): the 3 timed out in the fixture's 60 s waits for a push or a landing to reach its
   hold, a load timeout before any opinion is read, and pass alone.
+## 2026-10-19 — The instance door's tests gave a stand-in two seconds to connect and answer (TESTWAIT7)
+
+- **Symptom:** beside loaded merges, four `InstanceDoorTests` failed (exit 2 for 0; "trees: Daoris is running on this home … did not
+  answer" where a refusal was expected); each passed alone.
+- **Root cause** (read, not reproduced): the test world gave the client `Answer = 2 s` for the connect, the hello and the result-by-key
+  ask, and the stand-in is served in process on the same starved machine, so a late connect or hello read as a silent instance.
+- **Fix:** the world's `Answer` and `Wait` are two minutes; only the two cases that serve nothing (a pipe nobody serves, the variable
+  naming one) pass a one-second `answer:`, since no load makes an unserved pipe answer, and the held-press case keeps its 500 ms
+  `Wait` (the elapse is its point). No assertion changed.
+- **Verification:** `InstanceDoorTests` plain three times, 21 passed each (3 s alone).
+
+## 2026-10-19 — Hold-wait bounds in the driver's fast half were seconds, on a signal that loaded merges delay (TESTWAIT8, TESTCLOCK1)
+
+- **Symptom:** `AutoLandingFixture.HeldAtThePushAsync` timed out its 60 s wait for the landing's branch hold four times across
+  CLOSE1h12's and PROCSPLIT1's runs; the like waits in other classes carry 10-30 s bounds.
+- **Root cause:** the waits are on the hold's own count (or the landing ending), so the bound only elapses on failure, but it was
+  short enough for a starved thread to reach it.
+- **Fix:** the fixture's wait is five minutes; `LandingHoldsTests`' `Bound` and `SessionsOutliveTheirLookTests`' `Bound` are two
+  minutes (its closing token five), `EntryLandingTests`' hold wait two, and `PluginCatalogTests`' "not run, only probed" elapsed bar
+  15 s (under the probe's 20 s patience, so it still proves the harness was not run). No assertion changed. The remaining bounds
+  are listed as rows in the branch's hand-back.
+- **Verification:** the touched fast classes plain three times, 129 passed each (21-26 s); `AutoLanding*` once under the git
+  settings: 72 of 74 passed, the two failures (`AutoLandingPressTests`' push-waiting theory, 30 s waits in a test body another
+  branch owns) pass alone. Also found in the fast half's one run: `DriverWatchTopicsTests.A_thousand_wakes_run_no_remote_sync` asserted
+  two reported looks the moment the quest's run had started, but a run starts inside the look and the look is reported after it; it
+  now waits for the second report (an ordering race, not a clock one; passes alone and three plain runs of the class).
+
+## 2026-10-18 — A step's next submission after the person's go-on was never sealed (FABRIC-CLOSE1c14)
 
 - **Symptom:** after the person's go-on on a held step that had submitted, the successor that old submission published stood unheld,
   could be taken and worked on, and the step's next submission was never sealed by it: the step's close was refused `unsealed`.
