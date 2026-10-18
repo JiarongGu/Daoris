@@ -114,6 +114,7 @@
   "asks.work.pausedQuest": "Paused with quest #{{id}}, until that quest is resumed.",
   "asks.work.elsewhere": "Taken on {{machine}}: a pause here does not reach it.",
   "asks.work.elsewhereUnnamed": "Taken on another machine: a pause here does not reach it.",
+  "asks.work.reopenedTake": "You reopened the work this step grew from, and that reached the remote before this machine’s take did: a pause here does not reach it.",
   "asks.work.outside": "Taken here outside Daoris: a pause does not reach it.",
   "asks.record.goAheads": "Go-aheads",
   "asks.goAhead.lead": "Its sessions asked you for these, each once. Every session on the ask is handed your answer at its next start.",

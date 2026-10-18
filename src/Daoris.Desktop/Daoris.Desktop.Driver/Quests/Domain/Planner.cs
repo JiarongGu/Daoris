@@ -386,8 +386,12 @@ public sealed record PriorSession(
 /// The newest teammate's record on it that did not stand down, as <c>origin/id</c>, or null: what names another machine's take,
 /// since the quest's log names a machine by an id no person reads.
 /// </param>
-public sealed record QuestTake(string Claim, bool Took = false, string? Teammate = null)
+/// <param name="Why">Why a lost claim lost, as the host said it beside the claim (FABRIC-CLOSE1c18), or null.</param>
+public sealed record QuestTake(string Claim, bool Took = false, string? Teammate = null, string? Why = null)
 {
+    /// <summary>The claim was lost to the person's reopen of the work the step grew from, not to another machine's take (FABRIC-CLOSE1c20).</summary>
+    public bool Reopened => Claim == "lost" && Why == "source-reopened";
+
     /// <summary>The take is this machine's by its claim: one a remote numbered, or one only here (D68 §4).</summary>
     public bool Here => Claim is "held" or "unconfirmed";
 }

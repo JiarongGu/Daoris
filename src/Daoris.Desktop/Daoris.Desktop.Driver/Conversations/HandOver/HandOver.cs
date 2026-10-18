@@ -65,6 +65,9 @@ public static class HandOver
     /// <summary>A quest's session whose quest is not this machine's to carry on: taken elsewhere, or the session stood down.</summary>
     public const string QuestElsewhere = "quest-elsewhere";
 
+    /// <summary>A quest's session whose take was lost to the person's own reopen of the work its step grew from (FABRIC-CLOSE1c20).</summary>
+    public const string QuestReopened = "quest-reopened";
+
     /// <summary>A quest's session that is not the quest's last run on this machine, which a later session here carries.</summary>
     public const string NotLastRun = "not-last-run";
 
