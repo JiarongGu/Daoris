@@ -757,6 +757,87 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Null((await _a.DismissAsync("nosuchquest", null, null, Now)).Quest);
     }
 
+    /// <summary>
+    /// SYNCMERGE1a (D178 point 3): bringing a lost take forward is offered only where it can stand. Refused, and nothing written, while
+    /// another machine holds the quest, on another machine's conflict or none, and once the quest is closed; and for a quest there is not.
+    /// </summary>
+    [Fact]
+    public async Task A_bring_forward_is_refused_where_it_cannot_stand_and_writes_nothing()
+    {
+        var quest = await RacedAsync();
+        var lost = Assert.Single((await _b.FindAsync(quest.Id))!.Conflicts);
+        var conflict = new QuestOperationRef(lost.Machine, lost.Sequence);
+
+        Assert.Equal(QuestForwardRefusal.NotFound, (await _b.BringForwardAsync("nosuchquest", conflict, Now.AddHours(3))).Refusal);
+        var held = await _b.BringForwardAsync(quest.Id, conflict, Now.AddHours(3));
+        Assert.Equal((QuestForwardRefusal.TakenElsewhere, QuestStatus.Taken), (held.Refusal, held.Quest!.Status));
+        Assert.Null(held.Take);
+        Assert.Equal(QuestForwardRefusal.NotOurs, (await _a.BringForwardAsync(quest.Id, conflict, Now.AddHours(3))).Refusal);
+        Assert.Equal(QuestForwardRefusal.NotOurs,
+            (await _b.BringForwardAsync(quest.Id, conflict with { Sequence = conflict.Sequence + 50 }, Now.AddHours(3))).Refusal);
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Declined, "Not wanted after all.", Now.AddHours(4))).Moved);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(QuestForwardRefusal.Closed, (await _b.BringForwardAsync(quest.Id, conflict, Now.AddHours(5))).Refusal);
+
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Equal([conflict], (await _b.FindAsync(quest.Id))!.Conflicts.Select(c => new QuestOperationRef(c.Machine, c.Sequence)));
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a (D178 points 2 and 3): B's take of a step lost with the work it was made on, to C's take of the step's source, and C's
+    /// chain published the step anew under the same id (FABRIC-CLOSE1c24). B's person brings the lost take forward: a take of the step as it
+    /// stands, on C's work, and the conflict dismissed with it. It holds on every machine and the remote, the conflict gone, and B's done on
+    /// the step it now holds lands, which before the press it could not.
+    /// </summary>
+    [Fact]
+    public async Task A_take_lost_with_its_work_is_brought_forward_on_the_step_published_anew_and_holds_everywhere()
+    {
+        const string graph = "sha256:0f1e2d3c4b5a6978";
+        var c = await OpenAsync();
+        var quest = await _a.PublishAsync("Asker", "Federated", "Close in a chain", "why", Now,
+            then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await SyncAsync(c);
+        Assert.True((await c.MoveAsync(quest.Id, QuestStatus.Taken, "C's session.", Now.AddHours(1))).Moved);
+        Assert.True((await c.BindAsync(quest.Id, graph, Now.AddHours(1))).Moved);
+        await SyncAsync(c);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
+        Assert.True((await _b.BindAsync(quest.Id, graph, Now.AddHours(2))).Moved);
+        var step = (await _b.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(3))).FollowUp!;
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's step session.", Now.AddHours(3))).Moved);
+        var anew = await c.SubmitAsync(quest.Id, "Built by C.", [], Now.AddHours(4));
+        Assert.Equal(step.Id, anew.FollowUp!.Id);
+        await SyncAsync(c);
+        await SyncAsync(_b);
+        var lost = Assert.Single((await _b.FindAsync(step.Id))!.Conflicts);
+        var conflict = new QuestOperationRef(lost.Machine, lost.Sequence);
+        Assert.Equal((QuestClaim.Lost, QuestStatus.Open), (await _b.ClaimAsync(step.Id), (await _b.FindAsync(step.Id))!.Status));
+
+        var brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+        var report = await SyncAsync(_b);
+        await SyncAsync(c);
+        await SyncAsync(_a);
+
+        Assert.Equal(QuestForwardRefusal.None, brought.Refusal);
+        Assert.Empty(report.Refused);
+        Assert.Empty(report.Conflicts);
+        Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(step.Id));
+        var grows = new QuestOperationRef(anew.Quest!.Submission!.Machine, anew.Quest.Submission.Sequence);
+        foreach (var store in new[] { _a, _b, c, _remote })
+        {
+            var held = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Taken, 0, grows), (held.Status, held.Conflicts.Count, held.GrewFrom));
+            Assert.Contains(await store.HistoryAsync(step.Id), o => o.Kind == QuestOperationKind.Dismissed && o.Forward == brought.Take);
+        }
+
+        // The step is B's now: its person's done lands, which on the lost take it could not.
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Done, "Verified.", Now.AddHours(6))).Moved);
+        Assert.Empty((await SyncAsync(_b)).Refused);
+        Assert.Equal(QuestStatus.Done, (await _remote.FindAsync(step.Id))!.Status);
+    }
+
     // ——— Where a circle stands (SYNC6a): what this machine has not pushed, the quests carrying a
     // conflict, and how the last pass ended — what the status bar and `daoris-driver sync status` read.
 

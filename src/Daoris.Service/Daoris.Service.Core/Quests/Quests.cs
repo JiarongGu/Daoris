@@ -600,6 +600,42 @@ public sealed record QuestClosing(
 /// <summary>What a dismissal did: the quest as it now stands (null when there is no such quest), and how many conflicts went.</summary>
 public sealed record QuestDismissal(Quest? Quest, int Dismissed);
 
+/// <summary>Why the person's bring-forward of a lost take wrote nothing (SYNCMERGE1a, D178 point 3), or <see cref="None"/>.</summary>
+public enum QuestForwardRefusal
+{
+    None,
+
+    /// <summary>No quest under that id: never published here, or deleted.</summary>
+    NotFound,
+
+    /// <summary>
+    /// The conflict named is not this machine's take that lost on the quest as it stands: none is so named, it is another machine's, it
+    /// attempted another move than a take, or it went with an earlier publication of the quest (D95). Only the machine whose take lost
+    /// brings it forward.
+    /// </summary>
+    NotOurs,
+
+    /// <summary>The conflict was dismissed already, plainly or brought forward, here or on another machine: a settled conflict authorizes no take.</summary>
+    Settled,
+
+    /// <summary>Another machine holds the step: the claim is exclusive (D68), so the step is not this machine's while that take stands.</summary>
+    TakenElsewhere,
+
+    /// <summary>This machine holds the step already, by a take of its own since: nothing is left to bring forward, and the conflict is the person's to dismiss.</summary>
+    TakenHere,
+
+    /// <summary>The step is closed, done or declined: a closed step takes no take.</summary>
+    Closed,
+
+    /// <summary>The person's reopen holds the work the step grows from (FABRIC-CLOSE1c): withdrawn, it is taken by nobody until that work is ready again.</summary>
+    SourceReopened,
+}
+
+/// <param name="Refusal"><see cref="QuestForwardRefusal.None"/> when it wrote the take and the dismissal.</param>
+/// <param name="Quest">The quest as it now stands; null for no such id.</param>
+/// <param name="Take">The fresh take it made, which the dismissal is marked with (<see cref="QuestOperation.Forward"/>); null on a refusal.</param>
+public sealed record QuestBringingForward(QuestForwardRefusal Refusal, Quest? Quest, QuestOperationRef? Take = null);
+
 /// <param name="Quest">The quest as it stood when the delete was judged — null when there is no such quest.</param>
 /// <param name="Deleted">Whether THIS call deleted it. False with a quest is the table refusing: it is not open.</param>
 /// <param name="Tombstoned">Whether the delete is an operation that travels, rather than the quest simply going (D95).</param>
@@ -2531,6 +2567,68 @@ public sealed class QuestStore
             var standing = QuestLog.Replay(written)!;
             if (named.Count > 0) await WriteCacheAsync(standing, transaction, inside).ConfigureAwait(false);
             return new QuestDismissal(standing, named.Count);
+        }, ct);
+
+    /// <summary>
+    /// The person brings this machine's lost take forward (SYNCMERGE1a, D178 point 3): in one write, an ordinary take of the step stamped
+    /// with the source it grows from as it stands (FABRIC-CLOSE1c18), and the dismissal of <paramref name="conflict"/> marked with that take
+    /// (<see cref="QuestOperation.Forward"/>), so the conflict goes only where the take stands. Judged inside the write by the replay's own
+    /// rules, as every verb is: refused while another machine or this one holds the step, once it is closed, while the person's reopen holds
+    /// its source, and where the conflict is not this machine's lost take still on the quest. Pushing the take and awaiting its answer is
+    /// the exchange's (D69); a rebase loses both where another machine's take, or a dismissal of the same conflict, reached the remote first.
+    /// </summary>
+    public Task<QuestBringingForward> BringForwardAsync(
+        string id, QuestOperationRef conflict, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (QuestLog.Replay(history) is not { } standing) return new QuestBringingForward(QuestForwardRefusal.NotFound, null);
+
+            // This machine's own take that lost, kept on the quest as it stands; gone from it, either dismissed already or with an earlier
+            // publication of the quest (D95), which the history tells apart.
+            bool Named(QuestOperationRef? named) => named == conflict;
+            if (conflict.Machine != Machine
+                || !history.Any(o => o is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken }
+                                     && Named(new QuestOperationRef(o.Machine, o.Sequence))))
+            {
+                return new QuestBringingForward(QuestForwardRefusal.NotOurs, standing);
+            }
+
+            if (!standing.Conflicts.Any(c => Named(new QuestOperationRef(c.Machine, c.Sequence))))
+            {
+                var settled = history.Any(o => o.Kind == QuestOperationKind.Dismissed && Named(o.Dismisses));
+                return new QuestBringingForward(settled ? QuestForwardRefusal.Settled : QuestForwardRefusal.NotOurs, standing);
+            }
+
+            var refusal = standing switch
+            {
+                { Status: QuestStatus.Done or QuestStatus.Declined } => QuestForwardRefusal.Closed,
+                { Status: QuestStatus.Taken } => QuestLog.Claim(history, Machine) is QuestClaim.Held or QuestClaim.Unconfirmed
+                    ? QuestForwardRefusal.TakenHere
+                    : QuestForwardRefusal.TakenElsewhere,
+                { SourceReopened: not null } => QuestForwardRefusal.SourceReopened,
+                _ => QuestForwardRefusal.None,
+            };
+
+            // The take as MoveAsync makes one: stamped with the step's source as this write finds it, judged by the replay's rule.
+            var found = standing.GrewFrom;
+            if (refusal == QuestForwardRefusal.None
+                && !QuestLog.Applies(standing, new QuestOperation(id, QuestOperationKind.Taken, Machine, 0, now, Submission: found)))
+            {
+                refusal = QuestForwardRefusal.SourceReopened;
+            }
+
+            if (refusal != QuestForwardRefusal.None) return new QuestBringingForward(refusal, standing);
+
+            var take = await AppendAsync(
+                id, QuestOperationKind.Taken, now, note: null, published: null, transaction, inside, submission: found).ConfigureAwait(false);
+            var brought = new QuestOperationRef(Machine, take.Sequence);
+            var mark = await AppendAsync(
+                    id, QuestOperationKind.Dismissed, now, note: null, published: null, transaction, inside, conflict, forward: brought)
+                .ConfigureAwait(false);
+            var taken = QuestLog.Replay([.. history, take, mark])!;
+            await WriteCacheAsync(taken, transaction, inside).ConfigureAwait(false);
+            return new QuestBringingForward(QuestForwardRefusal.None, taken, brought);
         }, ct);
 
     /// <summary>

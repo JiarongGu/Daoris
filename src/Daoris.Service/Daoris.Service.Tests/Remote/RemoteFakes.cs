@@ -81,27 +81,29 @@ internal sealed class StoreRemote(
 }
 
 /// <summary>
-/// A remote built before PAUSE1c: a real store behind the real wire, whose reader has no field for a decline's
-/// <c>whileOpen</c>. The flag is taken out of every operation it reads and every one it serves, so it keeps, judges
-/// and hands back a plain decline, as an older build does. Quests only: nothing else of an older build differs here.
+/// A remote built before a field an existing kind gained: a real store behind the real wire, whose reader has no field for
+/// <paramref name="unknown"/>, by default a decline's <c>whileOpen</c> (PAUSE1c), or a dismissal's <c>forward</c> (SYNCMERGE1a). The
+/// field is taken out of every operation it reads and every one it serves, so it keeps, judges and hands back the operation as an older
+/// build does. Used to fetch from a current remote, it is a machine built before the field. Quests only: nothing else of an older build
+/// differs here.
 /// </summary>
-internal sealed class OlderRemote(QuestStore remote) : IRemote
+internal sealed class OlderRemote(QuestStore remote, string unknown = "whileOpen") : IRemote
 {
     public async Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) =>
-        QuestWire.ReadPage(WithoutWhileOpen(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct))))!;
+        QuestWire.ReadPage(Without(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct))))!;
 
     public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
     {
-        var (sent, pushed) = QuestWire.ReadPush(WithoutWhileOpen(QuestWire.Push(@base, operations)))!.Value;
+        var (sent, pushed) = QuestWire.ReadPush(Without(QuestWire.Push(@base, operations)))!.Value;
         return QuestWire.ReadPushed(QuestWire.Pushed(
             await remote.ReceiveAsync(sent, pushed, _ => null, _ => Workspaces.Default, ct)))!;
     }
 
     /// <summary>What an older reader makes of the JSON: every operation as it was, less the field it never knew.</summary>
-    private static string WithoutWhileOpen(string json)
+    private string Without(string json)
     {
         var root = System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
-        foreach (var operation in root["operations"]!.AsArray()) operation!.AsObject().Remove("whileOpen");
+        foreach (var operation in root["operations"]!.AsArray()) operation!.AsObject().Remove(unknown);
         return root.ToJsonString();
     }
 
