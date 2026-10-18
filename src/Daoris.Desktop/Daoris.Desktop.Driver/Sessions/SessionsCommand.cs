@@ -93,6 +93,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public Func<bool> LoopRuns { get; init; } = () => HomeLease.HeldBy(Home) is { IsInstance: true };
 
     /// <summary>
+    /// Told why a held word's line fell back to "at the driver's next look" instead of naming what holds it (TESTWAIT5): the
+    /// failure's kind, or that the planner gave no verdict. A test reads the cause; the person reads the same line.
+    /// </summary>
+    public Action<string>? Fell { get; init; }
+
+    /// <summary>
     /// The cool-off a start on an adapter would read for an account, or null where it is ready (MSG1g's <c>go-on-new</c>): read
     /// from this home's cool-offs by the account's owner, as the roster reads them, plugins' harnesses included.
     /// </summary>
@@ -1080,11 +1086,24 @@ public static class SessionsCommand
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException)
         {
+            world.Fell?.Invoke($"the look failed: {error.GetType().Name}: {error.Message}");
+            return Next;
+        }
+
+        if (verdict is null)
+        {
+            world.Fell?.Invoke($"the planner gave no verdict for quest {quest}");
             return Next;
         }
 
         // The listing's line for words that wait (MSG1f2): one sentence for both doors.
-        return verdict is null || WordsHold.Of(verdict, wait: null) is not { } holds ? Next : $"held: {holds.Sentence}";
+        if (WordsHold.Of(verdict, wait: null) is not { } holds)
+        {
+            world.Fell?.Invoke($"the planner's verdict for quest {quest} holds nothing: {verdict.Verdict}");
+            return Next;
+        }
+
+        return $"held: {holds.Sentence}";
     }
 
     /// <summary>

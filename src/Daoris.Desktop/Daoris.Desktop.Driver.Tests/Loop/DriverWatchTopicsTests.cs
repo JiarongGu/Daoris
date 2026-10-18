@@ -169,18 +169,27 @@ public sealed class DriverWatchTopicsTests : IDisposable
             await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
             var synced = Passes();
 
+            // TESTWAIT6: wakes go on until the loop's own signals say enough, two deadlines passed and more looks than a bare
+            // deadline would make, not for a stretch of the machine's clock, which a loaded run starved of wakes. Each wake waits
+            // for the look it woke, so a stream of wakes is what the loop saw.
             var wakes = 0;
-            var until = DateTimeOffset.UtcNow.AddSeconds(4);
-            while (DateTimeOffset.UtcNow < until)
+            var started = System.Diagnostics.Stopwatch.StartNew();
+            var first = Count(reports);
+            while (Passes() - synced < 2 || Count(reports) - first < 11)
             {
+                var seen = Count(reports);
                 watch.Nudge(ChangeTopics.Ledger, "quests");
                 wakes++;
+                await Poll.Until(() => Count(reports) > seen, () => $"wake {wakes} never looked", Bound);
                 await Task.Delay(100);
+                Assert.True(started.Elapsed < TimeSpan.FromSeconds(40), $"{Passes() - synced} deadline(s), {Count(reports) - first} look(s) for {wakes} wakes");
             }
 
+            // The deadline is pollSeconds after the last whole look, so over the time the stream ran there are at most one per second
+            // and one more, however many wakes came between.
             var deadlines = Passes() - synced;
-            Assert.True(Count(reports) > 10, $"{Count(reports)} look(s) for {wakes} wakes");
-            Assert.InRange(deadlines, 2, 8);
+            Assert.InRange(deadlines, 2, (int)started.Elapsed.TotalSeconds + 1);
+            Assert.True(Count(reports) - first > deadlines, $"{Count(reports) - first} look(s) for {wakes} wakes and {deadlines} deadlines");
         }
         finally
         {

@@ -149,6 +149,20 @@ repository.
   fact without the fresh read (S1's key on the node). Then the driver's fast half passes 9449 (9442 before), and the page's
   `WorkMilestone.test.tsx`, the locales, `i18n:check` and `names:check --strict` pass.
 
+## 2026-10-18 — A stream-of-wakes test counted looks over four wall-clock seconds, and a held-words line fell back with no cause shown (TESTWAIT6, TESTWAIT5)
+
+- **Symptom:** under load, `DriverWatchTopicsTests.The_whole_look_still_runs_at_its_deadline_under_a_stream_of_wakes` failed twice
+  ("6 look(s) for 7 wakes"), and `SessionsSayCommandTests.Held_words_name_what_holds_them` once, reading "held: the same session goes
+  on…" for the planner's hold sentence; each passed alone.
+- **Root cause** (read, not reproduced): the first sent wakes for 4 s of the machine's clock, so a starved test thread sent 7 wakes
+  and the `> 10` looks bar judged the load. The second's `HeldAsync` falls back to its "next look" sentence when the planner's look
+  throws or gives no verdict, and said nothing of which; the in-process stand-in has no client timeout, so the cause stays unproven.
+- **Fix:** the wakes test sends wakes, each awaiting the look it woke, until two deadlines and eleven looks have passed (the loop's
+  own counts, 40 s cap), then asserts the deadlines at most one per elapsed second plus one and more looks than deadlines. The
+  words' line is unchanged; `SessionsWorld.Fell` reports the fallback's cause, and the test asks again up to three times over a
+  fresh room when it fell, the last try failing with the causes named.
+- **Verify:** both classes (70 tests) passed 3 of 3, then the driver fast half. If the held test fails again its message names the cause.
+
 ## 2026-10-18 — A redirect test's status call timed out under load before its listener was asked (TESTWAIT3)
 
 - **Defect:** `RunningServiceTests.A_redirect_is_no_answer` failed twice in the driver gate beside two other gates and passed alone.
