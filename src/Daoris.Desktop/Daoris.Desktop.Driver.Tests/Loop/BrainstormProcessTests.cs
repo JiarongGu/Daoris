@@ -267,4 +267,94 @@ public sealed class BrainstormProcessTests : IDisposable
         Assert.Equal(refs, _repository.Output("for-each-ref --format=\"%(refname) %(objectname)\""));
         Assert.Equal("", _repository.Output("status --porcelain"));
     }
+
+    /// <summary>
+    /// A protocol agent that never answers its prompt: it says its process's id, then holds the turn open, as an agent past its
+    /// minutes would.
+    /// </summary>
+    private string Hanging()
+    {
+        var script = Path.Combine(_home, "hanging-agent.mjs");
+        File.WriteAllText(script, $$"""
+            {{Imports}}
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            const lines = createInterface({ input: process.stdin });
+            lines.on('line', (line) => {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'conv-' + process.env.DAORIS_BRAINSTORM_TURN } });
+              } else if (frame.method === 'session/prompt') {
+                writeFileSync(join({{System.Text.Json.JsonSerializer.Serialize(_home)}}, 'hanging.pid'), String(process.pid));
+                setTimeout(() => process.exit(0), 120_000);
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            });
+            """);
+        return script;
+    }
+
+    /// <summary>
+    /// 🔴 BRAINSTORM1b (D176 point 6): a real agent past its pass's minutes is stopped, its process ended, and its pass said as
+    /// timed out; the other maker's answer is still synthesized and ranked, and the document says who did not answer. The minute is
+    /// shortened to a second, so the five-minute pass ends in five seconds while the agent would hold its turn for two minutes.
+    /// </summary>
+    [Fact]
+    public async Task A_real_agent_past_its_minutes_is_stopped_and_what_answered_is_ranked()
+    {
+        OwnConnector();
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient("http://127.0.0.1:9", null),
+            DriverConfig.Empty with
+            {
+                Adapter = "stub", Cap = 3, TimeoutMinutes = 2,
+                Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Native()], ["acp-stub"] = ["node", Hanging()] },
+                Brainstorms = new BrainstormRule(BrainstormRules.Ask, [], new BrainstormMinutes(5, 10, 10, 30)),
+            },
+            adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            BrainstormMinute = TimeSpan.FromSeconds(1),
+        };
+        var files = new BrainstormFiles(_home);
+        var id = files.WriteRequest("Why does the daily report drop its last day?", null, ["stub", "acp-stub"], DateTimeOffset.UtcNow);
+        var snapshot = new Snapshot([], [], []);
+        await driver.BrainstormsAsync(snapshot, 0, [], CancellationToken.None);
+        files.WriteSent(id, files.ReadState(id)!.Packet!, DateTimeOffset.UtcNow);
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var events = new List<string>();
+        await driver.BrainstormsAsync(snapshot, 0, events, CancellationToken.None);
+        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        clock.Stop();
+
+        Assert.True(files.ReadState(id)!.State == BrainstormStates.Ended, string.Join('\n', events));
+        var pass = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "passes", "g2.json")))!;
+        Assert.Equal(("failed", "timed-out"), (pass["state"]!.GetValue<string>(), string.Join(",", pass["codes"]!.AsArray().Select(code => code!.GetValue<string>()))));
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"the brainstorm took {clock.Elapsed}");
+
+        // The agent's process was ended with its pass, not left holding its turn.
+        var pid = int.Parse(File.ReadAllText(Path.Combine(_home, "hanging.pid")), System.Globalization.CultureInfo.InvariantCulture);
+        Assert.True(Gone(pid), $"the hanging agent's process {pid} still runs");
+
+        var document = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "document.json")))!;
+        Assert.True(document["ranked"]!.GetValue<bool>());
+        Assert.Contains("Did not answer: `acp-stub` (maker stub): timed-out", files.DocumentText(id)!, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(files.Rooms(id)));
+    }
+
+    private static bool Gone(int pid)
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(pid);
+            return process.WaitForExit(TimeSpan.FromSeconds(10));
+        }
+        catch (ArgumentException)
+        {
+            return true;
+        }
+    }
 }

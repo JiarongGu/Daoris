@@ -241,6 +241,13 @@ public sealed class Driver(
         init => Context.BrainstormCheckouts = value;
     }
 
+    /// <summary>How long a brainstorm's minute lasts (BRAINSTORM1b): a minute, unless a test shortens it.</summary>
+    internal TimeSpan? BrainstormMinute
+    {
+        get => Context.BrainstormMinute;
+        init => Context.BrainstormMinute = value;
+    }
+
     private DriverBrainstorms? _brainstorms;
 
     private DriverBrainstorms Brainstorms => LazyInitializer.EnsureInitialized(ref _brainstorms, () => new DriverBrainstorms(Context, this));

@@ -16,6 +16,13 @@ with the version and date at release.
   is not measured yet. A machine with no connector starts no pass. No real agent has run one yet.
   `daoris brainstorm` does the same from any terminal, `show`, `send`, `clear` and `list` included, through the Daoris running
   on this machine: it asks only this machine's own service, and a brainstorm is never kept on a shared host.
+  A brainstorm is bounded and never hangs: its agents run side by side, ten minutes each and thirty for the whole question, with
+  the ranking's minutes kept in reserve; an agent past its time is stopped and what answered is kept; one that crashes fails alone;
+  one whose account meets its limit starts once more on the next account; a full machine waits within the time. The document says
+  which agents did not answer, and why, and when the ranking does not finish it lists the proposals unranked.
+  `daoris-driver brainstorm stop <id>` ends one and keeps what answered; `--id <id>` makes asking again the same brainstorm; a Daoris
+  that stopped mid-brainstorm ends it as interrupted and runs nothing again by itself. `daoris driver brainstorms` sets the agents a
+  brainstorm runs and its minutes, for this machine or with `--workspace` for a workspace's questions.
 
 - The desktop names two sign-ins of one email apart too. An agent's page, its own sign-in, the start's account picker, *What
   needs you* and a session's account say the organisation after the email where another sign-in shares it (else the plan),

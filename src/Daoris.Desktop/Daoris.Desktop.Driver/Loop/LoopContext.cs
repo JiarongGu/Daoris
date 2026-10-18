@@ -68,6 +68,12 @@ internal sealed class LoopContext(
     /// </summary>
     public Func<string, CancellationToken, Task<(string? Root, string? Revision)>>? BrainstormCheckouts { get; set; }
 
+    /// <summary>
+    /// How long a brainstorm's minute lasts (BRAINSTORM1b): a minute, unless a test shortens it so a pass's minutes and the request's
+    /// deadline can be met in a fast run (MOD8).
+    /// </summary>
+    public TimeSpan? BrainstormMinute { get; set; }
+
     public ServiceClient Service { get; } = service;
 
     public DriverConfig Config { get; } = config;

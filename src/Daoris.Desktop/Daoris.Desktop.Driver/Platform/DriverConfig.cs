@@ -289,6 +289,18 @@ public sealed record DriverConfig(
         new Dictionary<string, HelperRule>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The person's brainstorm policy on this machine (BRAINSTORM1b, D176 point 9): who may start one, the agents it runs and its
+    /// minutes. A workspace's rule replaces it whole for a question about a repository in that workspace
+    /// (<see cref="BrainstormRules.Resolve"/>); null is the default. Edited only through <see cref="BrainstormRules.Apply"/>; the
+    /// CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>BrainstormRulesTests</c>).
+    /// </summary>
+    public BrainstormRule? Brainstorms { get; init; }
+
+    /// <summary>A workspace's brainstorm policy, over the machine's for every question about a repository in it.</summary>
+    public IReadOnlyDictionary<string, BrainstormRule> WorkspaceBrainstorms { get; init; } =
+        new Dictionary<string, BrainstormRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// How work is committed in each repository (PROCESS1a, D164's amendment point 1): a mode (<c>as-you-go</c>, <c>ask</c>,
     /// <c>at-end</c>) and an optional convention. A repository's rule replaces its workspace's whole (<see cref="CommitRules.Resolve"/>);
     /// absent is <c>as-you-go</c>. Edited only through <see cref="CommitRules.Apply"/>; the CLI's <c>driverconfig.ts</c> reads it
@@ -877,6 +889,9 @@ public sealed record DriverConfig(
             // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
             HelperRules.WriteMap(writer, "helpers", Helpers);
             HelperRules.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
+            // Written only when set (BRAINSTORM1b), as the CLI writes them: absent is D176 point 9's proposed defaults.
+            BrainstormRules.WriteMachine(writer, Brainstorms);
+            BrainstormRules.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
             CommitRules.WriteMap(writer, "commits", Commits);
             CommitRules.WriteMap(writer, "workspaceCommits", WorkspaceCommits);
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
@@ -1256,7 +1271,9 @@ public sealed record DriverConfig(
             WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
             Helpers = HelperRules.Map(root, "helpers"),
             WorkspaceHelpers = HelperRules.Map(root, "workspaceHelpers"),
-            Commits = CommitRules.Map(root, "commits"),
+            Brainstorms = BrainstormRules.Machine(root),
+            WorkspaceBrainstorms = BrainstormRules.Map(root, "workspaceBrainstorms"),
+            Commits =CommitRules.Map(root, "commits"),
             WorkspaceCommits = CommitRules.Map(root, "workspaceCommits"),
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
             Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
