@@ -14,7 +14,7 @@ import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../../
 import type { Fetcher } from '../../src/agents/channels.ts';
 import { COOLING_FILE, coolingOf, coolingWhen, machineZone } from '../../src/accounts/cooling.ts';
 import { keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
-import { accountNames } from '../../src/accounts/accountnames.ts';
+import { accountNames, renameAccount } from '../../src/accounts/accountnames.ts';
 import { WINDOWS_FILE } from '../../src/accounts/windows.ts';
 import { makeFixture } from '../_fixture.ts';
 import { captureError } from '../_fixture.ts';
@@ -599,7 +599,7 @@ test('a new account takes a fresh id and never a removed one\'s name', () => {
 /**
  * A stand-in harness whose login question reads the home it is asked about: signed in exactly when
  * the home holds `credentials.json`, and it says WHO by that file's contents — the way `claude auth
- * status` names an email beside an organisation Daoris must not keep.
+ * status` names an email — beside an organisation, `org.txt`'s where the home has one, else `Org A`, and a plan (ACCOUNTID1).
  */
 function fakeHarness(fx: { root: string }): Toolchain {
   const script = join(fx.root, 'fake-harness.mjs');
@@ -608,7 +608,8 @@ function fakeHarness(fx: { root: string }): Toolchain {
     'const home = process.env.FAKE_HARNESS_HOME;',
     "if (process.argv[2] === '--version') { console.log('fake 1.0'); process.exit(0); }",
     "const signed = home && existsSync(home + '/credentials.json');",
-    "console.log(JSON.stringify({ loggedIn: Boolean(signed), email: signed ? readFileSync(home + '/credentials.json', 'utf8').trim() : null, orgName: 'Secretive' }));",
+    "const org = home && existsSync(home + '/org.txt') ? readFileSync(home + '/org.txt', 'utf8').trim() : 'Org A';",
+    "console.log(JSON.stringify({ loggedIn: Boolean(signed), email: signed ? readFileSync(home + '/credentials.json', 'utf8').trim() : null, orgName: org, subscriptionType: 'max' }));",
   ].join('\n'), 'utf8');
 
   return {
@@ -622,8 +623,9 @@ function fakeHarness(fx: { root: string }): Toolchain {
 
 /**
  * 🔴 An account is made by signing in (D66 §3) — the terminal's half of the desktop's *Add an account…* (D50). The
- * sign-in runs into a fresh id (ACCT2), and the end names who signed in by the tool's own answer, keeping neither the
- * organisation nor anything else it said — and offers it as the account's name, written only by the person's rename.
+ * sign-in runs into a fresh id (ACCT2), and the end names who signed in by the tool's own answer — and offers it as the
+ * account's name, written only by the person's rename. The organisation and the plan are read beside who (ACCOUNTID1) and
+ * kept nowhere; an email no other account has needs neither said.
  */
 test('`login --new` keeps a finished sign-in, names who signed in, and offers it as the name, writing none', () => {
   const fx = makeFixture('harness-sign-in');
@@ -641,12 +643,45 @@ test('`login --new` keeps a finished sign-in, names who signed in, and offers it
   assert.ok(existsSync(join(profileHome(fx.root, 'fake', made!), 'credentials.json')));
   assert.match(lines.join('\n'), /signed in as someone@example\.invalid/);
   assert.match(lines.join('\n'), new RegExp(`daoris agent profile rename fake ${made} someone@example\\.invalid`));
-  assert.doesNotMatch(lines.join('\n'), /Secretive/);
+  assert.doesNotMatch(lines.join('\n'), /Org A/);
   // D66 §3: who signed in is offered, never written without the person.
   assert.ok(!existsSync(join(fx.root, 'accounts.json')));
 
   const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
   assert.equal(listed.profiles[0]!.account, 'someone@example.invalid');
+  // ACCOUNTID1: read beside who, fresh, for the list to tell two sign-ins of one email apart.
+  assert.deepEqual([listed.profiles[0]!.org, listed.profiles[0]!.plan], ['Org A', 'max']);
+  fx.cleanup();
+});
+
+/**
+ * ACCOUNTID1: one email signed in to two organisations is two accounts. The second's email already names the first, so
+ * the end offers the email with its organisation beside it, a name the rename takes; and the list reads them apart.
+ */
+test('a second sign-in of an email another account is named is offered it with its organisation', () => {
+  const fx = makeFixture('harness-sign-in-second-org');
+  const toolchain = fakeHarness(fx);
+  const signIn = (org: string, name: string | null) => {
+    const lines: string[] = [];
+    signInNew('fake', toolchain, fx.root, (where) => {
+      writeFileSync(join(where, 'credentials.json'), 'person@example.invalid', 'utf8');
+      writeFileSync(join(where, 'org.txt'), org, 'utf8');
+      return 0;
+    }, (line) => lines.push(line), { name });
+    return lines.join('\n');
+  };
+
+  signIn('Org A', 'person@example.invalid');
+  const [first] = profiles(fx.root, 'fake');
+  const second = signIn('Org B', null);
+  const made = profiles(fx.root, 'fake').find((account) => account !== first)!;
+
+  assert.match(second, new RegExp(`\`daoris agent profile rename fake ${made} "person@example\\.invalid·Org-B"\` names it person@example\\.invalid·Org-B;`));
+  // Accepting the offer names it: the email was refused as taken, and this is not.
+  assert.equal(renameAccount(fx.root, 'fake', profiles(fx.root, 'fake'), made, 'person@example.invalid·Org-B'), 'person@example.invalid·Org-B');
+  const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
+  assert.deepEqual(listed.profiles.map((profile) => [profile.account, profile.org]).sort(),
+    [['person@example.invalid', 'Org A'], ['person@example.invalid', 'Org B']]);
   fx.cleanup();
 });
 
@@ -892,6 +927,38 @@ test('`profile rename` names an account, and its lists, defaults, readings and r
   const cleared = run(['profile', 'rename', 'claude-code', 'you@work.example', 'account-1'], at(fx));
   assert.match(cleared.out, /has no name of yours now/);
   assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), {});
+  fx.cleanup();
+});
+
+/**
+ * ACCOUNTID1: two sign-ins of one email in two organisations are listed apart, the organisation after who, and each said
+ * once (ACCTNAME1's rule): a name that is the email says the organisation alone after it, and a name that is the email with
+ * its organisation says neither again. An email no other account has needs no organisation, and no plan is said.
+ */
+test('`agent list` tells two sign-ins of one email apart by their organisations, each said once', () => {
+  const fx = makeFixture('harness-list-orgs');
+  const signedIn = (name: string, account: string, org: string, plan: string) =>
+    ({ name, home: '', login: 'in' as const, account, key: null, org, plan });
+  const report = {
+    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
+    profiles: [
+      signedIn('acct-0000000a', 'person@example.invalid', 'Org A', 'max'),
+      signedIn('acct-0000000b', 'person@example.invalid', 'Org B', 'max'),
+      signedIn('acct-0000000d', 'person@example.invalid', 'Org D', 'max'),
+      signedIn('acct-0000000c', 'other@example.invalid', 'Org A', 'pro'),
+    ],
+  };
+  writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ 'claude-code': {
+    'acct-0000000a': { name: 'person@example.invalid' }, 'acct-0000000b': { name: 'person@example.invalid·Org-B' } } }), 'utf8');
+
+  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
+  const line = (account: string) => lines.find((each) => each.includes(account))!;
+
+  assert.match(line('acct-0000000a'), /person@example\.invalid +in +Org A \(id acct-0000000a\)$/);
+  assert.match(line('acct-0000000b'), /person@example\.invalid·Org-B +in +\(id acct-0000000b\)$/);
+  assert.match(line('acct-0000000d'), /acct-0000000d +in +person@example\.invalid · Org D$/);
+  assert.match(line('acct-0000000c'), /acct-0000000c +in +other@example\.invalid$/);
+  assert.doesNotMatch(lines.join('\n'), /\bmax\b|\bpro\b/);
   fx.cleanup();
 });
 
@@ -1379,6 +1446,10 @@ test('the login questions read the answers the real harnesses give', () => {
   assert.equal(
     claude.account!.exec('{\n  "loggedIn": true,\n  "email": "someone@example.invalid",\n  "orgName": "x"\n}')?.[1],
     'someone@example.invalid');
+  // ACCOUNTID1: the organisation and the plan beside who, which tell two sign-ins of one email apart; none where it says none.
+  const both = '{\n  "loggedIn": true,\n  "email": "person@example.invalid",\n  "orgName": "Org A",\n  "subscriptionType": "max"\n}';
+  assert.deepEqual([claude.org?.exec(both)?.[1], claude.plan?.exec(both)?.[1]], ['Org A', 'max']);
+  assert.equal(claude.org?.exec('{ "loggedIn": true, "orgName": null }') ?? null, null);
 
   const codex = TOOLCHAINS.codex!.loginCheck!;
   assert.ok(codex.in.test('Logged in using ChatGPT'));

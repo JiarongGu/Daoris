@@ -430,8 +430,8 @@ public static class HarnessProbe
 
         // Read with the "logged in" pattern first, because it is the specific one; and neither matching leaves it unknown
         // rather than out, which is what keeps a reworded status line from refusing a spawn that would have worked.
-        var (login, who) = question.Read(answer.Output);
-        return new LoginAnswer(login, who, true);
+        var said = question.Read(answer.Output);
+        return new LoginAnswer(said.Login, said.Account, true);
     }
 
     /// <summary>The runtime's error code for a binary that is not there — ERROR_FILE_NOT_FOUND and ENOENT alike.</summary>
