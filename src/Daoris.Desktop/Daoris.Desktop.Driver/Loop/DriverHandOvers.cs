@@ -54,8 +54,10 @@ internal sealed class DriverHandOvers(LoopContext context)
                        && snapshot.LastRun.TryGetValue(quest, out var last) && Planner.TakenAway(row!, last, take);
             if (!closed && !away) continue;
 
+            // FABRIC-CLOSE1c20: a take lost to the person's reopen is said as that, never as another machine's.
+            var reopened = !closed && snapshot.Takes[quest].Reopened;
             handed.Clear(quest);
-            events.Add($"hand-over  `#{quest}` {(closed ? "has closed" : "is taken elsewhere")}: it goes back to this machine's agent.");
+            events.Add($"hand-over  `#{quest}` {(closed ? "has closed" : reopened ? "was lost to your reopen of the work it grew from" : "is taken elsewhere")}: it goes back to this machine's agent.");
         }
 
         return snapshot with { Handed = handed.All() };

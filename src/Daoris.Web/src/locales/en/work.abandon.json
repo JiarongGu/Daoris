@@ -28,6 +28,7 @@
   "work.abandon.piece.raw": "{{piece}}",
   "work.abandon.why.takenElsewhere": "taken on {{machine}}: its work is theirs; decline it on its page if you mean to stop it there",
   "work.abandon.why.takenElsewhereUnnamed": "taken on another machine: its work is theirs; decline it on its page if you mean to stop it there",
+  "work.abandon.why.sourceReopened": "you reopened the work its step grew from, which reached the remote before this machine’s take did; the step is open again for the work as it stands now",
   "work.abandon.why.takenOutside": "taken here outside Daoris: its work is wherever its taker works, not in a tree Daoris made",
   "work.abandon.why.done": "done: finished work keeps its record",
   "work.abandon.why.teammate": "it runs on {{machine}}; nothing this machine sends reaches it",

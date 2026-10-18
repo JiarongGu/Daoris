@@ -24,7 +24,7 @@ export type AbandonAct = 'decline' | 'stop' | 'end' | 'archive' | 'discard' | 'd
 
 /** Why an abandon keeps a piece (design §3.2), the driver's word for it (`AbandonWhy`). */
 export type AbandonWhy =
-  | 'taken-elsewhere' | 'taken-outside' | 'done' | 'teammate' | 'review' | 'landed' | 'elsewhere' | 'checked-out'
+  | 'taken-elsewhere' | 'source-reopened' | 'taken-outside' | 'done' | 'teammate' | 'review' | 'landed' | 'elsewhere' | 'checked-out'
   | 'unknown' | 'in-use' | 'unreached' | 'refused' | 'gone';
 
 /** One quest of the work, and what a pause and an abandon would do with it. */
@@ -268,6 +268,7 @@ function whyLine(keep: Pick<AbandonKeep, 'why' | 'machine' | 'where' | 'detail' 
       return keep.machine
         ? { key: 'work.abandon.why.takenElsewhere', values: { machine: keep.machine } }
         : { key: 'work.abandon.why.takenElsewhereUnnamed' };
+    case 'source-reopened': return { key: 'work.abandon.why.sourceReopened' };
     case 'taken-outside': return { key: 'work.abandon.why.takenOutside' };
     case 'done': return { key: 'work.abandon.why.done' };
     case 'teammate': return { key: 'work.abandon.why.teammate', values: { machine: keep.machine ?? '' } };

@@ -78,6 +78,8 @@ export function whyItSits(item: WorkItem, sitting: Consideration | null, ask: st
   if (quest.status !== 'Open' && quest.status !== 'Taken') return null;
   if (quest.pause === 'elsewhere') {
     if (quest.machine) return { line: { key: 'asks.work.elsewhere', values: { machine: quest.machine } } };
+    // A take lost to the person's own reopen is said as that, never as another machine's (FABRIC-CLOSE1c20).
+    if (quest.kept === 'source-reopened') return { line: { key: 'asks.work.reopenedTake' } };
     return { line: { key: quest.kept === 'taken-outside' ? 'asks.work.outside' : 'asks.work.elsewhereUnnamed' } };
   }
   const pause = sitting?.verdict === 'Paused' && sitting.pausedBy ? sitting.pausedBy : quest.pausedBy ?? null;

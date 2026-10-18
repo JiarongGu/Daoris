@@ -162,6 +162,24 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Contains(away.Events, line => line == "hand-over  `#q2` is taken elsewhere: it goes back to this machine's agent.");
     }
 
+    /// <summary>🔴 FABRIC-CLOSE1c20: a take lost to the person's reopen drops the store in the reopen's words, never as another machine's take.</summary>
+    [Fact]
+    public async Task The_store_goes_in_the_reopens_words_when_the_take_was_lost_to_it()
+    {
+        var store = new HandedQuests(_home);
+        _ledger.Publish("q2", "engine");
+        _ledger.Driven("s2", "q2", Path.Combine(_home, "tree-s2"), state: "stopped");
+        store.Write("q2", new HandedQuest("codex-acp", null, "s2", HandOverWhy.Press, HandOverBy.Person, T0));
+        _ledger.Claim = "lost";
+        _ledger.ClaimWhy = "source-reopened";
+
+        var away = await Driver().TickAsync().WaitAsync(Bound);
+
+        Assert.Empty(store.All());
+        Assert.Contains(away.Events, line => line.StartsWith("hand-over  `#q2` was lost to your reopen", StringComparison.Ordinal));
+        Assert.DoesNotContain(away.Events, line => line.Contains("taken elsewhere", StringComparison.Ordinal));
+    }
+
     /// <summary>The store stays while the quest is this machine's: another look changes nothing.</summary>
     [Fact]
     public async Task The_store_stays_while_the_quest_is_this_machine_s()
