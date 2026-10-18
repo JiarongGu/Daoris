@@ -142,6 +142,10 @@ names that folder until a row cuts it into scopes. A gate that reads the whole t
 names each path from the sources' top (`test/sources.ts`). A view in a folder the presentational boundary covers is an
 organism by name in `design/presentational.test.ts`.
 
+A take the person's own reopen made lose is said as that wherever a lost claim is read (FABRIC-CLOSE1c20): the hand-over's
+`quest-reopened`, the abandon's `source-reopened` and the pause's `asks.work.reopenedTake` each have their own sentence,
+never the one for a take on another machine.
+
 ## One UI, two shells
 
 This app is the **only** UI. It is served over HTTP for the browser, and `Daoris.Desktop` carries the
