@@ -184,7 +184,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// <summary>
     /// <c>record</c> or <c>stop</c> on a close whose submission is the quest's no more (FABRIC-CLOSE1q2): the person reopened it, or a later
     /// <c>ready</c> replaced it. Its answer cannot close the work there is now, and a stop of that work through it would be a stop of the next
-    /// submission's, so the word is taken back, saying why, and the close is still asked after with its key.
+    /// submission's, so the word is taken back, saying why: an unknown close is still asked after with its key, and a held one waits for
+    /// <c>resend</c>.
     /// </summary>
     public const string SubmissionMoved = "submission-moved";
 

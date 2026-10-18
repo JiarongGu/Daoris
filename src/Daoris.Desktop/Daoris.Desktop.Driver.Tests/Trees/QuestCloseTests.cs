@@ -193,7 +193,10 @@ public sealed class QuestCloseTests : IDisposable
     /// <summary>Each session branch the pass reads, by name: the quest whose sessions worked it, and its tip.</summary>
     private readonly Dictionary<string, (string Quest, string Tip)> _branches = [];
 
-    /// <summary>How many times the units were read, and what happens at each read: the fresh read right before a close is one.</summary>
+    /// <summary>
+    /// How many times the units were read, and what happens at each read: the fresh read right before a close is one. Counted only while
+    /// <c>_onRead</c> is set, so a test counting reads sets one, a no-op where it needs nothing done.
+    /// </summary>
     private int _reads;
 
     private Action<int>? _onRead;
