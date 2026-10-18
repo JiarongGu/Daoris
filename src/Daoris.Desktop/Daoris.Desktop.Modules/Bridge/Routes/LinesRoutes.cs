@@ -541,7 +541,7 @@ public sealed class LinesRoutes(DriverContext context)
             Unread = unread.ToArray(),
             // FABRIC-PERFORM1g, additive: the plugin steps whose attempt is held for the person, of every unit (a quest's too), or of the
             // units the name picked. An install no graph naming a plugin's performed node governs keeps no node record, and lists none.
-            Held = HeldAnswer(HeldAttempts.Read(new NodeRecordFiles(_loop.Home))
+            Held = HeldAnswer(HeldAttempts.Read(new NodeRecordFiles(_loop.Home), quests: _loop.LastQuests)
                 .Where(held => Optional(request, "unit") is not { } picked || held.Unit == picked || units.Any(unit => unit.Unit == held.Unit))),
         };
     }

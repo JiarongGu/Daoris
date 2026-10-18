@@ -208,6 +208,9 @@ public sealed class DriverLoop(
         _watch?.Nudge();
     }
 
+    /// <summary>The quests the node runtime last read (FABRIC-CLOSE1q3), for the held list to judge a close against; null before one pass has read.</summary>
+    public IReadOnlyDictionary<string, QuestView>? LastQuests => _watch?.LastQuests;
+
     /// <summary>Look now because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake (FABRIC-EVENT2b).</summary>
     public void Said(string session)
     {
