@@ -153,4 +153,48 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
             Assert.Equal("s4d5e6f7", answered.Submission!.Session);
         }
     }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c10: the person's go-on clears the held step's own result by the replay's rule, so the step's machine, the source's
+    /// machine and the remote read it taken with nothing submitted, grown from the new submission, and its old submission closes nowhere.
+    /// </summary>
+    [Fact]
+    public async Task A_go_on_clears_the_held_steps_own_result_alike_on_every_machine()
+    {
+        var (quest, step, submission) = await SealedOnBothAsync();
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(3))).Moved);
+        Assert.True((await _b.BindAsync(step.Id, Graph, Now.AddHours(3))).Moved);
+        var verified = await _b.SubmitAsync(step.Id, "Verified.", [], Now.AddHours(3), session: "s7b8c9d0");
+        Assert.True(verified.Moved);
+        var old = verified.Quest!.Submission!;
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Equal(QuestReopenRefusal.None, (await _a.ReopenAsync(quest.Id, submission, "Build it again.", Now.AddHours(4))).Refusal);
+        var again = await _a.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(5));
+        Assert.True(again.Moved);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(QuestHold.SourceReopened, (await _b.FindAsync(step.Id))!.Hold);
+
+        Assert.Equal(QuestReopenRefusal.None, (await _b.ContinueAsync(step.Id, Now.AddHours(6))).Refusal);
+        await SyncAsync(_b);
+        var report = await SyncAsync(_a);
+
+        Assert.Null(report.Problem);
+        Assert.Empty(report.Refused);
+        var grows = new QuestOperationRef(again.Quest!.Submission!.Machine, again.Quest.Submission.Sequence);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var cleared = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Taken, (QuestHold?)null, grows), (cleared.Status, cleared.Hold, cleared.GrewFrom));
+            Assert.Null(cleared.Submission);
+            Assert.Empty(cleared.Answers);
+        }
+
+        // The step's machine refuses its old submission's close; its agent submits anew.
+        var close = await _b.CloseAsync(step.Id, [(step.Id, new QuestOperationRef(old.Machine, old.Sequence))], new QuestClose("k2", "t2"),
+            Now.AddHours(7));
+        Assert.Equal(QuestCloseRefusal.Stale, close.Refusal);
+    }
 }

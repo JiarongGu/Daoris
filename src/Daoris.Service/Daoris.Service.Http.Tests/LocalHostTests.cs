@@ -991,6 +991,44 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1c10: the person's word to go on with a started step that had submitted answers the step taken with no submission,
+    /// and says its old result is cleared and that it must submit again.
+    /// </summary>
+    [Fact]
+    public async Task The_go_on_door_answers_the_held_steps_old_result_cleared()
+    {
+        var published = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Write the report it goes on from", body = "For the review.",
+            then = new[] { new { to = "Keeper", title = "Check {parent}", body = "Look at it." } },
+        });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
+        var submission = ready.Json.GetProperty("quest").GetProperty("submission");
+        var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
+        var stepId = (await host.GetAsync("/api/quests")).Json.EnumerateArray()
+            .Single(row => row.TryGetProperty("parent", out var parent) && parent.GetString() == quest).GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{stepId}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var checkedOnce = await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "ready", reason = "Looked." });
+        Assert.True(checkedOnce.Json.GetProperty("quest").TryGetProperty("submission", out _));
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written again." })).Status);
+
+        var goOn = await host.PostAsync($"/api/quests/{stepId}/continue", new { });
+
+        Assert.Equal(200, goOn.Status);
+        var step = goOn.Json.GetProperty("quest");
+        Assert.Equal("Taken", step.GetProperty("status").GetString());
+        Assert.False(step.TryGetProperty("submission", out _));
+        Assert.False(step.TryGetProperty("hold", out _));
+        Assert.Contains("cleared", goOn.Json.GetProperty("message").GetString());
+        Assert.Contains("submit again", goOn.Json.GetProperty("message").GetString());
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1c4: a submission a session's ready made answers that session (the one its connector's intake named), so the driver
     /// tells the session that said it when the person reopens it, not the newest one on the quest. FABRIC-CLOSE1c8: the reopen, which
     /// clears the submission, answers that session in its place.

@@ -1697,6 +1697,10 @@ session's quest does not stand waits for it.
 commits rebased onto the new submission's commit (its evidence's, on the wire), then the line. A conflict leaves the tree as it was and
 nothing else changes; the session is told the person must resolve it. With no commit known, the line alone is synced, and that said.
 
+**Amended (FABRIC-CLOSE1c10, D173's note).** The go-on clears the held step's own result. Its submission, answers, yes and verdict were made
+on the work reopened, so the go-on alone never makes that work finished again: the step reads taken with no submission, a close naming the
+old one is stale, and it submits anew once its branch holds the new submission. A withdrawn open step has no result to clear.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 

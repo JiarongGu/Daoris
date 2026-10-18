@@ -127,7 +127,7 @@ public sealed class QuestOperationKindsTests
         {
             Note = "The bridge is wrong; build it again.", Submission = new QuestOperationRef("m1", 4),
         },
-        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c).
+        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c), or a held one by the person's go-on (FABRIC-CLOSE1c10).
         [QuestOperationKind.Rebound] = s => Op(QuestOperationKind.Rebound, s) with { Submission = new QuestOperationRef("m9", 8) },
     };
 
@@ -156,6 +156,11 @@ public sealed class QuestOperationKindsTests
             // FABRIC-CLOSE1a: a taken quest a closure graph binds, and one whose agent submitted, waiting on its evidence.
             ("taken, bound to a closure graph", [published, taken, Sample(QuestOperationKind.Bound, 3)]),
             ("taken, submitted", [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4)]),
+            // FABRIC-CLOSE1c10: a step that submitted, then held by its source's reopen. Before the withdrawn one, so a rebind's cached row
+            // is checked here, where the person's go-on clears the step's own result.
+            ("taken, submitted, held by its source's reopen",
+                [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4),
+                    Sample(QuestOperationKind.Reopened, 5) with { Submission = new QuestOperationRef("m9", 3) }]),
             // FABRIC-CLOSE1c: a step its source's reopen withdrew, the reopen naming the submission it grew from.
             ("open, withdrawn by its source's reopen",
                 [published, Sample(QuestOperationKind.Reopened, 2) with { Submission = new QuestOperationRef("m9", 3) }]),
