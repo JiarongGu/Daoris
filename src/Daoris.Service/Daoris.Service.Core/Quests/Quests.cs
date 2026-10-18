@@ -220,6 +220,14 @@ public sealed record Quest(
     public QuestOperationRef? SourceReopened { get; init; }
 
     /// <summary>
+    /// The person's last reopen of its own submission that no later submission answered (FABRIC-CLOSE1c4, §E5): the reopen by its
+    /// machine and sequence, the submission it reopened, their words and when. Read from the log by the replay, as every machine
+    /// reads it, so a mirror answers the same; the next <c>ready</c> answers it, at whatever commit, and it reads null again. Null
+    /// for every quest never reopened, and for every step (its reopen is <see cref="SourceReopened"/>).
+    /// </summary>
+    public QuestReopen? Reopened { get; init; }
+
+    /// <summary>
     /// Whether its result is judged (FABRIC-CLOSE1a, §E5): closed done, or taken with a current submission. The holds, the
     /// evidence and the review hang on it, so in a closure graph they hang on the submission exactly as they hang on a done.
     /// </summary>
@@ -421,7 +429,18 @@ public sealed record QuestTaker(string? Session, Func<string, bool>? Remote = nu
 /// machine and sequence that name it everywhere, which the graph's close names as the one it judged; when; and its note. Its
 /// answers are the quest's <see cref="Quest.Answers"/>.
 /// </summary>
-public sealed record QuestSubmission(string Machine, long Sequence, DateTimeOffset At, string? Note);
+/// <param name="Session">
+/// The session that said its <c>ready</c> (FABRIC-CLOSE1c4), as its connector's intake named it: the one to tell when the person
+/// reopens it. Null for a <c>ready</c> no session said, through a door that names none, and for every submission from before.
+/// </param>
+public sealed record QuestSubmission(string Machine, long Sequence, DateTimeOffset At, string? Note, string? Session = null);
+
+/// <summary>
+/// The person's reopen of a quest's own submission (FABRIC-CLOSE1c4, §E5), as the quest keeps it until a later submission answers
+/// it: the <see cref="QuestOperationKind.Reopened"/> operation by its machine and sequence, the submission it reopened
+/// (<paramref name="Of"/>), the person's words, and when.
+/// </summary>
+public sealed record QuestReopen(string Machine, long Sequence, QuestOperationRef Of, string? Note, DateTimeOffset At);
 
 /// <summary>Why the person's reopen, or their word to go on, moved nothing (FABRIC-CLOSE1c, §E5), or <see cref="None"/>.</summary>
 public enum QuestReopenRefusal
@@ -655,8 +674,25 @@ public sealed class QuestStore
             await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
             await store.RecacheUnnamedConflictsAsync(ct).ConfigureAwait(false);
             await store.RecacheClosedAwaitsAsync(ct).ConfigureAwait(false);
+            await store.RecacheUnkeptReopensAsync(ct).ConfigureAwait(false);
             return store;
         }, ct);
+
+    /// <summary>
+    /// A source reopened by a build before FABRIC-CLOSE1c4 has a row that keeps no reopen, though its log holds one no submission
+    /// answered since. Those taken quests are replayed from the log, which reads it, so the driver tells it from one not yet ready.
+    /// A step its source's reopen reached holds a reopen too, but no submission of its own, so it is never selected; and once
+    /// replayed a source's row keeps its reopen, so no later open selects it again.
+    /// </summary>
+    private Task RecacheUnkeptReopensAsync(CancellationToken ct) =>
+        RecacheAsync(
+            """
+            SELECT id FROM quests
+            WHERE status = 'Taken' AND submission IS NULL AND reopened IS NULL
+              AND EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id AND kind = 'reopened')
+              AND EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id AND kind = 'submitted')
+            """,
+            ct);
 
     /// <summary>
     /// A cache written before dismissals (SYNC6c) holds conflicts without the sequence that names them,
@@ -828,7 +864,8 @@ public sealed class QuestStore
                   closure     TEXT NULL,
                   submission  TEXT NULL,
                   grew_from   TEXT NULL,
-                  source_reopened TEXT NULL
+                  source_reopened TEXT NULL,
+                  reopened    TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -880,6 +917,9 @@ public sealed class QuestStore
             // has neither, which reads as before.
             ("quests", "grew_from", "grew_from TEXT NULL"),
             ("quests", "source_reopened", "source_reopened TEXT NULL"),
+            // A quest's own reopen no later submission answered (FABRIC-CLOSE1c4); a row from before keeps none, and the next replay
+            // that writes it reads the log.
+            ("quests", "reopened", "reopened TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
             // A bind named for a take, owned (FABRIC-CLOSE1o): CLOSE1l's rows named only the quest. `CREATE TABLE IF NOT EXISTS`
             // upgrades nothing, so the columns are added here, on a local store and a shared one alike. FABRIC-CLOSE1w keeps them for
@@ -1171,7 +1211,7 @@ public sealed class QuestStore
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
         QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
-        QuestOperationRef? submission = null)
+        QuestOperationRef? submission = null, string? session = null)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -1198,8 +1238,10 @@ public sealed class QuestStore
         var closed = kind == QuestOperationKind.Done ? close : null;
         // The submission a reopen or a rebind names is theirs alone (FABRIC-CLOSE1c).
         var named = Names(kind) ? submission : null;
+        // The session that said a ready is the submission's alone (FABRIC-CLOSE1c4).
+        var by = kind == QuestOperationKind.Submitted ? session : null;
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed, named));
+            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed, named, by));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
@@ -1216,7 +1258,8 @@ public sealed class QuestStore
             Verdict: said,
             NoteParts: parts,
             Close: closed,
-            Submission: named);
+            Submission: named,
+            Session: by);
     }
 
     /// <summary>The kinds that name a submission (FABRIC-CLOSE1c): a reopen, and a rebind.</summary>
@@ -1252,7 +1295,8 @@ public sealed class QuestStore
                 operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null,
                 operation.NoteParts,
                 operation.Kind == QuestOperationKind.Done ? operation.Close : null,
-                Names(operation.Kind) ? operation.Submission : null));
+                Names(operation.Kind) ? operation.Submission : null,
+                operation.Kind == QuestOperationKind.Submitted ? operation.Session : null));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -1280,8 +1324,8 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened, reopened)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened, $reopened)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, note_parts = excluded.note_parts, filed = excluded.filed, updated = excluded.updated,
@@ -1292,7 +1336,7 @@ public sealed class QuestStore
               held = excluded.held, short_title = excluded.short_title, evidence = excluded.evidence,
               review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts,
               closure = excluded.closure, submission = excluded.submission,
-              grew_from = excluded.grew_from, source_reopened = excluded.source_reopened
+              grew_from = excluded.grew_from, source_reopened = excluded.source_reopened, reopened = excluded.reopened
             """;
         command.Parameters.AddWithValue("$closure", (object?)quest.Closure ?? DBNull.Value);
         command.Parameters.AddWithValue("$grewFrom", quest.GrewFrom is { } from
@@ -1309,6 +1353,18 @@ public sealed class QuestStore
                 writer.WriteNumber("sequence", submitted.Sequence);
                 writer.WriteString("at", Moments.Write(submitted.At));
                 if (submitted.Note is not null) writer.WriteString("note", submitted.Note);
+                if (submitted.Session is not null) writer.WriteString("session", submitted.Session);
+                writer.WriteEndObject();
+            })
+            : DBNull.Value);
+        command.Parameters.AddWithValue("$reopened", quest.Reopened is { } reopen
+            ? JsonFields.Written(writer =>
+            {
+                writer.WriteStartObject();
+                WriteRefFields(writer, new QuestOperationRef(reopen.Machine, reopen.Sequence));
+                WriteRef(writer, "of", reopen.Of);
+                if (reopen.Note is not null) writer.WriteString("note", reopen.Note);
+                writer.WriteString("at", Moments.Write(reopen.At));
                 writer.WriteEndObject();
             })
             : DBNull.Value);
@@ -1728,9 +1784,13 @@ public sealed class QuestStore
     /// published its successor, which stands: the step grew from that submission, and only the person reopens it.
     /// </returns>
     public Task<QuestMove> SubmitAsync(
-        string id, string? note, IReadOnlyList<QuestAnswer> answers, DateTimeOffset now, CancellationToken ct = default) =>
+        string id, string? note, IReadOnlyList<QuestAnswer> answers, DateTimeOffset now, CancellationToken ct = default,
+        string? session = null) =>
         TakersMoveAsync(
-            id, new QuestOperation(id, QuestOperationKind.Submitted, Machine, 0, now, note, Answers: answers.Count > 0 ? answers : null),
+            id,
+            new QuestOperation(
+                id, QuestOperationKind.Submitted, Machine, 0, now, note, Answers: answers.Count > 0 ? answers : null,
+                Session: session is { Length: > 0 } ? session : null),
             now, ct);
 
     /// <summary>
@@ -1768,7 +1828,8 @@ public sealed class QuestStore
             }
 
             var operation = await AppendAsync(
-                id, judged.Kind, now, judged.Note, null, transaction, inside, answers: judged.Answers).ConfigureAwait(false);
+                id, judged.Kind, now, judged.Note, null, transaction, inside, answers: judged.Answers, session: judged.Session)
+                .ConfigureAwait(false);
             var moved = QuestLog.Step(standing, operation)!;
             await WriteCacheAsync(moved, transaction, inside).ConfigureAwait(false);
 
@@ -3374,9 +3435,10 @@ public sealed class QuestStore
         Submission = reader.IsDBNull(reader.GetOrdinal("submission")) ? null : ReadSubmission(reader.GetString(reader.GetOrdinal("submission"))),
         GrewFrom = ReadRefColumn(reader, "grew_from"),
         SourceReopened = ReadRefColumn(reader, "source_reopened"),
+        Reopened = reader.IsDBNull(reader.GetOrdinal("reopened")) ? null : ReadReopen(reader.GetString(reader.GetOrdinal("reopened"))),
     };
 
-    /// <summary>A current submission as this store's own column keeps it (FABRIC-CLOSE1a).</summary>
+    /// <summary>A current submission as this store's own column keeps it (FABRIC-CLOSE1a; its session, FABRIC-CLOSE1c4).</summary>
     private static QuestSubmission ReadSubmission(string json)
     {
         using var document = System.Text.Json.JsonDocument.Parse(json);
@@ -3384,7 +3446,21 @@ public sealed class QuestStore
         return new QuestSubmission(
             root.GetProperty("machine").GetString() ?? "", root.GetProperty("sequence").GetInt64(),
             Moments.ReadRequired(root.GetProperty("at").GetString()!),
-            root.TryGetProperty("note", out var note) ? note.GetString() : null);
+            root.TryGetProperty("note", out var note) ? note.GetString() : null,
+            root.TryGetProperty("session", out var session) ? session.GetString() : null);
+    }
+
+    /// <summary>A quest's own reopen as this store's own column keeps it (FABRIC-CLOSE1c4); one not whole is none.</summary>
+    private static QuestReopen? ReadReopen(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        var root = document.RootElement;
+        return ReadRef(root) is { } named && root.TryGetProperty("of", out var of) && ReadRef(of) is { } reopened
+            && root.TryGetProperty("at", out var at) && at.GetString() is { } when
+            ? new QuestReopen(
+                named.Machine, named.Sequence, reopened, root.TryGetProperty("note", out var note) ? note.GetString() : null,
+                Moments.ReadRequired(when))
+            : null;
     }
 
     /// <summary>One value of this store's own column, read through the judge the wire reads it with (REVIEWENV1b).</summary>
@@ -3475,7 +3551,12 @@ public sealed class QuestStore
             // Absent from every done but a graph's close's (FABRIC-CLOSE1a), which this store wrote whole.
             kind == QuestOperationKind.Done && payload.TryGetProperty("close", out var close) ? ReadClose(close) : null,
             // A reopen's or a rebind's submission (FABRIC-CLOSE1c), which this store wrote whole.
-            Names(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null);
+            Names(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
+            // Absent from every submission before FABRIC-CLOSE1c4, and from one no session said.
+            kind == QuestOperationKind.Submitted && payload.TryGetProperty("session", out var speaker)
+            && speaker.ValueKind == System.Text.Json.JsonValueKind.String
+                ? speaker.GetString()
+                : null);
     }
 
     /// <summary>A close's provenance (FABRIC-CLOSE1a), or null where it is not whole: a key and a token, both strings.</summary>
@@ -3507,7 +3588,7 @@ public sealed class QuestStore
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
         QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
-        QuestOperationRef? submission = null) =>
+        QuestOperationRef? submission = null, string? session = null) =>
         JsonFields.Written(writer =>
     {
         if (dismisses is not null)
@@ -3616,6 +3697,9 @@ public sealed class QuestStore
 
         // Only on a reopen or a rebind (FABRIC-CLOSE1c), for the lanes' reason: every other operation reads as it did.
         if (submission is not null) WriteRef(writer, "submission", submission);
+
+        // Only on a submission a session said (FABRIC-CLOSE1c4), for the lanes' reason: every other operation reads as it did.
+        if (session is not null) writer.WriteString("session", session);
 
         writer.WriteEndObject();
     });

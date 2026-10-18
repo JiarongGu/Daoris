@@ -280,6 +280,11 @@ public sealed class QuestTools(
                         ? "  submitted " + submitted.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
                           + (submitted.Note is { Length: > 0 } said ? $": _{said}_" : "")
                           + ". It stays taken until its graph closes it at the work's end, after its holds and gates."
+                        // FABRIC-CLOSE1c4: a reopened submission, with the person's words, until the next ready answers it.
+                        : quest.Reopened is { } reopen
+                        ? "  the person reopened its submission " + reopen.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
+                          + (reopen.Note is { Length: > 0 } words ? $": _{words}_" : "")
+                          + ". Work on what they said, then say `ready` again, never `done`."
                         : "  its graph closes it: its taker says `ready`, never `done`, when the work is done.");
                 }
 

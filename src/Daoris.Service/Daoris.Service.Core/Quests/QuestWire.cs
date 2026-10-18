@@ -161,6 +161,10 @@ public static class QuestWire
         // The submission a reopen or a rebind names (FABRIC-CLOSE1c), on those kinds alone.
         if (QuestStore.Names(operation.Kind) && operation.Submission is { } submission) QuestStore.WriteRef(writer, "submission", submission);
 
+        // The session that said a ready (FABRIC-CLOSE1c4), on a submission alone and only where one said it: every other submission
+        // crosses exactly as it did, and an older build reads the submission without it.
+        if (operation is { Kind: QuestOperationKind.Submitted, Session: { } session }) writer.WriteString("session", session);
+
         // An evidenced operation's verdict (EVID1a): names and codes only; its when and machine are the operation's.
         if (operation is { Kind: QuestOperationKind.Evidenced, Evidence: { } verdict })
         {
@@ -485,9 +489,13 @@ public static class QuestWire
             return null;
         }
 
+        // Which session said a ready (FABRIC-CLOSE1c4) only names whom a reopen is told to, so one that is no name is none, never half
+        // a submission: the submission itself crossed whole.
+        var session = kind == QuestOperationKind.Submitted && Text(item, "session") is { Length: > 0 } speaker ? speaker : null;
+
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission);
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission, session);
     }
 
 }
