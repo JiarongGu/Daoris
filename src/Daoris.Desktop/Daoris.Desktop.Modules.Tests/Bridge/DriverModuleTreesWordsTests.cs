@@ -188,10 +188,32 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
     {
         var answer = await AnswerAsync(await ComeUpAsync(), "LAND_ASK", new { ask = "a1b2c3" });
 
-        Assert.Equal(["ask", "done", "repositories", "said"], answer.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(["ask", "done", "repositories", "said", "followed"], answer.EnumerateObject().Select(each => each.Name));
         Assert.False(answer.GetProperty("done").GetBoolean());
         Assert.Equal(TreesWords.EntryNone(isAsk: true, "a1b2c3").Error, Said(answer).Error);
         Assert.Equal(1, Said(answer).Code);
+    }
+
+    /// <summary>RPC1b5: the landing presses answer the lines the registry followed, none where nothing landed or none was asked for.</summary>
+    [Fact]
+    public async Task The_landing_presses_answer_followed_beside_the_words_and_follow_nothing_where_nothing_landed()
+    {
+        RegistryFollowing.Moved(Home, "engine", DateTimeOffset.UtcNow);
+        var module = await ComeUpAsync();
+
+        var entry = await AnswerAsync(module, "LAND_ENTRY", new { entry = "e-1", follow = true });
+        var ask = await AnswerAsync(module, "LAND_ASK", new { ask = "a1b2c3", follow = true });
+        var session = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s1a2b3c4", follow = true });
+
+        foreach (var answer in new[] { entry, ask, session })
+        {
+            Assert.Empty(answer.GetProperty("followed").EnumerateArray());
+            Assert.Empty(Said(answer).Out);
+        }
+
+        Assert.Equal(["ask", "done", "repositories", "said", "followed"], ask.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(1, Said(entry).Code);
+        Assert.Equal(["engine"], RegistryFollowing.Due(Home));
     }
 
     /// <summary><c>trees land &lt;session&gt;</c> (RPC1b4): the refusals the verb says as words, where the route threw or landed nothing said.</summary>
