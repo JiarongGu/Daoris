@@ -780,7 +780,11 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     [Fact]
     public async Task A_submission_answers_its_evidence_commit_once_read_and_leaves_it_out_before()
     {
-        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the committed bridge report for the weekly review." });
+        // The requirement quotes the ask, as a publish requires.
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Write the bridge report into docs/report-bridge.md for the committed weekly review.",
+        });
         var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
         var published = await host.PostAsync($"/api/asks/{ask}/publish", new
         {
@@ -790,6 +794,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
                 new { quote = "Write the bridge report into docs/report-bridge.md", check = "The report is in the file.", evidence = new[] { new { path = "docs/report-bridge.md" } } },
             },
         });
+        Assert.Equal(200, published.Status);
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);

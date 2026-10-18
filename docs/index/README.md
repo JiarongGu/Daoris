@@ -150,7 +150,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 123 | 2095 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 123 | 2100 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 57 | 681 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 147 | 2491 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |

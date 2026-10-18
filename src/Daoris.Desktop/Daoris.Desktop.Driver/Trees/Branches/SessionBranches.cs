@@ -117,6 +117,15 @@ public sealed class SessionBranches(string home)
     });
 
     /// <summary>
+    /// The branch grows from <paramref name="from"/> now (FABRIC-CLOSE1c5): a step's own commits replayed onto its source's new
+    /// submission. Its standing entry moved there, or one written where it had none, so the next sync and the landing cut there.
+    /// </summary>
+    public void GrewOnto(string repository, string workspace, string branch, string from, DateTimeOffset at) =>
+        Record(Of(repository, branch) is { } standing
+            ? standing with { From = from, At = at }
+            : new GrownBranch(repository, workspace, branch, null, from, null, at));
+
+    /// <summary>
     /// The tidy's effect's write (FABRIC-END4a, <see cref="TidyEffect"/>, its only caller): the guard that kept the standing branch, written
     /// only where it says something new, so a refusal repeated on every wake writes the file once.
     /// </summary>

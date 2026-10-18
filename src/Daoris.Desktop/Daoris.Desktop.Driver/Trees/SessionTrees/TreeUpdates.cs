@@ -330,12 +330,7 @@ internal sealed class TreeUpdates(
         // Where it grows from now is the new submission: the record says so, so the next sync and the landing cut there.
         try
         {
-            if (branch is not null)
-            {
-                context.Grown.Record(grown is not null
-                    ? grown with { From = onto, At = DateTimeOffset.UtcNow }
-                    : new GrownBranch(repository, workspace, branch, null, onto, null, DateTimeOffset.UtcNow));
-            }
+            if (branch is not null) context.Grown.GrewOnto(repository, workspace, branch, onto, DateTimeOffset.UtcNow);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
