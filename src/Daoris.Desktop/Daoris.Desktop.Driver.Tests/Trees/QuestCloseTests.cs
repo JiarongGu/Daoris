@@ -1022,6 +1022,51 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1q2: a held close for S1, its door's close kept, whose quest stands on S2 at the same commit since: <c>record</c> on it,
+    /// applied by a pass that is not a whole look (a wake), is judged on the quests read afresh, never on the read before S2. It is taken back,
+    /// said, and listed with why; S1's key never reaches the close node, and S2 closes under its own.
+    /// </summary>
+    [Fact]
+    public async Task Record_on_a_held_close_for_a_replaced_submission_is_taken_back_on_a_wake_judged_on_the_quests_read_afresh()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        var binding = ClosedUnbound();
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        var held = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal(HeldResolutions.Close, held.Words);
+        var s1 = Assert.Single(_door.Sent).Key;
+
+        // S1's Done lost since (D69), and the same commit made ready again here: S2. The person's record, applied at the loop's next wake.
+        Quest(_quests["q7"] with { Submission = new QuestSubmissionView("desk", 43, null, "ready") });
+        Bind(binding());
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, Unit, "close", held.Attempt, HeldResolutions.Record, () => _now).What);
+        _onRead = _ => { };
+        var reads = _reads;
+        var woken = await runtime.PassAsync(Look(Closing) with { Whole = false }, CancellationToken.None);
+
+        var status = Record().Statuses["close"];
+        Assert.NotEqual("close:" + s1, status.Current?.Evidence?.Ref);
+        Assert.Contains(woken.Performed, done => (done.What, done.Code) == (PerformedWhat.Refused, WorkPerformer.SubmissionMoved));
+        Assert.Contains(woken.Said, line => line.Contains("desk/41", StringComparison.Ordinal) && line.Contains("reopened or replaced", StringComparison.Ordinal));
+        var taken = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal(((string?)null, WorkPerformer.SubmissionMoved), (taken.Resolution, taken.Why));
+        Assert.Contains("reopened or replaced", HeldAttempts.WhySaid(taken), StringComparison.Ordinal);
+        Assert.True(_reads > reads);
+
+        // S1's held attempt still gates a new one (§D3): the person's resend asks its door after S1's key, which settles it as a stale one's,
+        // and S2 closes under its own key.
+        Assert.Single(_door.Sent);
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, Unit, "close", held.Attempt, HeldResolutions.Resend, () => _now).What);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Equal(("q7", s1), Assert.Single(_door.Asked));
+        Assert.Equal(2, _door.Sent.Count);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 43)], _door.Sent[1].Quests);
+        status = Record().Statuses["close"];
+        Assert.Equal((NodeStates.Reached, "close:" + _door.Sent[1].Key), (status.State, status.Current!.Evidence!.Ref));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("gph-another")]
