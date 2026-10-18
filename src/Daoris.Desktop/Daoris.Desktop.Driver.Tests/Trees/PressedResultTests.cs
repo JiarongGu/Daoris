@@ -197,4 +197,63 @@ public sealed class PressedResultTests
         Assert.Null(await pressed.Judged(true, default));
         Assert.Null(await pressed.BeforePush(true, default));
     }
+
+    // ——— a person's hand-off (FABRIC-CLOSE1h8)
+
+    /// <summary>A branch s1's landing made, moved on by each of <paramref name="advancedBy"/> in turn.</summary>
+    private static LandedBranch Landed(params string[] advancedBy) =>
+        new("engine", "aurora", "feature/q1-fix-the-gap", "main", "c0ffee", "s1", "q1", "Fix the gap", DateTimeOffset.UtcNow)
+        {
+            Advances = [.. advancedBy.Select(session => new LandedAdvance("c0ffee", "decade", DateTimeOffset.UtcNow, session))],
+        };
+
+    /// <summary>
+    /// The parent's decision 1: a hand-off is held to the quest of the session that last moved its branch, its newest advance's, else
+    /// its landing's, read where the door names the branch; the record's founding quest is not read. Its push's sentence names that
+    /// session's hand-off.
+    /// </summary>
+    [Theory]
+    [InlineData(new string[0], "s1", "q1")]
+    [InlineData(new[] { "s2" }, "s2", "q2")]
+    [InlineData(new[] { "s2", "s3" }, "s3", "q3")]
+    public async Task A_hand_off_is_held_to_the_quest_of_the_session_that_last_moved_its_branch(string[] advancedBy, string session, string quest)
+    {
+        var service = new Service();
+        foreach (var each in new[] { "q1", "q2", "q3" }) service.Quests[each] = Submitted() with { Id = each };
+        var asked = new List<string>();
+        Task<string?> SessionQuest(string id, CancellationToken ct)
+        {
+            asked.Add(id);
+            return Task.FromResult<string?>($"q{id[1..]}");
+        }
+
+        var pressed = await PressQuests.HandedAsync(Landed(advancedBy), SessionQuest, service.ReadAsync);
+
+        Assert.NotNull(pressed);
+        Assert.Equal([session], asked);
+        Assert.Equal(quest, pressed.Pressed.Id);
+        Assert.Equal(1, service.Reads);
+        service.Quests[quest] = Submitted(sequence: 2) with { Id = quest };
+        Assert.Contains($"`daoris-driver trees hand {session}`", await pressed.BeforePush(true, default));
+    }
+
+    /// <summary>
+    /// The parent's decision 5: a session on no quest reads no quest, and a quest whose result is not in holds to nothing, so the
+    /// hand-off hands on as before.
+    /// </summary>
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("Open", 1)]
+    [InlineData("Taken", 1)]
+    public async Task An_unbound_hand_off_or_one_on_no_result_holds_to_nothing(string? status, int reads)
+    {
+        var service = new Service();
+        if (status is not null) service.Quests["q2"] = Quest(status);
+
+        var pressed = await PressQuests.HandedAsync(
+            Landed("s2"), (_, _) => Task.FromResult(status is null ? null : (string?)"q2"), service.ReadAsync);
+
+        Assert.Null(pressed);
+        Assert.Equal(reads, service.Reads);
+    }
 }

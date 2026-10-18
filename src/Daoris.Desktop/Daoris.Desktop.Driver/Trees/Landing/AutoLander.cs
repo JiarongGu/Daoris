@@ -416,7 +416,8 @@ public sealed class AutoLander(
     /// A branch made and held back from its push, handed on now its quest stands again (FABRIC-CLOSE1h2): the hand-off's own door
     /// (<see cref="TreeHandOffs.HandAsync"/>), which takes the branch's hold, reads the record under it and pushes once, from the
     /// repository the tree is a checkout of. Kept as a landing is: <c>landed</c> where it pushed, <c>plugin-failed</c> where the plugin
-    /// did not, and a refusal where the hand-off spoke to none.
+    /// did not, <c>push-held</c> again where its quest moved just before the plugin was told (FABRIC-CLOSE1h8), and a refusal where the
+    /// hand-off spoke to none.
     /// </summary>
     private async Task<string> HandOnAsync(AutoChoice choice, LandedBranch made, CancellationToken ct)
     {
@@ -424,9 +425,14 @@ public sealed class AutoLander(
         var root = TreeTips.CommonDirectory(entry.Tree) is { } common
             ? Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(common)) ?? entry.Tree
             : entry.Tree;
-        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct).ConfigureAwait(false);
-        var landed = handed.Plugin is not null
-            ? new TreeLanding(true, handed.Message, handed.Branch, handed.Plugin)
+        // FABRIC-CLOSE1h8: its quest judged once more just before the plugin is told, by the look's own rule (a hold stops it too), so a
+        // hand-off that waited behind another push of the branch tells no plugin where its quest moved meanwhile.
+        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct, (waited, token) => BeforePushAsync(choice, waited, token))
+            .ConfigureAwait(false);
+        // Held back there, the branch stands made as it was, so it stays `push-held` for the first look once its quest stands again: a
+        // refusal would be kept at this tip and never tried again, since the tree does not move.
+        var landed = handed.Withheld is { } withheld ? new TreeLanding(true, handed.Message, handed.Branch) { Withheld = withheld }
+            : handed.Plugin is not null ? new TreeLanding(true, handed.Message, handed.Branch, handed.Plugin)
             : new TreeLanding(false, handed.Message, handed.Branch) { Refusal = AutoLandingCode.Refused };
         return Tried(entry, AutoLandingRules.CodeOf(landed), choice.Tip, choice.Status, landed, handed.Plugin?.Plugin ?? made.Rule?.Plugin,
             made.Branch);

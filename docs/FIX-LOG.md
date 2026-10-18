@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A hand-off that waited behind another push told its plugin of a result taken back meanwhile (FABRIC-CLOSE1h8)
+
+- **Symptom:** handing a landed branch on (`HANDOFF`, Ask Daoris's card, `trees hand`), or the look's hand-on of a push held back, waiting
+  up to minutes behind another push of the branch (LANDRACE1), told its plugin of the branch whatever its quest had come to meanwhile: a
+  submission reopened, readied again or a done turned down was pushed all the same, and the look's hand-on pushed through a fresh hold.
+- **Root cause:** `TreeHandOffs.HandAsync` took no judgement at the push, so no hand-off read a quest past its door; CLOSE1h3 fenced only
+  the press and Accept.
+- **Fix:** `HandAsync` takes a `beforePush`, asked under the branch's hold just before the plugin; a refusal tells no plugin and records
+  nothing (`TreeHand.Withheld`). The person's doors pass the result of the session that last moved the branch (`PressQuests.HandedAsync`,
+  CLOSE1h3's rule), the look its own rule, keeping the entry `push-held`. D173's FABRIC-CLOSE1h8 note has the behaviour.
+- **Verification:** red first: `PressedResultTests` and `DriverCommandTests` (fast, 6 failing), and the new Git cases (5 failing, 2
+  passing as before). Then the driver's fast half is 9545 (9538 before), its one failure a load flake that passes alone, and
+  `AutoLandingTests`, run once by class, passes 60 (53 before).
+
 ## 2026-10-18 — A press that waited behind another landing landed a result taken back meanwhile (FABRIC-CLOSE1h3)
 
 - **Symptom:** the person's Accept (`LAND_SESSION_TREE`, `trees land <session>`) or an entry's or an ask's, waiting up to minutes behind
