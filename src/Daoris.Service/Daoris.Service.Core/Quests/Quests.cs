@@ -480,7 +480,14 @@ public enum QuestReopenRefusal
 /// <param name="Refusal"><see cref="QuestReopenRefusal.None"/> when it moved.</param>
 /// <param name="Quest">The quest named, as it now stands; null for no such id.</param>
 /// <param name="Step">The step it moved with it, as it now stands: the reopened submission's, or the source a word to go on read.</param>
-public sealed record QuestReopening(QuestReopenRefusal Refusal, Quest? Quest, Quest? Step);
+public sealed record QuestReopening(QuestReopenRefusal Refusal, Quest? Quest, Quest? Step)
+{
+    /// <summary>
+    /// For a word to go on: the step's own successor, which the submission it cleared had published, as the same write reopened it,
+    /// withdrawn or held (FABRIC-CLOSE1c14). Null where none stood on that submission.
+    /// </summary>
+    public Quest? Successor { get; init; }
+}
 
 /// <summary>
 /// Why a graph's close wrote nothing (FABRIC-CLOSE1a, §E5), or <see cref="None"/> when it closed every quest it named. Each
@@ -1922,7 +1929,8 @@ public sealed class QuestStore
 
     /// <summary>
     /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): a <see cref="QuestOperationKind.Rebound"/>
-    /// naming the source's current submission, once that is unheld.
+    /// naming the source's current submission, once that is unheld; and in the same write, a <see cref="QuestOperationKind.Reopened"/> on
+    /// the step's own successor, which the submission the rebind cleared had published (FABRIC-CLOSE1c14).
     /// </summary>
     public Task<QuestReopening> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
@@ -1946,10 +1954,36 @@ public sealed class QuestStore
             var rebound = await ReboundInAsync(
                     id, new QuestOperationRef(current.Machine, current.Sequence), whileOpen: false, now, transaction, inside)
                 .ConfigureAwait(false);
-            return rebound is null
-                ? new QuestReopening(QuestReopenRefusal.SourceNotReady, standing, source)
-                : new QuestReopening(QuestReopenRefusal.None, rebound, source);
+            if (rebound is null) return new QuestReopening(QuestReopenRefusal.SourceNotReady, standing, source);
+
+            // FABRIC-CLOSE1c14: the rebind cleared the step's own submission, so the successor that submission published is reopened in
+            // the same write, as the person's reopen of it would be: withdrawn while open, held while taken. Its next submission then
+            // rebinds a withdrawn one, and a held one waits on the person's word, so the step's close is never left unsealed.
+            var successor = standing.Submission is { } cleared
+                ? await ReopenSuccessorAsync(standing, new QuestOperationRef(cleared.Machine, cleared.Sequence), now, transaction, inside)
+                    .ConfigureAwait(false)
+                : null;
+            return new QuestReopening(QuestReopenRefusal.None, rebound, source) { Successor = successor };
         }, ct);
+
+    /// <summary>
+    /// A <see cref="QuestOperationKind.Reopened"/> naming <paramref name="submission"/> on the chain's next step after
+    /// <paramref name="quest"/>, judged by the replay's rule in the caller's transaction (FABRIC-CLOSE1c14): the step as it then stands,
+    /// withdrawn or held, or null where none stands on that submission (none published, closed, or already reopened).
+    /// </summary>
+    private async Task<Quest?> ReopenSuccessorAsync(
+        Quest quest, QuestOperationRef submission, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
+    {
+        if (await SuccessorAsync(quest, transaction, ct).ConfigureAwait(false) is not { } step) return null;
+        var standing = QuestLog.Replay(await HistoryAsync(step.Id, transaction, ct).ConfigureAwait(false));
+        var judged = new QuestOperation(step.Id, QuestOperationKind.Reopened, Machine, 0, now, Submission: submission);
+        if (!QuestLog.Applies(standing, judged)) return null;
+        var operation = await AppendAsync(
+            step.Id, QuestOperationKind.Reopened, now, null, null, transaction, ct, submission: submission).ConfigureAwait(false);
+        var reopened = QuestLog.Step(standing, operation)!;
+        await WriteCacheAsync(reopened, transaction, ct).ConfigureAwait(false);
+        return reopened;
+    }
 
     /// <summary>
     /// The step that seals <paramref name="quest"/>'s current submission (FABRIC-CLOSE1a, FABRIC-CLOSE1c; §E5): its chain's next step,

@@ -1867,8 +1867,9 @@ public sealed class QuestExchange(
 
     /// <summary>
     /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): it grows from the source's current
-    /// submission once that is unheld, its hold let go, and any result it submitted on the reopened work cleared (FABRIC-CLOSE1c10).
-    /// To abandon it instead is their decline, at the decline's own door.
+    /// submission once that is unheld, its hold let go, and any result it submitted on the reopened work cleared (FABRIC-CLOSE1c10), with
+    /// the next step that result published withdrawn or held (FABRIC-CLOSE1c14). To abandon it instead is their decline, at the decline's
+    /// own door.
     /// </summary>
     public async Task<QuestRespondOutcome> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -1881,7 +1882,8 @@ public sealed class QuestExchange(
                 QuestRespondRefusal.None,
                 $"Quest `#{quest}` goes on: it grows from `#{parent}`'s current submission now, and its hold is let go. Its work "
                 + "stands on what was reopened, so any result it submitted is cleared: bring its branch up to date with that submission "
-                + "first, and it must submit again from there.",
+                + "first, and it must submit again from there."
+                + SuccessorWords(going.Successor),
                 going.Quest),
             QuestReopenRefusal.NotFound => new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", null),
             QuestReopenRefusal.NotWithdrawn => new(
@@ -1896,6 +1898,17 @@ public sealed class QuestExchange(
                 null),
         };
     }
+
+    /// <summary>
+    /// What the go-on did to the step's own successor, which the cleared result had published (FABRIC-CLOSE1c14): withdrawn until the step
+    /// submits again, or held for the person's word as the step was. Nothing where none stood on that result.
+    /// </summary>
+    private static string SuccessorWords(Quest? successor) => successor switch
+    {
+        null => "",
+        { Status: QuestStatus.Open } => $" Its next step `#{successor.Id}`, which that result published, is withdrawn until it submits again.",
+        _ => $" Its next step `#{successor.Id}`, which that result published, is held: once this one submits again, it goes on by your word.",
+    };
 
     /// <summary>
     /// Why a session's take, done or <c>ready</c> on a step moved nothing (FABRIC-CLOSE1c): the work it grew from was reopened, and

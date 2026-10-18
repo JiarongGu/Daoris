@@ -1705,6 +1705,10 @@ old one is stale, and it submits anew once its branch holds the new submission. 
 Where another machine's take of the step reached the remote before the reopen, the step is held there, the rebind is forgotten, and the
 step goes on only by the person's word, on every machine and the remote alike.
 
+**Amended (FABRIC-CLOSE1c14, D173's note).** The go-on also reopens the step's own successor, which the cleared result published,
+exactly as the person's reopen of that result would: withdrawn if untaken, held if taken. The step's next submission rebinds a withdrawn
+one and is sealed by it; a held one goes on by the person's word, and the step's close waits for it.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
