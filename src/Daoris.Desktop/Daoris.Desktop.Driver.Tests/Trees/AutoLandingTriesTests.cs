@@ -515,4 +515,86 @@ public sealed class AutoLandingTriesTests : AutoLandingFixture
         Assert.Equal(owed, Assert.Single(new OpinionDues(_home).All()));
         Assert.False(await BranchAsync(root, PushBranch));
     }
+
+    // ——— FABRIC-CLOSE1h18: an opinion's due closes as landed only on a landing made since it was owed (D173's note)
+
+    /// <summary>
+    /// The row's proof. A session landed, its words went on (D137), and it concluded on its done again with more work, now under a rule
+    /// that reads an opinion before landing: owed at the done, or at the look where its done owed none (FABRIC-CLOSE1h17). Its landing,
+    /// older than the due, lands none of the work done since, so the loop's opinion look keeps it owed and asks it, rather than closing it
+    /// as landed and leaving the landing to the person's ask. Once it settles, the next look moves the made branch on once, and the
+    /// advance, made since the due, closes it as landed.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_session_landed_that_went_on_keeps_its_later_dones_opinion_owed_and_lands_once_it_settles(bool owedAtTheDone)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        Assert.Single(await LookAsync());
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+
+        ReadsAnOpinion();
+        await CommitAsync(tree, "more.txt", "the work after its landing", "the work after its landing");
+        var head = await HeadAsync(tree);
+        ConcludeAgain("s1", "q1", tree);
+        if (owedAtTheDone)
+        {
+            Assert.Equal(OpinionRules.Landing, Assert.Single(OpinionLook.Concluded(_home, Config(), "s1", _world.Quests["q1"], "Done", "completed", tree)));
+        }
+
+        Assert.Contains("it is asked at the driver's next look", Assert.Single(await LookAsync()));
+
+        Assert.Single(_frames);
+        Assert.Equal(AutoLandingCode.Opinion, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        var due = Assert.Single(new OpinionDues(_home).Open());
+        Assert.Equal(("s1", OpinionRules.Landing), (due.Session, due.Occasion));
+        Assert.True(new LandedBranches(_home).Landing("s1")!.AcceptedAt("s1") < due.At, "the landing is older than the due");
+        // The loop's opinion look keeps it owed, and asks it: its gate reads not asked, with no hold of the quest's before it.
+        Assert.Null(await ClosesAsync(due));
+        var gate = await new SessionTrees(_home).OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, _world, null, due.Occasion);
+        Assert.Equal((OpinionGateStates.NotAsked, false), (gate.State, gate.Held));
+
+        Settled("o1", head);
+        Assert.Single(await LookAsync());
+
+        Assert.Equal(2, _frames.Count);
+        Assert.Equal(head, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+        Assert.Equal(AutoLandingCode.Advanced, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(OpinionDueClosed.Landed, await ClosesAsync(due));
+    }
+
+    /// <summary>
+    /// The reading by git behind it. A landing of the session's recorded before its due lands only the work it holds: a tree gone on past
+    /// it keeps the due owed; one still at the commit its branch was made at, or at the commit it squashed (its record's own word,
+    /// PROCESS1b-ii), closes it as landed, as any landing closed it before (a push held back's recovery owes its due after the landing,
+    /// FABRIC-CLOSE1h15).
+    /// </summary>
+    [Theory]
+    [InlineData(false, false, OpinionDueClosed.Landed)]
+    [InlineData(false, true, OpinionDueClosed.Landed)]
+    [InlineData(true, false, null)]
+    [InlineData(true, true, null)]
+    public async Task A_landing_older_than_its_due_closes_it_only_where_it_holds_the_trees_work(bool wentOn, bool squash, string? closed)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        ReadsAnOpinion();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var tip = await HeadAsync(tree);
+        // Its landing made the branch at the tree's tip, or at one commit squashing the tree's work onto the line, an hour before the due.
+        var made = squash ? (await GitAsync(root, "commit-tree", $"{tip}^{{tree}}", "-p", $"{tip}~1", "-m", "Fix the gap")).Trim() : tip;
+        await GitAsync(root, "branch", PushBranch, made);
+        var at = DateTimeOffset.UtcNow;
+        new LandedBranches(_home).Record(new LandedBranch("engine", "aurora", PushBranch, "main", made, "s1", "q1", "Fix the gap", at.AddHours(-1))
+        {
+            Squashed = squash ? tip : null,
+        });
+        if (wentOn) await CommitAsync(tree, "more.txt", "the work after its landing", "the work after its landing");
+
+        Assert.Equal(closed, await ClosesAsync(new OpinionDue("s1", "q1", "engine", "aurora", tree, OpinionRules.Landing, at)));
+    }
 }
