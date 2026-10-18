@@ -61,7 +61,7 @@ public sealed class PauseTickTests : IDisposable
         // pause's words on its record, the quest still taken here, and the pause keeps the stop it made.
         var first = Driver(service).RunOnceAsync();
         await UntilAsync(() => service.SessionCount == 1 && service.Status("q1") == "Taken");
-        var paused = await WorkPausing.PauseAsync(world, WorkScope.Ask, "a1", PluginEvents.Screen).WaitAsync(TimeSpan.FromSeconds(30));
+        var paused = await WorkPausing.PauseAsync(world, WorkScope.Ask, "a1", PluginEvents.Screen).WaitAsync(Poll.Patience);
         await first.WaitAsync(TimeSpan.FromSeconds(60));
 
         Assert.Equal(new WorkStop("s1", "q1"), Assert.Single(paused.Stopped));
@@ -75,7 +75,7 @@ public sealed class PauseTickTests : IDisposable
         // 2. The looks that follow hold the quest, naming the pause and its door, and start nothing.
         for (var look = 0; look < 2; look++)
         {
-            var held = await Driver(service).TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            var held = await Driver(service).TickAsync().WaitAsync(Poll.Patience);
 
             var sitting = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Paused, sitting.Verdict);
@@ -84,7 +84,7 @@ public sealed class PauseTickTests : IDisposable
         }
 
         // 3. Resume: the pause's stop released, nothing still holds the quest, and the next look carries it on in the same tree.
-        var resumed = await WorkPausing.ResumeAsync(world, WorkScope.Ask, "a1", PluginEvents.Screen).WaitAsync(TimeSpan.FromSeconds(30));
+        var resumed = await WorkPausing.ResumeAsync(world, WorkScope.Ask, "a1", PluginEvents.Screen).WaitAsync(Poll.Patience);
         Assert.Equal(new WorkStop("s1", "q1"), Assert.Single(resumed.Released));
         Assert.Empty(resumed.Holds!);
 
@@ -107,13 +107,13 @@ public sealed class PauseTickTests : IDisposable
         var world = World(service);
 
         // 1. Paused before the driver ever looked: nothing runs, so the pause stops nothing and is written.
-        var paused = await WorkPausing.PauseAsync(world, WorkScope.Quest, "q1", PluginEvents.Terminal).WaitAsync(TimeSpan.FromSeconds(30));
+        var paused = await WorkPausing.PauseAsync(world, WorkScope.Quest, "q1", PluginEvents.Terminal).WaitAsync(Poll.Patience);
         Assert.Equal((PauseVerdict.Paused, 0), (paused.Verdict, paused.Stopped.Count));
 
         // 2. Each look holds it, and nothing is spawned.
         for (var look = 0; look < 2; look++)
         {
-            var held = await Driver(service).TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            var held = await Driver(service).TickAsync().WaitAsync(Poll.Patience);
 
             var sitting = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Paused, sitting.Verdict);
@@ -123,7 +123,7 @@ public sealed class PauseTickTests : IDisposable
         }
 
         // 3. Resume: the next look starts it where it stood, oldest first, and it closes.
-        await WorkPausing.ResumeAsync(world, WorkScope.Quest, "q1", PluginEvents.Terminal).WaitAsync(TimeSpan.FromSeconds(30));
+        await WorkPausing.ResumeAsync(world, WorkScope.Quest, "q1", PluginEvents.Terminal).WaitAsync(Poll.Patience);
         await Driver(service).RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
         Assert.Equal("completed", service.Session("s1")["state"]!.GetValue<string>());
@@ -186,7 +186,7 @@ public sealed class PauseTickTests : IDisposable
 
     private static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");

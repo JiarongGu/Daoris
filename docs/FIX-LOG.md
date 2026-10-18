@@ -59,6 +59,22 @@ repository.
   `OpinionGateTests`'), `OpinionLookTests` 6 of 6 (4 before), and the `AutoLanding` classes, run once by filter with
   `git.process.runsettings`, 72 of 75 (74 before): the 3 timed out in the fixture's 60 s waits for a push or a landing to reach its
   hold, a load timeout before any opinion is read, and pass alone.
+## 2026-10-19 — The driver's remaining 15-60 s signal waits used the shared two minutes (TESTPATIENCE2)
+
+- **Symptom:** under the merge gates' load, short bounds that elapse only on failure (polls, `WaitAsync` on a tick, hold waits)
+  failed merges all day.
+- **Root cause:** the bounds were 15-30 s (60 s in three `AutoLanding` bodies) on signals a starved machine delays.
+- **Fix:** each now uses `Poll.Patience` (two minutes, TESTPATIENCE1), and `Poll.Until`'s own default is `Patience`. Counts of
+  sites: `Poll.cs` 1; `Loop/` PauseTick 7, StopHoldTick 3, ChannelNextStepTick 2, DrivenSessionInput 2, OrphanedSession 3,
+  SessionRequestTick 2, AccountLimitTick 1, HandOverQuestTick 1; `Platform/` ChangeWatchProcess 6, ProcessStarts 4;
+  `Sessions/SessionRequestChange` 7; `Trees/` AutoLandingPress 7 (5 at 30 s, 2 at 60 s), AutoLandingSubmission 1, AutoLandingPushHeld 1
+  (60 s), RefWatchProcess 3, TreeLineLook 1; `Agents/ProcessJob` 2; `Quests/Intake` 1; `Accounts/HarnessRun` 1; `Plugins/WorkPeer` 1,
+  WorkProcess 1. The four usage tests' elapsed bounds (`ClaudeUsage` 10 s, `CodexUsage` 10 s, `ClaudeUsageProcess` 20 s,
+  `CodexUsageProcess` 20 s) are two minutes: each proves a 200 ms (or 2 s) patience was not run against a probe that never
+  answers, and two minutes still separates the two. No assertion changed.
+- **Verification:** see the branch's hand-back (touched fast classes, the driver fast half, the AutoLanding git classes, the touched
+  Process classes).
+
 ## 2026-10-19 — The instance door's tests gave a stand-in two seconds to connect and answer (TESTWAIT7)
 
 - **Symptom:** beside loaded merges, four `InstanceDoorTests` failed (exit 2 for 0; "trees: Daoris is running on this home … did not

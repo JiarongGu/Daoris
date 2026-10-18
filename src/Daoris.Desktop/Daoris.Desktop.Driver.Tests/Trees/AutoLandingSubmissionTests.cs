@@ -88,7 +88,7 @@ public sealed class AutoLandingSubmissionTests : AutoLandingFixture
                 landing = Task.Run(() => lander.LandAsync(chosen));
             }
 
-            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0, TimeSpan.FromSeconds(30)), "the landing waits for its tree");
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0, Poll.Patience), "the landing waits for its tree");
             var quest = _world.Quests["q1"];
             _world.Quests["q1"] = change switch
             {

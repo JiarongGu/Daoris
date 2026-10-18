@@ -69,9 +69,9 @@ public sealed class ChangeWatchProcessTests(ITestOutputHelper output) : IDisposa
 
         var asked = Stopwatch.StartNew();
         requests.Write(request);
-        await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the words were never taken", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => inbox.State.Queued.Count == 1, () => "the words were never taken", Poll.Patience);
         var answered = asked.Elapsed;
-        await Poll.Until(() => !watch.Changes!.Judging, within: TimeSpan.FromSeconds(30));
+        await Poll.Until(() => !watch.Changes!.Judging, within: Poll.Patience);
         await Task.Delay(ChangeWatch.Cap + ChangeWatch.Quiet);
 
         output.WriteLine($"a say answered {answered.TotalMilliseconds:0} ms after it was written; {watch.Changes!.Judgements} judgement(s)");
@@ -105,23 +105,23 @@ public sealed class ChangeWatchProcessTests(ITestOutputHelper output) : IDisposa
 
         var file = Path.Combine(folder, "a.json");
         await File.WriteAllTextAsync(file, "{}");
-        await Poll.Until(() => Judged(ChangeWhy.Hint).Length == 1, () => "the write was never heard", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Judged(ChangeWhy.Hint).Length == 1, () => "the write was never heard", Poll.Patience);
         await Task.Delay(ChangeWatch.Cap);
         var heard = Judged(ChangeWhy.Hint).Length;
 
         AtomicFile.WriteText(file, """{ "again": true }""");
-        await Poll.Until(() => Judged(ChangeWhy.Hint).Length == heard + 1, () => "the replace was never heard", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Judged(ChangeWhy.Hint).Length == heard + 1, () => "the replace was never heard", Poll.Patience);
         await Task.Delay(ChangeWatch.Cap);
         Assert.Equal(heard + 1, Judged(ChangeWhy.Hint).Length);
 
         var aside = folder + ".aside";
         Directory.Move(folder, aside);
         Directory.CreateDirectory(folder);
-        await Poll.Until(() => Judged(ChangeWhy.Reopened).Length > 0, () => "the replaced folder was never reopened", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Judged(ChangeWhy.Reopened).Length > 0, () => "the replaced folder was never reopened", Poll.Patience);
 
         var before = Judged(ChangeWhy.Hint).Length;
         await File.WriteAllTextAsync(Path.Combine(folder, "b.json"), "{}");
-        await Poll.Until(() => Judged(ChangeWhy.Hint).Length > before, () => "the new folder was never heard", TimeSpan.FromSeconds(30));
+        await Poll.Until(() => Judged(ChangeWhy.Hint).Length > before, () => "the new folder was never heard", Poll.Patience);
         lock (judged) output.WriteLine($"judged, in order: {string.Join(", ", judged)}");
     }
 

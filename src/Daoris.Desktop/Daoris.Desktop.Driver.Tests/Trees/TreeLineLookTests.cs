@@ -110,7 +110,7 @@ public sealed class TreeLineLookTests : IDisposable
             }
         }
 
-        await Task.WhenAll(LookAsync(first, second), LookAsync(second, first)).WaitAsync(TimeSpan.FromSeconds(30));
+        await Task.WhenAll(LookAsync(first, second), LookAsync(second, first)).WaitAsync(Poll.Patience);
 
         Assert.Equal(2, _asked.Count);
     }

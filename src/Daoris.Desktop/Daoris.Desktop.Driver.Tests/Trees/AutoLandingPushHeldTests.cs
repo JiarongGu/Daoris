@@ -134,7 +134,7 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
             }
 
             Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || hand.IsCompleted,
-                TimeSpan.FromSeconds(60)), "the hand-off waits for its branch");
+                Poll.Patience), "the hand-off waits for its branch");
             var quest = change == "first-reopened" ? "q1" : "q2";
             var was = _world.Quests[quest];
             _world.Quests[quest] = change switch

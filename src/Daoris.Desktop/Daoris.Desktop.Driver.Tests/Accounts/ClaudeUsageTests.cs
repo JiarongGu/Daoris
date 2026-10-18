@@ -210,7 +210,7 @@ public sealed class ClaudeUsageTests
         var timer = System.Diagnostics.Stopwatch.StartNew();
 
         Assert.Null(await Ask(cli, TimeSpan.FromMilliseconds(200)));
-        Assert.InRange(timer.Elapsed, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+        Assert.InRange(timer.Elapsed, TimeSpan.Zero, Poll.Patience);
     }
 
     [Fact]

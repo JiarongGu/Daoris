@@ -34,8 +34,8 @@ public sealed class ProcessJobTests : IDisposable
         var tracked = processes.Track("s1", parent);
 
         // The measured shape: the parent is gone, and its child is still beating.
-        await parent.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
-        await Poll.Until(() => File.Exists(heartbeat), () => "the child never started", TimeSpan.FromSeconds(15));
+        await parent.WaitForExitAsync().WaitAsync(Poll.Patience);
+        await Poll.Until(() => File.Exists(heartbeat), () => "the child never started", Poll.Patience);
         Assert.True(await Beating(heartbeat), "the child should outlive its parent — the orphan this test is about");
 
         tracked.Dispose();
