@@ -163,6 +163,13 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// live quest alone, since once closed its close is what stands. False from a host before the field, and on the owner's install.
     /// </summary>
     public bool HeldByReopen => SourceReopened is not null && Status is "Open" or "Taken";
+
+    /// <summary>
+    /// The person's last reopen of its own submission that no later submission answered (FABRIC-CLOSE1c4, §E5): what tells a reopened
+    /// source, with no <see cref="Submission"/>, from one whose taker has not yet said <c>ready</c>. Null once a later <c>ready</c>
+    /// answered it, for every quest never reopened, and from a host before the field.
+    /// </summary>
+    public QuestReopenView? Reopened { get; init; }
 }
 
 /// <summary>A taker's submission in a closure graph (FABRIC-CLOSE1a), as the service answers it: the operation that made it, when, and its note.</summary>
@@ -170,7 +177,18 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 /// The commit its evidence was read at (FABRIC-CLOSE1c5), by its full id: what a step that grew from it is brought up to date with on
 /// the person's go-on. Null where none was read, and from a host before the field.
 /// </param>
-public sealed record QuestSubmissionView(string Machine, long Sequence, DateTimeOffset? At, string? Note, string? Commit = null);
+/// <param name="Session">
+/// The session that said its <c>ready</c> (FABRIC-CLOSE1c4), the one a reopen of it is told to. Null where no session said it, and from
+/// a host before the field.
+/// </param>
+public sealed record QuestSubmissionView(
+    string Machine, long Sequence, DateTimeOffset? At, string? Note, string? Commit = null, string? Session = null);
+
+/// <summary>
+/// The person's reopen of a quest's own submission (FABRIC-CLOSE1c4), as the service answers it until a later submission answers it:
+/// the reopen by its machine and sequence, the submission it reopened (<paramref name="Of"/>), their words, and when.
+/// </summary>
+public sealed record QuestReopenView(string Machine, long Sequence, QuestSubmissionRef Of, string? Note, DateTimeOffset? At);
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
 public sealed record QuestRequirementView(string Quote, string Check)

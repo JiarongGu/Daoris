@@ -78,6 +78,39 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1c4: a source's last reopen no later submission answered (the reopen's machine and sequence, the submission it
+    /// reopened, the person's words and when) and the session that said a submission's ready; absent from a host before them, and none
+    /// where the reopen is named in half.
+    /// </summary>
+    [Fact]
+    public void A_sources_reopen_and_the_session_that_said_ready_are_read_and_absent_from_a_host_before_them()
+    {
+        var quests = ServiceClient.ReadQuests(
+            """
+            [{ "id": "q7", "from": "game", "to": "engine", "title": "Ship it", "body": "", "status": "Taken", "closure": "gph-0123",
+               "reopened": { "machine": "desk", "sequence": 44, "of": { "machine": "desk", "sequence": 41 },
+                             "note": "The bridge is wrong.", "at": "2026-10-18T09:00:00+00:00" } },
+             { "id": "q8", "from": "game", "to": "engine", "title": "Again", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 45, "note": "ready", "session": "s0a1b2c3" } },
+             { "id": "q9", "from": "game", "to": "engine", "title": "Half", "body": "", "status": "Taken", "closure": "gph-0123",
+               "reopened": { "machine": "desk", "sequence": 44, "of": { "machine": "desk" } } },
+             { "id": "q10", "from": "game", "to": "engine", "title": "Old", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 41 } }]
+            """);
+
+        Assert.Equal(
+            new QuestReopenView("desk", 44, new QuestSubmissionRef("desk", 41), "The bridge is wrong.",
+                new DateTimeOffset(2026, 10, 18, 9, 0, 0, TimeSpan.Zero)),
+            quests[0].Reopened);
+        Assert.Null(quests[0].Submission);
+        Assert.Equal("s0a1b2c3", quests[1].Submission!.Session);
+        Assert.Null(quests[1].Reopened);
+        Assert.Null(quests[2].Reopened);
+        Assert.Null(quests[3].Reopened);
+        Assert.Null(quests[3].Submission!.Session);
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1c5: a submission's commit, its evidence's (§E5), read by its full id; absent from a host before it, and none where
     /// it is no commit's id.
     /// </summary>

@@ -1538,6 +1538,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 // from a step a done published and from a host before them; one named in half is none.
                 GrewFrom = ReadSubmissionRef(quest, "grewFrom"),
                 SourceReopened = ReadSubmissionRef(quest, "sourceReopened"),
+                // FABRIC-CLOSE1c4, read for FABRIC-CLOSE1c8: the source's own reopen no later submission answered. Absent once one did,
+                // and from a host before it; one named in half is none.
+                Reopened = ReadReopen(quest),
             });
         }
 
@@ -2135,7 +2138,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>
     /// A taker's current submission (FABRIC-CLOSE1a), or null: none, from a host before it, or named only in half. Its commit
-    /// (FABRIC-CLOSE1c5) only where it is a commit's full id, lowered as a verdict's is; absent from a host before it.
+    /// (FABRIC-CLOSE1c5) only where it is a commit's full id, lowered as a verdict's is; absent from a host before it. The session
+    /// that said its ready (FABRIC-CLOSE1c4), absent where none did and from a host before it.
     /// </summary>
     private static QuestSubmissionView? ReadSubmission(JsonElement quest) =>
         quest.TryGetProperty("submission", out var submission) && submission.ValueKind == JsonValueKind.Object
@@ -2144,7 +2148,18 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         && sequence.TryGetInt64(out var number) && number > 0
             ? new QuestSubmissionView(
                 machine, number, Moment(submission, "at"), Text(submission, "note"),
-                Text(submission, "commit") is { } commit && EvidenceCodes.IsObjectId(commit) ? commit.ToLowerInvariant() : null)
+                Text(submission, "commit") is { } commit && EvidenceCodes.IsObjectId(commit) ? commit.ToLowerInvariant() : null,
+                Text(submission, "session") is { Length: > 0 } session ? session : null)
+            : null;
+
+    /// <summary>
+    /// A source's own reopen no later submission answered (FABRIC-CLOSE1c4), or null: none, from a host before it, or named only in half,
+    /// the reopen's or the reopened submission's machine and sequence.
+    /// </summary>
+    private static QuestReopenView? ReadReopen(JsonElement quest) =>
+        quest.TryGetProperty("reopened", out var reopen) && reopen.ValueKind == JsonValueKind.Object
+        && ReadSubmissionRef(quest, "reopened") is { } named && ReadSubmissionRef(reopen, "of") is { } of
+            ? new QuestReopenView(named.Machine, named.Sequence, of, Text(reopen, "note"), Moment(reopen, "at"))
             : null;
 
     /// <summary>A submission a quest names by its machine and sequence (FABRIC-CLOSE1c), or null: none, from a host before it, or named only in half.</summary>
