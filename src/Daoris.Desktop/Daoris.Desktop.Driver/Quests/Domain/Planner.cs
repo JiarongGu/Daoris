@@ -144,6 +144,18 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// sequence a close and an evidence verdict name it by; null where there is none, and from a host before the field.
     /// </summary>
     public QuestSubmissionView? Submission { get; init; }
+
+    /// <summary>
+    /// The submission of its <see cref="Parent"/> it grew from (FABRIC-CLOSE1c, §E5), by its machine and sequence: what seals that
+    /// submission while it stands (FABRIC-WORKFLOW2d). Null for a step a done published, every other quest, and from a host before it.
+    /// </summary>
+    public QuestSubmissionRef? GrewFrom { get; init; }
+
+    /// <summary>
+    /// The submission it grew from, reopened by the person (FABRIC-CLOSE1c, §E5), while that stands: the step is withdrawn or held, and
+    /// seals nothing. Null for every other quest, once a rebind names its new source, and from a host before it.
+    /// </summary>
+    public QuestSubmissionRef? SourceReopened { get; init; }
 }
 
 /// <summary>A taker's submission in a closure graph (FABRIC-CLOSE1a), as the service answers it: the operation that made it, when, and its note.</summary>
