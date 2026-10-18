@@ -303,4 +303,235 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         Assert.Equal(AutoLandingCode.PushHeld, entry.Last!.Code);
         Assert.Null(entry.Closed);
     }
+
+    // ——— FABRIC-CLOSE1h12: the landing's gates judged again at the push and in its recovery (D173's note)
+
+    /// <summary>
+    /// The row's proof at the push. A gate that starts holding after the look chose a landing, while its push waits behind another push
+    /// of its branch, holds the push back as a hold does: a second opinion the repository's rule now reads before landing, or a set-up
+    /// step showing the work for the person's review. The branch is made, no plugin is told, the entry stays <c>push-held</c> and a look
+    /// while the gate holds says nothing more; once it lets go, the first look hands the branch on, one push.
+    /// </summary>
+    [Theory]
+    [InlineData("opinion")]
+    [InlineData("review")]
+    public async Task A_gate_that_starts_holding_while_the_push_waits_holds_it_back_until_it_lets_go(string gate)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tip = await HeadAsync(await DoneSessionAsync(root, "s1", "q1"));
+        var said = await HeldAtThePushAsync(root, () => Holds(gate, tip));
+
+        Assert.True(await BranchAsync(root, PushBranch), string.Join("\n", said));
+        Assert.Empty(_frames);
+        Assert.False(new LandedBranches(_home).Landing("s1")!.Pushed);
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal(AutoLandingCode.PushHeld, entry.Last!.Code);
+        Assert.Null(entry.Closed);
+        var line = Assert.Single(said);
+        Assert.Contains("nothing was pushed", line);
+        Assert.Contains("its landing's gate held it before its plugin was told, so its push was not tried", line);
+        Assert.Contains(gate == "opinion" ? "Waits for a second opinion" : "Waits for your review in `local`", line);
+        Assert.Single(_lines, each => each.Event == (gate == "opinion" ? "opinion.held" : "review.held"));
+
+        // While the gate holds, a look hands nothing on and says nothing more.
+        Assert.Empty(await LookAsync());
+        Assert.Empty(_frames);
+
+        LetsGo(gate, tip);
+        Assert.Single(await LookAsync());
+
+        Assert.Equal(PushBranch, Json(Assert.Single(_frames)).GetProperty("branch").GetString());
+        Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed);
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal([$"refs/heads/{PushBranch}"], await FeatureBranchesAsync(root));
+    }
+
+    /// <summary>
+    /// The row's proof in recovery. A push held back by its quest's hold is handed on by the first look once the quest stands (CLOSE1h2),
+    /// after a restart as at any look, since a look keeps nothing but the due list. A gate that started holding before that look holds
+    /// the hand-on too, read before it is chosen: the look waits, says nothing and tells no plugin, and the first look once the gate
+    /// lets go pushes once.
+    /// </summary>
+    [Theory]
+    [InlineData("opinion")]
+    [InlineData("review")]
+    public async Task A_gate_that_starts_holding_before_a_push_held_back_is_recovered_holds_its_hand_on_until_it_lets_go(string gate)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tip = await HeadAsync(await DoneSessionAsync(root, "s1", "q1"));
+        await HeldAtThePushAsync(root, quest => quest with { Held = true, Hold = EvidenceCodes.Departed });
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s1")!.Last!.Code);
+
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false, Hold = null };
+        Holds(gate, tip);
+        Assert.Empty(await LookAsync());
+
+        Assert.Empty(_frames);
+        Assert.False(new LandedBranches(_home).Landing("s1")!.Pushed);
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal(AutoLandingCode.PushHeld, entry.Last!.Code);
+        Assert.Null(entry.Closed);
+
+        LetsGo(gate, tip);
+        Assert.Single(await LookAsync());
+
+        Assert.Single(_frames);
+        Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed);
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+    }
+
+    /// <summary>
+    /// The parent's decision 6: a set-up step's <c>unreviewed</c> hold is its review gate's own, so the quest's hold alone never holds the
+    /// push back, and the gate read there does. q1 becomes a set-up step showing its work at the tip while the push waits: reviewed
+    /// there, its quest still held, it pushes at once; not reviewed, the push is held back until the person's reviewed lets it go.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_set_up_steps_unreviewed_hold_at_the_push_is_its_review_gates_to_judge(bool reviewed)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tip = await HeadAsync(await DoneSessionAsync(root, "s1", "q1"));
+        var said = await HeldAtThePushAsync(root, quest => quest with
+        {
+            SetUpIn = "local", Held = true, Hold = EvidenceCodes.Unreviewed, SetUps = [Shown(tip, 41)],
+            Verdicts = reviewed ? [Reviewed(tip, 41)] : [],
+        });
+
+        if (reviewed)
+        {
+            Assert.Single(_frames);
+            Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+            return;
+        }
+
+        Assert.Empty(_frames);
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Contains("Waits for your review in `local`", Assert.Single(said));
+        Assert.Empty(await LookAsync());
+        Assert.Empty(_frames);
+
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false, Hold = null, Verdicts = [Reviewed(tip, 41)] };
+        Assert.Single(await LookAsync());
+
+        Assert.Single(_frames);
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+    }
+
+    /// <summary>
+    /// The parent's decision 4: where a later session's done moved the branch on (CLOSE1h10), the gate is read for that session's work,
+    /// its quest and its tree, as its quest is. s1's push and s2's advance's were held back; both quests stand again, and q3, a set-up
+    /// step after them, was reviewed at s1's tip, which does not hold s2's work: no look hands anything on, said or not, until the person
+    /// reviews what q3 shows at s2's tip, and then the branch is pushed once, at its tip.
+    /// </summary>
+    [Fact]
+    public async Task The_looks_hand_on_reads_the_gate_for_the_later_session_that_moved_its_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var first = await DoneSessionAsync(root, "s1", "q1");
+        var tip = await HeadAsync(first);
+        await HeldAtThePushAsync(root, quest => quest with { Held = true, Hold = EvidenceCodes.Departed });
+        var later = await HeadAsync(await DoneSessionAsync(root, "s2", "q2", parent: "q1", from: $"daoris/{Path.GetFileName(first)}"));
+        await HeldAtThePushAsync(root, quest => quest with { Held = true, Hold = EvidenceCodes.Departed }, quest: "q2");
+        var recorded = new LandedBranches(_home).Of("engine", PushBranch)!;
+        Assert.Equal(("s1", "s2", false), (recorded.Session, recorded.LastSession(), recorded.Pushed));
+
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false, Hold = null };
+        _world.Quests["q2"] = _world.Quests["q2"] with { Held = false, Hold = null };
+        _world.Quests["q3"] = new QuestView("q3", "game", "engine", "Show #q2 in `local` for review", "", "Done")
+        {
+            Parent = "q2", SetUpIn = "local", SetUps = [Shown(tip, 41)], Verdicts = [Reviewed(tip, 41)],
+        };
+        Assert.Empty(await LookAsync());
+
+        Assert.Empty(_frames);
+        Assert.False(new LandedBranches(_home).Of("engine", PushBranch)!.Pushed);
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s2")!.Last!.Code);
+
+        _world.Quests["q3"] = _world.Quests["q3"] with { SetUps = [Shown(tip, 41), Shown(later, 42)], Verdicts = [Reviewed(tip, 41), Reviewed(later, 42)] };
+        await LookAsync();
+
+        var frame = Json(Assert.Single(_frames));
+        Assert.Equal((await GitAsync(root, "rev-parse", PushBranch)).Trim(), frame.GetProperty("tip").GetString());
+        Assert.True(new LandedBranches(_home).Of("engine", PushBranch)!.Pushed);
+    }
+
+    /// <summary>
+    /// The owner's install (the parent's decision 2): an uncontended landing of a plain done reads the gate no more at its push, since
+    /// the gate is read again only where the quest is (LANDGIT1's counts). Its landing reads the quest list as often as the look's
+    /// judgement did, which is the judgement just before the landing, and pushes once.
+    /// </summary>
+    [Fact]
+    public async Task An_uncontended_plain_done_reads_no_gate_at_its_push()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        await DoneSessionAsync(root, "s1", "q1");
+        var reads = 0;
+        _world.ReadingQuests = () => Interlocked.Increment(ref reads);
+        var lander = Lander();
+
+        var (chosen, _) = await lander.ChooseAsync(Config());
+        var looked = Interlocked.Exchange(ref reads, 0);
+        await lander.LandAsync(chosen);
+
+        Assert.True(looked > 0, "the look reads the quest list for its gate");
+        Assert.Equal(looked, reads);
+        Assert.Single(_frames);
+    }
+
+    /// <summary>
+    /// The gate named starts holding: the repository's rule now reads a second opinion before landing, which nobody has asked yet; or q2,
+    /// a set-up step after q1, shows its work at <paramref name="tip"/> for the person's review.
+    /// </summary>
+    private void Holds(string gate, string tip)
+    {
+        if (gate == "opinion")
+        {
+            (Config() with
+            {
+                Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["engine"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], true),
+                },
+            }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+            return;
+        }
+
+        _world.Quests["q2"] = new QuestView("q2", "game", "engine", "Show #q1 in `local` for review", "", "Done")
+        {
+            Parent = "q1", SetUpIn = "local", Held = true, Hold = EvidenceCodes.Unreviewed, SetUps = [Shown(tip, 41)],
+        };
+    }
+
+    /// <summary>The gate named lets go: the rule reads no opinion any more, or the person reviewed what q2 showed.</summary>
+    private void LetsGo(string gate, string tip)
+    {
+        if (gate == "opinion")
+        {
+            (Config() with { Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase) })
+                .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+            return;
+        }
+
+        _world.Quests["q2"] = _world.Quests["q2"] with { Held = false, Hold = null, Verdicts = [Reviewed(tip, 41)] };
+    }
+
+    /// <summary>A set-up this machine posted at <paramref name="commit"/>, as its <paramref name="sequence"/>th.</summary>
+    private static QuestSetUpView Shown(string commit, long sequence) =>
+        new(commit) { Shows = "the work", Session = "s9", Local = true, Machine = "desk", Sequence = sequence };
+
+    /// <summary>The person's reviewed of that set-up.</summary>
+    private static QuestReviewVerdictView Reviewed(string commit, long sequence) =>
+        new(ReviewVerdicts.Reviewed) { SetUpMachine = "desk", SetUpSequence = sequence, Commit = commit, At = DateTimeOffset.UtcNow };
 }

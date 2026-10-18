@@ -1693,6 +1693,11 @@ read or the look chose: a later session's done that moved the branch on meanwhil
 its result no longer in holds the push back and a hold does not; for the look, a hold does too, and a `push-held` entry whose later
 session's quest does not stand waits for it.
 
+**Amended (FABRIC-CLOSE1h12, D173's note).** The look's push and its recovery of a push held back judge the landing's gate again too
+(the run's workflow, the second opinion, the review), for the session whose work the push carries, wherever they read its quest again:
+a gate that starts holding after the look chose the landing holds the push back as a hold does, and the hand-on waits until it lets
+go. The review's own `unreviewed` hold is the gate's to judge. The person's press and hand-off keep their door-time gate.
+
 **Amended (FABRIC-CLOSE1c5, D173's note).** On the go-on, the step's branch is brought up to date by a replay, as the tree sync's: its own
 commits rebased onto the new submission's commit (its evidence's, on the wire), then the line. A conflict leaves the tree as it was and
 nothing else changes; the session is told the person must resolve it. With no commit known, the line alone is synced, and that said.

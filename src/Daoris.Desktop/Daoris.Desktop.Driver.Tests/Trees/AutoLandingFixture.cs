@@ -94,8 +94,15 @@ public abstract class AutoLandingFixture : IDisposable
     /// push of its branch, held here, while <paramref name="quest"/> moves as <paramref name="change"/> says; then the branch's hold is let
     /// go and the landing ends. What the landing said comes back.
     /// </summary>
-    protected async Task<IReadOnlyList<string>> HeldAtThePushAsync(
-        string root, Func<QuestView, QuestView> change, string quest = "q1", int choices = 1)
+    protected Task<IReadOnlyList<string>> HeldAtThePushAsync(
+        string root, Func<QuestView, QuestView> change, string quest = "q1", int choices = 1) =>
+        HeldAtThePushAsync(root, () => _world.Quests[quest] = change(_world.Quests[quest]), choices);
+
+    /// <summary>
+    /// The same, while <paramref name="change"/> moves anything the push is judged on (FABRIC-CLOSE1h12): a quest, the configuration's
+    /// rules, a set-up step the review reads.
+    /// </summary>
+    protected async Task<IReadOnlyList<string>> HeldAtThePushAsync(string root, Action change, int choices = 1)
     {
         var lander = Lander();
         var (chosen, _) = await lander.ChooseAsync(Config());
@@ -111,7 +118,7 @@ public abstract class AutoLandingFixture : IDisposable
 
             Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || landing.IsCompleted,
                 TimeSpan.FromSeconds(60)), "the push waits for its branch");
-            _world.Quests[quest] = change(_world.Quests[quest]);
+            change();
         }
 
         return await landing;
@@ -276,6 +283,8 @@ public abstract class AutoLandingFixture : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
     }
+
+    protected static async Task<string> HeadAsync(string tree) => (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
 
     protected static async Task<bool> BranchAsync(string root, string branch) =>
         (await GitAsync(root, "branch", "--list", branch)).Trim().Length > 0;
