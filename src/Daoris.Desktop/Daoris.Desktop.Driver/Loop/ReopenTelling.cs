@@ -28,7 +28,9 @@ public sealed class ServiceReopenDoors(ServiceClient service) : IReopenDoors
 /// <para><b>Who.</b> The session the reopen names (<see cref="QuestReopenView.Session"/>, the one that said the reopened ready), on
 /// this machine alone: a teammate's (<c>origin/id</c>) is never told here, and a reopen naming none (a ready the respond door made,
 /// or a host before the field) tells nobody, the run reading it as waiting for its agent. Never the quest's last record here, which
-/// need not be the one that said it.</para>
+/// need not be the one that said it: where a later session ran, the planner goes on with the words in the named one all the same
+/// (FABRIC-CLOSE1c9, <see cref="Snapshot.NamedByReopen"/>), unless the person stopped it, when it is told nothing and the look says
+/// so once, since Daoris's words would release the person's stop.</para>
 ///
 /// <para><b>When.</b> While the quest is taken and its reopen stands; a later submission answers it, so nothing is said. A parked
 /// or ended record is told at once: words on a park are its answer, on an ended record they reopen it, and the planner's go-on
@@ -42,7 +44,7 @@ public sealed class ServiceReopenDoors(ServiceClient service) : IReopenDoors
 /// say and the mark may tell it twice (D173's note).</para>
 ///
 /// <para><b>The cost.</b> Nothing is read where no quest this look read is a reopened source; otherwise one read of the records per
-/// reopen not yet told, unless the look's last records hold its session.</para>
+/// reopen not yet told, unless the look's last records or <see cref="Snapshot.NamedByReopen"/> hold its session.</para>
 /// </remarks>
 public sealed class ReopenTelling(ReopenMarks marks)
 {
@@ -79,8 +81,12 @@ public sealed class ReopenTelling(ReopenMarks marks)
         IReopenDoors doors, Snapshot snapshot, string quest, QuestReopenView reopen, string session, string key, List<string> lines,
         CancellationToken ct)
     {
-        // The look's last records name the session where it is the quest's newest here; otherwise its record is read by its id.
+        // The look's last records name the session where it is the quest's newest here, and the look's snapshot where a later one
+        // is (FABRIC-CLOSE1c9); otherwise its record is read by its id.
         var record = snapshot.LastRun.Values.FirstOrDefault(run => string.Equals(run.Session, session, StringComparison.Ordinal))
+                     ?? (snapshot.NamedByReopen.TryGetValue(quest, out var held) && string.Equals(held.Session, session, StringComparison.Ordinal)
+                         ? held
+                         : null)
                      ?? await doors.RecordAsync(session, ct).ConfigureAwait(false);
         var named = $"quest #{quest}'s reopened submission names session {session}";
         if (record is null)
@@ -94,6 +100,17 @@ public sealed class ReopenTelling(ReopenMarks marks)
         if (record.Tree is not { Length: > 0 } tree || !Directory.Exists(tree))
         {
             Settle(key, lines, $"reopen  {named}, whose tree is gone: it is told nothing, and no work is made again for it");
+            return;
+        }
+
+        // 🔴 The person stopped it, and a later session ran (FABRIC-CLOSE1c9): words on it would go on in it, releasing the person's
+        // stop as their own words do, and these are Daoris's. So it is told nothing, and the quest's run reads as it does.
+        if (record.PersonStopped
+            && snapshot.LastRun.GetValueOrDefault(quest) is { } later && !string.Equals(later.Session, session, StringComparison.Ordinal))
+        {
+            Settle(key, lines,
+                $"reopen  {named}, which the person stopped, and a later session ran: it is told nothing, and nothing goes on with it "
+                + "until they say so");
             return;
         }
 

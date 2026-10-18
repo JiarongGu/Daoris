@@ -100,16 +100,16 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 119 | 2109 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 112 | 2072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 924 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 173 | 2826 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 173 | 2827 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 785 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 44 | 763 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 78 | 1359 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 68 | 1106 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1155 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 82 | 1413 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 84 | 1438 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 718 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 134 | 2397 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 136 | 2438 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 59 | 1282 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 76 | 1470 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 757 |
@@ -178,7 +178,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 839 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 135 | 2476 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 279 | 4254 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 279 | 4262 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 
@@ -191,7 +191,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1057 |
 | `tools/family-rehearsal.mjs` | 340 | 5988 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 207 | 3675 |
+| `tools/merge-branch.mjs` | 207 | 3687 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 43 | 832 |
 | `tools/usage-report.mjs` | 57 | 1254 |
