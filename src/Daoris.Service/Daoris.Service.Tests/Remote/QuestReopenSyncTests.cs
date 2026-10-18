@@ -15,6 +15,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     private QuestStore _a = null!;
     private QuestStore _b = null!;
     private QuestStore _remote = null!;
+    private QuestStore _c = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-18T10:00:00Z");
     private const string Graph = "sha256:0f1e2d3c4b5a6978";
 
@@ -23,6 +24,8 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         _a = await OpenAsync();
         _b = await OpenAsync();
         _remote = await OpenAsync();
+        // FABRIC-CLOSE1c18: a third machine that only reads, fetching as the others move.
+        _c = await OpenAsync();
     }
 
     public async Task DisposeAsync()
@@ -331,5 +334,156 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         var close = await _b.CloseAsync(step.Id, [(step.Id, new QuestOperationRef(old.Machine, old.Sequence))], new QuestClose("k2", "t2"),
             Now.AddHours(7));
         Assert.Equal(QuestCloseRefusal.Stale, close.Refusal);
+    }
+
+    // ——— FABRIC-CLOSE1c18: a take carries the step's source as it found it, so one made before a reopen and its rebind reached its
+    // machine loses wherever it is judged. B first is CLOSE1c15's case above: B's take stands, judged where the replay reaches it.
+
+    /// <summary>
+    /// A reopens its source and submits again, so its publication rebinds the open step to the new submission, and reaches the remote
+    /// first. B, not yet fetched, takes the step as it grew from the reopened submission.
+    /// </summary>
+    private async Task<(Quest Quest, Quest Step, QuestOperationRef Reopened, QuestOperationRef Grows)> TakenBeforeTheReopenReachedBAsync()
+    {
+        var (quest, step, submission) = await SealedOnBothAsync();
+        await SyncAsync(_c);
+        Assert.Equal(QuestReopenRefusal.None, (await _a.ReopenAsync(quest.Id, submission, "Build it again.", Now.AddHours(3))).Refusal);
+        var again = await _a.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4));
+        Assert.True(again.Moved);
+        await SyncAsync(_a);
+        Assert.Equal(submission, (await _b.FindAsync(step.Id))!.GrewFrom);
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(5))).Moved);
+        return (quest, step, submission, new QuestOperationRef(again.Quest!.Submission!.Machine, again.Quest.Submission.Sequence));
+    }
+
+    /// <summary>
+    /// 🔴 B's take loses at its rebase: its claim reads lost, which its driver stops the session by, and every machine (a third fetching
+    /// as they move, a fourth fetching from nothing) and the remote read the step open on the new submission with B's take as a conflict
+    /// on it, as the replay of their history gives it. The new submission is sealed by the rebound step, and a fresh take of it holds.
+    /// </summary>
+    [Fact]
+    public async Task A_take_made_before_a_reopen_and_its_rebind_reached_its_machine_loses_everywhere()
+    {
+        var (quest, step, _, grows) = await TakenBeforeTheReopenReachedBAsync();
+
+        var report = await SyncAsync(_b);
+        await SyncAsync(_a);
+        await SyncAsync(_c);
+        var zero = await OpenAsync();
+        await SyncAsync(zero);
+
+        Assert.Null(report.Problem);
+        Assert.Empty(report.Refused);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(step.Id));
+        var lost = Assert.Single(report.Conflicts, c => c.Quest == step.Id);
+        Assert.Equal((QuestStatus.Taken, "B's session.", (QuestOperationRef?)null), (lost.Attempted, lost.Note, lost.Submission));
+        foreach (var store in new[] { _a, _b, _c, zero, _remote })
+        {
+            var open = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Open, (QuestHold?)null, grows, (QuestOperationRef?)null),
+                (open.Status, open.Hold, open.GrewFrom, open.SourceReopened));
+            Assert.Equal([(_b.Machine, QuestStatus.Taken, "B's session.")], open.Conflicts.Select(c => (c.Machine, c.Attempted, c.Note)));
+            var replayed = QuestLog.Replay(await store.HistoryAsync(step.Id))!;
+            Assert.Equal((open.Status, open.GrewFrom, open.Conflicts.Count), (replayed.Status, replayed.GrewFrom, replayed.Conflicts.Count));
+            Assert.Equal(grows, (await store.FindAsync(quest.Id))!.Submission is { } current ? new QuestOperationRef(current.Machine, current.Sequence) : null);
+        }
+
+        var close = await _a.CloseAsync(quest.Id, [(quest.Id, grows)], new QuestClose("k1", "t1"), Now.AddHours(6));
+        Assert.Equal(QuestCloseRefusal.None, close.Refusal);
+
+        var fresh = await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's second session.", Now.AddHours(7));
+        Assert.True(fresh.Moved);
+        Assert.Equal(grows, (await _b.HistoryAsync(step.Id))[^1].Submission);
+        Assert.Empty((await SyncAsync(_b)).Refused);
+        Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(step.Id));
+        Assert.Equal(QuestStatus.Taken, (await _remote.FindAsync(step.Id))!.Status);
+    }
+
+    /// <summary>
+    /// 🔴 A take carrying the source the step grew from before the reopen, pushed straight at the remote's current base, is refused
+    /// there, saying the person's reopen moved the step; one carrying the step's source now is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_stale_take_pushed_at_the_remotes_current_base_is_refused_and_a_current_one_is_kept()
+    {
+        var (_, step, reopened, grows) = await TakenBeforeTheReopenReachedBAsync();
+        var remote = new StoreRemote(_remote);
+        var through = (await _remote.OperationsSinceAsync(0)).Through;
+        var stale = new QuestOperation(step.Id, QuestOperationKind.Taken, "m-elsewhere", 7, Now.AddHours(5), "Elsewhere's session.",
+            Submission: reopened);
+
+        var pushed = await remote.PushQuestsAsync(through, [stale]);
+
+        Assert.Empty(pushed.Accepted);
+        var refusal = Assert.Single(pushed.Refused, r => r.Quest == step.Id).Reason;
+        Assert.Contains("the person's reopen", refusal);
+        Assert.Equal((QuestStatus.Open, grows), ((await _remote.FindAsync(step.Id))!.Status, (await _remote.FindAsync(step.Id))!.GrewFrom));
+
+        var current = await remote.PushQuestsAsync(through, [stale with { Sequence = 8, Submission = grows }]);
+        Assert.Single(current.Accepted);
+        Assert.Equal(QuestStatus.Taken, (await _remote.FindAsync(step.Id))!.Status);
+    }
+
+    /// <summary>
+    /// What a machine on a build before FABRIC-CLOSE1c18 writes for a move it makes after its take lost to the reopen: the store's own
+    /// append, with no claim judged on an open step, pending as any move is. Written by hand because no verb of this build writes it.
+    /// </summary>
+    private async Task WriteAsAnOlderBuildAsync(QuestStore machine, string quest, QuestOperationKind kind, string note, DateTimeOffset at)
+    {
+        await using var append = _connections[1].CreateCommand();
+        append.CommandText = """
+            INSERT INTO quest_log (quest, kind, machine, sequence, at, payload)
+            VALUES ($quest, $kind, $machine,
+                    (SELECT MAX(
+                       COALESCE((SELECT MAX(sequence) FROM quest_log WHERE machine = $machine), 0),
+                       COALESCE((SELECT sequence FROM quest_machine WHERE one = 1 AND id = $machine), 0)) + 1),
+                    $at, $payload)
+            """;
+        append.Parameters.AddWithValue("$quest", quest);
+        append.Parameters.AddWithValue("$kind", kind.ToString().ToLowerInvariant());
+        append.Parameters.AddWithValue("$machine", machine.Machine);
+        append.Parameters.AddWithValue("$at", at.ToString("O"));
+        append.Parameters.AddWithValue("$payload", System.Text.Json.JsonSerializer.Serialize(new { note }));
+        await append.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// 🔴 A take lost to the reopen leaves the step open, where the table allows a done or a decline from open. B's session runs until its
+    /// driver's next look stops it, and closes or declines nothing meanwhile: B's store refuses the move inside its write, in the reopen's
+    /// words; a remote refuses one pushed by a build that did not; and B's rebase loses one such a build left pending, as a conflict of its
+    /// own. The step stays open on the new submission everywhere. A take is not refused so: a fresh one of the open step is B's to make.
+    /// </summary>
+    [Theory]
+    [InlineData(QuestOperationKind.Done)]
+    [InlineData(QuestOperationKind.Declined)]
+    public async Task After_a_take_lost_to_the_reopen_the_losers_move_lands_on_the_open_step_nowhere(QuestOperationKind kind)
+    {
+        var (_, step, _, grows) = await TakenBeforeTheReopenReachedBAsync();
+        await SyncAsync(_b);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(step.Id));
+        var status = QuestTransitions.Target(kind)!.Value;
+
+        var move = await _b.MoveAsync(step.Id, status, "After the take lost.", Now.AddHours(6), byAgent: kind == QuestOperationKind.Done);
+        Assert.Equal((false, true), (move.Moved, move.ClaimLost));
+
+        var through = (await _remote.OperationsSinceAsync(0)).Through;
+        var pushed = await new StoreRemote(_remote).PushQuestsAsync(through,
+            [new QuestOperation(step.Id, kind, _b.Machine, 999, Now.AddHours(6), "After the take lost.")]);
+        Assert.Empty(pushed.Accepted);
+        Assert.Contains("the person's reopen", Assert.Single(pushed.Refused, r => r.Quest == step.Id).Reason);
+
+        await WriteAsAnOlderBuildAsync(_b, step.Id, kind, "After the take lost.", Now.AddHours(6));
+        var upgraded = await SyncAsync(_b);
+        await SyncAsync(_a);
+        Assert.Empty(upgraded.Refused);
+        Assert.Equal((status, "After the take lost."), (Assert.Single(upgraded.Conflicts).Attempted, upgraded.Conflicts[0].Note));
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var open = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Open, grows), (open.Status, open.GrewFrom));
+        }
+
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's second session.", Now.AddHours(7))).Moved);
     }
 }

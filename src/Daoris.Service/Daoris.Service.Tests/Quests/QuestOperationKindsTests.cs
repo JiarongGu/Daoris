@@ -64,7 +64,8 @@ public sealed class QuestOperationKindsTests
         {
             Published = Asked with { Filed = At(s), Updated = At(s) },
         },
-        [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session." },
+        // The step's source as the take found it (FABRIC-CLOSE1c18): the submission the quest as asked grew from.
+        [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session.", Submission = new QuestOperationRef("m9", 3) },
         // The close's provenance is a done's (FABRIC-CLOSE1a), so the sample carries it, and the wire and the log are held to it.
         [QuestOperationKind.Done] = s => Op(QuestOperationKind.Done, s) with
         {
@@ -259,6 +260,7 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Verdict] = "a review's verdict",
         [QuestOperationKind.Reopened] = "a reopen",
         [QuestOperationKind.Rebound] = "a rebind",
+        [QuestOperationKind.Taken] = "a take's",
     };
 
     /// <summary>
@@ -286,6 +288,26 @@ public sealed class QuestOperationKindsTests
             Assert.False(requiresMore,
                 $"`{kind}` requires more than every operation names, and QuestWire.Shape does not say what ({Guide}, the wire's shape sentence).");
         }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c18: a take's source is optional, since a source-free quest's take and every take from before carry none, but one
+    /// that is present and not whole makes the take half of one: read as absent, it would be judged as a legacy take and stand on work
+    /// the person reopened.
+    /// </summary>
+    [Fact]
+    public void A_takes_source_is_optional_on_the_wire_and_one_not_whole_makes_the_take_not_whole()
+    {
+        string Take(string source) => $$"""
+            { "base": 0, "operations": [{ "machine": "m1", "sequence": 1, "quest": "{{Id}}", "kind": "taken",
+              "at": "2026-10-07T09:00:00Z"{{source}} }] }
+            """;
+
+        Assert.Null(Assert.Single(QuestWire.ReadPush(Take(""))!.Value.Operations).Submission);
+        Assert.Equal(new QuestOperationRef("m9", 3),
+            Assert.Single(QuestWire.ReadPush(Take(""", "submission": { "machine": "m9", "sequence": 3 }"""))!.Value.Operations).Submission);
+        Assert.Null(QuestWire.ReadPush(Take(""", "submission": { "machine": "m9" }""")));
+        Assert.Null(QuestWire.ReadPush(Take(""", "submission": "m9:3" """)));
     }
 
     // ——— The log and the cache: QuestStore's payload, its reader, and the row the replay writes.
