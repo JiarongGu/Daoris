@@ -135,6 +135,32 @@ public sealed class WireEvaluationTests
         Assert.Equal(["w2"], third.Of("c")!.Waiting);
     }
 
+    /// <summary>
+    /// FABRIC-GRAPH1i (§E7's protected order across a skip): a skip satisfies <c>after</c>, so a chain of reach lets the landing go while the
+    /// opinion is unsettled; the opinion's own wire into the landing, which a save now asks of an authored graph, holds it. Both graphs are
+    /// as <see cref="NodeGraphs.Problems"/> reads them: the first is refused (<c>protected-wire</c>), the second holds.
+    /// </summary>
+    [Fact]
+    public void A_skip_of_the_look_passes_the_landing_only_where_the_opinion_is_wired_into_it()
+    {
+        NodeDeclaration[] nodes = [Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("landing", NodeKinds.Handed)];
+        Wire[] chain = [After("a", "opinion", "look"), After("b", "look", "landing")];
+        Wire[] wired = [.. chain, After("c", "opinion", "landing")];
+        Assert.Equal([GraphRefusal.ProtectedWire], NodeGraphs.Problems(new NodeGraph(nodes, chain, ["opinion"], "landing")).Select(problem => problem.Code));
+        Assert.Empty(NodeGraphs.Problems(new NodeGraph(nodes, wired, ["opinion"], "landing")));
+
+        var past = new Graph(nodes, chain);
+        past.Skip("look");
+        past.Evaluate();
+        Assert.Equal((NodeStates.Ready, NodeStates.Skipped, NodeStates.Ready), (past.State("opinion"), past.State("look"), past.State("landing")));
+
+        var held = new Graph(nodes, wired);
+        held.Skip("look");
+        var evaluated = held.Evaluate();
+        Assert.Equal((NodeStates.Ready, NodeStates.Skipped, NodeStates.Blocked), (held.State("opinion"), held.State("look"), held.State("landing")));
+        Assert.Equal(["c"], evaluated.Of("landing")!.Waiting);
+    }
+
     /// <summary>§E3 and canary 41: an <c>anyOf</c> records one witness, by wire-id order; losing it invalidates its consumer, and no other witness is taken silently.</summary>
     [Fact]
     public void An_anyOf_records_one_witness_and_losing_it_invalidates_its_consumer()

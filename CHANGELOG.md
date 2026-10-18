@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- The full gates can run in a worktree of their own while merges continue (`node tools/merge-branch.mjs --full --beside`,
+  GATEWT1), and `publish:desktop --stage --from-gated <commit>` stages the commit they passed, built in that worktree.
 - On Windows, where the git Daoris finds is Git for Windows', Daoris's own git commands now start one process where they
   started two: the git behind the install's `cmd\git.exe` launcher starts directly, with the environment the launcher
   would have given it, so hooks, `!` aliases and ssh find what they found before. A git you named as a file in Settings →

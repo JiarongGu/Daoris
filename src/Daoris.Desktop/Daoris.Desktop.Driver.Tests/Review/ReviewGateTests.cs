@@ -194,6 +194,38 @@ public sealed class ReviewGateTests
         Assert.Equal(new LandingReview(ReviewVerdicts.Reviewed, "local", "q2") { Commit = Shown, At = step.Verdicts[0].At, Words = "right" }, gate.Landing);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h (§E5): in a closure graph a set-up step's work is finished at its submission, since no Done is written before the
+    /// graph's end. Taken there, with what it showed posted and the person's reviewed on it, it lets the work go as a done step does; with
+    /// nothing posted it is still being set up. A chain step at its unheld submission published its set-up step, which then decides, never
+    /// the copy still in its <c>then</c>; a held one has published nothing yet.
+    /// </summary>
+    [Fact]
+    public async Task A_set_up_step_at_its_submission_is_judged_as_its_done_and_a_submission_publishes_as_a_done_does()
+    {
+        const string graph = "sha256:closure";
+        var made = new QuestSubmissionView("desk", 3, DateTimeOffset.UnixEpoch, "ready");
+        var step = Step("q2", "q1", "Taken", [SetUp(Shown, 41)]) with
+        {
+            Closure = graph, Submission = made, Verdicts = [Verdict(ReviewVerdicts.Reviewed, 41, "right")],
+        };
+        var reviewed = await ReviewGate.JudgeAsync(ReviewGate.Decide([Quest("q1"), step], "web-app", null, null), Later, _ => Task.FromResult<bool?>(true));
+        Assert.True(reviewed.LetsGo, reviewed.Says);
+        Assert.Equal(ReviewStates.Reviewed, reviewed.State);
+
+        var unposted = await Judge(ReviewGate.Decide([Quest("q1"), Step("q2", "q1", "Taken") with { Closure = graph, Submission = made }], "web-app", null, null));
+        Assert.Equal(ReviewStates.BeingSetUp, unposted.State);
+        Assert.Contains("posted when its session ends", unposted.Says);
+
+        var composing = Quest("q1", status: "Taken") with
+        {
+            Closure = graph, Submission = made,
+            Then = [new QuestStepView("web-app", "Show {parent} in `dev` for review", "Set it up.") { SetUpIn = "dev" }],
+        };
+        Assert.Null(ReviewGate.Decide([composing, Step("q2", "q1", "Declined")], "web-app", null, null).ComposedBy);
+        Assert.Equal("q1", ReviewGate.Decide([composing with { Held = true, Hold = EvidenceCodes.Departed }], "web-app", null, null).ComposedBy);
+    }
+
     [Fact]
     public async Task What_was_reviewed_does_not_let_newer_work_through()
     {

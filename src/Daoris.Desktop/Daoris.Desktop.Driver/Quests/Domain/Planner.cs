@@ -144,6 +144,25 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// sequence a close and an evidence verdict name it by; null where there is none, and from a host before the field.
     /// </summary>
     public QuestSubmissionView? Submission { get; init; }
+
+    /// <summary>
+    /// The submission of its <see cref="Parent"/> it grew from (FABRIC-CLOSE1c, §E5), by its machine and sequence: what seals that
+    /// submission while it stands (FABRIC-WORKFLOW2d). Null for a step a done published, every other quest, and from a host before it.
+    /// </summary>
+    public QuestSubmissionRef? GrewFrom { get; init; }
+
+    /// <summary>
+    /// The submission it grew from, reopened by the person (FABRIC-CLOSE1c, §E5), while that stands: the step is withdrawn or held, and
+    /// seals nothing. Null for every other quest, once a rebind names its new source, and from a host before it.
+    /// </summary>
+    public QuestSubmissionRef? SourceReopened { get; init; }
+
+    /// <summary>
+    /// Whether the person's reopen of the submission it grew from holds it (FABRIC-CLOSE1c2, §E5): open, it is withdrawn, and taken, it
+    /// is held, until they go on with it on the new work or abandon it. Read from <see cref="SourceReopened"/>, the service's fact, on a
+    /// live quest alone, since once closed its close is what stands. False from a host before the field, and on the owner's install.
+    /// </summary>
+    public bool HeldByReopen => SourceReopened is not null && Status is "Open" or "Taken";
 }
 
 /// <summary>A taker's submission in a closure graph (FABRIC-CLOSE1a), as the service answers it: the operation that made it, when, and its note.</summary>
@@ -679,6 +698,13 @@ public enum StartVerdict
     /// before is unsettled. The reason says which, and what moves it. No strike: nothing ran.
     /// </summary>
     WaitsForOpinion,
+
+    /// <summary>
+    /// A chain's step whose source the person reopened (FABRIC-CLOSE1c2, §E5; <see cref="QuestView.HeldByReopen"/>): withdrawn while
+    /// open, held while taken, and nothing starts it, carries it on or goes on with words written to its session until the person
+    /// chooses to go on with it on the new work or to abandon it. Daoris never chooses. No strike: nothing ran.
+    /// </summary>
+    SourceReopened,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -846,6 +872,15 @@ public static class Planner
             .ToList();
         foreach (var quest in writtenTo.Concat(snapshot.Quests.Where(quest => !WrittenTo(quest))))
         {
+            // 🔴 A step whose source the person reopened (FABRIC-CLOSE1c2, §E5): withdrawn while open and held while taken, until they
+            // go on with it on the new work or abandon it. Before every other reason, a pause and the person's stop included, since
+            // neither Resume nor Try again moves it: only their choice does, at the service. It spends no slot and no turn.
+            if (quest.HeldByReopen && Plans(quest))
+            {
+                considerations.Add(Reopened(quest));
+                continue;
+            }
+
             // 🔴 A pause holds every quest of its work this planner would plan (PAUSE1b, D132 point 3), before every other reason,
             // the person's stop included: Resume is the one press that moves it, so a released stop starts nothing meanwhile.
             // First, too, so a paused quest spends no slot and no repository's turn, and the next starts where it would have.
@@ -919,7 +954,16 @@ public static class Planner
                     || run.AnsweredPark
                     || string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(run.State, "stopped", StringComparison.OrdinalIgnoreCase)
-                    || run is { State: "completed", Answer: not null }));
+                    || run is { State: "completed", Answer: not null }
+                    || StoppedByReopen(run)));
+
+        // Held for the person's choice (FABRIC-CLOSE1c2): the sentence names the step it grew from and both choices. The service
+        // refuses its take, its done and its ready meanwhile, so nothing here would move it anyway.
+        static Consideration Reopened(QuestView quest) =>
+            new(quest, StartVerdict.SourceReopened,
+                $"Quest `#{quest.Id}` grew from the work of `#{quest.Parent}`, which you reopened: "
+                + (quest.Status == "Open" ? "it is withdrawn, and nothing starts it" : "it is held, and nothing carries it on")
+                + " until you go on with it on the new work or abandon it.");
 
         // Whether the quest was handed to another agent from this session (MIXAGENT1a-ii): the store names the session whose stop it is.
         bool HandedFrom(QuestView quest, PriorSession stop) =>
@@ -993,6 +1037,9 @@ public static class Planner
                 {
                     Reason = cutOff.Answer is { } answer
                         ? $"carrying on in `{quest.To}` — you answered session `{cutOff.Session}`: {answer}"
+                        : StoppedByReopen(cutOff)
+                            ? $"carrying on in `{quest.To}` — you went on with it on the new work of `#{quest.Parent}`, after session "
+                              + $"`{cutOff.Session}` stopped where that work was reopened."
                         : cutOff.PersonStopped && snapshot.Handed.TryGetValue(quest.Id, out var handed) && HandedFrom(quest, cutOff)
                             ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` was handed over to {handed.Agent}."
                         : cutOff.PersonStopped
@@ -1299,7 +1346,17 @@ public static class Planner
         // The person's own stop, once they released it (SESSUX1b): a held one never reaches the planner's carry-on.
         || last.PersonStopped
         // The person answered a session that parked to ask them (STANDDOWN2).
-        || last is { State: "completed", Answer: not null };
+        || last is { State: "completed", Answer: not null }
+        // The person's reopen of the work it grew from stopped it (FABRIC-CLOSE1c2): carried on once they go on, held until then.
+        || StoppedByReopen(last);
+
+    /// <summary>
+    /// Whether <paramref name="last"/> ended because the person reopened the work its quest grew from (FABRIC-CLOSE1c2,
+    /// <see cref="NoteCodes.EndedSourceReopened"/>): <c>completed</c>, by its note's code, never its English.
+    /// </summary>
+    internal static bool StoppedByReopen(PriorSession last) =>
+        string.Equals(last.State, "completed", StringComparison.OrdinalIgnoreCase)
+        && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedSourceReopened.Code) == true;
 
     /// <summary>
     /// Whether a taken quest's take is not this machine's, as <c>TakenElsewhere</c> reads it (CARRY2b) and the hand-over's judge

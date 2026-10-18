@@ -221,6 +221,37 @@ public sealed class ObservationTests
         Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q9", resumed: true).State);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c2 (§E5): a session told at its step that the person reopened the work its quest grew from stops holding the
+    /// quest. Not a park, since the person's choice is the step's to take, not an answer to it, and not a stand-down, since the take is
+    /// its own: a good ending, as a wait is, that the person's go-on carries on in the same tree. A messy exit, a failed turn and a
+    /// close made first are read as before.
+    /// </summary>
+    [Fact]
+    public void A_session_whose_source_was_reopened_ends_holding_its_quest_for_the_persons_choice()
+    {
+        foreach (var conclusion in new[]
+                 {
+                     Observation.Conclude(0, "Taken", took: true, lastWords: Asked, reopenedFrom: "q1"),
+                     Observation.Conclude(0, "Taken", resumed: true, reopenedFrom: "q1"),
+                     Observation.Conclude(0, "Taken", reopenedFrom: "q1"),
+                 })
+        {
+            Assert.Equal("completed", conclusion.State);
+            var part = Assert.Single(conclusion.Parts!);
+            Assert.Equal((NoteCodes.EndedSourceReopened.Code, "q1"), (part.Code, part.Value("quest")?.ToString()));
+            Assert.Equal(
+                "stopped with its quest still taken: the work of `#q1` it grew from was reopened, and it goes on in the same tree once "
+                + "the person goes on with it on the new work.",
+                conclusion.Note);
+        }
+
+        Assert.Equal("failed", Observation.Conclude(1, "Taken", took: true, reopenedFrom: "q1").State);
+        Assert.Equal("failed", Observation.Conclude(0, "Taken", turnFailed: "limit reached", took: true, reopenedFrom: "q1").State);
+        Assert.Equal("completed", Observation.Conclude(0, "Done", took: true, reopenedFrom: "q1").State);
+        Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", took: true, lastWords: Asked).State);
+    }
+
     /// <summary>With no last words to quote, the park still says where they would be.</summary>
     [Fact]
     public void A_park_with_no_last_words_points_at_the_transcript()
