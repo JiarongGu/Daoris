@@ -3,6 +3,11 @@
 Filed 2026-10-19 by the owner from a sibling workshop repository (one Daoris can drive). An idea for Daoris, because
 cross-agent collaboration is its goal and this is one shape of it that a single harness cannot give itself.
 
+**Decided by D176 (2026-10-19).** The idea below is taken as written; D176 places it as its own bounded driver operation
+(`daoris-driver brainstorm`, with a CLI twin), adds the frozen context packet Daoris assembles from its own knowledge,
+and settles the proposal's shape, the synthesis, the skeptical pass, the bounds, the accounts and the person's policy.
+Where this document and D176 differ, D176 governs; its build is BRAINSTORM1a–f in TASKS.
+
 ## The idea
 
 A single model brainstorming its own problem is bounded by its own blind spots. The value of *cross-agent*
