@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The Work frame's suite was one file that ran 181 s alone and timed out under load (WEBSPEED1)
+
+- **Symptom:** `WorkFrame.test.tsx`, 229 tests, was the slowest web-unit file (181 s alone on a quiet machine, 221 s here), and a merge's web-unit
+  gate timed out on it under load on 2026-10-18. Every test renders the whole frame (about 0.55 s each, median); a test's own wait was never the cost.
+- **Root cause:** user-event's default waits one macrotask between keys and each key re-rendered the whole frame (43 `type` sites, one test
+  of 6.3 s typing about 60 keys over five phrases and six sends); and the file held ten independent blocks run one after another by one worker.
+- **Fix:** the file's `type` and `keyboard` run with `delay: null` (every key event kept, only the waits dropped; a click keeps its wait, since
+  one without it did not open the review tab before its test read it): alone 221 s to 136 s. The 6.3 s test's four refusal rows became an
+  `it.each` (4.1 s to under 1 s each, 229 tests to 233, every assertion kept, and the box-empty check added to each row). Still over 60 s, so the file
+  is cut into five parts that run beside each other (`WorkFrame.test`, `.conversation`, `.words`, `.landed`, `.geometry`), the bridge mock and the
+  fixtures shared from `test/workFrameBridge.ts` and `test/workFrameKit.tsx`. Test bodies are unchanged: every line of the old blocks stands in a part.
+  `testTimeout` stays 20 s.
+- **Verification:** no red (no behaviour changed): the same 229 test names plus the four rows pass, 233 of 233; the five parts together take 78 s
+  wall (the largest part about 41 s alone); web-unit alone 350 files, 7115 tests, 304 s wall on this machine (no run of the whole set before, so no
+  before figure for it); `tsc` clean; the structure gate passes.
 ## 2026-10-18 — A hand-off that waited behind another push told its plugin of a result taken back meanwhile (FABRIC-CLOSE1h8)
 
 - **Symptom:** handing a landed branch on (`HANDOFF`, Ask Daoris's card, `trees hand`), or the look's hand-on of a push held back, waiting
