@@ -226,6 +226,18 @@ describe('an attempt held for the person', () => {
       .toHaveTextContent('close，第 1 次尝试：委托的关闭被拒绝了，但 Daoris 没能把这一结果记到这项工作上（no-acceptance）。它在等你的答复。');
   });
 
+  it('says a word taken back on a close whose submission was reopened or replaced, in English and in 中文 (FABRIC-CLOSE1q2)', async () => {
+    const { unmount } = render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
+    expect(screen.getByRole('region', { name: 'Where this work stands' })).toHaveTextContent(
+      'close, attempt 1: Your word could not be taken: the submission this close names was reopened or replaced since, so the work now is not this close\'s to record or stop.');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
+    expect(screen.getByRole('region', { name: '这项工作进展到哪里' }))
+      .toHaveTextContent('close，第 1 次尝试：无法采纳你的答复：这次关闭针对的交付此后已被重新打开或替换，现在的工作不能由这次关闭来记录或停止。');
+  });
+
   it('takes its node’s place on the work’s foot, in English and in 中文', async () => {
     const { unmount } = render(<WorkMilestone unit={unit({ held: [heldAttempt({ why: 'no-reconcile' })] })} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });

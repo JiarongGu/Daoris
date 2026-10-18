@@ -79,6 +79,8 @@ public static class HeldAttempts
     private static string CloseWhy(HeldAttempt held) => (held.Why, held.Outcome) switch
     {
         (WorkPerformer.NotCloseWord, _) => "your word could not be taken: a close's outcome is its door's answer, never a person's word",
+        (WorkPerformer.SubmissionMoved, _) =>
+            "your word could not be taken: the submission its close names was reopened or replaced since, so the work there is now is never that close's to record or stop",
         (var code, WorkStates.Reached) => $"the quest was closed, and Daoris could not record that on its close's node ({code})",
         (var code, WorkStates.Failed) => $"the quest's close was refused, and Daoris could not record that on its close's node ({code})",
         (var code, _) => $"Daoris keeps no answer to the quest's close ({code})",
