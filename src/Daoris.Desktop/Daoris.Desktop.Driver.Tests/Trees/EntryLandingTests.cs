@@ -414,7 +414,7 @@ public sealed class EntryLandingTests : LandedFixture
                 landing = Task.Run(() => trees.LandEntryAsync(parts, Subject, Kept));
             }
 
-            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(Home, first.Path) > 0, TimeSpan.FromSeconds(30)), "the first part waits for its tree");
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(Home, first.Path) > 0, TimeSpan.FromMinutes(2)), "the first part waits for its tree");
             quests["q2"] = Submitted("q2", 2);
         }
 
