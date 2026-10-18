@@ -926,6 +926,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // BRAINSTORM1a2: the brainstorm answers' table, which the service's twin validator reads too; and the posture's list of the
     // connector's tools, which the service's registration test holds to its host's.
     ["the brainstorm answers' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-answers.json'], [...BASE, 'service', 'driver']],
+    // BRAINSTORM1a3: the brainstorm files' table, which the service's brainstorm desk reads too.
+    ["the brainstorm files' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-files.json'], [...BASE, 'service', 'driver']],
     ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/Brainstorms/Domain/BrainstormPermissions.cs'],
       [...BASE, 'service', 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],

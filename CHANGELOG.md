@@ -14,6 +14,8 @@ with the version and date at release.
   and that connector is the only one it is handed. Claude Code is also held by Daoris's rules to reading that folder and calling
   its one tool: no edits, no commands, no web. Another agent is given only what the folder holds, and whether it stays inside
   is not measured yet. A machine with no connector starts no pass. No real agent has run one yet.
+  `daoris brainstorm` does the same from any terminal, `show`, `send`, `clear` and `list` included, through the Daoris running
+  on this machine: it asks only this machine's own service, and a brainstorm is never kept on a shared host.
 
 - The desktop names two sign-ins of one email apart too. An agent's page, its own sign-in, the start's account picker, *What
   needs you* and a session's account say the organisation after the email where another sign-in shares it (else the plan),
@@ -946,7 +948,7 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Eighteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Nineteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
@@ -959,7 +961,9 @@ The first version: doctrine that installs, is checked, and flows back.
   opt-in and never run by a gate — `connect` registers the repository with a knowledge service,
   carrying its declaration and, to a local service only, its root; `retire` takes it off the machine's
   registry without touching a file; `wire` moves a registered repository to another workspace and
-  changes nothing else about it; `import` registers a folder's subdirectories at once; `remote`
+  changes nothing else about it; `import` registers a folder's subdirectories at once; `brainstorm`
+  puts a question to this machine's agents through the Daoris running here, which freezes a packet the person reads before
+  anything goes (D176); `remote`
   edits the machine's map of one deployment per workspace, talking to nothing and never printing a key
   back; `agent` manages the agent tools sessions run on and the named accounts they run as, spawning
   each tool's own installer and sign-in — and keeps an API key only for an account that is one
@@ -969,7 +973,7 @@ The first version: doctrine that installs, is checked, and flows back.
   whether it is Daoris's own or the person's Edge and whether the page's links open there; and `tool`
   says which file each program Daoris runs beside its agents is — Git, Node.js, PowerShell, GitHub CLI
   and Azure CLI — the system's from `PATH` unless the person names a file (D121). `agent`
-  **spawns**; `connect`, `retire`, `wire` and `import` talk to a service; `remote`, `driver`, `plugin`,
+  **spawns**; `connect`, `retire`, `wire` and `import` talk to a service, and `brainstorm` to this machine's own only; `remote`, `driver`, `plugin`,
   `browser` and `tool` only edit files under the Daoris home.
 - **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
   offers `switchesOff`: a core rule, knowledge document or skill, with the reason its own document

@@ -159,6 +159,10 @@ public static class PersonDoors
         new("GET", "/api/sync", DoorClass.Open),
         new("GET", "/api/opinions", DoorClass.Open),
         new("GET", "/api/opinions/{id}", DoorClass.Open),
+        // The brainstorms on this machine, and one of them with its packet and its document (BRAINSTORM1a3, D176 point 8): reads,
+        // answered to loopback only.
+        new("GET", "/api/brainstorms", DoorClass.Open),
+        new("GET", "/api/brainstorms/{id}", DoorClass.Open),
         // What waits for the person's confirmation, and one of them, which the terminal that asked polls (PERSONDOOR1b).
         // Neither answers a secret's hash, so a reader learns nothing that grants.
         new("GET", "/api/confirmations", DoorClass.Open),
@@ -228,6 +232,11 @@ public static class PersonDoors
         new("DELETE", "/api/quests/{id}", DoorClass.Person, "a quest's delete"),
         new("DELETE", "/api/sessions/{id}", DoorClass.Person, "a session's delete"),
         new("POST", "/api/history/clear", DoorClass.Person, "a clear of finished history"),
+        // BRAINSTORM1a3 (D176 point 9): only the person starts a brainstorm, lets its packet go and clears it; an agent's ask waits
+        // for their yes, which a terminal's confirmation in the window is.
+        new("POST", "/api/brainstorms", DoorClass.Person, "a brainstorm's question"),
+        new("POST", "/api/brainstorms/{id}/send", DoorClass.Person, "a brainstorm's send"),
+        new("DELETE", "/api/brainstorms/{id}", DoorClass.Person, "a brainstorm's clear"),
         new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Person, "a conflict's dismissal"),
         new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire"),
         new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring"),
