@@ -485,6 +485,101 @@ public sealed class OpinionGateTests
         }
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h15 (D173's note): an opinion owed on work whose branch is made but whose push is held back has not landed, so the
+    /// look keeps it owed and asks it, as the gate's sentence says; it closes as landed once the push lands at the landing's tip, or once
+    /// no automatic landing holds that push back. A later session whose done moved the branch on is held with it (CLOSE1h10). The owner's
+    /// install, where no push is held back, closes it as before: a landing made, pushed or not, and a trace.
+    /// </summary>
+    [Theory]
+    [InlineData("s1", false, false, false, "s1", null)]
+    [InlineData("s2", true, false, false, "s1", null)]
+    [InlineData("s1", false, false, false, null, OpinionDueClosed.Landed)]
+    [InlineData("s1", false, true, false, "s1", OpinionDueClosed.Landed)]
+    [InlineData("s2", true, true, false, "s1", null)]
+    [InlineData("s1", false, false, true, "s1", OpinionDueClosed.Landed)]
+    [InlineData("s1", false, false, false, "s9", OpinionDueClosed.Landed)]
+    public async Task An_opinion_owed_on_work_whose_push_is_held_back_is_not_closed_as_landed(
+        string session, bool advanced, bool pushed, bool gone, string? held, string? closed)
+    {
+        var scratch = Path.Combine(RepoRoot(), "_fixtures", "opinion-closes", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var tree = Path.Combine(scratch, "trees", "t1");
+            Directory.CreateDirectory(tree);
+            File.WriteAllText(Path.Combine(tree, "work.ts"), "the work\n");
+            var config = DriverConfig.Empty with
+            {
+                Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["web-app"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], false),
+                },
+            };
+            var landed = new LandedBranches(Path.Combine(scratch, "home"));
+            // s1's landing made the branch at Read; s2's done moved it on to Later, where it advanced, and the plugin pushed it at Read
+            // where it pushed: at the landing's tip only while it did not move on since.
+            landed.Record(new LandedBranch("web-app", "work", "feature/q1-work", "main", Read, "s1", "q1", "Work q1", Asked)
+            {
+                Pushed = pushed, PushedTip = pushed ? Read : null,
+            });
+            if (advanced) landed.Advanced("web-app", "feature/q1-work", new LandedAdvance(Read, Later, Answered, "s2"));
+            if (gone) landed.Gone("web-app", ["feature/q1-work"]);
+            var due = new OpinionDue(session, "q1", "web-app", "work", tree, OpinionRules.Landing, Asked);
+            IReadOnlyCollection<string> pushHeld = held is null ? [] : [held];
+
+            Assert.Equal(closed, await OpinionLook.ClosesAsync(due, Quest(), [Quest()], config, landed, CancellationToken.None, pushHeld: pushHeld));
+        }
+        finally
+        {
+            if (Directory.Exists(scratch)) Directory.Delete(scratch, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1h15: the sessions whose automatic landing made its branch and holds its push back, as the opinion look reads them:
+    /// an open entry whose last try is <c>push-held</c>; one waiting on its opinion, and one closed since, are not.
+    /// </summary>
+    [Fact]
+    public void The_sessions_whose_push_is_held_back_are_the_open_entries_last_tried_push_held()
+    {
+        var scratch = Path.Combine(RepoRoot(), "_fixtures", "opinion-closes", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var home = Path.Combine(scratch, "home");
+            var due = new AutoLandings(home);
+            foreach (var session in new[] { "s1", "s2", "s3" })
+            {
+                due.Due(new AutoLanding(session, "q-" + session, "web-app", "work", Path.Combine(scratch, session), Asked));
+            }
+
+            due.Tried("s1", new AutoTry(Asked, AutoLandingCode.PushHeld) { Tip = Read }, close: false);
+            due.Tried("s2", new AutoTry(Asked, AutoLandingCode.Opinion) { Tip = Read }, close: false);
+            due.Tried("s3", new AutoTry(Asked, AutoLandingCode.PushHeld) { Tip = Read }, close: false);
+            due.Tried("s3", new AutoTry(Answered, AutoLandingCode.Landed) { Tip = Read }, close: true);
+
+            var held = OpinionLook.PushHeld(home);
+            Assert.Equal("s1", Assert.Single(held));
+            Assert.True(held.Contains("S1"));
+        }
+        finally
+        {
+            if (Directory.Exists(scratch)) Directory.Delete(scratch, recursive: true);
+        }
+    }
+
+    /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
+    private static string RepoRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git"))
+               && !File.Exists(Path.Combine(directory.FullName, ".git")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? AppContext.BaseDirectory;
+    }
+
     private static OpinionReading Answers(string tip, params (string Weight, string Counts)[] rows) =>
         new("s1", tip, Answered, [.. rows.Select((row, at) => new OpinionAnswerRead(at + 1, row.Weight, row.Counts)
         {

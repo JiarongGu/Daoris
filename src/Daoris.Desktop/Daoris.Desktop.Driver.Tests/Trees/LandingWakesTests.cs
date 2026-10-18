@@ -57,7 +57,8 @@ public sealed class LandingWakesTests : IDisposable
     // FABRIC-CLOSE1h7: a push held back after its branch was made keeps its tip, but waits on its quest standing again (the hold's
     // release, a reopen, the next submission), so the quests family and the configuration look at it, and the tree's refs do not.
     // FABRIC-CLOSE1h12: and on its landing's gate letting go, as an opinion's and a workflow's wait: any ledger family (the reviewer's
-    // session), the gate's files (the person's answer, a run's say-so).
+    // session), the gate's files (the person's answer, a run's say-so). FABRIC-CLOSE1h15: the opinion owed on it is asked at the look,
+    // which kept the ask in the gate's files, and settles as its reviewer's session ends (`sessions`): both rows below wake it.
     [InlineData("push-held", true, "ledger", "quests", true)]
     [InlineData("push-held", true, "ledger", "sessions,quests", true)]
     [InlineData("push-held", true, "config", "driver.json", true)]

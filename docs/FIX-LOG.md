@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A second opinion holding a push held back was never asked, and the person's ask was dropped (FABRIC-CLOSE1h15)
+
+- **Symptom:** under *Accept automatically*, a made branch whose push was held back by a second opinion nobody had asked waited on the
+  person alone, though the gate said *it is asked at the driver's next look*. The person's `opinion ask` on it opened a due that the
+  next look closed as landed before it read the request, so even that ask did not move it.
+- **Root cause:** `OpinionLook.ClosesAsync` closed a due as landed once a landing was recorded for its session, and its last exit closed
+  it too, since a made branch leaves nothing unlanded in the tree. A push held back is recorded as made, not pushed, and `push-held`
+  lives only on the automatic landing's entry, which the opinion look did not read. And only a conclusion or the person's ask owes a
+  due, so an opinion rule that started reading after the done owed none.
+- **Fix:** the opinion look reads the sessions whose automatic landing is open as `push-held`, and a landing whose push one of them holds,
+  not pushed at its tip, keeps the due owed. `PushHeldAsync`, held by the opinion's part of the gate, owes one at the landing's occasion
+  for the session whose work the hand-on pushes. D173's FABRIC-CLOSE1h15 note has the behaviour.
+- **Verification:** red first: `OpinionGateTests` (3 `ClosesAsync` rows and the push-held sessions; 4 guard rows green),
+  `OpinionLookTests` (2 cases: no pass asked), `AutoLandingPushHeldTests` (the new case and CLOSE1h12's recovery case for an opinion;
+  its review case green as a guard). Then the driver's fast half is 9607 with main merged (9598 before; this row's 8 are
+  `OpinionGateTests`'), `OpinionLookTests` 6 of 6 (4 before), and the `AutoLanding` classes, run once by filter with
+  `git.process.runsettings`, 72 of 75 (74 before): the 3 timed out in the fixture's 60 s waits for a push or a landing to reach its
+  hold, a load timeout before any opinion is read, and pass alone.
 ## 2026-10-19 — The instance door's tests gave a stand-in two seconds to connect and answer (TESTWAIT7)
 
 - **Symptom:** beside loaded merges, four `InstanceDoorTests` failed (exit 2 for 0; "trees: Daoris is running on this home … did not

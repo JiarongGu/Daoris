@@ -417,7 +417,8 @@ public sealed class AutoLander(
     /// <remarks>
     /// FABRIC-CLOSE1h12 (D173's note): the landing's gate is read again before a hand-on is chosen, for the session whose work the push
     /// carries, so a gate that started holding while the push was held back, or before a restart, holds the hand-on as the push would.
-    /// Held there, it waits as the quest's wait does, said once already at the push.
+    /// Held there, it waits as the quest's wait does, said once already at the push. FABRIC-CLOSE1h15: held by a second opinion, that
+    /// opinion is owed (<see cref="Owe"/>), so the loop asks it rather than the person alone.
     /// </remarks>
     /// <param name="process">The run's process the look read for the entry's quest (WORKFLOW1f), handed to the gate where it is read for it.</param>
     private async Task<(string? Said, AutoChoice? Choice)?> PushHeldAsync(
@@ -445,11 +446,43 @@ public sealed class AutoLander(
 
         // FABRIC-CLOSE1h12: the gate, for the session whose work the hand-on pushes, as BeforePushAsync reads it: a later session on no
         // quest, whose push is held to nothing, reads no part that needs one.
+        var (session, sessionQuest, sessionTree) = later ? (last, record?.Quest, record?.Tree ?? entry.Tree) : (entry.Session, entry.Quest, entry.Tree);
         var (_, gateHeld, _) = later
-            ? await GateAsync(entry, last, record?.Quest, record?.Tree ?? entry.Tree, world, ct).ConfigureAwait(false)
-            : await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
-        if (gateHeld is not null) return (null, null);
+            ? await GateAsync(entry, session, sessionQuest, sessionTree, world, ct).ConfigureAwait(false)
+            : await GateAsync(entry, session, sessionQuest, sessionTree, world, ct, process).ConfigureAwait(false);
+        if (gateHeld is not null)
+        {
+            // FABRIC-CLOSE1h15: a second opinion holding it is owed here, so the loop's opinion look asks it, as the gate says it will.
+            if (gateHeld.Refusal == AutoLandingCode.Opinion && sessionQuest is not null) Owe(entry, session, sessionQuest, sessionTree);
+            return (null, null);
+        }
+
         return (null, new AutoChoice(entry, quest, tip, status) { Hands = landing });
+    }
+
+    /// <summary>
+    /// A second opinion holding a push held back, owed where its gate is read (FABRIC-CLOSE1h15): at the landing's occasion, the one the
+    /// gate read, for the session whose work the hand-on pushes, unless one is owed there already, as the person's ask owes one. The
+    /// loop's opinion look then asks it as any, and keeps it owed while the push is held back (<see cref="OpinionLook.ClosesAsync"/>).
+    /// Never throws: a due list that cannot be written leaves the person's ask, which the gate's sentence names, and the next look's
+    /// recovery writes it again.
+    /// </summary>
+    private void Owe(AutoLanding entry, string session, string quest, string tree)
+    {
+        try
+        {
+            var dues = new OpinionDues(home);
+            if (dues.Open().Any(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase) && due.Occasion == OpinionRules.Landing))
+            {
+                return;
+            }
+
+            dues.Due(new OpinionDue(session, quest, entry.Repository, entry.Workspace, tree, OpinionRules.Landing, Now()));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Owed at the next look's recovery instead.
+        }
     }
 
     /// <summary>

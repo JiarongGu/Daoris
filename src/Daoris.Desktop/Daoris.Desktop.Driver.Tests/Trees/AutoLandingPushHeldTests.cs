@@ -375,6 +375,8 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         var entry = new AutoLandings(_home).Of("s1")!;
         Assert.Equal(AutoLandingCode.PushHeld, entry.Last!.Code);
         Assert.Null(entry.Closed);
+        // FABRIC-CLOSE1h15: the opinion holding it is owed there, for the loop's look to ask; a review that holds it owes none.
+        Assert.Equal(gate == "opinion" ? 1 : 0, new OpinionDues(_home).Open().Count);
 
         LetsGo(gate, tip);
         Assert.Single(await LookAsync());
@@ -382,6 +384,47 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
         Assert.Single(_frames);
         Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed);
         Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+    }
+
+    // ——— FABRIC-CLOSE1h15: an opinion that holds a push held back is asked by the loop (D173's note)
+
+    /// <summary>
+    /// The row's proof. A push held back whose recovery finds a second opinion holding it that nobody asked (a rule that started reading
+    /// after the done, so none was owed) makes one owed where it reads the gate, at the landing's occasion, as the person's ask would.
+    /// The loop's opinion look asks it as any, and does not close it as landed while the push is held back; a look while it holds owes it
+    /// once, not again. Once it settles, the first look pushes once, and the opinion look then closes it as landed.
+    /// </summary>
+    [Fact]
+    public async Task A_push_held_back_by_an_opinion_nobody_asked_is_owed_where_its_gate_is_read_and_pushes_once_it_settles()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var tip = await HeadAsync(tree);
+        await HeldAtThePushAsync(root, quest => quest with { Held = true, Hold = EvidenceCodes.Departed });
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false, Hold = null };
+        Holds("opinion", tip);
+        Assert.Empty(new OpinionDues(_home).All());
+
+        Assert.Empty(await LookAsync());
+
+        Assert.Empty(_frames);
+        var due = Assert.Single(new OpinionDues(_home).Open());
+        Assert.Equal(("s1", "q1", "engine", "aurora", tree, OpinionRules.Landing),
+            (due.Session, due.Quest, due.Repository, due.Workspace, due.Tree, due.Occasion));
+        Assert.Null(await ClosesAsync(due));
+
+        Assert.Empty(await LookAsync());
+        Assert.Equal(due.At, Assert.Single(new OpinionDues(_home).All()).At);
+
+        Settled("o1", tip);
+        Assert.Single(await LookAsync());
+
+        Assert.Single(_frames);
+        Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed);
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(OpinionDueClosed.Landed, await ClosesAsync(due));
     }
 
     /// <summary>
@@ -526,6 +569,25 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
 
         _world.Quests["q2"] = _world.Quests["q2"] with { Held = false, Hold = null, Verdicts = [Reviewed(tip, 41)] };
     }
+
+    /// <summary>The reviewer read s1's work at <paramref name="tip"/> and raised nothing: the opinion, kept at the gate as asked, settles.</summary>
+    private void Settled(string id, string tip)
+    {
+        _world.Opinions[id] = new OpinionView(id, OpinionRules.Landing, "first", "s1", "r-" + id, "engine", tip, tip, "codex-acp",
+            ReviewerLabels.AnotherMaker, "given")
+        {
+            Product = "Codex", Maker = "OpenAI", Minutes = 20, Findings = [], Read = "the whole change",
+        };
+        new OpinionGates(_home).Asked("q1", "engine", new OpinionAskKept(DateTimeOffset.UtcNow, OpinionRules.Landing, "s1", tip)
+        {
+            Opinion = id, Reviewer = "codex-acp",
+        });
+    }
+
+    /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it (FABRIC-CLOSE1h15), or null where it is still owed.</summary>
+    private Task<string?> ClosesAsync(OpinionDue due) =>
+        OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None,
+            pushHeld: OpinionLook.PushHeld(_home));
 
     /// <summary>A set-up this machine posted at <paramref name="commit"/>, as its <paramref name="sequence"/>th.</summary>
     private static QuestSetUpView Shown(string commit, long sequence) =>
