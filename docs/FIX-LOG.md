@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A press that waited behind another landing landed a result taken back meanwhile (FABRIC-CLOSE1h3)
+
+- **Symptom:** the person's Accept (`LAND_SESSION_TREE`, `trees land <session>`) or an entry's or an ask's, waiting up to minutes behind
+  another landing of the same tree (LANDRACE1), landed whatever stood when it got the tree: a submission reopened, readied again or a done
+  turned down meanwhile was branched and pushed all the same. An entry's later part was never judged after its earlier parts landed.
+- **Root cause:** `TreeLands.LandAsync`'s `judged` and `beforePush` (CLOSE1h, CLOSE1h2) were passed only by `AutoLander`; every press door
+  passed neither, so nothing read the quest again past the door's own reads.
+- **Fix:** `PressQuests` keeps one press's quest reads, so the press is made on the read that named its landing, and `PressedResult`
+  judges that result again under the tree's hold and before the push: moved, the press makes nothing, or at the push keeps its branch
+  and tells no plugin. A quest's hold does not stop a press. The route, the terminal and `EntryAccepts` (each part on its own quest)
+  build it alike. D173's FABRIC-CLOSE1h3 note has the behaviour.
+- **Verification:** red first: `PressedResultTests`, `EntryLandingsTests`, `TreesWordsTests` and `DriverCommandTests` (fast), and the
+  new Git cases (8 failing, 4 passing as before). Then the driver's fast half passes 9524 (9486 before), and `AutoLandingTests` with
+  `EntryLandingTests`, run once by class, 67 (55 before).
+
+## 2026-10-18 — A push held back after its branch was made waited for the whole look (FABRIC-CLOSE1h7)
+
+- **Symptom:** a `push-held` entry (CLOSE1h2) was looked at only by the whole look at `pollSeconds`, never by the `quests` wake its
+  release (the hold let go, a reopen, the next submission) raises.
+- **Root cause:** `LandingWaits.Of` had no case for `push-held`; its kept tip did not make it `tree` (`AutoLandingCode.OnChange` excludes
+  it), so it fell to `look`, which no wake concerns.
+- **Fix:** `LandingWaits.Of` reads `push-held` as `quests`, beside `held` and `unreviewed`.
+- **Verification:** red first: `LandingWakesTests`' `push-held` rows (the two quests-family rows failed); then 52 pass there.
+
 ## 2026-10-18 — A session due again after a try that closed its entry was never tried (FABRIC-CLOSE1h6)
 
 - **Symptom:** under a rule with *Accept automatically* on, a session that landed, was carried on with more words (D137) and concluded
