@@ -92,6 +92,7 @@ where it is, while one made after the change is made at its new place (D172 poin
 | `help/proposals/`, Ask Daoris's proposals | the service's `HelpProposalBox.cs:65`; `HelpProposals.cs:437` | same |
 | `opinions/gates/`, `opinions/due.json` | `OpinionGates.cs:21`, `OpinionDues.cs:21` | same |
 | `browser/settings.json`, `browser/favorites.json` | `BrowserSettings.cs:58`, `BrowserFavorites.cs:29` | same |
+| `brainstorms/<id>/`, a brainstorm's request, packet, passes and document (BRAINSTORM1a, D176 point 8) | `BrainstormFiles.cs` | same |
 
 ### 3.2 `profiles/`: sign-ins
 
@@ -116,6 +117,7 @@ where it is, while one made after the change is made at its new place (D172 poin
 | `sessions/<id>/files/`, a conversation's attachments | `ChatFiles.cs:37` | `work/files/sessions/<id>/` | stays, per session |
 | `proof/<session>/`, kept proof | the landing design's `${proof}` (`2026-10-04-landing-and-proof-design.md:222, 273`); no writer found in the code at this commit | `work/files/proof/<session>/` | stays, per session |
 | `usage-read/`, where the tool's own sign-in's usage read runs (found by HOMELAYOUT2's census) | `HarnessRoster.cs` (`usage-read` under the home where no account is asked) | `work/usage-read/` | moves: an empty folder an agent runs in |
+| `brainstorm-rooms/<id>/<turn>/`, a brainstorm pass's room (BRAINSTORM1a, D176 point 2) | `BrainstormFiles.cs` | `work/brainstorm-rooms/<id>/` | moves: removed when its brainstorm ends |
 
 ### 3.4 `cache/`: what can be fetched again
 

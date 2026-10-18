@@ -182,12 +182,13 @@ public sealed class StructureTests
     }
 
     [Fact]
-    public void The_map_names_the_design_s_fourteen_modules_and_the_one_folder_each_may_hold()
+    public void The_map_names_the_design_s_fourteen_modules_and_the_brainstorm_s_and_the_one_folder_each_may_hold()
     {
         var map = StructureMap.Read(File.ReadAllText(MapFile()));
 
+        // The design's fourteen, and Brainstorms (BRAINSTORM1a, D176 point 1): a bounded operation of its own, beside Review.
         Assert.Equal(
-            ["Platform", "Accounts", "Agents", "Conversations", "Sessions", "Trees", "Quests", "Review", "Workflows", "Plugins", "Help", "Service", "Setup", "Loop"],
+            ["Platform", "Accounts", "Agents", "Conversations", "Sessions", "Trees", "Quests", "Review", "Workflows", "Plugins", "Help", "Service", "Setup", "Brainstorms", "Loop"],
             map.Modules.Keys);
         // FLAT1a, D166's note of 2026-10-14: the onion is for a module's model and rules alone, a Domain folder and the rest at its top.
         Assert.All(map.Modules, module => Assert.True(module.Value.Count == 0 || module.Value.SequenceEqual(["Domain"]), $"{module.Key} holds {string.Join(", ", module.Value)}"));

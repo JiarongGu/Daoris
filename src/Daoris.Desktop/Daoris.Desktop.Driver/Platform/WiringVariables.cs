@@ -99,6 +99,9 @@ public static class WiringVariables
     public static IReadOnlyDictionary<string, string> SetAside { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["DAORIS_TARGET"] = "handed to a session by the driver: its target",
+        ["DAORIS_BRAINSTORM_ID"] = "handed to a brainstorm's pass by the driver: the brainstorm it serves",
+        ["DAORIS_BRAINSTORM_TURN"] = "handed to a brainstorm's pass by the driver: its turn",
+        ["DAORIS_BRAINSTORM_ANSWER"] = "handed to a brainstorm's pass by the driver: the file its result tool writes",
         ["DAORIS_QUEST_ATTACHMENTS"] = "handed to a session by the driver: its quest's kept files",
         ["DAORIS_SESSION_ID"] = "handed to a session or its connector by the driver",
         ["DAORIS_QUEST_ID"] = "handed to a session or its connector by the driver",

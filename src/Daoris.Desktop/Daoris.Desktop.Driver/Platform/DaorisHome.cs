@@ -272,6 +272,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry BrowserSettings = new("browser-settings", HomeCategory.Data, "browser/settings.json", "browser/settings.json");
     public static readonly HomeEntry BrowserFavorites = new("browser-favorites", HomeCategory.Data, "browser/favorites.json", "browser/favorites.json");
     public static readonly HomeEntry HomeId = new("home-id", HomeCategory.Data, "home.json", "home.json");
+    public static readonly HomeEntry Brainstorms = new("brainstorms", HomeCategory.Data, "brainstorms", "brainstorms");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "harnesses/*/*", "harnesses/*/*");
@@ -288,6 +289,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry SessionFiles = new("session-files", HomeCategory.Work, "sessions/*/files", "sessions/*/files");
     public static readonly HomeEntry Proof = new("proof", HomeCategory.Work, "proof/*", "proof/*");
     public static readonly HomeEntry UsageRead = new("usage-read", HomeCategory.Work, "usage-read", "usage-read");
+    public static readonly HomeEntry BrainstormRooms = new("brainstorm-rooms", HomeCategory.Work, "brainstorm-rooms/*", "brainstorm-rooms/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "bin", "bin");
@@ -311,9 +313,9 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
-        Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId,
+        Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
-        Trees, HelpRoom, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead,
+        Trees, HelpRoom, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe,
         Logs,

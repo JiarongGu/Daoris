@@ -37,4 +37,10 @@ public sealed record ServiceReply(int Status, string Payload)
 {
     /// <summary>A success, 200 to 299, as an HTTP answer's <c>IsSuccessStatusCode</c> reads one.</summary>
     public bool Ok => Status is >= 200 and <= 299;
+
+    /// <summary>
+    /// The tier the search answered with, as its <c>x-daoris-tier</c> header says it (TIER1, D24): read for a brainstorm's packet
+    /// (BRAINSTORM1a), which says which tier found its sources; null where the door carries no such header.
+    /// </summary>
+    public string? Tier { get; init; }
 }

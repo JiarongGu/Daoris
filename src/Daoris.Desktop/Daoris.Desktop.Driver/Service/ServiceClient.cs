@@ -2097,6 +2097,39 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// One wording's search of one repository's records for a brainstorm's packet (BRAINSTORM1a, D176 point 2; D151 §6): the
+    /// knowledge service's <c>/api/search</c>, local records only, each hit's entry read whole for its text, and the tier its header
+    /// names, <c>meaning</c> where the semantic tier answered, else <c>words</c>. Only reads: a search moves nothing.
+    /// </summary>
+    /// <exception cref="DriverException">A host that refused the search, or one older than the door, in its words.</exception>
+    public async Task<BrainstormSearch> BrainstormSearchAsync(string words, string repository, CancellationToken ct = default)
+    {
+        var path = $"/api/search?q={Uri.EscapeDataString(words)}&repositories={Uri.EscapeDataString(repository)}&limit=12";
+        var answer = await _doors.SendAsync(ServiceVerb.Get, path, null, ct).ConfigureAwait(false);
+        if (!answer.Ok) throw new DriverException($"the service would not search `{repository}`: {answer.Payload}");
+
+        var found = new List<BrainstormFound>();
+        using (var document = JsonDocument.Parse(answer.Payload))
+        {
+            foreach (var hit in document.RootElement.ValueKind == JsonValueKind.Array ? document.RootElement.EnumerateArray() : default)
+            {
+                if (Text(hit, "id") is not { } id || Text(hit, "path") is not { Length: > 0 } relative) continue;
+                var entry = await _doors.SendAsync(ServiceVerb.Get, $"/api/entry?id={Uri.EscapeDataString(id)}", null, ct).ConfigureAwait(false);
+                if (!entry.Ok) continue;
+                using var read = JsonDocument.Parse(entry.Payload);
+                found.Add(new BrainstormFound(
+                    Text(hit, "kind")?.ToLowerInvariant() ?? "entry", relative,
+                    hit.TryGetProperty("firstLine", out var first) && first.ValueKind == JsonValueKind.Number ? first.GetInt32() : null,
+                    hit.TryGetProperty("lastLine", out var last) && last.ValueKind == JsonValueKind.Number ? last.GetInt32() : null,
+                    Text(read.RootElement, "body") ?? "", words));
+            }
+        }
+
+        // The words tier always answers a search (BM25, D151 §6); the header says where meaning answered beside it.
+        return new BrainstormSearch(found, answer.Tier?.Contains("semantic", StringComparison.Ordinal) == true ? BrainstormPackets.Meaning : BrainstormPackets.Words);
+    }
+
+    /// <summary>
     /// The second press: exactly <paramref name="units"/>, each judged again by the service and cleared in one transaction of
     /// its own, or kept with its word.
     /// </summary>

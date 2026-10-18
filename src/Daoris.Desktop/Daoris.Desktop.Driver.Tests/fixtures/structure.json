@@ -13,6 +13,7 @@
     "Help": [],
     "Service": ["Domain"],
     "Setup": ["Domain"],
+    "Brainstorms": ["Domain"],
     "Loop": []
   },
   "root": {
@@ -68,6 +69,10 @@
     "AutoLandingTriesTests.cs": "Trees",
     "AutoLandingWorkflowTests.cs": "Trees",
     "BackgroundWaitJudgementTests.cs": "Loop",
+    "BrainstormCommandTests.cs": "Brainstorms",
+    "BrainstormLookTests.cs": "Loop",
+    "BrainstormProcessTests.cs": "Loop",
+    "BrainstormValidationTests.cs": "Brainstorms",
     "BranchTidyingProcessTests.cs": "Trees",
     "BranchTidyingTests.cs": "Trees",
     "CanonicalLineTests.cs": "Platform",

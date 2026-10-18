@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A first brainstorm across agents, at the terminal: `daoris-driver brainstorm "<question>" [--repository <name>] [--agents a,b]`.
+  Daoris freezes one context packet from its own knowledge of the repository, which `brainstorm show <id>` prints whole; nothing
+  goes to any agent until `brainstorm send <id>`. Each named agent then proposes once, in a folder holding only that packet,
+  answers that break the proposal schema get one retry, one agent ranks the proposals without knowing whose they are, and the ranked
+  document, saying who proposed what, is kept on this machine until `brainstorm clear <id>`. It changes nothing in any repository.
+  This first slice runs on the stub agents only: a real agent has no tool to answer through yet, so its pass fails and says so.
+
 - The desktop names two sign-ins of one email apart too. An agent's page, its own sign-in, the start's account picker, *What
   needs you* and a session's account say the organisation after the email where another sign-in shares it (else the plan),
   once: an account named `person@example.invalid·Org-B` says neither again. Adding an account offers the name the sign-in's end

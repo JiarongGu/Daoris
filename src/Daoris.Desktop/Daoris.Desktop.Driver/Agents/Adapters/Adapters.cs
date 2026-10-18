@@ -59,10 +59,26 @@ public sealed record SessionTarget(
     public string? Helper { get; init; }
 
     /// <summary>
-    /// Whether the session is one turn framed as one prompt, taking no person's line and never resumed: an intake (INT4h), a
-    /// reviewer, which reads in one turn and starts a fresh conversation every pass (D155 point 6), and a helper.
+    /// The brainstorm this turn is a pass of (BRAINSTORM1a, D176 point 1): one turn in a room holding the packet and its instruction,
+    /// on no quest, ask, opinion or repository. Its spawn carries the brainstorm, the turn and where its result goes. Null for every
+    /// other session.
     /// </summary>
-    public bool OneTurn => Ask is not null || Opinion is not null || Helper is not null;
+    public string? Brainstorm { get; init; }
+
+    /// <summary>The brainstorm's turn this session is (<c>g1</c>, <c>s1</c>, <c>g1r</c>…); null for every other session.</summary>
+    public string? BrainstormTurn { get; init; }
+
+    /// <summary>
+    /// The file a brainstorm turn's result goes to, which its result tool writes (BRAINSTORM1a); outside its room, and named to the
+    /// spawn only, never in its instruction. Null for every other session.
+    /// </summary>
+    public string? BrainstormAnswer { get; init; }
+
+    /// <summary>
+    /// Whether the session is one turn framed as one prompt, taking no person's line and never resumed: an intake (INT4h), a
+    /// reviewer, which reads in one turn and starts a fresh conversation every pass (D155 point 6), a helper, and a brainstorm's pass.
+    /// </summary>
+    public bool OneTurn => Ask is not null || Opinion is not null || Helper is not null || Brainstorm is not null;
 
     /// <summary>
     /// The session's own record — handed to every session, whose connector names it when it publishes
@@ -1238,6 +1254,20 @@ internal static class Spawning
         if (target.Opinion is not null || target.Helper is not null)
         {
             if (target.Session is { } reviewer) info.Environment[IntakeRoom.SessionVariable] = reviewer;
+            info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+            return info;
+        }
+
+        // A brainstorm's pass (BRAINSTORM1a, D176 point 2) serves no quest and no repository: the brainstorm, its turn and where its
+        // result tool writes, and its instruction; the quest variables absent, and no repository named.
+        if (target.Brainstorm is { } brainstorm)
+        {
+            info.Environment[BrainstormVariables.Id] = brainstorm;
+            if (target.BrainstormTurn is { } turn) info.Environment[BrainstormVariables.Turn] = turn;
+            if (target.BrainstormAnswer is { } answer) info.Environment[BrainstormVariables.Answer] = answer;
+            if (target.Session is { } pass) info.Environment[IntakeRoom.SessionVariable] = pass;
+            info.Environment.Remove("DAORIS_REPOSITORY");
+            info.Environment.Remove("DAORIS_SERVICE_URL");
             info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
             return info;
         }

@@ -56,6 +56,18 @@ internal sealed class LoopContext(
     /// <summary>How a helper's agent is chosen, unless a test hands in a choice.</summary>
     public Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices { get; set; }
 
+    /// <summary>How a brainstorm's turn is run, unless a test hands in a stand-in, since a real turn spawns an agent (MOD8).</summary>
+    public Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? BrainstormTurns { get; set; }
+
+    /// <summary>How a brainstorm's packet searches Daoris's knowledge, one wording at a time, unless a test hands in a stand-in.</summary>
+    public Func<string, string, CancellationToken, Task<BrainstormSearch>>? BrainstormSearches { get; set; }
+
+    /// <summary>
+    /// How a brainstorm's repository is read, its checkout and the commit it stands at, unless a test hands in a stand-in, since a
+    /// real read spawns git (MOD8).
+    /// </summary>
+    public Func<string, CancellationToken, Task<(string? Root, string? Revision)>>? BrainstormCheckouts { get; set; }
+
     public ServiceClient Service { get; } = service;
 
     public DriverConfig Config { get; } = config;

@@ -394,6 +394,13 @@ try
         return await Daoris.Driver.Host.OpinionConsole.RunAsync(opinionArgs);
     }
 
+    // A brainstorm (BRAINSTORM1a, D176 point 1): the verb writes a request the driver's look takes, and show, send and clear are
+    // the person's own. Files under this home only: it spawns nothing and asks no service.
+    if (args is ["brainstorm", .. var brainstormArgs])
+    {
+        return BrainstormCommand.Run(brainstormArgs, DriverConfig.HomeOf(DriverConfig.ResolvePath()), Console.Out, DateTimeOffset.UtcNow);
+    }
+
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
     // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing,
     // resuming and abandoning one quest's work (PAUSE1b, PAUSE1d, D132 §7.2): the quest's page is the other door. Clearing a
