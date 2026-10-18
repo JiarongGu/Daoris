@@ -287,6 +287,18 @@ export const FULL_COMMAND = 'node tools/merge-branch.mjs --full';
 export const STALE_COMMAND = 'node tools/merge-branch.mjs --stale';
 
 /**
+ * GATEWT1: the full set's own worktree, detached at the commit it gates, under the main checkout's ignored `local/`;
+ * the lock a run beside the merges holds while it runs; and the record of its last run and its stage. All three are
+ * the main checkout's, whichever worktree asks. `tools/desktop-publish.mjs` names the same three (a test holds them equal).
+ */
+export const GATE_TREE = 'local/gate-tree';
+export const GATE_TREE_LOCK = 'local/gate-tree.lock';
+export const GATE_TREE_RECORD = 'local/gate-tree.json';
+
+/** GATEWT1: the folders whose `package-lock.json` the gate tree installs from, as AGENTS.md has a fresh checkout do. */
+export const DEPENDENCY_FOLDERS = ['.', 'src/Daoris.Web'];
+
+/**
  * The gates that run the `Process` test category (MOD8): every test in one starts a real process or runs a
  * real tick, so a failure there may be the load and is re-run alone once. Named by the settings file those
  * gates run with, not by a list of classes: a list goes stale the day a new real-process class is written,
@@ -505,7 +517,7 @@ const usageError = (message) => new Refusal(message, 2, true);
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false, stale: false, oneAtATime: false,
+    full: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
   };
   let batch = false;
   let rerun = false;
@@ -1074,6 +1086,11 @@ const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z');
 
 // ---------------------------------------------------------------------------------------------------
 // The verdicts record (GATE3): which gate passed which tree
+
+/** GATEWT1: the checkout whose verdict store a run in `root` reads and writes. */
+export function verdictsHome(root) {
+  return root;
+}
 
 /** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
 export function readVerdicts(root) {
@@ -3147,6 +3164,40 @@ function dropBatch(root) {
   if (mergeInProgress(root)) console.log('  A merge is still open in the tree: git merge --abort drops it.');
   return 0;
 }
+
+// ---------------------------------------------------------------------------------------------------
+// GATEWT1: the full set in its own worktree, beside the merges
+
+/** Whether a process runs with this pid. */
+export function pidAlive(pid) {
+  return false;
+}
+
+/** The lock a full set beside the merges holds, with whether its process still runs, or null when none is held. */
+export function readGateLock(home, alive = pidAlive) {
+  return null;
+}
+
+/** The lock taken for `commit`, or a refusal naming the run that holds it. */
+export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso } = {}) {
+  return { stale: null };
+}
+
+/** The lock let go, when it is this process's. */
+export function releaseGateLock(home) {}
+
+/** Whether the prune removes the gate tree, and why it keeps it. */
+export function gateTreeVerdict(facts, { atMerge = false } = {}) {
+  return { remove: false, why: '' };
+}
+
+/** The folders of `DEPENDENCY_FOLDERS` whose dependencies are missing or older than their lockfile. */
+export function staleDependencies(tree) {
+  return [];
+}
+
+/** The note that a folder's dependencies were installed from its lockfile as it is now. */
+export function stampDependencies(tree, folder) {}
 
 export async function main(argv) {
   const options = parseArgs(argv);

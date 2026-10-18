@@ -769,6 +769,27 @@ export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates } =
   };
 }
 
+// ---------------------------------------------------------------------------------------------
+// GATEWT1: a stage built from the gate tree, never from the moving main checkout
+
+/** `merge-branch`'s three names for the full set's own worktree, its lock and its record, under the main checkout. */
+export const GATE_TREE = 'local/gate-tree';
+export const GATE_TREE_LOCK = 'local/gate-tree.lock';
+export const GATE_TREE_RECORD = 'local/gate-tree.json';
+
+/** The gate tree to build `commit` from, or the refusal that says why it cannot be. */
+export function gatedSource(repoRoot, commit, { alive } = {}) {
+  return { refusal: null, tree: null, commit: null, home: null };
+}
+
+/** The arguments the gate tree's own publish runs with: these, but `--from-gated` and its commit, and `--to` absolute. */
+export function childArgs(argv, to) {
+  return argv;
+}
+
+/** The record's note that the gate tree at `commit` was staged, which lets the next merge's prune remove it. */
+export function recordStaged(home, { commit, to, at }) {}
+
 /** Whether this script published here before: the marker, with its header — a file with that name proves nothing. */
 export function isInstall(folder) {
   const marker = join(folder, MARKER);

@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join, posix } from 'node:path';
+import { delimiter, dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { driverFile } from './_csharp.ts';
@@ -15,7 +15,7 @@ import {
   RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures,
   DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, driverLaunchers, driverPublishCommand, layDriverLaunchers,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
-  stagedManifest, ungatedRefusal, unstage, writeManifest,
+  stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
 // The service hosts' one build recipe (CONNECTOR1), which the desktop's `--service` publishes by.
@@ -256,6 +256,80 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
   gated = ungatedRefusal(to, repo);
   assert.equal(gated.refusal, null, gated.refusal ?? '');
   assert.match(gated.note!, /the full set has passed/);
+  fx.cleanup();
+});
+
+// GATEWT1: the full set ran in a worktree of its own while main moved on; the stage builds what it gated.
+test('a stage from the gate tree builds the commit it holds, refuses another or one whose full set runs, and is judged by the main checkout\'s verdicts', () => {
+  const fx = makeFixture('publish-gate-tree');
+  const repo = join(fx.root, 'repo');
+  mkdirSync(repo, { recursive: true });
+  const env = {
+    ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_AUTHOR_NAME: 'Fixture', GIT_AUTHOR_EMAIL: 'fixture@example.test',
+    GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
+  };
+  const git = (...args: string[]): string => {
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
+    return result.stdout.trim();
+  };
+  git('init', '--quiet', '--template=', '-b', 'main');
+  assert.equal(git('rev-parse', '--show-toplevel').toLowerCase().replace(/\\/g, '/'), repo.toLowerCase().replace(/\\/g, '/'));
+  writeFileSync(join(repo, '.gitignore'), 'local/\n');
+  writeFileSync(join(repo, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'first', run: 'node a.mjs' }] })}\n`);
+  writeFileSync(join(repo, 'code.txt'), 'gated\n');
+  git('add', '-A');
+  git('commit', '--quiet', '-m', 'gated');
+  const gated = git('rev-parse', 'HEAD');
+  const to = join(fx.root, 'install');
+
+  let source = gatedSource(repo, gated);
+  assert.match(source.refusal!, /no gate tree at local\/gate-tree: node tools\/merge-branch\.mjs --full --beside makes one and gates it/);
+
+  const tree = join(repo, 'local', 'gate-tree');
+  git('worktree', 'add', '--quiet', '--detach', tree, gated);
+  // Main moves on past what was gated: a merge committed while the full set ran.
+  writeFileSync(join(repo, 'code.txt'), 'merged since\n');
+  git('commit', '--quiet', '-am', 'merged since');
+  const moved = git('rev-parse', 'HEAD');
+
+  source = gatedSource(repo, 'main');
+  assert.match(source.refusal!, new RegExp(`the gate tree holds ${gated.slice(0, 7)}, not ${moved.slice(0, 7)}`));
+  source = gatedSource(repo, gated.slice(0, 7));
+  assert.equal(source.refusal, null, source.refusal ?? '');
+  assert.equal(source.commit, gated);
+  assert.equal(resolve(source.tree!).toLowerCase(), resolve(tree).toLowerCase());
+  assert.equal(resolve(source.home!).toLowerCase(), resolve(repo).toLowerCase());
+  // Never while its full set runs: what it would build is what is being gated.
+  writeFileSync(join(repo, GATE_TREE_LOCK), `${JSON.stringify({ pid: process.pid, commit: gated, at: '2026-10-18T10:00:00Z' })}\n`);
+  source = gatedSource(repo, gated, { alive: () => true });
+  assert.match(source.refusal!, new RegExp(`its full set is still running \\(pid ${process.pid}, since 2026-10-18 10:00 UTC\\)`));
+  assert.equal(gatedSource(repo, gated, { alive: () => false }).refusal, null, 'a lock whose process ended holds nothing');
+  rmSync(join(repo, GATE_TREE_LOCK));
+
+  // The verdicts are the main checkout's, keyed by tree: main's own pass does not stage the gate tree, and its gated tree's does.
+  const record = (trees: string[]) => writeFileSync(join(repo, 'local', 'gate-verdicts.json'), `${JSON.stringify({
+    schema: 1, verdicts: trees.map((at) => ({ gate: 'first', verdict: 'PASS', tree: at, at: '2026-10-18T11:00:00Z', commit: null, branch: null })),
+  }, null, 2)}\n`);
+  record([git('rev-parse', `${moved}^{tree}`)]);
+  assert.equal(ungatedRefusal(to, repo).refusal, null, 'the main checkout passes on its own tree');
+  const refused = ungatedRefusal(to, tree);
+  assert.match(refused.refusal!, /the full set of gates has not passed this checkout/);
+  assert.match(refused.refusal!, /first\s+stale\s+PASS .*code\.txt changed/);
+  record([git('rev-parse', `${gated}^{tree}`)]);
+  const passed = ungatedRefusal(to, tree);
+  assert.equal(passed.refusal, null, passed.refusal ?? '');
+  assert.match(passed.note!, /the full set has passed/);
+
+  // The gate tree's own publish runs with the same arguments, but the commit, and the install as an absolute path.
+  assert.deepEqual(childArgs(['--to', 'install', '--service', '--stage', '--from-gated', 'abc1234'], to), ['--to', to, '--service', '--stage']);
+  // A stage done is the record's note, which the next merge's prune reads to remove the tree.
+  writeFileSync(join(repo, GATE_TREE_RECORD), `${JSON.stringify({ schema: 1, commit: gated, ended: '2026-10-18T11:00:00Z', passed: true })}\n`);
+  recordStaged(repo, { commit: gated, to, at: '2026-10-18T12:00:00Z' });
+  const noted = JSON.parse(readFileSync(join(repo, GATE_TREE_RECORD), 'utf8'));
+  assert.deepEqual(noted.staged, { commit: gated, to, at: '2026-10-18T12:00:00Z' });
+  assert.equal(noted.passed, true, 'the rest of the record is kept');
+  git('worktree', 'remove', tree);
   fx.cleanup();
 });
 
