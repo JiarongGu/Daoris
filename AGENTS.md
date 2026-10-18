@@ -57,7 +57,8 @@ Node ≥22. Install root and web dependencies from their lockfiles (`npm ci` and
 `npm run verify` is the baseline check: CLI types/tests, doctrine, documentation, release references
 and universal gates. It is not the whole product test set. `daoris.gates.json` declares the component
 gates; use the reached checks while working, and the full set at an integration boundary. Real-process
-suites and rehearsals run serially; they may start subprocesses or windows. Read the development
+suites and rehearsals run serially (the merge tool runs the family rehearsal beside the git half, each on its own
+build output); they may start subprocesses or windows. Read the development
 guide before running the full set. Do not stop an unrelated or installed process to unblock a build.
 
 ## Conventions

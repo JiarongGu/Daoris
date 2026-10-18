@@ -16275,3 +16275,93 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-PERFORM1m — a branch unit's observed node bound to the fresh tip, not the end fact's** (driver; after PERFORM1i; §C4 rule 4, §E2, D88's PROC1d-ii). A branch unit's revision is the end fact's (`WorkInventory`), so while the end judgement lags, an observed node binds to the old tip and every event at the new one is refused `stale`. Proof: a lagging unit rebinds at the next pass and is reached; one `for-each-ref` per checkout per pass.
 
 **Outcome** 2026-10-18: a branch unit's observed plugin node binds to, and lapses on, its branch's tip read in the pass (`WireRun.NodeRevisions`); the tip is read once per checkout per pass (`PassTips`); a unit whose awaiting node the tip moved off is judged at the pass and rebinds under RUN1's lapse; performed nodes and quest units keep the unit's revision. On Opus: about 50 tool calls. Detail: D173's FABRIC-PERFORM1m note.
+
+## REHLANE1 — the rehearsals beside the git half (2026-10-18, D115)
+
+> - [ ] **REHLANE1 — the rehearsals beside the git half** (tools; after GATELANES2). `rehearse-family` (10 to 26 m) and `deployment` (about 12 m) wait for the whole Process lane; they build shared hosts, and the deployment rehearsal shuts the build servers down, so give each its own build output first. Proof: a full set's wall with no new flake, three times.
+
+**Outcome** 2026-10-18: the family rehearsal runs beside the driver's git half, building the driver host into `_fixtures/rehearsal-builds/family` (`ownBuild`, `--artifacts-path`) and shutting no build server down; every other Process-lane gate runs alone, the deployment rehearsal last; a git half's re-run alone waits for the rehearsal. On Opus: about 95 tool calls (with WEBSPLIT1; a first worker's tree was lost to the prune, CLEANUP2b). Detail: D115's note "REHLANE1, WEBSPLIT1", FIX-LOG.
+
+## FABRIC-WORKFLOW2b — a D157 run's step states read as the decoded graph's statuses (2026-10-18, D173)
+
+> - [ ] **FABRIC-WORKFLOW2b — a D157 run's step states read as the decoded graph's statuses** (driver; after WORKFLOW2 and WIRE1g; §E7, canary 38). Over recorded run fixtures, `WireEvaluation`'s eligible nodes equal `WorkflowRun.At`, and the bound digest is unchanged.
+
+**Outcome** 2026-10-18: a bound run's steps are replayed onto its decoded graph through the evaluation and the one table (`Trees/Nodes/WorkflowRunNodes.cs`), and the graph's eligible nodes compared with `WorkflowRun.At` over 31 hand-written recorded runs: 22 agree, 9 carry one of five named differences, none unexplained; read-only, schema 1 unchanged. WIRE1h and GRAPH1h then settled two of the five. On Opus: about 80 tool calls. Detail: D173's FABRIC-WORKFLOW2b note.
+
+## FABRIC-CLOSE1t — every named quest's graph prerequisites fenced (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1t — every named quest's graph prerequisites fenced** (driver; after CLOSE1r; §E5). The terminal quest's close checks its own prerequisites, then `Judge` checks only the ancestors' submission holds, not their node records, so in a two-quest chain the first publishes the second while its deployment stays held, and the second can close both: fence each named quest's prerequisites in its own graph. Proof: that chain waits while the first's deployment is held, and closes once it is reached.
+
+**Outcome** 2026-10-18: before a chain's close is sent, `NodeRuntime.Unreached` judges each other quest it names on its own node record, under its bound graph and at its current revision, by the evaluation its own pass makes; the close waits, said once a pass naming the quest and the node. One record read per other quest named, no git. On Opus: about 65 tool calls. Detail: D173's FABRIC-CLOSE1t note; FIX-LOG.
+
+## FABRIC-CLOSE1u — a close never first sent from recovery on stale evidence (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1u — a close never first sent from recovery on stale evidence** (driver; after CLOSE1t; §E5). `QuestCloser.ReconcileAsync` resends persisted attempts before the fresh fence: a crash after recording but before delivery, a branch moved, a restart, and the resend executes a never-delivered close on obsolete evidence. Ask the door for the key's outcome first and fence any never-executed close freshly; an unanswered close gets the person's stop. Proof: the crash-move-restart case sends nothing until judged again; an unknown close stopped by the person.
+
+**Outcome** 2026-10-18: recovery asks the door what became of a close's key (`POST /api/quests/{id}/close/outcome`, answered from `quest_closes`, running nothing) and never resends; a key taken settles from its kept outcome; a key never taken is withdrawn in the same transaction, its attempt settled `not-started` and its node invalidated, so a close is made again only through the fresh fence under a new key; an unknown close is offered `resend|stop`. On Opus: about 122 tool calls. Detail: D173's FABRIC-CLOSE1u note, §E5's amendment, FIX-LOG.
+
+## FABRIC-WIRE1h — the look's gate and the landing record pass their nodes over (2026-10-18, D173)
+
+> - [ ] **FABRIC-WIRE1h — the look's gate and the landing record pass their nodes over** (driver; after WIRE1g, WORKFLOW2b; §E2, §E4). A look the chain's or ask's choice turns off, and a pull request with no branch or nothing landed, are skipped in schema 1 by a choice or fact no node authority makes (`passed-by-rule`): give `NodeAuthority.SkipBy` to the review gate's record for `look` and to the landing record for `pull-request`. Proof: the two `passed-by-rule` rows agree; each kind's record skip in `NodeLifecycleTests`.
+
+**Outcome** 2026-10-18: `NodeAuthority.SkipBy` names the review gate's record for the `look` (the chain's or ask's off choice) and the landing record for the `pull-request` (no branch landed); the schema-1 run reads the same skips, so `passed-by-rule` is settled and removed from `WorkflowRunDifferences`. On Sonnet. Detail: D173's FABRIC-WIRE1h note; design §E2.
+
+## FABRIC-GRAPH1h — the protected order held across a skip (2026-10-18, D173)
+
+> - [ ] **FABRIC-GRAPH1h — the protected order held across a skip** (driver, cli twin; after WORKFLOW2b; §E7, §E3, GRAPH1's choice 5). A person's skip of the look satisfies its `after` wire while the opinion before it is unsettled, so a decoded landing becomes eligible past an unsettled opinion, which schema 1 never allows (`skip-passes-earlier`). Proof: that comparison row reads with no difference; both twins share the new table; stored digests unchanged.
+
+**Outcome** 2026-10-18: the decoder wires each gate of D157 §2.2's order before the landing (the work, the opinion, the look) into every gate after it, in both twins; `DecoderVersion` 2, so derived digests moved while identities and stored bytes did not; `skip-passes-earlier` no longer arises at a gate. On Opus: about 75 tool calls. Detail: D173's FABRIC-GRAPH1h note; §E7's table.
+
+## FABRIC-NODE1f — an observed node's unknown never holds its next attempt (2026-10-18, D173)
+
+> - [ ] **FABRIC-NODE1f — an observed node's unknown never holds its next attempt** (driver; §E2's unknown rows, NODE1c). An observed built-in (`pushed`, `pull-request`, `line`, `claimed`) gone unknown keeps `Unreconciled` through an invalidation and a later ready, and the start loop skips any node with it set, so after a new commit it is never offered a start again (read in the code, no test yet). Proof: a `pushed` node gone unknown, invalidated by a new tip, is offered a start on the new binding.
+
+**Outcome** 2026-10-18: an observed node's (`pushed`, `pull-request`, `line`, `claimed`) unknown no longer survives an invalidation, so the start loop offers it a start on the new binding; a performed node's unknown stays held for its reconciliation or the person's word. On Sonnet. Detail: D173's FABRIC-NODE1f note.
+
+## FABRIC-CLOSE1v — the service's close door enforces its own scope (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1v — the service's close door enforces its own scope** (service; after CLOSE1o; §E5). `Quests.CloseAsync` checks each quest is bound but not that they share a repository, chain and graph, and the non-`atTake` bind path skips the remote guard. Proof: a close naming an unrelated bound quest is refused with its code; a non-take bind in a remote-synced workspace refused.
+
+**Outcome** 2026-10-18: the close door refuses a named quest of another repository (`other-repository`), of no chain the quest it is at grew from (`not-in-chain`), or bound to another graph (`other-graph`), whole and before any quest's state; the plain bind is refused where the workspace syncs through a remote; the driver knows the three codes. On Opus: about 100 tool calls. Detail: D173's FABRIC-CLOSE1v note; FIX-LOG.
+
+## FABRIC-CLOSE1w — a take-bind's expiry and an older build's write (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1w — a take-bind's expiry and an older build's write** (service; after CLOSE1o; §E5). Expiry is judged on a `now` taken before the write lock, so a take queued past the deadline can bind; an older build's upsert can replace `graph` keeping the newer owner columns, and an older build's take ignores ownership and expiry: sample the time inside the write, and give an armed store a compatible-build boundary. Proof: a take that waits past the expiry binds nothing; the older-upsert collision refused or detected.
+
+**Outcome** 2026-10-18: a take judges its pending bind at the moment its write began (the caller's moment plus the wait on the store's monotonic clock), so a take queued past the expiry binds nothing; binds are named in `quest_owned_take_binds`, a table no older build knows, so an older build can neither replace an owned bind's graph nor bind one by id. An unarmed store gains one empty table. On Opus: about 75 tool calls. Detail: D173's FABRIC-CLOSE1w note; FIX-LOG.
+
+## CLEANUP2b — the prune never takes a live worker's tree (2026-10-18, D160)
+
+> - [ ] **CLEANUP2b — the prune never takes a live worker's tree** (tools; after CLEANUP2; GATE2). A harness-locked tree is in use for the agent's whole run, and a command line does not show a shell's working directory: on 2026-10-18 the prune removed a fresh worker's tree whose branch had only fast-forwarded to an older main. Proof: a fresh tree kept and named; one idle for hours removed; the plan changes nothing.
+
+**Outcome** 2026-10-18: the prune keeps a harness-locked tree written in the last two hours (`HARNESS_IDLE_MINUTES`, read cheaply by `newestWrite`), and `--prune --plan` says "written N minutes ago, a worker may be in it"; the worker brief makes its empty start commit before merging main. On Sonnet. Detail: FIX-LOG's CLEANUP2b entry, the GATE2 header.
+
+## TESTWAIT2 — the light suites' clock-bound waits held to their condition (2026-10-18, D160)
+
+> - [ ] **TESTWAIT2 — the light suites' clock-bound waits held to their condition** (service, driver, modules tests; after GATELANES2). The light lane runs three gates at once, and fast-suite tests that read a real loop's or a process pipe's effect after a fixed clock fail under that load (`ChangeStreamTests`, `NewerIndexTests`). Proof: each named test passes beside a second suite three times; a search lists the waits.
+
+**Outcome** 2026-10-18: `ChangeStreamTests`' "wakes nobody" test and its sibling canary hold their wait open until the observer's count moves, then read the negative; the newer-index connector test waits for its stderr line; both passed 3 of 3 beside the modules fast half. On Sonnet. Detail: FIX-LOG TESTWAIT2.
+
+## WEBSPLIT1 — the web gate's unit run beside the service suite (2026-10-18, D115)
+
+> - [ ] **WEBSPLIT1 — the web gate's unit run beside the service suite** (tools, gates; after GATELANES2). In a full set the light lane's floor is service then web, because web builds the HTTP host; its vitest step builds nothing and can be its own light gate beside service. Proof: the full set's light-lane wall, with no new web flake.
+
+**Outcome** 2026-10-18: the web gate's vitests are their own light gate, `web-unit` (`npm run test:web:unit`), with no component, run beside service; `web` runs `npm run test:web:e2e`; the release workflow runs them as two steps. Detail: D115's note "REHLANE1, WEBSPLIT1".
+
+## RPC1b4 — the trees routes' last words (2026-10-18, D171)
+
+> - [ ] **RPC1b4 — the trees routes' last words** (modules, driver; after RPC1b3; §7.3). `LAND_ENTRY` and `LAND_ASK` say the verb's words, the landed-already and no-tree refusals are words with the verb's code, and `DISCARD_SESSION_BRANCH` takes a session or a branch name. Proof: per verb, the text from the answer equals the alone path's against `InstanceStandIn`, refusals included.
+
+**Outcome** 2026-10-18: `LAND_ENTRY`/`LAND_ASK` answer `said`, `LAND_SESSION_TREE` refuses a landed or tree-less session as words (exit 1), a driver refusal inside an entry's press is its own answer, and `DISCARD_SESSION_BRANCH` takes `named`; the verb and the routes share `TreesWords`. On Sonnet: about 45 tool calls. Detail: D171's RPC1b4 note.
+
+## FABRIC-PERFORM1o — an event at the current tip not lost to the rebinding pass (2026-10-18, D173)
+
+> - [ ] **FABRIC-PERFORM1o — an event at the current tip not lost to the rebinding pass** (driver; after PERFORM1m; §C4). Within a pass the hearing comes before the rebinding, so an event at the branch's new tip that arrives before Daoris rebinds is refused `stale` and never asked for again. Proof: such an event is taken without the plugin sending it again.
+
+**Outcome** 2026-10-18: an event at the tip read in the pass, heard while its observed node still awaited the old tip, is held for the pass and heard again under all five rules once the evaluation has rebound the node; it is taken in that same pass with its wires fired, with no extra git and no resync. On Opus: about 48 tool calls. Detail: D173's FABRIC-PERFORM1o note.
+
+## TESTWAIT3 — the driver's fast half held to its conditions (2026-10-18, D160)
+
+> - [ ] **TESTWAIT3 — the driver's fast half held to its conditions** (driver tests; after TESTWAIT2). `RunningServiceTests.A_redirect_is_no_answer` failed beside two other gates and passed alone (twice on 2026-10-18): `RunningService.Status`'s own 2 s bound can end before a loaded local listener is asked. Proof: the test passes beside two other suites three times; a search lists the calls.
+
+**Outcome** 2026-10-18: `A_redirect_is_no_answer` repeats with fresh listeners, up to three times, when its redirect listener was never asked; both assertions kept, the product unchanged (TESTWAIT3b measures the product's bound). On Sonnet. Detail: FIX-LOG TESTWAIT3.
