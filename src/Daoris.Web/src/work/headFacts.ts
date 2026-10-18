@@ -121,8 +121,10 @@ export type QuestFactsOf = {
  */
 export function questFacts(t: TFunction, { quest, session, sitting }: QuestFactsOf): string[] {
   const unreviewed = quest.held === true && quest.hold === 'unreviewed';
+  // FABRIC-CLOSE1c3: a step its source's reopen holds waits on the person's go-on or abandon, which no yes lifts.
+  const reopened = quest.held === true && quest.hold === 'source-reopened';
   const facts = [
-    ...(unreviewed ? [t('review.pill')] : quest.held === true ? [t('quests.card.held')] : []),
+    ...(unreviewed ? [t('review.pill')] : reopened ? [t('quests.card.reopened')] : quest.held === true ? [t('quests.card.held')] : []),
     t('quests.facts.to', { repository: quest.to }),
     t('quests.facts.filed', { ago: ago(quest.filed) }),
   ];
@@ -142,5 +144,7 @@ export function questFacts(t: TFunction, { quest, session, sitting }: QuestFacts
       : t('quests.facts.parkedSome')];
   }
 
+  // FABRIC-CLOSE1d (§E5): a taken quest at its submission says when it was submitted; it is done only at its graph's close.
+  if (quest.status === 'Taken' && quest.submission) return [...facts, t('quests.facts.submitted', { ago: ago(quest.submission.at) })];
   return quest.status === 'Taken' ? [...facts, t('quests.facts.taken', { ago: ago(quest.updated) })] : facts;
 }

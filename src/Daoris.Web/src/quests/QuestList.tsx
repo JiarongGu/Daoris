@@ -12,7 +12,7 @@ import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
 import { questName } from '../work/identity';
 import { groupHeading, ListGroup, ListRowDoor } from '../work/ListPane';
-import { questGroups } from './records';
+import { questGroups, shownStatus } from './records';
 
 /** What a quest's row says beside the quest itself. */
 export type QuestRowFacts = {
@@ -155,7 +155,8 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
     <li data-list-row="" {...contextOffer(menu)}>
       <ListRowDoor chosen={chosen} dimmed={ended} onPress={() => onChoose(quest.id)}>
         <span className="flex items-baseline gap-2">
-          <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
+          {/* A closure graph's quest at its submission reads submitted (FABRIC-CLOSE1d, §E5); every other its status. */}
+          <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${shownStatus(quest)}`)}>{t(`status.${shownStatus(quest)}`)}</Pill>
           <span className="ml-auto flex min-w-0 shrink items-baseline justify-end gap-1.5">
             <CarriedCount links={quest.links?.length ?? 0} files={quest.attachments?.length ?? 0} />
             {/* A week of silence is the signal this view exists to surface. */}
@@ -164,10 +165,13 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
                 do. The waiting tone, as `awaiting-person` wears it. */}
             {waits && <Pill tone="open" title={t('quests.card.waitsHint')}>{t('quests.card.waits', { id: waits })}</Pill>}
             {/* A departure holds it for the person's yes (DRIFT1d2): what follows waits on them, so open's hue, theirs. A set-up
-                step its review holds waits for their review instead (REVIEWENV1g), which no yes lifts. */}
+                step its review holds waits for their review instead (REVIEWENV1g), which no yes lifts, and a step its source's
+                reopen holds for their go-on or abandon (FABRIC-CLOSE1c3). */}
             {quest.held && (quest.hold === 'unreviewed'
               ? <Pill tone="open" title={t('review.pillHint')}>{t('review.pill')}</Pill>
-              : <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>)}
+              : quest.hold === 'source-reopened'
+                ? <Pill tone="open" title={t('quests.card.reopenedHint')}>{t('quests.card.reopened')}</Pill>
+                : <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>)}
             {/* A live driven session marks its quest; finished ones live in its record. */}
             {session && SESSION_ACTIVE.has(session) && (
               <Pill tone={SESSION_TONE[session]} title={t('quests.session.hint')}>{t(`sessionState.${session}`)}</Pill>

@@ -439,10 +439,26 @@ try
             return await QuestDoneCommand.RunAsync(doneAsk, doneClient, Console.Out);
         }
 
+        // The person's reopen of a sealed submission and their go-on with the step it held (FABRIC-CLOSE1c3, D156, D50): the quest
+        // page's *Reopen…* and *Go on with it* are the other doors; abandoning the step is `quest abandon`.
+        if (QuestReopenCommand.Asks(questArgs))
+        {
+            if (QuestReopenCommand.Read(questArgs, out var reopenProblem) is not { } reopenAsk)
+            {
+                Console.Error.WriteLine($"daoris-driver: {reopenProblem}");
+                Console.Error.WriteLine(QuestReopenCommand.Usage);
+                return 2;
+            }
+
+            using var reopenClient = ServiceClient.FromEnvironment();
+            return await QuestReopenCommand.RunAsync(reopenAsk, reopenClient, Console.Out);
+        }
+
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
             Console.Error.WriteLine(
                 "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
+                + "quest reopen <id> [--note \"…\"]  ·  quest go-on <id>  ·  "
                 + "quest pause <id>  ·  quest resume <id>  ·  "
                 + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
                 + "quest check <id> [--commit <sha>]  ·  quest review <id> reviewed|not-yet|skip [\"…\"]  ·  "

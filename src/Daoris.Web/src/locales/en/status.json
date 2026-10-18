@@ -1,6 +1,7 @@
 {
   "status.Open": "open",
   "status.Taken": "taken",
+  "status.Submitted": "submitted",
   "status.Done": "done",
   "status.Declined": "declined"
 }

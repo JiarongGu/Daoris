@@ -7,7 +7,7 @@ import '../locales/i18n';
 import { PROPOSED } from '../asks/fixtures';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
-import { HELD, HELD_BY_PERSON, OPEN, SITTING, TAKEN } from './fixtures';
+import { HELD, HELD_BY_PERSON, OPEN, REOPENED, SITTING, SUBMITTED, TAKEN } from './fixtures';
 import { QuestList } from './QuestList';
 
 // Quests' list as a molecule (FRAME1d, D118 §2): rows arrive with what each says, and every press goes out.
@@ -70,6 +70,19 @@ describe("Quests' list", () => {
     ]);
     expect(within(screen.getByRole('button', { name: /Stream the tiles from the cold cache/ })).getByText('awaits your yes'))
       .toBeInTheDocument();
+  });
+
+  /** FABRIC-CLOSE1d and CLOSE1c3 (§E5): a submitted quest's row reads submitted with its hold; a step its source's reopen holds has its own pill. */
+  it('reads a submitted quest as submitted, and a step its source’s reopen holds by its own pill, never the yes', () => {
+    list({ quests: [{ quest: { ...SUBMITTED, title: 'Ship the cold cache' } }, { quest: REOPENED }, { quest: TAKEN }] });
+
+    const submitted = screen.getByRole('button', { name: /Ship the cold cache/ });
+    expect(within(submitted).getByText('submitted')).toBeInTheDocument();
+    expect(within(submitted).getByText('awaits your yes')).toBeInTheDocument();
+    const reopened = screen.getByRole('button', { name: /Verify the tiles in a playtest/ });
+    expect(within(reopened).getByText('source reopened')).toBeInTheDocument();
+    expect(within(reopened).queryByText('awaits your yes')).toBeNull();
+    expect(within(screen.getByRole('button', { name: /Read the media field names/ })).getByText('taken')).toBeInTheDocument();
   });
 
   it('marks a week of silence on its row', () => {
