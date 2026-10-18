@@ -29,8 +29,8 @@ public sealed class ServiceReopenDoors(ServiceClient service) : IReopenDoors
 /// this machine alone: a teammate's (<c>origin/id</c>) is never told here, and a reopen naming none (a ready the respond door made,
 /// or a host before the field) tells nobody, the run reading it as waiting for its agent. Never the quest's last record here, which
 /// need not be the one that said it: where a later session ran, the planner goes on with the words in the named one all the same
-/// (FABRIC-CLOSE1c9, <see cref="Snapshot.NamedByReopen"/>), unless the person stopped it, when it is told nothing and the look says
-/// so once, since Daoris's words would release the person's stop.</para>
+/// (FABRIC-CLOSE1c9, <see cref="Snapshot.NamedByReopen"/>), unless the person stopped it, last or not (FABRIC-CLOSE1c12), when it
+/// is told nothing and the look says so once, since Daoris's words would release the person's stop.</para>
 ///
 /// <para><b>When.</b> While the quest is taken and its reopen stands; a later submission answers it, so nothing is said. A parked
 /// or ended record is told at once: words on a park are its answer, on an ended record they reopen it, and the planner's go-on
@@ -157,13 +157,12 @@ public sealed class ReopenTelling(ReopenMarks marks)
             return;
         }
 
-        // 🔴 The person stopped it, and a later session ran (FABRIC-CLOSE1c9): words on it would go on in it, releasing the person's
-        // stop as their own words do, and these are Daoris's. So it is told nothing, and the quest's run reads as it does.
-        if (record.PersonStopped
-            && snapshot.LastRun.GetValueOrDefault(quest) is { } later && !string.Equals(later.Session, session, StringComparison.Ordinal))
+        // 🔴 The person stopped it (FABRIC-CLOSE1c9, and last or not, FABRIC-CLOSE1c12): words on it would go on in it, releasing the
+        // person's stop as their own words do, and these are Daoris's. So it is told nothing, and the stop is theirs to lift.
+        if (record.PersonStopped)
         {
             Settle(key, lines,
-                $"reopen  {named}, which the person stopped, and a later session ran: it is told nothing, and nothing goes on with it "
+                $"reopen  {named}, which the person stopped: it is told nothing, and nothing goes on with it "
                 + "until they say so");
             return;
         }
