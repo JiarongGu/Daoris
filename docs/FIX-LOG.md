@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A remote kept a step published on a take that then lost, when the take's own push was behind (FABRIC-CLOSE1c21)
+
+- **Symptom:** B took a step before A's reopen of its source and A's rebind reached B, bound it, submitted, and its submission
+  published the chain's next step. Where A's reopen, submission and rebind reached the remote between B's fetch and B's push, the
+  next step stood open at the remote and then on A and B, grown from B's submission, which no machine held any more. B's lost take's
+  conflict also said "the quest's close is the winner's", where nobody won: the person reopened the work.
+- **Root cause:** the remote judges a push quest by quest. B's step's group was behind (the reopen and rebind reached it after B's
+  base), but the next step's group was a new quest nothing had moved, so it was kept and numbered. B's next round rebased the step,
+  lost the take and the submission, and `ForgetStepsAsync` left the next step, since no machine forgets a numbered operation
+  (FABRIC-CLOSE1e's *Left*). The words: `SubmissionWentWith` had one sentence, written for a take lost to another machine's.
+- **Fix:** `QuestStore.ReceiveAsync` answers behind for a pushed step whose source it holds without the submission the step grew from
+  (`AwaitsItsSourceAsync`), so the machine goes round and its rebase forgets the step with the submission, or pushes it again beside
+  it. A source the remote never held waits on nothing. `RebaseAsync` words a take lost to the person's reopen
+  (`QuestLog.LostToTheReopen`) by the reopen.
+- **Verification:** `QuestReopenSyncTests`: the raced order was seen red as a probe (the next step found at the remote), then green;
+  the words red in both orders, then green; a step whose source never leaves its machine still goes up in the first push (a guard).
+  `QuestReopenSyncTests` and `QuestSyncTests`, 84 passed.
+
 ## 2026-10-19 — The instance door's tests gave a stand-in two seconds to connect and answer (TESTWAIT7)
 
 - **Symptom:** beside loaded merges, four `InstanceDoorTests` failed (exit 2 for 0; "trees: Daoris is running on this home … did not
