@@ -317,6 +317,7 @@ public sealed class NodeRuntime(
         if (_told) port.Watch(NoneAwaited);
         (_told, _toldText, _governed, _choices, _after, NextDue) = (false, "", null, null, null, null);
         LastQuests = null;
+        QuestReads.Delete(records.Home);
     }
 
     /// <summary>
@@ -345,6 +346,7 @@ public sealed class NodeRuntime(
                 (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _quests = Quests(read);
                 LastQuests = _quests;
+                QuestReads.Keep(home, _quests); // FABRIC-CLOSE1q5: the terminal's `work held` judges on it; the lease is held here.
                 if (_closer is not null) Keep(look.Config, _governed.Values);
             }
 

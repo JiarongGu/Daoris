@@ -1055,6 +1055,51 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Equal(HeldResolutions.Close, Assert.Single(HeldAttempts.Read(Files)).Words);
     }
 
+    private string QuestsFile => DaorisHome.Entry(_home, HomeEntry.Workflows, "quests.json");
+
+    private (int Code, string[] Lines) WorkHeld()
+    {
+        var output = new StringWriter();
+        var code = HeldAttempts.Run(_home, [], output, new StringWriter());
+        return (code, output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1q5: the terminal has no runtime, so <c>work held</c> judges a close on the last fresh read the runtime kept beside the
+    /// node records: a moved submission lists <c>resend</c> alone with the reason; a still-current one lists all three words; the file is
+    /// no unit's record, and a disarm deletes it.
+    /// </summary>
+    [Fact]
+    public async Task The_terminals_work_held_judges_a_close_on_the_last_read_the_runtime_kept()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        ClosedUnbound();
+        var runtime = Runtime();
+        Assert.False(File.Exists(QuestsFile));
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        Assert.True(File.Exists(QuestsFile));
+        Assert.Empty(Files.All().Unreadable);
+        Assert.Contains("record|resend|stop", string.Join('\n', WorkHeld().Lines), StringComparison.Ordinal);
+
+        Quest(_quests["q7"] with { Submission = new QuestSubmissionView("desk", 43, null, "ready") });
+        await runtime.PassAsync(Look(Closing) with { Whole = true }, CancellationToken.None);
+        var text = string.Join('\n', WorkHeld().Lines);
+        Assert.Contains("work held " + Unit + " close 1 resend", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("record|resend|stop", text, StringComparison.Ordinal);
+        Assert.Contains("reopened or replaced", text, StringComparison.Ordinal);
+
+        // A read left by a closed desktop is kept and used; a malformed one judges nothing.
+        File.WriteAllText(QuestsFile, "{ not json");
+        Assert.Contains("record|resend|stop", string.Join('\n', WorkHeld().Lines), StringComparison.Ordinal);
+
+        // Disarmed (no governing graph and no closure graph kept): deleted.
+        if (Directory.Exists(ClosureGraphs.FolderOf(_home))) Directory.Delete(ClosureGraphs.FolderOf(_home), true);
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.False(File.Exists(QuestsFile));
+        Assert.Contains("record|resend|stop", string.Join('\n', WorkHeld().Lines), StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// FABRIC-CLOSE1q2: a held close for S1, its door's close kept, whose quest stands on S2 at the same commit since: <c>record</c> on it,
     /// applied by a pass that is not a whole look (a wake), is judged on the quests read afresh, never on the read before S2. It is taken back,
