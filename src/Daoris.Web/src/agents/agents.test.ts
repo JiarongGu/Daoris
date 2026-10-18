@@ -5,7 +5,7 @@ import { byTool, type ToolDoor } from './tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {
-  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, nextStartSaid, nextStartSaidFor,
+  accountAct, accountLabel, accountName, accountState, accountWho, agentRows, ownWho, doorsSummary, heldBy, joinChoices, nextStartSaid, nextStartSaidFor,
   ownSaid, ownState, readLine, rulesSummary, runsFor, runsForLine, settingsSummary, sharesOwn, signedOutHeld, stateWhen, stateWord,
   usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
@@ -244,6 +244,80 @@ describe('an account’s name, as a person reads it (ACCT2)', () => {
   it('says a key by its handle, and no one signed in beside it', () => {
     expect(accountName({ name: 'acct-0000ffff', key: '…wxyz', account: 'x@y' })).toBe('API key …wxyz');
     expect(accountWho({ name: 'acct-0000ffff', key: '…wxyz' })).toBeNull();
+  });
+});
+
+/**
+ * ACCOUNTID1b: one email signed in to two organisations is two accounts that read alike. The organisation is said where it
+ * tells two of one agent's sign-ins apart, after the email and each said once (ACCTNAME1's rule); else the plan; else nothing.
+ */
+describe('two sign-ins of one email, told apart (ACCOUNTID1b)', () => {
+  beforeEach(() => i18n.changeLanguage('en'));
+
+  const EMAIL = 'person@example.invalid';
+  const tool = (profiles: ToolDoor['profiles'], over: Partial<ToolDoor> = {}) => byTool([claude({ profiles, ...over })])[0]!;
+  const a = { name: 'acct-0000000a', home: 'h/a', login: 'in' as const, account: EMAIL, org: 'Org A', plan: 'max' };
+  const b = { name: 'acct-0000000b', home: 'h/b', login: 'in' as const, account: EMAIL, org: 'Org B', plan: 'pro' };
+
+  it('carries the organisation and plan of the tool’s own sign-in from its door', () => {
+    const both = tool([a], { ownAccount: EMAIL, ownOrg: 'Org B', ownPlan: 'pro' });
+    expect([both.ownOrg, both.ownPlan]).toEqual(['Org B', 'pro']);
+    expect(both.accounts[0]).toMatchObject({ org: 'Org A', plan: 'max' });
+  });
+
+  it('says the organisation after a name that is the email, and once beside it', () => {
+    const among = tool([a, b]);
+    expect(accountName(a)).toBe(EMAIL);
+    expect(accountWho(a, among)).toBe('Org A');
+    expect(accountWho(b, among)).toBe('Org B');
+    expect(accountLabel(a, among)).toBe(`${EMAIL} · Org A`);
+    expect(accountLabel(b, among)).toBe(`${EMAIL} · Org B`);
+  });
+
+  it('repeats neither in a name that says both, as the sign-in’s end offers it', () => {
+    const named = { ...b, displayName: `${EMAIL}·Org-B` };
+    const among = tool([a, named]);
+    expect(accountWho(named, among)).toBeNull();
+    expect(accountLabel(named, among)).toBe(`${EMAIL}·Org-B`);
+  });
+
+  it('says the email and its organisation beside a name of the person’s own, and the name alone where one line is room', () => {
+    const named = { ...b, displayName: 'work' };
+    const among = tool([a, named]);
+    expect(accountWho(named, among)).toBe(`${EMAIL} · Org B`);
+    expect(accountLabel(named, among)).toBe('work');
+  });
+
+  it('says the plan where the answer named no organisation, and nothing where it named neither', () => {
+    const planned = { ...b, org: null };
+    expect(accountLabel(planned, tool([a, planned]))).toBe(`${EMAIL} · pro`);
+    const bare = { ...b, org: null, plan: null };
+    expect(accountWho(bare, tool([a, bare]))).toBeNull();
+    expect(accountLabel(bare, tool([a, bare]))).toBe(EMAIL);
+  });
+
+  it('says no organisation where no other sign-in of the agent has the email, in any case', () => {
+    const other = { ...b, account: 'other@example.invalid' };
+    const among = tool([a, other]);
+    expect(accountWho(a, among)).toBeNull();
+    expect(accountLabel(a, among)).toBe(EMAIL);
+    const shouted = { ...b, account: EMAIL.toUpperCase() };
+    expect(accountLabel(a, tool([a, shouted]))).toBe(`${EMAIL} · Org A`);
+    // A list handed none tells nothing apart.
+    expect(accountLabel(a)).toBe(EMAIL);
+  });
+
+  it('counts the tool’s own sign-in among them, and tells it apart too', () => {
+    const among = tool([b], { ownAccount: EMAIL, ownOrg: 'Org A', ownPlan: 'max' });
+    expect(accountLabel(b, among)).toBe(`${EMAIL} · Org B`);
+    expect(ownWho(among)).toBe(`${EMAIL} · Org A`);
+    expect(ownWho(tool([b], { ownAccount: 'other@example.invalid', ownOrg: 'Org A' }))).toBe('other@example.invalid');
+  });
+
+  it('never tells a key apart: it names no one signed in', () => {
+    const key = { name: 'acct-0000000c', home: 'h/c', login: 'in' as const, key: '…wxyz', account: EMAIL, org: 'Org C' };
+    expect(accountLabel(key, tool([a, key]))).toBe('API key …wxyz');
+    expect(accountLabel(a, tool([a, key]))).toBe(EMAIL);
   });
 });
 
