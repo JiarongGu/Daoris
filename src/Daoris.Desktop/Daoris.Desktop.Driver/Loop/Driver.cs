@@ -220,6 +220,35 @@ public sealed class Driver(
         init => Context.HelperChoices = value;
     }
 
+    /// <summary>How a brainstorm's turn is run (BRAINSTORM1a): <see cref="DriverBrainstorms.TurnAsync"/>, unless a test hands in a stand-in.</summary>
+    internal Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? BrainstormTurns
+    {
+        get => Context.BrainstormTurns;
+        init => Context.BrainstormTurns = value;
+    }
+
+    /// <summary>How a brainstorm's packet searches the knowledge service, unless a test hands in a stand-in.</summary>
+    internal Func<string, string, CancellationToken, Task<BrainstormSearch>>? BrainstormSearches
+    {
+        get => Context.BrainstormSearches;
+        init => Context.BrainstormSearches = value;
+    }
+
+    /// <summary>How a brainstorm's repository is read, its checkout and its commit: git, unless a test hands in a stand-in (MOD8).</summary>
+    internal Func<string, CancellationToken, Task<(string? Root, string? Revision)>>? BrainstormCheckouts
+    {
+        get => Context.BrainstormCheckouts;
+        init => Context.BrainstormCheckouts = value;
+    }
+
+    private DriverBrainstorms? _brainstorms;
+
+    private DriverBrainstorms Brainstorms => LazyInitializer.EnsureInitialized(ref _brainstorms, () => new DriverBrainstorms(Context, this));
+
+    /// <summary>The brainstorms on file at a look (BRAINSTORM1a, D176): <see cref="DriverBrainstorms.BrainstormsAsync"/>.</summary>
+    internal Task<int> BrainstormsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
+        Brainstorms.BrainstormsAsync(snapshot, taken, events, ct);
+
     /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
     internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
         HandOvers.HandOversAsync(snapshot, events, ct);
@@ -494,6 +523,10 @@ public sealed class Driver(
         // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
         // the cap as a pass does, and each answer handed to the session that asked.
         passes += await HelpersAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+
+        // The brainstorms on file (BRAINSTORM1a, D176): each request frozen into its packet for the person to read, and each one the
+        // person sent run beside the look, taking a slot under the cap as a pass does.
+        passes += await BrainstormsAsync(snapshot, passes, events, ct).ConfigureAwait(false);
 
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
         var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
@@ -2336,7 +2369,7 @@ public sealed class Driver(
         // What the target was composed of, kept beside it on its event with the rules handed beside it (CONTEXT1, D143 point 1);
         // a resume composes nothing, so its record keeps none. Nor a reviewer's (XAGENT1d): its instruction is its own
         // composer's, which the account's sections do not name yet, and an intake's section would say it was one.
-        var account = composed is null || target.Opinion is not null || target.Helper is not null ? null
+        var account = composed is null || target.Opinion is not null || target.Helper is not null || target.Brainstorm is not null ? null
             : rules.Handed is { } rulesHanded ? composed.Account.Beside(rulesHanded)
             : composed.Account;
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an

@@ -74,7 +74,10 @@ public sealed class ServiceHttp : IServiceDoors
         using var request = new HttpRequestMessage(Method(verb), $"{BaseUrl}{path}");
         if (json is not null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
-        return new ServiceReply((int)response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
+        return new ServiceReply((int)response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false))
+        {
+            Tier = response.Headers.TryGetValues("x-daoris-tier", out var tier) ? tier.FirstOrDefault() : null,
+        };
     }
 
     public void Dispose() => _http.Dispose();
