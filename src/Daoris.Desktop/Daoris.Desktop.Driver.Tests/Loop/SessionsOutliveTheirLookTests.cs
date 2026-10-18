@@ -16,7 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class SessionsOutliveTheirLookTests : IDisposable
 {
     /// <summary>How long anything here may take. A look that waits for its sessions waits forever here.</summary>
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    /// <remarks>TESTCLOCK1: every wait here is on a signal (a look, a count), so the bound elapses only on a real failure; it is minutes, as a loaded merge needs.</remarks>
+    private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-outlive-" + Guid.NewGuid().ToString("N")[..8]);
@@ -24,7 +25,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     private readonly StandInLedger _ledger = new();
 
     // Every look and watch here rides this, so a test that fails never leaves a stand-in session waiting.
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(60));
+    private readonly CancellationTokenSource _closing = new(TimeSpan.FromMinutes(5));
 
     public SessionsOutliveTheirLookTests()
     {
