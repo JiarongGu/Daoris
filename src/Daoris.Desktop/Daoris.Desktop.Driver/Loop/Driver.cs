@@ -252,6 +252,33 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// A step's tree the person went on with after reopening its source (FABRIC-CLOSE1c5), brought up to date with the source's new
+    /// submission, read off the wire now, then with the line: what the session is told, or null. A source the service cannot answer is
+    /// read as one naming no commit, so only the line is synced and that said; git or a disk that fails is no reason to hold the start.
+    /// </summary>
+    private async Task<TreeStartSync?> GoOnInSyncAsync(string tree, QuestView step, CancellationToken ct)
+    {
+        QuestView? source = null;
+        try
+        {
+            if (step.Parent is { Length: > 0 } parent) source = await service.FindQuestAsync(parent, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException)
+        {
+            // Read as naming no commit: the session is told only the line was synced.
+        }
+
+        try
+        {
+            return await Context.Trees.GoOnInSyncAsync(tree, $"#{step.Parent}", Planner.SourceCommit(step, source), ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// How a pass is run: <see cref="PassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git and an agent,
     /// which the suite's fast half may not (MOD8). The recheck is run through it (XAGENT1e). Written through to the context.
     /// </summary>
@@ -1175,7 +1202,11 @@ public sealed class Driver(
         // carry-on, a further part gone into its session's tree — starts from the line where the line came to hold some of its commits,
         // and is told what was done. Asked before this start's own hold below, since bringing a tree up to date holds the repository's
         // trees alone; never a reason to hold the start.
-        var inSync = (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
+        // FABRIC-CLOSE1c5 (§E5): the person went on with a step whose source they reopened, so its tree is first brought up to date
+        // with the source's new submission, then with the line; a conflict leaves both, and the session is told.
+        var inSync = resumedIn is { } reopenedIn && start.Resumes is { } stopped && Planner.StoppedByReopen(stopped) && quest.GrewFrom is not null
+            ? await GoOnInSyncAsync(reopenedIn, quest, ct).ConfigureAwait(false)
+            : (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
 
         // 🔴 WSR6's open window (LEFT2): bringing the repository up to date must not rebase a tree a session is
         // starting in. Its trees are held, beside any other start, from choosing the tree until the record is open,
