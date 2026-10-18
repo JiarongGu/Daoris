@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { RunStep } from './run';
-import { addedSaid, runSaid, stateSaid } from './runSaid';
+import { addedSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { WORKING } from './runFixtures';
 
 // WORKFLOW1c5 (D157's WORKFLOW1c5 note, `.claude/knowledge/twins.md`): the English a run says is one table with the driver, its
 // tests' `fixtures/workflow-run-said.json`, which `WorkflowRunSaidTwinTests` holds `WorkflowRunWords` to. Each row is said here
@@ -49,5 +50,13 @@ describe("a run's English, as the driver's table holds it", () => {
       expect(addedSaid(t, { ...stepOf({ kind: 'look', detail: '', said: null }), added: level })).toBe(said);
     }
     expect(addedSaid(t, stepOf({ kind: 'look', detail: '', said: null }))).toBeNull();
+  });
+
+  // FABRIC-WORKFLOW2d: a reopened submission waits on its agent, which the head says as the reopen, never as another repository's answer.
+  it('says a reopened submission in a few words, in English and Chinese', () => {
+    const reopened = { ...WORKING, steps: [{ ...WORKING.steps[0], state: 'waiting-on-agent', detail: 'reopened' }, ...WORKING.steps.slice(1)] };
+    expect(runShort(t, reopened)).toBe('reopened, waits for its agent');
+    expect(runShort(i18n.getFixedT('zh'), reopened)).toBe('已重新打开，等智能体');
+    expect(runSaid(i18n.getFixedT('zh'), reopened.steps[0])).toBe('你重新打开了委托 #q1 的交付：等它的智能体再次交付。');
   });
 });
