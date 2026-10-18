@@ -35,6 +35,17 @@ repository.
   "FullyQualifiedName~AutoLanding"` with `git.process.runsettings`, on a machine loaded by merges and builders: before, 53 m 20 s, 61 tests
   (60 passed; one failed on its own 60 s wait, "the push waits for its branch", a load timeout); after, with the five tests FABRIC-CLOSE1h10
   added, 12 m 35 s test duration (14 m wall with the build), 66 of 66 passed.
+## 2026-10-18 — The merge tool's `--beside` test held its fake gate a minute, and load outlasted it (TESTWAIT4)
+
+- **Symptom:** under load (three builders and a merge's gates) the `--full --beside` test failed `kept local/gate-tree` not matched; green on rerun.
+  Two other failures that day, in `generated` (`local/scratch/` "not ignored", exit 2) and `--passed` (expected 0, got 2), were not seen again.
+- **Root cause:** the fake gate waited on `GATE_HOLD` for 60 s at most, and the test's own steps (a refused second run, a merge, a prune, each a
+  process) took longer under load, so the hold expired, the gate ended and the prune removed the gate tree. The first two failures are the
+  GATEIGNORE1 class (a `git check-ignore` that failed under load was read as "not ignored", a tool error, exit 2); the logs kept hold only green reruns,
+  so the third is that class by its exit code only, not proven.
+- **Fix:** the hold's bound is ten minutes (the test releases it in `finally`, so a failed test still ends), and the test's wait for the gate to start is 5 minutes, not 1.
+  No tool bound was the cause; `tools/merge-branch.mjs` is unchanged.
+- **Verification:** no red (a load race cannot be reproduced without a load generator); the file run three times, plainly.
 
 ## 2026-10-18 — The Work frame's suite was one file that ran 181 s alone and timed out under load (WEBSPEED1)
 
@@ -63,6 +74,19 @@ repository.
   waits on that quest before choosing the hand-on (`AutoLander.PushHeldAsync`). D173's FABRIC-CLOSE1h10 note has the behaviour.
 - **Verification:** red first: `PressedResultTests` (5 failing), and the new Git cases (3 failing, 2 passing as before). Then the
   driver's fast half is 9568 (9561 before), and `AutoLandingTests`, run once by class, passes 65 (60 before).
+## 2026-10-18 — A step gone on with after its session ended normally sat taken with nothing submitted (FABRIC-CLOSE1c13)
+
+- **Symptom:** after the person's go-on cleared a held step's own result (CLOSE1c10), a step whose session had said `ready` and parked,
+  or completed, before its source was reopened sat taken with no submission: nothing went on with it, and its branch never got the
+  source's new work.
+- **Root cause:** the planner's go-on after a reopen read only a session the reopen stopped (`StoppedByReopen`, CLOSE1c2), and the
+  start's rebase onto the new submission (CLOSE1c5) was gated on the same; a park also holds its quest's slot and tree, so a new session
+  beside it could never start.
+- **Fix:** the look tells that session Daoris's words of the go-on, once (`Planner.GoneOnSince`, `ReopenTelling`), the planner's go-on
+  resumes it with them, and the start's gate (`ReopenTelling.BringsToSource`) brings its branch up to date first. D173's
+  FABRIC-CLOSE1c13 note has the behaviour.
+- **Verification:** red first: `PlannerTests` (2), `ReopenGoOnTests` (1), `ReopenTellingTests` (6), then green; the driver's fast half
+  is 9591 (9578 before).
 ## 2026-10-18 — The person's go-on kept a held step's result made on the reopened work (FABRIC-CLOSE1c10)
 
 - **Symptom:** a step that had said `ready` before the person reopened its source went on, at the person's word (`continue`), with that
