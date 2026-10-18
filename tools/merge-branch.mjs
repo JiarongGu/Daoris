@@ -813,6 +813,12 @@ export const REACH = Object.freeze([
     gates: ['driver', 'service'],
     why: "the driver's OpinionRulesTests and the service's HelpSettingProposalTests read the second-opinion rules' table (XAGENT1f4); the CLI's twin runs in verify",
   },
+  // BRAINSTORM1a2: the brainstorm answers' table sits among the driver's tests, and the service's twin validator reads it too.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-answers.json'],
+    gates: ['driver', 'service'],
+    why: "the driver's BrainstormValidationTests and the service's McpBrainstormToolTests read the brainstorm answers' table (BRAINSTORM1a2)",
+  },
   // Before the driver's tests, which would place it first: the modules' test reads it too (BRSCOPE1b).
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/checkout-scope.json'],
@@ -877,6 +883,13 @@ export const REACH = Object.freeze([
     ].map((name) => `src/Daoris.Desktop/Daoris.Desktop.Driver/**/${name}`),
     gates: [...DRIVER_READERS, 'web-unit'],
     why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",
+  },
+  // BRAINSTORM1a2: the service's McpToolRegistrationTests holds the brainstorm posture's list of the connector's tools to its
+  // host's, reading the driver's file by its name; a path rule replaces its lane's, so the driver's readers stay.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver/**/BrainstormPermissions.cs'],
+    gates: [...DRIVER_READERS, 'service'],
+    why: "the driver's own, and the service's McpToolRegistrationTests reads the brainstorm posture's list of the connector's tools (BRAINSTORM1a2)",
   },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.

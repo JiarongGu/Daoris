@@ -46,6 +46,25 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     }
 
     /// <summary>
+    /// BRAINSTORM1a2 (D176 point 2): a brainstorm's pass is denied every tool of the connector but its result, by name, from the
+    /// driver's <c>BrainstormPermissions.ConnectorTools</c>. A tool the connector gains is denied there in the same change, or a pass
+    /// could be offered it. The merge tool's rule for the driver's file runs this suite when it changes.
+    /// </summary>
+    [Fact]
+    public void The_driver_denies_a_brainstorm_pass_every_tool_this_host_advertises()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
+        var source = File.ReadAllText(Path.Combine(
+            root!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Brainstorms", "Domain", "BrainstormPermissions.cs"));
+
+        var list = System.Text.RegularExpressions.Regex.Match(source, @"ConnectorTools\s*=\s*\[(?<names>[^\]]*)\]").Groups["names"].Value;
+        var named = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value);
+
+        Assert.Equal(Advertised, named.Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
     /// The list is the connector's whole: a class of tools left off it is never offered, and nothing else finds one, since
     /// the host registers the list and does not scan.
     /// </summary>
