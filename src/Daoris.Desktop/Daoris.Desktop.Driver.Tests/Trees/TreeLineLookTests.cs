@@ -105,7 +105,7 @@ public sealed class TreeLineLookTests : IDisposable
             {
                 await context.LineAsync("one", "engine", "aurora", CancellationToken.None);
                 theirs.Release();
-                await mine.WaitAsync(TimeSpan.FromSeconds(10));
+                await mine.WaitAsync(Poll.Patience);
                 await context.LineAsync("one", "engine", "aurora", CancellationToken.None);
             }
         }

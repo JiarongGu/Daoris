@@ -64,7 +64,7 @@ public sealed class ProcessStartsTests
 
         // Every call came back to its caller while every start it made was still held.
         Assert.All(calls, call => Assert.False(call.IsCompleted));
-        Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref inside) == 4, TimeSpan.FromSeconds(10)), "four starts never ran");
+        Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref inside) == 4, Poll.Patience), "four starts never ran");
         // The rest wait on the gate, not on a thread: given the time, none more goes in.
         await Task.Delay(200);
         Assert.Equal(4, Volatile.Read(ref inside));

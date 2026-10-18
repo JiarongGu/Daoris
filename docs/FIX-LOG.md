@@ -31,6 +31,18 @@ repository.
   branch owns) pass alone. Also found in the fast half's one run: `DriverWatchTopicsTests.A_thousand_wakes_run_no_remote_sync` asserted
   two reported looks the moment the quest's run had started, but a run starts inside the look and the look is reported after it; it
   now waits for the second report (an ordering race, not a clock one; passes alone and three plain runs of the class).
+## 2026-10-19 — The driver's signal waits were 5-10 seconds, and load elapsed them (TESTPATIENCE1)
+
+- **Symptom:** nearly every merge on 2026-10-18/19 re-ran a gate for a fast test that failed on time alone (TESTCLOCK1's sweep found
+  about 100 such bounds).
+- **Root cause:** `WaitAsync(10 s)`, `Poll.Until(..., 10 s)` and `SpinUntil(..., 10 s)` wait on a signal that arrives in milliseconds
+  and a bound that elapses only on failure, but a starved thread reached ten seconds without a failure.
+- **Fix:** `Poll.Patience` (two minutes), defined once in the tests' `Poll.cs`, replaces the bound at 77 sites in 11 files:
+  `AcpBackgroundTests` 20, `AcpSteerTests` 37, `ToolActionsTests` 8, `ChatTurnsTests` 1, `DrivenInboxTests` 2, `SessionRequestsTests` 2,
+  `NodeRuntimeTests` 2, `ProcessStartsTests` 1, `WorkPeerTests` 2 (were 5 s), `HeldFactsTests` 1, `TreeLineLookTests` 1. Left as they were:
+  the elapsed-time bounds that state the claim, the staging delays, `ChildProcess.RunAsync`'s own 5 s argument, and the 15-30 s bounds
+  (see the hand-back's rows). No assertion changed.
+- **Verification:** the driver's fast half once, 9599 passed (4 m 43 s).
 
 ## 2026-10-18 — A step's next submission after the person's go-on was never sealed (FABRIC-CLOSE1c14)
 
