@@ -600,6 +600,11 @@ public sealed class TreesRoutes(DriverLoop loop)
         }
 
         _loop.Nudge();
+        // RPC1b5: the lines this landing moved are registered at once where the verb asks (`follow`), as the page's next look would
+        // (WSSETUP5); the lines it says ride in `followed` and after the sentence in `said`.
+        var followed = Flag(request, "follow")
+            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
+            : null;
         return new
         {
             Session = id, Done = landed.Landed, landed.Message, landed.Branch,
@@ -613,7 +618,8 @@ public sealed class TreesRoutes(DriverLoop loop)
             LeftOut = LeftOut(landed.LeftOut),
             Conflict = Conflict(landed.Conflict),
             // RPC1b3: what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
-            Said = TreesWords.Land(landed, pluginLines).ToWire(),
+            Said = TreesWords.Land(landed, pluginLines).Followed(followed).ToWire(),
+            Followed = followed?.Out ?? [],
         };
     }
 
@@ -625,6 +631,7 @@ public sealed class TreesRoutes(DriverLoop loop)
     {
         Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Review = (object?)null,
         Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null, Said = said.ToWire(),
+        Followed = Array.Empty<string>(),
     };
 
     /// <summary>The sentence a refusal's words carry without the verb's <c>trees: </c> lead, as the page shows it.</summary>
