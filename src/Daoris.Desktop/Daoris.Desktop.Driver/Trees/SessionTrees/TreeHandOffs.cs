@@ -54,14 +54,15 @@ internal sealed class TreeHandOffs(TreeContext context)
     /// the sentence says how to push by hand. Only a push is kept on the record.</para>
     /// </remarks>
     /// <param name="beforePush">
-    /// The door's judgement under the branch's hold, just before the plugin is told, told whether the hold waited (FABRIC-CLOSE1h8): the
-    /// sentence that holds the push back (<see cref="TreeHand.Withheld"/>), or null to go on. A person's door passes the result of the
-    /// session that last moved the branch (<see cref="PressQuests.HandedAsync(LandedBranch, ServiceClient, CancellationToken)"/>), the
-    /// look its own rule; none judges nothing, as before.
+    /// The door's judgement under the branch's hold, just before the plugin is told (FABRIC-CLOSE1h8), told the session that last moved
+    /// the branch as the record reads under that hold and whether the hold waited (FABRIC-CLOSE1h10): the sentence that holds the push
+    /// back (<see cref="TreeHand.Withheld"/>), or null to go on. A person's door passes the result of the session that last moved the
+    /// branch as it read it (<see cref="PressQuests.HandedAsync(LandedBranch, ServiceClient, CancellationToken)"/>), the look its own rule;
+    /// none judges nothing, as before.
     /// </param>
     internal async Task<TreeHand> HandAsync(
         string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default,
-        Func<bool, CancellationToken, Task<string?>>? beforePush = null)
+        Func<string, bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         // LANDRACE1's review (D173's LANDRACE1 note): one push of a landed branch at a time, a hand-off's and a landing's plugin step
         // alike, so a hand-off beside the landing that is still pushing the branch never pushes it again or opens a second pull request.
@@ -89,7 +90,9 @@ internal sealed class TreeHandOffs(TreeContext context)
 
         // FABRIC-CLOSE1h8 (D173's note): the door's judgement once more, just before its plugin is told, past which the push has begun.
         // Held here, no plugin is spoken to and nothing is kept, on the record or for a door behind this one: the branch stands as it was.
-        if (beforePush is not null && await beforePush(pushing.Waited, ct).ConfigureAwait(false) is { } withheld)
+        // FABRIC-CLOSE1h10: told the session that last moved the branch as the record reads under this hold, so a later session's advance
+        // made while this waited is judged on that session's quest, never pushed on the one the door read.
+        if (beforePush is not null && await beforePush(entry.LastSession(), pushing.Waited, ct).ConfigureAwait(false) is { } withheld)
         {
             return new(false, $"`{entry.Branch}` was not handed on. {Sentence(char.ToUpperInvariant(withheld[0]) + withheld[1..])}", entry.Branch)
             {

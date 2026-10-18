@@ -227,14 +227,15 @@ public sealed class PressedResultTests
             return Task.FromResult<string?>($"q{id[1..]}");
         }
 
-        var pressed = await PressQuests.HandedAsync(Landed(advancedBy), SessionQuest, service.ReadAsync);
+        var handed = await PressQuests.HandedAsync(Landed(advancedBy), SessionQuest, service.ReadAsync);
 
-        Assert.NotNull(pressed);
+        Assert.NotNull(handed.Pressed);
+        Assert.Equal(session, handed.Session);
         Assert.Equal([session], asked);
-        Assert.Equal(quest, pressed.Pressed.Id);
+        Assert.Equal(quest, handed.Pressed.Pressed.Id);
         Assert.Equal(1, service.Reads);
         service.Quests[quest] = Submitted(sequence: 2) with { Id = quest };
-        Assert.Contains($"`daoris-driver trees hand {session}`", await pressed.BeforePush(true, default));
+        Assert.Contains($"`daoris-driver trees hand {session}`", await handed.BeforePush(session, true, default));
     }
 
     /// <summary>
@@ -250,10 +251,77 @@ public sealed class PressedResultTests
         var service = new Service();
         if (status is not null) service.Quests["q2"] = Quest(status);
 
-        var pressed = await PressQuests.HandedAsync(
+        var handed = await PressQuests.HandedAsync(
             Landed("s2"), (_, _) => Task.FromResult(status is null ? null : (string?)"q2"), service.ReadAsync);
 
-        Assert.Null(pressed);
+        Assert.Null(handed.Pressed);
+        Assert.Null(await handed.BeforePush("s2", true, default));
         Assert.Equal(reads, service.Reads);
+    }
+
+    // ——— a later session's advance while the hand-off waited (FABRIC-CLOSE1h10)
+
+    /// <summary>
+    /// FABRIC-CLOSE1h10 (D173's note): the door read the branch with s1 last, and the record under the branch's hold names s2, whose done
+    /// moved it on meanwhile. The hand-off is judged on s2's quest, by the person's rule: its result not in (taken back, or gone) holds the
+    /// push back in words that name s2's hand-off; standing, held or not, it goes on, since the hand-off is the person's own word; a session
+    /// on no quest holds it to nothing. s1's result moving does not count, as it is not the branch's last. s2's quest is read every time,
+    /// whether the hold waited or not: the door never read it.
+    /// </summary>
+    [Theory]
+    [InlineData("Done", false)]
+    [InlineData("submitted-held", false)]
+    [InlineData("Open", true)]
+    [InlineData("gone", true)]
+    [InlineData(null, false)]
+    public async Task A_hand_off_whose_branch_a_later_session_moved_on_is_judged_on_that_sessions_quest(string? later, bool holds)
+    {
+        var service = new Service();
+        service.Quests["q1"] = Submitted() with { Id = "q1" };
+        if (later is "Done" or "Open") service.Quests["q2"] = Quest(later) with { Id = "q2" };
+        if (later is "submitted-held") service.Quests["q2"] = Submitted(held: true) with { Id = "q2" };
+        var asked = new List<string>();
+        Task<string?> SessionQuest(string id, CancellationToken ct)
+        {
+            asked.Add(id);
+            return Task.FromResult(id == "s1" ? "q1" : later is null ? null : (string?)"q2");
+        }
+
+        var handed = await PressQuests.HandedAsync(Landed(), SessionQuest, service.ReadAsync);
+        service.Quests["q1"] = Submitted(sequence: 2) with { Id = "q1" };
+        var withheld = await handed.BeforePush("s2", false, default);
+
+        Assert.Equal(["s1", "s2"], asked);
+        Assert.Equal(later is null ? 1 : 2, service.Reads);
+        if (!holds)
+        {
+            Assert.Null(withheld);
+            return;
+        }
+
+        Assert.NotNull(withheld);
+        Assert.Contains("its quest was taken back", withheld, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("its push was not tried", withheld);
+        Assert.Contains("`daoris-driver trees hand s2`", withheld);
+    }
+
+    /// <summary>
+    /// The parent's decision 4: where no later session moved the branch, the hand-off is judged exactly as FABRIC-CLOSE1h8 judges it, with
+    /// no read more: an unbound session reads nothing, and a done that did not wait is not read again.
+    /// </summary>
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("Done", 1)]
+    public async Task A_hand_off_whose_branch_no_later_session_moved_reads_no_more_than_before(string? status, int reads)
+    {
+        var service = new Service();
+        if (status is not null) service.Quests["q1"] = Quest(status);
+        var asked = 0;
+
+        var handed = await PressQuests.HandedAsync(
+            Landed(), (_, _) => { asked++; return Task.FromResult(status is null ? null : (string?)"q1"); }, service.ReadAsync);
+
+        Assert.Null(await handed.BeforePush("S1", false, default));
+        Assert.Equal((1, reads), (asked, service.Reads));
     }
 }

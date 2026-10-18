@@ -161,7 +161,8 @@ public sealed class AutoLander(
         }
 
         // FABRIC-CLOSE1h2: its branch is made and recorded and its push was held back, so it is handed on, never made again.
-        if (entry.Last is { Code: AutoLandingCode.PushHeld } held && await PushHeldAsync(entry, held, world, ct).ConfigureAwait(false) is { } handOn)
+        if (entry.Last is { Code: AutoLandingCode.PushHeld } held
+            && await PushHeldAsync(entry, held, world, looked, ct).ConfigureAwait(false) is { } handOn)
         {
             return handOn;
         }
@@ -338,7 +339,7 @@ public sealed class AutoLander(
                 judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
                 return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
             },
-            beforePush: (waited, token) => BeforePushAsync(choice, waited, token)).ConfigureAwait(false);
+            beforePush: (waited, token) => BeforePushAsync(choice, entry.Session, waited, token)).ConfigureAwait(false);
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
         if (judgedAgain is not null) return judgedAgain;
         var code = AutoLandingRules.CodeOf(landed);
@@ -373,38 +374,66 @@ public sealed class AutoLander(
     /// for a hold, a reopen or a later submission. A closure graph's submission is read every time; a plain done only where the push
     /// waited behind another push of its branch, so a landing that waited for nothing reads nothing more (LANDGIT1's counts stand).
     /// </summary>
+    /// <param name="last">
+    /// The session that last moved the branch, as its record reads under the branch's hold (FABRIC-CLOSE1h10, D173's note): another than
+    /// the choice's where a later session's done moved it on since the look chose it, and then that session's quest is judged instead, read
+    /// every time, by the same rule (taken back or held stops the push). The landing's own push passes the choice's session.
+    /// </param>
     /// <returns>Why the push is held back, as the landing's sentence says it; null where it goes on.</returns>
-    private async Task<string?> BeforePushAsync(AutoChoice choice, bool waited, CancellationToken ct)
+    private async Task<string?> BeforePushAsync(AutoChoice choice, string last, bool waited, CancellationToken ct)
     {
-        if (!waited && !QuestResults.Submitted(choice.Quest)) return null;
-        var quest = await world.Again().QuestAsync(choice.Entry.Quest, ct).ConfigureAwait(false);
+        var later = !string.Equals(last, choice.Entry.Session, StringComparison.OrdinalIgnoreCase);
+        if (!later && !waited && !QuestResults.Submitted(choice.Quest)) return null;
+        var fresh = world.Again();
+        // A later session on no quest holds nothing of the look's: its work was the person's press, as the hand-off's door holds it.
+        if ((later ? QuestOf(await fresh.RecordsAsync(ct).ConfigureAwait(false), last) : choice.Entry.Quest) is not { } id) return null;
+        var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
         var why = !QuestResults.Judged(quest) ? "its quest was taken back"
-            : !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
+            : !later && !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
             : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
             : null;
         return why is null ? null
             : $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first look once its quest stands "
-              + $"again hands it on, or `daoris-driver trees hand {choice.Entry.Session}` does now";
+              + $"again hands it on, or `daoris-driver trees hand {last}` does now";
     }
+
+    /// <summary>The quest a session's record names, null where it names none or the records hold no such session.</summary>
+    private static string? QuestOf(IReadOnlyList<SessionRecord> records, string session) =>
+        records.FirstOrDefault(record => string.Equals(record.Id, session, StringComparison.OrdinalIgnoreCase))?.Quest;
+
+    /// <summary>A quest the look would land on now: its result in, and no hold for the person's yes but the review's own.</summary>
+    private static bool Stands([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] QuestView? quest) =>
+        quest is not null && QuestResults.Judged(quest) && !(quest.Held && quest.Hold != EvidenceCodes.Unreviewed);
 
     /// <summary>
     /// A due entry whose push was held back after its branch was made (FABRIC-CLOSE1h2): its quest read as the look reads a hold, then
     /// its tree's tip. While its quest is held, taken back or not submitted again, it waits, said once already. Once it stands, a tree
     /// still at the commit its landing judged is handed on (<see cref="TreeHandOffs"/>): one push of the branch as made, never a second
     /// branch. A tree whose work went on past it is landed as any later done of the session is (null here), which moves the made
-    /// branch on and pushes the whole once.
+    /// branch on and pushes the whole once. Where a later session's done moved the branch on since (FABRIC-CLOSE1h10), its work rides
+    /// the hand-on, so that session's quest is read too and must stand as well.
     /// </summary>
     private async Task<(string? Said, AutoChoice? Choice)?> PushHeldAsync(
-        AutoLanding entry, AutoTry held, IAutoLandingWorld world, CancellationToken ct)
+        AutoLanding entry, AutoTry held, IAutoLandingWorld world, LookRecords looked, CancellationToken ct)
     {
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
-        if (quest is null || !QuestResults.Judged(quest) || quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed) return (null, null);
+        if (!Stands(quest)) return (null, null);
 
         // Handed on meanwhile by the person's own `trees hand`, or its record gone with its branch: nothing is handed on twice.
         if (trees.Recorded.Landing(entry.Session) is not { } landing
             || landing is { Pushed: true } && string.Equals(landing.PushedTip, landing.Tip, StringComparison.OrdinalIgnoreCase))
         {
             return (Closed(entry, AutoLandingCode.Already, branch: held.Branch), null);
+        }
+
+        // FABRIC-CLOSE1h10: a hand-on its later session's quest would hold back again (BeforePushAsync, under the branch's hold) waits
+        // instead, said once already, so no look keeps a try of it while that quest is held or taken back.
+        var last = landing.LastSession();
+        if (!string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase)
+            && QuestOf(await looked.ReadAsync(ct).ConfigureAwait(false), last) is { } later
+            && !Stands(await world.QuestAsync(later, ct).ConfigureAwait(false)))
+        {
+            return (null, null);
         }
 
         var (tip, status, _) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
@@ -426,8 +455,9 @@ public sealed class AutoLander(
             ? Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(common)) ?? entry.Tree
             : entry.Tree;
         // FABRIC-CLOSE1h8: its quest judged once more just before the plugin is told, by the look's own rule (a hold stops it too), so a
-        // hand-off that waited behind another push of the branch tells no plugin where its quest moved meanwhile.
-        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct, (waited, token) => BeforePushAsync(choice, waited, token))
+        // hand-off that waited behind another push of the branch tells no plugin where its quest moved meanwhile. FABRIC-CLOSE1h10: the
+        // quest of the session that last moved the branch as the record reads there, so a later session's work rides no earlier quest.
+        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct, (last, waited, token) => BeforePushAsync(choice, last, waited, token))
             .ConfigureAwait(false);
         // Held back there, the branch stands made as it was, so it stays `push-held` for the first look once its quest stands again: a
         // refusal would be kept at this tip and never tried again, since the tree does not move.
