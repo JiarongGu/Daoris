@@ -16461,3 +16461,33 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-CLOSE1h6 — a session due again after a closed try is tried again** (driver; after CLOSE1h). `AutoLandings.Due` reopens an entry with its tries kept, but `AutoLandingRules.ShouldTry` answers no for a last try that closed it, so a submission reopened then readied again, and a done after words went on past a landing (D137), are never tried. Contract: D145 point 2, D137, LAND2c, D173's FABRIC-CLOSE1h note (*Enrolled and kept due*). Proof (Git, red first): a reopened submission readied again lands at the next look; a done after words went on moves the made branch on with one push.
 
 **Outcome** 2026-10-18: a session due again after a try that closed its entry is judged afresh (`AutoLanding.Reopened`; `ShouldTry` and `LandingWaits.Of` read it as a first try); one still due on its own last try keeps its rule. Seen red first: D137's done after words went on past a landing (the ordinary automatic landing, no closure graph, so the owner's install too wherever a rule accepts automatically) never moved the made branch on, and a reopened submission readied again never landed. On Opus: about 95 tool calls. Detail: D173's FABRIC-CLOSE1h6 note; FIX-LOG 2026-10-18.
+
+## FABRIC-CLOSE1d2 — Submitted wherever a quest's status is drawn (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1d2 — Submitted wherever a quest's status is drawn** (web; after CLOSE1d; §E5). The chain strip, the map's detail, an ask's work and the overview still say *taken* for a submitted quest: use `shownStatus` and the reopened step's pill there. Proof: `ChainStrip`, `MapDetail`, `AskWork` and `OverviewView` tests on a submitted and a reopened quest; `names:check --strict`.
+
+**Outcome** 2026-10-18: the chain strip and line, the map's detail, an ask's work, the Overview and the session relations read a closure graph's submitted quest as *submitted* (已交付) and draw *source reopened* for a held step, through one shared `QuestStatus`; the Overview times it by the submission; a quest no closure holds draws as before. On Sonnet: about 70 tool calls. Detail: D173's FABRIC-CLOSE1d2 note.
+
+## FABRIC-CLOSE1h7 — a push held back is looked at by its quest's wake (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1h7 — a push held back is looked at by its quest's wake** (driver; after CLOSE1h2; FABRIC-END7). `LandingWaits.Of` (`Trees/Landing/LandingWakes.cs:49`) has no case for `push-held`, so such an entry waits on the whole look at `pollSeconds`: a `quests` wake (the hold's release, a reopen, the next submission) does not concern it. Proof (fast, red first): `LandingWakesTests`' table gains `push-held` rows, concerned by `ledger`/`quests` and the configuration, not by `refs` or `ledger`/`sessions`.
+
+**Outcome** 2026-10-18: `LandingWaits.Of` reads `push-held` as `quests`, so a push held back is looked at by its quest's wake (a hold let go, a reopen, the next submission), not only by the whole look. On Opus, with CLOSE1h3. Detail: D173's FABRIC-CLOSE1h7 note; FIX-LOG.
+
+## FABRIC-CLOSE1h3 — the press and an entry's Accept judged again under their holds (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1h3 — the press and an entry's Accept judged again under their holds** (driver; after CLOSE1h; D145, LANDRACE1). Only the automatic landing is re-judged under the tree's hold and before its push. The parent's default: a quest's hold does not stop the person's own press, the submission it was made on moving does. Proof: a press waiting behind another landing of the tree, whose submission is reopened or replaced meanwhile, makes nothing; a held but current one still lands.
+
+**Outcome** 2026-10-18: the person's press (route and terminal) and an entry's or ask's Accept are held to the result the press was made on (`PressQuests`, `PressedResult`), judged again under the tree's hold and before the push; a moved result makes nothing, or at the push keeps the branch and names the hand-off. A quest's hold does not stop a press (the parent's default), a press with no quest or an unfinished one lands as before, each entry part is held to its own quest, and a part held at its push stops the parts after it. On Opus: about 95 tool calls with CLOSE1h7. Detail: D173's FABRIC-CLOSE1h3 note (its four decisions); §E5's amendment; FIX-LOG.
+
+## FABRIC-CLOSE1c4 — a source's reopen on the wire (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1c4 — a source's reopen on the wire** (service; after CLOSE1c; §E5, `quest-operations.md`). The service clears the reopened submission and keeps the person's note only in the `reopened` operation, so the driver cannot tell a reopened source from one not yet `ready`, nor which session submitted. The source's answer carries its last reopen no later submission answered (its identity, the submission it reopened, the note), and a submission names the session that said `ready`. Proof: a service test (reopen shows it, the next `ready` clears it, replay keeps one), `LocalHostTests` on the wire, the driver client reading it and its absence from an older host.
+
+**Outcome** 2026-10-18: a source quest answers its last reopen no later submission answered (`reopened`: machine, sequence, `of`, the person's note, `at`), derived by the replay and cached, rows from before replayed once on open; a submission names the session that said its ready (`submission.session`, on the `submitted` operation and the sync wire). Both on `QuestResponse` and `quest_list`, read into the driver's `QuestView`; no driver behaviour (CLOSE1c8, which also derives the reopened submission's session onto the reopen). On Opus: about 105 tool calls. Detail: D173's FABRIC-CLOSE1c4 note; D68's note.
+
+## FABRIC-CLOSE1q5 — the terminal's `work held` judged on the last read too (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1q5 — the terminal's `work held` judged on the last read too** (driver; after CLOSE1q3). The terminal has no runtime, so it lists a moved close with all three words: persist the last pass's `{quest id → submission machine, sequence}` beside the node records, read-only for the doors. Proof: a `HeldAttempts.Run` test listing a moved close with `resend` alone.
+
+**Outcome** 2026-10-18: the runtime keeps its last fresh read of the quests as `workflows/quests.json` (each quest's submission machine and sequence), written only under the lease and deleted on disarm; the terminal's `work held` judges a held close on it, so a moved close lists `resend` alone with `submission-moved`. A read left by a closed desktop errs only toward today's listing. On Sonnet: about 33 tool calls. Detail: D173's FABRIC-CLOSE1q5 note.
