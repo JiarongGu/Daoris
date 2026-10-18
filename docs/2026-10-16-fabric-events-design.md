@@ -1674,6 +1674,10 @@ reopen is refused once the step closed on the submission.
 submission as its done. The automatic landing is judged again once it holds its tree, before anything is made: its commitment point. A
 hold or reopen before it stops the landing; one after it applies to what follows, and a push made is never retracted.
 
+**Amended (FABRIC-CLOSE1c5, D173's note).** On the go-on, the step's branch is brought up to date by a replay, as the tree sync's: its own
+commits rebased onto the new submission's commit (its evidence's, on the wire), then the line. A conflict leaves the tree as it was and
+nothing else changes; the session is told the person must resolve it. With no commit known, the line alone is synced, and that said.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
