@@ -18,7 +18,7 @@ import { WorkFrame } from '../work/WorkFrame';
 export const userEvent = {
   ...realUserEvent,
   type: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['type']>) => realUserEvent.setup({ delay: null }).type(...args),
-  keyboard: (...args: Parameters<typeof realUserEvent.keyboard>) => realUserEvent.setup({ delay: null }).keyboard(...args),
+  keyboard: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['keyboard']>) => realUserEvent.setup({ delay: null }).keyboard(...args),
 };
 
 export const DRIVER_STATE = { drivable: ['engine'], holds: [], trees: [], running: ['s1a2b3c4'] };
