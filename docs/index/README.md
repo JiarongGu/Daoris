@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (172)
+## Files over 40 KB (173)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -117,7 +117,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 77 | 1489 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 757 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 48 | 846 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 42 | 643 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 44 | 676 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 58 | 1015 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 49 | 848 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 55 | 873 |
@@ -151,8 +151,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 82 | 1481 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 140 | 2512 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 233 | 4050 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 141 | 2518 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 234 | 4060 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
@@ -163,6 +163,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 49 | 846 |
 | `src/Daoris.Service/Daoris.Service.Tests/Quests/QuestClosureTests.cs` | 42 | 786 |
+| `src/Daoris.Service/Daoris.Service.Tests/Quests/QuestReopenTests.cs` | 42 | 724 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 88 | 1787 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
 | `src/Daoris.Service/README.md` | 90 | 776 |

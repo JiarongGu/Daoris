@@ -19,6 +19,9 @@ with the version and date at release.
 - Under *Accept automatically*, a session you carry on with more words after its work landed now lands again when it is done
   again: its branch moves on and its pull-request plugin pushes once. Before, the later work waited for your Accept. A session
   stuck that way lands at the first look after the update, or is closed where nothing new is in it.
+- Under *Accept automatically*, work whose branch was made but whose push waits for a second opinion now has that opinion asked by
+  the driver at its next look, as the landing's gate says, and pushes once it settles. Before, it waited until you asked one
+  (`daoris-driver opinion ask`), and an ask made then could be dropped at the next look before it was read.
 - The full gates can run in a worktree of their own while merges continue (`node tools/merge-branch.mjs --full --beside`,
   GATEWT1), and `publish:desktop --stage --from-gated <commit>` stages the commit they passed, built in that worktree.
 - On Windows, where the git Daoris finds is Git for Windows', Daoris's own git commands now start one process where they

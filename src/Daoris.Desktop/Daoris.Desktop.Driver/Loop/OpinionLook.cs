@@ -47,15 +47,20 @@ public static class OpinionLook
     /// <summary>
     /// Why an opinion owed is closed now, or null where it is still owed: its quest no longer done, its rule no longer reading at
     /// its occasion, its tree gone, its work landed (a landing recorded for it, or nothing in its tree that no branch of the
-    /// person's holds), or, under <c>steps</c>, no next step of its chain left to hold.
+    /// person's holds, where no automatic landing holds that branch's push back), or, under <c>steps</c>, no next step of its chain
+    /// left to hold.
     /// </summary>
     /// <param name="process">
     /// Its run's process (WORKFLOW1f): under a named workflow, whether its version still reads at the occasion. One that cannot be
     /// read here closes nothing, since it may read once it can. Null reads the rule live, as before.
     /// </param>
+    /// <param name="pushHeld">
+    /// The sessions whose automatic landing holds its push back (FABRIC-CLOSE1h15, <see cref="PushHeld"/>): a landing whose push one of
+    /// them holds has not landed. Null or empty, a landing recorded closes it, as before.
+    /// </param>
     public static async Task<string?> ClosesAsync(
         OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
-        WorkflowProcess? process = null)
+        WorkflowProcess? process = null, IReadOnlyCollection<string>? pushHeld = null)
     {
         // FABRIC-CLOSE1h (§E5): in a closure graph its submission is the done it waits on.
         if (!QuestResults.Judged(quest)) return OpinionDueClosed.Undone;
@@ -65,13 +70,37 @@ public static class OpinionLook
         if (!reads) return OpinionDueClosed.Off;
 
         if (TreeFolders.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
-        if (landed.Landing(due.Session) is { } landing && landing.Names(due.Session)) return OpinionDueClosed.Landed;
+        // FABRIC-CLOSE1h15: a branch made whose push is held back has not landed, so the opinion that holds that push stays owed and the
+        // look asks it, as the gate says; it closes once the push lands at the landing's tip, or once no automatic landing holds it back.
+        var landing = landed.Landing(due.Session);
+        var held = landing is not null && HoldsPush(landing, pushHeld);
+        if (landing is not null && !held) return OpinionDueClosed.Landed;
         if (due.Occasion == OpinionRules.Steps
             && !chain.Any(step => string.Equals(step.Parent, due.Quest, StringComparison.OrdinalIgnoreCase) && step.Status == "Open"))
         {
             return OpinionDueClosed.Past;
         }
 
+        // Its tree's commits are all on the branch made, so git alone would call it landed.
+        if (held) return null;
         return await TreeFollows.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false) == 0 ? OpinionDueClosed.Landed : null;
     }
+
+    /// <summary>
+    /// The sessions whose automatic landing made its branch and holds its push back (FABRIC-CLOSE1h15): each open entry whose last try is
+    /// <c>push-held</c>, read once for a look's opinions. A due list that does not read is none.
+    /// </summary>
+    public static IReadOnlySet<string> PushHeld(string home) =>
+        new AutoLandings(home).Open().Where(entry => entry.Last?.Code == AutoLandingCode.PushHeld).Select(entry => entry.Session)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether <paramref name="landing"/>'s push is held back: a branch that stands, not pushed at its tip, whose push one of
+    /// <paramref name="pushHeld"/> holds, the session that made it or one whose done moved it on (CLOSE1h10), since the hand-on pushes
+    /// the whole.
+    /// </summary>
+    private static bool HoldsPush(LandedBranch landing, IReadOnlyCollection<string>? pushHeld) =>
+        pushHeld is { Count: > 0 } && landing.GoneAt is null
+        && !(landing.Pushed && string.Equals(landing.PushedTip, landing.Tip, StringComparison.OrdinalIgnoreCase))
+        && pushHeld.Any(landing.Names);
 }

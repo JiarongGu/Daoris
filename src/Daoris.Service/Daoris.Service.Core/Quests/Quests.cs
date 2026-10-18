@@ -1953,6 +1953,16 @@ public sealed class QuestStore
                 return new QuestReopening(QuestReopenRefusal.NotWithdrawn, standing, null);
             }
 
+            // FABRIC-CLOSE1c19: the go-on clears the step's own submission, and a successor already closed on it is not reopened (a reopen
+            // takes no close back), so the step's next submission would never be sealed. Refused as the person's reopen of it is.
+            if (standing.Submission is { } closedOn
+                && await SuccessorAsync(standing, transaction, inside).ConfigureAwait(false) is
+                    { Status: QuestStatus.Done or QuestStatus.Declined } closed
+                && Grows(closed, new QuestOperationRef(closedOn.Machine, closedOn.Sequence)))
+            {
+                return new QuestReopening(QuestReopenRefusal.StepClosed, standing, closed);
+            }
+
             // The source as this store holds it: its current submission, unheld, is what the step grows from now. Another machine's
             // submission reaches this store by sync, and the word waits for it.
             var source = standing.Parent is { Length: > 0 } parent ? await FindAsync(parent, transaction, inside).ConfigureAwait(false) : null;
