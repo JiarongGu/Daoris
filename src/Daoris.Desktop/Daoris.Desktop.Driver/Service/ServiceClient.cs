@@ -137,6 +137,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var closed = lastRun.Any(run => run.Value.WordsWaiting && !open.Contains(run.Key, StringComparer.OrdinalIgnoreCase))
             ? ReadClosed(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false), lastRun, open)
             : [];
+        var (claims, whys) = await CarryOnClaimsAsync(quests, lastRun, ct).ConfigureAwait(false);
         return new Snapshot(quests, repositories, active, ReadStrikes(records))
         {
             LastRun = lastRun,
@@ -145,7 +146,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Started = ReadStarted(records, active),
             Closed = closed,
             // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
-            Takes = ReadTakes(records, await CarryOnClaimsAsync(quests, lastRun, ct).ConfigureAwait(false)),
+            Takes = ReadTakes(records, claims, whys),
             // Each record's entry, which a quest's publisher names its line by (SESSONE1d).
             Entries = ReadEntries(records),
         };
@@ -157,10 +158,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before. A
     /// step the person's reopen holds is not asked (FABRIC-CLOSE1c2): nothing carries it on until their go-on, which the next look reads.
     /// </summary>
-    private async Task<IReadOnlyDictionary<string, string>> CarryOnClaimsAsync(
+    private async Task<(IReadOnlyDictionary<string, string> Claims, IReadOnlyDictionary<string, string?> Whys)> CarryOnClaimsAsync(
         IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, CancellationToken ct)
     {
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var whys = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in quests)
         {
             if (quest is not { Status: "Taken", Awaits: null or "", HeldByReopen: false }
@@ -171,7 +173,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
             try
             {
-                claims[quest.Id] = await ClaimAsync(quest.Id, ct).ConfigureAwait(false);
+                (claims[quest.Id], whys[quest.Id]) = await ClaimStandingAsync(quest.Id, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
                                               // The client's own timeout (DEV3a): a host that took the question and stalled.
@@ -181,7 +183,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             }
         }
 
-        return claims;
+        return (claims, whys);
     }
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
@@ -1790,7 +1792,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// that did not stand down, which names another machine's take. A teammate's mark is never this machine's.
     /// </summary>
     /// <param name="claims">This machine's claim on each quest read, by quest id (<see cref="ClaimAsync"/>).</param>
-    internal static IReadOnlyDictionary<string, QuestTake> ReadTakes(string json, IReadOnlyDictionary<string, string> claims)
+    /// <param name="whys">Why a lost claim lost, by quest id (<see cref="ClaimStandingAsync"/>), where the host said.</param>
+    internal static IReadOnlyDictionary<string, QuestTake> ReadTakes(
+        string json, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, string?>? whys = null)
     {
         var took = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var teammates = new Dictionary<string, (string Id, DateTimeOffset At)>(StringComparer.OrdinalIgnoreCase);
@@ -1813,7 +1817,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
         return claims.ToDictionary(
             pair => pair.Key,
-            pair => new QuestTake(pair.Value, took.Contains(pair.Key), teammates.TryGetValue(pair.Key, out var teammate) ? teammate.Id : null),
+            pair => new QuestTake(pair.Value, took.Contains(pair.Key), teammates.TryGetValue(pair.Key, out var teammate) ? teammate.Id : null,
+                whys is not null && whys.TryGetValue(pair.Key, out var why) ? why : null),
             StringComparer.OrdinalIgnoreCase);
     }
 

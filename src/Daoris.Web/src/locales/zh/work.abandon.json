@@ -28,6 +28,7 @@
   "work.abandon.piece.raw": "{{piece}}",
   "work.abandon.why.takenElsewhere": "已在 {{machine}} 上接下：它的工作属于那台机器；若要在那里停止，请在它的页面上谢绝",
   "work.abandon.why.takenElsewhereUnnamed": "已在另一台机器上接下：它的工作属于那台机器；若要在那里停止，请在它的页面上谢绝",
+  "work.abandon.why.sourceReopened": "你重新打开了该步骤所基于的工作，这一操作先于本机的接下到达了远端；该步骤已重新开放，按现在的工作进行",
   "work.abandon.why.takenOutside": "在本机以 Daoris 之外的方式接下：它的工作在接下者工作的地方，不在 Daoris 建的工作树里",
   "work.abandon.why.done": "已完成：完成的工作保留它的记录",
   "work.abandon.why.teammate": "它在 {{machine}} 上运行；本机发出的任何请求都到不了它",

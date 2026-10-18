@@ -33,9 +33,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 968 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 53 | 974 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 112 | 2134 |
-| `src/Daoris.Web/src/agents/agents.test.ts` | 41 | 691 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 53 | 982 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 115 | 2187 |
+| `src/Daoris.Web/src/agents/agents.test.ts` | 45 | 774 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/app/App.tsx` | 73 | 1317 |
 | `src/Daoris.Web/src/data/api.ts` | 41 | 684 |
@@ -84,7 +84,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Quests/IntakeTests.cs` | 47 | 991 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Quests/PlannerTests.cs` | 81 | 1606 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs` | 69 | 1393 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/AbandonTests.cs` | 44 | 791 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/AbandonTests.cs` | 45 | 825 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/HistoryClearingTests.cs` | 49 | 887 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsCommandTests.cs` | 46 | 904 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs` | 57 | 1163 |
@@ -110,12 +110,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 68 | 1108 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1155 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 86 | 1457 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 86 | 1461 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 718 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 139 | 2482 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 140 | 2487 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 59 | 1282 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 77 | 1489 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 757 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 48 | 846 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 44 | 676 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 58 | 1015 |
@@ -152,7 +152,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 141 | 2518 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 232 | 4040 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 234 | 4060 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |

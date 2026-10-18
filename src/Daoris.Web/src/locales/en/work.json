@@ -45,6 +45,7 @@
   "work.handOver.refused.notConversation": "This is a quest’s session, which is handed over from a terminal for now: daoris-driver sessions hand-over.",
   "work.handOver.refused.questClosed": "Its quest is not open or taken any more, so there is no work left to hand over.",
   "work.handOver.refused.questElsewhere": "Its quest is not taken by this machine, so its work is not this machine’s to hand over.",
+  "work.handOver.refused.questReopened": "Its quest lost its take because you reopened the work its step grew from, so its work is not this machine’s to hand over.",
   "work.handOver.refused.notLastRun": "A later session here carries this quest: hand that one over.",
   "work.handOver.refused.parked": "It is waiting on you: answer it instead.",
   "work.handOver.refused.noDoor": "That agent cannot drive this repository until it has adopted Daoris: choose another agent, or adopt the repository.",

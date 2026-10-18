@@ -159,6 +159,15 @@ export type HarnessEnded = {
   problem: string | null;
   /** Who signed in, for a sign-in — the tool's own answer (D66 §3); null when it did not say. */
   account?: string | null;
+  /** The organisation and the plan the tool named beside who (ACCOUNTID1); null where it named none, absent from an older shell. */
+  org?: string | null;
+  plan?: string | null;
+  /**
+   * The name the driver offers the account (ACCOUNTID1, `AccountNames.Offered`): who signed in, or with the organisation
+   * (else the plan) beside it where another account already has the email; null where none tells them apart and the person
+   * names it. The page offers it as it is, and holds no copy of the rule. Absent from an older shell.
+   */
+  offered?: string | null;
   /** For a sign-in to another account: whether it left one behind — only when it finished. */
   kept?: boolean | null;
   /** For a sign-in: where the account runs now (ACCT1), none where no list or default holds it; absent from an older shell. */

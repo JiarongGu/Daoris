@@ -475,6 +475,28 @@ public sealed class AbandonTests : IDisposable
         Assert.Contains("daoris-driver ask --resume a1", said);
     }
 
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1c20: a take lost to the person's own reopen is kept for that reason, never as another machine's take, in the
+    /// words of the stop that says it (FABRIC-CLOSE1c18).
+    /// </summary>
+    [Fact]
+    public async Task A_take_lost_to_the_persons_reopen_is_kept_as_that_and_not_as_another_machines()
+    {
+        var events = new List<string>();
+        var ledger = Family();
+        ledger.Take("q3", "lost");
+        ledger.LoseToReopen("q3");
+        using var service = ledger.Client();
+
+        var plan = (await WorkAbandoning.PlanAsync(World(service, Trees(events), events), WorkScope.Quest, "q3"))!;
+
+        var keep = Assert.Single(plan.Quests, each => each.Quest.Quest.Id == "q3");
+        Assert.Equal((AbandonAct.Keep, AbandonWhy.SourceReopened), (keep.Act, keep.Why));
+        var said = WorkAbandoning.Lines(plan);
+        Assert.Contains(said, line => line.Contains("you reopened", StringComparison.Ordinal));
+        Assert.DoesNotContain(said, line => line.Contains("another machine", StringComparison.Ordinal));
+    }
+
     /// <summary>One quest's work: the quest and the question its session asked, its session and its tree, and no ask to close.</summary>
     [Fact]
     public async Task A_quests_work_is_the_quest_and_what_its_sessions_asked_and_closes_no_ask()
@@ -698,6 +720,18 @@ public sealed class AbandonTests : IDisposable
             }
         }
 
+        /// <summary>The claim lost to the person's reopen of the work the step grew from: the claim door says <c>source-reopened</c> beside it (FABRIC-CLOSE1c18).</summary>
+        public void LoseToReopen(string id)
+        {
+            lock (_gate)
+            {
+                _claims[id] = "lost";
+                _whys[id] = "source-reopened";
+            }
+        }
+
+        private readonly Dictionary<string, string> _whys = new(StringComparer.OrdinalIgnoreCase);
+
         public void Publish(JsonObject quest) { lock (_gate) _quests.Add(quest); }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
@@ -739,7 +773,7 @@ public sealed class AbandonTests : IDisposable
                         });
                     case ("GET", _) when path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal):
                         var claimed = Uri.UnescapeDataString(path["/api/quests/".Length..^"/claim".Length]);
-                        return Answer(HttpStatusCode.OK, new JsonObject { ["quest"] = claimed, ["claim"] = _claims.GetValueOrDefault(claimed, "none") });
+                        return Answer(HttpStatusCode.OK, new JsonObject { ["quest"] = claimed, ["claim"] = _claims.GetValueOrDefault(claimed, "none"), ["why"] = _whys.GetValueOrDefault(claimed) });
                     case ("GET", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal):
                         var ask = Uri.UnescapeDataString(path["/api/asks/".Length..]);
                         return _asks.ContainsKey(ask)

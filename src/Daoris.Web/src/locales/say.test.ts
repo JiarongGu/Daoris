@@ -51,7 +51,7 @@ describe('the refusal codes the driver declares, held to the page’s tables', (
     ]);
     expect(codesOf('ChatRunner.StartFrom.cs', 'StartFrom').sort()).toEqual(['carried', 'no-words', 'running']);
     expect(codesOf('HandOver.cs', 'HandOver').sort()).toEqual([
-      'no-door', 'not-conversation', 'not-its-account', 'not-last-run', 'parked', 'quest-closed', 'quest-elsewhere', 'running',
+      'no-door', 'not-conversation', 'not-its-account', 'not-last-run', 'parked', 'quest-closed', 'quest-elsewhere', 'quest-reopened', 'running',
       'same-agent', 'tree-gone', 'unbriefed', 'unknown-agent', 'waiting',
     ]);
   });

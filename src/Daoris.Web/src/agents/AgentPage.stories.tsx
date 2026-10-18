@@ -5,7 +5,7 @@ import type { AgentActs } from './AgentPage';
 import { AgentMainNotice, AgentPage } from './AgentPage';
 import {
   AHEAD_USE, CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CURVE_USE, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL,
-  INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
+  INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, ORGS_TOOL, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
 } from './agentsFixtures';
 
 // An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2) in the main area: the design's Claude Code, three accounts of which
@@ -20,7 +20,8 @@ import {
 // and a key refused in its field (ACCTUX3), at the same widths; and the main area with no page. Each at
 // the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack. Above the accounts,
 // this machine's next start (ACCTUX4b): a wait in `ThreeAccounts`, the list's first taken in `Readings`, and the list's
-// first passed over in `CodexWindows`, its row marked first.
+// first passed over in `CodexWindows`, its row marked first. One email in several organisations, each row told apart
+// (ACCOUNTID1b), in English and 中文, and the add flow offering a second sign-in's name.
 
 const nothing = () => {};
 const ACTS: AgentActs = {
@@ -81,6 +82,23 @@ export const TheInstallNarrow: Story = {
 /** The add flow's last step, under the header: the email offered as its name, and the lists it may join. */
 export const AddedAskingWhere: Story = {
   args: { ...TheInstall.args, added: { account: 'acct-5e1f0a2b', who: 'spare@example.invalid' } },
+};
+
+/**
+ * One email in three organisations and the tool's own sign-in in a fourth (ACCOUNTID1b): each row says what tells it apart,
+ * after the email and once; a name that says both repeats neither, and a plan stands where no organisation was named.
+ */
+export const OneEmailManyOrganisations: Story = { args: { tool: ORGS_TOOL, use: null, workspaces: [], usage: [] } };
+
+/** The same in 中文: the organisations are the tool's words, said as it said them. */
+export const OneEmailManyOrganisationsChinese: Story = { args: OneEmailManyOrganisations.args, decorators: [chinese] };
+
+/** The add flow's last step for a second sign-in of an email: the name the sign-in's end offered, the organisation in it. */
+export const AddedSecondOfAnEmail: Story = {
+  args: {
+    ...OneEmailManyOrganisations.args,
+    added: { account: 'acct-0000000b', who: 'person@example.invalid', offered: 'person@example.invalid·Org-B' },
+  },
 };
 
 /** *Read again* on its way: the press is the only thing that asks an account (§5.3). */

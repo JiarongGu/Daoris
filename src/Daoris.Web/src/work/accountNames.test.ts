@@ -30,6 +30,20 @@ describe('the names a note says an account by', () => {
     expect(names.has('nobody')).toBe(false);
   });
 
+  /** ACCOUNTID1b: two fresh ids nobody named, signed in as one email, are named apart by their organisations. */
+  it('names two accounts of one email apart by their organisations', () => {
+    const email = 'person@example.invalid';
+    const names = accountNames([{
+      harness: 'claude-code', present: true,
+      profiles: [
+        { name: 'acct-0000000a', home: 'ha', login: 'in', account: email, org: 'Org A' },
+        { name: 'acct-0000000b', home: 'hb', login: 'in', account: email, org: 'Org B' },
+      ],
+    }]);
+    expect(names.get('acct-0000000a')).toBe(`${email} · Org A`);
+    expect(names.get('acct-0000000b')).toBe(`${email} · Org B`);
+  });
+
   it('is empty before the roster has answered', () => {
     expect(accountNames([]).size).toBe(0);
   });

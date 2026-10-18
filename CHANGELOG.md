@@ -12,6 +12,10 @@ with the version and date at release.
   document, saying who proposed what, is kept on this machine until `brainstorm clear <id>`. It changes nothing in any repository.
   This first slice runs on the stub agents only: a real agent has no tool to answer through yet, so its pass fails and says so.
 
+- The desktop names two sign-ins of one email apart too. An agent's page, its own sign-in, the start's account picker, *What
+  needs you* and a session's account say the organisation after the email where another sign-in shares it (else the plan),
+  once: an account named `person@example.invalid·Org-B` says neither again. Adding an account offers the name the sign-in's end
+  offered.
 - Two Claude sign-ins of one email in different organisations are told apart. Daoris reads each sign-in's organisation and plan
   from `claude auth status` beside its email, fresh and kept nowhere. `daoris agent list` says the organisation after the email
   where another account shares it, and a sign-in whose email already names another account is offered the email with its
