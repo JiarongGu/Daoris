@@ -46,8 +46,10 @@ public sealed class EntriesRoutes(DriverContext context)
         var (plugins, notes) = (new List<string>(), new List<string>());
         var landed = await LandingAsync(Accepts(service, plugins, notes), entry, rows, LeaveOut(request), cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
-        var said = entries.Count == 0 ? TreesWords.EntryNone(isAsk: false, key) : TreesWords.EntryLand([(entry.Repository, landed)], plugins, notes);
-        return LandedSaid(entry.Key, entry.Repository, landed, said);
+        // RPC1b5: the lines it moved are registered at once where the verb asks (`follow`), said after its words; none where nothing landed.
+        var followed = entries.Count > 0 ? await FollowAsync(request, service, cancellationToken).ConfigureAwait(false) : null;
+        var said = entries.Count == 0 ? TreesWords.EntryNone(isAsk: false, key) : TreesWords.EntryLand([(entry.Repository, landed)], plugins, notes).Followed(followed);
+        return LandedSaid(entry.Key, entry.Repository, landed, said, followed);
     }
 
     /// <summary>
@@ -101,9 +103,16 @@ public sealed class EntriesRoutes(DriverContext context)
 
         _loop.Nudge();
         // RPC1b4: what `trees land --ask` prints beside the page's fields, or its sentence where no entry of the ask has work to land.
-        var said = landings.Count == 0 ? TreesWords.EntryNone(isAsk: true, ask) : TreesWords.EntryLand(landings, plugins, notes);
-        return new { Ask = ask, Done = done && answers.Count > 0, Repositories = answers, Said = said.ToWire() };
+        var followed = landings.Count > 0 ? await FollowAsync(request, service, cancellationToken).ConfigureAwait(false) : null;
+        var said = landings.Count == 0 ? TreesWords.EntryNone(isAsk: true, ask) : TreesWords.EntryLand(landings, plugins, notes).Followed(followed);
+        return new { Ask = ask, Done = done && answers.Count > 0, Repositories = answers, Said = said.ToWire(), Followed = followed?.Out ?? [] };
     }
+
+    /// <summary>The lines a landing moved, registered from the line at once where the verb asks (<c>follow</c>), as the page's next look would (RPC1b5).</summary>
+    private async Task<FollowedSaid?> FollowAsync(IpcRequest request, ServiceClient service, CancellationToken cancellationToken) =>
+        Flag(request, "follow")
+            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken).ConfigureAwait(false)
+            : null;
 
     /// <summary>The parts of <paramref name="entry"/> whose tree offers work to land, in the entry's order: what its Accept lands.</summary>
     public static IReadOnlyList<EntryPart> PartsOf(SessionEntry entry, IReadOnlyList<SessionGrouping> rows) => EntryAccepts.PartsOf(entry, rows);
@@ -155,7 +164,7 @@ public sealed class EntriesRoutes(DriverContext context)
     };
 
     /// <summary><c>LAND_ENTRY</c>'s answer: <see cref="Landed"/>'s fields, and the words <c>trees land --entry</c> prints beside them (RPC1b4).</summary>
-    public static object LandedSaid(string entry, string repository, EntryLanding landed, TreesSaid said) => new
+    public static object LandedSaid(string entry, string repository, EntryLanding landed, TreesSaid said, FollowedSaid? followed = null) => new
     {
         Entry = entry,
         Repository = repository,
@@ -164,6 +173,7 @@ public sealed class EntriesRoutes(DriverContext context)
         landed.Branch,
         Parts = Parts(landed),
         Said = said.ToWire(),
+        Followed = followed?.Out ?? [],
     };
 
     private static object[] Parts(EntryLanding landed) => landed.Parts.Select(part => (object)new
