@@ -147,8 +147,9 @@ public sealed record QuestResponse(
     // reader tells a reopened source, with no `submission`, from one whose taker has not said `ready` yet.
     QuestReopenWire? Reopened = null);
 // A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
-// the person's words, and when.
-public sealed record QuestReopenWire(string Machine, long Sequence, QuestSubmissionRefWire Of, string? Note, DateTimeOffset At);
+// the person's words, and when. FABRIC-CLOSE1c8: and the session that said the reopened submission's ready, a name as
+// `submission.session` is; absent where none did and from a host before it.
+public sealed record QuestReopenWire(string Machine, long Sequence, QuestSubmissionRefWire Of, string? Note, DateTimeOffset At, string? Session = null);
 // The person's reopen of a sealed submission (FABRIC-CLOSE1c): the submission, by the machine and sequence a close names it by, and
 // their words. A half left out arrives blank and is refused naming it.
 public sealed record ReopenQuestRequest(QuestSubmissionRefWire? Submission, string? Note = null);

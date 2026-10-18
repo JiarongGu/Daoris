@@ -2269,9 +2269,12 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     // The submission a step grew from, and the one reopened under it (FABRIC-CLOSE1c): names, which every door may answer.
     q.GrewFrom is { } grew ? new QuestSubmissionRefWire(grew.Machine, grew.Sequence) : null,
     q.SourceReopened is { } reopened ? new QuestSubmissionRefWire(reopened.Machine, reopened.Sequence) : null,
-    // The quest's own reopen no later submission answered (FABRIC-CLOSE1c4): names and the person's words, as its note travels.
+    // The quest's own reopen no later submission answered (FABRIC-CLOSE1c4): names and the person's words, as its note travels; and
+    // the session that said the reopened ready (FABRIC-CLOSE1c8), a name as the submission's is.
     q.Reopened is { } reopen
-        ? new QuestReopenWire(reopen.Machine, reopen.Sequence, new QuestSubmissionRefWire(reopen.Of.Machine, reopen.Of.Sequence), reopen.Note, reopen.At)
+        ? new QuestReopenWire(
+            reopen.Machine, reopen.Sequence, new QuestSubmissionRefWire(reopen.Of.Machine, reopen.Of.Sequence), reopen.Note, reopen.At,
+            reopen.Session)
         : null);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
