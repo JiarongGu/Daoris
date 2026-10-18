@@ -15,7 +15,8 @@
     "canon"
   ],
   "scripts": {
-    "test": "node --test",
+    "test": "node --test \"test/**/*.ts\"",
+    "tooltests": "node --test \"tool-test/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build && node ../../tools/stage-package.mjs",

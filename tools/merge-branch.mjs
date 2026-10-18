@@ -761,23 +761,36 @@ export const REACH = Object.freeze([
     gates: '*',
     why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports',
   },
+  // GATESLIM1: the tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
+  // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
-    paths: ['tools/rehearsal-kit.mjs', 'tools/cdp.mjs'],
+    paths: ['tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts'],
+    gates: ['tool-tests'],
+    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports, the tests, and the fixture they share",
+  },
+  {
+    paths: ['tools/rehearsal-kit.mjs'],
+    gates: ['tool-tests', 'rehearse', 'rehearse-family', 'deployment'],
+    why: "the rehearsals' kit, which the set-up kit's tool-tests import, and the port test it takes each run's ports with (REHEARSEPORT1, GATESLIM1)",
+  },
+  {
+    paths: ['tools/cdp.mjs'],
     gates: ['rehearse', 'rehearse-family', 'deployment'],
-    why: "the rehearsals' kit, and the port test it takes each run's ports with (REHEARSEPORT1)",
+    why: "the port test the rehearsals take each run's ports with (REHEARSEPORT1)",
   },
   { paths: ['tools/release-rehearsal.mjs', 'tools/release-prep.mjs'], gates: ['rehearse'], why: 'release tooling' },
   {
     paths: ['tools/service-publish.mjs'],
-    gates: ['rehearse', 'deployment', 'rehearse-family'],
-    why: "release tooling, and the hosts' one build recipe (CONNECTOR1), which desktop-publish imports: the deployment rehearsal drives it, and the family rehearsal runs usage-report, which imports it",
+    gates: ['tool-tests', 'rehearse', 'deployment', 'rehearse-family'],
+    why: "release tooling, and the hosts' one build recipe (CONNECTOR1), which desktop-publish imports: the deployment rehearsal drives it, the family rehearsal runs usage-report, which imports it, and the publish's tool-tests call it (GATESLIM1)",
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
-  { paths: ['tools/family-rehearsal.mjs', 'tools/setup-kit.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
     paths: ['tools/desktop-publish.mjs', 'tools/processes.mjs'],
-    gates: ['deployment', 'rehearse-family'],
-    why: 'the publish the deployment rehearsal drives, and what it imports; the family rehearsal runs usage-report, which imports it',
+    gates: ['tool-tests', 'deployment', 'rehearse-family'],
+    why: 'the publish the deployment rehearsal drives, and what it imports; the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
   },
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },

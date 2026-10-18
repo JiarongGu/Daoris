@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { driverFile } from './_csharp.ts';
+import { driverFile } from '../test/_csharp.ts';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
   BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
@@ -29,8 +29,8 @@ import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/tools/resource
 import { INSTALL_BIN, installBin } from '../src/tools/tools.ts';
 import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
 import { RUNNING_FILE } from '../src/service/service.ts';
-import { makeFixture } from './_fixture.ts';
-import { TAR_END, tarEntry } from './_tar.ts';
+import { makeFixture } from '../test/_fixture.ts';
+import { TAR_END, tarEntry } from '../test/_tar.ts';
 
 /**
  * The publish guard (`tools/desktop-publish.mjs`): what it refuses to write into, and the one door
