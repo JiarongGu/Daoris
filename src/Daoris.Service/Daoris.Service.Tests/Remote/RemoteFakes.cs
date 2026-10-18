@@ -120,6 +120,72 @@ internal sealed class OlderRemote(QuestStore remote) : IRemote
     private static NotSupportedException QuestsOnly() => new("an older remote here speaks quests only");
 }
 
+/// <summary>
+/// A remote whose quest push fails (FABRIC-CLOSE1c21): before it reaches the store behind it, or once that store kept it, so its
+/// answer never comes back, as when the connection drops or the machine stops between the push and its answer. Fetches pass through.
+/// Quests only, as <see cref="OlderRemote"/>.
+/// </summary>
+internal sealed class InterruptedRemote(IRemote remote, bool reaches) : IRemote
+{
+    public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => remote.FetchQuestsAsync(since, ct);
+
+    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
+    {
+        if (reaches) await remote.PushQuestsAsync(@base, operations, ct);
+        throw new RemoteException(reaches ? "the push's answer never came back" : "the remote could not be reached (connection reset)");
+    }
+
+    public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
+
+    private static NotSupportedException QuestsOnly() => new("an interrupted remote here speaks quests only");
+}
+
+/// <summary>
+/// A remote another machine pushes to between this machine's fetch and its first push (FABRIC-CLOSE1c21): <paramref name="between"/>
+/// runs once, just before that push, so the push stands on a base the remote has moved past. Quests only, as <see cref="OlderRemote"/>.
+/// </summary>
+internal sealed class RacedRemote(IRemote remote, Func<Task> between) : IRemote
+{
+    private bool _raced;
+
+    public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => remote.FetchQuestsAsync(since, ct);
+
+    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
+    {
+        if (!_raced)
+        {
+            _raced = true;
+            await between();
+        }
+
+        return await remote.PushQuestsAsync(@base, operations, ct);
+    }
+
+    public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
+
+    private static NotSupportedException QuestsOnly() => new("a raced remote here speaks quests only");
+}
+
 /// <summary>A remote nobody can reach — what a take meets offline.</summary>
 internal sealed class UnreachableRemote : IRemote
 {
