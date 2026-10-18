@@ -2226,20 +2226,6 @@ describe('starting and holding a conversation', () => {
     // Held, not lost: nothing is put back in the box.
     expect(box).toHaveValue('');
 
-    // Each code has its line: a next-step door that never steers, a session still opening, and a code not known.
-    const refusals: [object, string][] = [
-      [{ sent: true, reaches: 'next-step', why: 'no-interrupt', now: false }, 'Its agent cannot be steered mid-turn, so these go at its next step.'],
-      [{ sent: true, reaches: 'next-step', why: 'behind', now: false }, 'Other words are already on their way to it, so these wait behind them.'],
-      [{ sent: true, reaches: 'resume', why: 'opening', now: false }, 'It is still opening, so these go as soon as it has opened.'],
-      [{ sent: true, reaches: 'turn-end', why: 'something-new', now: false }, 'It could not take these now, so they are held as queued words are.'],
-    ];
-    for (const [reply, line] of refusals) {
-      answer = reply;
-      await userEvent.type(box, 'more');
-      await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
-      await waitFor(() => expect(notify).toHaveBeenCalledWith(line));
-    }
-
     // No turn was running: an ordinary send, with nothing said.
     notify.mockClear();
     answer = { sent: true, reaches: null, why: null, now: true };
@@ -2247,6 +2233,30 @@ describe('starting and holding a conversation', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
     await waitFor(() => expect(box).toHaveValue(''));
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  // Each code has its line: a next-step door that never steers, a session still opening, and a code not known
+  // (one case per code, WEBSPEED1: the four sends in one test were most of that test's four seconds).
+  it.each<[object, string]>([
+    [{ sent: true, reaches: 'next-step', why: 'no-interrupt', now: false }, 'Its agent cannot be steered mid-turn, so these go at its next step.'],
+    [{ sent: true, reaches: 'next-step', why: 'behind', now: false }, 'Other words are already on their way to it, so these wait behind them.'],
+    [{ sent: true, reaches: 'resume', why: 'opening', now: false }, 'It is still opening, so these go as soon as it has opened.'],
+    [{ sent: true, reaches: 'turn-end', why: 'something-new', now: false }, 'It could not take these now, so they are held as queued words are.'],
+  ])('says in one line what a working driven session did with words sent now: %j', async (reply, line) => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+      if (type === 'SESSION_INPUT') return reply;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'more');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(line));
+    // Held, not lost: nothing is put back in the box.
+    expect(box).toHaveValue('');
   });
 
   /**
