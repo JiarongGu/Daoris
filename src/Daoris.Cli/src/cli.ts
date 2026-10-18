@@ -15,6 +15,7 @@ import { command as connect } from './cli/connect.ts';
 import { command as retire } from './cli/retire.ts';
 import { command as wire } from './cli/wire.ts';
 import { command as importFolders } from './cli/import.ts';
+import { command as brainstorm } from './cli/brainstorm.ts';
 import { command as remote } from './cli/remote.ts';
 import { command as agent } from './cli/agent.ts';
 import { command as driver } from './cli/driver.ts';
@@ -47,6 +48,7 @@ export const COMMANDS: readonly CliCommand[] = [
   retire,
   wire,
   importFolders,
+  brainstorm,
   remote,
   agent,
   driver,
@@ -61,7 +63,8 @@ const USAGE = [
   ...COMMANDS.flatMap((command) => command.usage),
   '',
   '  connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a',
-  '  service, and no gate ever runs them. remote, agent, driver, plugin, browser and',
+  '  service, and no gate ever runs them; brainstorm too, to this machine\'s own service',
+  '  only. remote, agent, driver, plugin, browser and',
   '  tool are management too — they edit files under the Daoris home ($DAORIS_HOME,',
   "  the installed application's own data folder; nothing lives under your profile),",
   "  and agent spawns each agent's own tooling. Of them only agent pin and agent",

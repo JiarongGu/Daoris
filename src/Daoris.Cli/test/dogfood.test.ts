@@ -796,7 +796,10 @@ test('tool download reaches a host only through the fetcher the dispatcher hands
 
   // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
   const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
-  assert.deepEqual(reaching.sort(), ['cli/agent.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/tool.ts', 'cli/wire.ts']);
+  // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8).
+  assert.deepEqual(reaching.sort(), [
+    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/tool.ts', 'cli/wire.ts',
+  ]);
 });
 
 /**
