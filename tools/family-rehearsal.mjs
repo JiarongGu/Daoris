@@ -5761,6 +5761,119 @@ for (const branch of landedBranches().split('\n').map((line) => line.replace('*'
   run(`git branch -D ${branch}`, newcomer);
 }
 
+// -------------------------------------------------- 17f. a brainstorm from a terminal
+
+section('17f. A brainstorm from a terminal: asked, shown, sent and kept on this machine, with no quest, no commit and no landing (D176/BRAINSTORM1a3)');
+
+// `daoris brainstorm` reaches the host's machine-only door, which writes the request under the host's home; the driver's look
+// freezes its packet from the newcomer's knowledge, the person reads it and sends it, and the ACP stub answers each pass through
+// its connector's result tool, over MCP, as a maker does. No model, no account and no credential. The driver's home is its
+// config's folder (D63's per-file override), so this phase's config sits in the host's own home: the two read one set of records,
+// as an install's desktop and host do. Nothing is driven (`drivable` is empty), so what the loop does here is the brainstorm alone.
+const brainstormHome = process.env.DAORIS_HOME;
+mkdirSync(brainstormHome, { recursive: true });
+const brainstormConfig = join(brainstormHome, 'driver-brainstorm.json');
+writeFileSync(brainstormConfig, `${JSON.stringify({
+  drivable: [], adapter: 'acp-stub', cap: 2, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
+}, null, 2)}\n`);
+// The connector a pass is handed opens the store this rehearsal's host keeps, as 17e's sessions do (KnowledgeConnector).
+const BRAINSTORM_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };
+const brainstormDrive = () => driver({ serviceUrl: BASE, config: brainstormConfig, env: BRAINSTORM_STORE, mode: '--until-idle' });
+const brainstormCli = (args, url = BASE) => run(`node "${cliBin}" brainstorm ${args}`, scratch, { DAORIS_SERVICE_URL: url });
+// D172's places: an entry at its new place under its category, or at its old place where only that holds it.
+const placeOf = (category, name, ...rest) => [join(brainstormHome, category, name, ...rest), join(brainstormHome, name, ...rest)]
+  .find((at) => existsSync(at)) ?? join(brainstormHome, category, name, ...rest);
+const brainstormRead = (id, file) => {
+  const at = placeOf('data', 'brainstorms', id, file);
+  return existsSync(at) ? readFileSync(at, 'utf8') : '';
+};
+const questsNow = async () => JSON.stringify(((await api('GET', '/api/quests?includeClosed=true')).json ?? [])
+  .map((q) => `${q.id} ${q.status} ${q.taker ?? ''}`).sort());
+const sessionsNow = async () => ((await api('GET', '/api/sessions?includeClosed=true')).json ?? []).length;
+const newcomerNow = () => `${run('git show-ref', newcomer).out}\n${run('git status --porcelain', newcomer).out}`;
+const landingsNow = () => ['data/landings.json', 'landings.json'].map((at) => (existsSync(join(brainstormHome, at))
+  ? readFileSync(join(brainstormHome, at), 'utf8') : '')).join('\n');
+
+const brainstormBefore = { quests: await questsNow(), sessions: await sessionsNow(), newcomer: newcomerNow(), landings: landingsNow() };
+const brainstormQuestion = 'How should the newcomer greet a reader in more languages';
+const brainstormAsked = brainstormCli(`"${brainstormQuestion}" --repository newcomer --agents acp-stub`);
+const brainstormId = brainstormAsked.out.match(/Brainstorm `(\w+)` asked/)?.[1] ?? '';
+const brainstormRequest = (() => {
+  try {
+    return JSON.parse(brainstormRead(brainstormId, 'request.json'));
+  } catch {
+    return null;
+  }
+})();
+check(
+  '`daoris brainstorm` asks this machine’s Daoris through its door: the request is written under the home, and nothing else is',
+  brainstormAsked.code === 0 && brainstormId !== '' && brainstormRequest?.question === brainstormQuestion
+    && brainstormRequest?.repository === 'newcomer' && JSON.stringify(brainstormRequest?.agents) === '["acp-stub"]'
+    && brainstormAsked.out.includes(`daoris brainstorm show ${brainstormId}`),
+  `${brainstormAsked.out}\n${brainstormRead(brainstormId, 'request.json')}`,
+);
+
+const brainstormWaits = brainstormCli(`show ${brainstormId}`);
+const brainstormFroze = brainstormDrive();
+const brainstormShown = brainstormCli(`show ${brainstormId}`);
+check(
+  'the driver’s look freezes its packet from the newcomer’s knowledge, and show prints it whole before anything goes to any agent',
+  brainstormWaits.code === 0 && brainstormWaits.out.includes('waits for Daoris\'s next look')
+    && brainstormFroze.code === 0 && brainstormFroze.out.includes(`brainstorm \`${brainstormId}\` frozen`)
+    && brainstormShown.code === 0 && brainstormShown.out.includes(`Brainstorm \`${brainstormId}\`, packet \`sha256:`)
+    && brainstormShown.out.includes(`> ${brainstormQuestion}`) && /sources of `newcomer`, found by (meaning|words|files)\./.test(brainstormShown.out)
+    && brainstormShown.out.includes(`Nothing has gone to any agent. Send it with \`daoris brainstorm send ${brainstormId}\``)
+    && !existsSync(placeOf('data', 'brainstorms', brainstormId, 'passes')),
+  `${brainstormWaits.out}\n${brainstormFroze.out}\n${brainstormShown.out}`,
+);
+
+const brainstormSent = brainstormCli(`send ${brainstormId}`);
+const brainstormRan = brainstormDrive();
+const brainstormState = (() => {
+  try {
+    return JSON.parse(brainstormRead(brainstormId, 'state.json'));
+  } catch {
+    return null;
+  }
+})();
+const brainstormGenerator = brainstormRead(brainstormId, join('passes', 'g1.log'));
+const brainstormDocument = brainstormCli(`show ${brainstormId}`);
+check(
+  'sent by the person’s press, each pass runs on the ACP stub and answers through its connector’s tool, and show is the document',
+  brainstormSent.code === 0 && brainstormSent.out.includes(`Brainstorm \`${brainstormId}\` sent, packet \`sha256:`)
+    && brainstormRan.code === 0 && brainstormState?.state === 'ended' && brainstormState?.code === null
+    && /brainstorm_give answered: Your answer is kept: 1 proposal/.test(brainstormGenerator)
+    && /brainstorm_synthesize answered: Your synthesis is kept/.test(brainstormRead(brainstormId, join('passes', 's1.log')))
+    && brainstormRead(brainstormId, join('answers', 'g1.json')).startsWith('{\n  "brainstorm": 1,')
+    && brainstormDocument.code === 0 && brainstormDocument.out.includes('The stub proposal of turn g1'),
+  `${brainstormSent.out}\n${brainstormRan.out}\n${JSON.stringify(brainstormState)}\n${brainstormGenerator}\n${brainstormDocument.out}`,
+);
+
+// 🔴 D176 point 1, "what it never is": no quest and no session record on the host, no commit, branch or change in the asker's
+// checkout, no landing record, and the rooms gone once it ended.
+const brainstormAfter = { quests: await questsNow(), sessions: await sessionsNow(), newcomer: newcomerNow(), landings: landingsNow() };
+check(
+  'a brainstorm is no quest operation, opens no session record, changes nothing in the asker’s checkout, lands nothing, and its rooms go',
+  brainstormAfter.quests === brainstormBefore.quests && brainstormAfter.sessions === brainstormBefore.sessions
+    && brainstormAfter.newcomer === brainstormBefore.newcomer && brainstormAfter.landings === brainstormBefore.landings
+    && !existsSync(placeOf('work', 'brainstorm-rooms', brainstormId)),
+  JSON.stringify({ before: brainstormBefore, after: brainstormAfter }),
+);
+
+const brainstormListed = brainstormCli('list');
+const brainstormCleared = brainstormCli(`clear ${brainstormId}`);
+const brainstormElsewhere = brainstormCli('list', 'https://team.example.invalid');
+check(
+  'list names it ended, clear takes its records and its packet, and a service off this machine is never asked',
+  brainstormListed.code === 0 && brainstormListed.out.includes(`${brainstormId}  ended  ${brainstormQuestion}`)
+    && brainstormCleared.code === 0 && brainstormCleared.out.includes('its records and its packet are gone from this machine')
+    && !existsSync(placeOf('data', 'brainstorms', brainstormId))
+    && brainstormElsewhere.code === 1 && brainstormElsewhere.out.includes('is not this machine\'s service')
+    && brainstormElsewhere.out.includes('nothing was sent'),
+  `${brainstormListed.out}\n${brainstormCleared.out}\n${brainstormElsewhere.out}`,
+);
+rmSync(brainstormConfig, { force: true });
+
 // -------------------------------------------------- 18. a plugin that declares, and speaks
 
 section('18. Three plugins: one declares a harness, one hands a server, one holds a quest with a sentence (D64, D65)');
