@@ -16,9 +16,9 @@ repository.
   reads it where it reads the quest again, for the same session; the recovery reads it before a hand-on is chosen and waits silently
   while it holds; the `push-held` wake hears every ledger family and the gate's files. D173's FABRIC-CLOSE1h12 note has the behaviour.
 - **Verification:** red first: `LandingWakesTests` (2 rows) and the new Git cases (6 failing on their assertions, 2 passing as guards).
-  Then the driver's fast half is 9583 (9581 before), and the `AutoLanding` classes, run once by filter with `git.process.runsettings`,
-  pass 73 of 74 (66 before); the 74th timed out in the fixture's 60 s wait for its push to reach the branch, a load timeout, and passes
-  alone.
+  Then the driver's fast half is 9598 with main merged (9581 before; this row's two are wake rows), and the `AutoLanding` classes,
+  run once by filter with `git.process.runsettings`, pass 73 of 74 (66 before); the 74th timed out in the fixture's 60 s wait for its
+  push to reach the branch, a load timeout, and passes alone.
 
 ## 2026-10-18 — The automatic landing's git tests were one class, the longest of the git half (PROCSPLIT1)
 
@@ -35,6 +35,7 @@ repository.
   "FullyQualifiedName~AutoLanding"` with `git.process.runsettings`, on a machine loaded by merges and builders: before, 53 m 20 s, 61 tests
   (60 passed; one failed on its own 60 s wait, "the push waits for its branch", a load timeout); after, with the five tests FABRIC-CLOSE1h10
   added, 12 m 35 s test duration (14 m wall with the build), 66 of 66 passed.
+
 ## 2026-10-18 — The merge tool's `--beside` test held its fake gate a minute, and load outlasted it (TESTWAIT4)
 
 - **Symptom:** under load (three builders and a merge's gates) the `--full --beside` test failed `kept local/gate-tree` not matched; green on rerun.
