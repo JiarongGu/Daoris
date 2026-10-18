@@ -249,8 +249,8 @@ public sealed class ReopenTellingTests : IDisposable
 
     /// <summary>
     /// A session the person stopped after its ready, when a later session ran: Daoris's words would release the person's stop, so it
-    /// is told nothing, and the look says so once. Where it is the quest's last record, it is told as before (the pack's decision 5),
-    /// and a stop the driver's shutdown made is no person's.
+    /// is told nothing, and the look says so once. Where it is the quest's last record it is told nothing too (FABRIC-CLOSE1c12), and
+    /// a stop the driver's shutdown made is no person's.
     /// </summary>
     [Fact]
     public async Task A_session_the_person_stopped_that_is_not_the_quests_last_is_told_nothing_and_says_so_once()
@@ -270,11 +270,16 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Empty(doors.Said);
         Assert.False(File.Exists(new ReopenMarks(_home).PathOf("s1")));
 
+        // FABRIC-CLOSE1c12: the same where it is the quest's last record, since any words release the person's stop.
         var last = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = doors.Records["s1"] };
-        await LookAsync(Telling(), doors, Look(Source()) with { LastRun = last });
+        var alone = await LookAsync(Telling(), doors, Look(Source()) with { LastRun = last });
+        var aloneLine = Assert.Single(alone);
+        Assert.StartsWith("reopen  ", aloneLine, StringComparison.Ordinal);
+        Assert.Contains("session s1, which the person stopped", aloneLine, StringComparison.Ordinal);
+        Assert.DoesNotContain("a later session ran", aloneLine, StringComparison.Ordinal);
         doors.Records["s3"] = Record("stopped", "s3") with { Interrupted = true };
         await LookAsync(Telling(), doors, Look(Source(session: "s3", id: "q3")) with { LastRun = later });
-        Assert.Equal(["s1", "s3"], doors.Said.Select(said => said.Session));
+        Assert.Equal(["s3"], doors.Said.Select(said => said.Session));
     }
 
     /// <summary>
