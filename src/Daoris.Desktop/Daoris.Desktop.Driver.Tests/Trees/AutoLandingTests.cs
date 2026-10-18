@@ -1059,6 +1059,72 @@ public sealed class AutoLandingTests : IDisposable
         Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed, string.Join("\n", said));
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h6 (D173's FABRIC-CLOSE1h note, *Enrolled and kept due*): a reopen takes the submission back and the look closes the
+    /// entry <c>undone</c>; the agent's next <c>ready</c> makes its session due again, and the next look judges it afresh and lands it,
+    /// the earlier try kept.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_reopened_and_readied_again_lands_at_the_next_look()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        var tree = await DoneSessionAsync(root, "s1", "q1", submitted: true);
+        _world.Quests["q1"] = _world.Quests["q1"] with { Submission = null };
+        Assert.Single(await LookAsync());
+        Assert.Equal(AutoLandingCode.Undone, new AutoLandings(_home).Of("s1")!.Last!.Code);
+
+        await CommitAsync(tree, "more.txt", "the work after the reopen", "the work after the reopen");
+        _world.Quests["q1"] = _world.Quests["q1"] with { Submission = Made(2) };
+        ConcludeAgain("s1", "q1", tree);
+        var said = await LookAsync();
+
+        Assert.True(await BranchAsync(root, PushBranch), string.Join("\n", said));
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal([AutoLandingCode.Undone, AutoLandingCode.Landed], entry.Tries.Select(each => each.Code));
+        Assert.Equal(2, entry.Last!.Commits);
+        Assert.NotNull(entry.Closed);
+        Assert.Equal(("Taken", 2L), (_world.Quests["q1"].Status, _world.Quests["q1"].Submission!.Sequence));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1h6 (D137, LAND2c): the ordinary automatic landing, no closure graph. A session landed, words went on with it, and it
+    /// concluded on its done again with more work: the next look moves the branch its landing made on, its plugin told once at the
+    /// tree's tip, kept as <c>advanced</c> beside the first try. Concluded once more with nothing new, it lands nothing twice.
+    /// </summary>
+    [Fact]
+    public async Task A_done_after_words_went_on_past_its_landing_moves_the_made_branch_on_with_one_push()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        Assert.Single(await LookAsync());
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Single(_frames);
+
+        await CommitAsync(tree, "more.txt", "the work after its landing", "the work after its landing");
+        var head = (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
+        ConcludeAgain("s1", "q1", tree);
+        var said = await LookAsync();
+
+        Assert.True(_frames.Count == 2, string.Join("\n", said));
+        Assert.Equal(head, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+        Assert.Equal(head, Json(_frames[1]).GetProperty("tip").GetString());
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal([AutoLandingCode.Landed, AutoLandingCode.Advanced], entry.Tries.Select(each => each.Code));
+        Assert.NotNull(entry.Closed);
+        Assert.Equal("s1", Assert.Single(new LandedBranches(_home).Landing("s1")!.Advances).Session);
+        Assert.Equal([$"refs/heads/{PushBranch}"], await FeatureBranchesAsync(root));
+
+        // Concluded again with nothing new: judged afresh, its work is on the branch already, so nothing lands twice.
+        ConcludeAgain("s1", "q1", tree);
+        Assert.Single(await LookAsync());
+        Assert.Equal(2, _frames.Count);
+        Assert.Equal(AutoLandingCode.Already, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(head, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+    }
+
     private const string PushBranch = "feature/q1-fix-the-gap";
 
     /// <summary>
@@ -1212,6 +1278,14 @@ public sealed class AutoLandingTests : IDisposable
         Assert.Equal(Config().Landings.GetValueOrDefault("engine")?.AutoAccept == true ? AutoConcluded.Due : null, verdict);
         return opened.Path;
     }
+
+    /// <summary>
+    /// The session's record concluding again on its quest as it stands now, as the driver's conclusion of a carried-on run hands it on
+    /// (D137's words that went on, or the agent's next <c>ready</c>): due again.
+    /// </summary>
+    private void ConcludeAgain(string session, string quest, string tree) =>
+        Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session,
+            _world.Quests[quest], QuestResults.Status(_world.Quests[quest]), "completed", tree, "aurora"));
 
     /// <summary>What a session in this repository's tree would be told of its landing, as a start composes it.</summary>
     private string Instruction(string root)

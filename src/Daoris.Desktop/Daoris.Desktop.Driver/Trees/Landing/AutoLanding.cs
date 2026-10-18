@@ -152,6 +152,12 @@ public sealed record AutoLanding(string Session, string Quest, string Repository
 
     /// <summary>Its last try, or null before the first.</summary>
     public AutoTry? Last => Tries.Count == 0 ? null : Tries[^1];
+
+    /// <summary>
+    /// Whether a new conclusion made it due again after a try that closed it (FABRIC-CLOSE1h6): open, with a last try whose code
+    /// closes. Only <see cref="AutoLandings.Due"/> opens a closed entry, so that try was the earlier due's, and this one is judged afresh.
+    /// </summary>
+    public bool Reopened => Closed is null && Last is { Code: var code } && AutoLandingCode.Closes(code);
 }
 
 /// <summary>How a concluded record stands to the switch (<see cref="AutoLandingRules.Concluded"/>).</summary>
@@ -190,11 +196,15 @@ public static class AutoLandingRules
 
     /// <summary>
     /// Whether a due entry is worth a try now (design §2): its first, and a hold's at every look; a refusal only once its
-    /// tree's tip or status moved since it, so a look never repeats one that nothing changed.
+    /// tree's tip or status moved since it, so a look never repeats one that nothing changed. One due again after a try that closed it
+    /// is judged afresh, as a first is (<see cref="AutoLanding.Reopened"/>).
     /// </summary>
     public static bool ShouldTry(AutoLanding entry, string? tip, string status) => entry.Last switch
     {
         null => true,
+        // FABRIC-CLOSE1h6: due again by D137's words that went on, or a closure graph's next `ready`. The landing's own checks keep a
+        // commit from landing twice.
+        _ when entry.Reopened => true,
         { Code: var code } last when AutoLandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
@@ -269,7 +279,8 @@ public sealed class AutoLandings(string home)
 
     /// <summary>
     /// Make a session due. One due before, open or closed, is opened again with its tries kept: a session words went on with
-    /// after its landing (D137) concludes again, and what it came to the first time stays a fact.
+    /// after its landing (D137) concludes again, and what it came to the first time stays a fact. One that a try had closed is
+    /// judged afresh at the next look (FABRIC-CLOSE1h6, <see cref="AutoLanding.Reopened"/>); one still open keeps its last try's rule.
     /// </summary>
     public void Due(AutoLanding entry) => Edit(all =>
     {

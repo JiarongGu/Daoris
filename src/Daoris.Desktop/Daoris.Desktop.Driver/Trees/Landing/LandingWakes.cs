@@ -18,7 +18,7 @@ public sealed record LandingTaken(IReadOnlyList<LandingWake> Heard, bool Whole)
 /// </summary>
 public static class LandingWaits
 {
-    /// <summary>No try yet: the first wake after it became due looks at it.</summary>
+    /// <summary>No try yet, or due again after a try that closed it: the first wake after it became due looks at it.</summary>
     public const string First = "first";
 
     /// <summary>
@@ -49,6 +49,8 @@ public static class LandingWaits
     public static string Of(AutoLanding entry) => entry.Last switch
     {
         null => First,
+        // FABRIC-CLOSE1h6: due again after a try that closed it, so that try was the earlier due's; this one waits as a first does.
+        _ when entry.Reopened => First,
         { Code: AutoLandingCode.Refused, Tip: null, Status: null } => Workflow,
         { Code: var code, Tip: not null } when AutoLandingCode.OnChange(code) => Tree,
         { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed } => Quests,
