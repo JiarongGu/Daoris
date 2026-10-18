@@ -220,6 +220,10 @@ public sealed class AutoLander(
         // or their skip.
         if (held is { Refusal: { } waiting })
         {
+            // FABRIC-CLOSE1h17: the opinion holding it is owed here, as a push held back's recovery owes it (FABRIC-CLOSE1h15), so the
+            // loop's opinion look asks it as the gate says, also where the rule started reading after the done. Read at every look that
+            // reaches the gate, so an entry already kept as `opinion` is owed too.
+            if (waiting == AutoLandingCode.Opinion) Owe(entry, entry.Session, entry.Quest, entry.Tree, since: entry.DueAt);
             if (entry.Last?.Code == waiting) return (null, null);
             var waits = Tried(entry, waiting, tip, status, held);
             if (line is not null) log?.Invoke(line);
@@ -461,27 +465,32 @@ public sealed class AutoLander(
     }
 
     /// <summary>
-    /// A second opinion holding a push held back, owed where its gate is read (FABRIC-CLOSE1h15): at the landing's occasion, the one the
-    /// gate read, for the session whose work the hand-on pushes, unless one is owed there already, as the person's ask owes one. The
-    /// loop's opinion look then asks it as any, and keeps it owed while the push is held back (<see cref="OpinionLook.ClosesAsync"/>).
-    /// Never throws: a due list that cannot be written leaves the person's ask, which the gate's sentence names, and the next look's
-    /// recovery writes it again.
+    /// A second opinion holding a landing, owed where its gate is read: a push held back's recovery (FABRIC-CLOSE1h15) and the look's
+    /// judgement of a done (FABRIC-CLOSE1h17). Owed at the landing's occasion, the one the gate read, whose refusal shows the rule reads
+    /// there, for the session whose work would land, unless one is owed there already, as the person's ask owes one. The loop's opinion
+    /// look then asks it as any (<see cref="OpinionLook.ClosesAsync"/> keeps it owed while a push is held back). Never throws: a due list
+    /// that cannot be written leaves the person's ask, which the gate's sentence names, and the next look writes it again.
     /// </summary>
-    private void Owe(AutoLanding entry, string session, string quest, string tree)
+    /// <param name="since">
+    /// The entry's done, where the look owes it (FABRIC-CLOSE1h17): a due the loop closed as landed since then is not opened again, since its
+    /// look would only close it again at every look. Null, as a push held back's recovery owes it, opens one whatever closed the last.
+    /// </param>
+    private void Owe(AutoLanding entry, string session, string quest, string tree, DateTimeOffset? since = null)
     {
         try
         {
             var dues = new OpinionDues(home);
-            if (dues.Open().Any(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase) && due.Occasion == OpinionRules.Landing))
-            {
-                return;
-            }
+            var owed = dues.All()
+                .Where(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase) && due.Occasion == OpinionRules.Landing)
+                .ToList();
+            if (owed.Any(due => due.Closed is null)) return;
+            if (since is { } done && owed.Any(due => due.Why == OpinionDueClosed.Landed && due.Closed >= done)) return;
 
             dues.Due(new OpinionDue(session, quest, entry.Repository, entry.Workspace, tree, OpinionRules.Landing, Now()));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Owed at the next look's recovery instead.
+            // Owed at the next look instead.
         }
     }
 
