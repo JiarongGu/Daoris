@@ -392,6 +392,15 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
+    /// Take a quest out of every list, as the service's rebase forgets a step that went with its source's lost submission (FABRIC-CLOSE1e):
+    /// no list shows it, though this machine's claim on it is still answered.
+    /// </summary>
+    public void Forget(string id)
+    {
+        lock (_gate) _quests.RemoveAll(q => q["id"]!.GetValue<string>() == id);
+    }
+
+    /// <summary>
     /// A driven session of this machine's that took <paramref name="quest"/> and parked to ask the person (D83), in its own
     /// tree, with no words on it yet (ANSWER2): what the say door keeps the person's answer on.
     /// </summary>

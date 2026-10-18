@@ -160,6 +160,11 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// For a <see cref="QuestOperationKind.Submitted"/>: the session that said the <c>ready</c>, as its connector's intake named it
 /// (FABRIC-CLOSE1c4). Null on every other kind, and where no session said it.
 /// </param>
+/// <param name="LostToTheReopen">
+/// For a <see cref="QuestOperationKind.Conflict"/>: the take of a step that went with its source's take, lost to the person's reopen
+/// (FABRIC-CLOSE1c22). The step's publication went too, so its history holds nothing the reopen could be read from, and the conflict
+/// says it instead, for <see cref="QuestLog.LostToTheReopen"/>. False on every other conflict, every one from before, and every other kind.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -179,7 +184,8 @@ public sealed record QuestOperation(
     string? NoteParts = null,
     QuestClose? Close = null,
     QuestOperationRef? Submission = null,
-    string? Session = null);
+    string? Session = null,
+    bool LostToTheReopen = false);
 
 /// <summary>
 /// What a graph's close names its Done by (FABRIC-CLOSE1a, the fabric events design §E5): the invocation's key, which the
@@ -423,7 +429,9 @@ public static class QuestLog
     /// <summary>
     /// Whether <paramref name="machine"/>'s take lost to the person's reopen (FABRIC-CLOSE1c18): its take's conflict, the latest, landed on
     /// the step open after a reopen of its source withdrew it, rebound since or not, on the quest as last published (D95). False where the
-    /// take lost to another machine's take or move, to a delete, or with its parent's submission (FABRIC-CLOSE1e), and where it never lost.
+    /// take lost to another machine's take or move, to a delete, or with its parent's submission (FABRIC-CLOSE1e), and where it never lost;
+    /// true again where it went with its parent's submission made on a take lost so, which its conflict says (FABRIC-CLOSE1c22,
+    /// <see cref="QuestOperation.LostToTheReopen"/>), since that step's history holds nothing else to read it from.
     /// The store's refusals, the claim's answer and the driver's stop say the loss by it.
     /// </summary>
     public static bool LostToTheReopen(IEnumerable<QuestOperation> history, string machine)
@@ -435,7 +443,7 @@ public static class QuestLog
         {
             if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken } && operation.Machine == machine)
             {
-                lost = reopened && quest is { Status: QuestStatus.Open };
+                lost = operation.LostToTheReopen || (reopened && quest is { Status: QuestStatus.Open });
             }
 
             if (!Applies(quest, operation)) continue;

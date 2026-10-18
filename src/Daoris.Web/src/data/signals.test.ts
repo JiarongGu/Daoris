@@ -424,6 +424,19 @@ describe('sittingSentence', () => {
     expect(here).not.toContain('另一台机器');
     expect(sittingSentence(sits('TakenElsewhere', named))).toBe(named);
   });
+
+  // FABRIC-CLOSE1c23: a take lost to the person's own reopen is said as that, in both languages.
+  it('says a take lost to the reopen in 中文 without another machine', async () => {
+    const lost = 'Quest `#9a9492` was lost to your reopen of the work it grew from: the take is not this machine’s, so session `s1` is not carried on over it.';
+    const byReopen: Consideration = { ...sits('TakenElsewhere', lost), takenBy: { machine: null, session: null, here: false, reopened: true, last: 's1' } };
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(byReopen)).toBe(lost);
+    await i18n.changeLanguage('zh');
+    const zh = sittingSentence(byReopen);
+    expect(zh).toContain('重新打开');
+    expect(zh).toContain('不会接续会话 `s1`');
+    expect(zh).not.toContain('另一台机器');
+  });
 });
 
 describe('waitsForAccount', () => {

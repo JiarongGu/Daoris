@@ -1259,6 +1259,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
         var told = Assert.Single(lost.Conflicts, c => c.Quest == step.Id);
         Assert.Equal((QuestStatus.Taken, _a.Machine), (told.Attempted, told.Machine));
         Assert.Contains($"#{quest.Id}", told.Note);
+        // Lost to another machine's take, and said so: never the person's reopen (FABRIC-CLOSE1c22).
+        Assert.Contains("another machine's take", told.Note);
+        Assert.False(await _a.LostToTheReopenAsync(step.Id));
         // The parent's own loss names its submission, as it did.
         Assert.Contains("submission", Assert.Single(lost.Conflicts, c => c.Quest == quest.Id).Note);
     }

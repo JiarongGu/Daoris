@@ -91,7 +91,7 @@ export interface Consideration {
    * its session ended, by a chat or by work outside Daoris; and `last`, the session here not carried on over it. Absent for
    * every other verdict, and on an older shell.
    */
-  takenBy?: { machine?: string | null; session?: string | null; here?: boolean; last: string } | null;
+  takenBy?: { machine?: string | null; session?: string | null; here?: boolean; reopened?: boolean; last: string } | null;
   /**
    * For a set-up step the planner cannot show (verdict `CannotShow`, CANNOTSHOW1a): why, as a code (`unnamed`: no review rule
    * here names the environment; `no-address`: a local environment declares no address; `no-window`: a local environment and no
@@ -202,7 +202,7 @@ export function sittingSentence(sitting: Consideration): string {
     const named = Boolean(taken.machine && taken.session);
     return i18n.t('work.sitting.TakenElsewhere', {
       why: sitting.reason, quest: sitting.quest, machine: taken.machine, session: taken.session, last: taken.last,
-      context: taken.here ? 'here' : named ? undefined : 'another', defaultValue: sitting.reason,
+      context: taken.reopened ? 'reopened' : taken.here ? 'here' : named ? undefined : 'another', defaultValue: sitting.reason,
     });
   }
   // A set-up step with nowhere to show its work (CANNOTSHOW1b, D154) is said from the fact the tick carries: which of the three

@@ -271,6 +271,7 @@
   "work.sitting.TakenElsewhere": "{{why}}",
   "work.sitting.TakenElsewhere_another": "{{why}}",
   "work.sitting.TakenElsewhere_here": "{{why}}",
+  "work.sitting.TakenElsewhere_reopened": "{{why}}",
   "work.sitting.CannotShow": "{{why}}",
   "work.sitting.CannotShow_unnamed": "This set-up step shows its work in `{{environment}}`, and no review rule here names `{{environment}}`, so it cannot start.",
   "work.sitting.CannotShow_noAddress": "This set-up step shows its work in `{{environment}}`, a local environment that declares no address, so it cannot start.",
