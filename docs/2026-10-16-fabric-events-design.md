@@ -1688,6 +1688,11 @@ quest of the session that last moved the branch: the person's doors by the press
 the look's hand-on of a push held back by the look's (a hold stops it too, and its entry stays `push-held`). A refusal pushes nothing and
 records nothing.
 
+**Amended (FABRIC-CLOSE1h10, D173's note).** That session is the one the record names under the branch's hold, not the one the door
+read or the look chose: a later session's done that moved the branch on meanwhile is judged on its own quest, read there. For the person,
+its result no longer in holds the push back and a hold does not; for the look, a hold does too, and a `push-held` entry whose later
+session's quest does not stand waits for it.
+
 **Amended (FABRIC-CLOSE1c5, D173's note).** On the go-on, the step's branch is brought up to date by a replay, as the tree sync's: its own
 commits rebased onto the new submission's commit (its evidence's, on the wire), then the line. A conflict leaves the tree as it was and
 nothing else changes; the session is told the person must resolve it. With no commit known, the line alone is synced, and that said.

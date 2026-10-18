@@ -789,6 +789,6 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <inheritdoc cref="TreeHandOffs.HandAsync"/>
     public Task<TreeHand> HandAsync(
         string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default,
-        Func<bool, CancellationToken, Task<string?>>? beforePush = null) =>
+        Func<string, bool, CancellationToken, Task<string?>>? beforePush = null) =>
         HandOffs.HandAsync(root, entry, plugin, ct, beforePush);
 }
