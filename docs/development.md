@@ -120,6 +120,10 @@ the main checkout meanwhile, under load (GATEWT1). One runs at a time. Stage wha
 tree, never from the moving checkout:
 `npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`. A merge's prune
 removes the tree once its stage is done, and `--prune` once its run has ended; neither while it runs.
+Each run copies the private files a gate reads under `local/` (the declared `sensitive.patternsFile`, today
+`local/sensitive-patterns.txt`) from the main checkout into the tree, refreshed, and keeps the run's logs in the main
+checkout's `local/scratch/beside-<sha7>/` when it ends, pass, fail or error, so a prune loses none (GATEWT1b, GATEWT1c).
+A run killed outright leaves its logs in the tree; the next run keeps them there before it clears them.
 
 Commits are local work and follow green gates (D37). Push, publish, release, history rewrites and
 destructive actions retain their human boundary. Do not bypass provenance checks or hooks to make

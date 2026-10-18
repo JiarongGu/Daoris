@@ -129,6 +129,12 @@
  * - **Under load.** A full set beside merges shares the machine with their gates (GATEORDER1's lesson: a Process half's
  *   timing tests failed beside heavy gates). Nothing of FLAKE1's changes: a Process half's failures are re-run alone once
  *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start.
+ * - **Its private files, its logs (GATEWT1b, GATEWT1c).** Before its gates start, the private files a gate reads under
+ *   `local/` (`privateGateFiles`: the declared `sensitive.patternsFile`, nothing outside `local/`) are copied from the main
+ *   checkout into the tree on every run; a missing one is said, and the gate that reads it answers. When the run ends, pass,
+ *   fail or a thrown error, the tree's run folder is copied to the main checkout's `local/scratch/beside-<sha7>` (the newest
+ *   run's replaces an older), so a prune loses none. A run killed outright never gets there: the next run, before it clears
+ *   its logs, keeps any run folder it finds in the tree whose `beside-<sha7>` is absent.
  *
  * ## The prune (GATE2)
  *

@@ -173,6 +173,10 @@ const tool = await import(
   gateTreeVerdict: (facts: GateTreeFacts, options?: { atMerge?: boolean }) => { remove: boolean; why: string; said?: string };
   staleDependencies: (tree: string) => string[];
   stampDependencies: (tree: string, folder: string) => void;
+  privateGateFiles: (home: string) => string[];
+  copyPrivateFiles: (home: string, tree: string, files: string[]) => string[];
+  keepGateLogs: (tree: string, home: string, sha: string) => boolean;
+  rescueGateLogs: (tree: string, home: string) => string[];
 };
 
 // The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
