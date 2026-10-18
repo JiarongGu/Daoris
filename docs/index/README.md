@@ -84,7 +84,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsCommandTests.cs` | 46 | 904 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs` | 56 | 1147 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/TraceTests.cs` | 41 | 691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/AutoLandingTests.cs` | 54 | 1013 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/AutoLandingTests.cs` | 62 | 1182 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 46 | 821 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 55 | 857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 60 | 1093 |
@@ -97,15 +97,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 119 | 2109 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 112 | 2072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 924 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 170 | 2787 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 784 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 43 | 756 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 171 | 2789 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 785 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 43 | 757 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 78 | 1359 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 67 | 1098 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 59 | 1155 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 77 | 1330 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 717 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 718 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 130 | 2334 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 59 | 1282 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 76 | 1470 |
@@ -118,8 +118,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WorkPerformer.cs` | 52 | 868 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 62 | 1110 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/LandedCleanups.cs` | 44 | 720 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 48 | 787 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 73 | 1135 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 48 | 788 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 74 | 1145 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/WorkingTree.cs` | 57 | 1141 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 43 | 776 |
 
@@ -223,6 +223,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
-| `docs/2026-10-16-fabric-events-design.md` | 170 | 2078 |
+| `docs/2026-10-16-fabric-events-design.md` | 170 | 2082 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 95 | 542 |

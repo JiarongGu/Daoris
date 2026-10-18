@@ -1670,6 +1670,10 @@ submission rebinds the same step, with its id and its history. The step records 
 seal reads. A started step goes on only by the person's word, once its source is unheld again, or is abandoned by their decline. A
 reopen is refused once the step closed on the submission.
 
+**Amended (FABRIC-CLOSE1h, D173's note).** The landing waits on an unheld submission as it waits on an unheld done, and the gates read a
+submission as its done. The automatic landing is judged again once it holds its tree, before anything is made: its commitment point. A
+hold or reopen before it stops the landing; one after it applies to what follows, and a push made is never retracted.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
