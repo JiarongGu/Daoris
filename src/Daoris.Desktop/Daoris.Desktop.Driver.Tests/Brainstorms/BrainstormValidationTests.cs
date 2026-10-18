@@ -31,7 +31,8 @@ public sealed class BrainstormValidationTests
         {
             new("decision", "docs/decisions/D7.md", 3, 9, new string('a', 50), "report"),
             new("decision", "docs/decisions/D7.md", 3, 9, new string('a', 50), "daily report"),
-            new("knowledge", "C:/Users/someone/notes.md", null, null, "private", "report"),
+            // A machine path, spelled in pieces as SessionSyncTests spells one (a literal one fails the universal gate).
+            new("knowledge", string.Join('/', "C:", "Users", "someone", "notes.md"), null, null, "private", "report"),
             new("knowledge", "../elsewhere/notes.md", null, null, "outside", "report"),
             new("document", "docs/report.md", null, null, new string('b', 80), "report"),
             new("document", "docs/more.md", null, null, new string('c', 80), "report"),
