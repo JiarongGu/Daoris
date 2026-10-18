@@ -130,7 +130,8 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
 
         Assert.Equal(QuestReopenRefusal.None, (await _a.ReopenAsync(quest.Id, submission, "Build it again.", Now.AddHours(3))).Refusal);
         var reopen = (await _a.HistoryAsync(quest.Id))[^1];
-        var expected = new QuestReopen(reopen.Machine, reopen.Sequence, submission, "Build it again.", Now.AddHours(3));
+        // FABRIC-CLOSE1c8: and the session that said the reopened ready, which the reopen cleared with the submission.
+        var expected = new QuestReopen(reopen.Machine, reopen.Sequence, submission, "Build it again.", Now.AddHours(3), "s0a1b2c3");
         await SyncAsync(_a);
         await SyncAsync(_b);
 

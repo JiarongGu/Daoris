@@ -94,6 +94,61 @@ internal static class GoOnFiles
         }
     }
 
+    /// <summary>The reopens a session was told of (FABRIC-CLOSE1c8, <see cref="ReopenMarks"/>) written to <paramref name="path"/>, its folder made where it is not.</summary>
+    public static void WriteTold(string path, IReadOnlyList<ReopenTold> told)
+    {
+        JsonFile.Write(path, writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("told");
+            foreach (var each in told)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("quest", each.Quest);
+                writer.WriteString("machine", each.Machine);
+                writer.WriteNumber("sequence", each.Sequence);
+                writer.WriteString("at", Moments.Write(each.At));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+    }
+
+    /// <summary>The reopens told at <paramref name="path"/>: none for no file or one that does not read, and one not whole passed over.</summary>
+    public static IReadOnlyList<ReopenTold> ReadTold(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return [];
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("told", out var told) || told.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var read = new List<ReopenTold>();
+            foreach (var each in told.EnumerateArray())
+            {
+                if (each.ValueKind == JsonValueKind.Object
+                    && Json.Text(each, "quest") is { Length: > 0 } quest && Json.Text(each, "machine") is { Length: > 0 } machine
+                    && each.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
+                    && sequence.TryGetInt64(out var number))
+                {
+                    read.Add(new ReopenTold(quest, machine, number, Moments.Read(each, "at") ?? DateTimeOffset.MinValue));
+                }
+            }
+
+            return read;
+        }
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
     /// <summary>A conversation id written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteConversation(string path, string adapter, string conversation)
     {

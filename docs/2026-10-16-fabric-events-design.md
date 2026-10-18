@@ -1683,6 +1683,11 @@ result the press was made on: a reopen, a later submission or another `ready` at
 tree's hold nothing is made; at the push the branch stays made and the hand-off is its way on). A quest's hold does not stop it: the press
 is the person's own word. A press on no quest, or on a quest whose result is not in, lands as before.
 
+**Amended (FABRIC-CLOSE1h8, D173's note).** A hand-off is judged again just before its plugin is told, under its branch's hold, on the
+quest of the session that last moved the branch: the person's doors by the press's rule (the result moving stops it, a hold does not),
+the look's hand-on of a push held back by the look's (a hold stops it too, and its entry stays `push-held`). A refusal pushes nothing and
+records nothing.
+
 **Amended (FABRIC-CLOSE1c5, D173's note).** On the go-on, the step's branch is brought up to date by a replay, as the tree sync's: its own
 commits rebased onto the new submission's commit (its evidence's, on the wire), then the line. A conflict leaves the tree as it was and
 nothing else changes; the session is told the person must resolve it. With no commit known, the line alone is synced, and that said.

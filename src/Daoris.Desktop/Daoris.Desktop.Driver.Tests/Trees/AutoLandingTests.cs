@@ -1289,6 +1289,119 @@ public sealed class AutoLandingTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1h8 (D173's note): a person's hand-off is judged again under its branch's hold, just before its plugin is told, against
+    /// the quest of the session that last moved the branch (the parent's decision 1). s2's done moved s1's branch on; the hand-off waits
+    /// behind another push of it while s2's submission is reopened, replaced, readied again at the same commit or readied on another
+    /// machine: nothing is pushed, no plugin is told, nothing is recorded, and the answer names `trees hand s2`; the verb exits 1. A hold
+    /// on s2's quest does not stop it, since the hand-off is the person's own word (decision 2), nor does s1's result moving, which is
+    /// not the branch's last.
+    /// </summary>
+    [Theory]
+    [InlineData("reopened", false)]
+    [InlineData("replaced", false)]
+    [InlineData("same-commit", false)]
+    [InlineData("elsewhere", false)]
+    [InlineData("held", true)]
+    [InlineData("first-reopened", true)]
+    public async Task A_hand_off_waiting_for_its_push_tells_no_plugin_where_the_last_result_on_its_branch_moved(string change, bool pushes)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var first = await DoneSessionAsync(root, "s1", "q1", submitted: true);
+        Assert.Single(await LookAsync(pushes: false));
+        await DoneSessionAsync(root, "s2", "q2", parent: "q1", from: $"daoris/{Path.GetFileName(first)}", submitted: true);
+        Assert.Single(await LookAsync(pushes: false));
+        var recorded = new LandedBranches(_home).Of("engine", PushBranch)!;
+        Assert.Equal(("s1", "s2"), (recorded.Session, recorded.LastSession()));
+        Assert.False(recorded.Pushed);
+        lock (_frames) _frames.Clear();
+        _pushes = true;
+
+        // As the doors make it: the branch's last session's quest, read where the door names the branch.
+        var pressed = await PressQuests.HandedAsync(recorded, SessionQuestAsync, _world.QuestAsync);
+        Task<TreeHand> hand;
+        using (var pushing = await LandingHolds.BranchAsync(_home, root, PushBranch))
+        {
+            Assert.NotNull(pushing);
+            using (ExecutionContext.SuppressFlow())
+            {
+                hand = Task.Run(() => new SessionTrees(_home, Plugins()).HandAsync(root, recorded, beforePush: pressed?.BeforePush));
+            }
+
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || hand.IsCompleted,
+                TimeSpan.FromSeconds(60)), "the hand-off waits for its branch");
+            var quest = change == "first-reopened" ? "q1" : "q2";
+            var was = _world.Quests[quest];
+            _world.Quests[quest] = change switch
+            {
+                "reopened" or "first-reopened" => was with { Submission = null },
+                "replaced" => was with { Submission = Made(2) with { Commit = "a later commit" } },
+                "same-commit" => was with { Submission = Made(2) },
+                "elsewhere" => was with { Submission = new QuestSubmissionView("laptop", 1, DateTimeOffset.UtcNow, "ready") },
+                _ => was with { Held = true, Hold = EvidenceCodes.Departed },
+            };
+        }
+
+        var handed = await hand;
+
+        Assert.Equal(pushes, handed.Handed);
+        Assert.Equal(pushes, new LandedBranches(_home).Of("engine", PushBranch)!.Pushed);
+        Assert.True(await BranchAsync(root, PushBranch));
+        if (pushes)
+        {
+            Assert.Single(_frames);
+            Assert.Null(handed.Withheld);
+            return;
+        }
+
+        Assert.Empty(_frames);
+        Assert.Null(handed.Plugin);
+        Assert.NotNull(handed.Withheld);
+        Assert.Contains("its push was not tried", handed.Message);
+        Assert.Contains("`daoris-driver trees hand s2`", handed.Message);
+        Assert.Equal(1, TreesWords.Hand(handed, []).Code);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1h8: the look's own hand-off of a push held back keeps the look's rule (the parent's decision 3). Released, the look
+    /// hands the made branch on; that hand-off waits behind another push of the branch while the quest is held again: nothing is pushed,
+    /// no plugin is told, and the entry stays <c>push-held</c>, not refused, so the first look after the release hands it on, once.
+    /// </summary>
+    [Fact]
+    public async Task The_looks_hand_off_held_again_while_it_waits_for_its_push_stays_push_held_and_pushes_once_after_the_release()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        await DoneSessionAsync(root, "s1", "q1", submitted: true);
+        await HeldAtThePushAsync(root, quest => quest with { Held = true, Hold = EvidenceCodes.Departed });
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s1")!.Last!.Code);
+
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false, Hold = null };
+        var said = await HeldAtThePushAsync(root, quest => quest with { Held = true, Hold = EvidenceCodes.Departed });
+
+        Assert.Empty(_frames);
+        Assert.False(new LandedBranches(_home).Landing("s1")!.Pushed);
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal(AutoLandingCode.PushHeld, entry.Last!.Code);
+        Assert.Null(entry.Closed);
+        Assert.Contains("nothing was pushed", Assert.Single(said));
+
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false, Hold = null };
+        Assert.Single(await LookAsync());
+
+        Assert.Single(_frames);
+        Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed);
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal([$"refs/heads/{PushBranch}"], await FeatureBranchesAsync(root));
+    }
+
+    /// <summary>The quest a session serves, as the service answers it from its records (<c>ServiceClient.SessionQuestAsync</c>).</summary>
+    private Task<string?> SessionQuestAsync(string id, CancellationToken ct) =>
+        Task.FromResult(_world.Records.FirstOrDefault(record => string.Equals(record.Id, id, StringComparison.OrdinalIgnoreCase))?.Quest);
+
+    /// <summary>
     /// The person's press as its doors make it (FABRIC-CLOSE1h3): the quest read where the door names its landing, then the landing
     /// judged again under its holds on that read.
     /// </summary>

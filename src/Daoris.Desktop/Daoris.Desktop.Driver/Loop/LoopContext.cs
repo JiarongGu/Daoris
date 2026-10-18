@@ -32,6 +32,12 @@ internal sealed class LoopContext(
     /// </summary>
     public ChannelReach Channel { get; } = new();
 
+    /// <summary>
+    /// The sources' reopens told to the sessions that said their ready (FABRIC-CLOSE1c8), shared across the per-tick instances, with
+    /// the marks beside the sessions' transcripts that hold the once across a restart.
+    /// </summary>
+    public ReopenTelling Reopens { get; } = new(new ReopenMarks(home));
+
     /// <summary>The person's choices to go on in a new session rather than wait for a cooling account (MSG1g), beside the marks.</summary>
     public NewSessionChoices NewSessions { get; } = new(home);
 

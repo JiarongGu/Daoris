@@ -970,6 +970,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(named.machine, reopen.GetProperty("machine").GetString());
         Assert.True(reopen.GetProperty("sequence").GetInt64() > named.sequence);
         Assert.True(reopen.TryGetProperty("at", out _));
+        // FABRIC-CLOSE1c8: a ready this door made names no session, so its reopen names none to tell.
+        Assert.False(reopen.TryGetProperty("session", out _));
         Assert.Contains($"#{stepId}", reopened.Json.GetProperty("message").GetString());
         var withdrawn = await Step();
         Assert.Equal(("Open", "source-reopened"), (withdrawn.GetProperty("status").GetString(), withdrawn.GetProperty("hold").GetString()));
@@ -990,7 +992,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// FABRIC-CLOSE1c4: a submission a session's ready made answers that session (the one its connector's intake named), so the driver
-    /// tells the session that said it when the person reopens it, not the newest one on the quest.
+    /// tells the session that said it when the person reopens it, not the newest one on the quest. FABRIC-CLOSE1c8: the reopen, which
+    /// clears the submission, answers that session in its place.
     /// </summary>
     [Fact]
     public async Task A_submission_answers_the_session_that_said_its_ready()
@@ -998,6 +1001,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         var published = await host.PostAsync("/api/quests", new
         {
             from = "Asker", to = "Keeper", title = "Write the session's report", body = "For the review.",
+            then = new[] { new { to = "Keeper", title = "Check {parent}", body = "Look at it." } },
         });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
@@ -1008,6 +1012,12 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(QuestRespondRefusal.None, said.Refusal);
         var answered = (await host.GetAsync("/api/quests")).Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == quest);
         Assert.Equal("s0a1b2c3", answered.GetProperty("submission").GetProperty("session").GetString());
+
+        var submission = answered.GetProperty("submission");
+        var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
+        var reopened = await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." });
+        Assert.Equal(200, reopened.Status);
+        Assert.Equal("s0a1b2c3", reopened.Json.GetProperty("quest").GetProperty("reopened").GetProperty("session").GetString());
     }
 
     /// <summary>

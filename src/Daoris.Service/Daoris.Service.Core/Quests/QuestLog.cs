@@ -462,11 +462,13 @@ public static class QuestLog
         // FABRIC-CLOSE1c: on the quest that submitted it, the submission is current no more and its answers, yes and verdict go with
         // it, so the next ready is judged from the start; on the step it published, the step stands withdrawn or held for the person.
         // FABRIC-CLOSE1c4: the quest keeps the reopen until a later submission answers it, so its driver can tell a reopened quest
-        // from one not yet ready, and the session that said the ready what the person said.
+        // from one not yet ready, and the session that said the ready what the person said. FABRIC-CLOSE1c8: the reopen names that session,
+        // which it clears with the submission, so the taker's machine knows whom to tell.
         QuestOperationKind.Reopened when SubmittedHere(quest!, operation.Submission!) => quest! with
         {
             Submission = null, Answers = [], Accepted = null, Evidence = null, Updated = operation.At,
-            Reopened = new QuestReopen(operation.Machine, operation.Sequence, operation.Submission!, operation.Note, operation.At),
+            Reopened = new QuestReopen(
+                operation.Machine, operation.Sequence, operation.Submission!, operation.Note, operation.At, quest.Submission!.Session),
         },
         QuestOperationKind.Reopened => quest! with { SourceReopened = operation.Submission, Updated = operation.At },
         QuestOperationKind.Rebound => quest! with { GrewFrom = operation.Submission, SourceReopened = null, Updated = operation.At },

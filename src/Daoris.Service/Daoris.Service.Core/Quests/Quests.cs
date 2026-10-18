@@ -440,7 +440,11 @@ public sealed record QuestSubmission(string Machine, long Sequence, DateTimeOffs
 /// it: the <see cref="QuestOperationKind.Reopened"/> operation by its machine and sequence, the submission it reopened
 /// (<paramref name="Of"/>), the person's words, and when.
 /// </summary>
-public sealed record QuestReopen(string Machine, long Sequence, QuestOperationRef Of, string? Note, DateTimeOffset At);
+/// <param name="Session">
+/// The session that said the reopened submission's <c>ready</c> (FABRIC-CLOSE1c8), which the reopen clears with the submission: the
+/// one its taker's machine tells. Null where none did (the respond door) and for a reopen a build before it kept.
+/// </param>
+public sealed record QuestReopen(string Machine, long Sequence, QuestOperationRef Of, string? Note, DateTimeOffset At, string? Session = null);
 
 /// <summary>Why the person's reopen, or their word to go on, moved nothing (FABRIC-CLOSE1c, §E5), or <see cref="None"/>.</summary>
 public enum QuestReopenRefusal
@@ -1365,6 +1369,7 @@ public sealed class QuestStore
                 WriteRef(writer, "of", reopen.Of);
                 if (reopen.Note is not null) writer.WriteString("note", reopen.Note);
                 writer.WriteString("at", Moments.Write(reopen.At));
+                if (reopen.Session is not null) writer.WriteString("session", reopen.Session);
                 writer.WriteEndObject();
             })
             : DBNull.Value);
@@ -3450,7 +3455,10 @@ public sealed class QuestStore
             root.TryGetProperty("session", out var session) ? session.GetString() : null);
     }
 
-    /// <summary>A quest's own reopen as this store's own column keeps it (FABRIC-CLOSE1c4); one not whole is none.</summary>
+    /// <summary>
+    /// A quest's own reopen as this store's own column keeps it (FABRIC-CLOSE1c4); one not whole is none. Its session (FABRIC-CLOSE1c8)
+    /// is absent from a row a build before it kept, and read as none.
+    /// </summary>
     private static QuestReopen? ReadReopen(string json)
     {
         using var document = System.Text.Json.JsonDocument.Parse(json);
@@ -3459,7 +3467,7 @@ public sealed class QuestStore
             && root.TryGetProperty("at", out var at) && at.GetString() is { } when
             ? new QuestReopen(
                 named.Machine, named.Sequence, reopened, root.TryGetProperty("note", out var note) ? note.GetString() : null,
-                Moments.ReadRequired(when))
+                Moments.ReadRequired(when), root.TryGetProperty("session", out var session) ? session.GetString() : null)
             : null;
     }
 

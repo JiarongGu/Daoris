@@ -16,6 +16,12 @@ public sealed record HandPlan(string Repository, string Branch, string? Plugin, 
 public sealed record TreeHand(bool Handed, string Message, string? Branch = null, PluginLanding? Plugin = null)
 {
     /// <summary>
+    /// Why its push was held back just before its plugin was told (FABRIC-CLOSE1h8): the door's judgement, as a landing's
+    /// <see cref="TreeLanding.Withheld"/> says it. No plugin was spoken to and nothing was recorded; null where it was not held there.
+    /// </summary>
+    public string? Withheld { get; init; }
+
+    /// <summary>
     /// The sentence for a name the record holds no landed branch under — the hand-off's first refusal. On the public answer
     /// (PART10l), since the terminal and the Modules bridge say it too and <see cref="TreeHandOffs"/> is internal over the context.
     /// </summary>
@@ -47,7 +53,15 @@ internal sealed class TreeHandOffs(TreeContext context)
     /// fails, or answers that it did not push, leaves the branch, the record and the remote as they were, and
     /// the sentence says how to push by hand. Only a push is kept on the record.</para>
     /// </remarks>
-    internal async Task<TreeHand> HandAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default)
+    /// <param name="beforePush">
+    /// The door's judgement under the branch's hold, just before the plugin is told, told whether the hold waited (FABRIC-CLOSE1h8): the
+    /// sentence that holds the push back (<see cref="TreeHand.Withheld"/>), or null to go on. A person's door passes the result of the
+    /// session that last moved the branch (<see cref="PressQuests.HandedAsync(LandedBranch, ServiceClient, CancellationToken)"/>), the
+    /// look its own rule; none judges nothing, as before.
+    /// </param>
+    internal async Task<TreeHand> HandAsync(
+        string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default,
+        Func<bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         // LANDRACE1's review (D173's LANDRACE1 note): one push of a landed branch at a time, a hand-off's and a landing's plugin step
         // alike, so a hand-off beside the landing that is still pushing the branch never pushes it again or opens a second pull request.
@@ -71,6 +85,16 @@ internal sealed class TreeHandOffs(TreeContext context)
         {
             return new(false, $"`{entry.Branch}` was pushed at this commit while this hand-off waited for that push: {Said(pushed, entry.Branch)} "
                 + "Nothing more was handed on.", entry.Branch, pushed);
+        }
+
+        // FABRIC-CLOSE1h8 (D173's note): the door's judgement once more, just before its plugin is told, past which the push has begun.
+        // Held here, no plugin is spoken to and nothing is kept, on the record or for a door behind this one: the branch stands as it was.
+        if (beforePush is not null && await beforePush(pushing.Waited, ct).ConfigureAwait(false) is { } withheld)
+        {
+            return new(false, $"`{entry.Branch}` was not handed on. {Sentence(char.ToUpperInvariant(withheld[0]) + withheld[1..])}", entry.Branch)
+            {
+                Withheld = withheld,
+            };
         }
 
         // The landing's own frame, said in the machine log as a hand-off (PLUGUI1d).
@@ -181,7 +205,7 @@ internal sealed class TreeHandOffs(TreeContext context)
 
         // The pull request a plugin already opened from it, so the hand-off grows it rather than opening a second, and who
         // accepted the work it carries (LAND2c, D149 point 4): its newest acceptance, a landing from before kept as the person's.
-        var newest = entry.Advances.Count > 0 ? entry.Advances[^1].Session : entry.Session;
+        var newest = entry.LastSession();
         return (new HandPlan(repository, branch, plugin, null, entry.PullRequest, commits.Count),
             new LandingFrame(repository, workspace, root, branch, line, entry.Title, entry.Quest, entry.Session, commits,
                 entry.Pushed ? entry.PullRequest : null, entry.AcceptedByOf(newest) ?? AcceptedBy.Person, Tip: tip),

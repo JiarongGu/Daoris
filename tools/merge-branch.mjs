@@ -1693,6 +1693,18 @@ function git(cwd, args, { allowFail = false, env } = {}) {
   return { status: result.status, out: result.stdout.trimEnd(), err: result.stderr.trim() };
 }
 
+/**
+ * What a `git check-ignore -q` probe answered: status 0 is ignored, 1 is not, and anything else (128, or a
+ * git that could not answer under load) is a tool error, not a false "not ignored" (GATEIGNORE1).
+ */
+export function ignoredVerdict({ status, err }, path) {
+  if (status === 0) return true;
+  if (status === 1) return false;
+  throw new Refusal(`git check-ignore ${path} failed (status ${status}): ${err || 'no message'}`);
+}
+
+const isIgnored = (cwd, path) => ignoredVerdict(git(cwd, ['check-ignore', '-q', path], { allowFail: true }), path);
+
 const lines = (text) => text.split('\n').filter((line) => line.trim());
 
 // Each git start costs tens of milliseconds on Windows, so the checkout's git folder is asked for once,
@@ -1759,7 +1771,7 @@ function preconditions(root) {
   const refusal = startRefusal(facts);
   if (refusal) throw new Refusal(refusal);
   // Asked last, and only of a checkout that passed the rest: it is one more git start.
-  if (git(root, ['check-ignore', '-q', `${SCRATCH}/merge-probe.log`], { allowFail: true }).status !== 0) {
+  if (!isIgnored(root, `${SCRATCH}/merge-probe.log`)) {
     throw new Refusal(startRefusal({ ...facts, ignored: false }));
   }
   requireVerdictsIgnored(root);
@@ -1768,7 +1780,7 @@ function preconditions(root) {
 /** The verdicts record is written as each gate ends: tracked or untracked, it would change the tree it judges. In the main checkout (GATEWT1). */
 function requireVerdictsIgnored(root) {
   const home = verdictsHome(root);
-  if (git(home, ['check-ignore', '-q', VERDICTS_FILE], { allowFail: true }).status !== 0) {
+  if (!isIgnored(home, VERDICTS_FILE)) {
     throw new Refusal(`${VERDICTS_FILE} is not ignored ${samePath(home, root) ? 'here' : 'in the main checkout, where every worktree records'}, so each verdict written would change the tree it is a verdict on`);
   }
 }
@@ -3030,7 +3042,7 @@ async function gateCheckout(root, options) {
   }
   const head = headCommit(root);
   if (!head) throw new Refusal('this checkout has no commit to gate');
-  if (git(root, ['check-ignore', '-q', `${SCRATCH}/full-probe.log`], { allowFail: true }).status !== 0) {
+  if (!isIgnored(root, `${SCRATCH}/full-probe.log`)) {
     throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
   }
   requireVerdictsIgnored(root);
@@ -3124,7 +3136,7 @@ async function rerunCheckout(root, options) {
   if (changed.length) {
     throw new Refusal(`${notClean(changed)}\n  ${verb} on the checkout gates a commit: commit the change first, or ${FULL_COMMAND} gates the tree as it stands`);
   }
-  if (git(root, ['check-ignore', '-q', `${SCRATCH}/full-probe.log`], { allowFail: true }).status !== 0) {
+  if (!isIgnored(root, `${SCRATCH}/full-probe.log`)) {
     throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
   }
   requireVerdictsIgnored(root);
@@ -3597,7 +3609,7 @@ const UNDER_LOAD = 'under load: a full set beside the merges shares the machine 
  */
 async function gateBeside(root, options) {
   const home = verdictsHome(root);
-  if (git(home, ['check-ignore', '-q', GATE_TREE], { allowFail: true }).status !== 0) {
+  if (!isIgnored(home, GATE_TREE)) {
     throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
   }
   requireVerdictsIgnored(home);

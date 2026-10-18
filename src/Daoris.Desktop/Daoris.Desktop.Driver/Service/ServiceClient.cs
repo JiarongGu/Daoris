@@ -2154,12 +2154,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>
     /// A source's own reopen no later submission answered (FABRIC-CLOSE1c4), or null: none, from a host before it, or named only in half,
-    /// the reopen's or the reopened submission's machine and sequence.
+    /// the reopen's or the reopened submission's machine and sequence. The session that said the reopened ready (FABRIC-CLOSE1c8), absent
+    /// where none did and from a host before it.
     /// </summary>
     private static QuestReopenView? ReadReopen(JsonElement quest) =>
         quest.TryGetProperty("reopened", out var reopen) && reopen.ValueKind == JsonValueKind.Object
         && ReadSubmissionRef(quest, "reopened") is { } named && ReadSubmissionRef(reopen, "of") is { } of
-            ? new QuestReopenView(named.Machine, named.Sequence, of, Text(reopen, "note"), Moment(reopen, "at"))
+            ? new QuestReopenView(
+                named.Machine, named.Sequence, of, Text(reopen, "note"), Moment(reopen, "at"),
+                Text(reopen, "session") is { Length: > 0 } session ? session : null)
             : null;
 
     /// <summary>A submission a quest names by its machine and sequence (FABRIC-CLOSE1c), or null: none, from a host before it, or named only in half.</summary>

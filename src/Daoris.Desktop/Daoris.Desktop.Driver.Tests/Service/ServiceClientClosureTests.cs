@@ -89,19 +89,23 @@ public sealed class ServiceClientClosureTests
             """
             [{ "id": "q7", "from": "game", "to": "engine", "title": "Ship it", "body": "", "status": "Taken", "closure": "gph-0123",
                "reopened": { "machine": "desk", "sequence": 44, "of": { "machine": "desk", "sequence": 41 },
-                             "note": "The bridge is wrong.", "at": "2026-10-18T09:00:00+00:00" } },
+                             "note": "The bridge is wrong.", "at": "2026-10-18T09:00:00+00:00", "session": "s0a1b2c3" } },
              { "id": "q8", "from": "game", "to": "engine", "title": "Again", "body": "", "status": "Taken", "closure": "gph-0123",
                "submission": { "machine": "desk", "sequence": 45, "note": "ready", "session": "s0a1b2c3" } },
              { "id": "q9", "from": "game", "to": "engine", "title": "Half", "body": "", "status": "Taken", "closure": "gph-0123",
                "reopened": { "machine": "desk", "sequence": 44, "of": { "machine": "desk" } } },
              { "id": "q10", "from": "game", "to": "engine", "title": "Old", "body": "", "status": "Taken", "closure": "gph-0123",
-               "submission": { "machine": "desk", "sequence": 41 } }]
+               "submission": { "machine": "desk", "sequence": 41 } },
+             { "id": "q11", "from": "game", "to": "engine", "title": "Unsaid", "body": "", "status": "Taken", "closure": "gph-0123",
+               "reopened": { "machine": "desk", "sequence": 44, "of": { "machine": "desk", "sequence": 41 }, "session": "" } }]
             """);
 
+        // FABRIC-CLOSE1c8: the reopen names the session that said the reopened ready; none where it is blank or absent.
         Assert.Equal(
             new QuestReopenView("desk", 44, new QuestSubmissionRef("desk", 41), "The bridge is wrong.",
-                new DateTimeOffset(2026, 10, 18, 9, 0, 0, TimeSpan.Zero)),
+                new DateTimeOffset(2026, 10, 18, 9, 0, 0, TimeSpan.Zero), "s0a1b2c3"),
             quests[0].Reopened);
+        Assert.Null(quests[4].Reopened!.Session);
         Assert.Null(quests[0].Submission);
         Assert.Equal("s0a1b2c3", quests[1].Submission!.Session);
         Assert.Null(quests[1].Reopened);

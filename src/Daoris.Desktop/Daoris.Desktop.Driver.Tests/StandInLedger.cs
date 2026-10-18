@@ -323,6 +323,28 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
+    /// <summary>
+    /// The person reopened <paramref name="id"/>'s own submission (FABRIC-CLOSE1c4, FABRIC-CLOSE1c8), as the service then lists the
+    /// source: no submission, and its reopen by its machine and sequence, the submission it reopened, their words and the session that
+    /// said the reopened ready, each left out where none.
+    /// </summary>
+    public void SourceReopened(string id, long sequence, long of, string? note, string? session, string machine = "desk")
+    {
+        lock (_gate)
+        {
+            var quest = _quests.Single(q => q["id"]!.GetValue<string>() == id);
+            quest.Remove("submission");
+            var reopen = new JsonObject
+            {
+                ["machine"] = machine, ["sequence"] = sequence, ["of"] = new JsonObject { ["machine"] = machine, ["sequence"] = of },
+                ["at"] = _clock.ToString("O"),
+            };
+            if (note is not null) reopen["note"] = note;
+            if (session is not null) reopen["session"] = session;
+            quest["reopened"] = reopen;
+        }
+    }
+
     /// <summary>Move a quest, as its session's own connector would.</summary>
     public void Move(string id, string status)
     {

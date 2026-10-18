@@ -9,6 +9,9 @@ with the version and date at release.
   of the same work. Where the quest was taken back or its result handed in again meanwhile, nothing lands and Accept says why; where
   that happens just before the push, the branch stays and `daoris-driver trees hand <session>` pushes it. A hold alone does not stop
   your Accept.
+- Handing a landed branch on (*hand it to*, Ask Daoris's card, or `daoris-driver trees hand`) now looks again at the quest of the
+  session whose work last moved the branch when it had to wait behind another push of it. Where that result was taken back or handed
+  in again meanwhile, no plugin is told, the branch stays as it was, and the answer says why. A hold alone does not stop it.
 - Under *Accept automatically*, a session you carry on with more words after its work landed now lands again when it is done
   again: its branch moves on and its pull-request plugin pushes once. Before, the later work waited for your Accept. A session
   stuck that way lands at the first look after the update, or is closed where nothing new is in it.

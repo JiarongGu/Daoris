@@ -188,7 +188,12 @@ public sealed record QuestSubmissionView(
 /// The person's reopen of a quest's own submission (FABRIC-CLOSE1c4), as the service answers it until a later submission answers it:
 /// the reopen by its machine and sequence, the submission it reopened (<paramref name="Of"/>), their words, and when.
 /// </summary>
-public sealed record QuestReopenView(string Machine, long Sequence, QuestSubmissionRef Of, string? Note, DateTimeOffset? At);
+/// <param name="Session">
+/// The session that said the reopened submission's <c>ready</c> (FABRIC-CLOSE1c8): the one this machine tells of the reopen. Null where
+/// no session said it (the respond door), and from a host before the field.
+/// </param>
+public sealed record QuestReopenView(
+    string Machine, long Sequence, QuestSubmissionRef Of, string? Note, DateTimeOffset? At, string? Session = null);
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
 public sealed record QuestRequirementView(string Quote, string Check)
