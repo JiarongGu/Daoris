@@ -140,6 +140,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return new Snapshot(quests, repositories, active, ReadStrikes(records))
         {
             LastRun = lastRun,
+            // The session a taken quest's reopen names, where a later one is its last here (FABRIC-CLOSE1c9): its words go on in it.
+            NamedByReopen = ReadNamedByReopen(records, quests, lastRun),
             Started = ReadStarted(records, active),
             Closed = closed,
             // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
@@ -1730,6 +1732,45 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The record each taken quest's standing reopen names (FABRIC-CLOSE1c9; <see cref="Snapshot.NamedByReopen"/>), where it is
+    /// this machine's and not the quest's last record here (<paramref name="lastRun"/>), from the same records.
+    /// </summary>
+    /// <remarks>Nothing is parsed where no taken quest's reopen names such a session, which is every look of an unbound install.</remarks>
+    internal static IReadOnlyDictionary<string, PriorSession> ReadNamedByReopen(
+        string json, IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun)
+    {
+        var named = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
+        var wanted = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var quest in quests)
+        {
+            // A teammate's session (origin/id) is never this machine's to go on with; the last one here is the planner's already.
+            if (quest is not { Status: "Taken", Reopened.Session: { Length: > 0 } session } || session.Contains('/')
+                || string.Equals(lastRun.GetValueOrDefault(quest.Id)?.Session, session, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (!wanted.TryGetValue(session, out var naming)) wanted[session] = naming = [];
+            naming.Add(quest.Id);
+        }
+
+        if (wanted.Count == 0) return named;
+
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return named;
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || IsTeams(session)) continue;
+            if (Text(session, "id") is not { } id || !wanted.TryGetValue(id, out var naming)) continue;
+
+            var record = Prior(session);
+            foreach (var quest in naming) named[quest] = record;
+        }
+
+        return named;
     }
 
     /// <summary>
