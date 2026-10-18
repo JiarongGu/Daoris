@@ -1466,6 +1466,86 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.TakenElsewhere, Assert.Single(Planner.Plan(taken, Config())).Verdict);
     }
 
+    // ── a step gone on with after its session ended normally (FABRIC-CLOSE1c13, §E5) ──────────────────────────────────────────────
+    //
+    // The person's go-on rebinds the step to its source's new submission and clears its own result (FABRIC-CLOSE1c10). A session the
+    // reopen stopped is carried on above; one that had already ended normally, parked after its `ready` or completed, is told Daoris's
+    // words of the go-on (ReopenTelling), and the planner goes on with them in it. The service's fact: taken, unheld, no submission,
+    // grown from a submission, and moved after that session ended.
+
+    private static readonly DateTimeOffset Ended = new(2026, 10, 18, 9, 0, 0, TimeSpan.Zero);
+
+    /// <summary>q2 after the person's go-on, its last move the rebound, ten minutes after <see cref="Ended"/>.</summary>
+    private static QuestView GoneOn() => Step("Taken", reopened: false) with { Updated = Ended.AddMinutes(10) };
+
+    /// <summary>q2's last session here, which ended normally at <see cref="Ended"/>: parked after its `ready`, or completed.</summary>
+    private static PriorSession EndedNormally(string state = "awaiting-person", string session = "s1") =>
+        new(session, "D:/trees/s1", state, "It stopped with its quest still taken, to ask you:", Repository: "Game") { Updated = Ended, Said = [] };
+
+    /// <summary>A step gone on with after its session parked or completed is the case the telling tells.</summary>
+    [Theory]
+    [InlineData("awaiting-person")]
+    [InlineData("completed")]
+    public void A_step_gone_on_with_after_its_session_ended_normally_is_read_so(string state)
+    {
+        Assert.True(Planner.GoneOnSince(GoneOn(), EndedNormally(state)));
+    }
+
+    /// <summary>
+    /// Every other step and record reads as before: the session the reopen stopped (carried on), one ended after the go-on, one running,
+    /// one with words or an answer waiting, a cut-off, a stop, a stand-down, a teammate's; a step with a submission, held, open, waiting
+    /// on a question, whose own submission was reopened, grown from no submission, or with no time to compare.
+    /// </summary>
+    [Fact]
+    public void Every_other_step_and_session_is_not_read_as_gone_on_with()
+    {
+        var said = new SaidWordView("w1", "Go on.", Ended, [], Reopens: true);
+        PriorSession[] records =
+        [
+            StoppedByReopen() with { Updated = Ended },
+            EndedNormally() with { Updated = Ended.AddMinutes(20) },
+            EndedNormally("working"),
+            EndedNormally() with { Said = [said] },
+            EndedNormally() with { Answer = "Yes." },
+            EndedNormally("failed"),
+            EndedNormally("stopped"),
+            EndedNormally("stood-down"),
+            EndedNormally(session: "laptop/s1"),
+            EndedNormally() with { Updated = null },
+        ];
+        foreach (var record in records) Assert.False(Planner.GoneOnSince(GoneOn(), record), record.ToString());
+
+        QuestView[] steps =
+        [
+            GoneOn() with { Submission = new QuestSubmissionView("desk", 47, Ended.AddMinutes(11), "ready") },
+            Step("Taken") with { Updated = Ended.AddMinutes(10) },
+            GoneOn() with { Status = "Open" },
+            GoneOn() with { Awaits = "q9" },
+            GoneOn() with { Reopened = new QuestReopenView("desk", 48, new("desk", 47), null, Ended.AddMinutes(5), "s1") },
+            GoneOn() with { GrewFrom = null },
+            GoneOn() with { Updated = null },
+        ];
+        foreach (var step in steps) Assert.False(Planner.GoneOnSince(step, EndedNormally()), step.ToString());
+    }
+
+    /// <summary>
+    /// The planner plans nothing for it until Daoris's words wait on the session, then goes on with them in that same session, in its
+    /// tree; a step the reopen stopped is carried on as before. Green before the change, as a guard: the telling is what moves it.
+    /// </summary>
+    [Fact]
+    public void A_step_gone_on_with_goes_on_in_its_session_once_told_and_a_stopped_one_is_carried_on_as_before()
+    {
+        Assert.Empty(Planner.Plan(Ran([GoneOn()], ("q2", EndedNormally("completed"))), Config()));
+
+        var words = new SaidWordView("w1", ReopenTelling.GoneOnWords("q2", "q1", S2), Ended.AddMinutes(11), [], Reopens: true);
+        var told = EndedNormally("completed") with { Said = [words] };
+        var goes = Assert.Single(Planner.Plan(Ran([GoneOn()], ("q2", told)), Config()));
+        Assert.Equal((StartVerdict.Start, true, told), (goes.Verdict, goes.GoesOn, goes.Resumes));
+
+        var carried = Assert.Single(Planner.Plan(Ran([GoneOn()], ("q2", StoppedByReopen())), Config()));
+        Assert.Equal((StartVerdict.Start, false), (carried.Verdict, carried.GoesOn));
+    }
+
     /// <summary>
     /// A look reads the hold from the service's answer: a withdrawn step and a held one sit, and no claim is asked of the held one
     /// while nothing would carry it on. Once the person goes on with each, the withdrawn step starts and the held one's claim is

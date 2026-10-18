@@ -37,6 +37,11 @@ sample is the kind's own sample with the field set. Check too the places that ca
 row: `KeepAsync` and `RewriteAsync` (a lost move rewritten as a conflict), and any note rewrite on the way (QUESTCLOSE1b1's
 `noteParts` is the worked example, D126's note).
 
+**An existing kind's effect changing** touches row 2 alone, and no shape changes, so an older build reads the same log as a
+different quest without refusing anything. The remote and every machine take the change together, as for a new kind, and a row
+an older build cached reads as it was until the quest's next operation replays it. Prove the change on two machines and the
+remote, as `QuestReopenSyncTests` does for FABRIC-CLOSE1c10's `rebound`, which now clears a held step's result.
+
 ### The places
 
 Rows 1 to 8 are the eight `evidenced` needed, and every kind needs them. Rows 9 to 11 come with what the kind carries and who

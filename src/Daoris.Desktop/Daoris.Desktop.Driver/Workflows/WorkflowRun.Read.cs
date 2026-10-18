@@ -56,14 +56,16 @@ public static class WorkflowRunReader
             };
         }
 
-        var (chains, problem) = ChainsOf(asked, quests, sessions);
+        var (chains, problem, only) = ChainsOf(asked, quests, sessions);
         if (problem is not null) return new WorkflowRunRead([], problem);
 
         var reads = new Reads(sources, quests, records, ct);
         var runs = new List<WorkflowRun>();
         foreach (var chain in chains)
         {
-            foreach (var repository in chain.Select(quest => quest.To).Distinct(StringComparer.OrdinalIgnoreCase))
+            // A quest's run (or its session's) is its own repository's, read over the whole chain; an ask's is one run per repository.
+            var repositories = only is null ? chain.Select(quest => quest.To).Distinct(StringComparer.OrdinalIgnoreCase) : [only];
+            foreach (var repository in repositories)
             {
                 runs.Add(await RunAsync(chain, repository, sessions, reads).ConfigureAwait(false));
             }
@@ -73,26 +75,27 @@ public static class WorkflowRunReader
     }
 
     /// <summary>The chains whose runs are asked for, each whole across its repositories, or the sentence that says why there are none.</summary>
-    internal static (IReadOnlyList<IReadOnlyList<QuestView>> Chains, string? Problem) ChainsOf(
+    internal static (IReadOnlyList<IReadOnlyList<QuestView>> Chains, string? Problem, string? Only) ChainsOf(
         WorkflowRunAsk asked, IReadOnlyList<QuestView> quests, IReadOnlyList<TracedSession> sessions)
     {
         if (asked.Session is { } sessionId)
         {
             var session = sessions.FirstOrDefault(each => Same(each.Id, sessionId.Trim()));
-            if (session is null) return ([], $"no session `{sessionId.Trim()}` is recorded here.");
+            if (session is null) return ([], $"no session `{sessionId.Trim()}` is recorded here.", null);
             if (session.Quest is { } quest) return ChainsOf(new WorkflowRunAsk(Quest: quest), quests, sessions);
             if (session.Ask is { } ask) return ChainsOf(new WorkflowRunAsk(Ask: ask), quests, sessions);
-            return ([], $"session `{session.Id}` serves no quest, so no workflow runs for it.");
+            return ([], $"session `{session.Id}` serves no quest, so no workflow runs for it.", null);
         }
 
         if (asked.Quest is { } questId)
         {
             var id = questId.Trim().TrimStart('#');
             var quest = quests.FirstOrDefault(each => Same(each.Id, id));
-            if (quest is null) return ([], $"no quest `#{id}` is here.");
+            if (quest is null) return ([], $"no quest `#{id}` is here.", null);
             var chain = ReviewGate.ChainOf(quests, quest.Id);
-            // A quest's run is its chain's work in its own repository, the chain's other repositories being their own runs.
-            return ([[.. chain.Where(each => Same(each.To, quest.To))]], null);
+            // A quest's run is its own repository's, over the whole chain: a step or source in another repository seals, submits and
+            // reopens it as a same-repository one does (FABRIC-WORKFLOW2e), and the chain's other repositories are their own runs.
+            return ([chain], null, quest.To);
         }
 
         if (asked.Ask is { } askId)
@@ -110,10 +113,10 @@ public static class WorkflowRunReader
                 chains.Add(chain);
             }
 
-            return (chains, null);
+            return (chains, null, null);
         }
 
-        return ([], "a run is read for a `session`, a `quest` or an `ask` — name one of them.");
+        return ([], "a run is read for a `session`, a `quest` or an `ask` — name one of them.", null);
     }
 
     /// <summary>One run: the chain's work in <paramref name="repository"/>, from every store that keeps a part of it.</summary>

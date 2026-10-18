@@ -1867,7 +1867,8 @@ public sealed class QuestExchange(
 
     /// <summary>
     /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): it grows from the source's current
-    /// submission once that is unheld, its hold let go. To abandon it instead is their decline, at the decline's own door.
+    /// submission once that is unheld, its hold let go, and any result it submitted on the reopened work cleared (FABRIC-CLOSE1c10).
+    /// To abandon it instead is their decline, at the decline's own door.
     /// </summary>
     public async Task<QuestRespondOutcome> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -1879,7 +1880,8 @@ public sealed class QuestExchange(
             QuestReopenRefusal.None => new(
                 QuestRespondRefusal.None,
                 $"Quest `#{quest}` goes on: it grows from `#{parent}`'s current submission now, and its hold is let go. Its work "
-                + "stands on what was reopened, so bring its branch up to date with that submission first.",
+                + "stands on what was reopened, so any result it submitted is cleared: bring its branch up to date with that submission "
+                + "first, and it must submit again from there.",
                 going.Quest),
             QuestReopenRefusal.NotFound => new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", null),
             QuestReopenRefusal.NotWithdrawn => new(

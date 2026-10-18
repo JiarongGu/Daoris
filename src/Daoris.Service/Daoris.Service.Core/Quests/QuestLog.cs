@@ -471,7 +471,14 @@ public static class QuestLog
                 operation.Machine, operation.Sequence, operation.Submission!, operation.Note, operation.At, quest.Submission!.Session),
         },
         QuestOperationKind.Reopened => quest! with { SourceReopened = operation.Submission, Updated = operation.At },
-        QuestOperationKind.Rebound => quest! with { GrewFrom = operation.Submission, SourceReopened = null, Updated = operation.At },
+        // FABRIC-CLOSE1c10: a held step's own result (its submission, answers, yes and verdict) was made on the work reopened, so the
+        // person's go-on clears it as a reopen of it would, and the step submits anew once its branch holds the new source; the go-on
+        // alone never makes old work finished again. It sets no reopen of its own. A withdrawn open step has none, and reads as it did.
+        QuestOperationKind.Rebound => quest! with
+        {
+            GrewFrom = operation.Submission, SourceReopened = null,
+            Submission = null, Answers = [], Accepted = null, Evidence = null, Updated = operation.At,
+        },
         // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none. The note's parts are the
         // move's own, so a note written without them clears the last one's (QUESTCLOSE1b1, D142 point 2). A close also clears
         // the question the quest waited on: it names one only while taken, the Waited operation staying in the history (AWAITSTALE1, D79).
