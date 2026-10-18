@@ -6,6 +6,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal static class Poll
 {
+    /// <summary>
+    /// How long a test waits on a signal that only fails to come when the code is wrong (TESTPATIENCE1).
+    /// Two minutes, because the bound elapses only on failure, and a starved run reached any shorter one
+    /// on time alone. Never for an elapsed-time bound that states the claim itself, nor for a staging delay.
+    /// </summary>
+    public static readonly TimeSpan Patience = TimeSpan.FromMinutes(2);
+
     /// <summary>Wait until <paramref name="condition"/> holds, or fail saying what was seen.</summary>
     /// <param name="seen">What the test saw, for the failure: the state the condition was waiting on.</param>
     /// <param name="within">

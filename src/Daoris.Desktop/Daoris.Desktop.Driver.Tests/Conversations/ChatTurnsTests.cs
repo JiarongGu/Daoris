@@ -279,7 +279,7 @@ public sealed class ChatTurnsTests
 
         Assert.Single(door.Took);
         door.InterruptGate.SetResult();
-        Assert.Equal(new SentNow("turn-end", true, null), await pressing.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(new SentNow("turn-end", true, null), await pressing.WaitAsync(Poll.Patience));
         await Poll.Until(() => door.Took.Count == 2, () => "the kept words never went");
         Assert.Equal([1], door.InterruptedAt);
     }
