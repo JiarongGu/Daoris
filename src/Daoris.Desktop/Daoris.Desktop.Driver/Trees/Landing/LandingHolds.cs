@@ -318,6 +318,9 @@ internal sealed record LandingAttempt(string Branch, string Tip, string Accepted
     /// <summary>What that plugin answered; null while it has not.</summary>
     public PluginLanding? Said { get; init; }
 
-    /// <summary>Why its push was not tried, where the plugin could not land work here (D145 point 2).</summary>
+    /// <summary>
+    /// Why its push was not tried: the plugin could not land work here (D145 point 2), or its quest was held, taken back or submitted
+    /// again just before the plugin was told (FABRIC-CLOSE1h2).
+    /// </summary>
     public string? Unready { get; init; }
 }

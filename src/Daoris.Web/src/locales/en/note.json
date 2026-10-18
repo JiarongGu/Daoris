@@ -83,6 +83,7 @@
   "note.landing.accepted": "Accepted automatically when its quest was done: its work is on `{{branch}}`.",
   "note.landing.plugin-unready": "Accepted automatically when its quest was done: its work is on `{{branch}}`, and `{{plugin}}` cannot land work here, so nothing was pushed; `trees hand` gives it the branch once it can.",
   "note.landing.plugin-failed": "Accepted automatically when its quest was done: its work is on `{{branch}}`, and `{{plugin}}` did not push it.",
+  "note.landing.push-held": "Accepted automatically when its quest was done: its work is on `{{branch}}`, but its quest was held or taken back before `{{plugin}}` was told, so nothing was pushed. The first look once it stands again hands the branch on.",
   "note.landing.nothing": "Its quest was done and its work made no commits, so nothing was landed.",
   "note.landing.held": "Its quest is done and held for your yes, so its work lands at the look after you release it.",
   "note.landing.uncommitted": "Not accepted automatically: its tree holds uncommitted work (paths: {{paths}}), which a branch would leave behind. Commit it in the tree or tell the session, then Accept lands it.",

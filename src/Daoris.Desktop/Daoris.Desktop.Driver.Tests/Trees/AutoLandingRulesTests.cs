@@ -115,6 +115,8 @@ public sealed class AutoLandingRulesTests : IDisposable
     [Theory]
     [InlineData(null, "tip1", "clean", "tip1", "clean", true)]
     [InlineData(AutoLandingCode.Held, "tip1", "clean", "tip1", "clean", true)]
+    // FABRIC-CLOSE1h2: a push held back waits on its quest, not its tree, as a hold does.
+    [InlineData(AutoLandingCode.PushHeld, "tip1", "clean", "tip1", "clean", true)]
     [InlineData(AutoLandingCode.Uncommitted, "tip1", "sha256:aaaa", "tip1", "sha256:aaaa", false)]
     [InlineData(AutoLandingCode.Uncommitted, "tip1", "sha256:aaaa", "tip1", "sha256:bbbb", true)]
     [InlineData(AutoLandingCode.Uncommitted, "tip1", "sha256:aaaa", "tip2", "clean", true)]
@@ -160,6 +162,9 @@ public sealed class AutoLandingRulesTests : IDisposable
             new PluginLanding("acme.lands", Pushed: false, null, "did not answer", Failed: true))));
         Assert.Equal(AutoLandingCode.PluginUnready,
             AutoLandingRules.CodeOf(new TreeLanding(true, "", "feature/x") { Unready = "plugin `acme.lands` is switched off" }));
+        // FABRIC-CLOSE1h2: the branch made, its push held back just before the plugin was told.
+        Assert.Equal(AutoLandingCode.PushHeld,
+            AutoLandingRules.CodeOf(new TreeLanding(true, "", "feature/x") { Withheld = "its quest was held before its plugin was told" }));
         Assert.Equal(AutoLandingCode.Exists, AutoLandingRules.CodeOf(new TreeLanding(false, "already a branch") { Refusal = AutoLandingCode.Exists }));
         Assert.Equal(AutoLandingCode.Uncommitted, AutoLandingRules.CodeOf(new TreeLanding(false, "") { Refusal = AutoLandingCode.Uncommitted }));
         Assert.Equal(AutoLandingCode.Nothing, AutoLandingRules.CodeOf(new TreeLanding(false, "") { Refusal = AutoLandingCode.Nothing }));
@@ -182,6 +187,8 @@ public sealed class AutoLandingRulesTests : IDisposable
     // SQUASHTIDY1f: its work is on the line or a branch of the person's already, so no later look lands it; its discard is the way.
     [InlineData(AutoLandingCode.Carried, true)]
     [InlineData(AutoLandingCode.Held, false)]
+    // FABRIC-CLOSE1h2: its branch waits to be handed on once its quest stands again.
+    [InlineData(AutoLandingCode.PushHeld, false)]
     [InlineData(AutoLandingCode.Uncommitted, false)]
     [InlineData(AutoLandingCode.Exists, false)]
     [InlineData(AutoLandingCode.Refused, false)]
@@ -311,12 +318,17 @@ public sealed class AutoLandingRulesTests : IDisposable
                  {
                      AutoLandingCode.Landed, AutoLandingCode.PluginUnready, AutoLandingCode.PluginFailed, AutoLandingCode.Nothing,
                      AutoLandingCode.Held, AutoLandingCode.Uncommitted, AutoLandingCode.Exists, AutoLandingCode.Refused,
+                     AutoLandingCode.PushHeld,
                  })
         {
             Assert.True(AutoLandingNotes.Says(code), code);
             var part = AutoLandingNotes.Of(code, new TreeLanding(code is AutoLandingCode.Landed or AutoLandingCode.PluginUnready or AutoLandingCode.PluginFailed, "said.", "feature/x"), plugin: "acme.lands", uncommitted: 1).Parts![0];
             Assert.Contains(NoteCodes.All, each => each.Code == part.Code);
         }
+
+        // FABRIC-CLOSE1h2: a push held back is said by a code of its own, naming the branch and the plugin not told.
+        var held = AutoLandingNotes.Of(AutoLandingCode.PushHeld, new TreeLanding(true, "said.", "feature/x"), plugin: "acme.lands").Parts![0];
+        Assert.Equal(NoteCodes.LandingPushHeld.Code, held.Code);
 
         foreach (var code in new[] { AutoLandingCode.Already, AutoLandingCode.Superseded, AutoLandingCode.Gone, AutoLandingCode.Undone, AutoLandingCode.Off })
         {

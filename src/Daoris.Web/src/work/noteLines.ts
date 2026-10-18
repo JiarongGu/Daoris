@@ -125,6 +125,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.accepted': { values: ['branch'] },
   'landing.plugin-unready': { values: ['branch', 'plugin'] },
   'landing.plugin-failed': { values: ['branch', 'plugin'] },
+  // Its push held back after the branch was made (FABRIC-CLOSE1h2), handed on at the look after the release.
+  'landing.push-held': { values: ['branch', 'plugin'] },
   'landing.nothing': { values: [] },
   'landing.held': { values: [] },
   'landing.uncommitted': { values: ['paths'] },
