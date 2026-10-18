@@ -270,6 +270,7 @@
   "work.sitting.forUpdate": "有一个更新在等本机的会话结束：安装完成并重新启动之前，不会开始新的工作。「暂不更新」或 `daoris-driver update --cancel` 可让工作先继续。",
   "work.sitting.TakenElsewhere": "委托 `#{{quest}}` 已在 {{machine}} 上由会话 `{{session}}` 接下：这次接下属于对方，所以本机不会接续会话 `{{last}}`。",
   "work.sitting.TakenElsewhere_another": "委托 `#{{quest}}` 已在另一台机器上接下：这次接下属于对方，所以本机不会接续会话 `{{last}}`。",
+  "work.sitting.TakenElsewhere_reopened": "委托 `#{{quest}}` 的接下因你重新打开了它所基于的工作而失效：这次接下不属于本机，所以不会接续会话 `{{last}}`。",
   "work.sitting.TakenElsewhere_here": "委托 `#{{quest}}` 在会话 `{{last}}` 结束后才在本机被接下，接下它的是一次聊天或 Daoris 之外的工作：这次接下不属于该会话，所以不会接续会话 `{{last}}`。",
   "work.sitting.CannotShow": "这个搭建步骤无法在本机开始，原因如下：{{why}}",
   "work.sitting.CannotShow_unnamed": "这个搭建步骤要在 `{{environment}}` 中展示成果，而这里没有任何审查规则指明 `{{environment}}`，所以无法开始。",
