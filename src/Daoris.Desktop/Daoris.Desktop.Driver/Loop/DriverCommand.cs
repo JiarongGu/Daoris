@@ -103,6 +103,9 @@ public static class DriverCommand
               a session's second opinion before its work lands: ask another agent to read it (one of its rule's reviewers by
               name, or the working agent fresh), say where it stands with its findings and their answers, stop a reviewer
               reading, go on without a settled one, or record your own reading in its place. `sessions say` sends it back.
+          brainstorm "<question>" [--repository <name>] [--agents <a,b>]  ·  brainstorm show|send|clear <id>  ·  brainstorm list
+              one question put to several agents: Daoris freezes a context packet from its own knowledge for you to read,
+              and once you send it each agent proposes, one synthesizes, and the ranked document is kept on this machine.
           history [--workspace <name>] [--json]
               what this machine keeps of finished work, per workspace: quests, asks, sessions and bytes, what a
               clear would take, and what it keeps and why.

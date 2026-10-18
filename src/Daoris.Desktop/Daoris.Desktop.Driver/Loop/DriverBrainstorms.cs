@@ -24,7 +24,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     private readonly Driver _driver = driver;
 
     /// <summary>The most generators one request runs (D176 point 9's proposed default: at most four makers).</summary>
-    internal const int MostAgents = 4;
+    internal const int MostAgents = DriverBrainstormLimits.MostAgents;
 
     /// <summary>Each turn's minutes, until the policy names them (D176 point 9's proposed default: ten).</summary>
     internal const int TurnMinutes = 10;
