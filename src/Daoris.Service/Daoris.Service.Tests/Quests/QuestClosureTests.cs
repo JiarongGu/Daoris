@@ -148,6 +148,27 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(QuestOperationKind.Submitted, (await _quests.HistoryAsync(quest.Id))[^1].Kind);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c4: a submission names the session that said its ready, the one a reopen of it is told to, in its operation and
+    /// on the quest; a ready through a door that names no session names none, and the earlier submission's session goes with it.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_names_the_session_that_said_ready_and_none_where_no_session_said_it()
+    {
+        var quest = await Bound();
+
+        var said = await _exchange.RespondAsync(quest.Id, "ready", "Built.", Now, answers: [Met(1), Met(2)], session: "s0a1b2c3");
+
+        Assert.Equal(QuestRespondRefusal.None, said.Refusal);
+        Assert.Equal("s0a1b2c3", said.Quest!.Submission!.Session);
+        Assert.Equal("s0a1b2c3", (await Find(quest.Id)).Submission!.Session);
+        Assert.Equal("s0a1b2c3", (await _quests.HistoryAsync(quest.Id))[^1].Session);
+
+        Assert.Equal(QuestRespondRefusal.None, (await Ready(quest)).Refusal);
+        Assert.Null((await Find(quest.Id)).Submission!.Session);
+        Assert.Null((await _quests.HistoryAsync(quest.Id))[^1].Session);
+    }
+
     [Fact]
     public async Task An_agents_done_on_a_bound_quest_is_refused_naming_ready_and_the_persons_done_stays_theirs()
     {

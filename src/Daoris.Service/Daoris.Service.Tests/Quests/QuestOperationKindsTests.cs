@@ -117,10 +117,10 @@ public sealed class QuestOperationKindsTests
         },
         // The closure graph's digest, as the driver binds a taken quest (FABRIC-CLOSE1a).
         [QuestOperationKind.Bound] = s => Op(QuestOperationKind.Bound, s) with { Note = "sha256:0f1e2d3c4b5a6978" },
-        // A ready's note and answers, as a done carries them (FABRIC-CLOSE1a).
+        // A ready's note and answers, as a done carries them (FABRIC-CLOSE1a), and the session that said it (FABRIC-CLOSE1c4).
         [QuestOperationKind.Submitted] = s => Op(QuestOperationKind.Submitted, s) with
         {
-            Note = "Built.", Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")],
+            Note = "Built.", Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")], Session = "s1a2b3c4",
         },
         // The person's reopen of the submission the states below show at sequence 4, with their words (FABRIC-CLOSE1c).
         [QuestOperationKind.Reopened] = s => Op(QuestOperationKind.Reopened, s) with

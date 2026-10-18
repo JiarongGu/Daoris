@@ -1206,7 +1206,7 @@ public sealed class QuestExchange(
 
         if (string.Equals(action, "ready", StringComparison.OrdinalIgnoreCase))
         {
-            return await ReadyAsync(id.TrimStart('#'), reason, answers ?? [], now, ct).ConfigureAwait(false);
+            return await ReadyAsync(id.TrimStart('#'), reason, answers ?? [], now, ct, session).ConfigureAwait(false);
         }
 
         var status = action.ToLowerInvariant() switch
@@ -1530,8 +1530,9 @@ public sealed class QuestExchange(
     /// unheld one publishes the chain's next step, which seals it. Refused where no closure graph holds the quest, on a take this
     /// machine lost, and on a sealed submission.
     /// </summary>
+    /// <param name="session">The session saying it, as its connector's intake names it (FABRIC-CLOSE1c4): kept on the submission.</param>
     private async Task<QuestRespondOutcome> ReadyAsync(
-        string id, string? note, IReadOnlyList<QuestAnswer> answers, DateTimeOffset now, CancellationToken ct)
+        string id, string? note, IReadOnlyList<QuestAnswer> answers, DateTimeOffset now, CancellationToken ct, string? session)
     {
         if (await quests.FindAsync(id, ct).ConfigureAwait(false) is not { } live)
         {
@@ -1545,7 +1546,7 @@ public sealed class QuestExchange(
         var judged = await JudgeAnswersAsync(live, answers, ct).ConfigureAwait(false);
         if (judged.Refusal is { } refusal) return new(refusal, judged.Message!, Quest: null);
 
-        var move = await quests.SubmitAsync(id, note, judged.Answers, now, ct).ConfigureAwait(false);
+        var move = await quests.SubmitAsync(id, note, judged.Answers, now, ct, session).ConfigureAwait(false);
         if (move.Quest is not { } standing)
         {
             return new(QuestRespondRefusal.NotFound, $"No quest `#{id}`. Ids come from `quest_list`.", Quest: null);

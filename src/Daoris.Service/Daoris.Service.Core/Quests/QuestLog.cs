@@ -152,6 +152,10 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// For a <see cref="QuestOperationKind.Reopened"/>: the submission reopened; for a <see cref="QuestOperationKind.Rebound"/>: the
 /// source's submission the step grows from now (FABRIC-CLOSE1c). Null on every other kind.
 /// </param>
+/// <param name="Session">
+/// For a <see cref="QuestOperationKind.Submitted"/>: the session that said the <c>ready</c>, as its connector's intake named it
+/// (FABRIC-CLOSE1c4). Null on every other kind, and where no session said it.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -170,7 +174,8 @@ public sealed record QuestOperation(
     QuestReviewVerdict? Verdict = null,
     string? NoteParts = null,
     QuestClose? Close = null,
-    QuestOperationRef? Submission = null);
+    QuestOperationRef? Submission = null,
+    string? Session = null);
 
 /// <summary>
 /// What a graph's close names its Done by (FABRIC-CLOSE1a, the fabric events design §E5): the invocation's key, which the
@@ -447,17 +452,21 @@ public static class QuestLog
         },
         QuestOperationKind.Bound => quest! with { Closure = operation.Note, Updated = operation.At },
         // The latest submission is the current one, judged again from the start (FABRIC-CLOSE1a, §E5): its answers are the
-        // quest's, and a yes or an evidence verdict given on the one before is not given on it.
+        // quest's, and a yes or an evidence verdict given on the one before is not given on it. It answers the last reopen, at
+        // whatever commit (FABRIC-CLOSE1c4): a submission is named by its machine and sequence, never by its commit.
         QuestOperationKind.Submitted => quest! with
         {
-            Submission = new QuestSubmission(operation.Machine, operation.Sequence, operation.At, operation.Note),
-            Answers = operation.Answers ?? [], Accepted = null, Evidence = null, Updated = operation.At,
+            Submission = new QuestSubmission(operation.Machine, operation.Sequence, operation.At, operation.Note, operation.Session),
+            Answers = operation.Answers ?? [], Accepted = null, Evidence = null, Updated = operation.At, Reopened = null,
         },
         // FABRIC-CLOSE1c: on the quest that submitted it, the submission is current no more and its answers, yes and verdict go with
         // it, so the next ready is judged from the start; on the step it published, the step stands withdrawn or held for the person.
+        // FABRIC-CLOSE1c4: the quest keeps the reopen until a later submission answers it, so its driver can tell a reopened quest
+        // from one not yet ready, and the session that said the ready what the person said.
         QuestOperationKind.Reopened when SubmittedHere(quest!, operation.Submission!) => quest! with
         {
             Submission = null, Answers = [], Accepted = null, Evidence = null, Updated = operation.At,
+            Reopened = new QuestReopen(operation.Machine, operation.Sequence, operation.Submission!, operation.Note, operation.At),
         },
         QuestOperationKind.Reopened => quest! with { SourceReopened = operation.Submission, Updated = operation.At },
         QuestOperationKind.Rebound => quest! with { GrewFrom = operation.Submission, SourceReopened = null, Updated = operation.At },

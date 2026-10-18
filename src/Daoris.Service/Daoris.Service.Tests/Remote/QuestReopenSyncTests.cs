@@ -48,7 +48,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
         Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
         Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
-        var submitted = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
+        var submitted = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2), session: "s0a1b2c3");
         Assert.True(submitted.Moved);
         await SyncAsync(_a);
         await SyncAsync(_b);
@@ -113,5 +113,43 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         Assert.Contains(report.Conflicts, c => c.Quest == step.Id && c.Attempted == QuestStatus.Taken);
         var close = await _a.CloseAsync(quest.Id, [(quest.Id, submission)], new QuestClose("k1", "t1"), Now.AddHours(4));
         Assert.Equal(QuestCloseRefusal.Stale, close.Refusal);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c4: the source's last reopen and the session that said its submission's ready are read from the log, so the machine
+    /// that synced it and the remote answer them as the take's machine does, and the next ready answers the reopen on every one.
+    /// </summary>
+    [Fact]
+    public async Task A_sources_reopen_and_the_session_that_said_ready_read_the_same_on_every_machine()
+    {
+        var (quest, _, submission) = await SealedOnBothAsync();
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Equal("s0a1b2c3", (await store.FindAsync(quest.Id))!.Submission!.Session);
+        }
+
+        Assert.Equal(QuestReopenRefusal.None, (await _a.ReopenAsync(quest.Id, submission, "Build it again.", Now.AddHours(3))).Refusal);
+        var reopen = (await _a.HistoryAsync(quest.Id))[^1];
+        var expected = new QuestReopen(reopen.Machine, reopen.Sequence, submission, "Build it again.", Now.AddHours(3));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var reopened = (await store.FindAsync(quest.Id))!;
+            Assert.Equal(expected, reopened.Reopened);
+            Assert.Null(reopened.Submission);
+        }
+
+        Assert.True((await _a.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4), session: "s4d5e6f7")).Moved);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var answered = (await store.FindAsync(quest.Id))!;
+            Assert.Null(answered.Reopened);
+            Assert.Equal("s4d5e6f7", answered.Submission!.Session);
+        }
     }
 }
