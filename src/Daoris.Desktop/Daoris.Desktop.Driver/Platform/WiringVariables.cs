@@ -102,6 +102,7 @@ public static class WiringVariables
         ["DAORIS_BRAINSTORM_ID"] = "handed to a brainstorm's pass by the driver: the brainstorm it serves",
         ["DAORIS_BRAINSTORM_TURN"] = "handed to a brainstorm's pass by the driver: its turn",
         ["DAORIS_BRAINSTORM_ANSWER"] = "handed to a brainstorm's pass by the driver: the file its result tool writes",
+        ["DAORIS_BRAINSTORM_ROOM"] = "handed to a brainstorm pass's connector by the driver: the room its answer is judged against",
         ["DAORIS_QUEST_ATTACHMENTS"] = "handed to a session by the driver: its quest's kept files",
         ["DAORIS_SESSION_ID"] = "handed to a session or its connector by the driver",
         ["DAORIS_QUEST_ID"] = "handed to a session or its connector by the driver",
