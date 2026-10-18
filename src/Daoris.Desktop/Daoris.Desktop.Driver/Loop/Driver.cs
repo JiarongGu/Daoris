@@ -440,8 +440,9 @@ public sealed class Driver(
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
         snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
-        // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting.
-        snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values) };
+        // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a
+        // reopen names is one the planner goes on with too (FABRIC-CLOSE1c9).
+        snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)) };
         // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
         // stands read for the planner, which reads the stop that handed one over as released.
         snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);

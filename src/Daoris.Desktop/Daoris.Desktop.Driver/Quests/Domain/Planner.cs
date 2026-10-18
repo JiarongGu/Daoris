@@ -586,6 +586,14 @@ public sealed record Snapshot(
         new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The record of this machine's that each taken quest's standing reopen names (FABRIC-CLOSE1c9, §E5), by quest id, where it
+    /// is not the quest's <see cref="LastRun"/>: the session that said the reopened <c>ready</c>, which the reopen is told to, so
+    /// its words go on in it though a later session ran. Derived from the same records, never kept. Absent is none.
+    /// </summary>
+    public IReadOnlyDictionary<string, PriorSession> NamedByReopen { get; init; } =
+        new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Every record this machine keeps, as the goal's walk counts them (TOOL6b): which account each ran on, when, and
     /// whether it runs now — derived from the same records, never kept. The roster reads it at each look.
     /// </summary>
@@ -920,21 +928,17 @@ public static class Planner
 
             // The person wrote to its last session here, parked or ended (MSG1b, D137 §2.2): that record goes on with their
             // words. Before the person's stop, which the words release as Try again does: the same session goes on with them.
-            if (WrittenTo(quest))
+            // Or the session its reopen names was told it (FABRIC-CLOSE1c9): see WordsOn.
+            if (WordsOn(quest) is { } written)
             {
-                considerations.Add(GoOn(quest, snapshot.LastRun[quest.Id]));
+                considerations.Add(GoOn(quest, written));
                 continue;
             }
 
             // 🔴 A person's stop holds its quest, open or taken, until they release that stop (SESSUX1b, D126 §3.3). Before
             // everything else, since it is the one reason the quest sits that the person must act on: a taken one was never
             // looked at again and sat with no sentence, and an open one was planned again at the next look (M3).
-            if (quest.Status is "Open" or "Taken"
-                && snapshot.LastRun.TryGetValue(quest.Id, out var last)
-                && last.PersonStopped
-                && !config.Releases(quest.Id, last.Session)
-                // The stop that handed the quest to another agent is its own release (MIXAGENT1a-ii): the person asked for it.
-                && !HandedFrom(quest, last))
+            if (StopHolding(quest) is { } last)
             {
                 considerations.Add(Stopped(quest, last));
                 continue;
@@ -996,15 +1000,36 @@ public static class Planner
         bool HandedFrom(QuestView quest, PriorSession stop) =>
             snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, stop.Session, StringComparison.Ordinal);
 
-        // Whether the person's words wait on this quest's last session here (MSG1b, D137 §2.2), parked or ended, and are not
-        // all words a reopen already found it could not take (MSG1a's open point). A taken quest waiting on a question waits
-        // with them: D79's resume is its next start, and the words stay on the record they were said to. A closed quest waits
-        // on nothing, whatever question the service still keeps for it (QuestView.Awaits reads none).
-        bool WrittenTo(QuestView quest) =>
-            quest.Awaits is null or ""
-            && snapshot.LastRun.TryGetValue(quest.Id, out var written)
-            && written.WordsWaiting
-            && !GoOnMarks.Judged(written, snapshot.Unable.GetValueOrDefault(written.Session));
+        // The person's stop of the quest's last session here, where it still holds the quest (SESSUX1b), or null.
+        PriorSession? StopHolding(QuestView quest) =>
+            quest.Status is "Open" or "Taken"
+            && snapshot.LastRun.TryGetValue(quest.Id, out var last)
+            && last.PersonStopped
+            && !config.Releases(quest.Id, last.Session)
+            // The stop that handed the quest to another agent is its own release (MIXAGENT1a-ii): the person asked for it.
+            && !HandedFrom(quest, last)
+                ? last
+                : null;
+
+        // Whether the person's words wait on this quest's record here for it to go on with (see WordsOn).
+        bool WrittenTo(QuestView quest) => WordsOn(quest) is not null;
+
+        // The record the person's words wait on for this quest (MSG1b, D137 §2.2), parked or ended, and not all words a reopen
+        // already found it could not take (MSG1a's open point): its last session here, or null. A taken quest waiting on a
+        // question waits with them: D79's resume is its next start, and the words stay on the record they were said to. A closed
+        // quest waits on nothing, whatever question the service still keeps for it (QuestView.Awaits reads none).
+        // 🔴 FABRIC-CLOSE1c9: the session a taken quest's reopen names, where a later one is its last here, goes first with the words
+        // it was told (its marks judged as the last's are); the last one's go on at a later look. Not while the person's stop of the
+        // last session holds the quest: the reopen's words are Daoris's, and release no stop the person made (D173's note).
+        PriorSession? WordsOn(QuestView quest)
+        {
+            if (quest.Awaits is { Length: > 0 }) return null;
+            if (snapshot.NamedByReopen.TryGetValue(quest.Id, out var named) && Waits(named) && StopHolding(quest) is null) return named;
+            return snapshot.LastRun.TryGetValue(quest.Id, out var written) && Waits(written) ? written : null;
+
+            bool Waits(PriorSession record) =>
+                record.WordsWaiting && !GoOnMarks.Judged(record, snapshot.Unable.GetValueOrDefault(record.Session));
+        }
 
         // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record
         // holding its tree, its quest and its slot, which it is never busy with itself; an ended record holds nothing, so it
