@@ -50,6 +50,7 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, id + HarnessConversations.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + ".pid"), "1 1");
         File.WriteAllText(Path.Combine(Sessions, id + GoOnMarks.Suffix), "{}");
+        File.WriteAllText(Path.Combine(Sessions, id + ReopenMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + HandOverBox.Suffix), "{}");
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
@@ -59,7 +60,7 @@ public sealed class HistoryClearingTests : IDisposable
 
     private string[] KeptOf(string id) =>
     [
-        .. new[] { ".events.jsonl", ".log", HarnessConversations.Suffix, ".pid", GoOnMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
+        .. new[] { ".events.jsonl", ".log", HarnessConversations.Suffix, ".pid", GoOnMarks.Suffix, ReopenMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
             .Select(suffix => Path.Combine(Sessions, id + suffix))
             .Where(File.Exists),
         .. new[] { ".mcp.json", ".settings.json" }.Select(suffix => DaorisHome.Entry(_home, HomeEntry.Spawn,id + suffix)).Where(File.Exists),

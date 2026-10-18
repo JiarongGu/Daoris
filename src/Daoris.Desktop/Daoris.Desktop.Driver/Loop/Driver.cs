@@ -453,6 +453,10 @@ public sealed class Driver(
             .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(snapshot, Context.Processes), ct)
             .ConfigureAwait(false));
 
+        // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,
+        // and the planner's go-on resumes it at the next look. Read from the quests this look read: nothing more where none is reopened.
+        events.AddRange(await Context.Reopens.LookAsync(new ServiceReopenDoors(service), snapshot, ct).ConfigureAwait(false));
+
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
         if (Reviews is { } showing)
