@@ -101,14 +101,21 @@ public static class BrainstormSyntheses
     /// 1 to n with no gap or tie; no id invented; each group's words within their bounds; a flag it adds named and given its why.
     /// Daoris's flags are not the synthesis's to keep: Daoris puts each member's on its group (<see cref="BrainstormDocuments"/>).
     /// </summary>
-    public static BrainstormSynthesisChecked Check(string? text, IReadOnlyList<BrainstormAnonymous> handed)
+    public static BrainstormSynthesisChecked Check(string? text, IReadOnlyList<BrainstormAnonymous> handed) =>
+        Check(text, handed.Select(each => each.Id).ToList());
+
+    /// <summary>
+    /// The same against the anonymous ids alone: what the turn was handed. The connector's <c>brainstorm_synthesize</c> judges by its
+    /// twin, the service's <c>BrainstormChecks</c>, and both are held to one table (BRAINSTORM1a2, <c>fixtures/brainstorm-answers.json</c>).
+    /// </summary>
+    public static BrainstormSynthesisChecked Check(string? text, IReadOnlyCollection<string> ids)
     {
         if (text is null) return new(null, [BrainstormAnswers.Missing]);
         if (text.Length > BrainstormAnswers.AnswerChars) return new(null, [BrainstormAnswers.TooLong]);
         try
         {
             using var document = JsonDocument.Parse(text);
-            return Check(document.RootElement, handed);
+            return Check(document.RootElement, ids);
         }
         catch (JsonException)
         {
@@ -116,7 +123,7 @@ public static class BrainstormSyntheses
         }
     }
 
-    private static BrainstormSynthesisChecked Check(JsonElement root, IReadOnlyList<BrainstormAnonymous> handed)
+    private static BrainstormSynthesisChecked Check(JsonElement root, IReadOnlyCollection<string> handed)
     {
         var codes = new List<string>();
         void Fail(string code)
@@ -125,13 +132,13 @@ public static class BrainstormSyntheses
         }
 
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("brainstorm", out var schema)
-            || schema.ValueKind != JsonValueKind.Number || schema.GetInt32() != BrainstormAnswers.Schema
+            || schema.ValueKind != JsonValueKind.Number || !schema.TryGetInt32(out var version) || version != BrainstormAnswers.Schema
             || !root.TryGetProperty("groups", out var given) || given.ValueKind != JsonValueKind.Array)
         {
             return new(null, [BrainstormAnswers.Shape]);
         }
 
-        var known = handed.Select(each => each.Id).ToHashSet(StringComparer.Ordinal);
+        var known = handed.ToHashSet(StringComparer.Ordinal);
         var placed = new HashSet<string>(StringComparer.Ordinal);
         void Place(string id)
         {

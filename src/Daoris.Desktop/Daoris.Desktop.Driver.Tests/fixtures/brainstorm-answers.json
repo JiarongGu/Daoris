@@ -1,0 +1,195 @@
+{
+  "about": "BRAINSTORM1a2 (D176 points 3 and 4): ONE table both validators of a brainstorm's answers read, row for row. The driver's BrainstormAnswers and BrainstormSyntheses judge a turn's answer file when the turn ends (BrainstormValidationTests); the service's BrainstormChecks judge it when the connector's brainstorm_give or brainstorm_synthesize is called, and answer the agent with the codes (McpBrainstormToolTests). They share no code. A row's answer is `answer`, a JSON value written compactly, or `text`, as it is; `pad` spaces follow it; a row with neither is no answer at all. `codes` are what it fails on, in order, and none for a valid answer.",
+  "sources": ["S1", "S2"],
+  "proposals": ["P1", "P2", "P3"],
+  "give": [
+    {
+      "name": "two proposals, one hard to reverse",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Make the window inclusive", "rationale": "The report reads an exclusive window.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": ["the window is exclusive"], "sources": ["S1"] },
+        { "idea": "Rewrite the stored reports", "rationale": "Every stored report lost its last day.", "effort": "medium", "risk": "unknown", "reversible": "no", "undo": "Restore them from the backup.", "confidence": "low", "assumptions": [], "sources": ["S1", "S2"] }
+      ] },
+      "codes": []
+    },
+    {
+      "name": "no proposal, with why and a need",
+      "answer": { "brainstorm": 1, "proposals": [], "needs": ["the tests"], "none": "The packet holds no code." },
+      "codes": []
+    },
+    { "name": "no answer at all", "codes": ["missing"] },
+    { "name": "not JSON", "text": "not json", "codes": ["shape"] },
+    { "name": "another schema", "answer": { "brainstorm": 2, "proposals": [] }, "codes": ["shape"] },
+    { "name": "a schema that is no whole number", "answer": { "brainstorm": 1.5, "proposals": [] }, "codes": ["shape"] },
+    { "name": "neither a proposal nor none", "answer": { "brainstorm": 1, "proposals": [], "none": null }, "codes": ["empty"] },
+    {
+      "name": "proposals beside none",
+      "answer": { "brainstorm": 1, "needs": [], "none": "nothing fits", "proposals": [
+        { "idea": "Make the window inclusive", "rationale": "The report reads an exclusive window.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": ["S1"] }
+      ] },
+      "codes": ["proposals-beside-none"]
+    },
+    {
+      "name": "an effort off its scale",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Make the window inclusive", "rationale": "The report reads an exclusive window.", "effort": "tiny", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": ["S1"] }
+      ] },
+      "codes": ["field:effort"]
+    },
+    {
+      "name": "no undo where it is only partly reversible",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Rename the report", "rationale": "Its name says weekly.", "effort": "small", "risk": "medium", "reversible": "partly", "undo": "", "confidence": "medium", "assumptions": [], "sources": [] }
+      ] },
+      "codes": ["field:undo"]
+    },
+    {
+      "name": "an idea past its bound",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", "rationale": "Too long.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] }
+      ] },
+      "codes": ["field:idea-length"]
+    },
+    {
+      "name": "six assumptions",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Make the window inclusive", "rationale": "The report reads an exclusive window.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": ["a", "b", "c", "d", "e", "f"], "sources": ["S1"] }
+      ] },
+      "codes": ["field:assumptions-count"]
+    },
+    {
+      "name": "a source the packet does not hold",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Make the window inclusive", "rationale": "The report reads an exclusive window.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": ["S9"] }
+      ] },
+      "codes": ["unknown-source"]
+    },
+    {
+      "name": "one idea twice, told apart only by case and spaces",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Same idea", "rationale": "One.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "same  IDEA", "rationale": "Two.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] }
+      ] },
+      "codes": ["idea-twice"]
+    },
+    {
+      "name": "nine proposals",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Idea 1", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 2", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 3", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 4", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 5", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 6", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 7", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 8", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] },
+        { "idea": "Idea 9", "rationale": "R.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": [] }
+      ] },
+      "codes": ["too-many"]
+    },
+    { "name": "an answer past the whole bound", "text": "", "pad": 20001, "codes": ["too-long"] },
+    {
+      "name": "several fields wrong in one proposal, each said once in the order read",
+      "answer": { "brainstorm": 1, "needs": [], "none": null, "proposals": [
+        { "idea": "Make the window inclusive", "effort": "small", "risk": "huge", "confidence": "high", "assumptions": [], "sources": [] }
+      ] },
+      "codes": ["field:rationale", "field:risk", "field:reversible"]
+    },
+    { "name": "proposals that are no list", "answer": { "brainstorm": 1, "proposals": "x", "none": null }, "codes": ["shape", "empty"] },
+    { "name": "a proposal that is no object", "answer": { "brainstorm": 1, "proposals": ["x"], "none": null }, "codes": ["shape"] },
+    {
+      "name": "a need past its bound beside a list of sources that is no list",
+      "answer": { "brainstorm": 1, "none": null, "needs": ["nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"], "proposals": [
+        { "idea": "Make the window inclusive", "rationale": "The report reads an exclusive window.", "effort": "small", "risk": "low", "reversible": "yes", "undo": null, "confidence": "high", "assumptions": [], "sources": "S1" }
+      ] },
+      "codes": ["field:needs-length", "field:sources"]
+    }
+  ],
+  "synthesize": [
+    {
+      "name": "one group and one left out with why",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1", "P2"], "rank": 1, "why": "It answers.", "flags": [] }
+      ], "leftOut": [{ "id": "P3", "why": "It rewrites history." }] },
+      "codes": []
+    },
+    {
+      "name": "two groups, one with a flag the synthesis adds",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 2", "idea": "Merged.", "members": ["P3"], "rank": 2, "why": "It answers less.", "flags": [{ "flag": "risky", "why": "It touches a release." }] },
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1", "P2"], "rank": 1, "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": []
+    },
+    { "name": "no answer at all", "codes": ["missing"] },
+    { "name": "not JSON", "text": "{ groups", "codes": ["shape"] },
+    { "name": "no groups", "answer": { "brainstorm": 1, "leftOut": [] }, "codes": ["shape"] },
+    { "name": "another schema", "answer": { "brainstorm": 2, "groups": [] }, "codes": ["shape"] },
+    { "name": "an answer past the whole bound", "text": "", "pad": 20001, "codes": ["too-long"] },
+    {
+      "name": "an id left unplaced",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1", "P2"], "rank": 1, "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": ["member-missing"]
+    },
+    {
+      "name": "an id placed twice",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1", "P2"], "rank": 1, "why": "It answers.", "flags": [] },
+        { "title": "Group 2", "idea": "Merged.", "members": ["P2", "P3"], "rank": 2, "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": ["member-twice"]
+    },
+    {
+      "name": "an id it was not handed",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1", "P2", "P3", "P4"], "rank": 1, "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": ["member-unknown"]
+    },
+    {
+      "name": "two groups tied",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1"], "rank": 1, "why": "It answers.", "flags": [] },
+        { "title": "Group 2", "idea": "Merged.", "members": ["P2", "P3"], "rank": 1, "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": ["ranks"]
+    },
+    {
+      "name": "a gap in the ranks",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1"], "rank": 1, "why": "It answers.", "flags": [] },
+        { "title": "Group 3", "idea": "Merged.", "members": ["P2", "P3"], "rank": 3, "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": ["ranks"]
+    },
+    {
+      "name": "one left out with no why",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1", "P2"], "rank": 1, "why": "It answers.", "flags": [] }
+      ], "leftOut": [{ "id": "P3" }] },
+      "codes": ["field:why"]
+    },
+    {
+      "name": "a flag that is not Daoris's",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": ["P1", "P2", "P3"], "rank": 1, "why": "It answers.", "flags": [{ "flag": "fine", "why": "x" }] }
+      ], "leftOut": [] },
+      "codes": ["flag-unknown"]
+    },
+    {
+      "name": "a group with no members and no rank",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "Group 1", "idea": "Merged.", "members": [], "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": ["field:members", "member-missing", "ranks"]
+    },
+    {
+      "name": "a title past its bound and an idea left blank",
+      "answer": { "brainstorm": 1, "groups": [
+        { "title": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt", "idea": "  ", "members": ["P1", "P2", "P3"], "rank": 1, "why": "It answers.", "flags": [] }
+      ], "leftOut": [] },
+      "codes": ["field:title-length", "field:idea"]
+    }
+  ]
+}
