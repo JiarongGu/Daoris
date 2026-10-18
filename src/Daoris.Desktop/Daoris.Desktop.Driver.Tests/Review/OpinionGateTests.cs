@@ -536,6 +536,57 @@ public sealed class OpinionGateTests
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1h18 (D173's note): a due closes as landed on a landing made since it was owed, by its record: the session's own landing,
+    /// or the advance its later done made (LAND2c), accepted at or after the due's time. One accepted before it, a session whose words went
+    /// on after its landing (D137), lands only the work it holds, which git reads of the tree (<c>AutoLandingTriesTests</c>, since this
+    /// class starts no git): its record alone closes nothing, as the last row shows. A push held back keeps it owed whichever is older
+    /// (FABRIC-CLOSE1h15's recovery owes its due after the landing).
+    /// </summary>
+    [Theory]
+    [InlineData(-20, false, null, OpinionDueClosed.Landed)]
+    [InlineData(0, false, null, OpinionDueClosed.Landed)]
+    [InlineData(20, true, null, OpinionDueClosed.Landed)]
+    [InlineData(20, false, "s1", null)]
+    [InlineData(20, false, null, null)]
+    public async Task An_opinion_owed_closes_as_landed_only_on_a_landing_made_since_it_was_owed(
+        int owedAfter, bool advanced, string? held, string? closed)
+    {
+        var scratch = Path.Combine(RepoRoot(), "_fixtures", "opinion-closes", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var tree = Path.Combine(scratch, "trees", "t1");
+            Directory.CreateDirectory(tree);
+            File.WriteAllText(Path.Combine(tree, "work.ts"), "the work\n");
+            var config = DriverConfig.Empty with
+            {
+                Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["web-app"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], false),
+                },
+            };
+            var landed = new LandedBranches(Path.Combine(scratch, "home"));
+            // s1's landing made the branch at Asked; its later done moved it on at Answered where it advanced. The due is owed
+            // owedAfter minutes after the landing.
+            landed.Record(new LandedBranch("web-app", "work", "feature/q1-work", "main", Read, "s1", "q1", "Work q1", Asked));
+            if (advanced) landed.Advanced("web-app", "feature/q1-work", new LandedAdvance(Read, Later, Answered, "s1"));
+            var due = new OpinionDue("s1", "q1", "web-app", "work", tree, OpinionRules.Landing, Asked.AddMinutes(owedAfter));
+            IReadOnlyCollection<string> pushHeld = held is null ? [] : [held];
+
+            // Made since it was owed, read from the landing's record, in every row; the whole look where it ends before git, which this
+            // class does not start: the last row's tree would be read by git next.
+            Assert.Equal(owedAfter <= 0 || advanced, OpinionLook.MadeSince(landed.Landing("s1")!, due));
+            if (closed is not null || held is not null)
+            {
+                Assert.Equal(closed, await OpinionLook.ClosesAsync(due, Quest(), [Quest()], config, landed, CancellationToken.None, pushHeld: pushHeld));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(scratch)) Directory.Delete(scratch, recursive: true);
+        }
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1h15: the sessions whose automatic landing made its branch and holds its push back, as the opinion look reads them:
     /// an open entry whose last try is <c>push-held</c>; one waiting on its opinion, and one closed since, are not.
     /// </summary>
