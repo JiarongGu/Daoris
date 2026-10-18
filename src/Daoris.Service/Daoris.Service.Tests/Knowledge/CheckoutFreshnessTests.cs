@@ -192,6 +192,58 @@ public sealed class CheckoutFreshnessTests : IDisposable
         await Heard(freshness);
     }
 
+    [Fact]
+    public async Task A_checkouts_ignored_folders_at_its_top_are_neither_read_nor_watched()
+    {
+        // KNOWHOLD1: the deployment rehearsal runs under `local/gate-tree/`, and its swap renames the install's `app/` there.
+        // A server started on a build from before KNOWWALK1 watched the whole checkout and walked each folder renamed in it,
+        // and held `app/cli/node_modules` for ten minutes. What reads and watches a checkout now opens nothing under
+        // `local/`, `node_modules/` or `_fixtures/`, and hears nothing written there.
+        var checkout = Path.Combine(_root, "served");
+        const string app = "served/local/gate-tree/_fixtures/deployment-rehearsal/install/app";
+        Write("served/.gitignore", "local/\nnode_modules/\n_fixtures/\n");
+        Write("served/docs/design.md", "# The probe lock\n\n## Why a lock\n\nOne probe at a time.\n");
+        Write("served/docs/index/README.md", "# Where things are\n\n| Where | What |\n|---|---|\n| `src/Probe.cs` | the probe lock |\n");
+        var held = new[]
+        {
+            Write($"{app}/cli/node_modules/daoris/README.md", "# Zeppelins\n\n## Zeppelins\n\nAn install's package.\n"),
+            Write("served/node_modules/pkg/README.md", "# Zeppelins\n\n## Zeppelins\n\nA package.\n"),
+            Write("served/_fixtures/probe/notes.md", "# Zeppelins\n\n## Zeppelins\n\nScratch.\n"),
+        };
+        GitCheckouts.Init(checkout);
+        using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: "docs/index");
+        Assert.True(freshness.Watching);
+
+        // Held with no sharing, as a swap holds what it moves: a read that opened one would fail on it.
+        var holds = held.Select(file => new FileStream(file, FileMode.Open, FileAccess.ReadWrite, FileShare.None)).ToList();
+        try
+        {
+            var entries = new RepositoryScanner(documents: "docs", index: "docs/index").Scan(checkout);
+            Assert.Contains(entries, entry => entry.RelativePath == "docs/design.md");
+            Assert.DoesNotContain(entries, entry => entry.Title == "Zeppelins");
+        }
+        finally
+        {
+            holds.ForEach(hold => hold.Dispose());
+        }
+
+        await Task.Delay(500);
+        freshness.Take();
+
+        // The swap's moves: the install's app/ set aside and put back. A handle anywhere in it would refuse the move.
+        var appFolder = Path.Combine(_root, app.Replace('/', Path.DirectorySeparatorChar));
+        Directory.Move(appFolder, appFolder + ".previous");
+        Directory.Move(appFolder + ".previous", appFolder);
+        Write("served/node_modules/other/index.js", "module.exports = 1;\n");
+        Write("served/_fixtures/probe/notes.md", "# Rewritten\n");
+        Write("served/local/notes.md", "# A person's own\n");
+        await Task.Delay(1500);
+        Assert.False(freshness.IsStale, "a write under a folder git ignores at the checkout's top marked the reading stale");
+
+        Write("served/docs/design.md", "# The probe lock, changed\n");
+        await Heard(freshness);
+    }
+
     private static async Task Heard(CheckoutFreshness freshness)
     {
         for (var waited = 0; waited < 100 && !freshness.IsStale; waited++) await Task.Delay(100);
