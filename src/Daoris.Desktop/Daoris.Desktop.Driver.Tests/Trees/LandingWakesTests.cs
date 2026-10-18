@@ -54,6 +54,14 @@ public sealed class LandingWakesTests : IDisposable
     [InlineData("unreviewed", false, "ledger", "quests", true)]
     [InlineData("unreviewed", false, "ledger", "sessions", false)]
     [InlineData("unreviewed", false, "refs", "engine", false)]
+    // FABRIC-CLOSE1h7: a push held back after its branch was made keeps its tip, but waits on its quest standing again (the hold's
+    // release, a reopen, the next submission), so the quests family and the configuration look at it, and the tree's refs do not.
+    [InlineData("push-held", true, "ledger", "quests", true)]
+    [InlineData("push-held", true, "ledger", "sessions,quests", true)]
+    [InlineData("push-held", true, "config", "driver.json", true)]
+    [InlineData("push-held", true, "ledger", "sessions", false)]
+    [InlineData("push-held", true, "refs", "engine", false)]
+    [InlineData("push-held", true, "gates", "gates", false)]
     // A second opinion: any ledger family (the reviewer's session and its end), the gate's files (the person's answer), the configuration.
     [InlineData("opinion", false, "ledger", "sessions", true)]
     [InlineData("opinion", false, "ledger", "quests", true)]
@@ -98,6 +106,7 @@ public sealed class LandingWakesTests : IDisposable
     [Theory]
     [InlineData(null, false)]
     [InlineData("held", false)]
+    [InlineData("push-held", true)]
     [InlineData("opinion", false)]
     [InlineData("refused", false)]
     [InlineData("uncommitted", true)]

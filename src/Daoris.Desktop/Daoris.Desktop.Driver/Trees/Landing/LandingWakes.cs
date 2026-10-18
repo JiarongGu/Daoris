@@ -27,7 +27,11 @@ public static class LandingWaits
     /// </summary>
     public const string Tree = "tree";
 
-    /// <summary>Held for the person's yes or evidence's verdict, or for the review: the ledger's <c>quests</c> family carries each release.</summary>
+    /// <summary>
+    /// Held for the person's yes or evidence's verdict, or for the review, or a push held back once its branch was made
+    /// (<see cref="AutoLandingCode.PushHeld"/>, FABRIC-CLOSE1h7): the ledger's <c>quests</c> family carries each release, a hold let go,
+    /// a reopen and the next submission alike.
+    /// </summary>
     public const string Quests = "quests";
 
     /// <summary>
@@ -53,7 +57,8 @@ public static class LandingWaits
         _ when entry.Reopened => First,
         { Code: AutoLandingCode.Refused, Tip: null, Status: null } => Workflow,
         { Code: var code, Tip: not null } when AutoLandingCode.OnChange(code) => Tree,
-        { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed } => Quests,
+        // FABRIC-CLOSE1h7: a push held back after its branch was made waits on its quest standing again, not on its tree, whose tip it keeps.
+        { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed or AutoLandingCode.PushHeld } => Quests,
         { Code: AutoLandingCode.Opinion } => Opinion,
         _ => Look,
     };

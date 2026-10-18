@@ -566,9 +566,10 @@ public sealed class TreesRoutes(DriverLoop loop)
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
         // Named for the chain's first quest (WSR5), and a part of an entry with others for its entry's first part, on the entry's one
         // branch (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): the call every door that lands one session makes (ACCEPTALL1f).
-        // A name the person entered still lands as entered.
+        // A name the person entered still lands as entered. FABRIC-CLOSE1h3: its quests read once, the press made on its own.
+        var quests = new PressQuests(service.FindQuestAsync);
         var subject = Entering(await trees.OwnSubjectAsync(
-            tree, id, questId, records, quest => service.FindQuestAsync(quest, cancellationToken),
+            tree, id, questId, records, quest => quests.FindAsync(quest, cancellationToken),
             named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), request);
         var lead = EntryLead(records, id);
 
@@ -585,13 +586,16 @@ public sealed class TreesRoutes(DriverLoop loop)
         // The press answers what it showed beside Accept (the second-agent design §8.2–§8.3): a dispute or commits nobody read,
         // drawn with the gate's token, which the press sends back; a gate that moved since answers nothing.
         gate = await new OpinionPresses(_loop.Home, service).PressedAsync(id, gate, Optional(request, "answers"), tree, questId, cancellationToken);
+        // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, its quest as read for its name, judged again under the tree's
+        // hold and before the push, so a press that waited behind another landing makes nothing where that result moved meanwhile.
+        var pressed = await quests.PressedAsync(id, questId, ct: cancellationToken);
 
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
         PressSteps.Reach(PressSteps.Landing);
         // LANDHOLD2: a landing of this tree still under way holds the press for up to five minutes; the page is told it waits.
         using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
         var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
-            joins: subject.Joins);
+            joins: subject.Joins, judged: pressed?.Judged, beforePush: pressed?.BeforePush);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)

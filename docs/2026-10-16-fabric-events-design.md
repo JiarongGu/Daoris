@@ -1678,6 +1678,11 @@ hold or reopen before it stops the landing; one after it applies to what follows
 point is the push: a hold, a reopen or a later submission there leaves the branch made and recorded and pushes nothing (`push-held`). The
 first look once the quest stands hands the branch on, one push; where the work went on past it, the look lands that on the made branch.
 
+**Amended (FABRIC-CLOSE1h3, D173's note).** The person's press and an entry's Accept are judged again at the same two points, on the
+result the press was made on: a reopen, a later submission or another `ready` at the same commit stops a press that waited (under the
+tree's hold nothing is made; at the push the branch stays made and the hand-off is its way on). A quest's hold does not stop it: the press
+is the person's own word. A press on no quest, or on a quest whose result is not in, lands as before.
+
 **Amended (FABRIC-CLOSE1c5, D173's note).** On the go-on, the step's branch is brought up to date by a replay, as the tree sync's: its own
 commits rebased onto the new submission's commit (its evidence's, on the wire), then the line. A conflict leaves the tree as it was and
 nothing else changes; the session is told the person must resolve it. With no commit known, the line alone is synced, and that said.

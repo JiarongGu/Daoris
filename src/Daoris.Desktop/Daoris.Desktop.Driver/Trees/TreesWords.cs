@@ -97,10 +97,13 @@ public static class TreesWords
     /// <summary><c>trees remove</c>: a tree discarded, or a refusal that preserves work, which is policy and exit 1.</summary>
     public static TreesSaid Remove(TreeRemoval removal) => new([$"trees: {removal.Message}"], [], removal.Removed ? 0 : 1);
 
-    /// <summary><c>trees land &lt;session&gt;</c>: the plugin's lines as they came, then the landing's sentence; 1 where the step the rule asked for did not happen.</summary>
+    /// <summary>
+    /// <c>trees land &lt;session&gt;</c>: the plugin's lines as they came, then the landing's sentence; 1 where the step the rule asked for did
+    /// not happen, a push held back once the branch was made among them (FABRIC-CLOSE1h3).
+    /// </summary>
     public static TreesSaid Land(TreeLanding landed, IReadOnlyList<string> pluginLines) =>
         new([.. pluginLines, $"trees: {landed.Message}"], [],
-            landed.Landed && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1);
+            landed.Landed && landed.Withheld is null && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1);
 
     /// <summary><c>trees hand</c>: the plugin's lines, then the hand-off's sentence; 1 where the branch was not pushed.</summary>
     public static TreesSaid Hand(TreeHand handed, IReadOnlyList<string> pluginLines) =>

@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Accept, on a session's work or on a whole line of work, now looks at its quest again when it had to wait behind another landing
+  of the same work. Where the quest was taken back or its result handed in again meanwhile, nothing lands and Accept says why; where
+  that happens just before the push, the branch stays and `daoris-driver trees hand <session>` pushes it. A hold alone does not stop
+  your Accept.
 - Under *Accept automatically*, a session you carry on with more words after its work landed now lands again when it is done
   again: its branch moves on and its pull-request plugin pushes once. Before, the later work waited for your Accept. A session
   stuck that way lands at the first look after the update, or is closed where nothing new is in it.
