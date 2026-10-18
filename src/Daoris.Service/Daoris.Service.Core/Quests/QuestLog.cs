@@ -412,7 +412,9 @@ public static class QuestLog
     /// take that lost would show the winner's step as work it never held.
     /// <para>A take lost to the person's reopen leaves its step open, withdrawn or rebound (FABRIC-CLOSE1c18), where the table allows a done
     /// or a decline from open. A done, a decline or a set-up its machine makes there is made on that take all the same, and would close or
-    /// decline the step over the person's reopen, so it is judged lost too (<see cref="LostToTheReopen"/>). An open quest is otherwise
+    /// decline the step over the person's reopen, so it is judged lost too (<see cref="LostToTheReopen"/>). So is one whose take lost
+    /// with the work it was made on, which the winner's chain published anew under the same id (FABRIC-CLOSE1c24,
+    /// <see cref="LostOnTheOpenStep"/>): applied, it would close the winner's step on the loser's work. An open quest is otherwise
     /// nobody's work, as above. A take is never judged so: a fresh one of the open step is that machine's to make, and its claim reads by
     /// it from then on.</para>
     /// </remarks>
@@ -422,9 +424,35 @@ public static class QuestLog
             { Status: QuestStatus.Taken } => Claim(history, operation.Machine) == QuestClaim.Lost,
             { Status: QuestStatus.Open } => operation.Kind != QuestOperationKind.Taken
                                             && Claim(history, operation.Machine) == QuestClaim.Lost
-                                            && LostToTheReopen(history, operation.Machine),
+                                            && (LostOnTheOpenStep(history, operation.Machine)
+                                                || LostToTheReopen(history, operation.Machine)),
             _ => false,
         };
+
+    /// <summary>
+    /// Whether <paramref name="machine"/>'s take, the latest that lost, lost on the step open (FABRIC-CLOSE1c24): its conflict landed
+    /// where the step stood open, so the take was made on work the step no longer stands on. A take loses on an open step only so:
+    /// withdrawn by the person's reopen of its source (FABRIC-CLOSE1c18), grown since from another submission than the one its stamp
+    /// names, which is how the winner's chain meets a step a lost submission published under the same id, or rewritten as a conflict
+    /// when that submission went (FABRIC-CLOSE1e) and gone up on the step published anew, whose publication comes first. A take that lost
+    /// to another machine's take lands on the step taken, and one that lost to a delete on no quest (D95), so neither is judged by it.
+    /// </summary>
+    public static bool LostOnTheOpenStep(IEnumerable<QuestOperation> history, string machine)
+    {
+        Quest? quest = null;
+        var lost = false;
+        foreach (var operation in history)
+        {
+            if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken } && operation.Machine == machine)
+            {
+                lost = quest is { Status: QuestStatus.Open };
+            }
+
+            if (Applies(quest, operation)) quest = Step(quest, operation);
+        }
+
+        return lost;
+    }
 
     /// <summary>
     /// Whether <paramref name="machine"/>'s take lost to the person's reopen (FABRIC-CLOSE1c18): its take's conflict, the latest, landed on

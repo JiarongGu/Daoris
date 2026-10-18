@@ -1322,8 +1322,7 @@ public sealed class QuestExchange(
         {
             return new(
                 QuestRespondRefusal.AlreadyTaken,
-                LostTake(move.Quest.Id, $"so this {action.ToLowerInvariant()} is not this machine's to make. Nothing moved.",
-                    reopened: move.Quest.Status == QuestStatus.Open),
+                LostTake(move.Quest.Id, $"so this {action.ToLowerInvariant()} is not this machine's to make. Nothing moved.", move),
                 Quest: null);
         }
 
@@ -1414,15 +1413,30 @@ public sealed class QuestExchange(
     /// A move or a wait refused because this machine's take lost (WAITCLAIM2), in one sentence for both: what happened to
     /// the take, then <paramref name="what"/>, what that means for this one, then the stand-down the take's own loss says.
     /// A remote refusing such a push says it in the same words (WAITCLAIM3), and the pushing machine's pass relays them.
-    /// <paramref name="reopened"/> where the take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18), which
-    /// is the one way such a step stands open: said as that, never as another machine's take.
+    /// <paramref name="reopened"/> where the take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18): said as
+    /// that, never as another machine's take. <paramref name="outgrown"/> where it lost with the work it was made on, and the step stands
+    /// open on another submission, published anew by the chain that won its source (FABRIC-CLOSE1c24): said as that, since nobody took
+    /// the step itself first. A refusal on a step open reads one or the other from its history (<see cref="QuestMove.LostToTheReopen"/>).
     /// </summary>
-    internal static string LostTake(string id, string what, bool reopened = false) => reopened
-        ? $"Quest `#{id}` moved under this machine's take: the person's reopen of the work it grew from reached the remote first, so "
-          + $"this machine's take lost and is kept on the quest as a conflict, {what} Stand down: this session's work stays in its tree, "
-          + "and the step is open for the work as it stands now."
+    internal static string LostTake(string id, string what, bool reopened = false, bool outgrown = false) =>
+        reopened
+            ? $"Quest `#{id}` moved under this machine's take: the person's reopen of the work it grew from reached the remote first, so "
+              + $"this machine's take lost and is kept on the quest as a conflict, {what} Stand down: this session's work stays in its tree, "
+              + "and the step is open for the work as it stands now."
+        : outgrown
+            ? $"Quest `#{id}` was published anew on other work: the submission this machine's take of it was made on went, so the take "
+              + $"lost and is kept on the quest as a conflict, {what} Stand down: this session's work stays in its tree, and the step is "
+              + "open for the work it grows from now."
         : $"Quest `#{id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, "
           + $"{what} Stand down rather than doubling the work.";
+
+    /// <summary>
+    /// The lost take's words for a move or a set-up the store refused with <see cref="QuestMove.ClaimLost"/>: on a step open, the
+    /// person's reopen or the work the take was made on gone, as the store read it inside its write (FABRIC-CLOSE1c24).
+    /// </summary>
+    internal static string LostTake(string id, string what, QuestMove move) =>
+        LostTake(id, what, reopened: move is { Quest.Status: QuestStatus.Open, LostToTheReopen: true },
+            outgrown: move is { Quest.Status: QuestStatus.Open, LostToTheReopen: false });
 
     /// <summary>
     /// The driver binds a taken quest to the graph that closes it (FABRIC-CLOSE1a, §E5), at the run's first start.
@@ -1999,8 +2013,7 @@ public sealed class QuestExchange(
         {
             return new(
                 QuestRespondRefusal.AlreadyTaken,
-                LostTake(move.Quest.Id, "so this done is not this machine's to make. Nothing moved.",
-                    reopened: move.Quest.Status == QuestStatus.Open),
+                LostTake(move.Quest.Id, "so this done is not this machine's to make. Nothing moved.", move),
                 Quest: null);
         }
 
