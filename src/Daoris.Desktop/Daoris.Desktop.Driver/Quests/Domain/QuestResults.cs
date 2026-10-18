@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -13,20 +15,27 @@ namespace Daoris.Driver;
 public static class QuestResults
 {
     /// <summary>Whether a quest a closure graph holds stands at its submission: taken, bound, with a current submission, held or not.</summary>
-    public static bool Submitted(QuestView? quest) => false;
+    public static bool Submitted([NotNullWhen(true)] QuestView? quest) => quest is { Status: "Taken", Closure: not null, Submission: not null };
 
     /// <summary>Whether its result is in: closed done, or at a closure graph's submission. Held or not: the hold is read beside it.</summary>
-    public static bool Judged(QuestView? quest) => quest is { Status: "Done" };
+    public static bool Judged([NotNullWhen(true)] QuestView? quest) => quest is { Status: "Done" } || Submitted(quest);
 
     /// <summary>
     /// The status the landing and its gates read: a submission reads as the done it stands for, every other quest as it stands. Null where
     /// there is no quest.
     /// </summary>
-    public static string? Status(QuestView? quest) => quest?.Status;
+    public static string? Status(QuestView? quest) => Submitted(quest) ? "Done" : quest?.Status;
 
     /// <summary>
     /// Whether two reads of one quest stand on the same result (FABRIC-CLOSE1h): the same submission, by its machine and sequence, or none
     /// on either. A later <c>ready</c> is another submission, judged again from the start (§E5), even at the same commit.
     /// </summary>
-    public static bool Same(QuestView? judged, QuestView? now) => true;
+    public static bool Same(QuestView? judged, QuestView? now) =>
+        judged is not null && now is not null
+        && (judged.Submission, now.Submission) switch
+        {
+            (null, null) => true,
+            ({ } was, { } is_) => was.Machine == is_.Machine && was.Sequence == is_.Sequence,
+            _ => false,
+        };
 }
