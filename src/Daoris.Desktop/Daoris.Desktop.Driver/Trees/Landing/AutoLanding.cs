@@ -64,6 +64,13 @@ public static class AutoLandingCode
     /// <summary>The branch was made and recorded; the rule's plugin failed, or answered that it did not push (D100).</summary>
     public const string PluginFailed = "plugin-failed";
 
+    /// <summary>
+    /// The branch was made and recorded; its quest was held, taken back or submitted again before the rule's plugin was told, so the
+    /// push was not tried (FABRIC-CLOSE1h2, D173's note: a hold stops a landing up to the moment its push begins). Kept open and read
+    /// again at every look: once its quest stands unheld, the look hands the branch on, or lands the work that went on past it.
+    /// </summary>
+    public const string PushHeld = "push-held";
+
     /// <summary>Its work reached a branch of the person's another way: their press, or a push of their own.</summary>
     public const string Already = "already";
 

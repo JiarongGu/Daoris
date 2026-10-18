@@ -254,6 +254,13 @@ public sealed record TreeLanding(
     public string? Unready { get; init; }
 
     /// <summary>
+    /// Why its push was held back where its plugin could have pushed (FABRIC-CLOSE1h2): the automatic landing's quest was held, taken
+    /// back or submitted again after the branch was made and before the plugin was told. The branch stands, recorded, and no plugin
+    /// was spoken to. Null wherever the push went on, and at every other door, which asks no judgement there.
+    /// </summary>
+    public string? Withheld { get; init; }
+
+    /// <summary>
     /// Where the landing moved a branch Daoris made on from (LAND2c, D149 point 2): the commit it stood at, recorded, before this
     /// session's work fast-forwarded it. Null for a branch made new, and for every merge.
     /// </summary>

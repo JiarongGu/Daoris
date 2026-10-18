@@ -978,6 +978,119 @@ public sealed class AutoLandingTests : IDisposable
         Assert.Equal("feature/q1-fix-the-gap", new LandedBranches(_home).Landing("s1")!.Branch);
     }
 
+    // ——— FABRIC-CLOSE1h2: a hold between a landing's branch and its push (D173's note)
+
+    /// <summary>
+    /// The row's proof. The automatic landing is judged once more just before its plugin is told, since the owner's default (D173's
+    /// FABRIC-CLOSE1h note) is that a hold stops a landing up to the moment its push begins. A hold that comes while the push waits
+    /// behind another push of its branch leaves the branch made and recorded and tells the plugin nothing: the entry stays open as
+    /// <c>push-held</c>, says nothing more while the hold stands, and the first look after the release hands the branch on, one push,
+    /// never a second branch. A plain done is judged there only where its push waited; a submission every time.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_hold_while_the_push_waits_for_its_branch_leaves_the_branch_made_and_pushes_it_once_after_the_release(bool submitted)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        await DoneSessionAsync(root, "s1", "q1", submitted: submitted);
+        var said = await HeldAtThePushAsync(root, quest => quest with { Held = true, Hold = EvidenceCodes.Departed });
+
+        Assert.True(await BranchAsync(root, PushBranch), string.Join("\n", said));
+        Assert.Empty(_frames);
+        Assert.False(new LandedBranches(_home).Landing("s1")!.Pushed);
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal(AutoLandingCode.PushHeld, entry.Last!.Code);
+        Assert.Null(entry.Closed);
+        Assert.Contains("nothing was pushed", Assert.Single(said));
+
+        // While the hold stands, a look hands nothing on and says nothing more.
+        Assert.Empty(await LookAsync());
+        Assert.Empty(_frames);
+
+        _world.Quests["q1"] = _world.Quests["q1"] with { Held = false, Hold = null };
+        var handed = Assert.Single(await LookAsync());
+
+        var frame = Json(Assert.Single(_frames));
+        Assert.Equal(PushBranch, frame.GetProperty("branch").GetString());
+        Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed, handed);
+        entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal(AutoLandingCode.Landed, entry.Last!.Code);
+        Assert.NotNull(entry.Closed);
+        Assert.Equal([$"refs/heads/{PushBranch}"], await FeatureBranchesAsync(root));
+        Assert.Empty((await Lander().ChooseAsync(Config())).Chosen);
+        Assert.Single(_frames);
+    }
+
+    /// <summary>
+    /// A reopen that comes as the push waits holds it the same way, and the work that goes on after it is not lost to a hand-off of the
+    /// branch as it was made: once the quest stands at a later submission and its tree has moved past the commit landed, the look lands
+    /// it as any later done of the session lands, moving the made branch on, and its plugin is told once, at the tree's tip.
+    /// </summary>
+    [Fact]
+    public async Task A_reopen_while_the_push_waits_holds_it_and_the_work_that_went_on_moves_the_made_branch_with_one_push()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1", submitted: true);
+        await HeldAtThePushAsync(root, quest => quest with { Submission = null });
+
+        Assert.True(await BranchAsync(root, PushBranch));
+        Assert.Empty(_frames);
+        Assert.Equal(AutoLandingCode.PushHeld, new AutoLandings(_home).Of("s1")!.Last!.Code);
+
+        // Taken back: a look waits for its next submission, and hands nothing on.
+        Assert.Empty(await LookAsync());
+        Assert.Empty(_frames);
+
+        await CommitAsync(tree, "more.txt", "the work after the reopen", "the work after the reopen");
+        var head = (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
+        _world.Quests["q1"] = _world.Quests["q1"] with { Submission = Made(2) };
+        var said = await LookAsync();
+
+        var frame = Json(Assert.Single(_frames));
+        Assert.Equal(head, frame.GetProperty("tip").GetString());
+        Assert.Equal(head, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+        Assert.Equal(AutoLandingCode.Advanced, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal([$"refs/heads/{PushBranch}"], await FeatureBranchesAsync(root));
+        Assert.True(new LandedBranches(_home).Landing("s1")!.Pushed, string.Join("\n", said));
+    }
+
+    private const string PushBranch = "feature/q1-fix-the-gap";
+
+    /// <summary>
+    /// One look's landing of the one due entry whose push waits behind another push of its branch, held here, while the quest moves as
+    /// <paramref name="change"/> says; then the branch's hold is let go and the landing ends. What the landing said comes back.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> HeldAtThePushAsync(string root, Func<QuestView, QuestView> change)
+    {
+        var lander = Lander();
+        var (chosen, _) = await lander.ChooseAsync(Config());
+        Assert.Single(chosen);
+        Task<IReadOnlyList<string>> landing;
+        using (var pushing = await LandingHolds.BranchAsync(_home, root, PushBranch))
+        {
+            Assert.NotNull(pushing);
+            using (ExecutionContext.SuppressFlow())
+            {
+                landing = Task.Run(() => lander.LandAsync(chosen));
+            }
+
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || landing.IsCompleted,
+                TimeSpan.FromSeconds(60)), "the push waits for its branch");
+            _world.Quests["q1"] = change(_world.Quests["q1"]);
+        }
+
+        return await landing;
+    }
+
+    private static async Task<IReadOnlyList<string>> FeatureBranchesAsync(string root) =>
+        (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/heads/feature/"))
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
     private const string Graph = "sha256:closure";
 
     /// <summary>A submission made on this machine at <paramref name="sequence"/> (FABRIC-CLOSE1a).</summary>

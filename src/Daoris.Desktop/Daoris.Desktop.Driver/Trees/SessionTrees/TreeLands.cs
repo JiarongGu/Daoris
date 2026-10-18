@@ -329,10 +329,15 @@ internal sealed class TreeLands(
     /// of the tree: a refusal it answers is the landing's, before anything is made; null lets it go on. Past this point a hold, a reopen or
     /// a gate's word applies to what follows, never to this landing, which is the landing's commitment. Null asks nothing, as before.
     /// </param>
+    /// <param name="beforePush">
+    /// The door's judgement once more, just before the rule's plugin is told (FABRIC-CLOSE1h2, D173's note), told whether the push
+    /// waited behind another push of its branch: a sentence it answers holds the push back (<see cref="TreeLanding.Withheld"/>), the
+    /// branch made and recorded and no plugin spoken to; null lets the push begin, past which nothing stops it. Null asks nothing.
+    /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null)
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door

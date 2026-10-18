@@ -551,6 +551,8 @@ public static class NoteCodes
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
     public static readonly NoteCode LandingUnready = new("landing.plugin-unready", ["branch", "plugin"]);
     public static readonly NoteCode LandingPluginFailed = new("landing.plugin-failed", ["branch", "plugin"]);
+    // Its push held back after the branch was made (FABRIC-CLOSE1h2): a code of its own, handed on at the look after the release.
+    public static readonly NoteCode LandingPushHeld = new("landing.push-held", ["branch", "plugin"]);
     public static readonly NoteCode LandingNothing = new("landing.nothing", []);
     public static readonly NoteCode LandingHeld = new("landing.held", []);
     public static readonly NoteCode LandingUncommitted = new("landing.uncommitted", ["paths"]);
