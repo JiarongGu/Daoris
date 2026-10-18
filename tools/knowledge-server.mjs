@@ -24,6 +24,10 @@
  * chooses, and every answer says the tier). A worktree reaches its main checkout's build and serves the main
  * checkout, unless it built one of its own.
  *
+ * A running session follows the build (KNOWHOLD1): when a merge makes a new one, the relay moves the session onto it at
+ * its next request with nothing owed, or within a minute while it is idle, and ends the server it left (`relayServer`),
+ * so a fix to the host reaches a running session.
+ *
  * A session a driver started (it names `DAORIS_REPOSITORY`) is the driver's: its environment is passed on whole,
  * so its connector speaks to the driver's store, as this file did for a pipe-door session before (D70). It runs
  * the machine's own host first, where the driver would find it for the protocol door (`DAORIS_MCP_HOST`, then the
@@ -237,10 +241,8 @@ const RETIRE_WAIT_MS = 10_000;
 /**
  * The relay between a session and its server, which follows the current build (KNOWHOLD1).
  *
- * The server was the session's own child on the session's own streams, so it ran the build it started on until the session
- * ended. The parent session of 2026-10-10 still ran the build of 10-09 on 10-19, whose host watched the whole checkout and
- * walked each folder renamed in it (KNOWWALK1, fixed in the source on 10-17): the deployment rehearsal's swap under
- * `local/gate-tree/` was refused twice, `app/cli/node_modules` held for ten minutes. So the relay reads the session's
+ * A server on the session's own streams runs the build it started on until the session ends, so a fault fixed by a merge
+ * stays in every running session (the fix log's KNOWHOLD1 entry has the case). So the relay reads the session's
  * messages a line at a time, and when the checkout's current build is not the one serving, it moves the session onto it:
  * at a request that arrives with none outstanding either way, or at its own look every minute while the session is idle.
  * The new server is handed the session's own handshake under an id of the relay's, then its `initialized`; once it has

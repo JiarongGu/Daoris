@@ -267,10 +267,8 @@ test('started with no build anywhere, it speaks the protocol on its standard str
 // ---------------------------------------------------------------------------------------------------
 // A running session follows the current build (KNOWHOLD1)
 //
-// A server started on 2026-10-10 still ran the build of 10-09 on 10-19: the parent session's, which never restarted it. That
-// build's host watched the whole checkout and walked each folder renamed in it (KNOWWALK1, fixed on 10-17 in the source), so
-// the deployment rehearsal's swap under `local/gate-tree/` was refused twice, `app/cli/node_modules` held for ten minutes. A
-// fix reaches a running session only if the relay moves it onto the build a merge made.
+// A fix to the host reaches a running session only if the relay moves it onto the build a merge made: a server left on its
+// first build kept a fixed host's whole-checkout watch, and held a rehearsal's swap (the fix log's KNOWHOLD1 entry).
 
 /** A server as the relay sees one: its streams, its end, and the requests it was handed. */
 type FakeServer = EventEmitter & {

@@ -195,10 +195,9 @@ public sealed class CheckoutFreshnessTests : IDisposable
     [Fact]
     public async Task A_checkouts_ignored_folders_at_its_top_are_neither_read_nor_watched()
     {
-        // KNOWHOLD1: the deployment rehearsal runs under `local/gate-tree/`, and its swap renames the install's `app/` there.
-        // A server started on a build from before KNOWWALK1 watched the whole checkout and walked each folder renamed in it,
-        // and held `app/cli/node_modules` for ten minutes. What reads and watches a checkout now opens nothing under
-        // `local/`, `node_modules/` or `_fixtures/`, and hears nothing written there.
+        // KNOWHOLD1: the deployment rehearsal runs under `local/gate-tree/`, and its swap renames the install's `app/` there,
+        // refused while any handle is open inside it. What reads and watches a checkout opens nothing under `local/`,
+        // `node_modules/` or `_fixtures/`, and hears nothing written there.
         var checkout = Path.Combine(_root, "served");
         const string app = "served/local/gate-tree/_fixtures/deployment-rehearsal/install/app";
         Write("served/.gitignore", "local/\nnode_modules/\n_fixtures/\n");
