@@ -296,6 +296,15 @@ describe('two sign-ins of one email, told apart (ACCOUNTID1b)', () => {
     expect(accountLabel(bare, tool([a, bare]))).toBe(EMAIL);
   });
 
+  /** As `agent list` says it (the CLI's `apartBy`): a part both sign-ins share tells nothing apart, so the next is said. */
+  it('says the plan where both sign-ins are in one organisation, and nothing where neither part differs', () => {
+    const same = { ...b, org: 'Org A' };
+    expect(accountLabel(same, tool([a, same]))).toBe(`${EMAIL} · pro`);
+    const twin = { ...b, org: 'Org A', plan: 'max' };
+    expect(accountLabel(twin, tool([a, twin]))).toBe(EMAIL);
+    expect(accountWho(twin, tool([a, twin]))).toBeNull();
+  });
+
   it('says no organisation where no other sign-in of the agent has the email, in any case', () => {
     const other = { ...b, account: 'other@example.invalid' };
     const among = tool([a, other]);

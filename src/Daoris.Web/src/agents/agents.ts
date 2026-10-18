@@ -346,17 +346,26 @@ export function ownWho(tool: Among): string | null {
 
 /**
  * What tells a sign-in apart from another of its agent signed in as the same email (ACCOUNTID1b, D125's note of 2026-10-19):
- * the organisation its agent named beside who, else the plan; null where no other sign-in of the agent has that email, in any
- * case, or the agent named neither. The agent's own sign-in is one of them, and a key names no one.
+ * the organisation its agent named beside who, where no such other sign-in has it, else the plan likewise; null where no
+ * other sign-in of the agent has that email, in any case, or neither part tells them apart. The rule `agent list` says it by
+ * (the CLI's `apartBy`), with the agent's own sign-in one of them on the page. A key names no one.
  */
 function apartOf(account: Named, among: Among | null | undefined): string | null {
   const who = account.key ? null : account.account?.trim();
   if (!who || !among) return null;
-  const same = (other: string | null | undefined) => Boolean(other?.trim()) && folded(other!) === folded(who);
-  // The sign-in itself is counted among them: an account is in the list, the agent's own sign-in is its `ownAccount`.
-  const signedIn = among.accounts.filter((each) => !each.key && same(each.account)).length + (same(among.ownAccount) ? 1 : 0);
-  if (signedIn < 2) return null;
-  return account.org?.trim() || account.plan?.trim() || null;
+  const same = (one: string | null | undefined, other: string) => Boolean(one?.trim()) && folded(one!) === folded(other);
+  // Every sign-in of the email, itself among them: an account is in the list, the agent's own sign-in is its `ownAccount`.
+  const signedIn = [
+    ...among.accounts.filter((each) => !each.key && same(each.account, who)).map((each) => ({ org: each.org, plan: each.plan })),
+    ...(same(among.ownAccount, who) ? [{ org: among.ownOrg, plan: among.ownPlan }] : []),
+  ];
+  if (signedIn.length < 2) return null;
+  for (const part of ['org', 'plan'] as const) {
+    const mine = account[part]?.trim();
+    // Itself is the one sign-in holding it; another with the same part leaves it telling nothing apart.
+    if (mine && signedIn.filter((each) => same(each[part], mine)).length === 1) return mine;
+  }
+  return null;
 }
 
 /**
