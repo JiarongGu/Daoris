@@ -121,7 +121,8 @@
  * - **The stage builds the gated tree.** `npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`
  *   builds in the gate tree, never in the main checkout as it moves, and refuses a tree no full set passed as before.
  * - **The prune sees it.** No rule above did: it is detached, so no merged branch has it out, and it is under `local/`,
- *   not `.claude/worktrees/`. It is never removed while its run holds the lock. A merge's prune removes it once its stage
+ *   not `.claude/worktrees/`. It is never removed while its run holds the lock, nor while a process is inside it (one a
+ *   full set started by hand holds no lock), read as CLEANUP2 reads a harness-locked tree's. A merge's prune removes it once its stage
  *   is done (`GATE_TREE_RECORD` notes the stage of the commit it holds); `--prune` removes it once its run has ended,
  *   staged or not. Either says so, a line of its own; changes in it are never forced away, and a folder git no longer
  *   lists there is the half-removed rule's (CLEANUP2).
@@ -2187,6 +2188,7 @@ function gateTreeFacts(home, worktrees, inside) {
     return { ...facts, folder: folder.link || folder.git ? folder : { ...folder, ...inside(path) } };
   }
   if (tree.prunable || !existsSync(join(path, '.git'))) return { ...facts, error: 'its folder has no .git file' };
+  Object.assign(facts, inside(path));
   const head = git(path, ['rev-parse', 'HEAD'], { allowFail: true });
   const status = git(path, ['--no-optional-locks', 'status', '--porcelain'], { allowFail: true });
   if (head.status !== 0 || status.status !== 0) return { ...facts, error: gitSays(head.err || status.err || head.out || status.out) };
@@ -3422,6 +3424,11 @@ export function gateTreeVerdict(facts, { atMerge = false } = {}) {
     return { remove: false, why: `its full set is running (pid ${lock.pid}, since ${when(lock.at)}, on ${lock.commit.slice(0, 7)}): never removed while it runs` };
   }
   if (!facts.listed) return folderVerdict(facts.folder);
+  // A full set started there by hand, as before GATEWT1, holds no lock: what runs inside is the only sign of it.
+  if (facts.processError) return { remove: false, why: `whether a process runs inside it could not be read (${facts.processError})` };
+  if (facts.processes?.length) {
+    return { remove: false, why: `a running process is inside it (${facts.processes.map(processSaid).join('; ')}), and no lock says whose run: it is never removed while one runs` };
+  }
   if (facts.error) return { remove: false, why: `it is in a state git could not read (${facts.error})` };
   if (facts.changes.length) return { remove: false, why: `it holds changes git removes only with --force (${listed(facts.changes)}), and is never forced here` };
   const sha = (facts.head ?? '').slice(0, 7);

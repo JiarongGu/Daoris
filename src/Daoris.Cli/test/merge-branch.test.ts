@@ -34,6 +34,8 @@ interface GateTreeFacts {
   lock: { pid: number; commit: string; at: string; running: boolean } | null;
   staged: { commit: string; at: string } | null;
   folder?: Folder;
+  /** The processes inside it, read when no running lock is held (a full set started by hand holds none). */
+  processes?: Proc[]; processError?: string;
 }
 /**
  * GATELANES1: the two lanes, the light one's run order, and what each Process-lane gate starts after. GATELANES2: how
@@ -352,6 +354,15 @@ test('the prune never takes the gate tree while its full set runs; a merge\'s pr
   const left = tool.gateTreeVerdict({ ...idle, lock: { ...running.lock, running: false } }, { atMerge: false });
   assert.equal(left.remove, true);
   assert.match(left.said!, /a lock left by pid 7, which no longer runs/);
+  // A full set started there by hand holds no lock: a process inside keeps the tree, and so does not knowing.
+  for (const atMerge of [true, false]) {
+    const busy = tool.gateTreeVerdict({ ...staged, processes: [{ pid: 9, exe: '', command: 'node tools/merge-branch.mjs --full' }] }, { atMerge });
+    assert.equal(busy.remove, false);
+    assert.match(busy.why, /a running process is inside it \(pid 9: node tools\/merge-branch\.mjs --full\), and no lock says whose run: it is never removed while one runs/);
+    const unknown = tool.gateTreeVerdict({ ...staged, processError: 'the process query failed' }, { atMerge });
+    assert.equal(unknown.remove, false);
+    assert.match(unknown.why, /whether a process runs inside it could not be read \(the process query failed\)/);
+  }
   // Changes are never forced away, at either prune.
   for (const atMerge of [true, false]) {
     const changed = tool.gateTreeVerdict({ ...staged, changes: ['code.txt'] }, { atMerge });
