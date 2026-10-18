@@ -8,7 +8,8 @@ namespace Daoris.Driver;
 /// turns it took (one, or two with its repair).
 /// </summary>
 /// <param name="Role"><c>generate</c> or <c>synthesize</c>.</param>
-/// <param name="State"><c>answered</c>, <c>failed</c> or <c>unavailable</c>.</param>
+/// <param name="State"><c>answered</c>, <c>failed</c> or <c>unavailable</c>; <c>running</c> while a turn runs, and since BRAINSTORM1b
+/// <c>stopped</c> by the person or <c>interrupted</c> by a driver that stopped.</param>
 public sealed record BrainstormPassRecord(BrainstormBy By, string Role, string State, IReadOnlyList<string> Codes, int Turns)
 {
     public const string Generate = "generate";
@@ -17,6 +18,15 @@ public sealed record BrainstormPassRecord(BrainstormBy By, string Role, string S
     public const string Answered = "answered";
     public const string Failed = "failed";
     public const string Unavailable = "unavailable";
+
+    /// <summary>A turn of it runs: what a restart finds of a pass its driver was running when it stopped.</summary>
+    public const string Running = "running";
+
+    /// <summary>Ended by the person's stop (D176 point 6).</summary>
+    public const string Stopped = "stopped";
+
+    /// <summary>Ended by a restart: its driver stopped while it ran, and it never runs again by itself (D176 point 6).</summary>
+    public const string Interrupted = "interrupted";
 }
 
 /// <summary>A member of a group as the document shows it: the proposal under its anonymous id, with its provenance re-attached.</summary>
@@ -48,12 +58,22 @@ public sealed record BrainstormDocument(
 
     /// <summary>Whether every pass ran on a stub door: no model ran, and the document is no maker's diversity.</summary>
     public bool Stubs => Passes.Count > 0 && Passes.All(pass => pass.By.Stub);
+
+    /// <summary>The generators that did not answer, each with why by code (D176 point 6's partial coverage).</summary>
+    public IReadOnlyList<BrainstormPassRecord> Unanswered =>
+        [.. Passes.Where(pass => pass.Role == BrainstormPassRecord.Generate && pass.State != BrainstormPassRecord.Answered)];
 }
 
 /// <summary>The document's assembly with provenance, its JSON and its Markdown (D176 points 4 and 8), with no model and no I/O.</summary>
 public static class BrainstormDocuments
 {
     public const string NoSynthesis = "the synthesis did not finish";
+
+    /// <summary>Why a document the person stopped is unranked (D176 point 6).</summary>
+    public const string StoppedByPerson = "stopped by the person: what answered is kept, and nothing ran after the stop";
+
+    /// <summary>Why a document a restart found running is unranked (D176 point 6).</summary>
+    public const string Interrupted = "interrupted: Daoris stopped while it ran, and nothing runs again by itself";
 
     /// <summary>
     /// The ranked document: each group of the validated synthesis with its members' provenance re-attached by Daoris, and every
@@ -116,6 +136,20 @@ public static class BrainstormDocuments
             writer.WriteBoolean("stubs", document.Stubs);
             writer.WriteStartArray("makers");
             foreach (var maker in document.Makers) writer.WriteStringValue(maker);
+            writer.WriteEndArray();
+            // Added by BRAINSTORM1b: the generators that did not answer, and why by code (D176 point 6).
+            writer.WriteStartArray("unanswered");
+            foreach (var pass in document.Unanswered)
+            {
+                writer.WriteStartObject();
+                By(writer, pass.By);
+                writer.WriteString("state", pass.State);
+                writer.WriteStartArray("codes");
+                foreach (var code in pass.Codes) writer.WriteStringValue(code);
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+            }
+
             writer.WriteEndArray();
             writer.WriteStartArray("rows");
             foreach (var row in document.Rows)
@@ -194,6 +228,20 @@ public static class BrainstormDocuments
         else if (document.Makers.Count < 2)
         {
             text.Append("One maker answered: this is no cross-maker brainstorm.\n");
+        }
+
+        // Partial coverage (BRAINSTORM1b, D176 point 6): which generators answered, and which did not and why, by code.
+        var answered = document.Passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Answered }).ToList();
+        if (answered.Count > 0 && document.Unanswered.Count > 0)
+        {
+            text.Append("Answered: ").Append(string.Join("; ", answered.Select(pass => $"`{pass.By.Adapter}` (maker {pass.By.Maker})"))).Append(".\n");
+        }
+
+        if (document.Unanswered.Count > 0)
+        {
+            text.Append("Did not answer: ")
+                .Append(string.Join("; ", document.Unanswered.Select(pass => $"`{pass.By.Adapter}` (maker {pass.By.Maker}): {string.Join(", ", pass.Codes)}")))
+                .Append(".\n");
         }
 
         foreach (var row in document.Rows)

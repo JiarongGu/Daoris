@@ -1,0 +1,52 @@
+{
+  "about": "The brainstorm policy in driver.json, `brainstorms` (this machine's rule) and `workspaceBrainstorms` (BRAINSTORM1b, D176 point 9): the table both twins hold, the CLI's brainstorms.ts (through driverconfig.ts) and the driver's BrainstormRules. `read`: a file's text, the workspace a question's repository is in (null for a question with no repository), and what resolves: the source (`workspace`, `machine`, or `default` for nothing set) and the rule as kept, as JSON text. `problems`: what an entry holds, as JSON text, and the first problem said, null for none. `listed`: a rule as JSON text and how the list says it. `edits`: a file's text, an edit as JSON text, the two keys the file holds after it (as JSON text) or the refusal in words. A rule an edit keeps is spelled whole in the file, since each writer keeps a value no edit changed as it was written.",
+  "read": [
+    ["nothing set is the default", "{}", "work", "default", "{\"mode\":\"ask\",\"agents\":[],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}"],
+    ["the machine's rule reaches a question with no repository", "{\"brainstorms\":{\"mode\":\"off\",\"agents\":[\"claude-code\",\"codex-acp\"]}}", null, "machine", "{\"mode\":\"off\",\"agents\":[\"claude-code\",\"codex-acp\"],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}"],
+    ["the machine's rule reaches a workspace that sets none, its minutes not written the defaults", "{\"brainstorms\":{\"minutes\":{\"pass\":5}},\"workspaceBrainstorms\":{\"home\":{\"mode\":\"off\"}}}", "work", "machine", "{\"mode\":\"ask\",\"agents\":[],\"minutes\":{\"pass\":5,\"synthesis\":10,\"challenge\":10,\"request\":30}}"],
+    ["a workspace's rule replaces the machine's whole", "{\"brainstorms\":{\"agents\":[\"dsh\"],\"minutes\":{\"pass\":5}},\"workspaceBrainstorms\":{\"work\":{\"mode\":\"off\"}}}", "work", "workspace", "{\"mode\":\"off\",\"agents\":[],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}"],
+    ["a question with no repository takes the machine's, never a workspace's", "{\"workspaceBrainstorms\":{\"default\":{\"mode\":\"off\"}}}", null, "default", "{\"mode\":\"ask\",\"agents\":[],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}"],
+    ["workspace names match in any case", "{\"workspaceBrainstorms\":{\"Work\":{\"mode\":\"off\"}}}", "work", "workspace", "{\"mode\":\"off\",\"agents\":[],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}"],
+    ["a rule with a problem is not read", "{\"brainstorms\":{\"mode\":\"on\"}}", null, "default", "{\"mode\":\"ask\",\"agents\":[],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}"]
+  ],
+  "problems": [
+    ["an empty rule is the default", "{}", null],
+    ["off with its agents and minutes", "{\"mode\":\"off\",\"agents\":[\"claude-code\",\"codex-acp\"],\"minutes\":{\"pass\":5,\"synthesis\":5,\"challenge\":5,\"request\":20}}", null],
+    ["null is absent", "{\"mode\":null,\"agents\":null,\"minutes\":{\"pass\":null}}", null],
+    ["false is no rule", "false", "a brainstorms rule is an object with its `mode`, the `agents` it runs and its `minutes`."],
+    ["a list is no rule", "[]", "a brainstorms rule is an object with its `mode`, the `agents` it runs and its `minutes`."],
+    ["on is not offered", "{\"mode\":\"on\"}", "`mode` is `ask` or `off`: whether a brainstorm an agent asks for waits for your yes, or is refused."],
+    ["a mode that is no word", "{\"mode\":true}", "`mode` is `ask` or `off`: whether a brainstorm an agent asks for waits for your yes, or is refused."],
+    ["agents that are no list", "{\"agents\":\"dsh\"}", "each agent is an adapter's name, such as `codex-acp` or `dsh`."],
+    ["a blank agent", "{\"agents\":[\" \"]}", "each agent is an adapter's name, such as `codex-acp` or `dsh`."],
+    ["an agent twice", "{\"agents\":[\"dsh\",\"DSH\"]}", "`DSH` is named twice — each agent once, in the order they run."],
+    ["five agents", "{\"agents\":[\"a\",\"b\",\"c\",\"d\",\"e\"]}", "a brainstorm runs at most 4 agents; 5 are named."],
+    ["minutes that are no object", "{\"minutes\":10}", "`minutes` holds whole numbers: `pass`, `synthesis` and `challenge` from 1 to 60 each, and `request` up to 240."],
+    ["minutes in words", "{\"minutes\":{\"pass\":\"10\"}}", "`minutes` holds whole numbers: `pass`, `synthesis` and `challenge` from 1 to 60 each, and `request` up to 240."],
+    ["minutes not whole", "{\"minutes\":{\"pass\":2.5}}", "`minutes` holds whole numbers: `pass`, `synthesis` and `challenge` from 1 to 60 each, and `request` up to 240."],
+    ["a pass of no minutes", "{\"minutes\":{\"pass\":0}}", "`minutes` holds whole numbers: `pass`, `synthesis` and `challenge` from 1 to 60 each, and `request` up to 240."],
+    ["a pass past an hour", "{\"minutes\":{\"pass\":61}}", "`minutes` holds whole numbers: `pass`, `synthesis` and `challenge` from 1 to 60 each, and `request` up to 240."],
+    ["a request past four hours", "{\"minutes\":{\"request\":241}}", "`minutes` holds whole numbers: `pass`, `synthesis` and `challenge` from 1 to 60 each, and `request` up to 240."],
+    ["a request no longer than its reserves", "{\"minutes\":{\"request\":20}}", "the request's minutes are more than the synthesis's and the challenge's together, which are reserved from the start: 10 and 10 here."]
+  ],
+  "listed": [
+    ["the default", "{}", "ask; the agents each request names; 10 minutes a pass, 10 the synthesis, 10 the challenge, 30 the request"],
+    ["off with its agents", "{\"mode\":\"off\",\"agents\":[\"claude-code\",\"codex-acp\"],\"minutes\":{\"pass\":5,\"synthesis\":5,\"challenge\":5,\"request\":20}}", "off; `claude-code`, then `codex-acp`; 5 minutes a pass, 5 the synthesis, 5 the challenge, 20 the request"]
+  ],
+  "edits": [
+    ["the machine's first rule", "{}", "{\"set\":{\"agents\":[\"claude-code\",\"codex-acp\"]}}", "{\"brainstorms\":{\"mode\":\"ask\",\"agents\":[\"claude-code\",\"codex-acp\"],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}}", null],
+    ["a workspace's first rule, by its minutes alone", "{}", "{\"workspace\":\"work\",\"set\":{\"minutes\":{\"pass\":5}}}", "{\"workspaceBrainstorms\":{\"work\":{\"mode\":\"ask\",\"agents\":[],\"minutes\":{\"pass\":5,\"synthesis\":10,\"challenge\":10,\"request\":30}}}}", null],
+    ["a set changes only what it names, minutes one by one, under the spelling first written", "{\"workspaceBrainstorms\":{\"Work\":{\"mode\":\"off\",\"agents\":[],\"minutes\":{\"pass\":5,\"synthesis\":10,\"challenge\":10,\"request\":40}}}}", "{\"workspace\":\"work\",\"set\":{\"minutes\":{\"synthesis\":15}}}", "{\"workspaceBrainstorms\":{\"Work\":{\"mode\":\"off\",\"agents\":[],\"minutes\":{\"pass\":5,\"synthesis\":15,\"challenge\":10,\"request\":40}}}}", null],
+    ["clear takes the machine's rule away", "{\"brainstorms\":{\"mode\":\"off\"}}", "{\"clear\":true}", "{}", null],
+    ["clear takes a workspace's away and keeps the machine's", "{\"brainstorms\":{\"mode\":\"off\",\"agents\":[],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}},\"workspaceBrainstorms\":{\"work\":{\"mode\":\"ask\"}}}", "{\"workspace\":\"work\",\"clear\":true}", "{\"brainstorms\":{\"mode\":\"off\",\"agents\":[],\"minutes\":{\"pass\":10,\"synthesis\":10,\"challenge\":10,\"request\":30}}}", null],
+    ["a repository named", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"off\"}}", null, "a brainstorms rule is set for this machine or for a workspace — never for one repository."],
+    ["no change", "{}", "{\"workspace\":\"work\"}", null, "one change at a time: set its mode, its agents or its minutes, or clear."],
+    ["a set that names nothing", "{}", "{\"set\":{}}", null, "one change at a time: set its mode, its agents or its minutes, or clear."],
+    ["a set and a clear", "{}", "{\"set\":{\"mode\":\"off\"},\"clear\":true}", null, "one change at a time: set its mode, its agents or its minutes, or clear."],
+    ["on is not offered", "{}", "{\"set\":{\"mode\":\"on\"}}", null, "`mode` is `ask` or `off`: whether a brainstorm an agent asks for waits for your yes, or is refused."],
+    ["a mode that is no word", "{}", "{\"set\":{\"mode\":1}}", null, "`mode` is `ask` or `off`: whether a brainstorm an agent asks for waits for your yes, or is refused."],
+    ["five agents", "{}", "{\"set\":{\"agents\":[\"a\",\"b\",\"c\",\"d\",\"e\"]}}", null, "a brainstorm runs at most 4 agents; 5 are named."],
+    ["minutes that are no object", "{}", "{\"set\":{\"minutes\":5}}", null, "`minutes` holds whole numbers: `pass`, `synthesis` and `challenge` from 1 to 60 each, and `request` up to 240."],
+    ["a synthesis eating its request's reserve", "{}", "{\"set\":{\"minutes\":{\"synthesis\":20}}}", null, "the request's minutes are more than the synthesis's and the challenge's together, which are reserved from the start: 20 and 10 here."]
+  ]
+}

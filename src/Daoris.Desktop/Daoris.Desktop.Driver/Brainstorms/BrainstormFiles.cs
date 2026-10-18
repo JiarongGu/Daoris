@@ -24,6 +24,12 @@ public static class BrainstormStates
 
     /// <summary>The code of a brainstorm whose synthesis did not finish: the document is unranked.</summary>
     public const string Unranked = "unranked";
+
+    /// <summary>The code of a brainstorm the person stopped (D176 point 6): what answered is kept, unranked.</summary>
+    public const string Stopped = "stopped";
+
+    /// <summary>The code of a brainstorm whose driver stopped while it ran: what answered is kept, and nothing runs again by itself.</summary>
+    public const string Interrupted = "interrupted";
 }
 
 /// <summary>
@@ -44,10 +50,14 @@ public sealed class BrainstormFiles(string home)
     /// <summary>The file a turn's result tool writes its answer to: <c>brainstorm_give</c>'s or <c>brainstorm_synthesize</c>'s.</summary>
     public string AnswerPath(string id, string turn) => PathOf(id, "answers", $"{turn}.json");
 
-    /// <summary>The request a person's terminal writes, atomically: its id, which names the brainstorm everywhere.</summary>
-    public string WriteRequest(string question, string? repository, IReadOnlyList<string> agents, DateTimeOffset at)
+    /// <summary>
+    /// The request a person's terminal writes, atomically: its id, which names the brainstorm everywhere. An id the caller names
+    /// (BRAINSTORM1b, D176 point 6) makes the request idempotent: one already on file under it is kept as it is, never written again.
+    /// </summary>
+    public string WriteRequest(string question, string? repository, IReadOnlyList<string> agents, DateTimeOffset at, string? named = null)
     {
-        var id = Guid.NewGuid().ToString("N")[..8];
+        var id = named ?? Guid.NewGuid().ToString("N")[..8];
+        if (named is not null && File.Exists(PathOf(id, "request.json"))) return id;
         Write(PathOf(id, "request.json"), writer =>
         {
             writer.WriteStartObject();
@@ -135,6 +145,43 @@ public sealed class BrainstormFiles(string home)
     {
         if (Parse(PathOf(id, "sent.json")) is not { } root) return null;
         using (root) return Text(root.RootElement, "packet");
+    }
+
+    /// <summary>The person's stop (BRAINSTORM1b, D176 point 6), a file of its own their verb writes: every pass ends, and what answered is kept.</summary>
+    public void WriteStop(string id, DateTimeOffset at) =>
+        Write(PathOf(id, "stop.json"), writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("at", Moments.Write(at));
+            writer.WriteEndObject();
+        });
+
+    /// <summary>Whether the person stopped it.</summary>
+    public bool Stopped(string id) => File.Exists(PathOf(id, "stop.json"));
+
+    /// <summary>Each pass's record as it was last written, in pass order; one unreadable is not a pass here.</summary>
+    public IReadOnlyList<BrainstormPassRecord> ReadPasses(string id)
+    {
+        var folder = PathOf(id, "passes");
+        if (!Directory.Exists(folder)) return [];
+        var passes = new List<BrainstormPassRecord>();
+        foreach (var file in Directory.EnumerateFiles(folder, "*.json").Order(StringComparer.Ordinal))
+        {
+            if (Parse(file) is not { } root) continue;
+            using (root)
+            {
+                var element = root.RootElement;
+                if (Text(element, "pass") is not { } pass || Text(element, "role") is not { } role || Text(element, "state") is not { } state) continue;
+                var codes = element.TryGetProperty("codes", out var listed) && listed.ValueKind == JsonValueKind.Array
+                    ? listed.EnumerateArray().Where(code => code.ValueKind == JsonValueKind.String).Select(code => code.GetString()!).ToList()
+                    : [];
+                var turns = element.TryGetProperty("turns", out var counted) && counted.ValueKind == JsonValueKind.Number && counted.TryGetInt32(out var count) ? count : 1;
+                passes.Add(new BrainstormPassRecord(
+                    new BrainstormBy(pass, Text(element, "maker") ?? "", Text(element, "adapter") ?? "", Text(element, "account")), role, state, codes, turns));
+            }
+        }
+
+        return passes;
     }
 
     /// <summary>A turn's answer as its tool wrote it; null where it wrote none.</summary>
