@@ -924,6 +924,104 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Contains("say resend or stop", HeldAttempts.Said(unkept, held.Attempt, HeldResolutions.Record), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1q2 (D173's CLOSE1q, CLOSE1u and CLOSE1c notes): a close for S1 is left unanswered when the person reopens S1, then S2 is
+    /// made ready at S1's commit, and the person's word on S1's close is applied by a loop started again. Its door took the close only after
+    /// the reopen, so its question answers <c>stale</c>. Whether the word was given before the loop read S2, or while the loop asked the door
+    /// with S2's deploy already sent, it never reaches S2: <c>record</c> is refused at the door, <c>resend</c> asks after S1's key alone, and
+    /// <c>stop</c> stops nothing of S2's work and is taken back, saying why. S2's deploy stays live, and S2 closes under a key of its own.
+    /// </summary>
+    [Theory]
+    [InlineData(HeldResolutions.Record, false)]
+    [InlineData(HeldResolutions.Resend, false)]
+    [InlineData(HeldResolutions.Stop, false)]
+    [InlineData(HeldResolutions.Record, true)]
+    [InlineData(HeldResolutions.Resend, true)]
+    [InlineData(HeldResolutions.Stop, true)]
+    public async Task A_word_on_a_close_left_unanswered_across_a_reopen_and_a_restart_never_reaches_the_next_submission_at_its_commit(string word, bool started)
+    {
+        _steps = [DeployStep];
+        var plugins = new Deploys();
+        Quest(Taken("q7", Digest(Deployed), Ready41) with { Updated = _now });
+        _branches["daoris/q7"] = ("q7", "c1");
+        var runtime = Runtime(plugins);
+
+        // S1's deploy reached; its close sent, taken by its door only after the person reopened S1, so refused stale, and its answer lost.
+        await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        plugins.Heard.Enqueue(Reached(Assert.Single(plugins.Sent)));
+        _door.Answer = _ => new(QuestCloseOutcomes.Refused, "stale", "Quest #q7's submission desk/41 is not its current one.", []);
+        _door.Lose = true;
+        _door.Told = _ => throw new HttpRequestException("the host did not answer in time");
+        await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        var s1 = Assert.Single(_door.Sent);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 41)], s1.Quests);
+        var listed = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((QuestClosing.Sender, NodeStates.Unknown), (listed.Plugin, listed.NodeState));
+
+        // S2: the same commit made ready again after the reopen, by a new operation.
+        Quest(_quests["q7"] with { Submission = new QuestSubmissionView("desk", 43, null, "ready"), Updated = _now.AddMinutes(5) });
+
+        // The person's word: given before the loop read S2, or while it asked the door, its pass then sending S2's deploy.
+        WorkPerformed? worded = null;
+        void Say() => worded ??= HeldAttempts.Word(Files, Unit, "close", listed.Attempt, word, () => _now);
+        if (started)
+        {
+            _door.Told = _ =>
+            {
+                Say();
+                throw new HttpRequestException("the host did not answer in time");
+            };
+            await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+            Assert.Equal(2, plugins.Sent.Count);
+            Assert.Equal(NodeStates.Active, Record().Statuses["deploy"].State);
+        }
+        else Say();
+
+        if (word == HeldResolutions.Record) Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotKept), (worded!.What, worded.Code));
+        else Assert.Equal(PerformedWhat.Worded, worded!.What);
+
+        // A loop started again applies it, its door now answering what it kept under S1's key.
+        _door.Told = null;
+        var restarted = Runtime(plugins);
+        var applied = await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+        await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+
+        // S1's key alone asked after and never sent again; its attempt settled on its door's stale, the word cleared.
+        Assert.Single(_door.Sent);
+        Assert.NotEmpty(_door.Asked);
+        Assert.All(_door.Asked, each => Assert.Equal(("q7", s1.Key), each));
+        var attempt = Record().Attempts.Single(each => each.Call.IdempotencyKey == s1.Key);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Failed, "stale", (string?)null), (attempt.State, attempt.Outcome, attempt.Code, attempt.Resolution));
+
+        // S2's work untouched: its deploy live on S2's revision (asked after where an earlier loop sent it), its close neither stopped nor
+        // settled on S1's answer.
+        var deploy = Record().Statuses["deploy"];
+        Assert.Equal((started ? NodeStates.Unknown : NodeStates.Active, 2), (deploy.State, plugins.Sent.Count));
+        Assert.NotEqual(NodeSource.Person, deploy.By);
+        Assert.NotEqual(plugins.Sent[0].SubjectRevision, plugins.Sent[1].SubjectRevision);
+        var close = Record().Statuses["close"];
+        Assert.DoesNotContain(close.State, new[] { NodeStates.Stopped, NodeStates.Reached, NodeStates.Failed });
+        Assert.DoesNotContain(HeldAttempts.Read(Files), held => held.Plugin == QuestClosing.Sender);
+
+        // The stop taken back, saying why: nothing of S2's work is S1's close's to stop.
+        if (word == HeldResolutions.Stop)
+        {
+            var refused = Assert.Single(applied.Performed, done => done.Code == WorkPerformer.SubmissionMoved);
+            Assert.Equal((Unit, "close", PerformedWhat.Refused), (refused.Unit, refused.Node, refused.What));
+            Assert.Contains(applied.Said, line => line.Contains("reopened or replaced", StringComparison.Ordinal));
+        }
+
+        // S2's deploy reached: S2 closes under a key of its own, naming S2 alone.
+        plugins.Heard.Enqueue(Reached(plugins.Sent[^1]));
+        _door.Lose = false;
+        _door.Answer = _ => new(QuestCloseOutcomes.Closed, null, "Closed.", []);
+        await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+        Assert.Equal(2, _door.Sent.Count);
+        Assert.NotEqual(s1.Key, _door.Sent[1].Key);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 43)], _door.Sent[1].Quests);
+        Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("gph-another")]

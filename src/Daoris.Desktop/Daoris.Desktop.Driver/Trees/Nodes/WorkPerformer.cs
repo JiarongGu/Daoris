@@ -182,6 +182,13 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public const string NotKept = "not-kept";
 
     /// <summary>
+    /// <c>record</c> or <c>stop</c> on a close whose submission is the quest's no more (FABRIC-CLOSE1q2): the person reopened it, or a later
+    /// <c>ready</c> replaced it. Its answer cannot close the work there is now, and a stop of that work through it would be a stop of the next
+    /// submission's, so the word is taken back, saying why, and the close is still asked after with its key.
+    /// </summary>
+    public const string SubmissionMoved = "submission-moved";
+
+    /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
     /// new loop's generations start again at 1 (FABRIC-PERFORM1a) and cannot tell its process from the old one's.
     /// </summary>

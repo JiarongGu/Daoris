@@ -328,7 +328,8 @@ public sealed class NodeRuntime(
             // FABRIC-RUN1e: governance is read afresh at the look's deadline, at the first pass, and at a wake under choices other than the
             // ones it was judged under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged.
             var choices = look.Config.Source ?? look.Config.ToJson();
-            var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal);
+            // FABRIC-CLOSE1q2: a word on a close is judged on the quests as they stand, so a pass applying one reads them afresh.
+            var fresh = look.Whole || _governed is null || !string.Equals(choices, _choices, StringComparison.Ordinal) || _closer?.Worded() == true;
             if (fresh)
             {
                 var read = await look.Units(ct).ConfigureAwait(false);
@@ -362,8 +363,9 @@ public sealed class NodeRuntime(
             done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], governed, tips.ReadAsync, ct, lagging).ConfigureAwait(false));
             // FABRIC-PERFORM1g: the person's word on a held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(_performer.Resolve(Declared));
-            // FABRIC-CLOSE1q: the person's word on a held close, a close's recovery, before the closer sends any close again below.
-            if (_closer is not null) done.AddRange(_closer.Resolve(Declared));
+            // FABRIC-CLOSE1q: the person's word on a held close, a close's recovery, before the closer sends any close again below; FABRIC-CLOSE1q2:
+            // judged on the quests this pass read, so a word on a close for a submission reopened or replaced since never reaches the next one.
+            if (_closer is not null) done.AddRange(_closer.Resolve(Declared, _quests));
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
 
