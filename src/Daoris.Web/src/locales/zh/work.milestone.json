@@ -68,7 +68,7 @@
   "work.milestone.held.close.why.refused": "委托的关闭被拒绝了，但 Daoris 没能把这一结果记到这项工作上（{{code}}）",
   "work.milestone.held.close.why.unanswered": "Daoris 没有留下委托关闭的答复（{{code}}）",
   "work.milestone.held.close.why.notCloseWord": "无法采纳你的答复：委托是否已关闭，只能由关闭本身的答复说明",
-  "work.milestone.held.close.why.submissionMoved": "无法采纳你的答复：这次关闭针对的交付此后已被重新打开或替换，现在的工作不能由这次关闭来记录或停止",
+  "work.milestone.held.close.why.submissionMoved": "这次关闭针对的交付此后已被重新打开或替换，现在的工作不能由这次关闭来记录或停止，只能再发送一次",
   "work.milestone.held.close.detail": "{{why}}。委托绝不会被第二次关闭：可以重新记下结果、再问一次结果，或停止这项工作余下的部分。",
   "work.milestone.held.act.record": "重新记下结果",
   "work.milestone.held.act.resend": "再问一次结果",

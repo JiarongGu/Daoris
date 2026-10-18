@@ -60,6 +60,11 @@ public sealed class DriverWatch(
 {
     private CancellationTokenSource _pause = new();
 
+    private volatile NodeRuntime? _nodes;
+
+    /// <summary>The quests the evaluation runtime last read (FABRIC-CLOSE1q3): what a door judges a held close against; null before a pass has read.</summary>
+    public IReadOnlyDictionary<string, QuestView>? LastQuests => _nodes?.LastQuests;
+
     // Every nudge counted, so one that lands while a look runs — before the wait it would have ended —
     // still ends that wait (DEV3): looks are short now, and a person's control nudges the loop often.
     private int _nudges;
@@ -349,6 +354,7 @@ public sealed class DriverWatch(
         // arms it too, and its `quest.close` is sent through this loop's service client, the local host's close door. FABRIC-CLOSE1l: a quest is
         // bound at its take, as its first session opens (Driver's start), never here.
         var nodes = hooks is null ? null : new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home), service);
+        _nodes = nodes;
         using var nodesDue = new System.Threading.Timer(_ => Nudge(ChangeTopics.Nodes, "due"));
 
         TickReport? looked = null;

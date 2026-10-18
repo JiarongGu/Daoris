@@ -151,6 +151,12 @@ public sealed class NodeRuntime(
     /// <summary>Every quest the last look read, by id: a close's chain, and what its quests now read (FABRIC-CLOSE1b).</summary>
     private Dictionary<string, QuestView> _quests = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// The quests the runtime last read, for the doors to judge a held close against (FABRIC-CLOSE1q3): read-only, never written by a door;
+    /// null before the first read of a start, where a door judges nothing.
+    /// </summary>
+    public IReadOnlyDictionary<string, QuestView>? LastQuests { get; private set; }
+
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
     private readonly SemaphoreSlim _one = new(1, 1);
@@ -310,6 +316,7 @@ public sealed class NodeRuntime(
     {
         if (_told) port.Watch(NoneAwaited);
         (_told, _toldText, _governed, _choices, _after, NextDue) = (false, "", null, null, null, null);
+        LastQuests = null;
     }
 
     /// <summary>
@@ -337,6 +344,7 @@ public sealed class NodeRuntime(
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
                 (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _quests = Quests(read);
+                LastQuests = _quests;
                 if (_closer is not null) Keep(look.Config, _governed.Values);
             }
 

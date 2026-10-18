@@ -1026,6 +1026,36 @@ public sealed class QuestCloseTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1q3: a held close whose quest stands on another submission by the runtime's last read is offered <c>resend</c> alone, with
+    /// the reason, never <c>record</c> or <c>stop</c>, which the pass takes back; read against no last read (a fresh start before a pass) it
+    /// is offered what it was. The runtime keeps no read before its first.
+    /// </summary>
+    [Fact]
+    public async Task A_held_close_whose_submission_moved_by_the_last_read_is_offered_resend_alone_with_the_reason()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        ClosedUnbound();
+        var runtime = Runtime();
+        Assert.Null(runtime.LastQuests);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        // Still on its submission by the last read: offered as before.
+        Assert.Equal(HeldResolutions.Close, Assert.Single(HeldAttempts.Read(Files, quests: runtime.LastQuests)).Words);
+
+        // S2 read since: resend alone, said, in the page's list and the terminal's.
+        Quest(_quests["q7"] with { Submission = new QuestSubmissionView("desk", 43, null, "ready") });
+        await runtime.PassAsync(Look(Closing) with { Whole = true }, CancellationToken.None);
+        var moved = Assert.Single(HeldAttempts.Read(Files, quests: runtime.LastQuests));
+        Assert.Equal([HeldResolutions.Resend], moved.Words);
+        Assert.Equal(WorkPerformer.SubmissionMoved, moved.Why);
+        Assert.Contains("reopened or replaced", HeldAttempts.WhySaid(moved), StringComparison.Ordinal);
+        Assert.Contains(HeldAttempts.Lines([moved]), line => line.EndsWith("work held " + Unit + " close " + moved.Attempt + " resend", StringComparison.Ordinal));
+
+        // No last read (a start before a pass): what it offers today.
+        Assert.Equal(HeldResolutions.Close, Assert.Single(HeldAttempts.Read(Files)).Words);
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1q2: a held close for S1, its door's close kept, whose quest stands on S2 at the same commit since: <c>record</c> on it,
     /// applied by a pass that is not a whole look (a wake), is judged on the quests read afresh, never on the read before S2. It is taken back,
     /// said, and listed with why; S1's key never reaches the close node, and S2 closes under its own.
