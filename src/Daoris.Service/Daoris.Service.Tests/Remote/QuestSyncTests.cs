@@ -1343,6 +1343,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
             : await _b.MoveAsync(step.Id, QuestTransitions.Target(kind)!.Value, "After the take lost.", at,
                 byAgent: kind == QuestOperationKind.Done);
         Assert.Equal((false, true, false), (move.Moved, move.ClaimLost, move.LostToTheReopen));
+        var said = QuestExchange.LostTake(step.Id, "so this move is not this machine's to make. Nothing moved.", move);
+        Assert.Contains("published anew", said);
+        Assert.DoesNotContain("reopen", said);
 
         // A build before this one pushes it: the remote refuses it, in words that say the step was published anew.
         var made = kind == QuestOperationKind.SetUp
@@ -1650,6 +1653,36 @@ public sealed class QuestSyncTests : IAsyncLifetime
         {
             var held = (await store.FindAsync(quest.Id))!;
             Assert.Equal((QuestStatus.Done, "Landed."), (held.Status, held.Note));
+        }
+    }
+
+    /// <summary>
+    /// The edge of FABRIC-CLOSE1c24's rule (D95): a take that lost to a delete lands on no quest, never on the quest open, so the quest
+    /// published again after it is nobody's work, and a done its machine makes there with no fresh take lands, here and at the remote.
+    /// </summary>
+    [Fact]
+    public async Task A_done_from_the_machine_whose_take_lost_to_a_delete_still_lands_on_the_quest_published_again()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(quest.Id, (await Publish(_a, body: "Asked properly this time.")).Id);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+        Assert.False(QuestLog.LostOnTheOpenStep(await _b.HistoryAsync(quest.Id), _b.Machine));
+
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Done, "Landed.", Now.AddHours(3))).Moved);
+        Assert.Empty((await SyncAsync(_b)).Refused);
+        await SyncAsync(_a);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var landed = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Done, "Landed."), (landed.Status, landed.Note));
         }
     }
 
