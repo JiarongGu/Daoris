@@ -445,6 +445,11 @@ const commitHere = async (author, message) => {
  * connector the protocol handed it, `review_ready` over MCP on stdio, and closes done with no commit of
  * its own; resumed with the person's *not yet*, it corrects the work in its tree and says a new set-up.
  *
+ * A brainstorm's turn (BRAINSTORM1a3, D176 points 3 and 4), started in a brainstorm's room with its variables and no quest, is
+ * answered as a maker answers one: through the one result tool its connector offers, never by writing the answer file. A
+ * generator gives one proposal on the scales, resting on the packet's first source; a synthesis puts every anonymous id it was
+ * handed in one group, ranked first. It commits nothing and asks the service nothing.
+ *
  * Here rather than inside the family rehearsal since DEPLOY5, whose deployment gate opens a
  * conversation on it in the installed shell: one copy, for the reason this module exists at all.
  *
@@ -671,7 +676,45 @@ async function showForReview(sessionId, said) {
   return 'end_turn';
 }
 
+// A BRAINSTORM TURN (BRAINSTORM1a3; D176 points 3 and 4): the turn's variables are on this process, its room is the folder it was
+// started in, and its connector is the only server it was handed. It answers through the turn's own tool, as a maker does; what
+// the tool said back goes on stderr, which the pass's transcript keeps. No connector fails the turn, as a maker's would.
+const BRAINSTORM_TURN = process.env.DAORIS_BRAINSTORM_TURN ?? '';
+
+async function brainstorm(sessionId) {
+  const synthesis = BRAINSTORM_TURN.startsWith('s');
+  let tool;
+  let args;
+  if (synthesis) {
+    const handed = JSON.parse(readFileSync('proposals.json', 'utf8')).proposals.map((each) => each.id);
+    tool = 'brainstorm_synthesize';
+    args = {
+      groups: [{
+        title: 'Every proposal', idea: 'Every proposal the stub was handed, as one.', members: handed, rank: 1,
+        why: 'A stub tells no proposal apart from another.', flags: [],
+      }],
+      leftOut: [],
+    };
+  } else {
+    const first = (JSON.parse(readFileSync('packet.json', 'utf8')).sources ?? [])[0]?.id;
+    tool = 'brainstorm_give';
+    args = {
+      proposals: [{
+        idea: 'The stub proposal of turn ' + BRAINSTORM_TURN, rationale: 'A stub answers with no model, from the packet it was handed.',
+        effort: 'small', risk: 'low', reversible: 'yes', undo: null, confidence: 'low', assumptions: [], sources: first ? [first] : [],
+      }],
+      needs: [],
+    };
+  }
+
+  const answered = await connector(tool, args);
+  say(tool + ' answered: ' + answered);
+  update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'answered through ' + tool } });
+  return 'end_turn';
+}
+
 async function work(sessionId, said) {
+  if (BRAINSTORM_TURN) return brainstorm(sessionId);
   if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(SET_UP)) return setUp(sessionId);
   if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(ASKS_FIRST)) return askFirst(sessionId, said);
   if (SHOW_FOR_REVIEW.test(process.env.DAORIS_QUEST_TITLE ?? '')) return showForReview(sessionId, said);
@@ -769,8 +812,9 @@ const handle = async (line) => {
     }
     case 'session/prompt': {
       // A conversation serves no quest (CONV3b): each prompt is a person's message, answered with
-      // what was heard — and the session is the SAME one for every message, which the gate reads back.
-      if (!id) {
+      // what was heard — and the session is the SAME one for every message, which the gate reads back. A brainstorm's turn
+      // serves no quest either, and is worked as its own (BRAINSTORM1a3).
+      if (!id && !BRAINSTORM_TURN) {
         const said = frame.params?.prompt?.[0]?.text ?? '';
         update(frame.params?.sessionId ?? session, {
           sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'acp heard: ' + said + ' (in ' + frame.params?.sessionId + ')' },
