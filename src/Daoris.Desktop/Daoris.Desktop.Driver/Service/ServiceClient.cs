@@ -152,7 +152,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>
     /// This machine's claim on each taken quest a look would carry on (CARRY2b): one that waits on nothing, whose last session
     /// here ended as a carry-on goes on from (<see cref="Planner.CarriesOn"/>), a stop the person still holds included, which
-    /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before.
+    /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before. A
+    /// step the person's reopen holds is not asked (FABRIC-CLOSE1c2): nothing carries it on until their go-on, which the next look reads.
     /// </summary>
     private async Task<IReadOnlyDictionary<string, string>> CarryOnClaimsAsync(
         IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, CancellationToken ct)
@@ -160,7 +161,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in quests)
         {
-            if (quest is not { Status: "Taken", Awaits: null or "" }
+            if (quest is not { Status: "Taken", Awaits: null or "", HeldByReopen: false }
                 || !lastRun.TryGetValue(quest.Id, out var last) || !Planner.CarriesOn(last))
             {
                 continue;

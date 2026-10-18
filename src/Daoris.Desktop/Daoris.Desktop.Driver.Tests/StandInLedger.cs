@@ -295,6 +295,34 @@ internal sealed class StandInLedger : HttpMessageHandler
         lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == id)["awaits"] = repository;
     }
 
+    /// <summary>
+    /// The person reopened the submission <paramref name="id"/> grew from (FABRIC-CLOSE1c), as the service then lists the step: its
+    /// source named reopened and held for it.
+    /// </summary>
+    public void Reopened(string id, string machine, long sequence)
+    {
+        lock (_gate)
+        {
+            var quest = _quests.Single(q => q["id"]!.GetValue<string>() == id);
+            quest["sourceReopened"] = new JsonObject { ["machine"] = machine, ["sequence"] = sequence };
+            quest["held"] = true;
+            quest["hold"] = "source-reopened";
+        }
+    }
+
+    /// <summary>The person's go-on (FABRIC-CLOSE1c): the step rebound to the submission it grows from now, and its hold let go.</summary>
+    public void Rebound(string id, string machine, long sequence)
+    {
+        lock (_gate)
+        {
+            var quest = _quests.Single(q => q["id"]!.GetValue<string>() == id);
+            quest.Remove("sourceReopened");
+            quest.Remove("held");
+            quest.Remove("hold");
+            quest["grewFrom"] = new JsonObject { ["machine"] = machine, ["sequence"] = sequence };
+        }
+    }
+
     /// <summary>Move a quest, as its session's own connector would.</summary>
     public void Move(string id, string status)
     {

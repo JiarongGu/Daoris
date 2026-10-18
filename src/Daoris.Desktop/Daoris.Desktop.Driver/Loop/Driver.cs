@@ -1601,7 +1601,9 @@ public sealed class Driver(
                                 // Whose take it was, and what it last said (STANDDOWN2): a session
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                                lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript))
+                                lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
+                                // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends.
+                                reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null)
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
