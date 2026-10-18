@@ -134,7 +134,9 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// <param name="WhileOpen">
 /// For a <see cref="QuestOperationKind.Declined"/>: it applies only to a quest still open where it lands (PAUSE1c,
 /// D132 point 10), so pushed after another machine's take it becomes a conflict rather than declining their work.
-/// False on every other kind, and on every decline made before it, which is a plain one.
+/// For a <see cref="QuestOperationKind.Rebound"/>: a publication's, judged on a withdrawn step, so pushed after another
+/// machine's take it is forgotten rather than letting go a started step without the person's word (FABRIC-CLOSE1c15).
+/// False on every other kind, on the person's go-on, and on every decline or rebind made before it, which is a plain one.
 /// </param>
 /// <param name="Evidence">For a <see cref="QuestOperationKind.Evidenced"/>: what was read (EVID1a). Null on every other kind.</param>
 /// <param name="SetUp">For a <see cref="QuestOperationKind.SetUp"/>: the set-up said (REVIEWENV1b). Null on every other kind.</param>
@@ -339,9 +341,12 @@ public static class QuestLog
         // from its parent's), not already withdrawn by it. A step closed stays closed: a reopen takes no close back.
         QuestOperationKind.Reopened => quest is { Status: QuestStatus.Taken or QuestStatus.Open } && operation.Submission is { } named
                                        && (SubmittedHere(quest, named) || GrewFromIt(quest, named)),
-        // A rebind only lets go a step its source's reopen withdrew or held, onto another submission than the one reopened.
+        // A rebind only lets go a step its source's reopen withdrew or held, onto another submission than the one reopened. A
+        // publication's was judged on a withdrawn step, so it applies only while the step is open (FABRIC-CLOSE1c15): after another
+        // machine's take reached it, a started step goes on only by the person's word, whose rebind carries no such mark.
         QuestOperationKind.Rebound => quest is { Status: QuestStatus.Taken or QuestStatus.Open, SourceReopened: { } reopened }
-                                      && operation.Submission is { } grows && grows != reopened,
+                                      && operation.Submission is { } grows && grows != reopened
+                                      && (!operation.WhileOpen || quest.Status == QuestStatus.Open),
         // A withdrawn step is taken by nobody until it is rebound (FABRIC-CLOSE1c): a take after the reopen loses, everywhere.
         QuestOperationKind.Taken => quest is { Status: QuestStatus.Open, SourceReopened: null },
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
@@ -516,7 +521,8 @@ public static class QuestLog
         // machine's came before, or on a set-up a newer one stands beside. A closure graph's bind or submission once its quest
         // is no longer taken, or made on this machine's take that lost (FABRIC-CLOSE1a, §E5): the take's conflict names a lost
         // submission, and the step a submission published goes with it (QuestStore.RebaseAsync). A reopen once the submission it
-        // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c).
+        // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c),
+        // and a publication's once another machine's take reached the step first (FABRIC-CLOSE1c15): the person's word lets that one go.
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
             or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
             or QuestOperationKind.SetUp or QuestOperationKind.Verdict

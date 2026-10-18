@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A step's next submission after the person's go-on was never sealed (FABRIC-CLOSE1c14)
+
+- **Symptom:** after the person's go-on on a held step that had submitted, the successor that old submission published stood unheld,
+  could be taken and worked on, and the step's next submission was never sealed by it: the step's close was refused `unsealed`.
+- **Root cause:** CLOSE1c10's go-on cleared the step's own submission and wrote nothing on the successor, which still named the cleared
+  submission as its `grewFrom`; `PublishNextAsync` rebinds only a withdrawn open step, so it left that successor standing.
+- **Fix:** `QuestStore.ContinueAsync` writes, in the same transaction, a `reopened` naming the cleared submission on the step's successor,
+  judged by the replay's rule: withdrawn while open, held while taken. The continue answer names it. D173's FABRIC-CLOSE1c14 note has the
+  behaviour.
+- **Verification:** red first: `QuestReopenTests` (2) and `QuestReopenSyncTests` (1 theory, 2 cases) failing, then green.
+  `Daoris.Service.Tests` is 2258 (2254 before), and `Daoris.Service.Http.Tests` 287, all passing.
+
+## 2026-10-18 — A source's next submission let go a step another machine had taken (FABRIC-CLOSE1c15)
+
+- **Symptom:** a machine that reopened a source and submitted again before another machine's take of the step reached it rebound the step
+  it read withdrawn. At the remote, and on every machine after, the step read taken and unheld, grown from the new submission: a started
+  step went on without the person's word.
+- **Root cause:** `QuestLog.Applies` admitted a `rebound` on a taken held step as on an open one, so the publication's rebind, made on a step
+  its machine read open, applied at the remote and survived the pushing machine's rebase.
+- **Fix:** a publication's rebind carries `whileOpen` (as a decline made while open does), in the log and on the wire, and `Applies`
+  refuses a marked one on a step no longer open; the person's go-on writes none. D173's FABRIC-CLOSE1c15 note and D68's note have the
+  behaviour.
+- **Verification:** red first: `QuestReopenSyncTests` (1), `QuestReopenTests` (1) and the census's wire and log theories for `Rebound`
+  failing, then green. `Daoris.Service.Tests` is 2254 (2252 before), all passing.
+
 ## 2026-10-18 — The automatic landing's git tests were one class, the longest of the git half (PROCSPLIT1)
 
 - **Symptom:** `AutoLandingTests`, one class of 40 test methods (about 70 cases), took about 10 minutes on a quiet machine and 43 under load,
