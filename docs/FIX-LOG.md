@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The merge tool's `--beside` test held its fake gate a minute, and load outlasted it (TESTWAIT4)
+
+- **Symptom:** under load (three builders and a merge's gates) the `--full --beside` test failed `kept local/gate-tree` not matched; green on rerun.
+  Two other failures that day, in `generated` (`local/scratch/` "not ignored", exit 2) and `--passed` (expected 0, got 2), were not seen again.
+- **Root cause:** the fake gate waited on `GATE_HOLD` for 60 s at most, and the test's own steps (a refused second run, a merge, a prune, each a
+  process) took longer under load, so the hold expired, the gate ended and the prune removed the gate tree. The first two failures are the
+  GATEIGNORE1 class (a `git check-ignore` that failed under load was read as "not ignored", a tool error, exit 2); the logs kept hold only green reruns,
+  so the third is that class by its exit code only, not proven.
+- **Fix:** the hold's bound is ten minutes (the test releases it in `finally`, so a failed test still ends), and the test's wait for the gate to start is 5 minutes, not 1.
+  No tool bound was the cause; `tools/merge-branch.mjs` is unchanged.
+- **Verification:** no red (a load race cannot be reproduced without a load generator); the file run three times, plainly.
+
 ## 2026-10-18 — The Work frame's suite was one file that ran 181 s alone and timed out under load (WEBSPEED1)
 
 - **Symptom:** `WorkFrame.test.tsx`, 229 tests, was the slowest web-unit file (181 s alone on a quiet machine, 221 s here), and a merge's web-unit
