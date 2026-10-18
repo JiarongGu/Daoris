@@ -16,8 +16,11 @@ namespace Daoris.Knowledge.Http;
 // This Daoris shows. Added after the others, a wire shape's field being added and never renamed; a reader older than it skips it.
 // `Closure` (FABRIC-CLOSE1b's handshake): this host knows a closure graph's operations (`bound`, `submitted`) and its bind and close
 // doors. A host from before answers none, which a driver reads as not knowing them, and binds nothing there.
+// `CloseOutcome` (CLOSECAP1): this host also answers the outcome door (`POST /api/quests/{id}/close/outcome`, FABRIC-CLOSE1u), the
+// close protocol's recovery. A driver binds only where `Closure` and this are both answered; a host with `Closure` alone binds nothing.
 public sealed record StatusResponse(
-    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null, bool? Closure = null);
+    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null, bool? Closure = null,
+    bool? CloseOutcome = null);
 
 /// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
 public static class HostVersion

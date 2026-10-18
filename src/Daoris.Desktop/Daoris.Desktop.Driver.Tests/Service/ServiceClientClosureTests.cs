@@ -323,7 +323,11 @@ public sealed class ServiceClientClosureTests
     }
 
     [Theory]
-    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true }""", true)]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true }""", true)]
+    // CLOSECAP1: a host from before the outcome door answers closure alone, and binds nothing.
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true }""", false)]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": false }""", false)]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closeOutcome": true }""", false)]
     [InlineData("""{ "semantic": false, "tier": "lexical only" }""", false)]
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": false }""", false)]
     public async Task The_handshake_reads_whether_the_host_knows_a_closure_graph(string status, bool knows)
