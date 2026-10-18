@@ -37,6 +37,15 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private string _claim = "held";
 
+    /// <summary>Why a lost claim lost, as the claim's answer says it beside the claim (FABRIC-CLOSE1c18); none while null.</summary>
+    public string? ClaimWhy
+    {
+        get { lock (_gate) return _claimWhy; }
+        set { lock (_gate) _claimWhy = value; }
+    }
+
+    private string? _claimWhy;
+
     /// <summary>While true the quest list does not answer, as a service that went away does.</summary>
     public bool Down { get; set; }
 
@@ -732,7 +741,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 {
                     var quest = path["/api/quests/".Length..^"/claim".Length];
                     _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
-                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = _claim });
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = _claim, ["why"] = _claimWhy });
                 }
 
                 default:

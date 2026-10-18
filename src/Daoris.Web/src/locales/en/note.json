@@ -24,6 +24,7 @@
   "note.ended.stopped": "The person stopped it.",
   "note.ended.handed-over": "Handed over to {{agent}}: its quest goes on with it, in the same tree.",
   "note.ended.lost-claim": "Stopped by this machine's driver: another machine's take on the quest reached the remote first, so this session's work would double someone else's.",
+  "note.ended.lost-claim-reopened": "Stopped by this machine's driver: you reopened the work this session's step grew from, and that reached the remote before its take did. Its work stays in its tree; the step is open again for the work as it stands now.",
   "note.ended.driver-closed": "The driver was stopped while this ran; the session's process was ended with it.",
   "note.account.cooling": "The account it ran on is cooling until {{until}} ({{why}}); nothing starts on it until then.",
   "note.account.cooling-window": "The {{owner}} account it ran on hit its {{window}} limit and is cooling until {{until}} ({{why}}); nothing starts on it until then.",

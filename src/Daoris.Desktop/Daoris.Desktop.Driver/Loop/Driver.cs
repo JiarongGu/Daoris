@@ -88,6 +88,18 @@ public sealed class Driver(
     public static Noted LostClaimNoted => Noted.Of(NoteCodes.EndedLostClaim, LostClaim);
 
     /// <summary>
+    /// What a session whose take lost to the person's reopen of the work its step grew from is told (FABRIC-CLOSE1c18): the claim's
+    /// answer says so beside the lost claim, and no other machine took anything first.
+    /// </summary>
+    public const string LostClaimToReopen =
+        "stopped by this machine's driver: you reopened the work this session's step grew from, and that reached the remote before this "
+        + "session's take did, so the take is a conflict on the quest. Its work stays in its tree; the step is open again for the work as "
+        + "it stands now.";
+
+    /// <summary><see cref="LostClaimToReopen"/> with its code.</summary>
+    public static Noted LostClaimToReopenNoted => Noted.Of(NoteCodes.EndedLostClaimReopened, LostClaimToReopen);
+
+    /// <summary>
     /// Why a person's line is refused for a driven session (INT4i), and where its work goes instead —
     /// the sentence the bridge carries verbatim, so a caller is told the truth rather than "it ended".
     /// </summary>
@@ -881,9 +893,10 @@ public sealed class Driver(
         foreach (var (quest, session) in Context.Runs.Live)
         {
             string claim;
+            string? why;
             try
             {
-                claim = await service.ClaimAsync(quest, ct).ConfigureAwait(false);
+                (claim, why) = await service.ClaimStandingAsync(quest, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                               // The client's own timeout (DEV3a): a host that took the question and stalled.
@@ -892,9 +905,11 @@ public sealed class Driver(
                 continue; // The host did not answer; the next pass asks again.
             }
 
-            if (claim == "lost" && (Stops ?? StopForLostClaim)(session, LostClaimNoted))
+            // FABRIC-CLOSE1c18: a take lost to the person's reopen is stopped alike, and said as that, never as another machine's take.
+            var reopened = why == "source-reopened";
+            if (claim == "lost" && (Stops ?? StopForLostClaim)(session, reopened ? LostClaimToReopenNoted : LostClaimNoted))
             {
-                lock (events) events.Add($"stop  session {session} (#{quest}): {LostClaim}");
+                lock (events) events.Add($"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}");
             }
         }
     }
