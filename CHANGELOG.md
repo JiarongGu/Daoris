@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Two Claude sign-ins of one email in different organisations are told apart. Daoris reads each sign-in's organisation and plan
+  from `claude auth status` beside its email, fresh and kept nowhere. `daoris agent list` says the organisation after the email
+  where another account shares it, and a sign-in whose email already names another account is offered the email with its
+  organisation (`person@example.invalid·Org-B`) as its name, where the email alone was refused as taken.
 - Accept, on a session's work or on a whole line of work, now looks at its quest again when it had to wait behind another landing
   of the same work. Where the quest was taken back or its result handed in again meanwhile, nothing lands and Accept says why; where
   that happens just before the push, the branch stays and `daoris-driver trees hand <session>` pushes it. A hold alone does not stop

@@ -221,4 +221,24 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Assert.Empty(nowhere.GetProperty("Places").EnumerateArray());
         Assert.Equal(JsonValueKind.Null, nowhere.GetProperty("DisplayName").ValueKind);
     }
+
+    /// <summary>
+    /// ACCOUNTID1: an account on the roster says the organisation and the plan its agent named beside who signed in, read
+    /// fresh and kept nowhere, what tells two sign-ins of one email apart; null where it named none, as before.
+    /// </summary>
+    [Fact]
+    public void An_account_on_the_roster_says_its_organisation_and_plan_or_none()
+    {
+        var settings = HarnessSettings.Load(Path.Combine(Home, "none.json"));
+
+        var said = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("acct-0000000b", Path.Combine(Home, "b"), LoginState.In, Account: "person@example.invalid", Org: "Org B", Plan: "max"),
+            settings.PlacesOf("claude-code", "acct-0000000b"), settingsFile: null));
+        var none = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("acct-0000000c", Path.Combine(Home, "c"), LoginState.In, Account: "person@example.invalid"),
+            settings.PlacesOf("claude-code", "acct-0000000c"), settingsFile: null));
+
+        Assert.Equal(("Org B", "max"), (said.GetProperty("Org").GetString(), said.GetProperty("Plan").GetString()));
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (none.GetProperty("Org").ValueKind, none.GetProperty("Plan").ValueKind));
+    }
 }

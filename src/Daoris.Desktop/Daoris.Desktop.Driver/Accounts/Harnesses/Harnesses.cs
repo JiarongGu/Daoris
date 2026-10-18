@@ -24,6 +24,12 @@ public enum LoginState
 }
 
 /// <summary>
+/// What one status answer says of a home (D66 §3, ACCOUNTID1): signed in or not, and on a yes who, with the organisation
+/// and the plan the agent names beside them, each null where it says none. Read fresh and written nowhere.
+/// </summary>
+public readonly record struct LoginRead(LoginState Login, string? Account, string? Org = null, string? Plan = null);
+
+/// <summary>
 /// How a harness answers "is this configuration home logged in?" — the arguments to ask with, and the
 /// two shapes its answer takes.
 /// </summary>
@@ -42,22 +48,28 @@ public enum LoginState
 /// <param name="Account">
 /// A pattern whose first group is <b>who</b> is signed in there, read from the same answer (D66 §3):
 /// an account is named by who signed in rather than by a name typed before anyone knew. Taken only on
-/// a yes, and it is the one thing besides the boolean the probe takes — a harness that volunteers an
-/// organisation and a tier beside it still has neither kept. Null asks nobody's name.
+/// a yes. Null asks nobody's name.
 /// </param>
+/// <param name="Org">
+/// A pattern whose first group is the organisation the sign-in is in, read from the same answer and only on a yes
+/// (ACCOUNTID1): one email may sign in to two organisations, and this is what tells the two accounts apart. Read fresh,
+/// held in memory, written nowhere (D66's ACCOUNTID1 note). Null asks none.
+/// </param>
+/// <param name="Plan">The plan the sign-in is on, read as <paramref name="Org"/> is (ACCOUNTID1). Null asks none.</param>
 public sealed record LoginQuestion(
-    IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null)
+    IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null,
+    string? Org = null, string? Plan = null)
 {
     /// <summary>
     /// What one answer says (CODEXACCT1, read in one place so a table can hold it): yes where <see cref="LoggedIn"/> matches,
     /// with who where <see cref="Account"/> reads one; else no where <see cref="LoggedOut"/> matches; else unknown. Matched
     /// without case, the yes first, since it is the specific one.
     /// </summary>
-    public (LoginState Login, string? Account) Read(string output) =>
-        Matches(output, LoggedIn) ? (LoginState.In, Who(output, Account))
-        : (Matches(output, LoggedOut) ? LoginState.Out : LoginState.Unknown, null);
+    public LoginRead Read(string output) =>
+        Matches(output, LoggedIn) ? new LoginRead(LoginState.In, Who(output, Account), Who(output, Org), Who(output, Plan))
+        : new LoginRead(Matches(output, LoggedOut) ? LoginState.Out : LoginState.Unknown, null);
 
-    /// <summary>The first group of the account pattern, trimmed — or null when there is none to read.</summary>
+    /// <summary>The first group of one of the answer's patterns, trimmed — or null when there is none to read.</summary>
     private static string? Who(string output, string? pattern)
     {
         if (pattern is null) return null;
@@ -272,9 +284,14 @@ public sealed record HarnessToolchain(
 /// The name the person gave the account (ACCT2, <see cref="AccountNames"/>), or null where they gave none and it reads as
 /// its id, <paramref name="Name"/>, which names its folder, its readings and its place in every list.
 /// </param>
+/// <param name="Org">
+/// The organisation the tool says the sign-in is in (ACCOUNTID1), read with <paramref name="Account"/> and kept as it is:
+/// fresh, in memory, written nowhere. What tells two sign-ins of one email apart. Null where the tool does not say.
+/// </param>
+/// <param name="Plan">The plan the tool says the sign-in is on (ACCOUNTID1), as <paramref name="Org"/>.</param>
 public sealed record ProfileReport(
     string Name, string Home, LoginState Login, string? Account = null, string? Key = null, DateTimeOffset? Read = null,
-    string? DisplayName = null);
+    string? DisplayName = null, string? Org = null, string? Plan = null);
 
 /// <summary>
 /// One harness as this machine has it (D49 §4): present or absent, its version, its profiles.
@@ -287,6 +304,8 @@ public sealed record ProfileReport(
 /// </param>
 /// <param name="OwnAccount">Who is signed in to the tool's own home, asked the way a profile is.</param>
 /// <param name="OwnRead">When <paramref name="OwnLogin"/> was read (ROSTER1): only at a person's press (TOOL6g), so null before one.</param>
+/// <param name="OwnOrg">The organisation of the tool's own sign-in (ACCOUNTID1), as a profile's <see cref="ProfileReport.Org"/>.</param>
+/// <param name="OwnPlan">The plan of the tool's own sign-in (ACCOUNTID1), as a profile's <see cref="ProfileReport.Plan"/>.</param>
 public sealed record HarnessReport(
     string Adapter,
     bool Present,
@@ -297,4 +316,6 @@ public sealed record HarnessReport(
     IReadOnlyList<ProfileReport> Profiles,
     LoginState OwnLogin = LoginState.Unknown,
     string? OwnAccount = null,
-    DateTimeOffset? OwnRead = null);
+    DateTimeOffset? OwnRead = null,
+    string? OwnOrg = null,
+    string? OwnPlan = null);

@@ -98,7 +98,8 @@ workspace, or for a single conversation, or `--clear` it; the session record nam
 version it ran as. A spawn onto a missing agent, a profile nobody signed into, or a workspace the agent
 has never been trusted in refuses **naming the action that fixes it**. `agent list` says what each account's
 agent last said of its windows, and the tool's own sign-in's once a press on its page read them (D125), each leading `read <age>:` for Daoris's own no-prompt read of the plan's usage or `said <age>:` for what a
-session reported (D165). `agent profile use` says what passes an account at a start, its limit reached, usage credits or
+session reported (D165). Two sign-ins of one email in different organisations list apart, the organisation after the email
+(D125). `agent profile use` says what passes an account at a start, its limit reached, usage credits or
 its use over its curve, and marks a reading over the scope's curve with the curve's value now (D165).
 `docs/2026-09-22-toolchain-design.md` is the contract.
 

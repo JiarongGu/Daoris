@@ -117,7 +117,7 @@ public sealed class CodexAccountProcessTests : IDisposable
 
         var code = await HarnessActions.LoginAsync(
             agent.Toolchain, roster.SignInCommand("codex-acp", Config)!, home, said.Add, fresh: true);
-        var (login, _) = await roster.LoginOfAsync("codex-acp", Config, fresh);
+        var login = (await roster.LoginOfAsync("codex-acp", Config, fresh)).Login;
 
         Assert.Equal(0, code);
         Assert.True(File.Exists(Path.Combine(home, "auth.json")));

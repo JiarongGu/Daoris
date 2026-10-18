@@ -170,6 +170,48 @@ public static class AccountNames
         return null;
     }
 
+    /// <summary>What joins who signed in to what tells two of their sign-ins apart, in a name a sign-in's end offers.</summary>
+    public const string Apart = "·";
+
+    /// <summary>
+    /// The name a sign-in's end offers an account (ACCOUNTID1, D66 §3): who signed in, where no other account has it as its id
+    /// or its name; else who with the organisation beside it (<see cref="Apart"/>), else with the plan, the first of them
+    /// <see cref="Problem"/> takes, so accepting the offer names it; else none, and the person names it. One email signed in to
+    /// two organisations is two accounts, and the second's email was refused as taken. Offered, never written: the person's
+    /// rename writes it. The CLI's twin is <c>accountnames.ts</c>' <c>offeredName</c>, which holds this table's rows.
+    /// </summary>
+    /// <param name="accounts">The agent's accounts on this machine, <see cref="HarnessSettings.Profiles"/>.</param>
+    public static string? Offered(
+        IReadOnlyCollection<string> accounts, IReadOnlyDictionary<string, string> names, string account, string? who,
+        string? org, string? plan)
+    {
+        if (who?.Trim() is not { Length: > 0 } email) return null;
+        string?[] offers = [email, Beside(email, org), Beside(email, plan)];
+        return offers.FirstOrDefault(offer => offer is not null && Problem(accounts, names, account, offer) is null);
+
+        // A name is one word (rule 3): each run of what one may not hold, inside the part, is one dash; at its ends, nothing;
+        // and a part of nothing else is nothing beside.
+        static string? Beside(string email, string? part)
+        {
+            var word = new System.Text.StringBuilder();
+            var gap = false;
+            foreach (var c in part ?? "")
+            {
+                if (char.IsWhiteSpace(c) || char.IsControl(c) || c == '`')
+                {
+                    gap = word.Length > 0;
+                    continue;
+                }
+
+                if (gap) word.Append('-');
+                gap = false;
+                word.Append(c);
+            }
+
+            return word.Length > 0 ? $"{email}{Apart}{word}" : null;
+        }
+    }
+
     /// <summary>
     /// Give an account its name, or clear it with null or the account's own id (ACCT2): the person's word, both doors'. Asked
     /// <see cref="Problem"/> first, and refused with its sentence, writing nothing.
