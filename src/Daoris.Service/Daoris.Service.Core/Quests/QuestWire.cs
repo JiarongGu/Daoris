@@ -32,7 +32,8 @@ public static class QuestWire
         + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
         + "name, and a set-up step's environment is a name that never reads as production; a set-up names its full "
         + "commit and, unless it is local, where to look; a review's verdict says reviewed or not-yet, naming the "
-        + "set-up's machine, sequence and commit, or skipped, and a not-yet carries the person's words";
+        + "set-up's machine, sequence and commit, or skipped, and a not-yet carries the person's words; a reopen and a rebind "
+        + "each name a submission's machine and sequence, as a step's grewFrom does where it says one";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
     public static string Page(QuestFetch page) => Written(writer =>
@@ -157,6 +158,9 @@ public static class QuestWire
         // older build reads the done without it.
         if (operation is { Kind: QuestOperationKind.Done, Close: { } close }) QuestStore.WriteClose(writer, close);
 
+        // The submission a reopen or a rebind names (FABRIC-CLOSE1c), on those kinds alone.
+        if (QuestStore.Names(operation.Kind) && operation.Submission is { } submission) QuestStore.WriteRef(writer, "submission", submission);
+
         // An evidenced operation's verdict (EVID1a): names and codes only; its when and machine are the operation's.
         if (operation is { Kind: QuestOperationKind.Evidenced, Evidence: { } verdict })
         {
@@ -224,6 +228,9 @@ public static class QuestWire
             }
 
             if (asked.SetUpIn is not null) writer.WriteString("setUpIn", asked.SetUpIn);
+
+            // Only on a step a submission published (FABRIC-CLOSE1c): every other quest crosses exactly as it did.
+            if (asked.GrewFrom is { } grew) QuestStore.WriteRef(writer, "grewFrom", grew);
 
             writer.WriteStartArray("links");
             foreach (var link in asked.Links) writer.WriteStringValue(link);
@@ -361,6 +368,10 @@ public static class QuestWire
                 return null;
             }
 
+            // The submission a step grew from (FABRIC-CLOSE1c), where it names one: not whole, the step could not be reopened by it.
+            QuestOperationRef? grewFrom = null;
+            if (asked.TryGetProperty("grewFrom", out var grew) && (grewFrom = QuestStore.ReadRef(grew)) is null) return null;
+
             // A lane that is not a string is half an address, and a quest half-addressed is not whole.
             var lanes = Items(asked, "lanes");
             if (lanes.Any(lane => lane.ValueKind != JsonValueKind.String)) return null;
@@ -395,6 +406,7 @@ public static class QuestWire
                 Short = Text(asked, "short"),
                 Review = choice,
                 SetUpIn = setUpIn,
+                GrewFrom = grewFrom,
             };
         }
 
@@ -464,9 +476,18 @@ public static class QuestWire
             return null;
         }
 
+        // The submission a reopen or a rebind names is its whole point (FABRIC-CLOSE1c): one missing, or not whole, makes the
+        // operation half of one, which a replay would read as a reopen of nothing, or a step rebound to nothing.
+        QuestOperationRef? submission = null;
+        if (QuestStore.Names(kind)
+            && (!item.TryGetProperty("submission", out var naming) || (submission = QuestStore.ReadRef(naming)) is null))
+        {
+            return null;
+        }
+
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close);
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission);
     }
 
 }

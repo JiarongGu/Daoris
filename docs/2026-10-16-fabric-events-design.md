@@ -1664,6 +1664,12 @@ runs nothing. A key it took is settled from that answer. A key it never took is 
 close never runs: its node is judged again, and a close is made again only through step 1's fence, under a new key. A close
 whose door answers neither stays unknown, never sent again by itself, and the person may stop its work.
 
+**Amended (FABRIC-CLOSE1c, D173's note).** The reopen's withdrawal is a hold on the open step, not a decline. A decline is final, so
+the next submission's step would be a second quest or never published. Withdrawn, the step is taken by nobody, and the next unheld
+submission rebinds the same step, with its id and its history. The step records the submission it grew from (`grewFrom`), which the
+seal reads. A started step goes on only by the person's word, once its source is unheld again, or is abandoned by their decline. A
+reopen is refused once the step closed on the submission.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
