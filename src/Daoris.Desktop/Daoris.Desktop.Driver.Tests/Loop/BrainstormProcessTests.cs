@@ -7,12 +7,16 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// BRAINSTORM1a (D176 points 1-4 and 8): a brainstorm's whole round trip on the real path, with no model. A request about a
 /// repository whose checkout real git reads is frozen at a look (no service: the declared index's files answer), sent, and run on
-/// two real processes, the native stub and the ACP stub, each answering through the file its result tool writes; the native stub
-/// synthesizes; the document is kept with each member's provenance, the rooms go, and the asker's checkout is untouched.
+/// two real processes, the native stub and the ACP stub; the native stub synthesizes; the document is kept with each member's
+/// provenance, the rooms go, and the asker's checkout is untouched. BRAINSTORM1a2: the ACP stub answers as a real maker does, by
+/// calling `brainstorm_give` on the one connector its turn was handed, over MCP, the development build's connector; the native stub
+/// still writes the file the tool writes.
 /// </summary>
 /// <remarks>
 /// Real git and real processes, so the class is in the real-process half (MOD8): a branch's worktree does not run it, the parent
-/// runs it on the merge. The service is a port nobody holds: a brainstorm asks it only for a search, and does without.
+/// runs it on the merge. The service is a port nobody holds: a brainstorm asks it only for a search, and does without. It needs
+/// `Daoris.Service.Mcp` built, as <see cref="KnowledgeConnectorStartTests"/> does, and sets this process's home, connector and store to
+/// its own scratch for its run (a class run one at a time, so its own to set), so the connector it starts never opens another home.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class BrainstormProcessTests : IDisposable
@@ -20,14 +24,40 @@ public sealed class BrainstormProcessTests : IDisposable
     private readonly GitTree _repository = new("brainstorm-pass");
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-brainstorm-pass-" + Guid.NewGuid().ToString("N")[..8]);
 
+    /// <summary>The variables this class sets for its run, each with what it held before, put back when it ends.</summary>
+    private readonly Dictionary<string, string?> _saved = new(StringComparer.Ordinal);
+
     public BrainstormProcessTests()
     {
         Directory.CreateDirectory(_home);
         _repository.Commit("report.md");
     }
 
+    /// <summary>
+    /// The connector the driver offers a pass found and started on this run's scratch alone: the development build named outright,
+    /// its home this run's, and its store and the folder it reads empty scratch of their own.
+    /// </summary>
+    private void OwnConnector()
+    {
+        var host = KnowledgeConnector.Candidates(null, null, WorkspaceRoot.Folder)
+            .Where(path => path.Contains(Path.Combine("Daoris.Service.Mcp", "bin")))
+            .FirstOrDefault(File.Exists) ?? throw new InvalidOperationException("build src/Daoris.Service/Daoris.Service.Mcp first");
+        var store = Directory.CreateDirectory(Path.Combine(_home, "store")).FullName;
+        foreach (var (name, value) in new[]
+                 {
+                     (KnowledgeConnector.PathVariable, host), (DaorisHome.Variable, _home),
+                     ("DAORIS_KNOWLEDGE_ROOT", Directory.CreateDirectory(Path.Combine(store, "family")).FullName),
+                     ("DAORIS_KNOWLEDGE_DB", Path.Combine(store, "knowledge.db")),
+                 })
+        {
+            _saved[name] = Environment.GetEnvironmentVariable(name);
+            Environment.SetEnvironmentVariable(name, value);
+        }
+    }
+
     public void Dispose()
     {
+        foreach (var (name, value) in _saved) Environment.SetEnvironmentVariable(name, value);
         _repository.Dispose();
         try
         {
@@ -40,13 +70,16 @@ public sealed class BrainstormProcessTests : IDisposable
 
     /// <summary>
     /// What both stubs do in a turn: say what they saw (their folder, the packet's hash, the variables) in the home's <c>saw</c>
-    /// folder, then answer through the file the result tool writes: a generator two proposals, the synthesis one group of all.
+    /// folder, then answer: <c>work</c> writes the file the result tool writes (a generator one proposal, the synthesis one group of
+    /// all), and <c>give</c> calls <c>brainstorm_give</c> on the turn's connector over MCP, started from its entry's own variables
+    /// alone as Codex starts one: first an answer the validator refuses, then the same answer whole, each tool answer kept under
+    /// the home's <c>tool</c> folder with the servers the turn was handed.
     /// </summary>
     private string Work()
     {
         var home = _home.Replace("\\", "/");
         return $$"""
-            const work = () => {
+            const see = () => {
               const turn = process.env.DAORIS_BRAINSTORM_TURN;
               const packet = readFileSync(join(process.cwd(), 'packet.json'));
               mkdirSync('{{home}}/saw', { recursive: true });
@@ -55,6 +88,44 @@ public sealed class BrainstormProcessTests : IDisposable
                 repository: process.env.DAORIS_REPOSITORY ?? null, quest: process.env.DAORIS_QUEST_ID ?? null,
                 files: readdirSync(process.cwd()).sort(),
               }));
+            };
+            const proposal = (turn) => ({ idea: 'Inclusive window from ' + turn, rationale: 'The report reads an exclusive window.',
+              effort: 'small', risk: 'low', reversible: 'yes', undo: null, confidence: 'medium', assumptions: [], sources: [] });
+            const give = async (servers) => {
+              see();
+              const turn = process.env.DAORIS_BRAINSTORM_TURN;
+              const server = servers.find((each) => each.name === 'daoris-knowledge');
+              const env = Object.fromEntries((server?.env ?? []).map((each) => [each.name, each.value]));
+              const said = { servers: servers.map((each) => each.name), env: Object.keys(env).sort() };
+              if (server) {
+                const child = spawn(server.command, server.args ?? [], { env, stdio: ['pipe', 'pipe', 'ignore'] });
+                const waiting = new Map();
+                createInterface({ input: child.stdout }).on('line', (line) => {
+                  let frame;
+                  try { frame = JSON.parse(line); } catch { return; }
+                  if (frame.id !== undefined && waiting.has(frame.id)) { waiting.get(frame.id)(frame); waiting.delete(frame.id); }
+                });
+                let next = 1;
+                const ask = (method, params) => new Promise((resolve) => {
+                  const id = next++;
+                  waiting.set(id, resolve);
+                  setTimeout(() => resolve({ error: 'no answer in 60 seconds' }), 60000);
+                  child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
+                });
+                const text = (frame) => frame.result?.content?.map((each) => each.text).join('') ?? JSON.stringify(frame.error ?? frame);
+                await ask('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'acp-stub', version: '0' } });
+                child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
+                said.refused = text(await ask('tools/call', { name: 'brainstorm_give', arguments: { proposals: [{ ...proposal(turn), effort: 'tiny' }] } }));
+                said.kept = text(await ask('tools/call', { name: 'brainstorm_give', arguments: { proposals: [proposal(turn)], needs: [] } }));
+                child.stdin.end();
+                child.kill();
+              }
+              mkdirSync('{{home}}/tool', { recursive: true });
+              writeFileSync('{{home}}/tool/' + turn + '.json', JSON.stringify(said));
+            };
+            const work = () => {
+              see();
+              const turn = process.env.DAORIS_BRAINSTORM_TURN;
               const answer = process.env.DAORIS_BRAINSTORM_ANSWER;
               mkdirSync(dirname(answer), { recursive: true });
               if (turn.startsWith('s')) {
@@ -62,16 +133,14 @@ public sealed class BrainstormProcessTests : IDisposable
                 writeFileSync(answer, JSON.stringify({ brainstorm: 1, groups: [{ title: 'Every idea', idea: 'All of them, merged.',
                   members: handed, rank: 1, why: 'Nothing told them apart.', flags: [] }], leftOut: [] }));
               } else {
-                writeFileSync(answer, JSON.stringify({ brainstorm: 1, needs: [], none: null, proposals: [
-                  { idea: 'Inclusive window from ' + turn, rationale: 'The report reads an exclusive window.', effort: 'small', risk: 'low',
-                    reversible: 'yes', undo: null, confidence: 'medium', assumptions: [], sources: [] },
-                ] }));
+                writeFileSync(answer, JSON.stringify({ brainstorm: 1, needs: [], none: null, proposals: [proposal(turn)] }));
               }
             };
             """;
     }
 
     private const string Imports = """
+        import { spawn } from 'node:child_process';
         import { createHash } from 'node:crypto';
         import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
         import { dirname, join } from 'node:path';
@@ -99,15 +168,18 @@ public sealed class BrainstormProcessTests : IDisposable
             {{Imports}}
             {{Work()}}
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            const servers = [];
             const lines = createInterface({ input: process.stdin });
-            lines.on('line', (line) => {
+            lines.on('line', async (line) => {
               const frame = JSON.parse(line);
               if (frame.method === 'initialize') {
                 send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
               } else if (frame.method === 'session/new') {
+                servers.push(...(frame.params.mcpServers ?? []));
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'conv-' + process.env.DAORIS_BRAINSTORM_TURN } });
               } else if (frame.method === 'session/prompt') {
-                work();
+                if (process.env.DAORIS_BRAINSTORM_TURN.startsWith('g')) await give(servers);
+                else work();
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: frame.params.sessionId,
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'answered through its tool' } } } });
                 send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
@@ -128,6 +200,7 @@ public sealed class BrainstormProcessTests : IDisposable
     [Fact]
     public async Task Two_stub_doors_answer_a_sent_brainstorm_and_the_document_is_kept_with_nothing_changed_in_the_checkout()
     {
+        OwnConnector();
         var refs = _repository.Output("for-each-ref --format=\"%(refname) %(objectname)\"");
         var head = _repository.Output("rev-parse HEAD");
         var adapters = AdapterSet.Built();
@@ -173,6 +246,21 @@ public sealed class BrainstormProcessTests : IDisposable
         Assert.Equal([("g1", "stub", "Inclusive window from g1"), ("g2", "acp-stub", "Inclusive window from g2")],
             members.Select(member => (member!["pass"]!.GetValue<string>(), member["adapter"]!.GetValue<string>(), member["idea"]!.GetValue<string>())));
         Assert.Contains("stubs are no maker diversity", files.DocumentText(id)!, StringComparison.Ordinal);
+
+        // BRAINSTORM1a2: the ACP stub's generator answered through `brainstorm_give` on its one connector, over MCP. The connector
+        // carried the turn whole; the validator's refusal came back as the tool's answer, by code; the answer given whole again was
+        // kept in the tool's own shape, and the driver read it from the file the tool wrote. Its pass took one turn, no repair.
+        var tool = JsonNode.Parse(File.ReadAllText(Path.Combine(_home, "tool", "g2.json")))!;
+        Assert.Equal(["daoris-knowledge"], tool["servers"]!.AsArray().Select(name => name!.GetValue<string>()));
+        var carried = tool["env"]!.AsArray().Select(name => name!.GetValue<string>()).ToList();
+        Assert.Superset(
+            new HashSet<string> { BrainstormVariables.Id, BrainstormVariables.Turn, BrainstormVariables.Answer, BrainstormVariables.Room, DaorisHome.Variable },
+            carried.ToHashSet());
+        Assert.Contains("field:effort", tool["refused"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("kept: 1 proposal", tool["kept"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.StartsWith("{\n  \"brainstorm\": 1,", File.ReadAllText(files.AnswerPath(id, "g2")), StringComparison.Ordinal);
+        var pass = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "passes", "g2.json")))!;
+        Assert.Equal(("answered", 1), (pass["state"]!.GetValue<string>(), pass["turns"]!.GetValue<int>()));
 
         // The rooms went, and the asker's checkout is as it was: no commit, no branch, no change.
         Assert.False(Directory.Exists(files.Rooms(id)));

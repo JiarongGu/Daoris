@@ -17,13 +17,26 @@ public sealed record BrainstormTurnRun(bool Ran, string? Account, string? Code, 
 
 /// <summary>
 /// The variables a brainstorm turn's spawn carries (BRAINSTORM1a): the brainstorm, the turn, and the file its result tool writes,
-/// which the stub agents read in place of a connector's tool.
+/// which a stub agent may write in place of calling the tool. Its connector carries them too, with the room (BRAINSTORM1a2).
 /// </summary>
+/// <remarks>A twin of the service's <c>BrainstormScope</c>: the names are duplicated deliberately, never imported across.</remarks>
 public static class BrainstormVariables
 {
     public const string Id = "DAORIS_BRAINSTORM_ID";
     public const string Turn = "DAORIS_BRAINSTORM_TURN";
     public const string Answer = "DAORIS_BRAINSTORM_ANSWER";
+
+    /// <summary>The turn's room, on its connector alone: what <c>brainstorm_give</c> and <c>brainstorm_synthesize</c> judge against.</summary>
+    public const string Room = "DAORIS_BRAINSTORM_ROOM";
+
+    /// <summary>What a turn's connector carries beyond a session's (<see cref="KnowledgeConnector.SessionScope"/>): its brainstorm whole.</summary>
+    public static IReadOnlyDictionary<string, string> Scope(BrainstormTurn turn) => new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        [Id] = turn.Id,
+        [Turn] = turn.Turn,
+        [Answer] = turn.Answer,
+        [Room] = turn.Room,
+    };
 }
 
 /// <summary>What one wording's search found, and the tier that answered: <c>meaning</c>, <c>words</c> or <c>files</c>.</summary>

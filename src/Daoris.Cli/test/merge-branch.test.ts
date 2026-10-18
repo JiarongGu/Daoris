@@ -923,6 +923,11 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the review rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'], [...BASE, 'service', 'driver']],
     // XAGENT1f4: the second-opinion rules' table, whose gate rows the service's tool test reads too.
     ["the second-opinion rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json'], [...BASE, 'service', 'driver']],
+    // BRAINSTORM1a2: the brainstorm answers' table, which the service's twin validator reads too; and the posture's list of the
+    // connector's tools, which the service's registration test holds to its host's.
+    ["the brainstorm answers' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-answers.json'], [...BASE, 'service', 'driver']],
+    ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/Brainstorms/Domain/BrainstormPermissions.cs'],
+      [...BASE, 'service', 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],
     // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
     // since ORIENT2h6b the service's MarkdownFence twin.

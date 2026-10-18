@@ -17,7 +17,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     /// <summary>Every name the host advertised before the tools left one class, in ordinal order.</summary>
     private static readonly string[] Advertised =
     [
-        "accept_propose", "agent_propose", "agent_settings_propose", "ask_propose", "browser_propose", "channel_post",
+        "accept_propose", "agent_propose", "agent_settings_propose", "ask_propose", "brainstorm_give", "brainstorm_synthesize", "browser_propose", "channel_post",
         "channel_read", "clear_propose", "delete_propose", "go_ahead_ask", "go_propose", "hand_propose", "helper_answer", "helper_ask", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "opinion_answer", "opinion_give",
         "pause_propose", "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "registry",
@@ -46,6 +46,25 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     }
 
     /// <summary>
+    /// BRAINSTORM1a2 (D176 point 2): a brainstorm's pass is denied every tool of the connector but its result, by name, from the
+    /// driver's <c>BrainstormPermissions.ConnectorTools</c>. A tool the connector gains is denied there in the same change, or a pass
+    /// could be offered it. The merge tool's rule for the driver's file runs this suite when it changes.
+    /// </summary>
+    [Fact]
+    public void The_driver_denies_a_brainstorm_pass_every_tool_this_host_advertises()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
+        var source = File.ReadAllText(Path.Combine(
+            root!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Brainstorms", "Domain", "BrainstormPermissions.cs"));
+
+        var list = System.Text.RegularExpressions.Regex.Match(source, @"ConnectorTools\s*=\s*\[(?<names>[^\]]*)\]").Groups["names"].Value;
+        var named = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value);
+
+        Assert.Equal(Advertised, named.Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
     /// The list is the connector's whole: a class of tools left off it is never offered, and nothing else finds one, since
     /// the host registers the list and does not scan.
     /// </summary>
@@ -60,7 +79,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(marked, KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
         Assert.Equal(
             [
-                "ChannelTools", "GoAheadTools", "HelpAcceptTool", "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
+                "BrainstormTools", "ChannelTools", "GoAheadTools", "HelpAcceptTool", "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
                 "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpSessionTool",
                 "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "KnowledgeSearchTools", "OpinionTools", "QuestTools",
                 "ReviewTools", "RuleProposalTools",

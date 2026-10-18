@@ -198,4 +198,57 @@ public sealed class BrainstormValidationTests
         Assert.Equal([("hard-to-reverse", "daoris"), ("risky", "daoris")], rows[0].Flags.Select(flag => (flag.Flag, flag.By)));
         Assert.Empty(rows[1].Flags);
     }
+
+    // ——— BRAINSTORM1a2: the twin of the connector's validator. Both read ONE table, fixtures/brainstorm-answers.json, row for row;
+    // the service's McpBrainstormToolTests reads it too, and the two validators share no code.
+
+    private static JsonNode Table() =>
+        JsonNode.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "brainstorm-answers.json")))!;
+
+    /// <summary>A row's answer as the validator reads it: its JSON written compactly, or its text as it is, then its padding; null for none.</summary>
+    internal static string? TextOf(JsonNode row)
+    {
+        var text = row["answer"] is { } answer ? answer.ToJsonString() : row["text"]?.GetValue<string>();
+        if (row["pad"] is { } pad) text = (text ?? "") + new string(' ', pad.GetValue<int>());
+        return text;
+    }
+
+    public static TheoryData<string, string> TableRows()
+    {
+        var rows = new TheoryData<string, string>();
+        foreach (var kind in new[] { "give", "synthesize" })
+        {
+            foreach (var row in Table()[kind]!.AsArray()) rows.Add(kind, row!["name"]!.GetValue<string>());
+        }
+
+        return rows;
+    }
+
+    [Theory]
+    [MemberData(nameof(TableRows))]
+    public void Each_row_of_the_shared_table_fails_on_its_codes_in_order_or_is_valid(string kind, string name)
+    {
+        var table = Table();
+        var row = table[kind]!.AsArray().Single(each => each!["name"]!.GetValue<string>() == name)!;
+        var expected = row["codes"]!.AsArray().Select(code => code!.GetValue<string>()).ToList();
+        var text = TextOf(row);
+
+        IReadOnlyList<string> codes;
+        if (kind == "give")
+        {
+            var sources = table["sources"]!.AsArray().Select(id => id!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+            var checkedAnswer = BrainstormAnswers.Check(text, sources);
+            Assert.Equal(expected.Count == 0, checkedAnswer.Valid);
+            codes = checkedAnswer.Codes;
+        }
+        else
+        {
+            var ids = table["proposals"]!.AsArray().Select(id => id!.GetValue<string>()).ToList();
+            var checkedSynthesis = BrainstormSyntheses.Check(text, ids);
+            Assert.Equal(expected.Count == 0, checkedSynthesis.Valid);
+            codes = checkedSynthesis.Codes;
+        }
+
+        Assert.Equal(expected, codes);
+    }
 }
