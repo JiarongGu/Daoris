@@ -279,6 +279,38 @@ public abstract class AutoLandingFixture : IDisposable
     protected void Rule(LandingRule rule) =>
         DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
+    /// <summary>
+    /// The repository's rule reads a second opinion before landing from now on (FABRIC-CLOSE1h15, h17), which nobody has asked yet: made
+    /// after a done, it is a rule that started reading after it, so the done owed none.
+    /// </summary>
+    protected void ReadsAnOpinion() =>
+        (Config() with
+        {
+            Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["engine"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], true),
+            },
+        }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+
+    /// <summary>The reviewer read s1's work at <paramref name="tip"/> and raised nothing: the opinion, kept at the gate as asked, settles.</summary>
+    protected void Settled(string id, string tip)
+    {
+        _world.Opinions[id] = new OpinionView(id, OpinionRules.Landing, "first", "s1", "r-" + id, "engine", tip, tip, "codex-acp",
+            ReviewerLabels.AnotherMaker, "given")
+        {
+            Product = "Codex", Maker = "OpenAI", Minutes = 20, Findings = [], Read = "the whole change",
+        };
+        new OpinionGates(_home).Asked("q1", "engine", new OpinionAskKept(DateTimeOffset.UtcNow, OpinionRules.Landing, "s1", tip)
+        {
+            Opinion = id, Reviewer = "codex-acp",
+        });
+    }
+
+    /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it (FABRIC-CLOSE1h15), or null where it is still owed.</summary>
+    protected Task<string?> ClosesAsync(OpinionDue due) =>
+        OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None,
+            pushHeld: OpinionLook.PushHeld(_home));
+
     protected void InstallManifest()
     {
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,Plugin);

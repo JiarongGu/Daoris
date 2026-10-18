@@ -541,13 +541,7 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
     {
         if (gate == "opinion")
         {
-            (Config() with
-            {
-                Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["engine"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], true),
-                },
-            }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+            ReadsAnOpinion();
             return;
         }
 
@@ -569,25 +563,6 @@ public sealed class AutoLandingPushHeldTests : AutoLandingFixture
 
         _world.Quests["q2"] = _world.Quests["q2"] with { Held = false, Hold = null, Verdicts = [Reviewed(tip, 41)] };
     }
-
-    /// <summary>The reviewer read s1's work at <paramref name="tip"/> and raised nothing: the opinion, kept at the gate as asked, settles.</summary>
-    private void Settled(string id, string tip)
-    {
-        _world.Opinions[id] = new OpinionView(id, OpinionRules.Landing, "first", "s1", "r-" + id, "engine", tip, tip, "codex-acp",
-            ReviewerLabels.AnotherMaker, "given")
-        {
-            Product = "Codex", Maker = "OpenAI", Minutes = 20, Findings = [], Read = "the whole change",
-        };
-        new OpinionGates(_home).Asked("q1", "engine", new OpinionAskKept(DateTimeOffset.UtcNow, OpinionRules.Landing, "s1", tip)
-        {
-            Opinion = id, Reviewer = "codex-acp",
-        });
-    }
-
-    /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it (FABRIC-CLOSE1h15), or null where it is still owed.</summary>
-    private Task<string?> ClosesAsync(OpinionDue due) =>
-        OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None,
-            pushHeld: OpinionLook.PushHeld(_home));
 
     /// <summary>A set-up this machine posted at <paramref name="commit"/>, as its <paramref name="sequence"/>th.</summary>
     private static QuestSetUpView Shown(string commit, long sequence) =>

@@ -33,6 +33,9 @@ with the version and date at release.
 - Under *Accept automatically*, work whose branch was made but whose push waits for a second opinion now has that opinion asked by
   the driver at its next look, as the landing's gate says, and pushes once it settles. Before, it waited until you asked one
   (`daoris-driver opinion ask`), and an ask made then could be dropped at the next look before it was read.
+- Under *Accept automatically*, done work waiting for a second opinion nobody asked now has it asked by the driver at its next
+  look, as the landing's gate says, and lands once it settles. Before, where the repository's opinion rule started reading after the
+  work was done, or was switched off and on again meanwhile, it waited until you asked one.
 - The full gates can run in a worktree of their own while merges continue (`node tools/merge-branch.mjs --full --beside`,
   GATEWT1), and `publish:desktop --stage --from-gated <commit>` stages the commit they passed, built in that worktree.
 - On Windows, where the git Daoris finds is Git for Windows', Daoris's own git commands now start one process where they

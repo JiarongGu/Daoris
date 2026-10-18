@@ -435,4 +435,84 @@ public sealed class AutoLandingTriesTests : AutoLandingFixture
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal(now, (await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim());
     }
+
+    // ——— FABRIC-CLOSE1h17: an opinion holding an ordinary automatic landing is asked by the loop (D173's note)
+
+    /// <summary>
+    /// The row's proof. A done's landing held at the look by a second opinion nobody asked makes one owed where the look reads its gate, at
+    /// the landing's occasion, as a push held back does (FABRIC-CLOSE1h15): a rule that started reading after the done owed none, and one
+    /// whose due the loop closed as off before the rule came back owes none any more. The loop's opinion look keeps it owed and asks it, its
+    /// gate reading not asked; a look while it holds owes it once, not again. Once it settles, the first look lands it once, and the opinion
+    /// look then closes it as landed.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_landing_held_by_an_opinion_nobody_asked_owes_it_at_the_look_and_lands_once_it_settles(bool closedOff)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var tip = await HeadAsync(tree);
+        ReadsAnOpinion();
+        if (closedOff)
+        {
+            // Owed at the done, closed as off while the rule read none, and the rule came back.
+            Assert.Equal(OpinionRules.Landing, Assert.Single(OpinionLook.Concluded(_home, Config(), "s1", _world.Quests["q1"], "Done", "completed", tree)));
+            new OpinionDues(_home).Close("s1", OpinionRules.Landing, OpinionDueClosed.Off, DateTimeOffset.UtcNow);
+        }
+
+        Assert.Empty(new OpinionDues(_home).Open());
+
+        var first = await LookAsync();
+
+        Assert.Contains("it is asked at the driver's next look", Assert.Single(first));
+        Assert.Empty(_frames);
+        Assert.False(await BranchAsync(root, PushBranch));
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.Equal((AutoLandingCode.Opinion, (DateTimeOffset?)null), (entry.Last!.Code, entry.Closed));
+        var due = Assert.Single(new OpinionDues(_home).Open());
+        Assert.Equal(("s1", "q1", "engine", "aurora", tree, OpinionRules.Landing),
+            (due.Session, due.Quest, due.Repository, due.Workspace, due.Tree, due.Occasion));
+        // The loop's opinion look keeps it owed, and asks it: its gate reads not asked, with no hold of the quest's before it.
+        Assert.Null(await ClosesAsync(due));
+        var gate = await new SessionTrees(_home).OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, _world, null, due.Occasion);
+        Assert.Equal((OpinionGateStates.NotAsked, false), (gate.State, gate.Held));
+
+        Assert.Empty(await LookAsync());
+        Assert.Equal(due, Assert.Single(new OpinionDues(_home).All()));
+
+        Settled("o1", tip);
+        Assert.Single(await LookAsync());
+
+        Assert.Single(_frames);
+        Assert.True(await BranchAsync(root, PushBranch));
+        Assert.Equal(AutoLandingCode.Landed, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(OpinionDueClosed.Landed, await ClosesAsync(due));
+    }
+
+    /// <summary>
+    /// The guards, each green before the row: a due already owed for the landing's occasion (the rule read at the done) is left as it was,
+    /// not owed again; and one the loop closed as landed since the done is not opened again, since its look would only close it again.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_landing_held_by_an_opinion_owed_at_its_done_owes_nothing_more_at_the_look(bool closedLanded)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        ReadsAnOpinion();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        Assert.Equal(OpinionRules.Landing, Assert.Single(OpinionLook.Concluded(_home, Config(), "s1", _world.Quests["q1"], "Done", "completed", tree)));
+        if (closedLanded) new OpinionDues(_home).Close("s1", OpinionRules.Landing, OpinionDueClosed.Landed, DateTimeOffset.UtcNow);
+        var owed = Assert.Single(new OpinionDues(_home).All());
+
+        Assert.Contains("it is asked at the driver's next look", Assert.Single(await LookAsync()));
+
+        Assert.Equal(AutoLandingCode.Opinion, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.Equal(owed, Assert.Single(new OpinionDues(_home).All()));
+        Assert.False(await BranchAsync(root, PushBranch));
+    }
 }
