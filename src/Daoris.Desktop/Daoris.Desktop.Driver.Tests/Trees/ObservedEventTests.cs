@@ -520,14 +520,24 @@ public sealed class ObservedEventTests : IDisposable
     }
 
     [Fact]
-    public async Task A_graph_with_two_observed_nodes_of_the_events_step_takes_neither()
+    public async Task A_graph_with_two_observed_nodes_of_the_events_step_is_refused_at_its_reading_and_takes_neither()
     {
+        // FABRIC-GRAPH1g: the graph is unreadable whole (its save says `observed-twice`), so no node of it waits and no event reaches one.
+        const string cycle = """
+            { "entries": ["again"], "end": "deployed", "nodes": [
+              { "id": "again", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" },
+              { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" } ],
+              "wires": [{ "id": "w1", "kind": "after", "from": "again", "to": "deployed" }] }
+            """;
+        var home = NodeGraphHomes.OfLanding(LandingRule.Merge with { Cycle = cycle }, LandingSource.Repository);
+        Assert.Equal([GraphRefusal.ObservedTwice], home.Problems.Select(problem => problem.Code));
+
         var runtime = Runtime();
         await PassAsync(runtime, Twice);
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));
         await PassAsync(runtime, Twice, whole: false);
 
-        Assert.Equal((Plugin, WorkRefusals.NotNamed), Assert.Single(_port.Refusals));
+        Assert.DoesNotContain(_port.Refusals, refusal => refusal.Item2 == WorkRefusals.NotNamed);
         Assert.DoesNotContain(Record().Statuses.Values, status => status.State == NodeStates.Reached);
     }
 
