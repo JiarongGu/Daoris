@@ -38,6 +38,9 @@
     { "kind": "work", "detail": "declined", "quest": "q1", "said": "Quest #q1 was declined." },
     { "kind": "work", "detail": "finished", "count": 1, "said": "The agent finished: 1 quest here is done." },
     { "kind": "work", "detail": "finished", "count": 2, "said": "The agent finished: 2 quests here are done." },
+    { "kind": "work", "state": "done", "detail": "submitted", "count": 1, "said": "The agent finished: 1 quest here is submitted, and closes at the workflow's end." },
+    { "kind": "work", "state": "done", "detail": "submitted", "count": 2, "said": "The agent finished: 2 quests here are submitted, and close at the workflow's end." },
+    { "kind": "work", "state": "waiting-on-agent", "detail": "reopened", "quest": "q1", "said": "You reopened quest #q1's submission: it waits for its agent to make it ready again." },
 
     { "kind": "opinion", "detail": "none", "said": "No second opinion is asked before this work lands." },
     { "kind": "opinion", "detail": "waits-chain", "quest": "q2", "said": "Waits for the chain's later step here, quest #q2: one opinion reads the whole work." },

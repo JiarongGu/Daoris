@@ -730,12 +730,13 @@ public sealed class DriverWatch(
                 continue;
             }
 
-            if (quest is not { Status: "Done" }) continue;
+            // FABRIC-CLOSE1h (§E5): a closure graph's submission reads as its done.
+            if (!QuestResults.Judged(quest)) continue;
             // WORKFLOW1f: its run's named workflow, where it has one, says whether it lands with no press.
             var process = await AutoLander.ProcessAsync(home, config, new ServiceReviewWorld(service), quest, ended.Tree!, quest.Workspace, ct)
                 .ConfigureAwait(false);
-            AutoLander.Concluded(home, config, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), ended.Id, quest, quest.Status,
-                "stopped", ended.Tree!, quest.Workspace, process: process);
+            AutoLander.Concluded(home, config, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), ended.Id, quest,
+                QuestResults.Status(quest), "stopped", ended.Tree!, quest.Workspace, process: process);
         }
     }
 

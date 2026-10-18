@@ -874,6 +874,62 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1c (§E5): the person's reopen of a sealed submission and their word to go on, at their own doors. The step answers
+    /// the submission it grew from, and the one reopened under it with its hold; a take of the withdrawn step is a stand-down (409);
+    /// the next ready rebinds the same step.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_reopen_withdraws_the_step_and_the_next_ready_rebinds_it_at_their_doors()
+    {
+        Assert.Contains(("POST", "/api/quests/{id}/reopen"), host.Routes());
+        Assert.Contains(("POST", "/api/quests/{id}/continue"), host.Routes());
+        var published = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Write the reopened report", body = "For the review.",
+            then = new[] { new { to = "Keeper", title = "Check {parent}", body = "Look at it." } },
+        });
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
+        Assert.Equal(200, ready.Status);
+        var submission = ready.Json.GetProperty("quest").GetProperty("submission");
+        var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
+
+        async Task<JsonElement> Step() => (await host.GetAsync("/api/quests")).Json.EnumerateArray()
+            .Single(row => row.TryGetProperty("parent", out var parent) && parent.GetString() == quest);
+        var step = await Step();
+        var stepId = step.GetProperty("id").GetString()!;
+        Assert.Equal(named.sequence, step.GetProperty("grewFrom").GetProperty("sequence").GetInt64());
+        Assert.False(step.TryGetProperty("sourceReopened", out _));
+
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/reopen", new { note = "Again." })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/reopen", new { submission = named })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named with { sequence = named.sequence + 7 } })).Status);
+
+        var reopened = await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." });
+
+        Assert.Equal(200, reopened.Status);
+        Assert.False(reopened.Json.GetProperty("quest").TryGetProperty("submission", out _));
+        Assert.Contains($"#{stepId}", reopened.Json.GetProperty("message").GetString());
+        var withdrawn = await Step();
+        Assert.Equal(("Open", "source-reopened"), (withdrawn.GetProperty("status").GetString(), withdrawn.GetProperty("hold").GetString()));
+        Assert.Equal(named.sequence, withdrawn.GetProperty("sourceReopened").GetProperty("sequence").GetInt64());
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "take" })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/continue", new { })).Status);
+
+        var again = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written again." });
+        Assert.Equal(200, again.Status);
+        var rebound = await Step();
+        Assert.Equal(stepId, rebound.GetProperty("id").GetString());
+        Assert.Equal(again.Json.GetProperty("quest").GetProperty("submission").GetProperty("sequence").GetInt64(),
+            rebound.GetProperty("grewFrom").GetProperty("sequence").GetInt64());
+        Assert.False(rebound.TryGetProperty("sourceReopened", out _));
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/continue", new { })).Status);
+    }
+
+    /// <summary>
     /// REVIEWENV1b (D154; the review environment design §2.1, §2.6, §3.3–§3.6): the publish doors take a chain's review choice
     /// and a set-up step and answer them on the quest; a set-up step that reads as production is refused. The set-up step's
     /// done waits on a set-up, here the person's own posted at the set-up door, then holds (<c>hold</c> <c>unreviewed</c>)

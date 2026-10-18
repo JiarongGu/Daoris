@@ -324,9 +324,15 @@ internal sealed class TreeLands(
     /// The entry's Accept fetched the line once before its parts (ACCEPTALL1d, D87's 2026-10-15 amendment point 6), and said a failed
     /// fetch once, so this part is judged against that fetch and fetches nothing. False: the person's press fetches, as before.
     /// </param>
+    /// <param name="judged">
+    /// The door's own judgement again, once it holds the tree (FABRIC-CLOSE1h, D173's note), told whether it waited for another landing
+    /// of the tree: a refusal it answers is the landing's, before anything is made; null lets it go on. Past this point a hold, a reopen or
+    /// a gate's word applies to what follows, never to this landing, which is the landing's commitment. Null asks nothing, as before.
+    /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false)
+        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false,
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
@@ -340,6 +346,10 @@ internal sealed class TreeLands(
         {
             return LandedMeanwhile(before, subject.Session);
         }
+
+        // FABRIC-CLOSE1h: what the door judged before it took the hold may have moved while it waited, so it judges again here, under the
+        // hold and before anything is made. A refusal now stops the landing whole: no branch, no advance, no push.
+        if (judged is not null && await judged(hold.Waited, ct).ConfigureAwait(false) is { } refusedNow) return refusedNow;
 
         TreeLanding landed;
         // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
