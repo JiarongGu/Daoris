@@ -45,6 +45,11 @@ public sealed class ServiceReopenDoors(ServiceClient service) : IReopenDoors
 ///
 /// <para><b>The cost.</b> Nothing is read where no quest this look read is a reopened source; otherwise one read of the records per
 /// reopen not yet told, unless the look's last records or <see cref="Snapshot.NamedByReopen"/> hold its session.</para>
+///
+/// <para><b>The step's go-on</b> (FABRIC-CLOSE1c13): a step the person went on with after its last session here had ended normally,
+/// parked after its <c>ready</c> or completed (<see cref="Planner.GoneOnSince"/>), is told so in that session with Daoris's words, and
+/// the start that goes on with them brings its branch up to date with the source's new submission first (<see cref="BringsToSource"/>).
+/// Once with no mark: the told record has words waiting, and once it goes on it moves after the step. Nothing more is read.</para>
 /// </remarks>
 public sealed class ReopenTelling(ReopenMarks marks)
 {
@@ -74,7 +79,56 @@ public sealed class ReopenTelling(ReopenMarks marks)
             }
         }
 
+        // FABRIC-CLOSE1c13 (§E5, the step rebinds once unheld, its branch brought up to date): a step the person went on with after its
+        // session here had ended normally is told so in that session, which the planner then goes on with, from the look's own reads.
+        foreach (var step in snapshot.Quests)
+        {
+            if (!snapshot.LastRun.TryGetValue(step.Id, out var last) || !Planner.GoneOnSince(step, last)) continue;
+            var key = $"{step.Id}\n{last.Session}\n{step.GrewFrom!.Machine}\n{step.GrewFrom.Sequence}\ngone-on";
+            if (_settled.ContainsKey(key)) continue;
+
+            try
+            {
+                await TellGoneOnAsync(doors, step, last, key, lines, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                              or InvalidOperationException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                lines.Add($"reopen  quest #{step.Id}'s go-on was not told to session {last.Session} at this look, and the next tries again: {error.Message}");
+            }
+        }
+
         return lines;
+    }
+
+    /// <summary>
+    /// Tell <paramref name="last"/> that the person went on with <paramref name="step"/> (FABRIC-CLOSE1c13): words on a park are its
+    /// answer, on an ended record they reopen it, so the planner goes on in that same session. A tree gone is told nothing, as a
+    /// reopen's is, since its go-on would make the work again; said once.
+    /// </summary>
+    private async Task TellGoneOnAsync(IReopenDoors doors, QuestView step, PriorSession last, string key, List<string> lines, CancellationToken ct)
+    {
+        if (last.Tree is not { Length: > 0 } tree || !Directory.Exists(tree))
+        {
+            Settle(key, lines,
+                $"reopen  quest #{step.Id} was gone on with on the new work of #{step.Parent} after session {last.Session} ended, and its tree "
+                + "is gone: it is told nothing, and no work is made again for it");
+            return;
+        }
+
+        var said = await doors.SayAsync(last.Session, GoneOnWords(step.Id, step.Parent!, step.GrewFrom!), ct).ConfigureAwait(false);
+        if (said.Kept)
+        {
+            _settled[key] = true;
+            lines.Add(
+                $"reopen  session {last.Session} was told the person went on with quest #{step.Id} on the new work of #{step.Parent}, and goes on "
+                + "with Daoris's words");
+            return;
+        }
+
+        // A record that began running since it was read is told at a later look; any other refusal is said once.
+        if (said.Refusal != "running") Settle(key, lines, $"reopen  session {last.Session} was not told of quest #{step.Id}'s go-on: {said.Message}");
     }
 
     private async Task TellAsync(
@@ -133,6 +187,28 @@ public sealed class ReopenTelling(ReopenMarks marks)
     }
 
     private static string Key(string quest, QuestReopenView reopen) => $"{quest}\n{reopen.Machine}\n{reopen.Sequence}";
+
+    /// <summary>
+    /// What a step's session is told once the person went on with it on its source's new submission (FABRIC-CLOSE1c13): Daoris's own
+    /// sentence, naming that submission, which is also how the start knows to bring its branch up to date (<see cref="BringsToSource"/>).
+    /// What the start did with the branch is said after it (LANDSYNC2's place).
+    /// </summary>
+    public static string GoneOnWords(string quest, string source, QuestSubmissionRef grew) =>
+        $"Daoris: the person reopened the work of `#{source}` that quest `#{quest}` grew from, and went on with `#{quest}` on its new "
+        + $"submission `{grew.Machine}` {grew.Sequence}, so any result submitted on `#{quest}` was cleared. Bring your work up to date with "
+        + $"that submission (what Daoris did with your branch follows, where it did anything), then say `ready` on `#{quest}` again.";
+
+    /// <summary>
+    /// Whether a step going on from <paramref name="record"/> is first brought up to date with its source's new submission, then the line
+    /// (FABRIC-CLOSE1c5's <c>GoOnInSyncAsync</c>): the session the reopen stopped, carried on, and (FABRIC-CLOSE1c13) one that had ended
+    /// normally, going on with Daoris's words of the go-on to the submission the step grows from now, while it has no result again.
+    /// Every other going-on syncs with the line alone, as before.
+    /// </summary>
+    public static bool BringsToSource(QuestView step, PriorSession record) =>
+        step.GrewFrom is { } grew
+        && (Planner.StoppedByReopen(record)
+            || (step is { Submission: null, Parent: { Length: > 0 } source }
+                && record.Waiting.Any(word => string.Equals(word.Text, GoneOnWords(step.Id, source, grew), StringComparison.Ordinal))));
 
     /// <summary>What the session is told: Daoris's own sentence naming the reopened submission, then the person's words quoted.</summary>
     public static string Words(string quest, QuestReopenView reopen)
