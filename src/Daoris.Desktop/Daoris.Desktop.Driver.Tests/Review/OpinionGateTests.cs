@@ -372,6 +372,22 @@ public sealed class OpinionGateTests
         Assert.Equal("q2", OpinionGate.LaterStep(composed, "q1", "web-app"));
         Assert.Null(OpinionGate.LaterStep(setUp, "q1", "web-app"));
 
+        // FABRIC-CLOSE1h (§E5): in a closure graph a step's work is finished at its unheld submission, which published its steps in the
+        // same transaction, as a done does: neither a later step still to run nor one still composed.
+        var made = new QuestSubmissionView("desk", 3, DateTimeOffset.UnixEpoch, "ready");
+        var submitted = new List<QuestView>
+        {
+            Quest("q1", "Taken") with { Closure = "sha256:closure", Submission = made },
+            Quest("q2", "Taken") with { Parent = "q1", To = "web-app", Closure = "sha256:closure", Submission = made },
+        };
+        Assert.Null(OpinionGate.LaterStep(submitted, "q1", "web-app"));
+        var publishedBy = new List<QuestView>
+        {
+            Quest("q1"),
+            Quest("q2", "Taken") with { Parent = "q1", To = "api", Closure = "sha256:closure", Submission = made, Then = [new QuestStepView("web-app", "Next", "")] },
+        };
+        Assert.Null(OpinionGate.LaterStep(publishedBy, "q1", "web-app"));
+
         // The look asks an earlier step's opinion of nobody: its chain's later work here, run or to run, asks one for the whole.
         var done = new List<QuestView> { Quest("q1"), Quest("q2") with { Parent = "q1" } };
         Assert.True(OpinionGate.HasLaterWork(done, "q1", "web-app"));

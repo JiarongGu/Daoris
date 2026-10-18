@@ -309,6 +309,13 @@ public sealed class QuestTools(
                         QuestHold.EvidenceMissing =>
                             "  ⚠ held for the person: its evidence was not found in the commit read, and what follows it waits until "
                             + "a later commit holds it or they accept the done as it stands.",
+                        // FABRIC-CLOSE1c: said so a session on it stops, and one looking for work leaves it.
+                        QuestHold.SourceReopened when quest.Status == QuestStatus.Open =>
+                            $"  ⚠ withdrawn: the person reopened the work it grew from, `#{quest.Parent}`, so nobody takes it until that "
+                            + "work is ready again.",
+                        QuestHold.SourceReopened =>
+                            $"  ⚠ held for the person: they reopened the work it grew from, `#{quest.Parent}`, so it goes no further "
+                            + "until they choose to go on with it on the new work or to abandon it. Stop here.",
                         _ =>
                             $"  ⚠ held for the person's review in `{quest.SetUpIn}`: what follows it waits until they say the newest "
                             + "set-up is reviewed, or skip the review.",

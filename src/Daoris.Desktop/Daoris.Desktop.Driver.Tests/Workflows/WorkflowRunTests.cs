@@ -119,6 +119,32 @@ public sealed class WorkflowRunTests
             Quests = [Quest("q1", "Done"), Quest("q2", "Taken")], Sessions = [Session("s1", "q1", "completed"), Session("s2", "q2", "working", 1)],
         }, [("work", "working", "agent")], "work"),
 
+        // A closure graph's work (FABRIC-WORKFLOW2d, §E5): finished at its unheld, sealed submissions, before any Done.
+        ["a closure chain's submissions unheld and sealed finish the work before its Done"] = new("{}", facts => facts with
+        {
+            Quests = [Bound("q1", 1), Bound("q2", 2, last: true) with { Parent = "q1", GrewFrom = Made(1) }],
+            Sessions = [Session("s1", "q1", "completed"), Session("s2", "q2", "completed", 1)],
+        }, [("work", "done", "submitted"), ("landing", "waiting-on-you", "accept")], "landing"),
+        ["a sealed submission passes the work to the chain's next step"] = new("{}", facts => facts with
+        {
+            Quests = [Bound("q1", 1), Bound("q2", null, last: true) with { Parent = "q1", GrewFrom = Made(1) }],
+            Sessions = [Session("s1", "q1", "completed"), Session("s2", "q2", "working", 1)],
+        }, [("work", "working", "agent"), ("landing", "not-reached", "")], "work"),
+        ["a held submission waits for your yes"] = new("{}", facts => facts with
+        {
+            Quests = [Bound("q1", 1, last: true) with { Held = true, Hold = "evidence-missing" }], Sessions = [Session("s1", "q1", "completed")],
+        }, [("work", "waiting-on-you", "held"), ("landing", "not-reached", "")], "work"),
+        ["a submission its step does not stand on is not sealed"] = new("{}", facts => facts with
+        {
+            Quests = [Bound("q1", 3), Bound("q2", null, last: true) with { Parent = "q1", GrewFrom = Made(1) }],
+            Sessions = [Session("s1", "q1", "completed")],
+        }, [("work", "waiting-on-you", "unclosed"), ("landing", "not-reached", "")], "work"),
+        ["a reopened submission takes the finish back and says so"] = new("{}", facts => facts with
+        {
+            Quests = [Bound("q1", null), Withdrawn(Bound("q2", null, last: true) with { Status = "Open" })],
+            Sessions = [Session("s1", "q1", "completed")],
+        }, [("work", "waiting-on-agent", "reopened"), ("landing", "not-reached", "")], "work"),
+
         // The landing.
         ["work finished waits for your accept"] = new("{}", facts => facts with
         {
@@ -521,9 +547,148 @@ public sealed class WorkflowRunTests
         Assert.Contains("name one of them", WorkflowRunReader.ChainsOf(new(), quests, sessions).Problem);
     }
 
+    /// <summary>
+    /// FABRIC-WORKFLOW2d's proof (§E5): a two-step chain bound to a closure graph finishes its work at its unheld, sealed submissions, so
+    /// the landing is reached before any Done; the graph's close then writes both Done at once, and the run reads finished as before.
+    /// </summary>
+    [Fact]
+    public void A_two_step_closure_chain_reaches_its_landing_before_Done_and_then_closes_at_once()
+    {
+        var current = WorkflowCurrent.Derive(DriverConfig.Parse("{}"), "engine", "aurora", Plugins);
+        IReadOnlyList<TracedSession> sessions = [Session("s1", "q1", "completed"), Session("s2", "q2", "completed", 1)];
+        var first = Bound("q1", 1);
+        var second = Bound("q2", 2, last: true) with { Parent = "q1", GrewFrom = Made(1) };
+
+        var submitted = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = [first, second], Sessions = sessions }, "aurora");
+
+        var work = submitted.Steps[0];
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Submitted), (work.State, work.Detail));
+        Assert.Equal((2, 2, "q2"), (work.Count, work.Of, work.Quest));
+        Assert.Equal(second.Submission!.At, work.At);
+        Assert.Equal("landing", submitted.At);
+        Assert.Equal("The agent finished: 2 quests here are submitted, and close at the workflow's end.", WorkflowRunWords.Said(work));
+
+        // The close: both Done in one transaction, each keeping the submission it closed on.
+        var closed = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current)
+        {
+            Quests = [first with { Status = "Done" }, second with { Status = "Done" }], Sessions = sessions,
+        }, "aurora");
+
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Finished), (closed.Steps[0].State, closed.Steps[0].Detail));
+        Assert.Equal(2, closed.Steps[0].Count);
+        Assert.Equal(submitted.Steps.Skip(1), closed.Steps.Skip(1));
+        Assert.Equal("landing", closed.At);
+    }
+
+    /// <summary>
+    /// FABRIC-WORKFLOW2d: the person's reopen (FABRIC-CLOSE1c) takes the seal back, so the run reads unfinished again and says why: its step
+    /// withdrawn while open or held while taken, the quest taken with no submission. A step from before, which names no submission it grew
+    /// from, seals whichever is current, as the service's seal reads it.
+    /// </summary>
+    [Fact]
+    public void A_reopen_takes_the_completion_back_and_says_so()
+    {
+        var current = WorkflowCurrent.Derive(DriverConfig.Parse("{}"), "engine", "aurora", Plugins);
+        IReadOnlyList<TracedSession> sessions = [Session("s1", "q1", "completed"), Session("s2", "q2", "completed", 1)];
+        WorkflowRun Read(params QuestView[] quests) =>
+            WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = quests, Sessions = sessions }, "aurora");
+        var second = Bound("q2", 2, last: true) with { Parent = "q1", GrewFrom = Made(1) };
+
+        Assert.Equal("landing", Read(Bound("q1", 1), second).At);
+
+        foreach (var step in new[] { Withdrawn(Bound("q2", null, last: true) with { Status = "Open" }), Withdrawn(second) })
+        {
+            var reopened = Read(Bound("q1", null), step);
+
+            var work = reopened.Steps[0];
+            Assert.Equal((WorkflowRunStates.WaitingOnAgent, WorkflowRunDetails.Reopened), (work.State, work.Detail));
+            Assert.Equal(("q1", 0), (work.Quest, work.Count));
+            Assert.Equal("work", reopened.At);
+            Assert.Equal(WorkflowRunStates.NotReached, reopened.Steps.Single(each => each.Step.Kind == WorkflowKinds.Landing).State);
+            Assert.Equal("You reopened quest #q1's submission: it waits for its agent to make it ready again.", WorkflowRunWords.Said(work));
+        }
+
+        // A step from before names no submission: it seals the current one, as it always did.
+        Assert.Equal("landing", Read(Bound("q1", 1), second with { GrewFrom = null }).At);
+    }
+
+    /// <summary>
+    /// FABRIC-WORKFLOW2d: a quest no closure graph holds reads exactly as it did, whatever a host answers of a submission or a step's source:
+    /// only its Done finishes it. The owner's schema-1 runs hold none, and the table's every other row stands as it did.
+    /// </summary>
+    [Fact]
+    public void An_unbound_run_reads_exactly_as_before()
+    {
+        var current = WorkflowCurrent.Derive(DriverConfig.Parse("{}"), "engine", "aurora", Plugins);
+        IReadOnlyList<TracedSession> sessions = [Session("s1", "q1", "completed"), Session("s2", "q2", "completed", 1)];
+        IReadOnlyList<QuestView> carried =
+        [
+            Bound("q1", 1) with { Closure = null },
+            Bound("q2", 2, last: true) with { Closure = null, Parent = "q1", GrewFrom = Made(1) },
+        ];
+        IReadOnlyList<QuestView> plain = [.. carried.Select(quest => quest with { Submission = null, GrewFrom = null, SourceReopened = null })];
+
+        var run = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = carried, Sessions = sessions }, "aurora");
+        var before = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = plain, Sessions = sessions }, "aurora");
+
+        Assert.Equal(before.Steps, run.Steps);
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Unclosed), (run.Steps[0].State, run.Steps[0].Detail));
+        Assert.Equal("work", run.At);
+
+        // A reopened step under an unbound quest says nothing of a reopen: only a closure graph's quest has a submission to reopen.
+        var under = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current)
+        {
+            Quests = [carried[0] with { Submission = null }, Withdrawn(carried[1])], Sessions = sessions,
+        }, "aurora");
+        Assert.Equal(WorkflowRunDetails.Unclosed, under.Steps[0].Detail);
+    }
+
+    /// <summary>
+    /// FABRIC-WORKFLOW2d: a submission's step another repository holds seals it through the whole chain, which the reader hands in; a run
+    /// handed only this repository's quests judges by those, and finds no step to seal it.
+    /// </summary>
+    [Fact]
+    public void A_step_in_another_repository_seals_through_the_whole_chain()
+    {
+        var current = WorkflowCurrent.Derive(DriverConfig.Parse("{}"), "engine", "aurora", Plugins);
+        var here = Bound("q1", 1) with { Then = [new QuestStepView("game", "Next", "")] };
+        var there = new QuestView("q2", "ask #a1", "game", "Quest q2", "", "Open") { Parent = "q1", GrewFrom = Made(1), Updated = T };
+        IReadOnlyList<TracedSession> sessions = [Session("s1", "q1", "completed")];
+
+        var whole = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = [here], Chain = [here, there], Sessions = sessions }, "aurora");
+        var alone = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = [here], Sessions = sessions }, "aurora");
+
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Submitted), (whole.Steps[0].State, whole.Steps[0].Detail));
+        Assert.Equal("landing", whole.At);
+        Assert.Equal("work", alone.At);
+    }
+
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";
 
     private static QuestView Quest(string id, string status) => new(id, "ask #a1", "engine", $"Quest {id}", "", status) { Updated = T };
+
+    /// <summary>The closure graph the chain's quests are bound to (FABRIC-CLOSE1a).</summary>
+    private const string Graph = "gph-0123";
+
+    /// <summary>A submission made on this machine at <paramref name="sequence"/>, as a step names the one it grew from.</summary>
+    private static QuestSubmissionRef Made(long sequence) => new("desk", sequence);
+
+    /// <summary>
+    /// A quest a closure graph holds (§E5): taken, its current submission made at <paramref name="sequence"/> where one is, and a step of
+    /// its chain still to publish unless it is the chain's <paramref name="last"/>.
+    /// </summary>
+    private static QuestView Bound(string id, long? sequence, bool last = false) => Quest(id, "Taken") with
+    {
+        Closure = Graph,
+        Submission = sequence is { } made ? new QuestSubmissionView("desk", made, T.AddMinutes(made), "ready") : null,
+        Then = last ? [] : [new QuestStepView("engine", "Next", "")],
+    };
+
+    /// <summary>The step <c>q1</c>'s first submission published, that submission reopened by the person (FABRIC-CLOSE1c): withdrawn or held.</summary>
+    private static QuestView Withdrawn(QuestView step) => step with
+    {
+        Parent = "q1", GrewFrom = Made(1), SourceReopened = Made(1), Held = true, Hold = "source-reopened",
+    };
 
     private static QuestView SetUpStep(string id, string status) => Quest(id, status) with { SetUpIn = "local" };
 

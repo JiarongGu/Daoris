@@ -118,7 +118,8 @@ once three batches hold the targets (MODELROLE1).
      diff of a branch that crossed lanes or touched the steward's records.
    - **The full set is owed before the install is built**, the long halves with it. `publish:desktop`
      refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
-     on the checkout, or `--full` on the day's last merge. 🔴 Never `--full` on a `--batch`: it runs every gate,
+     on the checkout, or `--full` on the day's last merge, or `--full --beside` to gate main's tip in `local/gate-tree`
+     while the merges go on, then stage it with `--from-gated <commit>` (GATEWT1). 🔴 Never `--full` on a `--batch`: it runs every gate,
      the long halves included, for EVERY merge in the batch (a docs-only design paid forty minutes of the driver's
      Process half, 2026-10-09). Merge the batch plain, then `--stale` once. A verdict stands until a path its gate reaches
      changes (GATE6), and records written after the gates are forgiven; a refusal names each stale gate and

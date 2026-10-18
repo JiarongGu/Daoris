@@ -52,6 +52,13 @@ public sealed class WorkflowRunNodesTests : IDisposable
 
     private static QuestView Quest(string id, string status) => new(id, "ask #a1", Repo, $"Quest {id}", "", status) { Updated = T };
 
+    /// <summary>A quest a closure graph holds (FABRIC-WORKFLOW2d, §E5): taken, its submission made at <paramref name="sequence"/> where one is.</summary>
+    private static QuestView Bound(string id, long? sequence, IReadOnlyList<QuestStepView> then) => Quest(id, "Taken") with
+    {
+        Closure = "gph-0123", Then = then,
+        Submission = sequence is { } made ? new QuestSubmissionView("desk", made, T.AddMinutes(made), "ready") : null,
+    };
+
     private static TracedSession Session(string id, string quest, string state) => new(id, Repo, state)
     {
         Quest = quest, Adapter = "claude-code", Created = T, Updated = T.AddMinutes(5), Evidence = "commits landed:\nabc1234 the change",
@@ -119,6 +126,31 @@ public sealed class WorkflowRunNodesTests : IDisposable
         }, "work", ["work"], [("work", Active), ("land", Blocked)], []),
         ["a declined quest stops the work"] = new(Basic, facts => facts with { Quests = [Quest("q1", "Declined")] },
             "work", ["work"], [("work", NodeStates.Stopped), ("land", Blocked)], []),
+
+        // A closure graph's work (FABRIC-WORKFLOW2d, §E5): reached at its unheld, sealed submissions, so the landing is offered before any
+        // Done; and pending again once the person reopens one. Both agree, with no difference to name.
+        ["a closure chain's sealed submissions reach the work before its Done"] = new(Basic, facts => facts with
+        {
+            Quests =
+            [
+                Bound("q1", 1, [new QuestStepView(Repo, "Next", "")]),
+                Bound("q2", 2, []) with { Parent = "q1", GrewFrom = new QuestSubmissionRef("desk", 1) },
+            ],
+            Sessions = [Session("s1", "q1", "completed"), Session("s2", "q2", "completed")],
+        }, "land", ["land"], [("work", Reached), ("land", Active)], []),
+        ["a reopened submission leaves the work pending again"] = new(Basic, facts => facts with
+        {
+            Quests =
+            [
+                Bound("q1", null, [new QuestStepView(Repo, "Next", "")]),
+                Bound("q2", null, []) with
+                {
+                    Status = "Open", Parent = "q1", GrewFrom = new QuestSubmissionRef("desk", 1), SourceReopened = new QuestSubmissionRef("desk", 1),
+                    Held = true, Hold = "source-reopened",
+                },
+            ],
+            Sessions = [Session("s1", "q1", "completed")],
+        }, "work", ["work"], [("work", Active), ("land", Blocked)], []),
 
         // The landing.
         ["the landing waits for the person's accept"] = new(Basic, Done, "land", ["land"], [("work", Reached), ("land", Active)], []),

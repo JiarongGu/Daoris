@@ -1624,8 +1624,10 @@ public sealed class Driver(
                     await ReviewSetUps.PostAsync(service, config, Context.Events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
                         .ConfigureAwait(false);
 
-                    // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself.
-                    await ConcludedForLandingAsync(sessionId, quest, after?.Status, conclusion.State, workTree, start.Workspace, ct).ConfigureAwait(false);
+                    // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself. FABRIC-CLOSE1h
+                    // (§E5): in a closure graph its submission reads as that done, so it is due at the agent's `ready`.
+                    await ConcludedForLandingAsync(sessionId, quest, QuestResults.Status(after), conclusion.State, workTree, start.Workspace, ct)
+                        .ConfigureAwait(false);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
                     // rules 6–7): the person merges from the root and discards from a surface that
