@@ -148,6 +148,12 @@ public sealed record LandedBranch(
         Advances.LastOrDefault(advance => string.Equals(advance.Session, session, StringComparison.OrdinalIgnoreCase)) is { } advance
             ? advance.AcceptedBy
             : AcceptedBy;
+
+    /// <summary>
+    /// The session whose work last moved it: its newest advance's, else the landing's own. Whose acceptance a hand-off tells its plugin
+    /// (LAND2c), and whose quest a person's hand-off is held to (FABRIC-CLOSE1h8). A method, so no answer that carries a landing gains a field.
+    /// </summary>
+    public string LastSession() => Advances.Count > 0 ? Advances[^1].Session : Session;
 }
 
 /// <summary>

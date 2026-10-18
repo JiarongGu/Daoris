@@ -33,6 +33,28 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
         var pressed = await FindAsync(quest, ct).ConfigureAwait(false);
         return QuestResults.Judged(pressed) ? new PressedResult(session, pressed, token => read(quest.TrimStart('#'), token), late) : null;
     }
+
+    /// <summary>
+    /// The result a person's hand-off of <paramref name="entry"/> is made on (FABRIC-CLOSE1h8, D173's note): the quest of the session
+    /// that last moved the branch (<see cref="LandedBranch.LastSession"/>), not its landing's first, read where the door names the
+    /// branch. The hand-off judges it once more under the branch's hold, just before its plugin is told (<see cref="PressedResult.BeforePush"/>).
+    /// </summary>
+    /// <param name="sessionQuest">The quest a session serves, null for none (<see cref="ServiceClient.SessionQuestAsync"/>).</param>
+    /// <param name="read">The service's quest by id, as it holds it now (<see cref="ServiceClient.FindQuestAsync"/>).</param>
+    /// <returns>Null where it holds the hand-off to nothing, so it hands on as before: a session on no quest, or a quest whose result is not in.</returns>
+    public static async Task<PressedResult?> HandedAsync(
+        LandedBranch entry, Func<string, CancellationToken, Task<string?>> sessionQuest,
+        Func<string, CancellationToken, Task<QuestView?>> read, CancellationToken ct = default)
+    {
+        // The record keeps no quest per advance, so the session's own is asked: one read, and one more only where it names a quest.
+        var session = entry.LastSession();
+        var quest = await sessionQuest(session, ct).ConfigureAwait(false);
+        return await new PressQuests(read).PressedAsync(session, quest, ct: ct).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc cref="HandedAsync(LandedBranch, Func{string, CancellationToken, Task{string?}}, Func{string, CancellationToken, Task{QuestView?}}, CancellationToken)"/>
+    public static Task<PressedResult?> HandedAsync(LandedBranch entry, ServiceClient service, CancellationToken ct = default) =>
+        HandedAsync(entry, service.SessionQuestAsync, service.FindQuestAsync, ct);
 }
 
 /// <summary>

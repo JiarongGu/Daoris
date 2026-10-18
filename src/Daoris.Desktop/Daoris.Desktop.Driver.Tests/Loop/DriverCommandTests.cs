@@ -258,6 +258,31 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1h8 (D173's note; D50's twin rule): every person's hand-off, the page's and Ask Daoris's card through the route's one
+    /// shared press and the terminal's <c>trees hand</c>, holds its push to the result of the session that last moved the branch, by the
+    /// driver's one helper (<c>PressQuests.HandedAsync</c>; <c>PressedResultTests</c> and <c>AutoLandingTests</c> hold the act).
+    /// </summary>
+    [Fact]
+    public void Every_hand_off_holds_its_push_to_the_result_of_the_session_that_last_moved_its_branch()
+    {
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
+        var help = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "HelpRoutes.cs"));
+        var from = console.IndexOf("case [\"hand\", var named, ..]:", StringComparison.Ordinal);
+        var hand = console[from..console.IndexOf("case [", from + 1, StringComparison.Ordinal)];
+        var shared = route[route.IndexOf("internal static async Task<TreeHand> HandAsync(", StringComparison.Ordinal)..];
+
+        foreach (var door in new[] { hand, shared })
+        {
+            Assert.Contains("await PressQuests.HandedAsync(entry, ", door);
+            Assert.Contains("beforePush: pressed?.BeforePush", door);
+        }
+
+        Assert.Contains("await HandAsync(_loop, trees, root, entry, named, cancellationToken)", route);
+        Assert.Contains("TreesRoutes.HandAsync(_loop, trees, root, entry, plugin, ct)", help);
+    }
+
+    /// <summary>
     /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
     /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
     /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.
