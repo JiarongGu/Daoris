@@ -285,8 +285,8 @@ Mapped in `src/Daoris.Service/Daoris.Service.Http/Program.cs`.
 | GET /api/registry | `Program.cs:1850` |
 | POST /api/registry | `Program.cs:1693` |
 | POST /api/registry/import | `Program.cs:1818` |
-| GET /api/registry/retired | `Program.cs:2118` |
-| DELETE /api/registry/retired/{repository} | `Program.cs:2124` |
+| GET /api/registry/retired | `Program.cs:2120` |
+| DELETE /api/registry/retired/{repository} | `Program.cs:2126` |
 | DELETE /api/registry/{repository} | `Program.cs:1766` |
 | POST /api/registry/{repository}/workspace | `Program.cs:1791` |
 | GET /api/repositories | `Program.cs:464` |

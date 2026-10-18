@@ -1718,6 +1718,11 @@ step goes on only by the person's word, on every machine and the remote alike.
 exactly as the person's reopen of that result would: withdrawn if untaken, held if taken. The step's next submission rebinds a withdrawn
 one and is sealed by it; a held one goes on by the person's word, and the step's close waits for it.
 
+**Amended (FABRIC-CLOSE1c18, D173's note).** A take carries the step's source as it found it, and stands only while the step still grows
+from that, judged where the replay reaches it. A take made before a reopen and its rebind reached its machine loses everywhere; one that
+came first stands through the person's go-on. The loser's session is stopped with its work kept, told the person reopened the work, and
+nothing it says after closes or declines the reopened step.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 
