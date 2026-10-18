@@ -121,6 +121,7 @@ const tool = await import(
   readLanes: (root: string) => { lanes: Lane[]; laneless: string[] } | null;
   unionRecords: (root: string) => string[];
   parseStatus: (text: string) => { branch: string; changed: { code: string; path: string }[] };
+  ignoredVerdict: (probe: { status: number | null; err: string }, path: string) => boolean;
   startRefusal: (facts: { branch: string; merging: boolean; changed: { code: string; path: string }[]; ignored: boolean }) => string | null;
   parseCommits: (text: string) => { sha: string; merge: boolean; subject: string; trailer: string }[];
   worktreeFor: (porcelain: string, branch: string) => string | null;
@@ -503,6 +504,13 @@ test('a merge starts only on main, with no merge open, a clean tree and ignored 
   const many = Array.from({ length: 13 }, (_, i) => ({ code: '.M', path: `f${i}` }));
   assert.match(tool.startRefusal({ ...ready, changed: many })!, /… 1 more$/);
   assert.match(tool.startRefusal({ ...ready, ignored: false })!, /local\/scratch\/ is not ignored/);
+});
+
+test('a check-ignore probe: status 0 is ignored, 1 is not, anything else is a tool error quoting git (GATEIGNORE1)', () => {
+  assert.equal(tool.ignoredVerdict({ status: 0, err: '' }, 'local/scratch/x.log'), true);
+  assert.equal(tool.ignoredVerdict({ status: 1, err: '' }, 'local/scratch/x.log'), false);
+  assert.throws(() => tool.ignoredVerdict({ status: 128, err: 'fatal: unable to read index' }, 'local/scratch/x.log'), /check-ignore.*local\/scratch\/x\.log.*failed.*status 128.*fatal: unable to read index/s);
+  assert.throws(() => tool.ignoredVerdict({ status: null, err: '' }, 'p'), /failed/);
 });
 
 test("the commit log is read for each commit's trailer, and a merge of main into the branch is marked", () => {
