@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A git that could not answer `check-ignore` refused a merge as "not ignored" (GATEIGNORE1)
+
+- **Symptom:** CLOSE1q5's merge failed its cli gate: the scratch tool exited 2 saying `local/scratch/` is not ignored, in a scratch
+  repository that ignores it; green on rerun. The false reason hid git's real error.
+- **Root cause:** the five `git check-ignore -q` probes in `tools/merge-branch.mjs` read any non-zero status as "not ignored", but git
+  answers 1 for that; 128, or a git that could not answer under load, is an error.
+- **Fix:** one `ignoredVerdict` (through `isIgnored`) for all five: 0 ignored, 1 not ignored, anything else a `Refusal` saying the probe
+  failed with its status and git's stderr.
+- **Verification:** red first: the new unit over the three statuses failed (`ignoredVerdict` absent), then `merge-branch.test.ts` passes
+  116 (115 before).
+
 ## 2026-10-18 — A press that waited behind another landing landed a result taken back meanwhile (FABRIC-CLOSE1h3)
 
 - **Symptom:** the person's Accept (`LAND_SESSION_TREE`, `trees land <session>`) or an entry's or an ask's, waiting up to minutes behind
