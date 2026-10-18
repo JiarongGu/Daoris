@@ -52,7 +52,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     private InstanceWorld World(Func<string, string?>? environment = null, string? baseDirectory = null, string? statusHome = null,
-                                TimeSpan? wait = null) => new()
+                                TimeSpan? wait = null, TimeSpan? answer = null) => new()
     {
         Home = _home,
         // 🔴 Never the account's: a test reads no variable it was not handed (D171's FINDDAORIS1 note).
@@ -62,8 +62,10 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Out = _out,
         Error = _error,
         Verb = "trees",
-        Answer = TimeSpan.FromSeconds(2),
-        Wait = wait ?? TimeSpan.FromSeconds(10),
+        // TESTWAIT7: a stand-in that answers is waited for for minutes, as a loaded machine needs; the bound only elapses where a
+        // case serves nothing (`answer:` short there, as no load can make a pipe nobody serves answer).
+        Answer = answer ?? TimeSpan.FromMinutes(2),
+        Wait = wait ?? TimeSpan.FromMinutes(2),
     };
 
     private Task<int> Alone()
@@ -225,7 +227,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         // The file names this home's pipe, and nothing serves it.
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
 
-        var exit = await PressAsync(World());
+        var exit = await PressAsync(World(answer: TimeSpan.FromSeconds(1)));
 
         Assert.Equal(2, exit);
         Assert.Equal(0, _alone);
@@ -305,7 +307,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         standIn.Result = state;
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
 
-        var exit = await PressAsync(World(wait: TimeSpan.FromMilliseconds(500)));
+        var exit = await PressAsync(World(wait: press == StandInPress.Hold ? TimeSpan.FromMilliseconds(500) : null));
 
         Assert.Equal(2, exit);
         Assert.Equal(0, _alone);
@@ -334,7 +336,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        var exit = await PressAsync(World(environment: name => name == InstanceDoor.Variable ? _pipe : null));
+        var exit = await PressAsync(World(environment: name => name == InstanceDoor.Variable ? _pipe : null, answer: TimeSpan.FromSeconds(1)));
 
         Assert.Equal(2, exit);
         Assert.Equal(0, _alone);
