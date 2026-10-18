@@ -83,6 +83,22 @@ public enum QuestOperationKind
     /// on the latest submission, and a later one replaces it, judged again from the start. It moves no status.
     /// </summary>
     Submitted,
+
+    /// <summary>
+    /// The person reopened a sealed submission (FABRIC-CLOSE1c, §E5): it names the submission by its machine and sequence. On the
+    /// quest that submitted it, it applies while that submission is current, and the quest stays taken with none, so a close naming
+    /// it is stale and a later <c>ready</c> is judged anew. On the step that submission published, it applies while the step is open
+    /// or taken: an open step is withdrawn, never taken while so, and a taken one is held with its reason until the person chooses.
+    /// It moves no status.
+    /// </summary>
+    Reopened,
+
+    /// <summary>
+    /// A step withdrawn or held by its source's reopen grows from the source's submission it names now (FABRIC-CLOSE1c, §E5): an
+    /// untaken one as that submission publishes it, a started one on the person's word to go on. Its hold is let go, and the step
+    /// keeps its id and its history. It moves no status.
+    /// </summary>
+    Rebound,
 }
 
 /// <summary>
@@ -132,6 +148,10 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// For a <see cref="QuestOperationKind.Done"/> the graph's close door wrote (FABRIC-CLOSE1a, §E5): the invocation's key and the
 /// close token, as its provenance. Null on every other done, and on every other kind.
 /// </param>
+/// <param name="Submission">
+/// For a <see cref="QuestOperationKind.Reopened"/>: the submission reopened; for a <see cref="QuestOperationKind.Rebound"/>: the
+/// source's submission the step grows from now (FABRIC-CLOSE1c). Null on every other kind.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -149,7 +169,8 @@ public sealed record QuestOperation(
     QuestSetUp? SetUp = null,
     QuestReviewVerdict? Verdict = null,
     string? NoteParts = null,
-    QuestClose? Close = null);
+    QuestClose? Close = null,
+    QuestOperationRef? Submission = null);
 
 /// <summary>
 /// What a graph's close names its Done by (FABRIC-CLOSE1a, the fabric events design §E5): the invocation's key, which the

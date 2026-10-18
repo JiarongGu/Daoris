@@ -193,6 +193,21 @@ public sealed record Quest(
     public QuestSubmission? Submission { get; init; }
 
     /// <summary>
+    /// The submission of its <see cref="Parent"/> it grew from (FABRIC-CLOSE1c, §E5's <c>publishedBy: { quest, submission }</c>), by
+    /// the machine and sequence that name it: set where a submission published the step, moved by a <see cref="QuestOperationKind.Rebound"/>.
+    /// Null for a step a done published, for every other quest, and for every step from before. <see cref="PublishedBy"/> stays the
+    /// publishing session's.
+    /// </summary>
+    public QuestOperationRef? GrewFrom { get; init; }
+
+    /// <summary>
+    /// The submission it grew from, reopened by the person (FABRIC-CLOSE1c, §E5), while that stands: an open step is withdrawn and
+    /// a taken one is held, each for the person (<see cref="QuestHold.SourceReopened"/>). Null for every other quest, and once a
+    /// <see cref="QuestOperationKind.Rebound"/> names the submission it grows from now.
+    /// </summary>
+    public QuestOperationRef? SourceReopened { get; init; }
+
+    /// <summary>
     /// Whether its result is judged (FABRIC-CLOSE1a, §E5): closed done, or taken with a current submission. The holds, the
     /// evidence and the review hang on it, so in a closure graph they hang on the submission exactly as they hang on a done.
     /// </summary>
@@ -334,6 +349,12 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
     public string? SealedBy { get; init; }
 
     /// <summary>
+    /// Refused because the work the quest grew from was reopened by the person (FABRIC-CLOSE1c, §E5): an agent's take, done or
+    /// <c>ready</c> on a step withdrawn or held for the person's choice.
+    /// </summary>
+    public bool SourceReopened { get; init; }
+
+    /// <summary>
     /// What a take made of the closure graph named for it (FABRIC-CLOSE1o, §E5's cutover): <see cref="QuestTakeBind.None"/> on every
     /// other move and on a take no graph was named for.
     /// </summary>
@@ -386,6 +407,41 @@ public sealed record QuestTaker(string? Session, Func<string, bool>? Remote = nu
 /// answers are the quest's <see cref="Quest.Answers"/>.
 /// </summary>
 public sealed record QuestSubmission(string Machine, long Sequence, DateTimeOffset At, string? Note);
+
+/// <summary>Why the person's reopen, or their word to go on, moved nothing (FABRIC-CLOSE1c, §E5), or <see cref="None"/>.</summary>
+public enum QuestReopenRefusal
+{
+    None,
+
+    /// <summary>No quest under that id.</summary>
+    NotFound,
+
+    /// <summary>Not taken: open, or closed done or declined, so it has no submission to reopen.</summary>
+    NotTaken,
+
+    /// <summary>Taken on another machine, or on a take this machine lost: the submission and its seal are that machine's.</summary>
+    NotHeld,
+
+    /// <summary>The submission named is not the quest's current one, or it has none.</summary>
+    NotCurrent,
+
+    /// <summary>The submission published no step that stands on it, so nothing seals it: a later <c>ready</c> replaces it.</summary>
+    NotSealed,
+
+    /// <summary>The step it published is closed, done or declined, on the submission it grew from, and a reopen takes no close back.</summary>
+    StepClosed,
+
+    /// <summary>A word to go on with a step no reopen holds.</summary>
+    NotWithdrawn,
+
+    /// <summary>A word to go on while the source has no unheld submission to grow from, so the step waits for its work again.</summary>
+    SourceNotReady,
+}
+
+/// <param name="Refusal"><see cref="QuestReopenRefusal.None"/> when it moved.</param>
+/// <param name="Quest">The quest named, as it now stands; null for no such id.</param>
+/// <param name="Step">The step it moved with it, as it now stands: the reopened submission's, or the source a word to go on read.</param>
+public sealed record QuestReopening(QuestReopenRefusal Refusal, Quest? Quest, Quest? Step);
 
 /// <summary>
 /// Why a graph's close wrote nothing (FABRIC-CLOSE1a, §E5), or <see cref="None"/> when it closed every quest it named. Each
@@ -1640,6 +1696,22 @@ public sealed class QuestStore
     /// <summary>The chain's next step <paramref name="quest"/>'s close or submission published, where it stands; else null.</summary>
     private async Task<Quest?> SuccessorAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
         NextStep(quest, quest.Updated) is { } next ? await FindAsync(next.Step.Id, transaction, ct).ConfigureAwait(false) : null;
+
+    /// <summary>
+    /// The person's reopen of a sealed submission (FABRIC-CLOSE1c, §E5), in one transaction on the machine holding the take: a
+    /// <see cref="QuestOperationKind.Reopened"/> on the quest, which leaves it taken with no current submission, and one on the step
+    /// that submission published, which withdraws it while open and holds it while taken.
+    /// </summary>
+    public Task<QuestReopening> ReopenAsync(
+        string id, QuestOperationRef submission, string? note, DateTimeOffset now, CancellationToken ct = default) =>
+        Task.FromResult(new QuestReopening(QuestReopenRefusal.NotFound, null, null));
+
+    /// <summary>
+    /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): a <see cref="QuestOperationKind.Rebound"/>
+    /// naming the source's current submission, once that is unheld.
+    /// </summary>
+    public Task<QuestReopening> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
+        Task.FromResult(new QuestReopening(QuestReopenRefusal.NotFound, null, null));
 
     /// <summary>
     /// The graph's close (FABRIC-CLOSE1a, §E5): every named quest Done, each on its named submission, in one transaction. Each

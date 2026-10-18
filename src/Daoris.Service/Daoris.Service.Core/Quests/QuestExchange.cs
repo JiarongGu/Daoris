@@ -247,6 +247,18 @@ public enum QuestRespondRefusal
     /// step stands, and reopened only by the person.
     /// </summary>
     Sealed,
+
+    /// <summary>
+    /// A take, done or <c>ready</c> on a chain's step whose source submission the person reopened (FABRIC-CLOSE1c, §E5): withdrawn
+    /// while open, held while taken, until the person chooses to go on with it or to abandon it.
+    /// </summary>
+    SourceReopened,
+
+    /// <summary>
+    /// The person's reopen of a submission that is not the quest's current sealed one, or whose step has closed; or their word to
+    /// go on with a step no reopen holds, or whose source has no unheld submission yet (FABRIC-CLOSE1c, §E5). The answer says which.
+    /// </summary>
+    NotSealed,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -1787,6 +1799,23 @@ public sealed class QuestExchange(
 
         return new(QuestRespondRefusal.None, $"{accepted}: what it held goes on.{resumes}{Then(move.FollowUp)}", move.Quest);
     }
+
+    /// <summary>
+    /// The person reopens a sealed submission (FABRIC-CLOSE1c, §E5): the quest stays taken with no current submission, so a
+    /// close naming it is stale and its agent's next <c>ready</c> is judged anew; the step it published is withdrawn if nobody
+    /// took it, and held with its reason if somebody did. Only the machine holding the take reopens, as only it submits.
+    /// </summary>
+    /// <remarks>The person's door, never an agent's: no connector tool reaches it. It commits here and travels like any verb (D68).</remarks>
+    public Task<QuestRespondOutcome> ReopenAsync(
+        string id, QuestOperationRef submission, string? note, DateTimeOffset now, CancellationToken ct = default) =>
+        Task.FromResult(new QuestRespondOutcome(QuestRespondRefusal.NotFound, "", null));
+
+    /// <summary>
+    /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): it grows from the source's current
+    /// submission once that is unheld, its hold let go. To abandon it instead is their decline, at the decline's own door.
+    /// </summary>
+    public Task<QuestRespondOutcome> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
+        Task.FromResult(new QuestRespondOutcome(QuestRespondRefusal.NotFound, "", null));
 
     /// <summary>
     /// The sentence a person's done writes on its quest (QUESTCLOSE1, D126's note): theirs, with their words after it where

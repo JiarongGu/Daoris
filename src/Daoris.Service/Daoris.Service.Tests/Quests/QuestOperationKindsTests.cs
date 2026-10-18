@@ -43,6 +43,8 @@ public sealed class QuestOperationKindsTests
             },
         ],
         Short = "The report",
+        // The submission it grew from (FABRIC-CLOSE1c), so a publish is held to carrying it, and a reopen naming it reaches it.
+        GrewFrom = new QuestOperationRef("m9", 3),
     };
 
     private static QuestOperation Op(QuestOperationKind kind, long sequence, string machine = "m1") =>
@@ -120,6 +122,13 @@ public sealed class QuestOperationKindsTests
         {
             Note = "Built.", Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")],
         },
+        // The person's reopen of the submission the states below show at sequence 4, with their words (FABRIC-CLOSE1c).
+        [QuestOperationKind.Reopened] = s => Op(QuestOperationKind.Reopened, s) with
+        {
+            Note = "The bridge is wrong; build it again.", Submission = new QuestOperationRef("m1", 4),
+        },
+        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c).
+        [QuestOperationKind.Rebound] = s => Op(QuestOperationKind.Rebound, s) with { Submission = new QuestOperationRef("m9", 8) },
     };
 
     /// <summary>The kind's sample, or a failure saying where a new kind goes before it is given one.</summary>
@@ -147,6 +156,9 @@ public sealed class QuestOperationKindsTests
             // FABRIC-CLOSE1a: a taken quest a closure graph binds, and one whose agent submitted, waiting on its evidence.
             ("taken, bound to a closure graph", [published, taken, Sample(QuestOperationKind.Bound, 3)]),
             ("taken, submitted", [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4)]),
+            // FABRIC-CLOSE1c: a step its source's reopen withdrew, the reopen naming the submission it grew from.
+            ("open, withdrawn by its source's reopen",
+                [published, Sample(QuestOperationKind.Reopened, 2) with { Submission = new QuestOperationRef("m9", 3) }]),
         ];
     }
 
@@ -235,6 +247,8 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Evidenced] = "evidenced",
         [QuestOperationKind.SetUp] = "a set-up names",
         [QuestOperationKind.Verdict] = "a review's verdict",
+        [QuestOperationKind.Reopened] = "a reopen",
+        [QuestOperationKind.Rebound] = "a rebind",
     };
 
     /// <summary>
