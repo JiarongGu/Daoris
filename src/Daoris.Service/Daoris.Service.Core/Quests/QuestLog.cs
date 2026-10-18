@@ -521,7 +521,8 @@ public static class QuestLog
         // machine's came before, or on a set-up a newer one stands beside. A closure graph's bind or submission once its quest
         // is no longer taken, or made on this machine's take that lost (FABRIC-CLOSE1a, §E5): the take's conflict names a lost
         // submission, and the step a submission published goes with it (QuestStore.RebaseAsync). A reopen once the submission it
-        // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c).
+        // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c),
+        // and a publication's once another machine's take reached the step first (FABRIC-CLOSE1c15): the person's word lets that one go.
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
             or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
             or QuestOperationKind.SetUp or QuestOperationKind.Verdict
