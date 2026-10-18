@@ -954,10 +954,22 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/reopen", new { submission = named })).Status);
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named with { sequence = named.sequence + 7 } })).Status);
 
+        // A ready through this door names no session (FABRIC-CLOSE1c4).
+        Assert.False(submission.TryGetProperty("session", out _));
+        Assert.False(ready.Json.GetProperty("quest").TryGetProperty("reopened", out _));
+
         var reopened = await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." });
 
         Assert.Equal(200, reopened.Status);
         Assert.False(reopened.Json.GetProperty("quest").TryGetProperty("submission", out _));
+        // FABRIC-CLOSE1c4: the source answers the reopen by its own name, the submission it reopened, and the person's words.
+        var reopen = reopened.Json.GetProperty("quest").GetProperty("reopened");
+        Assert.Equal((named.machine, named.sequence, "Build it again."),
+            (reopen.GetProperty("of").GetProperty("machine").GetString(), reopen.GetProperty("of").GetProperty("sequence").GetInt64(),
+                reopen.GetProperty("note").GetString()));
+        Assert.Equal(named.machine, reopen.GetProperty("machine").GetString());
+        Assert.True(reopen.GetProperty("sequence").GetInt64() > named.sequence);
+        Assert.True(reopen.TryGetProperty("at", out _));
         Assert.Contains($"#{stepId}", reopened.Json.GetProperty("message").GetString());
         var withdrawn = await Step();
         Assert.Equal(("Open", "source-reopened"), (withdrawn.GetProperty("status").GetString(), withdrawn.GetProperty("hold").GetString()));
@@ -967,12 +979,35 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         var again = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written again." });
         Assert.Equal(200, again.Status);
+        Assert.False(again.Json.GetProperty("quest").TryGetProperty("reopened", out _));
         var rebound = await Step();
         Assert.Equal(stepId, rebound.GetProperty("id").GetString());
         Assert.Equal(again.Json.GetProperty("quest").GetProperty("submission").GetProperty("sequence").GetInt64(),
             rebound.GetProperty("grewFrom").GetProperty("sequence").GetInt64());
         Assert.False(rebound.TryGetProperty("sourceReopened", out _));
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/continue", new { })).Status);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c4: a submission a session's ready made answers that session (the one its connector's intake named), so the driver
+    /// tells the session that said it when the person reopens it, not the newest one on the quest.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_answers_the_session_that_said_its_ready()
+    {
+        var published = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Write the session's report", body = "For the review.",
+        });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+
+        var said = await host.Composed.Exchange.RespondAsync(quest, "ready", "Written.", DateTimeOffset.UtcNow, session: "s0a1b2c3");
+
+        Assert.Equal(QuestRespondRefusal.None, said.Refusal);
+        var answered = (await host.GetAsync("/api/quests")).Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == quest);
+        Assert.Equal("s0a1b2c3", answered.GetProperty("submission").GetProperty("session").GetString());
     }
 
     /// <summary>

@@ -141,14 +141,24 @@ public sealed record QuestResponse(
     // FABRIC-CLOSE1c (§E5): the submission of its parent a chain's step grew from, and the one the person reopened under it, while
     // that holds it (`hold` then reads `source-reopened`). Both absent for every other quest, every step from before, and from a host
     // from before.
-    QuestSubmissionRefWire? GrewFrom = null, QuestSubmissionRefWire? SourceReopened = null);
+    QuestSubmissionRefWire? GrewFrom = null, QuestSubmissionRefWire? SourceReopened = null,
+    // FABRIC-CLOSE1c4 (§E5): the person's last reopen of its own submission that no later submission answered, read from the log as
+    // every machine reads it. Absent for a quest never reopened, once a later ready answered it, and from a host from before, so a
+    // reader tells a reopened source, with no `submission`, from one whose taker has not said `ready` yet.
+    QuestReopenWire? Reopened = null);
+// A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
+// the person's words, and when.
+public sealed record QuestReopenWire(string Machine, long Sequence, QuestSubmissionRefWire Of, string? Note, DateTimeOffset At);
 // The person's reopen of a sealed submission (FABRIC-CLOSE1c): the submission, by the machine and sequence a close names it by, and
 // their words. A half left out arrives blank and is refused naming it.
 public sealed record ReopenQuestRequest(QuestSubmissionRefWire? Submission, string? Note = null);
 // A taker's submission in a closure graph (FABRIC-CLOSE1a), answered only: the operation that made it, by the machine and
 // sequence a close names it by, when, and its note. Its answers are the quest's `Answers`. `Commit` (FABRIC-CLOSE1c5): the commit
-// its evidence was read at, added after the rest and absent where none was read; a host before it answers none.
-public sealed record QuestSubmissionWire(string Machine, long Sequence, DateTimeOffset At, string? Note, string? Commit = null);
+// its evidence was read at, added after the rest and absent where none was read; a host before it answers none. `Session`
+// (FABRIC-CLOSE1c4): the session its ready came from, the one a reopen of it is told to; absent where no session said it, and from a
+// host before it.
+public sealed record QuestSubmissionWire(
+    string Machine, long Sequence, DateTimeOffset At, string? Note, string? Commit = null, string? Session = null);
 // The driver's bind of a taken quest to the graph that closes it (FABRIC-CLOSE1a): the graph's digest.
 // `atTake` (FABRIC-CLOSE1l): the graph an open quest binds at its take, named as the driver opens its first session; a host before it
 // reads it as absent, and refuses the open quest's bind as not taken. `session` (FABRIC-CLOSE1o): the session the graph is named for,

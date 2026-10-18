@@ -2262,10 +2262,17 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     // A closure graph's digest and its taker's submission (FABRIC-CLOSE1a): names and words, which every door may answer.
     q.Closure,
     // FABRIC-CLOSE1c5: and the commit its evidence was read at, where that was read for it; left out otherwise.
-    q.Submission is { } submitted ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note, q.SubmissionCommit) : null,
+    // FABRIC-CLOSE1c4: and the session its ready came from, a name as `publishedBy` is, which every door may answer.
+    q.Submission is { } submitted
+        ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note, q.SubmissionCommit, submitted.Session)
+        : null,
     // The submission a step grew from, and the one reopened under it (FABRIC-CLOSE1c): names, which every door may answer.
     q.GrewFrom is { } grew ? new QuestSubmissionRefWire(grew.Machine, grew.Sequence) : null,
-    q.SourceReopened is { } reopened ? new QuestSubmissionRefWire(reopened.Machine, reopened.Sequence) : null);
+    q.SourceReopened is { } reopened ? new QuestSubmissionRefWire(reopened.Machine, reopened.Sequence) : null,
+    // The quest's own reopen no later submission answered (FABRIC-CLOSE1c4): names and the person's words, as its note travels.
+    q.Reopened is { } reopen
+        ? new QuestReopenWire(reopen.Machine, reopen.Sequence, new QuestSubmissionRefWire(reopen.Of.Machine, reopen.Of.Sequence), reopen.Note, reopen.At)
+        : null);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item
