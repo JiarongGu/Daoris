@@ -72,6 +72,23 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ACCOUNTID1c: where the email is already another sign-in's id or name, the end says the organisation (else the plan)
+    /// after it, and "by that name" where the account is named with it beside the email; as the terminal's twin says it.
+    /// </summary>
+    [Fact]
+    public void The_sign_in_end_names_a_second_sign_in_of_an_email_apart()
+    {
+        Assert.Equal("signed in as person@example.invalid · Org B — this machine lists it as `acct-2`.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", null, "acct-2", "Org B"));
+        Assert.Equal("signed in as person@example.invalid · Org B — this machine lists it by that name.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", "person@example.invalid·Org-B", "acct-2", "Org B"));
+        Assert.Equal("signed in as person@example.invalid · Org B — this machine lists it as `seat`.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", "seat", "acct-2", "Org B"));
+        Assert.Equal("signed in as person@example.invalid — this machine lists it as `acct-2`.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", null, "acct-2", null));
+    }
+
+    /// <summary>
     /// ACCT2: Daoris's session records name an account by its id, so the sessions running on it are counted for it across a
     /// rename, beside its new name.
     /// </summary>

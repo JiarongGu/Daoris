@@ -677,11 +677,38 @@ test('a second sign-in of an email another account is named is offered it with i
   const made = profiles(fx.root, 'fake').find((account) => account !== first)!;
 
   assert.match(second, new RegExp(`\`daoris agent profile rename fake ${made} "person@example\\.invalid·Org-B"\` names it person@example\\.invalid·Org-B;`));
+  // ACCOUNTID1c: the end tells the second sign-in apart from the first, in its own sentence.
+  assert.match(second, new RegExp(`daoris: signed in as person@example\\.invalid · Org B — this machine lists it as \`${made}\`\\.`));
   // Accepting the offer names it: the email was refused as taken, and this is not.
   assert.equal(renameAccount(fx.root, 'fake', profiles(fx.root, 'fake'), made, 'person@example.invalid·Org-B'), 'person@example.invalid·Org-B');
   const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
   assert.deepEqual(listed.profiles.map((profile) => [profile.account, profile.org]).sort(),
     [['person@example.invalid', 'Org A'], ['person@example.invalid', 'Org B']]);
+  fx.cleanup();
+});
+
+/** ACCOUNTID1c: a second sign-in named with the organisation beside the email is "that name", and the email is refused as taken. */
+test('a second sign-in named email·organisation says it lists it by that name', () => {
+  const fx = makeFixture('harness-sign-in-second-org-named');
+  const toolchain = fakeHarness(fx);
+  const signIn = (org: string, name: string): string => {
+    const lines: string[] = [];
+    signInNew('fake', toolchain, fx.root, (where) => {
+      writeFileSync(join(where, 'credentials.json'), 'person@example.invalid', 'utf8');
+      writeFileSync(join(where, 'org.txt'), org, 'utf8');
+      return 0;
+    }, (line) => lines.push(line), { name });
+    return lines.join('\n');
+  };
+
+  signIn('Org A', 'person@example.invalid');
+  const before = profiles(fx.root, 'fake');
+  const refused = captureError(() => signInNew('fake', toolchain, fx.root, () => 0, () => {}, { name: 'person@example.invalid' }));
+  assert.match(refused.message, /name it `person@example\.invalid·<organization>`, with the organization it signed in to/);
+  assert.deepEqual(profiles(fx.root, 'fake'), before);
+
+  assert.match(signIn('Org B', 'person@example.invalid·Org-B'),
+    /daoris: signed in as person@example\.invalid · Org B — this machine lists it by that name\./);
   fx.cleanup();
 });
 
