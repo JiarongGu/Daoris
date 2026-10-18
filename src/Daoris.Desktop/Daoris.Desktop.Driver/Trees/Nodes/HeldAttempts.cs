@@ -117,7 +117,7 @@ public static class HeldAttempts
         var records = new NodeRecordFiles(home);
         if (args is [] or ["--unit", _])
         {
-            foreach (var line in Lines(Read(records, args.Count == 2 ? args[1] : null))) output.WriteLine(line);
+            foreach (var line in Lines(Read(records, args.Count == 2 ? args[1] : null, QuestReads.Read(home)))) output.WriteLine(line);
             return 0;
         }
 
