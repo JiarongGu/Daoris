@@ -163,6 +163,8 @@ const tool = await import(
   GATE_TREE_RECORD: string;
   DEPENDENCY_FOLDERS: readonly string[];
   verdictsHome: (root: string) => string;
+  readVerdicts: (root: string) => { schema: number; verdicts: Verdict[] };
+  addVerdicts: (root: string, entries: Verdict[], options?: { keep?: number }) => void;
   readGateLock: (home: string, alive?: (pid: number) => boolean) => { pid: number; commit: string; at: string; running: boolean } | null;
   takeGateLock: (home: string, options: { commit: string; alive?: (pid: number) => boolean; now?: () => string }) => { stale: { pid: number; commit: string; at: string } | null };
   releaseGateLock: (home: string) => void;
@@ -360,6 +362,22 @@ test('the prune never takes the gate tree while its full set runs; a merge\'s pr
   const half = tool.gateTreeVerdict({ ...idle, listed: false, folder: { path: 'x', link: false, git: false, processes: [] } }, { atMerge: true });
   assert.equal(half.remove, true);
   assert.equal(tool.gateTreeVerdict({ ...idle, listed: false, folder: { path: 'x', link: false, git: true } }).remove, false);
+});
+
+test('two runs write one verdict store under a lock beside it, and a lock a dead writer left is taken', () => {
+  const fx = makeFixture('merge-branch-store-lock');
+  const verdict = (gate: string): Verdict => ({ gate, verdict: 'PASS', tree: 't', at: '2026-10-18T10:00:00Z', commit: null, branch: null });
+  tool.addVerdicts(fx.root, [verdict('first')]);
+  const lock = join(fx.root, `${tool.VERDICTS_FILE}.lock`);
+  assert.equal(existsSync(lock), false, 'the lock is let go once written');
+  // A writer that died mid-write left its lock a minute ago: a write takes milliseconds, so it is no writer's now.
+  writeFileSync(lock, '');
+  const old = new Date(Date.now() - 60_000);
+  utimesSync(lock, old, old);
+  tool.addVerdicts(fx.root, [verdict('second')]);
+  assert.deepEqual(tool.readVerdicts(fx.root).verdicts.map((one) => one.gate), ['first', 'second']);
+  assert.equal(existsSync(lock), false);
+  fx.cleanup();
 });
 
 test('the gate tree installs from each lockfile when its dependencies are missing or the lockfile changed since', () => {
@@ -4022,7 +4040,10 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
   // GATEWT1's proof: the full set ran in the main checkout, so no merge could run for its hour and a half.
   test('--full --beside gates main\'s tip in a worktree of its own while a merge lands, its verdicts in the main checkout\'s store', async () => {
-    const repo = scratch('beside', [{ name: 'first', run: 'node gate.mjs first' }], { 'code.txt': 'base\n', 'package-lock.json': '{"lockfileVersion":3}\n' });
+    // The install's output is ignored, as this repository's is: the tree gated is the commit's.
+    const repo = scratch('beside', [{ name: 'first', run: 'node gate.mjs first' }], {
+      '.gitignore': 'local/\nnode_modules/\n', 'code.txt': 'base\n', 'package-lock.json': '{"lockfileVersion":3}\n',
+    });
     branch(repo.root, 'feature', { 'feature.txt': 'x\n' });
     const gated = git(repo.root, 'rev-parse', 'HEAD');
     const sha = gated.slice(0, 7);
@@ -4065,7 +4086,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       // A merge lands meanwhile, and its prune keeps the gate tree.
       result = await repo.run(['feature']);
       assert.equal(result.status, 0, result.out);
-      assert.match(result.out, new RegExp(`\\n\\s+keep\\s+local/gate-tree\\s+its full set is running \\(pid \\d+, since [^)]+, on ${sha}\\): never removed while it runs\\n`));
+      assert.match(result.out, new RegExp(`\\n\\s+kept\\s+local/gate-tree\\s+its full set is running \\(pid \\d+, since [^)]+, on ${sha}\\): never removed while it runs\\n`));
       git(repo.root, 'commit', '--quiet', '-m', `merge feature${TRAILER}`);
       result = await repo.run(['--prune']);
       assert.equal(result.status, 0, result.out);
@@ -4086,9 +4107,10 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
 
     // Its verdict is in the main checkout's store, keyed by the tree it gated; none is in the gate tree's own.
     const record = JSON.parse(readFileSync(join(repo.root, 'local', 'gate-verdicts.json'), 'utf8')) as { verdicts: Verdict[] };
-    const there = record.verdicts.filter((verdict) => verdict.commit === gated);
-    assert.deepEqual(there.map((verdict) => `${verdict.gate} ${verdict.verdict}`), ['first PASS']);
-    assert.equal(there[0]!.tree, git(repo.root, 'rev-parse', `${gated}^{tree}`));
+    // The merge's own verdict is there too, on the merged tree, with the branch it merged.
+    const there = record.verdicts.filter((verdict) => verdict.tree === git(repo.root, 'rev-parse', `${gated}^{tree}`));
+    assert.deepEqual(there.map((verdict) => `${verdict.gate} ${verdict.verdict} ${verdict.commit} ${verdict.branch}`), [`first PASS ${gated} null`]);
+    assert.deepEqual(record.verdicts.filter((verdict) => verdict.branch === 'feature').map((verdict) => verdict.gate), ['first']);
     assert.equal(existsSync(join(gateTree, 'local', 'gate-verdicts.json')), false);
     // `--passed` asked in the gate tree, as its stage asks, reads the main checkout's store.
     let result = await repo.run(['--passed'], {}, gateTree);

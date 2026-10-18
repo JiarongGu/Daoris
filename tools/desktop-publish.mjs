@@ -14,6 +14,9 @@
  *                                                           which the desktop installs when idle (D139)
  *   … --force-ungated                                       …a tree the full set of gates has not passed
  *                                                           (GATE3, below): the person's call
+ *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
+ *                                                           …the commit the full set gated in its own worktree
+ *                                                           (GATEWT1, below), built there
  *
  * 🔴 **`--to` is required and has no default.** A machine path in a tracked file is exactly what
  * `sensitive-info` forbids, and a default would be one — the same rule `testbed.mjs` follows, for the
@@ -26,6 +29,13 @@
  * `--force-ungated` is the person's explicit override, and the publish says it is ungated. A folder under
  * the workspace's `_fixtures` is never asked: the deployment rehearsal publishes there, and it is one of the
  * gates being run.
+ *
+ * **A stage from the gate tree** (GATEWT1). `merge-branch --full --beside` runs the full set in a worktree of its own,
+ * `local/gate-tree` under the main checkout, while merges move main on, and records its verdicts in the main checkout's
+ * store, keyed by tree. `--stage --from-gated <commit>` builds that tree, never this checkout: it refuses when no gate
+ * tree stands, when it holds another commit, or while its full set runs; asks the gates of the gate tree's own tree,
+ * here and again in the gate tree's own publish, which it runs there with the same arguments; and once that stages,
+ * notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
  *
  * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
  * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium (D92,
@@ -777,18 +787,80 @@ export const GATE_TREE = 'local/gate-tree';
 export const GATE_TREE_LOCK = 'local/gate-tree.lock';
 export const GATE_TREE_RECORD = 'local/gate-tree.json';
 
-/** The gate tree to build `commit` from, or the refusal that says why it cannot be. */
-export function gatedSource(repoRoot, commit, { alive } = {}) {
-  return { refusal: null, tree: null, commit: null, home: null };
+/** Whether a process runs with this pid, as the merge tool asks of its lock: signal 0 sends nothing, and EPERM is one that runs. */
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === 'EPERM';
+  }
+}
+
+const gitIn = (cwd, args) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
+const samePath = (a, b) => (process.platform === 'win32' ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b));
+const minuteOf = (iso) => (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(iso ?? '') ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : 'an unknown time');
+
+/**
+ * The gate tree to build `commit` from (GATEWT1), or the refusal that says why it cannot be: no gate tree under the
+ * main checkout, one that holds another commit (main moved on, or a later full set moved it), or one whose full set is
+ * still running, whose verdicts are not in yet. `home` is the main checkout, where its record is kept.
+ */
+export function gatedSource(repoRoot, commit, { alive = pidAlive } = {}) {
+  const listed = gitIn(repoRoot, ['worktree', 'list', '--porcelain']);
+  if (listed.error || listed.status !== 0) return { refusal: `desktop-publish: git could not list the worktrees: ${(listed.stderr || listed.error?.message || '').trim()}` };
+  const paths = listed.stdout.split(/\r?\n/).filter((line) => line.startsWith('worktree ')).map((line) => resolve(line.slice('worktree '.length).trim()));
+  const home = paths[0] ?? repoRoot;
+  const tree = join(home, ...GATE_TREE.split('/'));
+  if (!paths.some((path) => samePath(path, tree))) {
+    return { refusal: `desktop-publish: no gate tree at ${GATE_TREE}: node tools/merge-branch.mjs --full --beside makes one and gates it` };
+  }
+  const wanted = gitIn(home, ['rev-parse', '--verify', '--quiet', `${commit}^{commit}`]);
+  if (wanted.status !== 0) return { refusal: `desktop-publish: no commit '${commit}' to stage from the gate tree` };
+  const want = wanted.stdout.trim();
+  const head = gitIn(tree, ['rev-parse', 'HEAD']).stdout.trim();
+  if (head !== want) {
+    return { refusal: `desktop-publish: the gate tree holds ${head.slice(0, 7) || 'no commit'}, not ${want.slice(0, 7)}: node tools/merge-branch.mjs --full --beside ${want.slice(0, 7)} gates that one there` };
+  }
+  let lock = null;
+  try {
+    lock = JSON.parse(readFileSync(join(home, ...GATE_TREE_LOCK.split('/')), 'utf8'));
+  } catch {
+    lock = null;
+  }
+  if (lock && alive(Number(lock.pid))) {
+    return { refusal: `desktop-publish: the gate tree is not staged while its full set is still running (pid ${lock.pid}, since ${minuteOf(lock.at)}): its verdicts are not in yet` };
+  }
+  return { refusal: null, tree, commit: want, home };
 }
 
 /** The arguments the gate tree's own publish runs with: these, but `--from-gated` and its commit, and `--to` absolute. */
 export function childArgs(argv, to) {
-  return argv;
+  const out = [];
+  for (let at = 0; at < argv.length; at += 1) {
+    const arg = argv[at];
+    const next = argv[at + 1];
+    if (arg === '--from-gated' || arg === '--to') {
+      if (next !== undefined && !next.startsWith('--')) at += 1;
+      if (arg === '--to') out.push('--to', to);
+    } else out.push(arg);
+  }
+  return out;
 }
 
-/** The record's note that the gate tree at `commit` was staged, which lets the next merge's prune remove it. */
-export function recordStaged(home, { commit, to, at }) {}
+/** The record's note that the gate tree at `commit` was staged, which lets the next merge's prune remove it. The rest is kept. */
+export function recordStaged(home, { commit, to, at }) {
+  const file = join(home, ...GATE_TREE_RECORD.split('/'));
+  let record = {};
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    if (parsed && typeof parsed === 'object') record = parsed;
+  } catch {
+    record = { schema: 1 };
+  }
+  writeAtomic(file, `${JSON.stringify({ ...record, staged: { commit, to, at } }, null, 2)}\n`);
+}
 
 /** Whether this script published here before: the marker, with its header — a file with that name proves nothing. */
 export function isInstall(folder) {
@@ -870,6 +942,33 @@ async function main() {
     process.exit(2);
   }
   const to = isAbsolute(toArg) ? toArg : resolve(process.cwd(), toArg);
+
+  // GATEWT1: a stage of the commit the full set gated in its own worktree is built there, by that tree's own publish,
+  // never from this checkout, which merges may have moved on since. Its gates are asked here first, and there again.
+  if (flag('--from-gated')) {
+    const commit = value('--from-gated');
+    if (!commit || !flag('--stage')) {
+      console.error('desktop-publish: --from-gated <commit> stages the commit the gate tree holds: give it with --stage and the commit.');
+      process.exit(2);
+    }
+    const source = gatedSource(repoRoot, commit);
+    if (source.refusal) {
+      console.error(source.refusal);
+      process.exit(2);
+    }
+    const asked = ungatedRefusal(to, source.tree, { force: flag('--force-ungated') });
+    if (asked.refusal) {
+      console.error(asked.refusal);
+      process.exit(2);
+    }
+    console.log(`desktop-publish: building ${source.commit.slice(0, 7)} from the gate tree (${GATE_TREE}), not from this checkout.`);
+    const built = spawnSync(process.execPath, [join(source.tree, 'tools', 'desktop-publish.mjs'), ...childArgs(argv, to)], { cwd: source.tree, stdio: 'inherit' });
+    if (built.status === 0) {
+      recordStaged(source.home, { commit: source.commit, to, at: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
+      console.log('desktop-publish: the gate tree\'s stage is done; the next merge\'s prune removes the tree, or node tools/merge-branch.mjs --prune now.');
+    }
+    process.exit(built.status ?? 2);
+  }
 
   const APP = 'src/Daoris.Desktop/Daoris.Desktop.App';
   const LAUNCHER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Launcher';
