@@ -813,7 +813,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, brainstorms, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 

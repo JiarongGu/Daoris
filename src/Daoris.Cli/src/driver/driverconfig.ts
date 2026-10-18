@@ -41,6 +41,9 @@ import {
 } from './opinions.ts';
 import { applyCommitEdit, commitListed, commitsOf, type CommitEdit, type CommitRule } from './commits.ts';
 import { applyHelperEdit, helperListed, helpersOf, type HelperEdit, type HelperRule } from './helpers.ts';
+import {
+  BRAINSTORM_DEFAULT, applyBrainstormEdit, brainstormListed, brainstormMachineOf, brainstormsOf, type BrainstormEdit, type BrainstormRule,
+} from './brainstorms.ts';
 import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from '../workflows/workflowchoice.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import type { ExitCode } from '../platform/errors.ts';
@@ -156,6 +159,14 @@ export interface DriverChoices {
   /** A workspace's helpers rule, for every repository in it that sets none of its own. */
   workspaceHelpers: Record<string, HelperRule>;
   /**
+   * The person's brainstorm policy on this machine (BRAINSTORM1b, D176 point 9): whether an agent's ask for one waits for their yes,
+   * the agents a brainstorm runs and its minutes; null is the default. The driver's `DriverConfig.Brainstorms` is the twin, read by
+   * one shared table (`brainstorms.ts`).
+   */
+  brainstorms: BrainstormRule | null;
+  /** A workspace's brainstorm policy, over this machine's whole for every question about a repository in it. */
+  workspaceBrainstorms: Record<string, BrainstormRule>;
+  /**
    * How work is committed in each repository (PROCESS1a, D164's amendment point 1): a mode and an optional convention; it
    * replaces its workspace's whole, and absent is `as-you-go`. The driver's `DriverConfig.Commits` is the twin, read by one
    * shared table (`commits.ts`).
@@ -254,6 +265,7 @@ const EMPTY: DriverChoices = {
   landings: {}, workspaceLandings: {}, workCycles: {}, workspaceWorkCycles: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {},
   standing: {}, languages: {},
   workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
+  brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
   workflows: {}, workspaceWorkflows: {},
   rest: {},
@@ -569,6 +581,7 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
       workspaceLandings: {}, workCycles: {}, workspaceWorkCycles: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
       workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
+      brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
       workflows: {}, workspaceWorkflows: {}, rest: {},
     };
@@ -577,8 +590,8 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, workCycles, workspaceWorkCycles, readAcross, workspaceReadAcross, writeAcross, standing,
-    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, commits, workspaceCommits,
-    workflows, workspaceWorkflows, ...rest
+    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, brainstorms,
+    workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -642,6 +655,9 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     // As the driver reads them (MIXAGENT2a-i): a rule with a problem is not read.
     helpers: helpersOf(helpers),
     workspaceHelpers: helpersOf(workspaceHelpers),
+    // As the driver reads them (BRAINSTORM1b): a rule with a problem is not read, and this machine's is one rule, not a map.
+    brainstorms: brainstormMachineOf(brainstorms),
+    workspaceBrainstorms: brainstormsOf(workspaceBrainstorms),
     // As the driver reads them (PROCESS1a): a rule with a problem is not read.
     commits: commitsOf(commits),
     workspaceCommits: commitsOf(workspaceCommits),
@@ -747,6 +763,9 @@ function choicesWritten(choices: DriverChoices): Record<string, unknown> {
     // Written only when set (MIXAGENT2a-i), as the driver writes them: absent is the default, `ask`.
     ...(Object.keys(choices.helpers).length > 0 ? { helpers: ordered(choices.helpers) } : {}),
     ...(Object.keys(choices.workspaceHelpers).length > 0 ? { workspaceHelpers: ordered(choices.workspaceHelpers) } : {}),
+    // Written only when set (BRAINSTORM1b), as the driver writes them: absent is D176 point 9's proposed defaults.
+    ...(choices.brainstorms !== null ? { brainstorms: choices.brainstorms } : {}),
+    ...(Object.keys(choices.workspaceBrainstorms).length > 0 ? { workspaceBrainstorms: ordered(choices.workspaceBrainstorms) } : {}),
     ...(Object.keys(choices.commits).length > 0 ? { commits: ordered(choices.commits) } : {}),
     ...(Object.keys(choices.workspaceCommits).length > 0 ? { workspaceCommits: ordered(choices.workspaceCommits) } : {}),
     // Written only when set (WORKFLOW1e), as the driver writes them: absent is Current, today's behaviour.
@@ -1424,6 +1443,11 @@ export function commandDriver(
     case 'helpers':
       return helpers();
 
+    // The brainstorm policy (BRAINSTORM1b, D176 point 9): this machine's, or with `--workspace` for the questions about a
+    // workspace's repositories. `--mode`, `--agents` and the minutes set what they name over the rule set there; `--clear`.
+    case 'brainstorms':
+      return brainstorms();
+
     // How work is committed (PROCESS1a, D164's amendment point 1): for a repository, or with `--workspace` for each repository
     // there that sets none of its own. `--mode` and `--convention` set what they name over the rule set there; `--clear`.
     // A driven session in a tree of its own is told it (PROCESS1d-i); a conversation's briefing is PROCESS1d-ii's.
@@ -1438,7 +1462,7 @@ export function commandDriver(
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
-        + 'language, review, opinion, helpers, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        + 'language, review, opinion, helpers, brainstorms, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -1600,6 +1624,14 @@ export function commandDriver(
     if (Object.keys(choices.helpers).length === 0 && Object.keys(choices.workspaceHelpers).length === 0) {
       write('  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> '
         + '--mode on|off` sets one');
+    }
+
+    // BRAINSTORM1b: this machine's brainstorm policy and each workspace's, which replaces it for that workspace's questions.
+    write(choices.brainstorms !== null
+      ? `  brainstorms  ${brainstormListed(choices.brainstorms)}`
+      : `  brainstorms  none set — ${brainstormListed(BRAINSTORM_DEFAULT)}; \`daoris driver brainstorms --agents <a,b>\` sets one`);
+    for (const [workspace, rule] of Object.entries(choices.workspaceBrainstorms)) {
+      write(`  brainstorms  workspace ${workspace}  ${brainstormListed(rule)}  (for its repositories' questions)`);
     }
 
     // PROCESS1a: each commit rule and where it was set; a workspace's is said for the repositories there that set none.
@@ -1796,6 +1828,80 @@ export function commandDriver(
         ? `daoris: helpers for repositories in the workspace \`${key}\` that set none of their own: ${helperListed(rule)}.`
         : `daoris: helpers for \`${key}\`: ${helperListed(rule)}.`);
       write(`  ${helperModeSays(rule.mode)}`);
+    }
+
+    write(`  Written to ${path}.`);
+    return 0;
+  }
+
+  /**
+   * `brainstorms` (BRAINSTORM1b, D176 point 9): with nothing to change, this machine's rule and each workspace's said; else the
+   * person's words made one edit, judged by the twin's table (`brainstorms.ts`), and said plainly. A minute given as anything but
+   * digits is handed on as written, to be refused in the driver's words.
+   */
+  function brainstorms(): ExitCode {
+    const minuteFlags: Record<string, string> = {
+      '--pass-minutes': 'pass', '--synthesis-minutes': 'synthesis', '--challenge-minutes': 'challenge', '--request-minutes': 'request',
+    };
+    const valued = new Set(['--workspace', '--mode', '--agents', ...Object.keys(minuteFlags)]);
+    const usage = '`driver brainstorms` takes [--workspace <name>], then --mode ask|off, --agents <adapter,adapter>, --pass-minutes, '
+      + '--synthesis-minutes, --challenge-minutes and --request-minutes <n>, or --clear — e.g. '
+      + '`daoris driver brainstorms --agents claude-code,codex-acp --pass-minutes 10`.';
+    for (let at = 1; at < argv.length; at += 1) {
+      const token = argv[at]!;
+      if (valued.has(token)) at += 1;
+      else if (token.startsWith('--') && token !== '--clear') {
+        throw new DaorisError(`\`${token}\` is not a flag \`driver brainstorms\` takes — ${usage}`);
+      } else if (!token.startsWith('--')) {
+        throw new DaorisError(`a brainstorms rule is set for this machine or for a workspace — never for one repository. ${usage}`);
+      }
+    }
+
+    const workspace = flagValue(argv, '--workspace');
+    const clear = argv.includes('--clear');
+    const mode = flagValue(argv, '--mode');
+    const agents = flagValue(argv, '--agents')?.split(',').map((each) => each.trim());
+    const minutes: Record<string, unknown> = {};
+    for (const [flag, name] of Object.entries(minuteFlags)) {
+      const value = flagValue(argv, flag);
+      if (value !== undefined) minutes[name] = /^\d+$/.test(value) ? Number(value) : value;
+    }
+
+    // The same set the screen and Ask Daoris would send: each part only where it was said.
+    const set: Record<string, unknown> = {
+      ...(mode !== undefined ? { mode } : {}),
+      ...(agents !== undefined ? { agents } : {}),
+      ...(Object.keys(minutes).length > 0 ? { minutes } : {}),
+    };
+    if (!clear && Object.keys(set).length === 0) {
+      write(`daoris: brainstorms on this machine: ${brainstormListed(choices.brainstorms ?? BRAINSTORM_DEFAULT)}`
+        + `${choices.brainstorms === null ? ' (the default)' : ''}.`);
+      for (const [name, rule] of Object.entries(choices.workspaceBrainstorms)) {
+        write(`  for questions about repositories in the workspace \`${name}\`: ${brainstormListed(rule)}.`);
+      }
+
+      return 0;
+    }
+
+    const edit: BrainstormEdit = {
+      ...(workspace ? { workspace } : {}),
+      ...(Object.keys(set).length > 0 ? { set } : {}),
+      ...(clear ? { clear: true } : {}),
+    };
+    const after = applyBrainstormEdit(choices, edit);
+    writeDriverChoices(path, { ...choices, ...after });
+
+    if (!workspace) {
+      write(after.brainstorms === null
+        ? `daoris: this machine's brainstorms take the default again: ${brainstormListed(BRAINSTORM_DEFAULT)}.`
+        : `daoris: brainstorms on this machine: ${brainstormListed(after.brainstorms)}.`);
+    } else {
+      const key = Object.keys(after.workspaceBrainstorms).find((each) => sameName(each, workspace))
+        ?? Object.keys(choices.workspaceBrainstorms).find((each) => sameName(each, workspace)) ?? workspace;
+      const rule = after.workspaceBrainstorms[key];
+      write(rule === undefined
+        ? `daoris: questions about repositories in the workspace \`${key}\` take this machine's brainstorms rule again.`
+        : `daoris: brainstorms for questions about repositories in the workspace \`${key}\`: ${brainstormListed(rule)}.`);
     }
 
     write(`  Written to ${path}.`);
