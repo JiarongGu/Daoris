@@ -2094,13 +2094,18 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             ? new QuestReviewChoiceView(choice, Text(review, "words"))
             : null;
 
-    /// <summary>A taker's current submission (FABRIC-CLOSE1a), or null: none, from a host before it, or named only in half.</summary>
+    /// <summary>
+    /// A taker's current submission (FABRIC-CLOSE1a), or null: none, from a host before it, or named only in half. Its commit
+    /// (FABRIC-CLOSE1c5) only where it is a commit's full id, lowered as a verdict's is; absent from a host before it.
+    /// </summary>
     private static QuestSubmissionView? ReadSubmission(JsonElement quest) =>
         quest.TryGetProperty("submission", out var submission) && submission.ValueKind == JsonValueKind.Object
         && Text(submission, "machine") is { Length: > 0 } machine
         && submission.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
         && sequence.TryGetInt64(out var number) && number > 0
-            ? new QuestSubmissionView(machine, number, Moment(submission, "at"), Text(submission, "note"))
+            ? new QuestSubmissionView(
+                machine, number, Moment(submission, "at"), Text(submission, "note"),
+                Text(submission, "commit") is { } commit && EvidenceCodes.IsObjectId(commit) ? commit.ToLowerInvariant() : null)
             : null;
 
     /// <summary>A submission a quest names by its machine and sequence (FABRIC-CLOSE1c), or null: none, from a host before it, or named only in half.</summary>

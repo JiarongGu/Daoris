@@ -166,7 +166,11 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 }
 
 /// <summary>A taker's submission in a closure graph (FABRIC-CLOSE1a), as the service answers it: the operation that made it, when, and its note.</summary>
-public sealed record QuestSubmissionView(string Machine, long Sequence, DateTimeOffset? At, string? Note);
+/// <param name="Commit">
+/// The commit its evidence was read at (FABRIC-CLOSE1c5), by its full id: what a step that grew from it is brought up to date with on
+/// the person's go-on. Null where none was read, and from a host before the field.
+/// </param>
+public sealed record QuestSubmissionView(string Machine, long Sequence, DateTimeOffset? At, string? Note, string? Commit = null);
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
 public sealed record QuestRequirementView(string Quote, string Check)
@@ -1357,6 +1361,17 @@ public static class Planner
     internal static bool StoppedByReopen(PriorSession last) =>
         string.Equals(last.State, "completed", StringComparison.OrdinalIgnoreCase)
         && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedSourceReopened.Code) == true;
+
+    /// <summary>
+    /// The commit a step the person went on with is brought up to date with (FABRIC-CLOSE1c5, §E5): its source's current submission's,
+    /// where that is the one the step grew from now. Null where the source is not read, names another submission or none, or names no
+    /// commit (a host before the field, or a submission no evidence was read for).
+    /// </summary>
+    internal static string? SourceCommit(QuestView step, QuestView? source) =>
+        step.GrewFrom is { } grew && source is { Submission: { Commit: { } commit } current } && source.Id == step.Parent
+        && current.Machine == grew.Machine && current.Sequence == grew.Sequence
+            ? commit
+            : null;
 
     /// <summary>
     /// Whether a taken quest's take is not this machine's, as <c>TakenElsewhere</c> reads it (CARRY2b) and the hand-over's judge

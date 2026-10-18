@@ -282,6 +282,32 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(found.Quest.Submission, (await Find(quest.Id)).Submission);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c5 (§E5): a submission's commit is the one its evidence was read at, for that submission alone. None before the
+    /// read, none from a verdict read of another submission, and none once a later ready replaced it.
+    /// </summary>
+    [Fact]
+    public async Task A_submissions_commit_is_the_one_its_own_evidence_was_read_at()
+    {
+        var quest = await Bound();
+        var first = (await Ready(quest)).Quest!;
+        Assert.Null(first.SubmissionCommit);
+
+        var stale = (await Ready(quest)).Quest!;
+        var late = await Found(quest, new QuestOperationRef(first.Submission!.Machine, first.Submission.Sequence));
+        Assert.Equal(QuestRespondRefusal.NotAwaitingEvidence, late.Refusal);
+        Assert.Null((await Find(quest.Id)).SubmissionCommit);
+
+        var found = await Found(quest);
+        Assert.Equal(QuestRespondRefusal.None, found.Refusal);
+        Assert.Equal(Commit, found.Quest!.SubmissionCommit);
+        Assert.Equal(Commit, (await Find(quest.Id)).SubmissionCommit);
+        Assert.Equal(stale.Submission, found.Quest.Submission);
+
+        // A quest with no submission names no commit, whatever its evidence says.
+        Assert.Null(found.Quest with { Submission = null } is { } none ? none.SubmissionCommit : "");
+    }
+
     [Fact]
     public async Task An_unheld_submission_publishes_its_chain_step_in_the_same_write()
     {

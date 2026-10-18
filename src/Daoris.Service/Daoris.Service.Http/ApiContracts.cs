@@ -146,8 +146,9 @@ public sealed record QuestResponse(
 // their words. A half left out arrives blank and is refused naming it.
 public sealed record ReopenQuestRequest(QuestSubmissionRefWire? Submission, string? Note = null);
 // A taker's submission in a closure graph (FABRIC-CLOSE1a), answered only: the operation that made it, by the machine and
-// sequence a close names it by, when, and its note. Its answers are the quest's `Answers`.
-public sealed record QuestSubmissionWire(string Machine, long Sequence, DateTimeOffset At, string? Note);
+// sequence a close names it by, when, and its note. Its answers are the quest's `Answers`. `Commit` (FABRIC-CLOSE1c5): the commit
+// its evidence was read at, added after the rest and absent where none was read; a host before it answers none.
+public sealed record QuestSubmissionWire(string Machine, long Sequence, DateTimeOffset At, string? Note, string? Commit = null);
 // The driver's bind of a taken quest to the graph that closes it (FABRIC-CLOSE1a): the graph's digest.
 // `atTake` (FABRIC-CLOSE1l): the graph an open quest binds at its take, named as the driver opens its first session; a host before it
 // reads it as absent, and refuses the open quest's bind as not taken. `session` (FABRIC-CLOSE1o): the session the graph is named for,
