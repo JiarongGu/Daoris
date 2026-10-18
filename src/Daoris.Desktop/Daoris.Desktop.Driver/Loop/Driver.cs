@@ -1601,7 +1601,9 @@ public sealed class Driver(
                                 // Whose take it was, and what it last said (STANDDOWN2): a session
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                                lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript))
+                                lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
+                                // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends.
+                                reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null)
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
@@ -1624,8 +1626,10 @@ public sealed class Driver(
                     await ReviewSetUps.PostAsync(service, config, Context.Events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
                         .ConfigureAwait(false);
 
-                    // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself.
-                    await ConcludedForLandingAsync(sessionId, quest, after?.Status, conclusion.State, workTree, start.Workspace, ct).ConfigureAwait(false);
+                    // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself. FABRIC-CLOSE1h
+                    // (§E5): in a closure graph its submission reads as that done, so it is due at the agent's `ready`.
+                    await ConcludedForLandingAsync(sessionId, quest, QuestResults.Status(after), conclusion.State, workTree, start.Workspace, ct)
+                        .ConfigureAwait(false);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
                     // rules 6–7): the person merges from the root and discards from a surface that

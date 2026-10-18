@@ -121,6 +121,12 @@ public enum QuestHold
     /// newest set-up, or their skip, lets it go.
     /// </summary>
     Unreviewed,
+
+    /// <summary>
+    /// A chain's step whose source submission the person reopened (FABRIC-CLOSE1c, §E5): open, it is withdrawn and taken by no
+    /// session; taken, its session goes no further. Only the person's word lets it go on, or abandons it.
+    /// </summary>
+    SourceReopened,
 }
 
 /// <summary>The codes a hold and a verdict are written in (LANG1a): codes, never sentences, so every reader words them itself.</summary>
@@ -132,6 +138,7 @@ public static class QuestEvidenceCodes
         QuestHold.Departed => "departed",
         QuestHold.EvidenceUnread => "evidence-unread",
         QuestHold.EvidenceMissing => "evidence-missing",
+        QuestHold.SourceReopened => "source-reopened",
         _ => "unreviewed",
     };
 

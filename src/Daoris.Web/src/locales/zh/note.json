@@ -11,6 +11,7 @@
   "note.ended.done": "委托已完成。",
   "note.ended.declined": "会话已谢绝，理由写在委托上。",
   "note.ended.stood-down": "它正常退出，委托已被别人接下。",
+  "note.ended.source-reopened": "它停了下来，委托仍已接下，因为你重新打开了它所基于的委托 #{{quest}} 的工作；你选择在新的工作上继续后，它会在同一工作树中继续。",
   "note.ended.taken-exit": "退出码 {{exit}}，委托仍已接下。",
   "note.ended.untouched": "它退出了，没有动它的委托。",
   "note.ended.untouched-exit": "退出码 {{exit}}，未接下委托。",

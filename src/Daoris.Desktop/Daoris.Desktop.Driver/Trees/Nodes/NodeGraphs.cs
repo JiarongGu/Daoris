@@ -93,6 +93,15 @@ public static class GraphRefusal
     /// <summary>D157 §2.2's protected order broken: the opinion comes before the look, and both before the landing.</summary>
     public const string ProtectedOrder = "protected-order";
 
+    /// <summary>
+    /// A gate with no wire straight into a later gate of D157 §2.2's order (FABRIC-GRAPH1i): reachability alone lets a person's skip of a
+    /// gate between pass an <c>after</c> wire while the earlier gate is unsettled, so each gate is wired into each later one, as the decoder does.
+    /// </summary>
+    public const string ProtectedWire = "protected-wire";
+
+    /// <summary>Two observed nodes of one plugin's step in one graph (FABRIC-GRAPH1g): an event names one node, so neither would be reached (§C4 rule 2).</summary>
+    public const string ObservedTwice = "observed-twice";
+
     /// <summary>A graph holding <c>quest.close</c> whose end is not it (§E5: in a graph that holds it, it is the end).</summary>
     public const string CloseEnd = "close-end";
 
@@ -146,7 +155,10 @@ public static class NodeGraphs
     /// node's declaration; the wires' (<see cref="NodeWires.Problems"/>); the entries; the end; each node no entry reaches; the protected
     /// order; the closure's rules; the cleanup.
     /// </summary>
-    public static IReadOnlyList<WireProblem> Problems(NodeGraph graph)
+    /// <param name="graph">The graph judged.</param>
+    /// <param name="saved">True for a graph a person authored and saves (a named graph version, a cycle): the rules only an authored graph is held to, the
+    /// observed nodes of one plugin step (FABRIC-GRAPH1g). False for <see cref="WorkflowGraphs"/>' decoding of a stored schema 1 version.</param>
+    public static IReadOnlyList<WireProblem> Problems(NodeGraph graph, bool saved = true)
     {
         var problems = new List<WireProblem>();
         void Say(string code, string? wire, string? node, string words) => problems.Add(new(code, wire, node, words));
@@ -251,6 +263,36 @@ public static class NodeGraphs
             {
                 Say(GraphRefusal.ProtectedOrder, null, looks[0].Id, $"the landing `{landing.Id}` can start with no look passed, though `{looks[0].Id}` reaches it: every way to it "
                     + "passes a look (D157 §2.2's order: holds, opinion, look, landing).");
+            }
+        }
+
+        // FABRIC-GRAPH1i: a skip satisfies `after` (§E2), so a person's skip of the look lets a wire from it pass while the opinion before it is
+        // unsettled, and reachability holds the order no further. Where the order holds by reach, each gate is wired straight into each later
+        // one, as the decoder wires a version's (FABRIC-GRAPH1h): a wire of the order's kinds, in no `anyOf` group, whose other members would
+        // let a way past it. Said only where the order is not already refused, so one fault is not two.
+        if (!problems.Any(problem => problem.Code == GraphRefusal.ProtectedOrder))
+        {
+            bool Wired(string from, string to) => ordered.Any(wire => wire.From!.Node == from && wire.To.Node == to && wire.Group?.Mode != WireGroupModes.AnyOf);
+            foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
+            {
+                var later = gate.Kind == NodeKinds.Opinion ? looks.Select(look => ("look", look)).Concat(landings.Select(landing => ("landing", landing))) : landings.Select(landing => ("landing", landing));
+                if (later.FirstOrDefault(each => !Wired(gate.Id, each.Item2.Id)) is ({ } what, { } next))
+                {
+                    Say(GraphRefusal.ProtectedWire, null, gate.Id, $"the {gate.Kind} `{gate.Id}` is not wired into the {what} `{next.Id}`: a skip of a gate between them would let an `after` "
+                        + $"wire pass while `{gate.Id}` is unsettled, so wire `{gate.Id}` into `{next.Id}` (D157 §2.2's order: holds, opinion, look, landing).");
+                }
+            }
+        }
+
+        // FABRIC-GRAPH1g: §C4's second rule names the one observed node of an event's plugin step, so two of a plugin's step in one graph are
+        // reached by neither (`not-named`, counted only). Said when saved, naming both.
+        var firstObserved = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var node in graph.Nodes.Where(node => saved && node.Reach == NodeReach.Observed && NodeKinds.IsPlugin(node.Kind)))
+        {
+            if (!firstObserved.TryAdd(node.Kind, node.Id))
+            {
+                Say(GraphRefusal.ObservedTwice, null, node.Id, $"node `{node.Id}` and `{firstObserved[node.Kind]}` are both observed nodes of `{node.Kind}`: an event of that step names one node, "
+                    + "so neither would be reached.");
             }
         }
 

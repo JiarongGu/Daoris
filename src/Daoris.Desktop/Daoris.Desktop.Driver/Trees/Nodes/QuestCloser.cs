@@ -217,6 +217,14 @@ public static class QuestClosing
                                               && named.Sequence == current.Sequence) == true;
 
     /// <summary>
+    /// The first quest a close attempt names whose submission is its current one no more (FABRIC-CLOSE1q2): read, and standing on another
+    /// submission or on none, since the person reopened it or a later <c>ready</c> replaced it; null where each one read still stands on the
+    /// submission named. A quest the read does not hold is not judged.
+    /// </summary>
+    public static QuestCloseItem? Moved(NodeAttempt attempt, IReadOnlyDictionary<string, QuestView> quests) =>
+        attempt.Close?.Quests.FirstOrDefault(named => quests.TryGetValue(named.Id, out var quest) && !NamesCurrent(attempt, quest));
+
+    /// <summary>
     /// Whether a close attempt is unknown and offered to the person (FABRIC-CLOSE1u): its door answered neither the close nor the question of
     /// what became of its key, so it is asked after at each pass and never sent again by itself, and its node is still on it. The person may
     /// stop its work, or ask again now, with a held close's words (<see cref="HeldResolutions.CloseUnkept"/>).
@@ -384,20 +392,29 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     /// kept one settles the attempt, its receipt kept; one not kept is asked for again with its key, and lands as a stale one's). The quest's
     /// Done, if the door wrote it, stands.</para>
     /// <para>A plugin's word recorded on a close before this build, or <c>record</c> with nothing kept, is taken back, saying why.</para>
+    /// <para><b>A close for a submission reopened or replaced since</b> (FABRIC-CLOSE1q2, <see cref="QuestClosing.Moved"/>, judged on
+    /// <paramref name="quests"/>): <c>record</c> and <c>stop</c> are taken back, saying why. Its answer closes none of the work there is now,
+    /// and a stop through it would stop the next submission's: its nodes already on that work, or the close node itself, since a stop is the
+    /// person's word for the work and not for a revision (<see cref="NodeStates.Bound"/>), so the next submission's close would never run.
+    /// The nodes it was bound to lapse with its revision. <c>resend</c> asks after its key alone, as before.</para>
     /// </remarks>
-    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
+    /// <param name="declared">The declaration governing each unit's node now.</param>
+    /// <param name="quests">The quests the pass read, by id; null, no close is judged moved.</param>
+    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared, IReadOnlyDictionary<string, QuestView>? quests = null)
     {
         var done = new List<WorkPerformed>();
         foreach (var read in records.All().Records)
         {
             if (!read.Attempts.Any(Worded)) continue;
+            var lines = new List<string>();
             var (refused, resolved) = records.Edit<List<WorkPerformed>>(read.Unit, current =>
             {
+                lines.Clear();
                 var said = new List<WorkPerformed>();
                 var record = current;
                 foreach (var attempt in current.Attempts.Where(Worded))
                 {
-                    var (next, result) = Recover(record, attempt, declared);
+                    var (next, result) = Recover(record, attempt, declared, quests, lines);
                     record = next;
                     said.Add(result);
                 }
@@ -405,18 +422,26 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
                 return (ReferenceEquals(record, current) ? null : record, said);
             });
             if (refused is not null) done.Add(new(read.Unit, "", PerformedWhat.Refused, refused));
-            else done.AddRange(resolved!);
+            else
+            {
+                done.AddRange(resolved!);
+                _said.AddRange(lines);
+            }
         }
 
         return done;
-
-        // FABRIC-CLOSE1u: an unknown close takes the person's word as a held one does, before it is asked after below.
-        static bool Worded(NodeAttempt attempt) =>
-            attempt is { Plugin: QuestClosing.Sender, State: AttemptStates.Held or AttemptStates.Unknown, Resolution: not null, Close: not null };
     }
 
-    /// <summary>One word on a held close applied (<see cref="Resolve"/>): the record after it, and what it came to.</summary>
-    private (NodeRecord Next, WorkPerformed Result) Recover(NodeRecord record, NodeAttempt attempt, Func<string, string, NodeDeclaration?> declared)
+    /// <summary>Whether any close attempt holds the person's word not applied yet: the pass that applies it reads the quests afresh (FABRIC-CLOSE1q2).</summary>
+    public bool Worded() => records.All().Records.Any(record => record.Attempts.Any(Worded));
+
+    /// <summary>A close attempt holding a word to apply. FABRIC-CLOSE1u: an unknown close takes the person's word as a held one does, before it is asked after.</summary>
+    private static bool Worded(NodeAttempt attempt) =>
+        attempt is { Plugin: QuestClosing.Sender, State: AttemptStates.Held or AttemptStates.Unknown, Resolution: not null, Close: not null };
+
+    /// <summary>One word on a held close applied (<see cref="Resolve"/>): the record after it, and what it came to; a word taken back says why in <paramref name="lines"/>.</summary>
+    private (NodeRecord Next, WorkPerformed Result) Recover(
+        NodeRecord record, NodeAttempt attempt, Func<string, string, NodeDeclaration?> declared, IReadOnlyDictionary<string, QuestView>? quests, List<string> lines)
     {
         var unit = record.Unit;
         var word = attempt.Resolution!;
@@ -425,6 +450,17 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         if (WorkPerformer.WordRefused(attempt, word) is { } code)
         {
             return (WorkPerformer.With(record, attempt, cleared with { Code = code }), new(unit, node.Id, PerformedWhat.Refused, code));
+        }
+
+        // FABRIC-CLOSE1q2: S1's close never records on, nor stops, the work of S2 at its commit; the nodes bound to S1 lapse with its revision.
+        if (word != HeldResolutions.Resend && quests is not null && QuestClosing.Moved(attempt, quests) is { } moved)
+        {
+            lines.Add($"work  {unit}: your `{word}` on its close ({node.Id}, attempt {attempt.Attempt}) was not taken: #{moved.Id}'s submission "
+                + $"{moved.Machine}/{moved.Sequence}, which that close names, was reopened or replaced since, so the work there is now is never that close's to "
+                + (word == HeldResolutions.Record ? "record" : "stop")
+                + (attempt.State == AttemptStates.Unknown ? "; its door is still asked what became of it." : "; say resend to ask its door what became of it."));
+            return (WorkPerformer.With(record, attempt, cleared with { Code = WorkPerformer.SubmissionMoved }),
+                new(unit, node.Id, PerformedWhat.Refused, WorkPerformer.SubmissionMoved));
         }
 
         if (word == HeldResolutions.Resend)

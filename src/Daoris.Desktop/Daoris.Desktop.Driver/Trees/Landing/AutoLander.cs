@@ -174,11 +174,14 @@ public sealed class AutoLander(
             return (Closed(entry, AutoLandingCode.Superseded), null);
         }
 
+        // FABRIC-CLOSE1h (the fabric design §E5): in a closure graph Daoris writes no Done before the graph's end, so the landing waits on
+        // the quest's current submission where it waits on a done, with every hold, opinion and look below still applying. A reopen takes
+        // the submission back, and closes the entry as a done turned down does; the agent's next `ready` makes its session due again.
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
-        if (quest is not { Status: "Done" }) return (Closed(entry, AutoLandingCode.Undone), null);
+        if (!QuestResults.Judged(quest)) return (Closed(entry, AutoLandingCode.Undone), null);
 
         // Held for the person's yes (D133) or evidence's verdict (D144): kept once, and read again at every look. A set-up step
-        // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c).
+        // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c). A submission's holds are the same (§E5).
         if (quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
         {
             return (entry.Last?.Code != AutoLandingCode.Held ? Tried(entry, AutoLandingCode.Held, tip: null, status: null) : null, null);
@@ -314,9 +317,39 @@ public sealed class AutoLander(
             entry.Tree, entry.Session, entry.Quest, await fresh.RecordsAsync(ct).ConfigureAwait(false), id => fresh.QuestAsync(id, ct),
             named => events.Openings([named]).GetValueOrDefault(named), choice.Gate?.Process, ct).ConfigureAwait(false);
         var plan = await trees.PlanAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins).ConfigureAwait(false);
+        string? judgedAgain = null;
+        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins,
+            judged: async (waited, token) =>
+            {
+                judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
+                return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
+            }).ConfigureAwait(false);
+        // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
+        if (judgedAgain is not null) return judgedAgain;
         var code = AutoLandingRules.CodeOf(landed);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
+    }
+
+    /// <summary>
+    /// The choice judged once more under its tree's hold (FABRIC-CLOSE1h, the fabric design §E5): what the look and the judgement just
+    /// before the landing read may have moved while it waited behind another landing of the tree (LANDRACE1's wait is bounded only at
+    /// minutes), so the quest, its submission, its holds, the switch, the opinion and the look are read again from a fresh world. A
+    /// closure graph's submission is judged again every time, since the person's reopen or a later <c>ready</c> may come at any moment
+    /// before the landing commits; a plain done only where the hold waited, so a landing that waited for nothing reads no more than it did.
+    /// </summary>
+    /// <returns>The look's line where it no longer lands now, already kept as its judgement keeps it; null where it lands.</returns>
+    private async Task<string?> UnderHoldAsync(AutoChoice choice, bool waited, CancellationToken ct)
+    {
+        if (!waited && !QuestResults.Submitted(choice.Quest)) return null;
+        var (said, again, _) = await AgainAsync(choice, ct).ConfigureAwait(false);
+        if (again is not null && QuestResults.Same(choice.Quest, again.Quest)) return null;
+        var entry = choice.Entry;
+        // A later `ready` while it waited is another submission, judged again from the start (§E5): nothing is kept, so the next look
+        // judges the one standing then, and lands it where nothing holds it.
+        return said ?? $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): "
+            + (again is null
+                ? "what it was chosen on moved while it waited to land, so nothing was landed: the next look judges it again."
+                : "its quest's submission was made again while it waited to land, so nothing was landed: the next look judges the new one.");
     }
 
     /// <summary>
