@@ -360,7 +360,7 @@ internal sealed class TreeLands(
         // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
         using (RepositoryHolds.Hold(context.Home, repository))
         {
-            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold).ConfigureAwait(false);
+            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush).ConfigureAwait(false);
         }
 
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
@@ -409,9 +409,11 @@ internal sealed class TreeLands(
 
     /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
     /// <param name="hold">The tree's hold (LANDRACE1), which keeps what this landing came to for a door waiting behind it.</param>
+    /// <param name="beforePush">The door's judgement just before its plugin is told (FABRIC-CLOSE1h2), as <see cref="LandAsync"/> takes it.</param>
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
-        string acceptedBy, LandingGate? gate, bool joins, bool fetched, LandingHold? hold)
+        string acceptedBy, LandingGate? gate, bool joins, bool fetched, LandingHold? hold,
+        Func<bool, CancellationToken, Task<string?>>? beforePush = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -576,7 +578,8 @@ internal sealed class TreeLands(
                 using var pushing = await LandingHolds.BranchAsync(context.Home, branched.Root, landed.Branch!, ct).ConfigureAwait(false);
                 var handed = pushing?.Before is { Said: { Pushed: true, Failed: false } pushed } other && tip is not null
                     && string.Equals(other.Tip, tip, StringComparison.OrdinalIgnoreCase) ? pushed : null;
-                PluginLanding said;
+                PluginLanding? said;
+                string? withheld = null;
                 if (pushing is null)
                 {
                     said = new PluginLanding(plugin, false, null,
@@ -586,6 +589,13 @@ internal sealed class TreeLands(
                 else if (handed is not null)
                 {
                     said = handed;
+                }
+                else if (beforePush is not null && await beforePush(pushing.Waited, ct).ConfigureAwait(false) is { } heldNow)
+                {
+                    // FABRIC-CLOSE1h2 (D173's note): the door's judgement once more, just before its plugin is told, past which the push
+                    // has begun and nothing stops it. Held here, the branch stays made and recorded, and no plugin is spoken to.
+                    withheld = heldNow;
+                    said = null;
                 }
                 else
                 {
@@ -603,18 +613,31 @@ internal sealed class TreeLands(
                     if (tip is not null) pushing.Keep(new LandingAttempt(landed.Branch!, tip, acceptedBy) { Plugin = plugin, Said = said });
                 }
 
-                landed = landed with
+                if (said is null)
                 {
-                    Plugin = said,
-                    // The plugin's word goes before the sentence about the tree, which a tidy may take out.
-                    Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + " " + Said(said, landed.Branch!) + TreeStays,
-                };
-                if (said is { Pushed: true, Failed: false } && tip is not null && handed is null)
-                {
-                    landed = Remember(landed, () => context.Recorded.Pushed(repository, landed.Branch!, said, tip));
+                    landed = landed with
+                    {
+                        Withheld = withheld,
+                        Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" {Sentence(withheld!)}" + TreeStays,
+                    };
+                    // Kept for a door behind this landing as a push not tried, with why, as a plugin that cannot land here is.
+                    if (kept is not null) hold?.Keep(kept with { Unready = withheld });
                 }
+                else
+                {
+                    landed = landed with
+                    {
+                        Plugin = said,
+                        // The plugin's word goes before the sentence about the tree, which a tidy may take out.
+                        Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + " " + Said(said, landed.Branch!) + TreeStays,
+                    };
+                    if (said is { Pushed: true, Failed: false } && tip is not null && handed is null)
+                    {
+                        landed = Remember(landed, () => context.Recorded.Pushed(repository, landed.Branch!, said, tip));
+                    }
 
-                if (kept is not null) hold?.Keep(kept with { Said = said });
+                    if (kept is not null) hold?.Keep(kept with { Said = said });
+                }
             }
         }
 
