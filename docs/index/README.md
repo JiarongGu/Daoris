@@ -157,8 +157,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 132 | 2221 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 58 | 696 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 148 | 2505 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 60 | 712 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 151 | 2553 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 49 | 846 |
@@ -167,7 +167,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs` | 44 | 763 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 88 | 1790 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
-| `src/Daoris.Service/README.md` | 91 | 778 |
+| `src/Daoris.Service/README.md` | 92 | 779 |
 
 ### CLI (`cli`)
 
@@ -182,9 +182,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 109 | 2072 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 67 | 1172 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 44 | 835 |
-| `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 839 |
+| `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 842 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 135 | 2476 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 280 | 4267 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 280 | 4269 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1227 |
 
@@ -195,18 +195,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 100 | 1751 |
 | `tools/desktop-publish.mjs` | 69 | 1236 |
 | `tools/desktop.mjs` | 51 | 1057 |
-| `tools/family-rehearsal.mjs` | 340 | 5988 |
+| `tools/family-rehearsal.mjs` | 348 | 6101 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 208 | 3700 |
+| `tools/merge-branch.mjs` | 208 | 3704 |
 | `tools/orient-index.mjs` | 66 | 1424 |
-| `tools/rehearsal-kit.mjs` | 43 | 832 |
+| `tools/rehearsal-kit.mjs` | 45 | 876 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
 ### No lane
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 101 | 171 |
+| `.claude/knowledge/twins.md` | 102 | 172 |
 | `docs/2026-09-19-platform-ux.md` | 65 | 679 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
