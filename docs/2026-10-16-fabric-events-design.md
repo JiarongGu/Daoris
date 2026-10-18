@@ -1701,6 +1701,10 @@ nothing else changes; the session is told the person must resolve it. With no co
 on the work reopened, so the go-on alone never makes that work finished again: the step reads taken with no submission, a close naming the
 old one is stale, and it submits anew once its branch holds the new submission. A withdrawn open step has no result to clear.
 
+**Amended (FABRIC-CLOSE1c15, D173's note).** The next submission rebinds a withdrawn step only while it is open where the rebind lands.
+Where another machine's take of the step reached the remote before the reopen, the step is held there, the rebind is forgotten, and the
+step goes on only by the person's word, on every machine and the remote alike.
+
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.
 

@@ -127,8 +127,12 @@ public sealed class QuestOperationKindsTests
         {
             Note = "The bridge is wrong; build it again.", Submission = new QuestOperationRef("m1", 4),
         },
-        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c), or a held one by the person's go-on (FABRIC-CLOSE1c10).
-        [QuestOperationKind.Rebound] = s => Op(QuestOperationKind.Rebound, s) with { Submission = new QuestOperationRef("m9", 8) },
+        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c), as that publication marks it: judged while the
+        // step is open (FABRIC-CLOSE1c15). The person's go-on, unmarked, is QuestReopenTests'.
+        [QuestOperationKind.Rebound] = s => Op(QuestOperationKind.Rebound, s) with
+        {
+            Submission = new QuestOperationRef("m9", 8), WhileOpen = true,
+        },
     };
 
     /// <summary>The kind's sample, or a failure saying where a new kind goes before it is given one.</summary>
@@ -156,8 +160,9 @@ public sealed class QuestOperationKindsTests
             // FABRIC-CLOSE1a: a taken quest a closure graph binds, and one whose agent submitted, waiting on its evidence.
             ("taken, bound to a closure graph", [published, taken, Sample(QuestOperationKind.Bound, 3)]),
             ("taken, submitted", [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4)]),
-            // FABRIC-CLOSE1c10: a step that submitted, then held by its source's reopen. Before the withdrawn one, so a rebind's cached row
-            // is checked here, where the person's go-on clears the step's own result.
+            // FABRIC-CLOSE1c10: a step that submitted, then held by its source's reopen. The census's rebind is a publication's, judged
+            // while open (FABRIC-CLOSE1c15), so it applies to the withdrawn one below and not here; the person's go-on, which clears this
+            // step's own result, is checked in its row and its replay by QuestReopenTests.
             ("taken, submitted, held by its source's reopen",
                 [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4),
                     Sample(QuestOperationKind.Reopened, 5) with { Submission = new QuestOperationRef("m9", 3) }]),

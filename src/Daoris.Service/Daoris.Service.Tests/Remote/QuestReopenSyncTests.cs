@@ -116,6 +116,65 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1c15: a publication's rebind is judged while the step is open. A reopens its source and submits again before B's take
+    /// of the step reaches it, so A's publication rebinds the step A reads withdrawn; B's take reached the remote first, and a started
+    /// step goes on only by the person's word. Both machines and the remote read the step held on the reopened submission, and the go-on
+    /// then lets it go everywhere.
+    /// </summary>
+    [Fact]
+    public async Task A_publications_rebind_never_lets_go_a_step_another_machine_took_first()
+    {
+        var (quest, step, submission) = await SealedOnBothAsync();
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(3))).Moved);
+        await SyncAsync(_b);
+        Assert.Equal(QuestReopenRefusal.None, (await _a.ReopenAsync(quest.Id, submission, "Build it again.", Now.AddHours(3))).Refusal);
+        var again = await _a.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4));
+        Assert.True(again.Moved);
+        var grows = new QuestOperationRef(again.Quest!.Submission!.Machine, again.Quest.Submission.Sequence);
+        // As A sees it before any sync, nobody took the step, so the new submission's publication rebound it.
+        var seen = (await _a.FindAsync(step.Id))!;
+        Assert.Equal((QuestStatus.Open, (QuestHold?)null, grows), (seen.Status, seen.Hold, seen.GrewFrom));
+
+        var report = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Null(report.Problem);
+        Assert.Empty(report.Refused);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Taken, QuestHold.SourceReopened, submission, submission),
+                (held.Status, held.Hold, held.SourceReopened, held.GrewFrom));
+        }
+
+        Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(step.Id));
+        // A remote handed a publication's rebind on the step taken there refuses it, in the words a decline made while open is refused in.
+        var marked = new QuestOperation(step.Id, QuestOperationKind.Rebound, "m-elsewhere", 7, Now.AddHours(4), Submission: grows,
+            WhileOpen: true);
+        var pushed = await new StoreRemote(_remote).PushQuestsAsync((await _remote.OperationsSinceAsync(0)).Through, [marked]);
+        Assert.Empty(pushed.Accepted);
+        Assert.Contains("only while it is open", Assert.Single(pushed.Refused, r => r.Quest == step.Id).Reason);
+        Assert.Equal(QuestHold.SourceReopened, (await _remote.FindAsync(step.Id))!.Hold);
+
+        // Nothing seals the new submission until the person's word: the source's close waits.
+        var early = await _a.CloseAsync(quest.Id, [(quest.Id, grows)], new QuestClose("k1", "t1"), Now.AddHours(5));
+        Assert.Equal(QuestCloseRefusal.Unsealed, early.Refusal);
+
+        Assert.Equal(QuestReopenRefusal.None, (await _b.ContinueAsync(step.Id, Now.AddHours(5))).Refusal);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var going = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Taken, (QuestHold?)null, grows), (going.Status, going.Hold, going.GrewFrom));
+        }
+
+        // The step stands on the new submission now, so the source's close runs.
+        var close = await _a.CloseAsync(quest.Id, [(quest.Id, grows)], new QuestClose("k2", "t2"), Now.AddHours(6));
+        Assert.Equal(QuestCloseRefusal.None, close.Refusal);
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1c4: the source's last reopen and the session that said its submission's ready are read from the log, so the machine
     /// that synced it and the remote answer them as the take's machine does, and the next ready answers the reopen on every one.
     /// </summary>
