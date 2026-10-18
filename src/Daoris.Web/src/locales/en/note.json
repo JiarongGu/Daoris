@@ -11,6 +11,7 @@
   "note.ended.done": "The quest reached done.",
   "note.ended.declined": "The session declined; its reason is on the quest.",
   "note.ended.stood-down": "It exited cleanly with the quest taken: someone else has it.",
+  "note.ended.source-reopened": "It stopped with its quest still taken, because you reopened the work of quest #{{quest}} it grew from; it goes on in the same tree once you go on with it on the new work.",
   "note.ended.taken-exit": "Exit {{exit}} with the quest still taken.",
   "note.ended.untouched": "It exited without touching its quest.",
   "note.ended.untouched-exit": "Exit {{exit}} before taking its quest.",

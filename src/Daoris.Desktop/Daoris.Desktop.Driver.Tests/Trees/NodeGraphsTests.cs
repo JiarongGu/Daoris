@@ -128,7 +128,18 @@ public sealed class NodeGraphsTests
             [After("a", "look", "opinion"), After("b", "opinion", "landing")], ["look"], "landing"), (GraphRefusal.ProtectedOrder, null, "opinion")),
         ["the opinion after the landing"] = (new NodeGraph([Node("landing", NodeKinds.Handed), Node("opinion", NodeKinds.Opinion)], [After("a", "landing", "opinion")], ["landing"], "opinion"),
             (GraphRefusal.ProtectedOrder, null, "opinion")),
-        ["a sink as the end"] = (new NodeGraph([Node("stopped", NodeKinds.Stop)], [], ["stopped"], "stopped"), (GraphRefusal.EndKind, null, "stopped")),
+        // FABRIC-GRAPH1i: reachability holds the order, and a skip of a gate between passes an `after` wire, so each gate is wired into each later one.
+        ["the look reaching the landing only through another node"] = (new NodeGraph([Node("look", NodeKinds.Look), Node("press", NodeKinds.Human), Node("landing", NodeKinds.Handed)],
+            [After("a", "look", "press"), After("b", "press", "landing")], ["look"], "landing"), (GraphRefusal.ProtectedWire, null, "look")),
+        ["the opinion not wired into the landing"] = (new NodeGraph([Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("landing", NodeKinds.Handed)],
+            [After("a", "opinion", "look"), After("b", "look", "landing")], ["opinion"], "landing"), (GraphRefusal.ProtectedWire, null, "opinion")),
+        ["the opinion's wire to the landing in an anyOf group"] =(new NodeGraph([Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("landing", NodeKinds.Handed)],
+            [After("a", "opinion", "look"), After("b", "look", "landing"), After("c", "opinion", "landing") with { Group = new WireGroup("g", WireGroupModes.AnyOf) }],
+            ["opinion"], "landing"), (GraphRefusal.ProtectedWire, null, "opinion")),
+        // FABRIC-GRAPH1g: an event names one observed node of its plugin's step (§C4 rule 2), so two would be reached by neither.
+        ["two observed nodes of one plugin's step"] = (new NodeGraph([Node("first", "acme/watch") with { Reach = NodeReach.Observed }, Node("second", "acme/watch") with { Reach = NodeReach.Observed }],
+            [], ["first", "second"], "second"), (GraphRefusal.ObservedTwice, null, "second")),
+        ["a sink as the end"] =(new NodeGraph([Node("stopped", NodeKinds.Stop)], [], ["stopped"], "stopped"), (GraphRefusal.EndKind, null, "stopped")),
         ["the close not the end"] = (Example with { End = "deploy" }, (GraphRefusal.CloseEnd, null, "close")),
         ["a node after the close"] = (Adding(Node("notify", NodeKinds.Human), After("x", "close", "notify")), (GraphRefusal.AfterClose, "x", "close")),
         ["the quest's own done before its close"] = (Adding(Node("done", NodeKinds.Claimed), After("x", "done", "close")) with { Entries = ["line", "dependency", "done"] },
@@ -183,11 +194,13 @@ public sealed class NodeGraphsTests
     public void A_join_holding_a_look_releases_the_landing_only_on_its_pass()
     {
         var (graph, _) = Cases["a landing on a join's early failure"];
-        Assert.Empty(NodeGraphs.Problems(graph with { Wires = [.. graph.Wires.Where(wire => wire.Id != "d")] }));
+        // FABRIC-GRAPH1i: the look is wired straight into the landing too, since a skip of the join's other member would pass its wire.
+        var wired = After("x", "look", "landing");
+        Assert.Empty(NodeGraphs.Problems(graph with { Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), wired] }));
         var retry = graph with
         {
             Nodes = [.. graph.Nodes, Node("fix", NodeKinds.Human)],
-            Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), new Wire("d", WireKinds.Failed, new("checks"), new("fix"))],
+            Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), new Wire("d", WireKinds.Failed, new("checks"), new("fix")), wired],
         };
         Assert.Empty(NodeGraphs.Problems(retry));
     }
@@ -206,7 +219,10 @@ public sealed class NodeGraphsTests
         {
             Nodes = [.. graph.Nodes.Select(node => node.Id == "check" ? Node("check", NodeKinds.Human) : node)],
         };
-        Assert.Empty(NodeGraphs.Problems(pressed));
+        // The order holds by reach here; FABRIC-GRAPH1i asks only the look's wire into the landing besides.
+        IEnumerable<string> Codes(NodeGraph each) => NodeGraphs.Problems(each).Select(problem => problem.Code);
+        Assert.Equal([GraphRefusal.ProtectedWire], Codes(pressed));
+        Assert.Empty(NodeGraphs.Problems(pressed with { Wires = [.. pressed.Wires, After("x", "look", "landing")] }));
 
         NodeGraph Nested(NodeDeclaration inner) => pressed with
         {
@@ -214,7 +230,7 @@ public sealed class NodeGraphsTests
             Wires = [.. pressed.Wires.Where(wire => wire.Id != "b"), After("b", "inner", "checks"), After("e", "check", "inner"), After("f", inner.Id, "inner")],
             Entries = ["look", "check", inner.Id],
         };
-        Assert.Empty(NodeGraphs.Problems(Nested(Node("sign", NodeKinds.GoAhead))));
+        Assert.Equal([GraphRefusal.ProtectedWire], Codes(Nested(Node("sign", NodeKinds.GoAhead))));
         Assert.Equal(new (string, string?)[] { (GraphRefusal.ProtectedOrder, "look") },
             NodeGraphs.Problems(Nested(Node("scan", "acme/scan"))).Select(problem => (problem.Code, problem.Node)));
     }
@@ -266,6 +282,27 @@ public sealed class NodeGraphsTests
         Assert.Empty(Order(new NodeGraph(nodes, [After("a", "press", "look"), After("b", "look", "landing")], ["press"], "landing")));
         Assert.Equal(["look"], Order(new NodeGraph(nodes, [new Wire("a", WireKinds.Failed, new("look"), new("landing")), After("b", "press", "landing")], ["look", "press"], "landing")));
         Assert.Equal(["look"], Order(new NodeGraph([.. nodes, Node("second", NodeKinds.Look)], [Any("a", "look"), Any("b", "press"), Any("c", "second")], ["look", "press", "second"], "landing")));
+    }
+
+    /// <summary>
+    /// FABRIC-GRAPH1i: a graph that wires each gate into each later one holds, a work's claim and a go-ahead beside them no gate; a gate
+    /// absent asks nothing. FABRIC-GRAPH1g: observed nodes of different steps, of one built-in kind, or one observed beside a performed node
+    /// of the same plugin kind hold.
+    /// </summary>
+    [Fact]
+    public void A_graph_wiring_each_gate_into_each_later_one_holds_and_so_do_observed_nodes_of_different_steps()
+    {
+        NodeDeclaration[] gates = [Node("work", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("press", NodeKinds.GoAhead), Node("landing", NodeKinds.Handed)];
+        Wire[] wires = [After("a", "work", "opinion"), After("b", "opinion", "look"), After("c", "look", "press"), After("d", "press", "landing"),
+            After("e", "opinion", "landing"), After("f", "look", "landing")];
+        var graph = new NodeGraph(gates, wires, ["work"], "landing");
+        Assert.Empty(NodeGraphs.Problems(graph));
+        Assert.Empty(NodeGraphs.Problems(graph with { Nodes = [gates[0], gates[2], gates[4]], Wires = [After("a", "work", "look"), After("b", "look", "landing")] }));
+
+        NodeDeclaration Watch(string id, string kind) => Node(id, kind) with { Reach = NodeReach.Observed };
+        Assert.Empty(NodeGraphs.Problems(new NodeGraph([Watch("one", "acme/watch"), Watch("two", "acme/scan")], [], ["one", "two"], "two")));
+        Assert.Empty(NodeGraphs.Problems(new NodeGraph([Watch("one", "acme/watch"), Node("two", "acme/watch")], [], ["one", "two"], "two")));
+        Assert.Empty(NodeGraphs.Problems(new NodeGraph([Watch("one", "acme/watch"), Watch("two", "other/watch")], [], ["one", "two"], "two")));
     }
 
     /// <summary>The bounds (§E7): 24 authored nodes and 96 wires hold; synthetic nodes and their wires are counted apart, three nodes an authored one.</summary>

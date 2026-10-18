@@ -43,6 +43,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.done': { values: [] },
   'ended.declined': { values: [] },
   'ended.stood-down': { values: [] },
+  'ended.source-reopened': { values: ['quest'] },
   'ended.taken-exit': { values: ['exit'] },
   'ended.untouched': { values: [] },
   'ended.untouched-exit': { values: ['exit'] },
