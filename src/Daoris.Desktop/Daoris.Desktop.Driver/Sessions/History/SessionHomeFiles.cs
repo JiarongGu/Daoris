@@ -26,7 +26,7 @@ public sealed record SessionFilesRemoved(
 /// </summary>
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
-/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its choice of a new
+/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark and its reopen mark (<see cref="ReopenMarks"/>, both named <c>mark</c>), its choice of a new
 /// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
@@ -87,6 +87,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Harness, Place.Sessions, HarnessConversations.Suffix, false, Beside),
         new(Marker, Place.Sessions, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarks.Suffix, false, Beside),
+        // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
+        new(Mark, Place.Sessions, ReopenMarks.Suffix, false, Beside),
         new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
         new(HandOver, Place.Sessions, HandOverBox.Suffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
