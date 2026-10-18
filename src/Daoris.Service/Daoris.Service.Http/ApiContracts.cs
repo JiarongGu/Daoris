@@ -137,7 +137,14 @@ public sealed record QuestResponse(
     // FABRIC-CLOSE1a (the fabric events design §E5): the digest of the graph that closes it, and its taker's current submission,
     // its result while it stays Taken. Both absent for a quest no closure graph holds, which is every quest from before, and from
     // a host from before: a reader that knows neither reads a submitted quest as Taken, as it is.
-    string? Closure = null, QuestSubmissionWire? Submission = null);
+    string? Closure = null, QuestSubmissionWire? Submission = null,
+    // FABRIC-CLOSE1c (§E5): the submission of its parent a chain's step grew from, and the one the person reopened under it, while
+    // that holds it (`hold` then reads `source-reopened`). Both absent for every other quest, every step from before, and from a host
+    // from before.
+    QuestSubmissionRefWire? GrewFrom = null, QuestSubmissionRefWire? SourceReopened = null);
+// The person's reopen of a sealed submission (FABRIC-CLOSE1c): the submission, by the machine and sequence a close names it by, and
+// their words. A half left out arrives blank and is refused naming it.
+public sealed record ReopenQuestRequest(QuestSubmissionRefWire? Submission, string? Note = null);
 // A taker's submission in a closure graph (FABRIC-CLOSE1a), answered only: the operation that made it, by the machine and
 // sequence a close names it by, when, and its note. Its answers are the quest's `Answers`.
 public sealed record QuestSubmissionWire(string Machine, long Sequence, DateTimeOffset At, string? Note);
@@ -602,6 +609,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(QuestSetUpRequest))]
 [JsonSerializable(typeof(BindQuestRequest))]
 [JsonSerializable(typeof(CloseQuestRequest))]
+[JsonSerializable(typeof(ReopenQuestRequest))]
 [JsonSerializable(typeof(QuestCloseResponse))]
 [JsonSerializable(typeof(QuestReviewRequest))]
 [JsonSerializable(typeof(SetUpStepRequest))]
