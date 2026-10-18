@@ -328,6 +328,64 @@ test('one full set beside at a time: a second is refused naming the run that hol
   fx.cleanup();
 });
 
+test('the private files a gate reads come from the declaration, only under local/; a copy is refreshed and a missing source says so (GATEWT1b)', () => {
+  const fx = makeFixture('merge-branch-private-files');
+  const home = join(fx.root, 'home');
+  const tree = join(fx.root, 'tree');
+  mkdirSync(join(home, 'local'), { recursive: true });
+  mkdirSync(tree, { recursive: true });
+  const declare = (sensitive?: unknown) => writeFileSync(join(home, 'daoris.gates.json'), JSON.stringify({ gates: [{ name: 'a', run: 'x' }], ...(sensitive ? { sensitive } : {}) }));
+
+  declare();
+  assert.deepEqual(tool.privateGateFiles(home), ['local/sensitive-patterns.txt'], 'the default');
+  declare({ patternsFile: 'local/own.txt' });
+  assert.deepEqual(tool.privateGateFiles(home), ['local/own.txt']);
+  declare({ patternsFile: 'private/patterns.txt' });
+  assert.deepEqual(tool.privateGateFiles(home), [], 'not under local/: nothing copied');
+  declare({ patternsFile: 'local/../secret.txt' });
+  assert.deepEqual(tool.privateGateFiles(home), [], 'no way out of local/');
+
+  const files = ['local/sensitive-patterns.txt'];
+  assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /local\/sensitive-patterns\.txt.*missing/);
+  assert.equal(existsSync(join(tree, files[0]!)), false);
+  writeFileSync(join(home, files[0]!), 'one\n');
+  assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /copied/);
+  assert.equal(readFileSync(join(tree, files[0]!), 'utf8'), 'one\n');
+  writeFileSync(join(home, files[0]!), 'two\n');
+  tool.copyPrivateFiles(home, tree, files);
+  assert.equal(readFileSync(join(tree, files[0]!), 'utf8'), 'two\n', 'refreshed on every run');
+  fx.cleanup();
+});
+
+test('the gate tree\'s run logs are kept in the main checkout as beside-<sha7>, replacing an older run; a killed run\'s are rescued once (GATEWT1c)', () => {
+  const fx = makeFixture('merge-branch-keep-logs');
+  const home = join(fx.root, 'home');
+  const tree = join(fx.root, 'tree');
+  const sha = 'abcdef1' + '0'.repeat(33);
+  const logs = join(tree, 'local', 'scratch', 'full-abcdef1');
+  mkdirSync(logs, { recursive: true });
+  writeFileSync(join(logs, 'first.log'), 'new\n');
+  writeFileSync(join(logs, 'first.rerun.log'), 'again\n');
+  const kept = join(home, 'local', 'scratch', 'beside-abcdef1');
+  mkdirSync(kept, { recursive: true });
+  writeFileSync(join(kept, 'old.log'), 'old\n');
+
+  assert.equal(tool.keepGateLogs(tree, home, sha), true);
+  assert.deepEqual(readdirSync(kept).sort(), ['first.log', 'first.rerun.log'], 'the newest run replaces the folder');
+  assert.equal(readFileSync(join(kept, 'first.log'), 'utf8'), 'new\n');
+  assert.equal(tool.keepGateLogs(tree, home, '1234567' + '0'.repeat(33)), false, 'no run folder, nothing kept');
+
+  // A run that was killed left its folder in the tree and none in the main checkout.
+  const killed = join(tree, 'local', 'scratch', 'full-9999999');
+  mkdirSync(killed, { recursive: true });
+  writeFileSync(join(killed, 'last.partial'), 'half\n');
+  const said = tool.rescueGateLogs(tree, home);
+  assert.equal(readFileSync(join(home, 'local', 'scratch', 'beside-9999999', 'last.partial'), 'utf8'), 'half\n');
+  assert.equal(said.length, 1);
+  assert.equal(readFileSync(join(kept, 'first.log'), 'utf8'), 'new\n', 'a folder already kept is left as it is');
+  fx.cleanup();
+});
+
 test('the prune never takes the gate tree while its full set runs; a merge\'s prune takes it once staged, --prune once idle, each said', () => {
   const sha = 'a'.repeat(40);
   const idle: GateTreeFacts = { listed: true, head: sha, changes: [], lock: null, staged: null };
@@ -4140,6 +4198,53 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, new RegExp(`\\n\\s+removed\\s+local/gate-tree\\s+the gate tree at ${sha}, never staged`));
     assert.equal(existsSync(gateTree), false);
     assert.equal(tool.parseWorktrees(git(repo.root, 'worktree', 'list', '--porcelain')).length, 1);
+    repo.cleanup();
+  });
+
+  // GATEWT1b and GATEWT1c: the gate tree's universal gate failed for want of the private patterns file, and a prune
+  // after the stage deleted the only copy of a failed run's logs.
+  test('--full --beside copies the declared private file into the tree on every run and keeps the run\'s logs past --prune', async () => {
+    const needs = [
+      "import { existsSync, readFileSync } from 'node:fs';",
+      "const file = 'local/sensitive-patterns.txt';",
+      "if (!existsSync(file)) { console.log('missing ' + file); process.exit(1); }",
+      "const text = readFileSync(file, 'utf8');",
+      'console.log(`read ${text.trim()}`);',
+      "process.exit(text.startsWith('bad') ? 1 : 0);",
+      '',
+    ].join('\n');
+    const repo = scratch('beside-private', [{ name: 'needs', run: 'node needs.mjs' }], {
+      'needs.mjs': needs,
+      'daoris.gates.json': `${JSON.stringify({ gates: [{ name: 'needs', run: 'node needs.mjs' }], sensitive: { patternsFile: 'local/sensitive-patterns.txt' } })}\n`,
+    });
+    const sha = git(repo.root, 'rev-parse', 'HEAD').slice(0, 7);
+    const gateTree = join(repo.root, 'local', 'gate-tree');
+    const mine = join(repo.root, 'local', 'sensitive-patterns.txt');
+    const theirs = join(gateTree, 'local', 'sensitive-patterns.txt');
+    const kept = join(repo.root, 'local', 'scratch', `beside-${sha}`);
+
+    // Without the file the run goes on and says so; the gate's own answer decides.
+    let result = await repo.run(['--full', '--beside']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /local\/sensitive-patterns\.txt.*missing/);
+
+    writeFileSync(mine, 'good\n');
+    result = await repo.run(['--full', '--beside']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /the gate tree: reused/);
+    assert.equal(readFileSync(theirs, 'utf8'), 'good\n');
+    assert.deepEqual(git(gateTree, 'status', '--porcelain'), '', 'ignored, so the tree is still clean');
+    assert.match(readFileSync(join(kept, 'needs.log'), 'utf8'), /read good/);
+
+    // Refreshed on a reused tree; a failed run's logs are kept, and its prune removes the tree but not them.
+    writeFileSync(mine, 'bad\n');
+    result = await repo.run(['--full', '--beside']);
+    assert.equal(result.status, 1, result.out);
+    assert.equal(readFileSync(theirs, 'utf8'), 'bad\n');
+    result = await repo.run(['--prune']);
+    assert.equal(result.status, 0, result.out);
+    assert.equal(existsSync(gateTree), false);
+    assert.match(readFileSync(join(kept, 'needs.log'), 'utf8'), /read bad/, 'the newest run\'s log outlives the tree');
     repo.cleanup();
   });
 });
