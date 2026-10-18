@@ -1320,7 +1320,8 @@ public sealed class QuestStore
                 operation.NoteParts,
                 operation.Kind == QuestOperationKind.Done ? operation.Close : null,
                 Carries(operation.Kind) ? operation.Submission : null,
-                operation.Kind == QuestOperationKind.Submitted ? operation.Session : null));
+                operation.Kind == QuestOperationKind.Submitted ? operation.Session : null,
+                operation.Kind == QuestOperationKind.Conflict && operation.LostToTheReopen));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -2824,10 +2825,12 @@ public sealed class QuestStore
                 // A submission that lost takes the step it published with it, its publication pending on the same take
                 // (FABRIC-CLOSE1a, §E5), and the take's conflict names it. One that lost to another machine's done leaves the
                 // step that done published, which is the same one. The step goes even once this machine took it, and its
-                // take reads lost, so its session is stopped (FABRIC-CLOSE1e).
+                // take reads lost, so its session is stopped (FABRIC-CLOSE1e); where the take this submission was made on lost to
+                // the person's reopen, the step's take says that (FABRIC-CLOSE1c22), read here because the step keeps no history to.
                 if (operation.Kind == QuestOperationKind.Submitted && quest is not { Status: QuestStatus.Done })
                 {
-                    conflicts.AddRange(await ForgetStepsAsync(id, lostClaim, transaction, ct).ConfigureAwait(false));
+                    var reopened = lostClaim && QuestLog.LostToTheReopen(replayed, Machine);
+                    conflicts.AddRange(await ForgetStepsAsync(id, lostClaim, reopened, transaction, ct).ConfigureAwait(false));
                     submissionLost |= lostClaim;
                 }
 
@@ -2999,10 +3002,14 @@ public sealed class QuestStore
     /// publication gone, the conflict is on a quest no list shows and no push carries, as one on a quest deleted first is (D95),
     /// and its note says why: the parent's submission went. Should the winner's chain publish the same step later (its id comes
     /// from the parent and the step), the conflict stands on it and goes up, as any take that lost is shown on the winner's quest.
+    /// <para>Where the parent's take lost to the person's reopen (<paramref name="reopened"/>, FABRIC-CLOSE1c22), the conflict says so in
+    /// its words and in <see cref="QuestOperation.LostToTheReopen"/>: the step's history holds only the conflict, so the claim's answer
+    /// (<see cref="LostToTheReopenAsync"/>) could not read the reopen from it, and the driver would stop the session in another
+    /// machine's words.</para>
     /// </remarks>
     /// <returns>The takes rewritten, as the rebase reports its conflicts.</returns>
     private async Task<IReadOnlyList<QuestOperation>> ForgetStepsAsync(
-        string parent, bool takeLost, SqliteTransaction transaction, CancellationToken ct)
+        string parent, bool takeLost, bool reopened, SqliteTransaction transaction, CancellationToken ct)
     {
         var children = new List<string>();
         await using (var command = _db.Command())
@@ -3024,7 +3031,7 @@ public sealed class QuestStore
                 continue;
             }
 
-            told.AddRange(await ForgetStepsAsync(child, takeLost, transaction, ct).ConfigureAwait(false));
+            told.AddRange(await ForgetStepsAsync(child, takeLost, reopened, transaction, ct).ConfigureAwait(false));
             foreach (var operation in history)
             {
                 var position = (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false))!.Value;
@@ -3036,8 +3043,8 @@ public sealed class QuestStore
 
                 var lost = operation with
                 {
-                    Kind = QuestOperationKind.Conflict, Attempted = QuestStatus.Taken, Note = StepWentWith(parent, takeLost, operation.Note),
-                    NoteParts = null, WhileOpen = false, Close = null, Submission = null,
+                    Kind = QuestOperationKind.Conflict, Attempted = QuestStatus.Taken, Note = StepWentWith(parent, takeLost, operation.Note, reopened),
+                    NoteParts = null, WhileOpen = false, Close = null, Submission = null, LostToTheReopen = reopened,
                 };
                 await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
                 told.Add(lost);
@@ -3051,13 +3058,17 @@ public sealed class QuestStore
 
     /// <summary>
     /// A lost step's take's note as it was given, then why the step went (FABRIC-CLOSE1e): the parent's submission that published
-    /// it no longer stands, with the parent's take or to another machine's move on the parent.
+    /// it no longer stands, with the parent's take or to another machine's move on the parent. A parent's take lost to the person's
+    /// reopen (<paramref name="reopened"/>, FABRIC-CLOSE1c22) has no winner, so it says the reopen, as the take's refusals do
+    /// (<see cref="QuestExchange.LostTake"/>).
     /// </summary>
-    internal static string StepWentWith(string parent, bool takeLost, string? note)
+    internal static string StepWentWith(string parent, bool takeLost, string? note, bool reopened = false)
     {
         var said = $"This quest was the next step of #{parent}'s submission, which "
-                   + (takeLost ? $"went with this machine's take of #{parent}: another machine's take reached the remote first"
-                               : $"lost to another machine's move on #{parent}")
+                   + (!takeLost ? $"lost to another machine's move on #{parent}"
+                      : reopened ? $"went with this machine's take of #{parent}: the person's reopen of the work it grew from reached the "
+                                   + "remote first"
+                      : $"went with this machine's take of #{parent}: another machine's take reached the remote first")
                    + ". The step went with it, so its work is not wanted.";
         return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
     }
@@ -3091,9 +3102,11 @@ public sealed class QuestStore
         command.CommandText =
             "UPDATE quest_log SET kind = $kind, payload = $payload WHERE position = $position AND remote IS NULL";
         command.Parameters.AddWithValue("$kind", KindText(operation.Kind));
-        // A move rewritten as a conflict keeps its note's parts beside the note (QUESTCLOSE1b1).
+        // A move rewritten as a conflict keeps its note's parts beside the note (QUESTCLOSE1b1), and a step's take that went with a take
+        // lost to the person's reopen says so (FABRIC-CLOSE1c22).
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, noteParts: operation.NoteParts));
+            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, noteParts: operation.NoteParts,
+                lostToTheReopen: operation.Kind == QuestOperationKind.Conflict && operation.LostToTheReopen));
         command.Parameters.AddWithValue("$position", position);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
@@ -3671,7 +3684,11 @@ public sealed class QuestStore
             kind == QuestOperationKind.Submitted && payload.TryGetProperty("session", out var speaker)
             && speaker.ValueKind == System.Text.Json.JsonValueKind.String
                 ? speaker.GetString()
-                : null);
+                : null,
+            // Absent from every conflict before FABRIC-CLOSE1c22, and from every one but a step's take that went with a take lost to the
+            // person's reopen.
+            kind == QuestOperationKind.Conflict && payload.TryGetProperty("lostToTheReopen", out var reopened)
+            && reopened.ValueKind == System.Text.Json.JsonValueKind.True);
     }
 
     /// <summary>A close's provenance (FABRIC-CLOSE1a), or null where it is not whole: a key and a token, both strings.</summary>
@@ -3703,7 +3720,7 @@ public sealed class QuestStore
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
         QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
-        QuestOperationRef? submission = null, string? session = null) =>
+        QuestOperationRef? submission = null, string? session = null, bool lostToTheReopen = false) =>
         JsonFields.Written(writer =>
     {
         if (dismisses is not null)
@@ -3724,6 +3741,8 @@ public sealed class QuestStore
             writer.WriteString("attempted", lost.ToString());
             if (note is not null) writer.WriteString("note", note);
             WriteNoteParts(writer, note, noteParts);
+            // Only when set (FABRIC-CLOSE1c22), for the lanes' reason: every other conflict is recorded exactly as before it.
+            if (lostToTheReopen) writer.WriteBoolean("lostToTheReopen", true);
             writer.WriteEndObject();
             return;
         }

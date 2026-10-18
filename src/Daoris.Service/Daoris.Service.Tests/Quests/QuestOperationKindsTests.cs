@@ -74,10 +74,11 @@ public sealed class QuestOperationKindsTests
             Close = new QuestClose("close-7", "token-0f1e2d"),
         },
         [QuestOperationKind.Declined] = s => Op(QuestOperationKind.Declined, s) with { Note = "Abandoned.", WhileOpen = true },
-        // A move that lost keeps its note's parts in the log, as a rebase rewrites it (QUESTCLOSE1b1).
+        // A move that lost keeps its note's parts in the log, as a rebase rewrites it (QUESTCLOSE1b1); and a step's take that went
+        // with its source's take, lost to the person's reopen, says so (FABRIC-CLOSE1c22).
         [QuestOperationKind.Conflict] = s => Op(QuestOperationKind.Conflict, s, "m2") with
         {
-            Note = "The person marked this done: Built.", NoteParts = DoneParts, Attempted = QuestStatus.Done,
+            Note = "The person marked this done: Built.", NoteParts = DoneParts, Attempted = QuestStatus.Done, LostToTheReopen = true,
         },
         [QuestOperationKind.Dismissed] = s => Op(QuestOperationKind.Dismissed, s) with { Dismisses = new QuestOperationRef("m2", 7) },
         [QuestOperationKind.Waited] = s => Op(QuestOperationKind.Waited, s) with { Note = "fedcbafedcba" },
@@ -308,6 +309,28 @@ public sealed class QuestOperationKindsTests
             Assert.Single(QuestWire.ReadPush(Take(""", "submission": { "machine": "m9", "sequence": 3 }"""))!.Value.Operations).Submission);
         Assert.Null(QuestWire.ReadPush(Take(""", "submission": { "machine": "m9" }""")));
         Assert.Null(QuestWire.ReadPush(Take(""", "submission": "m9:3" """)));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c22: a conflict's mark that its take went with a take lost to the person's reopen is optional, since every other
+    /// conflict and every one from before carries none, and a marked one crosses marked; one that is not true or false makes the conflict
+    /// half of one: read as plain, a done its machine made on the step published anew would land over the person's reopen.
+    /// </summary>
+    [Fact]
+    public void A_conflicts_reopen_mark_is_optional_on_the_wire_and_one_not_true_or_false_makes_the_conflict_not_whole()
+    {
+        string Conflict(string mark) => $$"""
+            { "base": 0, "operations": [{ "machine": "m1", "sequence": 1, "quest": "{{Id}}", "kind": "conflict",
+              "at": "2026-10-07T09:00:00Z", "attempted": "Taken"{{mark}} }] }
+            """;
+
+        Assert.False(Assert.Single(QuestWire.ReadPush(Conflict(""))!.Value.Operations).LostToTheReopen);
+        Assert.True(Assert.Single(QuestWire.ReadPush(Conflict(""", "lostToTheReopen": true"""))!.Value.Operations).LostToTheReopen);
+        Assert.False(Assert.Single(QuestWire.ReadPush(Conflict(""", "lostToTheReopen": false"""))!.Value.Operations).LostToTheReopen);
+        Assert.Null(QuestWire.ReadPush(Conflict(""", "lostToTheReopen": "yes" """)));
+        // On any other kind it is no field of the kind's, and is not read.
+        var take = QuestWire.ReadPush(Conflict(""", "lostToTheReopen": true""").Replace("\"conflict\"", "\"taken\""));
+        Assert.False(Assert.Single(take!.Value.Operations).LostToTheReopen);
     }
 
     // ——— The log and the cache: QuestStore's payload, its reader, and the row the replay writes.

@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A next step's take that went with a take lost to the reopen was stopped in another machine's words (FABRIC-CLOSE1c22)
+
+- **Symptom:** B took a step before A's reopen of its source reached it, submitted, and took the next step its submission published,
+  all before syncing. Its sync lost the step's take to the person's reopen, and with it the next step. B's take of the next step was
+  kept as a conflict saying "another machine's take reached the remote first", its claim answered no `why`, and B's driver stopped
+  that session as taken on another machine. Once the step's chain published the next step anew under the same id, a done from B's
+  stopped session would have closed it, since the open step's lost-take check reads only a loss to the reopen.
+- **Root cause:** `StepWentWith` had two sentences, both written for another machine's move, and `QuestLog.LostToTheReopen` reads
+  the reopen from the quest's own history. The next step's publication went with the submission, so its history on B holds only the
+  conflict, and nothing there shows the reopen.
+- **Fix:** `RebaseAsync` reads the source take's loss on its replay so far and hands it to `ForgetStepsAsync`, which words the
+  conflict by the reopen and marks it (`QuestOperation.LostToTheReopen`, `lostToTheReopen` in the log and on the wire, only when set).
+  `QuestLog.LostToTheReopen` reads a marked take conflict as lost to the reopen, so the claim's answer, the driver's stop and
+  `OnALostTake` all follow it.
+- **Verification:** `QuestReopenSyncTests`, plain and raced: the words red, then the claim's reason red against a probe that ignored the
+  mark, then green, with the restart and the step published anew; the census's conflict sample red in the log and on the wire, then
+  green. Service tests 2271 before, 2274 after, all passed.
+
 ## 2026-10-19 — A remote kept a step published on a take that then lost, when the take's own push was behind (FABRIC-CLOSE1c21)
 
 - **Symptom:** B took a step before A's reopen of its source and A's rebind reached B, bound it, submitted, and its submission

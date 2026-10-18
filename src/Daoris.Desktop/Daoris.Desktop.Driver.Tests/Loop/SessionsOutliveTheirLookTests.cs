@@ -299,6 +299,31 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1c22: a session on the next step its source's submission published, taken before the sync that found the source's take
+    /// lost to the person's reopen. The step went with that submission, so no list shows it any more, and the claim's answer still reads
+    /// lost beside the reopen: the session is stopped in the reopen's words and code, never another machine's take.
+    /// </summary>
+    [Fact]
+    public async Task A_session_on_a_next_step_that_went_with_a_take_lost_to_the_reopen_is_stopped_in_the_reopens_words()
+    {
+        using var sync = new RemoteSyncSet([]);
+        _ledger.Publish("q2", "engine", parent: "q1");
+        var (driver, _) = Driver(Config(), sync);
+        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        _ledger.Forget("q2");
+        _ledger.Claim = "lost";
+        _ledger.ClaimWhy = "source-reopened";
+
+        var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        await Poll.Until(() => State("s1") == "stood-down", () => $"s1 is {State("s1")}", Bound);
+
+        Assert.Contains($"stop  session s1 (#q2): {Daoris.Driver.Driver.LostClaimToReopen}", look.Events);
+        Assert.DoesNotContain(look.Events, line => line.Contains(Daoris.Driver.Driver.LostClaim, StringComparison.Ordinal));
+        Assert.Equal(("stood-down", "ended.lost-claim-reopened"),
+            (State("s1"), _ledger.Session("s1")["noteParts"]![0]!["code"]!.GetValue<string>()));
+    }
+
+    /// <summary>
     /// 🔴 D104's shutdown, for sessions started at two looks: closing the watch ends both on its own token, and
     /// it lets go only once each has written how it ended — stopped, and interrupted, so a take either held is
     /// carried on at the next start.
