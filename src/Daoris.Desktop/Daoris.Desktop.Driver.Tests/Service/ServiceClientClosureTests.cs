@@ -56,6 +56,27 @@ public sealed class ServiceClientClosureTests
         Assert.Null(quests[1].Submission);
     }
 
+    /// <summary>
+    /// FABRIC-WORKFLOW2d: a step's source (FABRIC-CLOSE1c's <c>grewFrom</c>) and the reopen standing on it (<c>sourceReopened</c>), each a
+    /// submission's machine and sequence; absent from a step a done published and from a host before them, and none where named in half.
+    /// </summary>
+    [Fact]
+    public void A_steps_source_and_its_reopen_are_read_and_absent_from_a_host_before_them()
+    {
+        var quests = ServiceClient.ReadQuests(
+            """
+            [{ "id": "q8", "from": "game", "to": "engine", "title": "Next", "body": "", "status": "Open", "parent": "q7",
+               "grewFrom": { "machine": "desk", "sequence": 41 }, "sourceReopened": { "machine": "desk", "sequence": 41 } },
+             { "id": "q9", "from": "game", "to": "engine", "title": "Half", "body": "", "status": "Open", "parent": "q7",
+               "grewFrom": { "machine": "desk" }, "sourceReopened": { "sequence": 41 } },
+             { "id": "q10", "from": "game", "to": "engine", "title": "Old", "body": "", "status": "Open", "parent": "q7" }]
+            """);
+
+        Assert.Equal(new QuestSubmissionRef("desk", 41), quests[0].GrewFrom);
+        Assert.Equal(new QuestSubmissionRef("desk", 41), quests[0].SourceReopened);
+        Assert.All(quests.Skip(1), quest => Assert.True(quest is { GrewFrom: null, SourceReopened: null }, quest.Id));
+    }
+
     [Fact]
     public void A_verdict_read_for_a_submission_names_it_and_a_dones_names_none()
     {
