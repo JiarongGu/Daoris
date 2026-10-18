@@ -1909,6 +1909,12 @@ public sealed class QuestExchange(
                 $"Quest `#{quest}` is {going.Quest!.Status}, and no reopen of the work it grew from holds it: nothing waits for your "
                 + "word to go on.",
                 null),
+            QuestReopenRefusal.StepClosed => new(
+                QuestRespondRefusal.NotSealed,
+                $"Quest `#{quest}`'s next step, `#{going.Step!.Id}`, is already {going.Step.Status} on the result it submitted, and a "
+                + "reopen takes no close back, so going on would leave its next submission unsealed for good. Nothing moved. Close "
+                + $"`#{quest}` yourself, decline it, or ask anew.",
+                null),
             _ => new(
                 QuestRespondRefusal.NotSealed,
                 $"Quest `#{quest}` grew from `#{parent}`, whose work has no unheld submission here yet: it can go on once that work is "

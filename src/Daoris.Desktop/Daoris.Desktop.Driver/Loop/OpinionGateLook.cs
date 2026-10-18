@@ -48,6 +48,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             var world = new ServiceReviewWorld(Service);
             var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
             var gates = new OpinionGates(Home);
+            // FABRIC-CLOSE1h15: a branch made whose push is held back has not landed, so the opinion holding it stays owed and is asked.
+            var pushHeld = OpinionLook.PushHeld(Home);
             foreach (var due in open)
             {
                 var now = DateTimeOffset.UtcNow;
@@ -57,7 +59,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 // step decides whether it is owed, who reads it and what holds.
                 var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
                     WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
-                if (await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process).ConfigureAwait(false) is { } closed)
+                if (await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process, pushHeld).ConfigureAwait(false) is { } closed)
                 {
                     dues.Close(due.Session, due.Occasion, closed, now);
                     continue;
