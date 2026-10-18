@@ -1411,6 +1411,25 @@ public static class Planner
         && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedSourceReopened.Code) == true;
 
     /// <summary>
+    /// Whether the person went on with <paramref name="step"/> on its source's new submission after <paramref name="last"/>, its last
+    /// session here, had ended normally (FABRIC-CLOSE1c13, §E5): what <see cref="ReopenTelling"/> tells that session, so the go-on with
+    /// Daoris's words goes on in it. The service's fact, read from the step and the record alone: the step is taken and unheld, grew from
+    /// a submission, and has no result of its own, which the go-on cleared (FABRIC-CLOSE1c10), nor a reopen of one (FABRIC-CLOSE1c8 tells
+    /// that); the record is this machine's, parked with nothing said to it or completed, and the step moved after it did, by the rebound.
+    /// </summary>
+    /// <remarks>
+    /// A session the reopen stopped is carried on instead (<see cref="StoppedByReopen"/>), and a cut-off, a stop, a stand-down, a record
+    /// with words waiting and a running one read as before. <b>Once</b>, with nothing kept: the record that goes on moves after the step,
+    /// and a <c>ready</c> gives the step a result again. A step whose session ran across the go-on is not read here: its record ended after
+    /// the step moved.
+    /// </remarks>
+    internal static bool GoneOnSince(QuestView step, PriorSession last) =>
+        step is { Status: "Taken", Awaits: null or "", HeldByReopen: false, Submission: null, Reopened: null, GrewFrom: not null, Parent: { Length: > 0 } }
+        && !last.Teammate && !last.Running && !last.WordsWaiting && last.Answer is null
+        && (last.Parked || (string.Equals(last.State, "completed", StringComparison.OrdinalIgnoreCase) && !StoppedByReopen(last)))
+        && last.Updated is { } ended && step.Updated is { } moved && moved > ended;
+
+    /// <summary>
     /// The commit a step the person went on with is brought up to date with (FABRIC-CLOSE1c5, §E5): its source's current submission's,
     /// where that is the one the step grew from now. Null where the source is not read, names another submission or none, or names no
     /// commit (a host before the field, or a submission no evidence was read for).

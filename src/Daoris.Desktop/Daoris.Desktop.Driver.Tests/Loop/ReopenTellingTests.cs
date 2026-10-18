@@ -325,6 +325,114 @@ public sealed class ReopenTellingTests : IDisposable
             words);
     }
 
+    // ——— FABRIC-CLOSE1c13: a step the person went on with after its session had ended normally is told so in that session, once.
+
+    private static readonly QuestSubmissionRef Grew = new("desk", 43);
+
+    private static readonly DateTimeOffset Moved = new(2026, 10, 18, 9, 10, 0, TimeSpan.Zero);
+
+    /// <summary>q2, which grew from q1, after the person's go-on: rebound to <see cref="Grew"/>, its own result cleared, moved then.</summary>
+    private static QuestView GoneOnStep() =>
+        new("q2", "game", "engine", "Next", "", "Taken") { Parent = "q1", Closure = "gph-0123", GrewFrom = Grew, Updated = Moved };
+
+    /// <summary>q2's last record here, as the look read it: ended normally ten minutes before the go-on, unless said otherwise.</summary>
+    private Snapshot StepLook(PriorSession last) =>
+        Look(GoneOnStep()) with { LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q2"] = last } };
+
+    private PriorSession EndedBefore(string state, string? tree = null) =>
+        Record(state, "s2", tree) with { Updated = Moved.AddMinutes(-10), Said = [] };
+
+    [Theory]
+    [InlineData("awaiting-person")]
+    [InlineData("completed")]
+    public async Task A_steps_session_that_ended_normally_is_told_of_the_go_on_once(string state)
+    {
+        var doors = new Doors();
+        var telling = Telling();
+
+        var told = await LookAsync(telling, doors, StepLook(EndedBefore(state)));
+        Assert.Empty(await LookAsync(telling, doors, StepLook(EndedBefore(state))));
+
+        Assert.Equal(("s2", ReopenTelling.GoneOnWords("q2", "q1", Grew)), Assert.Single(doors.Said));
+        Assert.Contains(told, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal) && line.Contains("#q2", StringComparison.Ordinal));
+        Assert.Empty(doors.Reads);
+    }
+
+    /// <summary>A session that ended after the go-on, one running, and one with words waiting are told nothing: each reads as before.</summary>
+    [Fact]
+    public async Task A_session_ended_after_the_go_on_running_or_with_words_waiting_is_told_nothing()
+    {
+        var doors = new Doors();
+        var said = new SaidWordView("w1", "Go on.", Moved, [], Reopens: true);
+
+        foreach (var last in new[] { EndedBefore("completed") with { Updated = Moved.AddMinutes(5) }, EndedBefore("working"), EndedBefore("completed") with { Said = [said] } })
+        {
+            Assert.Empty(await LookAsync(Telling(), doors, StepLook(last)));
+        }
+
+        Assert.Empty(doors.Said);
+    }
+
+    [Fact]
+    public async Task A_steps_tree_gone_is_told_nothing_and_says_why_once()
+    {
+        var doors = new Doors();
+        var telling = Telling();
+        var tidied = StepLook(EndedBefore("completed", Path.Combine(_home, "tidied")));
+
+        Assert.Contains("tree is gone", Assert.Single(await LookAsync(telling, doors, tidied)), StringComparison.Ordinal);
+        Assert.Empty(await LookAsync(telling, doors, tidied));
+        Assert.Empty(doors.Said);
+    }
+
+    [Fact]
+    public void The_go_on_words_name_the_source_and_its_new_submission_and_ask_for_ready_again()
+    {
+        Assert.Equal(
+            "Daoris: the person reopened the work of `#q1` that quest `#q2` grew from, and went on with `#q2` on its new submission `desk` "
+            + "43, so any result submitted on `#q2` was cleared. Bring your work up to date with that submission (what Daoris did with "
+            + "your branch follows, where it did anything), then say `ready` on `#q2` again.",
+            ReopenTelling.GoneOnWords("q2", "q1", Grew));
+    }
+
+    /// <summary>
+    /// Over the real driver: q2 submitted, its session parked after its ready or completed, then q1 reopened and the person went on with
+    /// q2. The first look tells that session, the next goes on with the words in it, and a driver started again tells it nothing more.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_step_gone_on_with_after_its_session_ended_goes_on_in_that_session_once(bool parked)
+    {
+        using var ledger = new StandInLedger();
+        ledger.Register("engine", Path.Combine(_home, "engine"));
+        ledger.Publish("q1", "engine");
+        ledger.Move("q1", "Taken");
+        ledger.Publish("q2", "engine", parent: "q1");
+        if (parked) ledger.Park("s2", "q2", Tree);
+        else ledger.Driven("s2", "q2", Tree, state: "completed");
+        ledger.Submitted("q2", "desk", 42, "s2");
+        ledger.Reopened("q2", "desk", 41);
+        ledger.Rebound("q2", "desk", 43, moved: true);
+        var (driver, began) = Driver(ledger);
+
+        var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var said = Assert.Single(ledger.Session("s2")["said"]!.AsArray());
+        Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), said!["text"]!.GetValue<string>());
+        Assert.Contains(told.Events, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal));
+
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var goes = Assert.Single(next.Considerations);
+        Assert.Equal((StartVerdict.Start, true, "s2"), (goes.Verdict, goes.GoesOn, goes.Resumes?.Session));
+        await Poll.Until(() => began.Count == 1, within: Bound);
+        Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), Assert.Single(began[0]));
+
+        var (again, _) = Driver(ledger);
+        var restarted = await again.TickAsync(_closing.Token).WaitAsync(Bound);
+        Assert.DoesNotContain(restarted.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
+        Assert.Empty(ledger.Session("s2")["said"]!.AsArray());
+    }
+
     // ——— Over the real driver: told at one look, gone on with at the next, and not told again by a driver started again.
 
     [Theory]
