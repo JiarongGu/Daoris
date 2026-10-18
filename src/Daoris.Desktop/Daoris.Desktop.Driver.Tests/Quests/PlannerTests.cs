@@ -1355,4 +1355,172 @@ public sealed class PlannerTests
 
         Assert.Equal(new PausedBy(WorkScope.Quest, "q1"), PausedWork.Set(look, config)["q1"]);
     }
+
+    // ── a step whose source the person reopened (FABRIC-CLOSE1c2, §E5, canary 55) ─────────────────────────────────────────────
+    //
+    // The person's reopen of a sealed submission withdraws its untaken step and holds a started one (FABRIC-CLOSE1c), each until they
+    // go on with it on the new work or abandon it; Daoris never chooses. The planner reads the service's fact: while it holds, nothing
+    // starts the step, carries it on or goes on with words written to its session, and once the person goes on, the session the hold
+    // stopped is carried on in its tree.
+
+    private static readonly QuestSubmissionRef S1 = new("desk", 41);
+    private static readonly QuestSubmissionRef S2 = new("desk", 43);
+
+    /// <summary>q2, the step q1's submission S1 published: reopened (held for it), or rebound to S2 by the person's go-on.</summary>
+    private static QuestView Step(string status = "Open", bool reopened = true) =>
+        Quest("q2", status: status) with
+        {
+            Parent = "q1", GrewFrom = reopened ? S1 : S2, SourceReopened = reopened ? S1 : null,
+            Held = reopened, Hold = reopened ? "source-reopened" : null,
+        };
+
+    /// <summary>The session the hold stopped (<see cref="NoteCodes.EndedSourceReopened"/>), as its record ended.</summary>
+    private static PriorSession StoppedByReopen(string session = "s1")
+    {
+        var noted = Noted.Of(
+            NoteCodes.EndedSourceReopened, "stopped with its quest still taken: the work of `#q1` it grew from was reopened.", ("quest", "q1"));
+        return new PriorSession(session, "D:/trees/s1", "completed", noted.Note, Repository: "Game") { NoteParts = noted.Parts };
+    }
+
+    /// <summary>An untaken step is withdrawn: no start, no slot spent, its sentence naming the reopen and the person's two choices.</summary>
+    [Fact]
+    public void An_open_step_whose_source_was_reopened_is_withdrawn_and_started_by_nothing()
+    {
+        var plan = Planner.Plan(Ran([Step(), Quest("q3")]), Config(cap: 1));
+
+        var withdrawn = plan.Single(each => each.Quest.Id == "q2");
+        Assert.Equal(StartVerdict.SourceReopened, withdrawn.Verdict);
+        Assert.Equal(
+            "Quest `#q2` grew from the work of `#q1`, which you reopened: it is withdrawn, and nothing starts it until you go on with it on "
+            + "the new work or abandon it.",
+            withdrawn.Reason);
+        Assert.Null(withdrawn.Root);
+        Assert.Equal(StartVerdict.Start, plan.Single(each => each.Quest.Id == "q3").Verdict);
+    }
+
+    /// <summary>
+    /// A started step is held: whatever its last session here would be planned for (the hold's own stop, a cut-off, the person's
+    /// released stop, an answered park, their words written to it, or a pause), nothing carries it on, before every other reason.
+    /// </summary>
+    [Fact]
+    public void A_taken_step_held_by_its_sources_reopen_is_carried_on_by_nothing_whatever_its_last_session_says()
+    {
+        var said = new SaidWordView("w1", "Go on with the tests.", DateTimeOffset.UnixEpoch, [], Reopens: true);
+        PriorSession[] lasts =
+        [
+            StoppedByReopen(),
+            new("s1", "D:/trees/s1", "failed", "timed out.", Repository: "Game"),
+            PersonStop,
+            new("s1", "D:/trees/s1", "awaiting-person", "asked the person", Answer: "Yes, go on."),
+            new("s1", "D:/trees/s1", "completed", "reached done.") { Said = [said] },
+        ];
+
+        foreach (var last in lasts)
+        {
+            var snapshot = Ran([Step("Taken")], ("q2", last));
+            foreach (var config in new[] { Config(), Config().WithReleased("q2", "s1"), Config(holds: ["Game"]) })
+            {
+                var held = Assert.Single(Planner.Plan(snapshot, config));
+                Assert.Equal(StartVerdict.SourceReopened, held.Verdict);
+                Assert.Equal(
+                    "Quest `#q2` grew from the work of `#q1`, which you reopened: it is held, and nothing carries it on until you go on "
+                    + "with it on the new work or abandon it.",
+                    held.Reason);
+                Assert.Null(held.Resumes);
+            }
+
+            Assert.Equal(StartVerdict.SourceReopened, Assert.Single(Planner.Plan(Paused(snapshot, ("q2", ByAsk)), Config())).Verdict);
+        }
+    }
+
+    /// <summary>A take this machine never ran, or whose session still works here, is not planned, so the hold says nothing of it.</summary>
+    [Fact]
+    public void A_held_step_this_machine_would_not_plan_gets_no_verdict()
+    {
+        Assert.Empty(Planner.Plan(Ran([Step("Taken")]), Config()));
+        Assert.Empty(Planner.Plan(
+            Ran([Step("Taken")], ("q2", new PriorSession("s1", "D:/trees/s1", "completed", "reached done."))), Config()));
+    }
+
+    /// <summary>
+    /// The person's go-on rebinds the step and lets the hold go: the session the hold stopped is carried on in its tree, its reason
+    /// naming the go-on, and the strikes and the take are judged as for any carry-on.
+    /// </summary>
+    [Fact]
+    public void Once_the_person_goes_on_the_session_the_hold_stopped_is_carried_on_in_its_tree()
+    {
+        var stopped = StoppedByReopen();
+
+        var only = Assert.Single(Planner.Plan(Ran([Step("Taken", reopened: false)], ("q2", stopped)), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(stopped, only.Resumes);
+        Assert.Equal(
+            "carrying on in `Game` — you went on with it on the new work of `#q1`, after session `s1` stopped where that work was reopened.",
+            only.Reason);
+        Assert.True(Planner.CarriesOn(stopped));
+        var taken = Ran([Step("Taken", reopened: false)], ("q2", stopped)) with
+        {
+            Takes = new Dictionary<string, QuestTake> { ["q2"] = new("lost") },
+        };
+        Assert.Equal(StartVerdict.TakenElsewhere, Assert.Single(Planner.Plan(taken, Config())).Verdict);
+    }
+
+    /// <summary>
+    /// A look reads the hold from the service's answer: a withdrawn step and a held one sit, and no claim is asked of the held one
+    /// while nothing would carry it on. Once the person goes on with each, the withdrawn step starts and the held one's claim is
+    /// asked and it is carried on.
+    /// </summary>
+    [Fact]
+    public async Task A_look_starts_no_withdrawn_step_asks_no_claim_of_a_held_one_and_moves_both_once_the_person_goes_on()
+    {
+        var ledger = new StandInLedger { Claim = "held" };
+        ledger.Publish("q1", "Game");
+        ledger.Publish("q2", "Game", parent: "q1");
+        ledger.Publish("q3", "Engine", parent: "q1");
+        using var service = ledger.Client();
+        var (cut, _) = await service.OpenSessionAsync("q3", "stub");
+        await service.AdvanceAsync(cut!, "failed", note: "timed out.");
+        ledger.Move("q1", "Taken");
+        ledger.Move("q3", "Taken");
+        ledger.Reopened("q2", "desk", 41);
+        ledger.Reopened("q3", "desk", 41);
+
+        RepoView[] repositories = [Repo(), Repo("Engine", root: "D:/fam/Engine")];
+        var config = Config(drivable: ["Game", "Engine"], cap: 5);
+        var held = await service.SnapshotAsync();
+        var sitting = Planner.Plan(held with { Repositories = repositories }, config).Where(each => each.Quest.Id != "q1").ToList();
+
+        Assert.Equal([("q2", StartVerdict.SourceReopened), ("q3", StartVerdict.SourceReopened)], sitting.Select(each => (each.Quest.Id, each.Verdict)));
+        Assert.Equal(new QuestSubmissionRef("desk", 41), held.Quests.Single(quest => quest.Id == "q2").SourceReopened);
+        Assert.Equal(0, ledger.ClaimsAsked("q3"));
+
+        ledger.Rebound("q2", "desk", 43);
+        ledger.Rebound("q3", "desk", 43);
+        var goneOn = await service.SnapshotAsync();
+        var moved = Planner.Plan(goneOn with { Repositories = repositories }, config).Where(each => each.Quest.Id != "q1").ToList();
+
+        Assert.Equal([("q2", StartVerdict.Start), ("q3", StartVerdict.Start)], moved.Select(each => (each.Quest.Id, each.Verdict)));
+        Assert.Equal(cut, moved.Single(each => each.Quest.Id == "q3").Resumes?.Session);
+        Assert.Equal(1, ledger.ClaimsAsked("q3"));
+    }
+
+    /// <summary>
+    /// The owner's install binds no quest, so no step names a reopened source: an open quest, a step, a cut-off and a take that ended
+    /// well are planned exactly as before. Written as a guard, green before the change.
+    /// </summary>
+    [Fact]
+    public void A_quest_no_reopen_holds_is_planned_as_before()
+    {
+        var cut = new PriorSession("s1", "D:/trees/s1", "failed", "timed out.");
+        var step = Quest("q3", status: "Taken") with { Parent = "q1" };
+
+        var open = Assert.Single(Planner.Plan(Ran([Quest() with { Parent = "q0" }]), Config()));
+        var carried = Assert.Single(Planner.Plan(Ran([Quest("q2", status: "Taken")], ("q2", cut)), Config()));
+
+        Assert.Equal((StartVerdict.Start, (PriorSession?)null), (open.Verdict, open.Resumes));
+        Assert.Equal((StartVerdict.Start, cut), (carried.Verdict, carried.Resumes));
+        Assert.Empty(Planner.Plan(Ran([step], ("q3", new PriorSession("s3", null, "completed", "reached done."))), Config()));
+        Assert.False(open.Quest.HeldByReopen || carried.Quest.HeldByReopen || step.HeldByReopen);
+    }
 }

@@ -110,6 +110,8 @@ const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-o
 export function heldWhy(t: TFunction, held: HeldAttempt): string {
   if (held.plugin === CLOSE_SENDER) {
     if (held.why === 'not-close-word') return t('work.milestone.held.close.why.notCloseWord');
+    // FABRIC-CLOSE1q2: record or stop taken back, since the submission the close names was reopened or replaced.
+    if (held.why === 'submission-moved') return t('work.milestone.held.close.why.submissionMoved');
     const answer = held.outcome === 'reached' ? 'closed' : held.outcome === 'failed' ? 'refused' : 'unanswered';
     return t(`work.milestone.held.close.why.${answer}`, { code: held.why });
   }

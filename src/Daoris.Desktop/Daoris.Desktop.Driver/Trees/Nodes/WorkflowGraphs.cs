@@ -59,7 +59,9 @@ public static class WorkflowGraphs
     {
         var identity = WorkflowNamed.Digest(steps);
         var graph = Graph(steps);
-        return NodeGraphs.Problems(graph) is [var first, ..]
+        // A version's two steps of one plugin kind are valid in schema 1 (a stored version never becomes unreadable by a later rule), so the
+        // authored graph's `observed-twice` is not asked of a decoded one (FABRIC-GRAPH1g); the cutover that binds a run to one owes it.
+        return NodeGraphs.Problems(graph, saved: false) is [var first, ..]
             ? new DecodedVersion(version, null, null, null, $"v{version}: its graph does not hold: {first.Words}")
             : new DecodedVersion(version, identity, graph, GraphDigest(identity, graph), null);
     }

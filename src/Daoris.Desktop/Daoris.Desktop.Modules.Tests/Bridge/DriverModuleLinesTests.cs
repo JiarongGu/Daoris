@@ -373,6 +373,27 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Contains("was closed", HeldAttempts.WhySaid(close), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1q3: a held close whose submission moved by the runtime's last read goes on the wire with <c>resend</c> alone and its
+    /// reason's code, which the page words; a loop with no last read (unarmed, or before a pass) hands the held list none to judge by.
+    /// </summary>
+    [Fact]
+    public void A_held_close_whose_submission_moved_is_listed_with_resend_alone_and_the_reason()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var moved = new HeldAttempt("quest:q7", "close", 1, QuestClosing.Sender, NodeKinds.QuestClose, NodeStates.Unknown, WorkPerformer.SubmissionMoved)
+        {
+            Outcome = WorkStates.Reached, Words = [HeldResolutions.Resend],
+        };
+
+        var row = JsonSerializer.SerializeToElement(LinesRoutes.HeldAnswer([moved]), camel).EnumerateArray().Single();
+
+        Assert.Equal(["resend"], row.GetProperty("words").EnumerateArray().Select(word => word.GetString()).ToArray());
+        Assert.Equal("submission-moved", row.GetProperty("why").GetString());
+        Assert.Contains("reopened or replaced", row.GetProperty("said").GetString(), StringComparison.Ordinal);
+        Assert.Null(Loop().LastQuests);
+    }
+
     /// <summary>The route's module over a loop come up on <paramref name="service"/>, standing in for the service.</summary>
     private async Task<DriverModule> ModuleOverAsync(DiscardService service)
     {

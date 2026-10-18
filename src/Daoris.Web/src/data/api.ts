@@ -128,9 +128,31 @@ export type Quest = {
   setUps?: QuestSetUp[];
   /** The person's verdicts on it, oldest first (REVIEWENV1b, design §3.5); absent where they gave none. */
   verdicts?: QuestVerdict[];
+  /**
+   * The digest of the graph that closes it (FABRIC-CLOSE1a, the fabric events design §E5), and its taker's current submission:
+   * the agent's `ready`, its result while it stays taken. Both absent for a quest no closure graph holds, which is every quest
+   * on an install that binds none, and from a host before them.
+   */
+  closure?: string | null;
+  submission?: QuestSubmission | null;
+  /**
+   * The submission of its parent a chain's step grew from, and the one the person reopened under it while that holds it
+   * (FABRIC-CLOSE1c; `hold` then reads `source-reopened`). Both absent for every other quest, every step from before, and from
+   * a host before them.
+   */
+  grewFrom?: SubmissionRef | null;
+  sourceReopened?: SubmissionRef | null;
 };
-/** Why a done is held (EVID1a, REVIEWENV1b), as the service spells it; a newer host may name another. */
-export type QuestHold = 'departed' | 'evidence-unread' | 'evidence-missing' | 'unreviewed' | (string & {});
+/** A submission by the machine and sequence that made it (FABRIC-CLOSE1a): what a reopen names it by. */
+export type SubmissionRef = { machine: string; sequence: number };
+/** A taker's submission in a closure graph (FABRIC-CLOSE1a): the operation that made it, when, and its note. */
+export type QuestSubmission = SubmissionRef & { at: string; note?: string | null };
+/**
+ * Why a done, or a submission, is held (EVID1a, REVIEWENV1b, FABRIC-CLOSE1a), as the service spells it: `source-reopened` is a
+ * chain's step whose source the person reopened (FABRIC-CLOSE1c). A newer host may name another.
+ */
+export type QuestHold =
+  | 'departed' | 'evidence-unread' | 'evidence-missing' | 'unreviewed' | 'source-reopened' | (string & {});
 /**
  * One set-up a set-up step said (REVIEWENV1b, D154 point 9): the commit Daoris read from its tree, where to look (absent on
  * another machine for a local one, whose tab is on the machine that showed it), what it shows, how to show it again, the folder
@@ -629,6 +651,15 @@ export const api = {
   // done` is the terminal's twin. Never respond's door, which is an agent's done.
   personDone: (id: string, note: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/done`, note ? { note } : {}),
+  // The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): the submission the page showed, named whole, which the
+  // host refuses once another is current, and their words. `daoris-driver quest reopen` is the terminal's twin.
+  reopenQuest: (id: string, submission: SubmissionRef, note: string | null) =>
+    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/reopen`, {
+      submission: { machine: submission.machine, sequence: submission.sequence }, ...(note ? { note } : {}),
+    }),
+  // The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): it grows from the source's current
+  // submission, refused until that is unheld. `daoris-driver quest go-on` is the terminal's twin; abandoning it is the decline.
+  continueQuest: (id: string) => asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/continue`, {}),
   // The person's verdict on a review (REVIEWENV1g, D154 point 8; design §3.3, §3.6): `reviewed` or `not-yet` on the set-up their
   // view drew, named whole, which the host refuses as stale where a newer one was shown since (REVIEWENV1b3); a skip names
   // none. `daoris-driver quest review` is the terminal's twin.

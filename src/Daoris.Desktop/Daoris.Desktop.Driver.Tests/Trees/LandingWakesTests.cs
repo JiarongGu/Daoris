@@ -40,6 +40,9 @@ public sealed class LandingWakesTests : IDisposable
     // No try yet: every wake looks at it.
     [InlineData(null, false, "ledger", "sessions", true)]
     [InlineData(null, false, "refs", "deck", true)]
+    // FABRIC-CLOSE1h6: a closed try on an entry open again was the earlier due's; due again by a new conclusion, every wake looks at it.
+    [InlineData("landed", false, "ledger", "sessions", true)]
+    [InlineData("undone", false, "refs", "deck", true)]
     // Held for the person's yes or evidence's verdict, and the review's gate: the quests family, and the configuration.
     [InlineData("held", false, "ledger", "quests", true)]
     [InlineData("held", false, "ledger", "sessions,quests", true)]

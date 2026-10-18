@@ -548,8 +548,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <inheritdoc cref="TreeLands.LandAsync"/>
     public Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false) =>
-        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins);
+        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false,
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<bool, CancellationToken, Task<string?>>? beforePush = null) =>
+        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush);
 
     /// <inheritdoc cref="EntryLands.JoinAsync"/>
     public Task<LandingSubject> JoinEntryAsync(
@@ -707,6 +708,10 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <inheritdoc cref="TreeUpdates.StartInSyncAsync"/>
     public Task<TreeStartSync> StartInSyncAsync(string tree, CancellationToken ct = default) => Updates.StartInSyncAsync(tree, ct);
+
+    /// <inheritdoc cref="TreeUpdates.GoOnInSyncAsync"/>
+    public Task<TreeStartSync> GoOnInSyncAsync(string tree, string source, string? commit, CancellationToken ct = default) =>
+        Updates.GoOnInSyncAsync(tree, source, commit, ct);
 
     /// <inheritdoc cref="LandedReviews.LandedReviewAsync"/>
     public Task<LandedReview> LandedReviewAsync(string? root, LandedBranch entry, bool changes = true, CancellationToken ct = default) =>

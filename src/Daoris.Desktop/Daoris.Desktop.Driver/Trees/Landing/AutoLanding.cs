@@ -64,6 +64,13 @@ public static class AutoLandingCode
     /// <summary>The branch was made and recorded; the rule's plugin failed, or answered that it did not push (D100).</summary>
     public const string PluginFailed = "plugin-failed";
 
+    /// <summary>
+    /// The branch was made and recorded; its quest was held, taken back or submitted again before the rule's plugin was told, so the
+    /// push was not tried (FABRIC-CLOSE1h2, D173's note: a hold stops a landing up to the moment its push begins). Kept open and read
+    /// again at every look: once its quest stands unheld, the look hands the branch on, or lands the work that went on past it.
+    /// </summary>
+    public const string PushHeld = "push-held";
+
     /// <summary>Its work reached a branch of the person's another way: their press, or a push of their own.</summary>
     public const string Already = "already";
 
@@ -104,7 +111,8 @@ public static class AutoLandingCode
     public const string Carried = "carried";
 
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
-    public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion);
+    public static bool Closes(string code) =>
+        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or PushHeld);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves (design §2).</summary>
     public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused;
@@ -144,6 +152,12 @@ public sealed record AutoLanding(string Session, string Quest, string Repository
 
     /// <summary>Its last try, or null before the first.</summary>
     public AutoTry? Last => Tries.Count == 0 ? null : Tries[^1];
+
+    /// <summary>
+    /// Whether a new conclusion made it due again after a try that closed it (FABRIC-CLOSE1h6): open, with a last try whose code
+    /// closes. Only <see cref="AutoLandings.Due"/> opens a closed entry, so that try was the earlier due's, and this one is judged afresh.
+    /// </summary>
+    public bool Reopened => Closed is null && Last is { Code: var code } && AutoLandingCode.Closes(code);
 }
 
 /// <summary>How a concluded record stands to the switch (<see cref="AutoLandingRules.Concluded"/>).</summary>
@@ -182,16 +196,20 @@ public static class AutoLandingRules
 
     /// <summary>
     /// Whether a due entry is worth a try now (design §2): its first, and a hold's at every look; a refusal only once its
-    /// tree's tip or status moved since it, so a look never repeats one that nothing changed.
+    /// tree's tip or status moved since it, so a look never repeats one that nothing changed. One due again after a try that closed it
+    /// is judged afresh, as a first is (<see cref="AutoLanding.Reopened"/>).
     /// </summary>
     public static bool ShouldTry(AutoLanding entry, string? tip, string status) => entry.Last switch
     {
         null => true,
+        // FABRIC-CLOSE1h6: due again by D137's words that went on, or a closure graph's next `ready`. The landing's own checks keep a
+        // commit from landing twice.
+        _ when entry.Reopened => true,
         { Code: var code } last when AutoLandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
-        // every look.
-        { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed or AutoLandingCode.Opinion } => true,
+        // every look; so does a push held back after its branch was made (FABRIC-CLOSE1h2).
+        { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed or AutoLandingCode.Opinion or AutoLandingCode.PushHeld } => true,
         _ => false,
     };
 
@@ -214,6 +232,7 @@ public static class AutoLandingRules
     public static string CodeOf(TreeLanding landed)
     {
         if (!landed.Landed) return landed.Refusal ?? AutoLandingCode.Refused;
+        if (landed.Withheld is not null) return AutoLandingCode.PushHeld;
         if (landed.Unready is not null) return AutoLandingCode.PluginUnready;
         if (landed.Plugin is { Failed: true } or { Pushed: false }) return AutoLandingCode.PluginFailed;
         return landed.AdvancedFrom is not null ? AutoLandingCode.Advanced : AutoLandingCode.Landed;
@@ -260,7 +279,8 @@ public sealed class AutoLandings(string home)
 
     /// <summary>
     /// Make a session due. One due before, open or closed, is opened again with its tries kept: a session words went on with
-    /// after its landing (D137) concludes again, and what it came to the first time stays a fact.
+    /// after its landing (D137) concludes again, and what it came to the first time stays a fact. One that a try had closed is
+    /// judged afresh at the next look (FABRIC-CLOSE1h6, <see cref="AutoLanding.Reopened"/>); one still open keeps its last try's rule.
     /// </summary>
     public void Due(AutoLanding entry) => Edit(all =>
     {
@@ -391,7 +411,7 @@ public static class AutoLandingNotes
     public static bool Says(string code) => code is AutoLandingCode.Landed or AutoLandingCode.Advanced or AutoLandingCode.PluginUnready
         or AutoLandingCode.PluginFailed or AutoLandingCode.Nothing or AutoLandingCode.Held or AutoLandingCode.Uncommitted
         or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused or AutoLandingCode.Unreviewed
-        or AutoLandingCode.Opinion;
+        or AutoLandingCode.Opinion or AutoLandingCode.PushHeld;
 
     /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there was a landing to say it.
@@ -414,6 +434,11 @@ public static class AutoLandingNotes
                 ("branch", named), ("plugin", plugin)),
             AutoLandingCode.PluginFailed => Noted.Of(NoteCodes.LandingPluginFailed,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, and `{plugin}` did not push it.", ("branch", named), ("plugin", plugin)),
+            // FABRIC-CLOSE1h2: judged once more just before its plugin was told, and held there; its own sentence beneath says why.
+            AutoLandingCode.PushHeld => Noted.Of(NoteCodes.LandingPushHeld,
+                $"{LandingRules.AutoAccepted} its work is on `{named}`, but its quest was held or taken back before `{plugin}` was told, "
+                + "so nothing was pushed. The first look once it stands again hands the branch on.",
+                ("branch", named), ("plugin", plugin)),
             AutoLandingCode.Nothing => Noted.Of(NoteCodes.LandingNothing, "its quest was done and its work made no commits, so nothing was landed."),
             AutoLandingCode.Held => Noted.Of(NoteCodes.LandingHeld,
                 "its quest is done and held for your yes, so its work lands at the look after you release it."),

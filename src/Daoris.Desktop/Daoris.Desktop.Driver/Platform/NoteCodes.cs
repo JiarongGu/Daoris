@@ -401,6 +401,12 @@ public static class NoteCodes
     public static readonly NoteCode EndedDone = new("ended.done", []);
     public static readonly NoteCode EndedDeclined = new("ended.declined", []);
     public static readonly NoteCode EndedStoodDown = new("ended.stood-down", []);
+
+    /// <summary>
+    /// FABRIC-CLOSE1c2 (§E5): it stopped with its quest still taken, held because the person reopened the work it grew from (`quest`, the
+    /// step before). A good ending, as a wait is: the quest goes on in the same tree once the person goes on with it on the new work.
+    /// </summary>
+    public static readonly NoteCode EndedSourceReopened = new("ended.source-reopened", ["quest"]);
     public static readonly NoteCode EndedTakenExit = new("ended.taken-exit", ["exit"]);
     public static readonly NoteCode EndedUntouched = new("ended.untouched", []);
     public static readonly NoteCode EndedUntouchedExit = new("ended.untouched-exit", ["exit"]);
@@ -551,6 +557,8 @@ public static class NoteCodes
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
     public static readonly NoteCode LandingUnready = new("landing.plugin-unready", ["branch", "plugin"]);
     public static readonly NoteCode LandingPluginFailed = new("landing.plugin-failed", ["branch", "plugin"]);
+    // Its push held back after the branch was made (FABRIC-CLOSE1h2): a code of its own, handed on at the look after the release.
+    public static readonly NoteCode LandingPushHeld = new("landing.push-held", ["branch", "plugin"]);
     public static readonly NoteCode LandingNothing = new("landing.nothing", []);
     public static readonly NoteCode LandingHeld = new("landing.held", []);
     public static readonly NoteCode LandingUncommitted = new("landing.uncommitted", ["paths"]);

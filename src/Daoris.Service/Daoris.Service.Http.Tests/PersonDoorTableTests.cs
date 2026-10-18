@@ -86,6 +86,9 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/asks/{id}/channel/read", Person),
         ("POST", "/api/quests/{id}/accept", Person),
         ("POST", "/api/quests/{id}/done", Person),
+        // FABRIC-CLOSE1c: a sealed submission's reopen, and the word to go on with the step it held; a local host's alone.
+        ("POST", "/api/quests/{id}/reopen", Person),
+        ("POST", "/api/quests/{id}/continue", Person),
         ("POST", "/api/asks/{id}/go-aheads/{number}", Person),
         ("POST", "/api/sessions/{id}/added", Person),
         ("POST", "/api/sessions/{id}/say", Person),
@@ -130,11 +133,12 @@ public sealed class PersonDoorTableTests
         // person's post (which an agent makes through the connector's tool instead) and an entry's read mark (SESSONE2a), and the list of
         // the asks held elsewhere (SESSONE2h), and the person's taking back of words a session has not taken (SAIDBACK1a), and the
         // change stream (FABRIC-EVENT3b), a read of which families moved, and a closure graph's bind and close, the driver's two
-        // posts (FABRIC-CLOSE1a), and its question of what became of a close (FABRIC-CLOSE1u).
+        // posts (FABRIC-CLOSE1a), and its question of what became of a close (FABRIC-CLOSE1u), and the person's reopen of a sealed
+        // submission and their word to go on with the step it held (FABRIC-CLOSE1c).
         Assert.Equal(25, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(19, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(25, Routes.Count(route => route.Class == Person));
+        Assert.Equal(27, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d).
         Assert.Equal(9, Routes.Count(route => route.Class == Shared));
     }

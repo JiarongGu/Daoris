@@ -115,6 +115,8 @@ public sealed class AutoLandingRulesTests : IDisposable
     [Theory]
     [InlineData(null, "tip1", "clean", "tip1", "clean", true)]
     [InlineData(AutoLandingCode.Held, "tip1", "clean", "tip1", "clean", true)]
+    // FABRIC-CLOSE1h2: a push held back waits on its quest, not its tree, as a hold does.
+    [InlineData(AutoLandingCode.PushHeld, "tip1", "clean", "tip1", "clean", true)]
     [InlineData(AutoLandingCode.Uncommitted, "tip1", "sha256:aaaa", "tip1", "sha256:aaaa", false)]
     [InlineData(AutoLandingCode.Uncommitted, "tip1", "sha256:aaaa", "tip1", "sha256:bbbb", true)]
     [InlineData(AutoLandingCode.Uncommitted, "tip1", "sha256:aaaa", "tip2", "clean", true)]
@@ -160,6 +162,9 @@ public sealed class AutoLandingRulesTests : IDisposable
             new PluginLanding("acme.lands", Pushed: false, null, "did not answer", Failed: true))));
         Assert.Equal(AutoLandingCode.PluginUnready,
             AutoLandingRules.CodeOf(new TreeLanding(true, "", "feature/x") { Unready = "plugin `acme.lands` is switched off" }));
+        // FABRIC-CLOSE1h2: the branch made, its push held back just before the plugin was told.
+        Assert.Equal(AutoLandingCode.PushHeld,
+            AutoLandingRules.CodeOf(new TreeLanding(true, "", "feature/x") { Withheld = "its quest was held before its plugin was told" }));
         Assert.Equal(AutoLandingCode.Exists, AutoLandingRules.CodeOf(new TreeLanding(false, "already a branch") { Refusal = AutoLandingCode.Exists }));
         Assert.Equal(AutoLandingCode.Uncommitted, AutoLandingRules.CodeOf(new TreeLanding(false, "") { Refusal = AutoLandingCode.Uncommitted }));
         Assert.Equal(AutoLandingCode.Nothing, AutoLandingRules.CodeOf(new TreeLanding(false, "") { Refusal = AutoLandingCode.Nothing }));
@@ -182,6 +187,8 @@ public sealed class AutoLandingRulesTests : IDisposable
     // SQUASHTIDY1f: its work is on the line or a branch of the person's already, so no later look lands it; its discard is the way.
     [InlineData(AutoLandingCode.Carried, true)]
     [InlineData(AutoLandingCode.Held, false)]
+    // FABRIC-CLOSE1h2: its branch waits to be handed on once its quest stands again.
+    [InlineData(AutoLandingCode.PushHeld, false)]
     [InlineData(AutoLandingCode.Uncommitted, false)]
     [InlineData(AutoLandingCode.Exists, false)]
     [InlineData(AutoLandingCode.Refused, false)]
@@ -239,6 +246,63 @@ public sealed class AutoLandingRulesTests : IDisposable
         var entry = Assert.Single(due.Open());
         Assert.Equal(At.AddHours(1), entry.DueAt);
         Assert.Equal([AutoLandingCode.Landed], entry.Tries.Select(each => each.Code));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1h6 (D137; D173's FABRIC-CLOSE1h note, *Enrolled and kept due*): a session due again after a try that closed its
+    /// entry is judged afresh, whatever that try's code, with its tree as it stood: the closed try was the earlier due's. Every wake
+    /// looks at it, as at a first try. Its earlier tries stay as history.
+    /// </summary>
+    [Theory]
+    [InlineData(AutoLandingCode.Landed)]
+    [InlineData(AutoLandingCode.Advanced)]
+    [InlineData(AutoLandingCode.Nothing)]
+    [InlineData(AutoLandingCode.PluginUnready)]
+    [InlineData(AutoLandingCode.PluginFailed)]
+    [InlineData(AutoLandingCode.Already)]
+    [InlineData(AutoLandingCode.Superseded)]
+    [InlineData(AutoLandingCode.Gone)]
+    [InlineData(AutoLandingCode.Undone)]
+    [InlineData(AutoLandingCode.Off)]
+    [InlineData(AutoLandingCode.Carried)]
+    public void A_session_due_again_after_a_try_that_closed_it_is_judged_afresh(string code)
+    {
+        var due = new AutoLandings(_home);
+        due.Due(Due("s1"));
+        due.Tried("s1", new AutoTry(At, code) { Tip = "tip1", Status = "clean" }, close: AutoLandingCode.Closes(code));
+        Assert.False(due.Of("s1")!.Reopened, "a closed entry is no due one");
+
+        due.Due(Due("s1") with { DueAt = At.AddHours(1) });
+
+        var entry = Assert.Single(due.Open());
+        Assert.True(entry.Reopened);
+        Assert.True(AutoLandingRules.ShouldTry(entry, "tip1", "clean"));
+        Assert.Equal(LandingWaits.First, LandingWaits.Of(entry));
+        Assert.Equal([code], entry.Tries.Select(each => each.Code));
+    }
+
+    /// <summary>
+    /// An entry still due on its own last try keeps today's rule when its session concludes again (FABRIC-CLOSE1h6): a refusal waits for
+    /// its tree to move, and a hold or a push held back is read at every look, as before.
+    /// </summary>
+    [Theory]
+    [InlineData(AutoLandingCode.Uncommitted, false)]
+    [InlineData(AutoLandingCode.Exists, false)]
+    [InlineData(AutoLandingCode.Completed, false)]
+    [InlineData(AutoLandingCode.Refused, false)]
+    [InlineData(AutoLandingCode.Held, true)]
+    [InlineData(AutoLandingCode.PushHeld, true)]
+    public void An_entry_still_due_on_its_last_try_keeps_its_rule_when_due_again(string code, bool tried)
+    {
+        var due = new AutoLandings(_home);
+        due.Due(Due("s1"));
+        due.Tried("s1", new AutoTry(At, code) { Tip = "tip1", Status = "clean" }, close: AutoLandingCode.Closes(code));
+
+        due.Due(Due("s1") with { DueAt = At.AddHours(1) });
+
+        var entry = Assert.Single(due.Open());
+        Assert.False(entry.Reopened);
+        Assert.Equal(tried, AutoLandingRules.ShouldTry(entry, "tip1", "clean"));
     }
 
     /// <summary>A file that does not read is no due list, never a failure; and a closed entry beyond the bound is dropped, an open one never.</summary>
@@ -311,12 +375,17 @@ public sealed class AutoLandingRulesTests : IDisposable
                  {
                      AutoLandingCode.Landed, AutoLandingCode.PluginUnready, AutoLandingCode.PluginFailed, AutoLandingCode.Nothing,
                      AutoLandingCode.Held, AutoLandingCode.Uncommitted, AutoLandingCode.Exists, AutoLandingCode.Refused,
+                     AutoLandingCode.PushHeld,
                  })
         {
             Assert.True(AutoLandingNotes.Says(code), code);
             var part = AutoLandingNotes.Of(code, new TreeLanding(code is AutoLandingCode.Landed or AutoLandingCode.PluginUnready or AutoLandingCode.PluginFailed, "said.", "feature/x"), plugin: "acme.lands", uncommitted: 1).Parts![0];
             Assert.Contains(NoteCodes.All, each => each.Code == part.Code);
         }
+
+        // FABRIC-CLOSE1h2: a push held back is said by a code of its own, naming the branch and the plugin not told.
+        var held = AutoLandingNotes.Of(AutoLandingCode.PushHeld, new TreeLanding(true, "said.", "feature/x"), plugin: "acme.lands").Parts![0];
+        Assert.Equal(NoteCodes.LandingPushHeld.Code, held.Code);
 
         foreach (var code in new[] { AutoLandingCode.Already, AutoLandingCode.Superseded, AutoLandingCode.Gone, AutoLandingCode.Undone, AutoLandingCode.Off })
         {

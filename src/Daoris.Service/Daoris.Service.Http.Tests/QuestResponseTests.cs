@@ -15,6 +15,7 @@ public sealed class QuestResponseTests
     {
         [nameof(Quest.Name)] = "answered as `short`: what a list calls it, the publisher's short title or a name read from its words",
         [nameof(Quest.EvidenceWanted)] = "read from `requirements` and `answers`, both answered",
+        [nameof(Quest.SubmissionCommit)] = "answered inside `submission`, as its `commit` (FABRIC-CLOSE1c5)",
     };
 
     /// <summary>Every property of a quest is answered under its own name, or left out here with the reason.</summary>

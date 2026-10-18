@@ -193,6 +193,166 @@ internal sealed class TreeUpdates(
             : new(null, TreeStartWords.NotMoved(line, ontoName, holds, done.Message) + fetch);
     }
 
+    /// <summary>
+    /// A step the person went on with after reopening the work it grew from (FABRIC-CLOSE1c5, §E5 as CLOSE1c amends it): before its
+    /// carried-on session starts, its tree is brought up to date with <paramref name="source"/>'s new submission at
+    /// <paramref name="commit"/>, then with the line as any start's (<see cref="StartInSyncAsync"/>).
+    /// </summary>
+    /// <param name="tree">The stopped session's tree, which the carry-on goes on in.</param>
+    /// <param name="source">The quest the step grew from, as the session is told it (<c>#q1</c>).</param>
+    /// <param name="commit">The new submission's commit off the wire; null where the host names none.</param>
+    /// <remarks>
+    /// <para><b>A replay, as the tree sync's</b> (WSR6, D88): the step's own commits, from where its record says it grew (else where it
+    /// leaves the commit), are rebased onto the commit in its own tree detached, proven, and its branch moved last from the commit
+    /// judged; its record then grows from the commit. Never a merge, which the tree sync never makes either.</para>
+    ///
+    /// <para><b>A conflict, or any reason it is left</b>, leaves the tree exactly as it was, tells the session, and changes nothing else:
+    /// the line's sync is not asked. With no commit (a host before it), or one this repository does not hold, only the line's sync
+    /// runs, said once in the session's instruction. Before the start's own hold, as <see cref="StartInSyncAsync"/> is.</para>
+    /// </remarks>
+    internal async Task<TreeStartSync> GoOnInSyncAsync(string tree, string source, string? commit, CancellationToken ct = default)
+    {
+        var onto = commit is null
+            ? new SubmissionOnto(null, TreeStartWords.NoSubmissionCommit(source), Stops: false)
+            : await OntoSubmissionAsync(tree, source, commit, ct).ConfigureAwait(false);
+        if (onto.Stops) return new(null, onto.Told);
+
+        var line = await StartInSyncAsync(tree, ct).ConfigureAwait(false);
+        var told = string.Join(" ", new[] { onto.Told, line.Told }.Where(each => each is { Length: > 0 }));
+        return new(line.Moved ?? onto.Moved, told.Length == 0 ? null : told);
+    }
+
+    /// <summary>
+    /// The step's tree replayed onto <paramref name="commit"/> (FABRIC-CLOSE1c5), by <see cref="GoOnInSyncAsync"/>'s rules: what moved and
+    /// what the session is told, or why it was left and that nothing else may change.
+    /// </summary>
+    private async Task<SubmissionOnto> OntoSubmissionAsync(string tree, string source, string commit, CancellationToken ct)
+    {
+        var named = TextBounds.ShortCommit(commit, 8);
+        SubmissionOnto Left(string why, bool conflict = false) =>
+            new(null, TreeStartWords.NotOntoSubmission(source, named, why, conflict), Stops: true);
+
+        using var look = context.OneLook();
+        // 🔴 Nothing else of a folder that is no tree of this home's is read: git would walk up from it to the repository above.
+        var full = Path.GetFullPath(tree);
+        var (workspace, repository) = context.OwnerOf(full);
+        if (!context.Holds(full) || repository.Length == 0 || !Directory.Exists(full)
+            || !await WorkingTree.IsTopLevelAsync(full, ct).ConfigureAwait(false))
+        {
+            return SubmissionOnto.Nothing;
+        }
+
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (here.Code != 0) return Left($"git could not read the tree: {Failure(here.Err)}");
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
+
+        // A commit this repository does not hold is no reason to leave the tree: the line is still synced, and that said.
+        if (await CommitOfAsync(root, commit, ct).ConfigureAwait(false) is not { } onto)
+        {
+            return new(null, TreeStartWords.SubmissionNotHere(source, named), Stops: false);
+        }
+
+        if (await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) is not { } head) return Left("the tree has no commit");
+        if (await IsAncestorAsync(root, onto, head, ct).ConfigureAwait(false)) return SubmissionOnto.Nothing;
+        if (await StatusPathsAsync(full, ct).ConfigureAwait(false) is > 0 and var dirty)
+        {
+            return Left($"its tree has uncommitted work ({dirty} path(s)), which a replay does not carry");
+        }
+
+        string? branch;
+        try
+        {
+            branch = await WorkingTree.BranchAsync(full, ct).ConfigureAwait(false);
+        }
+        catch (DriverException error)
+        {
+            return Left($"git could not tell: {error.Message}");
+        }
+
+        using var held = TreeLock.TryReplaying(context.Home, workspace, repository);
+        if (held is null) return Left($"`{repository}`'s trees are held right now, by a session starting in one or by another replay");
+
+        // Where its own commits start: where its record says it grew from, while the tree still holds that, else where it leaves the
+        // new submission. Only those are replayed, so the source's old commits it grew on are never replayed as its own.
+        var grown = branch is null ? null : context.Grown.Of(repository, branch);
+        string cut;
+        if (grown is { From: { Length: > 0 } from } && await IsAncestorAsync(root, from, head, ct).ConfigureAwait(false))
+        {
+            cut = from;
+        }
+        else
+        {
+            var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", head, onto], ct).ConfigureAwait(false);
+            if (baseCode != 0) return Left($"git found no point where it leaves that commit: {Failure(baseErr)}");
+            cut = baseOut.Trim();
+        }
+
+        // 🔴 Replayed detached, the branch moved last and only from the commit judged, as WSR6's replay of a session's own tree.
+        if (branch is not null)
+        {
+            var (detached, _, detachErr) = await WorkingTree.GitAsync(full, ["switch", "--quiet", "--detach"], ct).ConfigureAwait(false);
+            if (detached != 0) return Left($"git would not detach its tree to replay it: {Failure(detachErr)}");
+        }
+
+        var (failed, words) = await BranchReplays.RebaseInAsync(full, onto, cut, ct).ConfigureAwait(false);
+        if (failed)
+        {
+            var back = await BackAsync(full, branch, head, ct).ConfigureAwait(false);
+            return Left(words + (back ? "" : " Git could not put the tree back where it was: look at it before anything else (`git rebase "
+                                             + "--abort`, then `git status`)"), conflict: words.StartsWith("CONFLICT", StringComparison.Ordinal));
+        }
+
+        // 🔴 Proven before it is kept: nothing of its own changed but what the new submission brought.
+        var now = await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false);
+        var beyond = now is null ? "git could not say where it went" : await BranchReplays.BeyondTheLineAsync(root, head, now, cut, onto, ct).ConfigureAwait(false);
+        if (beyond is not null)
+        {
+            await BackAsync(full, branch, head, ct).ConfigureAwait(false);
+            return Left($"the replay changed what the new submission did not bring ({beyond}), so it was not kept");
+        }
+
+        if (branch is not null)
+        {
+            var (moved, _, moveErr) = await WorkingTree.GitAsync(
+                root, ["update-ref", "-m", $"daoris: bring {branch} up to date onto {source}'s new submission", $"refs/heads/{branch}", now!, head], ct)
+                .ConfigureAwait(false);
+            if (moved != 0)
+            {
+                await BackAsync(full, branch, head, ct).ConfigureAwait(false);
+                return Left($"`{branch}` moved while it was replayed: {Failure(moveErr)}");
+            }
+
+            await WorkingTree.GitAsync(full, ["switch", "--quiet", branch], ct).ConfigureAwait(false);
+        }
+
+        var kept = await CountAsync(root, $"{onto}..{now}", ct).ConfigureAwait(false);
+        var told = TreeStartWords.OntoSubmission(source, named, kept);
+        // Where it grows from now is the new submission: the record says so, so the next sync and the landing cut there.
+        try
+        {
+            if (branch is not null) context.Grown.GrewOnto(repository, workspace, branch, onto, DateTimeOffset.UtcNow);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            told += $" Daoris could not record where it now grows from ({error.Message}).";
+        }
+
+        return new(new TreeMoved(source, head, now!, branch, kept), told, Stops: false);
+    }
+
+    /// <summary>
+    /// A tree put back after a replay onto a submission that was not kept (FABRIC-CLOSE1c5): on its branch at the commit judged, or
+    /// detached there where it was detached. True where it stands so again.
+    /// </summary>
+    private static async Task<bool> BackAsync(string tree, string? branch, string head, CancellationToken ct)
+    {
+        await WorkingTree.GitAsync(tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
+        if (branch is null) return await PutBackAsync(tree, head, ct).ConfigureAwait(false);
+        await WorkingTree.GitAsync(tree, ["switch", "--quiet", branch], ct).ConfigureAwait(false);
+        var (_, onOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        return onOut.Trim() == branch && await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) == head;
+    }
+
     /// <summary>A start's tree runs nothing yet: the start is what would run in it, and asks this before it does.</summary>
     private static Task<bool> NothingRuns(CancellationToken _) => Task.FromResult(false);
 

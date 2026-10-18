@@ -71,6 +71,12 @@ public static class DriverCommand
           quest done <id> [--note "…"]
               mark a quest done as yours, as a finish at a checkpoint that left it taken says: its record says you
               marked it done, with your words, and answers none of its requirements one by one.
+          quest reopen <id> [--note "…"]
+              reopen what a quest submitted in a workflow that closes its quests itself, once the step it published
+              stands on it: its agent makes it ready again, and the step waits.
+          quest go-on <id>
+              go on with a step its source's reopen held, on the new work, once that is ready again; `quest abandon`
+              abandons it instead.
           quest check <id> [--commit <sha>]
               read a done's evidence again: at the commit a driven end here read, or the one named, which must come
               after it on the same history. 0 when all is found, 1 when anything is missing or unread.

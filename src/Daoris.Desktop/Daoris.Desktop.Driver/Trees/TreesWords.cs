@@ -19,6 +19,15 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
         foreach (var line in Error) error.WriteLine(line);
     }
 
+    /// <summary>
+    /// The words with the lines the registry followed said after them, and its failure on the error (RPC1b5): what a landing's verb
+    /// prints once the lines it moved are registered. The code is unchanged: a registry that did not follow is not a refused landing.
+    /// </summary>
+    public TreesSaid Followed(FollowedSaid? followed) =>
+        followed is null || (followed.Out.Count == 0 && followed.Error.Count == 0)
+            ? this
+            : new([.. Out, .. followed.Out], [.. Error, .. followed.Error], Code);
+
     /// <summary>The words as an answer carries them (<c>said</c>): added beside the page's fields, never in their place.</summary>
     public object ToWire() => new { Out, Error, Code };
 

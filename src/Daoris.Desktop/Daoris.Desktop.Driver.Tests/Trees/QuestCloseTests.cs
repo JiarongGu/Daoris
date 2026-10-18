@@ -193,7 +193,10 @@ public sealed class QuestCloseTests : IDisposable
     /// <summary>Each session branch the pass reads, by name: the quest whose sessions worked it, and its tip.</summary>
     private readonly Dictionary<string, (string Quest, string Tip)> _branches = [];
 
-    /// <summary>How many times the units were read, and what happens at each read: the fresh read right before a close is one.</summary>
+    /// <summary>
+    /// How many times the units were read, and what happens at each read: the fresh read right before a close is one. Counted only while
+    /// <c>_onRead</c> is set, so a test counting reads sets one, a no-op where it needs nothing done.
+    /// </summary>
     private int _reads;
 
     private Action<int>? _onRead;
@@ -922,6 +925,179 @@ public sealed class QuestCloseTests : IDisposable
         var unkept = HeldAttempts.Word(Files, Unit, "close", held.Attempt, HeldResolutions.Record, () => _now);
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotKept), (unkept.What, unkept.Code));
         Assert.Contains("say resend or stop", HeldAttempts.Said(unkept, held.Attempt, HeldResolutions.Record), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1q2 (D173's CLOSE1q, CLOSE1u and CLOSE1c notes): a close for S1 is left unanswered when the person reopens S1, then S2 is
+    /// made ready at S1's commit, and the person's word on S1's close is applied by a loop started again. Its door took the close only after
+    /// the reopen, so its question answers <c>stale</c>. Whether the word was given before the loop read S2, or while the loop asked the door
+    /// with S2's deploy already sent, it never reaches S2: <c>record</c> is refused at the door, <c>resend</c> asks after S1's key alone, and
+    /// <c>stop</c> stops nothing of S2's work and is taken back, saying why. S2's deploy stays live, and S2 closes under a key of its own.
+    /// </summary>
+    [Theory]
+    [InlineData(HeldResolutions.Record, false)]
+    [InlineData(HeldResolutions.Resend, false)]
+    [InlineData(HeldResolutions.Stop, false)]
+    [InlineData(HeldResolutions.Record, true)]
+    [InlineData(HeldResolutions.Resend, true)]
+    [InlineData(HeldResolutions.Stop, true)]
+    public async Task A_word_on_a_close_left_unanswered_across_a_reopen_and_a_restart_never_reaches_the_next_submission_at_its_commit(string word, bool started)
+    {
+        _steps = [DeployStep];
+        var plugins = new Deploys();
+        Quest(Taken("q7", Digest(Deployed), Ready41) with { Updated = _now });
+        _branches["daoris/q7"] = ("q7", "c1");
+        var runtime = Runtime(plugins);
+
+        // S1's deploy reached; its close sent, taken by its door only after the person reopened S1, so refused stale, and its answer lost.
+        await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        plugins.Heard.Enqueue(Reached(Assert.Single(plugins.Sent)));
+        _door.Answer = _ => new(QuestCloseOutcomes.Refused, "stale", "Quest #q7's submission desk/41 is not its current one.", []);
+        _door.Lose = true;
+        _door.Told = _ => throw new HttpRequestException("the host did not answer in time");
+        await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+        var s1 = Assert.Single(_door.Sent);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 41)], s1.Quests);
+        var listed = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((QuestClosing.Sender, NodeStates.Unknown), (listed.Plugin, listed.NodeState));
+
+        // S2: the same commit made ready again after the reopen, by a new operation.
+        Quest(_quests["q7"] with { Submission = new QuestSubmissionView("desk", 43, null, "ready"), Updated = _now.AddMinutes(5) });
+
+        // The person's word: given before the loop read S2, or while it asked the door, its pass then sending S2's deploy.
+        WorkPerformed? worded = null;
+        void Say() => worded ??= HeldAttempts.Word(Files, Unit, "close", listed.Attempt, word, () => _now);
+        if (started)
+        {
+            _door.Told = _ =>
+            {
+                Say();
+                throw new HttpRequestException("the host did not answer in time");
+            };
+            await runtime.PassAsync(Look(Deployed), CancellationToken.None);
+            Assert.Equal(2, plugins.Sent.Count);
+            Assert.Equal(NodeStates.Active, Record().Statuses["deploy"].State);
+        }
+        else Say();
+
+        if (word == HeldResolutions.Record) Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotKept), (worded!.What, worded.Code));
+        else Assert.Equal(PerformedWhat.Worded, worded!.What);
+
+        // A loop started again applies it, its door now answering what it kept under S1's key.
+        _door.Told = null;
+        var restarted = Runtime(plugins);
+        var applied = await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+        await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+
+        // S1's key alone asked after and never sent again; its attempt settled on its door's stale, the word cleared.
+        Assert.Single(_door.Sent);
+        Assert.NotEmpty(_door.Asked);
+        Assert.All(_door.Asked, each => Assert.Equal(("q7", s1.Key), each));
+        var attempt = Record().Attempts.Single(each => each.Call.IdempotencyKey == s1.Key);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Failed, "stale", (string?)null), (attempt.State, attempt.Outcome, attempt.Code, attempt.Resolution));
+
+        // S2's work untouched: its deploy live on S2's revision (asked after where an earlier loop sent it), its close neither stopped nor
+        // settled on S1's answer.
+        var deploy = Record().Statuses["deploy"];
+        Assert.Equal((started ? NodeStates.Unknown : NodeStates.Active, 2), (deploy.State, plugins.Sent.Count));
+        Assert.NotEqual(NodeSource.Person, deploy.By);
+        Assert.NotEqual(plugins.Sent[0].SubjectRevision, plugins.Sent[1].SubjectRevision);
+        var close = Record().Statuses["close"];
+        Assert.DoesNotContain(close.State, new[] { NodeStates.Stopped, NodeStates.Reached, NodeStates.Failed });
+        Assert.DoesNotContain(HeldAttempts.Read(Files), held => held.Plugin == QuestClosing.Sender);
+
+        // The stop taken back, saying why: nothing of S2's work is S1's close's to stop.
+        if (word == HeldResolutions.Stop)
+        {
+            var refused = Assert.Single(applied.Performed, done => done.Code == WorkPerformer.SubmissionMoved);
+            Assert.Equal((Unit, "close", PerformedWhat.Refused), (refused.Unit, refused.Node, refused.What));
+            Assert.Contains(applied.Said, line => line.Contains("reopened or replaced", StringComparison.Ordinal));
+        }
+
+        // S2's deploy reached: S2 closes under a key of its own, naming S2 alone.
+        plugins.Heard.Enqueue(Reached(plugins.Sent[^1]));
+        _door.Lose = false;
+        _door.Answer = _ => new(QuestCloseOutcomes.Closed, null, "Closed.", []);
+        await restarted.PassAsync(Look(Deployed), CancellationToken.None);
+        Assert.Equal(2, _door.Sent.Count);
+        Assert.NotEqual(s1.Key, _door.Sent[1].Key);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 43)], _door.Sent[1].Quests);
+        Assert.Equal(NodeStates.Reached, Record().Statuses["close"].State);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1q3: a held close whose quest stands on another submission by the runtime's last read is offered <c>resend</c> alone, with
+    /// the reason, never <c>record</c> or <c>stop</c>, which the pass takes back; read against no last read (a fresh start before a pass) it
+    /// is offered what it was. The runtime keeps no read before its first.
+    /// </summary>
+    [Fact]
+    public async Task A_held_close_whose_submission_moved_by_the_last_read_is_offered_resend_alone_with_the_reason()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        ClosedUnbound();
+        var runtime = Runtime();
+        Assert.Null(runtime.LastQuests);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+
+        // Still on its submission by the last read: offered as before.
+        Assert.Equal(HeldResolutions.Close, Assert.Single(HeldAttempts.Read(Files, quests: runtime.LastQuests)).Words);
+
+        // S2 read since: resend alone, said, in the page's list and the terminal's.
+        Quest(_quests["q7"] with { Submission = new QuestSubmissionView("desk", 43, null, "ready") });
+        await runtime.PassAsync(Look(Closing) with { Whole = true }, CancellationToken.None);
+        var moved = Assert.Single(HeldAttempts.Read(Files, quests: runtime.LastQuests));
+        Assert.Equal([HeldResolutions.Resend], moved.Words);
+        Assert.Equal(WorkPerformer.SubmissionMoved, moved.Why);
+        Assert.Contains("reopened or replaced", HeldAttempts.WhySaid(moved), StringComparison.Ordinal);
+        Assert.Contains(HeldAttempts.Lines([moved]), line => line.EndsWith("work held " + Unit + " close " + moved.Attempt + " resend", StringComparison.Ordinal));
+
+        // No last read (a start before a pass): what it offers today.
+        Assert.Equal(HeldResolutions.Close, Assert.Single(HeldAttempts.Read(Files)).Words);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1q2: a held close for S1, its door's close kept, whose quest stands on S2 at the same commit since: <c>record</c> on it,
+    /// applied by a pass that is not a whole look (a wake), is judged on the quests read afresh, never on the read before S2. It is taken back,
+    /// said, and listed with why; S1's key never reaches the close node, and S2 closes under its own.
+    /// </summary>
+    [Fact]
+    public async Task Record_on_a_held_close_for_a_replaced_submission_is_taken_back_on_a_wake_judged_on_the_quests_read_afresh()
+    {
+        Quest(Taken("q7", Digest(Closing), Ready41));
+        var binding = ClosedUnbound();
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        var held = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal(HeldResolutions.Close, held.Words);
+        var s1 = Assert.Single(_door.Sent).Key;
+
+        // S1's Done lost since (D69), and the same commit made ready again here: S2. The person's record, applied at the loop's next wake.
+        Quest(_quests["q7"] with { Submission = new QuestSubmissionView("desk", 43, null, "ready") });
+        Bind(binding());
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, Unit, "close", held.Attempt, HeldResolutions.Record, () => _now).What);
+        _onRead = _ => { };
+        var reads = _reads;
+        var woken = await runtime.PassAsync(Look(Closing) with { Whole = false }, CancellationToken.None);
+
+        var status = Record().Statuses["close"];
+        Assert.NotEqual("close:" + s1, status.Current?.Evidence?.Ref);
+        Assert.Contains(woken.Performed, done => (done.What, done.Code) == (PerformedWhat.Refused, WorkPerformer.SubmissionMoved));
+        Assert.Contains(woken.Said, line => line.Contains("desk/41", StringComparison.Ordinal) && line.Contains("reopened or replaced", StringComparison.Ordinal));
+        var taken = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal(((string?)null, WorkPerformer.SubmissionMoved), (taken.Resolution, taken.Why));
+        Assert.Contains("reopened or replaced", HeldAttempts.WhySaid(taken), StringComparison.Ordinal);
+        Assert.True(_reads > reads);
+
+        // S1's held attempt still gates a new one (§D3): the person's resend asks its door after S1's key, which settles it as a stale one's,
+        // and S2 closes under its own key.
+        Assert.Single(_door.Sent);
+        Assert.Equal(PerformedWhat.Worded, HeldAttempts.Word(Files, Unit, "close", held.Attempt, HeldResolutions.Resend, () => _now).What);
+        await runtime.PassAsync(Look(Closing), CancellationToken.None);
+        Assert.Equal(("q7", s1), Assert.Single(_door.Asked));
+        Assert.Equal(2, _door.Sent.Count);
+        Assert.Equal([new QuestCloseItem("q7", "desk", 43)], _door.Sent[1].Quests);
+        status = Record().Statuses["close"];
+        Assert.Equal((NodeStates.Reached, "close:" + _door.Sent[1].Key), (status.State, status.Current!.Evidence!.Ref));
     }
 
     [Theory]

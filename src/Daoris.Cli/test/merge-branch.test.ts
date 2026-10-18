@@ -25,6 +25,17 @@ interface Classified { lanes: { id: string; title: string; files: string[] }[]; 
 interface Options {
   branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
   full: boolean; rerun: string[]; passed: boolean; stale: boolean; oneAtATime: boolean;
+  /** GATEWT1: the full set in a worktree of its own, at this commit (main's tip when null). */
+  beside: boolean; besideCommit: string | null;
+}
+/** GATEWT1: what the prune knows of the gate tree: git lists it, the commit it holds, its changes, its run's lock and its stage. */
+interface GateTreeFacts {
+  listed: boolean; head: string | null; changes: string[]; error?: string;
+  lock: { pid: number; commit: string; at: string; running: boolean } | null;
+  staged: { commit: string; at: string } | null;
+  folder?: Folder;
+  /** The processes inside it, read when no running lock is held (a full set started by hand holds none). */
+  processes?: Proc[]; processError?: string;
 }
 /**
  * GATELANES1: the two lanes, the light one's run order, and what each Process-lane gate starts after. GATELANES2: how
@@ -149,6 +160,23 @@ const tool = await import(
   recordMatcher: (map: { lanes?: Lane[]; union?: string[] }) => (path: string) => boolean;
   trxCommand: (run: string, file: string) => string;
   slowestClasses: (trx: string, count?: number) => Slow[];
+  GATE_TREE: string;
+  GATE_TREE_LOCK: string;
+  GATE_TREE_RECORD: string;
+  DEPENDENCY_FOLDERS: readonly string[];
+  verdictsHome: (root: string) => string;
+  readVerdicts: (root: string) => { schema: number; verdicts: Verdict[] };
+  addVerdicts: (root: string, entries: Verdict[], options?: { keep?: number }) => void;
+  readGateLock: (home: string, alive?: (pid: number) => boolean) => { pid: number; commit: string; at: string; running: boolean } | null;
+  takeGateLock: (home: string, options: { commit: string; alive?: (pid: number) => boolean; now?: () => string }) => { stale: { pid: number; commit: string; at: string } | null };
+  releaseGateLock: (home: string) => void;
+  gateTreeVerdict: (facts: GateTreeFacts, options?: { atMerge?: boolean }) => { remove: boolean; why: string; said?: string };
+  staleDependencies: (tree: string) => string[];
+  stampDependencies: (tree: string, folder: string) => void;
+  privateGateFiles: (home: string) => string[];
+  copyPrivateFiles: (home: string, tree: string, files: string[]) => string[];
+  keepGateLogs: (tree: string, home: string, sha: string) => boolean;
+  rescueGateLogs: (tree: string, home: string) => string[];
 };
 
 // The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
@@ -174,7 +202,7 @@ function refusal(fn: () => unknown): { exitCode: number; message: string } {
 test('the arguments name one branch, or several after --batch, and the flags', () => {
   assert.deepEqual(tool.parseArgs(['mod9']), {
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false, stale: false, oneAtATime: false,
+    full: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
   });
   // GATELANES1: every verb that runs gates runs them one at a time when told to, as on a loaded machine.
   for (const argv of [['a', '--one-at-a-time'], ['--continue', '--one-at-a-time'], ['--rerun', 'web', '--one-at-a-time'],
@@ -245,6 +273,200 @@ test('the arguments refuse what would merge the wrong thing, with exit 2', () =>
     assert.equal(error.exitCode, 2, argv.join(' '));
     assert.match(error.message, message, argv.join(' '));
   }
+});
+
+// ---------------------------------------------------------------------------------------------------
+// GATEWT1: the full set in its own worktree, beside the merges
+
+test('--full --beside gates a commit in a worktree of its own, main\'s tip when it names none, and takes only the run\'s flags', () => {
+  const plain = tool.parseArgs(['--full', '--beside']);
+  assert.deepEqual([plain.full, plain.beside, plain.besideCommit, plain.branches], [true, true, null, []]);
+  const named = tool.parseArgs(['--full', '--beside', 'abc1234', '--keep-going']);
+  assert.deepEqual([named.beside, named.besideCommit, named.keepGoing, named.branches], [true, 'abc1234', true, []]);
+  assert.equal(tool.parseArgs(['--beside', '--full', '--one-at-a-time']).oneAtATime, true);
+  const cases: [string[], RegExp][] = [
+    [['--beside'], /--beside runs the full set: --full --beside \[<commit>\]/],
+    [['a', '--full', '--beside'], /--beside takes no branch/],
+    [['--full', '--beside', 'abc1234', 'b'], /--beside takes no branch/],
+    [['--full', '--beside', '--no-commit-check'], /--full --beside takes only a commit, --keep-going and --one-at-a-time/],
+    [['--full', '--beside', '--beside'], /--beside is given once/],
+    [['--prune', '--beside'], /one of|--beside/],
+    [['--passed', '--beside'], /one of|--beside/],
+  ];
+  for (const [argv, message] of cases) {
+    const error = refusal(() => tool.parseArgs(argv));
+    assert.equal(error.exitCode, 2, argv.join(' '));
+    assert.match(error.message, message, argv.join(' '));
+  }
+});
+
+test('the gate tree, its lock and its record are under local/, and the publish names the same three', async () => {
+  assert.deepEqual([tool.GATE_TREE, tool.GATE_TREE_LOCK, tool.GATE_TREE_RECORD], ['local/gate-tree', 'local/gate-tree.lock', 'local/gate-tree.json']);
+  const named = await import(
+    // @ts-expect-error — untyped workspace tooling; the same seam as above
+    '../../../tools/desktop-publish.mjs') as { GATE_TREE: string; GATE_TREE_LOCK: string; GATE_TREE_RECORD: string };
+  assert.deepEqual([named.GATE_TREE, named.GATE_TREE_LOCK, named.GATE_TREE_RECORD], [tool.GATE_TREE, tool.GATE_TREE_LOCK, tool.GATE_TREE_RECORD]);
+  assert.deepEqual(tool.DEPENDENCY_FOLDERS, ['.', 'src/Daoris.Web'], 'the two installs AGENTS.md has a fresh checkout make');
+});
+
+test('one full set beside at a time: a second is refused naming the run that holds the lock; one whose process ended is taken over', () => {
+  const fx = makeFixture('merge-branch-gate-lock');
+  const sha = 'a'.repeat(40);
+  const first = tool.takeGateLock(fx.root, { commit: sha, alive: () => true, now: () => '2026-10-18T10:00:00Z' });
+  assert.equal(first.stale, null);
+  const held = tool.readGateLock(fx.root, () => true);
+  assert.deepEqual(held, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z', running: true });
+
+  const error = refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => true }));
+  assert.equal(error.exitCode, 2);
+  assert.match(error.message, new RegExp(`a full set beside the merges is running already: on aaaaaaa since 2026-10-18 10:00 UTC \\(pid ${process.pid}, local/gate-tree\\); one runs at a time`));
+  assert.equal(tool.readGateLock(fx.root, () => true)!.commit, sha, 'a refusal leaves the lock as it was');
+
+  // Its process ended without letting go (a window closed on it): the lock is taken over, and the caller says so.
+  const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, now: () => '2026-10-18T11:00:00Z' });
+  assert.deepEqual(taken.stale, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z' });
+  assert.equal(tool.readGateLock(fx.root, () => true)!.commit, 'b'.repeat(40));
+  tool.releaseGateLock(fx.root);
+  assert.equal(tool.readGateLock(fx.root), null);
+  assert.equal(existsSync(join(fx.root, tool.GATE_TREE_LOCK)), false);
+  fx.cleanup();
+});
+
+test('the private files a gate reads come from the declaration, only under local/; a copy is refreshed and a missing source says so (GATEWT1b)', () => {
+  const fx = makeFixture('merge-branch-private-files');
+  const home = join(fx.root, 'home');
+  const tree = join(fx.root, 'tree');
+  mkdirSync(join(home, 'local'), { recursive: true });
+  mkdirSync(tree, { recursive: true });
+  const declare = (sensitive?: unknown) => writeFileSync(join(home, 'daoris.gates.json'), JSON.stringify({ gates: [{ name: 'a', run: 'x' }], ...(sensitive ? { sensitive } : {}) }));
+
+  declare();
+  assert.deepEqual(tool.privateGateFiles(home), ['local/sensitive-patterns.txt'], 'the default');
+  declare({ patternsFile: 'local/own.txt' });
+  assert.deepEqual(tool.privateGateFiles(home), ['local/own.txt']);
+  declare({ patternsFile: 'private/patterns.txt' });
+  assert.deepEqual(tool.privateGateFiles(home), [], 'not under local/: nothing copied');
+  declare({ patternsFile: 'local/../secret.txt' });
+  assert.deepEqual(tool.privateGateFiles(home), [], 'no way out of local/');
+
+  const files = ['local/sensitive-patterns.txt'];
+  assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /local\/sensitive-patterns\.txt.*missing/);
+  assert.equal(existsSync(join(tree, files[0]!)), false);
+  writeFileSync(join(home, files[0]!), 'one\n');
+  assert.match(tool.copyPrivateFiles(home, tree, files).join('\n'), /copied/);
+  assert.equal(readFileSync(join(tree, files[0]!), 'utf8'), 'one\n');
+  writeFileSync(join(home, files[0]!), 'two\n');
+  tool.copyPrivateFiles(home, tree, files);
+  assert.equal(readFileSync(join(tree, files[0]!), 'utf8'), 'two\n', 'refreshed on every run');
+  fx.cleanup();
+});
+
+test('the gate tree\'s run logs are kept in the main checkout as beside-<sha7>, replacing an older run; a killed run\'s are rescued once (GATEWT1c)', () => {
+  const fx = makeFixture('merge-branch-keep-logs');
+  const home = join(fx.root, 'home');
+  const tree = join(fx.root, 'tree');
+  const sha = 'abcdef1' + '0'.repeat(33);
+  const logs = join(tree, 'local', 'scratch', 'full-abcdef1');
+  mkdirSync(logs, { recursive: true });
+  writeFileSync(join(logs, 'first.log'), 'new\n');
+  writeFileSync(join(logs, 'first.rerun.log'), 'again\n');
+  const kept = join(home, 'local', 'scratch', 'beside-abcdef1');
+  mkdirSync(kept, { recursive: true });
+  writeFileSync(join(kept, 'old.log'), 'old\n');
+
+  assert.equal(tool.keepGateLogs(tree, home, sha), true);
+  assert.deepEqual(readdirSync(kept).sort(), ['first.log', 'first.rerun.log'], 'the newest run replaces the folder');
+  assert.equal(readFileSync(join(kept, 'first.log'), 'utf8'), 'new\n');
+  assert.equal(tool.keepGateLogs(tree, home, '1234567' + '0'.repeat(33)), false, 'no run folder, nothing kept');
+
+  // A run that was killed left its folder in the tree and none in the main checkout.
+  const killed = join(tree, 'local', 'scratch', 'full-9999999');
+  mkdirSync(killed, { recursive: true });
+  writeFileSync(join(killed, 'last.partial'), 'half\n');
+  const said = tool.rescueGateLogs(tree, home);
+  assert.equal(readFileSync(join(home, 'local', 'scratch', 'beside-9999999', 'last.partial'), 'utf8'), 'half\n');
+  assert.equal(said.length, 1);
+  assert.equal(readFileSync(join(kept, 'first.log'), 'utf8'), 'new\n', 'a folder already kept is left as it is');
+  fx.cleanup();
+});
+
+test('the prune never takes the gate tree while its full set runs; a merge\'s prune takes it once staged, --prune once idle, each said', () => {
+  const sha = 'a'.repeat(40);
+  const idle: GateTreeFacts = { listed: true, head: sha, changes: [], lock: null, staged: null };
+  const running = { ...idle, lock: { pid: 7, commit: sha, at: '2026-10-18T10:00:00Z', running: true } };
+  for (const atMerge of [true, false]) {
+    const kept = tool.gateTreeVerdict(running, { atMerge });
+    assert.equal(kept.remove, false);
+    assert.match(kept.why, /^its full set is running \(pid 7, since 2026-10-18 10:00 UTC, on aaaaaaa\): never removed while it runs$/);
+  }
+  // A merge's prune keeps a gated tree its stage has not read: that is what the run was for.
+  const waiting = tool.gateTreeVerdict(idle, { atMerge: true });
+  assert.equal(waiting.remove, false);
+  assert.match(waiting.why, /its stage has not read it: npm run publish:desktop -- --to <install> --service --stage --from-gated aaaaaaa; --prune removes it/);
+  const staged = { ...idle, staged: { commit: sha, at: '2026-10-18T12:00:00Z' } };
+  const done = tool.gateTreeVerdict(staged, { atMerge: true });
+  assert.equal(done.remove, true);
+  assert.match(done.said!, /the gate tree at aaaaaaa: its stage is done \(2026-10-18 12:00 UTC\)/);
+  // A stage of another commit is not this tree's.
+  assert.equal(tool.gateTreeVerdict({ ...idle, staged: { commit: 'b'.repeat(40), at: '2026-10-18T12:00:00Z' } }, { atMerge: true }).remove, false);
+  const asked = tool.gateTreeVerdict(idle, { atMerge: false });
+  assert.equal(asked.remove, true);
+  assert.match(asked.said!, /the gate tree at aaaaaaa, never staged/);
+  // A lock whose process ended is no run: it goes with the tree, and is said.
+  const left = tool.gateTreeVerdict({ ...idle, lock: { ...running.lock, running: false } }, { atMerge: false });
+  assert.equal(left.remove, true);
+  assert.match(left.said!, /a lock left by pid 7, which no longer runs/);
+  // A full set started there by hand holds no lock: a process inside keeps the tree, and so does not knowing.
+  for (const atMerge of [true, false]) {
+    const busy = tool.gateTreeVerdict({ ...staged, processes: [{ pid: 9, exe: '', command: 'node tools/merge-branch.mjs --full' }] }, { atMerge });
+    assert.equal(busy.remove, false);
+    assert.match(busy.why, /a running process is inside it \(pid 9: node tools\/merge-branch\.mjs --full\), and no lock says whose run: it is never removed while one runs/);
+    const unknown = tool.gateTreeVerdict({ ...staged, processError: 'the process query failed' }, { atMerge });
+    assert.equal(unknown.remove, false);
+    assert.match(unknown.why, /whether a process runs inside it could not be read \(the process query failed\)/);
+  }
+  // Changes are never forced away, at either prune.
+  for (const atMerge of [true, false]) {
+    const changed = tool.gateTreeVerdict({ ...staged, changes: ['code.txt'] }, { atMerge });
+    assert.equal(changed.remove, false);
+    assert.match(changed.why, /it holds changes git removes only with --force \(code\.txt\)/);
+  }
+  // A folder git no longer lists is the half-removed rule's: no .git, no process inside, it goes.
+  const half = tool.gateTreeVerdict({ ...idle, listed: false, folder: { path: 'x', link: false, git: false, processes: [] } }, { atMerge: true });
+  assert.equal(half.remove, true);
+  assert.equal(tool.gateTreeVerdict({ ...idle, listed: false, folder: { path: 'x', link: false, git: true } }).remove, false);
+});
+
+test('two runs write one verdict store under a lock beside it, and a lock a dead writer left is taken', () => {
+  const fx = makeFixture('merge-branch-store-lock');
+  const verdict = (gate: string): Verdict => ({ gate, verdict: 'PASS', tree: 't', at: '2026-10-18T10:00:00Z', commit: null, branch: null });
+  tool.addVerdicts(fx.root, [verdict('first')]);
+  const lock = join(fx.root, `${tool.VERDICTS_FILE}.lock`);
+  assert.equal(existsSync(lock), false, 'the lock is let go once written');
+  // A writer that died mid-write left its lock a minute ago: a write takes milliseconds, so it is no writer's now.
+  writeFileSync(lock, '');
+  const old = new Date(Date.now() - 60_000);
+  utimesSync(lock, old, old);
+  tool.addVerdicts(fx.root, [verdict('second')]);
+  assert.deepEqual(tool.readVerdicts(fx.root).verdicts.map((one) => one.gate), ['first', 'second']);
+  assert.equal(existsSync(lock), false);
+  fx.cleanup();
+});
+
+test('the gate tree installs from each lockfile when its dependencies are missing or the lockfile changed since', () => {
+  const fx = makeFixture('merge-branch-gate-deps');
+  assert.deepEqual(tool.staleDependencies(fx.root), [], 'no lockfile, nothing to install');
+  fx.write('package-lock.json', '{"lockfileVersion":3}\n');
+  assert.deepEqual(tool.staleDependencies(fx.root), ['.'], 'no node_modules');
+  mkdirSync(join(fx.root, 'node_modules'), { recursive: true });
+  assert.deepEqual(tool.staleDependencies(fx.root), ['.'], 'node_modules no install of this lockfile stamped');
+  tool.stampDependencies(fx.root, '.');
+  assert.deepEqual(tool.staleDependencies(fx.root), []);
+  fx.write('src/Daoris.Web/package-lock.json', '{"lockfileVersion":3}\n');
+  assert.deepEqual(tool.staleDependencies(fx.root), ['src/Daoris.Web']);
+  fx.write('package-lock.json', '{"lockfileVersion":3,"changed":true}\n');
+  assert.deepEqual(tool.staleDependencies(fx.root), ['.', 'src/Daoris.Web'], 'a lockfile changed since its install');
+  fx.cleanup();
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -2943,10 +3165,13 @@ function age(worktree: string, minutes: number): void {
 // Every gate appends its name to local/ran.txt and prints a thousand lines, so a test can read the order
 // the gates ran in and whether a log kept the whole output. Given `once`, it exits with its code the first
 // time only, as a rehearsal that died under load and passes run again.
+// Given GATE_HOLD, it waits (a minute at most) until that file is written, as a long gate runs while a test acts beside it.
 const GATE = [
   "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
   "const [name, code = '0', once] = process.argv.slice(2);",
   "appendFileSync('local/ran.txt', name + '\\n');",
+  'const hold = process.env.GATE_HOLD;',
+  'for (let waited = 0; hold && !existsSync(hold) && waited < 60000; waited += 50) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);',
   'for (let i = 1; i <= 1000; i++) console.log(`${name} line ${i}`);',
   'if (once && existsSync(`local/${name}.once`)) process.exit(0);',
   "if (once) writeFileSync(`local/${name}.once`, '');",
@@ -2975,7 +3200,13 @@ const FAKE_DOTNET = [
 /** What ran, or what was recorded, in name order: light gates that build nothing in common run side by side (GATELANES2). */
 const unordered = (list: string[]): string[] => [...list].sort();
 
-interface Scratch { root: string; run(args: string[], extra?: Record<string, string>): Promise<{ status: number | null; out: string }>; ran(): string[]; cleanup(): void }
+interface Scratch {
+  root: string;
+  /** `cwd`: where the tool runs, the repository's main checkout unless named (GATEWT1 runs it in the gate tree). */
+  run(args: string[], extra?: Record<string, string>, cwd?: string): Promise<{ status: number | null; out: string }>;
+  ran(): string[];
+  cleanup(): void;
+}
 
 function scratch(name: string, gates: { name: string; run: string }[], files: Record<string, string> = {}): Scratch {
   const fx = makeFixture(`merge-branch-${name}`);
@@ -3012,13 +3243,13 @@ function scratch(name: string, gates: { name: string; run: string }[], files: Re
   return {
     root,
     // Asynchronous, so the end-to-end tests below can run side by side: each has a repository of its own.
-    run(args, extra = {}) {
+    run(args, extra = {}, cwd = root) {
       const env: Record<string, string | undefined> = {};
       for (const [key, value] of Object.entries(process.env)) {
         if (key.toUpperCase() !== 'PATH' && key !== 'NODE_TEST_CONTEXT') env[key] = value;
       }
       env['PATH'] = `${bin}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
-      const child = spawn(process.execPath, [TOOL, ...args], { cwd: root, env: { ...env, ...GIT_ENV, ...extra } });
+      const child = spawn(process.execPath, [TOOL, ...args], { cwd, env: { ...env, ...GIT_ENV, ...extra } });
       let out = '';
       child.stdout.on('data', (chunk) => { out += String(chunk); });
       child.stderr.on('data', (chunk) => { out += String(chunk); });
@@ -3878,5 +4109,146 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       })));
       repo.cleanup();
     }
+  });
+
+  // GATEWT1's proof: the full set ran in the main checkout, so no merge could run for its hour and a half.
+  test('--full --beside gates main\'s tip in a worktree of its own while a merge lands, its verdicts in the main checkout\'s store', async () => {
+    // The install's output is ignored, as this repository's is: the tree gated is the commit's.
+    const repo = scratch('beside', [{ name: 'first', run: 'node gate.mjs first' }], {
+      '.gitignore': 'local/\nnode_modules/\n', 'code.txt': 'base\n', 'package-lock.json': '{"lockfileVersion":3}\n',
+    });
+    branch(repo.root, 'feature', { 'feature.txt': 'x\n' });
+    const gated = git(repo.root, 'rev-parse', 'HEAD');
+    const sha = gated.slice(0, 7);
+    const gateTree = join(repo.root, 'local', 'gate-tree');
+    const hold = join(dirname(repo.root), 'hold');
+    // `npm`, faked: `ci` lays node_modules where it runs and notes it, as the real one installs from the lockfile.
+    const npmBin = join(dirname(repo.root), 'npm-bin');
+    const npmLog = join(dirname(repo.root), 'npm.log');
+    mkdirSync(npmBin, { recursive: true });
+    writeFileSync(join(npmBin, 'fake-npm.mjs'), [
+      "import { appendFileSync, mkdirSync } from 'node:fs';",
+      "mkdirSync('node_modules', { recursive: true });",
+      `appendFileSync(${JSON.stringify(npmLog)}, process.argv.slice(2).join(' ') + '\\n');`,
+      '',
+    ].join('\n'));
+    if (process.platform === 'win32') writeFileSync(join(npmBin, 'npm.cmd'), '@echo off\r\nnode "%~dp0fake-npm.mjs" %*\r\n');
+    else {
+      writeFileSync(join(npmBin, 'npm'), '#!/bin/sh\nexec node "$(dirname "$0")/fake-npm.mjs" "$@"\n');
+      chmodSync(join(npmBin, 'npm'), 0o755);
+    }
+    const PATH = `${npmBin}${delimiter}${join(dirname(repo.root), 'bin')}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
+    const npmRan = () => (existsSync(npmLog) ? readFileSync(npmLog, 'utf8').split('\n').filter(Boolean) : []);
+    const ranThere = join(gateTree, 'local', 'ran.txt');
+
+    const beside = repo.run(['--full', '--beside'], { GATE_HOLD: hold, PATH });
+    try {
+      // Bounded: the gate tree's gate has started, and holds until the test lets it go.
+      for (let i = 0; i < 600 && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first')); i += 1) {
+        await new Promise((done) => setTimeout(done, 100));
+      }
+      assert.ok(existsSync(ranThere), 'the full set runs in the gate tree');
+      assert.equal(git(gateTree, 'rev-parse', 'HEAD'), gated, 'detached at main\'s tip');
+      assert.ok(existsSync(join(repo.root, 'local', 'gate-tree.lock')), 'the run holds its lock in the main checkout');
+
+      // One at a time.
+      let result = await repo.run(['--full', '--beside']);
+      assert.equal(result.status, 2, result.out);
+      assert.match(result.out, new RegExp(`a full set beside the merges is running already: on ${sha} since .*\\(pid \\d+, local/gate-tree\\); one runs at a time`));
+
+      // A merge lands meanwhile, and its prune keeps the gate tree.
+      result = await repo.run(['feature']);
+      assert.equal(result.status, 0, result.out);
+      assert.match(result.out, new RegExp(`\\n\\s+kept\\s+local/gate-tree\\s+its full set is running \\(pid \\d+, since [^)]+, on ${sha}\\): never removed while it runs\\n`));
+      git(repo.root, 'commit', '--quiet', '-m', `merge feature${TRAILER}`);
+      result = await repo.run(['--prune']);
+      assert.equal(result.status, 0, result.out);
+      assert.match(result.out, /\n\s+kept\s+local\/gate-tree\s+its full set is running/);
+      assert.ok(existsSync(gateTree));
+    } finally {
+      writeFileSync(hold, '');
+    }
+    const done = await beside;
+    assert.equal(done.status, 0, done.out);
+    assert.match(done.out, new RegExp(`the gate tree: made at ${sha} \\(local/gate-tree\\)`));
+    assert.match(done.out, /installed \. from its lockfile \(npm ci\)/);
+    assert.match(done.out, /under load: a full set beside the merges/i);
+    assert.match(done.out, new RegExp(`merge-branch: the full set passed ${sha}`));
+    assert.match(done.out, new RegExp(`npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}`));
+    assert.deepEqual(npmRan(), ['ci --no-audit --no-fund'], 'installed once, in the gate tree\'s root folder');
+    assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'the lock is let go');
+
+    // Its verdict is in the main checkout's store, keyed by the tree it gated; none is in the gate tree's own.
+    const record = JSON.parse(readFileSync(join(repo.root, 'local', 'gate-verdicts.json'), 'utf8')) as { verdicts: Verdict[] };
+    // The merge's own verdict is there too, on the merged tree, with the branch it merged.
+    const there = record.verdicts.filter((verdict) => verdict.tree === git(repo.root, 'rev-parse', `${gated}^{tree}`));
+    assert.deepEqual(there.map((verdict) => `${verdict.gate} ${verdict.verdict} ${verdict.commit} ${verdict.branch}`), [`first PASS ${gated} null`]);
+    assert.deepEqual(record.verdicts.filter((verdict) => verdict.branch === 'feature').map((verdict) => verdict.gate), ['first']);
+    assert.equal(existsSync(join(gateTree, 'local', 'gate-verdicts.json')), false);
+    // `--passed` asked in the gate tree, as its stage asks, reads the main checkout's store.
+    let result = await repo.run(['--passed'], {}, gateTree);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /first\s+PASS\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\s+on this tree/);
+
+    // Run again at the same commit, it is reused and installs nothing: its lockfile is as installed.
+    result = await repo.run(['--full', '--beside', gated], { PATH });
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, new RegExp(`the gate tree: reused at ${sha} \\(local/gate-tree\\)`));
+    assert.equal(npmRan().length, 1);
+
+    // --prune removes it once its run has ended, and says so.
+    result = await repo.run(['--prune']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, new RegExp(`\\n\\s+removed\\s+local/gate-tree\\s+the gate tree at ${sha}, never staged`));
+    assert.equal(existsSync(gateTree), false);
+    assert.equal(tool.parseWorktrees(git(repo.root, 'worktree', 'list', '--porcelain')).length, 1);
+    repo.cleanup();
+  });
+
+  // GATEWT1b and GATEWT1c: the gate tree's universal gate failed for want of the private patterns file, and a prune
+  // after the stage deleted the only copy of a failed run's logs.
+  test('--full --beside copies the declared private file into the tree on every run and keeps the run\'s logs past --prune', async () => {
+    const needs = [
+      "import { existsSync, readFileSync } from 'node:fs';",
+      "const file = 'local/sensitive-patterns.txt';",
+      "if (!existsSync(file)) { console.log('missing ' + file); process.exit(1); }",
+      "const text = readFileSync(file, 'utf8');",
+      'console.log(`read ${text.trim()}`);',
+      "process.exit(text.startsWith('bad') ? 1 : 0);",
+      '',
+    ].join('\n');
+    const repo = scratch('beside-private', [{ name: 'needs', run: 'node needs.mjs' }], {
+      'needs.mjs': needs,
+      'daoris.gates.json': `${JSON.stringify({ gates: [{ name: 'needs', run: 'node needs.mjs' }], sensitive: { patternsFile: 'local/sensitive-patterns.txt' } })}\n`,
+    });
+    const sha = git(repo.root, 'rev-parse', 'HEAD').slice(0, 7);
+    const gateTree = join(repo.root, 'local', 'gate-tree');
+    const mine = join(repo.root, 'local', 'sensitive-patterns.txt');
+    const theirs = join(gateTree, 'local', 'sensitive-patterns.txt');
+    const kept = join(repo.root, 'local', 'scratch', `beside-${sha}`);
+
+    // Without the file the run goes on and says so; the gate's own answer decides.
+    let result = await repo.run(['--full', '--beside']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /local\/sensitive-patterns\.txt.*missing/);
+
+    writeFileSync(mine, 'good\n');
+    result = await repo.run(['--full', '--beside']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /the gate tree: reused/);
+    assert.equal(readFileSync(theirs, 'utf8'), 'good\n');
+    assert.deepEqual(git(gateTree, 'status', '--porcelain'), '', 'ignored, so the tree is still clean');
+    assert.match(readFileSync(join(kept, 'needs.log'), 'utf8'), /read good/);
+
+    // Refreshed on a reused tree; a failed run's logs are kept, and its prune removes the tree but not them.
+    writeFileSync(mine, 'bad\n');
+    result = await repo.run(['--full', '--beside']);
+    assert.equal(result.status, 1, result.out);
+    assert.equal(readFileSync(theirs, 'utf8'), 'bad\n');
+    result = await repo.run(['--prune']);
+    assert.equal(result.status, 0, result.out);
+    assert.equal(existsSync(gateTree), false);
+    assert.match(readFileSync(join(kept, 'needs.log'), 'utf8'), /read bad/, 'the newest run\'s log outlives the tree');
+    repo.cleanup();
   });
 });

@@ -63,6 +63,12 @@ public sealed record AutoChoice(AutoLanding Entry, QuestView Quest, string? Tip,
     /// its landing record keeps.
     /// </summary>
     public LandingGate? Gate { get; init; }
+
+    /// <summary>
+    /// The branch its landing made and recorded and whose push was held back (FABRIC-CLOSE1h2), which this try hands on through the
+    /// hand-off rather than landing again; null for a landing.
+    /// </summary>
+    public LandedBranch? Hands { get; init; }
 }
 
 /// <summary>What the look chose to land beside it, and what it said of the rest as it looked.</summary>
@@ -154,6 +160,12 @@ public sealed class AutoLander(
             return (Closed(entry, AutoLandingCode.Off), null);
         }
 
+        // FABRIC-CLOSE1h2: its branch is made and recorded and its push was held back, so it is handed on, never made again.
+        if (entry.Last is { Code: AutoLandingCode.PushHeld } held && await PushHeldAsync(entry, held, world, ct).ConfigureAwait(false) is { } handOn)
+        {
+            return handOn;
+        }
+
         // Landed since another way: the person's press lands it at once, whatever the last try was (design §2). A press that
         // moved a chain's branch on lands it too, so its own acceptance is what is compared (LAND2c).
         var since = entry.Last is { } last && last.At > entry.DueAt ? last.At : entry.DueAt;
@@ -174,11 +186,14 @@ public sealed class AutoLander(
             return (Closed(entry, AutoLandingCode.Superseded), null);
         }
 
+        // FABRIC-CLOSE1h (the fabric design §E5): in a closure graph Daoris writes no Done before the graph's end, so the landing waits on
+        // the quest's current submission where it waits on a done, with every hold, opinion and look below still applying. A reopen takes
+        // the submission back, and closes the entry as a done turned down does; the agent's next `ready` makes its session due again.
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
-        if (quest is not { Status: "Done" }) return (Closed(entry, AutoLandingCode.Undone), null);
+        if (!QuestResults.Judged(quest)) return (Closed(entry, AutoLandingCode.Undone), null);
 
         // Held for the person's yes (D133) or evidence's verdict (D144): kept once, and read again at every look. A set-up step
-        // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c).
+        // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c). A submission's holds are the same (§E5).
         if (quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
         {
             return (entry.Last?.Code != AutoLandingCode.Held ? Tried(entry, AutoLandingCode.Held, tip: null, status: null) : null, null);
@@ -292,6 +307,8 @@ public sealed class AutoLander(
     /// <param name="fresh">The world the choice was judged again from, which names the landing and the trees in use.</param>
     private async Task<string> LandOneAsync(AutoChoice choice, IAutoLandingWorld fresh, CancellationToken ct)
     {
+        // FABRIC-CLOSE1h2: a branch made whose push was held back is handed on, never landed again.
+        if (choice.Hands is { } made) return await HandOnAsync(choice, made, ct).ConfigureAwait(false);
         var entry = choice.Entry;
         // LANDGIT1: the try's reads before the landing and the landing's own ask git's guess at the line once; the look the landing
         // opens is this one's. The table of what ids answer is the planning's too, closed by the landing before the tidy.
@@ -314,9 +331,105 @@ public sealed class AutoLander(
             entry.Tree, entry.Session, entry.Quest, await fresh.RecordsAsync(ct).ConfigureAwait(false), id => fresh.QuestAsync(id, ct),
             named => events.Openings([named]).GetValueOrDefault(named), choice.Gate?.Process, ct).ConfigureAwait(false);
         var plan = await trees.PlanAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins).ConfigureAwait(false);
+        string? judgedAgain = null;
+        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins,
+            judged: async (waited, token) =>
+            {
+                judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
+                return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
+            },
+            beforePush: (waited, token) => BeforePushAsync(choice, waited, token)).ConfigureAwait(false);
+        // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
+        if (judgedAgain is not null) return judgedAgain;
         var code = AutoLandingRules.CodeOf(landed);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
+    }
+
+    /// <summary>
+    /// The choice judged once more under its tree's hold (FABRIC-CLOSE1h, the fabric design §E5): what the look and the judgement just
+    /// before the landing read may have moved while it waited behind another landing of the tree (LANDRACE1's wait is bounded only at
+    /// minutes), so the quest, its submission, its holds, the switch, the opinion and the look are read again from a fresh world. A
+    /// closure graph's submission is judged again every time, since the person's reopen or a later <c>ready</c> may come at any moment
+    /// before the landing commits; a plain done only where the hold waited, so a landing that waited for nothing reads no more than it did.
+    /// </summary>
+    /// <returns>The look's line where it no longer lands now, already kept as its judgement keeps it; null where it lands.</returns>
+    private async Task<string?> UnderHoldAsync(AutoChoice choice, bool waited, CancellationToken ct)
+    {
+        if (!waited && !QuestResults.Submitted(choice.Quest)) return null;
+        var (said, again, _) = await AgainAsync(choice, ct).ConfigureAwait(false);
+        if (again is not null && QuestResults.Same(choice.Quest, again.Quest)) return null;
+        var entry = choice.Entry;
+        // A later `ready` while it waited is another submission, judged again from the start (§E5): nothing is kept, so the next look
+        // judges the one standing then, and lands it where nothing holds it.
+        return said ?? $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): "
+            + (again is null
+                ? "what it was chosen on moved while it waited to land, so nothing was landed: the next look judges it again."
+                : "its quest's submission was made again while it waited to land, so nothing was landed: the next look judges the new one.");
+    }
+
+    /// <summary>
+    /// The choice's quest judged once more just before its plugin is told (FABRIC-CLOSE1h2, D173's note: a hold stops a landing up to the
+    /// moment its push begins). Its branch is made and recorded by now, so only what can still stop the push is read: the quest afresh,
+    /// for a hold, a reopen or a later submission. A closure graph's submission is read every time; a plain done only where the push
+    /// waited behind another push of its branch, so a landing that waited for nothing reads nothing more (LANDGIT1's counts stand).
+    /// </summary>
+    /// <returns>Why the push is held back, as the landing's sentence says it; null where it goes on.</returns>
+    private async Task<string?> BeforePushAsync(AutoChoice choice, bool waited, CancellationToken ct)
+    {
+        if (!waited && !QuestResults.Submitted(choice.Quest)) return null;
+        var quest = await world.Again().QuestAsync(choice.Entry.Quest, ct).ConfigureAwait(false);
+        var why = !QuestResults.Judged(quest) ? "its quest was taken back"
+            : !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
+            : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
+            : null;
+        return why is null ? null
+            : $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first look once its quest stands "
+              + $"again hands it on, or `daoris-driver trees hand {choice.Entry.Session}` does now";
+    }
+
+    /// <summary>
+    /// A due entry whose push was held back after its branch was made (FABRIC-CLOSE1h2): its quest read as the look reads a hold, then
+    /// its tree's tip. While its quest is held, taken back or not submitted again, it waits, said once already. Once it stands, a tree
+    /// still at the commit its landing judged is handed on (<see cref="TreeHandOffs"/>): one push of the branch as made, never a second
+    /// branch. A tree whose work went on past it is landed as any later done of the session is (null here), which moves the made
+    /// branch on and pushes the whole once.
+    /// </summary>
+    private async Task<(string? Said, AutoChoice? Choice)?> PushHeldAsync(
+        AutoLanding entry, AutoTry held, IAutoLandingWorld world, CancellationToken ct)
+    {
+        var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
+        if (quest is null || !QuestResults.Judged(quest) || quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed) return (null, null);
+
+        // Handed on meanwhile by the person's own `trees hand`, or its record gone with its branch: nothing is handed on twice.
+        if (trees.Recorded.Landing(entry.Session) is not { } landing
+            || landing is { Pushed: true } && string.Equals(landing.PushedTip, landing.Tip, StringComparison.OrdinalIgnoreCase))
+        {
+            return (Closed(entry, AutoLandingCode.Already, branch: held.Branch), null);
+        }
+
+        var (tip, status, _) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
+        if (!string.Equals(tip, held.Tip, StringComparison.OrdinalIgnoreCase)) return null;
+        return (null, new AutoChoice(entry, quest, tip, status) { Hands = landing });
+    }
+
+    /// <summary>
+    /// A branch made and held back from its push, handed on now its quest stands again (FABRIC-CLOSE1h2): the hand-off's own door
+    /// (<see cref="TreeHandOffs.HandAsync"/>), which takes the branch's hold, reads the record under it and pushes once, from the
+    /// repository the tree is a checkout of. Kept as a landing is: <c>landed</c> where it pushed, <c>plugin-failed</c> where the plugin
+    /// did not, and a refusal where the hand-off spoke to none.
+    /// </summary>
+    private async Task<string> HandOnAsync(AutoChoice choice, LandedBranch made, CancellationToken ct)
+    {
+        var entry = choice.Entry;
+        var root = TreeTips.CommonDirectory(entry.Tree) is { } common
+            ? Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(common)) ?? entry.Tree
+            : entry.Tree;
+        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct).ConfigureAwait(false);
+        var landed = handed.Plugin is not null
+            ? new TreeLanding(true, handed.Message, handed.Branch, handed.Plugin)
+            : new TreeLanding(false, handed.Message, handed.Branch) { Refusal = AutoLandingCode.Refused };
+        return Tried(entry, AutoLandingRules.CodeOf(landed), choice.Tip, choice.Status, landed, handed.Plugin?.Plugin ?? made.Rule?.Plugin,
+            made.Branch);
     }
 
     /// <summary>

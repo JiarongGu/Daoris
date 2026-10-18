@@ -16365,3 +16365,99 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TESTWAIT3 — the driver's fast half held to its conditions** (driver tests; after TESTWAIT2). `RunningServiceTests.A_redirect_is_no_answer` failed beside two other gates and passed alone (twice on 2026-10-18): `RunningService.Status`'s own 2 s bound can end before a loaded local listener is asked. Proof: the test passes beside two other suites three times; a search lists the calls.
 
 **Outcome** 2026-10-18: `A_redirect_is_no_answer` repeats with fresh listeners, up to three times, when its redirect listener was never asked; both assertions kept, the product unchanged (TESTWAIT3b measures the product's bound). On Sonnet. Detail: FIX-LOG TESTWAIT3.
+
+## FABRIC-CLOSE1c — the person's reopen of a sealed submission (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1c — the person's reopen of a sealed submission** (service; after CLOSE1a; §E5, canary 55). Only the person may reopen a sealed submission; its successor withdrawn if untaken or held with its reason if taken. Proof: an untaken successor withdrawn, a started one held, a `ready` taken again after the reopen. Before arming (Codex's pre-mortem, 2026-10-18): the reopen invalidates the named submission at once (a close in flight, both orders, CLOSE1u's outcome door) and travels through operations to other machines; a started successor is held with its reason and the person chooses to continue it on the new submission or abandon it; a later `ready` makes no duplicate and no permanent seal.
+
+**Outcome** 2026-10-18: the service's half of the person's reopen: `reopened` and `rebound` operations, a step's `grewFrom`, and the seal read from it (`SealingAsync`); the `/reopen` and `/continue` Person doors on a local host; a withdrawn step taken by nobody, a held one going no further until the person's word, and the next unheld submission rebinding the same step; a reopen racing a take converges on every machine in either order. §E5's "withdrawn as a decline" became a hold on the open step (a decline is final). On Opus: about 100 tool calls. Detail: D173's FABRIC-CLOSE1c note; §E5's amendment.
+
+## FABRIC-WORKFLOW2d — workflow completion aware of a submission (2026-10-18, D173)
+
+> - [ ] **FABRIC-WORKFLOW2d — workflow completion aware of a submission** (driver; after CLOSE1c; §E5). `WorkflowRun`'s Done-only completion (`WorkflowRun.cs:362`) means a graph landing before its close waits on itself: complete on §E5's bound, unheld, sealed submission, terminal quests included; a reopen retracts it. Proof: a two-step chain reaches landing before Done, then closes atomically; a reopen retracts completion.
+
+**Outcome** 2026-10-18: a run's work finishes at a closure graph's unheld, sealed submissions (the chain's last at its unheld one), so its landing is reached before Done; the close's Done reads finished as before, a reopen reads waiting on an agent (reopened), and an unbound run reads exactly as it did; both new details said in English and 中文 (交付 for a submission). On Opus: about 80 tool calls. Detail: D173's FABRIC-WORKFLOW2d note.
+
+## GATEWT1 — the full set in its own worktree, beside the merges (2026-10-18, D115)
+
+> - [ ] **GATEWT1 — the full set in its own worktree, beside the merges** (tools; the owner: "can we run some parallel or optimize the gate and continue the development"). The full set runs in the main checkout, so no merge can run for its 1 to 1.5 hours: run it in a detached worktree at the commit to ship, record its verdicts where the stage reads them, and stage from that tree. Proof: a merge committed on main while the full set runs elsewhere; the stage publishes the gated tree.
+
+**Outcome** 2026-10-18: `merge-branch --full --beside [<commit>]` runs the full set in `local/gate-tree` (made or reused, `npm ci` when stale, one run at a time under a lock), records every verdict in the main checkout's store keyed by tree, and the prune sees the tree; `publish:desktop --stage --from-gated <commit>` builds in it. Its first, hand-made use staged 71928770f while merges went on. On Opus: about 80 tool calls. Detail: D115's GATEWT1 note.
+
+## FABRIC-CLOSE1h — the landing and its gates on an unheld submission (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1h — the landing and its gates on an unheld submission** (driver; §E5, §E10 row 24b). In a closure graph automatic landing starts at an unheld submission, with every hold, opinion and look still applying. Proof: a bound quest's unheld submission lands its branch and a held one does not. After WORKFLOW2d. Before arming (Codex's pre-mortem): enrol eligible bound submissions on the automatic landing path (conclusion enrolment and `AutoLander.cs:178`); judge again after LANDRACE1's tree hold; gates aware of a submission; landing never implies completion; a hold stops a landing up to the moment its push begins (the parent's default).
+
+**Outcome** 2026-10-18: in a closure graph the automatic landing and its gates wait on an unheld submission (`QuestResults`); the three conclusions make such a session due, `AutoLander` keeps it due and a reopen closes it `undone`, and the review's and opinion's gates read a submission as its done; the automatic landing is judged again once it holds its tree. A landing writes no quest state; the owner's install reads as before. On Opus: about 85 tool calls. Detail: D173's FABRIC-CLOSE1h note; §E5's amendment.
+
+## FABRIC-GRAPH1g — two observed nodes of one plugin step in one graph refused at save (2026-10-18, D173)
+
+> - [ ] **FABRIC-GRAPH1g — two observed nodes of one plugin step in one graph refused at save** (driver, cli; after PERFORM1i; §E3, §C4 rule 2). Today the runtime reaches neither (`not-named`) and says so only as a counted refusal: refuse the graph at save with its own code. Proof: a `NodeGraphs.Problems` test and the CLI twin's fixture.
+
+**Outcome** 2026-10-18: a graph with two observed nodes of one plugin step is refused at save as `observed-twice`, naming both; the decoder is exempt, so a stored schema-1 version stays readable. On Sonnet: about 50 tool calls (with GRAPH1i). Detail: D173's note "FABRIC-GRAPH1g and GRAPH1i".
+
+## FABRIC-GRAPH1i — an authored graph's protected order held across a skip (2026-10-18, D173)
+
+> - [ ] **FABRIC-GRAPH1i — an authored graph's protected order held across a skip** (driver, cli; after GRAPH1h; §E7, GRAPH1's choice 5). `NodeGraphs`' protected-order check is reachability, so a skip between a look and a landing lets the landing go while the look is unsettled: refuse it at save unless each gate is wired into each later one, or add the wires on read. Proof: `NodeGraphsTests` and a `WireEvaluation` case.
+
+**Outcome** 2026-10-18: an authored graph must wire each opinion into each later look and landing and each look into each landing, refused at save as `protected-wire`; wires are never added on read, so a saved graph is never silently changed. Detail: D173's note "FABRIC-GRAPH1g and GRAPH1i".
+
+## FABRIC-CLOSE1d — Submitted on the page and in the driver's reader (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1d — Submitted on the page and in the driver's reader** (web-shell, driver; after CLOSE1a; §E5). The quest page shows *Submitted → the current gate or hold → Done*, en and zh; `ServiceClient` reads `closure` and `submission` and sends `submission` with every verdict on a submitted quest. Proof: a page test on a submitted, held quest; a driver client test.
+
+**Outcome** 2026-10-18: the quest page and Quests' list read a closure graph's taken quest as *submitted* (zh 已交付, the glossary's new *submission* term), then its hold, then done; the driver's reader needed nothing (CLOSE1b and WORKFLOW2d read both fields, and the evidence verdict already names its submission). A held live quest, listed twice, is listed once. An unbound quest reads as before. On Opus, with CLOSE1c3: about 100 tool calls. Detail: D173's FABRIC-CLOSE1d and CLOSE1c3 note.
+
+## RPC1b5 — the land presses carry the registry's followed lines (2026-10-18, D171)
+
+> - [ ] **RPC1b5 — the land presses carry the registry's followed lines** (modules, driver; after RPC1b4; §7.3). The verb prints the registry lines after a landing; `LAND_SESSION_TREE`, `LAND_ENTRY` and `LAND_ASK` leave them to the loop: add `TreesWords.FollowMovedAsync` with `followed` in the answer, as `TREES_SYNC` does. Proof: the text from the answer equals the alone path's, with a stand-in registry.
+
+**Outcome** 2026-10-18: `LAND_SESSION_TREE`, `LAND_ENTRY` and `LAND_ASK` follow the lines a landing moved (`TreesWords.FollowMovedAsync`, on `follow:true`) and answer `followed`, with `said` carrying the lines after the sentence (`TreesSaid.Followed`); the text from the answer equals the alone path's over a stand-in registry. On Sonnet. Detail: D171's RPC1b5 note.
+
+## FABRIC-CLOSE1c2 — the driver's half of a reopen (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1c2 — the driver's half of a reopen** (driver; after CLOSE1c, WORKFLOW2d; §E5, canary 55). A step whose source the person reopened is withdrawn while open and held while taken; the planner starts, carries on and goes on with nothing until the person chooses; the session the hold stopped ends `completed` (`ended.source-reopened`), and their go-on carries it on in its tree. Proof: `PlannerTests` and `ObservationTests`.
+
+**Outcome** 2026-10-18: the planner's `SourceReopened` verdict withdraws an open step and holds a taken one, before a pause and a stop, with no claim asked while it holds; a session the hold stopped ends `completed` with `ended.source-reopened` (en, 中文); the person's go-on carries it on in its tree. On Opus: about 115 tool calls. Detail: D173's FABRIC-CLOSE1c2 note.
+
+## FABRIC-CLOSE1q2 — the held-close words across a reopen and a restart (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1q2 — the held-close words across a reopen and a restart** (driver; after CLOSE1c2; before arming). A close for S1 left unanswered when the person reopens S1, then S2 at S1's commit: `record` must never reach S2, `resend` only asks the outcome door, and `stop` stopped every live node of the unit, S2's work included. Proof: a `QuestCloseTests` theory over the three words, applied by a restarted loop; under `stop`, S2's deploy stays live.
+
+**Outcome** 2026-10-18: confirmed red first: a `stop` through S1's close stopped S2's deploy, or the close node so S2's close never ran, and a wake's `record` reached the node with S1's key. Now `record` and `stop` on a close whose submission was reopened or replaced are taken back (`submission-moved`) and said (en, zh), a pass with a close's word reads the quests afresh, and `resend` is unchanged. On Opus: about 80 tool calls. Detail: D173's FABRIC-CLOSE1q2 note; FIX-LOG.
+
+## FABRIC-CLOSE1h2 — a hold between a landing's branch and its push (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1h2 — a hold between a landing's branch and its push** (driver; after CLOSE1h; §E5, D145 point 2). CLOSE1h commits a landing at its judgement under the tree's hold, so a hold arriving after the branch is made and before the push is not honoured; the owner's default is that a hold stops a landing up to the moment its push begins. Proof: a hold during the branch-hold wait leaves the branch made, no plugin frame told, and one push after the release.
+
+**Outcome** 2026-10-18: the automatic landing is judged once more just before its plugin is told; a hold, a reopen or a later submission there leaves the branch made and recorded and pushes nothing (`push-held`, en and zh); the first look once the quest stands hands the branch on with one push, or lands work that went on past it onto the made branch. LANDGIT1's counts stand. On Opus: about 95 tool calls. Detail: D173's FABRIC-CLOSE1h2 note; §E5's amendment.
+
+## FABRIC-CLOSE1q3 — the doors offer only what the pass will take on a close whose submission moved (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1q3 — the doors offer only what the pass will take on a close whose submission moved** (driver, web; after CLOSE1q2; before arming). `WORK_STATE`'s held list read node records alone, so a held close whose submission changed still offered `record` and `stop`, which the next pass takes back. Proof: `HeldAttempts` and `DriverModuleLinesTests` list it with `resend` alone; the page offers only that press.
+
+**Outcome** 2026-10-18: a held close whose submission moved is listed with `resend` alone and the `submission-moved` reason on `WORK_STATE`, judged on the runtime's last read of the quests (`NodeRuntime.LastQuests`), and offered as that one press on the page; the terminal's `work held` lists as before (CLOSE1q5). On Sonnet. Detail: D173's FABRIC-CLOSE1q3 note.
+
+## FABRIC-CLOSE1c5 — a held step's branch brought up to date with its source's new submission on the go-on (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1c5 — a held step's branch brought up to date with its source's new submission on the go-on** (driver, service; after CLOSE1c2; §E5). CLOSE1c2 carries the held session on in its tree, synced only with the line; §E5 brings the step's branch up to date with the new submission, which needs the submission's commit on the wire. Proof: the client reads the commit, absent from an older host; a Git test where the go-on's carry-on starts in a tree holding it; a conflict leaves the tree as it was, and the session is told.
+
+**Outcome** 2026-10-18: a submission answers its evidence's commit (`Quest.SubmissionCommit`, the wire's `submission.commit`); on the person's go-on, the step's own commits are replayed onto it (a rebase, as the tree sync's) before the line sync, a conflict leaving the tree as it was with the person told to resolve it, no commit syncing the line alone. On Opus: about 95 tool calls. Detail: D173's FABRIC-CLOSE1c5 note.
+
+## FABRIC-CLOSE1c3 — reopen, go on and abandon on the page and the terminal (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1c3 — reopen, go on and abandon on the page and the terminal** (web-shell, driver; after CLOSE1d and CLOSE1c2; §E5, D156; before arming). A door for `/reopen` and `/continue`, shown only on a quest with a sealed submission, with a terminal twin confirmed in the window, en and 中文; a step held `source-reopened` gets its own pill and words, offers go on and abandon, never the yes door; the run says a source made ready again whose started step waits on the person's go-on. Proof: `QuestPage`/`QuestList` tests, `i18n:check`, `names:check --strict`, `HelpCoverageTests`.
+
+**Outcome** 2026-10-18: *Reopen…* on a quest whose unheld submission a live step stands on, and `daoris-driver quest reopen <id> [--note]`; a step held `source-reopened` has its own pill and section (来源已重新打开), offers *Go on with it* (`quest go-on <id>`) once its source is ready and *Abandon…*, never the yes; Ask Daoris answers both hooks as the quest's own acts. The terminal twins post as `quest done` does: their window confirmation waits on RPC1c (after PERSONDOOR1d). The run's go-on words are FABRIC-CLOSE1c7. On Opus, with CLOSE1d. Detail: D173's FABRIC-CLOSE1d and CLOSE1c3 note.
+
+## GATEWT1c — the gate tree's logs kept past its removal (2026-10-18, D115)
+
+> - [ ] **GATEWT1c — the gate tree's logs kept past its removal** (tools; after GATEWT1). Gate logs live inside the gate tree, so a prune after the stage deletes them: copy them to the main checkout's `local/scratch/` when the run ends. Proof: a failed beside run's logs readable there after the tree is removed.
+
+**Outcome** 2026-10-18: `--full --beside` keeps the run's logs in the main checkout's `local/scratch/beside-<sha7>/` on pass, fail or error, and a hard-killed run's are rescued by the next run; with GATEWT1b's tool half, it copies the declared private files (`sensitive.patternsFile`, under `local/` only) into the gate tree on every run (the universal gate fails without the list). On Sonnet: about 45 tool calls. Detail: D115's note "Amended 2026-10-18 (GATEWT1b, GATEWT1c)".
+
+## FABRIC-CLOSE1h6 — a session due again after a closed try is tried again (2026-10-18, D173)
+
+> - [ ] **FABRIC-CLOSE1h6 — a session due again after a closed try is tried again** (driver; after CLOSE1h). `AutoLandings.Due` reopens an entry with its tries kept, but `AutoLandingRules.ShouldTry` answers no for a last try that closed it, so a submission reopened then readied again, and a done after words went on past a landing (D137), are never tried. Contract: D145 point 2, D137, LAND2c, D173's FABRIC-CLOSE1h note (*Enrolled and kept due*). Proof (Git, red first): a reopened submission readied again lands at the next look; a done after words went on moves the made branch on with one push.
+
+**Outcome** 2026-10-18: a session due again after a try that closed its entry is judged afresh (`AutoLanding.Reopened`; `ShouldTry` and `LandingWaits.Of` read it as a first try); one still due on its own last try keeps its rule. Seen red first: D137's done after words went on past a landing (the ordinary automatic landing, no closure graph, so the owner's install too wherever a rule accepts automatically) never moved the made branch on, and a reopened submission readied again never landed. On Opus: about 95 tool calls. Detail: D173's FABRIC-CLOSE1h6 note; FIX-LOG 2026-10-18.

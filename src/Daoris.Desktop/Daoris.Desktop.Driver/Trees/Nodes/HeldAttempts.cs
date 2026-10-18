@@ -49,15 +49,22 @@ public static class HeldAttempts
     /// Every attempt held on the records that read, and every close unknown with its node still on it (FABRIC-CLOSE1u,
     /// <see cref="QuestClosing.Unanswered"/>), oldest first; with <paramref name="unit"/>, that unit's alone.
     /// </summary>
-    public static IReadOnlyList<HeldAttempt> Read(NodeRecordFiles records, string? unit = null) =>
+    public static IReadOnlyList<HeldAttempt> Read(NodeRecordFiles records, string? unit = null, IReadOnlyDictionary<string, QuestView>? quests = null) =>
         [.. records.All().Records
             .Where(record => unit is null || string.Equals(record.Unit, unit, StringComparison.Ordinal))
-            .SelectMany(record => record.Attempts.Where(attempt => attempt.State == AttemptStates.Held || QuestClosing.Unanswered(record, attempt)).Select(attempt => new HeldAttempt(
-                record.Unit, attempt.Node, attempt.Attempt, attempt.Plugin, attempt.Call.Step,
-                record.Statuses.GetValueOrDefault(attempt.Node)?.State ?? NodeStates.Blocked, attempt.Code ?? ReconcileStates.Unknown)
+            .SelectMany(record => record.Attempts.Where(attempt => attempt.State == AttemptStates.Held || QuestClosing.Unanswered(record, attempt)).Select(attempt =>
             {
-                Outcome = attempt.Outcome, Revision = attempt.Call.SubjectRevision, RecordedAt = attempt.RecordedAt,
-                Resolution = attempt.Resolution, ResolvedAt = attempt.ResolvedAt, Words = HeldResolutions.Of(attempt),
+                // FABRIC-CLOSE1q3: a close whose submission moved by the runtime's last read is offered resend alone: the pass takes back
+                // record and stop, which the node records alone cannot tell (WORK_HELD holds no quest). No last read judges nothing.
+                var moved = attempt.Plugin == QuestClosing.Sender && quests is not null && QuestClosing.Moved(attempt, quests) is not null;
+                return new HeldAttempt(
+                    record.Unit, attempt.Node, attempt.Attempt, attempt.Plugin, attempt.Call.Step,
+                    record.Statuses.GetValueOrDefault(attempt.Node)?.State ?? NodeStates.Blocked,
+                    moved ? WorkPerformer.SubmissionMoved : attempt.Code ?? ReconcileStates.Unknown)
+                {
+                    Outcome = attempt.Outcome, Revision = attempt.Call.SubjectRevision, RecordedAt = attempt.RecordedAt,
+                    Resolution = attempt.Resolution, ResolvedAt = attempt.ResolvedAt, Words = moved ? [HeldResolutions.Resend] : HeldResolutions.Of(attempt),
+                };
             }))
             .OrderBy(held => held.RecordedAt)];
 
@@ -79,6 +86,8 @@ public static class HeldAttempts
     private static string CloseWhy(HeldAttempt held) => (held.Why, held.Outcome) switch
     {
         (WorkPerformer.NotCloseWord, _) => "your word could not be taken: a close's outcome is its door's answer, never a person's word",
+        (WorkPerformer.SubmissionMoved, _) =>
+            "the submission its close names was reopened or replaced since, so the work there is now is never that close's to record or stop: it can be sent again",
         (var code, WorkStates.Reached) => $"the quest was closed, and Daoris could not record that on its close's node ({code})",
         (var code, WorkStates.Failed) => $"the quest's close was refused, and Daoris could not record that on its close's node ({code})",
         (var code, _) => $"Daoris keeps no answer to the quest's close ({code})",

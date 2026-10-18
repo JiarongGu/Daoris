@@ -24,6 +24,7 @@ import { Note } from '../work/Note';
 import { stepState } from '../work/review';
 import { ReviewGate, type ReviewGateActs } from '../work/ReviewGate';
 import { QuestRequirements } from './Requirements';
+import { shownStatus } from './records';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
@@ -33,7 +34,7 @@ import { WorkflowLine } from '../workflow/WorkflowLine';
 /** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
 type QuestAct =
   | 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'clear' | 'clearFailed' | 'accept' | 'resume' | 'retry'
-  | 'trust' | 'session';
+  | 'trust' | 'session' | 'reopen' | 'goOn';
 
 /** Each act's name, the one its button says, and its glyph in a menu. */
 const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
@@ -50,6 +51,8 @@ const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
   retry: { label: 'quests.detail.retry', icon: 'refresh' },
   trust: { label: 'trust.open', icon: 'shield' },
   session: { label: 'work.open', icon: 'frameWork' },
+  reopen: { label: 'quests.detail.reopen' },
+  goOn: { label: 'quests.reopened.goOn', icon: 'resume' },
 };
 
 /**
@@ -131,13 +134,29 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   *Review in `<environment>`* above the body, every set-up it said newest first, and under the newest *Reviewed*, *Not
  *   yet…*, *Show it again* and *Skip…*. A done its review holds waits for that, not for a yes: its header says *awaits
  *   review* and no *Accept the departure* is offered for it, which the accept door would refuse.
+ * - **A closure graph's quest reads *Submitted*** (FABRIC-CLOSE1d, the fabric events design §E5): taken at its agent's `ready`, then
+ *   the hold it waits on, as a done's, then done at the graph's close. Its sealed submission is reopened here (FABRIC-CLOSE1c3,
+ *   D156): *Reopen…* asks once with the step it publishes named, and sends the submission it showed. A step its source's reopen
+ *   holds says so in its own words, offering *Go on with it* once the source is ready again and *Abandon…*, never the yes. A quest
+ *   no closure graph holds, which is every quest on an install that binds none, reads as before.
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
   onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
-  nameOf, review, workflow, grouping,
+  nameOf, review, workflow, grouping, reopen, goOn,
 }: {
+  /**
+   * The person's reopen of its sealed submission (FABRIC-CLOSE1c3, D156): the step of its chain that stands on it, and the press,
+   * told back to its ask so a refusal is said inside it. Absent where no step stands on its submission; offered only on a quest
+   * at an unheld submission.
+   */
+  reopen?: { step: string; onReopen: (note: string | null, answered: Answered) => void };
+  /**
+   * A step its source's reopen holds (FABRIC-CLOSE1c3): whether the source is ready again, so the person's go-on can take, and the
+   * press. Absent where there is no door to say it through.
+   */
+  goOn?: { ready: boolean; going?: boolean; onGoOn: () => void };
   /**
    * Where its chain's work here stands in its workflow (WORKFLOW1c, the workflow design §7), said in one line among the head's
    * facts whose door opens the run. Absent in a browser, which has no driver to read one.
@@ -226,7 +245,9 @@ export function QuestPage({
   const { t } = useTranslation();
   // One question asks under the header at a time: a decline's reason, a delete's sentence, a pause's, the abandon's list, a
   // clear's list.
-  const [asking, setAsking] = useState<'done' | 'decline' | 'delete' | 'pause' | 'abandon' | 'clear' | 'clearFailed' | null>(null);
+  const [asking, setAsking] = useState<'done' | 'decline' | 'delete' | 'pause' | 'abandon' | 'clear' | 'clearFailed' | 'reopen' | null>(null);
+  // The person's words on a reopen (FABRIC-CLOSE1c3), kept while its ask is open.
+  const [reopenNote, setReopenNote] = useState('');
   // The plan the abandon's list showed, held from when it opened: the second press sends exactly what it listed (§3.1).
   const [listed, setListed] = useState<WorkPlan | null>(null);
   const [reason, setReason] = useState('');
@@ -275,9 +296,15 @@ export function QuestPage({
 
   // The header's acts, in its order (D118 §3b), each where it applies. While one asks under the header, its first press
   // is not offered twice. One list for its buttons and the page's right-click (CTX1), so the two never disagree.
+  // A closure graph's quest (FABRIC-CLOSE1d, CLOSE1c3): what its pill says, whether its sealed submission may be reopened here, and
+  // whether its source's reopen holds it, which no take, yes or done of the agent's moves.
+  const reads = shownStatus(quest);
+  const reopenHeld = quest.held === true && quest.hold === 'source-reopened';
+  const reopenable = reopen !== undefined && reads === 'Submitted' && quest.held !== true;
+  const goesOn = reopenHeld && quest.status === 'Taken' && goOn?.ready === true;
   const headActs: QuestAct[] = [
     ...(!(moving || offers.abandon) ? [] : [
-      ...(quest.status === 'Open' ? ['take' as const] : []),
+      ...(quest.status === 'Open' && !reopenHeld ? ['take' as const] : []),
       ...(moving && asking !== 'done' ? ['done' as const] : []),
       ...(offers.pause && moving && asking !== 'pause' ? ['pause' as const] : []),
       ...(moving && !declining ? ['decline' as const] : []),
@@ -295,12 +322,15 @@ export function QuestPage({
   const trustable = Boolean(hold && onGrant && onTrusting && !trusting);
   // A departure that holds it for the person's yes (DRIFT1d2): what it waits on, so the yes leads its body's acts. A set-up
   // step its review holds waits for the review's verdict instead (REVIEWENV1g), which no yes lifts (D154 point 9).
+  // A step its source's reopen holds waits on the person's go-on or abandon (FABRIC-CLOSE1c3), which the accept door would refuse.
   const unreviewed = quest.held === true && quest.hold === 'unreviewed';
-  const held = quest.held === true && !unreviewed;
+  const held = quest.held === true && !unreviewed && !reopenHeld;
   const requirements = quest.requirements ?? [];
   const acceptable = held && onAccept !== undefined;
   const bodyActs: QuestAct[] = [
     ...(acceptable ? ['accept' as const] : []),
+    ...(goesOn ? ['goOn' as const] : []),
+    ...(reopenable && asking !== 'reopen' ? ['reopen' as const] : []),
     ...(ownResume ? ['resume' as const] : []),
     ...(retryable ? ['retry' as const] : []),
     ...(trustable ? ['trust' as const] : []),
@@ -322,6 +352,8 @@ export function QuestPage({
       case 'retry': onRetry?.(); return;
       case 'trust': onTrusting?.(true); return;
       case 'session': if (session) onAttend?.(session.id); return;
+      case 'reopen': setAsking('reopen'); return;
+      case 'goOn': goOn?.onGoOn(); return;
     }
   };
 
@@ -386,7 +418,8 @@ export function QuestPage({
       ...[...headActs, ...bodyActs].map((act) => ({
         id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon,
         // What waits on a press waits in the menu too: the header's on the quest's own, Try again on its own.
-        disabled: act === 'retry' ? retrying : act === 'accept' ? accepting : act === 'session' || act === 'trust' ? false : waiting,
+        disabled: act === 'retry' ? retrying : act === 'accept' ? accepting : act === 'goOn' ? goOn?.going === true
+          : act === 'session' || act === 'trust' ? false : waiting,
         onSelect: () => press(act),
       })),
       copyId,
@@ -404,7 +437,7 @@ export function QuestPage({
   const head = (
     <PageHead
       title={named}
-      lead={<Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>}
+      lead={<Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${reads}`)}>{t(`status.${reads}`)}</Pill>}
       clamp={2}
       wholeElsewhere={!!body && named.length > LONG_TITLE}
       facts={questFacts(t, { quest, session, sitting })}
@@ -509,6 +542,32 @@ export function QuestPage({
             placeholder={t('quests.detail.doneNote')}
             value={doneNote}
             onChange={(e) => setDoneNote(e.target.value)}
+            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+          />
+        </InlineConfirm>
+      )}
+
+      {asking === 'reopen' && reopenable && (
+        /* The person's reopen of a sealed submission (FABRIC-CLOSE1c3, D156): it asks once, naming the step it holds, and sends
+           the submission this page showed, which the door refuses once another is current. Open until the service answers, a
+           refusal said inside it (UXFIX2). */
+        <InlineConfirm
+          className="mb-4"
+          label={t('quests.detail.reopenTitle')}
+          says={t('quests.detail.reopenConfirm', { id: quest.id, step: reopen!.step })}
+          meanIt={t('quests.detail.reopenMeanIt')}
+          busy={busy}
+          onConfirm={(answered) => reopen!.onReopen(reopenNote.trim() || null, answered)}
+          onClose={() => {
+            setAsking((was) => (was === 'reopen' ? null : was));
+            setReopenNote('');
+          }}
+        >
+          <input
+            aria-label={t('quests.detail.reopenNote')}
+            placeholder={t('quests.detail.reopenNote')}
+            value={reopenNote}
+            onChange={(e) => setReopenNote(e.target.value)}
             className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
         </InlineConfirm>
@@ -645,6 +704,17 @@ export function QuestPage({
             )}
           </Fact>
         )}
+        {reads === 'Submitted' && quest.submission && (
+          /* When its agent made it ready (FABRIC-CLOSE1d), and the person's reopen of it where a step stands on it (CLOSE1c3). */
+          <Fact name={t('quests.detail.submitted')}>
+            {stamp(quest.submission.at)} · {ago(quest.submission.at)}
+            {reopenable && asking !== 'reopen' && (
+              <span className="mt-1.5 block">
+                <Button disabled={waiting} onClick={() => press('reopen')}>{t(QUEST_ACT.reopen.label)}</Button>
+              </span>
+            )}
+          </Fact>
+        )}
         {abandoned && (
           /* When its work was abandoned on this machine (§4.2); the reason is the decline's note, on the record below. */
           <Fact name={t('quests.detail.abandonedAt')}>{stamp(abandoned.at)} · {ago(abandoned.at)}</Fact>
@@ -666,6 +736,37 @@ export function QuestPage({
         <div className="mb-4">
           <TrustAsk hold={hold} busy={granting} onCancel={onTrusting && (() => onTrusting(false))} onGrant={(answered) => onGrant(hold, answered)} />
         </div>
+      )}
+
+      {reopenHeld && (
+        /* A step its source's reopen holds (FABRIC-CLOSE1c3; D173's CLOSE1c note, choice 2): what it waits on, so above the body.
+           Withdrawn while open, it grows from the source's next unheld submission by itself; taken, it waits for the person's word,
+           go on once the source is ready again or abandon, which is their decline. Daoris never chooses, and no yes lifts it. */
+        <section
+          aria-label={t('quests.reopened.title')}
+          className="mb-4 rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5"
+        >
+          <SectionTitle>{t('quests.reopened.title')}</SectionTitle>
+          <p className="m-0 text-body">
+            {t(quest.status === 'Open' ? 'quests.reopened.withdrawn' : goesOn ? 'quests.reopened.ready' : 'quests.reopened.waits', {
+              parent: quest.parent ?? '',
+            })}
+          </p>
+          {moving && (
+            <span className="mt-2 flex flex-wrap gap-2">
+              {goesOn && (
+                <Button variant="primary" disabled={goOn?.going === true} onClick={() => press('goOn')}>
+                  {t(QUEST_ACT.goOn.label)}
+                </Button>
+              )}
+              {/* Abandoning it is the person's decline (CLOSE1c's choice 2): this machine's abandon where its driver offers one,
+                  which stops its work too, and the decline's own ask otherwise. */}
+              <Button disabled={waiting} onClick={() => press(offers.abandon ? 'abandon' : 'decline')}>
+                {t(QUEST_ACT.abandon.label)}
+              </Button>
+            </span>
+          )}
+        </section>
       )}
 
       {held && requirements.length > 0 && (

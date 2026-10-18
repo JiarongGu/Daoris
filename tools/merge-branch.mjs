@@ -56,7 +56,7 @@
  *    Process gate also writes `<gate>.trx` there, each test's duration, and the ten slowest classes are
  *    printed after its line (PROC1), so where its time goes is measured at every merge that runs it.
  * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
- *    `--rerun`, `--stale` and the stage read (below).
+ *    `--rerun`, `--stale` and the stage read (below): the main checkout's, whichever worktree the run is in (GATEWT1).
  * 9. Once the gates pass, the knowledge server agents ask is rebuilt from the merged tree when the service's
  *    sources changed (`tools/knowledge-server.mjs build`, ORIENT1c); one line says so, and a build that fails
  *    is said and fails nothing.
@@ -101,6 +101,40 @@
  * A refused stage, `--passed` and a failed `--full` end with the smallest command that would pass the checkout
  * (`stageRemedy`): `--stale` when every gate it lacks is stale, `--rerun` naming each that failed or has no verdict
  * when that runs fewer than the plan, else `--full`. `publish:desktop` names the same command in its refusal.
+ *
+ * ## The full set beside the merges (GATEWT1)
+ *
+ * `--full` ran in the main checkout, so no merge could run for its hour to an hour and a half. `--full --beside
+ * [<commit>]` runs it on `commit`, main's tip unless named, in the gate tree (`GATE_TREE`, `local/gate-tree` under the
+ * main checkout, ignored): a worktree of its own, detached at that commit, made where none stands, reused where it
+ * holds the commit, moved there where it holds another, refused where it holds changes. Each folder of
+ * `DEPENDENCY_FOLDERS` with a lockfile is installed there (`npm ci`) when its `node_modules` is missing or was installed
+ * from another lockfile, a stamp inside it says which. Then the whole plan runs there as `--full` does, and merges land
+ * in the main checkout meanwhile.
+ *
+ * - **One store.** Every run records into the main checkout's `local/gate-verdicts.json` (`verdictsHome`: the first
+ *   worktree git lists), whichever worktree it is in, under a lock beside the file, so a merge's verdict and the full
+ *   set's never write over each other. Verdicts are keyed by tree, so `--passed` in the main checkout judges its own tree
+ *   and `--passed` in the gate tree, which the stage asks, the gate tree's.
+ * - **One at a time.** The run holds `GATE_TREE_LOCK` (its pid, commit and start) in the main checkout; a second is refused,
+ *   naming it. A lock whose process no longer runs is taken over, and said.
+ * - **The stage builds the gated tree.** `npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`
+ *   builds in the gate tree, never in the main checkout as it moves, and refuses a tree no full set passed as before.
+ * - **The prune sees it.** No rule above did: it is detached, so no merged branch has it out, and it is under `local/`,
+ *   not `.claude/worktrees/`. It is never removed while its run holds the lock, nor while a process is inside it (one a
+ *   full set started by hand holds no lock), read as CLEANUP2 reads a harness-locked tree's. A merge's prune removes it once its stage
+ *   is done (`GATE_TREE_RECORD` notes the stage of the commit it holds); `--prune` removes it once its run has ended,
+ *   staged or not. Either says so, a line of its own; changes in it are never forced away, and a folder git no longer
+ *   lists there is the half-removed rule's (CLEANUP2).
+ * - **Under load.** A full set beside merges shares the machine with their gates (GATEORDER1's lesson: a Process half's
+ *   timing tests failed beside heavy gates). Nothing of FLAKE1's changes: a Process half's failures are re-run alone once
+ *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start.
+ * - **Its private files, its logs (GATEWT1b, GATEWT1c).** Before its gates start, the private files a gate reads under
+ *   `local/` (`privateGateFiles`: the declared `sensitive.patternsFile`, nothing outside `local/`) are copied from the main
+ *   checkout into the tree on every run; a missing one is said, and the gate that reads it answers. When the run ends, pass,
+ *   fail or a thrown error, the tree's run folder is copied to the main checkout's `local/scratch/beside-<sha7>` (the newest
+ *   run's replaces an older), so a prune loses none. A run killed outright never gets there: the next run, before it clears
+ *   its logs, keeps any run folder it finds in the tree whose `beside-<sha7>` is absent.
  *
  * ## The prune (GATE2)
  *
@@ -250,6 +284,7 @@
  *   node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  *   node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --passed
  *   node tools/merge-branch.mjs --prune [--plan]
  *   node tools/merge-branch.mjs --drop-batch
@@ -257,11 +292,12 @@
  * Exit codes: 0 merged and every gate passed (flakes named), or pruned (a branch kept is the rule working),
  * or the full set passed the checkout, after a re-run on it or not · 1 a conflict, a failed gate, a failed
  * commit check, or a checkout the full set has not passed · 2 refused (usage, not on main, a dirty tree, an
- * unknown branch or gate) or a tool error.
+ * unknown branch or gate, a full set beside already running, a gate tree with changes) or a tool error.
  */
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
-  closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
+  closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
@@ -285,6 +321,18 @@ export const FULL_COMMAND = 'node tools/merge-branch.mjs --full';
 
 /** The command that runs each stale gate again on the checkout as it stands (GATE6b): what a refused stage names when it would do. */
 export const STALE_COMMAND = 'node tools/merge-branch.mjs --stale';
+
+/**
+ * GATEWT1: the full set's own worktree, detached at the commit it gates, under the main checkout's ignored `local/`;
+ * the lock a run beside the merges holds while it runs; and the record of its last run and its stage. All three are
+ * the main checkout's, whichever worktree asks. `tools/desktop-publish.mjs` names the same three (a test holds them equal).
+ */
+export const GATE_TREE = 'local/gate-tree';
+export const GATE_TREE_LOCK = 'local/gate-tree.lock';
+export const GATE_TREE_RECORD = 'local/gate-tree.json';
+
+/** GATEWT1: the folders whose `package-lock.json` the gate tree installs from, as AGENTS.md has a fresh checkout do. */
+export const DEPENDENCY_FOLDERS = ['.', 'src/Daoris.Web'];
 
 /**
  * The gates that run the `Process` test category (MOD8): every test in one starts a real process or runs a
@@ -483,6 +531,7 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --passed',
   '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs --drop-batch',
@@ -505,16 +554,25 @@ const usageError = (message) => new Refusal(message, 2, true);
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false, stale: false, oneAtATime: false,
+    full: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
   };
   let batch = false;
   let rerun = false;
   let positional = 0;
   let batched = 0;
+  let besideNext = false;
   const flags = [];
   for (const arg of argv) {
     if (arg.startsWith('-')) flags.push(arg);
-    if (arg === '--batch') {
+    // GATEWT1: the word right after --beside, if it is no option, is the commit it gates.
+    const besideCommit = besideNext && !arg.startsWith('-');
+    besideNext = false;
+    if (besideCommit && !rerun) options.besideCommit = arg;
+    else if (arg === '--beside') {
+      if (options.beside) throw usageError('--beside is given once, with the commit it gates after it');
+      options.beside = true;
+      besideNext = true;
+    } else if (arg === '--batch') {
       if (batch) throw usageError('--batch is given once, before the branches it adds');
       if (positional === 0) throw usageError('--batch follows the first branch: <branch> --batch <branch>…');
       batch = true;
@@ -540,6 +598,13 @@ export function parseArgs(argv) {
       else if (++positional > 1) throw usageError('two branches without --batch: name the rest after --batch');
       if (options.branches.includes(arg)) throw usageError(`'${arg}' is named twice`);
       options.branches.push(arg);
+    }
+  }
+  if (options.beside) {
+    if (!options.full) throw usageError('--beside runs the full set: --full --beside [<commit>]');
+    if (options.branches.length) throw usageError("--beside takes no branch: it gates a commit, main's tip unless named, in a worktree of its own");
+    if (flags.some((flag) => !['--full', '--beside', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--full --beside takes only a commit, --keep-going and --one-at-a-time');
     }
   }
   // `--plan` is a verb of its own, or the prune's plan; `--full` is one when it names no branch and modifies nothing else.
@@ -1075,6 +1140,55 @@ const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z');
 // ---------------------------------------------------------------------------------------------------
 // The verdicts record (GATE3): which gate passed which tree
 
+/**
+ * GATEWT1: the checkout whose verdict store a run in `root` reads and writes: the repository's main checkout, the first
+ * worktree git lists, whichever worktree the run is in (the gate tree's own run among them), or `root` itself where git
+ * cannot say or the repository is bare. Verdicts are keyed by tree, so one store serves every worktree: a stage asked in
+ * the gate tree and `--passed` in the main checkout read the same verdicts, each judging its own tree.
+ */
+const homes = new Map();
+export function verdictsHome(root) {
+  if (!homes.has(root)) {
+    const listed = git(root, ['worktree', 'list', '--porcelain'], { allowFail: true });
+    const first = listed.status === 0 ? parseWorktrees(listed.out)[0] : null;
+    homes.set(root, first && first.path && !first.bare ? resolve(first.path) : root);
+  }
+  return homes.get(root);
+}
+
+/**
+ * `fn` run holding a lock beside `file`, so two runs writing one store (a merge's and a full set's beside it, GATEWT1)
+ * never write over each other's verdict. A write takes milliseconds, so a lock older than `staleMs` was left by a run
+ * that died, and one still held after `waitMs` is taken: a lost verdict is better than a run that never ends.
+ */
+function holdingLock(file, fn, { waitMs = 10_000, staleMs = 30_000 } = {}) {
+  const lock = `${file}.lock`;
+  mkdirSync(dirname(lock), { recursive: true });
+  const started = Date.now();
+  let fd = null;
+  while (fd === null) {
+    try {
+      fd = openSync(lock, 'wx');
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+      let age = 0;
+      try {
+        age = Date.now() - statSync(lock).mtimeMs;
+      } catch {
+        continue;
+      }
+      if (age > staleMs || Date.now() - started > waitMs) rmSync(lock, { force: true });
+      else Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    closeSync(fd);
+    rmSync(lock, { force: true });
+  }
+}
+
 /** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
 export function readVerdicts(root) {
   const file = join(root, VERDICTS_FILE);
@@ -1090,13 +1204,15 @@ export function readVerdicts(root) {
 /** Verdicts appended, newest last, the oldest dropped past `keep`: written beside, then renamed. */
 export function addVerdicts(root, entries, { keep = 400 } = {}) {
   const file = join(root, VERDICTS_FILE);
-  const verdicts = [...readVerdicts(root).verdicts, ...entries].slice(-keep);
-  const record = {
-    schema: 1,
-    _why: 'Written by tools/merge-branch.mjs (GATE3): each gate verdict with the tree it ran on. publish:desktop asks `merge-branch --passed`, which reads it.',
-    verdicts,
-  };
-  writeAtomic(file, `${JSON.stringify(record, null, 2)}\n`);
+  holdingLock(file, () => {
+    const verdicts = [...readVerdicts(root).verdicts, ...entries].slice(-keep);
+    const record = {
+      schema: 1,
+      _why: 'Written by tools/merge-branch.mjs (GATE3): each gate verdict with the tree it ran on. publish:desktop asks `merge-branch --passed`, which reads it.',
+      verdicts,
+    };
+    writeAtomic(file, `${JSON.stringify(record, null, 2)}\n`);
+  });
 }
 
 /**
@@ -1649,10 +1765,11 @@ function preconditions(root) {
   requireVerdictsIgnored(root);
 }
 
-/** The verdicts record is written as each gate ends: tracked or untracked, it would change the tree it judges. */
+/** The verdicts record is written as each gate ends: tracked or untracked, it would change the tree it judges. In the main checkout (GATEWT1). */
 function requireVerdictsIgnored(root) {
-  if (git(root, ['check-ignore', '-q', VERDICTS_FILE], { allowFail: true }).status !== 0) {
-    throw new Refusal(`${VERDICTS_FILE} is not ignored here, so each verdict written would change the tree it is a verdict on`);
+  const home = verdictsHome(root);
+  if (git(home, ['check-ignore', '-q', VERDICTS_FILE], { allowFail: true }).status !== 0) {
+    throw new Refusal(`${VERDICTS_FILE} is not ignored ${samePath(home, root) ? 'here' : 'in the main checkout, where every worktree records'}, so each verdict written would change the tree it is a verdict on`);
   }
 }
 
@@ -2019,7 +2136,7 @@ function strayFolders(mainCheckout, worktrees) {
  * asks whether a branch is merged into that one. The processes are read once, and only when a
  * harness-locked worktree or a folder is to be looked into.
  */
-export function planPrune(root, { hold = [] } = {}) {
+export function planPrune(root, { hold = [], atMerge = false } = {}) {
   const refs = lines(git(root, ['for-each-ref', `--merged=refs/heads/${MAIN}`, '--format=%(objectname) %(refname)', 'refs/heads/']).out)
     .map((line) => {
       const [sha, ref] = line.trim().split(' ');
@@ -2052,7 +2169,71 @@ export function planPrune(root, { hold = [] } = {}) {
     const looked = folder.link || folder.git ? folder : { ...folder, ...inside(folder.path) };
     return { ...looked, ...folderVerdict(looked) };
   });
-  return { current, entries, folders };
+  const gate = gateTreeFacts(worktrees[0]?.path ?? root, worktrees, inside);
+  const gateTree = gate && { ...gate, ...gateTreeVerdict(gate, { atMerge }) };
+  return { current, entries, folders, gateTree };
+}
+
+/**
+ * GATEWT1: what the prune knows of the gate tree, which no rule above sees: it is detached, so no merged branch has it
+ * out, and it is under `local/`, not `.claude/worktrees/`. Null when it does not stand. A run's lock is read first, and a
+ * tree whose full set runs is not looked into.
+ */
+function gateTreeFacts(home, worktrees, inside) {
+  const path = join(home, GATE_TREE);
+  const tree = worktrees.find((one) => samePath(one.path, path));
+  if (!tree && !existsSync(path)) return null;
+  const lock = readGateLock(home);
+  const record = readGateRecord(home);
+  const staged = record?.staged?.commit ? { commit: record.staged.commit, at: record.staged.at } : null;
+  const facts = { home, path, listed: Boolean(tree), head: null, changes: [], lock, staged };
+  if (lock?.running) return facts;
+  if (!tree) {
+    const link = lstatSync(path).isSymbolicLink();
+    const folder = { path, link, git: !link && existsSync(join(path, '.git')) };
+    return { ...facts, folder: folder.link || folder.git ? folder : { ...folder, ...inside(path) } };
+  }
+  if (tree.prunable || !existsSync(join(path, '.git'))) return { ...facts, error: 'its folder has no .git file' };
+  Object.assign(facts, inside(path));
+  const head = git(path, ['rev-parse', 'HEAD'], { allowFail: true });
+  const status = git(path, ['--no-optional-locks', 'status', '--porcelain'], { allowFail: true });
+  if (head.status !== 0 || status.status !== 0) return { ...facts, error: gitSays(head.err || status.err || head.out || status.out) };
+  return { ...facts, head: head.out.trim(), changes: lines(status.out).map((line) => line.slice(3)) };
+}
+
+/**
+ * The gate tree removed, its record and a lock its ended run left with it: `git worktree remove`, never forced, or the
+ * half-removed folder's removal. Its lock is read again first, and a run started meanwhile keeps it.
+ */
+function removeGateTree(home, entry) {
+  const lock = readGateLock(home);
+  if (lock?.running) return { ...entry, remove: false, ...gateTreeVerdict({ ...entry, lock }) };
+  let left = '';
+  if (entry.listed) {
+    const removed = git(home, ['worktree', 'remove', entry.path], { allowFail: true });
+    if (removed.status !== 0) {
+      const still = parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, entry.path));
+      if (still) return { ...entry, remove: false, why: `git refused to remove it: ${gitSays(removed.err || removed.out)}` };
+      left = `; git could not delete all of its folder (${gitSays(removed.err || removed.out)}), and what is left is no longer git's`;
+    }
+    git(home, ['worktree', 'prune'], { allowFail: true });
+  } else {
+    const gone = removeFolder(entry.folder, parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out));
+    if (!gone.removed) return { ...entry, remove: false, why: gone.why };
+  }
+  rmSync(join(home, GATE_TREE_RECORD), { force: true });
+  if (lock) rmSync(join(home, GATE_TREE_LOCK), { force: true });
+  return { ...entry, removed: true, left };
+}
+
+/** The gate tree's line, in the prune's columns. */
+function gateTreeLine(entry, applied) {
+  const goes = applied ? entry.removed === true : entry.remove;
+  const verb = applied ? (goes ? 'removed' : 'kept') : (goes ? 'remove' : 'keep');
+  const text = goes
+    ? (entry.listed ? `${entry.said}${entry.left ?? ''}` : 'a folder git does not list, with no .git: what a removal of the gate tree that did not finish left')
+    : entry.why;
+  return `  ${pad(verb, 8)} ${pad(GATE_TREE, 34)} ${text}`;
 }
 
 /** One removal: the worktree, unlocked first when the harness's lock is lifted, then the branch. What git refuses is kept, with git's own reason. */
@@ -2174,23 +2355,25 @@ function folderLine(root, folder, applied) {
 }
 
 /** The plan's lines, changing nothing: each branch, then each folder. */
-function printPrunePlan(root, { entries, folders }, atMerge = false) {
+function printPrunePlan(root, { entries, folders, gateTree }, atMerge = false) {
   console.log(pruneHeader(entries, { plan: true, atMerge, folders }));
   for (const entry of entries) console.log(pruneLine(root, entry, false));
   for (const folder of folders) console.log(folderLine(root, folder, false));
+  if (gateTree) console.log(gateTreeLine(gateTree, false));
 }
 
-/** The plan applied, a line for each branch and folder as it ends. */
-function applyPrunePlan(root, { entries, folders }) {
+/** The plan applied, a line for each branch and folder as it ends, and the gate tree's last (GATEWT1). */
+function applyPrunePlan(root, { entries, folders, gateTree }) {
   console.log(pruneHeader(entries, { folders }));
   applyPrune(root, entries, (entry) => console.log(pruneLine(root, entry, true)));
   removeFolders(root, folders, (folder) => console.log(folderLine(root, folder, true)));
+  if (gateTree) console.log(gateTreeLine(gateTree.remove ? removeGateTree(gateTree.home, gateTree) : gateTree, true));
 }
 
 /** The prune a merge runs at its start and a batch at its end. It never stops the merge. */
 function pruneAround(root, hold) {
   try {
-    const plan = planPrune(root, { hold });
+    const plan = planPrune(root, { hold, atMerge: true });
     if (plan.current !== MAIN) {
       console.log(`prune: skipped: this checkout has ${plan.current || 'a detached HEAD'} out, not ${MAIN}`);
       return;
@@ -2689,7 +2872,7 @@ function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, 
       // GATEBUILD1: a Process half runs its fast half's build when that passed in this run on this same tree.
       const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree) });
       Object.assign(result, { tree, at: started });
-      addVerdicts(where, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
+      addVerdicts(verdictsHome(where), [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
       onResult(result);
       return result;
     },
@@ -2916,7 +3099,7 @@ function passedOnly(root) {
 function judgeCheckout(root, plan) {
   const tree = contentTree(root);
   if (!tree) return null;
-  return { tree, ...stageJudgement({ ...standingFor(root, tree), plan: plan.map((gate) => gate.name), verdicts: readVerdicts(root).verdicts }) };
+  return { tree, ...stageJudgement({ ...standingFor(root, tree), plan: plan.map((gate) => gate.name), verdicts: readVerdicts(verdictsHome(root)).verdicts }) };
 }
 
 /** Whether the full set passed the checkout, as a clause: what `--passed` and a re-run on the checkout say. */
@@ -3126,7 +3309,7 @@ function planOnly(root, options) {
   });
   console.log('');
   if (options.autoPrune) {
-    printPrunePlan(root, planPrune(root, { hold: options.branches }), true);
+    printPrunePlan(root, planPrune(root, { hold: options.branches, atMerge: true }), true);
   } else {
     console.log('prune: skipped (--no-prune)');
   }
@@ -3148,6 +3331,314 @@ function dropBatch(root) {
   return 0;
 }
 
+// ---------------------------------------------------------------------------------------------------
+// GATEWT1: the full set in its own worktree, beside the merges
+
+/** Whether a process runs with this pid: signal 0 asks without sending, and EPERM is one that runs as someone else. */
+export function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === 'EPERM';
+  }
+}
+
+/**
+ * The lock a full set beside the merges holds (`GATE_TREE_LOCK`, in the main checkout): its pid, the commit it gates,
+ * since when, and whether that process still runs. Null when none is held. A lock that does not read is no run's.
+ */
+export function readGateLock(home, alive = pidAlive) {
+  let held;
+  try {
+    held = JSON.parse(readFileSync(join(home, GATE_TREE_LOCK), 'utf8'));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    held = {};
+  }
+  const pid = Number(held?.pid);
+  return { pid, commit: String(held?.commit ?? ''), at: String(held?.at ?? ''), running: alive(pid) };
+}
+
+/**
+ * The lock taken for `commit`, created only where none is (`wx`), or a refusal naming the run that holds it: one full
+ * set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose
+ * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say.
+ */
+export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso } = {}) {
+  const file = join(home, GATE_TREE_LOCK);
+  mkdirSync(dirname(file), { recursive: true });
+  let stale = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    let fd;
+    try {
+      fd = openSync(file, 'wx');
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+      const held = readGateLock(home, alive);
+      if (held?.running) {
+        throw new Refusal(`a full set beside the merges is running already: on ${held.commit.slice(0, 7)} since ${when(held.at)} (pid ${held.pid}, ${GATE_TREE}); one runs at a time`);
+      }
+      if (held) stale = { pid: held.pid, commit: held.commit, at: held.at };
+      rmSync(file, { force: true });
+      continue;
+    }
+    try {
+      writeSync(fd, `${JSON.stringify({ pid: process.pid, commit, at: now() })}\n`);
+    } finally {
+      closeSync(fd);
+    }
+    return { stale };
+  }
+  throw new Refusal(`${GATE_TREE_LOCK} could not be taken: another run took it at the same moment`);
+}
+
+/** The lock let go, when it is this process's: one taken over since is another run's. */
+export function releaseGateLock(home) {
+  if (readGateLock(home, () => false)?.pid === process.pid) rmSync(join(home, GATE_TREE_LOCK), { force: true });
+}
+
+/** The gate tree's record (`GATE_TREE_RECORD`): the commit its last run gated, when it started and ended, whether it passed, and its stage. */
+function readGateRecord(home) {
+  try {
+    const parsed = JSON.parse(readFileSync(join(home, GATE_TREE_RECORD), 'utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeGateRecord(home, fields) {
+  const record = {
+    schema: 1,
+    _why: 'Written by tools/merge-branch.mjs --full --beside (GATEWT1): the gate tree\'s last run; publish:desktop --from-gated adds its stage, which lets the next merge\'s prune remove the tree.',
+    ...fields,
+  };
+  writeAtomic(join(home, GATE_TREE_RECORD), `${JSON.stringify(record, null, 2)}\n`);
+}
+
+/**
+ * Whether the prune removes the gate tree, and why it keeps it, from `gateTreeFacts`. Never while its full set runs, at
+ * either prune. A merge's prune removes it once its stage is done (the record's stage is of the commit it holds), and
+ * `--prune` once its run has ended, staged or not; each says so (`said`). Changes in it are never forced away. A folder
+ * git no longer lists is the half-removed rule's (`folderVerdict`).
+ */
+export function gateTreeVerdict(facts, { atMerge = false } = {}) {
+  const { lock } = facts;
+  if (lock?.running) {
+    return { remove: false, why: `its full set is running (pid ${lock.pid}, since ${when(lock.at)}, on ${lock.commit.slice(0, 7)}): never removed while it runs` };
+  }
+  if (!facts.listed) return folderVerdict(facts.folder);
+  // A full set started there by hand, as before GATEWT1, holds no lock: what runs inside is the only sign of it.
+  if (facts.processError) return { remove: false, why: `whether a process runs inside it could not be read (${facts.processError})` };
+  if (facts.processes?.length) {
+    return { remove: false, why: `a running process is inside it (${facts.processes.map(processSaid).join('; ')}), and no lock says whose run: it is never removed while one runs` };
+  }
+  if (facts.error) return { remove: false, why: `it is in a state git could not read (${facts.error})` };
+  if (facts.changes.length) return { remove: false, why: `it holds changes git removes only with --force (${listed(facts.changes)}), and is never forced here` };
+  const sha = (facts.head ?? '').slice(0, 7);
+  const leftLock = lock ? `; a lock left by pid ${lock.pid}, which no longer runs, goes with it` : '';
+  if (facts.staged && facts.staged.commit === facts.head) {
+    return { remove: true, why: '', said: `the gate tree at ${sha}: its stage is done (${when(facts.staged.at)})${leftLock}` };
+  }
+  if (atMerge) {
+    return { remove: false, why: `it holds ${sha}, and its stage has not read it: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}; --prune removes it` };
+  }
+  return { remove: true, why: '', said: `the gate tree at ${sha}, never staged${leftLock}` };
+}
+
+/** Where a folder's install notes the lockfile it installed from: inside `node_modules`, which `npm ci` lays anew. */
+const DEPENDENCY_STAMP = '.gate-tree-lockfile';
+const fileHash = (file) => createHash('sha256').update(readFileSync(file)).digest('hex');
+
+/**
+ * The folders of `DEPENDENCY_FOLDERS` with a `package-lock.json` whose dependencies are missing or were installed from
+ * another lockfile than the one there now: a gate tree moved to a commit that changed one installs again.
+ */
+export function staleDependencies(tree) {
+  return DEPENDENCY_FOLDERS.filter((folder) => {
+    const lockfile = join(tree, folder, 'package-lock.json');
+    if (!existsSync(lockfile)) return false;
+    try {
+      return readFileSync(join(tree, folder, 'node_modules', DEPENDENCY_STAMP), 'utf8').trim() !== fileHash(lockfile);
+    } catch {
+      return true;
+    }
+  });
+}
+
+/** The note that a folder's dependencies were installed from its lockfile as it is now. */
+export function stampDependencies(tree, folder) {
+  const stamp = join(tree, folder, 'node_modules', DEPENDENCY_STAMP);
+  mkdirSync(dirname(stamp), { recursive: true });
+  writeAtomic(stamp, `${fileHash(join(tree, folder, 'package-lock.json'))}\n`);
+}
+
+/** Each folder's dependencies the gate tree lacks, installed from its lockfile (`npm ci`, as AGENTS.md has a fresh checkout do). */
+function installDependencies(tree) {
+  for (const folder of staleDependencies(tree)) {
+    console.log(`the gate tree: installing ${folder} from its lockfile (npm ci)…`);
+    const ran = spawnSync('npm ci --no-audit --no-fund', { cwd: join(tree, folder), shell: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
+    if (ran.error || ran.status !== 0) {
+      throw new Refusal(`npm ci failed in the gate tree's ${folder} (${ran.error?.message ?? `exit ${ran.status}`}), so the full set did not start`);
+    }
+    stampDependencies(tree, folder);
+    console.log(`the gate tree: installed ${folder} from its lockfile (npm ci)`);
+  }
+}
+
+/**
+ * The gate tree at `commit`: made (`git worktree add --detach`) where none stands, reused where it holds it, moved there
+ * (`git checkout --detach`) where it holds another. One with changes, or a folder git does not list, is refused, naming
+ * them: the full set gates a commit, and nothing here is forced.
+ */
+function prepareGateTree(home, commit) {
+  const path = join(home, GATE_TREE);
+  const sha = commit.slice(0, 7);
+  const tree = parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out).find((one) => samePath(one.path, path));
+  if (!tree) {
+    if (existsSync(path)) {
+      throw new Refusal(`${GATE_TREE} is a folder git does not list as a worktree: node tools/merge-branch.mjs --prune removes what a removal left, or look at it`);
+    }
+    git(home, ['worktree', 'add', '--detach', path, commit]);
+    console.log(`the gate tree: made at ${sha} (${GATE_TREE})`);
+    return path;
+  }
+  const changes = lines(git(path, ['--no-optional-locks', 'status', '--porcelain']).out);
+  if (changes.length) {
+    throw new Refusal(`the gate tree (${GATE_TREE}) holds changes, which the full set would gate as part of a tree no commit holds:\n`
+      + `${changes.slice(0, 12).map((line) => `  ${line}`).join('\n')}${changes.length > 12 ? `\n  … ${changes.length - 12} more` : ''}\n`
+      + '  Look at them; once it is clean, --prune removes it or --full --beside moves it');
+  }
+  const head = git(path, ['rev-parse', 'HEAD']).out.trim();
+  if (head === commit) {
+    console.log(`the gate tree: reused at ${sha} (${GATE_TREE})`);
+    return path;
+  }
+  git(path, ['checkout', '--quiet', '--detach', commit]);
+  console.log(`the gate tree: moved from ${head.slice(0, 7)} to ${sha} (${GATE_TREE})`);
+  return path;
+}
+
+/**
+ * The private files a gate reads under `local/`, as the declaration names them (GATEWT1b): today the sensitive scan's
+ * patterns file (`sensitive.patternsFile`, the devkit's default where undeclared). A path not under `local/` is not one
+ * of these (a tracked file is in the tree already), and none may climb out of it.
+ */
+export function privateGateFiles(home) {
+  let declared = 'local/sensitive-patterns.txt';
+  try {
+    const parsed = JSON.parse(readFileSync(join(home, 'daoris.gates.json'), 'utf8'));
+    if (typeof parsed?.sensitive?.patternsFile === 'string') declared = parsed.sensitive.patternsFile;
+  } catch {
+    // No readable declaration: the plan's own reading refuses it, with its reason.
+  }
+  const path = declared.replace(/\\/g, '/');
+  return path.startsWith('local/') && !path.split('/').includes('..') ? [path] : [];
+}
+
+/** Copies each of `files` from `home` into `tree`, refreshed on every run; returns the lines to say (GATEWT1b). */
+export function copyPrivateFiles(home, tree, files) {
+  return files.map((file) => {
+    const from = join(home, file);
+    if (!existsSync(from)) return `${file} is missing in the main checkout, so it is not copied into the gate tree: the gate that reads it answers for itself`;
+    mkdirSync(dirname(join(tree, file)), { recursive: true });
+    writeAtomic(join(tree, file), readFileSync(from));
+    return `${file}: copied into the gate tree`;
+  });
+}
+
+/** Copies the run folder at `from` over `home`'s `local/scratch/beside-<sha7>`, the newest run's logs only. */
+function replaceKept(from, home, sha7) {
+  const to = join(home, SCRATCH, `beside-${sha7}`);
+  rmSync(to, { recursive: true, force: true });
+  cpSync(from, to, { recursive: true });
+}
+
+/**
+ * Keeps the tree's run logs for `sha` in `home`'s `local/scratch/beside-<sha7>` (GATEWT1c): a prune after the stage
+ * removes the tree, and the logs of a failed run were in it. Replaces an older run's at that commit; true when kept.
+ */
+export function keepGateLogs(tree, home, sha) {
+  const from = join(tree, SCRATCH, `full-${sha.slice(0, 7)}`);
+  if (!existsSync(from)) return false;
+  replaceKept(from, home, sha.slice(0, 7));
+  return true;
+}
+
+/**
+ * Keeps any run folder a hard-killed run left in the tree (its `finally` never ran), before the next run clears it:
+ * copied to `beside-<sha7>` where that is absent in `home`; returns the lines to say (GATEWT1c).
+ */
+export function rescueGateLogs(tree, home) {
+  const scratch = join(tree, SCRATCH);
+  if (!existsSync(scratch)) return [];
+  const said = [];
+  for (const name of readdirSync(scratch)) {
+    const found = /^full-([0-9a-f]{7,40})$/.exec(name);
+    if (!found || existsSync(join(home, SCRATCH, `beside-${found[1].slice(0, 7)}`))) continue;
+    replaceKept(join(scratch, name), home, found[1].slice(0, 7));
+    said.push(`the logs of a run that did not end are kept: ${SCRATCH}/beside-${found[1].slice(0, 7)}`);
+  }
+  return said;
+}
+
+/** What a full set beside the merges says before its gates start: it shares the machine with them. */
+const UNDER_LOAD = 'under load: a full set beside the merges shares the machine with their gates, so a Process half\'s timing tests run '
+  + 'loaded; its failures are still re-run alone once its lane is quiet, and a pass alone still reads FLAKE (GATEORDER1, FLAKE1)';
+
+/**
+ * `--full --beside [<commit>]` (GATEWT1): the full set on `commit`, main's tip unless named, in the gate tree, a worktree
+ * of its own, so merges land in the main checkout meanwhile. One at a time (`takeGateLock`). The tree is made or reused,
+ * its dependencies installed when missing or stale, and the whole plan run there by `gateCheckout`, each verdict in the
+ * main checkout's store (`verdictsHome`). The record says when it ended and whether it passed; the stage it names builds
+ * from the tree, never from the main checkout.
+ */
+async function gateBeside(root, options) {
+  const home = verdictsHome(root);
+  if (git(home, ['check-ignore', '-q', GATE_TREE], { allowFail: true }).status !== 0) {
+    throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
+  }
+  requireVerdictsIgnored(home);
+  const asked = options.besideCommit ?? MAIN;
+  const resolved = git(home, ['rev-parse', '--verify', '--quiet', `${options.besideCommit ?? `refs/heads/${MAIN}`}^{commit}`], { allowFail: true });
+  if (resolved.status !== 0) throw new Refusal(`no commit '${asked}' to gate`);
+  const commit = resolved.out.trim();
+  const sha = commit.slice(0, 7);
+  const { stale } = takeGateLock(home, { commit });
+  try {
+    if (stale) console.log(`the gate tree's lock was left by pid ${stale.pid} (on ${stale.commit.slice(0, 7)} since ${when(stale.at)}), which no longer runs: taken over`);
+    const started = nowIso();
+    writeGateRecord(home, { commit, started, ended: null, passed: null, staged: null });
+    const tree = locate(prepareGateTree(home, commit));
+    installDependencies(tree);
+    for (const line of copyPrivateFiles(home, tree, privateGateFiles(home))) console.log(`  ${line}`);
+    for (const line of rescueGateLogs(tree, home)) console.log(`  ${line}`);
+    console.log(UNDER_LOAD);
+    let code;
+    try {
+      code = await gateCheckout(tree, options);
+    } finally {
+      // Pass, fail or a thrown error: the tree may be pruned next, and its logs go with it.
+      try {
+        if (keepGateLogs(tree, home, commit)) console.log(`  The run's logs are kept: ${SCRATCH}/beside-${sha}`);
+      } catch (error) {
+        console.log(`  The run's logs could not be kept (${error.message}); they stay in the gate tree`);
+      }
+    }
+    writeGateRecord(home, { commit, started, ended: nowIso(), passed: code === 0, staged: null });
+    if (code === 0) {
+      console.log(`  Stage it from the gate tree, never from the main checkout as it moves: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}`);
+    } else {
+      console.log(`  The gate tree stays at ${sha} (${GATE_TREE}): run that there, or --full --beside ${sha} again; --prune removes it.`);
+    }
+    return code;
+  } finally {
+    releaseGateLock(home);
+  }
+}
+
 export async function main(argv) {
   const options = parseArgs(argv);
   const root = locate(process.cwd());
@@ -3162,6 +3653,7 @@ export async function main(argv) {
   }
   if (options.rerun.length) return mergeInProgress(root) ? rerunGates(root, options) : rerunCheckout(root, options);
   if (options.resume) return resume(root, options);
+  if (options.beside) return gateBeside(root, options);
   if (options.full && options.branches.length === 0) return gateCheckout(root, options);
   return start(root, options);
 }

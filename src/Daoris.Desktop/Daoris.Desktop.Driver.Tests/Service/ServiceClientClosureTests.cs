@@ -56,6 +56,49 @@ public sealed class ServiceClientClosureTests
         Assert.Null(quests[1].Submission);
     }
 
+    /// <summary>
+    /// FABRIC-WORKFLOW2d: a step's source (FABRIC-CLOSE1c's <c>grewFrom</c>) and the reopen standing on it (<c>sourceReopened</c>), each a
+    /// submission's machine and sequence; absent from a step a done published and from a host before them, and none where named in half.
+    /// </summary>
+    [Fact]
+    public void A_steps_source_and_its_reopen_are_read_and_absent_from_a_host_before_them()
+    {
+        var quests = ServiceClient.ReadQuests(
+            """
+            [{ "id": "q8", "from": "game", "to": "engine", "title": "Next", "body": "", "status": "Open", "parent": "q7",
+               "grewFrom": { "machine": "desk", "sequence": 41 }, "sourceReopened": { "machine": "desk", "sequence": 41 } },
+             { "id": "q9", "from": "game", "to": "engine", "title": "Half", "body": "", "status": "Open", "parent": "q7",
+               "grewFrom": { "machine": "desk" }, "sourceReopened": { "sequence": 41 } },
+             { "id": "q10", "from": "game", "to": "engine", "title": "Old", "body": "", "status": "Open", "parent": "q7" }]
+            """);
+
+        Assert.Equal(new QuestSubmissionRef("desk", 41), quests[0].GrewFrom);
+        Assert.Equal(new QuestSubmissionRef("desk", 41), quests[0].SourceReopened);
+        Assert.All(quests.Skip(1), quest => Assert.True(quest is { GrewFrom: null, SourceReopened: null }, quest.Id));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c5: a submission's commit, its evidence's (§E5), read by its full id; absent from a host before it, and none where
+    /// it is no commit's id.
+    /// </summary>
+    [Fact]
+    public void A_submissions_commit_is_read_and_absent_from_a_host_before_it()
+    {
+        var quests = ServiceClient.ReadQuests(
+            $$"""
+            [{ "id": "q7", "from": "game", "to": "engine", "title": "Ship it", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 41, "note": "ready", "commit": "{{Commit.ToUpperInvariant()}}" } },
+             { "id": "q8", "from": "game", "to": "engine", "title": "Older", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 42, "note": "ready" } },
+             { "id": "q9", "from": "game", "to": "engine", "title": "Odd", "body": "", "status": "Taken", "closure": "gph-0123",
+               "submission": { "machine": "desk", "sequence": 43, "note": "ready", "commit": "main" } }]
+            """);
+
+        Assert.Equal(new QuestSubmissionView("desk", 41, null, "ready", Commit), quests[0].Submission);
+        Assert.Equal(new QuestSubmissionView("desk", 42, null, "ready"), quests[1].Submission);
+        Assert.Equal(new QuestSubmissionView("desk", 43, null, "ready"), quests[2].Submission);
+    }
+
     [Fact]
     public void A_verdict_read_for_a_submission_names_it_and_a_dones_names_none()
     {
@@ -71,6 +114,39 @@ public sealed class ServiceClientClosureTests
         // As a quest answers it back: the submission it was read for, read as written.
         using var quest = JsonDocument.Parse($$"""{ "evidence": {{named.Json()}} }""");
         Assert.Equal(new QuestSubmissionRef("desk", 41), EvidenceVerdict.Read(quest.RootElement)!.Submission);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c3: the person's reopen names the submission by its machine and sequence, with their words written only when given;
+    /// the go-on posts nothing more; each says the service's sentence, a refusal included.
+    /// </summary>
+    [Fact]
+    public async Task The_reopen_names_its_submission_and_the_go_on_says_the_services_words()
+    {
+        var replies = new Queue<ServiceReply>(
+        [
+            new(200, """{ "quest": { "id": "q7", "status": "Taken" }, "message": "Reopened." }"""),
+            new(200, """{ "quest": { "id": "q7", "status": "Taken" }, "message": "Reopened." }"""),
+            new(409, """{ "error": "Quest `#q8` grew from `#q7`, whose work has no unheld submission here yet." }"""),
+        ]);
+        var doors = new Doors((_, _, _) => replies.Dequeue());
+        using var client = new ServiceClient(doors);
+
+        var reopened = await client.ReopenQuestAsync("#q7", new QuestSubmissionRef("desk", 41), "It seams.");
+        await client.ReopenQuestAsync("q7", new QuestSubmissionRef("desk", 41), "  ");
+        var refused = await client.ContinueQuestAsync("q8");
+
+        Assert.Equal((true, "Reopened."), reopened);
+        Assert.Equal((false, "Quest `#q8` grew from `#q7`, whose work has no unheld submission here yet."), refused);
+        Assert.Equal(
+            [(ServiceVerb.Post, "/api/quests/q7/reopen"), (ServiceVerb.Post, "/api/quests/q7/reopen"), (ServiceVerb.Post, "/api/quests/q8/continue")],
+            doors.Asked.Select(asked => (asked.Verb, asked.Path)));
+        using var named = JsonDocument.Parse(doors.Asked[0].Body!);
+        var submission = named.RootElement.GetProperty("submission");
+        Assert.Equal(("desk", 41L, "It seams."), (submission.GetProperty("machine").GetString(), submission.GetProperty("sequence").GetInt64(),
+            named.RootElement.GetProperty("note").GetString()));
+        using var bare = JsonDocument.Parse(doors.Asked[1].Body!);
+        Assert.False(bare.RootElement.TryGetProperty("note", out _));
     }
 
     [Fact]

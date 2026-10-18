@@ -90,8 +90,9 @@ is not supplied by a mocked bridge, Storybook or a browser-only end-to-end test.
 ## Integrate and record
 
 `tools/merge-branch.mjs` is this repository's integration tool. It reads declared gates and lane
-ownership, regenerates indexes, and records verdicts under `local/merge-branch/`. Inspect a branch's
-plan before integration; use its resume/retry commands when a merge is already open:
+ownership, regenerates indexes, and records verdicts in the main checkout's `local/gate-verdicts.json`,
+keyed by tree, whichever worktree runs it. Inspect a branch's plan before integration; use its
+resume/retry commands when a merge is already open:
 
 ```sh
 node tools/merge-branch.mjs --plan <branch>
@@ -99,6 +100,7 @@ node tools/merge-branch.mjs --continue
 node tools/merge-branch.mjs --stale
 node tools/merge-branch.mjs --rerun <gate>
 node tools/merge-branch.mjs --full
+node tools/merge-branch.mjs --full --beside [<commit>]
 ```
 
 The last form runs the full set on the current checkout, including the long gates. The gates that
@@ -111,6 +113,17 @@ Process-lane gate alone (REHLANE1); the web gate's vitests are a light gate of t
 service suite (WEBSPLIT1). Add `--one-at-a-time` on a
 loaded machine to run every gate in turn. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
+
+`--full --beside` runs the same full set on a commit (main's tip unless named) in `local/gate-tree`, a
+detached worktree of its own with its dependencies installed from the lockfiles, so merges continue in
+the main checkout meanwhile, under load (GATEWT1). One runs at a time. Stage what it gated from that
+tree, never from the moving checkout:
+`npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`. A merge's prune
+removes the tree once its stage is done, and `--prune` once its run has ended; neither while it runs.
+Each run copies the private files a gate reads under `local/` (the declared `sensitive.patternsFile`, today
+`local/sensitive-patterns.txt`) from the main checkout into the tree, refreshed, and keeps the run's logs in the main
+checkout's `local/scratch/beside-<sha7>/` when it ends, pass, fail or error, so a prune loses none (GATEWT1b, GATEWT1c).
+A run killed outright leaves its logs in the tree; the next run keeps them there before it clears them.
 
 Commits are local work and follow green gates (D37). Push, publish, release, history rewrites and
 destructive actions retain their human boundary. Do not bypass provenance checks or hooks to make

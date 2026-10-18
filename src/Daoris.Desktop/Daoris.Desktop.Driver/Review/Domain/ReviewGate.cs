@@ -281,7 +281,8 @@ public static class ReviewGate
             return Of(ReviewLevels.SetUpStep, step.SetUpIn) with { SetUpStep = step };
         }
 
-        foreach (var quest in chain.Where(quest => quest.Status is "Open" or "Taken" || quest is { Status: "Done", Held: true }))
+        // FABRIC-CLOSE1h (§E5): an unheld submission published its steps in its own transaction, as an unheld done does.
+        foreach (var quest in chain.Where(quest => QuestResults.Status(quest) is "Open" or "Taken" || (QuestResults.Judged(quest) && quest.Held)))
         {
             if (quest.Then.FirstOrDefault(each => each.SetUpIn is not null && Same(each.To, repository)) is { } composed)
             {
@@ -337,7 +338,8 @@ public static class ReviewGate
         // is the floor, as it is for a review set up nowhere.
         if (decision.Cannot is not null) return new(ReviewStates.CannotStart, decision) { Tip = tip };
         if (decision.SetUpStep is not { } step) return new(ReviewStates.NotShown, decision) { Tip = tip };
-        if (step.Status is "Open" or "Taken" || step.SetUps.Count == 0) return new(ReviewStates.BeingSetUp, decision) { Tip = tip };
+        // FABRIC-CLOSE1h (§E5): a set-up step a closure graph holds has finished its work at its submission, where it stays taken.
+        if (QuestResults.Status(step) is "Open" or "Taken" || step.SetUps.Count == 0) return new(ReviewStates.BeingSetUp, decision) { Tip = tip };
 
         // The newest set-up the person reviewed, and whether its commit holds what would land.
         var reviewed = step.SetUps.LastOrDefault(setUp => VerdictOn(step, setUp, ReviewVerdicts.Reviewed) is not null);
@@ -390,7 +392,7 @@ public static class ReviewGate
                 ? $"its set-up step, \"{composed.Title.Replace("{parent}", $"#{decision.ComposedBy}", StringComparison.Ordinal)}\", is "
                   + $"published to `{composed.To}` when `#{decision.ComposedBy}` closes done, and shows it there."
                 : $"nothing shows it there yet: no set-up step for `{decision.Repository}` is in its chain." + skip),
-            ReviewStates.BeingSetUp => lead + (decision.SetUpStep!.Status is "Open" or "Taken"
+            ReviewStates.BeingSetUp => lead + (QuestResults.Status(decision.SetUpStep) is "Open" or "Taken"
                 ? $"set-up step `#{step}` is {decision.SetUpStep.Status.ToLowerInvariant()}: it shows the work there, then waits for your look."
                 : $"set-up step `#{step}` is done, and what it showed is posted when its session ends."),
             ReviewStates.Shown => lead + $"set-up step `#{step}` showed it at `{Short(gate.SetUp!.Commit)}`"

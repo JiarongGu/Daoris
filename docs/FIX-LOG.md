@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A session due again after a try that closed its entry was never tried (FABRIC-CLOSE1h6)
+
+- **Symptom:** under a rule with *Accept automatically* on, a session that landed, was carried on with more words (D137) and concluded
+  done again stayed open on the due list and was never tried: its later commits waited for the person's Accept, where the look should
+  have moved its branch on (LAND2c). In a closure graph, a submission reopened (entry closed `undone`) and readied again never landed.
+- **Root cause:** `AutoLandings.Due` reopens an entry with its tries kept, and `AutoLandingRules.ShouldTry` judged the reopened entry by
+  its last try, which was the earlier due's: for any code that closes (`landed`, `undone`, `nothing`, …) it answered no for good.
+  `LandingWaits.Of` likewise left it to the whole look alone.
+- **Fix:** `AutoLanding.Reopened` (open, with a last try whose code closes; only `Due` makes one) is judged afresh: `ShouldTry` answers
+  yes, and `LandingWaits.Of` reads it as a first try. An entry still due on its own last try keeps its rule. D173's FABRIC-CLOSE1h6 note
+  has the owner-facing behaviour.
+- **Verification:** red first: `AutoLandingRulesTests`' eleven closing codes, `LandingWakesTests`' two rows, and `AutoLandingTests`' two
+  Git proofs (no branch after the next `ready`; no second frame after the done that went on). Then the driver's fast half passes 9482
+  (9463 before) and `AutoLandingTests` 42 (40 before), the proof's second conclusion with nothing new closing `already` with no push.
+
+## 2026-10-18 — The person's stop on a close for a reopened submission stopped the next submission's work (FABRIC-CLOSE1q2)
+
+- **Symptom:** none on an install: no quest is bound to a closure graph there. A close for S1 left unanswered when the person reopened S1,
+  then S2 made ready at S1's commit: the person's `stop` on S1's close, applied by a loop started again, stopped S2's deploy where it was
+  already sent, or else the close node, so S2's close never ran. On a wake, `record` on a held close for S1 reached the close node with
+  S1's key while the quest stood on S2.
+- **Root cause:** `QuestCloser.Recover` stopped every live node of the unit, and a stop holds across revisions (`NodeStates.Bound`);
+  `QuestCloser.Resolve` never read the quests, and a pass that was no whole look kept the read from before (`NodeRuntime.PassAsync`).
+- **Fix:** `Resolve` takes the pass's quests, and where a close's submission is the quest's no more (`QuestClosing.Moved`), `record`
+  and `stop` are taken back with `submission-moved`, said; `resend` asks after S1's key alone, as before. A pass with a close's word
+  waiting reads the quests afresh. D173's FABRIC-CLOSE1q2 note has the choices.
+- **Verification:** red first: `QuestCloseTests`' theory's two `stop` rows (S2's deploy stopped; S2's close node stopped) and the wake
+  fact without the fresh read (S1's key on the node). Then the driver's fast half passes 9449 (9442 before), and the page's
+  `WorkMilestone.test.tsx`, the locales, `i18n:check` and `names:check --strict` pass.
+
 ## 2026-10-18 — A redirect test's status call timed out under load before its listener was asked (TESTWAIT3)
 
 - **Defect:** `RunningServiceTests.A_redirect_is_no_answer` failed twice in the driver gate beside two other gates and passed alone.

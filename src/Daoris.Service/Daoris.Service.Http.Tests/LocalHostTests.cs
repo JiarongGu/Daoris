@@ -773,6 +773,52 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.False(take.Json.GetProperty("quest").TryGetProperty("closure", out var closure) && closure.ValueKind == JsonValueKind.String);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c5 (§E5): a submission on the wire names the commit its evidence was read at, once that is read for it, and
+    /// leaves `commit` out before, so a quest no evidence was read for is answered as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_answers_its_evidence_commit_once_read_and_leaves_it_out_before()
+    {
+        // The requirement quotes the ask, as a publish requires.
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Write the bridge report into docs/report-bridge.md for the committed weekly review.",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the committed bridge report", body = "For the review.",
+            requirements = new[]
+            {
+                new { quote = "Write the bridge report into docs/report-bridge.md", check = "The report is in the file.", evidence = new[] { new { path = "docs/report-bridge.md" } } },
+            },
+        });
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new
+        {
+            action = "ready", reason = "Written.", answers = new[] { new { requirement = 1, met = "It is in the file." } },
+        });
+        Assert.Equal(200, ready.Status);
+        var submission = ready.Json.GetProperty("quest").GetProperty("submission");
+        Assert.False(submission.TryGetProperty("commit", out _));
+
+        const string Commit = "0123456789abcdef0123456789abcdef01234567";
+        var found = await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = Commit, how = "session-end",
+            items = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "found", @object = "fedcba9876543210fedcba9876543210fedcba98" } },
+            submission = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() },
+        });
+        Assert.Equal(200, found.Status);
+        Assert.Equal(Commit, found.Json.GetProperty("quest").GetProperty("submission").GetProperty("commit").GetString());
+        var listed = (await host.GetAsync("/api/quests")).Json.EnumerateArray().Single(q => q.GetProperty("id").GetString() == quest);
+        Assert.Equal(Commit, listed.GetProperty("submission").GetProperty("commit").GetString());
+    }
+
     [Fact]
     public async Task A_bound_quest_is_submitted_with_ready_and_closed_once_by_the_close_door()
     {
@@ -871,6 +917,62 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         // FABRIC-CLOSE1b's handshake: this host knows a closure graph's operations and doors.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c (§E5): the person's reopen of a sealed submission and their word to go on, at their own doors. The step answers
+    /// the submission it grew from, and the one reopened under it with its hold; a take of the withdrawn step is a stand-down (409);
+    /// the next ready rebinds the same step.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_reopen_withdraws_the_step_and_the_next_ready_rebinds_it_at_their_doors()
+    {
+        Assert.Contains(("POST", "/api/quests/{id}/reopen"), host.Routes());
+        Assert.Contains(("POST", "/api/quests/{id}/continue"), host.Routes());
+        var published = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Write the reopened report", body = "For the review.",
+            then = new[] { new { to = "Keeper", title = "Check {parent}", body = "Look at it." } },
+        });
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
+        Assert.Equal(200, ready.Status);
+        var submission = ready.Json.GetProperty("quest").GetProperty("submission");
+        var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
+
+        async Task<JsonElement> Step() => (await host.GetAsync("/api/quests")).Json.EnumerateArray()
+            .Single(row => row.TryGetProperty("parent", out var parent) && parent.GetString() == quest);
+        var step = await Step();
+        var stepId = step.GetProperty("id").GetString()!;
+        Assert.Equal(named.sequence, step.GetProperty("grewFrom").GetProperty("sequence").GetInt64());
+        Assert.False(step.TryGetProperty("sourceReopened", out _));
+
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/reopen", new { note = "Again." })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/reopen", new { submission = named })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named with { sequence = named.sequence + 7 } })).Status);
+
+        var reopened = await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." });
+
+        Assert.Equal(200, reopened.Status);
+        Assert.False(reopened.Json.GetProperty("quest").TryGetProperty("submission", out _));
+        Assert.Contains($"#{stepId}", reopened.Json.GetProperty("message").GetString());
+        var withdrawn = await Step();
+        Assert.Equal(("Open", "source-reopened"), (withdrawn.GetProperty("status").GetString(), withdrawn.GetProperty("hold").GetString()));
+        Assert.Equal(named.sequence, withdrawn.GetProperty("sourceReopened").GetProperty("sequence").GetInt64());
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "take" })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/continue", new { })).Status);
+
+        var again = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written again." });
+        Assert.Equal(200, again.Status);
+        var rebound = await Step();
+        Assert.Equal(stepId, rebound.GetProperty("id").GetString());
+        Assert.Equal(again.Json.GetProperty("quest").GetProperty("submission").GetProperty("sequence").GetInt64(),
+            rebound.GetProperty("grewFrom").GetProperty("sequence").GetInt64());
+        Assert.False(rebound.TryGetProperty("sourceReopened", out _));
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/continue", new { })).Status);
     }
 
     /// <summary>

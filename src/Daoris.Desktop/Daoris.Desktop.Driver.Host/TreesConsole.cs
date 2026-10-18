@@ -99,7 +99,13 @@ internal static class TreesConsole
         var tried = $"{due}; last tried {Minute(last.At)} UTC: {last.Code}"
                     + (last.Branch is { } branch ? $" (`{branch}`)" : "");
         return entry.Closed is null
-            ? $"{tried}. It waits: {(last.Code == AutoLandingCode.Held ? "its quest's release" : "a change in its tree, or your press")} lands it."
+            ? $"{tried}. It waits: " + last.Code switch
+            {
+                AutoLandingCode.Held => "its quest's release lands it.",
+                // FABRIC-CLOSE1h2: its branch is made and its push held back, so the release hands the branch on; nothing lands again.
+                AutoLandingCode.PushHeld => "its quest's release hands its branch on, or `trees hand` does now.",
+                _ => "a change in its tree, or your press lands it.",
+            }
             : $"{tried}.";
     }
 

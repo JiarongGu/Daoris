@@ -421,6 +421,12 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_host_routes_the_persons_done_to_the_librarys_words()
     {
+        // FABRIC-CLOSE1c3: the person's reopen and go-on (QuestReopenCommandTests) are routed the same way, before the quest's usage.
+        var reading = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var reopen = reading.IndexOf("QuestReopenCommand.Asks(questArgs)", StringComparison.Ordinal);
+        Assert.True(reopen > 0 && reading.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal) > reopen);
+        Assert.Contains("QuestReopenCommand.RunAsync(reopenAsk, reopenClient, Console.Out)", reading);
+
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var done = program.IndexOf("QuestDoneCommand.Asks(questArgs)", StringComparison.Ordinal);
         var questUsage = program.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal);
