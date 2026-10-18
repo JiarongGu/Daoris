@@ -429,6 +429,13 @@ public static class RemoteSyncPayloads
         return document.RootElement.ValueKind == JsonValueKind.Object ? Text(document.RootElement, "claim") ?? "none" : "none";
     }
 
+    /// <summary>Why a lost claim lost, as its host answered beside it (FABRIC-CLOSE1c18), or null where it said none.</summary>
+    public static string? ClaimWhy(string claimJson)
+    {
+        using var document = JsonDocument.Parse(claimJson);
+        return document.RootElement.ValueKind == JsonValueKind.Object ? Text(document.RootElement, "why") : null;
+    }
+
     private static string Clip(string text) => TextBounds.Clip(text, 120);
 
     /// <param name="Write">The team's rows to write here — new, or with a declaration that changed.</param>

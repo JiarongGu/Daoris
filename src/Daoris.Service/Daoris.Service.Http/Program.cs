@@ -453,7 +453,9 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     // What this host is (WIRING1b): This Daoris shows it beside the tier, and a terminal's `daoris-driver wiring` reads it too.
     Version: HostVersion.Stamped,
     // FABRIC-CLOSE1b's handshake: a driver binds a quest to a closure graph only against a host that says it knows one.
-    Closure: true));
+    Closure: true,
+    // CLOSECAP1: the outcome door's recovery, which a binding needs beside the graph's doors.
+    CloseOutcome: true));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -2108,7 +2110,9 @@ else
 
     app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>
         Results.Ok(new QuestClaimResponse(
-            id.TrimStart('#'), (await s.Quests.ClaimAsync(id.TrimStart('#'), ct)).ToString().ToLowerInvariant())));
+            id.TrimStart('#'), (await s.Quests.ClaimAsync(id.TrimStart('#'), ct)).ToString().ToLowerInvariant(),
+            // FABRIC-CLOSE1c18: a take lost to the person's reopen, which the driver's stop says as that.
+            await s.Quests.LostToTheReopenAsync(id.TrimStart('#'), ct) ? "source-reopened" : null)));
 
     // The retires this machine's checkouts owe a circle (SYNC5b): what the driver's pass carries to
     // that circle's deployment, then clears. The store writes them as the row leaves, so no door that

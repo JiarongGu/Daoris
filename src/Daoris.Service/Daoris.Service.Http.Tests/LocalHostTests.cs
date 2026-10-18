@@ -69,6 +69,42 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// 🔴 A root never leaves the machine (D46): a caller off it is answered the row, and no path — not
     /// in the field, and not anywhere else in the body.
     /// </summary>
+    /// <summary>
+    /// FABRIC-CLOSE1c18: the claim's answer says why a lost take lost where it lost to the person's reopen of the work its step grew
+    /// from, so the driver stops its session in words that are true. A take lost to another machine's is answered as before, with none.
+    /// </summary>
+    [Fact]
+    public async Task The_claim_answers_why_a_take_lost_where_the_persons_reopen_moved_its_step()
+    {
+        var now = DateTimeOffset.Parse("2026-10-18T12:00:00Z");
+        var machine = host.Composed.Quests.Machine;
+        var source = new QuestOperationRef("m2", 5);
+        const string reopened = "c1a1d0000001", taken = "c1a1d0000002";
+        Quest Asked(string id) =>
+            new(id, "Asker", "Keeper", "A step grown from a submission", "why", QuestStatus.Open, null, now, now, "claimed")
+            {
+                Parent = "feedfeedfeed", GrewFrom = source,
+            };
+
+        await host.Composed.Quests.IntegrateAsync("claimed",
+        [
+            new QuestOperation(reopened, QuestOperationKind.Published, "m2", 10, now, Published: Asked(reopened), Number: 1),
+            new QuestOperation(reopened, QuestOperationKind.Reopened, "m2", 11, now, "Build it again.", Submission: source, Number: 2),
+            new QuestOperation(reopened, QuestOperationKind.Conflict, machine, 900001, now, "This machine's session.",
+                Attempted: QuestStatus.Taken, Number: 3),
+            new QuestOperation(taken, QuestOperationKind.Published, "m2", 12, now, Published: Asked(taken), Number: 4),
+            new QuestOperation(taken, QuestOperationKind.Taken, "m3", 1, now, Submission: source, Number: 5),
+            new QuestOperation(taken, QuestOperationKind.Conflict, machine, 900002, now, "This machine's session.",
+                Attempted: QuestStatus.Taken, Number: 6),
+        ], 6);
+
+        var toTheReopen = (await host.GetAsync($"/api/quests/{reopened}/claim")).Json;
+        Assert.Equal(("lost", "source-reopened"), (toTheReopen.GetProperty("claim").GetString(), toTheReopen.GetProperty("why").GetString()));
+        var toATake = (await host.GetAsync($"/api/quests/{taken}/claim")).Json;
+        Assert.Equal("lost", toATake.GetProperty("claim").GetString());
+        Assert.True(!toATake.TryGetProperty("why", out var why) || why.ValueKind == JsonValueKind.Null);
+    }
+
     [Fact]
     public async Task A_registrations_root_is_never_answered_to_a_caller_off_this_machine()
     {
@@ -917,6 +953,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         // FABRIC-CLOSE1b's handshake: this host knows a closure graph's operations and doors.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
+        // CLOSECAP1: and its outcome door, which a binding also needs.
+        Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeOutcome").GetBoolean());
     }
 
     /// <summary>
@@ -988,6 +1026,44 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             rebound.GetProperty("grewFrom").GetProperty("sequence").GetInt64());
         Assert.False(rebound.TryGetProperty("sourceReopened", out _));
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/continue", new { })).Status);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c10: the person's word to go on with a started step that had submitted answers the step taken with no submission,
+    /// and says its old result is cleared and that it must submit again.
+    /// </summary>
+    [Fact]
+    public async Task The_go_on_door_answers_the_held_steps_old_result_cleared()
+    {
+        var published = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Write the report it goes on from", body = "For the review.",
+            then = new[] { new { to = "Keeper", title = "Check {parent}", body = "Look at it." } },
+        });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
+        var submission = ready.Json.GetProperty("quest").GetProperty("submission");
+        var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
+        var stepId = (await host.GetAsync("/api/quests")).Json.EnumerateArray()
+            .Single(row => row.TryGetProperty("parent", out var parent) && parent.GetString() == quest).GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{stepId}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var checkedOnce = await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "ready", reason = "Looked." });
+        Assert.True(checkedOnce.Json.GetProperty("quest").TryGetProperty("submission", out _));
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written again." })).Status);
+
+        var goOn = await host.PostAsync($"/api/quests/{stepId}/continue", new { });
+
+        Assert.Equal(200, goOn.Status);
+        var step = goOn.Json.GetProperty("quest");
+        Assert.Equal("Taken", step.GetProperty("status").GetString());
+        Assert.False(step.TryGetProperty("submission", out _));
+        Assert.False(step.TryGetProperty("hold", out _));
+        Assert.Contains("cleared", goOn.Json.GetProperty("message").GetString());
+        Assert.Contains("submit again", goOn.Json.GetProperty("message").GetString());
     }
 
     /// <summary>

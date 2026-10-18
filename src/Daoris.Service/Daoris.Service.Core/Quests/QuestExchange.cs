@@ -917,12 +917,24 @@ public sealed class QuestExchange(
         if (await SharedAtAsync(quest, ct).ConfigureAwait(false) is not { } remote) return null;
 
         var pass = await QuestSync.RunAsync(quests, service, remote, quest.Workspace, ct).ConfigureAwait(false);
-        return await quests.ClaimAsync(quest.Id, ct).ConfigureAwait(false) switch
+        var claim = await quests.ClaimAsync(quest.Id, ct).ConfigureAwait(false);
+        var reopened = claim == QuestClaim.Lost
+                       && QuestLog.LostToTheReopen(await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false), quests.Machine);
+        return claim switch
         {
             QuestClaim.Held => new(
                 QuestRespondRefusal.None,
                 $"Quest `#{quest.Id}` is now Taken — the remote confirmed the claim.",
                 await quests.FindAsync(quest.Id, ct).ConfigureAwait(false)),
+            // FABRIC-CLOSE1c18: a take lost to the person's reopen of the work the step grew from is said as that, under the lost take's
+            // refusal, which every reader of a take's answer already stands down on.
+            QuestClaim.Lost when reopened
+                => new(
+                    QuestRespondRefusal.AlreadyTaken,
+                    $"Quest `#{quest.Id}` moved under this take: the person's reopen of the work it grew from reached the remote first, "
+                    + "so this take lost and is kept on the quest as a conflict. Stand down: the step is open for the work as it stands "
+                    + "now, and is taken anew on it.",
+                    Quest: null),
             QuestClaim.Lost => new(
                 QuestRespondRefusal.AlreadyTaken,
                 $"Quest `#{quest.Id}` was taken on another machine first — its take reached the remote before this "
@@ -1310,7 +1322,8 @@ public sealed class QuestExchange(
         {
             return new(
                 QuestRespondRefusal.AlreadyTaken,
-                LostTake(move.Quest.Id, $"so this {action.ToLowerInvariant()} is not this machine's to make. Nothing moved."),
+                LostTake(move.Quest.Id, $"so this {action.ToLowerInvariant()} is not this machine's to make. Nothing moved.",
+                    reopened: move.Quest.Status == QuestStatus.Open),
                 Quest: null);
         }
 
@@ -1401,10 +1414,15 @@ public sealed class QuestExchange(
     /// A move or a wait refused because this machine's take lost (WAITCLAIM2), in one sentence for both: what happened to
     /// the take, then <paramref name="what"/>, what that means for this one, then the stand-down the take's own loss says.
     /// A remote refusing such a push says it in the same words (WAITCLAIM3), and the pushing machine's pass relays them.
+    /// <paramref name="reopened"/> where the take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18), which
+    /// is the one way such a step stands open: said as that, never as another machine's take.
     /// </summary>
-    internal static string LostTake(string id, string what) =>
-        $"Quest `#{id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, "
-        + $"{what} Stand down rather than doubling the work.";
+    internal static string LostTake(string id, string what, bool reopened = false) => reopened
+        ? $"Quest `#{id}` moved under this machine's take: the person's reopen of the work it grew from reached the remote first, so "
+          + $"this machine's take lost and is kept on the quest as a conflict, {what} Stand down: this session's work stays in its tree, "
+          + "and the step is open for the work as it stands now."
+        : $"Quest `#{id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, "
+          + $"{what} Stand down rather than doubling the work.";
 
     /// <summary>
     /// The driver binds a taken quest to the graph that closes it (FABRIC-CLOSE1a, §E5), at the run's first start.
@@ -1867,7 +1885,9 @@ public sealed class QuestExchange(
 
     /// <summary>
     /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): it grows from the source's current
-    /// submission once that is unheld, its hold let go. To abandon it instead is their decline, at the decline's own door.
+    /// submission once that is unheld, its hold let go, and any result it submitted on the reopened work cleared (FABRIC-CLOSE1c10), with
+    /// the next step that result published withdrawn or held (FABRIC-CLOSE1c14). To abandon it instead is their decline, at the decline's
+    /// own door.
     /// </summary>
     public async Task<QuestRespondOutcome> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -1879,7 +1899,9 @@ public sealed class QuestExchange(
             QuestReopenRefusal.None => new(
                 QuestRespondRefusal.None,
                 $"Quest `#{quest}` goes on: it grows from `#{parent}`'s current submission now, and its hold is let go. Its work "
-                + "stands on what was reopened, so bring its branch up to date with that submission first.",
+                + "stands on what was reopened, so any result it submitted is cleared: bring its branch up to date with that submission "
+                + "first, and it must submit again from there."
+                + SuccessorWords(going.Successor),
                 going.Quest),
             QuestReopenRefusal.NotFound => new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", null),
             QuestReopenRefusal.NotWithdrawn => new(
@@ -1894,6 +1916,17 @@ public sealed class QuestExchange(
                 null),
         };
     }
+
+    /// <summary>
+    /// What the go-on did to the step's own successor, which the cleared result had published (FABRIC-CLOSE1c14): withdrawn until the step
+    /// submits again, or held for the person's word as the step was. Nothing where none stood on that result.
+    /// </summary>
+    private static string SuccessorWords(Quest? successor) => successor switch
+    {
+        null => "",
+        { Status: QuestStatus.Open } => $" Its next step `#{successor.Id}`, which that result published, is withdrawn until it submits again.",
+        _ => $" Its next step `#{successor.Id}`, which that result published, is held: once this one submits again, it goes on by your word.",
+    };
 
     /// <summary>
     /// Why a session's take, done or <c>ready</c> on a step moved nothing (FABRIC-CLOSE1c): the work it grew from was reopened, and
@@ -1960,7 +1993,8 @@ public sealed class QuestExchange(
         {
             return new(
                 QuestRespondRefusal.AlreadyTaken,
-                LostTake(move.Quest.Id, "so this done is not this machine's to make. Nothing moved."),
+                LostTake(move.Quest.Id, "so this done is not this machine's to make. Nothing moved.",
+                    reopened: move.Quest.Status == QuestStatus.Open),
                 Quest: null);
         }
 

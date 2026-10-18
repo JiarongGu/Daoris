@@ -5,6 +5,125 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — A step's next submission after the person's go-on was never sealed (FABRIC-CLOSE1c14)
+
+- **Symptom:** after the person's go-on on a held step that had submitted, the successor that old submission published stood unheld,
+  could be taken and worked on, and the step's next submission was never sealed by it: the step's close was refused `unsealed`.
+- **Root cause:** CLOSE1c10's go-on cleared the step's own submission and wrote nothing on the successor, which still named the cleared
+  submission as its `grewFrom`; `PublishNextAsync` rebinds only a withdrawn open step, so it left that successor standing.
+- **Fix:** `QuestStore.ContinueAsync` writes, in the same transaction, a `reopened` naming the cleared submission on the step's successor,
+  judged by the replay's rule: withdrawn while open, held while taken. The continue answer names it. D173's FABRIC-CLOSE1c14 note has the
+  behaviour.
+- **Verification:** red first: `QuestReopenTests` (2) and `QuestReopenSyncTests` (1 theory, 2 cases) failing, then green.
+  `Daoris.Service.Tests` is 2258 (2254 before), and `Daoris.Service.Http.Tests` 287, all passing.
+
+## 2026-10-18 — A source's next submission let go a step another machine had taken (FABRIC-CLOSE1c15)
+
+- **Symptom:** a machine that reopened a source and submitted again before another machine's take of the step reached it rebound the step
+  it read withdrawn. At the remote, and on every machine after, the step read taken and unheld, grown from the new submission: a started
+  step went on without the person's word.
+- **Root cause:** `QuestLog.Applies` admitted a `rebound` on a taken held step as on an open one, so the publication's rebind, made on a step
+  its machine read open, applied at the remote and survived the pushing machine's rebase.
+- **Fix:** a publication's rebind carries `whileOpen` (as a decline made while open does), in the log and on the wire, and `Applies`
+  refuses a marked one on a step no longer open; the person's go-on writes none. D173's FABRIC-CLOSE1c15 note and D68's note have the
+  behaviour.
+- **Verification:** red first: `QuestReopenSyncTests` (1), `QuestReopenTests` (1) and the census's wire and log theories for `Rebound`
+  failing, then green. `Daoris.Service.Tests` is 2254 (2252 before), all passing.
+## 2026-10-18 — An automatic landing pushed past an opinion or a review that started holding after the look chose it (FABRIC-CLOSE1h12)
+
+- **Symptom:** under *Accept automatically*, an opinion rule or a set-up step shown for review that started holding while a landing's
+  push waited behind another push of its branch did not stop the push; nor did one that started before a `push-held` entry's recovery
+  (a restart's first look included), which handed the made branch on. An ordinary done was open to it as well as a submission.
+- **Root cause:** `AutoLander` read the landing gate once, in the judgement just before the landing. `BeforePushAsync` read only the
+  quest, and `PushHeldAsync` chose the hand-on before the look's gate part ran.
+- **Fix:** one helper (`AutoLander.GateAsync`) reads the gate and its first refusal for the look, the push and the recovery alike. The push
+  reads it where it reads the quest again, for the same session; the recovery reads it before a hand-on is chosen and waits silently
+  while it holds; the `push-held` wake hears every ledger family and the gate's files. D173's FABRIC-CLOSE1h12 note has the behaviour.
+- **Verification:** red first: `LandingWakesTests` (2 rows) and the new Git cases (6 failing on their assertions, 2 passing as guards).
+  Then the driver's fast half is 9598 with main merged (9581 before; this row's two are wake rows), and the `AutoLanding` classes,
+  run once by filter with `git.process.runsettings`, pass 73 of 74 (66 before); the 74th timed out in the fixture's 60 s wait for its
+  push to reach the branch, a load timeout, and passes alone.
+
+## 2026-10-18 — The automatic landing's git tests were one class, the longest of the git half (PROCSPLIT1)
+
+- **Symptom:** `AutoLandingTests`, one class of 40 test methods (about 70 cases), took about 10 minutes on a quiet machine and 43 under load,
+  the longest class of `driver-process-git` (46 m on the last full set): xUnit runs one class's tests one after another, so the git half's
+  four parallel threads could not share it.
+- **Root cause:** one class held every concern and the helpers beside them.
+- **Fix:** the constructor, `Dispose`, fields and every helper moved to the abstract `AutoLandingFixture`; the tests moved unchanged into
+  five classes by concern (`AutoLandingTriesTests`, `AutoLandingWorkflowTests`, `AutoLandingSubmissionTests`, `AutoLandingPressTests`,
+  `AutoLandingPushHeldTests`), each with the `Process` and `Git` traits. Nothing is shared between classes: each instance's scratch folder
+  carries a fresh id, `LandingHolds`' static gates are keyed by the home inside it, and the other statics are constants or pure helpers.
+- **Verification:** no red (no behaviour changed). The 40 test names are the same, once each; a sorted line diff of the old class against
+  the new files shows only access modifiers, headers, doc comments and two dropped section comments. Both runs used `--filter
+  "FullyQualifiedName~AutoLanding"` with `git.process.runsettings`, on a machine loaded by merges and builders: before, 53 m 20 s, 61 tests
+  (60 passed; one failed on its own 60 s wait, "the push waits for its branch", a load timeout); after, with the five tests FABRIC-CLOSE1h10
+  added, 12 m 35 s test duration (14 m wall with the build), 66 of 66 passed.
+
+## 2026-10-18 — The merge tool's `--beside` test held its fake gate a minute, and load outlasted it (TESTWAIT4)
+
+- **Symptom:** under load (three builders and a merge's gates) the `--full --beside` test failed `kept local/gate-tree` not matched; green on rerun.
+  Two other failures that day, in `generated` (`local/scratch/` "not ignored", exit 2) and `--passed` (expected 0, got 2), were not seen again.
+- **Root cause:** the fake gate waited on `GATE_HOLD` for 60 s at most, and the test's own steps (a refused second run, a merge, a prune, each a
+  process) took longer under load, so the hold expired, the gate ended and the prune removed the gate tree. The first two failures are the
+  GATEIGNORE1 class (a `git check-ignore` that failed under load was read as "not ignored", a tool error, exit 2); the logs kept hold only green reruns,
+  so the third is that class by its exit code only, not proven.
+- **Fix:** the hold's bound is ten minutes (the test releases it in `finally`, so a failed test still ends), and the test's wait for the gate to start is 5 minutes, not 1.
+  No tool bound was the cause; `tools/merge-branch.mjs` is unchanged.
+- **Verification:** no red (a load race cannot be reproduced without a load generator); the file run three times, plainly.
+
+## 2026-10-18 — The Work frame's suite was one file that ran 181 s alone and timed out under load (WEBSPEED1)
+
+- **Symptom:** `WorkFrame.test.tsx`, 229 tests, was the slowest web-unit file (181 s alone on a quiet machine, 221 s here), and a merge's web-unit
+  gate timed out on it under load on 2026-10-18. Every test renders the whole frame (about 0.55 s each, median); a test's own wait was never the cost.
+- **Root cause:** user-event's default waits one macrotask between keys and each key re-rendered the whole frame (43 `type` sites, one test
+  of 6.3 s typing about 60 keys over five phrases and six sends); and the file held ten independent blocks run one after another by one worker.
+- **Fix:** the file's `type` and `keyboard` run with `delay: null` (every key event kept, only the waits dropped; a click keeps its wait, since
+  one without it did not open the review tab before its test read it): alone 221 s to 136 s. The 6.3 s test's four refusal rows became an
+  `it.each` (4.1 s to under 1 s each, 229 tests to 233, every assertion kept, and the box-empty check added to each row). Still over 60 s, so the file
+  is cut into five parts that run beside each other (`WorkFrame.test`, `.conversation`, `.words`, `.landed`, `.geometry`), the bridge mock and the
+  fixtures shared from `test/workFrameBridge.ts` and `test/workFrameKit.tsx`. Test bodies are unchanged: every line of the old blocks stands in a part.
+  `testTimeout` stays 20 s.
+- **Verification:** no red (no behaviour changed): the same 229 test names plus the four rows pass, 233 of 233; the five parts together take 78 s
+  wall (the largest part about 41 s alone); web-unit alone 350 files, 7115 tests, 304 s wall on this machine (no run of the whole set before, so no
+  before figure for it); `tsc` clean; the structure gate passes.
+## 2026-10-18 — A hand-off pushed a later session's work on an earlier session's quest (FABRIC-CLOSE1h10)
+
+- **Symptom:** where a chain's later session moved a landed branch on after a hand-off's door read it (or after the look chose a
+  `push-held` entry), the hand-off pushed that later work while the later session's quest was taken back: the person's hand-off judged
+  the session its door read, and the look's hand-on its entry's own quest, which still stood.
+- **Root cause:** the advance is recorded before its push takes the branch's hold (`TreeLands`), and `TreeHandOffs.HandAsync` read the
+  record again under that hold without telling its `beforePush` which session the record now named.
+- **Fix:** `beforePush` is told the record's `LastSession()` under the hold. A session other than the one judged is judged on its own
+  quest, read there: the person's doors by their rule (`HandedResult`, from `PressQuests.HandedAsync`), the look by its own, which also
+  waits on that quest before choosing the hand-on (`AutoLander.PushHeldAsync`). D173's FABRIC-CLOSE1h10 note has the behaviour.
+- **Verification:** red first: `PressedResultTests` (5 failing), and the new Git cases (3 failing, 2 passing as before). Then the
+  driver's fast half is 9568 (9561 before), and `AutoLandingTests`, run once by class, passes 65 (60 before).
+## 2026-10-18 — A step gone on with after its session ended normally sat taken with nothing submitted (FABRIC-CLOSE1c13)
+
+- **Symptom:** after the person's go-on cleared a held step's own result (CLOSE1c10), a step whose session had said `ready` and parked,
+  or completed, before its source was reopened sat taken with no submission: nothing went on with it, and its branch never got the
+  source's new work.
+- **Root cause:** the planner's go-on after a reopen read only a session the reopen stopped (`StoppedByReopen`, CLOSE1c2), and the
+  start's rebase onto the new submission (CLOSE1c5) was gated on the same; a park also holds its quest's slot and tree, so a new session
+  beside it could never start.
+- **Fix:** the look tells that session Daoris's words of the go-on, once (`Planner.GoneOnSince`, `ReopenTelling`), the planner's go-on
+  resumes it with them, and the start's gate (`ReopenTelling.BringsToSource`) brings its branch up to date first. D173's
+  FABRIC-CLOSE1c13 note has the behaviour.
+- **Verification:** red first: `PlannerTests` (2), `ReopenGoOnTests` (1), `ReopenTellingTests` (6), then green; the driver's fast half
+  is 9591 (9578 before).
+## 2026-10-18 — The person's go-on kept a held step's result made on the reopened work (FABRIC-CLOSE1c10)
+
+- **Symptom:** a step that had said `ready` before the person reopened its source went on, at the person's word (`continue`), with that
+  submission still current, its answers, yes and verdict with it: its close could take work made on the reopened source as finished, with
+  nothing submitted again.
+- **Root cause:** CLOSE1c's `rebound` step in `QuestLog.Step` moved `grewFrom` and let the hold go, and touched nothing else, while the
+  reopen and the `submitted` steps both clear a quest's result.
+- **Fix:** the `rebound` step clears the step's submission, answers, yes and verdict too; the continue answer says so, and that the step
+  must submit again. D173's FABRIC-CLOSE1c10 note has the behaviour.
+- **Verification:** red first: `QuestReopenTests` (2) and `QuestReopenSyncTests` (1) failing, then green. `Daoris.Service.Tests` is 2252
+  (2249 before) and `Daoris.Service.Http.Tests` 287 (286 before), all passing.
+
 ## 2026-10-18 — A hand-off that waited behind another push told its plugin of a result taken back meanwhile (FABRIC-CLOSE1h8)
 
 - **Symptom:** handing a landed branch on (`HANDOFF`, Ask Daoris's card, `trees hand`), or the look's hand-on of a push held back, waiting
@@ -82,6 +201,20 @@ repository.
 - **Verification:** red first: `QuestCloseTests`' theory's two `stop` rows (S2's deploy stopped; S2's close node stopped) and the wake
   fact without the fresh read (S1's key on the node). Then the driver's fast half passes 9449 (9442 before), and the page's
   `WorkMilestone.test.tsx`, the locales, `i18n:check` and `names:check --strict` pass.
+
+## 2026-10-18 — A stream-of-wakes test counted looks over four wall-clock seconds, and a held-words line fell back with no cause shown (TESTWAIT6, TESTWAIT5)
+
+- **Symptom:** under load, `DriverWatchTopicsTests.The_whole_look_still_runs_at_its_deadline_under_a_stream_of_wakes` failed twice
+  ("6 look(s) for 7 wakes"), and `SessionsSayCommandTests.Held_words_name_what_holds_them` once, reading "held: the same session goes
+  on…" for the planner's hold sentence; each passed alone.
+- **Root cause** (read, not reproduced): the first sent wakes for 4 s of the machine's clock, so a starved test thread sent 7 wakes
+  and the `> 10` looks bar judged the load. The second's `HeldAsync` falls back to its "next look" sentence when the planner's look
+  throws or gives no verdict, and said nothing of which; the in-process stand-in has no client timeout, so the cause stays unproven.
+- **Fix:** the wakes test sends wakes, each awaiting the look it woke, until two deadlines and eleven looks have passed (the loop's
+  own counts, 40 s cap), then asserts the deadlines at most one per elapsed second plus one and more looks than deadlines. The
+  words' line is unchanged; `SessionsWorld.Fell` reports the fallback's cause, and the test asks again up to three times over a
+  fresh room when it fell, the last try failing with the causes named.
+- **Verify:** both classes (70 tests) passed 3 of 3, then the driver fast half. If the held test fails again its message names the cause.
 
 ## 2026-10-18 — A redirect test's status call timed out under load before its listener was asked (TESTWAIT3)
 

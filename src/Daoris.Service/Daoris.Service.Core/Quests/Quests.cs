@@ -215,7 +215,8 @@ public sealed record Quest(
     /// <summary>
     /// The submission it grew from, reopened by the person (FABRIC-CLOSE1c, §E5), while that stands: an open step is withdrawn and
     /// a taken one is held, each for the person (<see cref="QuestHold.SourceReopened"/>). Null for every other quest, and once a
-    /// <see cref="QuestOperationKind.Rebound"/> names the submission it grows from now.
+    /// <see cref="QuestOperationKind.Rebound"/> names the submission it grows from now, which clears the step's own submission and its
+    /// answers, yes and verdict, made on the work reopened (FABRIC-CLOSE1c10).
     /// </summary>
     public QuestOperationRef? SourceReopened { get; init; }
 
@@ -479,7 +480,14 @@ public enum QuestReopenRefusal
 /// <param name="Refusal"><see cref="QuestReopenRefusal.None"/> when it moved.</param>
 /// <param name="Quest">The quest named, as it now stands; null for no such id.</param>
 /// <param name="Step">The step it moved with it, as it now stands: the reopened submission's, or the source a word to go on read.</param>
-public sealed record QuestReopening(QuestReopenRefusal Refusal, Quest? Quest, Quest? Step);
+public sealed record QuestReopening(QuestReopenRefusal Refusal, Quest? Quest, Quest? Step)
+{
+    /// <summary>
+    /// For a word to go on: the step's own successor, which the submission it cleared had published, as the same write reopened it,
+    /// withdrawn or held (FABRIC-CLOSE1c14). Null where none stood on that submission.
+    /// </summary>
+    public Quest? Successor { get; init; }
+}
 
 /// <summary>
 /// Why a graph's close wrote nothing (FABRIC-CLOSE1a, §E5), or <see cref="None"/> when it closed every quest it named. Each
@@ -1232,7 +1240,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$kind", KindText(kind));
         command.Parameters.AddWithValue("$machine", Machine);
         command.Parameters.AddWithValue("$at", Moments.Write(at));
-        var flagged = whileOpen && kind == QuestOperationKind.Declined;
+        var flagged = whileOpen && JudgedOpen(kind);
         var verdict = kind == QuestOperationKind.Evidenced ? evidence : null;
         var shown = kind == QuestOperationKind.SetUp ? setUp : null;
         var said = kind == QuestOperationKind.Verdict ? review : null;
@@ -1240,8 +1248,8 @@ public sealed class QuestStore
         var parts = note is null ? null : NoteParts.Normalize(NoteParts.Element(noteParts));
         // A close's provenance is a done's alone (FABRIC-CLOSE1a).
         var closed = kind == QuestOperationKind.Done ? close : null;
-        // The submission a reopen or a rebind names is theirs alone (FABRIC-CLOSE1c).
-        var named = Names(kind) ? submission : null;
+        // The submission a reopen or a rebind names is theirs alone (FABRIC-CLOSE1c), beside the source a take found (FABRIC-CLOSE1c18).
+        var named = Carries(kind) ? submission : null;
         // The session that said a ready is the submission's alone (FABRIC-CLOSE1c4).
         var by = kind == QuestOperationKind.Submitted ? session : null;
         command.Parameters.AddWithValue(
@@ -1270,6 +1278,18 @@ public sealed class QuestStore
     internal static bool Names(QuestOperationKind kind) => kind is QuestOperationKind.Reopened or QuestOperationKind.Rebound;
 
     /// <summary>
+    /// The kinds a submission may ride on: the two that name one (<see cref="Names"/>), and a take, which carries its step's source as it
+    /// found it (FABRIC-CLOSE1c18), only where it found one. On any other kind it is never written, kept or read.
+    /// </summary>
+    internal static bool Carries(QuestOperationKind kind) => Names(kind) || kind == QuestOperationKind.Taken;
+
+    /// <summary>
+    /// The kinds a <c>whileOpen</c> mark may carry: a decline (PAUSE1c), and a publication's rebind (FABRIC-CLOSE1c15). On any other
+    /// kind it is never written, kept or read.
+    /// </summary>
+    internal static bool JudgedOpen(QuestOperationKind kind) => kind is QuestOperationKind.Declined or QuestOperationKind.Rebound;
+
+    /// <summary>
     /// Keep an operation another machine made, under ITS machine and sequence — what a remote receives
     /// and what a machine fetches. <paramref name="number"/> is where a remote placed it; a remote
     /// itself keeps none, because its own position is the number.
@@ -1293,13 +1313,13 @@ public sealed class QuestStore
         command.Parameters.AddWithValue(
             "$payload", PayloadJson(
                 operation.Note, operation.Published, operation.Attempted, operation.Dismisses, operation.Answers,
-                operation.WhileOpen && operation.Kind == QuestOperationKind.Declined,
+                operation.WhileOpen && JudgedOpen(operation.Kind),
                 operation.Kind == QuestOperationKind.Evidenced ? operation.Evidence : null,
                 operation.Kind == QuestOperationKind.SetUp ? operation.SetUp : null,
                 operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null,
                 operation.NoteParts,
                 operation.Kind == QuestOperationKind.Done ? operation.Close : null,
-                Names(operation.Kind) ? operation.Submission : null,
+                Carries(operation.Kind) ? operation.Submission : null,
                 operation.Kind == QuestOperationKind.Submitted ? operation.Session : null));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
@@ -1550,7 +1570,10 @@ public sealed class QuestStore
             // would not apply — a decline made while open (PAUSE1c) on a quest no longer open among them.
             var open = whileOpen && status == QuestStatus.Declined;
             var standing = QuestLog.Replay(history);
-            var judged = new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open);
+            // FABRIC-CLOSE1c18: a take carries the step's source as this write finds it, so wherever it is judged later (a rebase, a
+            // remote), a reopen and its rebind that reached there first are seen to have moved the step from under it.
+            var found = status == QuestStatus.Taken ? standing?.GrewFrom : null;
+            var judged = new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open, Submission: found);
             if (!QuestLog.Applies(standing, judged))
             {
                 // FABRIC-CLOSE1c: a step its source's reopen withdrew is taken by nobody, said apart so the answer can say why.
@@ -1578,7 +1601,8 @@ public sealed class QuestStore
 
             var operation = await AppendAsync(
                 id, kind, now, note, null, transaction, inside,
-                answers: status == QuestStatus.Done ? answers : null, whileOpen: open, noteParts: noteParts).ConfigureAwait(false);
+                answers: status == QuestStatus.Done ? answers : null, whileOpen: open, noteParts: noteParts, submission: found)
+                .ConfigureAwait(false);
             var moved = QuestLog.Replay([.. history, operation])!;
 
             // FABRIC-CLOSE1l (CLOSE1f): a take whose graph the driver named binds in this same write, judged by the replay's rule as
@@ -1632,10 +1656,11 @@ public sealed class QuestStore
 
         // FABRIC-CLOSE1c: a step its source's reopen withdrew, never taken, is the same step again: rebound to the submission that
         // publishes it now, keeping its id and its history, so no second quest is asked and no withdrawal outlives the work it named.
-        // A started one waits for the person's word (ContinueAsync).
+        // A started one waits for the person's word (ContinueAsync). FABRIC-CLOSE1c15: the rebind is judged on the step this machine
+        // reads open, so it is marked while-open, and never lets go a step another machine's take reached first, here or at the remote.
         if (standing is { Status: QuestStatus.Open, SourceReopened: not null } && next.Step.GrewFrom is { } from)
         {
-            return await ReboundInAsync(standing.Id, from, now, transaction, ct).ConfigureAwait(false) ?? standing;
+            return await ReboundInAsync(standing.Id, from, whileOpen: true, now, transaction, ct).ConfigureAwait(false) ?? standing;
         }
 
         return standing;
@@ -1643,16 +1668,18 @@ public sealed class QuestStore
 
     /// <summary>
     /// A <see cref="QuestOperationKind.Rebound"/> on <paramref name="id"/>, naming <paramref name="from"/>, judged by the replay's rule
-    /// in the caller's transaction (FABRIC-CLOSE1c); the step as it then stands, or null where the rule refused it.
+    /// in the caller's transaction (FABRIC-CLOSE1c); the step as it then stands, or null where the rule refused it. A publication's is
+    /// <paramref name="whileOpen"/>; the person's go-on is not, since their word is what lets a started step go (FABRIC-CLOSE1c15).
     /// </summary>
     private async Task<Quest?> ReboundInAsync(
-        string id, QuestOperationRef from, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
+        string id, QuestOperationRef from, bool whileOpen, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
     {
         var history = await HistoryAsync(id, transaction, ct).ConfigureAwait(false);
         var standing = QuestLog.Replay(history);
-        if (!QuestLog.Applies(standing, new QuestOperation(id, QuestOperationKind.Rebound, Machine, 0, now, Submission: from))) return null;
+        var judged = new QuestOperation(id, QuestOperationKind.Rebound, Machine, 0, now, Submission: from, WhileOpen: whileOpen);
+        if (!QuestLog.Applies(standing, judged)) return null;
         var operation = await AppendAsync(
-            id, QuestOperationKind.Rebound, now, null, null, transaction, ct, submission: from).ConfigureAwait(false);
+            id, QuestOperationKind.Rebound, now, null, null, transaction, ct, whileOpen: whileOpen, submission: from).ConfigureAwait(false);
         var rebound = QuestLog.Step(standing, operation)!;
         await WriteCacheAsync(rebound, transaction, ct).ConfigureAwait(false);
         return rebound;
@@ -1912,7 +1939,8 @@ public sealed class QuestStore
 
     /// <summary>
     /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c, §E5): a <see cref="QuestOperationKind.Rebound"/>
-    /// naming the source's current submission, once that is unheld.
+    /// naming the source's current submission, once that is unheld; and in the same write, a <see cref="QuestOperationKind.Reopened"/> on
+    /// the step's own successor, which the submission the rebind cleared had published (FABRIC-CLOSE1c14).
     /// </summary>
     public Task<QuestReopening> ContinueAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
@@ -1933,12 +1961,39 @@ public sealed class QuestStore
                 return new QuestReopening(QuestReopenRefusal.SourceNotReady, standing, source);
             }
 
-            var rebound = await ReboundInAsync(id, new QuestOperationRef(current.Machine, current.Sequence), now, transaction, inside)
+            var rebound = await ReboundInAsync(
+                    id, new QuestOperationRef(current.Machine, current.Sequence), whileOpen: false, now, transaction, inside)
                 .ConfigureAwait(false);
-            return rebound is null
-                ? new QuestReopening(QuestReopenRefusal.SourceNotReady, standing, source)
-                : new QuestReopening(QuestReopenRefusal.None, rebound, source);
+            if (rebound is null) return new QuestReopening(QuestReopenRefusal.SourceNotReady, standing, source);
+
+            // FABRIC-CLOSE1c14: the rebind cleared the step's own submission, so the successor that submission published is reopened in
+            // the same write, as the person's reopen of it would be: withdrawn while open, held while taken. Its next submission then
+            // rebinds a withdrawn one, and a held one waits on the person's word, so the step's close is never left unsealed.
+            var successor = standing.Submission is { } cleared
+                ? await ReopenSuccessorAsync(standing, new QuestOperationRef(cleared.Machine, cleared.Sequence), now, transaction, inside)
+                    .ConfigureAwait(false)
+                : null;
+            return new QuestReopening(QuestReopenRefusal.None, rebound, source) { Successor = successor };
         }, ct);
+
+    /// <summary>
+    /// A <see cref="QuestOperationKind.Reopened"/> naming <paramref name="submission"/> on the chain's next step after
+    /// <paramref name="quest"/>, judged by the replay's rule in the caller's transaction (FABRIC-CLOSE1c14): the step as it then stands,
+    /// withdrawn or held, or null where none stands on that submission (none published, closed, or already reopened).
+    /// </summary>
+    private async Task<Quest?> ReopenSuccessorAsync(
+        Quest quest, QuestOperationRef submission, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct)
+    {
+        if (await SuccessorAsync(quest, transaction, ct).ConfigureAwait(false) is not { } step) return null;
+        var standing = QuestLog.Replay(await HistoryAsync(step.Id, transaction, ct).ConfigureAwait(false));
+        var judged = new QuestOperation(step.Id, QuestOperationKind.Reopened, Machine, 0, now, Submission: submission);
+        if (!QuestLog.Applies(standing, judged)) return null;
+        var operation = await AppendAsync(
+            step.Id, QuestOperationKind.Reopened, now, null, null, transaction, ct, submission: submission).ConfigureAwait(false);
+        var reopened = QuestLog.Step(standing, operation)!;
+        await WriteCacheAsync(reopened, transaction, ct).ConfigureAwait(false);
+        return reopened;
+    }
 
     /// <summary>
     /// The step that seals <paramref name="quest"/>'s current submission (FABRIC-CLOSE1a, FABRIC-CLOSE1c; §E5): its chain's next step,
@@ -2772,10 +2827,12 @@ public sealed class QuestStore
             // A move. On a quest another machine deleted first (D95) it is kept as a conflict on a quest no list shows,
             // so this machine's claim reads lost and its driver stops the session. A decline made while open that lost
             // to a take (PAUSE1c) is kept like any losing move, with its reason: the conflict says it attempted a
-            // decline, and the flag, a decline's, goes with the kind.
+            // decline, and the flag, a decline's, goes with the kind. So does a take's source (FABRIC-CLOSE1c18): a conflict carries none,
+            // and is reported as the log keeps it.
             var lost = operation with
             {
                 Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind), WhileOpen = false, Close = null,
+                Submission = null,
             };
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
             quest = quest is null ? null : QuestLog.Step(quest, lost);
@@ -2966,7 +3023,7 @@ public sealed class QuestStore
                 var lost = operation with
                 {
                     Kind = QuestOperationKind.Conflict, Attempted = QuestStatus.Taken, Note = StepWentWith(parent, takeLost, operation.Note),
-                    NoteParts = null, WhileOpen = false, Close = null,
+                    NoteParts = null, WhileOpen = false, Close = null, Submission = null,
                 };
                 await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
                 told.Add(lost);
@@ -3085,6 +3142,17 @@ public sealed class QuestStore
             while (await reader.ReadAsync(ct).ConfigureAwait(false)) mine.Add(ReadOperation(reader));
             return QuestLog.Claim(mine, Machine);
         }, ct);
+
+    /// <summary>
+    /// Whether THIS machine's claim on a quest reads lost because its take lost to the person's reopen of the work the step grew from
+    /// (FABRIC-CLOSE1c18, <see cref="QuestLog.LostToTheReopen"/>), not to another machine's take: what the claim's answer says beside
+    /// it, so the driver stops the session in words that are true. False where the claim does not read lost.
+    /// </summary>
+    public async Task<bool> LostToTheReopenAsync(string id, CancellationToken ct = default)
+    {
+        if (await ClaimAsync(id, ct).ConfigureAwait(false) != QuestClaim.Lost) return false;
+        return QuestLog.LostToTheReopen(await HistoryAsync(id, ct).ConfigureAwait(false), Machine);
+    }
 
     /// <summary>
     /// How a circle's pass ended (SYNC6a). A pass that reached the remote moves <see cref="QuestStanding.Synced"/>;
@@ -3265,10 +3333,16 @@ public sealed class QuestStore
                                 ? $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which was deleted here."
                                 : $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which this deployment has never had published."
                             : filed.WhileOpen
-                                // PAUSE1c: named as the decline it is, so the refusal its machine relays says why it did not land.
+                                // PAUSE1c: named as the decline it is, so the refusal its machine relays says why it did not land; a
+                                // publication's rebind likewise (FABRIC-CLOSE1c15).
                                 ? $"`{KindText(filed.Kind)}` applies to quest `#{group.Key}` only while it is open (`whileOpen`), "
                                   + $"and it is {quest.Status} here, so the quest stays {quest.Status}."
-                                : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
+                                : filed is { Kind: QuestOperationKind.Taken, Submission: { } found } && quest.Status == QuestStatus.Open
+                                    // FABRIC-CLOSE1c18: a take made on the step as it grew from work the person reopened since.
+                                    ? $"`taken` on quest `#{group.Key}` was made on the step as it grew from submission "
+                                      + $"`{found.Machine}:{found.Sequence}`, and the person's reopen has moved the step from that work since, "
+                                      + "so the take does not apply and the step stays Open."
+                                    : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
                     }
 
                     // A done, a decline or a wait from a machine whose take on the quest lost (WAITCLAIM3): made after the
@@ -3276,13 +3350,14 @@ public sealed class QuestStore
                     // allows it, and applied it would close or hold the winner's quest. Refused by the rule the store
                     // judges by, in the words the store's refusal is answered in, so the pushing machine's pass relays the
                     // lost take and its stand-down.
+                    // FABRIC-CLOSE1c18: on an open step the take was lost to the person's reopen, and is said so.
                     if (why is null && QuestLog.OnALostTake(quest, [.. history, .. staged], filed))
                     {
                         why = QuestExchange.LostTake(group.Key, filed.Kind == QuestOperationKind.Waited
                             ? $"so it does not wait on `#{filed.Note}`. The remote kept nothing this push carried for the quest; "
                               + $"`#{filed.Note}` stays a quest of its own."
                             : $"so this `{KindText(filed.Kind)}` is not this machine's to make. The remote kept nothing this push "
-                              + "carried for the quest.");
+                              + "carried for the quest.", reopened: quest is { Status: QuestStatus.Open });
                     }
 
                     if (why is not null) break;
@@ -3544,8 +3619,9 @@ public sealed class QuestStore
             reader.IsDBNull(6) ? null : reader.GetInt64(6), dismisses,
             // Absent from every done before answers, and from one on a quest with no requirements (DRIFT1d).
             payload.TryGetProperty("answers", out var answered) ? ReadAnswers(answered) : null,
-            // Absent from every decline before PAUSE1c and from every plain one: a plain decline.
-            kind == QuestOperationKind.Declined
+            // Absent from every decline before PAUSE1c and from every plain one: a plain decline. Likewise a rebind before
+            // FABRIC-CLOSE1c15, and the person's go-on: a plain one.
+            JudgedOpen(kind)
             && payload.TryGetProperty("whileOpen", out var open) && open.ValueKind == System.Text.Json.JsonValueKind.True,
             // An evidenced operation's verdict (EVID1a), which this store wrote only after the exchange judged it.
             kind == QuestOperationKind.Evidenced && payload.TryGetProperty("evidence", out var read)
@@ -3558,8 +3634,9 @@ public sealed class QuestStore
             note is not null && payload.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null,
             // Absent from every done but a graph's close's (FABRIC-CLOSE1a), which this store wrote whole.
             kind == QuestOperationKind.Done && payload.TryGetProperty("close", out var close) ? ReadClose(close) : null,
-            // A reopen's or a rebind's submission (FABRIC-CLOSE1c), which this store wrote whole.
-            Names(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
+            // A reopen's or a rebind's submission (FABRIC-CLOSE1c), which this store wrote whole. A take's, absent from every take before
+            // FABRIC-CLOSE1c18 and from one of a quest with no source: a take judged as before.
+            Carries(kind) && payload.TryGetProperty("submission", out var submission) ? ReadRef(submission) : null,
             // Absent from every submission before FABRIC-CLOSE1c4, and from one no session said.
             kind == QuestOperationKind.Submitted && payload.TryGetProperty("session", out var speaker)
             && speaker.ValueKind == System.Text.Json.JsonValueKind.String

@@ -64,7 +64,8 @@ public sealed class QuestOperationKindsTests
         {
             Published = Asked with { Filed = At(s), Updated = At(s) },
         },
-        [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session." },
+        // The step's source as the take found it (FABRIC-CLOSE1c18): the submission the quest as asked grew from.
+        [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session.", Submission = new QuestOperationRef("m9", 3) },
         // The close's provenance is a done's (FABRIC-CLOSE1a), so the sample carries it, and the wire and the log are held to it.
         [QuestOperationKind.Done] = s => Op(QuestOperationKind.Done, s) with
         {
@@ -127,8 +128,12 @@ public sealed class QuestOperationKindsTests
         {
             Note = "The bridge is wrong; build it again.", Submission = new QuestOperationRef("m1", 4),
         },
-        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c).
-        [QuestOperationKind.Rebound] = s => Op(QuestOperationKind.Rebound, s) with { Submission = new QuestOperationRef("m9", 8) },
+        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c), as that publication marks it: judged while the
+        // step is open (FABRIC-CLOSE1c15). The person's go-on, unmarked, is QuestReopenTests'.
+        [QuestOperationKind.Rebound] = s => Op(QuestOperationKind.Rebound, s) with
+        {
+            Submission = new QuestOperationRef("m9", 8), WhileOpen = true,
+        },
     };
 
     /// <summary>The kind's sample, or a failure saying where a new kind goes before it is given one.</summary>
@@ -156,6 +161,12 @@ public sealed class QuestOperationKindsTests
             // FABRIC-CLOSE1a: a taken quest a closure graph binds, and one whose agent submitted, waiting on its evidence.
             ("taken, bound to a closure graph", [published, taken, Sample(QuestOperationKind.Bound, 3)]),
             ("taken, submitted", [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4)]),
+            // FABRIC-CLOSE1c10: a step that submitted, then held by its source's reopen. The census's rebind is a publication's, judged
+            // while open (FABRIC-CLOSE1c15), so it applies to the withdrawn one below and not here; the person's go-on, which clears this
+            // step's own result, is checked in its row and its replay by QuestReopenTests.
+            ("taken, submitted, held by its source's reopen",
+                [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4),
+                    Sample(QuestOperationKind.Reopened, 5) with { Submission = new QuestOperationRef("m9", 3) }]),
             // FABRIC-CLOSE1c: a step its source's reopen withdrew, the reopen naming the submission it grew from.
             ("open, withdrawn by its source's reopen",
                 [published, Sample(QuestOperationKind.Reopened, 2) with { Submission = new QuestOperationRef("m9", 3) }]),
@@ -249,6 +260,7 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Verdict] = "a review's verdict",
         [QuestOperationKind.Reopened] = "a reopen",
         [QuestOperationKind.Rebound] = "a rebind",
+        [QuestOperationKind.Taken] = "a take's",
     };
 
     /// <summary>
@@ -276,6 +288,26 @@ public sealed class QuestOperationKindsTests
             Assert.False(requiresMore,
                 $"`{kind}` requires more than every operation names, and QuestWire.Shape does not say what ({Guide}, the wire's shape sentence).");
         }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c18: a take's source is optional, since a source-free quest's take and every take from before carry none, but one
+    /// that is present and not whole makes the take half of one: read as absent, it would be judged as a legacy take and stand on work
+    /// the person reopened.
+    /// </summary>
+    [Fact]
+    public void A_takes_source_is_optional_on_the_wire_and_one_not_whole_makes_the_take_not_whole()
+    {
+        string Take(string source) => $$"""
+            { "base": 0, "operations": [{ "machine": "m1", "sequence": 1, "quest": "{{Id}}", "kind": "taken",
+              "at": "2026-10-07T09:00:00Z"{{source}} }] }
+            """;
+
+        Assert.Null(Assert.Single(QuestWire.ReadPush(Take(""))!.Value.Operations).Submission);
+        Assert.Equal(new QuestOperationRef("m9", 3),
+            Assert.Single(QuestWire.ReadPush(Take(""", "submission": { "machine": "m9", "sequence": 3 }"""))!.Value.Operations).Submission);
+        Assert.Null(QuestWire.ReadPush(Take(""", "submission": { "machine": "m9" }""")));
+        Assert.Null(QuestWire.ReadPush(Take(""", "submission": "m9:3" """)));
     }
 
     // ——— The log and the cache: QuestStore's payload, its reader, and the row the replay writes.

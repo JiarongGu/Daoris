@@ -584,15 +584,31 @@ public sealed class SessionsSayCommandTests : IDisposable
     [Fact]
     public async Task Held_words_name_what_holds_them()
     {
-        var room = Ended();
-        using var service = room.Client();
-        await using var loop = Loop(new SessionProcesses(Sessions), service);
-        var world = World(service, wait: TimeSpan.FromMilliseconds(600), config: Driving with { Holds = ["engine"] });
+        // TESTWAIT5: the line falls back to "at the driver's next look" when the planner's look failed or gave no verdict, which the
+        // world reports (Fell). A try that fell back is asked again, up to three times, over a fresh room; the last try judges, and
+        // names the cause it was told.
+        var causes = new List<string>();
+        for (var attempt = 1; ; attempt++)
+        {
+            var room = Ended();
+            using var service = room.Client();
+            await using var loop = Loop(new SessionProcesses(Sessions), service);
+            var fell = new List<string>();
+            var world = World(service, wait: TimeSpan.FromMilliseconds(600), config: Driving with { Holds = ["engine"] }) with { Fell = fell.Add };
 
-        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world);
+            var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world);
 
-        Assert.Equal(0, exit);
-        Assert.Equal("sessions: held: it goes on with this once engine is no longer held: daoris driver resume engine\n", said);
+            if (fell.Count > 0 && attempt < 3)
+            {
+                causes.AddRange(fell);
+                continue;
+            }
+
+            Assert.Equal(0, exit);
+            Assert.True(fell.Count == 0, $"fell back after {string.Join("; ", causes.Concat(fell))}");
+            Assert.Equal("sessions: held: it goes on with this once engine is no longer held: daoris driver resume engine\n", said);
+            return;
+        }
     }
 
     /// <summary>

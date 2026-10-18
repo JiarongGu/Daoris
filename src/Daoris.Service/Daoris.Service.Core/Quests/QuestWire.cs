@@ -25,15 +25,16 @@ public static class QuestWire
         + "body, every file its name, sha256 and size, every step its to, title and body, and every requirement "
         + "its quote and check, and any evidence at most 5 items, each a repository-relative path or a gate's name; "
         + "a done's every answer names its requirement and says met or departed, a departure "
-        + "with its quote, and a done's close, where it says one, names its key and token; a decline's whileOpen, where it "
-        + "says one, is true or false; a conflict names "
+        + "with its quote, and a done's close, where it says one, names its key and token; a decline's or a rebind's "
+        + "whileOpen, where it says one, is true or false; a conflict names "
         + "what it attempted; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
         + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
         + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
         + "name, and a set-up step's environment is a name that never reads as production; a set-up names its full "
         + "commit and, unless it is local, where to look; a review's verdict says reviewed or not-yet, naming the "
         + "set-up's machine, sequence and commit, or skipped, and a not-yet carries the person's words; a reopen and a rebind "
-        + "each name a submission's machine and sequence, as a step's grewFrom does where it says one";
+        + "each name a submission's machine and sequence, as a step's grewFrom does where it says one, and a take's submission does where "
+        + "it says one";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
     public static string Page(QuestFetch page) => Written(writer =>
@@ -144,9 +145,9 @@ public static class QuestWire
         // Only beside a note written with them (QUESTCLOSE1b1): an operation without crosses exactly as it did, and an older
         // build reads the note alone, as it always did.
         QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
-        // Only when set, and only on a decline (PAUSE1c): a plain decline crosses exactly as it did, and an older
-        // build reads a flagged one as a plain one.
-        if (operation is { WhileOpen: true, Kind: QuestOperationKind.Declined }) writer.WriteBoolean("whileOpen", true);
+        // Only when set, and only on a decline (PAUSE1c) or a publication's rebind (FABRIC-CLOSE1c15): a plain one crosses exactly
+        // as it did, and an older build reads a flagged one as a plain one.
+        if (operation.WhileOpen && QuestStore.JudgedOpen(operation.Kind)) writer.WriteBoolean("whileOpen", true);
         // Only when it answers some (DRIFT1d): a done on a quest with none crosses exactly as it did.
         if (operation.Answers is { Count: > 0 } answers)
         {
@@ -158,8 +159,9 @@ public static class QuestWire
         // older build reads the done without it.
         if (operation is { Kind: QuestOperationKind.Done, Close: { } close }) QuestStore.WriteClose(writer, close);
 
-        // The submission a reopen or a rebind names (FABRIC-CLOSE1c), on those kinds alone.
-        if (QuestStore.Names(operation.Kind) && operation.Submission is { } submission) QuestStore.WriteRef(writer, "submission", submission);
+        // The submission a reopen or a rebind names (FABRIC-CLOSE1c), and the source a take found (FABRIC-CLOSE1c18), on those kinds alone:
+        // a take that found none crosses exactly as it did, and an older build reads a take without it.
+        if (QuestStore.Carries(operation.Kind) && operation.Submission is { } submission) QuestStore.WriteRef(writer, "submission", submission);
 
         // The session that said a ready (FABRIC-CLOSE1c4), on a submission alone and only where one said it: every other submission
         // crosses exactly as it did, and an older build reads the submission without it.
@@ -433,9 +435,10 @@ public static class QuestWire
         }
 
         // A decline's flag (PAUSE1c) is true or false. Anything else is half of one, and read as plain it would
-        // decline over a take — the one thing the flag exists to stop.
+        // decline over a take — the one thing the flag exists to stop. A rebind's (FABRIC-CLOSE1c15) likewise: read as plain,
+        // it would let go a started step without the person's word.
         var whileOpen = false;
-        if (kind == QuestOperationKind.Declined && item.TryGetProperty("whileOpen", out var open))
+        if (QuestStore.JudgedOpen(kind) && item.TryGetProperty("whileOpen", out var open))
         {
             if (open.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return null;
             whileOpen = open.ValueKind == JsonValueKind.True;
@@ -485,6 +488,14 @@ public static class QuestWire
         QuestOperationRef? submission = null;
         if (QuestStore.Names(kind)
             && (!item.TryGetProperty("submission", out var naming) || (submission = QuestStore.ReadRef(naming)) is null))
+        {
+            return null;
+        }
+
+        // A take's source (FABRIC-CLOSE1c18) is absent from a source-free quest's take and every take from before. One present and not
+        // whole makes the take half of one: read as absent, it would be judged as such a take, and stand on work the person reopened.
+        if (kind == QuestOperationKind.Taken && item.TryGetProperty("submission", out var found)
+            && (submission = QuestStore.ReadRef(found)) is null)
         {
             return null;
         }

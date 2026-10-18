@@ -134,7 +134,9 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// <param name="WhileOpen">
 /// For a <see cref="QuestOperationKind.Declined"/>: it applies only to a quest still open where it lands (PAUSE1c,
 /// D132 point 10), so pushed after another machine's take it becomes a conflict rather than declining their work.
-/// False on every other kind, and on every decline made before it, which is a plain one.
+/// For a <see cref="QuestOperationKind.Rebound"/>: a publication's, judged on a withdrawn step, so pushed after another
+/// machine's take it is forgotten rather than letting go a started step without the person's word (FABRIC-CLOSE1c15).
+/// False on every other kind, on the person's go-on, and on every decline or rebind made before it, which is a plain one.
 /// </param>
 /// <param name="Evidence">For a <see cref="QuestOperationKind.Evidenced"/>: what was read (EVID1a). Null on every other kind.</param>
 /// <param name="SetUp">For a <see cref="QuestOperationKind.SetUp"/>: the set-up said (REVIEWENV1b). Null on every other kind.</param>
@@ -150,7 +152,9 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// </param>
 /// <param name="Submission">
 /// For a <see cref="QuestOperationKind.Reopened"/>: the submission reopened; for a <see cref="QuestOperationKind.Rebound"/>: the
-/// source's submission the step grows from now (FABRIC-CLOSE1c). Null on every other kind.
+/// source's submission the step grows from now (FABRIC-CLOSE1c); for a <see cref="QuestOperationKind.Taken"/>: the step's source as the
+/// take found it inside its own write, which the take is judged by (FABRIC-CLOSE1c18), null on a quest with no source and on every take
+/// from before. Null on every other kind.
 /// </param>
 /// <param name="Session">
 /// For a <see cref="QuestOperationKind.Submitted"/>: the session that said the <c>ready</c>, as its connector's intake named it
@@ -339,11 +343,18 @@ public static class QuestLog
         // from its parent's), not already withdrawn by it. A step closed stays closed: a reopen takes no close back.
         QuestOperationKind.Reopened => quest is { Status: QuestStatus.Taken or QuestStatus.Open } && operation.Submission is { } named
                                        && (SubmittedHere(quest, named) || GrewFromIt(quest, named)),
-        // A rebind only lets go a step its source's reopen withdrew or held, onto another submission than the one reopened.
+        // A rebind only lets go a step its source's reopen withdrew or held, onto another submission than the one reopened. A
+        // publication's was judged on a withdrawn step, so it applies only while the step is open (FABRIC-CLOSE1c15): after another
+        // machine's take reached it, a started step goes on only by the person's word, whose rebind carries no such mark.
         QuestOperationKind.Rebound => quest is { Status: QuestStatus.Taken or QuestStatus.Open, SourceReopened: { } reopened }
-                                      && operation.Submission is { } grows && grows != reopened,
-        // A withdrawn step is taken by nobody until it is rebound (FABRIC-CLOSE1c): a take after the reopen loses, everywhere.
-        QuestOperationKind.Taken => quest is { Status: QuestStatus.Open, SourceReopened: null },
+                                      && operation.Submission is { } grows && grows != reopened
+                                      && (!operation.WhileOpen || quest.Status == QuestStatus.Open),
+        // A withdrawn step is taken by nobody until it is rebound (FABRIC-CLOSE1c): a take after the reopen loses, everywhere. A take
+        // carries the step's source as it found it (FABRIC-CLOSE1c18), so one made before a reopen and its rebind reached its machine
+        // loses too, judged where the replay reaches it: a take that came first stands through any later rebind. One carrying none, a
+        // source-free quest's or a take from before the stamp, is judged as before.
+        QuestOperationKind.Taken => quest is { Status: QuestStatus.Open, SourceReopened: null }
+                                    && (operation.Submission is not { } found || found == quest.GrewFrom),
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -393,11 +404,48 @@ public static class QuestLog
     /// (D95). And a machine whose take was numbered reads held, never lost, so a winner's own moves are never judged here.
     /// A set-up is the taker's too (REVIEWENV1b): its driver posts what its session showed, and a set-up from the tree of a
     /// take that lost would show the winner's step as work it never held.
+    /// <para>A take lost to the person's reopen leaves its step open, withdrawn or rebound (FABRIC-CLOSE1c18), where the table allows a done
+    /// or a decline from open. A done, a decline or a set-up its machine makes there is made on that take all the same, and would close or
+    /// decline the step over the person's reopen, so it is judged lost too (<see cref="LostToTheReopen"/>). An open quest is otherwise
+    /// nobody's work, as above. A take is never judged so: a fresh one of the open step is that machine's to make, and its claim reads by
+    /// it from then on.</para>
     /// </remarks>
     public static bool OnALostTake(Quest? standing, IEnumerable<QuestOperation> history, QuestOperation operation) =>
-        standing is { Status: QuestStatus.Taken }
-        && TakersOwn(operation.Kind)
-        && Claim(history, operation.Machine) == QuestClaim.Lost;
+        TakersOwn(operation.Kind) && standing switch
+        {
+            { Status: QuestStatus.Taken } => Claim(history, operation.Machine) == QuestClaim.Lost,
+            { Status: QuestStatus.Open } => operation.Kind != QuestOperationKind.Taken
+                                            && Claim(history, operation.Machine) == QuestClaim.Lost
+                                            && LostToTheReopen(history, operation.Machine),
+            _ => false,
+        };
+
+    /// <summary>
+    /// Whether <paramref name="machine"/>'s take lost to the person's reopen (FABRIC-CLOSE1c18): its take's conflict, the latest, landed on
+    /// the step open after a reopen of its source withdrew it, rebound since or not, on the quest as last published (D95). False where the
+    /// take lost to another machine's take or move, to a delete, or with its parent's submission (FABRIC-CLOSE1e), and where it never lost.
+    /// The store's refusals, the claim's answer and the driver's stop say the loss by it.
+    /// </summary>
+    public static bool LostToTheReopen(IEnumerable<QuestOperation> history, string machine)
+    {
+        Quest? quest = null;
+        var reopened = false;
+        var lost = false;
+        foreach (var operation in history)
+        {
+            if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken } && operation.Machine == machine)
+            {
+                lost = reopened && quest is { Status: QuestStatus.Open };
+            }
+
+            if (!Applies(quest, operation)) continue;
+            if (operation.Kind == QuestOperationKind.Published) reopened = false;
+            if (operation.Kind == QuestOperationKind.Reopened && quest is { Status: QuestStatus.Open }) reopened = true;
+            quest = Step(quest, operation);
+        }
+
+        return lost;
+    }
 
     /// <summary>
     /// Whether a kind is made on a take, by the machine holding it: a move, a wait, a set-up (WAITCLAIM1, REVIEWENV1b), or a
@@ -471,7 +519,14 @@ public static class QuestLog
                 operation.Machine, operation.Sequence, operation.Submission!, operation.Note, operation.At, quest.Submission!.Session),
         },
         QuestOperationKind.Reopened => quest! with { SourceReopened = operation.Submission, Updated = operation.At },
-        QuestOperationKind.Rebound => quest! with { GrewFrom = operation.Submission, SourceReopened = null, Updated = operation.At },
+        // FABRIC-CLOSE1c10: a held step's own result (its submission, answers, yes and verdict) was made on the work reopened, so the
+        // person's go-on clears it as a reopen of it would, and the step submits anew once its branch holds the new source; the go-on
+        // alone never makes old work finished again. It sets no reopen of its own. A withdrawn open step has none, and reads as it did.
+        QuestOperationKind.Rebound => quest! with
+        {
+            GrewFrom = operation.Submission, SourceReopened = null,
+            Submission = null, Answers = [], Accepted = null, Evidence = null, Updated = operation.At,
+        },
         // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none. The note's parts are the
         // move's own, so a note written without them clears the last one's (QUESTCLOSE1b1, D142 point 2). A close also clears
         // the question the quest waited on: it names one only while taken, the Waited operation staying in the history (AWAITSTALE1, D79).
@@ -509,7 +564,8 @@ public static class QuestLog
         // machine's came before, or on a set-up a newer one stands beside. A closure graph's bind or submission once its quest
         // is no longer taken, or made on this machine's take that lost (FABRIC-CLOSE1a, §E5): the take's conflict names a lost
         // submission, and the step a submission published goes with it (QuestStore.RebaseAsync). A reopen once the submission it
-        // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c).
+        // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c),
+        // and a publication's once another machine's take reached the step first (FABRIC-CLOSE1c15): the person's word lets that one go.
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
             or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
             or QuestOperationKind.SetUp or QuestOperationKind.Verdict

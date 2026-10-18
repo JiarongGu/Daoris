@@ -3173,13 +3173,13 @@ function age(worktree: string, minutes: number): void {
 // Every gate appends its name to local/ran.txt and prints a thousand lines, so a test can read the order
 // the gates ran in and whether a log kept the whole output. Given `once`, it exits with its code the first
 // time only, as a rehearsal that died under load and passes run again.
-// Given GATE_HOLD, it waits (a minute at most) until that file is written, as a long gate runs while a test acts beside it.
+// Given GATE_HOLD, it waits (ten minutes at most, well past any test's own wait: load made a minute too short, TESTWAIT4) until that file is written, as a long gate runs while a test acts beside it.
 const GATE = [
   "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
   "const [name, code = '0', once] = process.argv.slice(2);",
   "appendFileSync('local/ran.txt', name + '\\n');",
   'const hold = process.env.GATE_HOLD;',
-  'for (let waited = 0; hold && !existsSync(hold) && waited < 60000; waited += 50) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);',
+  'for (let waited = 0; hold && !existsSync(hold) && waited < 600000; waited += 50) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);',
   'for (let i = 1; i <= 1000; i++) console.log(`${name} line ${i}`);',
   'if (once && existsSync(`local/${name}.once`)) process.exit(0);',
   "if (once) writeFileSync(`local/${name}.once`, '');",
@@ -4152,7 +4152,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const beside = repo.run(['--full', '--beside'], { GATE_HOLD: hold, PATH });
     try {
       // Bounded: the gate tree's gate has started, and holds until the test lets it go.
-      for (let i = 0; i < 600 && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first')); i += 1) {
+      for (let i = 0; i < 3000 && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first')); i += 1) {
         await new Promise((done) => setTimeout(done, 100));
       }
       assert.ok(existsSync(ranThere), 'the full set runs in the gate tree');

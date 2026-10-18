@@ -420,6 +420,8 @@ public static class NoteCodes
     public static readonly NoteCode EndedTimeout = new("ended.timeout", ["minutes"]);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);
+    // A take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18), not to another machine's take.
+    public static readonly NoteCode EndedLostClaimReopened = new("ended.lost-claim-reopened", []);
     // A quest's session stopped to go on with another agent (MIXAGENT1a-ii): the agent it went to, never an account or a path.
     public static readonly NoteCode EndedHandedOver = new("ended.handed-over", ["agent"]);
     public static readonly NoteCode EndedDriverClosed = new("ended.driver-closed", []);

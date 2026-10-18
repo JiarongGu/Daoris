@@ -245,6 +245,68 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Contains("> Not yet.", doors.Said[1].Text, StringComparison.Ordinal);
     }
 
+    // ——— FABRIC-CLOSE1c9: the named session when a later one is the quest's last here.
+
+    /// <summary>
+    /// A session the person stopped after its ready, when a later session ran: Daoris's words would release the person's stop, so it
+    /// is told nothing, and the look says so once. Where it is the quest's last record it is told nothing too (FABRIC-CLOSE1c12), and
+    /// a stop the driver's shutdown made is no person's.
+    /// </summary>
+    [Fact]
+    public async Task A_session_the_person_stopped_that_is_not_the_quests_last_is_told_nothing_and_says_so_once()
+    {
+        var doors = new Doors();
+        doors.Records["s1"] = Record("stopped");
+        var later = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = Record("completed", "s2") };
+        var telling = Telling();
+
+        var lines = await LookAsync(telling, doors, Look(Source()) with { LastRun = later });
+        Assert.Empty(await LookAsync(telling, doors, Look(Source()) with { LastRun = later }));
+
+        var line = Assert.Single(lines);
+        Assert.StartsWith("reopen  ", line, StringComparison.Ordinal);
+        Assert.Contains("session s1, which the person stopped", line, StringComparison.Ordinal);
+        Assert.Contains("nothing goes on with it until they say so", line, StringComparison.Ordinal);
+        Assert.Empty(doors.Said);
+        Assert.False(File.Exists(new ReopenMarks(_home).PathOf("s1")));
+
+        // FABRIC-CLOSE1c12: the same where it is the quest's last record, since any words release the person's stop.
+        var last = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = doors.Records["s1"] };
+        var alone = await LookAsync(Telling(), doors, Look(Source()) with { LastRun = last });
+        var aloneLine = Assert.Single(alone);
+        Assert.StartsWith("reopen  ", aloneLine, StringComparison.Ordinal);
+        Assert.Contains("session s1, which the person stopped", aloneLine, StringComparison.Ordinal);
+        Assert.DoesNotContain("a later session ran", aloneLine, StringComparison.Ordinal);
+        doors.Records["s3"] = Record("stopped", "s3") with { Interrupted = true };
+        await LookAsync(Telling(), doors, Look(Source(session: "s3", id: "q3")) with { LastRun = later });
+        Assert.Equal(["s3"], doors.Said.Select(said => said.Session));
+    }
+
+    /// <summary>
+    /// The look's snapshot names the record each taken quest's reopen names, from the records it already read: this machine's, and
+    /// not the quest's last here. A teammate's, the last, a record not kept and a quest not taken name none.
+    /// </summary>
+    [Fact]
+    public void The_snapshot_names_the_reopens_session_where_it_is_this_machines_and_not_the_quests_last()
+    {
+        const string records = """
+            [{ "id": "s1", "quest": "q1", "state": "completed", "tree": "t1", "created": "2026-10-18T08:00:00Z", "said": [] },
+             { "id": "s2", "quest": "q1", "state": "completed", "tree": "t2", "created": "2026-10-18T08:30:00Z", "said": [] },
+             { "id": "s4", "quest": "q4", "state": "completed", "tree": "t4", "created": "2026-10-18T08:00:00Z", "said": [] },
+             { "id": "laptop/s5", "quest": "q5", "state": "completed", "created": "2026-10-18T08:00:00Z" }]
+            """;
+        var quests = new[]
+        {
+            Source(), Source(session: "s4", id: "q4"), Source(session: "laptop/s5", id: "q5"), Source(session: "s9", id: "q9"),
+            Source(session: "s1", status: "Open", id: "q1b"), Source(sequence: null, id: "q1c"),
+        };
+
+        var named = ServiceClient.ReadNamedByReopen(records, quests, ServiceClient.ReadLastRun(records));
+
+        Assert.Equal(["q1"], named.Keys);
+        Assert.Equal(("s1", "t1"), (named["q1"].Session, named["q1"].Tree));
+    }
+
     // ——— The words.
 
     [Fact]
@@ -266,6 +328,114 @@ public sealed class ReopenTellingTests : IDisposable
             "Daoris: the person reopened submission `desk` 41 of quest `#q1`, which your `ready` made, so the quest is not ready "
             + "any more. Address what they reopened it for, then say `ready` on `#q1` again.",
             words);
+    }
+
+    // ——— FABRIC-CLOSE1c13: a step the person went on with after its session had ended normally is told so in that session, once.
+
+    private static readonly QuestSubmissionRef Grew = new("desk", 43);
+
+    private static readonly DateTimeOffset Moved = new(2026, 10, 18, 9, 10, 0, TimeSpan.Zero);
+
+    /// <summary>q2, which grew from q1, after the person's go-on: rebound to <see cref="Grew"/>, its own result cleared, moved then.</summary>
+    private static QuestView GoneOnStep() =>
+        new("q2", "game", "engine", "Next", "", "Taken") { Parent = "q1", Closure = "gph-0123", GrewFrom = Grew, Updated = Moved };
+
+    /// <summary>q2's last record here, as the look read it: ended normally ten minutes before the go-on, unless said otherwise.</summary>
+    private Snapshot StepLook(PriorSession last) =>
+        Look(GoneOnStep()) with { LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q2"] = last } };
+
+    private PriorSession EndedBefore(string state, string? tree = null) =>
+        Record(state, "s2", tree) with { Updated = Moved.AddMinutes(-10), Said = [] };
+
+    [Theory]
+    [InlineData("awaiting-person")]
+    [InlineData("completed")]
+    public async Task A_steps_session_that_ended_normally_is_told_of_the_go_on_once(string state)
+    {
+        var doors = new Doors();
+        var telling = Telling();
+
+        var told = await LookAsync(telling, doors, StepLook(EndedBefore(state)));
+        Assert.Empty(await LookAsync(telling, doors, StepLook(EndedBefore(state))));
+
+        Assert.Equal(("s2", ReopenTelling.GoneOnWords("q2", "q1", Grew)), Assert.Single(doors.Said));
+        Assert.Contains(told, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal) && line.Contains("#q2", StringComparison.Ordinal));
+        Assert.Empty(doors.Reads);
+    }
+
+    /// <summary>A session that ended after the go-on, one running, and one with words waiting are told nothing: each reads as before.</summary>
+    [Fact]
+    public async Task A_session_ended_after_the_go_on_running_or_with_words_waiting_is_told_nothing()
+    {
+        var doors = new Doors();
+        var said = new SaidWordView("w1", "Go on.", Moved, [], Reopens: true);
+
+        foreach (var last in new[] { EndedBefore("completed") with { Updated = Moved.AddMinutes(5) }, EndedBefore("working"), EndedBefore("completed") with { Said = [said] } })
+        {
+            Assert.Empty(await LookAsync(Telling(), doors, StepLook(last)));
+        }
+
+        Assert.Empty(doors.Said);
+    }
+
+    [Fact]
+    public async Task A_steps_tree_gone_is_told_nothing_and_says_why_once()
+    {
+        var doors = new Doors();
+        var telling = Telling();
+        var tidied = StepLook(EndedBefore("completed", Path.Combine(_home, "tidied")));
+
+        Assert.Contains("tree is gone", Assert.Single(await LookAsync(telling, doors, tidied)), StringComparison.Ordinal);
+        Assert.Empty(await LookAsync(telling, doors, tidied));
+        Assert.Empty(doors.Said);
+    }
+
+    [Fact]
+    public void The_go_on_words_name_the_source_and_its_new_submission_and_ask_for_ready_again()
+    {
+        Assert.Equal(
+            "Daoris: the person reopened the work of `#q1` that quest `#q2` grew from, and went on with `#q2` on its new submission `desk` "
+            + "43, so any result submitted on `#q2` was cleared. Bring your work up to date with that submission (what Daoris did with "
+            + "your branch follows, where it did anything), then say `ready` on `#q2` again.",
+            ReopenTelling.GoneOnWords("q2", "q1", Grew));
+    }
+
+    /// <summary>
+    /// Over the real driver: q2 submitted, its session parked after its ready or completed, then q1 reopened and the person went on with
+    /// q2. The first look tells that session, the next goes on with the words in it, and a driver started again tells it nothing more.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_step_gone_on_with_after_its_session_ended_goes_on_in_that_session_once(bool parked)
+    {
+        using var ledger = new StandInLedger();
+        ledger.Register("engine", Path.Combine(_home, "engine"));
+        ledger.Publish("q1", "engine");
+        ledger.Move("q1", "Taken");
+        ledger.Publish("q2", "engine", parent: "q1");
+        if (parked) ledger.Park("s2", "q2", Tree);
+        else ledger.Driven("s2", "q2", Tree, state: "completed");
+        ledger.Submitted("q2", "desk", 42, "s2");
+        ledger.Reopened("q2", "desk", 41);
+        ledger.Rebound("q2", "desk", 43, moved: true);
+        var (driver, began) = Driver(ledger);
+
+        var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var said = Assert.Single(ledger.Session("s2")["said"]!.AsArray());
+        Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), said!["text"]!.GetValue<string>());
+        Assert.Contains(told.Events, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal));
+
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var goes = Assert.Single(next.Considerations);
+        Assert.Equal((StartVerdict.Start, true, "s2"), (goes.Verdict, goes.GoesOn, goes.Resumes?.Session));
+        await Poll.Until(() => began.Count == 1, within: Bound);
+        Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), Assert.Single(began[0]));
+
+        var (again, _) = Driver(ledger);
+        var restarted = await again.TickAsync(_closing.Token).WaitAsync(Bound);
+        Assert.DoesNotContain(restarted.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
+        Assert.Empty(ledger.Session("s2")["said"]!.AsArray());
     }
 
     // ——— Over the real driver: told at one look, gone on with at the next, and not told again by a driver started again.
@@ -299,6 +469,70 @@ public sealed class ReopenTellingTests : IDisposable
         var restarted = await again.TickAsync(_closing.Token).WaitAsync(Bound);
         Assert.DoesNotContain(restarted.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
         Assert.Empty(ledger.Session("s1")["said"]!.AsArray());
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c9 over the real driver: the session that said the reopened ready is not the quest's last record here, since a
+    /// later one ran. It is told, and the next look goes on with the words in it; one the person stopped is told nothing, the look
+    /// says so once, and nothing goes on.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_named_session_that_is_not_the_last_goes_on_with_the_words_unless_the_person_stopped_it(bool stopped)
+    {
+        using var ledger = new StandInLedger();
+        ledger.Register("engine", Path.Combine(_home, "engine"));
+        ledger.Publish("q1", "engine");
+        ledger.Driven("s1", "q1", Tree, state: stopped ? "stopped" : "completed");
+        ledger.SourceReopened("q1", 44, 41, Note, "s1");
+        ledger.Driven("s2", "q1", DaorisHome.Entry(_home, HomeEntry.Trees, "s-2"), state: "completed");
+        var (driver, began) = Driver(ledger);
+
+        var told = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var line = Assert.Single(told.Events, line => line.StartsWith("reopen  ", StringComparison.Ordinal));
+        Assert.Equal(stopped ? 0 : 1, ledger.Session("s1")["said"]!.AsArray().Count);
+        Assert.Equal(stopped, line.Contains("which the person stopped", StringComparison.Ordinal));
+
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        Assert.DoesNotContain(next.Events, each => each.StartsWith("reopen  ", StringComparison.Ordinal));
+        if (stopped)
+        {
+            Assert.DoesNotContain(next.Considerations, each => each.Resumes is not null || each.Verdict == StartVerdict.Start);
+            Assert.Empty(began);
+            return;
+        }
+
+        var goes = Assert.Single(next.Considerations);
+        Assert.Equal((StartVerdict.Start, true, "s1"), (goes.Verdict, goes.GoesOn, goes.Resumes?.Session));
+        await Poll.Until(() => began.Count == 1, within: Bound);
+        Assert.StartsWith("Daoris: the person reopened", Assert.Single(began[0]), StringComparison.Ordinal);
+        Assert.Empty(ledger.Session("s1")["said"]!.AsArray());
+    }
+
+    /// <summary>
+    /// The look reads the marks of the named session as it reads the last one's (MSG1f2): words it was found unable to go on with
+    /// wait there, and are not tried again at each look.
+    /// </summary>
+    [Fact]
+    public async Task Words_the_named_session_could_not_go_on_with_wait_over_the_real_driver()
+    {
+        using var ledger = new StandInLedger();
+        ledger.Register("engine", Path.Combine(_home, "engine"));
+        ledger.Publish("q1", "engine");
+        ledger.Driven("s1", "q1", Tree, state: "completed");
+        ledger.SourceReopened("q1", 44, 41, Note, "s1");
+        ledger.Driven("s2", "q1", DaorisHome.Entry(_home, HomeEntry.Trees, "s-2"), state: "completed");
+        var (driver, began) = Driver(ledger);
+
+        await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var word = Assert.Single(ledger.Session("s1")["said"]!.AsArray())!["id"]!.GetValue<string>();
+        new GoOnMarks(_home).Mark("s1", [word], ContinueWhy.Tree, DateTimeOffset.UtcNow);
+
+        var next = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        Assert.DoesNotContain(next.Considerations, each => each.Resumes is not null);
+        Assert.Empty(began);
+        Assert.Single(ledger.Session("s1")["said"]!.AsArray());
     }
 
     /// <summary>

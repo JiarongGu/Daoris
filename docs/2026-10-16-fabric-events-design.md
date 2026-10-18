@@ -1688,9 +1688,40 @@ quest of the session that last moved the branch: the person's doors by the press
 the look's hand-on of a push held back by the look's (a hold stops it too, and its entry stays `push-held`). A refusal pushes nothing and
 records nothing.
 
+**Amended (FABRIC-CLOSE1h10, D173's note).** That session is the one the record names under the branch's hold, not the one the door
+read or the look chose: a later session's done that moved the branch on meanwhile is judged on its own quest, read there. For the person,
+its result no longer in holds the push back and a hold does not; for the look, a hold does too, and a `push-held` entry whose later
+session's quest does not stand waits for it.
+
+**Amended (FABRIC-CLOSE1h12, D173's note).** The look's push and its recovery of a push held back judge the landing's gate again too
+(the run's workflow, the second opinion, the review), for the session whose work the push carries, wherever they read its quest again:
+a gate that starts holding after the look chose the landing holds the push back as a hold does, and the hand-on waits until it lets
+go. The review's own `unreviewed` hold is the gate's to judge. The person's press and hand-off keep their door-time gate.
+
 **Amended (FABRIC-CLOSE1c5, D173's note).** On the go-on, the step's branch is brought up to date by a replay, as the tree sync's: its own
 commits rebased onto the new submission's commit (its evidence's, on the wire), then the line. A conflict leaves the tree as it was and
 nothing else changes; the session is told the person must resolve it. With no commit known, the line alone is synced, and that said.
+
+**Amended (FABRIC-CLOSE1c10, D173's note).** The go-on clears the held step's own result. Its submission, answers, yes and verdict were made
+on the work reopened, so the go-on alone never makes that work finished again: the step reads taken with no submission, a close naming the
+old one is stale, and it submits anew once its branch holds the new submission. A withdrawn open step has no result to clear.
+
+**Amended (FABRIC-CLOSE1c13, D173's note).** A step whose session had already ended normally when the person went on (parked after its
+`ready`, or completed) goes on in that same session: its taker's machine tells it, once, that the source was reopened and submitted again
+and its own result cleared, and the start that goes on with those words brings its branch up to date as above before it runs.
+
+**Amended (FABRIC-CLOSE1c15, D173's note).** The next submission rebinds a withdrawn step only while it is open where the rebind lands.
+Where another machine's take of the step reached the remote before the reopen, the step is held there, the rebind is forgotten, and the
+step goes on only by the person's word, on every machine and the remote alike.
+
+**Amended (FABRIC-CLOSE1c14, D173's note).** The go-on also reopens the step's own successor, which the cleared result published,
+exactly as the person's reopen of that result would: withdrawn if untaken, held if taken. The step's next submission rebinds a withdrawn
+one and is sealed by it; a held one goes on by the person's word, and the step's close waits for it.
+
+**Amended (FABRIC-CLOSE1c18, D173's note).** A take carries the step's source as it found it, and stands only while the step still grows
+from that, judged where the replay reaches it. A take made before a reopen and its rebind reached its machine loses everywhere; one that
+came first stands through the person's go-on. The loser's session is stopped with its work kept, told the person reopened the work, and
+nothing it says after closes or declines the reopened step.
 
 **A chain closed only in part** can come only from D69. The close is atomic on this machine, but a remote judges a push
 quest by quest (D68), and may refuse one quest's Done because its take was lost meanwhile.

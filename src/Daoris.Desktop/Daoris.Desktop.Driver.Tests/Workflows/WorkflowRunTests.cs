@@ -516,8 +516,9 @@ public sealed class WorkflowRunTests
     }
 
     /// <summary>
-    /// Whose runs are read: a quest's chain in its own repository, the chain's other repositories being their own runs; a session's
-    /// through its quest, an intake's through its ask; an ask's, each chain it asked. A chat serves no quest and has none.
+    /// Whose runs are read: a quest's run is its own repository's, read over its whole chain (FABRIC-WORKFLOW2e) and naming the repository
+    /// to run; a session's through its quest, an intake's through its ask; an ask's, each chain it asked, one run per repository. A chat
+    /// serves no quest and has none.
     /// </summary>
     [Fact]
     public void A_run_is_read_for_a_quest_a_session_or_an_ask()
@@ -535,9 +536,15 @@ public sealed class WorkflowRunTests
         ];
         string[][] Ids(IReadOnlyList<IReadOnlyList<QuestView>> chains) => [.. chains.Select(chain => chain.Select(quest => quest.Id).ToArray())];
 
-        Assert.Equal([["q1", "q2"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "#q2"), quests, sessions).Chains));
-        Assert.Equal([["q3"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "q3"), quests, sessions).Chains));
-        Assert.Equal([["q1", "q2"]], Ids(WorkflowRunReader.ChainsOf(new(Session: "s1"), quests, sessions).Chains));
+        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "#q2"), quests, sessions).Chains));
+        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "q3"), quests, sessions).Chains));
+        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Session: "s1"), quests, sessions).Chains));
+        Assert.Equal(["engine", "game", "engine", null, null], new[]
+        {
+            WorkflowRunReader.ChainsOf(new(Quest: "#q2"), quests, sessions).Only, WorkflowRunReader.ChainsOf(new(Quest: "q3"), quests, sessions).Only,
+            WorkflowRunReader.ChainsOf(new(Session: "s1"), quests, sessions).Only, WorkflowRunReader.ChainsOf(new(Session: "i1"), quests, sessions).Only,
+            WorkflowRunReader.ChainsOf(new(Ask: "a1"), quests, sessions).Only,
+        });
         Assert.Equal([["q1", "q2", "q3"], ["q4"]], Ids(WorkflowRunReader.ChainsOf(new(Session: "i1"), quests, sessions).Chains));
         Assert.Equal([["q1", "q2", "q3"], ["q4"]], Ids(WorkflowRunReader.ChainsOf(new(Ask: "a1"), quests, sessions).Chains));
 
@@ -661,6 +668,78 @@ public sealed class WorkflowRunTests
         Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Submitted), (whole.Steps[0].State, whole.Steps[0].Detail));
         Assert.Equal("landing", whole.At);
         Assert.Equal("work", alone.At);
+    }
+
+    /// <summary>
+    /// FABRIC-WORKFLOW2e: a quest's run and a session's run, read as the reader reads them (the whole chain, the quest's own repository
+    /// as the run), see a step in another repository: a sealed submission reads Done/Submitted, a reopened one WaitingOnAgent/Reopened.
+    /// </summary>
+    [Fact]
+    public void A_quests_and_a_sessions_run_see_a_step_in_another_repository()
+    {
+        var current = WorkflowCurrent.Derive(DriverConfig.Parse("{}"), "engine", "aurora", Plugins);
+        QuestView Here(bool reopened) => Bound("q1", reopened ? null : 1) with { Then = [new QuestStepView("game", "Next", "")] };
+        QuestView There(bool reopened) => new QuestView("q2", "ask #a1", "game", "Quest q2", "", "Open") { Parent = "q1", GrewFrom = Made(1), Updated = T }
+            with { SourceReopened = reopened ? Made(1) : null, Held = reopened, Hold = reopened ? "source-reopened" : null };
+        IReadOnlyList<TracedSession> sessions = [Session("s1", "q1", "completed")];
+
+        WorkflowRun Read(WorkflowRunAsk asked, bool reopened)
+        {
+            var (chains, _, only) = WorkflowRunReader.ChainsOf(asked, [Here(reopened), There(reopened)], sessions);
+            var chain = chains.Single();
+            Assert.Equal("engine", only);
+            return WorkflowRuns.Derive(new WorkflowRunFacts("engine", current)
+            {
+                Quests = [.. chain.Where(quest => quest.To == only)], Chain = chain, Sessions = sessions,
+            }, "aurora");
+        }
+
+        foreach (var asked in new[] { new WorkflowRunAsk(Quest: "q1"), new WorkflowRunAsk(Session: "s1") })
+        {
+            var sealedRun = Read(asked, false);
+            Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Submitted), (sealedRun.Steps[0].State, sealedRun.Steps[0].Detail));
+            Assert.Equal("landing", sealedRun.At);
+
+            var reopened = Read(asked, true);
+            Assert.Equal((WorkflowRunStates.WaitingOnAgent, WorkflowRunDetails.Reopened), (reopened.Steps[0].State, reopened.Steps[0].Detail));
+            Assert.Equal("work", reopened.At);
+        }
+
+        // No closure graph (every run on the owner's install): the whole chain changes nothing; only a Done finishes it.
+        var unbound = Here(false) with { Closure = null, Submission = null };
+        var plain = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current)
+        {
+            Quests = [unbound], Chain = [unbound, There(false) with { GrewFrom = null }], Sessions = sessions,
+        }, "aurora");
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Unclosed), (plain.Steps[0].State, plain.Steps[0].Detail));
+        Assert.Equal("work", plain.At);
+    }
+
+    /// <summary>
+    /// FABRIC-WORKFLOW2e: the whole chain moves a quest run's review level in the two reads of <see cref="ReviewGate.Decide"/> that look past
+    /// the run's repository, as every landing door's whole-chain read already does; rows 1 and 2 stay this repository's.
+    /// </summary>
+    [Fact]
+    public void The_whole_chain_moves_a_quest_runs_review_level_through_two_rows_only()
+    {
+        QuestView In(string id, string to, string? parent = null) => new(id, "ask #a1", to, id, "", "Open") { Parent = parent };
+        var cut = new[] { In("q2", "game", "q1") };
+
+        // Row 3: the chain's review choice, set on a quest in another repository.
+        var chosen = In("q1", "engine") with { Review = new QuestReviewChoiceView("off") };
+        var whole = new[] { chosen, cut[0] };
+        Assert.Equal(ReviewLevels.Nothing, ReviewGate.Decide(cut, "game", null, null).Level);
+        Assert.Equal(ReviewLevels.Chain, ReviewGate.Decide(whole, "game", null, null).Level);
+
+        // The set-up step another repository's open quest composes for this one.
+        var composing = In("q1", "engine") with { Then = [new QuestStepView("game", "Next", "") { SetUpIn = "local" }] };
+        Assert.Equal(ReviewLevels.SetUpStep, ReviewGate.Decide(new[] { composing, cut[0] }, "game", null, null).Level);
+
+        // Rows 1 and 2 read only this repository's part: a skip or a published set-up step in another repository moves nothing.
+        var skipped = In("q1", "engine") with { Verdicts = [new QuestReviewVerdictView(ReviewVerdicts.Skipped)] };
+        var step = In("q3", "engine", "q2") with { SetUpIn = "local" };
+        Assert.Equal(ReviewLevels.Nothing, ReviewGate.Decide(new[] { skipped, cut[0] }, "game", null, null).Level);
+        Assert.Equal(ReviewLevels.Nothing, ReviewGate.Decide(new[] { cut[0], step }, "game", null, null).Level);
     }
 
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";

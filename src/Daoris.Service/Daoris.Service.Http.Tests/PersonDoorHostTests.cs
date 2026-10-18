@@ -373,7 +373,7 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
         // the host's own, WIRING1b's; `closure`, FABRIC-CLOSE1b's handshake.
         var plain = await host.GetAsync("/api/status");
         Assert.Equal(
-            new[] { "semantic", "tier", "note", "home", "version", "closure" },
+            new[] { "semantic", "tier", "note", "home", "version", "closure", "closeOutcome" },
             plain.Json.EnumerateObject().Select(field => field.Name).ToArray());
     }
 

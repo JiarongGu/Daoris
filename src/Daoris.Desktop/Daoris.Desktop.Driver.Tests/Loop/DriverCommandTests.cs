@@ -275,7 +275,7 @@ public sealed class DriverCommandTests
         foreach (var door in new[] { hand, shared })
         {
             Assert.Contains("await PressQuests.HandedAsync(entry, ", door);
-            Assert.Contains("beforePush: pressed?.BeforePush", door);
+            Assert.Contains("beforePush: pressed.BeforePush", door);
         }
 
         Assert.Contains("await HandAsync(_loop, trees, root, entry, named, cancellationToken)", route);

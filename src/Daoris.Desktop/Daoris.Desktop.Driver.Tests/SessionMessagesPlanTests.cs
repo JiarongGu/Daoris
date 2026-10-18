@@ -382,4 +382,77 @@ public sealed class SessionMessagesPlanTests
 
         Assert.Equal(["q1"], closed.Select(quest => quest.Id));
     }
+
+    // ——— FABRIC-CLOSE1c9: the session a reopen names, when a later session is the quest's last here.
+
+    /// <summary>A taken quest whose last session here (s2) ended with nothing waiting, and whose reopen names s1, told its words.</summary>
+    private static Snapshot NamedByReopen(PriorSession? last = null, PriorSession? named = null) =>
+        new([Quest("q1", "Taken")], [Repo], [])
+        {
+            LastRun = new Dictionary<string, PriorSession>
+            {
+                ["q1"] = last ?? Written("completed", "s2") with { Said = [], Answer = null, Tree = "D:/trees/s-2" },
+            },
+            NamedByReopen = new Dictionary<string, PriorSession> { ["q1"] = named ?? Written("completed") },
+        };
+
+    /// <summary>
+    /// 🔴 The reopen's words go on in the session that said the reopened ready, though a later session ran on the quest: the
+    /// planner's go-on read only the quest's last record, so the words told to it waited for good.
+    /// </summary>
+    [Fact]
+    public void Words_on_the_session_a_reopen_names_go_on_in_it_though_a_later_session_is_the_quests_last()
+    {
+        var snapshot = NamedByReopen();
+
+        var only = Assert.Single(Planner.Plan(snapshot, Config()));
+
+        Assert.Equal((StartVerdict.Start, true, "s1"), (only.Verdict, only.GoesOn, only.Resumes?.Session));
+        Assert.Equal("going on in `Game` — you wrote to session `s1`: Also log the port.", only.Reason);
+    }
+
+    /// <summary>The named session's words wait on a pause as the last session's do: the quest is planned, and the pause holds it.</summary>
+    [Fact]
+    public void The_named_sessions_words_are_held_by_a_pause()
+    {
+        var paused = NamedByReopen() with { Paused = new Dictionary<string, PausedBy> { ["q1"] = new(WorkScope.Quest, "q1") } };
+
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(paused, Config())).Verdict);
+    }
+
+    /// <summary>
+    /// The person's stop of the quest's last session still holds the quest: the reopen's words are Daoris's, and release no stop
+    /// the person made on another session (D173's FABRIC-CLOSE1c9 note).
+    /// </summary>
+    [Fact]
+    public void The_persons_stop_of_the_last_session_holds_the_named_sessions_words()
+    {
+        var stopped = NamedByReopen(last: Written("stopped", "s2") with { Said = [], Answer = null, Note = "the person stopped it." });
+
+        var only = Assert.Single(Planner.Plan(stopped, Config()));
+
+        Assert.Equal((StartVerdict.Stopped, null), (only.Verdict, only.Resumes?.Session));
+    }
+
+    /// <summary>Words on the named session it was found unable to go on with wait, as on the last one (MSG1f2): they are not tried again.</summary>
+    [Fact]
+    public void The_named_sessions_words_it_could_not_go_on_with_wait()
+    {
+        var mark = new GoOnMark(["w1"], ContinueWhy.Tree, DateTimeOffset.Parse("2026-10-03T09:05:00Z"));
+        var judged = NamedByReopen() with { Unable = new Dictionary<string, GoOnMark> { ["s1"] = mark } };
+
+        Assert.Empty(Planner.Plan(judged, Config()));
+    }
+
+    /// <summary>Words on both: the named session's go on first, and the last session's at a later look, once those were taken.</summary>
+    [Fact]
+    public void Words_on_the_named_session_go_on_before_the_last_sessions()
+    {
+        var both = NamedByReopen(last: Written("completed", "s2") with { Tree = "D:/trees/s-2" });
+
+        Assert.Equal("s1", Assert.Single(Planner.Plan(both, Config())).Resumes?.Session);
+        Assert.Equal(
+            "s2",
+            Assert.Single(Planner.Plan(both with { NamedByReopen = new Dictionary<string, PriorSession> { ["q1"] = Written("completed") with { Said = [], Answer = null } } }, Config())).Resumes?.Session);
+    }
 }

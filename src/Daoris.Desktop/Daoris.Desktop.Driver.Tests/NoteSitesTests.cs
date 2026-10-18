@@ -113,6 +113,7 @@ public sealed class NoteSitesTests
         Line(Observation.Stopped, "the person stopped it.", "ended.stopped");
         Line(Observation.DriverClosed, "the driver was stopped while this ran; the session's process was ended with it.", "ended.driver-closed");
         Line(Daoris.Driver.Driver.LostClaimNoted, Daoris.Driver.Driver.LostClaim, "ended.lost-claim");
+        Line(Daoris.Driver.Driver.LostClaimToReopenNoted, Daoris.Driver.Driver.LostClaimToReopen, "ended.lost-claim-reopened");
 
         // An exception's message is a program's words, shown as written: no code re-authors it (the design §2).
         var failed = Observation.Failure("the service refused moving session `s1` to working");

@@ -37,6 +37,15 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private string _claim = "held";
 
+    /// <summary>Why a lost claim lost, as the claim's answer says it beside the claim (FABRIC-CLOSE1c18); none while null.</summary>
+    public string? ClaimWhy
+    {
+        get { lock (_gate) return _claimWhy; }
+        set { lock (_gate) _claimWhy = value; }
+    }
+
+    private string? _claimWhy;
+
     /// <summary>While true the quest list does not answer, as a service that went away does.</summary>
     public bool Down { get; set; }
 
@@ -310,8 +319,16 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>The person's go-on (FABRIC-CLOSE1c): the step rebound to the submission it grows from now, and its hold let go.</summary>
-    public void Rebound(string id, string machine, long sequence)
+    /// <summary>
+    /// The person's go-on (FABRIC-CLOSE1c): the step rebound to the submission it grows from now, and its hold let go. Its own result,
+    /// its submission and what was judged of it, is cleared (FABRIC-CLOSE1c10).
+    /// </summary>
+    /// <param name="moved">
+    /// Whether the quest's <c>updated</c> moves to the go-on, as the service's does (FABRIC-CLOSE1c13 reads it). Off by default: a look
+    /// judges an unmarked take by it as the take's time (CARRY2b), which a go-on moving it reads as taken after its session ended, a gap
+    /// handed back as a row, and the tests before this one model an unmarked take.
+    /// </param>
+    public void Rebound(string id, string machine, long sequence, bool moved = false)
     {
         lock (_gate)
         {
@@ -319,7 +336,30 @@ internal sealed class StandInLedger : HttpMessageHandler
             quest.Remove("sourceReopened");
             quest.Remove("held");
             quest.Remove("hold");
+            quest.Remove("submission");
+            quest.Remove("answers");
+            quest.Remove("accepted");
+            quest.Remove("evidence");
             quest["grewFrom"] = new JsonObject { ["machine"] = machine, ["sequence"] = sequence };
+            if (!moved) return;
+
+            _clock = _clock.AddSeconds(1);
+            quest["updated"] = _clock.ToString("O");
+        }
+    }
+
+    /// <summary>The taker's <c>ready</c> on <paramref name="id"/> (FABRIC-CLOSE1a): its current submission, said by <paramref name="session"/>.</summary>
+    public void Submitted(string id, string machine, long sequence, string session)
+    {
+        lock (_gate)
+        {
+            var quest = _quests.Single(q => q["id"]!.GetValue<string>() == id);
+            _clock = _clock.AddSeconds(1);
+            quest["submission"] = new JsonObject
+            {
+                ["machine"] = machine, ["sequence"] = sequence, ["at"] = _clock.ToString("O"), ["note"] = "ready", ["session"] = session,
+            };
+            quest["updated"] = _clock.ToString("O");
         }
     }
 
@@ -366,7 +406,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             {
                 ["id"] = session, ["quest"] = quest, ["repository"] = asked["to"]!.GetValue<string>(), ["state"] = "awaiting-person",
                 ["kind"] = "driven", ["adapter"] = "stub", ["tree"] = tree, ["created"] = _clock.ToString("O"),
-                ["note"] = "Which port should it listen on?", ["said"] = new JsonArray(),
+                ["updated"] = _clock.ToString("O"), ["note"] = "Which port should it listen on?", ["said"] = new JsonArray(),
             });
         }
     }
@@ -579,6 +619,9 @@ internal sealed class StandInLedger : HttpMessageHandler
                     }
 
                     session["state"] = to;
+                    // The record moved now, as the ledger keeps it (`updated`), which a step's go-on is compared with (FABRIC-CLOSE1c13).
+                    _clock = _clock.AddSeconds(1);
+                    session["updated"] = _clock.ToString("O");
                     if (!_moves.TryGetValue(id, out var moves)) _moves[id] = moves = [];
                     moves.Add(to);
                     // A session that parks again asks anew (ANSWER1b): a move into a park clears the words waiting (MSG1a).
@@ -698,7 +741,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 {
                     var quest = path["/api/quests/".Length..^"/claim".Length];
                     _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
-                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = _claim });
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = _claim, ["why"] = _claimWhy });
                 }
 
                 default:

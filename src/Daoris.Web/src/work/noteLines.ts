@@ -55,6 +55,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.timeout': { values: ['minutes'] },
   'ended.stopped': { values: [] },
   'ended.lost-claim': { values: [] },
+  'ended.lost-claim-reopened': { values: [] },
   'ended.handed-over': { values: ['agent'] },
   'ended.driver-closed': { values: [] },
   // An account's line. `account.cooling` is the shape notes from before AGT3d carry; since, a limit's line names whose

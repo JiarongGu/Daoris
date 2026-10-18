@@ -37,24 +37,76 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
     /// <summary>
     /// The result a person's hand-off of <paramref name="entry"/> is made on (FABRIC-CLOSE1h8, D173's note): the quest of the session
     /// that last moved the branch (<see cref="LandedBranch.LastSession"/>), not its landing's first, read where the door names the
-    /// branch. The hand-off judges it once more under the branch's hold, just before its plugin is told (<see cref="PressedResult.BeforePush"/>).
+    /// branch. The hand-off judges it once more under the branch's hold, just before its plugin is told (<see cref="HandedResult.BeforePush"/>).
     /// </summary>
     /// <param name="sessionQuest">The quest a session serves, null for none (<see cref="ServiceClient.SessionQuestAsync"/>).</param>
     /// <param name="read">The service's quest by id, as it holds it now (<see cref="ServiceClient.FindQuestAsync"/>).</param>
-    /// <returns>Null where it holds the hand-off to nothing, so it hands on as before: a session on no quest, or a quest whose result is not in.</returns>
-    public static async Task<PressedResult?> HandedAsync(
+    public static async Task<HandedResult> HandedAsync(
         LandedBranch entry, Func<string, CancellationToken, Task<string?>> sessionQuest,
         Func<string, CancellationToken, Task<QuestView?>> read, CancellationToken ct = default)
     {
         // The record keeps no quest per advance, so the session's own is asked: one read, and one more only where it names a quest.
         var session = entry.LastSession();
         var quest = await sessionQuest(session, ct).ConfigureAwait(false);
-        return await new PressQuests(read).PressedAsync(session, quest, ct: ct).ConfigureAwait(false);
+        var pressed = await new PressQuests(read).PressedAsync(session, quest, ct: ct).ConfigureAwait(false);
+        return new HandedResult(session, pressed, sessionQuest, read);
     }
 
     /// <inheritdoc cref="HandedAsync(LandedBranch, Func{string, CancellationToken, Task{string?}}, Func{string, CancellationToken, Task{QuestView?}}, CancellationToken)"/>
-    public static Task<PressedResult?> HandedAsync(LandedBranch entry, ServiceClient service, CancellationToken ct = default) =>
+    public static Task<HandedResult> HandedAsync(LandedBranch entry, ServiceClient service, CancellationToken ct = default) =>
         HandedAsync(entry, service.SessionQuestAsync, service.FindQuestAsync, ct);
+}
+
+/// <summary>
+/// What a person's hand-off is made on (FABRIC-CLOSE1h8 and FABRIC-CLOSE1h10, D173's notes), and its judgement under the branch's hold
+/// just before its plugin is told (<see cref="TreeHandOffs.HandAsync"/>'s <c>beforePush</c>): the session that last moved the branch as
+/// the door read it, and that session's result where one is in.
+/// </summary>
+public sealed class HandedResult
+{
+    private readonly Func<string, CancellationToken, Task<string?>> _sessionQuest;
+    private readonly Func<string, CancellationToken, Task<QuestView?>> _read;
+
+    internal HandedResult(
+        string session, PressedResult? pressed, Func<string, CancellationToken, Task<string?>> sessionQuest,
+        Func<string, CancellationToken, Task<QuestView?>> read)
+    {
+        Session = session;
+        Pressed = pressed;
+        _sessionQuest = sessionQuest;
+        _read = read;
+    }
+
+    /// <summary>The session that last moved the branch as the door read it (<see cref="LandedBranch.LastSession"/>).</summary>
+    public string Session { get; }
+
+    /// <summary>
+    /// Its result as the door read it; null where it holds the hand-off to nothing, so it hands on as before: a session on no quest, or a
+    /// quest whose result is not in (FABRIC-CLOSE1h8's decision 5).
+    /// </summary>
+    public PressedResult? Pressed { get; }
+
+    /// <summary>
+    /// The hand-off's judgement under the branch's hold, just before its plugin is told: told the session that last moved the branch as the
+    /// record reads there, and whether the hold waited. The sentence that holds the push back (<see cref="TreeHand.Withheld"/>), or null.
+    /// </summary>
+    public Func<string, bool, CancellationToken, Task<string?>> BeforePush => BeforePushAsync;
+
+    private async Task<string?> BeforePushAsync(string last, bool waited, CancellationToken ct)
+    {
+        // The parent's decision 4: no later session moved the branch, so it is judged as FABRIC-CLOSE1h8 judges it, with no read more.
+        if (string.Equals(last, Session, StringComparison.OrdinalIgnoreCase))
+        {
+            return Pressed is null ? null : await Pressed.BeforePush(waited, ct).ConfigureAwait(false);
+        }
+
+        // FABRIC-CLOSE1h10 (D173's note): another session's done moved the branch on before this hand-off held it, so its work rides this
+        // push. The door never read that session's result, so it is read now, whether or not the hold waited, by the person's rule: a
+        // result no longer in holds the push back, and a hold does not. A session on no quest holds it to nothing, as at the door.
+        if (await _sessionQuest(last, ct).ConfigureAwait(false) is not { } quest) return null;
+        var now = await _read(quest.TrimStart('#'), ct).ConfigureAwait(false);
+        return QuestResults.Judged(now) ? null : PressedResult.HeldBack("its quest was taken back", last);
+    }
 }
 
 /// <summary>
@@ -129,11 +181,16 @@ public sealed class PressedResult
     {
         if (!waited && !QuestResults.Submitted(Pressed)) return null;
         var now = await _again(ct).ConfigureAwait(false);
-        return Moved(Pressed, now) is { } why
-            ? $"{Capital(why)} before its plugin was told, so its push was not tried: the branch stands, and once you have looked at the quest "
-              + $"as it stands, `daoris-driver trees hand {Session}` hands it on"
-            : null;
+        return Moved(Pressed, now) is { } why ? HeldBack(why, Session) : null;
     }
+
+    /// <summary>
+    /// The sentence that holds a person's push back just before its plugin is told, for <paramref name="why"/>: it names the hand-off of
+    /// <paramref name="session"/>, the session whose result moved (FABRIC-CLOSE1h3; FABRIC-CLOSE1h10 for a later session's advance).
+    /// </summary>
+    internal static string HeldBack(string why, string session) =>
+        $"{Capital(why)} before its plugin was told, so its push was not tried: the branch stands, and once you have looked at the quest "
+        + $"as it stands, `daoris-driver trees hand {session}` hands it on";
 
     private static string Capital(string words) => char.ToUpperInvariant(words[0]) + words[1..];
 }
