@@ -917,6 +917,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         // FABRIC-CLOSE1b's handshake: this host knows a closure graph's operations and doors.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
+        // CLOSECAP1: and its outcome door, which a binding also needs.
+        Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeOutcome").GetBoolean());
     }
 
     /// <summary>

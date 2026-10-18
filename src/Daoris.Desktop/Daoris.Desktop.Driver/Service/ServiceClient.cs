@@ -1138,12 +1138,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>
     /// Whether this client's host knows a closure graph's operations and doors (FABRIC-CLOSE1b's handshake): <c>/api/status</c>'s
-    /// <c>closure</c>. A host from before answers none, and is not asked to keep what it cannot read.
+    /// <c>closure</c> and (CLOSECAP1) <c>closeOutcome</c>, the outcome door's recovery: both must be answered. A host from before
+    /// answers none, or <c>closure</c> alone, and is not asked to keep what it cannot recover.
     /// </summary>
     public async Task<bool> KnowsClosureAsync(CancellationToken ct = default)
     {
         using var document = JsonDocument.Parse(await GetAsync("/api/status", ct).ConfigureAwait(false));
-        return Flag(document.RootElement, "closure");
+        return Flag(document.RootElement, "closure") && Flag(document.RootElement, "closeOutcome");
     }
 
     /// <summary>
