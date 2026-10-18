@@ -1125,6 +1125,182 @@ public sealed class AutoLandingTests : IDisposable
         Assert.Equal(head, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
     }
 
+    // ——— FABRIC-CLOSE1h3: the person's press and an entry's Accept judged again under their holds (D173's note)
+
+    /// <summary>
+    /// The row's proof. A press waits behind another landing of its tree (LANDRACE1, bounded only at minutes), and the result it was
+    /// made on moves meanwhile: a reopen, a later <c>ready</c> at the same commit, one on another machine, or a plain done turned down.
+    /// It makes nothing: no branch, no record, no plugin told, and says why. A hold on the same result does not stop it (the parent's
+    /// decision 1: the press is the person's own word), and a press on an unfinished quest or on no quest holds to nothing and lands as
+    /// before (decision 3).
+    /// </summary>
+    [Theory]
+    [InlineData("reopened", false)]
+    [InlineData("again", false)]
+    [InlineData("elsewhere", false)]
+    [InlineData("turned-down", false)]
+    [InlineData("held", true)]
+    [InlineData("unfinished", true)]
+    [InlineData("conversation", true)]
+    public async Task A_press_waiting_for_its_tree_makes_nothing_where_the_result_it_was_made_on_moved(string change, bool lands)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1", submitted: change is "reopened" or "again" or "elsewhere" or "held");
+        if (change == "unfinished") _world.Quests["q1"] = _world.Quests["q1"] with { Status = "Taken" };
+
+        Task<TreeLanding> press;
+        using (var holding = await LandingHolds.TakeAsync(_home, tree))
+        {
+            Assert.NotNull(holding);
+            using (ExecutionContext.SuppressFlow())
+            {
+                press = Task.Run(() => PressAsync(tree, change == "conversation" ? null : "q1"));
+            }
+
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(_home, tree) > 0, TimeSpan.FromSeconds(30)), "the press waits for its tree");
+            var quest = _world.Quests["q1"];
+            _world.Quests["q1"] = change switch
+            {
+                "reopened" => quest with { Submission = null },
+                "again" => quest with { Submission = Made(2) },
+                "elsewhere" => quest with { Submission = quest.Submission! with { Machine = "laptop" } },
+                "turned-down" => quest with { Status = "Taken" },
+                _ => quest with { Held = true, Hold = EvidenceCodes.Departed },
+            };
+        }
+
+        var pressed = await press;
+
+        Assert.Equal(lands, pressed.Landed);
+        if (lands)
+        {
+            Assert.Single(_frames);
+            return;
+        }
+
+        Assert.False(await BranchAsync(root, PushBranch), pressed.Message);
+        Assert.Empty(_frames);
+        Assert.Null(new LandedBranches(_home).Landing("s1"));
+        Assert.Contains(change is "reopened" or "turned-down" ? "its quest was taken back" : "its quest's submission was made again", pressed.Message);
+    }
+
+    /// <summary>
+    /// The same at the push (the parent's decision 4): a press whose push waits behind another push of its branch, its result moved
+    /// meanwhile, keeps the branch made and recorded, tells no plugin, and says why and that the hand-off pushes it; the verb exits 1. A
+    /// hold on the same result there pushes, once.
+    /// </summary>
+    [Theory]
+    [InlineData("reopened", false)]
+    [InlineData("again", false)]
+    [InlineData("held", true)]
+    public async Task A_press_waiting_for_its_push_keeps_its_branch_and_tells_no_plugin_where_its_result_moved(string change, bool pushes)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1", submitted: true);
+
+        Task<TreeLanding> press;
+        using (var pushing = await LandingHolds.BranchAsync(_home, root, PushBranch))
+        {
+            Assert.NotNull(pushing);
+            using (ExecutionContext.SuppressFlow())
+            {
+                press = Task.Run(() => PressAsync(tree));
+            }
+
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || press.IsCompleted,
+                TimeSpan.FromSeconds(60)), "the push waits for its branch");
+            var quest = _world.Quests["q1"];
+            _world.Quests["q1"] = change switch
+            {
+                "reopened" => quest with { Submission = null },
+                "again" => quest with { Submission = Made(2) },
+                _ => quest with { Held = true, Hold = EvidenceCodes.Departed },
+            };
+        }
+
+        var pressed = await press;
+
+        Assert.True(pressed.Landed, pressed.Message);
+        Assert.True(await BranchAsync(root, PushBranch));
+        Assert.Equal(pushes, new LandedBranches(_home).Landing("s1")!.Pushed);
+        if (pushes)
+        {
+            Assert.Single(_frames);
+            Assert.Null(pressed.Withheld);
+            return;
+        }
+
+        Assert.Empty(_frames);
+        Assert.NotNull(pressed.Withheld);
+        Assert.Contains("its push was not tried", pressed.Message);
+        Assert.Contains("`daoris-driver trees hand s1`", pressed.Message);
+        Assert.Equal(1, TreesWords.Land(pressed, []).Code);
+    }
+
+    /// <summary>
+    /// An entry's Accept at the push: its first part's result moves while that part's push waits for its branch. Its branch stays made
+    /// with no plugin told, and the part after it is not tried, since its push would carry the first part's work on the entry's one
+    /// branch; the press says it did not land all it was asked to.
+    /// </summary>
+    [Fact]
+    public async Task An_entrys_part_whose_result_moved_at_its_push_keeps_its_branch_and_stops_the_parts_after_it()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin));
+        InstallManifest();
+        var first = await DoneSessionAsync(root, "s1", "q1", entry: "ask:a3/engine", submitted: true);
+        var second = await DoneSessionAsync(root, "s2", "q2", entry: "ask:a3/engine", submitted: true);
+        var reads = new PressQuests(_world.QuestAsync);
+        EntryLandingPart[] parts =
+        [
+            new("s1", first) { Pressed = await reads.PressedAsync("s1", "q1", late: true) },
+            new("s2", second) { Pressed = await reads.PressedAsync("s2", "q2", late: true) },
+        ];
+
+        Task<EntryLanding> landing;
+        using (var pushing = await LandingHolds.BranchAsync(_home, root, PushBranch))
+        {
+            Assert.NotNull(pushing);
+            using (ExecutionContext.SuppressFlow())
+            {
+                landing = Task.Run(() => new SessionTrees(_home, Plugins()).LandEntryAsync(
+                    parts, new LandingSubject("s1", "q1", "Fix the gap"), new HashSet<string>(StringComparer.Ordinal)));
+            }
+
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.WaitingOn(_home, root, PushBranch) > 0 || landing.IsCompleted,
+                TimeSpan.FromSeconds(60)), "the first part's push waits for its branch");
+            _world.Quests["q1"] = _world.Quests["q1"] with { Submission = null };
+        }
+
+        var landed = await landing;
+
+        Assert.False(landed.Landed, landed.Message);
+        Assert.Equal([EntryPartOutcome.Landed, EntryPartOutcome.NotTried], landed.Parts.Select(part => part.Outcome));
+        Assert.NotNull(landed.Parts[0].Landing!.Withheld);
+        Assert.Empty(_frames);
+        Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", $"main..{PushBranch}")).Trim());
+        Assert.False(new LandedBranches(_home).Landing("s1")!.Pushed);
+        Assert.Contains("`s1`'s push was held back", landed.Message);
+        Assert.Contains("`daoris-driver trees hand s1`", landed.Parts[0].Landing!.Message);
+    }
+
+    /// <summary>
+    /// The person's press as its doors make it (FABRIC-CLOSE1h3): the quest read where the door names its landing, then the landing
+    /// judged again under its holds on that read.
+    /// </summary>
+    private async Task<TreeLanding> PressAsync(string tree, string? quest = "q1")
+    {
+        var reads = new PressQuests(_world.QuestAsync);
+        if (quest is not null) await reads.FindAsync(quest);
+        var pressed = await reads.PressedAsync("s1", quest);
+        return await new SessionTrees(_home, Plugins()).LandAsync(
+            tree, new LandingSubject("s1", quest, "Fix the gap"), judged: pressed?.Judged, beforePush: pressed?.BeforePush);
+    }
+
     private const string PushBranch = "feature/q1-fix-the-gap";
 
     /// <summary>

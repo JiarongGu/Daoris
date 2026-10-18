@@ -101,6 +101,14 @@ public sealed class TreesWordsTests : IAsyncLifetime
         await AssertSameAsync(bad);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h3: a press whose quest moved just before its push made its branch and told no plugin; the step the rule asked for did
+    /// not happen, so the verb exits 1, as a failed push does.
+    /// </summary>
+    [Fact]
+    public void A_landing_whose_push_was_held_back_is_exit_1() =>
+        Assert.Equal(1, TreesWords.Land(new TreeLanding(true, "Landed `feature/x`.", "feature/x") { Withheld = "its quest was taken back" }, []).Code);
+
     [Fact]
     public Task A_landing_refused_is_its_sentence_and_exit_1() =>
         AssertSameAsync(TreesWords.Land(new TreeLanding(false, "Nothing was landed: its tree holds uncommitted work."), []));

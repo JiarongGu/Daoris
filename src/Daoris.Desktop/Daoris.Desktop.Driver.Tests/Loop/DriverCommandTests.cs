@@ -223,11 +223,38 @@ public sealed class DriverCommandTests
         Assert.Contains("await landing.OwnSubjectAsync(", console);
         Assert.Contains("await service.SessionRecordsAsync()", console);
         Assert.Contains("gate.Process", console[console.IndexOf("await landing.OwnSubjectAsync(", StringComparison.Ordinal)..]);
-        Assert.Contains("gate: gate, joins: subject.Joins)", console);
+        Assert.Contains("gate: gate, joins: subject.Joins,", console);
         Assert.DoesNotContain("LandingRules.SubjectAsync(", console);
         // The gate is read before the name, since the entry's branch is the gate's process's.
         Assert.True(console.IndexOf("await landing.GateAsync(tree, questId", StringComparison.Ordinal)
             < console.IndexOf("await landing.OwnSubjectAsync(", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1h3 (D173's note; D50's twin rule): the page's press and the terminal's hold their landing to the result the press was
+    /// made on, by the driver's one code (<c>PressQuests</c>, <c>PressedResult</c>; <c>PressedResultTests</c> and <c>AutoLandingTests</c>
+    /// hold the act): the quest read once where the door names the landing, and both judgements handed to it. An entry's Accept holds
+    /// each part to its own quest in the library, judged under that part's own holds.
+    /// </summary>
+    [Fact]
+    public void Every_press_holds_its_landing_to_the_result_it_was_made_on()
+    {
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
+        var accepts = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "SessionTrees", "EntryAccepts.cs"));
+        var lands = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "SessionTrees", "EntryLands.cs"));
+
+        foreach (var door in new[] { console, route })
+        {
+            Assert.Contains("new PressQuests(", door);
+            Assert.Contains("quests.FindAsync", door[door.IndexOf("OwnSubjectAsync(", StringComparison.Ordinal)..]);
+            Assert.Contains("await quests.PressedAsync(", door);
+            Assert.Contains("judged: pressed?.Judged, beforePush: pressed?.BeforePush", door);
+        }
+
+        Assert.Contains("quests.FindAsync", accepts);
+        Assert.Contains("Pressed = await quests.PressedAsync(part.Session, part.Quest, late: true", accepts);
+        Assert.Contains("judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush", lands);
     }
 
     /// <summary>

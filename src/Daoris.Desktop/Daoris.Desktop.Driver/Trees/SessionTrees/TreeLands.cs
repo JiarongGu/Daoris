@@ -327,7 +327,9 @@ internal sealed class TreeLands(
     /// <param name="judged">
     /// The door's own judgement again, once it holds the tree (FABRIC-CLOSE1h, D173's note), told whether it waited for another landing
     /// of the tree: a refusal it answers is the landing's, before anything is made; null lets it go on. Past this point a hold, a reopen or
-    /// a gate's word applies to what follows, never to this landing, which is the landing's commitment. Null asks nothing, as before.
+    /// a gate's word applies to what follows, never to this landing, which is the landing's commitment. Null asks nothing, as before. The
+    /// automatic landing's is <see cref="AutoLander"/>'s; the person's press and an entry's part ask theirs of <see cref="PressedResult"/>
+    /// (FABRIC-CLOSE1h3), on the result the press was made on.
     /// </param>
     /// <param name="beforePush">
     /// The door's judgement once more, just before the rule's plugin is told (FABRIC-CLOSE1h2, D173's note), told whether the push

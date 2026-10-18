@@ -129,20 +129,26 @@ public sealed class EntryAccepts(
         SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
     {
         var parts = new List<EntryLandingPart>();
+        // FABRIC-CLOSE1h3: the quests the names are read from, each read once; each part's own quest is the result its press is made on.
+        var quests = new PressQuests(service.FindQuestAsync);
         foreach (var part in PartsOf(entry, rows))
         {
             var (tree, _) = await service.SessionGroundAsync(part.Session, cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(tree)) continue;
             var gate = await trees.GateAsync(tree, part.Quest, new ServiceReviewWorld(service), part.Session, cancellationToken).ConfigureAwait(false);
             // TREEFOLLOWNAME1: its own words, which name its landing where its tree is on a branch of its own.
-            var own = await LandingRules.SubjectAsync(part.Session, part.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
+            var own = await LandingRules.SubjectAsync(part.Session, part.Quest, quest => quests.FindAsync(quest, cancellationToken),
                 events.Openings([part.Session]).GetValueOrDefault(part.Session)).ConfigureAwait(false);
-            parts.Add(new EntryLandingPart(part.Session, tree) { Gate = gate, Own = own });
+            // Judged again under its own tree's hold whether or not that hold waits: the press's fetch and its earlier parts come first.
+            parts.Add(new EntryLandingPart(part.Session, tree)
+            {
+                Gate = gate, Own = own, Pressed = await quests.PressedAsync(part.Session, part.Quest, late: true, cancellationToken).ConfigureAwait(false),
+            });
         }
 
         var lead = entry.Parts.Count > 0 ? entry.Parts[0] : null;
         var subject = lead is null ? new LandingSubject(entry.Key, null, null)
-            : await LandingRules.SubjectAsync(lead.Session, lead.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
+            : await LandingRules.SubjectAsync(lead.Session, lead.Quest, quest => quests.FindAsync(quest, cancellationToken),
                 events.Openings([lead.Session]).GetValueOrDefault(lead.Session)).ConfigureAwait(false);
         // ACCEPTFOOT2: a conversation's entry is named for its first part's work, as each part's own Accept names it.
         if (lead is not null && parts.Count > 0)

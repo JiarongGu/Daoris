@@ -91,6 +91,30 @@ public sealed class EntryLandingsTests
             + "it conflicts. 1 after it not tried, since a later part may build on it.", said);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1h3: a part whose quest moved just before its push keeps its branch made, but its push was not tried, and the parts
+    /// after it are not tried either, since their push would carry its work: the answer says so, and the press did not do what it asked.
+    /// </summary>
+    [Fact]
+    public void A_part_whose_push_was_held_back_stops_the_parts_after_it_and_says_so()
+    {
+        var held = new TreeLanding(true, "put the work on `feature/x`. its quest was taken back before its plugin was told.", "feature/x")
+        {
+            Withheld = "its quest was taken back before its plugin was told",
+        };
+        var outcomes = new[]
+        {
+            new EntryPartLanding("s1", EntryPartOutcome.Landed, new TreeLanding(true, "put the work on `feature/x`.", "feature/x")),
+            new EntryPartLanding("s2", EntryPartOutcome.Landed, held),
+            new EntryPartLanding("s3", EntryPartOutcome.NotTried),
+        };
+
+        Assert.Equal("Landed 2 part(s) on `feature/x`, in the order they ran. `s2`'s push was held back: its quest moved before its plugin "
+            + "was told. 1 after it not tried, since a later part may build on it.", EntryLandWords.Said(LandingForm.Branch, "feature/x", outcomes));
+        Assert.False(EntryLandWords.AllLanded(outcomes));
+        Assert.True(EntryLandWords.AllLanded(outcomes[..1]));
+    }
+
     [Fact]
     public void A_merge_rule_says_the_line_the_parts_merged_into() =>
         Assert.StartsWith("Merged 2 part(s) into `main`",

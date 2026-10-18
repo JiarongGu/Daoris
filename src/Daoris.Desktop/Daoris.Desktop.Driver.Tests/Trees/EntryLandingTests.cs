@@ -377,6 +377,56 @@ public sealed class EntryLandingTests : LandedFixture
     /// ACCEPTALL1d (D87's amendment point 6): an entry's press fetches its line once, not once per part. Where the fetch fails, its
     /// words are said once, in the entry's answer, and no part's landing says them again.
     /// </summary>
+    /// <summary>
+    /// FABRIC-CLOSE1h3 (D173's note): each part of an entry's one press is held to its own quest's result, read where the door names
+    /// the parts, and judged again under its own tree's hold, since the press's fetch and its earlier parts come between. The second
+    /// part's submission is made again while the first part waits for its tree: the first lands, the second makes nothing and says
+    /// why, and what landed before it stands.
+    /// </summary>
+    [Fact]
+    public async Task A_later_parts_result_moved_while_an_earlier_part_waited_lands_nothing_of_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        var firstTip = (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim();
+        static QuestView Submitted(string id, long sequence) => new QuestView(id, "game", "engine", "Fix the gap", "Fix it.", "Taken")
+        {
+            Closure = "sha256:closure", Submission = new QuestSubmissionView("desk", sequence, DateTimeOffset.UtcNow, "ready"),
+        };
+        var quests = new Dictionary<string, QuestView>(StringComparer.Ordinal) { ["q1"] = Submitted("q1", 1), ["q2"] = Submitted("q2", 1) };
+        var reads = new PressQuests((id, _) => Task.FromResult(quests.GetValueOrDefault(id)));
+        EntryLandingPart[] parts =
+        [
+            new("s1a2b3c4", first.Path) { Pressed = await reads.PressedAsync("s1a2b3c4", "q1", late: true) },
+            new("s5e6f7a8", second.Path) { Pressed = await reads.PressedAsync("s5e6f7a8", "q2", late: true) },
+        ];
+
+        Task<EntryLanding> landing;
+        using (var holding = await LandingHolds.TakeAsync(Home, first.Path))
+        {
+            Assert.NotNull(holding);
+            using (ExecutionContext.SuppressFlow())
+            {
+                landing = Task.Run(() => trees.LandEntryAsync(parts, Subject, Kept));
+            }
+
+            Assert.True(SpinWait.SpinUntil(() => LandingHolds.Waiting(Home, first.Path) > 0, TimeSpan.FromSeconds(30)), "the first part waits for its tree");
+            quests["q2"] = Submitted("q2", 2);
+        }
+
+        var landed = await landing;
+
+        Assert.False(landed.Landed, landed.Message);
+        Assert.Equal([EntryPartOutcome.Landed, EntryPartOutcome.Refused], landed.Parts.Select(part => part.Outcome));
+        Assert.Contains("its quest's submission was made again", landed.Parts[1].Landing!.Message);
+        Assert.Equal("the first part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}")).Trim());
+        Assert.Equal(firstTip, trees.Recorded.Of("engine", Branch)!.Tip);
+    }
+
     [Fact]
     public async Task An_entrys_press_fetches_once_and_says_a_failed_fetch_once()
     {

@@ -406,8 +406,10 @@ internal static class TreesConsole
                 var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session).ConfigureAwait(false);
                 // Named for the chain's first quest (WSR5), as the review's press names it, and a part of an entry with others for its
                 // entry's first part, on the entry's one branch (ACCEPTALL1f, D167's 2026-10-15 amendment point 2): the driver's one call.
+                // FABRIC-CLOSE1h3: its quests read once, as the route reads them.
+                var quests = new PressQuests(service.FindQuestAsync);
                 var subject = await landing.OwnSubjectAsync(
-                    tree, session, questId, await service.SessionRecordsAsync().ConfigureAwait(false), quest => service.FindQuestAsync(quest),
+                    tree, session, questId, await service.SessionRecordsAsync().ConfigureAwait(false), quest => quests.FindAsync(quest),
                     named => events.Openings([named]).GetValueOrDefault(named), gate.Process).ConfigureAwait(false);
                 subject = subject with { Entered = entered };
 
@@ -430,12 +432,16 @@ internal static class TreesConsole
                     return 0;
                 }
 
+                // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, judged again under the tree's hold and before the push,
+                // as the route's press is.
+                var pressed = await quests.PressedAsync(session, questId).ConfigureAwait(false);
                 // LANDHOLD2: said once where the landing has to wait behind another landing of this session's work.
                 using var waiting = LandingHoldNotice.Told(now => { if (now) Console.WriteLine(WaitingBehind); });
                 // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
                 var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins).ConfigureAwait(false);
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins,
+                    judged: pressed?.Judged, beforePush: pressed?.BeforePush).ConfigureAwait(false);
                 Told(home, PressesTold.Land, session);
                 // The plugin's lines were said as they came; the landing's sentence and the exit are the route's words too (RPC1b3).
                 var said = TreesWords.Land(landed, []);

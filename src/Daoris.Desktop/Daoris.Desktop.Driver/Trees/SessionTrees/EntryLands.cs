@@ -20,6 +20,12 @@ public sealed record EntryLandingPart(string Session, string Tree)
     /// branch of its own (TREEFOLLOW1) and so lands as that branch. Null where the door gave none: the entry's subject names it.
     /// </summary>
     public LandingSubject? Own { get; init; }
+
+    /// <summary>
+    /// The result the press was made on for this part, its own quest's (FABRIC-CLOSE1h3, D173's note): judged again under the part's
+    /// own tree's hold, and before its push. Null holds to nothing: a part with no quest or no result in, or a door that read none.
+    /// </summary>
+    public PressedResult? Pressed { get; init; }
 }
 
 /// <summary>
@@ -249,13 +255,19 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
                 continue;
             }
 
+            // FABRIC-CLOSE1h3: each part held to its own quest's result, judged again under its own tree's hold and before its push, so
+            // a part whose result moved while an earlier one landed or waited makes nothing (D173's note).
             var landed = await lands.LandAsync(part.Tree, Joining(await NamedAsync(part, subject, form, ct).ConfigureAwait(false), part.Session, form, target),
                 ct, inUse, AcceptedBy.Person, part.Gate,
-                joins: form == LandingForm.Branch, fetched: true).ConfigureAwait(false);
+                joins: form == LandingForm.Branch, fetched: true,
+                judged: part.Pressed?.Judged, beforePush: part.Pressed?.BeforePush).ConfigureAwait(false);
             if (landed.Landed)
             {
                 landedOn.Add(part.Session);
                 outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Landed, landed));
+                // Its branch made and its push held back: a later part's push would carry its work on the entry's one branch, so it stops
+                // the parts after it, as a refusal does; what landed before it stands.
+                if (landed.Withheld is not null) stopped = part.Session;
                 continue;
             }
 
@@ -266,9 +278,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         }
 
         var branch = outcomes.Select(outcome => outcome.Landing?.Branch).FirstOrDefault(each => each is not null) ?? target;
-        var tried = outcomes.Where(outcome => outcome.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.Refused).ToList();
-        var allLanded = tried.Count > 0 && tried.All(outcome => outcome.Outcome == EntryPartOutcome.Landed);
-        return new EntryLanding(allLanded, EntryLandWords.Said(form, branch, outcomes) + notFetched, branch, outcomes);
+        return new EntryLanding(EntryLandWords.AllLanded(outcomes), EntryLandWords.Said(form, branch, outcomes) + notFetched, branch, outcomes);
     }
 
     /// <summary>The press's one fetch (point 6), from the first part it lands whose tree is here; its words where it failed, else null.</summary>
@@ -402,6 +412,16 @@ public static class EntryLandWords
     public static string Held(string part, string says) =>
         $"Nothing was landed: a gate holds `{part}`, and what holds one part of an entry holds its landing. {says}";
 
+    /// <summary>
+    /// Whether the press landed every part it tried, and pushed each it was to: a part whose push was held back (FABRIC-CLOSE1h3) did not
+    /// do what the press asked, and stopped the parts after it.
+    /// </summary>
+    public static bool AllLanded(IReadOnlyList<EntryPartLanding> outcomes)
+    {
+        var tried = outcomes.Where(outcome => outcome.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.Refused).ToList();
+        return tried.Count > 0 && tried.All(outcome => outcome.Outcome == EntryPartOutcome.Landed && outcome.Landing?.Withheld is null);
+    }
+
     /// <summary>The answer's sentence: what landed where, what the person left out, what was refused and what was not tried.</summary>
     public static string Said(string form, string? branch, IReadOnlyList<EntryPartLanding> outcomes)
     {
@@ -417,6 +437,12 @@ public static class EntryLandWords
         if (outcomes.FirstOrDefault(each => each.Outcome == EntryPartOutcome.Refused) is { Landing: { } refused } at)
         {
             said.Add($"`{at.Session}` was refused: {refused.Message}");
+        }
+
+        // FABRIC-CLOSE1h3: its branch was made and its push held back; its own sentence says why and how it goes on.
+        if (outcomes.FirstOrDefault(each => each is { Outcome: EntryPartOutcome.Landed, Landing.Withheld: not null }) is { } held)
+        {
+            said.Add($"`{held.Session}`'s push was held back: its quest moved before its plugin was told.");
         }
 
         if (outcomes.Any(each => each.Outcome == EntryPartOutcome.NotTried))
