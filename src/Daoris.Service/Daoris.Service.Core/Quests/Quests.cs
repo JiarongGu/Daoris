@@ -1953,6 +1953,16 @@ public sealed class QuestStore
                 return new QuestReopening(QuestReopenRefusal.NotWithdrawn, standing, null);
             }
 
+            // FABRIC-CLOSE1c19: the go-on clears the step's own submission, and a successor already closed on it is not reopened (a reopen
+            // takes no close back), so the step's next submission would never be sealed. Refused as the person's reopen of it is.
+            if (standing.Submission is { } closedOn
+                && await SuccessorAsync(standing, transaction, inside).ConfigureAwait(false) is
+                    { Status: QuestStatus.Done or QuestStatus.Declined } closed
+                && Grows(closed, new QuestOperationRef(closedOn.Machine, closedOn.Sequence)))
+            {
+                return new QuestReopening(QuestReopenRefusal.StepClosed, standing, closed);
+            }
+
             // The source as this store holds it: its current submission, unheld, is what the step grows from now. Another machine's
             // submission reaches this store by sync, and the word waits for it.
             var source = standing.Parent is { Length: > 0 } parent ? await FindAsync(parent, transaction, inside).ConfigureAwait(false) : null;
@@ -2858,7 +2868,7 @@ public sealed class QuestStore
             var note = waitsLost.Count > 0 ? WaitsWentWith(conflicts[take.Reported].Note, waitsLost) : conflicts[take.Reported].Note;
             var named = conflicts[take.Reported] with
             {
-                Note = submissionLost ? SubmissionWentWith(note) : note, NoteParts = null,
+                Note = submissionLost ? SubmissionWentWith(note, QuestLog.LostToTheReopen(replayed, Machine)) : note, NoteParts = null,
             };
             await RewriteAsync(take.Position, named, transaction, ct).ConfigureAwait(false);
             conflicts[take.Reported] = named;
@@ -2923,12 +2933,16 @@ public sealed class QuestStore
 
     /// <summary>
     /// A lost take's note, then the submission that went with it (FABRIC-CLOSE1a, §E5), said on the conflict every machine
-    /// shows: the winner's work is what the quest's graph now closes.
+    /// shows: the winner's work is what the quest's graph now closes. A take lost to the person's reopen (FABRIC-CLOSE1c21,
+    /// <see cref="QuestLog.LostToTheReopen"/>) has no winner, so it says the reopen, as the take's refusals do.
     /// </summary>
-    internal static string SubmissionWentWith(string? note)
+    internal static string SubmissionWentWith(string? note, bool reopened = false)
     {
-        const string Said = "This take's submission went with it, and so did any step it published; the quest's close is the winner's.";
-        return string.IsNullOrWhiteSpace(note) ? Said : $"{note.TrimEnd()} {Said}";
+        var said = reopened
+            ? "This take's submission went with it, and so did any step it published; the person's reopen of the work this step grew from "
+              + "reached the remote first, so the step is open for the work as it stands now."
+            : "This take's submission went with it, and so did any step it published; the quest's close is the winner's.";
+        return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
     }
 
     /// <summary>Take a quest's row out of the cache — the replay says there is no quest (D95).</summary>
@@ -3268,7 +3282,8 @@ public sealed class QuestStore
 
     /// <summary>
     /// Judge a push, quest by quest (design §8): <b>behind</b> when anything reached the quest after
-    /// <paramref name="base"/> that this push did not carry; <b>refused</b> when an operation does not
+    /// <paramref name="base"/> that this push did not carry, or it is a step whose source holds no submission it grew from here
+    /// (<see cref="AwaitsItsSourceAsync"/>, FABRIC-CLOSE1c21); <b>refused</b> when an operation does not
     /// apply through the table, is made on a take its machine lost (<see cref="QuestLog.OnALostTake"/>,
     /// WAITCLAIM3), or is a publish that fails <paramref name="judge"/>; otherwise every operation is
     /// kept under the machine that made it and numbered.
@@ -3304,7 +3319,8 @@ public sealed class QuestStore
                 }
 
                 if (fresh.Count == 0) continue;
-                if (await MovedSinceAsync(group.Key, @base, carried, transaction, inside).ConfigureAwait(false))
+                if (await MovedSinceAsync(group.Key, @base, carried, transaction, inside).ConfigureAwait(false)
+                    || await AwaitsItsSourceAsync(fresh[0], transaction, inside).ConfigureAwait(false))
                 {
                     behind.Add(group.Key);
                     continue;
@@ -3384,6 +3400,20 @@ public sealed class QuestStore
 
             return new QuestPush(accepted, behind, refused);
         }, ct);
+
+    /// <summary>
+    /// Whether a pushed step's publication waits on the submission it grew from (FABRIC-CLOSE1c21, §E5): this store holds the step's
+    /// source quest but not that submission, so the source's own operations did not land in this push (behind, or refused). Kept alone,
+    /// the step would stand here on work its machine's rebase may yet lose with a take, as a take lost to the person's reopen loses its
+    /// submission and the step it published (FABRIC-CLOSE1e's *Left*, the parent behind). Answered behind, so the machine goes round:
+    /// its rebase forgets the step with the submission, or pushes it again beside it. The source's group comes first in a push, since its
+    /// submission was written before the step's publication, so a submission kept by this push is held here by then. A source this store
+    /// never held (its receiver stays on its machine) waits on nothing, and a step from before names no source.
+    /// </summary>
+    private async Task<bool> AwaitsItsSourceAsync(QuestOperation first, SqliteTransaction transaction, CancellationToken ct) =>
+        first is { Kind: QuestOperationKind.Published, Published: { Parent: { Length: > 0 } parent, GrewFrom: { } source } }
+        && await PositionOfAsync(source.Machine, source.Sequence, transaction, ct).ConfigureAwait(false) is null
+        && (await HistoryAsync(parent, transaction, ct).ConfigureAwait(false)).Count > 0;
 
     /// <summary>Whether anything this push did not carry reached a quest after <paramref name="base"/>.</summary>
     private async Task<bool> MovedSinceAsync(

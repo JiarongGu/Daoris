@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { sentence } from '../locales/format';
 import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../bridge/shell';
 import { byTool, type AccountPlace } from './tools';
-import { accountName } from './agents';
+import { accountLabel } from './agents';
 import { keys } from '../data/queries';
 import type { Notify } from '../design/ui';
 import type { Answered } from '../work/InlineConfirm';
@@ -16,7 +16,11 @@ export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'p
  * A new account a sign-in kept (UX7b, ACCT1): which tool, its id, who signed in, and where it runs, which is none for an
  * account just made. Held until the person answers the add flow's last step, its name and the lists it joins.
  */
-export type AccountAdded = { harness: string; profile: string; account: string | null; places: AccountPlace[] };
+export type AccountAdded = {
+  harness: string; profile: string; account: string | null; places: AccountPlace[];
+  /** The name the sign-in's end offered it (ACCOUNTID1b, `HARNESS_ENDED.offered`); undefined from an older shell. */
+  offered?: string | null;
+};
 
 /** Which action runs on which tool, and for whom, while it runs — and how to start one. */
 export type HarnessRun = {
@@ -91,7 +95,7 @@ function useRunState(notify: Notify): HarnessRun {
     const roster = client.getQueryData<HarnessRoster>(keys.harnesses);
     const tool = byTool(roster?.harnesses ?? []).find((each) => each.doors.some((door) => door.harness === harness));
     const account = tool?.accounts.find((each) => each.name === profile);
-    return account ? accountName(account) : null;
+    return account ? accountLabel(account, tool) : null;
   };
 
   /**
@@ -102,7 +106,7 @@ function useRunState(notify: Notify): HarnessRun {
    */
   const ended = (
     action: string, profile: string | undefined, exitCode: number, problem: string | null,
-    account?: string | null, kept?: boolean | null, places?: AccountPlace[] | null,
+    account?: string | null, kept?: boolean | null, places?: AccountPlace[] | null, offered?: string | null,
   ) => {
     setRunningProfile(null);
     setSigningInNew(null);
@@ -121,7 +125,7 @@ function useRunState(notify: Notify): HarnessRun {
         if (account) notify(t(nowhere ? 'harness.loginNew.doneNowhere' : 'harness.loginNew.done', { account }));
         else notify(t(nowhere ? 'harness.loginNew.unnamedNowhere' : 'harness.loginNew.unnamed', { profile }));
         const harness = runningRef.current?.split(':')[0];
-        if (harness && profile) setAdded({ harness, profile, account: account ?? null, places: places ?? [] });
+        if (harness && profile) setAdded({ harness, profile, account: account ?? null, places: places ?? [], offered });
       }
       return;
     }
@@ -142,7 +146,7 @@ function useRunState(notify: Notify): HarnessRun {
   useHarnessEnded((news) => {
     if (runningRef.current !== `${news.harness}:${news.action}`) return;
     setInFlight(null);
-    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places);
+    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places, news.offered);
   });
 
   const run: HarnessRun['run'] = (harness, action, profile, version, workspace, answered) => {

@@ -43,4 +43,19 @@ describe('the roster’s one namer', () => {
     expect(nameOf('claude-code', null)).toBe('you@example.com');
     expect(nameOf('codex-acp')).toBe(i18n.t('harness.own'));
   });
+
+  /** ACCOUNTID1b: the session header and every card say an account told apart from another sign-in of its email. */
+  it('says the organisation after an email two sign-ins of the agent share, the own sign-in among them', () => {
+    const email = 'person@example.invalid';
+    const shared = namer(i18n.t.bind(i18n), [{
+      harness: 'claude-code', present: true, ownAccount: email, ownOrg: 'Org C',
+      profiles: [
+        { name: 'acct-0000000a', home: 'ha', login: 'in', account: email, org: 'Org A' },
+        { name: 'acct-0000000b', home: 'hb', login: 'in', account: email, org: null, plan: 'max' },
+      ],
+    }]);
+    expect(shared('claude-code', 'acct-0000000a')).toBe(`${email} · Org A`);
+    expect(shared('claude-code', 'acct-0000000b')).toBe(`${email} · max`);
+    expect(shared('claude-code', null)).toBe(`${email} · Org C`);
+  });
 });

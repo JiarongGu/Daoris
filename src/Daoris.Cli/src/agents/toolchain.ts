@@ -128,8 +128,8 @@ import type {
   AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, ScopeProblem, Switch, UseChange, UseMode, Uses,
 } from '../accounts/rotation.ts';
 import {
-  accountNames, accountsPath, forgetName, nameFor, nameProblem, newAccountId, renameAccount, resolveAccount, shownAs,
-  signInRefusal, signInTarget, AccountNameError,
+  accountNames, accountsPath, apartWords, forgetName, nameBeside, nameFor, nameProblem, newAccountId, offeredName, renameAccount,
+  resolveAccount, shownAs, signedInSentence, signInRefusal, signInTarget, takenWayOut, AccountNameError,
 } from '../accounts/accountnames.ts';
 import { forgetRead, keepRead } from '../accounts/accountreads.ts';
 import type { Login } from '../accounts/accountreads.ts';
@@ -204,10 +204,13 @@ export interface Toolchain {
    * deliberately not consulted. Neither pattern matching means unknown, never logged-out.
    *
    * `account`, when given, is a pattern whose first group is WHO is signed in there (D66 §3) — the
-   * name a person knows the account by. Read only on a yes, and the one thing besides the boolean
-   * taken from the answer.
+   * name a person knows the account by. Read only on a yes.
+   *
+   * `org` and `plan`, when given, read the organisation and the plan the sign-in is in, on a yes only (ACCOUNTID1): one
+   * email may sign in to two organisations, and they are what tells the two accounts apart. Read fresh, written nowhere,
+   * as the driver's `LoginQuestion.Org` and `Plan` read them.
    */
-  loginCheck?: { args: string[]; in: RegExp; out: RegExp; account?: RegExp };
+  loginCheck?: { args: string[]; in: RegExp; out: RegExp; account?: RegExp; org?: RegExp; plan?: RegExp };
   /**
    * The harness whose ACCOUNT this one runs as, when it has none of its own (ACP2).
    *
@@ -291,13 +294,16 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     channel: 'claude-code-releases',
     update: ['update'],
     login: ['auth', 'login'],
-    // It answers JSON — and volunteers an email, an organisation and a subscription tier with it.
-    // Daoris reads the boolean and the email (who signed in, D66 §3), and keeps neither of the rest.
+    // It answers JSON — and volunteers an email, an organisation and a subscription tier with it. Daoris reads the
+    // boolean, the email (who signed in, D66 §3), and the organisation and the plan, which tell two sign-ins of one email
+    // apart (ACCOUNTID1); it keeps none of them. The driver's twin is `ClaudeCodeAdapter`'s `LoginCheck`.
     loginCheck: {
       args: ['auth', 'status'],
       in: /"loggedIn"\s*:\s*true/i,
       out: /"loggedIn"\s*:\s*false/i,
       account: /"email"\s*:\s*"([^"]+)"/i,
+      org: /"orgName"\s*:\s*"([^"]+)"/i,
+      plan: /"subscriptionType"\s*:\s*"([^"]+)"/i,
     },
     // 🔴 A pinned 2.1.270 reported its own auto-updates ENABLED (`claude doctor`, no login); with
     // this it reported them disabled, refused `claude update`, and stayed 2.1.270.
@@ -821,9 +827,13 @@ export interface HarnessReport {
   machineDefault: string | null;
   /**
    * `account` is who the tool says is signed in there (D66 §3), or null; `key` is an API-key
-   * account's handle (AGT3) — never the key — or null for a sign-in.
+   * account's handle (AGT3) — never the key — or null for a sign-in. `org` and `plan` are the organisation and the plan
+   * the tool says beside who (ACCOUNTID1), read fresh and written nowhere; absent or null where it says none.
    */
-  profiles: { name: string; home: string; login: Login; account: string | null; key: string | null }[];
+  profiles: {
+    name: string; home: string; login: Login; account: string | null; key: string | null;
+    org?: string | null; plan?: string | null;
+  }[];
 }
 
 /**
@@ -912,7 +922,7 @@ export function probe(
         key ? { [toolchain.keyVariable!]: key } : {}, probeLockPath(home, owner, name));
       // Kept where the driver keeps its own readings (AGENTREAD1), so the screen and the loop learn from this one too.
       if (said.asked) keepReading(home, owner, name, said.login);
-      return { name, home: where, login: said.login, account: said.account, key: shown };
+      return { name, home: where, login: said.login, account: said.account, key: shown, org: said.org ?? null, plan: said.plan ?? null };
     }),
   };
 }
@@ -932,7 +942,7 @@ function keepReading(home: string, owner: string, account: string, login: Login)
 
 /**
  * What the harness says about logging in to one home: the boolean, and — when the toolchain asks and
- * the answer is yes — who (D66 §3). Nothing else it volunteers is kept.
+ * the answer is yes — who (D66 §3), with the organisation and the plan beside them (ACCOUNTID1). None of it is kept.
  *
  * @remarks
  * 🔴 Asked under the home's probe lock (TOOL6g, `probelock.ts`) where one is named: the agent may refresh an expired token
@@ -946,7 +956,7 @@ function keepReading(home: string, owner: string, account: string, login: Login)
 function loginAt(
   command: string[], toolchain: Toolchain, where: string, managed = false,
   account: Record<string, string> = {}, lock: string | null = null,
-): { login: Login; account: string | null; asked: boolean } {
+): LoginSaid {
   const check = toolchain.loginCheck;
   if (!check) return { login: 'unknown', account: null, asked: false };
 
@@ -960,9 +970,22 @@ function loginAt(
   }
   if (!answer.ran) return { login: 'unknown', account: null, asked: true };
   if (check.in.test(answer.output)) {
-    return { login: 'in', account: check.account?.exec(answer.output)?.[1]?.trim() || null, asked: true };
+    const read = (pattern: RegExp | undefined) => pattern?.exec(answer.output)?.[1]?.trim() || null;
+    return { login: 'in', account: read(check.account), org: read(check.org), plan: read(check.plan), asked: true };
   }
   return { login: check.out.test(answer.output) ? 'out' : 'unknown', account: null, asked: true };
+}
+
+/**
+ * One status answer, as `loginAt` read it: the state, and on a yes who with the organisation and the plan beside them
+ * (ACCOUNTID1), each null or absent where the agent says none; and whether it was asked at all.
+ */
+interface LoginSaid {
+  login: Login;
+  account: string | null;
+  org?: string | null;
+  plan?: string | null;
+  asked: boolean;
 }
 
 /**
@@ -1125,7 +1148,7 @@ export function signInNew(
     const problem = nameProblem([...profiles(home, harness), id], accountNames(home, harness), id, wanted);
     if (problem !== null) {
       throw new DaorisError(problem.kind === 'taken'
-        ? `\`${wanted}\` already names \`${problem.other}\` — each \`${harness}\` account has a name of its own, so nothing was signed in.`
+        ? `\`${wanted}\` already names \`${problem.other}\` — each \`${harness}\` account has a name of its own, so nothing was signed in — ${takenWayOut(wanted)}`
         : `\`${wanted}\` is not a name a terminal can type — a name is one word, with no space or backtick, not starting with a dash, at most 64 characters; nothing was signed in.`);
     }
   }
@@ -1170,12 +1193,12 @@ export function signInNew(
       }
       const settings = options.path ? joinedAfterSignIn(options.path, before, harness, id, joins, write) : before;
       // ACCTNAME1: the email offered as the name is said once.
-      write(said.account
-        ? (called !== null && sameName(said.account, called)
-          ? `daoris: signed in as ${said.account} — this machine lists it by that name.`
-          : `daoris: signed in as ${said.account} — this machine lists it as \`${called ?? id}\`.`)
-        : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${called ?? id}\`.`);
-      for (const line of endLines(harness, id, called, said.account, settings, home, Boolean(options.path))) write(line);
+      // ACCOUNTID1c: where the email is another account's, the organisation (else the plan) is said after it.
+      const apart = apartWords(profiles(home, harness), accountNames(home, harness), id, said.account, said.org ?? null, said.plan ?? null);
+      write(`daoris: ${signedInSentence(said.account, harness, called, id, apart)}`);
+      // ACCOUNTID1: the email another account already names is offered with its organisation beside it, or none.
+      const offered = offeredName(profiles(home, harness), accountNames(home, harness), id, said.account, said.org ?? null, said.plan ?? null);
+      for (const line of endLines(harness, id, called, offered, settings, home, Boolean(options.path))) write(line);
     }
   }
 
@@ -1218,25 +1241,29 @@ export function signInTo(
     const binary = options.binary ?? { command: toolchain.binary, managed: false };
     const said = loginAt(binary.command, toolchain, where, binary.managed, {}, probeLockPath(home, harness, account));
     if (said.asked) keepReading(home, harness, account, said.login);
-    const who = named === null ? said.account : null;
-    for (const line of endLines(harness, account, named, who, settings, home, Boolean(options.path))) write(line);
+    // ACCOUNTID1: the email another account already names is offered with its organisation beside it, or none.
+    const offered = named === null
+      ? offeredName(accounts, names, account, said.account, said.org ?? null, said.plan ?? null)
+      : null;
+    for (const line of endLines(harness, account, named, offered, settings, home, Boolean(options.path))) write(line);
   }
   return signed;
 }
 
 /**
  * What a sign-in's end says beside who signed in (ACCT1, ACCT2): where the account runs — each list and default that holds
- * it, or that none does — and, where it has no name of the person's, who signed in offered as one, as a command the person
- * runs to keep it. Nothing of who signed in is written here.
+ * it, or that none does — and, where it has no name of the person's, the name offered for it (`offeredName`: who signed in,
+ * or with the organisation beside it where another account has the email, ACCOUNTID1) as a command the person runs to keep
+ * it, or a name of theirs asked for where none is offered. Nothing of who signed in is written here.
  */
 function endLines(
-  harness: string, account: string, named: string | null, who: string | null, settings: HarnessSettings, home: string,
+  harness: string, account: string, named: string | null, offered: string | null, settings: HarnessSettings, home: string,
   placed: boolean,
 ): string[] {
   const lines: string[] = [];
-  if (named === null && who) {
-    lines.push(`  \`daoris agent profile rename ${harness} ${shellWord(account, '<account>')} ${shellWord(who, '<name>')}\` names it `
-      + `${who}; it reads as \`${account}\` until it has a name.`);
+  if (named === null && offered) {
+    lines.push(`  \`daoris agent profile rename ${harness} ${shellWord(account, '<account>')} ${shellWord(offered, '<name>')}\` names it `
+      + `${offered}; it reads as \`${account}\` until it has a name.`);
   } else if (named === null) {
     lines.push(`  \`daoris agent profile rename ${harness} ${shellWord(account, '<account>')} <name>\` gives it a name of yours.`);
   }
@@ -1425,6 +1452,40 @@ export function nextStartBeneath(
   return lines;
 }
 
+type ProfileListed = HarnessReport['profiles'][number];
+
+/**
+ * Who signed in, as `agent list` says it after an account's name and state (D66 §3): dropped where it is the name already
+ * (ACCTNAME1, as the page's `accountWho` does); and where another account signed in with the same email (ACCOUNTID1), what
+ * tells this one apart after it (`apartBy`), each said once, so a name that is the email with it says neither again.
+ */
+function whoWords(profile: ProfileListed, name: string, profiles: readonly ProfileListed[]): string {
+  const apart = apartBy(profile, profiles);
+  const said = apart !== null && profile.account ? nameBeside(profile.account, apart) : null;
+  const named = said !== null && sameName(said, name);
+  const words = [
+    profile.account && !sameName(profile.account, name) && !named ? profile.account : null,
+    apart !== null && !named ? apart : null,
+  ].filter((word): word is string => word !== null);
+  return words.length > 0 ? ` ${words.join(' · ')}` : '';
+}
+
+/**
+ * What tells an account apart from another signed in with its email (ACCOUNTID1): its organisation, where no such other
+ * account has it, else its plan likewise; null where no other account has its email, or where neither tells them apart.
+ */
+function apartBy(profile: ProfileListed, profiles: readonly ProfileListed[]): string | null {
+  const email = profile.account;
+  if (!email) return null;
+  const twins = profiles.filter((other) => other !== profile && other.account && sameName(other.account, email));
+  if (twins.length === 0) return null;
+  for (const part of ['org', 'plan'] as const) {
+    const mine = profile[part];
+    if (mine && twins.every((other) => !other[part] || !sameName(other[part], mine))) return mine;
+  }
+  return null;
+}
+
 /** An agent with no Daoris account (OWNSPACE1d, D175): its starts wait for a sign-in, never run in the tool's own home. */
 function noAccountsWords(agent: string): string {
   return `no accounts — Daoris's sessions wait until you sign in: \`daoris agent login ${agent} --new\``;
@@ -1468,8 +1529,7 @@ export function accountLines(
     // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
     lines.push(
       `${indent}${shown(profile.name).padEnd(col)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
-      // Who signed in is dropped where it is the name already (ACCTNAME1, as the page's accountWho does).
-      + `${profile.account && !sameName(profile.account, shown(profile.name)) ? ` ${profile.account}` : ''}`
+      + `${whoWords(profile, shown(profile.name), report.profiles)}`
       + `${profile.key ? ` API key ${profile.key}` : ''}`
       + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
 

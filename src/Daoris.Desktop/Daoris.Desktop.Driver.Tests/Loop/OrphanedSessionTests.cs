@@ -170,7 +170,7 @@ public sealed class OrphanedSessionTests : IDisposable
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig), "{}");
 
         using var client = new ServiceClient(service.Url, null);
-        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        using var stop = new CancellationTokenSource(Poll.Patience);
         var reports = new List<TickReport>();
         var errors = new List<Exception>();
         var watch = new DriverWatch(
@@ -200,7 +200,7 @@ public sealed class OrphanedSessionTests : IDisposable
         File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1, }""");
 
         using var client = new ServiceClient(service.Url, null);
-        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var stop = new CancellationTokenSource(Poll.Patience);
         var reports = new List<TickReport>();
         var errors = new List<Exception>();
         var watch = new DriverWatch(
@@ -243,7 +243,7 @@ public sealed class OrphanedSessionTests : IDisposable
         return script;
     }
 
-    private static Task Until(Func<bool> condition) => Poll.Until(condition, within: TimeSpan.FromSeconds(15));
+    private static Task Until(Func<bool> condition) => Poll.Until(condition, within: Poll.Patience);
 
     /// <summary>
     /// The service's session doors, on a loopback port: records seeded or opened as chats, listed as

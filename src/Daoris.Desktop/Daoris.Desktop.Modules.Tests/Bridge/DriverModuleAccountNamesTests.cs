@@ -72,6 +72,23 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ACCOUNTID1c: where the email is already another sign-in's id or name, the end says the organisation (else the plan)
+    /// after it, and "by that name" where the account is named with it beside the email; as the terminal's twin says it.
+    /// </summary>
+    [Fact]
+    public void The_sign_in_end_names_a_second_sign_in_of_an_email_apart()
+    {
+        Assert.Equal("signed in as person@example.invalid · Org B — this machine lists it as `acct-2`.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", null, "acct-2", "Org B"));
+        Assert.Equal("signed in as person@example.invalid · Org B — this machine lists it by that name.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", "person@example.invalid·Org-B", "acct-2", "Org B"));
+        Assert.Equal("signed in as person@example.invalid · Org B — this machine lists it as `seat`.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", "seat", "acct-2", "Org B"));
+        Assert.Equal("signed in as person@example.invalid — this machine lists it as `acct-2`.",
+            AgentsRoutes.SignedInSentence("person@example.invalid", "claude-code", null, "acct-2", null));
+    }
+
+    /// <summary>
     /// ACCT2: Daoris's session records name an account by its id, so the sessions running on it are counted for it across a
     /// rename, beside its new name.
     /// </summary>
@@ -220,5 +237,25 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Assert.True(nowhere.GetProperty("Nowhere").GetBoolean());
         Assert.Empty(nowhere.GetProperty("Places").EnumerateArray());
         Assert.Equal(JsonValueKind.Null, nowhere.GetProperty("DisplayName").ValueKind);
+    }
+
+    /// <summary>
+    /// ACCOUNTID1: an account on the roster says the organisation and the plan its agent named beside who signed in, read
+    /// fresh and kept nowhere, what tells two sign-ins of one email apart; null where it named none, as before.
+    /// </summary>
+    [Fact]
+    public void An_account_on_the_roster_says_its_organisation_and_plan_or_none()
+    {
+        var settings = HarnessSettings.Load(Path.Combine(Home, "none.json"));
+
+        var said = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("acct-0000000b", Path.Combine(Home, "b"), LoginState.In, Account: "person@example.invalid", Org: "Org B", Plan: "max"),
+            settings.PlacesOf("claude-code", "acct-0000000b"), settingsFile: null));
+        var none = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("acct-0000000c", Path.Combine(Home, "c"), LoginState.In, Account: "person@example.invalid"),
+            settings.PlacesOf("claude-code", "acct-0000000c"), settingsFile: null));
+
+        Assert.Equal(("Org B", "max"), (said.GetProperty("Org").GetString(), said.GetProperty("Plan").GetString()));
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (none.GetProperty("Org").ValueKind, none.GetProperty("Plan").ValueKind));
     }
 }

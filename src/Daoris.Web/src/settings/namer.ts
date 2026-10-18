@@ -1,5 +1,5 @@
 import type { useTranslation } from 'react-i18next';
-import { accountName } from '../agents/agents';
+import { accountLabel, ownWho } from '../agents/agents';
 import { type AccountNamer, byTool, type ToolDoor } from '../agents/tools';
 
 /**
@@ -21,8 +21,9 @@ export function namer(t: ReturnType<typeof useTranslation>['t'], harnesses: Tool
     const tool = toolFor(owner);
     // The tool's own home is named as its row names it: who signed in, else this machine's own. It
     // was "the agent's own sign-in" in one card and "its own home" in another (UX5 U53).
-    if (!profile) return tool?.ownAccount ?? t('harness.own');
+    if (!profile) return (tool ? ownWho(tool) : null) ?? t('harness.own');
     const row = tool?.accounts.find((account) => account.name === profile);
-    return row ? accountName(row) : profile;
+    // Told apart from another sign-in of its email by its organisation, else its plan (ACCOUNTID1b).
+    return row ? accountLabel(row, tool) : profile;
   };
 }

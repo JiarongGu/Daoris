@@ -527,6 +527,25 @@ public sealed class HandOverTests : IDisposable
         QuestHandOver.AskAsync(room.Client(), _home, Drives, id, agent, account, HandOverWhy.Limit, HandOverBy.Person, T0.AddMinutes(30));
 
     /// <summary>🔴 A quest's session handed to another agent keeps its box, as a conversation's is, and says the driver's next look takes it.</summary>
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1c20: a take lost to the person's own reopen is refused in the reopen's words and its own code, never as another
+    /// machine's take.
+    /// </summary>
+    [Fact]
+    public async Task A_take_lost_to_the_persons_reopen_is_refused_as_that()
+    {
+        var room = QuestRoom(Driven("qu3st000", minute: 20), Driven("else0000", "q4"));
+        room.Quests.Add(QuestRow("q4", "Taken"));
+        room.Claims["q4"] = "lost";
+        room.Whys["q4"] = "source-reopened";
+
+        var answer = await AskQuestAsync(room, "else0000");
+
+        Assert.Equal((false, HandOver.QuestReopened), (answer.Kept, answer.Why));
+        Assert.Contains("you reopened", answer.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("another machine", answer.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_quest_s_session_is_handed_over_by_keeping_its_box_for_the_drivers_look()
     {
@@ -645,6 +664,9 @@ public sealed class HandOverTests : IDisposable
 
         public Dictionary<string, string> Claims { get; init; } = new(StringComparer.Ordinal);
 
+        /// <summary>Why a lost claim lost, as the claim door says it beside the claim (FABRIC-CLOSE1c18).</summary>
+        public Dictionary<string, string> Whys { get; init; } = new(StringComparer.Ordinal);
+
         public ServiceClient Client() => new("http://room.test", null, new HttpClient(this, disposeHandler: false));
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
@@ -656,7 +678,7 @@ public sealed class HandOverTests : IDisposable
             if (request.Method == HttpMethod.Get && path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal))
             {
                 var quest = path["/api/quests/".Length..^"/claim".Length];
-                return Task.FromResult(Json(new JsonObject { ["claim"] = Claims.GetValueOrDefault(quest, "none") }));
+                return Task.FromResult(Json(new JsonObject { ["claim"] = Claims.GetValueOrDefault(quest, "none"), ["why"] = Whys.GetValueOrDefault(quest) }));
             }
 
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("""{"error":"no such door"}""") });

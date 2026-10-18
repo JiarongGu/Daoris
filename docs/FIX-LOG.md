@@ -5,6 +5,97 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A remote kept a step published on a take that then lost, when the take's own push was behind (FABRIC-CLOSE1c21)
+
+- **Symptom:** B took a step before A's reopen of its source and A's rebind reached B, bound it, submitted, and its submission
+  published the chain's next step. Where A's reopen, submission and rebind reached the remote between B's fetch and B's push, the
+  next step stood open at the remote and then on A and B, grown from B's submission, which no machine held any more. B's lost take's
+  conflict also said "the quest's close is the winner's", where nobody won: the person reopened the work.
+- **Root cause:** the remote judges a push quest by quest. B's step's group was behind (the reopen and rebind reached it after B's
+  base), but the next step's group was a new quest nothing had moved, so it was kept and numbered. B's next round rebased the step,
+  lost the take and the submission, and `ForgetStepsAsync` left the next step, since no machine forgets a numbered operation
+  (FABRIC-CLOSE1e's *Left*). The words: `SubmissionWentWith` had one sentence, written for a take lost to another machine's.
+- **Fix:** `QuestStore.ReceiveAsync` answers behind for a pushed step whose source it holds without the submission the step grew from
+  (`AwaitsItsSourceAsync`), so the machine goes round and its rebase forgets the step with the submission, or pushes it again beside
+  it. A source the remote never held waits on nothing. `RebaseAsync` words a take lost to the person's reopen
+  (`QuestLog.LostToTheReopen`) by the reopen.
+- **Verification:** `QuestReopenSyncTests`: the raced order was seen red as a probe (the next step found at the remote), then green;
+  the words red in both orders, then green; a step whose source never leaves its machine still goes up in the first push (a guard).
+  `QuestReopenSyncTests` and `QuestSyncTests`, 84 passed.
+
+## 2026-10-19 — A second opinion holding a push held back was never asked, and the person's ask was dropped (FABRIC-CLOSE1h15)
+
+- **Symptom:** under *Accept automatically*, a made branch whose push was held back by a second opinion nobody had asked waited on the
+  person alone, though the gate said *it is asked at the driver's next look*. The person's `opinion ask` on it opened a due that the
+  next look closed as landed before it read the request, so even that ask did not move it.
+- **Root cause:** `OpinionLook.ClosesAsync` closed a due as landed once a landing was recorded for its session, and its last exit closed
+  it too, since a made branch leaves nothing unlanded in the tree. A push held back is recorded as made, not pushed, and `push-held`
+  lives only on the automatic landing's entry, which the opinion look did not read. And only a conclusion or the person's ask owes a
+  due, so an opinion rule that started reading after the done owed none.
+- **Fix:** the opinion look reads the sessions whose automatic landing is open as `push-held`, and a landing whose push one of them holds,
+  not pushed at its tip, keeps the due owed. `PushHeldAsync`, held by the opinion's part of the gate, owes one at the landing's occasion
+  for the session whose work the hand-on pushes. D173's FABRIC-CLOSE1h15 note has the behaviour.
+- **Verification:** red first: `OpinionGateTests` (3 `ClosesAsync` rows and the push-held sessions; 4 guard rows green),
+  `OpinionLookTests` (2 cases: no pass asked), `AutoLandingPushHeldTests` (the new case and CLOSE1h12's recovery case for an opinion;
+  its review case green as a guard). Then the driver's fast half is 9607 with main merged (9598 before; this row's 8 are
+  `OpinionGateTests`'), `OpinionLookTests` 6 of 6 (4 before), and the `AutoLanding` classes, run once by filter with
+  `git.process.runsettings`, 72 of 75 (74 before): the 3 timed out in the fixture's 60 s waits for a push or a landing to reach its
+  hold, a load timeout before any opinion is read, and pass alone.
+## 2026-10-19 — The driver's remaining 15-60 s signal waits used the shared two minutes (TESTPATIENCE2)
+
+- **Symptom:** under the merge gates' load, short bounds that elapse only on failure (polls, `WaitAsync` on a tick, hold waits)
+  failed merges all day.
+- **Root cause:** the bounds were 15-30 s (60 s in three `AutoLanding` bodies) on signals a starved machine delays.
+- **Fix:** each now uses `Poll.Patience` (two minutes, TESTPATIENCE1), and `Poll.Until`'s own default is `Patience`. Counts of
+  sites: `Poll.cs` 1; `Loop/` PauseTick 7, StopHoldTick 3, ChannelNextStepTick 2, DrivenSessionInput 2, OrphanedSession 3,
+  SessionRequestTick 2, AccountLimitTick 1, HandOverQuestTick 1; `Platform/` ChangeWatchProcess 6, ProcessStarts 4;
+  `Sessions/SessionRequestChange` 7; `Trees/` AutoLandingPress 7 (5 at 30 s, 2 at 60 s), AutoLandingSubmission 1, AutoLandingPushHeld 1
+  (60 s), RefWatchProcess 3, TreeLineLook 1; `Agents/ProcessJob` 2; `Quests/Intake` 1; `Accounts/HarnessRun` 1; `Plugins/WorkPeer` 1,
+  WorkProcess 1. The four usage tests' elapsed bounds (`ClaudeUsage` 10 s, `CodexUsage` 10 s, `ClaudeUsageProcess` 20 s,
+  `CodexUsageProcess` 20 s) are two minutes: each proves a 200 ms (or 2 s) patience was not run against a probe that never
+  answers, and two minutes still separates the two. No assertion changed.
+- **Verification:** see the branch's hand-back (touched fast classes, the driver fast half, the AutoLanding git classes, the touched
+  Process classes).
+
+## 2026-10-19 — The instance door's tests gave a stand-in two seconds to connect and answer (TESTWAIT7)
+
+- **Symptom:** beside loaded merges, four `InstanceDoorTests` failed (exit 2 for 0; "trees: Daoris is running on this home … did not
+  answer" where a refusal was expected); each passed alone.
+- **Root cause** (read, not reproduced): the test world gave the client `Answer = 2 s` for the connect, the hello and the result-by-key
+  ask, and the stand-in is served in process on the same starved machine, so a late connect or hello read as a silent instance.
+- **Fix:** the world's `Answer` and `Wait` are two minutes; only the two cases that serve nothing (a pipe nobody serves, the variable
+  naming one) pass a one-second `answer:`, since no load makes an unserved pipe answer, and the held-press case keeps its 500 ms
+  `Wait` (the elapse is its point). No assertion changed.
+- **Verification:** `InstanceDoorTests` plain three times, 21 passed each (3 s alone).
+
+## 2026-10-19 — Hold-wait bounds in the driver's fast half were seconds, on a signal that loaded merges delay (TESTWAIT8, TESTCLOCK1)
+
+- **Symptom:** `AutoLandingFixture.HeldAtThePushAsync` timed out its 60 s wait for the landing's branch hold four times across
+  CLOSE1h12's and PROCSPLIT1's runs; the like waits in other classes carry 10-30 s bounds.
+- **Root cause:** the waits are on the hold's own count (or the landing ending), so the bound only elapses on failure, but it was
+  short enough for a starved thread to reach it.
+- **Fix:** the fixture's wait is five minutes; `LandingHoldsTests`' `Bound` and `SessionsOutliveTheirLookTests`' `Bound` are two
+  minutes (its closing token five), `EntryLandingTests`' hold wait two, and `PluginCatalogTests`' "not run, only probed" elapsed bar
+  15 s (under the probe's 20 s patience, so it still proves the harness was not run). No assertion changed. The remaining bounds
+  are listed as rows in the branch's hand-back.
+- **Verification:** the touched fast classes plain three times, 129 passed each (21-26 s); `AutoLanding*` once under the git
+  settings: 72 of 74 passed, the two failures (`AutoLandingPressTests`' push-waiting theory, 30 s waits in a test body another
+  branch owns) pass alone. Also found in the fast half's one run: `DriverWatchTopicsTests.A_thousand_wakes_run_no_remote_sync` asserted
+  two reported looks the moment the quest's run had started, but a run starts inside the look and the look is reported after it; it
+  now waits for the second report (an ordering race, not a clock one; passes alone and three plain runs of the class).
+## 2026-10-19 — The driver's signal waits were 5-10 seconds, and load elapsed them (TESTPATIENCE1)
+
+- **Symptom:** nearly every merge on 2026-10-18/19 re-ran a gate for a fast test that failed on time alone (TESTCLOCK1's sweep found
+  about 100 such bounds).
+- **Root cause:** `WaitAsync(10 s)`, `Poll.Until(..., 10 s)` and `SpinUntil(..., 10 s)` wait on a signal that arrives in milliseconds
+  and a bound that elapses only on failure, but a starved thread reached ten seconds without a failure.
+- **Fix:** `Poll.Patience` (two minutes), defined once in the tests' `Poll.cs`, replaces the bound at 77 sites in 11 files:
+  `AcpBackgroundTests` 20, `AcpSteerTests` 37, `ToolActionsTests` 8, `ChatTurnsTests` 1, `DrivenInboxTests` 2, `SessionRequestsTests` 2,
+  `NodeRuntimeTests` 2, `ProcessStartsTests` 1, `WorkPeerTests` 2 (were 5 s), `HeldFactsTests` 1, `TreeLineLookTests` 1. Left as they were:
+  the elapsed-time bounds that state the claim, the staging delays, `ChildProcess.RunAsync`'s own 5 s argument, and the 15-30 s bounds
+  (see the hand-back's rows). No assertion changed.
+- **Verification:** the driver's fast half once, 9599 passed (4 m 43 s).
+
 ## 2026-10-18 — A step's next submission after the person's go-on was never sealed (FABRIC-CLOSE1c14)
 
 - **Symptom:** after the person's go-on on a held step that had submitted, the successor that old submission published stood unheld,

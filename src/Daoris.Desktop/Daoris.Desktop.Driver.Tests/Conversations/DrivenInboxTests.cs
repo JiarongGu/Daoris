@@ -333,8 +333,8 @@ public sealed class DrivenInboxTests
         Assert.Null(waiting?.Held);
         Assert.False(waiting?.Waits?.IsCompleted ?? true);
         gate.SetResult();
-        await pressing.WaitAsync(TimeSpan.FromSeconds(10));
-        await waiting!.Waits!.WaitAsync(TimeSpan.FromSeconds(10));
+        await pressing.WaitAsync(Desktop.Driver.Tests.Poll.Patience);
+        await waiting!.Waits!.WaitAsync(Desktop.Driver.Tests.Poll.Patience);
         Assert.Equal(1, landed);
         Assert.Equal("start with the tests", inbox.NextOrClose()?.Held?.Text);
     }

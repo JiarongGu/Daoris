@@ -114,6 +114,7 @@
   "asks.work.pausedQuest": "随委托 #{{id}} 暂缓，直到那个委托被恢复。",
   "asks.work.elsewhere": "已在 {{machine}} 上接下：本机的暂缓不涉及它。",
   "asks.work.elsewhereUnnamed": "已在另一台机器上接下：本机的暂缓不涉及它。",
+  "asks.work.reopenedTake": "你重新打开了该步骤所基于的工作，这一操作先于本机的接下到达了远端：本机的暂缓不涉及它。",
   "asks.work.outside": "在本机以 Daoris 之外的方式接下：暂缓不涉及它。",
   "asks.record.goAheads": "放行",
   "asks.goAhead.lead": "这些是它的会话各问过你一次的事项。这个需求上的每个会话下次开始时，都会拿到你的答复。",

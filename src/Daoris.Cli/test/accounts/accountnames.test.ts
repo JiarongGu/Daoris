@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  ACCOUNTS_FILE, AccountNameError, accountNames, forgetName, nameOf, newAccountId, renameAccount, resolveAccount, shownAs,
-  signInTarget,
+  ACCOUNTS_FILE, AccountNameError, accountNames, apartWords, signedInSentence, forgetName, nameOf, newAccountId, offeredName, renameAccount, resolveAccount,
+  shownAs, signInTarget,
 } from '../../src/accounts/accountnames.ts';
 import { readHarnessSettings } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
@@ -189,6 +189,71 @@ test('a sign-in reaches the account the driver reaches (the twin\'s table)', () 
   }
 });
 
+// ——— The name a sign-in's end offers (ACCOUNTID1): who signed in, where no other account has it; else who with the
+// organisation beside it, else with the plan, each a name the rename takes (one word: an organisation's spaces are dashes);
+// else none, and the person names it. Never written: the person's rename writes it (D66 §3).
+
+const OFFER_ROWS: [why: string, accounts: string, file: Cell, account: string, who: Cell, org: Cell, plan: Cell, offered: Cell][] = [
+  ['who signed in is offered', '["acct-1","acct-2"]', null, 'acct-2', 'person@example.invalid', 'Org B', 'max', 'person@example.invalid'],
+  ['an email another account is named takes its organisation beside it', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', 'Org B', 'max', 'person@example.invalid·Org-B'],
+  ['an email named in another case is named', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"Person@Example.invalid"}}}', 'acct-2', 'person@example.invalid', 'Org B', null, 'person@example.invalid·Org-B'],
+  ['an organisation\'s spaces are one dash each, since a name is one word', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', '  Org \u{9} of  B ', null, 'person@example.invalid·Org-of-B'],
+  ['the plan where no organisation is said', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', null, 'max', 'person@example.invalid·max'],
+  ['the plan where the organisation\'s name is taken too', '["acct-1","acct-2","acct-3"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"},"acct-3":{"name":"person@example.invalid·Org-B"}}}', 'acct-2', 'person@example.invalid', 'Org B', 'pro', 'person@example.invalid·pro'],
+  ['an organisation of nothing a name may hold is none', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', ' ` ', 'max', 'person@example.invalid·max'],
+  ['nothing tells them apart, so none is offered', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', null, null, null],
+  ['one organisation and no plan tell nothing apart', '["acct-1","acct-2","acct-3"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"},"acct-3":{"name":"person@example.invalid·Org-A"}}}', 'acct-2', 'person@example.invalid', 'Org A', null, null],
+  ['an offer longer than a name may be is not made', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"a234567890b234567890c234567890d234567890e234567890f@x.invalid"}}}', 'acct-2', 'a234567890b234567890c234567890d234567890e234567890f@x.invalid', 'Org B', 'max', null],
+  ['its own name is no other account\'s', '["acct-1"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-1', 'person@example.invalid', 'Org A', 'max', 'person@example.invalid'],
+  ['another agent\'s names are not this one\'s', '["acct-1","acct-2"]', '{"codex":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', 'Org B', 'max', 'person@example.invalid'],
+  ['nobody said is nothing offered', '["acct-1"]', null, 'acct-1', null, 'Org A', 'max', null],
+];
+
+test('a sign-in is offered the name the driver offers (the twin\'s table)', () => {
+  for (const [index, [why, accounts, file, account, who, org, plan, offered]] of OFFER_ROWS.entries()) {
+    const fx = makeFixture(`names-offer-${index}`);
+    holding(fx.root, file);
+
+    assert.equal(offeredName(list(accounts), accountNames(fx.root, 'claude-code'), account, who, org, plan), offered, why);
+    fx.cleanup();
+  }
+});
+
+// ——— What a sign-in's end says beside the email where another account already has it (ACCOUNTID1c): the organisation, else
+// the plan, by the test the offer uses, so the sentence and the offered name tell the same part; none where the email is not
+// another account's id or name, or where neither tells them apart.
+
+const APART_ROWS: [why: string, accounts: string, file: Cell, account: string, who: Cell, org: Cell, plan: Cell, apart: Cell][] = [
+  ['an email no other account has is said alone', '["acct-1","acct-2"]', null, 'acct-2', 'person@example.invalid', 'Org B', 'max', null],
+  ['an email another account is named says the organisation after it', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', 'Org B', 'max', 'Org B'],
+  ['an email named in another case says it too', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"Person@Example.invalid"}}}', 'acct-2', 'person@example.invalid', '  Org B ', null, 'Org B'],
+  ['the plan where no organisation is said', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', null, 'max', 'max'],
+  ['the plan where the organisation\'s name is taken too', '["acct-1","acct-2","acct-3"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"},"acct-3":{"name":"person@example.invalid·Org-B"}}}', 'acct-2', 'person@example.invalid', 'Org B', 'pro', 'pro'],
+  ['nothing tells them apart, so nothing is said', '["acct-1","acct-2"]', '{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}', 'acct-2', 'person@example.invalid', null, null, null],
+  ['nobody said is nothing said', '["acct-1"]', null, 'acct-1', null, 'Org A', 'max', null],
+];
+
+test('a sign-in\'s end tells a second sign-in of an email apart as the driver does (the twin\'s table)', () => {
+  for (const [index, [why, accounts, file, account, who, org, plan, apart]] of APART_ROWS.entries()) {
+    const fx = makeFixture(`names-apart-${index}`);
+    holding(fx.root, file);
+
+    assert.equal(apartWords(list(accounts), accountNames(fx.root, 'claude-code'), account, who, org, plan), apart, why);
+    fx.cleanup();
+  }
+});
+
+test('the sign-in\'s end sentence says the organisation after the email, and "by that name" for the offered name', () => {
+  assert.equal(signedInSentence('person@example.invalid', 'claude-code', null, 'acct-2', 'Org B'),
+    'signed in as person@example.invalid · Org B — this machine lists it as `acct-2`.');
+  assert.equal(signedInSentence('person@example.invalid', 'claude-code', 'person@example.invalid·Org-B', 'acct-2', 'Org B'),
+    'signed in as person@example.invalid · Org B — this machine lists it by that name.');
+  assert.equal(signedInSentence('person@example.invalid', 'claude-code', 'seat', 'acct-2', 'Org B'),
+    'signed in as person@example.invalid · Org B — this machine lists it as `seat`.');
+  assert.equal(signedInSentence('person@example.invalid', 'claude-code', null, 'acct-2', null),
+    'signed in as person@example.invalid — this machine lists it as `acct-2`.');
+});
+
 test('a new account takes a fresh id its name never shifts from', () => {
   const drawn = ['3f9c2a71', '0b7e4d22'];
 
@@ -230,6 +295,10 @@ test('each refusal says what was wrong and what is there, as the driver says it'
   };
 
   assert.match(refused('account-1', 'work'), /`work` already names `account-2`/);
+  // ACCOUNTID1c: an email taken names the way out, the organisation beside it or a name of one's own; a plain name only the latter.
+  assert.match(refused('account-1', 'work'), / and an id is one — give it a name of your own\.$/);
+  assert.match(refused('account-1', 'person@example.invalid', ['account-1', 'person@example.invalid']),
+    /name it `person@example\.invalid·<organization>`, with the organization it signed in to, or give it a name of your own\.$/);
   assert.match(refused('account-9', 'desk'), /no account `account-9`.*account-1, work \(account-2\)/);
   assert.match(refused('account-1', 'my seat', ['account-1']), /one word/);
   fx.cleanup();
@@ -248,4 +317,6 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   assert.deepEqual(rows('A_name_is_given_as_the_cli_gives_it'), RENAME_ROWS);
   assert.deepEqual(rows('Both_twins_write_the_same_file'), FILE_ROWS);
   assert.deepEqual(rows('A_sign_in_reaches_the_account_the_cli_reaches'), TARGET_ROWS);
+  assert.deepEqual(rows('A_sign_in_is_offered_the_name_the_cli_offers'), OFFER_ROWS);
+  assert.deepEqual(rows('A_sign_in_end_tells_a_second_sign_in_apart_as_the_cli_does'), APART_ROWS);
 });

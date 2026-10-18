@@ -516,48 +516,75 @@ public sealed class HarnessProbeTests : IDisposable
     /// <summary>
     /// A harness that volunteers an email, an organisation and a subscription tier when asked whether
     /// it is logged in — the shape <c>claude auth status</c> answers in. <paramref name="signedIn"/>
-    /// flips only the boolean; the rest is printed either way.
+    /// flips only the boolean; the rest is printed either way. The organisation is the home's <c>org.txt</c> where it has
+    /// one, else <c>Org A</c>; and with <paramref name="org"/> true the question asks it and the plan as Claude Code's does.
     /// </summary>
-    private HarnessToolchain Chatty(bool signedIn, string? account)
+    private HarnessToolchain Chatty(bool signedIn, string? account, bool org = false)
     {
         Directory.CreateDirectory(_home);
         var script = Path.Combine(_home, $"chatty-{signedIn}.mjs");
         File.WriteAllText(script, $$"""
+            import { existsSync, readFileSync } from 'node:fs';
             if (process.argv[2] === '--version') { console.log('chatty 1.0'); process.exit(0); }
-            console.log(JSON.stringify({ loggedIn: {{(signedIn ? "true" : "false")}}, email: 'someone@example.invalid', orgName: 'Secretive', subscriptionType: 'max' }));
+            const home = process.env.CHATTY_HOME;
+            const org = home && existsSync(home + '/org.txt') ? readFileSync(home + '/org.txt', 'utf8').trim() : 'Org A';
+            console.log(JSON.stringify({ loggedIn: {{(signedIn ? "true" : "false")}}, authMethod: 'claude.ai', email: 'person@example.invalid', orgName: org, subscriptionType: 'max' }));
             """);
+        var claude = new ClaudeCodeAdapter().Toolchain!.LoginCheck!;
         return new HarnessToolchain(
             Binary: ["node", script], VersionArguments: ["--version"],
             ProfileVariable: "CHATTY_HOME",
             LoginCheck: new LoginQuestion(
-                ["auth"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false", account));
+                ["auth"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false", account,
+                org ? claude.Org : null, org ? claude.Plan : null));
     }
 
     private static string Everything(HarnessReport report) =>
-        string.Join("|", report.Profiles.Select(p => $"{p.Name}:{p.Home}:{p.Login}:{p.Account}"))
-        + $"|{report.Version}|{report.Problem}|{report.OwnLogin}|{report.OwnAccount}";
+        string.Join("|", report.Profiles.Select(p => $"{p.Name}:{p.Home}:{p.Login}:{p.Account}:{p.Org}:{p.Plan}"))
+        + $"|{report.Version}|{report.Problem}|{report.OwnLogin}|{report.OwnAccount}|{report.OwnOrg}|{report.OwnPlan}";
 
     /// <summary>
-    /// 🔴 <b>Who is signed in, and nothing else</b> (D66 §3). The owner asked for an account to be
-    /// named by who signed in rather than by a name typed before anyone knew — so the one thing
-    /// besides the boolean the probe now takes is the name the tool gives, when its toolchain asks
-    /// for it and the answer is yes. The organisation and the tier are still never kept.
+    /// 🔴 <b>Who is signed in, its organisation and its plan, and nothing else</b> (D66 §3, ACCOUNTID1). The owner asked
+    /// for an account to be named by who signed in rather than by a name typed before anyone knew — so the probe takes the
+    /// name the tool gives, when its toolchain asks for it and the answer is yes; and since one email may sign in to two
+    /// organisations, the organisation and the plan beside it, read the same way and kept nowhere. Nothing else is taken.
     /// </summary>
     [Fact]
-    public async Task Who_is_signed_in_is_taken_when_the_toolchain_asks_and_nothing_else_is()
+    public async Task Who_the_organisation_and_the_plan_are_taken_when_the_toolchain_asks_and_nothing_else_is()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "account-1"));
 
         var report = await HarnessProbe.ProbeAsync(
-            "fake", Chatty(signedIn: true, account: @"""email""\s*:\s*""([^""]+)"""),
+            "fake", Chatty(signedIn: true, account: @"""email""\s*:\s*""([^""]+)""", org: true),
             command: null, new HarnessSettings(), _home);
 
-        Assert.Equal(LoginState.In, report.Profiles.Single().Login);
-        Assert.Equal("someone@example.invalid", report.Profiles.Single().Account);
+        var profile = report.Profiles.Single();
+        Assert.Equal((LoginState.In, "person@example.invalid", "Org A", "max"), (profile.Login, profile.Account, profile.Org, profile.Plan));
         // The tool's own home is asked the same way, so it is named the same way.
-        Assert.Equal("someone@example.invalid", report.OwnAccount);
-        Assert.DoesNotContain("Secretive", Everything(report));
-        Assert.DoesNotContain("max", Everything(report));
+        Assert.Equal(("person@example.invalid", "Org A", "max"), (report.OwnAccount, report.OwnOrg, report.OwnPlan));
+        Assert.DoesNotContain("claude.ai", Everything(report));
+    }
+
+    /// <summary>
+    /// ACCOUNTID1: one email signed in to two organisations is two accounts, each listed with its own organisation; where
+    /// the answer names none (an older CLI, a key, a stand-in answering the boolean), none is shown, never another's.
+    /// </summary>
+    [Fact]
+    public async Task Two_sign_ins_of_one_email_in_two_organisations_are_two_accounts_told_apart()
+    {
+        foreach (var (account, org) in new[] { ("acct-0000000a", "Org A"), ("acct-0000000b", "Org B") })
+        {
+            Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", account));
+            File.WriteAllText(Path.Combine(HarnessSettings.ProfileHome(_home, "fake", account), "org.txt"), org);
+        }
+
+        var report = await HarnessProbe.ProbeAsync(
+            "fake", Chatty(signedIn: true, account: @"""email""\s*:\s*""([^""]+)""", org: true),
+            command: null, new HarnessSettings(), _home);
+
+        Assert.Equal(
+            [("acct-0000000a", "person@example.invalid", "Org A"), ("acct-0000000b", "person@example.invalid", "Org B")],
+            report.Profiles.Select(p => (p.Name, p.Account, p.Org)).OrderBy(p => p.Name, StringComparer.Ordinal));
     }
 
     /// <summary>
@@ -596,6 +623,9 @@ public sealed class HarnessProbeTests : IDisposable
         Assert.Equal(LoginState.In, report.Profiles.Single().Login);
         Assert.Null(report.Profiles.Single().Account);
         Assert.DoesNotContain("example.invalid", Everything(report));
+        // Nor an organisation or a plan it did not ask for (ACCOUNTID1).
+        Assert.DoesNotContain("Org A", Everything(report));
+        Assert.DoesNotContain("max", Everything(report));
     }
 
     /// <summary>
@@ -608,12 +638,13 @@ public sealed class HarnessProbeTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "stale"));
 
         var report = await HarnessProbe.ProbeAsync(
-            "fake", Chatty(signedIn: false, account: @"""email""\s*:\s*""([^""]+)"""),
+            "fake", Chatty(signedIn: false, account: @"""email""\s*:\s*""([^""]+)""", org: true),
             command: null, new HarnessSettings(), _home);
 
         Assert.Equal(LoginState.Out, report.Profiles.Single().Login);
-        Assert.Null(report.Profiles.Single().Account);
-        Assert.Null(report.OwnAccount);
+        var nobody = ((string?)null, (string?)null, (string?)null);
+        Assert.Equal(nobody, (report.Profiles.Single().Account, report.Profiles.Single().Org, report.Profiles.Single().Plan));
+        Assert.Equal(nobody, (report.OwnAccount, report.OwnOrg, report.OwnPlan));
     }
 
     /// <summary>The configured command wins over the declared one — a machine's shim, as ever.</summary>

@@ -33,10 +33,10 @@ public static class WorkAbandoning
     public static AbandonPlan Plan(
         WorkPlan work, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, TreeOnlyHere> judged,
         IReadOnlyDictionary<string, TreeWork?> held, IReadOnlySet<string> archived,
-        IReadOnlyDictionary<string, (string? Base, string? Root)>? grounds = null)
+        IReadOnlyDictionary<string, (string? Base, string? Root)>? grounds = null, IReadOnlySet<string>? reopened = null)
     {
         var sessions = work.Pieces.Sessions;
-        var quests = work.Quests.Select(each => QuestAct(each.Quest, sessions, claims)).ToList();
+        var quests = work.Quests.Select(each => QuestAct(each.Quest, sessions, claims, reopened)).ToList();
         var landed = work.Pieces.Landings.Select(landing => landing.Session).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var trees = work.Pieces.Trees.Select(tree => TreeAct(tree, judged, landed, grounds)).ToList();
         var byKey = trees.GroupBy(tree => tree.Key, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
@@ -55,9 +55,12 @@ public static class WorkAbandoning
 
         // Whose take each taken quest is (D68 §4): this machine's, or another's.
         var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var reopened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in work.Quests.Select(each => each.Quest.Quest).Where(quest => quest.Status == "Taken"))
         {
-            claims[quest.Id] = await world.Service.ClaimAsync(quest.Id, ct).ConfigureAwait(false);
+            var (claim, why) = await world.Service.ClaimStandingAsync(quest.Id, ct).ConfigureAwait(false);
+            claims[quest.Id] = claim;
+            if (claim == "lost" && why == "source-reopened") reopened.Add(quest.Id);
         }
 
         IReadOnlyList<RepoView> registry = work.Pieces.Trees.Count == 0 ? [] : await world.Service.RegistryAsync(ct).ConfigureAwait(false);
@@ -81,7 +84,7 @@ public static class WorkAbandoning
         }
 
         var archived = new SessionArchive(world.Home).Marks().Keys.ToHashSet(StringComparer.Ordinal);
-        return Plan(work, claims, judged, held, archived, grounds) with
+        return Plan(work, claims, judged, held, archived, grounds, reopened) with
         {
             Abandoned = new AbandonRecord(world.Home).Last(scope, named),
         };
@@ -467,7 +470,8 @@ public static class WorkAbandoning
     }
 
     /// <summary>A quest's act (design §3.2): what Daoris made for this work on this machine goes, and what is somewhere else stays.</summary>
-    private static AbandonQuest QuestAct(WorkQuest quest, IReadOnlyList<WorkSession> sessions, IReadOnlyDictionary<string, string> claims)
+    private static AbandonQuest QuestAct(
+        WorkQuest quest, IReadOnlyList<WorkSession> sessions, IReadOnlyDictionary<string, string> claims, IReadOnlySet<string>? reopened)
     {
         var id = quest.Quest.Id;
         switch (quest.Quest.Status)
@@ -481,6 +485,9 @@ public static class WorkAbandoning
                 return sessions.Any(session => !session.Teammate && session.Record.Took && Same(session.Record.Quest, id))
                     ? new AbandonQuest(quest, AbandonAct.Decline)
                     : new AbandonQuest(quest, AbandonAct.Keep) { Why = AbandonWhy.TakenOutside };
+            case "Taken" when reopened?.Contains(id) == true && claims.GetValueOrDefault(id) == "lost":
+                // FABRIC-CLOSE1c20: lost to the person's own reopen, said as that, never as another machine's take.
+                return new AbandonQuest(quest, AbandonAct.Keep) { Why = AbandonWhy.SourceReopened };
             case "Taken":
                 return new AbandonQuest(quest, AbandonAct.Keep)
                 {
@@ -691,6 +698,7 @@ public static class WorkAbandoning
     private static string Because(AbandonKeep keep) => keep.Why switch
     {
         AbandonWhy.TakenElsewhere => $"taken on {keep.Machine ?? "another machine"}: its work is theirs; decline it on its page if you mean to stop it there.",
+        AbandonWhy.SourceReopened => "you reopened the work its step grew from, which reached the remote before this machine's take did: the step is open again for the work as it stands now.",
         AbandonWhy.TakenOutside => "taken here outside Daoris: its work is wherever its taker works, not in a tree Daoris made.",
         AbandonWhy.Done => "done: finished work keeps its record.",
         AbandonWhy.Teammate => $"it runs on {keep.Machine}; nothing this machine sends reaches it.",

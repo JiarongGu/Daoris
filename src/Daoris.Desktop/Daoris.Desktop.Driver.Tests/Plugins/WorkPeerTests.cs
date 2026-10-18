@@ -199,8 +199,8 @@ public sealed class WorkPeerTests
     {
         var stand = new Stand((frame, _) => Answering(frame, """["work/watch","work/step","work/perform"]""")) { End = "\r" };
 
-        var peer = await Started(stand).WaitAsync(TimeSpan.FromSeconds(5));
-        await peer.WatchAsync(Nothing, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+        var peer = await Started(stand).WaitAsync(Poll.Patience);
+        await peer.WatchAsync(Nothing, CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Equal(Declared, peer.Points);
     }
@@ -247,7 +247,7 @@ public sealed class WorkPeerTests
         var peer = new HookPeer(new StringReader(""), new Stuck(), "acme.deploy");
         var clock = System.Diagnostics.Stopwatch.StartNew();
 
-        await peer.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(15));
+        await peer.DisposeAsync().AsTask().WaitAsync(Poll.Patience);
 
         Assert.True(clock.Elapsed < HookProcess.Grace + TimeSpan.FromSeconds(3), $"the shutdown took {clock.Elapsed.TotalSeconds:0.#}s");
     }

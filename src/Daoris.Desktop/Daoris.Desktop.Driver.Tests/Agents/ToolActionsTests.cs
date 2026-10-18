@@ -117,7 +117,7 @@ public sealed class ToolActionsTests : IDisposable
 
         var run = actions.Start("gh", "download", null, line => { lock (lines) lines.Add(line); });
         Assert.Equal(("gh", "download", "2.62.0"), (run.Tool, run.Action, run.Version));
-        await body.Waiting.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await body.Waiting.Task.WaitAsync(Poll.Patience);
         Assert.False(run.Ended.IsCompleted, "a download is followed, never waited on");
         Assert.Same(run, actions.Running("gh"));
 
@@ -126,7 +126,7 @@ public sealed class ToolActionsTests : IDisposable
         Assert.Contains("GitHub CLI's download is still running", busy.Message);
 
         Assert.True(actions.Cancel("gh"));
-        var end = await run.Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        var end = await run.Ended.WaitAsync(Poll.Patience);
         Assert.True(end.Stopped);
         Assert.Equal(-1, end.ExitCode);
         Assert.Null(actions.Running("gh"));
@@ -143,7 +143,7 @@ public sealed class ToolActionsTests : IDisposable
         var lines = new List<string>();
 
         var run = actions.Start("gh", "use", null, line => { lock (lines) lines.Add(line); });
-        var end = await run.Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        var end = await run.Ended.WaitAsync(Poll.Patience);
 
         Assert.Equal(new ToolEnd("gh", "use", "2.62.0", 0, null, null, false, null), end);
         Assert.Equal(
@@ -158,14 +158,14 @@ public sealed class ToolActionsTests : IDisposable
     {
         BuiltIn("2.62.0");
         var actions = new ToolActions(Home, App, new Host(_ => Served()));
-        await actions.Start("gh", "use", "2.62.0", _ => { }).Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        await actions.Start("gh", "use", "2.62.0", _ => { }).Ended.WaitAsync(Poll.Patience);
 
-        var nothing = await actions.Start("gh", "update", null, _ => { }).Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        var nothing = await actions.Start("gh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);
         Assert.Equal(0, nothing.ExitCode);
         Assert.Equal("GitHub CLI 2.62.0 is the newest the lists name, and it is downloaded — nothing to do", nothing.Nothing);
 
         BuiltIn("2.62.0", "2.63.0");
-        var moved = await actions.Start("gh", "update", null, _ => { }).Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        var moved = await actions.Start("gh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);
         Assert.Equal(("2.63.0", 0), (moved.Version, moved.ExitCode));
         Assert.Equal("2.63.0", Tools.Read(Home).Entries["gh"].Version);
     }
@@ -179,7 +179,7 @@ public sealed class ToolActionsTests : IDisposable
             Content = new ByteArrayContent(Encoding.UTF8.GetBytes(new string('x', Bytes.Length))),
         }));
 
-        var end = await actions.Start("gh", "use", "2.62.0", _ => { }).Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        var end = await actions.Start("gh", "use", "2.62.0", _ => { }).Ended.WaitAsync(Poll.Patience);
         Assert.Equal((1, "hash", false), (end.ExitCode, end.Check, end.Stopped));
         Assert.Contains("served bytes whose SHA-256 is", end.Problem);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Tools)));
@@ -204,7 +204,7 @@ public sealed class ToolActionsTests : IDisposable
         BuiltIn("2.62.0");
         using var log = new MachineLog(Home, "driver");
         var actions = new ToolActions(Home, App, new Host(_ => Served()), log);
-        await actions.Start("gh", "download", null, _ => { }).Ended.WaitAsync(TimeSpan.FromSeconds(10));
+        await actions.Start("gh", "download", null, _ => { }).Ended.WaitAsync(Poll.Patience);
         log.Dispose();
 
         var text = string.Concat(Directory.EnumerateFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).Select(File.ReadAllText));

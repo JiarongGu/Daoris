@@ -598,7 +598,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     private static Task Until(Func<bool> condition) =>
-        Poll.Until(condition, () => "the intake never started", TimeSpan.FromSeconds(15));
+        Poll.Until(condition, () => "the intake never started", Poll.Patience);
 
     /// <summary>With no harness named for it, an ask is the declarations tier's alone — INT4a, unchanged.</summary>
     [Fact]

@@ -170,9 +170,17 @@ public static class QuestHandOver
 
         if (found.Status == "Taken")
         {
-            var take = ServiceClient.ReadTakes(json, new Dictionary<string, string> { [quest] = await service.ClaimAsync(quest, ct).ConfigureAwait(false) })[quest];
+            var (claim, why) = await service.ClaimStandingAsync(quest, ct).ConfigureAwait(false);
+            var take = ServiceClient.ReadTakes(json, new Dictionary<string, string> { [quest] = claim }, new Dictionary<string, string?> { [quest] = why })[quest];
             if (Planner.TakenAway(found, prior, take))
             {
+                // FABRIC-CLOSE1c20: a take lost to the person's reopen is said as that, never as another machine's.
+                if (take.Reopened)
+                {
+                    return (HandOver.Refused(HandOver.QuestReopened,
+                        $"#{quest} lost its take because you reopened the work its step grew from, so its work is not this machine's to hand over."), null);
+                }
+
                 return (HandOver.Refused(HandOver.QuestElsewhere,
                     $"#{quest} is not taken by this machine, so its work is not this machine's to hand over."), null);
             }

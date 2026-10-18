@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class LandingHoldsTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    // TESTCLOCK1: the waits are on the hold's own count, so the bound elapses only on a real failure.
+    private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
     private static readonly LandingAttempt Landed = new("feature/own", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", AcceptedBy.Auto)
     {

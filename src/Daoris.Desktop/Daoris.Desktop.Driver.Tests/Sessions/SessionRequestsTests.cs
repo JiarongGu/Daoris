@@ -200,7 +200,7 @@ public sealed class SessionRequestsTests : IDisposable
         using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete))
         {
             withdrawing = Task.Run(() => Requests.Withdraw("s1"));
-            await Poll.Until(() => !File.Exists(path), () => "the withdrawal never moved the request aside", TimeSpan.FromSeconds(10));
+            await Poll.Until(() => !File.Exists(path), () => "the withdrawal never moved the request aside", Poll.Patience);
 
             // The take's rename lands: on Windows its handle moves the file from wherever it now is, on Linux its name is gone.
             var from = OperatingSystem.IsWindows() ? Directory.GetFiles(Requests.Folder).SingleOrDefault() : path;
@@ -218,7 +218,7 @@ public sealed class SessionRequestsTests : IDisposable
             }
         }
 
-        var withdrawn = await withdrawing.WaitAsync(TimeSpan.FromSeconds(10));
+        var withdrawn = await withdrawing.WaitAsync(Poll.Patience);
 
         Assert.False(withdrawn && taken, "the door said withdrawn while the loop took it");
         Assert.True(withdrawn || taken, "neither the withdrawal nor the take has it");

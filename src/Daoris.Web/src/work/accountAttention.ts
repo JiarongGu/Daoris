@@ -1,6 +1,6 @@
 import i18n from '../locales/i18n';
 import type { Ask, Quest, Registration } from '../data/api';
-import { accountName, accountState, accountStates, joinChoices, ownState, runsFor, waitsOnPerson } from '../agents/agents';
+import { accountLabel, accountState, accountStates, joinChoices, ownState, runsFor, waitsOnPerson } from '../agents/agents';
 import { clockOf, list, moment } from '../locales/format';
 import {
   type AccountCooling, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, machineScope, workspaceScope,
@@ -211,7 +211,7 @@ function namedAccount(
   const refused = known === 'keyed' && holds === 'refused';
   return {
     id,
-    label: account ? accountName(account) : tickedName ?? id,
+    label: account ? accountLabel(account, tool) : tickedName ?? id,
     state: refused ? 'refused' : out ? 'out' : known,
     read: account?.read ?? null,
     until: cooling?.until ?? null,
@@ -279,13 +279,13 @@ function outsideOf(
     return state === 'in' || state === 'keyed';
   });
   if (ready) {
-    return { outside: { id: ready.name, label: accountName(ready), list: target, workspace: held.workspace }, readFirst: null };
+    return { outside: { id: ready.name, label: accountLabel(ready, tool), list: target, workspace: held.workspace }, readFirst: null };
   }
   const unread = candidates.find((account) => {
     const state = states.get(account.name);
     return state?.state === 'unknown' && !state.read;
   });
-  return { outside: null, readFirst: unread ? { id: unread.name, label: accountName(unread) } : null };
+  return { outside: null, readFirst: unread ? { id: unread.name, label: accountLabel(unread, tool) } : null };
 }
 
 /** What a held start holds, as its row's title: one quest by its name, one intake as Sessions names it, else counted. */
@@ -406,7 +406,8 @@ export function accountAttention(
       return [{
         id: `signed-out:${tool.name}/${account.name}`,
         kind: 'signed-out',
-        title: accountName(account),
+        // Told apart from another sign-in of its email by its organisation (ACCOUNTID1b).
+        title: accountLabel(account, tool),
         where: facts.product,
         // When it was read, which its row says as *read …*; since when it holds work nobody knows (UXFIX3).
         since: null,
@@ -414,7 +415,7 @@ export function accountAttention(
         detail: detail || null,
         account: {
           ...facts,
-          named: [{ id: account.name, label: accountName(account), state: refused ? 'refused' : 'out', read: state.read, until: null }],
+          named: [{ id: account.name, label: accountLabel(account, tool), state: refused ? 'refused' : 'out', read: state.read, until: null }],
           outside: null,
         },
       }];

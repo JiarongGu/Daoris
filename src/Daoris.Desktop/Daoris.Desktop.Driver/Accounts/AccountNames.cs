@@ -170,6 +170,64 @@ public static class AccountNames
         return null;
     }
 
+    /// <summary>What joins who signed in to what tells two of their sign-ins apart, in a name a sign-in's end offers.</summary>
+    public const string Apart = "·";
+
+    /// <summary>
+    /// The name a sign-in's end offers an account (ACCOUNTID1, D66 §3): who signed in, where no other account has it as its id
+    /// or its name; else who with the organisation beside it (<see cref="Apart"/>), else with the plan, the first of them
+    /// <see cref="Problem"/> takes, so accepting the offer names it; else none, and the person names it. One email signed in to
+    /// two organisations is two accounts, and the second's email was refused as taken. Offered, never written: the person's
+    /// rename writes it. The CLI's twin is <c>accountnames.ts</c>' <c>offeredName</c>, which holds this table's rows.
+    /// </summary>
+    /// <param name="accounts">The agent's accounts on this machine, <see cref="HarnessSettings.Profiles"/>.</param>
+    public static string? Offered(
+        IReadOnlyCollection<string> accounts, IReadOnlyDictionary<string, string> names, string account, string? who,
+        string? org, string? plan)
+    {
+        if (who?.Trim() is not { Length: > 0 } email) return null;
+        string?[] offers = [email, Beside(email, org), Beside(email, plan)];
+        return offers.FirstOrDefault(offer => offer is not null && Problem(accounts, names, account, offer) is null);
+    }
+
+    /// <summary>
+    /// A name is one word (rule 3): each run of what one may not hold, inside the part, is one dash; at its ends, nothing;
+    /// and a part of nothing else is nothing beside. The CLI's twin is <c>nameBeside</c>.
+    /// </summary>
+    public static string? Beside(string email, string? part)
+    {
+        var word = new System.Text.StringBuilder();
+        var gap = false;
+        foreach (var c in part ?? "")
+        {
+            if (char.IsWhiteSpace(c) || char.IsControl(c) || c == '`')
+            {
+                gap = word.Length > 0;
+                continue;
+            }
+
+            if (gap) word.Append('-');
+            gap = false;
+            word.Append(c);
+        }
+
+        return word.Length > 0 ? $"{email}{Apart}{word}" : null;
+    }
+
+    /// <summary>
+    /// What a sign-in's end says after the email where another account already has it as its id or name (ACCOUNTID1c): the
+    /// organisation, else the plan, the one <see cref="Offered"/> puts beside the email, trimmed; null where the email is
+    /// said alone — no other account has it, or neither tells them apart. The CLI's twin is <c>apartWords</c>.
+    /// </summary>
+    public static string? ApartWords(
+        IReadOnlyCollection<string> accounts, IReadOnlyDictionary<string, string> names, string account, string? who,
+        string? org, string? plan)
+    {
+        if (Offered(accounts, names, account, who, org, plan) is not { } offer || who?.Trim() is not { } email) return null;
+        if (offer == email) return null;
+        return offer == Beside(email, org) ? org?.Trim() : plan?.Trim();
+    }
+
     /// <summary>
     /// Give an account its name, or clear it with null or the account's own id (ACCT2): the person's word, both doors'. Asked
     /// <see cref="Problem"/> first, and refused with its sentence, writing nothing.
@@ -270,8 +328,18 @@ public static class AccountNames
             $"`{name?.Trim()}` is not a name a terminal can type: a name is one word, with no space or backtick, not starting with a dash.",
         AccountNameProblemKind.Long =>
             $"a name is at most {Longest} characters — `{name?.Trim()}` is {name?.Trim().Length}.",
-        _ => $"`{name?.Trim()}` already names `{problem.Other}` — each `{agent}` account has a name of its own, and an id is one.",
+        _ => $"`{name?.Trim()}` already names `{problem.Other}` — each `{agent}` account has a name of its own, and an id is one"
+            + $" — {TakenWayOut(name?.Trim() ?? "")}",
     };
+
+    /// <summary>
+    /// The way out of a name another account has (ACCOUNTID1c): an email is another sign-in's, so the organisation beside it
+    /// tells them apart; any other name, one of the person's own. The CLI's twin is <c>takenWayOut</c>.
+    /// </summary>
+    public static string TakenWayOut(string wanted) =>
+        wanted.Contains('@')
+            ? $"name it `{wanted}{Apart}<organization>`, with the organization it signed in to, or give it a name of your own."
+            : "give it a name of your own.";
 
     /// <summary>The name an entry holds, trimmed, or null where it holds none.</summary>
     private static string? Name(JsonObject entry) =>

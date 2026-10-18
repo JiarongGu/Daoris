@@ -362,14 +362,14 @@ public sealed class NodeRuntimeTests : IDisposable
         };
 
         var look = runtime.PassAsync(Look(Governed), CancellationToken.None);
-        await sending.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await sending.Task.WaitAsync(Poll.Patience);
         var wake = runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
 
         // A verb beside the loop, or a loop that lost the lease: it holds no lease, so it reads no unit and writes nothing.
         var verb = await new NodeRuntime(new NodeRecordFiles(_home, () => false), _port, () => _now, () => false).PassAsync(Look(Governed), CancellationToken.None);
         Assert.Empty(verb.Performed);
         release.SetResult();
-        await Task.WhenAll(look, wake).WaitAsync(TimeSpan.FromSeconds(10));
+        await Task.WhenAll(look, wake).WaitAsync(Poll.Patience);
 
         Assert.Single(_port.Sent);
         var attempt = Assert.Single(Record().Attempts);

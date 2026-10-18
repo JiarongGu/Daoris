@@ -53,6 +53,11 @@ Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside i
 *Left in your own tool home* (`WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
 ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand.
 
+**An account is named by one rule, wherever it is said** (`src/agents/agents.ts`, D125's ACCTNAME1 and ACCOUNTID1b notes):
+`accountName` leads a row, `accountWho` sits beside it, and `accountLabel` is the one line a chip, a pill, a note or the
+roster's namer (`settings/namer.ts`, so a session's header) says. Where two of an agent's sign-ins share an email, each
+says what tells it apart, after the email and once. A surface that names an account goes through these, never its own.
+
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
 detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim, and a status palette that
@@ -141,6 +146,10 @@ declares, a test apart from its source or a folder's top past twenty sources fai
 names that folder until a row cuts it into scopes. A gate that reads the whole tree globs from the project's root and
 names each path from the sources' top (`test/sources.ts`). A view in a folder the presentational boundary covers is an
 organism by name in `design/presentational.test.ts`.
+
+A take the person's own reopen made lose is said as that wherever a lost claim is read (FABRIC-CLOSE1c20): the hand-over's
+`quest-reopened`, the abandon's `source-reopened` and the pause's `asks.work.reopenedTake` each have their own sentence,
+never the one for a take on another machine.
 
 ## One UI, two shells
 

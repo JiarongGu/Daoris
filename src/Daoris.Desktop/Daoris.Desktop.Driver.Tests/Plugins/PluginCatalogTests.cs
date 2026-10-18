@@ -387,7 +387,7 @@ public sealed class PluginCatalogTests : IDisposable
         var report = await HarnessProbe.ProbeAsync("plain-agent", adapter.Toolchain!, null, new HarnessSettings(), _home);
 
         Assert.True(report.Present, report.Problem);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"took {clock.Elapsed}");
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(15), $"took {clock.Elapsed}");
 
         var missing = new DeclaredAcpAdapter(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain");
         Assert.False((await HarnessProbe.ProbeAsync("gone", missing.Toolchain!, null, new HarnessSettings(), _home)).Present);

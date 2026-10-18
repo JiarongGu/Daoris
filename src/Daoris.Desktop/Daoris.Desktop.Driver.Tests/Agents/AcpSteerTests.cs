@@ -193,18 +193,18 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("put PINEAPPLE after the words", [])));
-        var words = await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var words = await second.Task.WaitAsync(Poll.Patience);
 
         // 🔴 The task's prompt is answered, and the session is still working on the words: nothing closes it yet.
-        await Poll.Until(() => record.Lines.Contains("message:PINEAPPLE"), () => "the work after the hand-off never arrived", TimeSpan.FromSeconds(10));
+        await Poll.Until(() => record.Lines.Contains("message:PINEAPPLE"), () => "the work after the hand-off never arrived", Poll.Patience);
         await Task.Delay(100);
         Assert.False(run.IsCompleted);
         Assert.DoesNotContain("session/close", agent.Methods);
 
         agent.Push(Answer(words, "end_turn"));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal(["read the five files", "put PINEAPPLE after the words"], agent.Prompts);
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "session/close"], agent.Methods);
@@ -254,7 +254,7 @@ public sealed class AcpSteerTests
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked)
-            .WaitAsync(TimeSpan.FromSeconds(10));
+            .WaitAsync(Poll.Patience);
 
         Assert.Equal(["read the five files", "said while it opened"], agent.Prompts);
         Assert.Equal(
@@ -293,14 +293,14 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        var id = await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var id = await first.Task.WaitAsync(Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("the budget is in level.json", [])));
         // Held: nothing more goes to the agent while its turn runs.
         await Task.Delay(100);
         Assert.Single(agent.Prompts);
 
         agent.Push(Answer(id, "end_turn"));
-        await run.WaitAsync(TimeSpan.FromSeconds(10));
+        await run.WaitAsync(Poll.Patience);
 
         Assert.Equal(["read the five files", "the budget is in level.json"], agent.Prompts);
         Assert.Equal(
@@ -364,10 +364,10 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("one more thing", [])));
 
-        await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(TimeSpan.FromSeconds(10)));
+        await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(Poll.Patience));
         Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("1 message(s)"));
 
@@ -411,9 +411,9 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("one more thing", [])));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Internal error: busy"));
@@ -461,10 +461,10 @@ public sealed class AcpSteerTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event);
 
         var run = session.RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("stuck?", [])));
 
-        var failed = await Assert.ThrowsAnyAsync<DriverException>(() => run.WaitAsync(TimeSpan.FromSeconds(10)));
+        var failed = await Assert.ThrowsAnyAsync<DriverException>(() => run.WaitAsync(Poll.Patience));
 
         Assert.Contains("ECONNRESET", failed.Message);
         Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
@@ -506,13 +506,13 @@ public sealed class AcpSteerTests
         await session.OpenAsync("D:/fam/Game", CancellationToken.None);
         session.OnTaken(record.Asked);
         var turn = session.PromptAsync("read the five files", CancellationToken.None);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         var words = session.SayAsync(new ChatMessage("put PINEAPPLE after the words", []) { Id = "said-c1" }, CancellationToken.None);
-        var id = await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var id = await second.Task.WaitAsync(Poll.Patience);
 
-        await Assert.ThrowsAnyAsync<DriverException>(() => turn.WaitAsync(TimeSpan.FromSeconds(10)));
+        await Assert.ThrowsAnyAsync<DriverException>(() => turn.WaitAsync(Poll.Patience));
         agent.Push(Answer(id, "end_turn"));
-        Assert.Equal("end_turn", await words.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal("end_turn", await words.WaitAsync(Poll.Patience));
         Assert.Equal(["taken:said-c1:put PINEAPPLE after the words", "message:PINEAPPLE", "turn:end_turn"], record.Lines);
         session.Release();
     }
@@ -554,16 +554,16 @@ public sealed class AcpSteerTests
         session.OnTaken(record.Asked);
         Assert.True(session.NextStep);
         var turn = session.PromptAsync("read the five files", CancellationToken.None);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         var words = session.SayAsync(new ChatMessage("put PINEAPPLE after the words", []) { Id = "said-c1" }, CancellationToken.None);
-        var id = await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var id = await second.Task.WaitAsync(Poll.Patience);
 
-        Assert.Equal("end_turn", await turn.WaitAsync(TimeSpan.FromSeconds(10)));
-        await Poll.Until(() => record.Lines.Contains("message:PINEAPPLE"), () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+        Assert.Equal("end_turn", await turn.WaitAsync(Poll.Patience));
+        await Poll.Until(() => record.Lines.Contains("message:PINEAPPLE"), () => string.Join(" | ", record.Lines), Poll.Patience);
         Assert.False(words.IsCompleted);
 
         agent.Push(Answer(id, "end_turn"));
-        Assert.Equal("end_turn", await words.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal("end_turn", await words.WaitAsync(Poll.Patience));
         Assert.Equal(["read the five files", "put PINEAPPLE after the words"], agent.Prompts);
         Assert.Equal(
             ["turn:end_turn", "taken:said-c1:put PINEAPPLE after the words", "message:PINEAPPLE", "turn:end_turn"],
@@ -655,11 +655,11 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files in reverse", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await Poll.Until(() => record.Lines.Contains("tool:read-1:pending"), () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
+        await Poll.Until(() => record.Lines.Contains("tool:read-1:pending"), () => string.Join(" | ", record.Lines), Poll.Patience);
 
         var now = await inbox.HoldNowAsync(new ChatMessage("put MANGO after the words", []));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal(new SentNow("now", true, null), now);
         Assert.Equal("end_turn", outcome.StopReason);
@@ -724,12 +724,12 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("put PINEAPPLE after the words", [])));
-        await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await second.Task.WaitAsync(Poll.Patience);
 
         var now = await inbox.HoldNowAsync(new ChatMessage("stop: the tests are in /spec", []));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal(new SentNow("now", true, null), now);
         Assert.Equal("end_turn", outcome.StopReason);
@@ -783,10 +783,10 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await Poll.Until(() => record.Lines.Contains("tool:read-1:"), () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
+        await Poll.Until(() => record.Lines.Contains("tool:read-1:"), () => string.Join(" | ", record.Lines), Poll.Patience);
         await inbox.HoldNowAsync(new ChatMessage("one more thing", []));
-        await run.WaitAsync(TimeSpan.FromSeconds(10));
+        await run.WaitAsync(Poll.Patience);
 
         Assert.Contains("turn:end_turn", record.Lines);
         Assert.DoesNotContain("tool:read-1:cut", record.Lines);
@@ -826,9 +826,9 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         Assert.Equal(new SentNow("now", true, null), await inbox.HoldNowAsync(new ChatMessage("one more thing", [])));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
@@ -881,9 +881,9 @@ public sealed class AcpSteerTests
 
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
             .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
         Assert.Equal(new SentNow("now", true, null), await inbox.HoldNowAsync(new ChatMessage("one more thing", [])));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Equal(["read the five files", "one more thing"], prompts);
@@ -928,12 +928,12 @@ public sealed class AcpSteerTests
         session.OnTaken(record.Asked);
         Assert.True(session.Steers);
         var turn = session.PromptAsync("read the five files", CancellationToken.None);
-        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await first.Task.WaitAsync(Poll.Patience);
 
         var steered = await session.SteerAsync(new ChatMessage("put MANGO after the words", []) { Id = "said-c1" }, CancellationToken.None);
 
         Assert.Equal("injected", steered);
-        Assert.Equal("end_turn", await turn.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal("end_turn", await turn.WaitAsync(Poll.Patience));
         Assert.Equal(["taken:said-c1:put MANGO after the words", "message:MANGO", "turn:end_turn"], record.Lines);
         session.Release();
 

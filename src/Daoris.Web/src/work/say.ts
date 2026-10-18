@@ -143,6 +143,7 @@ export const HAND_OVER: Record<string, string> = {
   // A quest's session (MIXAGENT1a-ii, D163 point 1): what its judge refuses beside the conversation's.
   'quest-closed': 'work.handOver.refused.questClosed',
   'quest-elsewhere': 'work.handOver.refused.questElsewhere',
+  'quest-reopened': 'work.handOver.refused.questReopened',
   'not-last-run': 'work.handOver.refused.notLastRun',
   'parked': 'work.handOver.refused.parked',
   'no-door': 'work.handOver.refused.noDoor',

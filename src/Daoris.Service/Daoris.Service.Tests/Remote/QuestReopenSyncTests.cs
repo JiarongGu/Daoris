@@ -491,4 +491,199 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
 
         Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's second session.", Now.AddHours(7))).Moved);
     }
+
+    // ——— FABRIC-CLOSE1c21: the pass that finds such a take lost, stopped part way and run again after a restart; and what the take
+    // made on the step going with it.
+
+    /// <summary>Where B's pass stops: inside its integration before the commit, or after it, before its push reached the remote or before
+    /// the answer to a push the remote kept.</summary>
+    public enum Stop { BeforeTheCommit, BeforeThePushReached, BeforeThePushAnswered }
+
+    /// <summary>
+    /// A machine that stops inside a write: the cursor's write is the integration's last, so every rewrite the rebase made before it is
+    /// undone with it. Dropped again before the restart.
+    /// </summary>
+    private static async Task StopAtTheCursorAsync(SqliteConnection connection, bool stopping)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = stopping
+            ? """
+              CREATE TRIGGER stop_insert BEFORE INSERT ON quest_cursor BEGIN SELECT RAISE(ABORT, 'the machine stopped'); END;
+              CREATE TRIGGER stop_update BEFORE UPDATE ON quest_cursor BEGIN SELECT RAISE(ABORT, 'the machine stopped'); END;
+              """
+            : "DROP TRIGGER stop_insert; DROP TRIGGER stop_update;";
+        await command.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// B's pass finds its take lost to the reopen and stops part way, and B restarts: its store opened again on the same connection, then
+    /// a pass run again. Stopped before the commit, the integration is undone whole and the next pass finds the loss; stopped after it, the
+    /// loss and the cursor stand, and the next pass pushes the conflict, or numbers the one the remote already kept. Either way the take is
+    /// lost once: one conflict, reported by one pass, kept once at the remote and on every machine (a third fetching as they move, a fourth
+    /// from nothing), with nothing left to go up, B's cursor where the remote's numbers end, and a fresh take of the open step holding.
+    /// </summary>
+    [Theory]
+    [InlineData(Stop.BeforeTheCommit)]
+    [InlineData(Stop.BeforeThePushReached)]
+    [InlineData(Stop.BeforeThePushAnswered)]
+    public async Task A_pass_that_loses_a_stale_take_stopped_part_way_and_run_again_after_a_restart_loses_it_once(Stop stop)
+    {
+        var (_, step, _, grows) = await TakenBeforeTheReopenReachedBAsync();
+        var connection = _connections[1];
+        var fetched = (await _remote.OperationsSinceAsync(0)).Through;
+        var cursor = await _b.CursorAsync(Workspaces.Default);
+        var reported = new List<QuestOperation>();
+
+        if (stop == Stop.BeforeTheCommit)
+        {
+            await StopAtTheCursorAsync(connection, stopping: true);
+            await Assert.ThrowsAsync<SqliteException>(() => SyncAsync(_b));
+            await StopAtTheCursorAsync(connection, stopping: false);
+            Assert.Equal((QuestClaim.Unconfirmed, cursor, QuestStatus.Taken),
+                (await _b.ClaimAsync(step.Id), await _b.CursorAsync(Workspaces.Default), (await _b.FindAsync(step.Id))!.Status));
+        }
+        else
+        {
+            var stopped = await QuestSync.RunAsync(
+                _b, _ => true, new InterruptedRemote(new StoreRemote(_remote), reaches: stop == Stop.BeforeThePushAnswered), Workspaces.Default);
+            Assert.NotNull(stopped.Problem);
+            reported.AddRange(stopped.Conflicts);
+            Assert.Equal((QuestClaim.Lost, fetched), (await _b.ClaimAsync(step.Id), await _b.CursorAsync(Workspaces.Default)));
+        }
+
+        var restarted = await QuestStore.OpenAsync(connection);
+        Assert.Equal(_b.Machine, restarted.Machine);
+        var again = await SyncAsync(restarted);
+        reported.AddRange(again.Conflicts);
+        await SyncAsync(_a);
+        await SyncAsync(_c);
+        var zero = await OpenAsync();
+        await SyncAsync(zero);
+
+        Assert.Null(again.Problem);
+        Assert.Empty(again.Refused);
+        Assert.Equal(stop == Stop.BeforeThePushAnswered ? 0 : 1, again.Pushed);
+        var lost = Assert.Single(reported);
+        Assert.Equal((step.Id, QuestStatus.Taken, "B's session."), (lost.Quest, lost.Attempted, lost.Note));
+        Assert.Equal((QuestClaim.Lost, true), (await restarted.ClaimAsync(step.Id), await restarted.LostToTheReopenAsync(step.Id)));
+        Assert.Empty(await restarted.PendingAsync(Workspaces.Default, _ => true));
+        // The cursor is consistent: B holds every operation the remote numbered, under the number the remote gave it, and its cursor
+        // names no number the remote has not given. A pass that pushed leaves its cursor where its fetch ended, as every push does, and
+        // the next pass brings it level with nothing to push or report.
+        var numbered = (await _remote.OperationsSinceAsync(0)).Operations;
+        foreach (var id in numbered.Select(o => o.Quest).Distinct())
+        {
+            Assert.Equal(numbered.Where(o => o.Quest == id).Select(o => (o.Machine, o.Sequence, o.Number)),
+                (await restarted.HistoryAsync(id)).Select(o => (o.Machine, o.Sequence, o.Number)));
+        }
+
+        Assert.InRange(await restarted.CursorAsync(Workspaces.Default), fetched, numbered[^1].Number!.Value);
+        var level = await SyncAsync(restarted);
+        Assert.Equal((0, 0, numbered[^1].Number), (level.Pushed, level.Conflicts.Count, (long?)await restarted.CursorAsync(Workspaces.Default)));
+        var kept = await _remote.HistoryAsync(step.Id);
+        Assert.Equal(QuestOperationKind.Conflict, Assert.Single(kept, o => o.Machine == _b.Machine).Kind);
+        foreach (var store in new[] { _a, restarted, _c, zero, _remote })
+        {
+            Assert.Equal(kept.Select(o => (o.Machine, o.Sequence, o.Kind)), (await store.HistoryAsync(step.Id)).Select(o => (o.Machine, o.Sequence, o.Kind)));
+            var open = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Open, grows), (open.Status, open.GrewFrom));
+            Assert.Equal([(_b.Machine, QuestStatus.Taken, "B's session.")], open.Conflicts.Select(c => (c.Machine, c.Attempted, c.Note)));
+        }
+
+        Assert.True((await restarted.MoveAsync(step.Id, QuestStatus.Taken, "B's second session.", Now.AddHours(7))).Moved);
+        Assert.Empty((await SyncAsync(restarted)).Refused);
+        Assert.Equal(QuestClaim.Held, await restarted.ClaimAsync(step.Id));
+        Assert.Equal(QuestStatus.Taken, (await _remote.FindAsync(step.Id))!.Status);
+    }
+
+    /// <summary>
+    /// B works on the step it took before the reopen and its rebind reached it, before syncing: it binds, submits, and its submission
+    /// publishes the chain's next step. When its take loses, the bind, the submission and the step go with it: none reaches the remote, and
+    /// none stands on A, on B or at the remote. B's claim reads lost to the person's reopen, the conflict says so, and the step stays open on
+    /// the new submission, bound to nothing and sealed by nothing. Raced, A's reopen, submission and rebind reach the remote between B's
+    /// fetch and its push, so B's push stands on a base the step has moved past: the remote takes nothing of the step, and nothing of the
+    /// step it published either, since that grew from a submission the remote does not hold; B goes round, and its rebase loses them.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_take_lost_to_the_reopen_takes_its_bind_its_submission_and_the_step_it_published_with_it_everywhere(bool raced)
+    {
+        var quest = await _a.PublishAsync("Asker", "Federated", "Close in a chain", "why", Now,
+            then: [new QuestStep("Federated", "Verify {parent}", "Look at it."), new QuestStep("Federated", "Publish {parent}", "Put it live.")]);
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
+        var built = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
+        var step = built.FollowUp!;
+        var first = new QuestOperationRef(built.Quest!.Submission!.Machine, built.Quest.Submission.Sequence);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(QuestReopenRefusal.None, (await _a.ReopenAsync(quest.Id, first, "Build it again.", Now.AddHours(3))).Refusal);
+        var again = await _a.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4));
+        var grows = new QuestOperationRef(again.Quest!.Submission!.Machine, again.Quest.Submission.Sequence);
+        if (!raced) await SyncAsync(_a);
+
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(5))).Moved);
+        Assert.True((await _b.BindAsync(step.Id, Graph, Now.AddHours(5))).Moved);
+        var verified = await _b.SubmitAsync(step.Id, "Verified.", [], Now.AddHours(6), session: "s0b1c2d3");
+        var next = verified.FollowUp!;
+        Assert.Equal(step.Id, next.Parent);
+        var report = raced
+            ? await QuestSync.RunAsync(_b, _ => true, new RacedRemote(new StoreRemote(_remote), () => SyncAsync(_a)), Workspaces.Default)
+            : await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Null(report.Problem);
+        Assert.Empty(report.Refused);
+        Assert.Empty(report.Behind);
+        Assert.Equal((QuestClaim.Lost, true), (await _b.ClaimAsync(step.Id), await _b.LostToTheReopenAsync(step.Id)));
+        var lost = Assert.Single(report.Conflicts);
+        Assert.Equal((step.Id, QuestStatus.Taken), (lost.Quest, lost.Attempted));
+        Assert.StartsWith("B's session. ", lost.Note);
+        Assert.Contains("submission", lost.Note);
+        Assert.Contains("reopen", lost.Note);
+        Assert.DoesNotContain("winner", lost.Note);
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var open = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Open, (QuestHold?)null, grows), (open.Status, open.Hold, open.GrewFrom));
+            Assert.Equal(((string?)null, (QuestSubmission?)null), (open.Closure, open.Submission));
+            Assert.Equal([(_b.Machine, QuestStatus.Taken, lost.Note)], open.Conflicts.Select(c => (c.Machine, c.Attempted, c.Note)));
+            Assert.DoesNotContain(await store.HistoryAsync(step.Id),
+                o => o.Kind is QuestOperationKind.Bound or QuestOperationKind.Submitted or QuestOperationKind.Taken);
+            Assert.Null(await store.FindAsync(next.Id));
+            Assert.Empty(await store.HistoryAsync(next.Id));
+        }
+
+        Assert.Equal(QuestClaim.None, await _b.ClaimAsync(next.Id));
+        // The step is A's chain's again: a fresh take of it binds, and its submission publishes the next step anew.
+        Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(7))).Moved);
+        Assert.True((await _a.BindAsync(step.Id, Graph, Now.AddHours(7))).Moved);
+        var anew = await _a.SubmitAsync(step.Id, "Verified anew.", [], Now.AddHours(8));
+        Assert.Equal(next.Id, anew.FollowUp!.Id);
+        Assert.Empty((await SyncAsync(_a)).Refused);
+        Assert.Equal(QuestStatus.Open, (await _remote.FindAsync(next.Id))!.Status);
+    }
+
+    /// <summary>
+    /// A step whose source never leaves its machine (the source's receiver is local, the step's shared) goes up as it did: the remote holds
+    /// nothing of the source, so it waits on no submission of it, and takes the step in the first push.
+    /// </summary>
+    [Fact]
+    public async Task A_step_whose_source_never_leaves_its_machine_still_goes_up_at_once()
+    {
+        var quest = await _a.PublishAsync("Asker", "Local", "Close in a graph", "why", Now,
+            then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
+        var built = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
+        var grewFrom = new QuestOperationRef(built.Quest!.Submission!.Machine, built.Quest.Submission.Sequence);
+
+        var report = await QuestSync.RunAsync(_a, to => to == "Federated", new StoreRemote(_remote), Workspaces.Default);
+
+        Assert.Equal((1, 0, 0), (report.Pushed, report.Behind.Count, report.Refused.Count));
+        Assert.Null(await _remote.FindAsync(quest.Id));
+        Assert.Equal(grewFrom, (await _remote.FindAsync(built.FollowUp!.Id))!.GrewFrom);
+    }
 }

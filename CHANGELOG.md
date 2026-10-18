@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- The desktop names two sign-ins of one email apart too. An agent's page, its own sign-in, the start's account picker, *What
+  needs you* and a session's account say the organisation after the email where another sign-in shares it (else the plan),
+  once: an account named `person@example.invalid·Org-B` says neither again. Adding an account offers the name the sign-in's end
+  offered.
+- Two Claude sign-ins of one email in different organisations are told apart. Daoris reads each sign-in's organisation and plan
+  from `claude auth status` beside its email, fresh and kept nowhere. `daoris agent list` says the organisation after the email
+  where another account shares it, and a sign-in whose email already names another account is offered the email with its
+  organisation (`person@example.invalid·Org-B`) as its name, where the email alone was refused as taken.
 - Accept, on a session's work or on a whole line of work, now looks at its quest again when it had to wait behind another landing
   of the same work. Where the quest was taken back or its result handed in again meanwhile, nothing lands and Accept says why; where
   that happens just before the push, the branch stays and `daoris-driver trees hand <session>` pushes it. A hold alone does not stop
@@ -15,6 +23,9 @@ with the version and date at release.
 - Under *Accept automatically*, a session you carry on with more words after its work landed now lands again when it is done
   again: its branch moves on and its pull-request plugin pushes once. Before, the later work waited for your Accept. A session
   stuck that way lands at the first look after the update, or is closed where nothing new is in it.
+- Under *Accept automatically*, work whose branch was made but whose push waits for a second opinion now has that opinion asked by
+  the driver at its next look, as the landing's gate says, and pushes once it settles. Before, it waited until you asked one
+  (`daoris-driver opinion ask`), and an ask made then could be dropped at the next look before it was read.
 - The full gates can run in a worktree of their own while merges continue (`node tools/merge-branch.mjs --full --beside`,
   GATEWT1), and `publish:desktop --stage --from-gated <commit>` stages the commit they passed, built in that worktree.
 - On Windows, where the git Daoris finds is Git for Windows', Daoris's own git commands now start one process where they

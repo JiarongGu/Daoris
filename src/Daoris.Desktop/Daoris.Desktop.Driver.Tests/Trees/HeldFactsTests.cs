@@ -242,7 +242,7 @@ public sealed partial class HeldFactsTests : IDisposable
             File.WriteAllText(grown.FilePath, text.Replace("daoris/first", "daoris/holder", StringComparison.Ordinal));
         }
 
-        Assert.True(edit.Wait(TimeSpan.FromSeconds(10)));
+        Assert.True(edit.Wait(Poll.Patience));
         Assert.Equal(["daoris/holder", "daoris/second"], grown.All().Select(each => each.Branch));
     }
 

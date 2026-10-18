@@ -186,6 +186,74 @@ export function nameProblem(
   return null;
 }
 
+/** What joins who signed in to what tells two of their sign-ins apart, in a name a sign-in's end offers (ACCOUNTID1). */
+export const NAME_APART = '·';
+
+/**
+ * The name a sign-in's end offers an account (ACCOUNTID1, rule 2): who signed in, where no other account has it as its id or
+ * its name; else who with the organisation beside it (`NAME_APART`), else with the plan, the first of them `nameProblem`
+ * takes, so accepting the offer names it; else none, and the person names it. One email signed in to two organisations is
+ * two accounts, and the second's email was refused as taken. Offered, never written. The driver's twin is
+ * `AccountNames.Offered`, whose table is `OFFER_ROWS` in `accountnames.test.ts`.
+ */
+export function offeredName(
+  accounts: string[], names: Record<string, string>, account: string, who: string | null, org: string | null, plan: string | null,
+): string | null {
+  const email = who?.trim() ?? '';
+  if (email.length === 0) return null;
+  return [email, nameBeside(email, org), nameBeside(email, plan)]
+    .find((offer) => offer !== null && nameProblem(accounts, names, account, offer) === null) ?? null;
+}
+
+/**
+ * Who signed in with what tells their sign-ins apart beside it (`NAME_APART`), as `offeredName` offers it: a name is one
+ * word (rule 3), so each run of what one may not hold inside the part is one dash, and at its ends nothing. Null where the
+ * part holds nothing else.
+ */
+export function nameBeside(who: string, part: string | null): string | null {
+  const word = (part ?? '').split(/[\s\p{Cc}`]+/u).filter(Boolean).join('-');
+  return word.length > 0 ? `${who.trim()}${NAME_APART}${word}` : null;
+}
+
+/**
+ * What a sign-in's end says after the email where another account already has it as its id or name (ACCOUNTID1c): the
+ * organisation, else the plan, the one `offeredName` puts beside the email, trimmed; null where the email is said alone — no
+ * other account has it, or neither tells them apart. The driver's twin is `AccountNames.ApartWords`, whose table is
+ * `APART_ROWS` in `accountnames.test.ts`.
+ */
+export function apartWords(
+  accounts: string[], names: Record<string, string>, account: string, who: string | null, org: string | null, plan: string | null,
+): string | null {
+  const email = who?.trim() ?? '';
+  const offer = offeredName(accounts, names, account, who, org, plan);
+  if (offer === null || offer === email) return null;
+  return (offer === nameBeside(email, org) ? org : plan)?.trim() ?? null;
+}
+
+/**
+ * The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once; where the email is another sign-in's,
+ * the organisation (else the plan) is said after it (ACCOUNTID1c), and a name that is the email with it beside is "that
+ * name". The driver's twin is `AgentsRoutes.SignedInSentence`.
+ */
+export function signedInSentence(account: string | null, harness: string, called: string | null, id: string, apart: string | null): string {
+  if (!account) return `signed in — \`${harness}\` did not say who, so this machine lists it as \`${called ?? id}\`.`;
+  const who = apart === null ? account : `${account} · ${apart}`;
+  const byName = called !== null && (sameName(account, called) || (apart !== null && sameName(nameBeside(account, apart) ?? '', called)));
+  return byName
+    ? `signed in as ${who} — this machine lists it by that name.`
+    : `signed in as ${who} — this machine lists it as \`${called ?? id}\`.`;
+}
+
+/**
+ * The way out of a name another account has (ACCOUNTID1c): an email is another sign-in's, so the organisation beside it tells
+ * them apart; any other name, one of the person's own. The driver says it in `AccountNames.Sentence`.
+ */
+export function takenWayOut(wanted: string): string {
+  return wanted.includes('@')
+    ? `name it \`${wanted}${NAME_APART}<organization>\`, with the organization it signed in to, or give it a name of your own.`
+    : 'give it a name of your own.';
+}
+
 function sentence(
   agent: string, problem: NameProblem, account: string, name: string | null, accounts: string[], names: Record<string, string>,
 ): string {
@@ -200,7 +268,9 @@ function sentence(
     case 'long':
       return `a name is at most ${NAME_LONGEST} characters — \`${wanted}\` is ${wanted.length}.`;
     default:
-      return `\`${wanted}\` already names \`${problem.other}\` — each \`${agent}\` account has a name of its own, and an id is one.`;
+      // ACCOUNTID1c: the way out. An email is another sign-in's, and the organisation tells them apart.
+      return `\`${wanted}\` already names \`${problem.other}\` — each \`${agent}\` account has a name of its own, and an id is one`
+        + ` — ${takenWayOut(wanted)}`;
   }
 }
 

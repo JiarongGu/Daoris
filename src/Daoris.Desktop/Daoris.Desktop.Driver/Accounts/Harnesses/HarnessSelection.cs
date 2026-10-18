@@ -230,7 +230,10 @@ public static class HarnessProbe
     /// when it was read, so the binary can be asked with no account asked at all.
     /// </param>
     /// <param name="clock">When an answer came, for <see cref="ProfileReport.Read"/>; the system's, unless a roster's.</param>
-    /// <param name="answered">Told each question that was asked, the account's name or null for the tool's own: the roster keeps it.</param>
+    /// <param name="answered">
+    /// Told each question that was asked, the account's name or null for the tool's own, with what it said: the roster keeps
+    /// the state under the home and who, the organisation and the plan in memory (D66 §3, ACCOUNTID1).
+    /// </param>
     public static async Task<HarnessReport> ProbeAsync(
         string adapter,
         HarnessToolchain toolchain,
@@ -243,7 +246,7 @@ public static class HarnessProbe
         bool own = true,
         Func<string, bool>? asks = null,
         Func<DateTimeOffset>? clock = null,
-        Action<string?, LoginState, string?, DateTimeOffset>? answered = null)
+        Action<string?, LoginRead, DateTimeOffset>? answered = null)
     {
         var now = clock ?? (() => DateTimeOffset.UtcNow);
         // 🔴 Rule 4, applied HERE and not only where a session spawns: the explicit command, then the
@@ -290,21 +293,21 @@ public static class HarnessProbe
             var said = prior?.Profiles.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
             var kept = Kept(said);
             var answer = !present ? new LoginAnswer(LoginState.Unknown, null, false)
-                : asks is not null && !asks(name) ? new LoginAnswer(kept.Login, kept.Account, false)
+                : asks is not null && !asks(name) ? LoginAnswer.Of(kept, asked: false)
                 : await LoginAsync(
                     resolved, toolchain, profileHome, isManaged, ct, key, ProbeLock.PathOf(home, owner, name),
                     busy is null ? null : () => busy(name), kept).ConfigureAwait(false);
             profiles.Add(new ProfileReport(
                 name, profileHome, answer.Login, answer.Account, held is null ? null : HarnessKeys.Handle(held),
-                Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name)));
+                Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name), answer.Org, answer.Plan));
         }
 
         // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
         // answers about wherever it keeps its own credential. Read-only; Daoris never logs into it, and
         // asks it only at a person's press (TOOL6g).
-        (LoginState Login, string? Account) keptOwn = (prior?.OwnLogin ?? LoginState.Unknown, prior?.OwnAccount);
+        var keptOwn = new LoginRead(prior?.OwnLogin ?? LoginState.Unknown, prior?.OwnAccount, prior?.OwnOrg, prior?.OwnPlan);
         var ownAnswer = !present ? new LoginAnswer(LoginState.Unknown, null, false)
-            : !own ? new LoginAnswer(keptOwn.Login, keptOwn.Account, false)
+            : !own ? LoginAnswer.Of(keptOwn, asked: false)
             : await LoginAsync(
                 resolved, toolchain, profileHome: null, isManaged, ct, lockPath: ProbeLock.PathOf(home, owner, null),
                 busy: busy is null ? null : () => busy(null), kept: keptOwn).ConfigureAwait(false);
@@ -319,27 +322,37 @@ public static class HarnessProbe
             profiles,
             ownAnswer.Login,
             ownAnswer.Account,
-            Moment(ownAnswer, keptOwn, prior?.OwnRead, null));
+            Moment(ownAnswer, keptOwn, prior?.OwnRead, null),
+            ownAnswer.Org,
+            ownAnswer.Plan);
 
         // When an answer was read: now where the question was asked, and told; a word kept from before keeps its moment.
-        DateTimeOffset? Moment(LoginAnswer answer, (LoginState Login, string? Account) kept, DateTimeOffset? before, string? account)
+        DateTimeOffset? Moment(LoginAnswer answer, LoginRead kept, DateTimeOffset? before, string? account)
         {
-            if (!answer.Asked) return (answer.Login, answer.Account) == kept ? before : null;
+            if (!answer.Asked) return answer.Said == kept ? before : null;
             var at = now();
-            answered?.Invoke(account, answer.Login, answer.Account, at);
+            answered?.Invoke(account, answer.Said, at);
             return at;
         }
     }
 
     /// <summary>What the last report said of an account a session now runs on: its word stands, or unknown where it said none.</summary>
-    private static (LoginState Login, string? Account) Kept(ProfileReport? said) =>
-        said is null ? (LoginState.Unknown, null) : (said.Login, said.Account);
+    private static LoginRead Kept(ProfileReport? said) =>
+        said is null ? new LoginRead(LoginState.Unknown, null) : new LoginRead(said.Login, said.Account, said.Org, said.Plan);
 
     /// <summary>
-    /// One status question's outcome (ROSTER1): what the agent said, and whether it was asked at all. One never asked (no login
-    /// question, another holder kept the account's lock, a session of Daoris's runs on it) is no reading, and writes nothing.
+    /// One status question's outcome (ROSTER1): what the agent said — on a yes who, with the organisation and the plan beside
+    /// them (ACCOUNTID1) — and whether it was asked at all. One never asked (no login question, another holder kept the
+    /// account's lock, a session of Daoris's runs on it) is no reading, and writes nothing.
     /// </summary>
-    internal readonly record struct LoginAnswer(LoginState Login, string? Account, bool Asked);
+    internal readonly record struct LoginAnswer(LoginState Login, string? Account, bool Asked, string? Org = null, string? Plan = null)
+    {
+        /// <summary>What it said, without whether it was asked.</summary>
+        public LoginRead Said => new(Login, Account, Org, Plan);
+
+        /// <summary>An answer saying what <paramref name="said"/> says.</summary>
+        public static LoginAnswer Of(LoginRead said, bool asked) => new(said.Login, said.Account, asked, said.Org, said.Plan);
+    }
 
     /// <summary>
     /// What the harness says about logging in to ONE home — a profile's, or its own when
@@ -365,7 +378,7 @@ public static class HarnessProbe
     internal static async Task<LoginAnswer> AskAccountAsync(
         string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command,
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct, string? lockPath,
-        IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, (LoginState Login, string? Account) kept = default)
+        IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, LoginRead kept = default)
     {
         // The pin, as the probe resolves it; nothing installed at it is nobody to ask.
         var run = CommandOf(adapter, toolchain, command, settings, home);
@@ -400,8 +413,8 @@ public static class HarnessProbe
 
     /// <summary>
     /// What the harness says about logging in here: the boolean, and — when the toolchain asks and the
-    /// answer is yes — <b>who</b> (D66 §3). A real harness volunteers an organisation and a
-    /// subscription tier alongside both, and neither is Daoris's to hold, log, or put on a roster.
+    /// answer is yes — <b>who</b> (D66 §3), with the organisation and the plan a real harness volunteers beside them
+    /// (ACCOUNTID1): what tells two sign-ins of one email apart. Read fresh and shown, and never written or logged.
     /// </summary>
     /// <param name="lockPath">
     /// The home's <see cref="ProbeLock"/> (TOOL6g): asked only while holding it, and not at all, unknown, when another holder
@@ -415,14 +428,14 @@ public static class HarnessProbe
     private static async Task<LoginAnswer> LoginAsync(
         IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, bool managed,
         CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
-        Func<bool>? busy = null, (LoginState Login, string? Account) kept = default)
+        Func<bool>? busy = null, LoginRead kept = default)
     {
         if (toolchain.LoginCheck is not { } question) return new LoginAnswer(LoginState.Unknown, null, false);
 
         // One status question per account at a time, in this process and across them (TOOL6g).
         await using var held = lockPath is null ? null : await ProbeLock.TakeAsync(lockPath, ct: ct).ConfigureAwait(false);
         if (lockPath is not null && held is null) return new LoginAnswer(LoginState.Unknown, null, false);
-        if (busy?.Invoke() == true) return new LoginAnswer(kept.Login, kept.Account, false);
+        if (busy?.Invoke() == true) return LoginAnswer.Of(kept, asked: false);
 
         var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)
             .ConfigureAwait(false);
@@ -430,8 +443,7 @@ public static class HarnessProbe
 
         // Read with the "logged in" pattern first, because it is the specific one; and neither matching leaves it unknown
         // rather than out, which is what keeps a reworded status line from refusing a spawn that would have worked.
-        var (login, who) = question.Read(answer.Output);
-        return new LoginAnswer(login, who, true);
+        return LoginAnswer.Of(question.Read(answer.Output), asked: true);
     }
 
     /// <summary>The runtime's error code for a binary that is not there — ERROR_FILE_NOT_FOUND and ENOENT alike.</summary>

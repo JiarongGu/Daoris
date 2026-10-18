@@ -68,7 +68,7 @@ public sealed class StopHoldTickTests : IDisposable
         // 2. The looks that follow hold the quest, saying why and how to release it, and start nothing.
         for (var look = 0; look < 2; look++)
         {
-            var held = await Driver(service, config).TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            var held = await Driver(service, config).TickAsync().WaitAsync(Poll.Patience);
 
             var sitting = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Stopped, sitting.Verdict);
@@ -106,7 +106,7 @@ public sealed class StopHoldTickTests : IDisposable
         // 2. It was planned again at the next look before SESSUX1b; now each look holds it, and nothing starts.
         for (var look = 0; look < 2; look++)
         {
-            var held = await Driver(service, config).TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            var held = await Driver(service, config).TickAsync().WaitAsync(Poll.Patience);
 
             Assert.Equal(StartVerdict.Stopped, Assert.Single(held.Considerations, c => c.Quest.Id == "q1").Verdict);
             Assert.Equal(1, service.SessionCount);
@@ -172,7 +172,7 @@ public sealed class StopHoldTickTests : IDisposable
 
     private static async Task UntilAsync(Func<bool> condition)
     {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        var patience = DateTime.UtcNow + Poll.Patience;
         while (!condition())
         {
             Assert.True(DateTime.UtcNow < patience, "the condition never held");

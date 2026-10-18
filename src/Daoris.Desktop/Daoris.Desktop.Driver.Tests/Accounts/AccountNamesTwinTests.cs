@@ -182,6 +182,55 @@ public sealed class AccountNamesTwinTests : IDisposable
         Assert.True(reached == said, $"{why}: {said}");
     }
 
+    // ——— The name a sign-in's end offers (ACCOUNTID1): who signed in, where no other account has it; else who with the
+    // organisation beside it, else with the plan, each a name the rename takes (one word: an organisation's spaces are
+    // dashes); else none, and the person names it. Never written: the person's rename writes it (D66 §3).
+
+    [Theory]
+    [InlineData("who signed in is offered", """["acct-1","acct-2"]""", null, "acct-2", "person@example.invalid", "Org B", "max", "person@example.invalid")]
+    [InlineData("an email another account is named takes its organisation beside it", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", "Org B", "max", "person@example.invalid·Org-B")]
+    [InlineData("an email named in another case is named", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"Person@Example.invalid"}}}""", "acct-2", "person@example.invalid", "Org B", null, "person@example.invalid·Org-B")]
+    [InlineData("an organisation's spaces are one dash each, since a name is one word", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", "  Org \u0009 of  B ", null, "person@example.invalid·Org-of-B")]
+    [InlineData("the plan where no organisation is said", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", null, "max", "person@example.invalid·max")]
+    [InlineData("the plan where the organisation's name is taken too", """["acct-1","acct-2","acct-3"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"},"acct-3":{"name":"person@example.invalid·Org-B"}}}""", "acct-2", "person@example.invalid", "Org B", "pro", "person@example.invalid·pro")]
+    [InlineData("an organisation of nothing a name may hold is none", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", " ` ", "max", "person@example.invalid·max")]
+    [InlineData("nothing tells them apart, so none is offered", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", null, null, null)]
+    [InlineData("one organisation and no plan tell nothing apart", """["acct-1","acct-2","acct-3"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"},"acct-3":{"name":"person@example.invalid·Org-A"}}}""", "acct-2", "person@example.invalid", "Org A", null, null)]
+    [InlineData("an offer longer than a name may be is not made", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"a234567890b234567890c234567890d234567890e234567890f@x.invalid"}}}""", "acct-2", "a234567890b234567890c234567890d234567890e234567890f@x.invalid", "Org B", "max", null)]
+    [InlineData("its own name is no other account's", """["acct-1"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-1", "person@example.invalid", "Org A", "max", "person@example.invalid")]
+    [InlineData("another agent's names are not this one's", """["acct-1","acct-2"]""", """{"codex":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", "Org B", "max", "person@example.invalid")]
+    [InlineData("nobody said is nothing offered", """["acct-1"]""", null, "acct-1", null, "Org A", "max", null)]
+    public void A_sign_in_is_offered_the_name_the_cli_offers(
+        string why, string accounts, string? file, string account, string? who, string? org, string? plan, string? offered)
+    {
+        Holding(file);
+
+        var said = AccountNames.Offered(Names(accounts), AccountNames.Of(_home, "claude-code"), account, who, org, plan);
+
+        Assert.True(offered == said, $"{why}: {said ?? "(none)"}");
+    }
+
+    // ——— What a sign-in's end says beside the email where another account already has it (ACCOUNTID1c): the organisation,
+    // else the plan, by the test the offer uses; none where the email is no other account's id or name, or neither tells them apart.
+
+    [Theory]
+    [InlineData("an email no other account has is said alone", """["acct-1","acct-2"]""", null, "acct-2", "person@example.invalid", "Org B", "max", null)]
+    [InlineData("an email another account is named says the organisation after it", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", "Org B", "max", "Org B")]
+    [InlineData("an email named in another case says it too", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"Person@Example.invalid"}}}""", "acct-2", "person@example.invalid", "  Org B ", null, "Org B")]
+    [InlineData("the plan where no organisation is said", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", null, "max", "max")]
+    [InlineData("the plan where the organisation's name is taken too", """["acct-1","acct-2","acct-3"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"},"acct-3":{"name":"person@example.invalid·Org-B"}}}""", "acct-2", "person@example.invalid", "Org B", "pro", "pro")]
+    [InlineData("nothing tells them apart, so nothing is said", """["acct-1","acct-2"]""", """{"claude-code":{"acct-1":{"name":"person@example.invalid"}}}""", "acct-2", "person@example.invalid", null, null, null)]
+    [InlineData("nobody said is nothing said", """["acct-1"]""", null, "acct-1", null, "Org A", "max", null)]
+    public void A_sign_in_end_tells_a_second_sign_in_apart_as_the_cli_does(
+        string why, string accounts, string? file, string account, string? who, string? org, string? plan, string? apart)
+    {
+        Holding(file);
+
+        var said = AccountNames.ApartWords(Names(accounts), AccountNames.Of(_home, "claude-code"), account, who, org, plan);
+
+        Assert.True(apart == said, $"{why}: {said ?? "(none)"}");
+    }
+
     /// <summary>
     /// ACCT1: a sign-in into an account is refused, before anything starts and with nothing made, where its folder is not
     /// there; only a sign-in to a new account opens one.
@@ -281,6 +330,13 @@ public sealed class AccountNamesTwinTests : IDisposable
         var taken = Assert.Throws<AccountNameException>(
             () => AccountNames.Rename(_home, "claude-code", ["account-1", "account-2"], "account-1", "work"));
         Assert.Contains("`work` already names `account-2`", taken.Message);
+        // ACCOUNTID1c: the way out of a taken name is said; an email's is the organisation beside it.
+        Assert.EndsWith(" and an id is one — give it a name of your own.", taken.Message);
+        var email = Assert.Throws<AccountNameException>(
+            () => AccountNames.Rename(_home, "claude-code", ["account-1", "person@example.invalid"], "account-1", "person@example.invalid"));
+        Assert.EndsWith(
+            "name it `person@example.invalid·<organization>`, with the organization it signed in to, or give it a name of your own.",
+            email.Message);
 
         var missing = Assert.Throws<AccountNameException>(
             () => AccountNames.Rename(_home, "claude-code", ["account-1", "account-2"], "account-9", "desk"));

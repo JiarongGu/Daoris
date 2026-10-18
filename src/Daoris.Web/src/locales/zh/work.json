@@ -53,6 +53,7 @@
   "work.handOver.refused.notConversation": "这是委托的会话，目前只能在终端里转交：daoris-driver sessions hand-over。",
   "work.handOver.refused.questClosed": "它的委托已不是开放或已接手的状态，没有可转交的工作了。",
   "work.handOver.refused.questElsewhere": "这个委托不是本机接手的，它的工作不归本机转交。",
+  "work.handOver.refused.questReopened": "这个委托的接下已失效，因为你重新打开了它所在步骤所基于的工作，所以它的工作不归本机转交。",
   "work.handOver.refused.notLastRun": "本机之后又有一个会话在接着做这个委托：请转交那一个。",
   "work.handOver.refused.parked": "它正在等你回答：请先回答它。",
   "work.handOver.refused.noDoor": "该智能体在这个仓库采用 Daoris 之前无法驱动它：请换一个智能体，或让仓库采用 Daoris。",

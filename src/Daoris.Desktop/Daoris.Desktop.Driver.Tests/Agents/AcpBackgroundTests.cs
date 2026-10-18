@@ -188,7 +188,7 @@ public sealed class AcpBackgroundTests
         // The turn has ended and the work still runs: the session waits, open, and says why.
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Run the gates")),
-            () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+            () => string.Join(" | ", record.Lines), Poll.Patience);
         await Task.Delay(300);
         Assert.False(run.IsCompleted);
         Assert.DoesNotContain("session/close", agent.Methods);
@@ -197,11 +197,11 @@ public sealed class AcpBackgroundTests
         // The work ends; the harness wakes its agent itself, with no prompt open (CONSOLE2a), and then the driver's turn goes.
         GatesEnd(agent);
         agent.Push(Said("The gates passed."));
-        var id = await ended.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var id = await ended.Task.WaitAsync(Poll.Patience);
         Assert.False(run.IsCompleted);
 
         agent.Push(Answer(id, "end_turn"));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "session/close"], agent.Methods);
@@ -263,15 +263,15 @@ public sealed class AcpBackgroundTests
 
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Run the gates")),
-            () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+            () => string.Join(" | ", record.Lines), Poll.Patience);
         await Task.Delay(300);
         Assert.False(run.IsCompleted);
         Assert.Equal(1, Volatile.Read(ref asked));
 
         GatesEnd(agent);
-        var id = await ended.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var id = await ended.Task.WaitAsync(Poll.Patience);
         agent.Push(Answer(id, "end_turn"));
-        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+        var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Equal(["initialize", "session/resume", "session/prompt", "session/prompt", "session/close"], agent.Methods);
@@ -314,7 +314,7 @@ public sealed class AcpBackgroundTests
                     Interlocked.Increment(ref asked);
                     return Task.FromResult(true);
                 })
-            .WaitAsync(TimeSpan.FromSeconds(10));
+            .WaitAsync(Poll.Patience);
 
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
         Assert.Equal(0, asked);
@@ -354,7 +354,7 @@ public sealed class AcpBackgroundTests
                     Interlocked.Increment(ref asked);
                     return Task.FromResult(false);
                 })
-            .WaitAsync(TimeSpan.FromSeconds(10));
+            .WaitAsync(Poll.Patience);
 
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/close"], agent.Methods);
         Assert.Equal(1, asked);
@@ -388,10 +388,10 @@ public sealed class AcpBackgroundTests
             .RunAsync("D:/fam/Game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(true));
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
-            () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+            () => string.Join(" | ", record.Lines), Poll.Patience);
         agent.Close();
 
-        var failed = await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(TimeSpan.FromSeconds(10)));
+        var failed = await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(Poll.Patience));
         Assert.Contains("background work", failed.Message);
         Assert.Single(agent.Prompts);
     }
@@ -434,17 +434,17 @@ public sealed class AcpBackgroundTests
                 "D:/fam/Game", "close quest #12", CancellationToken.None, inbox: inbox, waitsOnBackground: _ => Task.FromResult(true));
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
-            () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+            () => string.Join(" | ", record.Lines), Poll.Patience);
 
         Assert.True(inbox.Hold(new ChatMessage("skip the Angular Jest run", [])));
-        await words.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await words.Task.WaitAsync(Poll.Patience);
         await Task.Delay(300);
         Assert.False(run.IsCompleted);
         Assert.False(ended.Task.IsCompleted);
 
         GatesEnd(agent);
-        await ended.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await run.WaitAsync(TimeSpan.FromSeconds(10));
+        await ended.Task.WaitAsync(Poll.Patience);
+        await run.WaitAsync(Poll.Patience);
 
         Assert.Equal(3, agent.Prompts.Count);
         Assert.Equal("skip the Angular Jest run", agent.Prompts[1]);
@@ -483,17 +483,17 @@ public sealed class AcpBackgroundTests
         var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
             .RunAsync(
                 "D:/fam/Game", "close quest #12", CancellationToken.None, inbox: inbox, waitsOnBackground: _ => Task.FromResult(true));
-        var id = await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var id = await first.Task.WaitAsync(Poll.Patience);
         Assert.True(inbox.Hold(new ChatMessage("skip the Angular Jest run", [])));
         agent.Push(Answer(id, "end_turn"));
 
-        await Poll.Until(() => agent.Prompts.Count == 2, () => string.Join(" | ", agent.Prompts), TimeSpan.FromSeconds(10));
+        await Poll.Until(() => agent.Prompts.Count == 2, () => string.Join(" | ", agent.Prompts), Poll.Patience);
         Assert.Equal("skip the Angular Jest run", agent.Prompts[1]);
         await Task.Delay(300);
         Assert.False(run.IsCompleted);
 
         GatesEnd(agent);
-        await run.WaitAsync(TimeSpan.FromSeconds(10));
+        await run.WaitAsync(Poll.Patience);
 
         Assert.Equal(3, agent.Prompts.Count);
         Assert.Contains("background work", agent.Prompts[2]);
@@ -531,7 +531,7 @@ public sealed class AcpBackgroundTests
             .RunAsync("D:/fam/Game", "close quest #12", CancellationToken.None, waitsOnBackground: _ => Task.FromResult(true));
         await Poll.Until(
             () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal)),
-            () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+            () => string.Join(" | ", record.Lines), Poll.Patience);
 
         // Woken by the first ending, the agent starts the build in the background before the first is said.
         agent.Push(Update("""{"sessionUpdate":"async_task_spawned","asyncTaskId":"b2","name":"Build","taskType":"shell","canStop":true}"""));
@@ -540,8 +540,8 @@ public sealed class AcpBackgroundTests
         Assert.False(ended.Task.IsCompleted);
 
         GatesEnd(agent, task: "b2");
-        await ended.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await run.WaitAsync(TimeSpan.FromSeconds(10));
+        await ended.Task.WaitAsync(Poll.Patience);
+        await run.WaitAsync(Poll.Patience);
 
         var resumed = agent.Prompts[1];
         Assert.Contains("`Run the gates` (failed)", resumed);

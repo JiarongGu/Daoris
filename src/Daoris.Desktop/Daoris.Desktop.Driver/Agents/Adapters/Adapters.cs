@@ -1361,7 +1361,11 @@ public sealed class StubAdapter : ISessionAdapter
         LoginArguments: ["--login"],
         LoginCheck: new LoginQuestion(
             ["--login-state"], LoggedIn: @"logged-in", LoggedOut: @"logged-out",
-            Account: @"logged-in as (\S+)"),
+            Account: @"logged-in as (\S+)",
+            // And its way to say an organisation and a plan (ACCOUNTID1), each on a line of its own after who, so one email
+            // can be signed in to two organisations with no account behind either.
+            Org: @"(?m)^org:[ \t]*(.+)$",
+            Plan: @"(?m)^plan:[ \t]*(.+)$"),
         // Claude Code's own words for a refused credential (AGT3b), mirrored so the rehearsal can
         // gate a refused account with no account behind it. The stub's door carries only text, so they
         // are read from its transcript beside an exit that was not 0 (AGT3c).
@@ -1943,7 +1947,11 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
             ["auth", "status"],
             LoggedIn: @"""loggedIn""\s*:\s*true",
             LoggedOut: @"""loggedIn""\s*:\s*false",
-            Account: @"""email""\s*:\s*""([^""]+)"""),
+            Account: @"""email""\s*:\s*""([^""]+)""",
+            // ACCOUNTID1: one email may sign in to two organisations; these tell the two accounts apart. The CLI's twin is
+            // `toolchain.ts`' `claude-code` entry.
+            Org: @"""orgName""\s*:\s*""([^""]+)""",
+            Plan: @"""subscriptionType""\s*:\s*""([^""]+)"""),
         // A pin comes from the release bucket, against its SIGNED manifest (AGT2b) — the npm package
         // installs the same native binary, with nothing but npm's own integrity check behind it.
         Channel: ClaudeReleases.Channel,

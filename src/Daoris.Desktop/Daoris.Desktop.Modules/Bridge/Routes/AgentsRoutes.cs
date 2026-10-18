@@ -148,6 +148,9 @@ public sealed class AgentsRoutes(DriverContext context)
                     // accounts" to an owner who was logged in.
                     OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
                     report.OwnAccount,
+                    // Its organisation and plan (ACCOUNTID1), as an account's.
+                    report.OwnOrg,
+                    report.OwnPlan,
                     // When the tool's own sign-in was last read: only at a person's press (TOOL6g), so null before one.
                     report.OwnRead,
                     // Which circles run this harness as which account (D49 §4): the terminal
@@ -191,6 +194,10 @@ public sealed class AgentsRoutes(DriverContext context)
         // Who is signed in there, by the tool's own answer (D66 §3), read fresh and written nowhere: what the page offers as
         // the account's name at a sign-in's end (ACCT2), never kept without the person.
         profile.Account,
+        // The organisation and the plan the tool names beside who (ACCOUNTID1), read and kept as who is: what tells two
+        // sign-ins of one email apart. Null where it names none.
+        profile.Org,
+        profile.Plan,
         // An account that is a key, by its handle only (AGT3). Never the key.
         profile.Key,
         // The account's own model and effort, read fresh from the tool's file each time (AGT6): the file is the truth, and
@@ -617,14 +624,20 @@ public sealed class AgentsRoutes(DriverContext context)
     private static object[] PerModelOf(AgentSettingsRead read) =>
         [.. read.PerModel.Select(entry => (object)new { entry.Model, entry.Effort })];
 
+    /// <summary>Who signed in, with what tells a second sign-in of the email apart after it (ACCOUNTID1c, <c>AccountNames.ApartWords</c>).</summary>
+    private static string Told(string account, string? apart) => apart is null ? account : $"{account} · {apart}";
+
     /// <summary>
-    /// The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once, as the terminal's twin says it.
+    /// The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once, as the terminal's twin says it;
+    /// where the email is another sign-in's, the organisation (else the plan) is said after it (ACCOUNTID1c), and a name that
+    /// is the email with it beside is "that name".
     /// </summary>
-    public static string SignedInSentence(string? account, string owner, string? called, string fresh) =>
+    public static string SignedInSentence(string? account, string owner, string? called, string fresh, string? apart = null) =>
         account is { Length: > 0 }
-            ? called is not null && string.Equals(account, called, StringComparison.OrdinalIgnoreCase)
-                ? $"signed in as {account} — this machine lists it by that name."
-                : $"signed in as {account} — this machine lists it as `{called ?? fresh}`."
+            ? called is not null && (string.Equals(account, called, StringComparison.OrdinalIgnoreCase)
+                    || (apart is not null && string.Equals(AccountNames.Beside(account, apart), called, StringComparison.OrdinalIgnoreCase)))
+                ? $"signed in as {Told(account, apart)} — this machine lists it by that name."
+                : $"signed in as {Told(account, apart)} — this machine lists it as `{called ?? fresh}`."
             : $"signed in — `{owner}` did not say who, so this machine lists it as `{called ?? fresh}`.";
 
     /// <summary>

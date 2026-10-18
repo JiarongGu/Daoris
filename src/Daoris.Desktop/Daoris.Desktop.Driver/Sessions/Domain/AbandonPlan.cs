@@ -43,6 +43,9 @@ public static class AbandonWhy
     /// <summary>A quest taken on another machine: its work is theirs; decline it on its page to stop it there.</summary>
     public const string TakenElsewhere = "taken-elsewhere";
 
+    /// <summary>A quest whose take this machine lost to the person's own reopen of the work its step grew from (FABRIC-CLOSE1c20), not to another machine.</summary>
+    public const string SourceReopened = "source-reopened";
+
     /// <summary>A quest taken here outside Daoris (this machine's take, and no session record that took it).</summary>
     public const string TakenOutside = "taken-outside";
 
