@@ -20,6 +20,19 @@ repository.
 - **Verification:** no red (no behaviour changed): the same 229 test names plus the four rows pass, 233 of 233; the five parts together take 78 s
   wall (the largest part about 41 s alone); web-unit alone 350 files, 7115 tests, 304 s wall on this machine (no run of the whole set before, so no
   before figure for it); `tsc` clean; the structure gate passes.
+## 2026-10-18 — A hand-off pushed a later session's work on an earlier session's quest (FABRIC-CLOSE1h10)
+
+- **Symptom:** where a chain's later session moved a landed branch on after a hand-off's door read it (or after the look chose a
+  `push-held` entry), the hand-off pushed that later work while the later session's quest was taken back: the person's hand-off judged
+  the session its door read, and the look's hand-on its entry's own quest, which still stood.
+- **Root cause:** the advance is recorded before its push takes the branch's hold (`TreeLands`), and `TreeHandOffs.HandAsync` read the
+  record again under that hold without telling its `beforePush` which session the record now named.
+- **Fix:** `beforePush` is told the record's `LastSession()` under the hold. A session other than the one judged is judged on its own
+  quest, read there: the person's doors by their rule (`HandedResult`, from `PressQuests.HandedAsync`), the look by its own, which also
+  waits on that quest before choosing the hand-on (`AutoLander.PushHeldAsync`). D173's FABRIC-CLOSE1h10 note has the behaviour.
+- **Verification:** red first: `PressedResultTests` (5 failing), and the new Git cases (3 failing, 2 passing as before). Then the
+  driver's fast half is 9568 (9561 before), and `AutoLandingTests`, run once by class, passes 65 (60 before).
+
 ## 2026-10-18 — A hand-off that waited behind another push told its plugin of a result taken back meanwhile (FABRIC-CLOSE1h8)
 
 - **Symptom:** handing a landed branch on (`HANDOFF`, Ask Daoris's card, `trees hand`), or the look's hand-on of a push held back, waiting

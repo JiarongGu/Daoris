@@ -502,7 +502,7 @@ internal static class TreesConsole
                 // moved the branch, as the route's hand-off is.
                 var pressed = await PressQuests.HandedAsync(entry, service).ConfigureAwait(false);
                 using var waiting = LandingHoldNotice.Told(now => { if (now) Console.WriteLine(WaitingBehind); });
-                var handed = await handing.HandAsync(root, entry, plugin, beforePush: pressed?.BeforePush).ConfigureAwait(false);
+                var handed = await handing.HandAsync(root, entry, plugin, beforePush: pressed.BeforePush).ConfigureAwait(false);
                 Told(home, PressesTold.HandOff, entry.Session);
                 // The plugin's lines were said as they came; the hand-off's sentence and the exit are the route's words too (RPC1b3).
                 var said = TreesWords.Hand(handed, []);

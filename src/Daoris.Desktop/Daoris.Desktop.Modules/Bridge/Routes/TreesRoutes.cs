@@ -1023,7 +1023,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         // FABRIC-CLOSE1h8 (D173's note): the result of the session that last moved the branch, read here, judged again just before the
         // plugin is told, so a hand-off that waited behind another push tells no plugin where that result moved meanwhile.
         var pressed = await PressQuests.HandedAsync(entry, loop.Service ?? throw NotReady(), cancellationToken);
-        var handed = await trees.HandAsync(root, entry, plugin, cancellationToken, beforePush: pressed?.BeforePush);
+        var handed = await trees.HandAsync(root, entry, plugin, cancellationToken, beforePush: pressed.BeforePush);
         if (handed.Plugin is not null) loop.Events.Keep(entry.Session, LandingRules.HandNote(handed), line => loop.Output.Append(entry.Session, line));
         loop.Nudge();
         return handed;
