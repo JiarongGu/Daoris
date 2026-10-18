@@ -27,7 +27,7 @@ public static class QuestWire
         + "a done's every answer names its requirement and says met or departed, a departure "
         + "with its quote, and a done's close, where it says one, names its key and token; a decline's or a rebind's "
         + "whileOpen, where it says one, is true or false; a conflict names "
-        + "what it attempted; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
+        + "what it attempted, and its lostToTheReopen, where it says one, is true or false; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
         + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
         + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
         + "name, and a set-up step's environment is a name that never reads as production; a set-up names its full "
@@ -189,6 +189,9 @@ public static class QuestWire
         }
 
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
+        // Only when set, and only on a conflict (FABRIC-CLOSE1c22): every other conflict crosses exactly as it did, and an older build
+        // reads a marked one as plain.
+        if (operation is { Kind: QuestOperationKind.Conflict, LostToTheReopen: true }) writer.WriteBoolean("lostToTheReopen", true);
         if (operation.Dismisses is { } named)
         {
             writer.WriteStartObject("dismisses");
@@ -444,6 +447,15 @@ public static class QuestWire
             whileOpen = open.ValueKind == JsonValueKind.True;
         }
 
+        // A conflict's mark that its take went with a take lost to the person's reopen (FABRIC-CLOSE1c22) is true or false. Anything
+        // else is half of one: read as plain, a done its machine made on the step published anew would land over the person's reopen.
+        var lostToTheReopen = false;
+        if (kind == QuestOperationKind.Conflict && item.TryGetProperty("lostToTheReopen", out var reopened))
+        {
+            if (reopened.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return null;
+            lostToTheReopen = reopened.ValueKind == JsonValueKind.True;
+        }
+
         // A verdict is an evidenced operation's whole point (EVID1a): one missing, or not whole, makes the operation half
         // of one, which a replay would read as evidence found or missing on nobody's reading.
         QuestEvidenceVerdict? verdict = null;
@@ -506,7 +518,8 @@ public static class QuestWire
 
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission, session);
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission, session,
+            lostToTheReopen);
     }
 
 }
