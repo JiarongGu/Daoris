@@ -567,8 +567,9 @@ public sealed record SyncResponse(
 public sealed record SyncStandingResponse(
     string Workspace, bool Wired, int Ahead, IReadOnlyList<string> Behind, IReadOnlyList<string> Conflicts,
     DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem);
-// Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4).
-public sealed record QuestClaimResponse(string Quest, string Claim);
+// Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4). Why a lost one lost, where its take lost to
+// the person's reopen of the work the step grew from (FABRIC-CLOSE1c18): `source-reopened`; null otherwise, as an older host answers.
+public sealed record QuestClaimResponse(string Quest, string Claim, string? Why = null);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
 // host that brings a teammate's map down reads the same answer the door writes.

@@ -3144,6 +3144,17 @@ public sealed class QuestStore
         }, ct);
 
     /// <summary>
+    /// Whether THIS machine's claim on a quest reads lost because its take lost to the person's reopen of the work the step grew from
+    /// (FABRIC-CLOSE1c18, <see cref="QuestLog.LostToTheReopen"/>), not to another machine's take: what the claim's answer says beside
+    /// it, so the driver stops the session in words that are true. False where the claim does not read lost.
+    /// </summary>
+    public async Task<bool> LostToTheReopenAsync(string id, CancellationToken ct = default)
+    {
+        if (await ClaimAsync(id, ct).ConfigureAwait(false) != QuestClaim.Lost) return false;
+        return QuestLog.LostToTheReopen(await HistoryAsync(id, ct).ConfigureAwait(false), Machine);
+    }
+
+    /// <summary>
     /// How a circle's pass ended (SYNC6a). A pass that reached the remote moves <see cref="QuestStanding.Synced"/>;
     /// one that hit a wall keeps it and names the wall, because when the circle last synced and why
     /// the last try did not are two facts.

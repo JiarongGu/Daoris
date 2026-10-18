@@ -111,8 +111,10 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
             Assert.Equal((QuestStatus.Open, QuestHold.SourceReopened), (withdrawn.Status, withdrawn.Hold));
         }
 
-        // B's take lost: its claim reads lost, which the driver stops its session by, and the pass names the take.
+        // B's take lost: its claim reads lost, which the driver stops its session by, and the pass names the take. It lost to the
+        // person's reopen, and is said so (FABRIC-CLOSE1c18).
         Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(step.Id));
+        Assert.True(await _b.LostToTheReopenAsync(step.Id));
         Assert.Contains(report.Conflicts, c => c.Quest == step.Id && c.Attempted == QuestStatus.Taken);
         var close = await _a.CloseAsync(quest.Id, [(quest.Id, submission)], new QuestClose("k1", "t1"), Now.AddHours(4));
         Assert.Equal(QuestCloseRefusal.Stale, close.Refusal);
@@ -375,6 +377,8 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         Assert.Null(report.Problem);
         Assert.Empty(report.Refused);
         Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(step.Id));
+        // Lost to the person's reopen, which the claim's answer and the driver's stop say: never another machine's take.
+        Assert.Equal((true, false), (await _b.LostToTheReopenAsync(step.Id), await _a.LostToTheReopenAsync(step.Id)));
         var lost = Assert.Single(report.Conflicts, c => c.Quest == step.Id);
         Assert.Equal((QuestStatus.Taken, "B's session.", (QuestOperationRef?)null), (lost.Attempted, lost.Note, lost.Submission));
         foreach (var store in new[] { _a, _b, _c, zero, _remote })
@@ -396,6 +400,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         Assert.Equal(grows, (await _b.HistoryAsync(step.Id))[^1].Submission);
         Assert.Empty((await SyncAsync(_b)).Refused);
         Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(step.Id));
+        Assert.False(await _b.LostToTheReopenAsync(step.Id));
         Assert.Equal(QuestStatus.Taken, (await _remote.FindAsync(step.Id))!.Status);
     }
 
