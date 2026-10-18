@@ -46,6 +46,9 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/sync", Open),
         ("GET", "/api/opinions", Open),
         ("GET", "/api/opinions/{id}", Open),
+        // BRAINSTORM1a3 (D176 point 8): the brainstorms on this machine, and one of them, answered to loopback only.
+        ("GET", "/api/brainstorms", Open),
+        ("GET", "/api/brainstorms/{id}", Open),
         ("GET", "/api/confirmations", Open),
         ("GET", "/api/confirmations/{id}", Open),
         ("GET", "/api/changes", Open),
@@ -99,6 +102,10 @@ public sealed class PersonDoorTableTests
         ("DELETE", "/api/quests/{id}", Person),
         ("DELETE", "/api/sessions/{id}", Person),
         ("POST", "/api/history/clear", Person),
+        // BRAINSTORM1a3 (D176 point 9): only the person starts one, sends its packet and clears it; an agent asks them instead.
+        ("POST", "/api/brainstorms", Person),
+        ("POST", "/api/brainstorms/{id}/send", Person),
+        ("DELETE", "/api/brainstorms/{id}", Person),
         ("POST", "/api/quests/{id}/conflicts/dismiss", Person),
         ("DELETE", "/api/registry/{repository}", Person),
         ("POST", "/api/registry/{repository}/workspace", Person),
@@ -134,11 +141,12 @@ public sealed class PersonDoorTableTests
         // the asks held elsewhere (SESSONE2h), and the person's taking back of words a session has not taken (SAIDBACK1a), and the
         // change stream (FABRIC-EVENT3b), a read of which families moved, and a closure graph's bind and close, the driver's two
         // posts (FABRIC-CLOSE1a), and its question of what became of a close (FABRIC-CLOSE1u), and the person's reopen of a sealed
-        // submission and their word to go on with the step it held (FABRIC-CLOSE1c).
-        Assert.Equal(25, Routes.Count(route => route.Class == Open));
+        // submission and their word to go on with the step it held (FABRIC-CLOSE1c), and a brainstorm's two reads and the person's
+        // three presses: its question, its send and its clear (BRAINSTORM1a3).
+        Assert.Equal(27, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(19, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(27, Routes.Count(route => route.Class == Person));
+        Assert.Equal(30, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d).
         Assert.Equal(9, Routes.Count(route => route.Class == Shared));
     }

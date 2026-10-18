@@ -70,6 +70,7 @@
     "AutoLandingWorkflowTests.cs": "Trees",
     "BackgroundWaitJudgementTests.cs": "Loop",
     "BrainstormCommandTests.cs": "Brainstorms",
+    "BrainstormFilesTwinTests.cs": "Brainstorms",
     "BrainstormLookTests.cs": "Loop",
     "BrainstormPostureTests.cs": "Brainstorms",
     "BrainstormProcessTests.cs": "Loop",

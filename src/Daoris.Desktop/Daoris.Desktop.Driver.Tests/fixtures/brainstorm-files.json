@@ -1,0 +1,52 @@
+{
+  "_": "BRAINSTORM1a3 (D176 points 1 and 8): a brainstorm's records under the home, as the driver's BrainstormFiles and the service's BrainstormDesk each read them with their own code. The driver's BrainstormFilesTwinTests and the service's BrainstormDeskTests hold both readers to these rows, row for row; a reads of null is no record. A request is the verb's or the door's, written once; the state is the driver's alone; the send is the person's.",
+  "requests": [
+    {
+      "name": "as either door writes it",
+      "file": "{\n  \"brainstorm\": 1,\n  \"id\": \"ab12cd34\",\n  \"question\": \"Why does the daily report drop its last day?\",\n  \"repository\": \"reports\",\n  \"agents\": [\n    \"stub\",\n    \"acp-stub\"\n  ],\n  \"at\": \"2026-10-19T10:00:00.0000000+00:00\"\n}",
+      "reads": { "question": "Why does the daily report drop its last day?", "repository": "reports", "agents": ["stub", "acp-stub"], "at": "2026-10-19T10:00:00.0000000+00:00" }
+    },
+    {
+      "name": "no repository and no agents",
+      "file": "{\"brainstorm\":1,\"id\":\"ab12cd35\",\"question\":\"What next?\",\"repository\":null,\"agents\":[],\"at\":\"2026-10-19T10:00:00Z\"}",
+      "reads": { "question": "What next?", "repository": null, "agents": [], "at": "2026-10-19T10:00:00.0000000+00:00" }
+    },
+    {
+      "name": "agents that are not a list are none",
+      "file": "{\"question\":\"What next?\",\"agents\":\"stub\",\"at\":\"2026-10-19T10:00:00Z\"}",
+      "reads": { "question": "What next?", "repository": null, "agents": [], "at": "2026-10-19T10:00:00.0000000+00:00" }
+    },
+    {
+      "name": "an agent that is not a string is skipped",
+      "file": "{\"question\":\"What next?\",\"agents\":[\"stub\",3,null],\"at\":\"2026-10-19T10:00:00Z\"}",
+      "reads": { "question": "What next?", "repository": null, "agents": ["stub"], "at": "2026-10-19T10:00:00.0000000+00:00" }
+    },
+    {
+      "name": "no moment reads as the epoch",
+      "file": "{\"question\":\"What next?\"}",
+      "reads": { "question": "What next?", "repository": null, "agents": [], "at": "1970-01-01T00:00:00.0000000+00:00" }
+    },
+    { "name": "a blank question is no request", "file": "{\"question\":\"\",\"agents\":[]}", "reads": null },
+    { "name": "a question that is not a string is no request", "file": "{\"question\":4}", "reads": null },
+    { "name": "a file that does not read is no request", "file": "{\"question\":", "reads": null }
+  ],
+  "states": [
+    {
+      "name": "frozen, as the driver writes it",
+      "file": "{\n  \"id\": \"ab12cd34\",\n  \"state\": \"frozen\",\n  \"packet\": \"sha256:5f1c\",\n  \"code\": null,\n  \"at\": \"2026-10-19T10:01:00.0000000+00:00\"\n}",
+      "reads": { "state": "frozen", "packet": "sha256:5f1c", "code": null }
+    },
+    {
+      "name": "ended with no agent",
+      "file": "{\"id\":\"ab12cd34\",\"state\":\"ended\",\"packet\":\"sha256:5f1c\",\"code\":\"no-agent\",\"at\":\"2026-10-19T10:02:00Z\"}",
+      "reads": { "state": "ended", "packet": "sha256:5f1c", "code": "no-agent" }
+    },
+    { "name": "no state is none", "file": "{\"packet\":\"sha256:5f1c\"}", "reads": null },
+    { "name": "a file that does not read is none", "file": "not json", "reads": null }
+  ],
+  "sent": [
+    { "name": "the person's send", "file": "{\n  \"packet\": \"sha256:5f1c\",\n  \"at\": \"2026-10-19T10:03:00.0000000+00:00\"\n}", "reads": "sha256:5f1c" },
+    { "name": "no digest is no send", "file": "{\"at\":\"2026-10-19T10:03:00Z\"}", "reads": null },
+    { "name": "a file that does not read is no send", "file": "{", "reads": null }
+  ]
+}

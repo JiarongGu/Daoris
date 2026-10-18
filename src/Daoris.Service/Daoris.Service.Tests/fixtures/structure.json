@@ -53,6 +53,7 @@
     "HistoryWordsTwinTests.cs": "Asks",
     "WorkflowProposalTests.cs": "Asks",
     "IntakeTests.cs": "Asks",
+    "BrainstormDeskTests.cs": "Sessions",
     "GoAheadFixture.cs": "Sessions",
     "GoAheadGoesOnTests.cs": "Sessions",
     "GoAheadTests.cs": "Sessions",
