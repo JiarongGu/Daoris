@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A second opinion holding an ordinary automatic landing was never asked where no due was open (FABRIC-CLOSE1h17)
+
+- **Symptom:** under *Accept automatically*, a done's landing held at the look by a second opinion nobody had asked was kept as
+  `opinion` and waited on the person's ask alone, though the gate said *it is asked at the driver's next look*. It happened where the
+  opinion rule started reading after the done, or where the done's due had closed `off` and the rule came back.
+- **Root cause:** only a conclusion (`OpinionLook.Concluded`) or the person's ask owes a due, and the loop's opinion look asks only what
+  is owed. FABRIC-CLOSE1h15 made the gate's reader owe one in a push held back's recovery, but the look's own judgement
+  (`AutoLander.JudgeAsync`) kept the hold and owed nothing.
+- **Fix:** `JudgeAsync`'s opinion hold calls `AutoLander.Owe` for the entry's session at the landing's occasion, at every look that
+  reaches the gate. A due open is left as it is; one the loop closed as landed since the entry's done is not opened again, so the look
+  never churns it. D173's FABRIC-CLOSE1h17 note has the behaviour.
+- **Verification:** red first: `AutoLandingTriesTests` (the new theory's 2 rows: no due owed); its guard theory's 2 rows green before
+  and after. Then the driver's fast half 9631 of 9631 (9631 before), and the `AutoLanding` classes with `OpinionLandingTests`, run once by
+  filter with `git.process.runsettings`, 84 of 84, this row's 4 among them.
+
 ## 2026-10-19 — A remote kept a step published on a take that then lost, when the take's own push was behind (FABRIC-CLOSE1c21)
 
 - **Symptom:** B took a step before A's reopen of its source and A's rebind reached B, bound it, submitted, and its submission
