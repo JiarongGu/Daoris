@@ -77,6 +77,9 @@ export interface ToolDoor {
   ownLogin?: string | null;
   /** Who is signed in to that home, when the tool says (D66 §3). */
   ownAccount?: string | null;
+  /** The organisation and the plan the tool names beside who (ACCOUNTID1), as an account's; absent from an older shell. */
+  ownOrg?: string | null;
+  ownPlan?: string | null;
   /** When that home's state was last read (UX6e): only at a person's press (TOOL6g), so null before one. */
   ownRead?: string | null;
   /** Which circles run this door as which account (D49 §4). */
@@ -164,6 +167,12 @@ export interface Account {
   /** Asked of the tool, and one of three answers (SES3): only a definite `out` refuses. */
   login: 'in' | 'out' | 'unknown';
   account?: string | null;
+  /**
+   * The organisation and the plan the tool names beside who (ACCOUNTID1, D125's note of 2026-10-19), read fresh and kept
+   * nowhere: what tells two sign-ins of one email apart. Null where it names none; absent from an older shell.
+   */
+  org?: string | null;
+  plan?: string | null;
   /** An account that is an API key (AGT3): its handle, never the key. */
   key?: string | null;
   /** Its own model and effort (AGT6), where the tool's settings are known; absent or null otherwise. */
@@ -197,6 +206,9 @@ export interface Tool {
   ownLogin: string;
   /** Who is signed in to the tool's own home, where any door says. */
   ownAccount: string | null;
+  /** Its organisation and plan (ACCOUNTID1), from the door that says who; absent from a surface built before them. */
+  ownOrg?: string | null;
+  ownPlan?: string | null;
   /** When the tool's own home was last read, by the door whose word on it stands (UX6e); null where it never was. */
   ownRead: string | null;
   /** Whether any door onto it is handed Daoris's rules file (UX6e, D150 §5.1). */
@@ -315,6 +327,9 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
       ownLogin: doorsInOrder.map((door) => door.ownLogin).find((state) => state && state !== 'unknown')
         ?? 'unknown',
       ownAccount: doorsInOrder.map((door) => door.ownAccount).find(Boolean) ?? null,
+      // Beside who, from the door that says who (ACCOUNTID1): two doors' halves would describe two readings.
+      ownOrg: doorsInOrder.find((door) => door.ownAccount)?.ownOrg ?? null,
+      ownPlan: doorsInOrder.find((door) => door.ownAccount)?.ownPlan ?? null,
       // Read where the word on it stands: the door whose definite answer the state above takes, else any door's reading.
       ownRead: (doorsInOrder.find((door) => door.ownLogin && door.ownLogin !== 'unknown')
         ?? doorsInOrder.find((door) => door.ownRead))?.ownRead ?? null,

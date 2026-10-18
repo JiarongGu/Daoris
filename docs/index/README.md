@@ -33,9 +33,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 968 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 53 | 974 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 112 | 2134 |
-| `src/Daoris.Web/src/agents/agents.test.ts` | 41 | 691 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 53 | 982 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 115 | 2187 |
+| `src/Daoris.Web/src/agents/agents.test.ts` | 45 | 774 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/app/App.tsx` | 73 | 1317 |
 | `src/Daoris.Web/src/data/api.ts` | 41 | 684 |

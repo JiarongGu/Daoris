@@ -20,7 +20,7 @@ import type { ScopeActs } from '../settings/AccountUse';
 import { proposalChange } from '../settings/proposals';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
-import { type AgentPart, accountName, agentRows, runsForLine, signedOutHeld } from './agents';
+import { type AgentPart, accountLabel, agentRows, runsForLine, signedOutHeld } from './agents';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
@@ -211,8 +211,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const [keyAdded, setKeyAdded] = useState<{ profile: string; key: string | null } | null>(null);
   // The step answers the key's first, the newer press; a sign-in's waits behind it, held above every view.
   const answering = keyAdded
-    ? { profile: keyAdded.profile, who: null, key: keyAdded.key, settle: () => setKeyAdded(null) }
-    : addedHere ? { profile: addedHere.profile, who: addedHere.account, key: null, settle: settleAdded } : null;
+    ? { profile: keyAdded.profile, who: null, offered: null, key: keyAdded.key, settle: () => setKeyAdded(null) }
+    : addedHere
+      ? { profile: addedHere.profile, who: addedHere.account, offered: addedHere.offered, key: null, settle: settleAdded }
+      : null;
 
   // The list's Install (AGENTS2): the account-owning door's installer, as the first Install under *Ways in* runs it. Taken
   // once, by a ref, since a development build runs an effect twice and the run's own guard learns of the first only later.
@@ -232,7 +234,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const labelOf = (name: string | null) => {
     if (!name) return t('agents.account.own');
     const account = tool.accounts.find((each) => each.name === name);
-    return account ? accountName(account) : name;
+    return account ? accountLabel(account, tool) : name;
   };
 
   // ACCT2's rename and ACCT1's join, each the terminal's `daoris agent profile rename|join` (D50), said as they land.
@@ -363,7 +365,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       signInNewPanel={signingInNew === door
         ? <SignIn id={`${door}:login-new`} harness={door} action="login-new" tool={product} />
         : null}
-      added={answering ? { account: answering.profile, who: answering.who, key: answering.key } : null}
+      added={answering ? { account: answering.profile, who: answering.who, key: answering.key, offered: answering.offered } : null}
       doorRunning={doorRunning}
       doorConsole={running && doorRunning ? <SessionConsole id={running} /> : null}
       acts={acts}

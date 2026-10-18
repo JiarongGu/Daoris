@@ -16,8 +16,8 @@ import { AgentRules, type AgentRulesState, type RuleAddition, type RuleScopeName
 import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
 import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {
-  type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
-  doorsSummary, joinChoices, latestRead, nextStartSaidFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine,
+  type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountLabel, accountName, accountStates,
+  accountWho, doorsSummary, joinChoices, latestRead, nextStartSaidFor, ownSaid, ownState, ownWho, rulesSummary, runsFor, runsForLine, whoApart,
   settingsSummary, usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
@@ -146,7 +146,7 @@ export function AgentPage({
    * The new account a sign-in or a key added kept, by its id, who signed in and, for a key, its handle, waiting on the add
    * flow's step 3: a key added asks the same question (the UX7 design §4.5, ACCTUX3).
    */
-  added?: { account: string; who: string | null; key?: string | null } | null;
+  added?: { account: string; who: string | null; key?: string | null; offered?: string | null } | null;
   /** The door whose action runs, whose block holds `doorConsole`. */
   doorRunning?: string | null;
   doorConsole?: ReactNode;
@@ -169,9 +169,10 @@ export function AgentPage({
   const latest = latestRead([own, ...states.values()]);
   const ownLabel = t('agents.account.own');
   const accountOf = (name: string) => tool.accounts.find((each) => each.name === name);
+  // An account on one line, told apart from another sign-in of its email (ACCOUNTID1b).
   const labelOf = (name: string) => {
     const account = accountOf(name);
-    return account ? accountName(account) : name;
+    return account ? accountLabel(account, tool) : name;
   };
   const choices: AccountChoice[] = tool.accounts.map((account) => ({
     name: account.name, label: labelOf(account.name), login: account.login, keyed: Boolean(account.key),
@@ -305,7 +306,7 @@ export function AgentPage({
   const back: BackAccount[] = tool.accounts
     .filter((account) => !account.key && ['out', 'unknown'].includes(states.get(account.name)!.state))
     .map((account) => ({
-      id: account.name, name: accountName(account), state: states.get(account.name)!,
+      id: account.name, name: accountLabel(account, tool), state: states.get(account.name)!,
       runs: runsForLine(runsFor(tool, use, account.name)),
     }));
   const startAdding = () => {
@@ -472,6 +473,8 @@ export function AgentPage({
 
   const accountRow = (account: Account) => {
     const name = accountName(account);
+    // Where a name reads as another sign-in's, the line its acts and asks name it by (ACCOUNTID1b).
+    const label = accountLabel(account, tool);
     const state = states.get(account.name)!;
     const runs = runsFor(tool, use, account.name);
     const facts = use?.accounts.find((each) => each.name === account.name);
@@ -492,21 +495,22 @@ export function AgentPage({
       <AccountRow
         key={account.home}
         name={name}
-        who={accountWho(account)}
+        label={label}
+        who={accountWho(account, tool)}
         id={account.name}
         home={account.home}
         state={state}
         runs={runsForLine(runs)}
         current={typeof facts?.running === 'number' && facts.running > 0 ? t('agents.now.sessions', { count: facts.running }) : null}
         usage={usage}
-        act={actOf(offered, account.name, name)}
+        act={actOf(offered, account.name, label)}
         menu={accountMenu(account, state)}
         now={now}
       >
         {/* The one inline confirmation (UXFIX2): open until the removal answers, a refusal said inside it. */}
         {removing === account.name && (
           <InlineConfirm
-            label={t('harness.profile.removeTitle', { account: name })}
+            label={t('harness.profile.removeTitle', { account: label })}
             says={t('harness.profile.removeConfirm')}
             meanIt={t('harness.profile.removeMeanIt')}
             busy={busy}
@@ -518,7 +522,7 @@ export function AgentPage({
           <PlaceAccount
             agent={tool.name}
             account={account.name}
-            title={t('agents.place.title', { account: name })}
+            title={t('agents.place.title', { account: label })}
             choices={joinable(account.name)}
             busy={busy}
             refusal={refusalOf('place', account.name)}
@@ -552,7 +556,7 @@ export function AgentPage({
               spellCheck={false}
               value={keyDraft}
               onChange={(event) => setKeyDraft(event.target.value)}
-              aria-label={t('agents.key.replaceLabel', { account: name })}
+              aria-label={t('agents.key.replaceLabel', { account: label })}
               placeholder={t('harness.profile.keyPlaceholder')}
               className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
             />
@@ -567,10 +571,14 @@ export function AgentPage({
     );
   };
 
-  // The add flow's step 3 offers the name the person gave at the sign-in, else who signed in (ACCT2), else none; and says
-  // what it is called left empty, which is the row's own namer's answer with no name given (ACCTUX1).
+  // The add flow's step 3 offers the name the person gave at the sign-in, else the name the sign-in's end offered (ACCOUNTID1b:
+  // who signed in, or with the organisation beside it where another account has the email, by the driver's one rule), else
+  // none; an older shell offered none, so who signed in. It says what it is called left empty, which is the row's own namer's
+  // answer with no name given (ACCTUX1), and who signed in told apart from another sign-in of the email.
   const addedAccount = added ? accountOf(added.account) : undefined;
-  const offeredName = addedAccount?.displayName?.trim() || added?.who || '';
+  const offeredName = addedAccount?.displayName?.trim()
+    || (added && added.offered !== undefined ? added.offered : added?.who) || '';
+  const addedWho = (addedAccount ? whoApart(addedAccount, tool) : null) ?? added?.who ?? null;
   const addedFallback = added
     ? accountName({ name: added.account, key: added.key ?? addedAccount?.key, account: added.who ?? addedAccount?.account })
     : '';
@@ -600,7 +608,7 @@ export function AgentPage({
               agent={tool.name}
               account={added.account}
               title={t(addedKey ? 'harness.profile.addKey' : 'agents.add.title')}
-              signedIn={addedKey ? undefined : added.who}
+              signedIn={addedKey ? undefined : addedWho}
               lead={addedKey ? t('agents.add.keyAdded', { handle: addedKey }) : undefined}
               offered={offeredName}
               fallback={addedFallback}
@@ -660,8 +668,8 @@ export function AgentPage({
             {tool.present && (
               <AccountRow
                 name={ownLabel}
-                who={tool.ownAccount}
-                why={ownLine(tool.ownAccount, use?.own.cooling)}
+                who={ownWho(tool)}
+                why={ownLine(ownWho(tool), use?.own.cooling)}
                 state={own}
                 // No *Runs for* and no *Try now*: no start runs on it, so an old cool-off is only said (D175 point 1).
                 // What its agent last said of its windows, where a press asked its own server (CODEXUSE3), in the cells an

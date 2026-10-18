@@ -79,4 +79,24 @@ describe('the agent and account chip', () => {
     expect(rows.findIndex((text) => text.startsWith('lab'))).toBeLessThan(rows.findIndex((text) => text.startsWith('team')));
     expect(rows.findIndex((text) => text.startsWith('team'))).toBeLessThan(rows.findIndex((text) => text.startsWith('spare')));
   });
+
+  /** ACCOUNTID1b: two sign-ins of one email read alike; each says its organisation, after the email and once. */
+  it('tells two accounts of one email apart by their organisations, in its rows and on the chip', async () => {
+    const email = 'person@example.invalid';
+    show({
+      value: { adapter: 'claude-code', profile: 'acct-0000000b' },
+      accounts: {
+        'claude-code': [
+          { name: 'acct-0000000a', login: 'in' as const, account: email, org: 'Org A' },
+          { name: 'acct-0000000b', login: 'in' as const, account: email, org: 'Org B' },
+          { name: 'acct-0000000d', displayName: 'work', login: 'in' as const, account: email, org: 'Org D' },
+        ],
+      },
+    });
+    expect(screen.getByRole('button', { name: /Agent and account/ }).textContent).toBe(`Claude Code · ${email} · Org B`);
+    const menu = await open();
+
+    const rows = within(menu).getAllByRole('menuitemradio').map((row) => row.textContent);
+    expect(rows.slice(-3)).toEqual([`${email} · Org A`, `${email} · Org B`, `work · ${email} · Org D`]);
+  });
 });

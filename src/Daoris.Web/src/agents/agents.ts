@@ -272,7 +272,10 @@ export function latestRead(states: readonly AccountState[]): string | null {
 /** A fresh id (ACCT2): `acct-` and eight hex characters, which the person never chose and which says nothing. */
 const FRESH = /^acct-[0-9a-f]{8}$/i;
 
-type Named = Pick<Account, 'name'> & Partial<Pick<Account, 'displayName' | 'account' | 'key'>>;
+type Named = Pick<Account, 'name'> & Partial<Pick<Account, 'displayName' | 'account' | 'key' | 'org' | 'plan'>>;
+
+/** One agent's sign-ins, an account told apart among (ACCOUNTID1b): its accounts, and its own sign-in where it is known. */
+export type Among = { accounts: readonly Named[] } & Partial<Pick<Tool, 'ownAccount' | 'ownOrg' | 'ownPlan'>>;
 
 /**
  * An account's name, as its row leads with it (D152 §4.2): the person's own (ACCT2), else a key's handle, else, for a fresh
@@ -303,10 +306,76 @@ function folded(name: string): string {
  * that is its identity in another case is one (ACCTNAME1's page half: the owner named each account by its email), since
  * every name here is compared without case.
  */
-export function accountWho(account: Named): string | null {
+export function accountWho(account: Named, among?: Among | null): string | null {
   if (account.key) return null;
   const who = account.account?.trim();
-  return who && folded(who) !== folded(accountName(account)) ? who : null;
+  if (!who) return null;
+  const name = accountName(account);
+  const apart = apartOf(account, among);
+  const said = [says(name, who) ? null : who, apart && !says(name, apart) ? apart : null].filter((part) => part !== null);
+  return said.length > 0 ? said.join(' · ') : null;
+}
+
+/**
+ * An account's name on one line, where a pill, a chip, a note or a header has room for one (ACCOUNTID1b): its name, and what
+ * tells it apart after it where the name is who signed in and another sign-in of its agent is that email too. A name the
+ * person chose is one no other account has (ACCT2), so it stands alone.
+ */
+export function accountLabel(account: Named, among?: Among | null): string {
+  const name = accountName(account);
+  const who = account.account?.trim();
+  const apart = apartOf(account, among);
+  return apart && who && says(name, who) && !says(name, apart) ? `${name} · ${apart}` : name;
+}
+
+/**
+ * Who signed in, with what tells the sign-in apart from another of its agent of the same email after it (ACCOUNTID1b), for a
+ * line that says who and no name: *Signed in as …*, the agent's own sign-in. Null for a key, or where the agent said nobody.
+ */
+export function whoApart(account: Named, among?: Among | null): string | null {
+  const who = account.key ? null : account.account?.trim();
+  if (!who) return null;
+  const apart = apartOf(account, among);
+  return apart ? `${who} · ${apart}` : who;
+}
+
+/** Who is signed in to the agent's own home, told apart from an account of the same email (ACCOUNTID1b). */
+export function ownWho(tool: Among): string | null {
+  return whoApart({ name: '', account: tool.ownAccount, org: tool.ownOrg, plan: tool.ownPlan }, tool);
+}
+
+/**
+ * What tells a sign-in apart from another of its agent signed in as the same email (ACCOUNTID1b, D125's note of 2026-10-19):
+ * the organisation its agent named beside who, where no such other sign-in has it, else the plan likewise; null where no
+ * other sign-in of the agent has that email, in any case, or neither part tells them apart. The rule `agent list` says it by
+ * (the CLI's `apartBy`), with the agent's own sign-in one of them on the page. A key names no one.
+ */
+function apartOf(account: Named, among: Among | null | undefined): string | null {
+  const who = account.key ? null : account.account?.trim();
+  if (!who || !among) return null;
+  const same = (one: string | null | undefined, other: string) => Boolean(one?.trim()) && folded(one!) === folded(other);
+  // Every sign-in of the email, itself among them: an account is in the list, the agent's own sign-in is its `ownAccount`.
+  const signedIn = [
+    ...among.accounts.filter((each) => !each.key && same(each.account, who)).map((each) => ({ org: each.org, plan: each.plan })),
+    ...(same(among.ownAccount, who) ? [{ org: among.ownOrg, plan: among.ownPlan }] : []),
+  ];
+  if (signedIn.length < 2) return null;
+  for (const part of ['org', 'plan'] as const) {
+    const mine = account[part]?.trim();
+    // Itself is the one sign-in holding it; another with the same part leaves it telling nothing apart.
+    if (mine && signedIn.filter((each) => same(each[part], mine)).length === 1) return mine;
+  }
+  return null;
+}
+
+/**
+ * Whether a name already says a part (ACCTNAME1's rule, said once): the part is the name, or one of its words joined by `·`,
+ * as the sign-in's end offers a second sign-in's name (`email·Org-B`, each run of space a dash), compared without case.
+ */
+function says(name: string, part: string): boolean {
+  const word = (text: string) => folded(text.trim().split(/[\s`\p{Cc}]+/u).filter(Boolean).join('-'));
+  const wanted = word(part);
+  return folded(name) === folded(part) || name.split('·').some((each) => word(each) === wanted);
 }
 
 /** A version as its number alone (D152 §4.1): the product name a binary prints after it, in brackets, is dropped. */

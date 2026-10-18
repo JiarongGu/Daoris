@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { accountName, accountWho } from '../agents/agents';
+import { accountLabel, accountName, accountWho } from '../agents/agents';
 import type { Account } from '../agents/tools';
 import { Icon, Menu } from '../design/ui';
 import { CHIP } from './RepositoryPicker';
@@ -11,7 +11,7 @@ const DEFAULT = '*';
 export type AgentChoice = { adapter: string; profile: string };
 
 /** Each agent's accounts, with their sign-in state (D49 §4), by agent. */
-export type AgentAccounts = Readonly<Record<string, Pick<Account, 'name' | 'login' | 'account' | 'displayName' | 'key'>[]>>;
+export type AgentAccounts = Readonly<Record<string, Pick<Account, 'name' | 'login' | 'account' | 'displayName' | 'key' | 'org' | 'plan'>[]>>;
 
 /**
  * The agent and account chip (NEW1b, D162; factored out for MIXAGENT1b-i, D163): one chip, and a menu of the agents, then the
@@ -69,7 +69,9 @@ export function AgentChip({
   };
 
   const agentName = agent ? names[agent] ?? labels[agent] ?? agent : t('work.start.harness');
-  const accountShown = account ? accountName(account) : t('work.start.accountDriver');
+  // Each account told apart from another of the agent's of one email (ACCOUNTID1b), among the accounts offered here.
+  const among = { accounts: profiles };
+  const accountShown = account ? accountLabel(account, among) : t('work.start.accountDriver');
   const showAgents = named ? harnesses.length > 0 : harnesses.length > 1;
 
   return (
@@ -115,7 +117,7 @@ export function AgentChip({
             >
               <Menu.RadioItem value={DEFAULT}>{t('work.start.profileDefault')}</Menu.RadioItem>
               {ordered.map((choice, index) => {
-                const who = accountWho(choice);
+                const who = accountWho(choice, among);
                 const name = who ? `${accountName(choice)} · ${who}` : accountName(choice);
                 const first = listed && !listed.includes(choice.name) && (index === 0 || listed.includes(ordered[index - 1]!.name));
                 return (
