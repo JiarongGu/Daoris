@@ -723,6 +723,22 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/quests/{id}/continue", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
         await PersonMoveAnswerAsync(s, http, await s.Exchange.ContinueAsync(id, DateTimeOffset.UtcNow, ct), ct));
 
+    // The person's bring-forward of their machine's lost take (SYNCMERGE1a, D178 point 3): a fresh take of the step and the conflict's
+    // dismissal marked with it, pushed and awaited as a take is (D69). LOCAL mode only: the take is this machine's, and travels from
+    // here as operations (D68). No connector tool reaches it: only the person chooses how a conflict ends.
+    app.MapPost("/api/quests/{id}/conflicts/forward", async (
+        ComposedService s, HttpContext http, string id, ForwardConflictRequest body, CancellationToken ct) =>
+    {
+        if (body is not { Machine: { Length: > 0 } machine, Sequence: > 0 and var sequence })
+        {
+            return Results.BadRequest(new ErrorResponse(
+                "A bring-forward names the conflict it resolves: its `machine` and `sequence`, as the quest answers it."));
+        }
+
+        var outcome = await s.Exchange.BringForwardAsync(id, new QuestOperationRef(machine, sequence), DateTimeOffset.UtcNow, ct);
+        return await PersonMoveAnswerAsync(s, http, outcome, ct);
+    });
+
     // What the driver read of a done's evidence (EVID1a, D144 §3): its verdict at the end of the session that made the
     // done, the sweep's, or the person's check at the terminal. LOCAL mode only, as the yes is: the commit is read on the
     // machine whose tree holds it, and the verdict travels from there as an operation (D68). No connector tool reaches it,

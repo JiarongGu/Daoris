@@ -201,6 +201,8 @@ public sealed record RespondQuestRequest(
 public sealed record PersonDoneRequest(string? Note);
 // A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
 public sealed record DismissConflictRequest(string? Machine, long? Sequence);
+// The person bringing their machine's lost take forward (SYNCMERGE1a): the conflict it resolves, named whole as the quest answers it.
+public sealed record ForwardConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
 // and `To` is the asker naming the receiver, which publishes at once.
 // `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
@@ -633,6 +635,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(RespondQuestRequest))]
 [JsonSerializable(typeof(PersonDoneRequest))]
 [JsonSerializable(typeof(DismissConflictRequest))]
+[JsonSerializable(typeof(ForwardConflictRequest))]
 [JsonSerializable(typeof(QuestEvidenceVerdictWire))]
 [JsonSerializable(typeof(QuestSetUpRequest))]
 [JsonSerializable(typeof(BindQuestRequest))]

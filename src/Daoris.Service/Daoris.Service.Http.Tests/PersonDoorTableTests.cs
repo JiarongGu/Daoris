@@ -107,6 +107,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/brainstorms/{id}/send", Person),
         ("DELETE", "/api/brainstorms/{id}", Person),
         ("POST", "/api/quests/{id}/conflicts/dismiss", Person),
+        // SYNCMERGE1a (D178 point 3): the person's bring-forward of their machine's lost take; a local host's alone.
+        ("POST", "/api/quests/{id}/conflicts/forward", Person),
         ("DELETE", "/api/registry/{repository}", Person),
         ("POST", "/api/registry/{repository}/workspace", Person),
         ("POST", "/api/registry/import", Person),
@@ -142,11 +144,11 @@ public sealed class PersonDoorTableTests
         // change stream (FABRIC-EVENT3b), a read of which families moved, and a closure graph's bind and close, the driver's two
         // posts (FABRIC-CLOSE1a), and its question of what became of a close (FABRIC-CLOSE1u), and the person's reopen of a sealed
         // submission and their word to go on with the step it held (FABRIC-CLOSE1c), and a brainstorm's two reads and the person's
-        // three presses: its question, its send and its clear (BRAINSTORM1a3).
+        // three presses: its question, its send and its clear (BRAINSTORM1a3), and the person's bring-forward of a lost take (SYNCMERGE1a).
         Assert.Equal(27, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(19, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(30, Routes.Count(route => route.Class == Person));
+        Assert.Equal(31, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d).
         Assert.Equal(9, Routes.Count(route => route.Class == Shared));
     }

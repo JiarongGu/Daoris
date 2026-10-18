@@ -1029,6 +1029,30 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// SYNCMERGE1a (D178 point 3): the person's bring-forward of their machine's lost take, at its own door. The body names the conflict
+    /// by its machine and sequence, as the quest answers it; one not named whole is refused before anything is asked of the store, a quest
+    /// there is not is 404, and a conflict that is not this machine's lost take is a state, the lock's 409. The press that stands is
+    /// proven on two machines and the remote by the service's suites, which a host with no remote cannot make.
+    /// </summary>
+    [Fact]
+    public async Task The_bring_forward_door_names_its_conflict_whole_and_refuses_one_that_is_not_this_machines()
+    {
+        Assert.Contains(("POST", "/api/quests/{id}/conflicts/forward"), host.Routes());
+        var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Bring it forward", body = "why" });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/conflicts/forward", new { machine = "m-1" })).Status);
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/conflicts/forward", new { sequence = 3 })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/conflicts/forward", new { machine = "m-1", sequence = 3 })).Status);
+        var refused = await host.PostAsync($"/api/quests/{quest}/conflicts/forward", new { machine = "m-1", sequence = 3 });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Contains("only the machine whose take lost", refused.Json.GetProperty("error").GetString());
+        Assert.Equal("Open", (await host.GetAsync("/api/quests")).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == quest).GetProperty("status").GetString());
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1c10: the person's word to go on with a started step that had submitted answers the step taken with no submission,
     /// and says its old result is cleared and that it must submit again.
     /// </summary>

@@ -238,6 +238,8 @@ public static class PersonDoors
         new("POST", "/api/brainstorms/{id}/send", DoorClass.Person, "a brainstorm's send"),
         new("DELETE", "/api/brainstorms/{id}", DoorClass.Person, "a brainstorm's clear"),
         new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Person, "a conflict's dismissal"),
+        // SYNCMERGE1a (D178 point 3): only the person, on the machine whose take lost, brings it forward; a local host's alone.
+        new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Person, "a lost take brought forward"),
         new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire"),
         new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring"),
         new("POST", "/api/registry/import", DoorClass.Person, "a folder's import"),
