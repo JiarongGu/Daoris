@@ -298,6 +298,9 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         Assert.DoesNotContain(("POST", "/api/quests/{id}/accept"), host.Routes());
         // Nor the person's done (QUESTCLOSE1): it is said on their own machine and travels from there as a done.
         Assert.DoesNotContain(("POST", "/api/quests/{id}/done"), host.Routes());
+        // Nor the reopen and the word to go on (FABRIC-CLOSE1c): the seal is judged on the take's machine, and travels from there.
+        Assert.DoesNotContain(("POST", "/api/quests/{id}/reopen"), host.Routes());
+        Assert.DoesNotContain(("POST", "/api/quests/{id}/continue"), host.Routes());
         // Nor the go-ahead's (KNOWUSE1a): asks are a local host's, and the yes to a production act is the person's.
         Assert.DoesNotContain(("POST", "/api/asks/{id}/go-aheads/{number}"), host.Routes());
         // Nor an ask's channel (SESSONE2a): asks are this machine's; the channel travels as a feed once SESSONE2d builds it.

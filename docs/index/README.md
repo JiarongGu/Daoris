@@ -142,20 +142,20 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 82 | 1481 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 130 | 2360 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 201 | 3563 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 137 | 2477 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 218 | 3849 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 117 | 1998 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 56 | 672 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 144 | 2457 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 121 | 2054 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 57 | 680 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 147 | 2490 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 47 | 817 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 88 | 1785 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
-| `src/Daoris.Service/README.md` | 89 | 775 |
+| `src/Daoris.Service/README.md` | 90 | 776 |
 
 ### CLI (`cli`)
 
@@ -221,6 +221,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
-| `docs/2026-10-16-fabric-events-design.md` | 170 | 2072 |
+| `docs/2026-10-16-fabric-events-design.md` | 170 | 2078 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 95 | 542 |
