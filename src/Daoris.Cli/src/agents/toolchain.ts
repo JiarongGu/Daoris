@@ -128,8 +128,8 @@ import type {
   AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, ScopeProblem, Switch, UseChange, UseMode, Uses,
 } from '../accounts/rotation.ts';
 import {
-  accountNames, accountsPath, forgetName, nameBeside, nameFor, nameProblem, newAccountId, offeredName, renameAccount,
-  resolveAccount, shownAs, signInRefusal, signInTarget, AccountNameError,
+  accountNames, accountsPath, apartWords, forgetName, nameBeside, nameFor, nameProblem, newAccountId, offeredName, renameAccount,
+  resolveAccount, shownAs, signedInSentence, signInRefusal, signInTarget, takenWayOut, AccountNameError,
 } from '../accounts/accountnames.ts';
 import { forgetRead, keepRead } from '../accounts/accountreads.ts';
 import type { Login } from '../accounts/accountreads.ts';
@@ -1148,7 +1148,7 @@ export function signInNew(
     const problem = nameProblem([...profiles(home, harness), id], accountNames(home, harness), id, wanted);
     if (problem !== null) {
       throw new DaorisError(problem.kind === 'taken'
-        ? `\`${wanted}\` already names \`${problem.other}\` — each \`${harness}\` account has a name of its own, so nothing was signed in.`
+        ? `\`${wanted}\` already names \`${problem.other}\` — each \`${harness}\` account has a name of its own, so nothing was signed in — ${takenWayOut(wanted)}`
         : `\`${wanted}\` is not a name a terminal can type — a name is one word, with no space or backtick, not starting with a dash, at most 64 characters; nothing was signed in.`);
     }
   }
@@ -1193,11 +1193,9 @@ export function signInNew(
       }
       const settings = options.path ? joinedAfterSignIn(options.path, before, harness, id, joins, write) : before;
       // ACCTNAME1: the email offered as the name is said once.
-      write(said.account
-        ? (called !== null && sameName(said.account, called)
-          ? `daoris: signed in as ${said.account} — this machine lists it by that name.`
-          : `daoris: signed in as ${said.account} — this machine lists it as \`${called ?? id}\`.`)
-        : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${called ?? id}\`.`);
+      // ACCOUNTID1c: where the email is another account's, the organisation (else the plan) is said after it.
+      const apart = apartWords(profiles(home, harness), accountNames(home, harness), id, said.account, said.org ?? null, said.plan ?? null);
+      write(`daoris: ${signedInSentence(said.account, harness, called, id, apart)}`);
       // ACCOUNTID1: the email another account already names is offered with its organisation beside it, or none.
       const offered = offeredName(profiles(home, harness), accountNames(home, harness), id, said.account, said.org ?? null, said.plan ?? null);
       for (const line of endLines(harness, id, called, offered, settings, home, Boolean(options.path))) write(line);
