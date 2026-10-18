@@ -773,6 +773,47 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.False(take.Json.GetProperty("quest").TryGetProperty("closure", out var closure) && closure.ValueKind == JsonValueKind.String);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c5 (§E5): a submission on the wire names the commit its evidence was read at, once that is read for it, and
+    /// leaves `commit` out before, so a quest no evidence was read for is answered as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_answers_its_evidence_commit_once_read_and_leaves_it_out_before()
+    {
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the committed bridge report for the weekly review." });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the committed bridge report", body = "For the review.",
+            requirements = new[]
+            {
+                new { quote = "Write the bridge report into docs/report-bridge.md", check = "The report is in the file.", evidence = new[] { new { path = "docs/report-bridge.md" } } },
+            },
+        });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/bind", new { graph = "sha256:0f1e2d3c4b5a6978" })).Status);
+        var ready = await host.PostAsync($"/api/quests/{quest}/respond", new
+        {
+            action = "ready", reason = "Written.", answers = new[] { new { requirement = 1, met = "It is in the file." } },
+        });
+        Assert.Equal(200, ready.Status);
+        var submission = ready.Json.GetProperty("quest").GetProperty("submission");
+        Assert.False(submission.TryGetProperty("commit", out _));
+
+        const string Commit = "0123456789abcdef0123456789abcdef01234567";
+        var found = await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = Commit, how = "session-end",
+            items = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "found", @object = "fedcba9876543210fedcba9876543210fedcba98" } },
+            submission = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() },
+        });
+        Assert.Equal(200, found.Status);
+        Assert.Equal(Commit, found.Json.GetProperty("quest").GetProperty("submission").GetProperty("commit").GetString());
+        var listed = (await host.GetAsync("/api/quests")).Json.EnumerateArray().Single(q => q.GetProperty("id").GetString() == quest);
+        Assert.Equal(Commit, listed.GetProperty("submission").GetProperty("commit").GetString());
+    }
+
     [Fact]
     public async Task A_bound_quest_is_submitted_with_ready_and_closed_once_by_the_close_door()
     {

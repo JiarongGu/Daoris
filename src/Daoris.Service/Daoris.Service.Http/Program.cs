@@ -2261,7 +2261,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     NoteParts.Element(q.NoteParts),
     // A closure graph's digest and its taker's submission (FABRIC-CLOSE1a): names and words, which every door may answer.
     q.Closure,
-    q.Submission is { } submitted ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note) : null,
+    // FABRIC-CLOSE1c5: and the commit its evidence was read at, where that was read for it; left out otherwise.
+    q.Submission is { } submitted ? new QuestSubmissionWire(submitted.Machine, submitted.Sequence, submitted.At, submitted.Note, q.SubmissionCommit) : null,
     // The submission a step grew from, and the one reopened under it (FABRIC-CLOSE1c): names, which every door may answer.
     q.GrewFrom is { } grew ? new QuestSubmissionRefWire(grew.Machine, grew.Sequence) : null,
     q.SourceReopened is { } reopened ? new QuestSubmissionRefWire(reopened.Machine, reopened.Sequence) : null);
