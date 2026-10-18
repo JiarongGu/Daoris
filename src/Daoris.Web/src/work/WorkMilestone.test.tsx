@@ -226,6 +226,29 @@ describe('an attempt held for the person', () => {
       .toHaveTextContent('close，第 1 次尝试：委托的关闭被拒绝了，但 Daoris 没能把这一结果记到这项工作上（no-acceptance）。它在等你的答复。');
   });
 
+  it('says a word taken back on a close whose submission was reopened or replaced, in English and in 中文 (FABRIC-CLOSE1q2)', async () => {
+    const { unmount } = render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
+    expect(screen.getByRole('region', { name: 'Where this work stands' })).toHaveTextContent(
+      'close, attempt 1: The submission this close names was reopened or replaced since, so the work now is not this close\'s to record or stop; it can be sent again.');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
+    expect(screen.getByRole('region', { name: '这项工作进展到哪里' }))
+      .toHaveTextContent('close，第 1 次尝试：这次关闭针对的交付此后已被重新打开或替换，现在的工作不能由这次关闭来记录或停止，只能再发送一次。');
+  });
+
+  it('offers a close whose submission moved the one press the driver names, resend alone (FABRIC-CLOSE1q3)', async () => {
+    const [row] = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [], [heldClose({ why: 'submission-moved', words: ['resend'] })]);
+    expect(attentionActs(row!)).toEqual(['resend-close']);
+    const words: string[] = [];
+    render(<ul><AttentionRow item={row!} acts={{ held: (_, resolution) => words.push(resolution) }} /></ul>);
+    expect(screen.queryByRole('button', { name: 'Record the answer again' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop the rest of this work' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Ask for the answer again' }));
+    expect(words).toEqual(['resend']);
+  });
+
   it('takes its node’s place on the work’s foot, in English and in 中文', async () => {
     const { unmount } = render(<WorkMilestone unit={unit({ held: [heldAttempt({ why: 'no-reconcile' })] })} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });

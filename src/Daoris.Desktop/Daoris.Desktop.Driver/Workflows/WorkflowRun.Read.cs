@@ -166,6 +166,8 @@ public static class WorkflowRunReader
         var facts = new WorkflowRunFacts(repository, current)
         {
             Quests = part,
+            // FABRIC-WORKFLOW2d: the whole chain, where a submission's next step another repository holds is read to seal it (§E5).
+            Chain = chain,
             Sessions = mine,
             GoAheads = ask?.GoAheads ?? [],
             Review = review,

@@ -10,7 +10,11 @@ const short = (commit: string) => (commit.length > 8 ? commit.slice(0, 8) : comm
 
 /** The details each kind words; a detail a newer driver names is said as recorded. */
 const DETAILS: Record<string, readonly string[]> = {
-  work: ['queued', 'agent', 'answered', 'park', 'go-ahead', 'held', 'awaits', 'unclosed', 'failed', 'stopped', 'declined', 'finished'],
+  // A closure graph's work finished at its submissions, and a submission the person reopened (FABRIC-WORKFLOW2d).
+  work: [
+    'queued', 'agent', 'answered', 'park', 'go-ahead', 'held', 'awaits', 'unclosed', 'failed', 'stopped', 'declined', 'finished', 'submitted',
+    'reopened',
+  ],
   // The second opinion's gate's own states (XAGENT1f, `OpinionGateStates`), and a landing that let it go.
   opinion: [
     'none', 'waits-chain', 'not-asked', 'reading', 'read-again', 'with-session', 'disputed', 'commits-since', 'unavailable', 'settled',
@@ -55,8 +59,10 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
     case 'work.held': return t(`${at}.${HOLDS.includes(step.code ?? '') ? step.code : 'departed'}`);
     case 'work.awaits':
     case 'work.unclosed':
-    case 'work.declined': return t(at, { quest: step.quest ?? '' });
-    case 'work.finished': return t(at, { count: step.count ?? 0 });
+    case 'work.declined':
+    case 'work.reopened': return t(at, { quest: step.quest ?? '' });
+    case 'work.finished':
+    case 'work.submitted': return t(at, { count: step.count ?? 0 });
     case 'opinion.reading': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
     case 'opinion.read-again': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
     case 'opinion.with-session':
@@ -122,6 +128,9 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
   if (kind === 'work' && at.state === 'waiting-on-you' && ['park', 'go-ahead', 'held', 'unclosed'].includes(at.detail)) {
     return t(`workflow.run.short.work.${at.detail}`);
   }
+
+  // A reopened submission waits on its own agent (FABRIC-WORKFLOW2d), not on another repository as the state's short words say.
+  if (kind === 'work' && at.detail === 'reopened') return t('workflow.run.short.work.reopened');
 
   const key = `workflow.run.short.${kind}.${at.state}`;
   const known = SHORT[kind]?.includes(at.state) ?? false;

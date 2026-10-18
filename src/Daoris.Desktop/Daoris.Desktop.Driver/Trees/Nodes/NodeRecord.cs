@@ -93,7 +93,8 @@ public static class HeldResolutions
 
     /// <summary>
     /// Stop the node: the attempt's outcome stays unknown, settled as the person's to answer for, and nothing more is asked. On a held close
-    /// (FABRIC-CLOSE1q), stop its work's further nodes instead: the close's answer is still its door's, kept or asked for with its key.
+    /// (FABRIC-CLOSE1q), stop its work's further nodes instead: the close's answer is still its door's, kept or asked for with its key. Taken
+    /// back once the close's submission was reopened or replaced (FABRIC-CLOSE1q2): the work then is the next submission's.
     /// </summary>
     public const string Stop = "stop";
 
