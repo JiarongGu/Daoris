@@ -376,8 +376,42 @@ public static class WorkflowRuns
     private static WorkflowStep Cell(WorkflowRunFacts facts, string kind) =>
         facts.Current.Steps.First(step => step.Kind == kind);
 
-    /// <summary>Whether a quest's work here is finished: done, and not held for the person's yes (D133, D144).</summary>
-    private static bool Finished(QuestView quest) => quest.Status == "Done" && !quest.Held;
+    /// <summary>
+    /// Whether a quest's work here is finished: done, and not held for the person's yes (D133, D144); or, bound to a closure graph, at its
+    /// unheld, sealed submission (FABRIC-WORKFLOW2d, §E5), since in that graph Daoris writes no Done before the graph's end.
+    /// </summary>
+    private static bool Finished(QuestView quest, IReadOnlyList<QuestView> chain) => Closed(quest) || Submitted(quest, chain);
+
+    /// <summary>Closed done, and not held for the person's yes (D133, D144): how every quest finished before a closure graph, and still does.</summary>
+    private static bool Closed(QuestView quest) => quest.Status == "Done" && !quest.Held;
+
+    /// <summary>
+    /// Whether a quest a closure graph holds is finished at its submission (FABRIC-WORKFLOW2d, §E5): taken, its current submission unheld
+    /// and sealed. Sealed is the service's own reading (<c>QuestStore.SealingAsync</c>, FABRIC-CLOSE1c): the chain's next step published
+    /// and standing on that submission, grown from it (or from none, a step from before) with no reopen since. The chain's last has no step
+    /// to publish, so its unheld submission is enough, as the close door judges it. Its Done is the graph's close's to write.
+    /// </summary>
+    private static bool Submitted(QuestView quest, IReadOnlyList<QuestView> chain) =>
+        quest is { Status: "Taken", Closure: not null, Submission: { } current, Held: false }
+        && (quest.Then.Count == 0
+            || (chain.FirstOrDefault(step => Same(step.Parent, quest.Id)) is { SourceReopened: null } step
+                && (step.GrewFrom is null || step.GrewFrom == new QuestSubmissionRef(current.Machine, current.Sequence))));
+
+    /// <summary>
+    /// Whether the person reopened a closure graph's quest's submission and nothing was made ready since (FABRIC-CLOSE1c, FABRIC-WORKFLOW2d):
+    /// taken with no current submission, its chain's next step standing reopened, withdrawn while open or held while taken.
+    /// </summary>
+    private static bool Reopened(QuestView quest, IReadOnlyList<QuestView> chain) =>
+        quest is { Status: "Taken", Closure: not null, Submission: null }
+        && chain.Any(step => Same(step.Parent, quest.Id) && step.SourceReopened is not null);
+
+    /// <summary>
+    /// A hold the work's words name (D133, D144): a held done's, and a closure graph's held submission's, which holds as a done does (§E5).
+    /// A step held because its source was reopened is FABRIC-CLOSE1c's, which these words do not say.
+    /// </summary>
+    private static bool HeldForYou(QuestView quest) =>
+        quest is { Held: true, Status: "Done" }
+        || quest is { Held: true, Status: "Taken", Closure: not null, Submission: not null, Hold: null or EvidenceCodes.Departed or EvidenceCodes.Unread or EvidenceCodes.MissingHold };
 
     private static bool Live(TracedSession session) => !Endings.Contains(session.State);
 
@@ -395,14 +429,19 @@ public static class WorkflowRuns
             return Step(WorkflowRunStates.Stopped, WorkflowRunDetails.Declined) with { Quest = declined.Id, Words = declined.Note, At = declined.Updated };
         }
 
-        var done = work.Count(Finished);
-        var current = work.FirstOrDefault(quest => !Finished(quest));
+        // A step another repository holds seals a submission here too (FABRIC-WORKFLOW2d), so the seal reads the whole chain where it was handed.
+        var chain = facts.Chain.Count > 0 ? facts.Chain : facts.Quests;
+        var done = work.Count(quest => Finished(quest, chain));
+        var current = work.FirstOrDefault(quest => !Finished(quest, chain));
         if (current is null)
         {
             var last = sessions.LastOrDefault();
-            return Step(WorkflowRunStates.Done, WorkflowRunDetails.Finished) with
+            // Finished at a submission, the work says so, at the newest one made: the graph's close writes the Done at its end (§E5).
+            var submitted = work.Any(quest => !Closed(quest));
+            return Step(WorkflowRunStates.Done, submitted ? WorkflowRunDetails.Submitted : WorkflowRunDetails.Finished) with
             {
-                Count = done, Quest = work[^1].Id, Session = last?.Id, Agent = last?.Adapter, At = work[^1].Updated ?? last?.Updated,
+                Count = done, Quest = work[^1].Id, Session = last?.Id, Agent = last?.Adapter,
+                At = (work[^1] is { Status: "Taken", Submission.At: { } made } ? made : work[^1].Updated) ?? last?.Updated,
             };
         }
 
@@ -426,7 +465,7 @@ public static class WorkflowRuns
             };
         }
 
-        if (current is { Status: "Done", Held: true })
+        if (HeldForYou(current))
         {
             return At(WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Held) with { Code = current.Hold ?? EvidenceCodes.Departed, At = current.Updated };
         }
@@ -447,6 +486,10 @@ public static class WorkflowRuns
 
         // A stop the person made holds the quest (D126 §3.4); one that was not theirs (D104) is the driver's to start again.
         if (latest is { State: "stopped", Interrupted: false }) return At(WorkflowRunStates.Stopped, WorkflowRunDetails.Stopped) with { At = latest.Updated };
+
+        // The person reopened its submission (FABRIC-CLOSE1c): the finish is taken back, and the work waits for its agent's next ready, judged
+        // from the start (FABRIC-WORKFLOW2d). Said where nobody is at it, as its done would be; an agent at it, failed or stopped is said above.
+        if (Reopened(current, chain)) return At(WorkflowRunStates.WaitingOnAgent, WorkflowRunDetails.Reopened);
 
         if (current.Status == "Taken" && latest is { State: "completed" or "stood-down" })
         {

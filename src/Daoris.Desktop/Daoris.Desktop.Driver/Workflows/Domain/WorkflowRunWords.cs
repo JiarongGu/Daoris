@@ -22,6 +22,7 @@ public static class WorkflowRunWords
             WorkflowRunDetails.Queued, WorkflowRunDetails.Agent, WorkflowRunDetails.Answered, WorkflowRunDetails.Park,
             WorkflowRunDetails.GoAhead, WorkflowRunDetails.Held, WorkflowRunDetails.Awaits, WorkflowRunDetails.Unclosed,
             WorkflowRunDetails.Failed, WorkflowRunDetails.Stopped, WorkflowRunDetails.Declined, WorkflowRunDetails.Finished,
+            WorkflowRunDetails.Submitted, WorkflowRunDetails.Reopened,
         ],
         [WorkflowKinds.Opinion] =
         [
@@ -123,6 +124,12 @@ public static class WorkflowRunWords
             (WorkflowKinds.Work, WorkflowRunDetails.Declined) => $"Quest #{quest} was declined.",
             (WorkflowKinds.Work, WorkflowRunDetails.Finished) =>
                 count == 1 ? "The agent finished: 1 quest here is done." : $"The agent finished: {count} quests here are done.",
+            // FABRIC-WORKFLOW2d: a closure graph's work, finished at its submissions, and a submission the person reopened.
+            (WorkflowKinds.Work, WorkflowRunDetails.Submitted) => count == 1
+                ? "The agent finished: 1 quest here is submitted, and closes at the workflow's end."
+                : $"The agent finished: {count} quests here are submitted, and close at the workflow's end.",
+            (WorkflowKinds.Work, WorkflowRunDetails.Reopened) =>
+                $"You reopened quest #{quest}'s submission: it waits for its agent to make it ready again.",
 
             (WorkflowKinds.Opinion, OpinionGateStates.None) => "No second opinion is asked before this work lands.",
             (WorkflowKinds.Opinion, OpinionGateStates.WaitsChain) =>
