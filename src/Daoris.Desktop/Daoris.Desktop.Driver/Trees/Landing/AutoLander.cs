@@ -385,7 +385,7 @@ public sealed class AutoLander(
         var later = !string.Equals(last, choice.Entry.Session, StringComparison.OrdinalIgnoreCase);
         if (!later && !waited && !QuestResults.Submitted(choice.Quest)) return null;
         var fresh = world.Again();
-        // A later session on no quest holds nothing of the look's: its work was the person's press, as the hand-off's door holds it.
+        // A later session on no quest holds the push to nothing, as at the person's door: its work landed by the person's own press.
         if ((later ? QuestOf(await fresh.RecordsAsync(ct).ConfigureAwait(false), last) : choice.Entry.Quest) is not { } id) return null;
         var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
         var why = !QuestResults.Judged(quest) ? "its quest was taken back"
