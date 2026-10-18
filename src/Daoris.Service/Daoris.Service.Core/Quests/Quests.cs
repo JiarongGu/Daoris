@@ -215,7 +215,8 @@ public sealed record Quest(
     /// <summary>
     /// The submission it grew from, reopened by the person (FABRIC-CLOSE1c, §E5), while that stands: an open step is withdrawn and
     /// a taken one is held, each for the person (<see cref="QuestHold.SourceReopened"/>). Null for every other quest, and once a
-    /// <see cref="QuestOperationKind.Rebound"/> names the submission it grows from now.
+    /// <see cref="QuestOperationKind.Rebound"/> names the submission it grows from now, which clears the step's own submission and its
+    /// answers, yes and verdict, made on the work reopened (FABRIC-CLOSE1c10).
     /// </summary>
     public QuestOperationRef? SourceReopened { get; init; }
 
