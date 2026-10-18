@@ -1494,6 +1494,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 // and from a host before them; a submission named only in half is none.
                 Closure = Text(quest, "closure") is { Length: > 0 } closure ? closure : null,
                 Submission = ReadSubmission(quest),
+                // FABRIC-CLOSE1c, read for FABRIC-WORKFLOW2d's seal: the submission a step grew from and the reopen standing on it. Absent
+                // from a step a done published and from a host before them; one named in half is none.
+                GrewFrom = ReadSubmissionRef(quest, "grewFrom"),
+                SourceReopened = ReadSubmissionRef(quest, "sourceReopened"),
             });
         }
 
@@ -2096,6 +2100,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         && submission.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
         && sequence.TryGetInt64(out var number) && number > 0
             ? new QuestSubmissionView(machine, number, Moment(submission, "at"), Text(submission, "note"))
+            : null;
+
+    /// <summary>A submission a quest names by its machine and sequence (FABRIC-CLOSE1c), or null: none, from a host before it, or named only in half.</summary>
+    private static QuestSubmissionRef? ReadSubmissionRef(JsonElement quest, string name) =>
+        quest.TryGetProperty(name, out var named) && named.ValueKind == JsonValueKind.Object
+        && Text(named, "machine") is { Length: > 0 } machine
+        && named.TryGetProperty("sequence", out var sequence) && sequence.ValueKind == JsonValueKind.Number
+        && sequence.TryGetInt64(out var number) && number > 0
+            ? new QuestSubmissionRef(machine, number)
             : null;
 
     /// <summary>A set-up step's set-ups (<c>setUps</c>), each with a full commit: one without is half of one.</summary>
