@@ -32,6 +32,19 @@ repository.
   waits on that quest before choosing the hand-on (`AutoLander.PushHeldAsync`). D173's FABRIC-CLOSE1h10 note has the behaviour.
 - **Verification:** red first: `PressedResultTests` (5 failing), and the new Git cases (3 failing, 2 passing as before). Then the
   driver's fast half is 9568 (9561 before), and `AutoLandingTests`, run once by class, passes 65 (60 before).
+## 2026-10-18 — A step gone on with after its session ended normally sat taken with nothing submitted (FABRIC-CLOSE1c13)
+
+- **Symptom:** after the person's go-on cleared a held step's own result (CLOSE1c10), a step whose session had said `ready` and parked,
+  or completed, before its source was reopened sat taken with no submission: nothing went on with it, and its branch never got the
+  source's new work.
+- **Root cause:** the planner's go-on after a reopen read only a session the reopen stopped (`StoppedByReopen`, CLOSE1c2), and the
+  start's rebase onto the new submission (CLOSE1c5) was gated on the same; a park also holds its quest's slot and tree, so a new session
+  beside it could never start.
+- **Fix:** the look tells that session Daoris's words of the go-on, once (`Planner.GoneOnSince`, `ReopenTelling`), the planner's go-on
+  resumes it with them, and the start's gate (`ReopenTelling.BringsToSource`) brings its branch up to date first. D173's
+  FABRIC-CLOSE1c13 note has the behaviour.
+- **Verification:** red first: `PlannerTests` (2), `ReopenGoOnTests` (1), `ReopenTellingTests` (6), then green; the driver's fast half
+  is 9591 (9578 before).
 ## 2026-10-18 — The person's go-on kept a held step's result made on the reopened work (FABRIC-CLOSE1c10)
 
 - **Symptom:** a step that had said `ready` before the person reopened its source went on, at the person's word (`continue`), with that
