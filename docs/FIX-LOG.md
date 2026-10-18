@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-18 — The automatic landing's git tests were one class, the longest of the git half (PROCSPLIT1)
+
+- **Symptom:** `AutoLandingTests`, one class of 40 test methods (about 70 cases), took about 10 minutes on a quiet machine and 43 under load,
+  the longest class of `driver-process-git` (46 m on the last full set): xUnit runs one class's tests one after another, so the git half's
+  four parallel threads could not share it.
+- **Root cause:** one class held every concern and the helpers beside them.
+- **Fix:** the constructor, `Dispose`, fields and every helper moved to the abstract `AutoLandingFixture`; the tests moved unchanged into
+  five classes by concern (`AutoLandingTriesTests`, `AutoLandingWorkflowTests`, `AutoLandingSubmissionTests`, `AutoLandingPressTests`,
+  `AutoLandingPushHeldTests`), each with the `Process` and `Git` traits. Nothing is shared between classes: each instance's scratch folder
+  carries a fresh id, `LandingHolds`' static gates are keyed by the home inside it, and the other statics are constants or pure helpers.
+- **Verification:** no red (no behaviour changed). The 40 test names are the same, once each; a sorted line diff of the old class against
+  the new files shows only access modifiers, headers, doc comments and two dropped section comments. Both runs used `--filter
+  "FullyQualifiedName~AutoLanding"` with `git.process.runsettings`, on a machine loaded by merges and builders: before, 53 m 20 s, 61 tests
+  (60 passed; one failed on its own 60 s wait, "the push waits for its branch", a load timeout); after, with the five tests FABRIC-CLOSE1h10
+  added, 12 m 35 s test duration (14 m wall with the build), 66 of 66 passed.
+
 ## 2026-10-18 — The Work frame's suite was one file that ran 181 s alone and timed out under load (WEBSPEED1)
 
 - **Symptom:** `WorkFrame.test.tsx`, 229 tests, was the slowest web-unit file (181 s alone on a quiet machine, 221 s here), and a merge's web-unit
