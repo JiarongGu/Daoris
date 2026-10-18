@@ -186,6 +186,35 @@ export function nameProblem(
   return null;
 }
 
+/** What joins who signed in to what tells two of their sign-ins apart, in a name a sign-in's end offers (ACCOUNTID1). */
+export const NAME_APART = '·';
+
+/**
+ * The name a sign-in's end offers an account (ACCOUNTID1, rule 2): who signed in, where no other account has it as its id or
+ * its name; else who with the organisation beside it (`NAME_APART`), else with the plan, the first of them `nameProblem`
+ * takes, so accepting the offer names it; else none, and the person names it. One email signed in to two organisations is
+ * two accounts, and the second's email was refused as taken. Offered, never written. The driver's twin is
+ * `AccountNames.Offered`, whose table is `OFFER_ROWS` in `accountnames.test.ts`.
+ */
+export function offeredName(
+  accounts: string[], names: Record<string, string>, account: string, who: string | null, org: string | null, plan: string | null,
+): string | null {
+  const email = who?.trim() ?? '';
+  if (email.length === 0) return null;
+  return [email, nameBeside(email, org), nameBeside(email, plan)]
+    .find((offer) => offer !== null && nameProblem(accounts, names, account, offer) === null) ?? null;
+}
+
+/**
+ * Who signed in with what tells their sign-ins apart beside it (`NAME_APART`), as `offeredName` offers it: a name is one
+ * word (rule 3), so each run of what one may not hold inside the part is one dash, and at its ends nothing. Null where the
+ * part holds nothing else.
+ */
+export function nameBeside(who: string, part: string | null): string | null {
+  const word = (part ?? '').split(/[\s\p{Cc}`]+/u).filter(Boolean).join('-');
+  return word.length > 0 ? `${who.trim()}${NAME_APART}${word}` : null;
+}
+
 function sentence(
   agent: string, problem: NameProblem, account: string, name: string | null, accounts: string[], names: Record<string, string>,
 ): string {

@@ -211,13 +211,22 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             // The roster says what was last read on the page's next question; the end is still news.
         }
 
+        var signedIn = signingIn ? report?.Profiles.FirstOrDefault(each => each.Name == profile) : null;
+        var owner = _loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness;
         await _events.EmitAsync("DAORIS", "HARNESS_ENDED", new
         {
             Harness = harness, Action = action, Profile = profile, ExitCode = code, Problem = problem,
             // Who signed in (D66 §3) — the tool's own answer, from the reading the sign-in's end made, so
             // the sentence a person hears names the account the way they know it.
-            Account = signingIn
-                ? report?.Profiles.FirstOrDefault(each => each.Name == profile)?.Account
+            Account = signedIn?.Account,
+            // The organisation and the plan beside who (ACCOUNTID1), from the same reading, written nowhere.
+            signedIn?.Org,
+            signedIn?.Plan,
+            // The name offered for it (ACCOUNTID1, AccountNames.Offered): who signed in, or with the organisation beside it
+            // where another account already has the email, so accepting it names the account; null where none tells them
+            // apart, and the person names it. Offered, never written (D66 §3).
+            Offered = signedIn is { Account: { } who }
+                ? Offer(owner, signedIn.Name, who, signedIn.Org, signedIn.Plan)
                 : null,
             // Whether a sign-in to another account left one behind: it does only when it finished.
             Kept = action == "login-new" && profile is not null
@@ -227,9 +236,24 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             // Where the account signed in runs now, its joins made (ACCT1): each list and default holding it, this machine a
             // null workspace; none is an account no start runs on, which the page asks about at the sign-in's end.
             Places = signingIn
-                ? AgentsRoutes.PlacesShown(_loop.Harnesses.Settings.PlacesOf(_loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness, profile!))
+                ? AgentsRoutes.PlacesShown(_loop.Harnesses.Settings.PlacesOf(owner, profile!))
                 : null,
         });
+    }
+
+    /// <summary>The name a sign-in's end offers an account (ACCOUNTID1), or null where the names do not read.</summary>
+    private string? Offer(string owner, string account, string who, string? org, string? plan)
+    {
+        var home = _loop.Harnesses.Home;
+        try
+        {
+            return AccountNames.Offered(HarnessSettings.Profiles(home, owner), AccountNames.Of(home, owner), account, who, org, plan);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The end is news whatever the names say; the page offers nothing and the person names it.
+            return null;
+        }
     }
 
     /// <summary>
@@ -262,11 +286,11 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
         finally
         {
-            var (login, account) = code == 0
+            var said = code == 0
                 ? await _loop.Harnesses.LoginOfAsync(harness, config, fresh, CancellationToken.None)
-                : (LoginState.Out, null);
+                : new LoginRead(LoginState.Out, null);
 
-            if (code != 0 || login == LoginState.Out)
+            if (code != 0 || said.Login == LoginState.Out)
             {
                 try
                 {
@@ -284,7 +308,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 // Named where the person named it (ACCT2); who signed in is offered on the page, never written here (D66 §3).
                 var called = Kept(() => AccountNames.Rename(
                     _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), fresh, name), name is not null, stream);
-                stream(AgentsRoutes.SignedInSentence(account, owner, called, fresh));
+                stream(AgentsRoutes.SignedInSentence(said.Account, owner, called, fresh));
                 Placed(owner, fresh, joins, stream);
             }
         }

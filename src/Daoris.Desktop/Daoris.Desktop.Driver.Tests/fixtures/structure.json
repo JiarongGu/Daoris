@@ -291,6 +291,7 @@
     "SetupQuestsTests.cs": "Setup",
     "SetupWorldTests.cs": "Setup",
     "ShellWordTests.cs": "Platform",
+    "SignInOrgTests.cs": "Accounts",
     "SignInRefusalTickTests.cs": "Loop",
     "SignInRefusalsTests.cs": "Accounts",
     "SignInRefusedStartTests.cs": "Accounts",

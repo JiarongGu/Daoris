@@ -64,7 +64,8 @@ public sealed class DriverWatchTopicsTests : IDisposable
             watch.Nudge(ChangeTopics.Ledger, "quests");
             await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
 
-            Assert.True(Count(reports) >= 2, $"{Count(reports)} look(s)");
+            // TESTCLOCK1: the run starts inside the look and the look is reported after it, so the second report is waited for.
+            await Poll.Until(() => Count(reports) >= 2, () => $"{Count(reports)} look(s)", Bound);
             Assert.Equal(synced, Passes());
 
             // A plain nudge carries no topic, and means everything, the remote sync with it, as it always did.
