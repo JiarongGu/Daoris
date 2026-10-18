@@ -25,7 +25,11 @@ public static class VerbLeases
 {
     private static readonly HashSet<string> Reading = new(StringComparer.Ordinal) { "trace", "git", "logs" };
 
-    private static readonly HashSet<string> ServiceQuests = new(StringComparer.Ordinal) { "delete", "accept", "done", "check", "review" };
+    private static readonly HashSet<string> ServiceQuests = new(StringComparer.Ordinal)
+    {
+        // FABRIC-CLOSE1c3: the person's reopen and go-on are the service's doors alone, as the yes and the done are.
+        "delete", "accept", "done", "check", "review", "reopen", "go-on",
+    };
 
     private static readonly HashSet<string> AskWork = new(StringComparer.Ordinal) { "--pause", "--resume", "--abandon", "--clear" };
 

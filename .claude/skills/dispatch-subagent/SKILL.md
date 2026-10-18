@@ -119,7 +119,7 @@ once three batches hold the targets (MODELROLE1).
    - **The full set is owed before the install is built**, the long halves with it. `publish:desktop`
      refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
      on the checkout, or `--full` on the day's last merge, or `--full --beside` to gate main's tip in `local/gate-tree`
-     while the merges go on, then stage it with `--from-gated <commit>` (GATEWT1). 🔴 Never `--full` on a `--batch`: it runs every gate,
+     while the merges go on, then stage it with `--from-gated <commit>` (GATEWT1); it copies `local/sensitive-patterns.txt` into the tree and keeps its logs in `local/scratch/beside-<sha7>/`. 🔴 Never `--full` on a `--batch`: it runs every gate,
      the long halves included, for EVERY merge in the batch (a docs-only design paid forty minutes of the driver's
      Process half, 2026-10-09). Merge the batch plain, then `--stale` once. A verdict stands until a path its gate reaches
      changes (GATE6), and records written after the gates are forgiven; a refusal names each stale gate and
@@ -166,6 +166,9 @@ once three batches hold the targets (MODELROLE1).
    **Scan what you staged first** (`daoris-devkit scan`): records written after the gates, and every records
    commit made outside a merge, are the one change no universal gate reads before it is committed. A
    backlog row quoting a window's caption put a private name into history that way (2026-10-08).
+   **A records commit that appends a decision note regenerates the index with it** (`node tools/orient-index.mjs`,
+   then `--check`): `docs/index/decisions.md` reads every note, and `verify` does not run that check. A records commit
+   without it stopped the full set at `orient-index` on 2026-10-18.
    **The next merge's prune removes the worker's worktree and branch**, its harness lock with them, once nothing is
    left inside; `--prune` does it at once. Read the kept lines: each names what holds a tree (work, a file under
    `local/`, a running process), and what holds it is yours to settle. 43 subagent worktrees had piled up by

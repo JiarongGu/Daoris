@@ -208,6 +208,34 @@ export const PAUSED_WITH_QUEST: Consideration = {
   reason: 'you paused `#def456`; Resume starts it — `daoris-driver quest resume def456`.',
 };
 
+/** The submission a closure graph's quest stands at (FABRIC-CLOSE1a): its agent's `ready`, two hours ago. */
+export const SUBMISSION = { machine: 'desk', sequence: 41, at: hoursAgo(2), note: 'ready' };
+
+/**
+ * Taken in a closure graph and submitted (FABRIC-CLOSE1d, §E5): its submission departs from what the person required, so it is
+ * held for their yes, as a done would be. It reads *Submitted*, then the hold, and is done only at the graph's close.
+ */
+export const SUBMITTED: Quest = { ...HELD, id: 'su0su0', status: 'Taken', closure: 'gph-1', submission: SUBMISSION, hold: 'departed' };
+
+/** Submitted and unheld: its chain's next step was published from that submission, which it seals (FABRIC-CLOSE1c). */
+export const SEALED: Quest = {
+  ...TAKEN, id: 'se0se0', title: 'Stream the tiles over the v3 bridge', closure: 'gph-1', submission: SUBMISSION, held: false,
+};
+
+/** The step its submission published, standing on it (FABRIC-CLOSE1c's `grewFrom`). */
+export const STANDING: Quest = {
+  ...OPEN, id: 'st0st0', title: 'Verify the tiles in a playtest', parent: SEALED.id, grewFrom: { machine: 'desk', sequence: 41 },
+  links: [], attachments: [],
+};
+
+/** That step taken and started, then held because the person reopened its source (FABRIC-CLOSE1c, `source-reopened`). */
+export const REOPENED: Quest = {
+  ...STANDING, id: 'ro0ro0', status: 'Taken', sourceReopened: { machine: 'desk', sequence: 41 }, held: true, hold: 'source-reopened',
+};
+
+/** The same step reopened before anyone took it: withdrawn, taken by nobody until the source is ready again. */
+export const WITHDRAWN: Quest = { ...REOPENED, id: 'wd0wd0', status: 'Open' };
+
 /** A start the driver holds for the agent's trust (D73). */
 export const TRUST: TrustHold = {
   folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json', quest: OPEN.id,

@@ -468,6 +468,13 @@ public sealed partial class HelpCoverageTests
         ("quests", "useDeleteQuest", null, new Door("delete", "quest")),
         ("quests", "useRetryQuest", null, new Door("setting", "retry")),
         ("quests", "usePersonDone", null, PersonDone),
+        // FABRIC-CLOSE1c3 (D173's CLOSE1c note, D156): a person-only door each, which no agent's call may reach.
+        ("quests", "useReopenQuest", null, Own("quests",
+            "reopening a sealed submission is the person's word that its work is not what they will close on (FABRIC-CLOSE1c), a "
+            + "person-only door pressed on the quest's page, and `daoris-driver quest reopen` at a terminal")),
+        ("quests", "useContinueQuest", null, Own("quests",
+            "going on with a step its source's reopen held is the person's choice, which Daoris never makes (FABRIC-CLOSE1c's choice "
+            + "2), pressed on the step's page beside its abandon, and `daoris-driver quest go-on` at a terminal")),
         ("quests", "useTrustFolder", null, TrustFolder),
         ("quests", "useDismissConflict", null, new Exempt(
             "it puts away a conflict the person has read, an operation that travels and changes no status of the quest or its "

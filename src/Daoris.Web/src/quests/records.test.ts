@@ -1,8 +1,49 @@
 import { describe, expect, it } from 'vitest';
 import type { Ask, Quest, Session } from '../data/api';
 import {
-  answered, askStanding, freshest, keptFilters, latestSessions, questFilters, questGroups, questionOf, questStanding,
+  answered, askStanding, freshest, keptFilters, latestSessions, questFilters, questGroups, questionOf, questStanding, shownStatus,
+  sourceReady, standingStep,
 } from './records';
+import { REOPENED, SEALED, STANDING, SUBMITTED, TAKEN, WITHDRAWN } from './fixtures';
+
+// FABRIC-CLOSE1d and CLOSE1c3 (§E5; D173's CLOSE1c note): what a closure graph's quest reads, which step stands on its submission
+// (the seal the reopen needs), and whether a held step's source is ready again for the person's go-on.
+describe("a closure graph's quests as values", () => {
+  it('reads a taken quest with a current submission as submitted, and every other as its status', () => {
+    expect(shownStatus(SUBMITTED)).toBe('Submitted');
+    expect(shownStatus(SEALED)).toBe('Submitted');
+    expect(shownStatus(TAKEN)).toBe('Taken');
+    expect(shownStatus({ ...SUBMITTED, status: 'Done' })).toBe('Done');
+  });
+
+  it('finds the live step standing on the current submission, and none once it is reopened, closed or grew from another', () => {
+    expect(standingStep(SEALED, [SEALED, STANDING])?.id).toBe(STANDING.id);
+    // A step from before names no source, and stands on whatever its parent submitted (CLOSE1c's *step from before*).
+    expect(standingStep(SEALED, [SEALED, { ...STANDING, grewFrom: null }])?.id).toBe(STANDING.id);
+    expect(standingStep(SEALED, [SEALED, { ...STANDING, grewFrom: { machine: 'desk', sequence: 40 } }])).toBeNull();
+    expect(standingStep(SEALED, [SEALED, WITHDRAWN])).toBeNull();
+    expect(standingStep(SEALED, [SEALED, { ...STANDING, status: 'Done' }])).toBeNull();
+    expect(standingStep(SEALED, [SEALED, { ...STANDING, status: 'Declined' }])).toBeNull();
+    expect(standingStep(TAKEN, [TAKEN, { ...STANDING, parent: TAKEN.id }])).toBeNull();
+    expect(standingStep({ ...SEALED, held: true, hold: 'departed' }, [SEALED, STANDING])).toBeNull();
+  });
+
+  it('lists a held live quest once, where it waits on the person', () => {
+    const groups = questGroups([SUBMITTED, REOPENED, WITHDRAWN, TAKEN], false);
+
+    expect(groups.map(({ group, quests }) => [group, quests.map((quest) => quest.id)])).toEqual([
+      ['held', [SUBMITTED.id, REOPENED.id, WITHDRAWN.id]], ['open', []], ['progress', [TAKEN.id]],
+    ]);
+  });
+
+  it('reads a held step’s source ready once it has an unheld submission again', () => {
+    const reopenedSource = { ...SEALED, submission: null };
+    expect(sourceReady(REOPENED, [reopenedSource, REOPENED])).toBe(false);
+    expect(sourceReady(REOPENED, [{ ...SEALED, submission: { ...SEALED.submission!, sequence: 52 }, held: true }, REOPENED])).toBe(false);
+    expect(sourceReady(REOPENED, [{ ...SEALED, submission: { ...SEALED.submission!, sequence: 52 } }, REOPENED])).toBe(true);
+    expect(sourceReady(REOPENED, [REOPENED])).toBe(false);
+  });
+});
 
 // Quests' list and its memory as values (FRAME1d, D118 §2, §3f): every list a person could have is an argument.
 

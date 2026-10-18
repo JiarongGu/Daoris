@@ -129,6 +129,12 @@
  * - **Under load.** A full set beside merges shares the machine with their gates (GATEORDER1's lesson: a Process half's
  *   timing tests failed beside heavy gates). Nothing of FLAKE1's changes: a Process half's failures are re-run alone once
  *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start.
+ * - **Its private files, its logs (GATEWT1b, GATEWT1c).** Before its gates start, the private files a gate reads under
+ *   `local/` (`privateGateFiles`: the declared `sensitive.patternsFile`, nothing outside `local/`) are copied from the main
+ *   checkout into the tree on every run; a missing one is said, and the gate that reads it answers. When the run ends, pass,
+ *   fail or a thrown error, the tree's run folder is copied to the main checkout's `local/scratch/beside-<sha7>` (the newest
+ *   run's replaces an older), so a prune loses none. A run killed outright never gets there: the next run, before it clears
+ *   its logs, keeps any run folder it finds in the tree whose `beside-<sha7>` is absent.
  *
  * ## The prune (GATE2)
  *
@@ -291,7 +297,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
-  closeSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
+  closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
@@ -3515,6 +3521,69 @@ function prepareGateTree(home, commit) {
   return path;
 }
 
+/**
+ * The private files a gate reads under `local/`, as the declaration names them (GATEWT1b): today the sensitive scan's
+ * patterns file (`sensitive.patternsFile`, the devkit's default where undeclared). A path not under `local/` is not one
+ * of these (a tracked file is in the tree already), and none may climb out of it.
+ */
+export function privateGateFiles(home) {
+  let declared = 'local/sensitive-patterns.txt';
+  try {
+    const parsed = JSON.parse(readFileSync(join(home, 'daoris.gates.json'), 'utf8'));
+    if (typeof parsed?.sensitive?.patternsFile === 'string') declared = parsed.sensitive.patternsFile;
+  } catch {
+    // No readable declaration: the plan's own reading refuses it, with its reason.
+  }
+  const path = declared.replace(/\\/g, '/');
+  return path.startsWith('local/') && !path.split('/').includes('..') ? [path] : [];
+}
+
+/** Copies each of `files` from `home` into `tree`, refreshed on every run; returns the lines to say (GATEWT1b). */
+export function copyPrivateFiles(home, tree, files) {
+  return files.map((file) => {
+    const from = join(home, file);
+    if (!existsSync(from)) return `${file} is missing in the main checkout, so it is not copied into the gate tree: the gate that reads it answers for itself`;
+    mkdirSync(dirname(join(tree, file)), { recursive: true });
+    writeAtomic(join(tree, file), readFileSync(from));
+    return `${file}: copied into the gate tree`;
+  });
+}
+
+/** Copies the run folder at `from` over `home`'s `local/scratch/beside-<sha7>`, the newest run's logs only. */
+function replaceKept(from, home, sha7) {
+  const to = join(home, SCRATCH, `beside-${sha7}`);
+  rmSync(to, { recursive: true, force: true });
+  cpSync(from, to, { recursive: true });
+}
+
+/**
+ * Keeps the tree's run logs for `sha` in `home`'s `local/scratch/beside-<sha7>` (GATEWT1c): a prune after the stage
+ * removes the tree, and the logs of a failed run were in it. Replaces an older run's at that commit; true when kept.
+ */
+export function keepGateLogs(tree, home, sha) {
+  const from = join(tree, SCRATCH, `full-${sha.slice(0, 7)}`);
+  if (!existsSync(from)) return false;
+  replaceKept(from, home, sha.slice(0, 7));
+  return true;
+}
+
+/**
+ * Keeps any run folder a hard-killed run left in the tree (its `finally` never ran), before the next run clears it:
+ * copied to `beside-<sha7>` where that is absent in `home`; returns the lines to say (GATEWT1c).
+ */
+export function rescueGateLogs(tree, home) {
+  const scratch = join(tree, SCRATCH);
+  if (!existsSync(scratch)) return [];
+  const said = [];
+  for (const name of readdirSync(scratch)) {
+    const found = /^full-([0-9a-f]{7,40})$/.exec(name);
+    if (!found || existsSync(join(home, SCRATCH, `beside-${found[1].slice(0, 7)}`))) continue;
+    replaceKept(join(scratch, name), home, found[1].slice(0, 7));
+    said.push(`the logs of a run that did not end are kept: ${SCRATCH}/beside-${found[1].slice(0, 7)}`);
+  }
+  return said;
+}
+
 /** What a full set beside the merges says before its gates start: it shares the machine with them. */
 const UNDER_LOAD = 'under load: a full set beside the merges shares the machine with their gates, so a Process half\'s timing tests run '
   + 'loaded; its failures are still re-run alone once its lane is quiet, and a pass alone still reads FLAKE (GATEORDER1, FLAKE1)';
@@ -3544,8 +3613,20 @@ async function gateBeside(root, options) {
     writeGateRecord(home, { commit, started, ended: null, passed: null, staged: null });
     const tree = locate(prepareGateTree(home, commit));
     installDependencies(tree);
+    for (const line of copyPrivateFiles(home, tree, privateGateFiles(home))) console.log(`  ${line}`);
+    for (const line of rescueGateLogs(tree, home)) console.log(`  ${line}`);
     console.log(UNDER_LOAD);
-    const code = await gateCheckout(tree, options);
+    let code;
+    try {
+      code = await gateCheckout(tree, options);
+    } finally {
+      // Pass, fail or a thrown error: the tree may be pruned next, and its logs go with it.
+      try {
+        if (keepGateLogs(tree, home, commit)) console.log(`  The run's logs are kept: ${SCRATCH}/beside-${sha}`);
+      } catch (error) {
+        console.log(`  The run's logs could not be kept (${error.message}); they stay in the gate tree`);
+      }
+    }
     writeGateRecord(home, { commit, started, ended: nowIso(), passed: code === 0, staged: null });
     if (code === 0) {
       console.log(`  Stage it from the gate tree, never from the main checkout as it moves: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}`);

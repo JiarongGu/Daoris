@@ -7,13 +7,14 @@ import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import { askItem, type OpenGroup, questsItem } from '../app/opener';
 import {
-  useAcceptQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry, useRespondQuest,
-  useSessions,
+  useAcceptQuest, useContinueQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry,
+  useReopenQuest, useRespondQuest, useSessions,
 } from '../data/queries';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './QuestComposer';
 import { QuestList } from './QuestList';
 import {
-  answered, freshest, keptFilters, latestSessions, type QuestFilters, questFilters, questionOf, questStanding,
+  answered, freshest, keptFilters, latestSessions, type QuestFilters, questFilters, questionOf, questStanding, sourceReady,
+  standingStep,
 } from './records';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 import { namer } from '../settings/namer';
@@ -171,6 +172,10 @@ export function useQuestsView({
   const remove = useDeleteQuest();
   // The person's yes to a done's departure (DRIFT1d2): the service's accept door, `daoris-driver quest accept`'s twin.
   const accept = useAcceptQuest();
+  // The person's reopen of a sealed submission and their go-on with a step it held (FABRIC-CLOSE1c3, D156): the service's own doors,
+  // `daoris-driver quest reopen` and `quest go-on`'s twins. Abandoning such a step is the decline's.
+  const reopen = useReopenQuest();
+  const goOn = useContinueQuest();
   // The person's done (QUESTCLOSE1): the service's own door for it, `daoris-driver quest done`'s twin.
   const personDone = usePersonDone();
   // The chosen quest's work on this machine (PAUSE1e, D132 §7.1): its plan while Quests is in front, and the three presses.
@@ -234,7 +239,8 @@ export function useQuestsView({
   // Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie.
   const nobody = registry.data !== undefined && adopters.length === 0;
   const target = (registry.data ?? []).find((row) => row.repository === draft.to);
-  const busy = publish.isPending || respond.isPending || remove.isPending || accept.isPending || personDone.isPending || reading;
+  const busy = publish.isPending || respond.isPending || remove.isPending || accept.isPending || personDone.isPending
+    || reopen.isPending || reading;
   // A quest's lanes as its repository names them (D115 §2.2): the id, and its title where the registration gives
   // one. The ids are the repository's words, so they are shown as it spells them.
   const laneNames = (quest: Quest) => {
@@ -409,6 +415,29 @@ export function useQuestsView({
         onRespond={(action, reason, answered) => onRespond(quest, action, reason ?? null, answered)}
         // The service's own door, so a browser on this machine says yes as the desktop does (D50).
         onAccept={() => onAccept(quest)}
+        // FABRIC-CLOSE1c3: the reopen is offered where a live step stands on its submission, which the door judges again; the
+        // submission sent is the one the page showed. A refusal is said inside its ask (UXFIX2), the quest unmoved.
+        reopen={(() => {
+          const step = standingStep(quest, everything.data ?? quests.data ?? []);
+          const submission = quest.submission;
+          return step && submission ? {
+            step: step.id,
+            onReopen: (note: string | null, answered: Answered) => reopen.mutate(
+              { id: quest.id, submission: { machine: submission.machine, sequence: submission.sequence }, note },
+              {
+                onSuccess: (result) => { notify(result.message); answered.done(); setHeld(result.quest); },
+                onError: (error) => answered.refused(sentence(error)),
+              }),
+          } : undefined;
+        })()}
+        goOn={quest.hold === 'source-reopened' ? {
+          ready: sourceReady(quest, everything.data ?? quests.data ?? []),
+          going: goOn.isPending,
+          onGoOn: () => goOn.mutate(quest.id, {
+            onSuccess: (result) => { notify(result.message); setHeld(result.quest); },
+            onError: failure(notify),
+          }),
+        } : undefined}
         onDelete={(answered) => onDelete(quest, answered)}
         onDismiss={(machine, sequence) => onDismiss(quest, machine, sequence)}
         // A driver's verdicts and holds reach only a shell, so in a browser neither act is ever offered. Said as the

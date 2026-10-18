@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, type AskAction, HELP_REPOSITORY, type QuestAction, type SetUpRef, type Verdict } from './api';
+import { api, type AskAction, HELP_REPOSITORY, type QuestAction, type SetUpRef, type SubmissionRef, type Verdict } from './api';
 import { useScope } from './scope';
 import { workspaceOf, workspacesOf } from './workspaces';
 
@@ -482,6 +482,25 @@ export const useChooseAskWorkflow = () =>
   useAskChange(({ id, kind, workflow }: { id: string; kind: string; workflow?: string | null }) => api.chooseAskWorkflow(id, kind, workflow));
 export const useChooseAskReview = () =>
   useAskChange(({ id, choice, words }: { id: string; choice: string; words?: string }) => api.chooseAskReview(id, choice, words));
+
+/**
+ * The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): the step it published is withdrawn or held, so the quests
+ * and the asks are read again, as a respond's are.
+ */
+export const useReopenQuest = () => {
+  const invalidate = useInvalidateQuestWork();
+  return useMutation({
+    mutationFn: ({ id, submission, note }: { id: string; submission: SubmissionRef; note: string | null }) =>
+      api.reopenQuest(id, submission, note),
+    onSuccess: invalidate,
+  });
+};
+
+/** The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): its hold goes, and the driver carries it on. */
+export const useContinueQuest = () => {
+  const invalidate = useInvalidateQuestWork();
+  return useMutation({ mutationFn: (id: string) => api.continueQuest(id), onSuccess: invalidate });
+};
 
 export const usePersonDone = () => {
   const invalidate = useInvalidateQuestWork();
