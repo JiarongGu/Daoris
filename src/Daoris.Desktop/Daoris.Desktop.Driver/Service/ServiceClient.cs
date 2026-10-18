@@ -1098,6 +1098,45 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// The person's reopen of a sealed submission (FABRIC-CLOSE1c3, §E5; D156): <c>POST /api/quests/{id}/reopen</c>, naming the
+    /// submission by its machine and sequence, with their words where they wrote any. The service's sentence comes back verbatim, a
+    /// refusal (another submission current, nothing published from it, a step closed on it) included.
+    /// </summary>
+    public Task<(bool Ok, string Message)> ReopenQuestAsync(
+        string id, QuestSubmissionRef submission, string? note, CancellationToken ct = default) =>
+        PersonMoveAsync(id, "reopen", WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartObject("submission");
+            writer.WriteString("machine", submission.Machine);
+            writer.WriteNumber("sequence", submission.Sequence);
+            writer.WriteEndObject();
+            // Written only when given: no words is the reopen alone.
+            if (!string.IsNullOrWhiteSpace(note)) writer.WriteString("note", note.Trim());
+            writer.WriteEndObject();
+        }), ct);
+
+    /// <summary>
+    /// The person's word to go on with a step its source's reopen held (FABRIC-CLOSE1c3): <c>POST /api/quests/{id}/continue</c>. A
+    /// refusal (its source not ready again, nothing holding it) is the service's sentence.
+    /// </summary>
+    public Task<(bool Ok, string Message)> ContinueQuestAsync(string id, CancellationToken ct = default) =>
+        PersonMoveAsync(id, "continue", "{}", ct);
+
+    /// <summary>A person's door on one quest (FABRIC-CLOSE1c3): its sentence, a refusal's included, and a host older than it said to be.</summary>
+    private async Task<(bool Ok, string Message)> PersonMoveAsync(string id, string door, string body, CancellationToken ct)
+    {
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/{door}", body, ct).ConfigureAwait(false);
+        if (root is not { } answer)
+        {
+            return (false, $"the service at {_base} has no {door} door ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
     /// Whether this client's host knows a closure graph's operations and doors (FABRIC-CLOSE1b's handshake): <c>/api/status</c>'s
     /// <c>closure</c>. A host from before answers none, and is not asked to keep what it cannot read.
     /// </summary>

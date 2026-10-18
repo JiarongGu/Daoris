@@ -94,6 +94,39 @@ public sealed class ServiceClientClosureTests
         Assert.Equal(new QuestSubmissionRef("desk", 41), EvidenceVerdict.Read(quest.RootElement)!.Submission);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1c3: the person's reopen names the submission by its machine and sequence, with their words written only when given;
+    /// the go-on posts nothing more; each says the service's sentence, a refusal included.
+    /// </summary>
+    [Fact]
+    public async Task The_reopen_names_its_submission_and_the_go_on_says_the_services_words()
+    {
+        var replies = new Queue<ServiceReply>(
+        [
+            new(200, """{ "quest": { "id": "q7", "status": "Taken" }, "message": "Reopened." }"""),
+            new(200, """{ "quest": { "id": "q7", "status": "Taken" }, "message": "Reopened." }"""),
+            new(409, """{ "error": "Quest `#q8` grew from `#q7`, whose work has no unheld submission here yet." }"""),
+        ]);
+        var doors = new Doors((_, _, _) => replies.Dequeue());
+        using var client = new ServiceClient(doors);
+
+        var reopened = await client.ReopenQuestAsync("#q7", new QuestSubmissionRef("desk", 41), "It seams.");
+        await client.ReopenQuestAsync("q7", new QuestSubmissionRef("desk", 41), "  ");
+        var refused = await client.ContinueQuestAsync("q8");
+
+        Assert.Equal((true, "Reopened."), reopened);
+        Assert.Equal((false, "Quest `#q8` grew from `#q7`, whose work has no unheld submission here yet."), refused);
+        Assert.Equal(
+            [(ServiceVerb.Post, "/api/quests/q7/reopen"), (ServiceVerb.Post, "/api/quests/q7/reopen"), (ServiceVerb.Post, "/api/quests/q8/continue")],
+            doors.Asked.Select(asked => (asked.Verb, asked.Path)));
+        using var named = JsonDocument.Parse(doors.Asked[0].Body!);
+        var submission = named.RootElement.GetProperty("submission");
+        Assert.Equal(("desk", 41L, "It seams."), (submission.GetProperty("machine").GetString(), submission.GetProperty("sequence").GetInt64(),
+            named.RootElement.GetProperty("note").GetString()));
+        using var bare = JsonDocument.Parse(doors.Asked[1].Body!);
+        Assert.False(bare.RootElement.TryGetProperty("note", out _));
+    }
+
     [Fact]
     public async Task The_close_sends_its_key_token_and_quests_and_reads_each_answer_by_its_code()
     {
