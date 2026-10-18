@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A session that went on after its landing had its later done's opinion closed before the loop asked it (FABRIC-CLOSE1h18)
+
+- **Symptom:** under *Accept automatically* and an opinion rule, a session that landed, went on with the person's words (D137) and
+  concluded again with more work had the opinion owed on that work closed as `landed` at the loop's next look, never asked. Its landing
+  was then kept as `opinion` and waited on the person's ask, though the gate said *it is asked at the driver's next look*.
+- **Root cause:** `OpinionLook.ClosesAsync` closed a due as landed wherever `LandedBranches.Landing` named its session, whatever the
+  landing's time. A session's landing record outlives its done, so the record of the first landing stood for every later done's work.
+  The automatic landing already compared a landing's acceptance with its entry's done (`AutoLander.JudgeAsync`); the opinion look did not.
+- **Fix:** the record closes the due only where it was made since the due was owed (`OpinionLook.MadeSince`: `AcceptedAt` of the due's
+  session, its landing or its newest advance, at or after the due's `At`). An older landing falls to git's reading of the tree, as a
+  session with no landing does, with its squash as one proof more, so a due owed after a squashed landing whose push was held back still
+  closes once the push lands. D173's FABRIC-CLOSE1h18 note has the behaviour.
+- **Verification:** red first: `OpinionGateTests` (the new theory's 2 older-landing rows), `AutoLandingTriesTests` (the row's proof, 2
+  rows, and the git reading's 2 rows where the tree went on past the landing); the git reading's other 2 rows green before and after, as
+  guards. Then the driver's fast half 9687 of 9687 (9682 before), and the `AutoLanding` Git classes, run once by filter with
+  `git.process.runsettings`, 85 of 85, this row's 6 among them.
+
 ## 2026-10-19 — A next step's take that went with a take lost to the reopen was stopped in another machine's words (FABRIC-CLOSE1c22)
 
 - **Symptom:** B took a step before A's reopen of its source reached it, submitted, and took the next step its submission published,
