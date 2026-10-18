@@ -99,7 +99,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             && AccountNames.Problem([.. accounts, fresh], names, fresh, name) is { } problem)
         {
             throw new DriverException(problem.Kind == AccountNameProblemKind.Taken
-                ? $"`{name.Trim()}` already names `{problem.Other}`, so nothing was signed in — each `{owner}` account has a name of its own."
+                ? $"`{name.Trim()}` already names `{problem.Other}`, so nothing was signed in — each `{owner}` account has a name of its own — {AccountNames.TakenWayOut(name.Trim())}"
                 : $"`{name.Trim()}` is not a name a terminal can type, so nothing was signed in — a name is one word, with no "
                   + $"space or backtick, not starting with a dash, at most {AccountNames.Longest} characters.");
         }
@@ -308,7 +308,11 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 // Named where the person named it (ACCT2); who signed in is offered on the page, never written here (D66 §3).
                 var called = Kept(() => AccountNames.Rename(
                     _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), fresh, name), name is not null, stream);
-                stream(AgentsRoutes.SignedInSentence(said.Account, owner, called, fresh));
+                var accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner);
+                var apart = said.Account is { } who
+                    ? AccountNames.ApartWords(accounts, AccountNames.Of(_loop.Harnesses.Home, owner), fresh, who, said.Org, said.Plan)
+                    : null;
+                stream(AgentsRoutes.SignedInSentence(said.Account, owner, called, fresh, apart));
                 Placed(owner, fresh, joins, stream);
             }
         }
