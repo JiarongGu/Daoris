@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Closing Daoris while a session waits its turn to start ends the wait at once, rather than starting the session first to stop
+  it. A finished session you had written to, closed before it went on, keeps how it ended with your words still waiting, and
+  goes on with them the next time Daoris starts.
 - A terminal's words or stop for one session no longer wait behind another session's slow delivery, and the plugins'
   evaluation steps run beside the driver's look instead of holding the next one.
 - A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates
