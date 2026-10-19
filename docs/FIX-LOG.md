@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The real ledger refused the carry-on of a step the person's reopen stopped (FABRIC-CLOSE1c26)
+
+- **Symptom:** found by reading, then shown red: `SessionLedger.OpenAsync` answered `QuestNotOpen` for a taken quest whose last
+  record here was `completed`, no answer, its note coded `ended.source-reopened`, which is the driver's carry-on once the person
+  goes on with the step (`SessionLedgerTests.A_take_the_persons_reopen_stopped_is_carried_on`, the code's row failed first).
+- **Root cause:** FABRIC-CLOSE1c2 taught the driver's planner to carry such a record on (`Planner.CarriesOn`, `StoppedByReopen`, by
+  the note's code), but its tests opened the carry-on through `StandInLedger`, which judges no carry-on, so the real ledger's own
+  list (failed, completed with an answer, stopped interrupted or by the person after a take here, a stand-down brought forward)
+  was never asked; a `completed` record is a finished one there.
+- **Fix:** the ledger reads the code off the record's note parts (`NoteParts.Carries`, `SessionLedger.EndedSourceReopened`, the
+  driver's `NoteCodes.EndedSourceReopened` its twin by spelling) and carries such a record on; CARRY2's question of whose the take
+  is still follows. D126's SESSTRUE1 note, D173's note of this date.
+- **Verification:** `SessionLedgerTests` (102), the code's row red first; a completed record with no code, or another code, is
+  still refused.
+
 ## 2026-10-20 — Two writers of `driver.json` at once lost one's change, and a name written twice in any case read two ways (CONFIG1)
 
 - **Symptom:** the limits D173's second re-check named, each shown red by a test before the change. Another writer's edit landing
