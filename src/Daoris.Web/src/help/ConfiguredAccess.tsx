@@ -6,9 +6,9 @@ import { cn } from '../lib/cn';
 import { GRANTS, grantState, type GrantSpec } from './grants';
 
 // Restricted mode's configured access (HELPMODE1c1, D183 point 1; the modes design §4.1 and §5's Settings sketch), drawn from
-// props for the owner's review before any grant is built: nothing passes it yet, and it presses nothing itself. It lives in
-// help/ so Settings → Daoris's own AI → Ask Daoris draws it now and the panel can later. Not `HelpGrants`, which is the
-// driver's name for the plugin approvals the browser's grant reads.
+// props, first for the owner's review before any grant was built; it presses nothing itself. It lives in help/ so both
+// Settings → Daoris's own AI → Ask Daoris and the panel can draw it. Not `HelpGrants`, which is the driver's name for the
+// plugin approvals the browser's grant reads.
 
 /** A state's pill: granted in the done hue, waiting on the person's approval in the waiting hue, the rest quiet. */
 const TONE: Record<HelpGrantState, 'neutral' | 'open' | 'done'> = {

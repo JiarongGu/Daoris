@@ -55,7 +55,7 @@ export type HelpAccessJob = {
 
 /**
  * Restricted mode's configured access on THIS machine (HELPMODE1c1, D183 point 1; the modes design §4.1, §5): the agent the
- * grants are held on, what is chosen, and each choice handed up. A mock for the owner's review: no domain passes it yet.
+ * grants are held on, what is chosen, and each choice handed up.
  */
 export type HelpGrantsJob = {
   agent: HelpGrantAgent;

@@ -77,7 +77,7 @@ export type HelpGrantState = 'off' | 'on' | 'needs-approval' | 'changed' | 'unav
 export type HelpGrantAgent = { name: string; rules: boolean };
 
 /**
- * One grant as this machine has it configured (HELPMODE1c1 draws it; nothing answers it yet): the operations chosen, by their
+ * One grant as this machine has it configured (HELPMODE1c1): the operations chosen, by their
  * codes in §4.1's table (`help/grants.ts`); for the browser, whether its plugin's update changed it since it was approved; and
  * whether the conversation in view started with another choice, which takes its next start (§4.1's trap: a grant is never
  * shown in force before the agent is held to it).

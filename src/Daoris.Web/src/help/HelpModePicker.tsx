@@ -54,7 +54,7 @@ export function HelpModeChip({ selected, running = null, busy = false, open, onP
   /** Changed to a new number to open the menu: a lack's door to the mode (design §6). */
   open?: number;
   onPick: (mode: HelpMode) => void;
-  /** The door to restricted mode's configured access; none offers no row (HELPMODE1c1: nothing passes it yet). */
+  /** The door to restricted mode's configured access (HELPMODE1c1); none offers no row. */
   onConfigure?: () => void;
 }) {
   const { t } = useTranslation();

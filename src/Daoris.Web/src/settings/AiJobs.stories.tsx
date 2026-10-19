@@ -79,7 +79,7 @@ export const TierNotYetKnown: Story = {
 
 /**
  * HELPMODE1c1 (the modes design §5's sketch): Ask Daoris on Claude Code, restricted, with its configured access under the access
- * row, housekeeping's inspection chosen and the browser waiting for approval. A mock: no domain passes the grants yet.
+ * row, housekeeping's inspection chosen and the browser waiting for approval.
  */
 export const RestrictedWithConfiguredAccess: Story = {
   args: {
