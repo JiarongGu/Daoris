@@ -51,11 +51,13 @@ import { type DriverState, useDriver } from '../bridge/driver';
 import { useLines, useSweepLook, useSweepPlan, useWorkState } from '../bridge/repositories/lines';
 import { useSessionEntries, useSessionGroups } from '../bridge/sessions/sessions';
 import { type UsageAnswer, useUsage } from '../bridge/agents/agents';
+import { useAccounts } from '../bridge/agents/accounts';
+import type { AccountsAnswer } from '../settings/accounts/accounts';
 
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 
 /** How many slices a window reads pushed, each its one snapshot as the window opens (`PUSHED` in `ShellSignals`). */
-const SLICES = 11;
+const SLICES = 12;
 
 /** The driver's slice as the shell's owner holds it: three partitions, each at its first number. */
 const SNAPSHOT = {
@@ -196,6 +198,27 @@ const USAGE_SNAPSHOT = {
   ],
 };
 
+const claude = (used: number, over: boolean) => ({
+  agent: 'claude-code', speaks: true, reads: true, own: { cooling: null, offered: null, said: null },
+  accounts: [{
+    name: 'account-1', displayName: null, cooling: null, offered: null, week: null, running: 0,
+    said: {
+      seen: '2026-10-20T08:00:00+00:00',
+      windows: [{
+        window: 'session', used, reset: '2026-10-20T12:00:00+00:00', standing: null, credits: false, seen: '2026-10-20T08:00:00+00:00',
+        source: 'read', from: '2026-10-20T07:00:00+00:00', curve: 90, over,
+      }],
+    },
+  }],
+  scopes: [],
+});
+
+/** How each agent's accounts are used, as the shell's owner holds it (PUSH1e): a partition per agent, its verdicts beside each reading. */
+const ACCOUNTS_SNAPSHOT = {
+  slice: 'accounts', epoch: 'a1', status: 'ready',
+  partitions: [{ partition: 'claude-code', seq: 1, status: 'ready', data: claude(0.4, false) }],
+};
+
 /** How often the page read the quests or the asks from the service: either list with any of its questions, never one record's own door. */
 const questReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/quests(\?|$)/.test(String(input))).length;
 const askReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/asks(\?|$)/.test(String(input))).length;
@@ -241,7 +264,7 @@ function host(pushes: boolean) {
         return slice === 'lines' ? LINES_SNAPSHOT : slice === 'sessions' ? SESSIONS_SNAPSHOT : slice === 'calls' ? CALLS_SNAPSHOT
           : slice === 'work' ? WORK_SNAPSHOT : slice === 'groups' ? GROUPS_SNAPSHOT : slice === 'sync' ? SYNC_SNAPSHOT
             : slice === 'sweep' ? SWEEP_SNAPSHOT : slice === 'quests' ? QUESTS_SNAPSHOT : slice === 'asks' ? ASKS_SNAPSHOT
-              : slice === 'usage' ? USAGE_SNAPSHOT : SNAPSHOT;
+              : slice === 'usage' ? USAGE_SNAPSHOT : slice === 'accounts' ? ACCOUNTS_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -249,6 +272,7 @@ function host(pushes: boolean) {
     if (module === 'DAORIS.DRIVER' && type === 'SWEEP_PLAN') return { branches: [sweepRow('daoris/s-pulled')], landed: [] };
     if (module === 'DAORIS.DRIVER' && type === 'STATE') return { ...CHOICES, running: [] };
     if (module === 'DAORIS.DRIVER' && type === 'USAGE') return { sessions: [used('s-pulled', '2026-10-20T07:00:00+00:00')], accounts: [] };
+    if (module === 'DAORIS.DRIVER' && type === 'ACCOUNTS') return { agents: [claude(0.1, false)] };
     return {};
   });
   window.localStorage.setItem(AT_START, 'off');
@@ -962,6 +986,98 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(read['DAORIS.DRIVER.USAGE']).toBeUndefined();
     // The second window's own snapshots alone; the first window's ask of the held permissions is not this window's (AUTONOMY1b3c).
     expect(read['DAORIS.DRIVER.STATE_SLICE']).toBe(SLICES);
+  });
+
+  it('holds how the accounts are used from its snapshot, and a tick, the roster\'s scope, an end or a focus reads no ACCOUNTS (PUSH1e)', async () => {
+    host(true);
+    const client = await open();
+    expect(asked().get('DAORIS.DRIVER.ACCOUNTS')).toBeUndefined();
+    expect(client.getQueryData<AccountsAnswer>(keys.accounts)?.agents[0]?.accounts[0]?.said?.windows[0]).toMatchObject({ used: 0.4, curve: 90, over: false });
+    let read: AccountsAnswer | undefined;
+    function Reader() {
+      read = useAccounts().data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><Reader /></QueryClientProvider>);
+    await later(1_000);
+    expect(read?.agents.map((each) => each.agent)).toEqual(['claude-code']);
+    const before = asked();
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      heard.get('STATE_CHANGED')?.({ scopes: ['harnesses'] });
+      heard.get('HARNESS_ENDED')?.({ harness: 'claude-code', action: 'login' });
+      heard.get('SESSION_ENDED')?.({ session: 's-2', state: 'completed' });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    await later(20_000);
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+
+    const asksSince = since(before, asked());
+    expect(asksSince['DAORIS.DRIVER.ACCOUNTS']).toBeUndefined();
+    expect(asksSince['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+  });
+
+  it('moves how the accounts are used in two windows from the push a probe\'s result made, with no read in either (PUSH1e)', async () => {
+    host(true);
+    const client = await open();
+    const firstWindow = heard.get('STATE_PUSH')!;
+    let first: AccountsAnswer | undefined;
+    function First() {
+      first = useAccounts().data;
+      return null;
+    }
+    render(<QueryClientProvider client={client}><First /></QueryClientProvider>);
+    await later(1_000);
+    const before = asked();
+
+    const second = new QueryClient();
+    let other: AccountsAnswer | undefined;
+    function Second() {
+      other = useAccounts().data;
+      return null;
+    }
+    render(
+      <QueryClientProvider client={second}>
+        <WorkspaceScopeProvider initial={null}><ShellSignals notify={() => {}} /><Second /></WorkspaceScopeProvider>
+      </QueryClientProvider>,
+    );
+    await later(2_000);
+    const secondWindow = heard.get('STATE_PUSH')!;
+    expect(other?.agents[0]?.accounts[0]?.said?.windows[0]?.used).toBe(0.4);
+
+    // *Read now* asked the agent: its answer lands in the files, the roster's scope wakes the owner, and it pushes the agent it moved.
+    const pushed = { slice: 'accounts', epoch: 'a1', partition: 'claude-code', seq: 2, status: 'ready', data: claude(0.95, true) };
+    await act(async () => {
+      firstWindow(pushed);
+      secondWindow(pushed);
+      heard.get('STATE_CHANGED')?.({ scopes: ['harnesses'] });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+
+    for (const window of [first, other]) {
+      expect(window?.agents[0]?.accounts[0]?.said?.windows[0]).toMatchObject({ used: 0.95, curve: 90, over: true });
+    }
+    const read = since(before, asked());
+    expect(read['DAORIS.DRIVER.ACCOUNTS']).toBeUndefined();
+    expect(read['DAORIS.DRIVER.STATE_SLICE']).toBe(SLICES);
+  });
+
+  it('keeps how the accounts are used pulled on a host older than the push: read as the window opens, and read again at a tick (PUSH1e)', async () => {
+    host(false);
+    const client = await open();
+    const opened = asked().get('DAORIS.DRIVER.ACCOUNTS') ?? 0;
+    expect(opened).toBeGreaterThan(0);
+    expect(client.getQueryData<AccountsAnswer>(keys.accounts)?.agents[0]?.accounts[0]?.said?.windows[0]?.used).toBe(0.1);
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(asked().get('DAORIS.DRIVER.ACCOUNTS')).toBeGreaterThan(opened);
   });
 
   it('keeps what sessions consumed pulled on a host older than the push: read as it mounts, and read again at a focus (PUSH1e)', async () => {

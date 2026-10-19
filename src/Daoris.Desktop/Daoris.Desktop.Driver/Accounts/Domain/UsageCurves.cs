@@ -31,7 +31,8 @@ public static class UsageCurves
     private static readonly TimeSpan MadeUp = TimeSpan.FromMinutes(1);
 
     // The smart week: its pace plus the lead up to the knee, then evenly to the end at its reset (USAGERESET1). Duplicated
-    // deliberately in the CLI's and the page's `usagecurves.ts` / `usageCurves.ts`; the shared table holds the three as one.
+    // deliberately in the CLI's `usagecurves.ts`; the shared table holds the two as one. The page holds none since PUSH1e: the
+    // accounts' answer carries each scope's curve in effect (`AccountsRoutes`).
     private const int WeeklyLead = 20, WeeklyKnee = 95, WeeklyEnd = 100;
 
     /// <summary>A window's length, or null for a window this build does not know.</summary>

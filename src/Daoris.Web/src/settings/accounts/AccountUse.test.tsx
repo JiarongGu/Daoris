@@ -258,7 +258,12 @@ describe('how a scope\'s list is used', () => {
   /** SWITCH1d (the switch design §5, §6): *My own curve* edits a window's points, saved as `--curve`, and clears them all. */
   it('edits a window’s own points under My own curve, and clears them as --no-curve does', async () => {
     const pressed = acts();
-    const scope = { ...MACHINE_NEAR, use: { ...MACHINE_NEAR.use, switch: 'curve' as const, curve: { session: [[0, 80]] as [number, number][] } } };
+    // The curve in effect as the accounts' answer carries it (PUSH1e): the person's five-hour points, Daoris's week.
+    const scope = {
+      ...MACHINE_NEAR,
+      use: { ...MACHINE_NEAR.use, switch: 'curve' as const, curve: { session: [[0, 80]] as [number, number][] } },
+      curves: { ...MACHINE_NEAR.curves, session: [[0, 80]] as [number, number][] },
+    };
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scope} accounts={CHOICES} acts={pressed} />);
 
     expect(screen.getAllByRole('img')[0]!.querySelector('[data-curve]')!.getAttribute('data-curve')).toBe('0:80 100:80');

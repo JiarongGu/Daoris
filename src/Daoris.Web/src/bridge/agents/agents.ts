@@ -6,7 +6,7 @@ import type { WiringAnswer } from '../../map/wiring';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { byInstant } from '../sessions/sessions';
-import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
+import { mergeKeyed, notPushed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
 
 // The toolchain (MOD3): this machine's agents and their accounts, what each carried, each tool's own
 // actions, and what a start in each workspace would run on (D49 §4, D57).
@@ -231,7 +231,9 @@ export const useHarnessEnded = (handler: (ended: HarnessEnded) => void) => {
   useShenoraEvent('DAORIS', 'HARNESS_ENDED', (payload) => {
     const ended = payload as HarnessEnded | undefined;
     if (!ended?.harness || !ended.action) return;
-    void client.invalidateQueries({ queryKey: keys.harnesses });
+    // The roster; and the accounts beneath its key where they are pulled: where the shell pushes them (PUSH1e), the end wakes their
+    // owner, whose push writes them.
+    void client.invalidateQueries({ queryKey: keys.harnesses, predicate: notPushed(client) });
     handler(ended);
   });
 };
