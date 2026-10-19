@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's own tree of a Node repository starts with the dependencies your checkout installed with npm, copied in where
+  the tree's `package-lock.json` is the checkout's and the checkout's install is at it, so its session no longer spends
+  minutes on a fresh `npm ci`, and is told to skip it. The tree's opening names what was copied, or says why a project was
+  not: its lockfile moved, pnpm or yarn installs it, the checkout has not installed it, or git does not ignore it there. A
+  copy, never a link, so nothing the session installs or builds reaches your checkout.
 - Ask Daoris can act on this machine itself, if you choose. `daoris-driver help mode full` runs it with full access from its
   next start, in its agent's own mode that asks nothing (Claude Code's `bypassPermissions`, Codex's full access). It then has a
   shell, file edits, Daoris's commands and every plugin server here, and your own denies still hold where its agent takes them.

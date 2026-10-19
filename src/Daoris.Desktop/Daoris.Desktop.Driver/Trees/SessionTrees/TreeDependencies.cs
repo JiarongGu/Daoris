@@ -27,9 +27,7 @@ namespace Daoris.Driver;
 /// anywhere else copies nothing. A cache at the top of a <c>node_modules</c> (<c>.cache</c>, <c>.vite</c>) names where it was
 /// made, and is left for the tree's tools to make again.</para>
 ///
-/// <para><b>Measured</b> on the owner's machine (2026-10-19, D51's note): the web's install, 17,069 files and 228 MB, copied in
-/// 20.7 s one file at a time and 5.9 s eight at once, where its <c>npm ci</c> took 70 s with npm's cache warm and session trees
-/// took 170–221 s. So it runs inline, eight files at once.</para>
+/// <para>It runs inline, eight files at once, on the measurement in D51's note: a fraction of the <c>npm ci</c> it saves.</para>
 /// </remarks>
 internal static class TreeDependencies
 {
@@ -49,7 +47,7 @@ internal static class TreeDependencies
     /// <summary>git's pathspecs for every tracked lockfile, at any depth.</summary>
     private static readonly string[] Pathspecs = [$":(glob)**/{Lockfile}", .. OtherLockfiles.Select(name => $":(glob)**/{name}")];
 
-    /// <summary>How many files are copied at once: eight measured three and a half times one's speed, and sixteen no faster.</summary>
+    /// <summary>How many files are copied at once: eight, past which the measurement in D51's note found nothing faster.</summary>
     private static readonly int AtOnce = Math.Clamp(Environment.ProcessorCount, 1, 8);
 
     /// <summary>
@@ -230,7 +228,8 @@ internal static class TreeDependencies
                 var to = Path.Combine(at.To, entry.Name);
                 if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
                 {
-                    // 🔴 Never followed, and never made to lead where the checkout's does: to the same place in the tree.
+                    // 🔴 Never followed, and made to lead to the same place in the tree, never where the checkout's does: git's
+                    // removal of a tree follows a junction and deletes what it leads to (D51's note).
                     if (LeadsInTree(root, tree, copying, entry) is not { } there) return UncopiedWhy.Link;
                     MakeLink(to, Path.Combine(tree, Path.GetRelativePath(root, entry.FullName)), there, entry is DirectoryInfo);
                 }
