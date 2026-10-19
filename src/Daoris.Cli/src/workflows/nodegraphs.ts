@@ -593,14 +593,15 @@ export function graphProblems(graph: GraphForm, saved = true): GraphProblem[] {
 /**
  * A whole graph from its JSON (a work cycle, a named graph) — the driver's `NodeGraphs.Read`: the graph and what its save refuses, or no
  * graph and the one `unreadable` problem naming where it is not a graph's shape. Never read in part. `lossy` is set where an option holds a
- * value this build cannot write as the driver does: the graph is judged, and no digest is taken of it.
+ * value this build cannot write as the driver does: the graph is judged, and no digest is taken of it; `rewrites` where a write of the
+ * file holding it would change what the driver reads (`readGraphParts`).
  */
-export function readGraph(value: unknown): { graph: GraphForm | null; problems: GraphProblem[]; lossy: string | null } {
-  const { parts, problem, lossy } = readGraphParts(value);
-  if (parts === null) return { graph: null, problems: [{ code: 'unreadable', wire: null, node: null, words: problem! }], lossy: null };
+export function readGraph(value: unknown): { graph: GraphForm | null; problems: GraphProblem[]; lossy: string | null; rewrites: boolean } {
+  const { parts, problem, lossy, rewrites } = readGraphParts(value);
+  if (parts === null) return { graph: null, problems: [{ code: 'unreadable', wire: null, node: null, words: problem! }], lossy: null, rewrites: false };
   const graph: GraphForm = { ...parts, end: parts.end ?? '', cleanup: parts.cleanup ?? { until: 'held', days: null } };
   const problems = graphProblems(graph);
-  return { graph: problems.length === 0 ? graph : null, problems, lossy };
+  return { graph: problems.length === 0 ? graph : null, problems, lossy, rewrites };
 }
 
 /** A landing rule as its cycle is judged after it: its form, and the plugin a branch names. */

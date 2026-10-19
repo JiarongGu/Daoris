@@ -96,8 +96,19 @@ function list(parent: Record<string, unknown>, name: string, where: string): unk
   throw new Unread(`${where}'s \`${name}\``, 'list');
 }
 
-/** Why an option's value cannot be written as the driver's compact writer writes it. */
-class Lossy extends Error {}
+/**
+ * Why an option's value cannot be written as the driver's compact writer writes it. `rewrites` where this build could not write the file
+ * back as read either (a number or a key read with no record of its text, a key written twice): a character it cannot digest is still a
+ * string it writes back whole.
+ */
+class Lossy extends Error {
+  readonly rewrites: boolean;
+
+  constructor(rewrites: boolean) {
+    super('lossy');
+    this.rewrites = rewrites;
+  }
+}
 
 /** A JSON escape's hex, as the driver's writer spells it: four upper-case digits. */
 const hex = (unit: number): string => `\\u${unit.toString(16).toUpperCase().padStart(4, '0')}`;
@@ -118,7 +129,7 @@ function compactText(value: string): string {
     else if (code < 0x20 || code === 0x7f) out += hex(code);
     else if (code < 0x7f || (code >= 0x4e00 && code <= 0x9fff)) out += ch;
     else if (code > 0xffff) out += hex(ch.charCodeAt(0)) + hex(ch.charCodeAt(1));
-    else throw new Lossy();
+    else throw new Lossy(false);
   }
   return `${out}"`;
 }
@@ -134,20 +145,20 @@ function compact(value: unknown, holder: unknown, key: string | number): string 
   if (typeof value === 'string') return compactText(value);
   if (typeof value === 'number') {
     const own = numberText(holder, key);
-    if (own === undefined) throw new Lossy();
+    if (own === undefined) throw new Lossy(true);
     return own;
   }
 
   if (Array.isArray(value)) return `[${value.map((each, index) => compact(each, value, index)).join(',')}]`;
   if (isObject(value)) {
     const source = sourceOf(value);
-    if (source?.twice === true) throw new Lossy();
+    if (source?.twice === true) throw new Lossy(true);
     const keys = source?.keys ?? Object.keys(value);
-    if (source === undefined && keys.some((name) => /^(0|[1-9][0-9]*)$/.test(name))) throw new Lossy();
+    if (source === undefined && keys.some((name) => /^(0|[1-9][0-9]*)$/.test(name))) throw new Lossy(true);
     return `{${keys.map((name) => `${compactText(name)}:${compact(value[name], value, name)}`).join(',')}}`;
   }
 
-  throw new Lossy();
+  throw new Lossy(true);
 }
 
 /** The sentence for an option this build cannot write as the driver does. */
@@ -156,7 +167,9 @@ const lossySaid = (node: string, option: string): string =>
   + 'Chinese, a key written twice, or a number read with no record of its text); the driver reads it.';
 
 /** A map of names to text, or, with `anyValue`, to each value's compact JSON (an option's). Its own keys only: `__proto__` is a name. */
-function names(parent: Record<string, unknown>, name: string, where: string, anyValue: ((option: string) => void) | null = null): Record<string, string> {
+function names(
+  parent: Record<string, unknown>, name: string, where: string, anyValue: ((option: string, rewrites: boolean) => void) | null = null,
+): Record<string, string> {
   const map: Record<string, string> = Object.create(null) as Record<string, string>;
   const value = parent[name];
   if (absent(value)) return map;
@@ -168,7 +181,7 @@ function names(parent: Record<string, unknown>, name: string, where: string, any
       } catch (error) {
         if (!(error instanceof Lossy)) throw error;
         // Said once the whole graph has read, so a place that is not a graph's shape is said first, as the driver says it.
-        anyValue(key);
+        anyValue(key, error.rewrites);
         map[key] = '';
       }
     } else if (typeof each === 'string') map[key] = each;
@@ -178,7 +191,7 @@ function names(parent: Record<string, unknown>, name: string, where: string, any
 }
 
 /** A node, its fields read in the driver's order (`NodeGraphs.Node`): its retry, then id, kind, version, reach, ports, options and the rest. */
-function nodeOf(raw: unknown, where: string, lossy: (said: string) => void): FormNode {
+function nodeOf(raw: unknown, where: string, lossy: (said: string, rewrites: boolean) => void): FormNode {
   if (!isObject(raw)) throw new Unread(where, 'node');
   if ('synthetic' in raw) throw new Unread(`${where}'s \`synthetic\``, "field a person's graph declares");
   let retry: FormNode['retry'] = null;
@@ -207,7 +220,7 @@ function nodeOf(raw: unknown, where: string, lossy: (said: string) => void): For
   const reach = need(text(raw, 'reach', where), 'reach', 'text');
   const inputs = names(raw, 'inputs', where);
   const outputs = names(raw, 'outputs', where);
-  const options = names(raw, 'options', where, (option) => lossy(lossySaid(id, option)));
+  const options = names(raw, 'options', where, (option, rewrites) => lossy(lossySaid(id, option), rewrites));
   return {
     id, kind, version, reach, inputs, outputs, options,
     evidence: text(raw, 'evidence', where),
@@ -253,15 +266,20 @@ function wireOf(raw: unknown, where: string): FormWire {
 /**
  * What a graph's or a cycle's JSON declares, read in the driver's order (`NodeGraphs.Parts`: its schema, nodes, wires, entries, end,
  * then cleanup), or the sentence saying the first place that is not a graph's shape. Never read in part. `lossy` names the first option
- * this build cannot write as the driver does: the parts still read, and are judged, but no digest is taken of them.
+ * this build cannot write as the driver does: the parts still read, and are judged, but no digest is taken of them; `rewrites` where
+ * some option's text was not kept either, so a write of the file holding it would change what the driver reads.
  */
-export function readGraphParts(value: unknown): { parts: GraphParts | null; problem: string | null; lossy: string | null } {
+export function readGraphParts(value: unknown): { parts: GraphParts | null; problem: string | null; lossy: string | null; rewrites: boolean } {
   let lossy: string | null = null;
+  let rewrites = false;
   try {
     if (!isObject(value)) throw new Unread('the graph', 'an object');
     const here = 'the graph';
     const schemaVersion = whole(value, 'schemaVersion', here) ?? GRAPH_SCHEMA;
-    const nodes = list(value, 'nodes', here).map((node, index) => nodeOf(node, `nodes[${index}]`, (said) => { lossy ??= said; }));
+    const nodes = list(value, 'nodes', here).map((node, index) => nodeOf(node, `nodes[${index}]`, (said, kept) => {
+      lossy ??= said;
+      rewrites ||= kept;
+    }));
     const wires = list(value, 'wires', here).map((wire, index) => wireOf(wire, `wires[${index}]`));
     const entries = list(value, 'entries', here).map((entry, index) => {
       if (typeof entry === 'string') return entry;
@@ -275,9 +293,9 @@ export function readGraphParts(value: unknown): { parts: GraphParts | null; prob
       cleanup = { until: text(declared, 'until', "the graph's `cleanup`") ?? 'held', days: whole(declared, 'days', "the graph's `cleanup`") };
     }
 
-    return { parts: { schemaVersion, nodes, wires, entries, end, cleanup }, problem: null, lossy };
+    return { parts: { schemaVersion, nodes, wires, entries, end, cleanup }, problem: null, lossy, rewrites };
   } catch (error) {
-    if (error instanceof Unread) return { parts: null, problem: error.message, lossy: null };
+    if (error instanceof Unread) return { parts: null, problem: error.message, lossy: null, rewrites: false };
     throw error;
   }
 }

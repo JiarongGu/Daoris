@@ -250,8 +250,12 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
       // Judged whole as the driver's `NodeGraphs.Read` judges it (FABRIC-GRAPH1c, GRAPH1k), its first problem said.
       const read = readGraph(raw);
       if (read.problems.length > 0) return unread(`v${number}: its graph does not hold: ${read.problems[0]!.words}`);
-      // The driver reads this graph and this build cannot write its options as the driver does: no digest, and no rewriting of the file.
-      if (read.lossy !== null) return { ...unread(`v${number}: its graph does not hold here: ${read.lossy}`), rewrites: true };
+      // The driver reads this graph and this build cannot write its options as the driver does: no digest, and, where some option's text
+      // was not kept (FABRIC-GRAPH1f: a file read with `JSON.parse`), no rewriting of the file.
+      if (read.lossy !== null) {
+        const said = unread(`v${number}: its graph does not hold here: ${read.lossy}`);
+        return read.rewrites ? { ...said, rewrites: true } : said;
+      }
       return { version: number, at, door, steps: null, problem: null, digest: graphFormDigest(read.graph!), graph: read.graph! };
     }
   }
@@ -821,7 +825,10 @@ export interface VersionAdded {
   door: string;
   at: string;
   steps: unknown;
-  /** A named graph as the version (schema 2, FABRIC-GRAPH1b), instead of the steps: the CLI does not judge one, so it saves none. */
+  /**
+   * A named graph as the version (schema 2, FABRIC-GRAPH1b), instead of the steps: judged whole before it is saved (FABRIC-GRAPH1f), as
+   * the driver's `PlanAdd` judges it. Read by `parseWithSource`, its values are written back as read (`stringifyWithSource`).
+   */
   graph?: unknown;
 }
 
@@ -836,13 +843,13 @@ export interface VersionAdded {
 export function planAddVersion(file: unknown, add: VersionAdded, kept: readonly number[] = []):
   { result: Record<string, unknown> | null; version: number | null; problem: string | null } {
   const refused = (problem: string) => ({ result: null, version: null, problem });
-  // A graph is judged whole before it is saved (`NodeGraphs.Problems`), which only the driver holds: a CLI that wrote one unjudged would
-  // leave a version the driver refuses (FABRIC-GRAPH1b).
-  if (add.graph !== undefined && add.graph !== null) {
-    return refused('nothing was written: a graph is saved where it is judged whole, by the driver; this door saves a workflow\'s steps.');
-  }
-
-  const version ={ version: 0, at: add.at, door: add.door, steps: add.steps };
+  // A graph is the version's schema 2 and its steps are none; both is refused whole, by the reader below, with the number it would take
+  // (the driver's `PlanAdd`). The reader judges a graph whole as `NodeGraphs.Problems` does (FABRIC-GRAPH1f), so a version the driver
+  // would refuse is never written here.
+  const graph = add.graph !== undefined && add.graph !== null;
+  const version: Record<string, unknown> & { version: number } = graph
+    ? { version: 0, at: add.at, door: add.door, schema: GRAPH_SCHEMA, graph: add.graph, ...(add.steps !== null && add.steps !== undefined ? { steps: add.steps } : {}) }
+    : { version: 0, at: add.at, door: add.door, steps: add.steps };
   if (file === null) {
     const problem = workflowIdProblem(add.id) ?? workflowNameProblem(add.name);
     if (problem !== null) return refused(problem);
