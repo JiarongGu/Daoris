@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- In a week's last day, a start now goes to the account where the most of its week would otherwise go unused, for the hours
+  left to its reset, rather than to the one that resets first: three points resetting in two hours no longer go ahead of half
+  a week resetting in twenty. Only a reading of the week's use counts; a reset known with no reading ranks nothing. Daoris's
+  smart curve lets the week rise from 95% to 100% as its reset nears, so less of it lapses, and a session that has to move
+  goes where more would lapse. The start's first line says why: *its weekly window resets in 20 h with 40% of it unused, read
+  10 min ago*, in English and 中文.
 - Daoris keeps every usage reading it sees, in `usage-history/` in its data folder: each window's use and reset as a session or a
   read said it, the account's plan word and when, for the estimate of how much work each window holds that comes later. Nothing
   reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says

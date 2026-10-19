@@ -101,6 +101,9 @@ D130 §16.3's walk keeps its steps, with two read from the curve:
 - **Step 2, near last**, becomes **over its curve last**: an account over its curve on any window goes to the end; among
   those, the one least over first (ACCTWALK3's order, measured against the curve).
 - **Step 5, furthest behind its week's pace**, becomes **most room under its curve first**, on its tightest window.
+- **Step 4, its week lapsing**, weighs what would lapse and not only when (USAGERESET1, D165's note of 2026-10-19): within the
+  last day, the most weekly room under the curve per hour to its reset first, from a reading only; and the smart week's tail
+  rises evenly from 95 to 100 at its reset, amending §2's cap.
 
 With `switch: off`, step 2 reads the smart curve and step 5 stands as D130 wrote it.
 
