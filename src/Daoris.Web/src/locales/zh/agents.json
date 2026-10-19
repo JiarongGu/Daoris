@@ -28,6 +28,8 @@
   "agents.window.unknown": "未知",
   "agents.window.curve": "曲线此刻允许 {{curve}}",
   "agents.window.overCurve": "超出其曲线此刻的 {{curve}}",
+  "agents.window.projected": "此刻约 {{projected}}，按 Daoris 此后自己的轮次推算",
+  "agents.window.unweighed": "未推算：Daoris 无法衡量此后自己的轮次",
   "agents.said.resets": "{{when}} 重置",
   "agents.said.comma": "，",
   "agents.said.bySession": "{{age}}由会话报告",
