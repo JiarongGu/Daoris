@@ -1826,6 +1826,8 @@ public sealed class Driver(
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
         restarting?.Dispose();
+        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this driver goes (QUEUED1).
+        Context.Processes.MarkOpening(sessionId);
         onOpened();
         var openedAt = DateTimeOffset.UtcNow;
 

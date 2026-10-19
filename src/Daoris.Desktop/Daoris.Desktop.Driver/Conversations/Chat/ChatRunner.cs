@@ -445,6 +445,8 @@ public sealed class ChatRunner : IDisposable
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
+        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this process goes (QUEUED1).
+        _processes.MarkOpening(sessionId);
 
         // A new conversation holds no context yet, so it rotates like a start (TOOL4f, D125 §3.3), and only here, at its
         // opening: its account is its process's home, set at spawn. Its first line says which account and why.
@@ -568,6 +570,8 @@ public sealed class ChatRunner : IDisposable
             .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home, workspace), selection.Version, selection.Profile, workspace, access.Mode, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
+        // Marked as this process's start until its spawn's marker replaces it: placed, it waits for its run (QUEUED1).
+        _processes.MarkOpening(sessionId);
 
         // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first.
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);

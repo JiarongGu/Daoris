@@ -20,11 +20,13 @@ public sealed record OrphanEnded(string Id, string Repository)
 /// for it here — not in this driver's registry and not marked by any other driver sharing the home
 /// (<see cref="SessionProcesses.AliveOnThisMachine"/>).</para>
 ///
-/// <para><b>The sweep takes only <c>working</c>.</b> A record is <c>starting</c> between its opening and
-/// its spawn, which another driver here may be in the middle of, and a parked one waits on the person
-/// by design. The person's own stop on one record also takes <c>starting</c> and <c>queued</c>: they asked
-/// about that one, and a start that never spawned is exactly what would otherwise hold its repository, or
-/// Ask Daoris's room, forever (HELPSTUCK1).</para>
+/// <para><b>The sweep takes <c>working</c>, and a start whose opener went.</b> A record is <c>queued</c>, then
+/// <c>starting</c>, between its opening and its spawn, which another driver here may be in the middle of, and a
+/// parked one waits on the person by design. So the sweep takes a <c>queued</c> or <c>starting</c> record only
+/// where the process that opened it marked it and has gone (<see cref="SessionProcesses.OpenerWent"/>, QUEUED1);
+/// one no opener marked is left as before. The person's own stop on one record takes <c>starting</c> and
+/// <c>queued</c> whatever marks it: they asked about that one, and a start that never spawned is exactly what
+/// would otherwise hold its repository, or Ask Daoris's room, forever (HELPSTUCK1).</para>
 ///
 /// <para><b>One home per service is the assumption</b>, and it is the deployed shape: a driver drives
 /// its machine's local host (a shared host is reached through the sync, never driven directly — D47
@@ -65,8 +67,10 @@ public static class Orphans
         {
             if (only is not null && !string.Equals(session.Id, only, StringComparison.OrdinalIgnoreCase)) continue;
             // The person's stop takes a start that never spawned, `starting` or still `queued` (HELPSTUCK1: an Ask Daoris start left
-            // `queued` by a driver that went held the room, and every later start was refused naming it).
-            var claimsProcess = session.State == "working" || (only is not null && session.State is "starting" or "queued");
+            // `queued` by a driver that went held the room, and every later start was refused naming it). The sweep takes one only
+            // where the process that opened it is proven gone (QUEUED1): a live opener here is still starting it.
+            var claimsProcess = session.State == "working"
+                || (session.State is "starting" or "queued" && (only is not null || processes.OpenerWent(session.Id)));
             if (!claimsProcess || processes.AliveOnThisMachine(session.Id)) continue;
 
             var evidence = await LostDoneAsync(service, session, git, ct).ConfigureAwait(false);
