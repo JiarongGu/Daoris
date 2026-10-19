@@ -871,7 +871,10 @@ public sealed class Driver(
                     }
                 }
 
-                return await (Runner is { } runner ? runner(start, opened, ct) : RunAsync(start, snapshot.Repositories, own, opened, ct))
+                // QUEUEDTREE1: the tree the start opens goes on the driver's close before its record's open is asked, on no token.
+                var fresh = new FreshTree(path => Context.Trees.RemoveAsync(path));
+                return await fresh.UntilOpenAsync(
+                        () => Runner is { } runner ? runner(start, opened, ct) : RunAsync(start, snapshot.Repositories, own, opened, fresh, ct), ct)
                     .ConfigureAwait(false);
             }
             finally
@@ -1445,8 +1448,9 @@ public sealed class Driver(
     /// </returns>
     /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
     /// <param name="onOpened">Called once the session's record is open, and never for a start that held or was refused (DEV3).</param>
+    /// <param name="fresh">The tree this start opens, let go on each way out that starts nothing, on no token (QUEUEDTREE1).</param>
     private async Task<StartRun> RunAsync(
-        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, CancellationToken ct)
+        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -1624,6 +1628,7 @@ public sealed class Driver(
                             : entryTree is not null ? EntryLanded(start.Entry!, quest.To) : null,
                         partOf: entryTree is not null ? start.Entry!.Into!.Session : null)
                     .ConfigureAwait(false);
+                fresh.Opened(opened.Path);
             }
             catch (DriverException error)
             {
@@ -1638,7 +1643,7 @@ public sealed class Driver(
         var setUp = ReviewSetUps.Environment(config, quest, start.Workspace);
         if (setUp is not null && ReviewSetUps.ProcedureMissing(setUp, quest, workTree) is { } unfollowable)
         {
-            if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            await fresh.LetGoAsync().ConfigureAwait(false);
             return Hold(unfollowable);
         }
 
@@ -1646,7 +1651,7 @@ public sealed class Driver(
         // design §2.3 step 1): a tab an agent opens over CDP has no window. A browser that will not open one holds the start.
         if (setUp is not null && Reviews is { } desk && await desk.OpenForStepAsync(quest, setUp, ct).ConfigureAwait(false) is { } unshowable)
         {
-            if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            await fresh.LetGoAsync().ConfigureAwait(false);
             return Hold(unshowable);
         }
 
@@ -1703,10 +1708,11 @@ public sealed class Driver(
                     permissions: permissions)
                 .ConfigureAwait(false);
             // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
-            // D51): a tree and branch for a start that is never made would be left at every look.
+            // D51): a tree and branch for a start that is never made would be left at every look. On no token (QUEUEDTREE1): a
+            // continuation returns as the driver closes, and a removal on the closed token would leave it to the sweep.
             if (continued is not null)
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return continued;
             }
 
@@ -1715,7 +1721,7 @@ public sealed class Driver(
             park = await GoOns.HandedOnRecordAsync(park, ct).ConfigureAwait(false);
             if (!park.Parked && !park.Running && !park.WordsWaiting)
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return DriverContinuations.TakenBackFirst(quest, park.Session);
             }
 
@@ -1725,7 +1731,7 @@ public sealed class Driver(
             // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f).
             if (fellBack!.Never || quest.Status is not ("Open" or "Taken"))
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return GoOns.CannotGoOn(quest, park, fellBack);
             }
 
@@ -1734,7 +1740,7 @@ public sealed class Driver(
             // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
             if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons))
             {
-                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await fresh.LetGoAsync().ConfigureAwait(false);
                 return GoOns.CannotGoOn(quest, park, fellBack);
             }
 
@@ -1755,19 +1761,19 @@ public sealed class Driver(
                 }
                 catch (DriverException error)
                 {
-                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    await fresh.LetGoAsync().ConfigureAwait(false);
                     return Hold(error.Message);
                 }
 
                 if (!selection.Allowed)
                 {
-                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    await fresh.LetGoAsync().ConfigureAwait(false);
                     return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
                 }
 
                 if (!ReferenceEquals(resumed, selection) && Untrusted(selection) is { } walkedUntrusted)
                 {
-                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    await fresh.LetGoAsync().ConfigureAwait(false);
                     return walkedUntrusted;
                 }
             }
@@ -1790,7 +1796,9 @@ public sealed class Driver(
         var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why);
 
         // The ledger judges the open — the same door any other client would use. A refusal here is
-        // an answer (someone else got there first), not an error.
+        // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
+        // tree even where a close cuts its answer off, so a close from here leaves it (QUEUEDTREE1).
+        fresh.Asked();
         var (sessionId, message) = await service
             // The tree this spawn will hold (D51) — its own where the repository opted in, the
             // registered root otherwise. Stated rather than left to the service to infer, because
@@ -1804,10 +1812,7 @@ public sealed class Driver(
         {
             // A fresh tree for a session that never opened has no work in it, so the clean removal
             // path takes it — and if anything landed there in the meantime, the refusal keeps it.
-            if (opened is not null)
-            {
-                await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
-            }
+            await fresh.LetGoAsync().ConfigureAwait(false);
 
             // The words of a record the person wrote to are the start's own to say (TICKSHOWN1, D137): carried as the hold's
             // sentence, the consideration reads Blocked and the record's row says its words wait and why, not only going on.
