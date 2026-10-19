@@ -55,7 +55,7 @@ vi.mock('@shenora/react', async () => {
 });
 
 import '../locales/i18n';
-import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects, useWindowChrome } from './windowChrome';
+import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects, useWindowChrome, useWindowTitle, windowTitle } from './windowChrome';
 import { AppStrip, DRAG_DISTANCE, STRIP_SPACE } from '../work/frame';
 import { setThemeChoice } from '../design/theme';
 
@@ -392,6 +392,34 @@ describe('another main window\'s frame and the viewer\'s theme', () => {
     act(() => setThemeChoice('dark'));
 
     expect(told()).toEqual([]);
+  });
+});
+
+/**
+ * MAINWINDOWS3 (D171's note): each main window holds its own workspace, so two of them would read alike on the taskbar
+ * and in Alt-Tab. The page's title names the one it holds, as the frame names the application (`WaitingBadge.Name`).
+ */
+describe('the window\'s title', () => {
+  afterEach(() => {
+    document.title = '';
+  });
+
+  it('names the workspace the window holds, and the application alone for every workspace', () => {
+    expect(windowTitle('games')).toBe('Daoris (道衍) — games');
+    expect(windowTitle('工作区')).toBe('Daoris (道衍) — 工作区');
+    expect(windowTitle(null)).toBe('Daoris (道衍)');
+  });
+
+  it('is this page\'s title, moving with the window\'s scope', () => {
+    const { rerender } = renderHook(({ workspace }: { workspace: string | null }) => useWindowTitle(workspace), {
+      initialProps: { workspace: 'games' },
+    });
+    expect(document.title).toBe('Daoris (道衍) — games');
+
+    rerender({ workspace: 'work' });
+    expect(document.title).toBe('Daoris (道衍) — work');
+    rerender({ workspace: null });
+    expect(document.title).toBe('Daoris (道衍)');
   });
 });
 

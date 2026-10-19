@@ -64,7 +64,7 @@ import { type AttentionDoors, useAccountsKnown } from '../work/AttentionBand';
 import type { Attention } from '../work/AttentionRow';
 import { needsAPerson, waitingInSessions } from '../work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from '../work/frame';
-import { useWindowChrome } from './windowChrome';
+import { useWindowChrome, useWindowTitle } from './windowChrome';
 import { useSplashLift } from './splash';
 import {
   type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, listOf, MENUS, paletteCommands, shortcutGroups,
@@ -391,6 +391,8 @@ export function App() {
   // no longer holds falls back to every, out loud (the switcher then says so), rather than scoping
   // every query to a circle nobody is in any more.
   const scope = useScope();
+  // Each main window holds its own (MAINWINDOWS3), so the title says which, where two would otherwise read alike.
+  useWindowTitle(scope.workspace);
   const workspaces = useWorkspaces();
   const holdings = useWorkspaceHoldings();
   // 🔴 The scope in words, whatever the machine holds (D75 §3): the one chosen, the one there is,
