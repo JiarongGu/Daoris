@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Whole, the rest.</b> The service's answers and the roster, the sessions' look across every tree, each workspace's
 /// history and the work inventory are each gathered across the home by their own readers, so each is one subject, judged on its
-/// wakes, at its deadline, and at most once each <see cref="FactRules.Rest"/>. Splitting them per repository is a later row.</para>
+/// wakes, at its deadline, and at most once each <see cref="FactRules.Rest"/>.</para>
 /// </remarks>
 public static class HelpFacts
 {
