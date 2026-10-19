@@ -45,6 +45,12 @@ public static class ClaudeUsage
         ],
         UsageKind.Claude);
 
+    /// <summary>The question's name as the usage history writes a reading's source (USAGECAP1a1).</summary>
+    public const string Source = "get_usage";
+
+    /// <summary>The version of <see cref="Read"/>'s history parse, which each reading it keeps carries (USAGECAP1a1).</summary>
+    public const int HistoryReader = 1;
+
     /// <summary>
     /// What the answer's body says (evidence's field table): <c>rate_limits.five_hour</c> as <c>session</c> and
     /// <c>.seven_day</c> as <c>weekly</c>, each <c>utilization</c> (a whole percent) as a fraction and each <c>resets_at</c>
@@ -52,13 +58,20 @@ public static class ClaudeUsage
     /// <paramref name="now"/>, the soonest it could turn over, so it is dropped then like any reading. Nothing where the home is
     /// not signed in, or a window is not said whole.
     /// </summary>
-    public static IReadOnlyList<WindowReading> Read(JsonElement body, DateTimeOffset now)
+    /// <remarks>
+    /// Beside the walk's, what the usage history keeps (USAGECAP1a1, D179 point 2): every window of <c>rate_limits</c> said in
+    /// part or whole, the scoped weeks among them (<c>seven_day_opus</c>), each reset marked said or made up; the server's
+    /// rows (<c>limits[]</c>: <c>kind</c>, <c>scope</c>, <c>percent</c>, <c>resets_at</c>, the evidence's field table) by their
+    /// kind and scope, never their severity; and the plan's word (<c>subscription_type</c>). Usage credits and spend
+    /// (<c>extra_usage</c>, <c>spend</c>) stay unread.
+    /// </remarks>
+    public static UsageAnswer Read(JsonElement body, DateTimeOffset now)
     {
         if (body.ValueKind != JsonValueKind.Object
             || !body.TryGetProperty("rate_limits_available", out var available) || available.ValueKind != JsonValueKind.True
             || !body.TryGetProperty("rate_limits", out var limits) || limits.ValueKind != JsonValueKind.Object)
         {
-            return [];
+            return UsageAnswer.None(Source, HistoryReader);
         }
 
         var readings = new List<WindowReading>();
@@ -90,8 +103,64 @@ public static class ClaudeUsage
             readings.Add(new WindowReading(window, percent / 100, reset));
         }
 
-        return readings;
+        return new UsageAnswer(readings, Seen(limits, now), Json.NonEmpty(body, "subscription_type"), Source, HistoryReader);
     }
+
+    /// <summary>The answer's windows and the server's rows, as the usage history keeps them (<see cref="Read"/>'s remarks).</summary>
+    private static List<WindowSeen> Seen(JsonElement limits, DateTimeOffset now)
+    {
+        var seen = new List<WindowSeen>();
+        foreach (var each in limits.EnumerateObject())
+        {
+            if (each.Value.ValueKind != JsonValueKind.Object || each.Name is "extra_usage" or "spend") continue;
+            var (used, precision) = Percent(each.Value, "utilization");
+            var (minutes, scope) = ClaudeWindows.Shape(each.Name);
+            var walk = ClaudeWindows.Words.Windows.GetValueOrDefault(each.Name);
+            DateTimeOffset? reset = Moments.Read(each.Value, "resets_at");
+            var from = reset is null ? null : UsageHistory.ResetSaid;
+            if (reset is null && walk is not null && used == 0
+                && (!each.Value.TryGetProperty("resets_at", out var at) || at.ValueKind == JsonValueKind.Null))
+            {
+                // As the walk reads it: a window not yet opened turns over a window's length from now at the soonest.
+                reset = now + (minutes == SessionLength.TotalMinutes ? SessionLength : WeekLength);
+                from = UsageHistory.ResetMadeUp;
+            }
+
+            Add(new WindowSeen(each.Name, walk, scope, minutes, used, precision, reset, from));
+        }
+
+        if (limits.TryGetProperty("limits", out var rows) && rows.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var row in rows.EnumerateArray())
+            {
+                if (row.ValueKind != JsonValueKind.Object || Json.NonEmpty(row, "kind") is not { } kind) continue;
+                var (used, precision) = Percent(row, "percent");
+                var reset = Moments.Read(row, "resets_at");
+                var minutes = kind == "session" ? (int)SessionLength.TotalMinutes
+                    : kind.StartsWith("weekly", StringComparison.Ordinal) ? (int)WeekLength.TotalMinutes : (int?)null;
+                Add(new WindowSeen(
+                    $"limits:{kind}", null, Json.NonEmpty(row, "scope"), minutes, used, precision, reset,
+                    reset is null ? null : UsageHistory.ResetSaid));
+            }
+        }
+
+        return seen;
+
+        // A window says something with a use or a reset; one said twice is its last.
+        void Add(WindowSeen window)
+        {
+            if (window.Used is null && window.Reset is null) return;
+            seen.RemoveAll(each => each.Window == window.Window && each.Scope == window.Scope);
+            seen.Add(window);
+        }
+    }
+
+    /// <summary>A whole percent from 0 to 100 as a fraction, with the precision it was written to; nulls where it is not one.</summary>
+    private static (double? Used, double? Precision) Percent(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
+        && value.TryGetDouble(out var percent) && double.IsFinite(percent) && percent is >= 0 and <= 100
+            ? (percent / 100, UsageHistory.Precision(value, 100))
+            : (null, null);
 
     /// <summary>
     /// The read over the CLI's lines (evidence, the request): <c>initialize</c>, its reply, then <c>get_usage</c>, whose reply

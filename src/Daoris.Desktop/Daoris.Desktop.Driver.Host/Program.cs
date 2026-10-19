@@ -401,6 +401,13 @@ try
         return BrainstormCommand.Run(brainstormArgs, DriverConfig.HomeOf(DriverConfig.ResolvePath()), Console.Out, DateTimeOffset.UtcNow);
     }
 
+    // A meeting (AGENTROOM1a, D177 point 7): the verb writes a request the driver's look takes, and show, send, stop and clear are
+    // the person's own. Files under this home only, as the brainstorm's: it spawns nothing and asks no service.
+    if (args is ["meeting", .. var meetingArgs])
+    {
+        return MeetingCommand.Run(meetingArgs, DriverConfig.HomeOf(DriverConfig.ResolvePath()), Console.Out, DateTimeOffset.UtcNow);
+    }
+
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
     // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing,
     // resuming and abandoning one quest's work (PAUSE1b, PAUSE1d, D132 §7.2): the quest's page is the other door. Clearing a

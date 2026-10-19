@@ -188,15 +188,42 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// Only a named account's, since the tool's own sign-in is never in a list (D125 §3.7). Null where nothing was kept.
     /// </summary>
     /// <param name="info">The frame's object, apart from the agent's words: never the transcript (D125 §1.4).</param>
+    /// <remarks>
+    /// Every window the frame says is kept in the usage history first (USAGECAP1a1, D179 point 2), the scoped weeks the walk
+    /// does not read among them, at the moment <c>windows.json</c> keeps.
+    /// </remarks>
     public IReadOnlyList<WindowReading>? Said(string adapter, string? profile, JsonElement info, string? session)
     {
         var resolved = adapters.Resolve(adapter);
         if (profile is null || CoolingAgent(resolved) is not { } agent || WindowsOf(resolved.Name) is not { } words) return null;
 
+        var now = Clock();
+        History(agent, profile, resolved.Name, AccountReadings.Seen(info, words), UsageHistory.SourceFrame, AccountReadings.HistoryReader, now, session);
         var readings = AccountReadings.Read(info, words);
         if (readings.Count == 0) return null;
-        AccountWindows.Said(Home, agent, profile, readings, Clock(), session);
+        AccountWindows.Said(Home, agent, profile, readings, now, session);
         return readings;
+    }
+
+    /// <summary>
+    /// A reader's windows kept in the usage history (USAGECAP1a1, D179 point 2), before <c>windows.json</c> keeps the newest of
+    /// each: with the plan as last read, the answer's own where it named one, else the one this process's last status question
+    /// of the account read (ACCOUNTID1, held in memory alone); never who signed in or the organisation. Never throws.
+    /// </summary>
+    /// <param name="account">The account, or <see cref="AccountWindows.Own"/> for the tool's own sign-in.</param>
+    private void History(
+        string owner, string account, string door, IReadOnlyList<WindowSeen> windows, string source, int reader, DateTimeOffset now,
+        string? session, string? plan = null)
+    {
+        if (windows.Count == 0) return;
+        var planFrom = plan is null ? null : source;
+        if (plan is null && _who.TryGetValue(AccountKey(owner, account), out var who) && who.Said is { Login: LoginState.In, Plan: { } read })
+        {
+            plan = read;
+            planFrom = UsageHistory.PlanFromStatus;
+        }
+
+        UsageHistory.Kept(Home, new ReadingFrom(owner, account, door, source, reader, now, session, plan, planFrom), windows, now);
     }
 
     /// <summary>The account's cool-off now, or null when it is ready, a start on this adapter as <paramref name="profile"/> would read it.</summary>
@@ -501,6 +528,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         _who[AccountKey(owner, account)] = (at, login == LoginState.In ? said : new LoginRead(login, null));
         // A newer word on the account settles a fresh reading a refusal owed it (TOOL6h).
         _owed.TryRemove(AccountKey(owner, account), out _);
+        // Its usage history's binding epoch (USAGECAP1a1): a sign-out marks it, and another plan as read begins the next.
+        UsageHistory.Login(Home, owner, account ?? AccountWindows.Own, login, login == LoginState.In ? said.Plan : null, at);
         try
         {
             AccountReads.Keep(Home, owner, account, login, at);
@@ -521,6 +550,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         _who.TryRemove(AccountKey(agent, account), out _);
         _owed.TryRemove(AccountKey(agent, account), out _);
         _fresh.TryRemove(AccountKey(agent, account), out _);
+        // One made later under its name is another binding in the usage history (USAGECAP1a1).
+        UsageHistory.Unbound(Home, agent, account, Clock());
         try
         {
             AccountReads.Forget(Home, agent, account);
@@ -1769,9 +1800,26 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 }
             }
 
+            // Every window it said kept in the usage history first (USAGECAP1a1): the reader's own parse where it answered one,
+            // else the walk's readings as they are (a stand-in's, reader 0).
+            var now = Clock();
+            var key = account ?? AccountWindows.Own;
+            var door = Adapters.Resolve(adapter).Name;
+            if (readings is UsageAnswer answer)
+            {
+                History(owner, key, door, answer.Seen, answer.Source, answer.Reader, now, session: null, answer.Plan);
+            }
+            else if (readings is { Count: > 0 })
+            {
+                History(
+                    owner, key, door,
+                    [.. readings.Select(reading => new WindowSeen(
+                        reading.Window, reading.Window, null, null, reading.Used, null, reading.Reset, UsageHistory.ResetSaid))],
+                    question.Kind == UsageKind.Claude ? ClaudeUsage.Source : CodexUsage.Method, reader: 0, now, session: null);
+            }
+
             if (readings is not { Count: > 0 }) return null;
-            AccountWindows.Said(
-                Home, owner, account ?? AccountWindows.Own, readings, Clock(), session: null, source: AccountWindows.SourceRead);
+            AccountWindows.Said(Home, owner, key, readings, now, session: null, source: AccountWindows.SourceRead);
             return readings;
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)

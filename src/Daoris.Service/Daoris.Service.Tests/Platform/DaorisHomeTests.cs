@@ -143,6 +143,14 @@ public sealed class DaorisHomeTests
         Assert.Null(HomeEntry.Named("nothing"));
     }
 
+    /// <summary>USAGECAP1a1 (D179 point 2): the driver's usage history, a data folder the service's table names as its twin does.</summary>
+    [Fact]
+    public void The_usage_history_is_a_data_folder_of_its_own()
+    {
+        Assert.Same(HomeEntry.UsageHistory, HomeEntry.Named("usage-history"));
+        Assert.Equal(HomeCategory.Data, HomeEntry.UsageHistory.Category);
+    }
+
     /// <summary>
     /// 🔴 SERVICEHOME2 (D171 point 1), the driver's FINDDAORIS1 rows: a connector a person's own agent starts from its
     /// <c>.mcp.json</c>, or the HTTP host started from a terminal, is handed no variable, so a program the install carries
