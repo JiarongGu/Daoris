@@ -117,9 +117,13 @@ internal static class Program
         // The in-app browser is a process of its own, which this does not reach.
         builder.Services.AddShenoraColorScheme();
 
-        // The kit's, the engine's and the modules' warnings and errors, into the same log.
+        // The kit's, the engine's and the modules' warnings and errors, into the same log: loggers the container makes, since the
+        // kit asks it for an ILogger<T>, and a provider alone made none (ONEINSTANCE2). And a later launch handed over, which the
+        // single-instance guard and the engine say as information: the engine's line is the only trace of a launch the guard
+        // let through and Chromium's own singleton turned away.
         builder.Services.AddSingleton(log);
-        builder.Services.AddSingleton<Microsoft.Extensions.Logging.ILoggerProvider>(new MachineLogProvider(log));
+        builder.Services.AddMachineLog(log,
+            typeof(SingleInstanceGuard).FullName!, typeof(Shenora.Chromium.ChromiumEngine).FullName!);
 
         builder.Services.AddSingleton(new HostSupervisor(serviceUrl));
         builder.Services.AddSingleton(sp => new DriverLoop(
@@ -306,17 +310,25 @@ internal static class Program
             },
             // One instance per install, the kit's default, and a later launch is a new main window of it (ONEINSTANCE1, D171
             // point 2): the guard brings this instance's main window forward and hands the launch over on the window's thread,
-            // and the hand-over opens the window off it, once the service answers.
-            SingleInstance = new SingleInstanceHostOptions
-            {
-                OnActivated = (running, launch) =>
-                    _ = running.Services.GetRequiredService<SecondLaunch>().OpenAsync(launch.Arguments),
-            },
+            // and the hand-over opens the window off it, once the service answers. Written as it arrives, and every failure on
+            // the way written too (ONEINSTANCE2).
+            SingleInstance = LaterLaunch.Options(log),
         });
 
         using var app = builder.Build();
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
-        app.Run();
+        try
+        {
+            app.Run();
+        }
+        catch (Exception error)
+        {
+            // Written here, while the log is open (ONEINSTANCE2, as HOSTSTART2 found for the hosts): leaving Main closes it before
+            // the runtime reports the exception as unhandled, so an engine that would not start, as a launch Chromium turned
+            // away does, ended the process without a line.
+            log.Failed("the application's run", error, terminating: true);
+            throw;
+        }
     }
 }

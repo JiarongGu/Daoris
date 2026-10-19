@@ -8,7 +8,8 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// <para><b>How the launch arrives.</b> The kit's guard (<c>WindowsHostOptions.SingleInstance</c>, on by default) answers a
 /// later launch by bringing this instance's main window forward and then, on the window's thread, calling the app's
-/// <c>OnActivated</c> with that launch's arguments and folder. The application hands it to <see cref="OpenAsync"/>.</para>
+/// <c>OnActivated</c> with that launch's arguments and folder. <see cref="LaterLaunch"/> is that callback: it writes the launch's
+/// arrival and hands it to <see cref="OpenAsync"/>, writing whatever fails on the way (ONEINSTANCE2).</para>
 ///
 /// <para><b>Every launch opens a window</b>, whatever it carries: Daoris takes no file or link on its command line, and the
 /// flags a native launcher adds (<c>--app-root</c>, <c>--startup-screen</c>) say nothing about what to open.</para>
