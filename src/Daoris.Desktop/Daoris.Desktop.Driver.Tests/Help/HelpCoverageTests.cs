@@ -563,6 +563,12 @@ public sealed partial class HelpCoverageTests
         ("work", "useAskHelper", null, HelperAskDoor),
         ("work", "useApproveHelper", null, HelperAnswerDoor),
         ("work", "useDeclineHelper", null, HelperAnswerDoor),
+        // AUTONOMY1b3c (D184 point 3): the person's answer to a tool call a session holds for them under asking, on the session's page
+        // and What needs you.
+        ("work", "useAnswerPermission", null, new Exempt(
+            "it answers a tool call a session holds for the person under its repository's asking permission prompts, with a choice "
+            + "its agent offered, for that one call (D184's AUTONOMY1b3a note): a live request is the person's own press, never a "
+            + "proposal, and what an agent may do at all is the person's rules and access setup, doors of their own.")),
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),
