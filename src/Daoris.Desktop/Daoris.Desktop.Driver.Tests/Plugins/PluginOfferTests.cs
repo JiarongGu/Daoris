@@ -138,6 +138,29 @@ public sealed class PluginOfferTests : IDisposable
             && need.Contains("`az extension add --name azure-devops`", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// HELPPLUG1c (D170's note): the in-app browser offers Ask Daoris its `browser` server, its page-reading tools as reads and
+    /// its page-changing ones as writes, so the person can approve it on its page; none is a generic execution tool, so it is
+    /// never refused, and the tools that run a page's code (`browser_evaluate`, `browser_run_code_unsafe`) are not offered.
+    /// Every session is still handed it, as before.
+    /// </summary>
+    [Fact]
+    public void The_in_app_browser_offers_ask_daoris_its_browser_reads_and_writes_apart_and_no_code_runner()
+    {
+        var (manifest, problem) = PluginCatalog.ReadAsWritten(
+            "in-app-browser", Path.Combine(Repository(), "examples", "plugins", "in-app-browser", PluginCatalog.ManifestName));
+
+        Assert.Null(problem);
+        var browser = Assert.Single(manifest!.Servers);
+        Assert.Equal(["sessions", "help"], browser.To);
+        Assert.Contains("browser_navigate", browser.Allow);
+        Assert.Contains("browser_snapshot", browser.Allow);
+        Assert.Contains("browser_click", browser.Writes);
+        Assert.Contains("browser_type", browser.Writes);
+        Assert.Null(HelpGrants.Refusal(browser));
+        Assert.DoesNotContain(browser.Allow.Concat(browser.Writes), tool => tool is "browser_evaluate" or "browser_run_code_unsafe");
+    }
+
     private static string Repository()
     {
         var here = new DirectoryInfo(AppContext.BaseDirectory);
