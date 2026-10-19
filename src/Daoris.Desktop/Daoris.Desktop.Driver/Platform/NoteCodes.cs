@@ -407,6 +407,7 @@ public static class NoteCodes
     /// <summary>
     /// FABRIC-CLOSE1c2 (§E5): it stopped with its quest still taken, held because the person reopened the work it grew from (`quest`, the
     /// step before). A good ending, as a wait is: the quest goes on in the same tree once the person goes on with it on the new work.
+    /// A twin: the service's ledger reads this spelling to open that carry-on (<c>SessionLedger.EndedSourceReopened</c>, FABRIC-CLOSE1c26).
     /// </summary>
     public static readonly NoteCode EndedSourceReopened = new("ended.source-reopened", ["quest"]);
     public static readonly NoteCode EndedTakenExit = new("ended.taken-exit", ["exit"]);
