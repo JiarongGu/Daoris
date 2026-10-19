@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris no longer sits silently while it starts on a busy machine. It waits up to 30 seconds to read this machine for its
+  room; past that it starts on the room as last written and says so in the conversation, and the room is written again once the
+  reading finishes. On a machine where Ask Daoris never ran before, the start ends saying why instead of waiting.
+- A folder beside an agent's accounts whose name ends `.lock`, or starts with `.`, is no longer taken for an account: Claude Code
+  makes such folders to lock an account's home, and two were listed, signed in to and run in. Nothing is deleted. Ask Daoris
+  names each one, and says when one holds a sign-in: rename it to an account's name while nothing runs on it to keep it.
 - Each main window of Daoris holds its own workspace. Choosing one in a window changes that window alone, and reloading it
   keeps it; a window opened later starts from the workspace last chosen in any. A session's own window keeps the workspace its
   session belongs to, or follows the window it was opened from, never another main window, and so does the monitor. The page's

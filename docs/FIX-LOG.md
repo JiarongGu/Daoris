@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — An Ask Daoris message stayed queued and never started, and a lock's folder was an account (HELPSTUCK1)
+
+- **Symptom:** the owner's, on the install, under load (test runs beside, each git taking seconds): *I just tried input 1
+  message and it stucked*. The message (`message.sent` 01:59:39Z) placed help conversation `dc46ef27` (02:00:11Z), rotated from
+  `Gmail` over its curve to `account-3.lock`; its events held the opening note alone, it stayed `queued` for minutes, and no
+  agent process started. The accounts folder held `Gmail.lock` and `account-3.lock` beside the accounts, both listed as accounts.
+- **Root cause:** two. `ChatRunner.RunHelpAsync` awaited the room's reading of the machine (`HelpRoutes.HelpMachineAsync`, through
+  the loop's `DescribeHelp`) before anything else, unbounded and on `CancellationToken.None` from `HelpRoutes.RunPlacedAsync`;
+  that reading walks git across every repository and tree in turn (the lines, the session look's trees, each workspace's
+  history, the work inventory), and under that load it did not answer. Nothing said why meanwhile, and the held words were
+  never handed back (`RunPlacedAsync`'s `finally` never ran), which the events file's single event shows. It waits on neither
+  the loop's look nor the planner. Separately, the account listing took every folder for an account, and Claude Code locks a
+  configuration home by a folder named after it with `.lock` beside it, so two locks were walked to, signed in to and run in.
+- **Fix:** the reading is waited for 30 s (`ChatHelp.ReadAsync`); past it the room as last written serves, said first in the
+  conversation by code (`help.room-as-written`), the late reading writing the room when it answers; with no room ever written the
+  start ends `failed` saying so (`help.room-unread`). A conversation going on in the room takes the same bound. A folder ending
+  `.lock` or starting `.` is no account (twin rule 1, `NotAnAccount` and `notAnAccount`), named as a stray with whether it holds
+  a sign-in (`HarnessReport.Strays`, Ask Daoris's room); nothing touches it. D89's and D125's notes of this date.
+- **Verification:** `HelpStartReadTests` (a reading that never answers; both timed out first), `RosterReadTests`' stray test,
+  `HelpRoomTests`' stray line and `HarnessSettingsTests`' rows, each seen failing first, and the CLI's profiles test, failed
+  first; the driver's fast half, the touched modules classes, and the web's note tests pass. Not run here: the Process half, the
+  window, the install.
+
 ## 2026-10-19 — A second launch of the installed Daoris opened no window and the desktop wrote nothing of why (ONEINSTANCE2)
 
 - **Symptom:** a second `Daoris.exe`, and a direct `app\Daoris.Desktop.exe`, each exited while Daoris ran; no second main window
