@@ -58,7 +58,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
     private int _busy;
 
-    private TimeSpan Minute => _context.BrainstormMinute ?? TimeSpan.FromMinutes(1);
+    /// <summary>A brainstorm's minute, and a meeting's (AGENTROOM1a): a minute, unless a test shortens it.</summary>
+    internal TimeSpan Minute => _context.BrainstormMinute ?? TimeSpan.FromMinutes(1);
 
     /// <summary>How often a waiting pass asks for a slot again, and a running brainstorm looks for the person's stop.</summary>
     private TimeSpan Tick => TimeSpan.FromMilliseconds(Math.Clamp(Minute.TotalMilliseconds / 60, 20, 1000));
@@ -104,7 +105,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;
                         files.WriteState(state with { State = BrainstormStates.Running, At = DateTimeOffset.UtcNow });
-                        Beside(request, state.Packet!, RuleOf(request, snapshot), files, ct);
+                        Beside(request, state.Packet!, RuleOf(request.Repository, snapshot), files, ct);
                         break;
                     case BrainstormStates.Running when _context.Runs.TryOpinion(Claim(request.Id)):
                         // Nothing in this driver runs it: the driver that did stopped. What answered is kept; nothing runs again by itself.
@@ -131,10 +132,13 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         return held + begun;
     }
 
-    /// <summary>The policy standing for a request (D176 point 9): its repository's workspace's whole, else this machine's.</summary>
-    private BrainstormRule RuleOf(BrainstormRequest request, Snapshot snapshot)
+    /// <summary>
+    /// The policy standing for a request (D176 point 9): its repository's workspace's whole, else this machine's. A meeting's is the
+    /// same (AGENTROOM1a, D177 point 6: the brainstorm's bounds and policy are the meeting's).
+    /// </summary>
+    internal BrainstormRule RuleOf(string? asked, Snapshot snapshot)
     {
-        var workspace = request.Repository is { } repository
+        var workspace = asked is { } repository
             ? snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace
               ?? RemoteTarget.DefaultWorkspace
             : null;
@@ -147,16 +151,30 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// </summary>
     private async Task<string> FreezeAsync(BrainstormRequest request, Snapshot snapshot, BrainstormFiles files, CancellationToken ct)
     {
+        var packet = await AssembleAsync(request.Question, request.Repository, snapshot, ct).ConfigureAwait(false);
+        files.WritePacket(request.Id, BrainstormPackets.Bytes(packet));
+        files.WriteState(new BrainstormState(request.Id, BrainstormStates.Frozen, packet.Digest, null, DateTimeOffset.UtcNow));
+        var from = request.Repository is null ? "the question alone" : $"{packet.Sources.Count} sources of `{request.Repository}` by {packet.Tier}";
+        return $"brainstorm `{request.Id}` frozen: packet `{packet.Digest[..19]}`, {from}. Read it with `daoris-driver brainstorm show {request.Id}`, "
+            + $"and send it with `daoris-driver brainstorm send {request.Id}`.";
+    }
+
+    /// <summary>
+    /// The packet's assembly (D176 point 2): the question, and for a repository its sources from the knowledge search in more than
+    /// one wording, else from its declared index's files. A meeting's first packet is this assembly (AGENTROOM1a, D177 point 2).
+    /// </summary>
+    internal async Task<BrainstormPacket> AssembleAsync(string question, string? asked, Snapshot snapshot, CancellationToken ct)
+    {
         var found = new List<BrainstormFound>();
         string? tier = null;
         string? revision = null;
-        if (request.Repository is { } repository)
+        if (asked is { } repository)
         {
             var (root, commit) = await CheckoutAsync(repository, snapshot, ct).ConfigureAwait(false);
             revision = commit;
             try
             {
-                foreach (var words in BrainstormWordings.Of(request.Question))
+                foreach (var words in BrainstormWordings.Of(question))
                 {
                     var search = await SearchAsync(words, repository, ct).ConfigureAwait(false);
                     found.AddRange(search.Found);
@@ -169,16 +187,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 // No service: the declared index's files answer (D151 §6).
                 found.Clear();
                 tier = BrainstormPackets.Files;
-                if (root is not null) found.AddRange(IndexFiles(root, request.Question));
+                if (root is not null) found.AddRange(IndexFiles(root, question));
             }
         }
 
-        var packet = BrainstormPackets.Freeze(request.Question, request.Repository, tier, revision, found, BrainstormBounds.First);
-        files.WritePacket(request.Id, BrainstormPackets.Bytes(packet));
-        files.WriteState(new BrainstormState(request.Id, BrainstormStates.Frozen, packet.Digest, null, DateTimeOffset.UtcNow));
-        var from = request.Repository is null ? "the question alone" : $"{packet.Sources.Count} sources of `{request.Repository}` by {packet.Tier}";
-        return $"brainstorm `{request.Id}` frozen: packet `{packet.Digest[..19]}`, {from}. Read it with `daoris-driver brainstorm show {request.Id}`, "
-            + $"and send it with `daoris-driver brainstorm send {request.Id}`.";
+        return BrainstormPackets.Freeze(question, asked, tier, revision, found, BrainstormBounds.First);
     }
 
     private async Task<(string? Root, string? Revision)> CheckoutAsync(string repository, Snapshot snapshot, CancellationToken ct)
@@ -407,8 +420,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         return $"brainstorm `{id}` stopped by the person: {answered.Count} answers kept, and nothing runs again by itself.";
     }
 
-    /// <summary>The person's stop, looked for while a brainstorm runs: its file, written by their verb, ends every pass at once.</summary>
-    private async Task WatchAsync(string id, BrainstormFiles files, CancellationTokenSource stop, CancellationToken done)
+    /// <summary>
+    /// The person's stop, looked for while a brainstorm runs: its file, written by their verb, ends every pass at once. A meeting's
+    /// round is watched the same, through its turns' files (AGENTROOM1a).
+    /// </summary>
+    internal async Task WatchAsync(string id, BrainstormFiles files, CancellationTokenSource stop, CancellationToken done)
     {
         try
         {
@@ -459,14 +475,17 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// room within its own minutes from its slot, cut at <paramref name="until"/>; its answer validated by <paramref name="check"/>,
     /// and where that failed its one repair, handed the codes, within the same minutes. A limit starts it once more instead, as that
     /// repair; a crash is a turn with no answer; the person's stop ends it. Its record is written at each turn's start, so a restart
-    /// knows what ran, and whatever it came to.
+    /// knows what ran, and whatever it came to. A meeting's turn is one such pass (AGENTROOM1a, D177 point 4), run by
+    /// <paramref name="run"/>: a meeting's runner, never the brainstorm's.
     /// </summary>
-    private async Task<(BrainstormPassRecord Record, T? Valid)> PassAsync<T>(
+    /// <param name="run">How its turns run; null for a brainstorm's: its test stand-in, else <see cref="TurnAsync"/>.</param>
+    internal async Task<(BrainstormPassRecord Record, T? Valid)> PassAsync<T>(
         string id, string pass, string agent, string role, byte[] packet, string instruction, byte[]? proposals,
         Func<string?, (T? Valid, IReadOnlyList<string> Codes)> check, BrainstormFiles files, TimeSpan own, DateTimeOffset until,
-        CancellationToken stop, CancellationToken ct)
+        CancellationToken stop, CancellationToken ct, Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? run = null)
         where T : class
     {
+        run ??= _context.BrainstormTurns ?? TurnAsync;
         var family = AgentFamily.Of(_context.Adapters, agent);
         var maker = family.Maker ?? family.Owner;
         string? account = null;
@@ -514,32 +533,32 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 var room = files.OpenRoom(id, turn, packet, said, proposals);
                 using var window = CancellationTokenSource.CreateLinkedTokenSource(stop);
                 window.CancelAfter(left);
-                BrainstormTurnRun run;
+                BrainstormTurnRun ran;
                 var cut = false;
                 try
                 {
-                    run = await (_context.BrainstormTurns ?? TurnAsync)(
+                    ran = await run(
                         new BrainstormTurn(id, turn, agent, room, said, files.AnswerPath(id, turn), Math.Max(1, (int)Math.Ceiling(left.TotalMinutes))),
                         window.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (window.IsCancellationRequested && !ct.IsCancellationRequested)
                 {
                     cut = true;
-                    run = new BrainstormTurnRun(true, null, null, $"stopped  brainstorm turn {turn}");
+                    ran = new BrainstormTurnRun(true, null, null, $"stopped  brainstorm turn {turn}");
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
                     // A crash ends the turn with no answer: its pass alone fails, after its repair, never the brainstorm.
-                    run = new BrainstormTurnRun(true, null, Crashed, $"crashed  brainstorm turn {turn}: {error.Message}");
+                    ran = new BrainstormTurnRun(true, null, Crashed, $"crashed  brainstorm turn {turn}: {error.Message}");
                 }
 
-                account = run.Account ?? account;
-                if (!run.Ran)
+                account = ran.Account ?? account;
+                if (!ran.Ran)
                 {
-                    return Ended(BrainstormPassRecord.Unavailable, restart ? [Limit, run.Code ?? "not-started"] : [run.Code ?? "not-started"], turns);
+                    return Ended(BrainstormPassRecord.Unavailable, restart ? [Limit, ran.Code ?? "not-started"] : [ran.Code ?? "not-started"], turns);
                 }
 
-                if (run.Code == Limit && !restart && !cut)
+                if (ran.Code == Limit && !restart && !cut)
                 {
                     // D125: the account cooled where the turn ran, no strike is counted, and the pass starts once more on the next
                     // ready account of that agent's walk, as its one repair, within its minutes.
@@ -558,7 +577,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         : Ended(BrainstormPassRecord.Failed, [cutCode], turns);
                 }
 
-                codes = run.Code is { } code ? [.. failed, code] : failed;
+                codes = ran.Code is { } code ? [.. failed, code] : failed;
                 restart = false;
             }
 

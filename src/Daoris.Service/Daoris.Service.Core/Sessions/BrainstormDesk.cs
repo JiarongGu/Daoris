@@ -145,7 +145,7 @@ public sealed class BrainstormDesk(string? home)
     /// <summary>One brainstorm as its records stand, or null where there is no readable request by that id.</summary>
     public BrainstormStanding? Find(string id)
     {
-        if (Home is null || !PlainName.IsMatch(id) || Parse(PathOf(id, "request.json")) is not { } request) return null;
+        if (Home is null || !PlainName.IsMatch(id) || Reserved(id) || Parse(PathOf(id, "request.json")) is not { } request) return null;
         if (Text(request, "question") is not { Length: > 0 } question) return null;
 
         var agents = request.TryGetProperty("agents", out var listed) && listed.ValueKind == JsonValueKind.Array
@@ -201,7 +201,7 @@ public sealed class BrainstormDesk(string? home)
     /// <summary>The brainstorm cleared (D176 point 8): its records, its packet and its rooms; never while it runs.</summary>
     public BrainstormOutcome Clear(string id)
     {
-        if (Home is null || !PlainName.IsMatch(id)) return NotFound(id);
+        if (Home is null || !PlainName.IsMatch(id) || Reserved(id)) return NotFound(id);
         var folder = DaorisHome.Entry(Home, HomeEntry.Brainstorms, id);
         var brainstorm = Find(id);
         if (brainstorm is null && !Directory.Exists(folder)) return NotFound(id);
@@ -218,8 +218,19 @@ public sealed class BrainstormDesk(string? home)
         return new(BrainstormRefusal.None, $"Brainstorm `{id}` cleared: its records and its packet are gone from this machine.", brainstorm);
     }
 
-    private static BrainstormOutcome NotFound(string id) =>
-        new(BrainstormRefusal.NotFound, $"There is no brainstorm `{id.Trim()}` on this machine.");
+    /// <summary>
+    /// The folder that holds every meeting is no brainstorm's id (AGENTROOM1a; BRAINSTORM-RESERVED1): the driver's
+    /// <c>BrainstormFiles.Reserved</c>, duplicated deliberately (twins.md). Every door checks it before the disk, so a clear can
+    /// never take the meetings' records.
+    /// </summary>
+    public static bool Reserved(string id) => string.Equals(id.Trim(), "meetings", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The sentence for an id no brainstorm answers to, the reserved one with its own reason.</summary>
+    public static string NotFoundSentence(string id) => Reserved(id)
+        ? "`meetings` holds the meetings' records, not a brainstorm."
+        : $"There is no brainstorm `{id.Trim()}` on this machine.";
+
+    private static BrainstormOutcome NotFound(string id) => new(BrainstormRefusal.NotFound, NotFoundSentence(id));
 
     private string PathOf(string id, string file) => DaorisHome.Entry(Home!, HomeEntry.Brainstorms, id, file);
 

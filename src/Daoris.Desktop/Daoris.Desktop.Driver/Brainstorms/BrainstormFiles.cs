@@ -40,12 +40,27 @@ public static class BrainstormStates
 /// </summary>
 public sealed class BrainstormFiles(string home)
 {
-    public string Folder(string id) => DaorisHome.Entry(home, HomeEntry.Brainstorms, id);
+    /// <summary>The folder these records sit under within the entries: none for a brainstorm's.</summary>
+    private readonly string[] _under = [];
+
+    /// <summary>
+    /// A meeting's turns (AGENTROOM1a, D177 point 1): the pass records, the answers and the rooms a brainstorm's pass keeps, under
+    /// <paramref name="under"/> in the same entries, so a pass runs a meeting's turn as it runs a brainstorm's, apart from them.
+    /// </summary>
+    internal BrainstormFiles(string home, string under) : this(home) => _under = [under];
+
+    public string Folder(string id) => DaorisHome.Entry(home, HomeEntry.Brainstorms, [.. _under, id]);
 
     public string PathOf(string id, params string[] parts) => Path.Combine([Folder(id), .. parts]);
 
     /// <summary>The rooms of one brainstorm, one folder per turn.</summary>
-    public string Rooms(string id) => DaorisHome.Entry(home, HomeEntry.BrainstormRooms, id);
+    public string Rooms(string id) => DaorisHome.Entry(home, HomeEntry.BrainstormRooms, [.. _under, id]);
+
+    /// <summary>
+    /// The folder that holds every meeting (<see cref="MeetingFiles.Under"/>) is no brainstorm's id (AGENTROOM1a): named as one, a
+    /// brainstorm's clear would take every meeting with it.
+    /// </summary>
+    public static bool Reserved(string id) => string.Equals(id, MeetingFiles.Under, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The file a turn's result tool writes its answer to: <c>brainstorm_give</c>'s or <c>brainstorm_synthesize</c>'s.</summary>
     public string AnswerPath(string id, string turn) => PathOf(id, "answers", $"{turn}.json");
@@ -75,12 +90,13 @@ public sealed class BrainstormFiles(string home)
         return id;
     }
 
-    /// <summary>Every request on file, oldest first; one unreadable is not a request here.</summary>
+    /// <summary>Every request on file, oldest first; one unreadable is not a request here, and the meetings' folder is none.</summary>
     public IReadOnlyList<BrainstormRequest> Requests()
     {
-        var folder = DaorisHome.Entry(home, HomeEntry.Brainstorms);
+        var folder = DaorisHome.Entry(home, HomeEntry.Brainstorms, _under);
         if (!Directory.Exists(folder)) return [];
-        return [.. Directory.EnumerateDirectories(folder).Select(Path.GetFileName).OfType<string>().Select(Request).OfType<BrainstormRequest>()
+        return [.. Directory.EnumerateDirectories(folder).Select(Path.GetFileName).OfType<string>().Where(id => _under.Length > 0 || !Reserved(id))
+            .Select(Request).OfType<BrainstormRequest>()
             .OrderBy(request => request.At).ThenBy(request => request.Id, StringComparer.Ordinal)];
     }
 
@@ -237,7 +253,7 @@ public sealed class BrainstormFiles(string home)
     /// <summary>The brainstorm cleared (D176 point 8): its records, its packet and its rooms. What could not be removed is said.</summary>
     public string? Clear(string id) => RemoveRooms(id) ?? Remove(Folder(id));
 
-    private static string? Remove(string folder)
+    internal static string? Remove(string folder)
     {
         if (!Directory.Exists(folder)) return null;
         try
@@ -252,19 +268,19 @@ public sealed class BrainstormFiles(string home)
         }
     }
 
-    private static void Write(string path, Action<Utf8JsonWriter> write)
+    internal static void Write(string path, Action<Utf8JsonWriter> write)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         JsonFile.Write(path, write);
     }
 
-    private static void Bytes(string path, byte[] bytes)
+    internal static void Bytes(string path, byte[] bytes)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         AtomicFile.WriteBytes(path, bytes);
     }
 
-    private static byte[]? ReadBytes(string path)
+    internal static byte[]? ReadBytes(string path)
     {
         try
         {
@@ -276,9 +292,9 @@ public sealed class BrainstormFiles(string home)
         }
     }
 
-    private static string? ReadText(string path) => ReadBytes(path) is { } bytes ? System.Text.Encoding.UTF8.GetString(bytes) : null;
+    internal static string? ReadText(string path) => ReadBytes(path) is { } bytes ? System.Text.Encoding.UTF8.GetString(bytes) : null;
 
-    private static JsonDocument? Parse(string path)
+    internal static JsonDocument? Parse(string path)
     {
         try
         {

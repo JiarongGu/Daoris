@@ -23,6 +23,10 @@ public static partial class BrainstormCommand
         {
             case ["list"]:
                 return List(files, output);
+            // The folder that holds every meeting is no brainstorm (AGENTROOM1a): cleared as one, it would take them all.
+            case ["show" or "send" or "stop" or "clear", var id] when BrainstormFiles.Reserved(id):
+                output.WriteLine($"daoris-driver: there is no brainstorm `{id}` on this machine.");
+                return 1;
             case ["show", var id]:
                 return Show(files, id, output);
             case ["send", var id]:
@@ -61,7 +65,7 @@ public static partial class BrainstormCommand
                     agents = [.. rest[at + 1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
                     break;
                 // The caller's own id (BRAINSTORM1b, D176 point 6): asked again under it, it is the same brainstorm, never a second spend.
-                case "--id" when IdShape().IsMatch(rest[at + 1]):
+                case "--id" when IdShape().IsMatch(rest[at + 1]) && !BrainstormFiles.Reserved(rest[at + 1]):
                     named = rest[at + 1];
                     break;
                 default:
@@ -142,10 +146,22 @@ public static partial class BrainstormCommand
         var text = new StringBuilder();
         text.Append("Brainstorm `").Append(id).Append("`, packet `").Append(packet.Digest).Append("`\n\n");
         foreach (var line in packet.Question.Split('\n')) text.Append("> ").Append(line.TrimEnd('\r')).Append('\n');
-        text.Append('\n').Append(packet.Repository is null
+        Sources(text, packet.Repository, packet.Tier, packet.Sources, packet.LeftOut);
+        text.Append('\n');
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// A packet's sources as the person reads them, each with where it came from, and what was left out: a brainstorm's, and a
+    /// meeting's, whose sources are the brainstorm's assembly (AGENTROOM1a, D177 point 2).
+    /// </summary>
+    internal static void Sources(
+        StringBuilder text, string? repository, string? tier, IReadOnlyList<BrainstormSource> sources, IReadOnlyList<BrainstormLeftOut> leftOut)
+    {
+        text.Append('\n').Append(repository is null
             ? "No repository: the question alone.\n"
-            : $"{packet.Sources.Count} sources of `{packet.Repository}`, found by {packet.Tier}.\n");
-        foreach (var source in packet.Sources)
+            : $"{sources.Count} sources of `{repository}`, found by {tier}.\n");
+        foreach (var source in sources)
         {
             text.Append("\n").Append(source.Id).Append("  ").Append(source.Kind).Append("  ").Append(source.Path)
                 .Append(source.First is { } first ? $":{first}-{source.Last ?? first}" : "")
@@ -154,14 +170,12 @@ public static partial class BrainstormCommand
             foreach (var line in source.Text.Split('\n')) text.Append("    ").Append(line.TrimEnd('\r')).Append('\n');
         }
 
-        foreach (var left in packet.LeftOut) text.Append("\nLeft out: ").Append(left.Path).Append(" (").Append(left.Why).Append(")\n");
-        text.Append('\n');
-        return text.ToString();
+        foreach (var left in leftOut) text.Append("\nLeft out: ").Append(left.Path).Append(" (").Append(left.Why).Append(")\n");
     }
 
     /// <summary>A caller's own id: a plain name of letters, digits and dashes, at most 32, so it is a folder's name and nothing more.</summary>
     [System.Text.RegularExpressions.GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9-]{0,31}$")]
-    private static partial System.Text.RegularExpressions.Regex IdShape();
+    internal static partial System.Text.RegularExpressions.Regex IdShape();
 
     /// <summary>
     /// The person's stop (BRAINSTORM1b, D176 point 6): a file the driver looks for while the brainstorm runs, and at its next look

@@ -10,6 +10,10 @@ with the version and date at release.
   session belongs to, or follows the window it was opened from, never another main window, and so does the monitor. The page's
   title names the workspace, *Daoris (道衍) — games*, which a browser's tab shows; the desktop window's own title does not say it
   yet.
+- Daoris keeps every usage reading it sees, in `usage-history/` in its data folder: each window's use and reset as a session or a
+  read said it, the account's plan word and when, for the estimate of how much work each window holds that comes later. Nothing
+  reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says
+  what it pruned.
 
 - A first brainstorm across agents, at the terminal: `daoris-driver brainstorm "<question>" [--repository <name>] [--agents a,b]`.
   Daoris freezes one context packet from its own knowledge of the repository, which `brainstorm show <id>` prints whole; nothing
@@ -29,6 +33,16 @@ with the version and date at release.
   `daoris-driver brainstorm stop <id>` ends one and keeps what answered; `--id <id>` makes asking again the same brainstorm; a Daoris
   that stopped mid-brainstorm ends it as interrupted and runs nothing again by itself. `daoris driver brainstorms` sets the agents a
   brainstorm runs and its minutes, for this machine or with `--workspace` for a workspace's questions.
+
+- A first meeting of agents, at the terminal: `daoris-driver meeting ask "<question>" --agents a,b [--repository <name>]`.
+  Daoris freezes the first round's context packet as a brainstorm's, naming the agents in your order, and `meeting show <id>`
+  prints it whole; nothing goes to any agent until `meeting send <id>`. Each agent then speaks once, one at a time in your order,
+  within a brainstorm's minutes, and Daoris keeps each message with who said it from its own records, never from what the message
+  claims. A second round goes only by `meeting send <id> --round 2`, its packet holding the first round's messages, which `show`
+  says it adds before it goes. `meeting stop <id>` ends a meeting at once, and a Daoris that stopped mid-round ends it as
+  interrupted and runs nothing again by itself. A meeting talks only: it changes nothing in any repository, and is kept on this
+  machine until `meeting clear <id>`. No agent can speak in one yet: no tool of Daoris's connector carries a meeting's message, so
+  each turn is refused and nothing is started.
 
 - The desktop names two sign-ins of one email apart too. An agent's page, its own sign-in, the start's account picker, *What
   needs you* and a session's account say the organisation after the email where another sign-in shares it (else the plan),

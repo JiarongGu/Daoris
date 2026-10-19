@@ -1497,7 +1497,7 @@ if (mode == ServiceMode.Local)
         if (!MachineLocal(http)) return OffMachineBrainstorm();
         return brainstorms.Show(id) is { } shown
             ? Results.Ok(new BrainstormShownResponse(ToBrainstorm(shown.Brainstorm), shown.Frozen, shown.Document))
-            : Results.NotFound(new ErrorResponse($"There is no brainstorm `{id.Trim()}` on this machine."));
+            : Results.NotFound(new ErrorResponse(BrainstormDesk.NotFoundSentence(id)));
     });
 
     app.MapPost("/api/brainstorms/{id}/send", (HttpContext http, string id) =>

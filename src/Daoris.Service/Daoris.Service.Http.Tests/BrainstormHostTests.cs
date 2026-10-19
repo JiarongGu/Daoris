@@ -77,6 +77,21 @@ public sealed class BrainstormHostTests(LocalHost host) : IClassFixture<LocalHos
         Assert.True(Directory.Exists(Folder(id)));
     }
 
+    /// <summary>BRAINSTORM-RESERVED1: a clear named `meetings` is refused, and the meetings' records stay.</summary>
+    [Fact]
+    public async Task Clearing_the_reserved_id_meetings_is_refused_and_every_meeting_stays()
+    {
+        var meeting = Path.Combine(Folder("meetings"), "ab12cd34");
+        Directory.CreateDirectory(meeting);
+        File.WriteAllText(Path.Combine(meeting, "request.json"), "{}");
+
+        var cleared = await host.DeleteAsync("/api/brainstorms/meetings");
+        Assert.Equal(404, cleared.Status);
+        Assert.Contains("`meetings` holds the meetings' records, not a brainstorm", cleared.Error);
+        Assert.Equal(404, (await host.GetAsync("/api/brainstorms/meetings")).Status);
+        Assert.True(File.Exists(Path.Combine(meeting, "request.json")));
+    }
+
     /// <summary>🔴 A caller off this machine is answered by no brainstorm door, with the sentence that says why, and nothing is written.</summary>
     [Fact]
     public async Task The_brainstorm_doors_answer_no_caller_off_this_machine()
