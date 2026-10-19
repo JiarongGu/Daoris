@@ -48,6 +48,13 @@ export type HarnessRun = {
    * or a pin): its console shows under the tool doing it, and its end is said, as for one started here.
    */
   follow: (harness: string, action: 'update' | 'pin') => void;
+  /**
+   * The driver's sentence where a sign-in's start was refused (CODEXSIGNIN2), or null. The sign-in's panel stays up and says it,
+   * since a refusal is said where its action was started; `retry` starts the same sign-in again, `dismiss` closes the panel.
+   */
+  refusal: string | null;
+  retry: () => void;
+  dismiss: () => void;
 };
 
 const Runs = createContext<HarnessRun | null>(null);
@@ -88,6 +95,8 @@ function useRunState(notify: Notify): HarnessRun {
   const [added, setAdded] = useState<AccountAdded | null>(null);
   // The same key, readable from the event handler without re-subscribing on every render.
   const runningRef = useRef<string | null>(null);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const lastSignIn = useRef<{ harness: string; action: HarnessRunAction; profile?: string } | null>(null);
 
   // Read the roster at the moment an action ends: a rename or a view change can happen while a sign-in runs.
   // Looking in the shared cache asks no agent to read its sign-in again.
@@ -152,6 +161,8 @@ function useRunState(notify: Notify): HarnessRun {
   const run: HarnessRun['run'] = (harness, action, profile, version, workspace, answered) => {
     // Never over one still running: whose end the news belongs to is the one thing this must not lose.
     if (inFlight !== null) return;
+    setRefusal(null);
+    if (action === 'login' || action === 'login-new') lastSignIn.current = { harness, action, profile };
     setRunning(`${harness}:${action}`);
     runningRef.current = `${harness}:${action}`;
     setRunningProfile(action === 'login' ? profile ?? null : null);
@@ -192,12 +203,30 @@ function useRunState(notify: Notify): HarnessRun {
         ended(action, profile, result.exitCode ?? 0, null);
       },
       onError: (error: unknown) => {
+        // A sign-in's refusal is said in its own panel, which stays up with its way on (CODEXSIGNIN2), not as a toast.
+        if (!answered && (action === 'login' || action === 'login-new')) {
+          setRefusal(sentence(error));
+          return;
+        }
         setRunningProfile(null);
         setSigningInNew(null);
         if (answered) answered.refused(sentence(error));
         else notify(sentence(error), 'error');
       },
     });
+  };
+
+  // The same sign-in again, from its refused panel; or the panel closed with nothing left of the press.
+  const retry = () => {
+    const last = lastSignIn.current;
+    if (last) run(last.harness, last.action, last.profile);
+  };
+  const dismiss = () => {
+    setRefusal(null);
+    setRunning(null);
+    runningRef.current = null;
+    setRunningProfile(null);
+    setSigningInNew(null);
   };
 
   // Already started, so nothing is sent: only the end is waited for, as a process started here waits.
@@ -210,6 +239,7 @@ function useRunState(notify: Notify): HarnessRun {
 
   return {
     running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow,
+    refusal, retry, dismiss,
     added, settleAdded: () => setAdded(null),
   };
 }
