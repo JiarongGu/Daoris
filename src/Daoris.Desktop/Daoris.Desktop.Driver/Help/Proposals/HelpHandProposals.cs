@@ -28,6 +28,19 @@ internal sealed class HelpHandProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["hand"];
 
+    /// <summary>
+    /// ASKSCOPE1c: the repository it names, or, where it names none, each repository whose landing its session or branch names, as
+    /// its judge finds the branch.
+    /// </summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        if (proposal.Repository is { Length: > 0 } named) return new([proposal.Workspace], [named]);
+        var target = proposal.Target?.Trim() ?? "";
+        return new([proposal.Workspace], [.. facts.Landed
+            .Where(entry => string.Equals(entry.Session, target, StringComparison.OrdinalIgnoreCase) || string.Equals(entry.Branch, target, StringComparison.Ordinal))
+            .Select(entry => entry.Repository)]);
+    }
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why, string terminal = "") => new(why, "", terminal, null);

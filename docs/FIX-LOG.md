@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The setup kit's early-exit row counted the stub's start under load (STUB3, FLAKE1)
+
+- **Symptom:** the CI beside on `b0a786d` (five workers beside it, below normal) failed `setup-kit.test.ts`'s *a stub that exits
+  without answering fails its row in seconds* with *the stub never answered 1 (initialize), 2 (session/new), 3 (session/prompt)
+  within 10000 ms of its start*; it passed alone three times in three.
+- **Root cause:** the row took `speak()`'s default start bound, 10 s, and the stub's node process took longer than that to start
+  under the load; what the row tests is that an exit after `initialize` fails at the exit, not how fast a process starts.
+  STUB3b gave the start a bound of its own, and this row inherited it.
+- **Fix:** the row passes a start bound of 60 s and drops its elapsed-time check: the exit's own message (*the stub exited
+  with code 3 and never answered 2 …*), never a bound's, is what shows it failed as the stub exited.
+- **Verify:** the four STUB3 and STUB3b rows green; the CLI typecheck clean.
+
 ## 2026-10-19 — Ask Daoris's mode molecules took their types from a bridge domain (HELPMODE1b)
 
 - **Symptom:** `design/presentational.test.ts` failed on main: `help/HelpModePicker.tsx`, `help/WhatItHas.tsx`, `help/modes.ts` and

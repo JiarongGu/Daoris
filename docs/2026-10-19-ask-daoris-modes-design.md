@@ -56,6 +56,28 @@ any grant a rule like `Bash(daoris-driver *)`, an interpreter, or a generic exec
 5. **A confined shell, later.** Only with an enforced file-system and process boundary around chosen Daoris trees, away
    from account stores and sensitive home data. A working folder, a `cd` prefix or an instruction is not confinement.
 
+### 4.1 Each grant's contents, read from the code (2026-10-19)
+
+From a read-only Codex read of the code, its key claims checked against it. The screen shows **specific operations, each
+with whether this agent can be held to it**, not five blanket switches. No grant exists yet: today's proposal tools still
+need Apply.
+
+| Grant | What it reaches | Its operations | Default | Claude (both doors) | Codex |
+|---|---|---|---|---|---|
+| Housekeeping | Daoris's own work: only recorded targets its cleanup judges permit | inspect (one group); remove landed, empty or carried session branches and trees (`TreeSweeps`, `LandedCleanups`); discard a named session branch (`SessionBranchDiscard`; a running or waiting session keeps its own; no force); delete recovery refs nothing holds (`RecoveryDropping`), each chosen on its own | off | typed tools Daoris serves and enforces | the same: held, since Daoris enforces it |
+| Browser | Daoris's browser connection, signed-in pages included | the server's reads approved together; each write (click, type, press a key, fill a form, choose an option, check, drag, upload, answer a dialog) on its own; no page code | needs approval (`HelpGrants`, `plugin-approvals.json`); changed since approved is said apart | exact `mcp__browser__<tool>` rules | the whole server or none: a subset is **unavailable on this agent** until mediated |
+| Checkouts | the workspace's checkouts within D107's readable set | read files; `git status`; `git branch --list` (never log, diff or show: their output options write files) | on, inherited (repository, workspace, then on) | `Read(//<checkout>/**)` and the two git prefixes | **unavailable as a scoped grant** until a scoped read tool exists |
+| Chosen settings | only the settings chosen, through the existing validation and writer, with an outcome record | `notify`, a session's `language`, `timeout`, `cap`, `cooloff`, each chosen on its own; never the mode, the grants, accounts, plugin approval, access or across, standing, review, opinions, helpers, commits, landing, driving, or a safeguard | off | a typed tool Daoris enforces | the same |
+| Confined shell | later | — | off | unavailable | unavailable |
+
+**Housekeeping is built first**, narrowly: inspection, and removing branches and trees the judges have cleared, without
+force or recovery deletion. It is what D183's own trigger asked for, and Daoris enforces it, so it holds on every agent.
+
+**The traps:** a grant made to work by widening the harness's mode; grants read once and reused on a resume (each start
+composes them again, each act is judged at execution, each start leaves its receipt); a typed tool that takes a path
+(it takes a recorded identity, checks the owner, and judges again before acting); and a grant shown as in force where
+the agent cannot be held to it (*What it has* keeps the start's receipt; the screen shows a change as pending).
+
 ## 5. The screen (HELPMODE1b)
 
 The picker sits beside the composer, the docked panel included. History keeps its own head. The text is translated, the

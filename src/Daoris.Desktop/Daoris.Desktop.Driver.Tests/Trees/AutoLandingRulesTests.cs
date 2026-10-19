@@ -185,6 +185,10 @@ public sealed class AutoLandingRulesTests : IDisposable
         Assert.Contains("this machine's access setup lands work by its rule", said.Text);
         Assert.Contains("merges", said.Text);
         Assert.Contains("Accept", said.Text);
+        // ACCESSWORDS1: a coded note, the page words it, with the level that set the setup.
+        Assert.Equal(NoteCodes.LandingMerges.Code, said.Parts![0].Code);
+        Assert.Equal(AccessRules.FromMachine, said.Parts[0].Value("access"));
+        Assert.Equal(NoteCodes.LandingMerges.Code, AutoLandingNotes.Concluded(AutoConcluded.Merges, AccessRules.FromRepository).Parts![0].Code);
         Assert.Null(AutoLander.Concluded(_home, merges, events, "s5", quest with { Status = "Open" }, "Open", "declined", tree, "aurora"));
         Assert.Empty(events.After("s5", 0).Events);
         Assert.Equal(2, new AutoLandings(_home).All().Count);

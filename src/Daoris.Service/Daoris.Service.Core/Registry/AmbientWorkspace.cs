@@ -21,15 +21,36 @@ namespace Daoris.Knowledge;
 /// <para><b>One session knows its circle without a row: an intake</b> (D65 §1b). Its room is under the
 /// home, never registered, and the circle is its ASK's — so the host names it here, from the ask, and
 /// the room's path is never asked.</para>
+///
+/// <para><b>One session is BOUND to its circle: Ask Daoris in a workspace's room</b> (ASKSCOPE1c, D158's ASKSCOPE1 note point 5).
+/// Its record keeps the workspace it was started in, and the driver hands that to its connector; what it asks is answered from
+/// that workspace alone, and naming another, or <c>all</c>, is refused (<see cref="Bound"/>).</para>
 /// </remarks>
 public sealed class AmbientWorkspace(string workingDirectory, string? circle = null)
 {
     /// <summary>
-    /// The circle named for this session, or the workspace of the repository this directory sits in,
-    /// or null when it sits in none.
+    /// The variable the driver names a conversation's bound workspace in (ASKSCOPE1c). 🔴 A twin: the driver's
+    /// <c>HelpCircle.Variable</c> spells the same name, and each side's test holds the spelling.
+    /// </summary>
+    public const string BoundVariable = "DAORIS_SESSION_WORKSPACE";
+
+    /// <summary>
+    /// The workspace this session is bound to by its record (ASKSCOPE1c): every answer is that workspace's, whatever a call names.
+    /// Null for every other session, which answers from its own circle unless a call deliberately names another.
+    /// </summary>
+    public string? Bound { get; init; }
+
+    /// <summary>The workspace <paramref name="variable"/> binds a session to, trimmed; null where it names none.</summary>
+    public static string? BoundFrom(Func<string, string?> variable) =>
+        variable(BoundVariable) is { } named && !string.IsNullOrWhiteSpace(named) ? named.Trim() : null;
+
+    /// <summary>
+    /// The workspace bound to this session, or the circle named for it, or the workspace of the repository this directory sits
+    /// in, or null when it sits in none.
     /// </summary>
     public async Task<string?> ResolveAsync(KnowledgeService service, CancellationToken ct = default)
     {
+        if (Bound is { Length: > 0 } bound) return bound;
         if (circle is { Length: > 0 }) return circle;
 
         var registry = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
