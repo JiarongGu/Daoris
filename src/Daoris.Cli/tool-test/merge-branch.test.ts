@@ -2271,9 +2271,9 @@ test("this repository's light lane runs the desktop suites' fast halves first, a
   const schedule = tool.laneSchedule(repoPlan);
   assert.deepEqual(schedule.light.map((gate) => gate.name),
     ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit']);
-  // REHLANE1: the family rehearsal right after the git half, which it runs beside.
+  // REHLANE1, REHLANE2: the release and family rehearsals right after the git half, which they run beside, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
-    ['driver-process', 'driver-process-git', 'rehearse-family', 'modules-process', 'rehearse', 'deployment']);
+    ['driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'modules-process', 'deployment']);
   for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
     // GATEORDER1: and for the heavy light gates (the CLI, service, devkit and web suites), so no Process half runs under their load.
     assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit'], component: 'src/Daoris.Desktop' }, name);
@@ -2281,6 +2281,7 @@ test("this repository's light lane runs the desktop suites' fast halves first, a
   assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit']);
   assert.equal(tool.isHeavyGate({ name: 'x', run: 'node tools/orient-index.mjs --check' }), false);
   // A rehearsal builds what its command does not name, and the deployment's build-server shutdown clears every build's server.
+  // REHLANE2: and the release rehearsal's pack stages the CLI's dist/, which the bin the cli gate's `daoris check` runs prefers.
   for (const name of ['rehearse', 'rehearse-family', 'deployment']) {
     assert.deepEqual(schedule.waits[name], { after: schedule.light.map((gate) => gate.name), component: null }, name);
   }
@@ -2621,23 +2622,31 @@ test('the git half is the Process half run with the git settings, and the rehear
   assert.equal(tool.isGitHalf({ name: 'renamed', run: gitRun('src/X/X.Tests') }), true);
   assert.equal(tool.isGitHalf({ name: 'driver-process', run: processRun('src/X/X.Tests') }), false);
   assert.equal(tool.isGitHalf({ name: 'driver', run: 'dotnet test src/X/X.Tests --filter Category!=Process' }), false);
-  assert.deepEqual([...tool.BESIDE_GIT_HALF], ['rehearse:family']);
+  // REHLANE2: the release rehearsal too, which builds no .NET project at all.
+  assert.deepEqual([...tool.BESIDE_GIT_HALF], ['rehearse', 'rehearse:family']);
   assert.equal(tool.runsBesideGitHalf({ name: 'renamed', run: 'npm run rehearse:family' }), true);
   assert.equal(tool.runsBesideGitHalf({ name: 'renamed', run: 'npm run -s rehearse:family' }), true);
-  // The deployment rehearsal publishes every desktop project and shuts the build servers down, and the release rehearsal
-  // stages the CLI's package in place: both run alone.
-  for (const run of ['npm run rehearse:deploy', 'npm run rehearse', 'npm run rehearse:family-x', processRun('src/X/X.Tests')]) {
+  assert.equal(tool.runsBesideGitHalf({ name: 'renamed', run: 'npm run rehearse' }), true);
+  // The deployment rehearsal publishes every desktop project into the folders the Process halves run from: it runs alone.
+  for (const run of ['npm run rehearse:deploy', 'npm run rehearse-x', 'npm run rehearse:family-x', processRun('src/X/X.Tests')]) {
     assert.equal(tool.runsBesideGitHalf({ name: 'x', run }), false, run);
   }
 });
 
-test("this repository's Process lane runs the family rehearsal beside the git half, and every other Process-lane gate alone", () => {
+test("this repository's Process lane runs the release and family rehearsals beside the git half, one after the other, and every other Process-lane gate alone", () => {
   const schedule = tool.laneSchedule(repoPlan, { scripts: rootScripts() });
   assert.deepEqual(schedule.process.map((gate) => gate.name),
-    ['driver-process', 'driver-process-git', 'rehearse-family', 'modules-process', 'rehearse', 'deployment']);
-  assert.deepEqual(schedule.beside, { 'driver-process-git': ['rehearse-family'], 'rehearse-family': ['driver-process-git'] });
-  // It still starts once the light lane has ended: the service's hosts it builds are the light lane's service and web gates' too.
-  assert.deepEqual(schedule.waits['rehearse-family'], { after: schedule.light.map((gate) => gate.name), component: null });
+    ['driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'modules-process', 'deployment']);
+  // Never beside each other (REHLANE2): the family runs the CLI's bin, which prefers the dist/ the release rehearsal's pack
+  // stages in the CLI's folder and removes again; and two Process-lane gates at once is the measured ceiling.
+  assert.deepEqual(schedule.beside, {
+    'driver-process-git': ['rehearse', 'rehearse-family'], rehearse: ['driver-process-git'], 'rehearse-family': ['driver-process-git'],
+  });
+  // They still start once the light lane has ended: the service's hosts the family builds are the light lane's service and web
+  // gates' too, and the cli gate runs the CLI's bin, which the release rehearsal's staged dist/ would shadow.
+  for (const name of ['rehearse', 'rehearse-family']) {
+    assert.deepEqual(schedule.waits[name], { after: schedule.light.map((gate) => gate.name), component: null }, name);
+  }
   // The deployment rehearsal ends the lane, alone, so its build-server shutdown stops no build.
   assert.equal(schedule.process.at(-1)!.name, 'deployment');
   assert.deepEqual(repoPlan.find((gate) => gate.name === 'deployment')!.before, ['dotnet build-server shutdown']);
@@ -2655,16 +2664,21 @@ function rehearsalProjects(text: string): Record<string, string> {
 /**
  * REHLANE1: a rehearsal that runs beside the git half builds a project of a component the Process lane builds only into its
  * own output (`ownBuild`), never into that project's folders, which the Process halves build into and run from; and it shuts
- * no build server down. Read from the tool its root script runs, as REACH's rows for the rehearsals are.
+ * no build server down. Read from the tool its root script runs, as REACH's rows for the rehearsals are. REHLANE2: or it runs
+ * no `dotnet` at all, as the release rehearsal does.
  */
-test('a rehearsal that runs beside the git half builds what the Process lane builds into its own output, and shuts no build server down', () => {
+test('a rehearsal that runs beside the git half builds what the Process lane builds into its own output, or no .NET at all, and shuts no build server down', () => {
   const scripts = rootScripts();
   const processBuilds = new Set(repoPlan.filter((gate) => tool.isProcessGate(gate)).map((gate) => tool.dotnetComponent(gate.run)));
   assert.deepEqual([...processBuilds], ['src/Daoris.Desktop']);
+  const building: string[] = [];
   for (const script of tool.BESIDE_GIT_HALF) {
     const file = /^node (tools\/\S+\.mjs)$/.exec(scripts[script] ?? '')?.[1];
     assert.ok(file, `${script} runs one tool`);
     const text = readFileSync(join(repoRoot, file), 'utf8');
+    assert.doesNotMatch(text, /build-server/, `${file} shuts a build server down, which a build beside it would lose`);
+    if (!/\bdotnet\s+(?:build|publish|test|run)\b|\bownBuild\(/.test(text)) continue;
+    building.push(script);
     const projects = rehearsalProjects(text);
     const own = [...text.matchAll(/\bownBuild\((\w+),/g)].map((match) => match[1]!);
     assert.ok(own.length >= 1, `${file} builds nothing into its own output: this test has stopped reading it`);
@@ -2675,11 +2689,40 @@ test('a rehearsal that runs beside the git half builds what the Process lane bui
       assert.ok(!processBuilds.has(tool.dotnetComponent(`dotnet build ${project}`)),
         `${file} builds ${project} into its own folders, which a Process half builds into and runs from`);
     }
-    assert.doesNotMatch(text, /build-server/, `${file} shuts a build server down, which a build beside it would lose`);
   }
+  // The family's tool is read for its builds: a rehearsal that names no `dotnet` is not, so the one that does is named here.
+  assert.deepEqual(building, ['rehearse:family']);
 });
 
-test('the family rehearsal runs beside the git half, never beside another Process half, and the other rehearsals after both', async () => {
+/**
+ * REHLANE2: the release rehearsal packs the CLI in its own folder, whose `prepack` stages the canon, the README, the LICENSE
+ * and a built `dist/` there and whose `postpack` removes them, and the CLI's bin prefers that `dist/` over the sources. So it
+ * runs beside the git half only while no desktop test reads the package's folder outside its `src/` and `test/`, which no
+ * pack writes, nor runs its bin. Read from every tracked desktop source, and from the stager's own list.
+ */
+test('the release rehearsal stages nothing a desktop test reads: they read the CLI package only under src/ and test/, which no pack writes', () => {
+  const stager = readFileSync(join(repoRoot, 'tools', 'stage-package.mjs'), 'utf8');
+  const staged = [...(/const STAGED = \[([^\]]+)\]/.exec(stager)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((match) => match[1]!);
+  assert.deepEqual(staged, ['canon', 'LICENSE', 'README.md'], 'the stager has stopped saying what it stages: read it again');
+  assert.match(stager, /\[\.\.\.STAGED, 'dist'\]/, 'the stager no longer cleans dist/ with them: read it again');
+  const unwritten = new Set(['src', 'test']);
+  for (const folder of [...staged, 'dist']) assert.ok(!unwritten.has(folder), `a pack writes the CLI's ${folder}/`);
+  const sources = trackedFiles().filter((path) => path.startsWith('src/Daoris.Desktop/') && path.endsWith('.cs'));
+  assert.ok(sources.length >= 100, 'the desktop sources left src/Daoris.Desktop');
+  let read = 0;
+  for (const path of sources) {
+    const text = readFileSync(join(repoRoot, path), 'utf8');
+    assert.doesNotMatch(text, /daoris\.mjs/, `${path} names the CLI's bin, which prefers a staged dist/`);
+    for (const match of text.matchAll(/Daoris\.Cli"\s*,\s*"([^"]+)"|Daoris\.Cli[\\/]+([^\\/\s"`'<]+)/g)) {
+      const folder = match[1] ?? match[2]!;
+      read += 1;
+      assert.ok(unwritten.has(folder), `${path} reads the CLI package's ${folder}, which a pack beside it may stage or remove`);
+    }
+  }
+  assert.ok(read >= 10, 'no desktop source reads the CLI package any more: this test has stopped reading them');
+});
+
+test('the release and family rehearsals run beside the git half, one after the other, never beside another Process half, and the deployment after all', async () => {
   const gates = [
     planned('d', 'dotnet test src/X/X.Tests --filter Category!=Process'),
     planned('dp', processRun('src/X/X.Tests')), planned('dg', gitRun('src/X/X.Tests')), planned('mp', processRun('src/X/M.Tests')),
@@ -2687,19 +2730,29 @@ test('the family rehearsal runs beside the git half, never beside another Proces
     planned('dep', 'npm run rehearse:deploy', ['dotnet build-server shutdown']),
   ];
   const lanes = laneRun(gates.map((gate) => gate.name));
-  // dg ends only once f has started beside it, and f only once dg has started: one at a time, neither would.
+  // dg ends only once f has started beside it, r only once dg has started, and f only once dg has: one at a time, none would.
   lanes.until['dg'] = () => lanes.started['f']!.promise;
+  lanes.until['r'] = () => lanes.started['dg']!.promise;
   lanes.until['f'] = () => lanes.started['dg']!.promise;
   const printed: string[] = [];
   const results = await tool.runGates('root', gates, 'logs', { run: lanes.run, scripts: {}, print: (line) => printed.push(line) });
   const at = (event: string) => lanes.events.indexOf(event);
   const order = lanes.events.join(', ');
-  assert.ok(at('start f') > at('end dp'), `f never runs beside the serial half: ${order}`);
-  assert.ok(at('start mp') > at('end dg') && at('start mp') > at('end f'), `the next Process half waits for both: ${order}`);
-  assert.ok(at('start r') > at('end mp'), `the release rehearsal runs alone: ${order}`);
-  assert.ok(at('start dep') > at('end r'), `the deployment rehearsal ends the lane, alone: ${order}`);
-  assert.match(printed.join('\n'), /Process\s+dp, dg, f, mp, r, dep\b/);
-  assert.match(printed.join('\n'), /f runs beside dg: it builds what the Process lane builds into its own output/);
+  assert.ok(at('start r') > at('end dp') && at('start f') > at('end dp'), `neither runs beside the driver's other half: ${order}`);
+  assert.ok(at('start f') > at('end r'), `the family never runs beside the release rehearsal, whose staged dist/ its CLI would run: ${order}`);
+  assert.ok(at('start mp') > at('end dg') && at('start mp') > at('end f'), `the next Process half waits for all three: ${order}`);
+  assert.ok(at('start dep') > at('end mp'), `the deployment rehearsal ends the lane, alone: ${order}`);
+  // Two Process-lane gates at once at most, the measured ceiling.
+  let running = 0;
+  let most = 0;
+  for (const event of lanes.events) {
+    if (event === 'start d' || event === 'end d') continue;
+    running += event.startsWith('start ') ? 1 : -1;
+    most = Math.max(most, running);
+  }
+  assert.equal(most, 2, order);
+  assert.match(printed.join('\n'), /Process\s+dp, dg, r, f, mp, dep\b/);
+  assert.match(printed.join('\n'), /r, f run beside dg, one after the other: none builds into a folder a Process half runs from, or shuts a build server down/);
   assert.deepEqual(summary(printed), ['PASS d', 'PASS dp', 'PASS dg', 'PASS mp', 'PASS r', 'PASS f', 'PASS dep'], "the summary in the plan's order");
   assert.deepEqual(results.map((result) => result.gate.name), gates.map((gate) => gate.name));
 
@@ -2709,7 +2762,7 @@ test('the family rehearsal runs beside the git half, never beside another Proces
   assert.deepEqual(turn.events.filter((event) => event.startsWith('start')), gates.map((gate) => `start ${gate.name}`));
 });
 
-test("the git half's failures are re-run alone: after the family rehearsal beside it has ended, and none starts meanwhile", async () => {
+test("the git half's failures are re-run alone: after the rehearsal beside it has ended, and none starts meanwhile", async () => {
   const gates = [planned('u', 'node u.mjs'), planned('dg', gitRun('src/X/X.Tests')), planned('f', 'npm run rehearse:family')];
   const names = gates.map((gate) => gate.name);
 
@@ -2734,6 +2787,21 @@ test("the git half's failures are re-run alone: after the family rehearsal besid
   await tool.runGates('root', gates, 'logs', { run: waiting.run, scripts: {}, print: () => {} });
   assert.ok(waiting.events.indexOf('start f') > waiting.events.indexOf('end dg'), waiting.events.join(', '));
   assert.ok(waiting.events.indexOf('alone') > waiting.events.indexOf('end u'), 'the light lane ended first, as before');
+
+  // REHLANE2: the release rehearsal runs beside dg when dg wants to be alone, and the family waits for it: dg's re-run waits
+  // for the release rehearsal to end, and the family, next beside dg, starts only once dg has ended.
+  const chain = [...gates.slice(0, 2), planned('r', 'npm run rehearse'), gates[2]!];
+  const chained = laneRun(chain.map((gate) => gate.name));
+  chained.until['r'] = () => chained.started['dg']!.promise;
+  chained.until['dg'] = async () => {
+    await chained.started['r']!.promise;
+    await chained.heard['dg']!.settled!();
+    chained.events.push('alone');
+  };
+  await tool.runGates('root', chain, 'logs', { run: chained.run, scripts: {}, print: () => {} });
+  const at = (event: string) => chained.events.indexOf(event);
+  assert.ok(at('alone') > at('end r'), chained.events.join(', '));
+  assert.ok(at('start f') > at('end dg'), chained.events.join(', '));
 });
 
 test("this repository's web gate runs its unit tests as a light gate of its own, which builds nothing, with WEBGATE1's cap", () => {
