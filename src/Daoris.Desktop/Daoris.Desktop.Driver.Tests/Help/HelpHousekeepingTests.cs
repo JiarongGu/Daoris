@@ -81,6 +81,46 @@ public sealed class HelpHousekeepingTests : IDisposable
     }
 
     /// <summary>
+    /// HELPMODE1c2b: the person's choice of one operation edits that grant's list alone, made onto the file as it reads at the write,
+    /// so what it holds besides (another grant, a code this build does not act on, a key it does not know) stays as written.
+    /// </summary>
+    [Fact]
+    public void A_choice_edits_its_grant_alone_and_keeps_what_the_file_holds_besides()
+    {
+        Choose("""{ "housekeeping": ["drop-recovery"], "checkouts": ["read"], "later": { "kept": 1 } }""");
+
+        ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.CleanUp, true);
+        ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.Inspect, true);
+        var chosen = ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.CleanUp, false);
+
+        Assert.Equal([ConfiguredAccess.Inspect], chosen.Housekeeping);
+        using var file = JsonDocument.Parse(File.ReadAllText(ConfiguredAccess.PathOf(_home)));
+        Assert.Equal(["inspect", "drop-recovery"], file.RootElement.GetProperty("housekeeping").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(["read"], file.RootElement.GetProperty("checkouts").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(1, file.RootElement.GetProperty("later").GetProperty("kept").GetInt32());
+        Assert.DoesNotContain("\r", File.ReadAllText(ConfiguredAccess.PathOf(_home)));
+    }
+
+    /// <summary>
+    /// A choice this build does not act on is refused in a sentence and nothing is written: an operation it does not know, dropping
+    /// recovery refs (not built), and another grant (the browser's is its plugin's approval, the others not built). A file that does
+    /// not read is refused and left as it is, never written over.
+    /// </summary>
+    [Fact]
+    public void A_choice_it_does_not_act_on_or_a_file_that_does_not_read_is_refused()
+    {
+        Assert.Contains("`everything`", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "housekeeping", "everything", true)).Message);
+        Assert.Contains("not built", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "housekeeping", "drop-recovery", true)).Message);
+        Assert.Contains("plugin", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "browser", "reads", true)).Message);
+        Assert.Contains("not built", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "settings", "notify", true)).Message);
+        Assert.False(File.Exists(ConfiguredAccess.PathOf(_home)));
+
+        Choose("{ not json");
+        Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "housekeeping", "inspect", true));
+        Assert.Equal("{ not json", File.ReadAllText(ConfiguredAccess.PathOf(_home)));
+    }
+
+    /// <summary>
     /// 🔴 Each start composes the grant again (design §4.1's trap): the place a start is handed reads the record then, its allow-list
     /// names the chosen operations' tools beside the room's own, and the room's own list names none of them, so nothing is allowed
     /// by a list the person did not choose. Full access keeps the grant, since the tools judge it either way.

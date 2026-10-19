@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
@@ -43,6 +44,65 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
 
     /// <summary>The tools of the operations chosen, in their order.</summary>
     public IReadOnlyList<string> HousekeepingTools => [.. Housekeeping.Select(ToolOf)];
+
+    /// <summary>Every housekeeping code the page draws, in its order: the built ones, then dropping recovery refs, not built.</summary>
+    private static readonly string[] HousekeepingDrawn = [Inspect, CleanUp, DiscardBranch, "drop-recovery"];
+
+    // One writer at a time in this process: two presses from two windows would otherwise each drop the other's choice.
+    private static readonly object Gate = new();
+
+    /// <summary>
+    /// The person's choice of one operation (HELPMODE1c2b, <c>SET_HELP_GRANT</c>): that grant's list edited alone, made onto the file
+    /// as it reads now, so another grant, a code this build does not act on and a key it does not know stay as written; the list kept
+    /// in the page's order. Answers the record after it.
+    /// </summary>
+    /// <exception cref="DriverException">
+    /// A grant or an operation this build does not act on, or a file that does not read, which is left as it is.
+    /// </exception>
+    public static ConfiguredAccess Choose(string home, string grant, string operation, bool chosen)
+    {
+        if (grant != HousekeepingGrant)
+        {
+            throw new DriverException(grant == "browser"
+                ? "The browser's grant is its plugin's approval, made on the plugin's own page; nothing is chosen for it here."
+                : $"`{grant}` is not built yet as a grant of Ask Daoris's configured access; only `{HousekeepingGrant}` is chosen here.");
+        }
+
+        if (!HousekeepingBuilt.Contains(operation))
+        {
+            throw new DriverException(HousekeepingDrawn.Contains(operation)
+                ? $"`{operation}` is not built yet, so it cannot be granted: housekeeping grants {string.Join(", ", HousekeepingBuilt.Select(each => $"`{each}`"))}."
+                : $"`{operation}` is no housekeeping operation: they are {string.Join(", ", HousekeepingBuilt.Select(each => $"`{each}`"))}.");
+        }
+
+        lock (Gate)
+        {
+            var path = PathOf(home);
+            JsonObject file;
+            try
+            {
+                file = File.Exists(path)
+                    ? JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? throw new DriverException($"`{path}` holds no object, so it was left as it is.")
+                    : [];
+            }
+            catch (JsonException error)
+            {
+                throw new DriverException($"`{path}` does not read ({error.Message}), so it was left as it is.");
+            }
+
+            var listed = file[HousekeepingGrant] is JsonArray array
+                ? array.Select(each => each is JsonValue value && value.TryGetValue<string>(out var text) ? text : null).OfType<string>().ToList()
+                : [];
+            listed.Remove(operation);
+            if (chosen) listed.Add(operation);
+            var ordered = listed.Distinct(StringComparer.Ordinal)
+                .OrderBy(each => Array.IndexOf(HousekeepingDrawn, each) < 0 ? HousekeepingDrawn.Length : Array.IndexOf(HousekeepingDrawn, each)).ToList();
+            file[HousekeepingGrant] = new JsonArray([.. ordered.Select(each => (JsonNode)JsonValue.Create(each))]);
+            JsonFile.Write(path, file);
+        }
+
+        return Read(home);
+    }
 
     /// <summary>The record as the home holds it now; <see cref="None"/> where it holds none or it does not read.</summary>
     public static ConfiguredAccess Read(string home)
