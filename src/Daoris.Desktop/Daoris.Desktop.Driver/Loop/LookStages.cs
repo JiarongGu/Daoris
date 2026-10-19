@@ -123,13 +123,14 @@ public sealed class LookStages
         private readonly Timer? _slow;
         private long _queued;
         private int _ended;
+        private volatile bool _beside;
 
         internal StageSpan(LookStages stages, string stage, string? subject, bool beside, long began)
         {
             _stages = stages;
             Stage = stage;
             Subject = subject;
-            Beside = beside;
+            _beside = beside;
             Began = began;
             // Named once if it outlives the threshold; a log nobody keeps names nothing, so no timer is spent on it.
             if (stages._log is { Writing: true }) _slow = new Timer(_ => Slowed(), null, stages._slowAfter, Timeout.InfiniteTimeSpan);
@@ -139,12 +140,18 @@ public sealed class LookStages
 
         internal string? Subject { get; }
 
-        internal bool Beside { get; }
+        internal bool Beside => _beside;
 
         internal long Began { get; }
 
         /// <summary>How long of it was spent waiting for a gate (a queue for a place, a semaphore), said apart from its hold.</summary>
         public void Queued(TimeSpan queued) => Interlocked.Add(ref _queued, (long)queued.TotalMilliseconds);
+
+        /// <summary>
+        /// It runs on beside the look that began it, which let go of it (PARALLEL1b: a start not yet open), so it is marked as work
+        /// beside the look in the line it ends in, never read as a later look's own.
+        /// </summary>
+        public void Aside() => _beside = true;
 
         private void Slowed()
         {

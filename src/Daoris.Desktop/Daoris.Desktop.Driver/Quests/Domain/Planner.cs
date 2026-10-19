@@ -921,10 +921,7 @@ public static class Planner
         var treesThisTick = new List<(string Tree, string Quest)>();
         // PARALLEL1b: a start of this machine's still opening takes its place as a live session does, counted once where its record
         // has opened since and an active session already stands for its quest.
-        var opening = snapshot.Starting
-            .Where(start => start.Quest is null
-                            || !snapshot.Active.Any(s => string.Equals(s.Quest, start.Quest, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
+        var opening = Opening(snapshot);
         var slots = config.Cap - snapshot.Active.Count - opening.Count;
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts
@@ -1510,8 +1507,17 @@ public static class Planner
         !take.Here
         || (!take.Took && quest.Updated is { } taken && last.Updated is { } ended && taken > ended);
 
+    /// <summary>
+    /// The starts still opening a snapshot carries that take a place of their own (PARALLEL1b): each but one whose quest an active
+    /// session already stands for, its record opened since, which the active sessions count. What the planner and a look's intakes
+    /// count under the cap.
+    /// </summary>
+    internal static IReadOnlyList<StartReservation> Opening(Snapshot snapshot) =>
+        [.. snapshot.Starting.Where(start => start.Quest is null
+                                             || !snapshot.Active.Any(s => string.Equals(s.Quest, start.Quest, StringComparison.OrdinalIgnoreCase)))];
+
     /// <summary>Two tree paths are one tree — separators and case aside, as Windows sees them.</summary>
-    private static bool SameTree(string? a, string? b) =>
+    internal static bool SameTree(string? a, string? b) =>
         a is { Length: > 0 } && b is { Length: > 0 }
         && string.Equals(
             a.Replace('\\', '/').TrimEnd('/'), b.Replace('\\', '/').TrimEnd('/'), StringComparison.OrdinalIgnoreCase);

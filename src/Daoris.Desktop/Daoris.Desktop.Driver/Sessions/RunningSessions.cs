@@ -71,6 +71,79 @@ public sealed class RunningSessions
         lock (_gate) _opinions.Remove(key);
     }
 
+    // The starts of this loop's not yet open (PARALLEL1b), each reserved by the look that began it until its record opens or it comes
+    // to nothing; and what a start came to after the look that began it let go of it, for a later look's report.
+    private readonly List<StartReservation> _reserved = [];
+    private readonly List<StartCame> _came = [];
+
+    /// <summary>The starts of this loop's reserved and not yet open (PARALLEL1b), as a look hands them to the planner.</summary>
+    internal IReadOnlyList<StartReservation> Reserved
+    {
+        get { lock (_gate) return [.. _reserved]; }
+    }
+
+    /// <summary>
+    /// Reserve a start (PARALLEL1b, D181 point 3): its quest or ask, and the tree it goes back into, held from the look that plans it
+    /// until its record opens or it comes to nothing, so a look meanwhile neither plans it again nor gives its place under the cap
+    /// (<see cref="Snapshot.Starting"/>). False where a start of this loop's already holds the quest, the ask or the tree.
+    /// </summary>
+    internal bool TryReserve(StartReservation start)
+    {
+        lock (_gate)
+        {
+            if (_reserved.Any(held => (start.Quest is not null && string.Equals(held.Quest, start.Quest, StringComparison.OrdinalIgnoreCase))
+                                      || (start.Ask is not null && string.Equals(held.Ask, start.Ask, StringComparison.OrdinalIgnoreCase))
+                                      || Planner.SameTree(held.Tree, start.Tree)))
+            {
+                return false;
+            }
+
+            _reserved.Add(start);
+            return true;
+        }
+    }
+
+    /// <summary>Let a reservation go: its record is open, so the ledger holds it, or it came to nothing. Once is enough; again is nothing.</summary>
+    internal void Release(StartReservation start)
+    {
+        lock (_gate) _reserved.Remove(start);
+    }
+
+    /// <summary>
+    /// Keep what a start a look let go of comes to (PARALLEL1b): its record open, a hold, a refusal, or a failure before its spawn, for
+    /// the next look's report, which says it as the look that began it would have. An opened one wakes a wait, as an ending does, so
+    /// its run is bound and its progress said at once; a hold waits for whatever wakes the next look, so a hold never spins the loop.
+    /// </summary>
+    internal void Carry(StartBegun started, Task<StartCame> start) =>
+        _ = start.ContinueWith(done =>
+        {
+            var came = done.IsCompletedSuccessfully
+                ? done.Result
+                : new StartCame(started, new StartRun(
+                    $"failed  {started.Where}: the start failed before its record opened, and is tried again at a later look: "
+                    + $"{done.Exception?.InnerException?.Message ?? "it was cancelled"}", Opened: false), []);
+            TaskCompletionSource moved;
+            lock (_gate)
+            {
+                _came.Add(came);
+                moved = _moved;
+                _moved = NewSignal();
+            }
+
+            moved.TrySetResult();
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+    /// <summary>What each start a look let go of came to since the last look took them (<see cref="Carry"/>), each handed on once.</summary>
+    internal IReadOnlyList<StartCame> TakeCame()
+    {
+        lock (_gate)
+        {
+            var came = _came.ToList();
+            _came.Clear();
+            return came;
+        }
+    }
+
     /// <summary>How many runs are still going: started, opened, and not yet concluded.</summary>
     public int Running
     {
@@ -82,7 +155,7 @@ public sealed class RunningSessions
     /// </summary>
     public bool Idle
     {
-        get { lock (_gate) return _running == 0 && _ended.Count == 0 && _landing is null && _syncing is null; }
+        get { lock (_gate) return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _landing is null && _syncing is null; }
     }
 
     // The remote sync beside the looks (PARALLEL1b), while a pass works, and the pass asked for meanwhile, which runs once after it.
@@ -289,7 +362,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_ended.Count > 0 || _claimsDue) return;
+                if (_ended.Count > 0 || _claimsDue || _came.Any(came => came.Opened)) return;
                 moved = _moved.Task;
             }
 
@@ -361,4 +434,18 @@ public sealed class RunningSessions
     }
 
     private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
+
+/// <summary>What one start of a look is (DEV3): a quest's or an ask's intake, where it runs, on which adapter, and the plan's start.</summary>
+/// <param name="Start">The quest's planned start, which its run is bound by once it opens (WORKFLOW1e); null for an intake.</param>
+internal sealed record StartBegun(string? Quest, string? Ask, string Where, string? Workspace, string Adapter, Consideration? Start = null);
+
+/// <summary>
+/// What one start came to (DEV3, PARALLEL1b): null <paramref name="Came"/> for a record opened and running on, else its hold, refusal
+/// or failure; with the trust holds it met (D73), which the report's screen offers.
+/// </summary>
+internal sealed record StartCame(StartBegun Started, StartRun? Came, IReadOnlyList<TrustHold> Untrusted)
+{
+    /// <summary>Whether it opened a record: what a look counts as progress, and binds.</summary>
+    public bool Opened => Came is null || Came.Opened;
 }
