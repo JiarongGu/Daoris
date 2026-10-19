@@ -87,6 +87,11 @@ public sealed class NodeRuntimeReadsTests : IDisposable
             _holdReads.Add((root, holder, held));
             return Task.FromResult<bool?>(_holds.TryGetValue((holder, held), out var holds) ? holds : null);
         },
+        Gates = (unit, _) =>
+        {
+            _gateReads.Add(unit.Id);
+            return Task.FromResult(_gates.GetValueOrDefault(unit.Id));
+        },
     };
 
     private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string config, bool whole = true) => runtime.PassAsync(Look(config, whole), CancellationToken.None);
@@ -158,7 +163,7 @@ public sealed class NodeRuntimeReadsTests : IDisposable
         Assert.Equal(holds == true ? 1 : 0, _port.Sent.Count);
     }
 
-    /// <summary>A branch's cycle wired from <c>handed</c> alone waits on no git read: neither the remote-tracking refs nor any ancestry is asked.</summary>
+    /// <summary>A branch's cycle wired from <c>handed</c> alone waits on no git read and no gate: neither is asked.</summary>
     [Fact]
     public async Task A_cycle_whose_waiting_nodes_need_no_git_reads_none()
     {
@@ -170,5 +175,119 @@ public sealed class NodeRuntimeReadsTests : IDisposable
         Assert.Single(_port.Sent);
         Assert.Empty(_remoteReads);
         Assert.Empty(_holdReads);
+        Assert.Empty(_gateReads);
+    }
+
+    // ---- FABRIC-RUN1c: D157's gates started in the runtime, and their gates handed in
+
+    /// <summary>The gates each unit's work stands at, as the look's gate reads them for it: by unit, absent where none was read.</summary>
+    private readonly Dictionary<string, (OpinionGateState? Opinion, ReviewGateState? Review)> _gates = new(StringComparer.Ordinal);
+
+    private readonly List<string> _gateReads = [];
+
+    /// <summary>
+    /// A repository's quests, their work cycle asking the second opinion and the person's look before the plugin notifies: D157 §2.2's gates
+    /// come before a landing, so a branch's cycle, which comes after it, never holds them.
+    /// </summary>
+    private const string Gated = """
+        { "workCycles": { "engine": { "quest": {
+            "schemaVersion": 2, "entries": ["opinion"], "end": "notify",
+            "nodes": [
+              { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" },
+              { "id": "look", "kind": "look", "version": 1, "reach": "observed" },
+              { "id": "notify", "kind": "acme.deploy/notify", "version": 1, "reach": "performed" } ],
+            "wires": [
+              { "id": "w1", "kind": "after", "from": "opinion", "to": "look" },
+              { "id": "w2", "kind": "after", "from": "look", "to": "notify" } ] } } } }
+        """;
+
+    private const string Quest = "quest:q1";
+
+    /// <summary>The quest a branch's work served, as the inventory gives it: no revision, by design.</summary>
+    private static WorkUnit QuestUnit() => new(Quest, WorkUnitKind.Quest, new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter),
+        new WorkSubject("#q1", null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
+
+    /// <summary>The plugin's notify, its failure path into a stop: a failure Daoris will not retry reaches the stop, and the end is never reached.</summary>
+    private const string Stopping = """
+        { "landings": { "engine": { "form": "merge", "cycle": {
+            "schemaVersion": 2, "entries": ["notify"], "end": "notify",
+            "nodes": [
+              { "id": "notify", "kind": "acme.deploy/notify", "version": 1, "reach": "performed" },
+              { "id": "halt", "kind": "stop", "version": 1, "reach": "observed" } ],
+            "wires": [{ "id": "w1", "kind": "failed", "from": "notify", "to": "halt" }] } } } }
+        """;
+
+    private NodeRuntimeLook Gating(string config, bool whole = true) => Look(config, whole);
+
+    private static OpinionGateState Opinion(string state, string? tip = T1) => new(state, "engine") { Tip = tip };
+
+    private static ReviewGateState Review(string state, string? tip = T1) =>
+        new(state, new ReviewDecision(ReviewLevels.Chain, null) { Repository = "engine", Choice = "off" }) { Tip = tip };
+
+    /// <summary>
+    /// The proof's runtime test: an <c>opinion</c> and a <c>look</c> are begun as observed nodes are, and the second opinion's gate, whose rule
+    /// asks none here, and the look the chain's choice turns off, read for the unit once a pass, pass them over by their records; the plugin's
+    /// step after them is sent on what they let go.
+    /// </summary>
+    [Fact]
+    public async Task A_second_opinions_gate_and_a_look_turned_off_move_their_nodes_and_the_step_after_them_is_sent()
+    {
+        _units = [QuestUnit()];
+        // As a landing door reads a gate whose rule asks no opinion: no commit is read for it (TreeGates.OpinionAsync), nothing being judged.
+        _gates[Quest] = (Opinion(OpinionGateStates.None, tip: null), Review(ReviewStates.None, tip: null));
+        var pass = await Runtime().PassAsync(Gating(Gated), CancellationToken.None);
+
+        var record = Files.Read(Quest)!;
+        Assert.Equal((NodeStates.Skipped, NodeSource.Opinion), (record.Statuses["opinion"].State, record.Statuses["opinion"].By));
+        Assert.Equal((NodeStates.Skipped, NodeSource.Review), (record.Statuses["look"].State, record.Statuses["look"].By));
+        Assert.Equal(Plugin + "/notify", Assert.Single(_port.Sent).Step);
+        Assert.Contains(pass.Performed, done => (done.Node, done.What) == ("opinion", PerformedWhat.Begun));
+
+        // The gates were read for the unit once in the pass, though both nodes and several rounds asked.
+        Assert.Equal([Quest], _gateReads);
+    }
+
+    /// <summary>
+    /// A gate that says nothing yet keeps its node active and what follows it waiting, at every pass; and a quest's work, which has no commit,
+    /// is never reached on a settled opinion of a branch's commit (FABRIC-WIRE1g). Its rule asking none moves it then.
+    /// </summary>
+    [Fact]
+    public async Task An_opinion_whose_gate_says_nothing_yet_waits_and_moves_once_it_is_passed_over()
+    {
+        _units = [QuestUnit()];
+        var runtime = Runtime();
+        await runtime.PassAsync(Gating(Gated), CancellationToken.None);
+        Assert.Equal(NodeStates.Active, Files.Read(Quest)!.Statuses["opinion"].State);
+
+        foreach (var state in new[] { OpinionGateStates.Reading, OpinionGateStates.Settled })
+        {
+            _gates[Quest] = (Opinion(state), null);
+            await runtime.PassAsync(Gating(Gated), CancellationToken.None);
+            Assert.Equal((state, NodeStates.Active), (state, Files.Read(Quest)!.Statuses["opinion"].State));
+            Assert.Empty(_port.Sent);
+        }
+
+        _gates[Quest] = (Opinion(OpinionGateStates.None, tip: null), Review(ReviewStates.None, tip: null));
+        await runtime.PassAsync(Gating(Gated), CancellationToken.None);
+        Assert.Equal(NodeStates.Skipped, Files.Read(Quest)!.Statuses["opinion"].State);
+        Assert.Single(_port.Sent);
+    }
+
+    /// <summary>A <c>stop</c> is begun once the failure path into it holds, and reached on that failure's receipt; the end is not reached.</summary>
+    [Fact]
+    public async Task A_stop_is_begun_on_its_failure_path_and_reached_on_it()
+    {
+        _units = [BranchUnit()];
+        var runtime = Runtime();
+        await PassAsync(runtime, Stopping);
+        var invocation = Assert.Single(Record().Attempts).Call.Invocation;
+
+        _port.Heard.Enqueue(new WorkStepHeard(Plugin, 1, new WorkStepFrame("notify", new WorkOutcome(WorkStates.Failed, "rejected-by-platform"), Then, "e1",
+            Invocation: invocation)));
+        await PassAsync(runtime, Stopping, whole: false);
+
+        var record = Record();
+        Assert.Equal(NodeStates.Failed, record.Statuses["notify"].State);
+        Assert.Equal((NodeStates.Reached, NodeSource.Path), (record.Statuses["halt"].State, record.Statuses["halt"].By));
     }
 }

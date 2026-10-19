@@ -432,6 +432,8 @@ public sealed class DriverWatch(
                         // FABRIC-RUN1b: the look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.
                         Remotes = NodeTips.RemotesAsync,
                         Holds = NodeTips.HoldsAsync,
+                        // FABRIC-RUN1c: D157's gates for a unit whose opinion or look waits, read as a landing door reads them.
+                        Gates = new NodeGates(home, service).ReadAsync,
                     }, token), beside: true).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
@@ -700,6 +702,40 @@ public sealed class DriverWatch(
         var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
         return new NodeUnitsRead(units, roots) { Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false) };
+    }
+
+    /// <summary>
+    /// One pass's reads of D157's gates for the evaluation runtime (FABRIC-RUN1c, link 8's <see cref="NodeRuntimeLook.Gates"/>): a unit's work
+    /// read as a landing door reads it (<see cref="SessionTrees.GateAsync"/>), at its newest session's tree here: a branch unit's newest executor,
+    /// a quest unit's newest session serving it. The sessions are read once a pass, at the first unit asked. A unit with no such tree here (a
+    /// teammate's work, a tree tidied), or a read that failed, reads nothing, and its nodes wait.
+    /// </summary>
+    internal sealed class NodeGates(string home, ServiceClient service)
+    {
+        private Task<IReadOnlyList<SessionRecord>>? _sessions;
+
+        public async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> ReadAsync(WorkUnit unit, CancellationToken ct)
+        {
+            try
+            {
+                var sessions = await (_sessions ??= service.SessionRecordsAsync(ct)).ConfigureAwait(false);
+                var serving = unit.Kind == WorkUnitKind.Quest
+                    ? sessions.Where(session => session.Quest is { Length: > 0 } quest && string.Equals(QuestUnits.IdOf(quest.TrimStart('#')), unit.Id, StringComparison.Ordinal))
+                    : sessions.Where(session => unit.Executors.Contains(session.Id, StringComparer.Ordinal));
+                if (serving.Where(session => session.Tree is { Length: > 0 } tree && Directory.Exists(tree)).MaxBy(session => session.Updated) is not { } newest)
+                {
+                    return (null, null);
+                }
+
+                var gate = await new SessionTrees(home).GateAsync(newest.Tree!, newest.Quest, new ServiceReviewWorld(service), newest.Id, ct).ConfigureAwait(false);
+                return (gate.Opinion, gate.Review);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
+                                              or UnauthorizedAccessException)
+            {
+                return (null, null);
+            }
+        }
     }
 
     /// <summary>What a person reads of a pass (FABRIC-RUN1): each attempt sent, answered, retried, unknown or held, and what the pass said.</summary>

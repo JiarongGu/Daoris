@@ -138,7 +138,7 @@ public sealed class NodeRuntimeTests : IDisposable
             Interlocked.Increment(ref _stepsRead);
             return [Step, Build];
         },
-        // FABRIC-RUN1b: every git read the runtime may make, counted, so an install with no graph is seen to start none.
+        // FABRIC-RUN1b, RUN1c: every git read and gate read the runtime may make, counted, so an install with no graph is seen to make none.
         Tips = (_, _, _) =>
         {
             Interlocked.Increment(ref _gitRead);
@@ -154,8 +154,14 @@ public sealed class NodeRuntimeTests : IDisposable
             Interlocked.Increment(ref _gitRead);
             return Task.FromResult<bool?>(null);
         },
+        Gates = (_, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
+        },
     };
 
+    /// <summary>The git and gate reads a pass made (FABRIC-RUN1b, RUN1c).</summary>
     private int _gitRead;
 
     /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>

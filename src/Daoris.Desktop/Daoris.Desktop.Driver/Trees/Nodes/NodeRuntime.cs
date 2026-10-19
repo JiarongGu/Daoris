@@ -61,6 +61,14 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// asked only where one waits on a completed answer from a newer commit; null where git could not say.
     /// </summary>
     public Func<string, string, string, CancellationToken, Task<bool?>> Holds { get; init; } = (_, _, _, _) => Task.FromResult<bool?>(null);
+
+    /// <summary>
+    /// The second opinion's and the look's gates for a branch unit's work as a landing door reads them (FABRIC-RUN1c, WIRE1g, WIRE1h; NODE1b:
+    /// <see cref="OpinionGate.JudgeAsync"/> and <see cref="ReviewGate"/>'s live read), what its <c>opinion</c> and <c>look</c> nodes observe:
+    /// read once a pass for a unit, and only where one of them waits. Either is null where it was not read, and its node waits.
+    /// </summary>
+    public Func<WorkUnit, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> Gates { get; init; } =
+        (_, _) => Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
 }
 
 /// <summary>
@@ -372,8 +380,8 @@ public sealed class NodeRuntime(
             var tips = new PassTips(look.Tips, Observing(governed.Values));
 
             // FABRIC-RUN1b: the look's git reads for the observed built-ins, each checkout's remote-tracking refs read once a pass, and only where
-            // a node waits on them.
-            var git = new PassGit(look.Remotes, look.Holds, Pushing(governed.Values));
+            // a node waits on them. FABRIC-RUN1c: D157's gates likewise, once a pass for a unit whose opinion or look waits on them.
+            var git = new PassReads(new PassGit(look.Remotes, look.Holds, Pushing(governed.Values)), new PassGates(look.Gates));
 
             // FABRIC-RUN1e: one count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
@@ -437,7 +445,7 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task EvaluateAsync(
         GovernedUnit governed, WorkSends sends, List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units,
-        PassTips tips, PassGit git, CancellationToken ct)
+        PassTips tips, PassReads git, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         // FABRIC-PERFORM1m: a branch unit's observed plugin nodes bind to its branch's tip read this pass, not to the unit's revision, which is
@@ -452,9 +460,11 @@ public sealed class NodeRuntime(
                 break;
             }
 
-            // FABRIC-RUN1b: what git says for the built-ins this round's record holds waiting on it, read once a pass.
-            var reads = await GitReadsAsync(governed, record, git, ct).ConfigureAwait(false);
-            var (before, evaluated) = Evaluate(governed, record, tipped, tip, reads);
+            // FABRIC-RUN1b: what git says for the built-ins this round's record holds waiting on it, read once a pass; FABRIC-RUN1c: the gates
+            // its opinion and look wait on, likewise.
+            var reads = await GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false);
+            var gates = await GatesAsync(governed, record, git.Gates, ct).ConfigureAwait(false);
+            var (before, evaluated) = Evaluate(governed, record, tipped, tip, reads, gates);
             if (evaluated.Refusal is { } refusal)
             {
                 said.Add($"work  {unit}: its graph was not judged ({refusal}: {string.Join(", ", evaluated.Missing)}), so nothing on it is started.");
@@ -476,7 +486,7 @@ public sealed class NodeRuntime(
                     // next pass reads it again, and no further round reads git again only to find the same stale revision.
                     if (_governed is null) return;
                 }
-                else if (node.Reach == NodeReach.Observed && (BuiltInNodes.Observed.Contains(node.Kind) || governed.Observable.Contains(node.Id)))
+                else if (node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id)))
                 {
                     // FABRIC-PERFORM1m: an observed plugin node whose branch's tip this pass did not read is left as it stands: nothing is
                     // bound on a guess, and the pass that reads the tip begins it there.
@@ -510,7 +520,8 @@ public sealed class NodeRuntime(
     /// the caller's to keep, and it reads no git itself.
     /// </summary>
     private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(
-        GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null, NodeGitReads? git = null)
+        GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null, NodeGitReads? git = null,
+        (OpinionGateState? Opinion, ReviewGateState? Review) gates = default)
     {
         var unit = governed.Unit.Id;
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
@@ -522,9 +533,30 @@ public sealed class NodeRuntime(
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
             Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
             Git = git,
+            Opinions = gates.Opinion is { } opinion
+                ? new Dictionary<string, OpinionGateState>(StringComparer.Ordinal) { [unit] = opinion }
+                : new Dictionary<string, OpinionGateState>(StringComparer.Ordinal),
+            Reviews = gates.Review is { } review
+                ? new Dictionary<string, ReviewGateState>(StringComparer.Ordinal) { [unit] = review }
+                : new Dictionary<string, ReviewGateState>(StringComparer.Ordinal),
         };
         return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
     }
+
+    /// <summary>
+    /// The gates a unit's <c>opinion</c> and <c>look</c> observe (FABRIC-RUN1c; WIRE1g, WIRE1h, NODE1b): read through the pass's one read of the
+    /// unit, and only where one of them is active or unknown on its record, so a unit whose graph holds neither, or whose gates are settled,
+    /// asks nothing. Nothing read leaves both null, and the nodes wait.
+    /// </summary>
+    private static async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> GatesAsync(
+        GovernedUnit governed, NodeRecord record, PassGates gates, CancellationToken ct) =>
+        governed.Graph.Nodes.Any(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look
+            && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown)
+            ? await gates.OfAsync(governed.Unit, ct).ConfigureAwait(false)
+            : default;
+
+    /// <summary>One pass's reads beyond the tips (FABRIC-RUN1b, RUN1c): git's for the observed built-ins, and D157's gates.</summary>
+    private sealed record PassReads(PassGit Git, PassGates Gates);
 
     /// <summary>
     /// What git says for a branch unit's observed built-ins that wait on it (FABRIC-RUN1b; NODE1's choice 8, the look's git reads): a
@@ -819,7 +851,7 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task HearAgainAsync(
         List<WorkLagging> lagging, IReadOnlyDictionary<string, GovernedUnit> governed, IReadOnlyList<GovernedUnit> concerned, WorkSends sends,
-        List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units, PassTips tips, PassGit git, CancellationToken ct)
+        List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units, PassTips tips, PassReads git, CancellationToken ct)
     {
         if (lagging.Count == 0) return;
         var again = await _observer.HearAsync([.. lagging.Select(each => each.Heard)], governed, tips.ReadAsync, ct).ConfigureAwait(false);
@@ -926,6 +958,14 @@ public sealed class NodeRuntime(
     private string _toldText = "";
 
     private static string PluginOf(string kind) => kind[..kind.IndexOf('/')];
+
+    /// <summary>
+    /// Whether the runtime begins a built-in kind as an observed built-in (FABRIC-RUN1c): every built-in observed from records or settled by the
+    /// evaluation, D157's <c>opinion</c> and <c>look</c> on their gates (WIRE1g, WIRE1h, NODE1b), a <c>stop</c> on its path and an <c>all</c>
+    /// join on its members included; RUN1 began only those <see cref="BuiltInNodes"/> reads. A pressed node's task and a waited node's wait are
+    /// HUMAN1's and WAITUNIT1's to start.
+    /// </summary>
+    private static bool Begins(string kind) => NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) && builtIn.Reach == NodeReach.Observed;
 
     private static bool Performs(NodeDeclaration node) => node.Reach == NodeReach.Performed && NodeKinds.IsPlugin(node.Kind);
 

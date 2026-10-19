@@ -271,6 +271,23 @@ public sealed class PassGit(
 }
 
 /// <summary>
+/// One pass's reads of D157's gates (FABRIC-RUN1c): the second opinion's and the look's gate for a unit's work, read once a pass for each
+/// unit whose <c>opinion</c> or <c>look</c> waits on them, however many rounds ask. Made for one pass and dropped with it.
+/// </summary>
+/// <param name="read">The look's read of one unit's gates (<see cref="NodeRuntimeLook.Gates"/>).</param>
+public sealed class PassGates(Func<WorkUnit, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> read)
+{
+    private readonly Dictionary<string, (OpinionGateState? Opinion, ReviewGateState? Review)> _read = new(StringComparer.Ordinal);
+
+    /// <summary>The gates of <paramref name="unit"/>'s work, read at the first ask this pass; either null where it was not read.</summary>
+    public async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> OfAsync(WorkUnit unit, CancellationToken ct)
+    {
+        if (_read.TryGetValue(unit.Id, out var gates)) return gates;
+        return _read[unit.Id] = await read(unit, ct).ConfigureAwait(false);
+    }
+}
+
+/// <summary>
 /// One pass's tips (FABRIC-PERFORM1m; §C4's fourth rule, D88's PROC1d-ii): each checkout read once, by whatever asks of it first (an event's
 /// belief, a rebinding's check, an observed node's binding), for every branch the pass governs there as well as those asked, so they share
 /// the one read. Made for one pass and dropped with it, so no tip is carried into the next (LANDGIT1).

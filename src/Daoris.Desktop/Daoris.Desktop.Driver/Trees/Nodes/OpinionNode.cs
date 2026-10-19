@@ -12,7 +12,8 @@ namespace Daoris.Driver;
 /// it; <i>none</i>, and an <i>unavailable</i> the rule does not require, pass it over, by the gate's record and never in the person's
 /// words (<see cref="NodeAuthority.SkipBy"/>); every other state is pending, never failed, since nothing fails an opinion.</para>
 /// <para><b>Bound to its commit and its work.</b> A judgement at another commit than the binding's, with no commit read, for another
-/// repository, or not handed in at all says nothing: the node stays pending, never completed or passed over on a guess.</para>
+/// repository, or not handed in at all says nothing: the node stays pending, never completed or passed over on a guess. A rule that asks
+/// no opinion here judges no commit, and its read carries none, so it passes the node over whatever it is bound to (FABRIC-RUN1c).</para>
 /// <para><b>A landing recorded at the bound commit keeps today's reading</b>: what its gate let go, as the landing record kept it, whatever
 /// the gate says now. A kept <i>unavailable</i> passes it over; any other, or none kept (a landing from before the record kept one, or one
 /// no rule asked of), reaches it.</para>
@@ -63,6 +64,11 @@ public static class OpinionNode
         {
             return Seen(null, $"its gate was judged for `{gate.Repository}`, not this work's `{repository}`");
         }
+
+        // FABRIC-RUN1c: a rule that asks no second opinion here judges no commit, and a landing door's read of it carries none
+        // (TreeGates.OpinionAsync), so it passes the opinion over whatever its node is bound to, a quest's work included. One read at a commit
+        // is that commit's, as WIRE1g judged it.
+        if (gate is { State: OpinionGateStates.None, Tip: null }) return Skipped("its rule asks no second opinion here");
 
         if (gate.Tip is not { } tip || !string.Equals(tip, binding.SubjectRevision, StringComparison.Ordinal))
         {
