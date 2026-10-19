@@ -125,6 +125,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Ask Daoris's start, where the machine's reading for its room did not answer in time (HELPSTUCK1).
   'help.room-as-written': { values: ['seconds'] },
   'help.room-unread': { values: ['seconds'] },
+  // Ask Daoris started at once on the facts the judges keep, some of the machine not read yet (PARALLEL1a).
+  'help.room-not-read-yet': { values: [] },
   // A landing at the quest's done, under a rule that accepts automatically (LAND2b).
   'landing.accepted': { values: ['branch'] },
   'landing.plugin-unready': { values: ['branch', 'plugin'] },

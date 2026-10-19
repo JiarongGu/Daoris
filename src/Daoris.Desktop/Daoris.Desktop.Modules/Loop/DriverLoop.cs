@@ -96,6 +96,22 @@ public sealed class DriverLoop(
     public PressesUnderWay UnderWay { get; } = new();
 
     /// <summary>
+    /// The driver's state as every window holds it (PUSH1a, D182): one owner, judged from what <c>STATE</c> answers and pushed with
+    /// its data when it moves, so no tick reads it again in any window. The <c>STATE_SLICE</c> route reads its snapshot.
+    /// </summary>
+    public StateSlice DriverSlice => LazyInitializer.EnsureInitialized(ref _driverSlice, () => DriverStateSlice.Of(this, eventBus));
+
+    private StateSlice? _driverSlice;
+
+    /// <summary>The slices this Daoris pushes (PUSH1a): the snapshot route finds them here, and <see cref="Start"/> runs them.</summary>
+    public StateSlices Slices => LazyInitializer.EnsureInitialized(ref _slices, () => new StateSlices(DriverSlice));
+
+    private StateSlices? _slices;
+
+    /// <summary>The slices' workers, from <see cref="Start"/> until the stop.</summary>
+    private Task? _pushing;
+
+    /// <summary>
     /// Conversations, once the loop is up (D49 §3) — null before the host answers, because a chat
     /// needs the service that holds its record. The control surface says so rather than failing
     /// obscurely: "not yet" is a state a person can wait out.
@@ -415,6 +431,13 @@ public sealed class DriverLoop(
     public HelpStarting HelpStarting { get; } = new();
 
     /// <summary>
+    /// The machine's facts as the judges keep them (PARALLEL1a, D181 points 1-2): one for the shell's life, its one owner, judged on
+    /// background tasks once the loop is up and woken by what the change sources hear, read as last judged by what a person
+    /// presses. The module registers Ask Daoris's topics on it; a state hub's push reads it next (D182).
+    /// </summary>
+    public MachineFacts Facts { get; } = new() { Log = log };
+
+    /// <summary>
     /// The second-opinion gates the last tick judged (XAGENT1g3), replaced whole each tick: what <c>OPINION_WAITS</c> answers, as of
     /// that tick, at most one poll old. Null before the first.
     /// </summary>
@@ -444,6 +467,9 @@ public sealed class DriverLoop(
     public void Start()
     {
         _loop = Task.Run(RunAsync);
+        // PUSH1a (D182): the slices judged from the start, whether or not a window is open, and before the service answers, so a
+        // window's first snapshot is read from memory.
+        _pushing = Task.Run(() => Slices.RunAsync(_stopping.Token));
     }
 
     /// <summary>The address this Daoris left in its home, or null before the service answered and after the stop.</summary>
@@ -588,6 +614,10 @@ public sealed class DriverLoop(
             _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", ConversationRoutes.OptionsAnswer(session, options));
         await ComeUpAsync(service, chat).ConfigureAwait(false);
 
+        // PARALLEL1a (D181 point 2): the machine's facts judged from here, on their own tasks, the service answering; every loop on the
+        // home keeps them, whoever holds its lease, since a person presses here either way. The watch below tells them its wakes.
+        Facts.Start(ct);
+
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
         // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
@@ -659,6 +689,8 @@ public sealed class DriverLoop(
             Log = log,
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
+            // PARALLEL1a: each move the sources hear wakes the facts it moves (a ref its repository's line, a ledger family the rest).
+            Heard = (topic, subject) => HelpFacts.Wake(Facts, topic, subject),
         };
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);
@@ -718,6 +750,9 @@ public sealed class DriverLoop(
                 Look.Record(report.Considerations, report.Waits);
                 // And the second-opinion gates it judged, whole (XAGENT1g3), for *What needs you* to read without running a gate.
                 Judged.Record(report.JudgedOpinions);
+                // And the driver's state judged again (PUSH1a, D182), pushed only where it moved: what runs and what waits for review
+                // move at a look, and a terminal's edit of `driver.json` is read here. A wake only asks; the slice's worker judges.
+                DriverSlice.Wake();
 
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,
@@ -1082,6 +1117,7 @@ public sealed class DriverLoop(
         try
         {
             _loop?.Wait(TimeSpan.FromSeconds(15));
+            _pushing?.Wait(TimeSpan.FromSeconds(5));
         }
         catch (AggregateException)
         {
@@ -1108,6 +1144,7 @@ public sealed class DriverLoop(
     public void Dispose()
     {
         Stop();
+        Facts.Dispose();
         _stopping.Dispose();
     }
 }

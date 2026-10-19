@@ -26,6 +26,7 @@ export * from './rules';
 export * from './sessions';
 export * from './setup';
 export * from './published';
+export * from './slices';
 export * from './stateHub';
 export * from './system';
 export * from './terminal';
