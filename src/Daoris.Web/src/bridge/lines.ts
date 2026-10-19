@@ -12,7 +12,7 @@ import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
 import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult } from '../work/milestone';
 import { call, lookBound, pressBound } from './call';
-import { type DriverState, useDriverChange } from './driver';
+import { type DriverState, useDriverChange, writeAnswered } from './driver';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
 export { stoppedWaiting } from './call';
@@ -52,7 +52,7 @@ export const useSetLanding = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: LandingChange) => call<DriverState>('SET_LANDING', change),
-    onSuccess: (state) => client.setQueryData(keys.driver, state),
+    onSuccess: (state) => writeAnswered(client, state),
   });
 };
 

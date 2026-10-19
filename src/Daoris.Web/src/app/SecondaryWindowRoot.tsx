@@ -43,6 +43,9 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
 
   return (
     <LinkOpener.Provider value={linkOpener}>
+      {/* First (PUSH1a): its effects run before the window's own, so the driver's state is read as the snapshot it asks and
+          never pulled beside it. It renders nothing. */}
+      <ShellSignals notify={notify} />
       {which.kind === 'monitor'
         ? <MonitorWindow notify={notify} />
         : <DetachedSession id={which.id} notify={notify} />}
@@ -58,7 +61,6 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
           openInBrowser: (address) => openBrowser.mutate(address, { onError: failure(notify) }),
         }}
       />
-      <ShellSignals notify={notify} />
     </LinkOpener.Provider>
   );
 }

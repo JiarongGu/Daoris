@@ -6,6 +6,7 @@ import { readUnderWay } from './driver';
 import { HELP_HISTORY, HELP_PROPOSALS } from './help';
 import { ALL_HISTORY } from './history';
 import { treesSyncScopeKey } from './lines';
+import { notPushed } from './slices';
 import { ALL_TOOLS } from './tools';
 
 /**
@@ -67,13 +68,15 @@ const words = (value: unknown): string[] =>
  */
 function askAgain(client: QueryClient, queryKey: QueryKey) {
   const cache = client.getQueryCache();
-  const inFlight = cache.findAll({ queryKey }).filter((query) => query.state.fetchStatus === 'fetching');
-  void client.invalidateQueries({ queryKey });
+  // A slice the shell pushes (PUSH1a, D182) is written by its pushes, so a scope asks again only what is read beneath it.
+  const predicate = notPushed(client);
+  const inFlight = cache.findAll({ queryKey, predicate }).filter((query) => query.state.fetchStatus === 'fetching');
+  void client.invalidateQueries({ queryKey, predicate });
   if (inFlight.length === 0) return;
   const stop = cache.subscribe(() => {
     if (inFlight.some((query) => query.state.fetchStatus === 'fetching')) return;
     stop();
-    void client.invalidateQueries({ queryKey });
+    void client.invalidateQueries({ queryKey, predicate });
   });
 }
 
