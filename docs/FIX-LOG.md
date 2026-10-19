@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The driver's git tests left a folder each, and rooted it in the main checkout from a worktree (SCRATCHLEAK1)
+
+- **Symptom:** `_fixtures/landed` held 14,796 entries and `_fixtures/landing` 2,158; every git and disk scan on the machine
+  walked them.
+- **Root cause:** about thirty test classes removed their scratch with one `Directory.Delete` and swallowed the refusal.
+  Git writes its objects read-only and `Directory.Delete` refuses a read-only file on Windows (PROCSPEED1), so each test left
+  its folder, and a straggler's hold on a file did the same. Nineteen classes also found the checkout by walking up to a
+  `.git` directory only: a linked worktree's `.git` is a file, so a run there walked past it and wrote into the main
+  checkout's `_fixtures`.
+- **Fix:** one `GitSeed.Remove` (read-only made writable, 12 tries a quarter second apart), `GitSeed.Discard` for a test's
+  `Dispose` (the same, the last refusal let go), and one `GitSeed.RepoRoot` walk that stops at `.git` as a directory or a file.
+  Every class goes through them; `GitSeedTests` has a guard that no test under `_fixtures` calls a recursive
+  `Directory.Delete` or writes its own `.git` walk. Existing leftovers are cleared by the repository cleanup procedure, not here.
+- **Verify:** `GitSeedTests` (a worktree-shaped tree resolves to its own root; a briefly held file is waited for; the guard),
+  red before the helper and the sweep, green after.
+
 ## 2026-10-20 — The desktop read a session variable the scratch-environment census had not named (HEAVYRUN1b2a)
 
 - **Symptom:** the CI on `7f72756` failed the CLI's `desktop-tool.test.ts` (*every machine-local override the desktop reads is
