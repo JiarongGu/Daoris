@@ -604,8 +604,13 @@ public sealed class Driver(
 
         // The second opinions owed (XAGENT1f, the second-agent design §2.1, §7, §8.1): asked and delivered beside the look, and the
         // starts they sit held. A pass finishes work already done, so it takes its slot before any quest's first start (D130).
+        // PARALLEL1g (D181 point 3): under the watch each is judged as its topic's judge beside the look, and the plan reads what each last
+        // found; one not judged yet holds its chain. The facts' wake is taken first, so a judgment landing after this wakes the next look.
+        Context.Runs.TakeFactsMoved();
         var judgedOpinions = new List<OpinionJudged>();
-        var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
+        var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => Context.Beside
+            ? Task.FromResult(Gate.OpinionsBeside(looked, judgedOpinions, Stages, ct))
+            : OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
         // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under

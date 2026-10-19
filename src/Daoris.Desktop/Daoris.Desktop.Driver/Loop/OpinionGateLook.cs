@@ -47,76 +47,21 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         {
             var world = new ServiceReviewWorld(Service);
             var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
-            var gates = new OpinionGates(Home);
             // FABRIC-CLOSE1h15: a branch made whose push is held back has not landed, so the opinion holding it stays owed and is asked.
             var pushHeld = OpinionLook.PushHeld(Home);
             foreach (var due in open)
             {
-                var now = DateTimeOffset.UtcNow;
-                var chain = ReviewGate.ChainOf(quests, due.Quest);
-                var quest = chain.FirstOrDefault(each => Same(each.Id, due.Quest));
-                // WORKFLOW1f: the run's process, read once for this due and handed to each part below, so a named workflow's opinion
-                // step decides whether it is owed, who reads it and what holds.
-                var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
-                    WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
-                if (await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process, pushHeld).ConfigureAwait(false) is { } closed)
+                if (await JudgeAsync(due, dues, world, quests, pushHeld, keep: judged is not null, beside: false, ct).ConfigureAwait(false) is not { } fact)
                 {
-                    dues.Close(due.Session, due.Occasion, closed, now);
                     continue;
                 }
 
-                var key = TreeGates.OpinionChain(chain, due.Quest);
-                var claim = $"{key}/{due.Repository}/{due.Occasion}";
-                // The landing's gate reads D154's review beside it, as every landing door does (XAGENT1g3): a review that answered what
-                // the opinion showed settles it. It moves no ask below, which read states the review never changes.
-                var review = judged is not null && due.Occasion == OpinionRules.Landing
-                    ? await ReviewGate.ReadAsync(world, Config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, due.Quest, ct, process)
-                        .ConfigureAwait(false)
-                    : null;
-                var gate = await _context.Trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process)
-                    .ConfigureAwait(false);
-                if (review is not null)
-                {
-                    judged!.Add(new OpinionJudged(due.Session, due.Quest, due.Repository, due.Workspace, due.At,
-                        (process.Landing ?? LandingRules.Choose(Config, due.Repository, due.Workspace)).Rule.AutoAccept, gate));
-                }
-
-                // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
-                var asked = gates.Read(key, due.Repository).Requests.Where(request => Same(request.Session, due.Session)).ToList();
-                if (asked.Count > 0)
-                {
-                    if (_context.Runs.TryOpinion(claim))
-                    {
-                        var request = gates.Take(key, due.Repository, due.Session)[^1];
-                        passes++;
-                        OpinionBeside(claim, token => AskPassAsync(due, key, chain, request.Occasion, request, snapshot, process, token), ct);
-                    }
-                }
-                else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
-                          || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } reset } && reset <= now))
-                         // One opinion reads a chain's whole work here (§8.1): an earlier step's is its last step's to ask.
-                         && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository)))
-                {
-                    if (_context.Runs.TryOpinion(claim))
-                    {
-                        passes++;
-                        OpinionBeside(claim, token => AskPassAsync(due, key, chain, due.Occasion, null, snapshot, process, token), ct);
-                    }
-                }
-                else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && _context.Runs.TryOpinion(claim))
-                {
-                    OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
-                }
-
-                Sit(sits, due, chain, gate);
+                if (fact.Judged is { } kept) judged!.Add(kept);
+                if (fact.Act is { } act && Begin(act, snapshot, ct)) passes++;
+                foreach (var (quest, why) in fact.Sits) sits[quest] = why;
             }
 
-            if (judged is not null)
-            {
-                var ordered = judged.OrderBy(each => each.Since).DistinctBy(each => each.Session, StringComparer.OrdinalIgnoreCase).ToList();
-                judged.Clear();
-                judged.AddRange(ordered);
-            }
+            if (judged is not null) Order(judged);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                           or UnauthorizedAccessException
@@ -127,6 +72,191 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }
 
         return (sits, passes);
+    }
+
+    /// <summary>How many owed opinions are judged at once beside the looks (PARALLEL1g; a topic bounded, the events design §A3).</summary>
+    internal const int OpinionsAtOnce = 2;
+
+    /// <summary>
+    /// The second opinions owed, at a look under the watch (PARALLEL1g, D181 point 3): each judged as the <c>opinion</c> topic's judge
+    /// beside the look, one judgement per owed opinion and <see cref="OpinionsAtOnce"/> at a time, and the look plans over what each last
+    /// found, so a gate, a review or a chain slow to read holds its own chain alone. One no judgment has answered for yet holds what it
+    /// could sit (<see cref="NotJudged"/>), never started early. A pass a judgment found owed is begun here, before the plan, so it takes
+    /// its slot as it did; begun before the next judgment is asked, so that one reads its claim held and owes no second. Nothing here
+    /// waits on the service, git or a reviewer.
+    /// </summary>
+    /// <param name="judged">Where each owed landing opinion's gate is kept, as its last judgment read it (XAGENT1g3).</param>
+    internal (IReadOnlyDictionary<string, string> Sits, int Passes) OpinionsBeside(
+        Snapshot snapshot, List<OpinionJudged> judged, LookStages stages, CancellationToken ct)
+    {
+        var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var facts = _context.Runs.Facts;
+        var open = new OpinionDues(Home).Open();
+        facts.KeepOpinionsOf(open.Select(Subject));
+        var passes = 0;
+        foreach (var due in open)
+        {
+            var subject = Subject(due);
+            if (facts.TakeAct(subject) is { } act && Begin(act, snapshot, ct)) passes++;
+            if (facts.Opinion(subject) is { } fact)
+            {
+                foreach (var (quest, why) in fact.Sits) sits[quest] = why;
+                if (fact.Judged is { } kept) judged.Add(kept);
+            }
+            else
+            {
+                foreach (var (quest, why) in NotJudged(due, snapshot)) sits[quest] = why;
+            }
+
+            Judging(due, subject, stages, ct);
+        }
+
+        Order(judged);
+        return (sits, passes);
+    }
+
+    /// <summary>An owed opinion's subject: its session's at its occasion, one owed each (<see cref="OpinionDues.Close"/>).</summary>
+    private static string Subject(OpinionDue due) => $"{due.Session}/{due.Occasion}";
+
+    /// <summary>What a judgment that closed its opinion found: nothing sat, nothing owed.</summary>
+    private static readonly OpinionFact Settled = new(new Dictionary<string, string>(), null, null);
+
+    /// <summary>
+    /// One owed opinion judged as the <c>opinion</c> topic's judge beside the look (PARALLEL1g): kept, and the plan woken where what it
+    /// found moves what the plan reads. A judgment that fails leaves the last one standing, or the opinion not judged yet, and is said.
+    /// </summary>
+    private void Judging(OpinionDue due, string subject, LookStages stages, CancellationToken ct) =>
+        _context.Runs.Judge("opinion", subject, OpinionsAtOnce, async token =>
+        {
+            try
+            {
+                var fact = await stages.TimeAsync("opinions", async () =>
+                {
+                    var world = new ServiceReviewWorld(Service);
+                    var quests = await world.QuestsAsync(token).ConfigureAwait(false);
+                    return await JudgeAsync(due, new OpinionDues(Home), world, quests, OpinionLook.PushHeld(Home), keep: true, beside: true, token)
+                        .ConfigureAwait(false);
+                }, $"#{due.Quest}", beside: true).ConfigureAwait(false);
+                if (_context.Runs.Facts.KeepOpinion(subject, fact ?? Settled)) _context.Runs.FactsMoved();
+                return [];
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
+                                              or UnauthorizedAccessException
+                                              || (error is OperationCanceledException && !token.IsCancellationRequested))
+            {
+                return [$"opinion  the second opinion owed on session {due.Session}'s work could not be judged this time, and is judged again at the next look: {error.Message}"];
+            }
+        }, ct);
+
+    /// <summary>
+    /// What an owed opinion no judgment has answered for yet holds (PARALLEL1g), read from the look's open quests as the planner holds a
+    /// start still opening: under <c>steps</c>, the chain's next steps; under <c>landing</c>, every open set-up step of its repository,
+    /// since which chain each is in is what the judgment reads. A wait of one judgment, never a start before the opinion.
+    /// </summary>
+    internal static IEnumerable<(string Quest, string Why)> NotJudged(OpinionDue due, Snapshot snapshot) =>
+        due.Occasion == OpinionRules.Landing
+            ? snapshot.Quests.Where(each => each.SetUpIn is not null && each.Status == "Open" && Same(each.To, due.Repository))
+                .Select(step => (step.Id, $"set-up step `#{step.Id}` waits for a second opinion on the work it shows, which is not judged yet."))
+            : snapshot.Quests.Where(each => Same(each.Parent, due.Quest) && each.Status == "Open")
+                .Select(next => (next.Id, $"waits for a second opinion on the step before it, `#{due.Quest}`, before it starts: it is not judged yet."));
+
+    /// <summary>
+    /// One owed opinion judged as it stands now (XAGENT1f, §2.1, §7, §8.1): null where it is closed, and closed on file; otherwise the quests
+    /// it sits, its landing gate where <paramref name="keep"/> asks for it, and the pass it finds owed, which the caller begins. A delivery
+    /// it finds owed takes no slot, so it is begun here, beside.
+    /// </summary>
+    /// <param name="beside">
+    /// Judged beside the look (PARALLEL1g): a pass in flight on the chain's claim owes no other, since the gate it read may predate that
+    /// pass's opening; the next judgment reads where it came to.
+    /// </param>
+    private async Task<OpinionFact?> JudgeAsync(
+        OpinionDue due, OpinionDues dues, ServiceReviewWorld world, IReadOnlyList<QuestView> quests, IReadOnlySet<string> pushHeld, bool keep,
+        bool beside, CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var chain = ReviewGate.ChainOf(quests, due.Quest);
+        var quest = chain.FirstOrDefault(each => Same(each.Id, due.Quest));
+        // WORKFLOW1f: the run's process, read once for this due and handed to each part below, so a named workflow's opinion
+        // step decides whether it is owed, who reads it and what holds.
+        var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
+            WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
+        if (await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process, pushHeld).ConfigureAwait(false) is { } closed)
+        {
+            dues.Close(due.Session, due.Occasion, closed, now);
+            return null;
+        }
+
+        var key = TreeGates.OpinionChain(chain, due.Quest);
+        var claim = $"{key}/{due.Repository}/{due.Occasion}";
+        var inFlight = beside && _context.Runs.OpinionHeld(claim);
+        // The landing's gate reads D154's review beside it, as every landing door does (XAGENT1g3): a review that answered what
+        // the opinion showed settles it. It moves no ask below, which read states the review never changes.
+        var review = keep && due.Occasion == OpinionRules.Landing
+            ? await ReviewGate.ReadAsync(world, Config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, due.Quest, ct, process)
+                .ConfigureAwait(false)
+            : null;
+        var gate = await _context.Trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process)
+            .ConfigureAwait(false);
+        var kept = review is null
+            ? null
+            : new OpinionJudged(due.Session, due.Quest, due.Repository, due.Workspace, due.At,
+                (process.Landing ?? LandingRules.Choose(Config, due.Repository, due.Workspace)).Rule.AutoAccept, gate);
+
+        // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
+        OpinionAct? act = null;
+        var asked = new OpinionGates(Home).Read(key, due.Repository).Requests.Where(request => Same(request.Session, due.Session)).ToList();
+        if (asked.Count > 0)
+        {
+            act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: true, process);
+        }
+        else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
+                  || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } reset } && reset <= now))
+                 // One opinion reads a chain's whole work here (§8.1): an earlier step's is its last step's to ask.
+                 && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository)))
+        {
+            act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: false, process);
+        }
+        else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && _context.Runs.TryOpinion(claim))
+        {
+            OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
+        }
+
+        var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        Sit(sits, due, chain, gate);
+        return new OpinionFact(sits, kept, inFlight ? null : act);
+    }
+
+    /// <summary>
+    /// Begin the pass <paramref name="act"/> found owed, beside the look, under the chain's claim: false where a pass or a delivery of this
+    /// loop's holds it. The person's ask is taken from the gate as it is begun, and one taken meanwhile leaves nothing to ask.
+    /// </summary>
+    private bool Begin(OpinionAct act, Snapshot snapshot, CancellationToken ct)
+    {
+        if (!_context.Runs.TryOpinion(act.Claim)) return false;
+        OpinionRequest? request = null;
+        if (act.Person)
+        {
+            var taken = new OpinionGates(Home).Take(act.Key, act.Due.Repository, act.Due.Session);
+            if (taken.Count == 0)
+            {
+                _context.Runs.OpinionDone(act.Claim);
+                return false;
+            }
+
+            request = taken[^1];
+        }
+
+        var occasion = request?.Occasion ?? act.Occasion;
+        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, snapshot, act.Process, token), ct);
+        return true;
+    }
+
+    /// <summary>The kept gates oldest first, one per session, as the attention band's route reads them (XAGENT1g3).</summary>
+    private static void Order(List<OpinionJudged> judged)
+    {
+        var ordered = judged.OrderBy(each => each.Since).DistinctBy(each => each.Session, StringComparer.OrdinalIgnoreCase).ToList();
+        judged.Clear();
+        judged.AddRange(ordered);
     }
 
     /// <summary>
