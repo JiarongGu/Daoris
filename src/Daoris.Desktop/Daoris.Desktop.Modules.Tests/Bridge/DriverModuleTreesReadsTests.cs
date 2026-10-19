@@ -115,6 +115,26 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
         Assert.Equal(1, Said(ask).Code);
     }
 
+    /// <summary><c>sessions</c> (RPCOPEN1, RPC1e): the list's lines from the instance's own look, where the verb asks, beside the page's fields.</summary>
+    [Fact]
+    public async Task The_sessions_list_says_its_lines_where_asked_and_the_page_is_answered_as_before()
+    {
+        var module = await ComeUpAsync();
+
+        var page = await AnswerAsync(module, "SESSION_GROUPS", new { });
+        var verb = await AnswerAsync(module, "SESSION_GROUPS", new { group = (string?)null, repository = (string?)null, json = false, said = true });
+        var named = await AnswerAsync(module, "SESSION_GROUPS", new { group = SessionGroup.You, said = true });
+        var written = await AnswerAsync(module, "SESSION_GROUPS", new { json = true, said = true });
+
+        Assert.Equal(["sessions", "entries"], page.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(["sessions", "entries", "said"], verb.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(["sessions: no session on this machine."], Said(verb).Out);
+        Assert.Equal(["sessions: nothing waits on you."], Said(named).Out);
+        Assert.Equal(0, Said(verb).Code);
+        // `--json` is the page's own answer, field for field, as `SessionsCommand.Json` writes it.
+        Assert.Equal(SessionsCommand.Json([], []), Said(written).Out.Single());
+    }
+
     private sealed class StandInService : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
