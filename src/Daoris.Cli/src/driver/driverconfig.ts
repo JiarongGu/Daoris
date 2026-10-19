@@ -2348,23 +2348,29 @@ function releases(value: unknown): Record<string, string> {
   return held;
 }
 
-/** The forgiveness marks, as a map of quest id to the failure count it was restarted at. */
+/**
+ * The forgiveness marks, as a map of quest id to the failure count it was restarted at. A quest written twice in any case is read
+ * where first readable, as the driver's `ForgivenMap` reads it (CASEMAP1, D173's CONFIG1 note: each spelling was read here).
+ */
 function marks(value: unknown): Record<string, number> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, number> = {};
   for (const [quest, mark] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof mark === 'number' && Number.isInteger(mark) && mark > 0) held[quest] = mark;
+    if (typeof mark === 'number' && Number.isInteger(mark) && mark > 0 && findName(Object.keys(held), quest) === null) held[quest] = mark;
   }
 
   return held;
 }
 
-/** A map of names to branch names; an entry git would not take is skipped, as the driver skips it. */
+/**
+ * A map of names to branch names; an entry git would not take is skipped, as the driver skips it. A name written twice in any case is
+ * read where first readable, as the driver's `BranchMap` reads it (CASEMAP1: each spelling was read here, the last value there).
+ */
 function branchMap(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, string> = {};
   for (const [name, branch] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof branch === 'string' && isBranchName(branch)) held[name] = branch;
+    if (typeof branch === 'string' && isBranchName(branch) && findName(Object.keys(held), name) === null) held[name] = branch;
   }
 
   return held;
@@ -2389,12 +2395,16 @@ function withTarget(map: Record<string, string[]>, repository: string, to: strin
   return kept.length > 0 ? { ...rest, [key]: kept } : rest;
 }
 
-/** A map of names to booleans; an entry of any other type is not read, as the driver does not read it (D107). */
+/**
+ * A map of names to booleans; an entry of any other type is not read, as the driver does not read it (D107). A name written twice in
+ * any case is read where first readable, as the driver's `FlagMap` reads it (CASEMAP1).
+ */
 function flagMap(value: unknown): Record<string, boolean> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, boolean> = {};
   for (const [name, flag] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof flag === 'boolean' && name.trim().length > 0) held[name.trim()] = flag;
+    const named = name.trim();
+    if (typeof flag === 'boolean' && named.length > 0 && findName(Object.keys(held), named) === null) held[named] = flag;
   }
 
   return held;
@@ -2403,13 +2413,14 @@ function flagMap(value: unknown): Record<string, boolean> {
 /**
  * The declared relationships (D107): each repository's list of other names, once each in any case, in the
  * order first written. A list that is not one, an entry that is not a name, and the repository itself are
- * not read, as the driver does not read them; a repository left with none has no entry.
+ * not read, as the driver does not read them; a repository left with none has no entry. A repository written
+ * twice in any case is read where first readable, as the driver's `TargetMap` reads it (CASEMAP1).
  */
 function targetMap(value: unknown): Record<string, string[]> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, string[]> = {};
   for (const [name, list] of Object.entries(value as Record<string, unknown>)) {
-    if (!Array.isArray(list) || name.trim().length === 0) continue;
+    if (!Array.isArray(list) || name.trim().length === 0 || findName(Object.keys(held), name.trim()) !== null) continue;
     const targets: string[] = [];
     for (const item of list) {
       if (typeof item !== 'string' || writeAcrossProblem(name, item) !== null) continue;

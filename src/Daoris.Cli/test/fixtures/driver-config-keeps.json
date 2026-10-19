@@ -603,5 +603,20 @@
     "notify": false,
     "workCycles": { "engine": { "quest": { "end": "close" }, "chore": { "end": "done" } } },
     "refused": "`notify`"
-  }
+  },
+  "names": [
+    { "name": "a repository's line written twice in any case reads its first", "map": "lines", "file": { "lines": { "Engine": "main", "engine": "dev" } }, "read": { "Engine": "main" } },
+    { "name": "a line git would refuse shadows none: the next spelling reads", "map": "lines", "file": { "lines": { "engine": "bad..name", "Engine": "dev" } }, "read": { "Engine": "dev" } },
+    { "name": "a workspace's line written twice in any case reads its first", "map": "workspaceLines", "file": { "workspaceLines": { "Shop": "main", "SHOP": "trunk" } }, "read": { "Shop": "main" } },
+    { "name": "reading across written twice in any case reads its first", "map": "readAcross", "file": { "readAcross": { "Shop-API": false, "shop-api": true } }, "read": { "Shop-API": false } },
+    { "name": "reading across reads a name trimmed, and its first in any case", "map": "readAcross", "file": { "readAcross": { " shop-api ": false, "SHOP-API": true } }, "read": { "shop-api": false } },
+    { "name": "reading across that is no boolean shadows none", "map": "readAcross", "file": { "readAcross": { "shop-api": "no", "Shop-Api": true } }, "read": { "Shop-Api": true } },
+    { "name": "a workspace's reading across written twice in any case reads its first", "map": "workspaceReadAcross", "file": { "workspaceReadAcross": { "shop": true, "Shop": false } }, "read": { "shop": true } },
+    { "name": "writing across written twice in any case reads its first list", "map": "writeAcross", "file": { "writeAcross": { "Engine": ["shop-api"], "engine": ["web"] } }, "read": { "Engine": ["shop-api"] } },
+    { "name": "a list naming no other repository shadows none", "map": "writeAcross", "file": { "writeAcross": { "engine": ["ENGINE"], "Engine": ["web"] } }, "read": { "Engine": ["web"] } },
+    { "name": "a quest forgiven twice in any case reads its first mark", "map": "forgiven", "file": { "forgiven": { "Q7": 2, "q7": 5 } }, "read": { "Q7": 2 } },
+    { "name": "a mark that is no count shadows none", "map": "forgiven", "file": { "forgiven": { "q7": 0, "Q7": 3 } }, "read": { "Q7": 3 } },
+    { "name": "a language written twice in any case reads its first, as it did", "map": "languages", "file": { "languages": { "Engine": "zh", "engine": "en" } }, "read": { "Engine": "zh" } },
+    { "name": "a release written twice in any case reads its first, as it did", "map": "released", "file": { "released": { "Q9": "s-41", "q9": "s-42" } }, "read": { "Q9": "s-41" } }
+  ]
 }

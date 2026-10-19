@@ -22,9 +22,12 @@ type Edit = {
 type Change = { from: string[]; to: string[] };
 type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string; missing?: boolean };
 type Twice = { changes: Change[]; notify: boolean; workCycles: Record<string, Record<string, unknown>>; refused: string };
+type Named = { name: string; map: keyof DriverChoices; file: Record<string, unknown>; read: Record<string, unknown> };
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
-const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'driver-config-keeps.json'), 'utf8')) as { file: string[]; rows: Row[]; twice: Twice };
+const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'driver-config-keeps.json'), 'utf8')) as {
+  file: string[]; rows: Row[]; twice: Twice; names: Named[];
+};
 const FILE = `${TABLE.file.join('\n')}\n`;
 
 /** The edit as the door that makes it makes it: the `landing` verb through `landingEdited`, the rest as their verbs set the field. */
@@ -81,6 +84,16 @@ TABLE.rows.forEach((row, index) => {
     if (row.refused === undefined) write();
     else assert.throws(write, (error: Error) => error.message.includes(row.refused!), row.name);
     assert.equal(fx.read('driver.json'), expected(row.changes, row.crlf));
+  });
+});
+
+// CASEMAP1 (D173's CONFIG1 note): every per-name map reads a name written twice in any case where first readable, its first spelling
+// and value, row for row with the driver's `DriverConfigKeepsTests`.
+TABLE.names.forEach((row, index) => {
+  test(`configkeeps: a name written twice in any case reads as the driver reads it: ${row.name}`, () => {
+    const fx = makeFixture(`config-names-${index}`);
+    const choices = readDriverChoices(fx.write('driver.json', JSON.stringify(row.file)));
+    assert.deepEqual(Object.entries(choices[row.map] as Record<string, unknown>), Object.entries(row.read), row.name);
   });
 });
 

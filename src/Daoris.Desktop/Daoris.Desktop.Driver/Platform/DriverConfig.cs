@@ -1088,7 +1088,10 @@ public sealed record DriverConfig(
         writer.WriteEndObject();
     }
 
-    /// <summary>A map of names to booleans; an entry of any other type is not read (D107).</summary>
+    /// <summary>
+    /// A map of names to booleans; an entry of any other type is not read (D107). A name written twice in any case is read where first
+    /// readable, as the CLI reads it (CASEMAP1, D173's CONFIG1 note: the last value was read here, each spelling there).
+    /// </summary>
     private static IReadOnlyDictionary<string, bool> FlagMap(JsonElement root, string name)
     {
         var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
@@ -1096,9 +1099,10 @@ public sealed record DriverConfig(
         {
             foreach (var property in element.EnumerateObject())
             {
-                if (property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False && property.Name.Trim().Length > 0)
+                if (property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False && property.Name.Trim() is { Length: > 0 } named
+                    && !map.ContainsKey(named))
                 {
-                    map[property.Name.Trim()] = property.Value.GetBoolean();
+                    map[named] = property.Value.GetBoolean();
                 }
             }
         }
@@ -1109,7 +1113,8 @@ public sealed record DriverConfig(
     /// <summary>
     /// The declared relationships (D107): each repository's list of other names, once each in any case, in
     /// the order first written. A list that is not one, an entry that is not a name, and the repository
-    /// itself are not read; a repository left with none has no entry.
+    /// itself are not read; a repository left with none has no entry. A repository written twice in any case
+    /// is read where first readable, as the CLI reads it (CASEMAP1: the last list was read here).
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> TargetMap(JsonElement root, string name)
     {
@@ -1118,7 +1123,7 @@ public sealed record DriverConfig(
 
         foreach (var property in element.EnumerateObject())
         {
-            if (property.Value.ValueKind != JsonValueKind.Array || property.Name.Trim().Length == 0) continue;
+            if (property.Value.ValueKind != JsonValueKind.Array || property.Name.Trim().Length == 0 || map.ContainsKey(property.Name.Trim())) continue;
             var targets = new List<string>();
             foreach (var item in property.Value.EnumerateArray())
             {
@@ -1224,7 +1229,10 @@ public sealed record DriverConfig(
         return map;
     }
 
-    /// <summary>A map of names to branch names; an entry that is not one git would take is skipped.</summary>
+    /// <summary>
+    /// A map of names to branch names; an entry that is not one git would take is skipped. A name written twice in any case is read
+    /// where first readable, as the CLI reads it (CASEMAP1: the first spelling was kept here with the last value).
+    /// </summary>
     private static IReadOnlyDictionary<string, string> BranchMap(JsonElement root, string name)
     {
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -1233,7 +1241,7 @@ public sealed record DriverConfig(
             foreach (var property in element.EnumerateObject())
             {
                 if (property.Value.ValueKind == JsonValueKind.String
-                    && property.Value.GetString() is { } branch && BranchName.IsValid(branch))
+                    && property.Value.GetString() is { } branch && BranchName.IsValid(branch) && !map.ContainsKey(property.Name))
                 {
                     map[property.Name] = branch;
                 }
@@ -1381,8 +1389,9 @@ public sealed record DriverConfig(
         {
             foreach (var property in element.EnumerateObject())
             {
+                // A quest written twice in any case is read where first readable, as the CLI reads it (CASEMAP1).
                 if (property.Value.ValueKind == JsonValueKind.Number
-                    && property.Value.TryGetInt32(out var mark) && mark > 0)
+                    && property.Value.TryGetInt32(out var mark) && mark > 0 && !forgiven.ContainsKey(property.Name))
                 {
                     forgiven[property.Name] = mark;
                 }
