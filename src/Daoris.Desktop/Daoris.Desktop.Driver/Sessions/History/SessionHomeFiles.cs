@@ -81,6 +81,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// <summary>
     /// The inventory (§2.2), in the order the files go, written once (HIST1j): what a reading measures, what a clear and a delete
     /// remove, and what a left-over file is read by. A per-session file a later change adds is named here, and every door takes it.
+    /// A new name is a word a delete's <c>stayed</c> carries, which the page says from its own catalogues (<c>KeptNamesTwinTests</c>,
+    /// <c>kept-names.json</c>), so a file an existing name already covers goes under that name, as HELPWIRED1's receipts go under
+    /// <see cref="Help"/>.
     /// </summary>
     private static readonly SessionFile[] Inventory =
     [
