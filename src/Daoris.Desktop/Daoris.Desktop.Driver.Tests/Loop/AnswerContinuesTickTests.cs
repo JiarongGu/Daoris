@@ -223,6 +223,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Equal("bypassPermissions", heard.Skip(resumedAt).Single(line => line["method"]!.GetValue<string>() == "session/set_mode")["mode"]!.GetValue<string>());
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.Note, Text: { } text }
             && text.StartsWith("Permission prompts changed since `s1` started: it started under `asking`, and this run goes on under `unrestricted`.", StringComparison.Ordinal));
+        // AUTONOMY1b2 (D184 point 1): and its record names the setup it now runs under.
+        Assert.Equal(AccessRules.Unrestricted, service.Session("s1")["access"]![AccessRules.Permissions]!.GetValue<string>());
     }
 
     /// <summary>
@@ -548,6 +550,15 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         if (to == "awaiting-person") session.Remove("answer");
                         if (session["answer"] is not null) _moves[id + "/answered"].Add(to);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
+                    }
+
+                    // AUTONOMY1b2: the setup a resumed record now runs under, kept as the service does.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/access", StringComparison.Ordinal):
+                    {
+                        var id = path["/api/sessions/".Length..^"/access".Length];
+                        var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                        session["access"] = Body()["access"]?.DeepClone();
+                        return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                     }
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/answer", StringComparison.Ordinal):

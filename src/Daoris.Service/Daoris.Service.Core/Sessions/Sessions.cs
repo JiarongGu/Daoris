@@ -1197,6 +1197,20 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// Write the access setup a driven record of this machine's now runs under (AUTONOMY1b2). Blind, like every write here: that it is a
+    /// short map of words is the ledger's to judge. No revision, since nothing that travels changed. False when there is no such record.
+    /// </summary>
+    public Task<bool> KeepAccessAsync(string id, IReadOnlyDictionary<string, string> access, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE sessions SET access = $access WHERE id = $id AND origin IS NULL AND kind = $kind";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$access", (object?)SessionAccess.Written(access) ?? DBNull.Value);
+        command.Parameters.AddWithValue("$kind", SessionKind.Driven.ToString());
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
+    /// <summary>
     /// Mark these records as gone up to a remote (SESSUX1f, D126 §5.4), once a push took them. No revision moves: the mark
     /// is this machine's fact about the record, not a change to it, so the next push does not send it again. An id with
     /// no record of this machine's is passed over.

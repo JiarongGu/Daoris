@@ -58,6 +58,9 @@ judgement (D173's FABRIC-END2, FABRIC-END4a and FABRIC-END2d notes). Before a re
 moves aside each folder under its trees that git lists no tree in, once quiet, and each tree whose opening was cut off; an open
 holds its tree locked under a reason naming its process, and `TreeOpenings` undoes one cut off (AUTOTIDY2c, OPENCUT1, D88's
 note). The words beside a clean-up row, which the terminal and the bridge say, are the public `SessionBranchDoors`.
+Git for Windows' removal follows a junction out of a tree, so each path that has git delete a tree's folder (the removal, a
+landing's tidy, the press, an undone opening) first takes every link in it off as a link with `TreeLinks`, and keeps a tree it
+cannot (TREELINK1, D51's note); the look's own tidy moves folders aside and never needs it.
 A judgement reads a checkout's refs and working trees once (`RefSnapshot`, PROC1d-ii and -iii) and asks its git each question of
 commits by their ids once (PROC1d-iv), every write in its flow dropping both; a landing's planning keeps its facts in `GitFacts`
 (LANDGIT1). D88's notes say what each keeps.

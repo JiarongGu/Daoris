@@ -754,6 +754,31 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
     }
 
+    /// <summary>
+    /// Record the access setup a resumed driven session now runs under (AUTONOMY1b2, D184 point 1), where the person's setup changed
+    /// since it started. A refusal is the ledger's sentence (<see cref="DriverException"/>).
+    /// </summary>
+    public async Task KeepAccessAsync(string sessionId, IReadOnlyDictionary<string, string> access, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartObject("access");
+            foreach (var (pause, value) in access) writer.WriteString(pause, value);
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        });
+
+        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(sessionId)}/access", body, ct)
+            .ConfigureAwait(false);
+        if (!ok)
+        {
+            throw new DriverException(
+                $"the service refused recording the setup session `{sessionId}` goes on under: "
+                + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
+        }
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {

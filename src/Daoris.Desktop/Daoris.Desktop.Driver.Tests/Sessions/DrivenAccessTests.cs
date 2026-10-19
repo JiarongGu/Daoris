@@ -207,6 +207,60 @@ public sealed class DrivenAccessTests : IDisposable
         Assert.Null(DrivenAccess.StartNote(today, auto, Ran(AccessRules.Auto)));
     }
 
+    /// <summary>
+    /// 🔴 AUTONOMY1b2 (D184 point 1): a resume under a changed setup tells the service's door the setup it now runs under, each pause with
+    /// its value, so the record names it; one under the same setup, or from a record before the setting that ran auto, calls nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_under_a_changed_setup_keeps_the_new_one_on_its_record_and_the_same_keeps_nothing()
+    {
+        using var listener = new System.Net.HttpListener();
+        var port = System.Net.Sockets.TcpListener.Create(0);
+        port.Start();
+        var number = ((System.Net.IPEndPoint)port.LocalEndpoint).Port;
+        port.Stop();
+        listener.Prefixes.Add($"http://127.0.0.1:{number}/");
+        listener.Start();
+        var heard = new List<(string Path, string Body)>();
+        var serving = Task.Run(async () =>
+        {
+            while (listener.IsListening)
+            {
+                System.Net.HttpListenerContext context;
+                try { context = await listener.GetContextAsync(); } catch (Exception) { return; }
+                using var reader = new StreamReader(context.Request.InputStream);
+                var said = await reader.ReadToEndAsync();
+                lock (heard) heard.Add((context.Request.Url!.AbsolutePath, said));
+                var bytes = System.Text.Encoding.UTF8.GetBytes("""{"session":{"id":"s1"},"message":"kept"}""");
+                await context.Response.OutputStream.WriteAsync(bytes);
+                context.Response.Close();
+            }
+        });
+        var service = new ServiceClient($"http://127.0.0.1:{number}", null);
+        var adapter = Adapter("claude-code-acp");
+        var now = Permissions(AccessRules.Unrestricted);
+        var got = DrivenAccess.For(now, "engine", adapter);
+        PriorSession Ran(string? permissions) => new("s1", null)
+        {
+            Access = permissions is null ? null : new Dictionary<string, string> { [AccessRules.Permissions] = permissions },
+        };
+
+        await DrivenAccess.KeepAsync(service, Ran(AccessRules.Unrestricted), got, now, default);
+        await DrivenAccess.KeepAsync(service, Ran(null), DrivenAccess.For(AccessRules.ResolveLevels(null, null, null), "engine", adapter),
+            AccessRules.ResolveLevels(null, null, null), default);
+        lock (heard) Assert.Empty(heard);
+
+        await DrivenAccess.KeepAsync(service, Ran(AccessRules.Asking), got, now, default);
+
+        listener.Stop();
+        await serving;
+        var (path, body) = Assert.Single(heard);
+        Assert.Equal("/api/sessions/s1/access", path);
+        var sent = System.Text.Json.Nodes.JsonNode.Parse(body)!["access"]!.AsObject();
+        Assert.Equal(now.Values.ToDictionary(p => p.Key, p => p.Value), sent.ToDictionary(p => p.Key, p => p.Value!.GetValue<string>()));
+        Assert.Equal(AccessRules.Unrestricted, sent[AccessRules.Permissions]!.GetValue<string>());
+    }
+
     /// <summary>The record's setup read back as the service answers it on loopback (AUTONOMY1a), and none from a record before it.</summary>
     [Fact]
     public void A_record_s_setup_is_read_back_with_it()

@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { linesSlice } from './lines';
 
-// The lines slice's page half (PUSH1b2, D182): one partition per repository, composed into the seven arrays `LINES` answers.
+// The lines slice's page half (PUSH1b2, D182): one partition per repository, composed into the eight arrays `LINES` answers.
 
 const part = (repository: string, branch: string | null, extra: Record<string, unknown> = {}) => ({
   lines: [{ repository, workspace: 'default', branch, source: branch ? 'repository' : 'none', ...extra }],
   landings: [{ repository, workspace: 'default' }],
   languages: [], reviews: [], opinions: [], helpers: [], commits: [],
+  access: [{ repository, workspace: 'default', full: false, pauses: [{ pause: 'permissions', value: 'auto', source: 'default' }] }],
 });
 
 describe('the lines slice (PUSH1b2)', () => {
@@ -21,6 +22,13 @@ describe('the lines slice (PUSH1b2)', () => {
     expect(composed.lines.map((line) => line.repository)).toEqual(['alpha', 'zeta']);
     expect(composed.landings.map((line) => line.repository)).toEqual(['alpha', 'zeta']);
     expect(composed.commits).toEqual([]);
+  });
+
+  it("composes each repository's access setup as the shell pushes it (AUTONOMY1d)", () => {
+    const composed = linesSlice.compose(new Map([['zeta', part('zeta', 'main')], ['alpha', part('alpha', 'dev')]])) as
+      { access: { repository: string; pauses: { pause: string; value: string; source: string }[] }[] };
+    expect(composed.access.map((row) => row.repository)).toEqual(['alpha', 'zeta']);
+    expect(composed.access[0]!.pauses).toEqual([{ pause: 'permissions', value: 'auto', source: 'default' }]);
   });
 
   it('keeps a line not read yet as the flag says, and answers nothing while no repository is judged', () => {

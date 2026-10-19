@@ -559,6 +559,8 @@ public sealed record OpenHelpRequest(
     string? Mode = null);
 // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris conversation going on runs under, as its driver resolved it.
 public sealed record HelpModeRequest(string? Mode);
+// AUTONOMY1b2 (D184 point 1): the access setup a resumed driven session now runs under, each pause with its value, as its driver resolved it.
+public sealed record AccessKeepRequest(Dictionary<string, string>? Access);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
 // that an account's limit made. Silence is the old reading of both. `NoteParts` (LANG1a): the note's lines by code, beside
 // it; a note sent without them clears the record's, and an older driver sends none.

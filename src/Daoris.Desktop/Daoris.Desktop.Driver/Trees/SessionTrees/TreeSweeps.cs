@@ -191,6 +191,14 @@ internal sealed class TreeSweeps(
             }
             else if (now.Tree is { } pressed)
             {
+                // TREELINK1: each link in the tree goes as a link first, since git's removal follows a junction out of it.
+                if (TreeLinks.Unlinked(pressed) is { } linked)
+                {
+                    await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
+                    results.Add(new(now, false, linked));
+                    continue;
+                }
+
                 var (removeCode, _, removeErr) = await WorkingTree.GitAsync(
                     root, ["worktree", "remove", pressed], done).ConfigureAwait(false);
                 if (removeCode != 0)

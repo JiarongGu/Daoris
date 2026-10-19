@@ -6,6 +6,12 @@ with the version and date at release.
 ## Unreleased
 
 - Three of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
+- Removing a session's tree no longer deletes what a link in it points at. On Windows git's removal followed a junction out
+  of the tree, so a tree holding `npm link`'s link, a workspace's junction or a link of the session's own could take files in
+  your checkout or another repository with it. Each link in a tree now goes as a link before git removes the tree, whether
+  you remove it, a landing or the clean-up does, or an opening is undone; a tree with a link that will not go, or whose own
+  folder is a link, stays, and says why.
+- Two of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
   `daoris-driver access <repository> routing=intake` lets an ask's intake publish to its own best choice of repository rather
   than ask you which, saying in the quest that the route was its choice, and you can still publish the ask elsewhere.
   `goAheads=never` stops a session asking go-aheads before acts outside its repository or on a production system; a go-ahead your

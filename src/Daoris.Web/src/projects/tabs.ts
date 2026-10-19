@@ -19,8 +19,8 @@ export const WORKSPACE_TABS = ['details', 'branches', 'workflow', 'setup'] as co
 
 export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
 
-/** The two sections of a workspace's Setup (UX6g, §4.3), which a door may ask to see open. */
-export type WorkspaceSection = 'defaults' | 'remote';
+/** The sections of a workspace's Setup (UX6g, §4.3; *Sessions' access* since AUTONOMY1d), which a door may ask to see open. */
+export type WorkspaceSection = 'defaults' | 'access' | 'remote';
 
 /** Where the tab chosen is kept: one for the view, whichever repository it shows (§4.2, *remembered per view*). */
 const KEY = 'daoris.list.projects.tab';

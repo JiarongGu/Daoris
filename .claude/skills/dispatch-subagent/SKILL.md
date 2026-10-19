@@ -111,7 +111,9 @@ once three batches hold the targets (MODELROLE1).
    `git rev-parse` took five seconds then, and the harness's check gave up. Remove the half-made tree it leaves (look
    first: a clean checkout of an old commit, no commits of its own), and dispatch again; a retry usually goes through. Two dispatched in one message
    while a merge's gates ran were both refused the same way (2026-10-08), each a half-made tree holding only
-   `.git` and `.claude`: remove each (`git worktree remove --force`, then its branch), and dispatch one at a time.
+   `.git` and `.claude`: remove each (`git worktree remove --force`, then its branch), and dispatch one at a time. Use that
+   removal only on such a half-made tree: `git worktree remove --force` follows a junction out of the tree (TREELINK1, probed
+   2026-10-19), and a worker's tree that ran `npm ci` holds workspace junctions; the merge tool's prune removes those.
    **Nothing the parent or a worker starts outlives its work.** A background loop ends when the work that wanted it ends
    (a stop file, a parent's pid it watches, a time it gives up at): the parent's own `renice.ps1` loop ran a hundred hours
    past its session, asking the machine's management service for every process every ten seconds (2026-10-19 audit). A
