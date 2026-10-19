@@ -370,6 +370,22 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// Why the closure graph named for this session's take did not bind it (CLOSETAKE1, FABRIC-CLOSE1o-ii): <c>expired</c>,
+    /// <c>replaced</c> or <c>remote</c>, read off its record at its end; null for a bound take, a take no graph was named for, and a
+    /// host from before the field.
+    /// </summary>
+    public async Task<string?> TookBindAsync(string id, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (Text(session, "id") == id) return Text(session, "tookBind") is { Length: > 0 } why ? why : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Answer a driven session that parked to ask the person (STANDDOWN2) — the terminal's form of the
     /// page's box. The service's sentence comes back verbatim, and a refusal is an answer too.
     /// </summary>
@@ -1422,6 +1438,12 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// moments from (TRACE1), which <see cref="QuestView"/> leaves out because no planner needs them.
     /// </summary>
     public Task<string> QuestsJsonAsync(CancellationToken ct = default) => GetAsync("/api/quests?includeClosed=true", ct);
+
+    /// <summary>
+    /// Every ask, closed and done ones included, each as it stands, as the service wrote them: what the asks' pushed slice reads
+    /// (PUSH1d3), which <see cref="AskView"/> leaves out because no planner needs it.
+    /// </summary>
+    public Task<string> AsksJsonAsync(CancellationToken ct = default) => GetAsync("/api/asks?includeClosed=true", ct);
 
     /// <summary>
     /// The ledger's judgement of deleting a session's record (SESSUX1f, D126 §5.4), deleting nothing: whether it would, and

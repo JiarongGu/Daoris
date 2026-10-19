@@ -106,6 +106,59 @@ public sealed class OrphanedSessionTests : IDisposable
             (service.State("a2"), service.State("person@machine-b/a3"), service.State("a4"), service.State("a5")));
     }
 
+    /// <summary>
+    /// QUEUED1: a start's record is marked by the process that opened it until its spawn's marker replaces it, so the sweep ends a
+    /// `queued` or `starting` record whose opener went, and leaves one a live driver here is starting, and one no opener marked (a
+    /// record from before the mark, or one in the breath between its open and its mark): only a dead opener proves nothing starts it.
+    /// </summary>
+    [Fact]
+    public async Task The_sweep_ends_a_start_whose_opener_went_and_leaves_one_being_started()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        service.Seed("q1", "queued");
+        service.Seed("q2", "queued");
+        service.Seed("q3", "queued");
+        service.Seed("s1", "starting");
+        var went = Holding();
+        var terminal = new SessionProcesses(Markers);
+        terminal.MarkOpening("q1", went);
+        terminal.MarkOpening("s1", went);
+        // This test's own process: a driver here, alive and in the middle of its start.
+        terminal.MarkOpening("q2");
+        went.Kill();
+        await went.WaitForExitAsync();
+
+        using var client = new ServiceClient(service.Url, null);
+        var ended = await Orphans.EndAsync(client, new SessionProcesses(Markers));
+
+        Assert.Equal(["q1", "s1"], ended.Select(e => e.Id));
+        Assert.Equal(
+            ("stopped", "stopped", "queued", "queued"),
+            (service.State("q1"), service.State("s1"), service.State("q2"), service.State("q3")));
+        Assert.Contains("nothing on this machine was running it", service.Note("q1"));
+        // The sweep's, never the person's (D104).
+        Assert.True(service.Interrupted("q1"));
+    }
+
+    /// <summary>
+    /// QUEUED1: an opener's mark is no running process to anything but the sweep's judgement of a start (a word, a stop, the
+    /// history's clearing read none yet), and the spawn's own marker replaces it.
+    /// </summary>
+    [Fact]
+    public void An_openers_mark_is_no_running_process_and_its_spawn_replaces_it()
+    {
+        var desktop = new SessionProcesses(Markers);
+        var terminal = new SessionProcesses(Markers);
+
+        desktop.MarkOpening("a1b2c3d4");
+        Assert.False(terminal.AliveOnThisMachine("a1b2c3d4"));
+        Assert.False(terminal.OpenerWent("a1b2c3d4"));
+
+        using var tracked = desktop.Track("a1b2c3d4", Holding());
+        Assert.True(terminal.AliveOnThisMachine("a1b2c3d4"));
+        Assert.False(terminal.OpenerWent("a1b2c3d4"));
+    }
+
     /// <summary>The person's stop on one record ends it even while it says it is starting — they asked, about that one.</summary>
     [Fact]
     public async Task A_stop_asked_of_one_orphan_ends_that_one_starting_or_working()
@@ -113,6 +166,8 @@ public sealed class OrphanedSessionTests : IDisposable
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
         service.Seed("a1", "working");
         service.Seed("a5", "starting");
+        // QUEUED1: a live opener's mark holds the sweep, never the person's stop of that one record.
+        new SessionProcesses(Markers).MarkOpening("a5");
 
         using var client = new ServiceClient(service.Url, null);
         var ended = await Orphans.EndAsync(client, new SessionProcesses(Markers), only: "a5");

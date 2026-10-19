@@ -48,8 +48,30 @@ public sealed class InstancePipeTests : Bridge
         return (provider.GetRequiredService<IMessageDispatcher>(), underWay, provider);
     }
 
-    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null) =>
-        new(dispatcher, Bus, Home, log, Census, version: "9.9.9-test", limits: limits);
+    /// <summary>
+    /// <see cref="Compose"/> with the kit's own requests module beside the others, as the application's builder registers it, so a
+    /// <c>CANCEL</c> the pipe passes on reaches the tracker the dispatcher records its requests in.
+    /// </summary>
+    private (IMessageDispatcher Dispatcher, PressesUnderWay UnderWay, ServiceProvider Services) ComposeCancelling(MachineLog log, params IIpcModule[] modules)
+    {
+        var underWay = new PressesUnderWay();
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        var options = new IpcRequestTrackerOptions { GracePeriod = TimeSpan.FromMilliseconds(50) };
+        var tracker = new IpcRequestTracker(Bus, options);
+        services.AddSingleton<IIpcRequestTracker>(tracker);
+        foreach (var module in modules) services.AddSingleton(module);
+        services.AddSingleton<IIpcModule>(new Shenora.Modules.Requests.IpcRequestsModule(
+            tracker, options, Microsoft.Extensions.Logging.Abstractions.NullLogger<Shenora.Modules.Requests.IpcRequestsModule>.Instance));
+        services.UseMessageDispatcher((_, dispatcher) => dispatcher
+            .Use(RefusalLog.Middleware(log))
+            .Use(StatePublisher.Middleware(Bus, Declared, underWay)));
+        var provider = services.BuildServiceProvider();
+        return (provider.GetRequiredService<IMessageDispatcher>(), underWay, provider);
+    }
+
+    private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null) =>
+        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits);
 
     private string HomeId => HomeIdentity.Read(Home)!;
 
@@ -516,6 +538,71 @@ public sealed class InstancePipeTests : Bridge
         Assert.Equal(InstancePipe.IdTaken, Code(await later.AnswerAsync(id)));
         Assert.Equal(InstancePipe.IdTaken, Code(await later.ResultAnswerAsync(id, "another-key-0123456789abcdef")));
         Assert.Equal("answered", (await later.ResultAsync(id, key)).GetProperty("state").GetString());
+        Assert.Equal(1, press.Ran);
+    }
+
+    /// <summary>
+    /// RPC1h (§6.2): a terminal's Ctrl+C is the kit's <c>CANCEL</c> by the request's id, taken only for a press this pipe began and
+    /// only with the key that sent it, and passed on to the kit's tracker; the press then ends as a cancelled one, and <c>RESULT</c>
+    /// says so. A window's id, another key's and an id nobody sent are refused as an id bound elsewhere is, and nothing is cancelled.
+    /// </summary>
+    [Fact]
+    public async Task A_cancel_for_a_press_the_pipe_began_with_its_key_cancels_it_and_RESULT_says_how_it_ended()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var press = new HeldModule("TEST.PRESS");
+        var window = new HeldModule("TEST.WINDOW");
+        var (dispatcher, _, services) = ComposeCancelling(log, press, window);
+        using var _ = services;
+        using var pipe = Pipe(dispatcher, log, census: Census.With("TEST.WINDOW", "MOVE", PipeClass.Open));
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+
+        // A press a window began, held: its id is not this pipe's, so a terminal cannot cancel it.
+        var windowPress = dispatcher.DispatchAsync(new IpcRequest
+        {
+            Id = "window-held",
+            Module = "TEST.WINDOW",
+            Type = "MOVE",
+            Payload = JsonSerializer.SerializeToElement(new { id = "s1a2b3c4" }),
+        }, CancellationToken.None);
+        await window.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var id = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s5e6f7a8" });
+        var key = client.KeyOf(id)!;
+        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var strangers = await client.SendAsync("SHENORA.REQUESTS", "CANCEL", new { requestId = "window-held" });
+        Assert.Equal(InstancePipe.IdTaken, Code(await client.AnswerAsync(strangers)));
+        var nobodys = await client.SendAsync("SHENORA.REQUESTS", "CANCEL", new { requestId = "never-sent" });
+        Assert.Equal(InstancePipe.IdTaken, Code(await client.AnswerAsync(nobodys)));
+        var another = await client.SendAsync("SHENORA.REQUESTS", "CANCEL", new { requestId = id }, key: "another-key-0123456789abcdef");
+        Assert.Equal(InstancePipe.IdTaken, Code(await client.AnswerAsync(another)));
+        var keyless = await client.SendAsync("SHENORA.REQUESTS", "CANCEL", new { requestId = id }, key: "short");
+        Assert.Equal(InstancePipe.KeyMissing, Code(await client.AnswerAsync(keyless)));
+        Assert.False(windowPress.IsCompleted);
+        Assert.Equal("running", (await client.ResultAsync(id)).GetProperty("state").GetString());
+
+        // The sender's own key cancels it: the kit's tracker aborts the token the press runs under.
+        var cancel = await client.SendAsync("SHENORA.REQUESTS", "CANCEL", new { requestId = id }, key: key);
+        var cancelled = await client.AnswerAsync(cancel);
+        Assert.True(cancelled.GetProperty("success").GetBoolean(), cancelled.GetRawText());
+        var answer = await client.AnswerAsync(id);
+        Assert.False(answer.GetProperty("success").GetBoolean());
+        Assert.Equal(IpcErrorCodes.OperationCancelled, Code(answer));
+
+        // RESULT says how it ended; a cancel sent again says it already had, and runs nothing.
+        var ended = await client.ResultAsync(id);
+        Assert.Equal("answered", ended.GetProperty("state").GetString());
+        Assert.Equal(IpcErrorCodes.OperationCancelled, ended.GetProperty("answer").GetProperty("error").GetProperty("code").GetString());
+        var again = await client.SendAsync("SHENORA.REQUESTS", "CANCEL", new { requestId = id }, key: key);
+        var settled = await client.AnswerAsync(again);
+        Assert.True(settled.GetProperty("success").GetBoolean());
+        Assert.False(settled.GetProperty("data").GetProperty("cancelled").GetBoolean());
+
+        window.Let.SetResult();
+        Assert.True((await windowPress).Success);
         Assert.Equal(1, press.Ran);
     }
 

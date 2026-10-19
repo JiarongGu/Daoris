@@ -457,8 +457,8 @@ export const useSyncNow = () => {
       // A pass refused as an error publishes nothing (D169 point 5), and one that failed part way may have recorded where it
       // stood: this window, which pressed it, asks again itself. Where the shell pushes the standings, the pass's end pushes them (PUSH1a2).
       void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
-      void client.invalidateQueries({ queryKey: keys.allQuests });
-      // The records themselves, where the shell pushes them, are pushed as the pass moved them (PUSH1d2).
+      // The quests and the records themselves, where the shell pushes them, are pushed as the pass moved them (PUSH1d3, PUSH1d2).
+      void client.invalidateQueries({ queryKey: keys.allQuests, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allRegistry });
     },

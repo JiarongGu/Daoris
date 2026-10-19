@@ -25,6 +25,12 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public bool Failed => Failure is { Length: > 0 } || Exit is { } exit && exit != 0;
 
     /// <summary>
+    /// The session's own background work its harness ended with its turn (BGWAIT1c), by name: on the native door, a command still
+    /// running at the turn's <c>result</c> and ended after it, which only the harness does there. Empty on every other door.
+    /// </summary>
+    public IReadOnlyList<string> BackgroundCut { get; init; } = [];
+
+    /// <summary>
     /// A door that carries only text (AGT3c): its transcript's last lines, both its streams, beside the process's exit. Its
     /// agent's words are among them and cannot be told apart, so only an exit that was not 0 lets them be read. Unreadable
     /// is none.

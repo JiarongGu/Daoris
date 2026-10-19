@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Shenora;
@@ -107,6 +108,79 @@ public sealed class DriverLoopAddressTests : Bridge
         Assert.True((await client.AnswerAsync(pressed)).GetProperty("success").GetBoolean());
         await stopped.WaitAsync(TimeSpan.FromSeconds(30));
         Assert.False(File.Exists(RunningAddress.PathIn(Home)));
+    }
+
+    /// <summary>
+    /// RPC1i (§6.3): a stop whose drain ends with a press still under way goes on, as it always did, and says so in the machine log:
+    /// <c>pipe.drained</c> with how many presses were left, so a terminal told <i>nothing was done</i> by a closing Daoris can be read
+    /// against what the instance knew. A drain that ends clean says nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_that_cannot_drain_says_how_many_presses_were_left()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var press = new HeldModule("TEST.PRESS");
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        services.AddSingleton<IIpcModule>(press);
+        services.UseMessageDispatcher((_, _) => { });
+        using var provider = services.BuildServiceProvider();
+        var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:5181/") { PipeDrain = TimeSpan.FromMilliseconds(300) };
+        using var log = new MachineLog(Home, "desktop");
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log,
+            census: PipeCensus.Daoris.With("TEST.PRESS", "MOVE", PipeClass.Open));
+        loop.Pipe = pipe;
+        loop.Announce();
+        var name = pipe.Serve()!;
+        await using var client = await PipeClient.ConnectAsync(name);
+        await client.HelloAsync(HomeId());
+        await client.SendAsync("TEST.PRESS", "MOVE");
+        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        loop.Stop();
+
+        var said = Assert.Single(PipeLines(), line => line.GetProperty("event").GetString() == "pipe.drained");
+        Assert.Equal("""{"left":1}""", said.GetProperty("data").GetRawText());
+        Assert.False(File.Exists(RunningAddress.PathIn(Home)));
+        press.Let.SetResult();
+    }
+
+    /// <summary>A stop with nothing under way drains clean and says nothing of it.</summary>
+    [Fact]
+    public void A_stop_that_drains_says_nothing_of_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        services.UseMessageDispatcher((_, _) => { });
+        using var provider = services.BuildServiceProvider();
+        var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:5181/") { PipeDrain = TimeSpan.FromMilliseconds(300) };
+        using var log = new MachineLog(Home, "desktop");
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log);
+        loop.Pipe = pipe;
+        loop.Announce();
+        pipe.Serve();
+
+        loop.Stop();
+
+        Assert.DoesNotContain(PipeLines(), line => line.GetProperty("event").GetString() == "pipe.drained");
+    }
+
+    private string HomeId() => HomeIdentity.Read(Home)!;
+
+    private List<JsonElement> PipeLines()
+    {
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
+        if (!Directory.Exists(folder)) return [];
+        return
+        [
+            .. Directory.GetFiles(folder).SelectMany(path =>
+            {
+                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(stream);
+                return reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            }).Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement.Clone()),
+        ];
     }
 
     /// <summary>Held on the loop's source: the pipe is served once the loop holds the home, and named in the address after (§6.3).</summary>

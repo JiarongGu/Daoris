@@ -184,6 +184,8 @@ public static class InstanceDoor
 
         var id = Guid.NewGuid().ToString();
         var key = Guid.NewGuid().ToString("N");
+        // RPC1j: kept before it is sent, so `result <id>` can ask for an answer that never reached this verb.
+        if (world.Home is { } kept) new SentPresses(kept).Keep(new SentPress(id, key, $"{route.Module}.{route.Route}", DateTimeOffset.UtcNow));
         JsonElement? answer;
         await using (var client = look.Client!)
         {
@@ -216,6 +218,128 @@ public static class InstanceDoor
         }
 
         var (code, message, _) = Refusal(answer.Value);
+        await world.Error.WriteLineAsync($"{world.Verb}: {message} ({code})").ConfigureAwait(false);
+        return 2;
+    }
+
+    /// <summary>
+    /// Which of §7.2's rows a press that goes several routes in one run is in, asked once before the first: the connection it made is
+    /// closed, since each press of <see cref="PressAsync"/> finds its own. A press then refused (<see cref="InstanceFound.Silent"/> or
+    /// <see cref="InstanceFound.Refused"/>) is said by <see cref="RefusedAsync(InstanceLook, InstanceWorld)"/> and is exit 2.
+    /// </summary>
+    public static async Task<InstanceLook> PeekAsync(InstanceWorld world, CancellationToken ct = default)
+    {
+        var look = await FindAsync(world, ct).ConfigureAwait(false);
+        if (look.Client is { } client) await client.DisposeAsync().ConfigureAwait(false);
+        return look with { Client = null };
+    }
+
+    /// <summary>A press refused before it was sent, said as <see cref="PressAsync"/> says it: exit 2.</summary>
+    public static async Task<int> RefusedAsync(InstanceLook look, InstanceWorld world)
+    {
+        await world.Error.WriteLineAsync($"{world.Verb}: {look.Why}").ConfigureAwait(false);
+        return 2;
+    }
+
+    /// <summary>
+    /// A read of <paramref name="route"/> as §7.2's read column takes it (RPC1b2, RPC1e): sent where the instance answers, and
+    /// <paramref name="alone"/> wherever it does not (no instance, a pipe that is silent or refuses its hello, an answer that is lost
+    /// or refused), since a read changes nothing and acting alone beside an instance is harmless. Said nothing of why.
+    /// </summary>
+    /// <remarks>
+    /// The route's answer is the page's shape, so the <paramref name="words"/> read what it adds for a terminal (<c>said</c>); an
+    /// answer that carries none is read alone, as one from an instance that predates the field would be.
+    /// </remarks>
+    public static async Task<int> ReadAsync(
+        InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int?> words, InstanceWorld world,
+        CancellationToken ct = default) =>
+        await TryReadAsync(route, payload, words, world, ct).ConfigureAwait(false) ?? await alone().ConfigureAwait(false);
+
+    /// <summary>
+    /// <see cref="ReadAsync"/> without the alone path: the exit code where the instance answered the read and its words took the
+    /// answer, else null, and the verb goes on alone from the next line. For a verb whose alone path is a long run of statements that a
+    /// lambda would only move.
+    /// </summary>
+    public static async Task<int?> TryReadAsync(
+        InstanceRoute route, object? payload, Func<JsonElement, int?> words, InstanceWorld world, CancellationToken ct = default)
+    {
+        if (route.Class != RouteClass.Open) return null;
+        var look = await FindAsync(world, ct).ConfigureAwait(false);
+        if (look.Found != InstanceFound.Answers) return null;
+
+        JsonElement? answer;
+        await using (var client = look.Client!)
+        {
+            answer = await client.RequestAsync(Guid.NewGuid().ToString(), route.Module, route.Route, payload, Guid.NewGuid().ToString("N"),
+                told: null, world.Wait, ct).ConfigureAwait(false);
+        }
+
+        return answer is { } said && Succeeded(said) ? words(said.TryGetProperty("data", out var data) ? data : default) : null;
+    }
+
+    /// <summary>
+    /// <c>daoris-driver result &lt;id&gt;</c> (RPC1j, §6.1): how a press this terminal sent ended, asked of the instance with the key it
+    /// was sent with. An answered press's words are its route's (<c>said</c>), else its answer as the instance gave it; a press still
+    /// under way, one the instance does not know and one it holds for another key are said, exit 2.
+    /// </summary>
+    public static async Task<int> ResultAsync(string id, InstanceWorld world, CancellationToken ct = default)
+    {
+        var kept = world.Home is { } home ? new SentPresses(home).Find(id, DateTimeOffset.UtcNow) : null;
+        if (kept is null)
+        {
+            await world.Error.WriteLineAsync(
+                $"{world.Verb}: this terminal sent no request {id} within the day Daoris keeps one's answer; nothing is known of it.").ConfigureAwait(false);
+            return 2;
+        }
+
+        var look = await FindAsync(world, ct).ConfigureAwait(false);
+        if (look.Found != InstanceFound.Answers)
+        {
+            await world.Error.WriteLineAsync($"{world.Verb}: {look.Why}").ConfigureAwait(false);
+            return 2;
+        }
+
+        JsonElement? result;
+        await using (var client = look.Client!)
+        {
+            result = await client.ResultAsync(id, kept.Key, world.Answer, ct).ConfigureAwait(false);
+        }
+
+        if (result is not { } envelope)
+        {
+            await world.Error.WriteLineAsync($"{world.Verb}: Daoris did not answer within {world.Answer.TotalSeconds:0.#} seconds; ask again.").ConfigureAwait(false);
+            return 2;
+        }
+
+        if (!Succeeded(envelope)) return await RefusedAsync(envelope, world).ConfigureAwait(false);
+        var data = envelope.TryGetProperty("data", out var held) ? held : default;
+        switch (InstanceClient.Text(data, "state"))
+        {
+            case "answered" when data.TryGetProperty("answer", out var answer):
+                if (!Succeeded(answer)) return await RefusedAsync(answer, world).ConfigureAwait(false);
+                var inside = answer.TryGetProperty("data", out var body) ? body : default;
+                if (TreesSaid.Read(inside) is { } said)
+                {
+                    said.Print(world.Out, world.Error);
+                    return said.Code;
+                }
+
+                await world.Out.WriteLineAsync(inside.ValueKind == JsonValueKind.Undefined ? "{}" : inside.GetRawText()).ConfigureAwait(false);
+                return 0;
+            case "running":
+                await world.Error.WriteLineAsync($"{world.Verb}: Daoris is still working on it (request {id}); ask again later.").ConfigureAwait(false);
+                return 2;
+            default:
+                await world.Error.WriteLineAsync(
+                    $"{world.Verb}: Daoris does not know how it ended (request {id}): it stopped while this was under way, and nothing was done again.")
+                    .ConfigureAwait(false);
+                return 2;
+        }
+    }
+
+    private static async Task<int> RefusedAsync(JsonElement envelope, InstanceWorld world)
+    {
+        var (code, message, _) = Refusal(envelope);
         await world.Error.WriteLineAsync($"{world.Verb}: {message} ({code})").ConfigureAwait(false);
         return 2;
     }

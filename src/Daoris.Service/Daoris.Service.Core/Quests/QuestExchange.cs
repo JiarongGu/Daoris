@@ -271,7 +271,11 @@ public enum QuestRespondRefusal
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
 /// <param name="Message">The full answer, phrased once here.</param>
 /// <param name="Quest">The quest as it now stands, when the status moved.</param>
-public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Message, Quest? Quest);
+public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Message, Quest? Quest)
+{
+    /// <summary>What a take made of the closure graph named for it (CLOSETAKE1, FABRIC-CLOSE1o-ii): none on every other answer.</summary>
+    public QuestTakeBind TakeBind { get; init; }
+}
 
 /// <param name="Refusal"><see cref="QuestCloseRefusal.None"/> when every named quest is Done.</param>
 /// <param name="Message">The full answer, phrased once here: what closed, or which check refused, on which quest.</param>
@@ -1320,7 +1324,7 @@ public sealed class QuestExchange(
                       + "sync keeps this decline on the quest as a conflict, and the take stands."
                     : "")
                 + Then(move.FollowUp),
-                move.Quest);
+                move.Quest) { TakeBind = move.TakeBind };
         }
 
         // A close on the winner's take, made after the pass that found this machine's take lost (WAITCLAIM2): the stand-down
@@ -1517,6 +1521,13 @@ public sealed class QuestExchange(
 
         // The map sync reads, as the driver read it before naming the graph, and as the take reads it again (FABRIC-CLOSE1o).
         if (SyncsThroughRemote(found.Workspace)) return new(QuestRespondRefusal.NotInGraph, ThroughRemote(name), Quest: null);
+
+        // CLOSETAKE1 (QUESTSTOREVER1): a store a newer build stamped keeps binds this build would misread, so it writes none there.
+        if (quests.NewerVersion is not null)
+        {
+            return new(QuestRespondRefusal.NotInGraph, $"Quest `#{name}`'s store was written by a newer Daoris than this one, so a graph "
+                + "is not named for its take here: it closes by its done. Nothing moved.", Quest: null);
+        }
 
         var move = await quests.BindAtTakeAsync(name, graph, session.Trim(), now, ct).ConfigureAwait(false);
         if (move.Quest is not { } standing)

@@ -19,6 +19,20 @@ repository.
   read at a commit stays that commit's.
 - **Verification:** the two cases above, and the neighbouring node suites (`WireEvaluationDecodedTests`' "none at an older commit" row
   still pending), filtered, green.
+## 2026-10-20 — The real ledger refused the carry-on of a step the person's reopen stopped (FABRIC-CLOSE1c26)
+
+- **Symptom:** found by reading, then shown red: `SessionLedger.OpenAsync` answered `QuestNotOpen` for a taken quest whose last
+  record here was `completed`, no answer, its note coded `ended.source-reopened`, which is the driver's carry-on once the person
+  goes on with the step (`SessionLedgerTests.A_take_the_persons_reopen_stopped_is_carried_on`, the code's row failed first).
+- **Root cause:** FABRIC-CLOSE1c2 taught the driver's planner to carry such a record on (`Planner.CarriesOn`, `StoppedByReopen`, by
+  the note's code), but its tests opened the carry-on through `StandInLedger`, which judges no carry-on, so the real ledger's own
+  list (failed, completed with an answer, stopped interrupted or by the person after a take here, a stand-down brought forward)
+  was never asked; a `completed` record is a finished one there.
+- **Fix:** the ledger reads the code off the record's note parts (`NoteParts.Carries`, `SessionLedger.EndedSourceReopened`, the
+  driver's `NoteCodes.EndedSourceReopened` its twin by spelling) and carries such a record on; CARRY2's question of whose the take
+  is still follows. D126's SESSTRUE1 note, D173's note of this date.
+- **Verification:** `SessionLedgerTests` (102), the code's row red first; a completed record with no code, or another code, is
+  still refused.
 
 ## 2026-10-20 — Two writers of `driver.json` at once lost one's change, and a name written twice in any case read two ways (CONFIG1)
 
@@ -40,6 +54,29 @@ repository.
 - **Verification:** `DriverConfigKeepsTests`, `KeepLockTests`, `KeepLockProcessTests` (Process), and the CLI's `configkeeps.test.ts`
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
+
+## 2026-10-20 — A named workspace's help start sometimes wrote "Not read yet" into its room (HelpStartReadTests)
+
+- **Symptom:** `A_named_workspace_s_start_writes_its_own_room_from_the_facts_and_starts_no_git` failed about one run in three on
+  a loaded machine: the room said *Not read yet*.
+- **Root cause:** a race in the test. It waited for the line's first judgement only, while the sessions, the history and the work
+  are judged beside the lines; the room is written at once from the facts as last judged (PARALLEL1a), so a busy machine wrote it
+  before they landed.
+- **Fix:** the test waits until the facts' reading marks none of the three unread before it starts the conversation.
+- **Verify:** `HelpStartReadTests` five runs in a row, 5 of 5 each.
+
+## 2026-10-20 — The full set on 3e88bcc failed three gates on tests the merges' filtered runs never reached (CONFIG1, PUSH1d1b)
+
+- **Symptom:** `cli` (the home census: `keeplock.test.ts` joined `driver.json` by hand), `tool-tests` (the reach scan:
+  `KeepLockProcessTests` read a CLI source no rule sent to `driver-process`) and `service` (`ChangeStreamHostTests` expected four
+  families where PUSH1d1b's `words` made five).
+- **Root cause:** each branch ran its own classes filtered, as the brief asks; the census, the reach scan and the HTTP host's
+  tests sit outside those filters, and CONFIG1 and HOMELAYOUT2 landed the same day, so neither saw the other's census.
+  `KeepLockProcessTests` built its import paths from spread parts, which the scan cannot read, so it saw a probe file.
+- **Fix:** `keeplock.test.ts` asks `homeEntry(fx.root, 'driver')`; `KeepLockProcessTests` names `keeplock.ts` and `driverconfig.ts`
+  whole; `ChangeStreamHostTests.Every` names `ChangeFamilies.Words`.
+- **Verify:** `keeplock.test.ts` 15 of 15; the census and the reach scan pass; `ChangeStreamHostTests` 5 of 5;
+  `KeepLockProcessTests` 2 of 2 under `process.runsettings`.
 
 ## 2026-10-20 — A repository's Setup test still read asking mode's old hint, that any other call is refused (AUTONOMY1b3)
 

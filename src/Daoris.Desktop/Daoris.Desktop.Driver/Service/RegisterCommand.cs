@@ -17,7 +17,16 @@ public static class RegisterCommand
 {
     public const string Usage = "usage: daoris-driver register [--repository <name>]";
 
-    public static async Task<int> RunAsync(IReadOnlyList<string> args, TextWriter output, IRegistrationWorld world, CancellationToken ct = default)
+    public static Task<int> RunAsync(IReadOnlyList<string> args, TextWriter output, IRegistrationWorld world, CancellationToken ct = default) =>
+        RunAsync(args, output, world, instance: null, ct);
+
+    /// <summary>
+    /// The verb, through the running Daoris where one answers (RPCOPEN1, RPC1e, the terminal RPC design §7.2): each repository is one
+    /// <c>REGISTRY_REFRESH</c>, whose answer is read back into the record the alone path prints from, so the words are the same;
+    /// alone where none runs. An instance that lives and does not answer refuses the verb (exit 2), and nothing is registered here.
+    /// </summary>
+    public static async Task<int> RunAsync(
+        IReadOnlyList<string> args, TextWriter output, IRegistrationWorld world, InstanceWorld? instance, CancellationToken ct = default)
     {
         if (Problem(args) is { } problem)
         {
@@ -27,7 +36,19 @@ public static class RegisterCommand
         }
 
         var named = Named(args);
-        var report = await RegistrationFollow.FollowAsync(world, named is null ? null : [named], ct).ConfigureAwait(false);
+        FollowReport report;
+        if (instance is not null && await InstanceDoor.PeekAsync(instance, ct).ConfigureAwait(false) is var look
+            && look.Found is InstanceFound.Answers or InstanceFound.Silent or InstanceFound.Refused)
+        {
+            if (look.Found != InstanceFound.Answers) return await InstanceDoor.RefusedAsync(look, instance).ConfigureAwait(false);
+            if (await ThroughAsync(named, world, instance, ct).ConfigureAwait(false) is not { } through) return 2;
+            report = through;
+        }
+        else
+        {
+            report = await RegistrationFollow.FollowAsync(world, named is null ? null : [named], ct).ConfigureAwait(false);
+        }
+
         if (report.Followed.Count == 0)
         {
             output.WriteLine("register: no repository has a checkout here, so there is nothing to register.");
@@ -45,6 +66,50 @@ public static class RegisterCommand
         output.WriteLine($"register: {sent} registered, {report.Followed.Count - sent - refused} already as their lines say, "
             + $"{refused} not registered{(refused > 0 ? ", each saying why above" : "")}.");
         return named is not null && refused > 0 ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Every repository with a checkout here, or the one named, each followed by one <c>REGISTRY_REFRESH</c> to the running Daoris; null
+    /// where a press was refused or its answer did not read, which the door has said. The repositories are this machine's registry's,
+    /// read as the alone path reads them, so the same ones are followed in the same order.
+    /// </summary>
+    private static async Task<FollowReport?> ThroughAsync(string? named, IRegistrationWorld world, InstanceWorld instance, CancellationToken ct)
+    {
+        IReadOnlyList<string> names = named is not null
+            ? [named]
+            : [.. (await world.RegistrationsAsync(ct).ConfigureAwait(false))
+                .Where(row => !string.IsNullOrWhiteSpace(row.Root)).Select(row => row.Repository).Order(StringComparer.Ordinal)];
+        var followed = new List<RegistrationFollowed>();
+        string? refresh = null;
+        foreach (var name in names)
+        {
+            var exit = await InstanceDoor.PressAsync(
+                OpenRoutes.RegistryRefresh, new { repository = name },
+                alone: async () =>
+                {
+                    // The instance went between the look and this press: what none running does, for this repository.
+                    var one = await RegistrationFollow.FollowAsync(world, [name], ct).ConfigureAwait(false);
+                    followed.AddRange(one.Followed);
+                    refresh ??= one.Refresh;
+                    return 0;
+                },
+                words: answer =>
+                {
+                    if (RegistrationFollowed.Read(answer) is not { } read)
+                    {
+                        instance.Error.WriteLine($"{instance.Verb}: Daoris answered in a form this terminal does not read.");
+                        return 2;
+                    }
+
+                    followed.Add(read.Followed);
+                    refresh ??= read.Refresh;
+                    return 0;
+                },
+                instance, ct).ConfigureAwait(false);
+            if (exit != 0) return null;
+        }
+
+        return new FollowReport(followed, refresh);
     }
 
     /// <summary>What is wrong with the words, or null for none or <c>--repository &lt;name&gt;</c>.</summary>

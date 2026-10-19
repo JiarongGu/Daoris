@@ -5,6 +5,18 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's state reads the same in the list, its page and `daoris-driver sessions`:
+  - An open conversation in a tree of its own offers its work to land in the Sessions list and the terminal once its turn
+    ends, as its page already did.
+  - A session the words of a reopen go on in is listed as going on, or with what holds them, though a later session of its
+    quest ran after it.
+  - A session whose start was left waiting by a Daoris process that closed or crashed is ended by the next look, instead of
+    holding its repository or Ask Daoris until you stop it.
+  - A step stopped by your reopen of the work it grew from is carried on once you go on with it, where the service had
+    refused it.
+  - A session on an agent run without its protocol that ended its turn while its own background work still ran is carried
+    on in the same tree, saying so, instead of waiting on you as if it had asked a question: that agent ends such work with
+    the turn.
 - Two changes to this machine's driver settings made at once, from Setup, Ask Daoris or the terminal, no longer lose one:
   each waits for the other's write, and two repositories made drivable, held or given trees from two places at once are
   both kept. Plugins, permission rules and API keys wait for each other's writes the same way. A repository named twice in

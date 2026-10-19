@@ -26,8 +26,12 @@ public sealed class KeepLockProcessTests : IDisposable
         try { Directory.Delete(_folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static string Source(params string[] parts) =>
-        new Uri(Path.Combine([WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", .. parts])).AbsoluteUri;
+    // Each source named whole, so the merge tool's scan reads which CLI files this Process class runs (CONFIG1's reach row).
+    private static readonly string KeepLockSource =
+        new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "keeplock.ts")).AbsoluteUri;
+
+    private static readonly string DriverConfigSource =
+        new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "driver", "driverconfig.ts")).AbsoluteUri;
 
     /// <summary>A Node process running <paramref name="script"/> as a module, <c>KEEP_FILE</c> naming the file.</summary>
     private static Process Node(string script, string file)
@@ -52,7 +56,7 @@ public sealed class KeepLockProcessTests : IDisposable
         File.WriteAllText(path, Start);
         var script = $$"""
             import { readFileSync, writeFileSync } from 'node:fs';
-            import { takeKeepLock } from '{{Source("platform", "keeplock.ts")}}';
+            import { takeKeepLock } from '{{KeepLockSource}}';
             const held = takeKeepLock(process.env.KEEP_FILE);
             const text = readFileSync(process.env.KEEP_FILE, 'utf8');
             process.stdout.write('held\n');
@@ -81,7 +85,7 @@ public sealed class KeepLockProcessTests : IDisposable
         var path = Path.Combine(_folder, "driver.json");
         File.WriteAllText(path, Start);
         var script = $$"""
-            import { readDriverChoices, writeDriverChoices } from '{{Source("driver", "driverconfig.ts")}}';
+            import { readDriverChoices, writeDriverChoices } from '{{DriverConfigSource}}';
             const choices = readDriverChoices(process.env.KEEP_FILE);
             process.stdout.write('read\n');
             writeDriverChoices(process.env.KEEP_FILE, { ...choices, drivable: [...choices.drivable, 'orders'] });

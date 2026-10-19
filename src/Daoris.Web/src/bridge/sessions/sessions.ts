@@ -245,9 +245,9 @@ const folded = (value: unknown) => [...(typeof value === 'string' ? value : '')]
 
 /**
  * Two instants as `DateTimeOffset` compares them: the moment whatever its offset, to the tick (`Date.parse` keeps the millisecond,
- * the fraction's further digits the rest), never the strings.
+ * the fraction's further digits the rest), never the strings. The pushed quests and asks are ordered by it too (PUSH1d3).
  */
-const byInstant = (a: unknown, b: unknown) => {
+export const byInstant = (a: unknown, b: unknown) => {
   const millisecond = (value: unknown) => (typeof value === 'string' ? Date.parse(value) || 0 : 0);
   const tick = (value: unknown) =>
     Number(((typeof value === 'string' ? /T\d\d:\d\d:\d\d\.(\d+)/.exec(value)?.[1] : undefined) ?? '').slice(3, 7).padEnd(4, '0'));

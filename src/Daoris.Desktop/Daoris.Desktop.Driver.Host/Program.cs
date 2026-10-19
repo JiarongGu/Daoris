@@ -581,6 +581,13 @@ try
         return await Daoris.Driver.Host.WorkConsole.RecoveryDropAsync(dropArgs);
     }
 
+    // How a press this terminal sent to the running Daoris ended (RPC1j, the terminal RPC design §6.1): asked again by its id and the
+    // key it was sent with, kept under the home for a day. It sends nothing again.
+    if (args is ["result", var resultId])
+    {
+        return await InstanceDoor.ResultAsync(resultId, Daoris.Driver.Host.InstanceHost.World("result"));
+    }
+
     // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.
     if (args is ["sync", .. var syncArgs])
     {

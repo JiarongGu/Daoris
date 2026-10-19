@@ -335,6 +335,8 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
     [InlineData("DRIVER_READY", "{}", true)]
     // The loop's look told to the windows: where every window pulled the groups before.
     [InlineData("DRIVER_TICK", "{}", true)]
+    // ACCEPTFOOT1b: a conversation's turns moving, whose end offers its tree's work to land and whose next turn takes the offer back.
+    [InlineData("SESSION_QUEUED", "{}", true)]
     [InlineData("SESSION_STREAMS", "{}", false)]
     public void What_wakes_the_groups_slice(string type, string payload, bool wakes)
     {

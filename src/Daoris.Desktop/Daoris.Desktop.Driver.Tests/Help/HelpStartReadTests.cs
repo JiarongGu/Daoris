@@ -175,6 +175,11 @@ public sealed class HelpStartReadTests : IDisposable
         });
         facts.Start();
         await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        // The sessions, the history and the work are judged beside the lines, not before them: the room is written at once from the
+        // facts as last judged (PARALLEL1a), so wait for each it reads, or a busy machine writes it before they land.
+        await Poll.Until(
+            () => HelpFacts.Read(facts.Current, config) is { NotReadYet: { Sessions: false, History: false, Work: false } },
+            within: Within);
         var gits = 0;
         ProcessStartInfo? spawned = null;
 

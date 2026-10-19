@@ -117,6 +117,48 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// ANSWER2b (D131's ANSWER2 note, "no real resumed run met a second look"), the install's case through real ticks: a session
+    /// takes its quest and parks to ask, the person answers through the say door, and the next look resumes its conversation. That
+    /// run is still in its turn, its record working with the answer still on it, when another look comes. That look begins nothing
+    /// on it: the conversation is resumed once, the record moves to working once, and it ends as its run does, its quest done and
+    /// its answer taken off once.
+    /// </summary>
+    [Fact]
+    public async Task An_answered_parks_resumed_run_still_in_its_turn_at_the_next_look_goes_on_once()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var driver = Protocol(service, "parks");
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("awaiting-person", "Taken"), (service.State("s1"), service.Status("q1")));
+        Assert.Equal("w1", await service.SayAsync("s1", "Port 8080."));
+        using var closing = new CancellationTokenSource(Poll.Patience);
+        int Resumed(string method) => Heard().Count(line => line["method"]!.GetValue<string>() == method && line["resumed"]?.GetValue<bool>() != false);
+        string Seen(TickReport look) =>
+            $"record: {service.Record("s1")}\nquest: {service.Status("q1")}\nsessions: {service.SessionCount}"
+            + $"\nmoves since the words: {string.Join(", ", service.MovesAfterWords("s1"))}\ntaken: {string.Join(" | ", service.Taken)}"
+            + $"\nplan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
+            + $"\nlook: {string.Join(" | ", look.Events)}\nheard: {string.Join(" | ", Heard().Select(line => line.ToJsonString()))}";
+
+        var first = await driver.TickAsync(closing.Token).WaitAsync(Poll.Patience);
+        await Poll.Until(() => Resumed("session/prompt") == 1 && service.State("s1") == "working", () => Seen(first), Poll.Patience);
+        var second = await driver.TickAsync(closing.Token).WaitAsync(Poll.Patience);
+        Assert.Equal(["w1"], service.Said("s1"));
+        File.WriteAllText(Path.Combine(_home, "go.flag"), "");
+        await Poll.Until(() => service.State("s1") != "working", () => Seen(second), Poll.Patience);
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+
+        Assert.True(first.Considerations.Any(c => c is { Verdict: StartVerdict.Start, GoesOn: true }), Seen(first));
+        Assert.False(second.Considerations.Any(c => c.Verdict == StartVerdict.Start || c.GoesOn), Seen(second));
+        Assert.True(service.SessionCount == 1, Seen(second));
+        Assert.True((service.State("s1"), service.Status("q1")) == ("completed", "Done"), Seen(second));
+        Assert.True(service.MovesAfterWords("s1").SequenceEqual(["working", "completed"]), Seen(second));
+        Assert.True(service.Taken.SequenceEqual([("s1", "w1", (string?)null)]), Seen(second));
+        Assert.Equal(1, Resumed("session/resume"));
+        Assert.Equal(1, Resumed("session/prompt"));
+        Assert.DoesNotContain("cannot move", service.Note("s1") ?? "", StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The agent's other client holds the conversation (<c>elsewhere</c>): the record goes back to `completed`, saying it
     /// cannot go on and why, its words still waiting as said and marked by their ids, and nothing else carries them on, its
     /// quest having closed. The next look does not try them again; a word said after does.
@@ -450,8 +492,18 @@ public sealed class SessionMessagesTickTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const blocks = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text);
                 heard({ method: 'session/prompt', conversation: frame.params?.sessionId, blocks, resumed });
-                if (resumed) {
+                if (resumed && mode === 'parks') {
+                  // ANSWER2b: the answered park's resumed turn is held until the test writes `go.flag`, then closes the quest.
+                  const go = log.replace(/agent\.log$/, 'go.flag');
+                  for (let waited = 0; !existsSync(go) && waited < 30000; waited += 50) await new Promise((r) => setTimeout(r, 50));
+                  say('Listening on the port you named.');
+                  await respond({ action: 'done', reason: 'listening on the port the person named' });
+                } else if (resumed) {
                   say('Logged the port, as you said.');
+                } else if (mode === 'parks') {
+                  // ANSWER2b: it takes its quest and asks, so it parks on the person.
+                  await respond({ action: 'take' });
+                  say('Which port should it listen on?');
                 } else {
                   await respond({ action: 'take' });
                   if (mode !== 'fails') await respond({ action: 'done', reason: 'served the report' });

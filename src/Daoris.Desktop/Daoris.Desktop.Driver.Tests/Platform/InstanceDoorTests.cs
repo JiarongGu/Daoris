@@ -343,6 +343,189 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Contains(InstanceDoor.Variable, _error.ToString());
     }
 
+    private Task<int> ReadAsync(InstanceWorld world, InstanceRoute? route = null) =>
+        InstanceDoor.ReadAsync(route ?? Open, new { id = "s1a2b3c4" }, Alone, answer => Words(answer), world);
+
+    [Fact]
+    public async Task A_read_is_sent_to_an_instance_that_answers_and_said_in_the_verbs_words()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Data = new { done = true, message = "the plan." };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await ReadAsync(World());
+
+        Assert.Equal(0, exit);
+        Assert.Equal(0, _alone);
+        Assert.Single(standIn.Presses);
+        Assert.Contains("trees: the plan.", _out.ToString());
+        // A read keeps no record to ask again: nothing it did needs finding out.
+        Assert.False(Directory.Exists(Path.Combine(_home, "pipe", "sent")));
+    }
+
+    [Theory]
+    [InlineData("none")]
+    [InlineData("silent")]
+    [InlineData("refused")]
+    [InlineData("answer refused")]
+    [InlineData("answer lost")]
+    [InlineData("person")]
+    public async Task A_read_acts_alone_wherever_the_instance_does_not_answer_it_and_says_nothing_of_it(string case_)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var route = Open;
+        switch (case_)
+        {
+            case "silent":
+                using (RunningAddress.Write(_home, "http://localhost:5177", _pipe))
+                {
+                    Assert.Equal(0, await ReadAsync(World(answer: TimeSpan.FromSeconds(1))));
+                }
+
+                break;
+            case "refused":
+                Serve().RefuseHello = "stopping";
+                using (RunningAddress.Write(_home, "http://localhost:5177", _pipe))
+                {
+                    Assert.Equal(0, await ReadAsync(World()));
+                }
+
+                break;
+            case "answer refused":
+                var refusing = Serve();
+                refusing.Press = StandInPress.Refuse;
+                using (RunningAddress.Write(_home, "http://localhost:5177", _pipe))
+                {
+                    Assert.Equal(0, await ReadAsync(World()));
+                }
+
+                break;
+            case "answer lost":
+                Serve().Press = StandInPress.Drop;
+                using (RunningAddress.Write(_home, "http://localhost:5177", _pipe))
+                {
+                    Assert.Equal(0, await ReadAsync(World()));
+                }
+
+                break;
+            case "person":
+                route = Open with { Class = RouteClass.Person };
+                var standIn = Serve();
+                using (RunningAddress.Write(_home, "http://localhost:5177", _pipe))
+                {
+                    Assert.Equal(0, await ReadAsync(World(), route));
+                    Assert.Equal(0, standIn.Connections);
+                }
+
+                break;
+            default:
+                Assert.Equal(0, await ReadAsync(World()));
+                break;
+        }
+
+        Assert.Equal(1, _alone);
+        Assert.Equal("", _error.ToString());
+    }
+
+    [Fact]
+    public async Task A_press_keeps_its_id_and_key_under_the_home_for_a_day_and_the_record_is_read_back()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        await PressAsync(World());
+
+        var press = Assert.Single(standIn.Presses);
+        var id = press.GetProperty("id").GetString()!;
+        var kept = new SentPresses(_home).Find(id, DateTimeOffset.UtcNow);
+        Assert.NotNull(kept);
+        Assert.Equal(press.GetProperty("key").GetString(), kept.Key);
+        Assert.Equal("TEST.PRESS.MOVE", kept.Route);
+        // A day on, it is gone, and so is its file.
+        Assert.Null(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddHours(25)));
+        Assert.Null(new SentPresses(_home).Find("not-an-id", DateTimeOffset.UtcNow));
+        Assert.Null(new SentPresses(_home).Find("../escape", DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
+    public async Task Result_asks_again_for_a_press_this_terminal_sent_and_says_its_answer_in_the_routes_words()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Press = StandInPress.Drop;
+        standIn.Result = "running";
+        standIn.Data = new { said = new { @out = new[] { "trees: removed 1 of 1." }, error = Array.Empty<string>(), code = 0 } };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+        Assert.Equal(2, await PressAsync(World()));
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        _out.GetStringBuilder().Clear();
+        _error.GetStringBuilder().Clear();
+
+        // Still under way: said so, with the id, and nothing is sent again.
+        Assert.Equal(2, await InstanceDoor.ResultAsync(id, World()));
+        Assert.Contains($"Daoris is still working on it (request {id})", _error.ToString());
+
+        standIn.Result = "answered";
+        _error.GetStringBuilder().Clear();
+        Assert.Equal(0, await InstanceDoor.ResultAsync(id, World()));
+        Assert.Contains("trees: removed 1 of 1.", _out.ToString());
+        Assert.Single(standIn.Presses);
+        Assert.Equal(0, _alone);
+    }
+
+    [Fact]
+    public async Task Result_says_an_id_it_never_sent_is_unknown_without_asking_the_instance()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await InstanceDoor.ResultAsync("a-request-nobody-sent", World());
+
+        Assert.Equal(2, exit);
+        Assert.Equal(0, standIn.Connections);
+        Assert.Contains("this terminal sent no request a-request-nobody-sent", _error.ToString());
+    }
+
+    [Fact]
+    public async Task Result_says_an_id_the_instance_holds_for_another_key_is_refused()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Press = StandInPress.Drop;
+        standIn.Result = "id-taken";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+        await PressAsync(World());
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        _error.GetStringBuilder().Clear();
+
+        var exit = await InstanceDoor.ResultAsync(id, World());
+
+        Assert.Equal(2, exit);
+        Assert.Contains("id-taken", _error.ToString());
+    }
+
+    [Fact]
+    public async Task Result_with_no_instance_running_says_so_and_does_nothing()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Serve();
+        using (var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe))
+        {
+            await PressAsync(World());
+        }
+
+        var id = Assert.Single(_standIn!.Presses).GetProperty("id").GetString()!;
+        _error.GetStringBuilder().Clear();
+
+        var exit = await InstanceDoor.ResultAsync(id, World());
+
+        Assert.Equal(2, exit);
+        Assert.Contains("Daoris is not running on this home", _error.ToString());
+    }
+
     [Fact]
     public async Task What_it_finds_where_the_instance_answers_is_its_client_and_says_so()
     {

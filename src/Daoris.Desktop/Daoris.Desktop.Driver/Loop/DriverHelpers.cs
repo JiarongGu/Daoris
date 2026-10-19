@@ -447,6 +447,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
 
         var sessionId = opened.Session!;
+        // Marked as this process's start until its spawn's marker replaces it (QUEUED1).
+        _context.Processes.MarkOpening(sessionId);
         // The state names the helper now, before its turn (helper_answer finds its ask by it).
         ask.Opened?.Invoke(sessionId);
         HelperPassRun Ended(string state, string note, string? lastWords = null) =>

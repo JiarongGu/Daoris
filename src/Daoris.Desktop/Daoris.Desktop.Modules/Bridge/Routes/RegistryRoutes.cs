@@ -28,16 +28,7 @@ public sealed class RegistryRoutes(DriverLoop loop)
             .ConfigureAwait(false);
         var followed = report.Followed.Single();
         _loop.Nudge();
-        return new
-        {
-            followed.Repository,
-            followed.Outcome,
-            followed.Said,
-            followed.Line,
-            followed.Commit,
-            Registered = followed.Sent,
-            Refused = RegistryOutcome.IsRefusal(followed.Outcome),
-            report.Refresh,
-        };
+        // RPCOPEN1: the record `daoris-driver register` prints from, read back out of this answer by `RegistrationFollowed.Read`.
+        return followed.ToWire(report.Refresh);
     }
 }

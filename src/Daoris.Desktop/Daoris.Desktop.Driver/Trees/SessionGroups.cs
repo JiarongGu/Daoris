@@ -510,6 +510,13 @@ public sealed record SessionLook(
     public IReadOnlyDictionary<string, PriorSession> LastRun { get; init; } =
         new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The session each taken quest's standing reopen names where a later one is its last here (FABRIC-CLOSE1c11):
+    /// <see cref="ServiceClient.ReadNamedByReopen"/>, the planner's own reading (<see cref="Snapshot.NamedByReopen"/>).
+    /// </summary>
+    public IReadOnlyDictionary<string, PriorSession> NamedByReopen { get; init; } =
+        new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Each quest's failed sessions since its last *Try again* (DRV6, RETRY1), counted as the planner counts them.</summary>
     public IReadOnlyDictionary<string, int> Strikes { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -558,18 +565,28 @@ public sealed record SessionLook(
     public IReadOnlyDictionary<string, RunningCall> Calls { get; init; } = new Dictionary<string, RunningCall>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The open conversations of this machine's between turns (ACCEPTFOOT1b, <see cref="SessionGroups.Between"/>): live, their turn
+    /// ended and nothing waiting, so their own tree offers its work to land as an ended session's does.
+    /// </summary>
+    public IReadOnlySet<string> Between { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
     /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
     /// planner's own readers, never a second copy of either rule.
     /// </summary>
     /// <param name="forgivenAt">RETRY1's mark for a quest (<see cref="DriverConfig.ForgivenAt"/>): the planner counts strikes from it.</param>
     public static SessionLook From(
-        string recordsJson, IReadOnlyList<QuestView> quests, IReadOnlyList<Consideration> considered, Func<string, int> forgivenAt) =>
-        new(SessionRecords.Parse(recordsJson), quests, considered)
+        string recordsJson, IReadOnlyList<QuestView> quests, IReadOnlyList<Consideration> considered, Func<string, int> forgivenAt)
+    {
+        var lastRun = ServiceClient.ReadLastRun(recordsJson);
+        return new(SessionRecords.Parse(recordsJson), quests, considered)
         {
-            LastRun = ServiceClient.ReadLastRun(recordsJson),
+            LastRun = lastRun,
+            NamedByReopen = ServiceClient.ReadNamedByReopen(recordsJson, quests, lastRun),
             Strikes = ServiceClient.ReadStrikes(recordsJson)
                 .ToDictionary(pair => pair.Key, pair => pair.Value - forgivenAt(pair.Key), StringComparer.OrdinalIgnoreCase),
         };
+    }
 }
 
 /// <summary>
@@ -723,10 +740,14 @@ public static class SessionGroups
     /// The cool-off a start on an adapter would read for an account (MSG1f3): the home's, by <see cref="CoolingOn"/>, where
     /// none is handed.
     /// </param>
+    /// <param name="turnEnded">
+    /// The word of the runner in this process on an open conversation's turns (ACCEPTFOOT1b, <see cref="ChatRunner.TurnEnded"/>):
+    /// null where it holds none, and none handed where this process runs no conversation, as the terminal's listing.
+    /// </param>
     public static async Task<SessionLook> LookAsync(
         ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, string home,
         IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, CoolingEntry?>? coolingOf = null,
-        LookTimes? times = null)
+        LookTimes? times = null, Func<string, bool?>? turnEnded = null)
     {
         // Each step timed where the caller asked (HELPROOM1); a look nobody times runs its steps as they are.
         var asked = times is not null;
@@ -741,8 +762,14 @@ public static class SessionGroups
             {
                 Archived = new SessionArchive(home).Marks(),
             };
-            // What each quest's last session here could not go on with (MSG1f2), read as the planner's snapshot reads it.
-            gathered = gathered with { Unable = new GoOnMarks(home).For(gathered.LastRun.Values) };
+            // What each quest's last session here, and the one its reopen names (FABRIC-CLOSE1c11), could not go on with (MSG1f2),
+            // read as the planner's snapshot reads it.
+            gathered = gathered with { Unable = new GoOnMarks(home).For(gathered.LastRun.Values.Concat(gathered.NamedByReopen.Values)) };
+            // ACCEPTFOOT1b: the open conversations between turns, whose trees offer their work to land.
+            gathered = gathered with
+            {
+                Between = Between(gathered.Records, turnEnded ?? (_ => null), new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions))),
+            };
             return gathered with { Kept = new SessionDeletion(home).Kept(gathered.Records) };
         });
         // MSG1f3: what holds words the planner cannot see, a chat's runner and a cool-off a fresh plan missed. The home's roster
@@ -753,6 +780,29 @@ public static class SessionGroups
             coolingOf ?? ((adapter, profile) => roster.Value(adapter, profile)), TimeZoneInfo.Local));
         if (asked) times.Trees = TreesToJudge(look, trees.Holds, only).Count;
         return await times.TimeAsync("trees", () => JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The open conversations of this machine's between turns (ACCEPTFOOT1b, D164's ACCEPTFOOT1 note): live, their last turn ended
+    /// and nothing said since. A conversation's record stays <c>working</c> between turns, so the record cannot say it.
+    /// </summary>
+    /// <remarks>
+    /// <b>The runner's word first, else its record of its turns.</b> The page's foot offers <i>Accept…</i> by the runner's word on a
+    /// conversation's turns (CONV4a), which lives in the process that runs it; the screen's look is taken in that process and reads it
+    /// (<paramref name="runner"/>). A terminal's listing, or a conversation another process runs, reads what that runner wrote as each
+    /// turn ended and each word was said (<see cref="SessionEvents.TurnEnded"/>), so every door says the same once the turn has ended.
+    /// </remarks>
+    /// <param name="runner">Whether the runner here says the conversation's turn ended with nothing waiting; null where it holds none.</param>
+    public static IReadOnlySet<string> Between(IReadOnlyList<SessionRecord> records, Func<string, bool?> runner, SessionEvents events)
+    {
+        var between = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var record in records)
+        {
+            if (record is not { Kind: "chat", State: "working", Teammate: false }) continue;
+            if (runner(record.Id) ?? events.TurnEnded(record.Id)) between.Add(record.Id);
+        }
+
+        return between;
     }
 
     /// <summary>
@@ -927,8 +977,10 @@ public static class SessionGroups
                 .GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
             var ours = look.Records.Where(record => !record.Teammate && record.Tree is not null).ToList();
+            // An open conversation between turns writes nothing into its tree until the person says more (ACCEPTFOOT1b).
             _liveTrees = new HashSet<string>(
-                ours.Where(record => record.Live).Select(record => Normal(record.Tree!)), StringComparer.OrdinalIgnoreCase);
+                ours.Where(record => record.Live && !look.Between.Contains(record.Id)).Select(record => Normal(record.Tree!)),
+                StringComparer.OrdinalIgnoreCase);
             _newestOnTree = ours
                 .GroupBy(record => Normal(record.Tree!), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(
@@ -940,19 +992,23 @@ public static class SessionGroups
         /// <summary>
         /// Where a session is listed, and what its own tree offers to land (LAND4) wherever it rests bar Working: a session that
         /// goes on, or runs, is about to write into that tree again. Where the line holds its commits by content, its discard
-        /// instead (SQUASHTIDY1b).
+        /// instead (SQUASHTIDY1b). An open conversation between turns offers its landing too, by the same judgement, and never a
+        /// discard while it is open (ACCEPTFOOT1b).
         /// </summary>
         public SessionGrouping Place(SessionRecord record)
         {
             var row = PlaceInGroup(record);
-            if (row.Group == SessionGroup.Working
+            var between = _look.Between.Contains(record.Id);
+            if ((row.Group == SessionGroup.Working && !between)
                 || LandableTree(record) is not { } tree
                 || !_look.Trees.TryGetValue(Normal(tree), out var work))
             {
                 return row;
             }
 
-            return row with { Lands = LandOffer.Of(tree, work), Discards = DiscardOffer.Of(tree, work) };
+            return between
+                ? row with { Lands = LandOffer.Of(tree, work) }
+                : row with { Lands = LandOffer.Of(tree, work), Discards = DiscardOffer.Of(tree, work) };
         }
 
         private SessionGrouping PlaceInGroup(SessionRecord record)
@@ -1007,17 +1063,18 @@ public static class SessionGroups
 
             // MSG1f2 (D137 §3.2): the person's words wait on it, so it goes on with them, working, where the planner starts
             // it; else it resumes later, its line naming what holds them, the planner's own verdict. Before parked and to
-            // review: words written to it are the person's Try again, and its tree is what it goes on in.
-            if (verdict is not null && WordsWait(record))
+            // review: words written to it are the person's Try again, and its tree is what it goes on in. FABRIC-CLOSE1c11: the
+            // session a reopen names, though a later one is its quest's last here, reads that quest's verdict for its words.
+            if (WordsWait(record) && VerdictOn(record) is { } words)
             {
                 // MSG1f3: the planner's own hold first; where it starts them, the cool-off a fresh plan cannot see, read from
                 // the home for the account the words resume on.
-                if ((WordsHold.Of(verdict, WaitOn(verdict.Quest.Id)) ?? _look.Held.GetValueOrDefault(record.Id)) is not { } holds)
+                if ((WordsHold.Of(words, WaitOn(words.Quest.Id)) ?? _look.Held.GetValueOrDefault(record.Id)) is not { } holds)
                 {
                     return row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
                 }
 
-                return Rest(row with { Group = SessionGroup.Later, Holds = holds });
+                return Rest(row with { Group = SessionGroup.Later, Holds = holds, PausedBy = words.PausedBy });
             }
 
             if (verdict?.Verdict == StartVerdict.Exhausted)
@@ -1054,11 +1111,12 @@ public static class SessionGroups
         /// <summary>
         /// The tree an ended session of this machine's would offer to land, were there commits in it (LAND4): its own, the newest
         /// session on it, held by nothing live. Whatever its ending, and whether or not its quest goes back into it: the person
-        /// may land what it committed before a carry-on writes more. Null for any other.
+        /// may land what it committed before a carry-on writes more. An open conversation between turns too (ACCEPTFOOT1b), as the page's
+        /// foot offers it. Null for any other.
         /// </summary>
         public string? LandableTree(SessionRecord record)
         {
-            if (record.Live || record.Teammate || record.Tree is not { } tree) return null;
+            if ((record.Live && !_look.Between.Contains(record.Id)) || record.Teammate || record.Tree is not { } tree) return null;
             var key = Normal(tree);
             return _newestOnTree.TryGetValue(key, out var newest) && newest == record.Id && !_liveTrees.Contains(key) ? tree : null;
         }
@@ -1083,15 +1141,32 @@ public static class SessionGroups
         }
 
         /// <summary>
-        /// Whether the person's words wait on this record for it to go on with (MSG1b, D137 §2.2): its quest's last session
-        /// here, with words kept on it, and not every one a word it was already found unable to go on with (its marks).
+        /// Whether the person's words wait on this record for it to go on with (MSG1b, D137 §2.2): the record its quest's words
+        /// go on in (<see cref="WordsOn"/>).
         /// </summary>
         private bool WordsWait(SessionRecord record) =>
-            record.Quest is { } quest
-            && _look.LastRun.TryGetValue(quest, out var last)
-            && string.Equals(last.Session, record.Id, StringComparison.Ordinal)
-            && last.WordsWaiting
-            && !GoOnMarks.Judged(last, _look.Unable.GetValueOrDefault(record.Id));
+            record.Quest is { } quest && string.Equals(WordsOn(quest)?.Session, record.Id, StringComparison.Ordinal);
+
+        /// <summary>
+        /// The record the person's words wait on for this quest, the planner's <c>WordsOn</c> read again (FABRIC-CLOSE1c11): with
+        /// words kept on it, not every one a word it was already found unable to go on with (its marks). The session the quest's
+        /// reopen names first, though a later one is its last here (FABRIC-CLOSE1c9), else its last session here; where the planner
+        /// started the words' go-on, the record it names. The person's stop of the last session holds the named record's words
+        /// (D173's CLOSE1c9 note, choice 3), so they are listed on it, held by that verdict.
+        /// </summary>
+        private PriorSession? WordsOn(string quest)
+        {
+            if (_verdicts.TryGetValue(quest, out var verdict) && verdict is { GoesOn: true, Resumes: { } resumes }) return resumes;
+            if (_look.NamedByReopen.TryGetValue(quest, out var named) && Waits(named)) return named;
+            return _look.LastRun.TryGetValue(quest, out var last) && Waits(last) ? last : null;
+
+            bool Waits(PriorSession record) => record.WordsWaiting && !GoOnMarks.Judged(record, _look.Unable.GetValueOrDefault(record.Session));
+        }
+
+        /// <summary>The planner's verdict on this session's quest, where its words go on in this session (<see cref="WordsOn"/>) or it is that quest's last here.</summary>
+        private Consideration? VerdictOn(SessionRecord record) =>
+            VerdictOnLast(record)
+            ?? (WordsWait(record) && _verdicts.TryGetValue(record.Quest!, out var verdict) ? verdict : null);
 
         /// <summary>The look's wait holding this quest's start (TOOL4g), on a cool-off or on signed-out accounts (UX6d1), or null.</summary>
         private AccountWait? WaitOn(string quest) =>

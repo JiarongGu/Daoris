@@ -132,8 +132,10 @@ internal static class HarnessCapture
         var beside = output is null ? null : mapper.Beside(new SessionStreams(output, sessionId), Line);
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
-            // Before the streams beside take it: a subagent's start is theirs too, and its lineage is the part's (FABRIC-C1a).
+            // Before the streams beside take it: a subagent's start is theirs too, and its lineage is the part's (FABRIC-C1a). And the
+            // background work the harness ends with its turn, the run's ending's however its streams are kept (BGWAIT1c).
             lineage?.Invoke(line);
+            own?.Heard(line);
             if (beside?.Take(line) == true) continue;
             var mapped = mapper.Read(line);
             if (own is not null)

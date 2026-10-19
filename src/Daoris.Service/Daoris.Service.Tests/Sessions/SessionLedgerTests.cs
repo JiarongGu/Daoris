@@ -262,6 +262,21 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.None, carried.Refusal);
     }
 
+    /// <summary>CLOSETAKE1 (FABRIC-CLOSE1o-ii): the take's bind outcome is kept on the session's record beside its take, and read back from it.</summary>
+    [Fact]
+    public async Task A_take_keeps_what_its_bind_made_on_the_session_record()
+    {
+        var quest = await Publish();
+        var took = await Working(quest, Now);
+        Assert.Null((await _ledger.FindAsync(took.Id))!.TookBind);
+
+        Assert.True(await _ledger.MarkTookAsync(took.Id, quest.Id, QuestTakeBind.Expired));
+
+        var kept = (await _ledger.FindAsync(took.Id))!;
+        Assert.True(kept.Took);
+        Assert.Equal("expired", kept.TookBind);
+    }
+
     /// <summary>
     /// SESSUX1b2 (D126 §3.3): the person's stop holds its quest in the driver until Try again releases it,
     /// and a released take is carried on in the stop's tree, so the ledger opens it. The take is this
@@ -347,6 +362,35 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         }
 
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(8))).Refusal);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c26 (D173's CLOSE1c2 note): the person's reopen of the work a step grew from stops the step's session, which
+    /// ends <c>completed</c> with its quest still taken, saying why by its note's code alone (<c>ended.source-reopened</c>), and
+    /// their go-on carries it on in its tree (the driver's <c>Planner.CarriesOn</c>). The ledger opens that carry-on. A completed
+    /// record with no answer and no such code finished its work, and nothing carries it on.
+    /// </summary>
+    [Theory]
+    [InlineData("ended.source-reopened", true)]
+    [InlineData("ended.awaits", false)]
+    [InlineData(null, false)]
+    public async Task A_take_the_persons_reopen_stopped_is_carried_on(string? code, bool carried)
+    {
+        var quest = await Publish();
+        var took = await Working(quest, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        Assert.True(await _ledger.MarkTookAsync(took.Id, quest.Id));
+        const string Note = "stopped with its quest still taken: the work of `#q0` it grew from was reopened, and it goes on in the "
+            + "same tree once the person goes on with it on the new work.";
+        var parts = code is null
+            ? null
+            : $$"""[{"code":"{{code}}","values":{"quest":"q0"},"text":"{{Note}}"}]""";
+        var ended = await _ledger.AdvanceAsync(took.Id, "completed", Note, null, null, Now.AddMinutes(20), noteParts: parts);
+        Assert.Equal(SessionAdvanceRefusal.None, ended.Refusal);
+
+        var opened = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(30));
+
+        Assert.Equal(carried ? SessionOpenRefusal.None : SessionOpenRefusal.QuestNotOpen, opened.Refusal);
     }
 
     // ——— CARRY2 (D80, D126's SESSUX1b2 note): a carry-on goes on with this machine's take, so it asks whose the take is.

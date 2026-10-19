@@ -25,6 +25,8 @@ internal static class SessionsConsole
 
         return await SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log)
         {
+            // RPCOPEN1: the list is the running Daoris's own look (SESSION_GROUPS) where one answers, in the same words.
+            Instance = InstanceHost.World(home, "sessions"),
             // MSG1f3 (D50): *Start a conversation with these words* opens this terminal's own conversation, as `chat` does.
             StartFrom = (id, _) => ChatConsole.StartFromAsync(id),
             // MIXAGENT1a-i (D163, D50): a conversation goes on with another agent in this terminal, through the same runner's act.

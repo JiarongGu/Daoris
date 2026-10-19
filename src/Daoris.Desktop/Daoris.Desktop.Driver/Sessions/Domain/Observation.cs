@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -75,10 +77,14 @@ public static class Observation
     /// The step before, where the person's reopen of the work this quest grew from holds it as the session ends (FABRIC-CLOSE1c2,
     /// <see cref="QuestView.HeldByReopen"/>); null otherwise.
     /// </param>
+    /// <param name="backgroundCut">
+    /// The session's own background work its harness ended with its turn, by name (BGWAIT1c, <see cref="HarnessEnding.BackgroundCut"/>):
+    /// the native door's; none on any other.
+    /// </param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null,
-        string? reopenedFrom = null) => questStatus switch
+        string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -111,6 +117,17 @@ public static class Observation
                 $"stopped with its quest still taken: the work of `#{source}` it grew from was reopened, and it goes on in the same tree "
                 + "once the person goes on with it on the new work.",
                 ("quest", source))),
+
+        // BGWAIT1c (D83's BGWAIT1 note): on the native door the harness ends the session's own background work with its turn, so a
+        // turn that ended on that work is no question, as BGWAIT1 has it, and there is nothing left to wait for. Where it would park,
+        // quoting what it said of the work, it is cut off, failed: D80 carries it on in the same tree, handed this note, and the
+        // strikes bound it, as work that never ends is bounded on the protocol door.
+        "Taken" when exitCode == 0 && backgroundCut is { Count: > 0 } works && Parks(questStatus, awaitsBefore, awaitsAfter, resumed, took)
+            => SessionConclusion.Of("failed", Noted.Of(
+                NoteCodes.EndedBackgroundCut,
+                $"its turn ended while its own background work ran: {string.Join(", ", works.Select(name => $"`{name}`"))}. Its agent "
+                + "ends such work with the turn, so it was cut off before that work finished, and is carried on in the same tree.",
+                ("works", works))),
 
         // 🔴 A session that holds its own quest and ended its turn cleanly is WAITING ON THE PERSON
         // (STANDDOWN2): it took the quest itself, or resumed or carried on one this machine already
@@ -197,11 +214,12 @@ public static class Observation
     /// <param name="before">The record's state before it went on, in its spelling.</param>
     /// <param name="startedOn">Its quest's status as the look planned the run.</param>
     /// <param name="questStatus">Its quest's status as the run left it.</param>
+    /// <param name="backgroundCut">The session's own background work its harness ended with its turn (BGWAIT1c), as a start's.</param>
     public static SessionConclusion Resumed(
         int exitCode, string before, string startedOn, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
-        string? turnFailed = null, bool took = false, string? lastWords = null) =>
+        string? turnFailed = null, bool took = false, string? lastWords = null, IReadOnlyList<string>? backgroundCut = null) =>
         startedOn is "Open" or "Taken"
-            ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords)
+            ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, backgroundCut: backgroundCut)
             : WentOn(exitCode, before, turnFailed);
 
     /// <summary>
@@ -355,6 +373,11 @@ public sealed class HarnessWords
     private readonly Queue<string> _lines = new();
     private string? _failure;
 
+    // BGWAIT1c: the commands it backgrounded still running, by task id; whether its turn's `result` came; what the harness ended after it.
+    private readonly Dictionary<string, string> _running = new(StringComparer.Ordinal);
+    private readonly List<string> _cut = [];
+    private bool _turnEnded;
+
     /// <summary>A run begins: what the run before it said is not this one's ending.</summary>
     public void Begin()
     {
@@ -362,7 +385,69 @@ public sealed class HarnessWords
         {
             _lines.Clear();
             _failure = null;
+            _running.Clear();
+            _cut.Clear();
+            _turnEnded = false;
         }
+    }
+
+    /// <summary>
+    /// A line of the native door's structured stdout, read for the session's own background work (BGWAIT1c;
+    /// docs/2026-09-30-console3-native-streams-evidence.md): a command it backgrounded (<c>task_started</c>, never a subagent's),
+    /// the turn's end (<c>result</c>), and that command ended after it (<c>task_updated</c> <c>killed</c>, or its
+    /// <c>task_notification</c> <c>stopped</c>), which only the harness does there, since the door has no stop for one task.
+    /// Work that ended before the turn did is no cut. Read before a console's streams take the line, so a run with no console
+    /// reads the same.
+    /// </summary>
+    public void Heard(string line)
+    {
+        // Most lines are the agent's words: only a task's line or the turn's result is parsed.
+        if (!line.Contains("\"task_", StringComparison.Ordinal) && !line.Contains("\"result\"", StringComparison.Ordinal)) return;
+        JsonElement root;
+        try
+        {
+            using var document = JsonDocument.Parse(line);
+            root = document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return;
+        }
+
+        if (root.ValueKind != JsonValueKind.Object) return;
+        var type = Text(root, "type");
+        lock (_gate)
+        {
+            if (type == "result")
+            {
+                _turnEnded = true;
+                return;
+            }
+
+            if (type != "system" || Text(root, "task_id") is not { Length: > 0 } id) return;
+            switch (Text(root, "subtype"))
+            {
+                case "task_started" when Text(root, "task_type") != "local_agent":
+                    _running[id] = Text(root, "description") is { Length: > 0 } named ? named : id;
+                    break;
+                case "task_updated" when root.TryGetProperty("patch", out var patch) && patch.ValueKind == JsonValueKind.Object:
+                    Ended(id, Text(patch, "status"));
+                    break;
+                case "task_notification":
+                    Ended(id, Text(root, "status"));
+                    break;
+            }
+        }
+
+        // Called under the gate: an ending of a command still running, cut where the turn had ended before it.
+        void Ended(string id, string? status)
+        {
+            if (status is null or "running" or "pending" || !_running.Remove(id, out var name)) return;
+            if (_turnEnded && status is "killed" or "stopped") _cut.Add(name);
+        }
+
+        static string? Text(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
     /// <summary>A line the harness wrote itself: on its stderr, or outside its protocol.</summary>
@@ -384,6 +469,6 @@ public sealed class HarnessWords
     /// <summary>The run's ending, with the process's exit.</summary>
     public HarnessEnding Ended(int? exit)
     {
-        lock (_gate) return new(exit, _failure, [.. _lines]);
+        lock (_gate) return new(exit, _failure, [.. _lines]) { BackgroundCut = [.. _cut] };
     }
 }

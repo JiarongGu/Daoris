@@ -585,7 +585,17 @@ public sealed class SessionLedger(
     /// (D126 §5.4). Every reader that asks a take of a quest keys on the record's quest, which a chat's is not, so the mark
     /// changes no carry-on and no stand-down.
     /// </remarks>
-    public async Task<bool> MarkTookAsync(string sessionId, string questId, CancellationToken ct = default)
+    public async Task<bool> MarkTookAsync(string sessionId, string questId, QuestTakeBind bind, CancellationToken ct = default) =>
+        await MarkTookAsync(sessionId, questId, ct, bind switch
+        {
+            QuestTakeBind.Expired => "expired",
+            QuestTakeBind.Replaced => "replaced",
+            QuestTakeBind.Remote => "remote",
+            _ => null,
+        }).ConfigureAwait(false);
+
+    /// <inheritdoc cref="MarkTookAsync(string, string, QuestTakeBind, CancellationToken)"/>
+    public async Task<bool> MarkTookAsync(string sessionId, string questId, CancellationToken ct = default, string? bind = null)
     {
         var session = await sessions.FindAsync(sessionId, ct).ConfigureAwait(false);
         if (session is not { Active: true, Origin: null }) return false;
@@ -595,7 +605,7 @@ public sealed class SessionLedger(
             : session.Kind == SessionKind.Chat;
         // CHATTAKE1: a chat's mark names the quest it took, which is what puts that quest in the chat's line (design §1.2 rule 2).
         return served && await sessions.MarkTookAsync(
-            sessionId, session.Quest is null ? questId.TrimStart('#') : null, ct).ConfigureAwait(false);
+            sessionId, session.Quest is null ? questId.TrimStart('#') : null, ct, bind).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -645,6 +655,13 @@ public sealed class SessionLedger(
 
     /// <summary>The answer a park keeps where the person gave no words of their own (ANSWER1b): what it goes on with.</summary>
     private const string CarryOn = "carry on.";
+
+    /// <summary>
+    /// The driver's code for a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c2; its
+    /// <c>NoteCodes.EndedSourceReopened</c>, a twin read here by its spelling): the one ending the ledger reads by a code, since
+    /// the record's state alone, <c>completed</c>, says the work finished (FABRIC-CLOSE1c26).
+    /// </summary>
+    internal const string EndedSourceReopened = "ended.source-reopened";
 
     /// <summary>
     /// Keep <paramref name="said"/> as a park's answer, joining any before it (MSG1a), with its line on the note: inside the
@@ -1072,10 +1089,13 @@ public sealed class SessionLedger(
             ? (await quests.ReadTakesAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
             : null;
         var brought = forward is not null && forward.At > last!.Created;
+        // And a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c26, D173's CLOSE1c2 note): it ended
+        // completed with its quest still taken, said by the driver's code alone, and their go-on carries it on in its tree.
         var carriesOn = last is { State: SessionState.Failed }
                 or { State: SessionState.Completed, Answer: not null }
                 or { State: SessionState.Stopped, Interrupted: true }
             || (last is { State: SessionState.Stopped } && tookHere)
+            || (last is { State: SessionState.Completed } && NoteParts.Carries(last.NoteParts, EndedSourceReopened))
             || brought;
 
         if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)

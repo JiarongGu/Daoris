@@ -14,9 +14,6 @@ namespace Daoris.Driver.Host;
 /// </remarks>
 internal static class TreesConsole
 {
-    /// <summary>One branch of the clean-up's list, in words: whose, which, and what it holds.</summary>
-    internal static string Describe(SweepItem item) => TreesWords.Describe(item);
-
     /// <summary>
     /// What a press changed, told to the open windows (STATEHUB1e, D169 point 8): this process has no bus of the desktop's, so it leaves
     /// a note in the request folder, and the shell's loop publishes the change the window's press of <paramref name="route"/> declares
@@ -24,9 +21,6 @@ internal static class TreesConsole
     /// </summary>
     private static void Told(string home, string route, string? session = null) =>
         new PressesTold(home).Tell(new PressTold(route, session, DateTimeOffset.UtcNow));
-
-    /// <summary>The door offered beside a kept branch a failed or superseded attempt left (LAND3), or null.</summary>
-    internal static string? Offered(SweepItem item) => SessionBranchDoors.RemovalOffered(item);
 
     /// <summary>A tree named by its path, as `remove` always took one, rather than a session or its branch (LAND3).</summary>
     internal static bool LooksLikePath(string named) => SessionBranchDoors.NamesAPath(named);
@@ -45,72 +39,6 @@ internal static class TreesConsole
 
     /// <summary>What a `trees land` or `trees hand` says once before it waits behind another landing or push (LANDHOLD2).</summary>
     internal const string WaitingBehind = "trees: waiting for another landing of this work to end…";
-
-    /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it (D100).</summary>
-    internal static string Planned(string session, LandingPlan plan)
-    {
-        // ACCEPTALL1g: a branch that already stands (an entry's or a chain's) is moved on, and its pull request grows, as the review says.
-        var line = plan.Stands
-            ? $"trees: accepting `{session}` would add its work to `{plan.Target}`, a branch that already stands, moving it on ({plan.Source})"
-            : $"trees: accepting `{session}` would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source})";
-        if (plan.Plugin is { } plugin) line += plan.Stands ? $", then plugin `{plugin}` would push it to grow its pull request" : $", then plugin `{plugin}` would push it and open the pull request";
-        line += ".";
-        // LAND2b: the rule's switch lands it at its quest's done with no press, and a plugin it cannot use does not stop the branch.
-        if (plan.AutoAccept) line += " The rule accepts automatically, so its quest's done lands it with no press.";
-        return plan.Problem is { } problem
-            ? $"{line} {(plan.AutoAccept ? "Its push would not be tried now" : "It would be refused now")}: {problem}"
-            : line;
-    }
-
-    /// <summary>
-    /// What an entry's Accept would do, in lines (ACCEPTALL1e): where its parts land, then each part's own words: what it shares,
-    /// what it leaves out, what it conflicts with, what holds it and what a later part superseded; the page's plan in a terminal's words.
-    /// </summary>
-    internal static IEnumerable<string> EntryPlanned(SessionEntry entry, EntryPlan plan, IReadOnlyDictionary<string, string> held)
-    {
-        var count = plan.Parts.Count(part => part.SameTreeAs is null);
-        yield return plan.Parts.Count == 0
-            ? $"trees: `{entry.Key}` ({entry.Repository}) has no part with work to land here."
-            : $"trees: accepting `{entry.Key}` ({entry.Repository}) would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} "
-              + $"`{plan.Target}`, {count} tree(s), oldest first.";
-        foreach (var part in plan.Parts)
-        {
-            if (part.SameTreeAs is { } same) yield return $"  {part.Session}  shares `{same}`'s tree, which that part's landing carries.";
-            if (part.Plan?.LeftOut is { Count: > 0 } left) yield return $"  {part.Session}  leaves out {left.Count} commit(s) the line holds.";
-            if (part.Plan?.Conflict is { } conflict) yield return $"  {part.Session}  would conflict: {conflict.Says}";
-            if (held.TryGetValue(part.Session, out var why)) yield return $"  {part.Session}  is held: {why}";
-            if (part.Superseded is { } by)
-            {
-                yield return $"  {part.Session}  was redone by `{by.By}`: {(by.Conflicts ? "it conflicts after that part's work" : "it adds nothing after it")} "
-                    + $"(`--leave-out {part.Session}` leaves it out): {by.Says}";
-            }
-        }
-    }
-
-    /// <summary>
-    /// A session's entry on the due list (LAND2b, design §8), for <c>trees land --plan</c>: when it became due, and its last try
-    /// by its code; null where it was never due.
-    /// </summary>
-    internal static string? Due(AutoLanding? entry)
-    {
-        if (entry is null) return null;
-        var due = $"trees: due to land automatically since {Minute(entry.DueAt)} UTC";
-        if (entry.Last is not { } last) return $"{due}; not tried yet — the loop's next look tries it.";
-        var tried = $"{due}; last tried {Minute(last.At)} UTC: {last.Code}"
-                    + (last.Branch is { } branch ? $" (`{branch}`)" : "");
-        return entry.Closed is null
-            ? $"{tried}. It waits: " + last.Code switch
-            {
-                AutoLandingCode.Held => "its quest's release lands it.",
-                // FABRIC-CLOSE1h2: its branch is made and its push held back, so the release hands the branch on; nothing lands again.
-                AutoLandingCode.PushHeld => "its quest's release hands its branch on, or `trees hand` does now.",
-                _ => "a change in its tree, or your press lands it.",
-            }
-            : $"{tried}.";
-    }
-
-    private static string Minute(DateTimeOffset at) =>
-        at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
     /// The lines this press moved, registered from the line at once (WSSETUP5, D124 §3.1) rather than at a loop's next
@@ -198,35 +126,23 @@ internal static class TreesConsole
 
                 if (!ask.Yes)
                 {
-                    var plan = await asking.CleanPlanAsync(repositories, inUse).ConfigureAwait(false);
-                    if (plan.Sessions.Count == 0 && plan.Landed.Count == 0)
+                    // RPCOPEN1: the list is the running Daoris's where one answers (SWEEP_PLAN: its git fan-out is asked once for every
+                    // terminal and window, which ask the pull-request plugins as the person's occasion, D148, here as ever: this verb
+                    // is still that person's look), in the words the alone path prints from the same function.
+                    if (await InstanceDoor.TryReadAsync(OpenRoutes.SweepPlan, new { workspace = ask.Workspace, said = true },
+                            TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } listed)
                     {
-                        Console.WriteLine(TreesCommand.NothingToClean(ask));
-                        return 0;
+                        return listed;
                     }
 
+                    var plan = await asking.CleanPlanAsync(repositories, inUse).ConfigureAwait(false);
                     // LAND4: the session each kept branch's tree is, so its landing is offered beside the discard, as on its page.
                     var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
                         ? await SessionBranchDoors.RecordsOrNoneAsync(service).ConfigureAwait(false)
                         : [];
-                    foreach (var item in plan.Sessions)
-                    {
-                        Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
-                        if (SessionBranchDoors.LandingOffered(item, SessionBranchDoors.SessionOfTree(records, item.Tree)) is { } landing)
-                        {
-                            Console.WriteLine($"         {landing}");
-                        }
-
-                        if (Offered(item) is { } offer) Console.WriteLine($"         {offer}");
-                    }
-                    // The branches landings made (WSR5), in a group of their own: each goes where its work reached the line.
-                    if (plan.Landed.Count > 0) Console.WriteLine("  landed branches — each goes once its work reads on the line:");
-                    foreach (var item in plan.Landed) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {LandedWords.Describe(item)}");
-                    var going = plan.Sessions.Count(item => item.Removable) + plan.Landed.Count(item => item.Removable);
-                    Console.WriteLine(going == 0
-                        ? "trees: nothing to clean — every branch listed holds something of its own."
-                        : $"trees: {going} branch(es) would go, a session's with its tree. `{TreesCommand.Press(ask)}` removes them.");
-                    return 0;
+                    var listing = TreesWords.CleanPlan(plan, records, ask);
+                    listing.Print(Console.Out, Console.Error);
+                    return listing.Code;
                 }
 
                 var done = await trees.CleanAsync(repositories, inUse).ConfigureAwait(false);
@@ -267,20 +183,21 @@ internal static class TreesConsole
 
                 if (!ask.Yes)
                 {
+                    // RPCOPEN1: the list is the running Daoris's where one answers (TREES_SYNC_PLAN: its fetch and its plugin asks, as the
+                    // person's look, D148, which this verb still is), in the words the alone path prints from the same function.
+                    if (await InstanceDoor.TryReadAsync(
+                            OpenRoutes.TreesSyncPlan, new { repository = ask.Repository, workspace = ask.Workspace, all = ask.All, said = true },
+                            TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } listed)
+                    {
+                        return listed;
+                    }
+
                     // Its fetch first, then its plugin asks where git cannot tell (PLUGHOOK1c, design §2.1 occasion 3).
                     var plan = await asking.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope).ConfigureAwait(false);
                     // What was not fetched, said once and first (WSR7), rather than at the end of every row.
-                    foreach (var line in SyncWords.NotFetched(plan.Lines, DateTimeOffset.UtcNow)) Console.WriteLine(line);
-                    foreach (var pull in plan.Lines) Console.WriteLine($"  {(pull.Moves ? "moves" : "stays")}  {SyncWords.Describe(pull)}");
-                    foreach (var item in plan.Rebases) Console.WriteLine($"  {(item.Replays ? "moves" : "stays")}  {SyncWords.Describe(item)}");
-                    if (plan.Deletes.Count > 0) Console.WriteLine("  landed branches whose work reached the line:");
-                    foreach (var item in plan.Deletes) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")}  {LandedWords.Describe(item)}");
-                    if (SyncWords.Apart(plan.Apart) is { } apart) Console.WriteLine(apart);
-                    var acts = plan.Lines.Count(pull => pull.Moves) + plan.Rebases.Count(item => item.Replays) + plan.Deletes.Count(item => item.Removable);
-                    Console.WriteLine(plan.Looked.Count == 0 ? TreesCommand.NoneHeld(ask)
-                        : acts == 0 ? "trees: everything here is up to date."
-                        : $"trees: {acts} thing(s) would change. `{TreesCommand.Press(ask)}` does them — Daoris fetches, and never pushes.");
-                    return 0;
+                    var listing = TreesWords.SyncPlan(plan, ask, DateTimeOffset.UtcNow);
+                    listing.Print(Console.Out, Console.Error);
+                    return listing.Code;
                 }
 
                 // The sessions in use, asked again while each repository's trees are held for its replays (LEFT2).
@@ -302,6 +219,15 @@ internal static class TreesConsole
             case ["land", "--entry" or "--ask", ..]:
             {
                 if (TreesCommand.ReadEntryLand(args, out var problem) is not { } ask) return Usage(problem);
+                // RPCOPEN1: the plan is the running Daoris's where one answers (ENTRY_LANDING, ASK_LANDING), in the alone path's words.
+                if (ask.Plan && await InstanceDoor.TryReadAsync(
+                        ask.IsAsk ? OpenRoutes.AskLanding : OpenRoutes.EntryLanding,
+                        ask.IsAsk ? new { ask = ask.Id, said = true } : (object)new { entry = ask.Id, said = true },
+                        TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } viaInstance)
+                {
+                    return viaInstance;
+                }
+
                 using var service = ServiceClient.FromEnvironment();
                 var config = DriverConfig.Load(configPath);
                 var accepts = new EntryAccepts(
@@ -330,7 +256,7 @@ internal static class TreesConsole
                     foreach (var entry in entries)
                     {
                         var (plan, held) = await accepts.PlanAsync(entry, rows, default).ConfigureAwait(false);
-                        foreach (var line in EntryPlanned(entry, plan, held)) Console.WriteLine(line);
+                        foreach (var line in TreesWords.EntryPlanned(entry, plan, held)) Console.WriteLine(line);
                     }
 
                     return 0;
@@ -367,6 +293,14 @@ internal static class TreesConsole
                 // LANDNAME1a: the name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
                 var entered = Option(args, "--branch");
                 if (args.Contains("--branch") && entered is null) return Usage("`--branch` takes a branch name.");
+                // RPCOPEN1: the plan is the running Daoris's where one answers (LANDING), in the alone path's words.
+                if (args.Contains("--plan") && await InstanceDoor.TryReadAsync(
+                        OpenRoutes.Landing, new { id = session, branch = entered, said = true },
+                        TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } viaInstance)
+                {
+                    return viaInstance;
+                }
+
                 using var service = ServiceClient.FromEnvironment();
                 var (tree, _) = await service.SessionGroundAsync(session).ConfigureAwait(false);
 
@@ -379,9 +313,9 @@ internal static class TreesConsole
                 {
                     if (args.Contains("--plan"))
                     {
-                        Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
-                        if (Due(new AutoLandings(home).Of(session)) is { } landedDue) Console.WriteLine(landedDue);
-                        return 0;
+                        var landedPlan = TreesWords.LandedPlan(session, before, new AutoLandings(home).Of(session));
+                        landedPlan.Print(Console.Out, Console.Error);
+                        return landedPlan.Code;
                     }
 
                     var again = TreesWords.NotAgain(session, before, gone);
@@ -417,19 +351,11 @@ internal static class TreesConsole
                 {
                     // How it lands, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
                     var plan = await landing.PlanAsync(tree, subject, process: gate.Process).ConfigureAwait(false);
-                    Console.WriteLine(Planned(session, plan));
-                    // LANDSYNC1: what the press would leave out because the line holds it, judged against the last fetch.
-                    foreach (var line in LandingSyncWords.Plan(plan)) Console.WriteLine(line);
-                    // SQUASHTIDY1f: work the line holds by content, which the press refuses, said before it in the press's own sentence.
-                    if (await landing.DiscardOfferAsync(tree).ConfigureAwait(false) is { } carried) Console.WriteLine($"trees: {carried.NotLanded}");
-                    // What the gate says before the press (the second-agent design §8.6, the review design §3.5): what holds it, or
-                    // what let it go, in the gate's order.
-                    foreach (var line in LandingGateWords.Plan(gate)) Console.WriteLine(line);
-                    // Landed before, its branch gone since, its tree still here: said, as the review's note says it.
-                    if (before is not null) Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
-                    // Due to land at its quest's done (LAND2b): what its tries came to, which the review's note shows.
-                    if (Due(new AutoLandings(home).Of(session)) is { } due) Console.WriteLine(due);
-                    return 0;
+                    // The plan's lines, which the route answers as `said` too: what the line holds of it, the gate, the review's reading of
+                    // an earlier landing and where it is due (RPCOPEN1, §7.3).
+                    var planned = await TreesWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, []).ConfigureAwait(false);
+                    planned.Print(Console.Out, Console.Error);
+                    return planned.Code;
                 }
 
                 // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, judged again under the tree's hold and before the push,
@@ -464,6 +390,14 @@ internal static class TreesConsole
             {
                 var repository = Option(args, "--repository");
                 var plugin = Option(args, "--plugin");
+                // RPCOPEN1: the plan is the running Daoris's where one answers (HANDOFF_PLAN), in the alone path's words.
+                if (args.Contains("--plan") && await InstanceDoor.TryReadAsync(
+                        OpenRoutes.HandoffPlan, new { branch = named, repository, plugin, said = true },
+                        TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } viaInstance)
+                {
+                    return viaInstance;
+                }
+
                 var found = trees.Recorded.Find(named, repository);
                 if (found.Count == 0)
                 {
@@ -494,8 +428,9 @@ internal static class TreesConsole
                 if (args.Contains("--plan"))
                 {
                     var plan = await handing.HandPlanAsync(root, entry, plugin).ConfigureAwait(false);
-                    Console.WriteLine(HandPlanned(plan));
-                    return 0;
+                    var handPlan = TreesWords.HandPlan(plan, []);
+                    handPlan.Print(Console.Out, Console.Error);
+                    return handPlan.Code;
                 }
 
                 // FABRIC-CLOSE1h8 (D173's note): judged again just before its plugin is told, on the result of the session that last
@@ -622,16 +557,6 @@ internal static class TreesConsole
         Console.Error.WriteLine("  For clean and sync, --workspace takes one workspace's checkouts alone, as its");
         Console.Error.WriteLine("  Branches tab does; a workspace the registry does not name is refused (BRSCOPE1a).");
         return 2;
-    }
-
-    /// <summary>What handing a landed branch on would do, in one line — and what would refuse it (WSR5b).</summary>
-    internal static string HandPlanned(HandPlan plan)
-    {
-        var line = plan.Plugin is { } plugin
-            ? $"trees: handing on `{plan.Branch}` ({plan.Repository}) would give plugin `{plugin}` its {plan.Commits} commit(s) to push and open the pull request for."
-            : $"trees: `{plan.Branch}` ({plan.Repository}) has no plugin named to hand it to.";
-        if (plan.PullRequest is { } pr) line += $" Its last pull request: {pr}";
-        return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
     }
 
     /// <summary>The word after <paramref name="name"/>, or null where it is absent or ends the line.</summary>

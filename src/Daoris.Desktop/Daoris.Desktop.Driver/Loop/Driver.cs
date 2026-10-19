@@ -1826,6 +1826,8 @@ public sealed class Driver(
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
         restarting?.Dispose();
+        // Marked as this process's start until its spawn's marker replaces it, so a sweep ends it only if this driver goes (QUEUED1).
+        Context.Processes.MarkOpening(sessionId);
         onOpened();
         var openedAt = DateTimeOffset.UtcNow;
 
@@ -2044,7 +2046,9 @@ public sealed class Driver(
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
                                 lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
                                 // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends.
-                                reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null)
+                                reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null,
+                                // BGWAIT1c: the native door's harness ended its own background work with its turn.
+                                backgroundCut: ended.BackgroundCut)
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
                             : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
 
@@ -2083,7 +2087,12 @@ public sealed class Driver(
                     // here once, beside its take's own answer, since its next start reads it unbound and names nothing.
                     return new StartRun(
                         $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}"
-                        + ClosureBinding.UnboundAtEnd(closure, after),
+                        + ClosureBinding.UnboundAtEnd(
+                            closure, after,
+                            // CLOSETAKE1: why, read off the session's record only where there is something to say.
+                            closure is { Bound: true } && after is { Status: "Taken" or "Done", Closure: null or "" }
+                                ? await TookBindOrNullAsync(service, sessionId, ct).ConfigureAwait(false)
+                                : null),
                         true,
                         // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
                         // one that outranks the observation above. Read once, used for both. A park is
@@ -3227,6 +3236,22 @@ public sealed class Driver(
             DaorisHome.Resolve(),
             AppContext.BaseDirectory,
             scope: KnowledgeConnector.SessionScope(home, sessionId, scope));
+
+    /// <summary>
+    /// Why the graph named for a session's take did not bind it (CLOSETAKE1), or null: a line's extra word is never worth failing the end of a
+    /// run for, so a service that did not answer says nothing more than the line already did.
+    /// </summary>
+    private static async Task<string?> TookBindOrNullAsync(ServiceClient service, string sessionId, CancellationToken ct)
+    {
+        try
+        {
+            return await service.TookBindAsync(sessionId, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>
     /// A quest's target with the person's words on the ask it was asked by (DRIFT1b, D133 §2), read from the ask for this
