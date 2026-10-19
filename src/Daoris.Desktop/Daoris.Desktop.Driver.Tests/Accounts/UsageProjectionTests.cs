@@ -106,23 +106,31 @@ public sealed class UsageProjectionTests : IDisposable
         Assert.Equal(0.55, session.Projected, 6);
         Assert.Equal(1_500_000, session.Spent);
         Assert.Equal(Now.AddMinutes(-10), session.Seen);
-        // The week has no history of its own: its reading alone, never a guess upward.
+        // The week has no history of its own to weigh the turn since by: its reading alone, never a guess upward from nothing,
+        // and said unweighed, so a start asks it.
         var week = projected.Of("weekly")!;
-        Assert.Equal(ProjectedBy.Reading, week.How);
+        Assert.Equal(ProjectedBy.Unweighed, week.How);
         Assert.Equal(0.25, week.Projected, 6);
+        Assert.Equal(1_500_000, week.Spent);
         Assert.Equal(Now.AddMinutes(-10), projected.Oldest);
     }
 
     [Fact]
-    public void With_too_little_history_or_nothing_spent_since_the_projection_is_the_last_reading_alone()
+    public void With_nothing_to_weigh_its_turns_by_or_nothing_spent_since_the_projection_is_the_last_reading_alone()
     {
         var said = new AccountSaid([Said("session", 0.40, Now.AddHours(3), 10)]);
 
+        // Too little history to weigh what was spent since: the reading alone, said unweighed.
         var none = UsageProjection.Of(said, [], [Turn(0.1, 9_000_000)], Now)!.Of("session")!;
-        Assert.Equal((ProjectedBy.Reading, 0.40), (none.How, none.Projected));
+        Assert.Equal((ProjectedBy.Unweighed, 0.40), (none.How, none.Projected));
 
+        // A turn since that nothing weighs (a report of unknown meaning, or no counts), beside a ratio that stands.
         var gone = Now.AddHours(-20);
-        var idle = UsageProjection.Of(said, [Read("session", 0.10, gone, 24), Read("session", 0.30, gone, 22)], [Turn(23, 2_000_000)], Now)!.Of("session")!;
+        ReadPoint[] measured = [Read("session", 0.10, gone, 24), Read("session", 0.30, gone, 22)];
+        var unknown = UsageProjection.Of(said, measured, [Turn(23, 2_000_000), new SpentTurn(Now.AddMinutes(-1), null, 1)], Now)!.Of("session")!;
+        Assert.Equal((ProjectedBy.Unweighed, 0.40), (unknown.How, unknown.Projected));
+
+        var idle = UsageProjection.Of(said, measured, [Turn(23, 2_000_000)], Now)!.Of("session")!;
         Assert.Equal((ProjectedBy.Reading, 0.40), (idle.How, idle.Projected));
 
         Assert.Null(UsageProjection.Of(null, [], [], Now));
@@ -169,6 +177,25 @@ public sealed class UsageProjectionTests : IDisposable
         Assert.Equal(ProbeWhy.Credits, Owed(Account(Said("session", 0.40, reset, 10, credits: true))));
         Assert.Equal(ProbeWhy.Limit, Owed(Account(Said("session", 0.40, reset, 10)), limit: Now.AddMinutes(-5)));
         Assert.Null(Owed(Account(Said("session", 0.40, reset, 10)), limit: Now.AddMinutes(-15)));
+        // Daoris's own turns since its reading that nothing weighs: no projection can show it is far from its curve.
+        var spent = Account(Said("session", 0.40, reset, 10));
+        Assert.Equal(ProbeWhy.Unweighed, UsageProjection.Owed(spent, UsageProjection.Of(spent, [], [Turn(0.1, 1000)], Now), use, Now));
+        Assert.Equal(ProbeWhy.Unweighed, UsageProjection.Owed(spent, UsageProjection.Of(spent, [], [new SpentTurn(Now.AddMinutes(-1), null)], Now), use, Now));
+    }
+
+    [Fact]
+    public void A_run_with_a_turn_nothing_weighs_is_no_evidence_for_the_ratio()
+    {
+        var (first, second) = (Now.AddHours(-20), Now.AddHours(-2));
+        ReadPoint[] readings =
+        [
+            Read("session", 0.10, first, 24), Read("session", 0.20, first, 22),
+            Read("session", 0.01, second, 6), Read("session", 0.07, second, 4),
+        ];
+        // The first run's rise is part a turn of unknown size: it is passed, never divided by the part that is known.
+        SpentTurn[] turns = [Turn(23, 100_000), new(Now.AddHours(-23), null, 1), Turn(5, 300_000)];
+
+        Assert.Equal(0.06 / 300_000, UsageProjection.Ratio(readings, turns, "session", Now)!.Value, 12);
     }
 
     [Fact]
@@ -253,9 +280,10 @@ public sealed class UsageProjectionTests : IDisposable
         Assert.Equal([1000.0], ledger.Of("claude-code", "account-1", Now).Turns.Select(turn => turn.Work));
 
         UsageHistory.Turned(_home, binding, new TurnSeen("3f9c2a71", 2, null, Now.AddMinutes(-1), new TurnTokens(2000, null, null, null), null, false), Now);
-        // A turn whose report's meaning is not known is no spend it can weigh (D179 point 8).
+        // A turn whose report's meaning is not known (D179 point 8), and one that said no count, are held as spend nothing weighs.
         UsageHistory.Turned(_home, binding with { Meaning = UsageHistory.MeaningUnknown }, new TurnSeen("3f9c2a71", 3, null, Now.AddMinutes(-1), new TurnTokens(5000, null, null, null), null, false), Now);
-        Assert.Equal([1000.0, 2000.0], ledger.Of("claude-code", "account-1", Now).Turns.Select(turn => turn.Work));
+        UsageHistory.Turned(_home, binding, new TurnSeen("3f9c2a71", 4, null, Now.AddMinutes(-1), null, null, true), Now);
+        Assert.Equal(new double?[] { 1000, 2000, null, null }, ledger.Of("claude-code", "account-1", Now).Turns.Select(turn => turn.Work));
 
         // Past its horizon, a turn is no longer held.
         Assert.Empty(ledger.Of("claude-code", "account-1", Now + UsageProjection.Horizon + TimeSpan.FromMinutes(1)).Turns);

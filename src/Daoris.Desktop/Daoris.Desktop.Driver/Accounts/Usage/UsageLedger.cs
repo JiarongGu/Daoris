@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The usage history's last <see cref="UsageProjection.Horizon"/> held in memory for one home, read on as its files grow
 /// (USAGEPROBE1): what a start's projection reads, without parsing a month of turns at every start. Only what a projection
-/// weighs is held: each reading of a window the walk reads (the whole plan's <c>session</c> and <c>weekly</c>) that gave a
-/// number, and each turn a start bound to an account whose door reports each turn's own tokens.
+/// reads is held: each reading of a window the walk reads (the whole plan's <c>session</c> and <c>weekly</c>) that gave a
+/// number, and each turn a start bound to an account, weighed where its door reports each turn's own tokens.
 /// </summary>
 /// <remarks>
 /// Each month's file is read from where the last read stopped, a line still being written left for the next. A file shorter
@@ -84,9 +84,11 @@ public sealed class UsageLedger(string home)
             _offsets[month.Name] = to;
             foreach (var kept in read)
             {
-                // A turn whose report's meaning is not known may be a running total (D179 point 8): no spend this can weigh.
-                if (kept is { Agent: { } agent, Account: { } account, Meaning: UsageHistory.PerTurn } && UsageProjection.Work(kept.Tokens) is { } work)
+                // A turn whose report's meaning is not known may be a running total (D179 point 8), and one that said no count
+                // said nothing of its size: each is held as spend nothing weighs, never as none.
+                if (kept is { Agent: { } agent, Account: { } account })
                 {
+                    var work = kept.Meaning == UsageHistory.PerTurn ? UsageProjection.Work(kept.Tokens) : null;
                     _turns.Add((agent, account, new SpentTurn(kept.Ended, work, kept.Epoch)));
                 }
             }

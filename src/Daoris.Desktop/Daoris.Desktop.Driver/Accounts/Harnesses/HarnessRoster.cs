@@ -1228,7 +1228,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             Choice = scope.Use.Use == "goal" && order.Count > 1 ? new AccountChoice(choice.Step, RotationWords.Text(steps)) : null,
             Steps = steps,
-            AccountsSaid = RotationWords.AccountsSaid(walked, Projected(owner, walked, facts, now), scope.Use, now),
+            // A start's line says what was projected (USAGEPROBE1); a panel, which a person waits on, reads no history for it.
+            AccountsSaid = RotationWords.AccountsSaid(walked, counts ? Projected(owner, walked, facts, now) : facts, scope.Use, now),
             Rotated = string.Equals(runs, begins, StringComparison.OrdinalIgnoreCase)
                 ? null
                 : new RotatedStart(begins, passed?.Cooling, steps[0].Text)

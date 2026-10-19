@@ -108,13 +108,13 @@ public sealed class UsageProbeRosterTests : IDisposable
             _home, new ReadingFrom("fake", account, "fake-door", CodexUsage.Method, 0, at),
             [new WindowSeen("300-minute", "session", null, 300, used, 0.01, reset, UsageHistory.ResetSaid)], at);
 
-    /// <summary>A turn of Daoris's on the account, its door reporting each turn's own tokens.</summary>
+    /// <summary>A turn of Daoris's on the account, its door reporting each turn's own tokens, in a session of the account's own.</summary>
     private void Spent(string account, long work, double minutesAgo, long seq)
     {
         var ended = _now.AddMinutes(-minutesAgo);
         UsageHistory.Turned(
             _home, new TurnBinding("fake", account, "fake-door", UsageHistory.PerTurn),
-            new TurnSeen("3f9c2a71", seq, null, ended, new TurnTokens(work, null, null, null), null, false), ended);
+            new TurnSeen($"3f9c2a7{account[^1]}", seq, null, ended, new TurnTokens(work, null, null, null), null, false), ended);
     }
 
     /// <summary>A start, then a look that finds its session ended, so the next start may ask its account again.</summary>
@@ -209,6 +209,37 @@ public sealed class UsageProbeRosterTests : IDisposable
             selection.SaidLine);
         var projected = selection.AccountsSaid!.Parts.Single(part => part.Code == NoteCodes.OpeningSaidProjected.Code);
         Assert.Equal((100, "session"), (projected.Value("projected"), projected.Value("window")));
+    }
+
+    [Fact]
+    public async Task An_account_Daoris_spent_on_since_its_reading_by_what_nothing_weighs_is_asked_and_an_idle_one_is_not()
+    {
+        Accounts(_home, "account-1", "account-2", "account-3");
+        Read("account-1", 0.10, 0.20, minutesAgo: 10);
+        Read("account-2", 0.20, 0.30, minutesAgo: 10);
+        Read("account-3", 0.30, 0.30, minutesAgo: 10);
+        Measured("account-1");
+        Measured("account-2");
+        // The second's week measured too, beside the same two million: every window a turn since moved is weighed.
+        foreach (var (hoursAgo, used) in new[] { (5, 0.10), (3, 0.20) })
+        {
+            var at = _now.AddHours(-hoursAgo);
+            UsageHistory.Kept(
+                _home, new ReadingFrom("fake", "account-2", "fake-door", CodexUsage.Method, 0, at),
+                [new WindowSeen("10080-minute", "weekly", null, 10080, used, 0.01, Start.AddDays(4), UsageHistory.ResetSaid)], at);
+        }
+
+        // A door whose turns' meaning is unknown (Codex's, D179 point 8) ran on the first since its reading; the second had a turn
+        // its ratios weigh; the third ran nothing.
+        UsageHistory.Turned(
+            _home, new TurnBinding("fake", "account-1", "fake-door", UsageHistory.MeaningUnknown),
+            new TurnSeen("9b1e7c20", 1, null, _now.AddMinutes(-5), new TurnTokens(1000, 10, null, null), null, false), _now);
+        Spent("account-2", 100_000, minutesAgo: 5, seq: 3);
+        Answers("account-1", 0.10, 0.20);
+
+        await StartAsync(Roster());
+
+        Assert.Equal(["fake/account-1"], Asked());
     }
 
     [Fact]

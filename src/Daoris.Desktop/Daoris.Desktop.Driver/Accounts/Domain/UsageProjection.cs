@@ -9,17 +9,26 @@ namespace Daoris.Driver;
 public sealed record ReadPoint(string Window, double Used, DateTimeOffset? Reset, DateTimeOffset Seen, int? Epoch = null);
 
 /// <summary>One turn of Daoris's on an account as the projection weighs it (USAGEPROBE1): when it ended, its work, and its account's epoch.</summary>
-/// <param name="Work">Its tokens in reference-equivalent tokens (<see cref="UsageProjection.Work"/>).</param>
-public sealed record SpentTurn(DateTimeOffset Ended, double Work, int? Epoch = null);
+/// <param name="Work">
+/// Its tokens in reference-equivalent tokens (<see cref="UsageProjection.Work"/>), or null where nothing weighs them: its door's
+/// report may be a running total (Codex's, D179 point 8), or it said no count. Spent all the same: absent is never zero.
+/// </param>
+public sealed record SpentTurn(DateTimeOffset Ended, double? Work, int? Epoch = null);
 
 /// <summary>How a window's projection was made (USAGEPROBE1).</summary>
 public static class ProjectedBy
 {
-    /// <summary>Its last reading alone: nothing spent since, or too little history to convert what was.</summary>
+    /// <summary>Its last reading alone, nothing of Daoris's having been spent on it since.</summary>
     public const string Reading = "reading";
 
     /// <summary>Its last reading plus Daoris's own turns since, by the account's measured ratio.</summary>
     public const string Measured = "measured";
+
+    /// <summary>
+    /// Its last reading alone, though Daoris's turns ran on it since: too little history to weigh them by, or a turn nothing
+    /// weighs. Never a guess upward from nothing; a start asks it instead.
+    /// </summary>
+    public const string Unweighed = "unweighed";
 }
 
 /// <summary>One window projected to now (USAGEPROBE1).</summary>
@@ -57,6 +66,9 @@ public enum ProbeWhy
     /// <summary>Its projection is within <see cref="UsageProjection.Margin"/> of its curve, or over it.</summary>
     Near,
 
+    /// <summary>Daoris's turns ran on it since its reading and nothing weighs them, so no projection shows it far from its curve.</summary>
+    Unweighed,
+
     /// <summary>A limit's word on its reading, or a limit's sentence since its reading.</summary>
     Limit,
 
@@ -80,8 +92,9 @@ public enum ProbeWhy
 /// walk ranks on the readings as before. The ratio is not USAGECAP1b's validated estimate, which alone may order a walk.</para>
 /// <para><b>The weights</b> are D179 point 3's ratios between kinds for Claude (input 1, output 5, a cache read 0.1, a cache
 /// write 1.25), used for every agent until USAGECAP1b's table stands: a ratio measured per account and window absorbs its own
-/// model mix, so only the kinds' proportions matter. A turn whose report's meaning is unknown (Codex's, D179 point 8) is no spend
-/// it can weigh, so such an account projects as its last reading.</para>
+/// model mix, so only the kinds' proportions matter. A turn whose report's meaning is unknown (Codex's, D179 point 8), or that
+/// said no count, is spend nothing weighs: the account projects as its last reading, <see cref="ProjectedBy.Unweighed"/>, and a
+/// start asks it, since no projection shows it far from its curve.</para>
 /// </remarks>
 public static class UsageProjection
 {
@@ -126,8 +139,9 @@ public static class UsageProjection
     /// <summary>
     /// The share of <paramref name="window"/> one reference-equivalent token of Daoris's spent on the account, over the readings
     /// and turns within <see cref="Horizon"/> of <paramref name="now"/>: each run of readings inside one reset and one epoch rose
-    /// from its first to its last, beside the turns that ended between them; the rises summed over the work summed. Null where the
-    /// rises come to less than <see cref="LeastRise"/> or no turn of Daoris's ran inside any run.
+    /// from its first to its last, beside the turns that ended between them; the rises summed over the work summed. A run beside
+    /// a turn nothing weighs is passed. Null where the rises come to less than <see cref="LeastRise"/> or no turn of Daoris's
+    /// ran inside any run.
     /// </summary>
     /// <param name="readings">The account's readings, any window, any order.</param>
     /// <param name="turns">The account's turns whose report is each turn's own.</param>
@@ -149,8 +163,10 @@ public static class UsageProjection
             var (first, last) = (points[start], points[at - 1]);
             if (at - 1 > start)
             {
-                var between = spent.Where(turn => turn.Ended > first.Seen && turn.Ended <= last.Seen && SameEpoch(turn.Epoch, first.Epoch)).Sum(turn => turn.Work);
-                if (between > 0)
+                var inside = spent.Where(turn => turn.Ended > first.Seen && turn.Ended <= last.Seen && SameEpoch(turn.Epoch, first.Epoch)).ToList();
+                var between = inside.Sum(turn => turn.Work ?? 0);
+                // Its rise is part a turn of unknown size: never divided by the part that is known.
+                if (between > 0 && inside.All(turn => turn.Work is not null))
                 {
                     rose += Math.Max(0, last.Used - first.Used);
                     work += between;
@@ -165,8 +181,9 @@ public static class UsageProjection
 
     /// <summary>
     /// Each window <paramref name="said"/> gives a number for, projected to <paramref name="now"/>: its reading plus the work of
-    /// the turns that ended since, by its window's <see cref="Ratio"/>, at most the whole window; its reading alone where nothing
-    /// was spent since or no ratio stands. Null where no window has a number.
+    /// the turns that ended since, by its window's <see cref="Ratio"/>, at most the whole window. Its reading alone where nothing
+    /// was spent since (<see cref="ProjectedBy.Reading"/>), and where something was that no ratio or no count weighs
+    /// (<see cref="ProjectedBy.Unweighed"/>). Null where no window has a number.
     /// </summary>
     public static AccountProjection? Of(AccountSaid? said, IReadOnlyList<ReadPoint> readings, IReadOnlyList<SpentTurn> turns, DateTimeOffset now)
     {
@@ -175,11 +192,17 @@ public static class UsageProjection
         foreach (var window in said.Windows)
         {
             if (window.Used is not { } read) continue;
-            var spent = turns.Where(turn => turn.Ended > window.Seen && turn.Ended <= now).Sum(turn => turn.Work);
-            var ratio = spent > 0 ? Ratio(readings, turns, window.Window, now) : null;
-            windows.Add(ratio is { } measured
+            var since = turns.Where(turn => turn.Ended > window.Seen && turn.Ended <= now).ToList();
+            var spent = since.Sum(turn => turn.Work ?? 0);
+            if (since.Count == 0)
+            {
+                windows.Add(new WindowProjection(window.Window, read, read, window.Seen, window.Reset, ProjectedBy.Reading));
+                continue;
+            }
+
+            windows.Add(since.All(turn => turn.Work is not null) && Ratio(readings, turns, window.Window, now) is { } measured
                 ? new WindowProjection(window.Window, read, Math.Max(read, Math.Min(1, read + measured * spent)), window.Seen, window.Reset, ProjectedBy.Measured, measured, spent)
-                : new WindowProjection(window.Window, read, read, window.Seen, window.Reset, ProjectedBy.Reading));
+                : new WindowProjection(window.Window, read, read, window.Seen, window.Reset, ProjectedBy.Unweighed, Spent: spent));
         }
 
         return windows.Count == 0 ? null : new AccountProjection(windows);
@@ -202,9 +225,9 @@ public static class UsageProjection
     /// <summary>
     /// Whether a start owes the account's maker a question now, and why; null where it ranks on what it holds. Asked: an account
     /// nothing is known of; one whose reading says a limit is reached or credits are drawn, or that a limit's sentence followed
-    /// (<paramref name="limitSaid"/>); one unread for <see cref="Interval"/>; and one whose projection is within
-    /// <see cref="Margin"/> of its curve or over it, so near and over are always a reading's. The person's press asks
-    /// whatever this says.
+    /// (<paramref name="limitSaid"/>); one unread for <see cref="Interval"/>; one Daoris spent on since its reading by what
+    /// nothing weighs; and one whose projection is within <see cref="Margin"/> of its curve or over it, so near and over are
+    /// always a reading's. The person's press asks whatever this says.
     /// </summary>
     /// <param name="limitSaid">When a limit was last said of the account, from its cool-off or this process's own hearing.</param>
     public static ProbeWhy? Owed(AccountSaid? said, AccountProjection? projection, RotationUse use, DateTimeOffset now, DateTimeOffset? limitSaid = null)
@@ -215,6 +238,7 @@ public static class UsageProjection
         if (limitSaid is { } limit && limit >= said.Seen) return ProbeWhy.Limit;
         if (projection is not { Windows.Count: > 0 }) return ProbeWhy.Unread;
         if (now - projection.Oldest >= Interval) return ProbeWhy.Stale;
+        if (projection.Windows.Any(window => window.How == ProjectedBy.Unweighed)) return ProbeWhy.Unweighed;
         return Room(projection, use, now) is { } room && room < Margin ? ProbeWhy.Near : null;
     }
 
