@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The CLI aborted on a libuv assertion at exit after a service request (CLIEXIT1)
+
+- **Symptom:** `daoris import <folder> --workspace <w>` against the installed service did its work and printed its answer, then
+  Node aborted with `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94` (Node 24, Windows), so
+  a script reading the exit code saw a failure for work done.
+- **Root cause:** not proven. `bin/daoris.mjs` ended with `process.exit(await runCli(...))`, the only `process.exit` in `src/` and
+  `bin/`, which tears the loop down at once while the request's keep-alive socket may still be closing; STUB1 hit the same libuv
+  abort in the rehearsal stub and cured it by setting `process.exitCode` and letting the loop drain.
+- **Fix:** `bin/daoris.mjs` sets `process.exitCode` and does not exit. Nothing the CLI starts holds the loop open afterwards: its
+  child processes are all `spawnSync` (`agents/toolchain.ts`), `tools/toolinstall.ts` starts none, `platform/lease.ts` has one
+  awaited `setTimeout` sleep, and the one `readline` (`service/remotes.ts`) closes on its answer.
+- **Verify:** `test/service/exit.test.ts` spawns the real entry against a loopback stub service, once with keep-alive and once with
+  the socket destroyed after the answer, and asserts exit 0, the answer and no `Assertion failed`. **The abort did not reproduce
+  here**: both rows passed before the fix too (Windows, this Node), so the test is a guard, not a red-first proof; the fix stands on
+  STUB1's precedent. The installed proof is the owner's next `daoris import` against the install.
 ## 2026-10-19 — The CI beside on f617bc1 failed three more tests the branches never ran: one writer, the Process gate's rule, a held folder (PUSH1a, PROCPAR1)
 
 - **Symptom:** `modules`: `DriverLoopChatTakenUpTests.A_conversations_end_has_one_writer` found `"SESSION_ENDED"` spelled in

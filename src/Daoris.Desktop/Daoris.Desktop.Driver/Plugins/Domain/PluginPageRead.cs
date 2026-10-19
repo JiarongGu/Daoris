@@ -36,6 +36,9 @@ public sealed record PageServer(string Name, IReadOnlyList<string> Command, IRea
     /// </summary>
     public string? Help { get; init; }
 
+    /// <summary>An approval on file no longer matches what the manifest declares, so it asks again (HELPPLUG1c, PLUGINSHOWCHANGED1).</summary>
+    public bool Changed { get; init; }
+
     /// <summary>The writes the person accepted, where approved.</summary>
     public IReadOnlyList<string> Accepted { get; init; } = [];
 

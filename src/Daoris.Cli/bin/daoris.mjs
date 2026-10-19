@@ -13,4 +13,6 @@ const built = join(packageRoot, 'dist', 'cli.js');
 const entry = existsSync(built) ? built : join(packageRoot, 'src', 'cli.ts');
 
 const { runCli } = await import(pathToFileURL(entry).href);
-process.exit(await runCli(process.argv.slice(2), process.cwd()));
+// The code is set, not exited with: `process.exit` straight after a service request tore the loop down while a socket was
+// closing and aborted on a libuv assertion on Windows (CLIEXIT1). The loop drains instead, as the rehearsal stub's does.
+process.exitCode = await runCli(process.argv.slice(2), process.cwd());

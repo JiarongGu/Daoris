@@ -192,6 +192,7 @@ public static class PluginsCommand
                 if (state != HelpGrants.Approved && server.Writes.Count > 0) tools.Add($"writes outside Daoris with {string.Join(", ", server.Writes)}");
                 var said = state == HelpGrants.Approved ? "approved"
                     : state == HelpGrants.Refused ? $"refused, {server.Refusal}"
+                    : server.Changed ? "changed since you approved it, so it asks again and Ask Daoris is handed nothing of it until you do"
                     : "waiting for your approval";
                 handed.Add($"offered to Ask Daoris, {said}: {(tools.Count > 0 ? string.Join("; ", tools) : "none of its tools")}");
             }
