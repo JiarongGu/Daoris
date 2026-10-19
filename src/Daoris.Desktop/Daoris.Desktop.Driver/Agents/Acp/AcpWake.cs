@@ -97,17 +97,20 @@ internal sealed class AcpWake
     {
         while (true)
         {
+            // The turn's end comes before the stream's in the wire's order, and the reader takes every update before the stream's
+            // end completes: whether the stream is over is read before the turn's end is, never after, so a turn's end the reader
+            // took and read past to the stream's end is still read here as the turn's end (BGWAIT2c).
+            var over = ended.IsCompleted;
             Task changed;
             bool running;
             lock (_gate)
             {
-                // The turn's end comes before the stream's in the wire's order, so it is read first.
                 if (_woke > _ending) return true;
                 changed = _changed.Task;
                 running = _began > 0;
             }
 
-            if (ended.IsCompleted) return null;
+            if (over) return null;
             var waits = running || prompted();
 
             using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);

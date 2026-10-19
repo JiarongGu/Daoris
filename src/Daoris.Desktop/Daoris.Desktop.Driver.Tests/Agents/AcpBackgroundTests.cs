@@ -693,6 +693,39 @@ public sealed class AcpBackgroundTests
         Assert.Single(agent.Prompts);
     }
 
+    /// <summary>
+    /// 🔴 BGWAIT2c: work whose ending the wire said before its stream ended has ended, however the wait is woken. The reader
+    /// hands the ending to the wait and reads on, so the stream can be over before the wait looks; the wait that then read the
+    /// stream's end first failed a session whose work had ended, as the case above did now and then alone. Here the test's own
+    /// thread is the reader, the ending and the stream's end one after the other, the wait parked before either: run many
+    /// times, since which of the two the wait sees first is the thread pool's to say.
+    /// </summary>
+    [Fact]
+    public async Task Work_whose_ending_was_said_before_the_stream_ended_has_ended_however_the_wait_is_woken()
+    {
+        var spawned = Element("""{"sessionUpdate":"async_task_spawned","asyncTaskId":"bdd847eoq","name":"Run the gates"}""");
+        var stopped = Element("""{"sessionUpdate":"async_task_state_update","asyncTaskId":"bdd847eoq","state":"stopped"}""");
+        var completed = Element("""{"sessionUpdate":"async_task_state_update","asyncTaskId":"bdd847eoq","state":"completed"}""");
+
+        for (var run = 0; run < 200; run++)
+        {
+            var background = new AcpBackground();
+            background.Take(spawned);
+            var stream = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var waits = background.EndedAsync(stream.Task, CancellationToken.None);
+
+            background.Take(stopped);
+            background.Take(completed);
+            stream.SetResult();
+
+            var ended = await waits.WaitAsync(Poll.Patience);
+            Assert.True(ended is not null, $"run {run}: the stream's end was read before the ending the wire said first");
+            Assert.Equal([("Run the gates", "completed")], ended);
+        }
+    }
+
+    private static JsonElement Element(string json) => JsonDocument.Parse(json).RootElement.Clone();
+
     /// <summary>The driver's shutdown ends the wait for the woken turn, as it ends the wait for the work, and sends nothing.</summary>
     [Fact]
     public async Task The_drivers_shutdown_ends_the_wait_for_the_woken_turn()

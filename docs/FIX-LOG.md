@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A woken turn that ended as the stream did could fail its session (BGWAIT2c)
+
+- **Symptom:** `AcpBackgroundTests.A_woken_turn_that_ends_as_the_stream_does_ends_the_run_as_that_turn` failed alone now and then
+  (at the fifteenth run of a loop here; the row measured one in five) and in the CI beside on 0a5c608: `AfterBackgroundAsync`
+  threw *"the ACP agent's stream ended while the session waited for its own background work"* (`Acp.cs`, the `EndedAsync` line),
+  though the wire had said the work's ending, the woken turn and its end before the stream's end. On the install it would record
+  a finished session `failed`, BGWAIT2's own defect.
+- **Root cause:** the order of two reads on the waiter's side, not the reader's. The reader takes every update before the stream's
+  end completes (`Ended` is the reader's own task). `AcpBackground.EndedAsync`, parked while the work ran, woke on the ending's
+  signal on the thread pool and then asked whether the stream was over: where the reader had read on to the stream's end first,
+  it said null without reading the work again. `AcpWake.AfterAsync` read the turn's end under its lock and the stream's end after
+  it, the same order with a narrower window.
+- **Fix:** both read whether the stream is over first and what the wire said after it, so what they read once the stream is over
+  is its last word: work it said ended has ended, and a woken turn's end it said is the turn's end, however the two completions
+  reached the wait. A stream that truly ends while work runs, or before any woken turn's end, is the door's failure as before.
+- **Verify:** `Work_whose_ending_was_said_before_the_stream_ended_has_ended_however_the_wait_is_woken` parks the wait, then takes
+  the ending and the stream's end on the test's own thread, 200 times: red on its first iteration in six runs of six before the
+  fix. After it, `AcpBackgroundTests` (27) run twenty times alone, green every time, and the stream's-end case thirty times
+  alone, green every time.
+
 ## 2026-10-19 — A resumed protocol conversation skipped a required posture (HELPMODE1a4)
 
 - **Symptom:** none observed. HELPMODE1a1's own note says it: an Ask Daoris conversation in full access, resumed on an ACP agent
