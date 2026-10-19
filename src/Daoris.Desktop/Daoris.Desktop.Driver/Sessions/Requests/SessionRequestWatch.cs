@@ -28,6 +28,12 @@ namespace Daoris.Driver;
 ///
 /// <para><b>And what a terminal pressed</b> (STATEHUB1e, D169 point 8): a <c>trees</c> verb tells its press in the same folder
 /// (<see cref="PressesTold"/>), and the loop that hears them, the shell's, publishes it to its windows at the same look.</para>
+///
+/// <para><b>Each session's on its own</b> (PARALLEL1h, D181 point 3). A look claims each session it has a request for and honours
+/// that session's requests beside the others, in the order they were asked; a session already claimed keeps its claim, and the
+/// requests a later look found for it are honoured by that claim after the ones it holds. So a say that takes its time (a
+/// conversation's door, the ledger) holds only its own session's next request, never another session's nor a terminal's press.
+/// The folder's look returns once it has begun them, and what it began is waited for, cancelled, when the watch closes.</para>
 /// </remarks>
 public sealed class SessionRequestWatch : IAsyncDisposable
 {
@@ -42,7 +48,15 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     // and whether a process for it lives anywhere on this machine. The seams answer both by what runs here.
     private readonly Func<string, bool> _hears;
     private readonly Func<string, bool> _aliveHere;
-    private readonly SemaphoreSlim _one = new(1, 1);
+
+    // PARALLEL1h: the sessions being honoured now, each its claim's end, and those a look found more for while claimed. Held only to
+    // read and change these, never across a say, a stop or the ledger.
+    private readonly object _gate = new();
+    private readonly Dictionary<string, Task> _claimed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _again = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>What the folder's looks begin on: cancelled as the watch closes, which then waits for what they began.</summary>
+    private readonly CancellationTokenSource _closing = new();
 
     /// <summary>
     /// The listing behind the change watch (FABRIC-EVENT2): the longest a request waits when the watcher missed it, a third of
@@ -161,71 +175,162 @@ public sealed class SessionRequestWatch : IAsyncDisposable
             || (name.EndsWith(".json", StringComparison.Ordinal) && !name.EndsWith(SessionRequests.Answered, StringComparison.Ordinal)));
 
     /// <summary>
-    /// One look: each request for a session this loop runs, taken and acted on, in the order they were asked. What was
-    /// honoured comes back. A move the ledger refused is not retried: the asking door sees the record unmoved and says so.
+    /// One look: each request for a session this loop runs, taken and acted on, a session's in the order they were asked and each
+    /// session beside the others (PARALLEL1h). What this look honoured comes back, in the order asked. A session another look is
+    /// honouring is waited for, and what it honours is that look's. A move the ledger refused is not retried: the asking door sees
+    /// the record unmoved and says so.
     /// </summary>
     public async Task<IReadOnlyList<SessionRequest>> HonourAsync(CancellationToken ct = default)
     {
-        await _one.WaitAsync(ct).ConfigureAwait(false);
-        try
+        var (runs, held, _) = Begin(ct);
+        var honoured = await Task.WhenAll(runs).ConfigureAwait(false);
+        await Task.WhenAll(held).WaitAsync(ct).ConfigureAwait(false);
+        return [.. honoured.SelectMany(each => each).OrderBy(request => request.At)];
+    }
+
+    /// <summary>
+    /// Claim each session with a request this loop would act on, and begin honouring it beside the others (PARALLEL1h): the runs
+    /// begun, each its session's honoured; the claims other looks hold that this one found more for, which honour those after
+    /// their own; and how many requests the runs begun with.
+    /// </summary>
+    private (List<Task<IReadOnlyList<SessionRequest>>> Runs, List<Task> Held, int Begun) Begin(CancellationToken ct)
+    {
+        var runs = new List<Task<IReadOnlyList<SessionRequest>>>();
+        var held = new List<Task>();
+        var begun = 0;
+        foreach (var session in _requests.Pending(_clock()).Where(Ours).GroupBy(request => request.Session, StringComparer.OrdinalIgnoreCase))
         {
-            var honoured = new List<SessionRequest>();
-            foreach (var pending in _requests.Pending(_clock()))
+            TaskCompletionSource claim;
+            lock (_gate)
             {
-                if (pending.Move == SessionMove.Say)
+                if (_claimed.TryGetValue(session.Key, out var other))
                 {
-                    if (await SayAsync(pending, Say, ct).ConfigureAwait(false) is { } said) honoured.Add(said);
+                    _again.Add(session.Key);
+                    held.Add(other);
                     continue;
                 }
 
-                if (pending.Move == SessionMove.TakeBack)
-                {
-                    if (await SayAsync(pending, TakeBack, ct).ConfigureAwait(false) is { } back) honoured.Add(back);
-                    continue;
-                }
-
-                if (!_runsHere(pending.Session)) continue;
-
-                var resolves = pending.Move != SessionMove.Stop || pending.Parked;
-                var service = _service();
-                if (resolves && service is null) continue;
-                if (_requests.Take(pending.Session) is not { } request) continue;
-
-                try
-                {
-                    // A stop's note is a pause's words for the record (PAUSE1b), or none for the plain stop: the driver's line,
-                    // with its codes, or carried whole where an older door wrote none (LANG1a).
-                    var line = request.Note is null ? null : Noted.From(request.Note, request.NoteParts);
-                    if (!resolves) _stop(request.Session, line);
-                    else if (request.Move == SessionMove.Stop && line is not null)
-                    {
-                        await SessionMoves.ResolveAsync(id => _stop(id, null), service!, request.Session, "stopped", line, ct).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var state = request.Move switch
-                        {
-                            SessionMove.Finish => "completed",
-                            SessionMove.Decline => "declined",
-                            _ => "stopped",
-                        };
-                        // A finish's note and a decline's reason are the person's own words.
-                        await SessionMoves.ResolveAsync(id => _stop(id, null), service!, request.Session, state, request.Note, ct).ConfigureAwait(false);
-                    }
-
-                    honoured.Add(request);
-                }
-                catch (Exception error) when (error is DriverException or HttpRequestException)
-                {
-                    // The ledger refused, or did not answer: the record did not move, and the door that asked says so.
-                }
+                claim = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                _claimed[session.Key] = claim.Task;
             }
 
-            return honoured;
+            SessionRequest[] mine = [.. session];
+            begun += mine.Length;
+            runs.Add(Task.Run(() => HonourSessionAsync(session.Key, mine, claim, ct), CancellationToken.None));
+        }
+
+        return (runs, held, begun);
+    }
+
+    /// <summary>
+    /// One session's claim (PARALLEL1h): its requests honoured in the order asked, then those a later look found for it meanwhile,
+    /// read from the folder again, until a look has found none more; then the claim is let go.
+    /// </summary>
+    private async Task<IReadOnlyList<SessionRequest>> HonourSessionAsync(
+        string session, IReadOnlyList<SessionRequest> mine, TaskCompletionSource claim, CancellationToken ct)
+    {
+        var honoured = new List<SessionRequest>();
+        try
+        {
+            while (true)
+            {
+                foreach (var pending in mine)
+                {
+                    // A closing watch leaves what it has not begun in the folder, for the next loop that looks.
+                    ct.ThrowIfCancellationRequested();
+                    if (await HonourOneAsync(pending, ct).ConfigureAwait(false) is { } done) honoured.Add(done);
+                }
+
+                lock (_gate)
+                {
+                    if (!_again.Remove(session))
+                    {
+                        _claimed.Remove(session);
+                        return honoured;
+                    }
+                }
+
+                mine = [.. _requests.Pending(_clock()).Where(pending => Same(pending.Session, session) && Ours(pending))];
+            }
+        }
+        catch
+        {
+            lock (_gate)
+            {
+                if (_claimed.TryGetValue(session, out var held) && held == claim.Task) _claimed.Remove(session);
+                _again.Remove(session);
+            }
+
+            throw;
         }
         finally
         {
-            _one.Release();
+            claim.TrySetResult();
+        }
+    }
+
+    private static bool Same(string one, string other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether a request is this loop's to act on now: what its honouring judges again just before it takes it, so a look claims no
+    /// session whose requests are another loop's.
+    /// </summary>
+    private bool Ours(SessionRequest pending) => pending.Move switch
+    {
+        SessionMove.Say => Say is not null && SaysHere(pending.Session),
+        SessionMove.TakeBack => TakeBack is not null && SaysHere(pending.Session),
+        _ => _runsHere(pending.Session) && (!Resolves(pending) || _service() is not null),
+    };
+
+    /// <summary>
+    /// Whether a say for the session is this registry's (MSG1e): one it hears, or one nothing on this machine runs while this loop's
+    /// service answers. Not where another process here runs it, which its own loop answers, nor where the record's half waits for a service.
+    /// </summary>
+    private bool SaysHere(string session) => _hears(session) || (!_aliveHere(session) && _service() is not null);
+
+    /// <summary>Whether the move is the ledger's as well as the process's: anything but a live session's plain stop.</summary>
+    private static bool Resolves(SessionRequest pending) => pending.Move != SessionMove.Stop || pending.Parked;
+
+    /// <summary>One request taken and acted on, or null where it is not this loop's now, or another loop took it first.</summary>
+    private async Task<SessionRequest?> HonourOneAsync(SessionRequest pending, CancellationToken ct)
+    {
+        if (pending.Move == SessionMove.Say) return await SayAsync(pending, Say, ct).ConfigureAwait(false);
+        if (pending.Move == SessionMove.TakeBack) return await SayAsync(pending, TakeBack, ct).ConfigureAwait(false);
+        if (!_runsHere(pending.Session)) return null;
+
+        var resolves = Resolves(pending);
+        var service = _service();
+        if (resolves && service is null) return null;
+        if (_requests.Take(pending.Session) is not { } request) return null;
+
+        try
+        {
+            // A stop's note is a pause's words for the record (PAUSE1b), or none for the plain stop: the driver's line,
+            // with its codes, or carried whole where an older door wrote none (LANG1a).
+            var line = request.Note is null ? null : Noted.From(request.Note, request.NoteParts);
+            if (!resolves) _stop(request.Session, line);
+            else if (request.Move == SessionMove.Stop && line is not null)
+            {
+                await SessionMoves.ResolveAsync(id => _stop(id, null), service!, request.Session, "stopped", line, ct).ConfigureAwait(false);
+            }
+            else
+            {
+                var state = request.Move switch
+                {
+                    SessionMove.Finish => "completed",
+                    SessionMove.Decline => "declined",
+                    _ => "stopped",
+                };
+                // A finish's note and a decline's reason are the person's own words.
+                await SessionMoves.ResolveAsync(id => _stop(id, null), service!, request.Session, state, request.Note, ct).ConfigureAwait(false);
+            }
+
+            return request;
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException)
+        {
+            // The ledger refused, or did not answer: the record did not move, and the door that asked says so.
+            return null;
         }
     }
 
@@ -255,10 +360,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     private async Task<SessionRequest?> SayAsync(
         SessionRequest pending, Func<SessionRequest, CancellationToken, Task<WordsHeld>>? say, CancellationToken ct)
     {
-        if (say is null) return null;
-
-        // Not this registry's: another process here runs it, which its own loop answers, or the record's half waits for a service.
-        if (!_hears(pending.Session) && (_aliveHere(pending.Session) || _service() is null)) return null;
+        if (say is null || !SaysHere(pending.Session)) return null;
         if (_requests.Take(pending) is not { } request) return null;
 
         WordsHeld held;
@@ -286,28 +388,62 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>Link 7 on the requests folder (FABRIC-CHAIN2): its wake or its deadline reads the folder, and emits nothing into the chain.</summary>
-    private async Task<ChainFired> ReadAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct) =>
-        new(await LookAsync(ct).ConfigureAwait(false), []);
+    private Task<ChainFired> ReadAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct) => Task.FromResult(new ChainFired(Look(), []));
 
-    /// <summary>One look the change watch asked for: the requests honoured, and what a terminal pressed; how many of both.</summary>
-    private async Task<int> LookAsync(CancellationToken ct)
+    /// <summary>
+    /// One look the change watch asked for: each session's requests begun beside the others (PARALLEL1h), and what a terminal pressed,
+    /// heard now rather than after a slow say; how many of both. It waits for none of what it began, so the folder's next word is heard
+    /// while a say takes its time.
+    /// </summary>
+    private int Look()
     {
+        var begun = 0;
         try
         {
-            var honoured = await HonourAsync(ct).ConfigureAwait(false);
-            // STATEHUB1e: and what a terminal pressed, in the same folder at the same look.
-            return honoured.Count + Hear().Count;
+            var (runs, _, count) = Begin(_closing.Token);
+            foreach (var run in runs) Observe(run);
+            begun = count;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // A folder held for a moment: the listing behind the watch reads it again.
-            return 0;
+        }
+
+        try
+        {
+            // STATEHUB1e: and what a terminal pressed, in the same folder at the same look.
+            return begun + Hear().Count;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return begun;
         }
     }
 
+    /// <summary>
+    /// A run begun beside the look, watched for what its own catches did not hold: a folder held for a moment is read again by the
+    /// listing, and a closing watch's cancellation is its own; anything else is written to the machine log, never lost unobserved.
+    /// </summary>
+    private void Observe(Task run) =>
+        _ = run.ContinueWith(
+            failed =>
+            {
+                if (failed.Exception?.GetBaseException() is { } error and not (IOException or UnauthorizedAccessException)) Log?.Failed("a terminal's request", error);
+            },
+            CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+    private int _disposed;
+
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         if (Changes is not null) await Changes.DisposeAsync().ConfigureAwait(false);
-        _one.Dispose();
+
+        // PARALLEL1h: what the looks began is cancelled and waited for, so no say or stop outlives the watch.
+        await _closing.CancelAsync().ConfigureAwait(false);
+        Task[] begun;
+        lock (_gate) begun = [.. _claimed.Values];
+        await Task.WhenAll(begun).ConfigureAwait(false);
+        _closing.Dispose();
     }
 }

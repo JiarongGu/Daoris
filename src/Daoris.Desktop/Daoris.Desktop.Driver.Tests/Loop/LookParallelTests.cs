@@ -324,12 +324,97 @@ public sealed class LookParallelTests : IDisposable
         Assert.Equal(3, snapshot.Repositories.Count);
     }
 
+    /// <summary>
+    /// 🔴 PARALLEL1h: the node runtime's pass runs beside the look, so a pass held (a read or a plugin that does not answer) holds no next
+    /// look: the look the next wake asks for reports, and a quest published after it starts, while the pass still waits. It is timed as a
+    /// stage beside the look, <c>~nodes</c>, once it ends.
+    /// </summary>
+    [Fact]
+    public async Task A_slow_node_pass_holds_no_next_look()
+    {
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _) ?? throw new InvalidOperationException("the home's lease was not taken");
+        await using var hooks = new HookSet(_home, say: (_, _) => { });
+        var (watch, runs) = Watch(hooks: hooks, cycle: Cycle, log: new MachineLog(_home, "driver"));
+        var reports = new List<TickReport>();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<NodeRuntimePass>? holding = null;
+
+        var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
+        try
+        {
+            await Poll.Until(() => Count(reports) >= 1 && watch.Nodes is not null, () => "the first look never reported", Bound);
+            // A pass of the test's own holds the runtime, its read not answering, as a slow read or a plugin holds a pass: the loop's
+            // next pass waits on it.
+            var config = DriverConfig.Parse(File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig)));
+            holding = watch.Nodes!.PassAsync(new NodeRuntimeLook(config, Whole: true)
+            {
+                Units = async token =>
+                {
+                    entered.TrySetResult();
+                    await release.Task.WaitAsync(token);
+                    return new NodeUnitsRead([], new Dictionary<string, string>());
+                },
+            }, _closing.Token);
+            await entered.Task.WaitAsync(Bound);
+            var before = Count(reports);
+
+            _ledger.Publish("q1", "engine");
+            watch.Nudge(ChangeTopics.Ledger, "quests");
+            await Poll.Until(() => Count(reports) > before && runs.Started.Contains("q1"), () => "q1's look waited on the node pass", Bound);
+            _ledger.Publish("q2", "tools");
+            watch.Nudge(ChangeTopics.Ledger, "quests");
+            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2's look waited on the node pass", Bound);
+            Assert.False(holding.IsCompleted);
+
+            // Let go, the loop's pass that waited ends, and the next look's line names it as a stage beside the look.
+            release.TrySetResult();
+            await holding.WaitAsync(Bound);
+            await Poll.Until(() =>
+            {
+                watch.Nudge(ChangeTopics.Ledger, "quests");
+                return Looked().Any(stages => stages.Contains("~nodes=", StringComparison.Ordinal));
+            }, () => $"no look named the pass beside it: {string.Join(" | ", Looked())}", Bound);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+    }
+
+    /// <summary>A work cycle naming a plugin's performed step on <c>engine</c>'s quests, which arms the loop's evaluation runtime.</summary>
+    private const string Cycle = """
+        "workCycles": { "engine": { "quest": {
+            "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
+            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }],
+            "wires": [] } } },
+        """;
+
+    /// <summary>Each <c>watch.looked</c> line's stages, as the machine log holds them.</summary>
+    private string[] Looked()
+    {
+        var logs = DaorisHome.Entry(_home, HomeEntry.Logs);
+        return Directory.Exists(logs)
+            ?
+            [
+                .. Directory.EnumerateFiles(logs, "*.jsonl")
+                    .SelectMany(StubFile.Lines)
+                    .Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement.Clone())
+                    .Where(line => line.GetProperty("event").GetString() == "watch.looked")
+                    .Select(line => line.GetProperty("data").TryGetProperty("stages", out var stages) ? stages.GetString() ?? "" : ""),
+            ]
+            : [];
+    }
+
     private (DriverWatch Watch, StandInRuns Runs) Watch(
-        RemoteSyncSet? sync = null, int cap = 3, int pollSeconds = 60, StartGate? gate = null, HookSet? hooks = null)
+        RemoteSyncSet? sync = null, int cap = 3, int pollSeconds = 60, StartGate? gate = null, HookSet? hooks = null, string cycle = "",
+        MachineLog? log = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
-            { "drivable": ["engine", "tools", "docs"], "adapter": "stub", "cap": {{cap}}, "pollSeconds": {{pollSeconds}}, "trees": ["engine", "tools", "docs"] }
+            { {{cycle}} "drivable": ["engine", "tools", "docs"], "adapter": "stub", "cap": {{cap}}, "pollSeconds": {{pollSeconds}}, "trees": ["engine", "tools", "docs"] }
             """);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);
@@ -339,6 +424,7 @@ public sealed class LookParallelTests : IDisposable
         {
             Runner = gate?.Over(runs) ?? runs.Runner,
             Stops = runs.Stops,
+            Log = log,
         };
         runs.Keeping = watch.Running;
         return (watch, runs);

@@ -202,6 +202,13 @@ using Daoris.Driver;
 //                 one readable line each, or as written with --json. A line that cannot be read is
 //                 skipped and counted. Settings → Logs is the screen's door to the same reading.
 //
+//   run-heavy [--gate <name>]
+//                 a checkout's heavy gates (HEAVYRUN1a, D180's HEAVYRUN1 note), run in it: those its daoris.gates.json
+//                 marks "heavy": true, one after another, or the one named, holding its repository's one heavy-run slot
+//                 under the home's locks/, which a run from any tree of it waits for, saying behind whom and how long.
+//                 Every gate's processes are in one job, ended and waited for before the slot is let go; Ctrl+C stops
+//                 the run the same way. 0 every gate passed · 1 one failed, was not heavy, or was stopped · 2 could not run.
+//
 //   trace <commit|session|quest> · trace commit|session|quest <id>
 //                 one read back to the ask (TRACE1, D143): from a commit (a landing's tip, or in a session's evidence), a
 //                 session or a quest, the ask and the person's words and go-aheads, the quest's requirements and answers,
@@ -317,6 +324,13 @@ if (args is ["git", .. var gitArgs])
 if (args is ["workflow", .. var workflowArgs])
 {
     return await Daoris.Driver.Host.WorkflowConsole.RunAsync(workflowArgs);
+}
+
+// A checkout's heavy gates under its repository's one slot (HEAVYRUN1a, D180's HEAVYRUN1 note). Routed before the machine log opens,
+// with its own catch: it runs for minutes beside everything else, holds no home lease (VerbLeases), and writes only its slot's files.
+if (args is ["run-heavy", .. var heavyArgs])
+{
+    return await Daoris.Driver.Host.HeavyConsole.RunAsync(heavyArgs);
 }
 
 // The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its
