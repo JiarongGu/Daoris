@@ -134,18 +134,20 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     }
 
     /// <summary>
-    /// The room as the machine stands now, written again as an open writes it, and what reading across lets it read (D107); the
-    /// room as last written, reading nothing outside it, where nothing hands a reading, the reading failed, or it did not answer
-    /// within <see cref="ReadBound"/> (HELPSTUCK1), which the conversation <paramref name="sessionId"/> is told.
+    /// The room of <paramref name="workspace"/> as the machine stands now (ASKSCOPE1b: its facts projected to it, in its own
+    /// folder), written again as an open writes it, and what reading across lets it read (D107); the room as last written,
+    /// reading nothing outside it, where nothing hands a reading, the reading failed, or it did not answer within
+    /// <see cref="ReadBound"/> (HELPSTUCK1), which the conversation <paramref name="sessionId"/> is told.
     /// </summary>
-    public async Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(string sessionId, CancellationToken ct)
+    /// <param name="workspace">The workspace whose room it goes on in (<see cref="HelpRoom.GoesOnIn"/>); null is <c>default</c>'s.</param>
+    public async Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(string sessionId, string? workspace, CancellationToken ct)
     {
         if (DescribeHelp is { } describe)
         {
             try
             {
-                var (machine, late, waited) = await ReadAsync(describe, ct).ConfigureAwait(false);
-                if (machine is not null)
+                var (read, late, waited) = await ReadAsync(describe, workspace, ct).ConfigureAwait(false);
+                if (read?.Within(workspace) is { } machine)
                 {
                     var room = HelpRoom.Prepare(context.Home, machine);
                     if (machine.NotReadYet.Any) context.Note(sessionId, NotReadYet());
@@ -160,7 +162,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
             }
         }
 
-        return (HelpRoom.PathOf(context.Home), []);
+        return (HelpRoom.PathOf(context.Home, workspace), []);
     }
 
     /// <summary>
@@ -177,9 +179,13 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     /// room as last written, saying so, or ends saying why. The reading left behind goes on, until <see cref="ReadBackstop"/>,
     /// and writes the room when it answers, so the next conversation starts on the machine as read.
     /// </summary>
+    /// <param name="workspace">
+    /// The workspace whose room it is for (ASKSCOPE1b): its room's being written decides the wait, and the reading left behind
+    /// writes that room, from the machine projected to it. The reading answered is the whole machine's.
+    /// </param>
     /// <exception cref="OperationCanceledException"><paramref name="ct"/> was cancelled while it waited.</exception>
     public async Task<(HelpMachine? Read, bool Late, bool Waited)> ReadAsync(
-        Func<CancellationToken, Task<HelpMachine?>> machine, CancellationToken ct)
+        Func<CancellationToken, Task<HelpMachine?>> machine, string? workspace, CancellationToken ct)
     {
         var backstop = CancellationTokenSource.CreateLinkedTokenSource(ct);
         backstop.CancelAfter(ReadBackstop);
@@ -195,9 +201,9 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         }
 
         _ = reading.ContinueWith(_ => backstop.Dispose(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
-        if (!reading.IsCompleted && HelpRoom.Written(context.Home))
+        if (!reading.IsCompleted && HelpRoom.Written(context.Home, workspace))
         {
-            _ = WriteWhenReadAsync(reading);
+            _ = WriteWhenReadAsync(reading, workspace);
             return (null, true, false);
         }
 
@@ -207,17 +213,20 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         }
         catch (TimeoutException)
         {
-            _ = WriteWhenReadAsync(reading);
+            _ = WriteWhenReadAsync(reading, workspace);
             return (null, true, true);
         }
     }
 
-    /// <summary>A reading left behind writes the room once it answers (HELPSTUCK1); one that fails late writes nothing.</summary>
-    private async Task WriteWhenReadAsync(Task<HelpMachine?> reading)
+    /// <summary>
+    /// A reading left behind writes the room of <paramref name="workspace"/> once it answers (HELPSTUCK1, ASKSCOPE1b); one that fails
+    /// late writes nothing.
+    /// </summary>
+    private async Task WriteWhenReadAsync(Task<HelpMachine?> reading, string? workspace)
     {
         try
         {
-            if (await reading.ConfigureAwait(false) is { } read && !context.Closing) HelpRoom.Prepare(context.Home, read);
+            if (await reading.ConfigureAwait(false) is { } read && !context.Closing) HelpRoom.Prepare(context.Home, read.Within(workspace));
         }
         catch (Exception)
         {

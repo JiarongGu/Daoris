@@ -165,10 +165,18 @@ public sealed class HelpRoomGoldenTests
     /// <summary>A machine with nothing at all.</summary>
     internal static readonly HelpMachine Empty = new();
 
+    /// <summary>
+    /// A workspace's room (ASKSCOPE1b): <c>alpha</c>'s, projected from a machine with <c>beta</c>'s and the default's facts beside
+    /// it, so its first lines say its scope and every list and count is its own. <c>full</c>, <c>sparse</c> and <c>empty</c> are
+    /// <c>default</c>'s room, the whole machine, as before.
+    /// </summary>
+    internal static HelpMachine Scoped => HelpRoomScopeFixture.Machine().Within("alpha");
+
     internal static HelpMachine Named(string name) => name switch
     {
         "full" => Full,
         "sparse" => Sparse,
+        "scoped" => Scoped,
         _ => Empty,
     };
 
@@ -209,6 +217,7 @@ public sealed class HelpRoomGoldenTests
     [InlineData("full")]
     [InlineData("sparse")]
     [InlineData("empty")]
+    [InlineData("scoped")]
     public void The_room_renders_the_text_it_rendered_before_its_sections_were_split(string machine)
     {
         Settle(GoldenPath($"{machine}.md"), HelpRoom.Render(Named(machine)), WriteRequested);

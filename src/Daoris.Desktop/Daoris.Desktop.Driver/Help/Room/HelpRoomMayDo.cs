@@ -9,15 +9,19 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class HelpRoomMayDo : IHelpRoomSection
 {
-    /// <summary>The checkouts it may read: every readable one here, in every workspace, from the driver's own setting.</summary>
+    /// <summary>
+    /// The checkouts it may read: every readable one here, in every workspace, from the driver's own setting. In a workspace's room
+    /// too (ASKSCOPE1b): they are what its spawn is granted, which ASKSCOPE1c binds to the record's workspace.
+    /// </summary>
     public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
     {
-        var workspaceOf = sources.Snapshot.Repositories
+        var registry = sources.Registry ?? sources.Snapshot.Repositories;
+        var workspaceOf = registry
             .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(named => named.Key, named => named.First().Workspace, StringComparer.OrdinalIgnoreCase);
         return machine with
         {
-            Reads = [.. AcrossRules.Readable(sources.Config, sources.Snapshot.Repositories)
+            Reads = [.. AcrossRules.Readable(sources.Config, registry)
                 .Select(checkout => new HelpRead(checkout.Repository, workspaceOf[checkout.Repository], checkout.Path))],
             // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
             PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Approved)

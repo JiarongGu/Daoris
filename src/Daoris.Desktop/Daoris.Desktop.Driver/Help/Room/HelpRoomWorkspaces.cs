@@ -70,7 +70,13 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
     public string Render(HelpMachine machine)
     {
         var text = new StringBuilder();
-        if (machine.Repositories.Count == 0)
+        // ASKSCOPE1b: a workspace's room lists its own repositories; none left in it is not a machine with none.
+        if (machine.Repositories.Count == 0 && machine.Workspace is { } workspace)
+        {
+            text.Append($"No repository is in workspace `{workspace}` on this machine now. A repository joins it on its page's\n");
+            text.Append("Manage → Move to workspace, or with `daoris import <folder> --workspace <name>`.\n\n");
+        }
+        else if (machine.Repositories.Count == 0)
         {
             text.Append("No repository is registered on this machine yet. The first step is `daoris connect` from inside\n");
             text.Append("one, or Repositories → Import a folder as a workspace, to register a folder of them at once\n");
