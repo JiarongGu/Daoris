@@ -17,7 +17,8 @@ public enum LookPart
 
     /// <summary>
     /// A wake's (a <c>ledger</c> family moved, a terminal's words kept, a session's end): the local plan alone, every part of the
-    /// look but the remote sync and the lost-claim stop, the sync after an ending it reports included.
+    /// look but the remote sync and the lost-claim stop, the sync after an ending it reports included. PARALLEL1b: the stop is a
+    /// plan's too where a sync beside the looks ended since the last look asked, while a session here held a quest.
     /// </summary>
     Plan,
 }
@@ -431,7 +432,7 @@ public sealed class DriverWatch(
                     _harnesses, usage, hooks, events, browser, Running)
                 {
                     Runner = Runner, Stops = Stops, Log = Log, Stages = Stages, Reviews = Reviews, Part = part, Woke = taken.Woke,
-                    LandingEnded = Reoffered,
+                    LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token),
                 };
             try
             {
@@ -446,6 +447,30 @@ public sealed class DriverWatch(
             {
                 if (!driver.WokeSpent) Unspent(taken, driver.LandingBusy);
             }
+        }
+
+        // PARALLEL1b (D181 point 3): what a look waits on for a start that has not yet opened its record, and leaves it beside on: a
+        // nudge since the loop counted its nudges, an ending waiting to be said, or the `look` topic's deadline (a whole look's own
+        // is a pace from now). Never throws: the look reads its own token to learn whether it was the close.
+        async Task WantedAsync(LookPart part, CancellationToken token)
+        {
+            CancellationToken paused;
+            try
+            {
+                paused = Volatile.Read(ref _pause).Token;
+            }
+            catch (ObjectDisposedException)
+            {
+                return; // A nudge swapped the source as this began: that is a nudge.
+            }
+
+            if (Volatile.Read(ref _nudges) != counted) return;
+            var pace = TimeSpan.FromSeconds(config.PollSeconds);
+            var left = part == LookPart.Look ? pace : pace - Stopwatch.GetElapsedTime(whole);
+            using var waiting = CancellationTokenSource.CreateLinkedTokenSource(token, paused);
+            await Task.WhenAny(Running.EndedAsync(waiting.Token), Task.Delay(left > TimeSpan.Zero ? left : TimeSpan.Zero, waiting.Token))
+                .ConfigureAwait(false);
+            await waiting.CancelAsync().ConfigureAwait(false);
         }
 
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure

@@ -162,6 +162,14 @@ public sealed class Driver(
     public Action? LandingEnded { get; init; }
 
     /// <summary>
+    /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
+    /// deadline. Handed by the watch, whose looks then leave beside them the work no part of the look waits on (the remote sync and the
+    /// lost-claim stop after it, the sync after an ending), and wait for a start that has not yet opened its record only until this
+    /// completes. Null, a one-look run's and a gate's run-until-idle, runs each in the look as before, since each reads one look whole.
+    /// </summary>
+    internal Func<CancellationToken, Task>? Wanted { get; init; }
+
+    /// <summary>
     /// What the loop's classes share (PART10m, D166): the constructor's objects, the sessions and trees, the per-look adapters,
     /// servers and catalogue, and the settables. Built once, here; the classes below hold it, and the ones that run through this
     /// driver's machinery hold the driver as well.
@@ -468,13 +476,19 @@ public sealed class Driver(
         // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
         // An unconfirmed take keeps working. A wake's plan does neither (FABRIC-EVENT3a): the claims it would ask after move
         // only when the sync runs, so both wait for the `look` topic's deadline, and a wake costs the remote nothing.
+        // PARALLEL1b (D181 point 3): under the watch the sync runs beside the look, on its own task, so a remote that does not answer
+        // holds that pass and no local start; this look plans over what the last pass brought, and the change stream wakes the plan
+        // that reads what this one brings. The stop stays the look's, so a stop a look made is said with it: at every whole look, and
+        // at the first look after a pass beside ended while a session here held a quest. Both are `|`, so a whole look takes the due.
         if (Part == LookPart.Look)
         {
-            await SyncAsync(events, ct).ConfigureAwait(false);
-            if (sync is not null)
-            {
-                using (Stages.Begin("claims")) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
-            }
+            if (Wanted is not null) SyncBeside(ct);
+            else await SyncAsync(events, ct).ConfigureAwait(false);
+        }
+
+        if (sync is not null && (Part == LookPart.Look | Context.Runs.TakeClaimsDue()))
+        {
+            using (Stages.Begin("claims")) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
         }
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
@@ -924,11 +938,12 @@ public sealed class Driver(
     /// next retries, and every verb has already committed here — but a sync dying quietly looks exactly like
     /// a family with nothing to say, so the wall is named.
     /// </summary>
-    private async Task SyncAsync(List<string> events, CancellationToken ct)
+    /// <param name="beside">Whether it runs beside the look (<see cref="SyncBeside"/>), for its stage's mark (LOOKWAIT1).</param>
+    private async Task SyncAsync(List<string> events, CancellationToken ct, bool beside = false)
     {
         if (sync is null) return;
         SyncReport synced;
-        using (var syncing = Stages.Begin("sync"))
+        using (var syncing = Stages.Begin("sync", beside: beside))
         {
             synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
             syncing.Queued(synced.Queued);
@@ -946,6 +961,22 @@ public sealed class Driver(
             // Reported as its own kind of line: each is news about the family, not a fault here.
             foreach (var note in synced.Notes) events.Add($"held  {note}");
         }
+    }
+
+    /// <summary>
+    /// The sync, run beside the look on the running set's own task (PARALLEL1b, D181 point 3): what it says joins a later look's report,
+    /// one pass at a time, and one asked for while a pass works follows it once. The lost-claim stop after it is the next look's
+    /// (<see cref="RunningSessions.TakeClaimsDue"/>), so a stop is still said by the look that made it.
+    /// </summary>
+    private void SyncBeside(CancellationToken ct)
+    {
+        if (sync is null) return;
+        Context.Runs.SyncBeside(async token =>
+        {
+            var said = new List<string>();
+            await SyncAsync(said, token, beside: true).ConfigureAwait(false);
+            return said;
+        }, ct);
     }
 
     /// <summary>
@@ -975,7 +1006,10 @@ public sealed class Driver(
             }
         }
 
-        if (concluded.Count > 0) await SyncAsync(events, ct).ConfigureAwait(false);
+        // Under the watch, beside the look (PARALLEL1b): the report after it carries what the sync said.
+        if (concluded.Count == 0) return;
+        if (Wanted is not null) SyncBeside(ct);
+        else await SyncAsync(events, ct).ConfigureAwait(false);
     }
 
     /// <summary>

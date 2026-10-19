@@ -77,10 +77,104 @@ public sealed class RunningSessions
         get { lock (_gate) return _running; }
     }
 
-    /// <summary>Whether nothing runs, no landing pass works beside the looks, and nothing ended that a look has not yet reported.</summary>
+    /// <summary>
+    /// Whether nothing runs, no landing pass or remote sync works beside the looks, and nothing ended that a look has not yet reported.
+    /// </summary>
     public bool Idle
     {
-        get { lock (_gate) return _running == 0 && _ended.Count == 0 && _landing is null; }
+        get { lock (_gate) return _running == 0 && _ended.Count == 0 && _landing is null && _syncing is null; }
+    }
+
+    // The remote sync beside the looks (PARALLEL1b), while a pass works, and the pass asked for meanwhile, which runs once after it.
+    private Task? _syncing;
+    private (Func<CancellationToken, Task<IReadOnlyList<string>>> Pass, CancellationToken Ct)? _syncAgain;
+
+    /// <summary>Whether a remote sync pass works beside the looks (PARALLEL1b).</summary>
+    internal bool Syncing
+    {
+        get { lock (_gate) return _syncing is not null; }
+    }
+
+    // A pass beside the looks ended while a session of this loop's held a quest, so the next look asks where each claim stands.
+    private bool _claimsDue;
+
+    /// <summary>
+    /// Whether a remote sync pass beside the looks ended since the last look that asked, while a session of this loop's held a quest
+    /// (PARALLEL1b): the lost-claim stop rides every sync (D68 §5), so the look after it asks, as the whole look asked after its own
+    /// sync. Taken once: true for the one look that asks. A pending one wakes a wait, as an ending does.
+    /// </summary>
+    internal bool TakeClaimsDue()
+    {
+        lock (_gate)
+        {
+            var due = _claimsDue;
+            _claimsDue = false;
+            return due;
+        }
+    }
+
+    /// <summary>
+    /// Run a remote sync pass beside the looks (PARALLEL1b, D181 point 3), as a landing pass runs: a remote that does not answer holds
+    /// that pass, never a local start. One pass at a time, since the set's passes share one gate; one asked for while a pass works runs
+    /// once after it, however many were asked, so an ending's sync is never lost to the deadline's. What a pass says joins the next
+    /// look's report, and wakes a wait as an ending does; a pass that says nothing wakes nothing.
+    /// </summary>
+    /// <returns>True where the pass began now; false where one works, and this one follows it.</returns>
+    internal bool SyncBeside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            if (_syncing is not null)
+            {
+                _syncAgain = (pass, ct);
+                return false;
+            }
+
+            _syncing = Task.Run(() => KeepSyncingAsync(pass, ct), CancellationToken.None);
+            return true;
+        }
+    }
+
+    private async Task KeepSyncingAsync(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        while (true)
+        {
+            IReadOnlyList<string> said;
+            try
+            {
+                said = await pass(ct).ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                // A closing loop cancels it; anything else past the pass's own catches is said once, in the next report.
+                said = ct.IsCancellationRequested ? [] : [$"sync  the pass beside the looks failed, and the next look tries again: {error.Message}"];
+            }
+
+            TaskCompletionSource moved;
+            var again = false;
+            lock (_gate)
+            {
+                _ended.AddRange(said.Select(line => new StartRun(line, Opened: false)));
+                // The claims a pass may have moved are asked by the next look, and only where a session of this loop's holds one.
+                if (!Live.IsEmpty && !ct.IsCancellationRequested) _claimsDue = true;
+                if (_syncAgain is { } next && !next.Ct.IsCancellationRequested)
+                {
+                    (pass, ct) = next;
+                    again = true;
+                }
+                else
+                {
+                    _syncing = null;
+                }
+
+                _syncAgain = null;
+                moved = _moved;
+                _moved = NewSignal();
+            }
+
+            moved.TrySetResult();
+            if (!again) return;
+        }
     }
 
     // The landing pass beside the looks (LAND2b), while it works: one at a time, since a plugin's two minutes may outlast a look.
@@ -184,7 +278,10 @@ public sealed class RunningSessions
         }
     }
 
-    /// <summary>Completes once an ending waits to be reported — at once when one already does.</summary>
+    /// <summary>
+    /// Completes once an ending waits to be reported, or the claims a sync beside the looks may have moved wait to be asked
+    /// (PARALLEL1b) — at once when one already does.
+    /// </summary>
     public async Task EndedAsync(CancellationToken ct = default)
     {
         while (true)
@@ -192,7 +289,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_ended.Count > 0) return;
+                if (_ended.Count > 0 || _claimsDue) return;
                 moved = _moved.Task;
             }
 
@@ -201,8 +298,8 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once nothing runs: every session concluded and its record written, and no landing pass works (LAND2b). Never
-    /// cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended (REV3, D104).
+    /// Completes once nothing runs: every session concluded and its record written, and no landing pass or remote sync works (LAND2b,
+    /// PARALLEL1b). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended (REV3, D104).
     /// </summary>
     public async Task SettledAsync()
     {
@@ -211,7 +308,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_running == 0 && _landing is null) return;
+                if (_running == 0 && _landing is null && _syncing is null) return;
                 moved = _moved.Task;
             }
 

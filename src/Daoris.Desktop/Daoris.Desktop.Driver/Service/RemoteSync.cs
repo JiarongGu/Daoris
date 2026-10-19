@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// One circle's wall does not stop another's pass: each runs, each reports, and the tick carries
 /// whatever trouble there was with the workspace's name on it — "the sync is failing" is not a useful
-/// sentence on a machine that holds two deployments' keys.
+/// sentence on a machine that holds two deployments' keys. Nor does one circle's slow remote hold
+/// another's: the circles' passes run at once (PARALLEL1b).
 /// </remarks>
 public sealed class RemoteSyncSet : IDisposable
 {
@@ -127,11 +128,13 @@ public sealed class RemoteSyncSet : IDisposable
                 + "and a workspace with none syncs nowhere.");
         }
 
+        // PARALLEL1b (D181 point 3): the circles at once, each against its own host and key with its own clients, so one remote that is
+        // slow to answer holds its own circle's pass and not the next's. Said in the circles' order whatever order they end in.
+        var reports = await Task.WhenAll(syncs.Select(sync => sync.RunOnceAsync(ct))).ConfigureAwait(false);
         var problems = new List<string>();
         var notes = new List<string>();
-        foreach (var sync in syncs)
+        foreach (var (sync, report) in syncs.Zip(reports))
         {
-            var report = await sync.RunOnceAsync(ct).ConfigureAwait(false);
             if (report.Problem is not null) problems.Add($"{sync.Workspace}: {report.Problem}");
             foreach (var note in report.Notes) notes.Add($"{sync.Workspace}: {note}");
         }
