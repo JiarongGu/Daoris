@@ -58,6 +58,38 @@ export type HelpReceipt = {
 /** `HELP_WIRED`'s answer: a conversation's receipts, the newest first; `recorded: false` for one started before they were kept. */
 export type HelpWired = { session: string; recorded: boolean; receipts: HelpReceipt[] };
 
+/**
+ * The grants of restricted mode's configured access (HELPMODE1c, D183 point 1; the modes design §4.1), in the table's order:
+ * Daoris's housekeeping, the browser, reading checkouts, chosen settings, and a confined shell, later.
+ */
+export type HelpGrantId = 'housekeeping' | 'browser' | 'checkouts' | 'settings' | 'shell';
+
+/**
+ * A grant's state as its row says it (§4.1): off or on by the operations chosen; the browser waiting for approval, or changed
+ * since it was approved; unavailable where this agent cannot be held to it; and the confined shell, not available yet.
+ */
+export type HelpGrantState = 'off' | 'on' | 'needs-approval' | 'changed' | 'unavailable' | 'later';
+
+/**
+ * The agent Ask Daoris runs on, as the grants read it: its name as a person knows it, and whether it takes Claude's permission
+ * rules (a receipt's `rules`), which hold the browser's chosen writes and the checkouts' scoped reads (§4.1).
+ */
+export type HelpGrantAgent = { name: string; rules: boolean };
+
+/**
+ * One grant as this machine has it configured (HELPMODE1c1): the operations chosen, by their
+ * codes in §4.1's table (`help/grants.ts`); for the browser, whether its plugin's update changed it since it was approved; and
+ * whether the conversation in view started with another choice, which takes its next start (§4.1's trap: a grant is never
+ * shown in force before the agent is held to it).
+ */
+export type HelpGrantChoice = {
+  id: HelpGrantId;
+  chosen: readonly string[];
+  /** The browser's server changed since it was approved: Ask Daoris is handed nothing of it until it is approved again. */
+  changed?: boolean;
+  pending?: boolean;
+};
+
 /** What the chip reads of a plugin to say what full access would add: whether it runs, and the servers it offers Ask Daoris. */
 export type HelpPluginOffer = {
   enabled: boolean;
