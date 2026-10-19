@@ -90,6 +90,53 @@ public sealed class LandingWakesTests : IDisposable
         Assert.Equal(concerned, LandingConcerns.Concerns(Entry(code, tipKept), [new LandingWake(topic, subject)], _ => Tip));
 
     /// <summary>
+    /// FABRIC-END7b: a due entry a look left because a live session held its tree keeps no try, so its last try still says what it waits
+    /// on; a session's end (the ledger's <c>sessions</c>, the loop's own end among them) concerns it as well, whatever that is. Another
+    /// wake concerns it only as its last try says, and an entry no look left so is not a session end's.
+    /// </summary>
+    [Theory]
+    [InlineData("held", false, "ledger", "sessions", true)]
+    [InlineData("held", false, "ledger", "quests,sessions", true)]
+    [InlineData("unreviewed", false, "ledger", "sessions", true)]
+    [InlineData("refused", false, "ledger", "sessions", true)]
+    [InlineData("uncommitted", true, "ledger", "sessions", true)]
+    [InlineData("held", false, "refs", "engine", false)]
+    [InlineData("held", false, "requests", "s9", false)]
+    [InlineData("held", false, "gates", "gates", false)]
+    [InlineData("held", false, "ledger", "quests", true)]
+    public void A_session_s_end_concerns_an_entry_a_look_left_for_a_live_session_on_its_tree(
+        string code, bool tipKept, string topic, string subject, bool concerned)
+    {
+        var entry = Entry(code, tipKept);
+        LandingWake[] woke = [new(topic, subject)];
+
+        Assert.Equal(concerned, LandingConcerns.Concerns(entry, woke, _ => Tip, leftLive: _ => true));
+        Assert.Equal(LandingConcerns.Concerns(entry, woke, _ => Tip), LandingConcerns.Concerns(entry, woke, _ => Tip, leftLive: _ => false));
+    }
+
+    /// <summary>
+    /// FABRIC-END7b: what a look left for a live session is kept per home and per entry until a look judges it past the session, or it is no
+    /// longer due; another home's is not this one's.
+    /// </summary>
+    [Fact]
+    public void An_entry_left_for_a_live_session_is_kept_until_judged_past_it_or_no_longer_due()
+    {
+        var entry = Entry(AutoLandingCode.Held, tipKept: false);
+        var other = entry with { Session = "s2" };
+        Assert.False(LandingJudged.LeftLive(_home, entry));
+
+        LandingJudged.Live(_home, entry, live: true);
+        LandingJudged.Live(_home, other, live: true);
+        Assert.True(LandingJudged.LeftLive(_home, entry));
+        Assert.False(LandingJudged.LeftLive(Path.Combine(_home, "elsewhere"), entry));
+
+        LandingJudged.Live(_home, entry, live: false);
+        Assert.False(LandingJudged.LeftLive(_home, entry));
+        LandingJudged.Keep(_home, [entry]);
+        Assert.False(LandingJudged.LeftLive(_home, other));
+    }
+
+    /// <summary>
     /// A refusal kept with its tree's tip is released by its tree moving: any wake that finds the tip read from git's files moved
     /// looks at it, and a tip those files cannot say is git's to read.
     /// </summary>
@@ -396,6 +443,8 @@ public sealed class LandingWakesTests : IDisposable
     {
         Directory.CreateDirectory(Gates);
         Directory.CreateDirectory(Path.Combine(Workflows, "runs"));
+        // FABRIC-END7b: the run a due entry's gate read, the one the topic lists of the runs.
+        LandingJudged.Read(_home, Entry(AutoLandingCode.Refused, tipKept: false), "run1");
         var woken = new ConcurrentQueue<(string Topic, string Subject)>();
         await using var watch = HomeWatch.ForDriver(_home, DaorisHome.Entry(_home, HomeEntry.DriverConfig), (topic, subject) => woken.Enqueue((topic, subject)),
             TimeSpan.FromHours(1), _source);
@@ -438,6 +487,90 @@ public sealed class LandingWakesTests : IDisposable
         File.WriteAllText(Path.Combine(Gates, "q1.json"), "{}");
 
         await Poll.Until(() => woken.Contains((ChangeTopics.Gates, ChangeTopics.Gates)), () => "the gate's record was never found at its deadline");
+    }
+
+    /// <summary>
+    /// FABRIC-END7b: the <c>gates</c> topic lists of <c>workflows/runs/</c> only the runs a due entry's gate read, by name, never the folder,
+    /// which keeps one file per run for good. Forty runs bound and two read by due entries' gates are two runs' files listed, beside the
+    /// opinion gates' records and the workflows' versions; a run read but not bound is listed as absent, so its binding arriving moves it.
+    /// </summary>
+    [Fact]
+    public void The_gates_deadline_lists_only_the_runs_a_due_entry_s_gate_read()
+    {
+        var runs = new WorkflowRunFiles(_home);
+        for (var each = 0; each < 40; each++) runs.Bind(Binding($"run{each}"));
+        Directory.CreateDirectory(Gates);
+        File.WriteAllText(Path.Combine(Gates, "q1.json"), "{}");
+        File.WriteAllText(Path.Combine(Workflows, "careful.json"), "{}");
+        LandingJudged.Read(_home, Entry(AutoLandingCode.Refused, tipKept: false), "run7");
+        LandingJudged.Read(_home, Entry(AutoLandingCode.PushHeld, tipKept: true) with { Session = "s2" }, "run99");
+        LandingJudged.Read(_home, Entry(AutoLandingCode.Held, tipKept: false) with { Session = "s3" }, run: null);
+
+        var listed = HomeWatch.Listed(HomeWatch.GateParts(_home));
+
+        var folder = WorkflowRunBindings.FolderOf(_home) + Path.DirectorySeparatorChar;
+        Assert.Equal(
+            [WorkflowRunBindings.PathOf(_home, "run7"), WorkflowRunBindings.PathOf(_home, "run99")],
+            listed.Keys.Where(key => key.StartsWith(folder, StringComparison.OrdinalIgnoreCase)).Order(StringComparer.OrdinalIgnoreCase));
+        Assert.Equal("-", listed[WorkflowRunBindings.PathOf(_home, "run99")]);
+        Assert.Equal(4, listed.Count);
+
+        // No longer due: its run is no longer listed.
+        LandingJudged.Keep(_home, [Entry(AutoLandingCode.Refused, tipKept: false)]);
+        Assert.Equal(3, HomeWatch.Listed(HomeWatch.GateParts(_home)).Count);
+    }
+
+    /// <summary>
+    /// FABRIC-END7b: a run's name entering or leaving the list is the list's change, never the file's, so it wakes nothing; a listed run's
+    /// file written by another process does, and one this process wrote does not.
+    /// </summary>
+    [Fact]
+    public async Task A_run_entering_or_leaving_the_list_wakes_nothing_and_its_file_written_elsewhere_does()
+    {
+        var runs = new WorkflowRunFiles(_home);
+        runs.Bind(Binding("run1"));
+        runs.Bind(Binding("run2"));
+        var woken = new ConcurrentQueue<(string Topic, string Subject)>();
+        await using var watch = HomeWatch.ForDriver(_home, DaorisHome.Entry(_home, HomeEntry.DriverConfig), (topic, subject) => woken.Enqueue((topic, subject)),
+            TimeSpan.FromHours(1), _source);
+        watch.Start();
+
+        void Say(string name)
+        {
+            foreach (var handle in _source.Opened.Where(handle => handle.Folder == Path.GetFullPath(Workflows) && !handle.Disposed)) handle.Raise(name, ChangeKind.Renamed);
+        }
+
+        async Task Judged(int judgements)
+        {
+            await Poll.Until(() => watch.Changes.Judgements >= judgements, () => $"{watch.Changes.Judgements} judgements");
+            await watch.Changes.Settled();
+        }
+
+        // run1 read by a due entry's gate: listed from now on, which moves nothing.
+        LandingJudged.Read(_home, Entry(AutoLandingCode.Refused, tipKept: false), "run1");
+        Say("runs/run1.json");
+        await Judged(1);
+        Assert.Empty(woken);
+
+        // run2, which no gate read, written by another process: not listed, so nothing.
+        File.AppendAllText(WorkflowRunBindings.PathOf(_home, "run2"), " ");
+        Say("runs/run2.json");
+        await Judged(2);
+        Assert.Empty(woken);
+
+        // The entry no longer due: run1 leaves the list, which moves nothing either.
+        LandingJudged.Keep(_home, []);
+        Say("runs/run1.json");
+        await Judged(3);
+        Assert.Empty(woken);
+
+        // Read again, and written by another process: heard.
+        LandingJudged.Read(_home, Entry(AutoLandingCode.Refused, tipKept: false), "run1");
+        Say("runs/run1.json");
+        await Judged(4);
+        File.AppendAllText(WorkflowRunBindings.PathOf(_home, "run1"), " ");
+        Say("runs/run1.json");
+        await Poll.Until(() => woken.Contains((ChangeTopics.Gates, ChangeTopics.Gates)), () => "the run's binding was never heard");
     }
 
     private static WorkflowRunBinding Binding(string run) => new(run, "engine", "aurora", "careful", WorkflowLevels.Task, At);

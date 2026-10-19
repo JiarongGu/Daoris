@@ -117,6 +117,8 @@ public sealed class AutoLander(
     public async Task<AutoChosen> ChooseAsync(DriverConfig config, CancellationToken ct = default, IReadOnlyCollection<LandingWake>? woke = null)
     {
         var open = Due.Open();
+        // FABRIC-END7b: what the looks kept of an entry no longer due goes with it.
+        LandingJudged.Keep(home, open);
         if (open.Count == 0) return new([], []);
 
         var said = new List<string>();
@@ -124,7 +126,7 @@ public sealed class AutoLander(
         var records = new LookRecords(world);
         foreach (var entry in open)
         {
-            if (!LandingConcerns.Concerns(entry, woke, TreeTips.Read)) continue;
+            if (!LandingConcerns.Concerns(entry, woke, TreeTips.Read, leftLive: each => LandingJudged.LeftLive(home, each))) continue;
             var (line, choice) = await JudgeAsync(entry, config, world, records, ct).ConfigureAwait(false);
             if (line is not null) said.Add(line);
             if (choice is not null) chosen.Add(choice);
@@ -154,6 +156,8 @@ public sealed class AutoLander(
         // cannot be read here holds the entry at the gate, never closes it as off.
         var process = await WorkflowProcesses.ReadAsync(home, config, world, entry.Quest, entry.Repository, entry.Workspace, ct)
             .ConfigureAwait(false);
+        // FABRIC-END7b: the run whose binding the gate reads, which the gate's files' watch lists by name.
+        LandingJudged.Read(home, entry, process.Binding?.Run);
         var rule = process.Landing.Rule;
         if (process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true })
         {
@@ -180,7 +184,10 @@ public sealed class AutoLander(
         // ReviewableTree's rule: a live session in the tree is using it, and a newer session on it stands for it now.
         var records = await looked.ReadAsync(ct).ConfigureAwait(false);
         var onTree = records.Where(record => !record.Teammate && record.Tree is { } tree && SameTree(tree, entry.Tree)).ToList();
-        if (onTree.Any(record => record.Live)) return (null, null);
+        // FABRIC-END7b: left with no try, so the session's end concerns it whatever its last try waits on (LandingConcerns).
+        var live = onTree.Any(record => record.Live);
+        LandingJudged.Live(home, entry, live);
+        if (live) return (null, null);
         var newest = onTree.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).FirstOrDefault();
         if (newest is not null && !string.Equals(newest.Id, entry.Session, StringComparison.OrdinalIgnoreCase))
         {
