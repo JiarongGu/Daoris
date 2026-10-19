@@ -11,9 +11,15 @@ namespace Daoris.Driver;
 /// that started them: the watch owns this and hands it to each. A driver nobody hands one to keeps its
 /// own, which is what a one-look run and a gate's run-until-idle want.</para>
 ///
-/// <para><b>A run that never opened a record is its own look's to report</b>, never a later one's: a hold,
-/// a refusal and an error before the record opened are what that look says about the quest. Only a run
-/// whose record opened is kept here, since only it outlives the look.</para>
+/// <para><b>A run that never opened a record is its own look's to report</b>: a hold, a refusal and an error
+/// before the record opened are what that look says about the quest. Only a run whose record opened is kept
+/// here, since only it outlives the look; or, under the watch (PARALLEL1b), one its look let go of while it
+/// still prepared, reserved here until it opens or comes to nothing, which a later look says
+/// (<see cref="Carry"/>).</para>
+///
+/// <para><b>The work beside the looks is kept here too</b> (PARALLEL1b, D181 point 3): the remote sync's
+/// pass, the landing's, and each topic's judges, one judgement per subject and each topic bounded, so a
+/// closing loop waits for them as it waits for its sessions.</para>
 ///
 /// <para><b>Nothing here decides how a session ends.</b> Each run concludes its own record, on its exit code
 /// and its quest, as it always has (D46 §4). This keeps the runs and hands their endings on.</para>

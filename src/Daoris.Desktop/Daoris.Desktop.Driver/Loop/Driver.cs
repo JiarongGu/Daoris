@@ -8,7 +8,9 @@ namespace Daoris.Driver;
 /// plans it (pure), starts every planned start, and returns once each has opened its record or come to
 /// nothing. The sessions run on beside the looks that follow, and each one's ending joins the next
 /// look's report (DEV3, D115 §3.1): a quest published while a long session runs starts at the next look,
-/// not after that session.
+/// not after that session. Under the watch (PARALLEL1b, D181 point 3) a look waits for a start only until
+/// something else wants the loop, the start reserved and running on beside it, and leaves beside it the
+/// work none of its parts waits on: the remote sync, the plugins' word on an ending, a packet frozen.
 /// </summary>
 /// <remarks>
 /// <para><b>The driver never writes quest state.</b> It opens and advances SESSION records through the
@@ -451,6 +453,8 @@ public sealed class Driver(
     /// <remarks>
     /// A <see cref="LookPart.Plan"/> (FABRIC-EVENT3a) is the same look without the remote sync at its head and the lost-claim stop
     /// after it; everything else it runs as the whole look does, the sync after an ending it reports included (the sync design §8).
+    /// Where the watch hands <see cref="Wanted"/> (PARALLEL1b), the syncs run beside the look and a start still preparing when
+    /// something else wants the loop runs on beside it, reserved, what it came to said by a later look.
     /// </remarks>
     /// <param name="failed">
     /// Handed what the look had said when it fails or is closed (DEV3c): its lines and what ended, which its report would have
