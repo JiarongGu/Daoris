@@ -308,8 +308,8 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   options the kit is handed are `LaterLaunch.Options` (ONEINSTANCE2): `window.launch` is written as a launch arrives, and
   whatever fails on the way is an `error` line, never an exception into the kit's callback.
 - 🔴 **The kit's loggers are the container's** (`MachineLogging.AddMachineLog`, ONEINSTANCE2). The kit asks the container
-  for an `ILogger<T>`; a registered `ILoggerProvider` alone makes none, and until ONEINSTANCE2 every warning the kit wrote
-  went nowhere. Its single-instance guard's and engine's hand-over information is written too.
+  for an `ILogger<T>`, and a registered `ILoggerProvider` alone makes none: register loggers through it, never a provider
+  alone. Its single-instance guard's and engine's hand-over information is written too.
 - **It ends with its last main window** (MAINWINDOWS2, D171 point 2). The first main window holds the kit's loop and the
   services resolved as it (the pickers, the taskbar's count, the tray, the update), so the person's close of it while a
   `main:<n>` is open hides it (`MainWindows`); the last of those closing closes it for good, and a later launch or the tray

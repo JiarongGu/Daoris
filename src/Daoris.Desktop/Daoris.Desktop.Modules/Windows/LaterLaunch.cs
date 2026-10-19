@@ -9,11 +9,10 @@ namespace Daoris.Desktop;
 /// what the tests run (ONEINSTANCE2).
 /// </summary>
 /// <remarks>
-/// <para><b>Nothing silent</b> (ONEINSTANCE2). A later launch of the installed Daoris opened no window and wrote no line, and the
-/// hand-over had been a discarded task: a resolution that threw went into the kit's callback, whose report went to a logger the
-/// container never made, and a window that failed faulted a task nobody watched. So the launch's arrival is written before
-/// anything is resolved or awaited (<c>window.launch</c>), and whatever the hand-over throws is written where it happened (the
-/// <c>error</c> event, <see cref="Where"/>), never thrown into the kit's callback.</para>
+/// <para><b>Nothing silent</b> (ONEINSTANCE2). A launch that opens no window must say why where the person reads: so its arrival
+/// is written before anything is resolved or awaited (<c>window.launch</c>), and whatever the hand-over throws is written where
+/// it happened (the <c>error</c> event, <see cref="Where"/>), never thrown into the kit's callback, which reports to a logger
+/// alone, nor left in a task nobody watches.</para>
 ///
 /// <para>Called on the window's thread, after the kit has brought the first main window forward; the hand-over runs on it up
 /// to its first wait, so <see cref="SecondLaunch.OpenAsync"/> still reads that bringing forward before anything else

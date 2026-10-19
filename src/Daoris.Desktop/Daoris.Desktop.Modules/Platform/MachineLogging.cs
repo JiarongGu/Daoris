@@ -10,12 +10,11 @@ namespace Daoris.Desktop;
 /// <see cref="MachineLogProvider"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>Why a factory of its own.</b> LOG1a registered the provider and nothing else, and a provider is only what a factory
-/// makes loggers of: the kit calls no <c>AddLogging</c> (its loggers are optional "so composition works without it"), and asks
-/// the container for <c>ILogger&lt;T&gt;</c>, which nothing answered. So every warning the kit wrote, the single-instance
-/// guard's among them, went nowhere, and a later launch that opened no window left no line saying why (ONEINSTANCE2). The
-/// application references the logging abstractions alone, whose <see cref="Logger{T}"/> takes any factory, so this is the
-/// factory: one provider, no filters but its own, no scopes.</para>
+/// <para><b>Why a factory of its own.</b> A provider is only what a factory makes loggers of, and the kit calls no
+/// <c>AddLogging</c>: it asks the container for an <c>ILogger&lt;T&gt;</c>, and a provider registered alone answers nothing, so
+/// every warning it writes, the single-instance guard's among them, goes nowhere (ONEINSTANCE2). The application references the
+/// logging abstractions alone, whose <see cref="Logger{T}"/> takes any factory, so this is the factory: one provider, no filters
+/// but its own, no scopes.</para>
 /// </remarks>
 public static class MachineLogging
 {
