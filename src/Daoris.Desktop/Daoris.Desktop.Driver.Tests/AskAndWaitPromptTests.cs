@@ -48,9 +48,10 @@ public sealed class AskAndWaitPromptTests
     [Fact]
     public void A_quests_target_says_what_only_the_person_can_give_is_asked_for_by_stopping_not_declining()
     {
-        var prompt = TargetPrompt.Compose(Target());
+        // Flat, as the sentence tests below read it: a phrase is found however the instruction wraps it.
+        var prompt = Flat(TargetPrompt.Compose(Target()));
 
-        Assert.Contains("only the person can give", prompt);
+        Assert.Contains("only for what you cannot decide", prompt);
         Assert.Contains("end your turn with the quest still taken", prompt);
         Assert.Contains("rather than declining", prompt);
     }
@@ -108,22 +109,49 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// What reaches the person narrows to what no source holds (D124 §6.1): a sign-in, a go-ahead outside the
-    /// repository or on a production system, a preference nothing records. A choice between options is no
-    /// longer a reason by itself, and the stop says what was looked at.
+    /// AUTONOMY1e (D184 point 4): a session's questions work as Claude Code's console does. Whatever it can decide it decides,
+    /// records why and keeps going; on the install, parks waited 7 to 57 minutes on questions such as which report a page
+    /// shows, or a name, which "a preference nothing records" (D124 §6.1) had let through. It asks only what it cannot decide,
+    /// and no go-ahead it asked for before is dropped (D184 point 5): outside the repository and on a production system still
+    /// are, and so is one the repository or the quest names.
     /// </summary>
     [Fact]
-    public void Only_what_no_source_holds_stops_the_session_and_a_choice_between_options_is_gone()
+    public void It_decides_what_it_can_and_asks_only_what_it_cannot()
     {
         foreach (var (which, prompt) in EveryInstruction(Target()))
         {
             var flat = Flat(prompt);
             Assert.True(flat.Contains(
-                "Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act outside "
-                + "this repository or on a production system, a preference nothing records.",
+                "Decide whatever you reasonably can, such as a name or which of two sound ways: say it under "
+                + "**Readings** with why, and keep going.",
                 StringComparison.Ordinal), which);
-            Assert.True(flat.Contains("say exactly what and why, and what you looked at, in your last message", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Ask the person only for what you cannot decide: a credential, an account or a sign-in; a choice the quest or "
+                + "the person's words leave to them; a go-ahead for an act outside this repository or on a production system, "
+                + "or for one this repository or the quest says needs it.",
+                StringComparison.Ordinal), which);
+            Assert.False(flat.Contains("a preference nothing records", StringComparison.Ordinal), which);
             Assert.False(flat.Contains("choice between options", StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
+    /// AUTONOMY1e (D184 point 4): the question is asked at its turn's end, in its own words, in its own conversation, and the
+    /// person's answer goes on in that same conversation (ANSWER1a, D131 §1), which the instruction once told as a fresh start
+    /// "here, in this tree".
+    /// </summary>
+    [Fact]
+    public void It_asks_at_its_turns_end_and_goes_on_in_this_conversation_with_the_answer()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains(
+                "Ask it in your last message, with why and what you looked at; commit what you have, and "
+                + "end your turn with the quest still taken, rather than declining. The person answers in this conversation, and "
+                + "you go on here with their words.",
+                StringComparison.Ordinal), which);
+            Assert.False(flat.Contains("you are started again here, in this tree, with their words", StringComparison.Ordinal), which);
         }
     }
 
@@ -141,8 +169,10 @@ public sealed class AskAndWaitPromptTests
             Assert.True(flat.Contains(
                 "Your closing note, and your last message whenever you stop, keeps two lists apart.", StringComparison.Ordinal), which);
             Assert.True(flat.Contains(
-                "Under **Needs you**, only what the person alone can give — a go-ahead, an agreement this repository's own "
-                + "documents require, a sign-in, a preference nothing records — each with why, and what you looked at first.",
+                // AUTONOMY1e (D184 point 4): what it could not decide, never a preference it could have made itself.
+                "Under **Needs you**, only what you could not decide — a go-ahead, an agreement this repository's own "
+                + "documents require, a credential or a sign-in, a choice left to the person — each with why, and what you "
+                + "looked at first.",
                 StringComparison.Ordinal), which);
             Assert.True(flat.Contains(
                 "Under **Readings**, everything else you decided or took on the evidence, each said as your reading rather than "
@@ -202,7 +232,7 @@ public sealed class AskAndWaitPromptTests
     {
         foreach (var (which, prompt) in EveryInstruction(Target()))
         {
-            var person = prompt.IndexOf("Stop only for what no source holds", StringComparison.Ordinal);
+            var person = prompt.IndexOf("Ask the person only for what", StringComparison.Ordinal);
             var close = prompt.IndexOf("Your closing note, and your last message", StringComparison.Ordinal);
             var propose = prompt.IndexOf("If a command the work genuinely needs is refused", StringComparison.Ordinal);
             Assert.True(person >= 0 && person < close && close < propose, which);
@@ -263,7 +293,7 @@ public sealed class AskAndWaitPromptTests
         {
             var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
             var neighbour = prompt.IndexOf("do not read into it and do not guess: ask it.", StringComparison.Ordinal);
-            var person = prompt.IndexOf("Stop only for what no source holds", StringComparison.Ordinal);
+            var person = prompt.IndexOf("Ask the person only for what", StringComparison.Ordinal);
             Assert.True(look >= 0 && look < neighbour && neighbour < person, which);
         }
     }

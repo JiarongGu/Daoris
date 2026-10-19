@@ -12,6 +12,15 @@ network.
 
 ## Unreleased
 
+- **`autonomous-development` has the agent make the choices it can.** *Look before you ask* no longer
+  sends "a preference nothing records" to the person mid-run: a choice nothing settles that review can
+  still change, such as a name or which of two sound ways, is the agent's to make and state at the
+  checkpoint like a reading. What reaches the person is what the agent cannot decide: a credential or a
+  sign-in, a choice the task leaves to them, and the go-aheads it named before, now with one the
+  repository says an act needs. Drawn from unattended runs whose questions about a name, or which report
+  a page shows, waited up to an hour for an answer the agent could have given. **Adopting repositories:**
+  run `daoris sync`; nothing else. The document is read on demand, so the always-loaded region does not
+  change.
 - **`no-tmp-for-repo-files` says what a harness with no file-writing tool writes with.** A program
   writes the file through a language's file API, as BOM-less UTF-8 in the repository's line endings,
   never through the console's redirection, and reads it back; a helper script it needs is scratch like

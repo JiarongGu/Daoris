@@ -279,7 +279,9 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
   asking, or a conversation that answers the person's words (NOTIFY1a), raises an OS balloon unless
   one of its windows has focus. `AttentionWatch` in the library makes the judgement, so `daoris-driver`
-  prints the tick's as a line; its console conversation answers in the console itself.
+  prints the tick's as a line; its console conversation answers in the console itself. A park is said once
+  per question: one the person answered waits on nobody, so the same session asking again is said again
+  (AUTONOMY1e). A driven session is told to decide what it can and ask only what it cannot (D184 point 4).
 - **It brings up the local host**, adopting one already running or spawning and owning one, and runs
   the driver's watch loop in-process with `driver.json` re-read every tick. On close it takes the
   loop and its owned host down, with in-flight sessions ended and recorded `stopped` and
