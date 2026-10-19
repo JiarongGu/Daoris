@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { HelpMode } from '../bridge/help';
+import type { HelpMode } from '../help/wired';
 import { Card, Pill, Prose, SelectField, SettingRow } from '../design/ui';
 import { FullAccessConfirm, HelpModeChip } from '../help/HelpModePicker';
 import type { StartWiring } from '../map/wiring';

@@ -124,7 +124,7 @@ describe('Ask Daoris, with an agent named', () => {
       payload: { id: HELP.id, text: 'how do I drive a repository?' },
     }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', {});
-    // Its conversations are read across every workspace: it belongs to none.
+    // Its conversations are read across every workspace, and the panel keeps the window's own (ASKSCOPE1d).
     expect(asked.some((url) => url.includes('repository=daoris%3Ahelp') && !url.includes('workspace='))).toBe(true);
   });
 

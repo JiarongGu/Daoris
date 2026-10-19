@@ -1,7 +1,7 @@
 import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import { type HelpListing, joinPages, listingPage } from '../help/history';
+import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help/history';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { call, pressBound } from './call';
@@ -20,14 +20,22 @@ import { usePollUnlessTold } from './published';
  * after, and the words said to it meanwhile wait as its queue, opening. A driver before it answers once it runs.
  *
  * Its route publishes the sessions it opened one among, and the state hub asks them again in every window (STATEHUB1h, D169).
+ *
+ * The press names the workspace its conversation is in (ASKSCOPE1d, D158's ASKSCOPE1 note, point 1): the caller reads the
+ * window's at the press and hands it here, so a window that changes workspace while the start is under way moves nothing. None
+ * is today's start, `default`'s, which the panel sends only where the machine holds no other workspace to choose.
  */
 export const useStartHelp = () =>
   useMutation({
-    mutationFn: () => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean }>('START_HELP'),
+    mutationFn: (workspace?: string) => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean }>(
+      'START_HELP', workspace ? { workspace } : undefined),
   });
 
-/** Which Ask Daoris conversation waits unseen for the person's first words, and which have had theirs. */
-type HelpReadied = { readied: string | null; spoken: string[] };
+/**
+ * Which Ask Daoris conversation waits unseen for the person's first words, and which have had theirs; and, since ASKSCOPE1d, the
+ * workspace each was opened ahead in, so one opened in another workspace never takes this one's words.
+ */
+type HelpReadied = { readied: string | null; spoken: string[]; workspaces?: Record<string, string> };
 const NOTHING_READIED: HelpReadied = { readied: null, spoken: [] };
 
 /**
@@ -50,10 +58,27 @@ export const useHelpReadied = () => {
   });
   const change = (next: (was: HelpReadied) => HelpReadied) =>
     client.setQueryData<HelpReadied>(keys.helpReadied, (was) => next(was ?? NOTHING_READIED));
+  const held = data ?? NOTHING_READIED;
+  const opened = held.workspaces ?? {};
+  const unspoken = [...new Set([...(held.readied ? [held.readied] : []), ...Object.keys(opened)])]
+    .filter((id) => !held.spoken.includes(id));
   return {
-    readied: data?.readied ?? null,
-    /** Opened ahead: kept unseen until spoken in, unless it has been already. */
-    ready: (id: string) => change((was) => (was.spoken.includes(id) ? was : { ...was, readied: id })),
+    readied: held.readied,
+    /**
+     * The conversation opened ahead in `workspace` that nobody has spoken in (ASKSCOPE1d), or null: the newest where it is that
+     * workspace's, else an earlier one that is. One opened ahead with no workspace said is any workspace's, as before.
+     */
+    readiedIn: (workspace: string): string | null => {
+      const fits = (id: string) => opened[id] === undefined || sameWorkspace(opened[id], workspace);
+      if (held.readied && !held.spoken.includes(held.readied) && fits(held.readied)) return held.readied;
+      return unspoken.filter((id) => opened[id] !== undefined && fits(id)).at(-1) ?? null;
+    },
+    /** Every conversation opened ahead that nobody has spoken in, whatever its workspace: none is shown as a workspace's newest. */
+    unspoken,
+    /** Opened ahead in `workspace`: kept unseen until spoken in, unless it has been already. */
+    ready: (id: string, workspace?: string) => change((was) => (was.spoken.includes(id) ? was : {
+      ...was, readied: id, ...(workspace === undefined ? {} : { workspaces: { ...was.workspaces, [id]: workspace } }),
+    })),
     /** The person's words went to it: seen from now on. */
     spoke: (id: string) => change((was) => ({
       readied: was.readied === id ? null : was.readied,
@@ -144,13 +169,18 @@ const joined = (data: InfiniteData<HelpListing, number>): HelpListing => joinPag
  * An offset points into one order, which a change moves (D158's ASKHIST1d1 note). Asked again, an infinite query asks from
  * offset 0 and takes each next offset from the page it just read, as many pages as it held, so the rows after a change are read
  * in the new order, not half in the old. The first ask is the one a driver before pages took: no offset.
+ *
+ * `workspace` is whose conversations (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6): that workspace's, searched and counted by the
+ * driver before it takes a page, or every workspace's for null. It is part of the key, so one scope's pages never answer
+ * another's.
  */
-export const useHelpConversations = (search: string, enabled = true) => {
+export const useHelpConversations = (search: string, enabled = true, workspace: string | null = null) => {
   const { isAvailable } = useShenora();
   const words = search.trim();
   return useInfiniteQuery({
-    queryKey: [...HISTORY, words],
+    queryKey: [...HISTORY, workspace ?? '*', words],
     queryFn: async ({ pageParam }) => listingPage(await call<unknown>('HELP_CONVERSATIONS', {
+      ...(workspace ? { workspace } : {}),
       ...(words ? { q: words } : {}),
       ...(pageParam > 0 ? { offset: pageParam } : {}),
     })),
@@ -162,64 +192,12 @@ export const useHelpConversations = (search: string, enabled = true) => {
   });
 };
 
-/** Ask Daoris's access modes (D183 point 1): restricted, which reads and proposes, or full, which acts itself. */
-export type HelpMode = 'restricted' | 'full';
+// The mode's and the receipts' shapes live in `help/wired`, where the panel's molecules take them (the presentational boundary).
+import type { HelpMode, HelpReceipt, HelpWired, HelpWiredCheckout, HelpWiredLack, HelpWiredRules, HelpWiredServer, HelpWiredSkill } from '../help/wired';
+export type { HelpMode, HelpReceipt, HelpWired, HelpWiredCheckout, HelpWiredLack, HelpWiredRules, HelpWiredServer, HelpWiredSkill };
 
 /** A mode as the driver reads one (`HelpModes`): `full` only when it says so, anything else restricted, the default. */
 export const helpModeOf = (value: unknown): HelpMode => (value === 'full' ? 'full' : 'restricted');
-
-/**
- * A server on a receipt (HELPWIRED1, `HelpWiredServer`): its name, the plugin that declares it (null for Daoris's own
- * connector), its state (`handed`, `full-access`, `withheld`), its tools where known, and why it was withheld.
- */
-export type HelpWiredServer = { name: string; plugin: string | null; state: string; tools: string[] | null; why: string | null };
-
-/** A plugin's skill on a receipt (`HelpWiredSkill`): `plugin:skill`, its state (`handed`, `withheld`, `unverified`) and why. */
-export type HelpWiredSkill = { name: string; state: string; why: string | null };
-
-/** The permission rules a start handed, list for list as the settings file holds them (`HelpWiredRules`). */
-export type HelpWiredRules = { allow: string[]; ask: string[]; deny: string[] };
-
-/** A checkout reading across lets it read (D107, `HelpRead`): its name, its workspace and its path on this machine. */
-export type HelpWiredCheckout = { name: string; workspace: string; path: string };
-
-/**
- * What restricted mode lacks (`HelpWiredLack`): its kind (`server`, `shell`, `edits`), its name, the door that grants it
- * (`plugins`, `mode`, `host`, `harness`), why, and the plugin whose page holds the door where it is one.
- */
-export type HelpWiredLack = { kind: string; name: string; door: string; why: string; plugin: string | null };
-
-/**
- * What one start of an Ask Daoris conversation handed its agent (HELPWIRED1, D183 point 4, the modes design §6), as the driver
- * keeps it (`HelpReceipt`), field for field: recorded at the start, never worked out again. Its paths are this machine's.
- */
-export type HelpReceipt = {
-  at: string;
-  /** `new` for a conversation's first start, `going-on` for one going on. */
-  start: string;
-  /** The mode it ran under, the effective one. */
-  mode: string;
-  harness: string;
-  version: string | null;
-  account: string | null;
-  /** `pipe` (the native door) or `acp` (the protocol door). */
-  door: string;
-  posture: string | null;
-  permissionMode: string | null;
-  folder: string;
-  /** Daoris's own tools its allow-list allows, as the rules spell them; none in full access. */
-  tools: string[];
-  skills: HelpWiredSkill[];
-  servers: HelpWiredServer[];
-  rules: HelpWiredRules | null;
-  guarded: boolean;
-  checkouts: HelpWiredCheckout[];
-  /** In restricted mode, what it lacks with the door that grants each; none in full access. */
-  lacks: HelpWiredLack[];
-};
-
-/** `HELP_WIRED`'s answer: a conversation's receipts, the newest first; `recorded: false` for one started before they were kept. */
-export type HelpWired = { session: string; recorded: boolean; receipts: HelpReceipt[] };
 
 const textOf = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 const textsOf = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
@@ -301,11 +279,13 @@ export const usePinHelp = () =>
 
 /**
  * A new Ask Daoris conversation from an earlier one's words (ASKHIST1): the driver opens it as it opens any, setting aside the
- * one running, and hands it the earlier one's transcript with the person's first message.
+ * one running, and hands it the earlier one's transcript with the person's first message. It is opened in the workspace the
+ * window shows at the press (ASKSCOPE1d), whatever the earlier one's was; none is `default`'s, as `useStartHelp`'s.
  */
 export const useHelpStartFrom = () =>
   useMutation({
-    mutationFn: (id: string) => call<{ sessionId: string | null; message: string; from: string }>('HELP_START_FROM', { id }),
+    mutationFn: ({ id, workspace }: { id: string; workspace?: string }) =>
+      call<{ sessionId: string | null; message: string; from: string }>('HELP_START_FROM', workspace ? { id, workspace } : { id }),
   });
 
 /**

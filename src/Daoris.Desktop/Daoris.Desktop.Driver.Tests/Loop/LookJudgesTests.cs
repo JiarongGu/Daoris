@@ -153,7 +153,7 @@ public sealed class LookJudgesTests : IDisposable
     public async Task A_slow_helper_judgment_holds_no_other_start()
     {
         // A conversation asked a helper, which answered; the answer waits to be handed, and the helpers' door does not answer.
-        _ledger.Working("s-asker", "engine", Path.Combine(_home, "trees", "s-asker"));
+        _ledger.Working("s-asker", "engine", Path.Combine(DaorisHome.Entry(_home, HomeEntry.Trees), "s-asker"));
         var files = new HelperFiles(_home);
         Directory.CreateDirectory(Path.GetDirectoryName(files.PathOf("h1", "ask"))!);
         File.WriteAllText(files.PathOf("h1", "ask"), new JsonObject

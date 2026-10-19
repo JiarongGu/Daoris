@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { HelpReceipt, HelpWired, HelpWiredLack } from '../bridge/help';
+import type { HelpReceipt, HelpWired, HelpWiredLack } from './wired';
 import { Button, Icon, PathText, Prose } from '../design/ui';
 import { clockOf } from '../locales/format';
 import { cn } from '../lib/cn';

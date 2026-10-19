@@ -422,6 +422,12 @@ export type Session = {
    */
   answer?: string | null;
   /**
+   * The access setup a driven session started under (AUTONOMY1a, D184 point 1): each pause by name with its value, as the driver
+   * resolved it at the start. This machine's own, as the opinion is: null on any other kind, on a record from before the field, on
+   * a teammate's record and in a browser.
+   */
+  access?: Record<string, string> | null;
+  /**
    * The note's lines, one part each, beside the note's English (LANG1a, D142 point 2): the page words a coded part in the
    * reader's language and shows a words part as written (LANG1b, `work/note.ts`). Absent or null for a record from before
    * parts, and from a host older than the field, whose note is shown as kept.

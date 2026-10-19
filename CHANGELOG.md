@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- Three of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
+- Ask Daoris follows the window's workspace. A conversation starts in the workspace the window shows when you press send,
+  and stays there if the window moves while it starts. A window that shows every workspace asks which before it starts one,
+  keeping your words in the box. Its history lists the window's workspace's conversations, or every workspace's with each
+  labelled, and searches only the one chosen. Another workspace's conversation can be read from any window, named as that
+  workspace's, and *Switch to games and continue* moves the window there before you write to it. In the terminal,
+  `daoris-driver help list` takes `--workspace <name>` or `--all`.
 - Removing a session's tree no longer deletes what a link in it points at. On Windows git's removal followed a junction out
   of the tree, so a tree holding `npm link`'s link, a workspace's junction or a link of the session's own could take files in
   your checkout or another repository with it. Each link in a tree now goes as a link before git removes the tree, whether
@@ -14,7 +21,10 @@ with the version and date at release.
   `daoris-driver access <repository> routing=intake` lets an ask's intake publish to its own best choice of repository rather
   than ask you which, saying in the quest that the route was its choice, and you can still publish the ask elsewhere.
   `goAheads=never` stops a session asking go-aheads before acts outside its repository or on a production system; a go-ahead your
-  own words on the ask or the task demand is still asked. `full` turns both off. Nothing changes until you set it, and a
+  own words on the ask or the task demand is still asked. `landing=rule` lands a session's finished work when its quest is done,
+  without your *Accept…*, as a branch rule's *Accept automatically* does: on its branch, and pushed with a pull request where the
+  rule names a plugin. A held done still waits for you, and a rule that merges still waits for your Accept, its conversation
+  saying why. `full` turns them all off. Nothing changes until you set it, and a
   session that goes on in its own conversation is told where its go-aheads changed since it started.
 - A session's own tree of a Node repository starts with the dependencies your checkout installed with npm, copied in where
   the tree's `package-lock.json` is the checkout's and the checkout's install is at it, so its session no longer spends

@@ -151,11 +151,12 @@ public static class DriverCommand
           sessions helper --approve|--decline <ask>
               your yes or no to an agent's ask for a helper that waits on you (the `helpers` rule's `ask`), as its
               session's page takes it: a yes starts it at the driver's next look; a no refuses it and says so.
-          help list [--search "…"] [--json] [--offset <n>] [--limit <n>]  ·  help resume <id> "…" [--file <path>]…
-          help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>  ·  help delete <id> [--yes]
-              Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, go on
-              in one with your words (it goes on in the window), name, pin or unpin one, or delete one, listed
-              first and deleted with --yes.
+          help list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
+          help resume <id> "…" [--file <path>]…  ·  help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
+          help delete <id> [--yes]
+              Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, one
+              workspace's or every one's, each then labelled with its own; go on in one with your words (it goes
+              on in the window), name, pin or unpin one, or delete one, listed first and deleted with --yes.
           help mode [restricted|full]
               Ask Daoris's access mode (D183), from its next start: restricted, the default, reads and proposes and
               you apply; full acts on this machine itself, in its agent's mode that asks nothing. Alone, says which.

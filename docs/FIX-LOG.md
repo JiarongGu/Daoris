@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — Ask Daoris's mode molecules took their types from a bridge domain (HELPMODE1b)
+
+- **Symptom:** `design/presentational.test.ts` failed on main: `help/HelpModePicker.tsx`, `help/WhatItHas.tsx`, `help/modes.ts` and
+  `settings/AiJobs.tsx` each "imports a bridge domain ('./bridge/…')".
+- **Root cause:** the boundary forbids a molecule any import from a bridge domain, a type-only one included, so a molecule cannot
+  side-step it; HELPMODE1b's molecules took `HelpMode`, `HelpReceipt` and `PluginEntry` from `bridge/help` and `bridge/plugins`.
+  Its builder ran its own files, not the boundary's test (D180).
+- **Fix:** the shapes live in `help/wired.ts`, types alone; `bridge/help.ts` imports and re-exports them, so its callers are
+  unchanged; `modes.ts` reads a plugin through `HelpPluginOffer`, the fields it uses.
+- **Verify:** the boundary's test and the help, bridge and Settings tests (121) green; the web typecheck clean.
+- **Commit:** `2aa5d51c7`
+
 ## 2026-10-19 — A tree's removal deleted what a junction in it pointed at, outside it (TREELINK1)
 
 - **Symptom:** TREEDEPS1's builder probed git 2.53.0.windows.3 on the owner's machine: a junction in a worktree to a folder

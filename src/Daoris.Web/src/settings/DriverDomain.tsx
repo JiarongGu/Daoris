@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSayUpdate, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
+  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
 } from '../bridge/shell';
 import { useSystemWiring } from '../bridge/system';
-import { Button, Card, CheckField, failure, Icon, PathText, SettingRow } from '../design/ui';
+import { Button, Card, CheckField, failure, Icon, PathText, SectionTitle, SettingRow } from '../design/ui';
+import { sentence } from '../locales/format';
+import { accessToast, AccessRows, resolveAccess } from './Access';
 import type { SettingsDomainProps } from './domains';
 import { UpdateSection } from './Update';
 
@@ -65,6 +67,9 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   // The install's update (UPDATE1b, D139 §6): the query the banner reads, and the same word it says.
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
+  // This machine's sessions' access (AUTONOMY1d, D184 point 1): the default under every workspace's and repository's.
+  const setAccess = useSetAccess();
+  const machineAccess = driver.data?.machineAccess;
   const onError = failure(notify);
 
   return (
@@ -229,6 +234,32 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
           />
         )}
       </Card>
+
+      {/* This machine's sessions' access (AUTONOMY1d, D184 point 1): the level under every workspace's and repository's, whose
+          own are on their Setup tabs. Here because it is the machine's, as the driver's dials are, and offered where the shell
+          answers it, since an older shell has no route to write it. Nothing stands above it, so turning full access off clears it. */}
+      {machineAccess && (
+        <Card>
+          <section aria-label={t('projects.setup.section.access')}>
+            <SectionTitle>{t('projects.setup.section.access')}</SectionTitle>
+            <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.access.machineHint')}</p>
+            <AccessRows
+              owner="machine"
+              pauses={resolveAccess([{ setting: machineAccess, source: 'machine' }])}
+              aboveFull={false}
+              busy={setAccess.isPending}
+              setHere={t('settings.access.setHere.machine')}
+              onChange={(edit, answered) => setAccess.mutate({ machine: true, ...edit }, {
+                onSuccess: () => {
+                  notify(accessToast(t, t('settings.access.thisMachine'), edit, true));
+                  answered?.done();
+                },
+                onError: (error) => (answered ? answered.refused(sentence(error)) : onError(error)),
+              })}
+            />
+          </section>
+        </Card>
+      )}
 
       {/* The install's update (UPDATE1b): the banner, its other door on the screen, is gone once dismissed, and this
           stands. Here because the update is the application's own, as the home above is, and holds the driver's starts

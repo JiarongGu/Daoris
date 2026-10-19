@@ -360,6 +360,58 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
+    /// ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): the list holds one workspace's conversations, its name matched whatever its
+    /// letters' case (D48), or every workspace's where none is named, each row with the workspace its record keeps. A record from
+    /// before ASKSCOPE1a keeps none, and is read as `default`'s, exactly as it was recorded.
+    /// </summary>
+    [Fact]
+    public void The_list_holds_one_workspaces_conversations_or_every_ones_each_with_its_workspace()
+    {
+        Said("h1", "what is a workspace?", "A circle of repositories.");
+        Said("h2", "and the games one?", "Its own room.");
+        Said("h3", "and before workspaces?", "The default.");
+        SessionRecord[] records = [Help("h1") with { Workspace = "work" }, Help("h2") with { Workspace = "games" }, Help("h3")];
+        var kept = new HelpConversations(_home);
+
+        var games = kept.List(records, Events, Resumes, workspace: "Games");
+        var older = kept.List(records, Events, Resumes, workspace: RemoteTarget.DefaultWorkspace);
+        var every = kept.List(records, Events, Resumes);
+
+        Assert.Equal(1, games.Total);
+        Assert.Equal(("h2", "games"), Assert.Single(games.Conversations) is var row ? (row.Session, row.Workspace) : default);
+        Assert.Equal(["h3"], older.Conversations.Select(row => row.Session));
+        Assert.Equal(3, every.Total);
+        Assert.Equal(
+            new Dictionary<string, string> { ["h1"] = "work", ["h2"] = "games", ["h3"] = RemoteTarget.DefaultWorkspace },
+            every.Conversations.ToDictionary(row => row.Session, row => row.Workspace));
+        Assert.Empty(kept.List(records, Events, Resumes, workspace: "elsewhere").Conversations);
+    }
+
+    /// <summary>
+    /// ASKSCOPE1d (point 6): a search runs over the chosen workspace before the page is taken, so another workspace's finds never
+    /// fill its page, and its count and its next page are that workspace's.
+    /// </summary>
+    [Fact]
+    public void A_search_runs_over_the_chosen_workspace_before_its_page()
+    {
+        SessionRecord[] records =
+        [
+            Help("h1") with { Workspace = "games" }, Help("h2") with { Workspace = "work" }, Help("h3") with { Workspace = "work" },
+            Help("h4") with { Workspace = "games" }, Help("h5") with { Workspace = "games" },
+        ];
+        foreach (var record in records) Said(record.Id, $"and the remote of {record.Id}?", "Its remote.");
+        var kept = new HelpConversations(_home);
+
+        var first = kept.List(records, Events, Resumes, "remote", limit: 2, workspace: "games");
+        var rest = kept.List(records, Events, Resumes, "remote", offset: 2, limit: 2, workspace: "games");
+
+        Assert.Equal((3, 2), (first.Total, first.Next));
+        Assert.Equal((3, (int?)null), (rest.Total, rest.Next));
+        Assert.Equal(["h1", "h4", "h5"], first.Conversations.Concat(rest.Conversations).Select(row => row.Session).Order());
+        Assert.All(first.Conversations.Concat(rest.Conversations), row => Assert.Equal("games", row.Workspace));
+    }
+
+    /// <summary>
     /// ASKHIST1d: the line of what it was about is the answer's first line whole, so the page parses its Markdown before it cuts
     /// it to a row; the driver cut it at 160 characters first, and a delimiter could lose its partner. Only a line longer than
     /// any row shows is cut, and says so.

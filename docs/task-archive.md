@@ -17175,3 +17175,33 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AUTONOMY1b2 — a resumed record keeps the setup it runs under now** (service, driver; D184 point 1, its AUTONOMY1b note). A resumed driven record still holds the setup it opened under, and the ledger has no door to change it (Ask Daoris's mode has `/help-mode`). Proof: a resume under a changed setup leaves the record's `access` naming the new values.
 
 **Outcome** 2026-10-19: `POST /api/sessions/{id}/access` keeps a driven record's access map (this machine's driven records only, no revision, a malformed or empty map refused, a mirror, chat or help record a 404); a resume whose permission prompts changed (`DrivenAccess.KeepAsync`) posts the whole setup standing now before its spawn, and a refused door is said and the run goes on. A go-ahead changed alone does not call it. On Sonnet: about 55 tool calls, 9 minutes; `AnswerContinuesTickTests` ran at the merge (5 pass). Detail: D184's AUTONOMY1b note, its AUTONOMY1b2 line.
+
+## AUTONOMY1d — the repository setup page's access section (2026-10-19, D184)
+
+> - [ ] **AUTONOMY1d — the repository setup page's access section** (web; D184 points 1-3; after AUTONOMY1a). On a repository's setup: a full-access switch and the list of pauses, each with what it means, its effective value and where it comes from (repository, workspace, machine), confirmed once for full access; en and 中文. Proof: page tests per control; the installed window.
+
+**Outcome** 2026-10-19: A repository's Setup has *Sessions' access* after *Line and landing*; a workspace's Setup and Settings > Driver hold the same rows one level up (`settings/Access.tsx`'s `AccessRows`). Full access is asked once, saying what it turns off and what stays; switching it off clears the level, or sets today's pauses where the level above is full; each pause shows its value and where it was set, set here or cleared back to the level above; *Questions* read-only. The lines slice carries `access`; en and 中文, the glossary's traps noted. On Opus: about 320 tool calls, 49 minutes. Detail: D184's AUTONOMY1d note.
+
+## TREELINK1b — a second opinion's copy is removed without following a link (2026-10-19, D51)
+
+> - [ ] **TREELINK1b — a second opinion's copy is removed without following a link** (driver; D51's TREELINK1 note). `Review/OpinionTree.cs` (~142) deletes a second opinion's copy under the trees home with .NET's recursive `Directory.Delete`, which throws on a junction although it removes it. It uses `TreeSetAside.DeleteNeverFollowing`, as the purge does. Proof: a copy holding a junction to a folder outside it is removed, and the folder's file still stands.
+
+**Outcome** 2026-10-19: `OpinionTree.RemoveAsync` removes a second opinion's copy through `TreeSetAside.DeleteNeverFollowing`; a junction test passed on the old delete too (this .NET took the junction as a link), so the change is the named safety, not a fix seen to fail. On Sonnet, with TREESCRATCH2: about 25 tool calls, 9 minutes. Detail: D51's TREELINK1 note, its TREELINK1b line.
+
+## TREESCRATCH2 — `SessionTreesTests` leaves no folders behind (2026-10-19, D51)
+
+> - [ ] **TREESCRATCH2 — `SessionTreesTests` leaves no folders behind** (driver tests; TREEDEPS1's hand-back). Its `Dispose` uses .NET's recursive delete, which leaves each test's `engine/.git` and throws on a workspace junction, leaving `node_modules`. Remove through `TreeSetAside.DeleteNeverFollowing`. Proof: a run of the class leaves its scratch empty.
+
+**Outcome** 2026-10-19: `SessionTreesTests`' cleanup removes through `DeleteNeverFollowing`; a run of the class (20 pass) leaves its scratch empty.
+
+## AUTONOMY1c2 — landing by the rule, without *Accept…*, where the setup says (2026-10-19, D184)
+
+> - [ ] **AUTONOMY1c2 — landing by the rule, without *Accept…*, where the setup says** (driver; D184 points 2-3, 5; D145; AUTONOMY1c's note). With `landing: rule`, finished work under a branch rule lands as the rule's own `autoAccept` makes it today, one effective rule read at `AutoLander.Concluded` (`Trees/Landing/AutoLander.cs` ~647), `WorkflowProcess.Current` (`Workflows/Domain/WorkflowGate.cs` ~99), `TreeLands`' refusal (~443-446) and its plan (~111); never written to `driver.json`; a merge rule still lands nothing by itself (D51 rule 6); the evidence hold, a lost claim and a done turned down still hold it; the landing's record says the setup accepted it. Proof: `rule` on and off, full access, an evidence-held done held, in the landing's rule, look and refusal tests; `AutoLandingTests` (Process) with the setup.
+
+**Outcome** 2026-10-19: `LandingRules.Effective` turns a branch rule's auto-accept on under `landing: rule` (full access included, at any level), read at `AutoLander.Concluded`, `WorkflowProcess.Current`, `TreeLands`' refusal and its plan; never written to `driver.json`; named workflows keep their landing step's own press; a merge rule keeps *Accept…* and says why (`AutoConcluded.Merges`); the evidence and yes holds, a done turned down and a lost claim still hold it; the landing's record keeps `rule.access`. On Opus: about 165 tool calls, 27 minutes; `AutoLandingTriesTests` ran at the merge (26 pass). Detail: D184's AUTONOMY1c2 note.
+
+## ASKSCOPE1d — Ask Daoris's history and panel follow the window's workspace (2026-10-19, D158)
+
+> - [ ] **ASKSCOPE1d — Ask Daoris's history and panel follow the window's workspace** (driver, modules, web, cli; D158's ASKSCOPE1 note points 1 and 6; after ASKSCOPE1a). History lists the window's workspace, with *All workspaces* labelling each row; search runs over the scope before paging, the scope in the query key; a conversation from another workspace is named and continued only after an explicit switch; *All workspaces* asks which before a start; `help list --workspace`/`--all` row for row; en and 中文. Proof: route, terminal and page tests per point; then the installed two-window proof (ONEINSTANCE2b).
+
+**Outcome** 2026-10-19: `HELP_CONVERSATIONS` and `daoris-driver help list` take a workspace (`--workspace`, `--all`), the row carries its workspace at both doors, an older record reading `default`. The page starts in the window's workspace, captured at the press; a window showing several asks which before a start (the words wait in the box); it shows the newest conversation of its workspace and opens one ahead only there; another workspace's conversation is named and continued only after an explicit switch; the history is scoped by the window's workspace with *All workspaces* labelling each row, searched within its scope. A window showing every workspace may continue any conversation (recorded in D158's note). On Opus: about 250 tool calls, 51 minutes. Detail: D158's ASKSCOPE1d note.

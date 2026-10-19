@@ -23,7 +23,8 @@ through the same door the screen uses, so what it can do is exactly what the per
   person, and it stays open across views. *As built (HELP1d):* not a tab of Sessions' right dock, as
   first written, since that dock exists only inside Sessions and a panel there would close with a
   change of view. Whether it is open is this viewer's, remembered like the view.
-- One conversation per machine, carried on across opens. *New conversation* waits for the host to finish
+- One conversation per workspace, carried on across opens; a window shows its own workspace's (D158's ASKSCOPE1 note).
+  *New conversation* waits for the host to finish
   a running conversation before clearing the panel. Pending or refused endings keep the draft visible.
 
 **Where it lives, looked at again (the owner, 2026-09-29: *"the ask daoris need to be a better
@@ -178,8 +179,9 @@ line git can name. With an agent named, a starter is also a first message.
    - **Its rules are the room's allows and the person's denies**, never the person's allows, which
      are for work in a repository; the connector is handed on both doors, and no plugin's server
      (a browser brought up for a tool it may not use would be a window for nothing).
-   - **Its conversations are read across every workspace**: it belongs to none, and the scope a
-     person works in must not hide the conversation beside it.
+   - **Each conversation is in the workspace it started in** (D158's ASKSCOPE1 note): the panel
+     shows the window's workspace's, and its history lists them, or every workspace's, each labelled.
+     Another workspace's is read from any window, and gone on in only from a window on it.
    - **A running conversation is carried on only where this process holds it**: after a restart,
      the one that ran is shown ended, and a message opens the next.
    - 🔴 **Its session asks for the agent's own asking mode** (`default`), never D81's `auto`. The

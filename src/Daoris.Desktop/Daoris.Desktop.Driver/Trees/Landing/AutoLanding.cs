@@ -19,7 +19,15 @@ public static class AcceptedBy
 /// <summary>The landing rule a landing was made under, as it stood then (LAND2b, D145 point 6, design §8).</summary>
 /// <param name="Plugin">The plugin the rule named, whether or not it pushed; null where the person pushes.</param>
 /// <param name="Source">Where the rule came from, one of <see cref="LandingSource"/>.</param>
-public sealed record LandedRule(string? Plugin, bool AutoAccept, string Source);
+public sealed record LandedRule(string? Plugin, bool AutoAccept, string Source)
+{
+    /// <summary>
+    /// Where the access setup that turned the rule's switch on was set (AUTONOMY1c2, D184 point 3; <see cref="Landing.Access"/>): with
+    /// <see cref="AcceptedBy.Auto"/>, the setup accepted it, not the rule's own switch. Null where the rule's own switch stood, and in a
+    /// record from before: the file keeps it as <c>access</c> beside <c>source</c>, only where it was set.
+    /// </summary>
+    public string? Access { get; init; }
+}
 
 /// <summary>
 /// What a try to land a due session came to (LAND2b, design §8): the codes its due entry keeps and the machine log writes.
@@ -171,6 +179,12 @@ public static class AutoConcluded
 
     /// <summary>An end that is not a done — declined, failed, stood down, stopped: it keeps today's review (design §2).</summary>
     public const string NotDone = "not-done";
+
+    /// <summary>
+    /// A done in a tree of its own whose access setup lands work by its rule, under a rule that merges (AUTONOMY1c2): a merge lands
+    /// nothing by itself (D51 rule 6), so it waits for the person's Accept, and its conversation says why.
+    /// </summary>
+    public const string Merges = "merges";
 }
 
 /// <summary>The due list's rules (LAND2b): pure, so the tables hold them without a process.</summary>
@@ -193,6 +207,17 @@ public static class AutoLandingRules
         if (status == "Done") return ownTree ? AutoConcluded.Due : AutoConcluded.NoTree;
         return Ends.Contains(state) ? AutoConcluded.NotDone : null;
     }
+
+    /// <summary>
+    /// How a concluded record stands to the rule it lands by (AUTONOMY1c2, <see cref="LandingRules.Effective"/>): as
+    /// <see cref="Concluded(LandingRule, string?, bool, string)"/> says of its rule, and <see cref="AutoConcluded.Merges"/> for a done in a
+    /// tree of its own under a merge rule its access setup would have land by the rule, which lands nothing by itself (D51 rule 6). A done
+    /// in the checkout is there already, and another end keeps today's review, so neither is said.
+    /// </summary>
+    public static string? Concluded(Landing landing, string? status, bool ownTree, string state) =>
+        landing is { Access: not null, Rule.Form: LandingForm.Merge }
+            ? status == "Done" && ownTree && !SessionStates.IsParked(state) ? AutoConcluded.Merges : null
+            : Concluded(landing.Rule, status, ownTree, state);
 
     /// <summary>
     /// Whether a due entry is worth a try now (design §2): its first, and a hold's at every look; a refusal only once its
@@ -467,9 +492,21 @@ public static class AutoLandingNotes
     }
 
     /// <summary>What a record that concluded under the switch and lands nothing says (design §2).</summary>
-    /// <param name="concluded"><see cref="AutoConcluded.NoTree"/> or <see cref="AutoConcluded.NotDone"/>.</param>
-    public static SessionEvent Concluded(string concluded)
+    /// <param name="concluded"><see cref="AutoConcluded.NoTree"/>, <see cref="AutoConcluded.NotDone"/> or <see cref="AutoConcluded.Merges"/>.</param>
+    /// <param name="access">Where the access setup that lands work by its rule was set, which a merge's note names (<see cref="Landing.Access"/>).</param>
+    public static SessionEvent Concluded(string concluded, string? access = null)
     {
+        // AUTONOMY1c2: uncoded until the page's note catalogues word it (AUTONOMY1d), as the setup's start note is.
+        if (concluded == AutoConcluded.Merges)
+        {
+            return new SessionEvent
+            {
+                Kind = SessionEventKind.Note,
+                Text = $"its quest was done, and {(access is null ? "its" : AccessRules.Whose(access) + "'s")} access setup lands work by its rule, "
+                    + "but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept.",
+            };
+        }
+
         var said = concluded == AutoConcluded.NoTree
             ? Noted.Of(NoteCodes.LandingNoTree,
                 "its quest was done, and it worked in the repository's own checkout, so its work is already there: nothing lands automatically.")

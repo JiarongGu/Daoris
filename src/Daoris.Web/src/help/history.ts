@@ -24,6 +24,11 @@ export type HelpConversationRow = {
    * start got, never the mode chosen now. Absent from a driver before it.
    */
   mode?: string;
+  /**
+   * The workspace it started in, its record's (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): kept from its start and never
+   * moved, `default` for a record from before. Absent from a driver before it, which is `default`'s too (`workspaceOf`).
+   */
+  workspace?: string;
   /** Whether words written to it once it ended go on in its own conversation; else a new one starts from its words. */
   resumable: boolean;
   /** The earlier conversation it started from, and what it was handed of it. */
@@ -37,6 +42,9 @@ export type HelpConversationRow = {
    */
   foundLine?: string | null;
 };
+
+/** Whether two workspace names name one workspace, whatever their letters' case, as the driver matches them (D48). */
+export const sameWorkspace = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
 
 /** A name's longest: a title, as the driver keeps it (`HelpConversations.NameLimit`). */
 export const HELP_NAME_LIMIT = 80;

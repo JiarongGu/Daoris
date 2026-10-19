@@ -249,7 +249,8 @@ public abstract class AutoLandingFixture : IDisposable
         // The status the driver's conclusion hands on, as it reads the quest after the run (Driver.ConcludedForLandingAsync's callers).
         var verdict = AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session, _world.Quests[quest],
             QuestResults.Status(_world.Quests[quest]), "completed", opened.Path, "aurora");
-        Assert.Equal(Config().Landings.GetValueOrDefault("engine")?.AutoAccept == true ? AutoConcluded.Due : null, verdict);
+        // The rule as it lands, the access setup's landing composed in (AUTONOMY1c2).
+        Assert.Equal(LandingRules.Effective(Config(), "engine", "aurora").Rule.AutoAccept ? AutoConcluded.Due : null, verdict);
         return opened.Path;
     }
 

@@ -65,7 +65,11 @@ public sealed class HelpCommandTests : IDisposable
         new[] { "delete", "h1", "--now" },
         new[] { "resume", "h1" },
         new[] { "list", "--search" },
-        new[] { "list", "--all" },
+        new[] { "list", "--workspace" },
+        new[] { "list", "--workspace", "--json" },
+        new[] { "list", "--workspace", "games", "--workspace", "work" },
+        new[] { "list", "--workspace", "games", "--all" },
+        new[] { "list", "--all", "--workspace", "games" },
         new[] { "list", "--offset" },
         new[] { "list", "--offset", "-1" },
         new[] { "list", "--limit", "0" },
@@ -88,6 +92,8 @@ public sealed class HelpCommandTests : IDisposable
     {
         Assert.Equal(new HelpVerbAsk("list") { Search = "remote", Json = true }, HelpCommand.Read(["list", "--search", " remote ", "--json"], out _));
         Assert.Equal(new HelpVerbAsk("list") { Offset = 50, Limit = 20 }, HelpCommand.Read(["list", "--offset", "50", "--limit", "20"], out _));
+        Assert.Equal(new HelpVerbAsk("list") { Workspace = "games" }, HelpCommand.Read(["list", "--workspace", " games "], out _));
+        Assert.Equal(new HelpVerbAsk("list") { All = true, Json = true }, HelpCommand.Read(["list", "--all", "--json"], out _));
         var resume = HelpCommand.Read(["resume", "h1", "and", "the", "remote?", "--file", "notes.md"], out _)!;
         Assert.Equal(("resume", "h1", "and the remote?"), (resume.Verb, resume.Id, resume.Text));
         Assert.Equal(["notes.md"], resume.Files);
@@ -198,6 +204,58 @@ public sealed class HelpCommandTests : IDisposable
         Assert.Equal("live", HelpCommand.JsonFields[HelpCommand.JsonFields.ToList().IndexOf("mode") - 1]);
         Assert.Contains("what is a workspace?  · full access", listed);
         Assert.DoesNotContain("how do I land on a branch?  · restricted", listed);
+    }
+
+    /// <summary>
+    /// ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): <c>--workspace &lt;name&gt;</c> lists that workspace's conversations, and
+    /// <c>--all</c> every workspace's, each row labelled with its workspace, row for row the panel's; a terminal stands in no
+    /// workspace, so a listing that names none is every workspace's, as <c>history</c>'s is. A record from before keeps no
+    /// workspace and is `default`'s. Its <c>--json</c> carries the row's <c>workspace</c>, the route's field, after <c>mode</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_listing_is_one_workspaces_or_every_ones_row_for_row_the_panels()
+    {
+        var ledger = Ledger();
+        ledger.Edit("h1", record => record["workspace"] = "games");
+
+        var (exit, games) = await RunAsync(ledger, "list", "--workspace", "games");
+        var (_, older) = await RunAsync(ledger, "list", "--workspace", "default");
+        var (_, every) = await RunAsync(ledger, "list", "--all");
+        var (_, unnamed) = await RunAsync(ledger, "list");
+        var (_, json) = await RunAsync(ledger, "list", "--workspace", "GAMES", "--json");
+        var (_, none) = await RunAsync(ledger, "list", "--workspace", "elsewhere");
+        var (_, unfound) = await RunAsync(ledger, "list", "--workspace", "games", "--search", "branch");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("what is a workspace?\n", games);
+        Assert.DoesNotContain("how do I land on a branch?", games);
+        Assert.DoesNotContain("in games", games);
+        Assert.Contains("how do I land on a branch?  · starts anew\n", older);
+        Assert.DoesNotContain("what is a workspace?", older);
+        Assert.Contains("what is a workspace?  · in games\n", every);
+        Assert.Contains("how do I land on a branch?  · starts anew · in default\n", every);
+        Assert.Equal(every, unnamed);
+        using var document = JsonDocument.Parse(json);
+        Assert.Equal("games", document.RootElement.GetProperty("conversations")[0].GetProperty("workspace").GetString());
+        Assert.Equal(1, document.RootElement.GetProperty("total").GetInt32());
+        Assert.Equal("mode", HelpCommand.JsonFields[HelpCommand.JsonFields.ToList().IndexOf("workspace") - 1]);
+        Assert.Equal("help: Ask Daoris has no conversations in the workspace `elsewhere` yet; `--all` lists every workspace's.\n", none);
+        Assert.Equal("help: no Ask Daoris conversation in the workspace `games` holds “branch”.\n", unfound);
+    }
+
+    /// <summary>ASKSCOPE1d: a page of one workspace's conversations, or of every one's, says the words that list the next in it.</summary>
+    [Fact]
+    public async Task The_next_page_is_listed_in_the_same_workspace()
+    {
+        var ledger = Ledger();
+        ledger.Edit("h1", record => record["workspace"] = "games");
+        ledger.Edit("h2", record => record["workspace"] = "games");
+
+        var (_, games) = await RunAsync(ledger, "list", "--workspace", "games", "--limit", "1");
+        var (_, every) = await RunAsync(ledger, "list", "--all", "--limit", "1");
+
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --workspace games --offset 1 --limit 1` lists the next.\n", games);
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --all --offset 1 --limit 1` lists the next.\n", every);
     }
 
     /// <summary>
