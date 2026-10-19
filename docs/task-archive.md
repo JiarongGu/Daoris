@@ -17495,3 +17495,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **USAGECAP1a4 — a brainstorm's and a meeting's passes keep their account in the usage history** (driver; D179 point 2, D176). `DriverBrainstorms` and `DriverMeetings` never call `Driver.Said`, so their turns, where recorded, carry no account. Proof: a pass's turn read back with its account.
 
 **Outcome** 2026-10-20: a brainstorm pass's `HoldAsync` passes `said: _driver.Said(adapter, selection, sessionId)`, so its `brainstorm-<id>-<turn>` turns keep the walk's account in the usage history (both doors' events reach `Context.Events`), and the pass also writes account-window readings through the roster callback, as every start holding a session does. A meeting's turn is refused without a stand-in until AGENTROOM1b, so its account follows then. The call-site proof is a Process assertion in `BrainstormProcessTests`, first run by the next full set. On Sonnet: about 24 tool calls, 5 minutes. Detail: D179's USAGECAP1a4 line.
+
+## REHLANE2b — the deployment rehearsal beside the Process lane (2026-10-20, D180)
+
+> - [ ] **REHLANE2b — the deployment rehearsal beside the Process lane** (tools; D180's REHLANE2 note; after REHLANE2). It still runs alone and last (12 to 14 minutes) because `desktop-publish` publishes every desktop project into the `bin/` and `obj/` the Process halves run from, and packs the CLI's folder in place as the release rehearsal does; give its publish an output of its own and chain it after the release and family rehearsals, beside the git half. Contract: D115's REHLANE1 note (why it stayed alone), D180's budget, SHUTDOWNBESIDE1 and REHLANE2 notes. Proof: the merge test's lane tables and own-output rule over its tools; a full set's wall with it beside.
+
+**Outcome** 2026-10-20: `desktop-publish --artifacts-path` builds every `dotnet publish` it runs and its stages into the folder it is told (untold, the install's recipe as before); the deployment rehearsal publishes and builds its driver host into `_fixtures/rehearsal-builds/deployment` on build servers of its own (`OWN_BUILD_SERVERS`), so no build-server shutdown runs before it, and it is of `BESIDE_GIT_HALF`, last: `driver-process`, `driver-process-git`, `rehearse`, `rehearse-family`, `deployment`, `modules-process`. No full set, rehearsal or publish ran on the branch; the next full set is its proof. The `before` machinery no gate plans now is BEFORESTEP1. On Opus: about 214 tool calls, 43 minutes. Detail: D180's REHLANE2b note.
+
+## REHLANE1b — the deployment rehearsal beside the git half (2026-10-20, D115)
+
+> - [ ] **REHLANE1b — the deployment rehearsal beside the git half** (tools; after REHLANE1's three full sets show no new flake). It still waits for the whole Process lane (13–15 m): give its builds and publish their own `--artifacts-path` through `tools/desktop-publish.mjs`'s recipes and their own build servers in place of the shutdown, then run it after the family rehearsal beside the git half. Proof: three full sets' walls, no new flake.
+
+**Outcome** 2026-10-20: done by REHLANE2b; its full sets' walls are the next runs'. Detail: D180's REHLANE2b note.
