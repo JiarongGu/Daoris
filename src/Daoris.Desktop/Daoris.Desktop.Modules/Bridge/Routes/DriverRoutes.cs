@@ -30,6 +30,16 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("UNDER_WAY")]
     private object? GetUnderWay(IpcRequest request) => _loop.UnderWay.Now();
 
+    /// <summary>
+    /// A slice's snapshot (PUSH1a, D182 point 3), which a window asks once it hears the slice's pushes: every partition as last
+    /// judged, read from memory, or not judged yet, never a judgement made for the asking, so a second window judges nothing. A slice
+    /// this Daoris does not push answers nothing, and the page keeps that slice's pulls (capability per slice). A read: it declares
+    /// nothing and tells nothing.
+    /// </summary>
+    [DriverRoute("STATE_SLICE")]
+    private object? GetStateSlice(IpcRequest request) =>
+        _loop.Slices.Find(PayloadHelper.GetRequiredValue<string>(request.Payload, "slice"))?.Snapshot();
+
     [DriverRoute("SET_DRIVABLE")]
     [Publishes("SET_DRIVABLE", StateScopes.Driver)]
     private object? SetDrivable(IpcRequest request)

@@ -503,6 +503,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("RETRY_QUEST", "sessions,driver", null)]
     [InlineData("SHOW_REVIEW_AGAIN", "driver", null)]
     [InlineData("STATE", "", null)]
+    [InlineData("STATE_SLICE", "", null)]
     [InlineData("UNDER_WAY", "", null)]
     [InlineData("NUDGE", "", null)]
     [InlineData("SET_LINE", "driver", null)]
