@@ -112,6 +112,7 @@ where it is, while one made after the change is made at its new place (D172 poin
 |---|---|---|---|
 | `trees/<workspace>/<repository>/<tree>`, with `.tidied/` | `TreeContext.cs:42`, `TreeSetAside.cs:32`, `WorkAbandoning.cs:574`, `OpinionTree.cs:130` | `work/trees/…` | stays, per tree: git's worktree links and an agent's conversation name it |
 | `help/`, Ask Daoris's room (its rendered `AGENTS.md` and `CLAUDE.md`) | `HelpRoom.cs:27` | `work/rooms/help/` | stays: every Ask Daoris conversation ran in it. Its old place counts as there while it holds the rendered `CLAUDE.md`, since `data/help/` also holds the proposals |
+| `help-<name>/`, a named workspace's Ask Daoris room (ASKSCOPE1b; HOMEROOMS1, entry `help-rooms`, pattern `help-*`) | `HelpRoom.PathOf(home, workspace)` | `work/rooms/help-<name>/` | as `help/`: the same `CLAUDE.md` holds it |
 | `intake/<workspace>/`, an intake's room | `IntakeRoom.cs:29` | `work/rooms/intake/<workspace>/` | stays, per workspace |
 | `opinions/<id>/`, a reviewer's packet | `OpinionPackets.cs:44`, `OpinionDeliveries.cs:15` | `work/opinions/<id>/` | stays, per opinion |
 | `quests/<id>/`, `asks/<id>/`, the attachments | the service's `QuestFiles.cs:30, 58` and `Asks.cs:880`; `HistoryHome.cs:13-14` | `work/files/quests/<id>/`, `work/files/asks/<id>/` | stays, per record: handed to sessions as `DAORIS_QUEST_ATTACHMENTS` |

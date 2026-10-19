@@ -177,6 +177,59 @@ public sealed class HelpGoOnTests : IDisposable
         lock (native.Asked) Assert.Equal("conv-h1", Assert.Single(native.Asked).Resume);
     }
 
+    /// <summary>
+    /// 🔴 ASKSCOPE1b (D158's ASKSCOPE1 note point 4): a named workspace's conversation goes on in its own room folder, the one its
+    /// harness keeps it by, written from its workspace's facts; the machine's room is not written for it.
+    /// </summary>
+    [Fact]
+    public async Task A_named_workspace_s_conversation_goes_on_in_its_own_room_written_from_its_workspace()
+    {
+        // Its room stands, as its start wrote it: a conversation goes on only in a tree that stands.
+        var alpha = Directory.CreateDirectory(HelpRoom.PathOf(_home, "alpha")).FullName;
+        var ledger = new ChatLedger();
+        ledger.Chat("h1", "completed", "native-talk", alpha, repository: HelpRoom.Repository).Say("w1", "and the remote?");
+        ledger.Edit("h1", record => record["workspace"] = "alpha");
+        new HarnessConversations(_home).Keep("h1", "native-talk", "conv-h1");
+        var native = new Native();
+        using var runner = Runner(ledger, native, Events);
+        var machine = HelpRoomScopeFixture.Machine();
+        runner.DescribeHelp = _ => Task.FromResult<HelpMachine?>(machine);
+
+        await runner.GoOnAsync("h1", DriverConfig.Empty);
+
+        ChatTarget asked;
+        lock (native.Asked) asked = Assert.Single(native.Asked);
+        Assert.Equal("conv-h1", asked.Resume);
+        Assert.Equal(Path.GetFullPath(alpha), Path.GetFullPath(asked.Root));
+        Assert.Equal(HelpRoom.Render(machine.Within("alpha")), File.ReadAllText(Path.Combine(alpha, "AGENTS.md")));
+        Assert.False(File.Exists(Path.Combine(Room, "AGENTS.md")));
+    }
+
+    /// <summary>
+    /// ASKSCOPE1b: one started in the machine's room before each workspace had its own goes on there, since its harness keeps it
+    /// by that folder, and the room written there is the machine's, as when it started; its workspace's folder is never made.
+    /// </summary>
+    [Fact]
+    public async Task One_started_in_the_machine_s_room_before_each_workspace_had_its_own_goes_on_there()
+    {
+        var ledger = new ChatLedger();
+        ledger.Chat("h1", "completed", "native-talk", Room, repository: HelpRoom.Repository).Say("w1", "and the remote?");
+        ledger.Edit("h1", record => record["workspace"] = "alpha");
+        new HarnessConversations(_home).Keep("h1", "native-talk", "conv-h1");
+        var native = new Native();
+        using var runner = Runner(ledger, native, Events);
+        var machine = HelpRoomScopeFixture.Machine();
+        runner.DescribeHelp = _ => Task.FromResult<HelpMachine?>(machine);
+
+        await runner.GoOnAsync("h1", DriverConfig.Empty);
+
+        ChatTarget asked;
+        lock (native.Asked) asked = Assert.Single(native.Asked);
+        Assert.Equal(Path.GetFullPath(Room), Path.GetFullPath(asked.Root));
+        Assert.Equal(HelpRoom.Render(machine), File.ReadAllText(Path.Combine(Room, "AGENTS.md")));
+        Assert.False(Directory.Exists(HelpRoom.PathOf(_home, "alpha")));
+    }
+
     /// <summary>A reading that fails leaves the room as last written: the conversation still goes on in it.</summary>
     [Fact]
     public async Task A_reading_that_fails_leaves_the_room_as_last_written()

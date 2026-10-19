@@ -812,7 +812,7 @@ export const REACH = Object.freeze([
   },
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
-  { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver-process', 'modules-process'], why: "the Process halves' settings (MOD8)" },
+  { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver', 'driver-process', 'modules-process'], why: "the Process halves' settings (MOD8), which the driver's CategoryTests read (PROCPAR1)" },
   { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
   // Before the driver's tests, which would place it first: the page's twin reads it too.
   // WEBSPLIT1: a vitest's read reaches the web gate's unit run, which runs the vitests; the web gate builds and runs Playwright.

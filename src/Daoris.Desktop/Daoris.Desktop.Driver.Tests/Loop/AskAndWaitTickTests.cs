@@ -46,7 +46,7 @@ public sealed class AskAndWaitTickTests : IDisposable
         var driver = Driver(service, log);
 
         // 1. The quest's first session takes it, asks `backend`, waits, and ends. A good ending.
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var first = service.Session("s1");
         Assert.Equal("completed", first["state"]!.GetValue<string>());
         Assert.Contains("#q2", first["note"]!.GetValue<string>());
@@ -54,7 +54,7 @@ public sealed class AskAndWaitTickTests : IDisposable
         Assert.NotEqual(Path.GetFullPath(_repository), Path.GetFullPath(tree));
 
         // 2. While the question is open the quest sits, saying what it waits on, and nothing starts.
-        var waiting = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var waiting = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var sitting = Assert.Single(waiting.Considerations, c => c.Quest.Id == "q1");
         Assert.Equal(StartVerdict.Waiting, sitting.Verdict);
         Assert.Contains("#q2", sitting.Reason);
@@ -62,7 +62,7 @@ public sealed class AskAndWaitTickTests : IDisposable
 
         // 3. `backend` answers. The quest resumes in the tree it asked from, handed what came back.
         service.Close("q2", "Done", "POST /notes takes { text }.");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var resumed = service.Session("s2");
         Assert.Equal("completed", resumed["state"]!.GetValue<string>());
@@ -89,15 +89,15 @@ public sealed class AskAndWaitTickTests : IDisposable
         await using var service = StandIn.Start(_repository);
         var driver = Driver(service, Path.Combine(_home, "agent.log"), resumedDoesNothing: true);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         service.Close("q2", "Declined", "Not ours.");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var resumed = service.Session("s2");
         Assert.Equal("awaiting-person", resumed["state"]!.GetValue<string>());
         Assert.DoesNotContain("someone else", resumed["note"]!.GetValue<string>());
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(2, service.SessionCount);
     }
 
@@ -114,7 +114,7 @@ public sealed class AskAndWaitTickTests : IDisposable
         var log = Path.Combine(_home, "agent.log");
         var driver = Driver(service, log);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var first = service.Session("s1");
         Assert.Equal("completed", first["state"]!.GetValue<string>());
         var tree = first["tree"]!.GetValue<string>();
@@ -127,7 +127,7 @@ public sealed class AskAndWaitTickTests : IDisposable
             ["body"] = "The notes endpoint takes an author.", ["status"] = "Open", ["publishedBy"] = "b1",
         });
         service.Entries["q3"] = "ask:a1/engine";
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var started = Assert.Single(look.Considerations, c => c.Quest.Id == "q3");
         Assert.Equal("s1", started.Entry?.Into?.Session);

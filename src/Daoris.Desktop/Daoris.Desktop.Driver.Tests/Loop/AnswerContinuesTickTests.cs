@@ -67,7 +67,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
     /// <summary>The first look: a session takes the quest, asks which port, and parks with its conversation id kept.</summary>
     private async Task<JsonObject> ParkedAsync(ParkStandIn service, Daoris.Driver.Driver driver)
     {
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var parked = service.Session("s1");
         Assert.Equal("awaiting-person", parked["state"]!.GetValue<string>());
         Assert.Equal("Taken", service.Status("q1"));
@@ -95,7 +95,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
             park["state"]!.GetValue<string>() == "awaiting-person" && park["answer"]?.GetValue<string>() == "Port 8080.",
             $"the answered park before the next look: {park.ToJsonString()}");
 
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         // 🔴 Said whole on failure (the merge of 2026-10-03): the park before the look, the plan, what the look did, and the
         // record and its quest after it. A park whose resumed run closed its quest once ended still parked here.
@@ -137,7 +137,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         await ParkedAsync(service, driver);
         await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var park = service.Session("s1");
         Assert.Equal("completed", park["state"]!.GetValue<string>());
@@ -182,7 +182,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         new HarnessSettings().WithDefault("stub", "account-2").Save(settings);
         await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
 
-        await Driver(service, "resumes").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await Driver(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
 
         var park = service.Session("s1");
         Assert.Equal("completed", park["state"]!.GetValue<string>());

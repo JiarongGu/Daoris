@@ -51,11 +51,11 @@ public sealed class StartInSyncTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service, "ask");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var tree = service.Session("s1")["tree"]!.GetValue<string>();
         SquashOntoLine(tree);
         service.Close("q2", "Done", "POST /notes takes { text }.");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var resumed = Runs().Last();
         Assert.Contains("resuming quest `#q1`", resumed["target"]!.GetValue<string>());
@@ -72,7 +72,7 @@ public sealed class StartInSyncTickTests : IDisposable
         service.Entries["q1"] = "ask:a1/engine";
         var driver = Driver(service, "ask");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var tree = service.Session("s1")["tree"]!.GetValue<string>();
         SquashOntoLine(tree);
         service.Keep(new JsonObject { ["id"] = "b1", ["repository"] = "backend", ["state"] = "completed", ["entry"] = "ask:a1/backend" });
@@ -82,7 +82,7 @@ public sealed class StartInSyncTickTests : IDisposable
             ["body"] = "The notes endpoint takes an author.", ["status"] = "Open", ["publishedBy"] = "b1",
         });
         service.Entries["q3"] = "ask:a1/engine";
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal("s1", Assert.Single(look.Considerations, c => c.Quest.Id == "q3").Entry?.Into?.Session);
         var part = Runs().Last();
@@ -99,11 +99,11 @@ public sealed class StartInSyncTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service, "fail");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal("failed", service.Session("s1")["state"]!.GetValue<string>());
         var tree = service.Session("s1")["tree"]!.GetValue<string>();
         SquashOntoLine(tree);
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var carried = Runs().Last();
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(carried["cwd"]!.GetValue<string>()), ignoreCase: true);
@@ -174,13 +174,13 @@ public sealed class StartInSyncTickTests : IDisposable
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var parked = service.Session("s1");
         Assert.Equal("awaiting-person", parked["state"]!.GetValue<string>());
         SquashOntoLine(parked["tree"]!.GetValue<string>());
         var (answered, message) = await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
         Assert.True(answered, message);
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var prompt = Runs().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
         Assert.True(prompt["resumed"]!.GetValue<bool>());

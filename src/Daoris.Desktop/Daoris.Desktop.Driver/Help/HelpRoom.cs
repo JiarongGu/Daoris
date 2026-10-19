@@ -20,11 +20,24 @@ namespace Daoris.Driver;
 /// <para><b>By section (MOD6).</b> What it says is <see cref="HelpRoomSections.All"/>, in order: each section a
 /// file of its own under <c>Help/Room/</c> that says one thing and describes the facts it says, so a new
 /// section is a file and a line there.</para>
+///
+/// <para><b>A room per workspace</b> (ASKSCOPE1b, D158's ASKSCOPE1 note point 4). A conversation runs in the room of the
+/// workspace its record keeps: <c>default</c>'s is <see cref="Folder"/>, the whole machine as before, and a named workspace's is a
+/// folder of its own beside it (<see cref="PathOf(string, string?)"/>), written from the facts projected to that workspace
+/// (<see cref="HelpMachine.Within"/>). Two running conversations in two workspaces never write one room.</para>
 /// </remarks>
 public static class HelpRoom
 {
-    /// <summary>The folder under the home that is the room.</summary>
+    /// <summary>The folder under the home that is the room: <c>default</c>'s, the whole machine's.</summary>
     public const string Folder = "help";
+
+    /// <summary>
+    /// The longest a named workspace's part of its room's folder name is spelled out (ASKSCOPE1b); a longer one keeps its first
+    /// <see cref="NameKept"/> characters and a digest of the whole name, so a folder's name stays well inside what a file system holds.
+    /// </summary>
+    private const int NameSpelled = 48;
+
+    private const int NameKept = 32;
 
     /// <summary>
     /// The "repository" its sessions are recorded in: a colon is in no folder name, so no registered
@@ -61,36 +74,134 @@ public static class HelpRoom
         .. HelpProposalKinds.All.Select(kind => $"mcp__{KnowledgeConnector.ServerName}__{kind.Tool}"),
     ];
 
+    /// <summary><c>default</c>'s room, the whole machine's: <see cref="Folder"/> under the home.</summary>
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpRoom);
 
     /// <summary>
-    /// Whether the room was ever written (HELPSTUCK1): its <c>AGENTS.md</c> is there, so a start whose reading of the machine
-    /// does not answer in time can start on it as last written.
+    /// The room of <paramref name="workspace"/> (ASKSCOPE1b): <c>default</c>'s, or none named, is <see cref="PathOf(string)"/>, so
+    /// every conversation started before keeps the folder its harness keeps it by; a named workspace's is a folder of its own beside
+    /// it, <see cref="FolderOf"/>.
     /// </summary>
-    public static bool Written(string home) => File.Exists(Path.Combine(PathOf(home), "AGENTS.md"));
+    public static string PathOf(string home, string? workspace) =>
+        ScopeOf(workspace) is { } named ? Path.Combine(Path.GetDirectoryName(PathOf(home))!, FolderOf(named)) : PathOf(home);
 
-    /// <summary>Write the room from the machine as it stands, and answer where it is.</summary>
+    /// <summary>
+    /// The workspace a room is scoped to (ASKSCOPE1b): null for <c>default</c> or none named, whose room is the whole machine; else
+    /// the name, trimmed.
+    /// </summary>
+    public static string? ScopeOf(string? workspace)
+    {
+        var circle = RemoteTarget.Workspace(workspace);
+        return string.Equals(circle, RemoteTarget.DefaultWorkspace, StringComparison.OrdinalIgnoreCase) ? null : circle;
+    }
+
+    /// <summary>
+    /// A named workspace's room folder (ASKSCOPE1b): <c>help-</c> and the name as one workspace is one name, whatever its letters'
+    /// case (D48), its ASCII letters and digits kept, lowercase, and every other character spelled by its UTF-8 bytes, each
+    /// <c>_</c> and two hex digits. One name is one folder and two names are two, and none is <see cref="Folder"/>: no character
+    /// is kept that a file system or the harness's own naming of a folder would change. A name spelled longer than
+    /// <see cref="NameSpelled"/> keeps its first <see cref="NameKept"/> characters, <c>-</c> and a digest of the whole name, a
+    /// <c>-</c> no shorter one holds.
+    /// </summary>
+    internal static string FolderOf(string workspace)
+    {
+        var spelled = new StringBuilder();
+        Span<byte> bytes = stackalloc byte[4];
+        foreach (var rune in workspace.Trim().ToUpperInvariant().EnumerateRunes())
+        {
+            if (rune.IsAscii && char.IsAsciiLetterOrDigit((char)rune.Value))
+            {
+                spelled.Append(char.ToLowerInvariant((char)rune.Value));
+                continue;
+            }
+
+            var length = rune.EncodeToUtf8(bytes);
+            foreach (var each in bytes[..length]) spelled.Append('_').Append(each.ToString("x2", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        var name = spelled.ToString();
+        if (name.Length > NameSpelled)
+        {
+            var digest = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(workspace.Trim().ToUpperInvariant())));
+            name = $"{name[..NameKept]}-{digest[..16].ToLowerInvariant()}";
+        }
+
+        return $"{Folder}-{name}";
+    }
+
+    /// <summary>
+    /// The workspace whose room a kept conversation goes on in (ASKSCOPE1b): its record's, save one whose record says it ran in
+    /// <c>default</c>'s room (<paramref name="tree"/>, <see cref="PathOf(string)"/>), started there before each workspace had its own,
+    /// which goes on there, its harness keeping it by that folder; null is <c>default</c>'s.
+    /// </summary>
+    public static string? GoesOnIn(string home, string? workspace, string? tree) =>
+        tree is { Length: > 0 } && Same(tree, PathOf(home)) ? null : ScopeOf(workspace);
+
+    private static bool Same(string one, string other)
+    {
+        try
+        {
+            return string.Equals(
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(one)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(other)),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Whether the room of <paramref name="workspace"/> was ever written (HELPSTUCK1): its <c>AGENTS.md</c> is there, so a start whose
+    /// reading of the machine does not answer in time can start on it as last written.
+    /// </summary>
+    public static bool Written(string home, string? workspace = null) => File.Exists(Path.Combine(PathOf(home, workspace), "AGENTS.md"));
+
+    /// <summary>
+    /// Write the room from the machine as it stands, and answer where it is: the room of the workspace it is scoped to
+    /// (<see cref="HelpMachine.Workspace"/>, ASKSCOPE1b), <c>default</c>'s where it is the whole machine.
+    /// </summary>
     public static string Prepare(string home, HelpMachine machine)
     {
-        var room = PathOf(home);
+        var room = PathOf(home, machine.Workspace);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
         AtomicFile.WriteText(Path.Combine(room, "AGENTS.md"), Render(machine));
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
         AtomicFile.WriteText(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         AtomicFile.WriteText(Path.Combine(room, ".claude", "settings.json"), Settings());
-        Unread[Path.GetFullPath(room)] = machine.NotReadYet.Any;
+        Said[Path.GetFullPath(room)] = new RoomSaid(Path.GetFullPath(home), machine.Workspace, machine.NotReadYet.Any);
         return room;
     }
 
-    // What the room this process wrote last under each home said was not read yet (PARALLEL1a): the catch-up writes only such a room
-    // again. A room another process wrote, or one written before this process, is written again at the next start.
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> Unread = new(StringComparer.OrdinalIgnoreCase);
+    // What each room this process wrote last under each home said was not read yet (PARALLEL1a), by its folder, with its workspace
+    // (ASKSCOPE1b): the catch-up writes only such a room again, from its own workspace's facts. A room another process wrote, or one
+    // written before this process, is written again at its next start.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, RoomSaid> Said = new(StringComparer.OrdinalIgnoreCase);
+
+    private sealed record RoomSaid(string Home, string? Workspace, bool NotReadYet);
 
     /// <summary>
-    /// Whether the room this process wrote last under <paramref name="home"/> said something was not read yet (PARALLEL1a), so it
+    /// Whether any room this process wrote last under <paramref name="home"/> said something was not read yet (PARALLEL1a), so it
     /// is written again as the facts land (<see cref="HelpRoomCatchUp"/>).
     /// </summary>
-    public static bool SaidNotReadYet(string home) => Unread.GetValueOrDefault(Path.GetFullPath(PathOf(home)));
+    public static bool SaidNotReadYet(string home) => Unread(home).Count > 0;
+
+    /// <summary>Whether the room of <paramref name="workspace"/> this process wrote last under <paramref name="home"/> said so.</summary>
+    public static bool SaidNotReadYet(string home, string? workspace) =>
+        Said.GetValueOrDefault(Path.GetFullPath(PathOf(home, workspace)))?.NotReadYet ?? false;
+
+    /// <summary>
+    /// The workspaces whose room this process wrote last under <paramref name="home"/> said something was not read yet (ASKSCOPE1b),
+    /// each the one its room is scoped to, null for <c>default</c>'s: what the catch-up writes again, each from its own facts.
+    /// </summary>
+    internal static IReadOnlyList<string?> Unread(string home)
+    {
+        var full = Path.GetFullPath(home);
+        return [.. Said.Values.Where(said => said.NotReadYet && string.Equals(said.Home, full, StringComparison.OrdinalIgnoreCase)).Select(said => said.Workspace)];
+    }
+
+    /// <summary>How many asks wait for the person's answer (HELP1a): those the host answered <c>Proposed</c>.</summary>
+    public static int AsksWaiting(IEnumerable<AskView> standing) => standing.Count(ask => ask.State == "Proposed");
 
     /// <summary>
     /// What its session is handed at spawn (PERM1): the room's allows and a read of the files its
@@ -141,6 +252,10 @@ public static class HelpRoom
     /// <param name="workflows">The named workflows under the home (WORKFLOW1h-b, <see cref="WorkflowStore.List"/>), which name the version each repository follows; null where none were read.</param>
     /// <param name="grants">The person's approvals of what plugins hand it (<see cref="HelpGrants.Read"/>, HELPPLUG1a); none read, none named.</param>
     /// <param name="notReadYet">What the facts the judges keep had not read yet (PARALLEL1a, <see cref="HelpFacts.Read"/>); none by default.</param>
+    /// <param name="workspace">
+    /// The workspace whose room it is (ASKSCOPE1b): its facts projected to it before any section counts or lists them
+    /// (<see cref="HelpRoomScope"/>); <c>default</c> or none is the whole machine, as before.
+    /// </param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
@@ -149,7 +264,7 @@ public static class HelpRoom
         IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
         IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
         IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<string>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
-        HelpNotReadYet? notReadYet = null)
+        HelpNotReadYet? notReadYet = null, string? workspace = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
@@ -158,7 +273,19 @@ public static class HelpRoom
             Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants,
             Work = work, WorkUnread = workUnread ?? [], WorkRecovery = workRecovery ?? [], NotReadYet = notReadYet ?? HelpNotReadYet.None,
         };
-        return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
+        return Describe(sources, ScopeOf(workspace));
+    }
+
+    /// <summary>
+    /// The machine from the whole machine's <paramref name="whole"/>, as the room of <paramref name="workspace"/> says it: its facts
+    /// projected to it first (ASKSCOPE1b), the whole machine where null. The machine keeps <paramref name="whole"/>, so another
+    /// workspace's room is described from the same facts (<see cref="HelpMachine.Within"/>).
+    /// </summary>
+    internal static HelpMachine Describe(HelpMachineSources whole, string? workspace)
+    {
+        var sources = workspace is null ? whole : HelpRoomScope.Project(whole, workspace);
+        return HelpRoomSections.All.Aggregate(
+            new HelpMachine { Workspace = workspace, Whole = whole }, (machine, section) => section.Describe(machine, sources));
     }
 
     public static string Render(HelpMachine machine) =>
@@ -184,6 +311,30 @@ public static class HelpRoom
 /// <remarks>MOD6: each section says its facts in its own file; PART4 keeps the facts in this one declaration, under a comment per section.</remarks>
 public sealed record HelpMachine
 {
+    // The room's scope (ASKSCOPE1b).
+
+    /// <summary>
+    /// The workspace whose room this is, its facts projected to it (D158's ASKSCOPE1 note point 4); null for <c>default</c>'s room,
+    /// the whole machine.
+    /// </summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>The whole machine's facts it was described from, so another workspace's room is described from the same; null where it was built by hand.</summary>
+    internal HelpMachineSources? Whole { get; init; }
+
+    /// <summary>
+    /// The room of <paramref name="workspace"/> (ASKSCOPE1b): this machine's facts projected to it before any count or limit, said
+    /// again by every section; itself for <c>default</c>, or none named, whose room is the whole machine. One built by hand, with no
+    /// facts to project, is only named for the workspace; one altered with <c>with</c> after it was described is described again
+    /// from its facts, so the alteration is not kept.
+    /// </summary>
+    public HelpMachine Within(string? workspace)
+    {
+        var scope = HelpRoom.ScopeOf(workspace);
+        if (string.Equals(scope, Workspace, StringComparison.OrdinalIgnoreCase)) return this;
+        return Whole is { } whole ? HelpRoom.Describe(whole, scope) : this with { Workspace = scope };
+    }
+
     // The agents section's.
 
     public IReadOnlyList<HelpAgent> Agents { get; init; } = [];
@@ -344,4 +495,14 @@ internal sealed record HelpMachineSources(
 
     /// <summary>What the facts the judges keep had not read yet (PARALLEL1a).</summary>
     public HelpNotReadYet NotReadYet { get; init; } = HelpNotReadYet.None;
+
+    /// <summary>The workspace these are projected to (ASKSCOPE1b, <see cref="HelpRoomScope"/>); null for the whole machine.</summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>
+    /// Every repository registered here, every workspace's, where these are projected (ASKSCOPE1b): what the checkouts it may read
+    /// are judged from. Those are what its spawn is granted (D107), so the room lists what its rules allow (D158's ASKSCOPE1b note,
+    /// point 5). Null for the whole machine, whose <see cref="HelpMachineSources.Snapshot"/> holds them all.
+    /// </summary>
+    public IReadOnlyList<RepoView>? Registry { get; init; }
 }

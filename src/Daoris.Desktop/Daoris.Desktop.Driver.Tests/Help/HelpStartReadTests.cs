@@ -149,6 +149,68 @@ public sealed class HelpStartReadTests : IDisposable
     }
 
     /// <summary>
+    /// ASKSCOPE1b (D158's ASKSCOPE1 note point 4): a named workspace's start is the same start, no git on its press (D181): its own
+    /// room folder written at once from the facts projected to its workspace, its agent started there, and the machine's room
+    /// not written. Another workspace's line not judged yet is no part of its room, so its conversation is told nothing is
+    /// missing.
+    /// </summary>
+    [Fact]
+    public async Task A_named_workspace_s_start_writes_its_own_room_from_the_facts_and_starts_no_git()
+    {
+        await using var service = StandInService.Start(_home);
+        var (runner, events, client, config, placed) = Placed(service, "help0006");
+        using var _c = client;
+        using var _r = runner;
+        runner.HelpReadBound = TimeSpan.FromMinutes(5);
+        using var facts = new MachineFacts();
+        var engine = new RepoView("engine", Adopted: true, Root: "checkouts/engine", Workspace: "alpha");
+        var site = new RepoView("site", Adopted: true, Root: "checkouts/site", Workspace: "beta");
+        HelpFacts.Keep(facts, new HelpFactJudges(
+            Machine: _ => Task.FromResult<HelpMachineWhole?>(new(new Snapshot([], [engine, site], []), [], [])),
+            Sessions: _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            History: _ => Task.FromResult<IReadOnlyList<HistoryReading>?>([]),
+            Work: _ => Task.FromResult<HelpWork?>(new HelpWork([], [], [])))
+        {
+            Guess = (root, _) => root == site.Root ? new TaskCompletionSource<string?>().Task : Task.FromResult<string?>("main"),
+        });
+        facts.Start();
+        await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        var gits = 0;
+        ProcessStartInfo? spawned = null;
+
+        using (ProcessStarts.Within(info =>
+               {
+                   spawned = info;
+                   return null;
+               }))
+        {
+            WorkingTree.Started.Value = _ => Interlocked.Increment(ref gits);
+            try
+            {
+                await runner.RunHelpAsync(
+                        placed with { Workspace = "alpha" }, config,
+                        async ct => HelpFactsTests.Describe((await HelpFacts.ReadAsync(facts, config, ct))!, config))
+                    .WaitAsync(Within);
+            }
+            finally
+            {
+                WorkingTree.Started.Value = null;
+            }
+        }
+
+        Assert.Equal(0, gits);
+        var alpha = HelpRoom.PathOf(_home, "alpha");
+        Assert.Equal(Path.GetFullPath(alpha), Path.GetFullPath(spawned!.WorkingDirectory));
+        var agents = File.ReadAllText(Path.Combine(alpha, "AGENTS.md"));
+        Assert.Contains("This conversation is workspace `alpha`'s", agents);
+        Assert.Contains("| `engine` | not driven | `main` (the checkout's own) |", agents);
+        Assert.DoesNotContain("| `site` |", agents);
+        Assert.DoesNotContain("- Not read yet:", agents);
+        Assert.False(File.Exists(Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md")));
+        Assert.DoesNotContain(events.Page("help0006").Events, e => e.Parts is { Count: > 0 } parts && parts[0].Code == "help.room-not-read-yet");
+    }
+
+    /// <summary>
     /// A start that never spawned and left its record <c>queued</c> (the owner's `dc46ef27`, its driver gone) holds the room: every
     /// later Ask Daoris start is refused naming it. The person's stop on that one record ends it, as it ends one left
     /// <c>starting</c>; the loop's own sweep still takes neither.

@@ -41,7 +41,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var record = service.Session("s1");
         Assert.Equal("Taken", service.Status("q1"));
@@ -72,11 +72,11 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service, trees: true, refusal: "Internal error: the connection was reset");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var cutOff = service.Session("s1");
         Assert.Equal("failed", cutOff["state"]!.GetValue<string>());
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var carried = service.Session("s2");
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
