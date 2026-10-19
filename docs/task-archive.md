@@ -17401,3 +17401,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LOOKSLOW2 — `look.slow` says its queue so far** (driver; the machine-log design §4; D181's QUEUEDTREE1 and LOOKWAIT1b note). A stage named slow while it runs cannot yet say whether it waits for places or works; an additive `queued` field tells the two apart. Proof: a `LookStagesTests` row.
 
 **Outcome** 2026-10-20: `look.slow` carries an additive `queued`, the stage's queue so far with a wait still open counted (`StageSpan.QueuedSoFar`), written always, 0 included, so a reader tells "not waiting" from a missing field. On Sonnet: about 19 tool calls, 8 minutes. Detail: D181's LOOKSLOW2 line; the machine-log design's `look.slow` row.
+
+## CIPRIO1e — a dead run's shells' orphans ended at the takeover (2026-10-20, D180)
+
+> - [ ] **CIPRIO1e — a dead run's shells' orphans ended at the takeover** (tools; D180's CIPRIO1d note). On Windows a killed node's non-detached children end with it, so a step's `cmd.exe` exits and its grandchild runs on under a dead parent id, which a listing by the dead run's pid cannot find. At a stale lock's takeover, also end processes created since its `at` whose command line names the gate tree's folder and whose parent no longer runs, with their trees (a listing `tools/processes.mjs` does not have yet). Proof: the killed run with a non-detached `cmd.exe` shell and a grandchild; the takeover ends the grandchild.
+
+**Outcome** 2026-10-20: `endStranded(folder, since)` in `tools/processes.mjs`, called by `takeGateLock` (seam `endStrays`) after `endOrphans`; its pids join `stale.ended`. A real-tree test with a non-detached shell proves it. On Sonnet. Detail: D180's CIPRIO1e note.

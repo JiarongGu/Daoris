@@ -313,7 +313,7 @@ import { constants as osConstants, setPriority as osSetPriority } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
-import { endOrphans } from './processes.mjs';
+import { endOrphans, endStranded } from './processes.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -3619,9 +3619,10 @@ export function readGateLock(home, alive = pidAlive) {
  * set beside the merges at a time, since two would load the machine twice over and share one gate tree. A lock whose
  * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say, with
  * `ended`: the pids `end` (CIPRIO1d, `endOrphans`) ended, the dead pid's direct children started since the lock's `at`
- * with their trees. Only Windows ends any: elsewhere `endOrphans` is a no-op.
+ * with their trees, and (CIPRIO1e, `endStrays`) the processes since then naming the gate tree's folder whose parent no longer
+ * runs. Only Windows ends any: elsewhere both are no-ops.
  */
-export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso, end = endOrphans } = {}) {
+export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
   const file = join(home, GATE_TREE_LOCK);
   mkdirSync(dirname(file), { recursive: true });
   let stale = null;
@@ -3638,7 +3639,10 @@ export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso, end
       if (held) {
         // CIPRIO1d: a run killed outright left its steps' tree running; end what its pid started since the lock's `at`.
         const since = Date.parse(held.at);
-        stale = { pid: held.pid, commit: held.commit, at: held.at, ended: Number.isNaN(since) ? [] : end(held.pid, since) };
+        // CIPRIO1e: and what its shells' orphans still run, found by the gate tree's folder in their command line.
+        const ended = Number.isNaN(since) ? [] : end(held.pid, since);
+        if (!Number.isNaN(since)) ended.push(...endStrays(join(home, GATE_TREE), since).filter((pid) => !ended.includes(pid)));
+        stale = { pid: held.pid, commit: held.commit, at: held.at, ended };
       }
       rmSync(file, { force: true });
       continue;

@@ -176,3 +176,30 @@ export function endOrphans(parent, since) {
   for (const pid of orphans) spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
   return orphans;
 }
+
+/**
+ * End what a killed run's shells left running (CIPRIO1e): every process created at or after `since` (epoch milliseconds)
+ * whose command line names `folder` and whose parent no longer runs, each with its tree. Answers the pids it ended.
+ *
+ * 🔴 {@link endOrphans} lists by the dead run's pid, but a killed node's non-detached children end with it on Windows: a
+ * step's `cmd.exe` goes, and its child runs on under a dead parent id no listing by the run's pid finds. The gate tree's
+ * folder in the command line is what such a process still carries. Only processes whose parent is gone are taken, so a
+ * live run's own tree (its parent alive) is never ended, and `since` keeps an older process out.
+ */
+export function endStranded(folder, since) {
+  if (process.platform !== 'win32' || typeof folder !== 'string' || folder.length === 0) return [];
+  const forms = [folder.replaceAll('/', '\\'), folder.replaceAll('\\', '/')]
+    .map((form) => `'${form.replaceAll("'", "''").toLowerCase()}'`).join(',');
+  const stranded = powershell(
+    '$all = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue); '
+    + '$ids = @{}; foreach ($p in $all) { $ids[[int]$p.ProcessId] = $true }; '
+    + `$forms = @(${forms}); `
+    + `$from = [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.floor(since) - 1000}).LocalDateTime; `
+    + 'foreach ($p in $all) { '
+    + 'if ($p.ProcessId -eq $PID -or -not $p.CommandLine -or $p.CreationDate -lt $from -or $ids.ContainsKey([int]$p.ParentProcessId)) { continue }; '
+    + '$cl = $p.CommandLine.ToLower(); '
+    + 'foreach ($form in $forms) { if ($cl.Contains($form)) { $p.ProcessId; break } } }')
+    .split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
+  for (const pid of stranded) spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+  return stranded;
+}
