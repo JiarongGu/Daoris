@@ -1634,6 +1634,27 @@ describe('Ask Daoris’s access and what it has', () => {
     expect(screen.queryByRole('region', { name: 'What it has' })).toBeNull();
   });
 
+  it('shows a receipt recorded while What it has is open, with no reopening (HELPWIREDLIVE1)', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'restricted' })];
+    WIRED = { session: HELP.id, recorded: true, receipts: [RECEIPT] };
+    access();
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'What it has' }));
+    const has = await screen.findByRole('region', { name: 'What it has' });
+    expect(await within(has).findByText('C:/daoris/help/room')).toBeInTheDocument();
+
+    // A resume records a second receipt; the history watch tells the page the help scope moved.
+    WIRED = {
+      session: HELP.id, recorded: true,
+      receipts: [{ ...RECEIPT, at: '2026-10-19T11:00:00+00:00', start: 'resume', folder: 'C:/daoris/help/room-two' }, RECEIPT],
+    };
+    act(() => heard.get('STATE_CHANGED')?.({ scopes: ['help'] }));
+
+    expect(await within(has).findByText('C:/daoris/help/room-two')).toBeInTheDocument();
+  });
+
   it('says a conversation from before as not recorded', async () => {
     SESSIONS = [HELP];
     ROWS = [row({})];

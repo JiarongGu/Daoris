@@ -17353,3 +17353,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LOOKWAIT1b — a process start's queue timed apart from its run** (driver; D181 point 6, its PARALLEL1b note). `ProcessStarts`' wait for a place shows nowhere in a look's `stages`. Proof: a stage whose git waited for a place shows `stage.queue`.
 
 **Outcome** 2026-10-20: a start's wait for a place is said as the queue of the stage whose work made it (`stage.queue`, or `~stage.queue` beside the look), through an async-local queue set inside that stage's work alone (`ProcessStarts.QueuedToAsync`, `StageSpan.RunAsync`, every `TimeAsync`), counted on the span's clock as the time any of its starts waited; work the running set keeps beside the looks begins said to no stage. On Opus, with QUEUEDTREE1. Detail: D181's QUEUEDTREE1 and LOOKWAIT1b note; `LookWaitTests`, `ProcessStartsTests`, `RunningSessionsTests`.
+
+## HELPWIREDLIVE1 — *What it has* kept current while open (2026-10-20, D183)
+
+> - [ ] **HELPWIREDLIVE1 — *What it has* kept current while open** (web; the modes design §6, D183 point 4). It is read each time it opens, not when a resume adds a receipt meanwhile. Re-read it when the `sessions` family is published: since PUSH1d2 it can hang off the pushed `sessions` entry, or the hub's `sessions` scope, which still invalidates what is read beneath it. Proof: a page test where a published `sessions` refreshes an open *What it has*.
+
+**Outcome** 2026-10-20: the hub's `help` scope asks `help-wired` again (`bridge/stateHub.ts`), so a receipt recorded while *What it has* is open shows with no reopening; a resume's event can land before its receipt is written (HELPWIREDLIVE1b), and `SET_HELP_MODE` records no receipt until the next start. On Sonnet: about 46 tool calls, 19 minutes. Detail: D183's HELPWIREDLIVE1 line; `stateHub.test.tsx`, `AskDaoris.test.tsx`.
+
+## CIPRIO1c — a superseded CI run stops the gate already running (2026-10-20, D180)
+
+> - [ ] **CIPRIO1c — a superseded CI run stops the gate already running** (tools; D180's CIPRIO1 line). A superseded run stops only before its next gate, since `runStep` holds no child handle. `runStep` registers its child and a supersession ends that tree. Proof: a held gate's tree ended within seconds of a newer tip; the run recorded superseded.
+
+**Outcome** 2026-10-20: a run beside of main's tip polls the tip every five seconds while its gates run and, on the first move, ends every step tree it holds by the step's own pid (`taskkill /T /F`; never by image name, never the build servers) and starts nothing more; an ended gate reads ENDED, gives no verdict, and the record stays superseded. A person's Ctrl+C ends the trees the same way and lets the lock go. Left: a run killed outright (CIPRIO1d). On Opus: about 112 tool calls, 50 minutes. Detail: D180's CIPRIO1c note.

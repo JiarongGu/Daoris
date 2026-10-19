@@ -3,7 +3,7 @@ import { type QueryClient, type QueryKey, skipToken, useIsMutating, useQuery, us
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
 import { readUnderWay } from './driver';
-import { HELP_HISTORY, HELP_PROPOSALS } from './help';
+import { HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED } from './help';
 import { ALL_HISTORY } from './history';
 import { treesSyncScopeKey } from './lines';
 import { notPushed } from './slices';
@@ -52,7 +52,9 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   // The remaining presses (STATEHUB1h): the tools, with what a switch of git would change; Ask Daoris's history and what each
   // conversation proposed; the browser's settings and favorites.
   ['tools', () => [ALL_TOOLS]],
-  ['help', () => [HELP_HISTORY, HELP_PROPOSALS]],
+  // HELPWIREDLIVE1: and the receipts *What it has* shows, so one a resume or a change of mode records while it is open appears
+  // (only an enabled query, the open panel's, asks again).
+  ['help', () => [HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED]],
   ['browser', () => [keys.browserSettings]],
   // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends (FABRIC-EVENT5b), no press behind it.
   ['wiring', () => [keys.systemWiring]],
