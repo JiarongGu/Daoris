@@ -981,6 +981,10 @@ export function App() {
         the status bar is therefore always where it was. Page scrolling would put the output panel
         below the fold exactly when a session is producing output. */}
     <div className="flex h-screen flex-col overflow-hidden">
+      {/* First (PUSHMOUNT1, as the secondary root since PUSH1a): its effects run before any view's, so the driver's state and the
+          lines are read as the snapshot it asks and never pulled beside it. A notification is a door (design §4): clicking the OS
+          balloon lands on that session rather than on whatever was last open. It renders nothing. */}
+      <ShellSignals notify={notify} onAttend={openInWork} attended={view === 'sessions' ? attending : null} />
       {/* The application's one global row (D56). It holds what is true everywhere, which is exactly
           why none of it belongs in a sidebar owned by one view. Since SURF7 it is the window's own
           title bar. */}
@@ -1308,9 +1312,6 @@ export function App() {
       <Toasts items={toasts} onClose={dismiss} />
       {/* The window's one right-click handler (CTX1, D138): each surface offers its acts, and it draws the menu. */}
       <ContextMenus doors={contextDoors} shell={chrome.present} />
-      {/* A notification is a door (design §4): clicking the OS balloon lands on that session
-          rather than on whatever was last open. */}
-      <ShellSignals notify={notify} onAttend={openInWork} attended={view === 'sessions' ? attending : null} />
     </div>
     </MainOffer.Provider>
     </LinkOpener.Provider>
