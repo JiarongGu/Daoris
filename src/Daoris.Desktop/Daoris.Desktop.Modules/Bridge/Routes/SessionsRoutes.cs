@@ -347,7 +347,9 @@ public sealed class SessionsRoutes(DriverContext context)
     /// it has looked, a plan over a fresh snapshot where it has not; git asked only of an ended session's own tree that
     /// could be to review. Never from what a session printed.</para>
     ///
-    /// <para><b>Nothing machine-local comes back</b>: ids, groups, words and counts. A tree's path stays here.</para>
+    /// <para><b>Nothing machine-local comes back</b>: ids, groups, words and counts. A tree's path stays here. The one
+    /// exception is a working session's running call (WAITSAY1b): its title is the agent's own words, which may name a file,
+    /// transcript-class as its conversation is (D47 §4) and answered over this bridge alone, as <c>SESSION_HISTORY</c> is.</para>
     /// </remarks>
     [DriverRoute("SESSION_GROUPS")]
     private async Task<object?> SessionGroupsAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -424,8 +426,9 @@ public sealed class SessionsRoutes(DriverContext context)
         var at = DateTimeOffset.UtcNow;
         var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
             .ConfigureAwait(false);
-        // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset.
-        look = look with { Waits = _loop.Look.Waits };
+        // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset. And the
+        // call each live session's agent is inside, as this loop heard it from the events its sessions write (WAITSAY1b).
+        look = look with { Waits = _loop.Look.Waits, Calls = RunningCalls.Of(_loop.Events).Now() };
         // A look at every session is kept with its time, for Ask Daoris's room to read where it is recent (HELPSTART1).
         if (only is null) _loop.SessionsLooked.Keep(look, at);
         return (look, SessionGroups.Read(look, only));
@@ -515,6 +518,8 @@ public sealed class SessionsRoutes(DriverContext context)
         Discards = row.Discards is { } discards
             ? new { discards.Branch, discards.Tree, discards.Says, discards.Work.Keeps, discards.KeptAt }
             : null,
+        // WAITSAY1b: the call a working session's agent is inside, as the loop heard it, which its row and head say with how long.
+        Calling = row.Calling is { } call ? new { call.Title, call.Since } : null,
     };
 
     private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };

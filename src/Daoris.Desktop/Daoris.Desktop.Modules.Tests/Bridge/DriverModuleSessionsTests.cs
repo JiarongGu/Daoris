@@ -605,6 +605,34 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// WAITSAY1b (D152's UX7c amendment): a working session's row carries the call its agent is inside, its title and when it
+    /// began, as the loop heard it from the events its sessions write, a call begun before any window asked among them; and null
+    /// once the call ends. Held in memory: the record keeps the events and nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_working_sessions_row_carries_the_call_its_agent_is_inside_until_it_ends()
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+        var module = new DriverModule(Bus, loop);
+        var since = new DateTimeOffset(2026, 10, 19, 11, 52, 0, TimeSpan.Zero);
+        loop.Events.Append("running1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c1", Title = "npm test", Status = "in_progress", At = since });
+
+        var row = (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "running1", "done1" } })).GetProperty("sessions")
+            .EnumerateArray().ToDictionary(each => each.GetProperty("session").GetString()!);
+
+        var calling = row["running1"].GetProperty("calling");
+        Assert.Equal(("npm test", since), (calling.GetProperty("title").GetString(), calling.GetProperty("since").GetDateTimeOffset()));
+        Assert.Equal(JsonValueKind.Null, row["done1"].GetProperty("calling").ValueKind);
+
+        loop.Events.Append("running1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c1", Status = "completed", At = since.AddMinutes(9) });
+        var ended = (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "running1" } })).GetProperty("sessions")[0];
+
+        Assert.Equal(JsonValueKind.Null, ended.GetProperty("calling").ValueKind);
+        Assert.Equal(2, loop.Events.After("running1", 0).Events.Count);
+    }
+
+    /// <summary>
     /// LAND4: a row carries what its session's own tree offers to land, whatever group it rests in, as the reader said it: the
     /// branch, the tree's name (never its path), the commits and the uncommitted paths; and null where it offers none. The page
     /// offers Accept beside it, and <c>sessions --json</c> prints the same field.
