@@ -170,6 +170,23 @@ public sealed class DriverWatch(
     /// <summary>The ref watch this loop runs (FABRIC-END3), which a test steps and counts; null until the loop starts.</summary>
     internal RefWatch? Refs => _refs;
 
+    /// <summary>Told each pass the evaluation runtime made (link 8, FABRIC-RUN1d's tests); null tells nobody.</summary>
+    internal Action<NodeRuntimePass>? Passed { get; init; }
+
+    /// <summary>
+    /// The evaluation runtime's own wake (FABRIC-RUN1d, §A3): a timer its records persist came due (<c>due</c>), or the awaited set it told
+    /// changed (<see cref="NodesAwaited"/>). Link 8 alone, never the local plan: it wakes no look. Before the loop binds link 8, nothing.
+    /// </summary>
+    internal void NodesWoken(string subject) => WakeNodes(new ChainEvent(ChainEvents.Nodes, subject, ChangeTopics.Nodes));
+
+    /// <summary>The runtime's wake whose pass first runs the plugins' supervision: the awaited set it told changed (FABRIC-RUN1d).</summary>
+    private const string NodesAwaited = "awaited";
+
+    /// <summary>Fires link 8 alone on the loop's chain (FABRIC-RUN1d): set while the loop runs with a hook set, null before and after.</summary>
+    private Action<ChainEvent>? _nodesWake;
+
+    private void WakeNodes(ChainEvent wake) => Volatile.Read(ref _nodesWake)?.Invoke(wake);
+
     /// <summary>
     /// Look now, because a terminal's words for <paramref name="session"/> were kept (FABRIC-EVENT2b): the requests topic's wake,
     /// so <c>watch.looked</c> says the words woke it, not that something nudged.
@@ -385,12 +402,13 @@ public sealed class DriverWatch(
         // FABRIC-RUN1, link 8: the evaluation runtime, begun after the plan on every wake it hears and at the look's deadline, and run beside
         // the look (PARALLEL1h); only where this loop
         // holds a hook set, and its passes write only where it holds the home's lease. It reads nothing unless a graph naming a plugin's
-        // performed node governs a unit, and the next timer the node records persist wakes a plan at its moment. FABRIC-CLOSE1b: a closure graph
+        // performed node governs a unit, and the next timer the node records persist wakes link 8 alone at its moment (FABRIC-RUN1d). FABRIC-CLOSE1b: a closure graph
         // arms it too, and its `quest.close` is sent through this loop's service client, the local host's close door. FABRIC-CLOSE1l: a quest is
         // bound at its take, as its first session opens (Driver's start), never here.
         var nodes = hooks is null ? null : new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home), service);
         _nodes = nodes;
-        using var nodesDue = new System.Threading.Timer(_ => Nudge(ChangeTopics.Nodes, "due"));
+        // FABRIC-RUN1d: the runtime's own wakes run link 8 alone: its timer and a plugin's step, never the local plan.
+        using var nodesDue = new System.Threading.Timer(_ => NodesWoken("due"));
 
         TickReport? looked = null;
         chain.Bind(ChainRanks.Plan, async (heard, token) =>
@@ -408,21 +426,52 @@ public sealed class DriverWatch(
             // where asked, so a read or a plugin that holds a pass holds no next look; the closing loop waits for it as it waits for the
             // sessions. A whole look's ask is kept until a pass takes it, so a pass that follows reads the units afresh for it.
             NodeRuntime runtime = nodes;
+            HookSet supervised = hooks!;
             var wholeAsked = 0;
+            var superviseAsked = 0;
             chain.Bind(ChainRanks.Nodes, (heard, token) =>
             {
                 if (heard.Any(cause => cause.Key == Whole)) Interlocked.Exchange(ref wholeAsked, 1);
+                if (heard.Any(cause => cause is { Type: ChainEvents.Nodes, Subject: NodesAwaited })) Interlocked.Exchange(ref superviseAsked, 1);
                 Running.PassBeside(PassAsync, token);
                 return Task.FromResult(ChainFired.Nothing);
             });
+
+            // FABRIC-RUN1d: the runtime's own wakes and a plugin's step fire link 8 alone on this loop's chain, beside whatever look runs; one
+            // that fails is logged and the next wake or look passes again.
+            Volatile.Write(ref _nodesWake, wake => _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await chain.FireAsync([wake], ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    // The loop closed: nothing is passed after it.
+                }
+                catch (Exception error)
+                {
+                    Log?.Failed("the evaluation runtime's own wake", error);
+                }
+            }, CancellationToken.None));
+            supervised.StepArrived = plugin => WakeNodes(new ChainEvent(ChainEvents.PluginStep, plugin, ChangeTopics.Nodes));
 
             // One pass, on the choices the latest look read. What it says joins the next look's report; what it acted on is in the records.
             async Task<IReadOnlyList<string>> PassAsync(CancellationToken token)
             {
                 var whole = Interlocked.Exchange(ref wholeAsked, 0) == 1;
+                var lines = new List<string>();
                 NodeRuntimePass pass;
                 try
                 {
+                    // FABRIC-RUN1d: a set naming a plugin anew starts its process here, with no plan, as the plan's supervision did at the look
+                    // it woke; withdrawn first where the choices no longer arm the runtime (FABRIC-RUN1e), so it starts nothing for a removed graph.
+                    if (Interlocked.Exchange(ref superviseAsked, 0) == 1 && !await runtime.WithdrawAsync(config, token).ConfigureAwait(false))
+                    {
+                        lines.AddRange(await Stages.TimeAsync("supervise", () => supervised.ReconcileAsync(PluginCatalog.Load(home), token), beside: true)
+                            .ConfigureAwait(false));
+                    }
+
                     pass = await Stages.TimeAsync("nodes", () => runtime.PassAsync(new NodeRuntimeLook(config, whole)
                     {
                         Units = NodeUnitsAsync,
@@ -439,16 +488,17 @@ public sealed class DriverWatch(
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
                                                   or UnauthorizedAccessException)
                 {
-                    return [$"work  the plugins' steps were not judged this time, and are judged again at the next look: {error.Message}"];
+                    return [.. lines, $"work  the plugins' steps were not judged this time, and are judged again at the next look: {error.Message}"];
                 }
 
                 NodesDue(nodesDue, runtime.NextDue);
+                Passed?.Invoke(pass);
 
-                // A set naming a plugin anew wakes one more plan, whose supervision starts the process the start then goes to.
-                if (pass.AwaitedChanged) Nudge(ChangeTopics.Nodes, "awaited");
+                // A set naming a plugin anew wakes link 8 once more (FABRIC-RUN1d), whose supervision starts the process the start then goes to.
+                if (pass.AwaitedChanged) NodesWoken(NodesAwaited);
                 var acted = pass.Performed.Count(done => Acted.Contains(done.What));
                 if (acted > 0) Log?.Info("chain.fired", ("link", ChainRanks.Nodes), ("topic", ChangeTopics.Nodes), ("count", acted));
-                return NodeRuntimeLines(pass);
+                return [.. lines, .. NodeRuntimeLines(pass)];
             }
         }
 
@@ -648,6 +698,10 @@ public sealed class DriverWatch(
         }
         finally
         {
+            // FABRIC-RUN1d: no wake of the runtime's fires link 8 once the loop closes.
+            Volatile.Write(ref _nodesWake, null);
+            if (hooks is not null) hooks.StepArrived = null;
+
             // The change stream's wait ends with the loop, and is waited for, so no ask outlives it.
             await listening.CancelAsync().ConfigureAwait(false);
             await ledger.ConfigureAwait(false);

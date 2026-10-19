@@ -100,10 +100,15 @@ public sealed class ChainTests : IDisposable
             [ChainKind.Fact, ChainKind.Effect, ChainKind.Fact, ChainKind.Fact, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader, ChainKind.Reader],
             table.Links.Select(link => link.Kind));
 
-        // The evaluation runtime hears what the plan hears, the look's deadline and a plugin's step, and emits nothing.
+        // The evaluation runtime hears what the plan hears, the look's deadline, a plugin's step and its own wakes, and emits nothing.
         var nodes = Assert.Single(table.Links, link => link.Rank == ChainRanks.Nodes);
-        Assert.Equal([ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.TimerOf(ChangeTopics.Look)], nodes.On);
+        Assert.Equal([ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.Nodes, ChainEvents.TimerOf(ChangeTopics.Look)], nodes.On);
         Assert.Empty(nodes.Emits);
+
+        // FABRIC-RUN1d: a plugin's step and the runtime's own wakes run link 8 alone, never the local plan.
+        var plan = Assert.Single(table.Links, link => link.Rank == ChainRanks.Plan);
+        Assert.False(plan.Hears(ChainEvents.PluginStep) || plan.Hears(ChainEvents.Nodes));
+        Assert.Equal([ChainRanks.Nodes], table.Links.Where(link => link.Hears(ChainEvents.Nodes)).Select(link => link.Rank));
         foreach (var link in table.Links)
         {
             foreach (var emitted in link.Emits)
