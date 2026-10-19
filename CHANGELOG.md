@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Each main window of Daoris holds its own workspace. Choosing one in a window changes that window alone, and reloading it
+  keeps it; a window opened later starts from the workspace last chosen in any. A session's own window keeps the workspace its
+  session belongs to, or follows the window it was opened from, never another main window, and so does the monitor. The page's
+  title names the workspace, *Daoris (道衍) — games*, which a browser's tab shows; the desktop window's own title does not say it
+  yet.
+
 - A first brainstorm across agents, at the terminal: `daoris-driver brainstorm "<question>" [--repository <name>] [--agents a,b]`.
   Daoris freezes one context packet from its own knowledge of the repository, which `brainstorm show <id>` prints whole; nothing
   goes to any agent until `brainstorm send <id>`. Each named agent then proposes once, in a folder holding only that packet,
