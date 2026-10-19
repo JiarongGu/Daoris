@@ -100,10 +100,13 @@ public sealed class RemoteSyncSet : IDisposable
     /// <exception cref="DriverException">A circle was named that this machine has no remote for.</exception>
     public async Task<SyncReport> RunOnceAsync(string? workspace, CancellationToken ct = default)
     {
+        // LOOKWAIT1: the wait for the gate is said apart from the pass, so a slow look names a *Sync now* it queued behind.
+        var queued = System.Diagnostics.Stopwatch.GetTimestamp();
         await _pass.WaitAsync(ct).ConfigureAwait(false);
+        var waited = System.Diagnostics.Stopwatch.GetElapsedTime(queued);
         try
         {
-            return await RunLockedAsync(workspace, ct).ConfigureAwait(false);
+            return await RunLockedAsync(workspace, ct).ConfigureAwait(false) with { Queued = waited };
         }
         finally
         {

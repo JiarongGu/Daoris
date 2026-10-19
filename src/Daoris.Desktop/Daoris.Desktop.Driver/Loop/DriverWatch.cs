@@ -90,6 +90,19 @@ public sealed class DriverWatch(
     /// <summary>Handed to every look's driver (<see cref="Driver.Log"/>): where a failure nothing else awaits is written (ANSWER2).</summary>
     public MachineLog? Log { get; init; }
 
+    private LookStages? _stages;
+
+    /// <summary>
+    /// Handed to every look's driver (<see cref="Driver.Stages"/>): each stage of the looks and of their work beside them, timed into the
+    /// next <c>watch.looked</c>'s <c>stages</c>, and a stage that hangs named in <see cref="Log"/> as it hangs (LOOKWAIT1). Over
+    /// <see cref="Log"/> at <see cref="LookStages.SlowAfter"/>, unless a test hands its own with a shorter threshold.
+    /// </summary>
+    internal LookStages Stages
+    {
+        get => LazyInitializer.EnsureInitialized(ref _stages, () => new LookStages(Log));
+        init => _stages = value;
+    }
+
     /// <summary>
     /// Handed to every look's driver (<see cref="Driver.Reviews"/>): the review's showing in Daoris's browser (REVIEWENV1d), one
     /// for the shell's life, since a served tab outlives the look and the session that started it. Null in the headless host.
@@ -362,7 +375,7 @@ public sealed class DriverWatch(
         {
             // FABRIC-RUN1e: choices that no longer arm the runtime withdraw its awaited set before the plan's supervision reads it, so the
             // look that reads the last graph's removal starts no plugin for it; link 8 then reads nothing.
-            if (nodes is not null) await nodes.WithdrawAsync(config, token).ConfigureAwait(false);
+            if (nodes is not null) await Stages.TimeAsync("withdraw", () => nodes.WithdrawAsync(config, token)).ConfigureAwait(false);
             looked = await LookAsync(heard.Any(cause => cause.Key == Whole) ? LookPart.Look : LookPart.Plan, token).ConfigureAwait(false);
             return new ChainFired(looked.Progressed ? 1 : 0, []);
         });
@@ -374,13 +387,13 @@ public sealed class DriverWatch(
                 NodeRuntimePass pass;
                 try
                 {
-                    pass = await nodes.PassAsync(new NodeRuntimeLook(config, heard.Any(cause => cause.Key == Whole))
+                    pass = await Stages.TimeAsync("nodes", () => nodes.PassAsync(new NodeRuntimeLook(config, heard.Any(cause => cause.Key == Whole))
                     {
                         Units = NodeUnitsAsync,
                         Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
                         // FABRIC-PERFORM1i: an observed node's event is bound to its branch's tip read now, once per checkout per pass.
                         Tips = NodeTips.ReadAsync,
-                    }, token).ConfigureAwait(false);
+                    }, token)).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
                                                   or UnauthorizedAccessException)
@@ -416,7 +429,10 @@ public sealed class DriverWatch(
             var driver = new Driver(
                     service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
-                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part, Woke = taken.Woke, LandingEnded = Reoffered };
+                {
+                    Runner = Runner, Stops = Stops, Log = Log, Stages = Stages, Reviews = Reviews, Part = part, Woke = taken.Woke,
+                    LandingEnded = Reoffered,
+                };
             try
             {
                 var report = await driver.TickAsync(token, failed: said =>
@@ -456,7 +472,7 @@ public sealed class DriverWatch(
 
                     if (!swept)
                     {
-                        var orphans = await Orphans.EndAsync(service, processes, ct: ct).ConfigureAwait(false);
+                        var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(service, processes, ct: ct)).ConfigureAwait(false);
                         carried.AddRange(orphans.Select(ended => $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
                         swept = true;
                         // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
@@ -653,7 +669,8 @@ public sealed class DriverWatch(
     /// The look, timed (FABRIC-EVENT2, the design §A2): <c>watch.looked</c> with its ms, what woke it (<c>start</c>, <c>pace</c>,
     /// <c>ended</c> for a session's end, or <c>nudge</c> with the topic and subject a nudge carried, none for a plain one), the part
     /// it ran (FABRIC-EVENT3a: <c>look</c> for the whole look, <c>plan</c> for a wake's local plan), how many nudges it took up, and
-    /// whether it failed. Up to the report, not the door's handling of it.
+    /// whether it failed. Up to the report, not the door's handling of it. LOOKWAIT1: its <c>stages</c>, each part of the look and of
+    /// the work beside it that ended since the last line (<see cref="LookStages.Take"/>), so a slow look says which part was slow.
     /// </summary>
     private void Looked(string by, Wake? woke, LookPart part, int nudges, long began, bool failed) =>
         Log?.Info("watch.looked",
@@ -663,7 +680,8 @@ public sealed class DriverWatch(
             ("subject", woke?.Subject),
             ("part", part == LookPart.Look ? "look" : "plan"),
             ("nudges", nudges),
-            ("failed", failed));
+            ("failed", failed),
+            ("stages", Stages.Take()));
 
     /// <summary>
     /// One tidy pass (AUTOTIDY1), started on the pool so the look beside it does not wait on its git. A closing loop ends it
@@ -677,7 +695,8 @@ public sealed class DriverWatch(
             try
             {
                 // A review step in progress keeps the tree it shows from (REVIEWENV1d), as a session in use keeps its own.
-                return await tidy.LookAsync(service, Log, ct, token => BranchTidying.ReviewingAsync(Reviews, service, token))
+                return await Stages.TimeAsync(
+                        "tidy", () => tidy.LookAsync(service, Log, ct, token => BranchTidying.ReviewingAsync(Reviews, service, token)), beside: true)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -702,7 +721,8 @@ public sealed class DriverWatch(
         {
             try
             {
-                var report = await RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), only: null, ct)
+                var report = await Stages.TimeAsync(
+                        "follow", () => RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), only: null, ct), beside: true)
                     .ConfigureAwait(false);
                 return
                 [

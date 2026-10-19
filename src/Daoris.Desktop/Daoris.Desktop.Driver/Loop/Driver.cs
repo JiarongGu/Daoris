@@ -73,6 +73,18 @@ public sealed class Driver(
     public MachineLog? Log { get; init; }
 
     /// <summary>
+    /// Where this driver's looks time their stages (LOOKWAIT1, D181 point 6): the watch's, shared across its looks and read into each
+    /// <c>watch.looked</c>; else this driver's own, which still names a stage that hangs in <see cref="Log"/>.
+    /// </summary>
+    public LookStages Stages
+    {
+        get => LazyInitializer.EnsureInitialized(ref _stages, () => new LookStages(Log));
+        init => _stages = value;
+    }
+
+    private LookStages? _stages;
+
+    /// <summary>
     /// The review's showing in Daoris's browser (REVIEWENV1d, D154 point 5), shared across looks as the browser is: a local
     /// set-up step's tab opened before its session, its build served there once its set-up is posted, and let go at each look
     /// once the person answered it. Null where no shell carries a browser, the headless host and every gate, which show nothing.
@@ -459,21 +471,27 @@ public sealed class Driver(
         if (Part == LookPart.Look)
         {
             await SyncAsync(events, ct).ConfigureAwait(false);
-            if (sync is not null) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            if (sync is not null)
+            {
+                using (Stages.Begin("claims")) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            }
         }
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process
         // disabled since is stopped now. The catalogue refuses a name this build carries before
         // anything of that plugin is taken.
-        var catalog = PluginCatalog.Load(home, _built.Names);
-        Context.Adapters = _built.WithPlugins(catalog);
-        Context.Servers = catalog.Servers;
-        Context.Catalog = catalog;
-        Context.Harnesses.Use(Context.Adapters);
-        if (Context.Hooks is { } hooks)
+        using (Stages.Begin("plugins"))
         {
-            events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
+            var catalog = PluginCatalog.Load(home, _built.Names);
+            Context.Adapters = _built.WithPlugins(catalog);
+            Context.Servers = catalog.Servers;
+            Context.Catalog = catalog;
+            Context.Harnesses.Use(Context.Adapters);
+            if (Context.Hooks is { } hooks)
+            {
+                events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
+            }
         }
 
         // What sessions proposed about the rules (PERM2, D74), settled BEFORE this tick spawns anything:
@@ -481,7 +499,7 @@ public sealed class Driver(
         // is held for the person — who alone may let an agent do more.
         try
         {
-            events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow));
+            using (Stages.Begin("rules")) events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -491,35 +509,38 @@ public sealed class Driver(
         // The lines Daoris moved since each was last followed (WSSETUP5, D124 §3.1), registered from the line before this
         // look reads the registry, so a set-up that just landed is planned by what it now declares. Nothing is read with
         // git, or asked of the service, unless a line moved.
-        await FollowMovedLinesAsync(events, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("lines", () => FollowMovedLinesAsync(events, ct)).ConfigureAwait(false);
 
         // The workspace plans (WSSETUP6, D124 §4.1), worked before this look reads the quests, so a set-up a plan publishes now
         // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
-        await WorkSetupPlansAsync(events, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("setup", () => WorkSetupPlansAsync(events, ct)).ConfigureAwait(false);
 
         // The goal's walk counts Daoris's sessions from this look's records (TOOL6b, D130 §4.2), and every start chosen
         // while they were read: marked first, so a conversation chosen meanwhile is not lost.
         var mark = Context.Harnesses.Mark();
-        var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
+        var snapshot = await Stages.TimeAsync("snapshot", () => service.SnapshotAsync(ct)).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
-        snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
+        snapshot = await Stages.TimeAsync("paused", () => PausedWork.LookAsync(service, config, snapshot, ct)).ConfigureAwait(false);
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a
         // reopen names is one the planner goes on with too (FABRIC-CLOSE1c9).
         snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)) };
         // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
         // stands read for the planner, which reads the stop that handed one over as released.
-        snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);
+        var read = snapshot;
+        snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
         Context.Harnesses.Look(snapshot.Started, mark);
 
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
         // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
-        events.AddRange(await Context.Channel
-            .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(snapshot, Context.Processes), ct)
+        var looked = snapshot;
+        events.AddRange(await Stages.TimeAsync("channel", () => Context.Channel
+            .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(looked, Context.Processes), ct))
             .ConfigureAwait(false));
 
         // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,
         // and the planner's go-on resumes it at the next look. Read from the quests this look read: nothing more where none is reopened.
-        events.AddRange(await Context.Reopens.LookAsync(new ServiceReopenDoors(service), snapshot, ct).ConfigureAwait(false));
+        events.AddRange(await Stages.TimeAsync("reopens", () => Context.Reopens.LookAsync(new ServiceReopenDoors(service), looked, ct))
+            .ConfigureAwait(false));
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
@@ -527,7 +548,8 @@ public sealed class Driver(
         {
             try
             {
-                events.AddRange(await showing.LookAsync(snapshot.Quests, service.FindQuestAsync, ct).ConfigureAwait(false));
+                events.AddRange(await Stages.TimeAsync("reviews", () => showing.LookAsync(looked.Quests, service.FindQuestAsync, ct))
+                    .ConfigureAwait(false));
             }
             catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -539,23 +561,31 @@ public sealed class Driver(
         // The second opinions owed (XAGENT1f, the second-agent design §2.1, §7, §8.1): asked and delivered beside the look, and the
         // starts they sit held. A pass finishes work already done, so it takes its slot before any quest's first start (D130).
         var judgedOpinions = new List<OpinionJudged>();
-        var (opinionSits, passes) = await OpinionsAsync(snapshot, events, ct, judgedOpinions).ConfigureAwait(false);
+        var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
         // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
         // the cap as a pass does, and each answer handed to the session that asked.
-        passes += await HelpersAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+        var judged = snapshot;
+        var taken = passes;
+        passes += await Stages.TimeAsync("helpers", () => HelpersAsync(judged, taken, events, ct)).ConfigureAwait(false);
 
         // The brainstorms on file (BRAINSTORM1a, D176): each request frozen into its packet for the person to read, and each one the
         // person sent run beside the look, taking a slot under the cap as a pass does.
-        passes += await BrainstormsAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+        taken = passes;
+        passes += await Stages.TimeAsync("brainstorms", () => BrainstormsAsync(judged, taken, events, ct)).ConfigureAwait(false);
 
         // The meetings on file (AGENTROOM1a, D177): each round's packet frozen for the person to read, and each round they sent run
         // beside the look, its turns one at a time through a brainstorm's pass, each taking a slot under the cap.
-        passes += await MeetingsAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+        taken = passes;
+        passes += await Stages.TimeAsync("meetings", () => MeetingsAsync(judged, taken, events, ct)).ConfigureAwait(false);
 
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
-        var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
+        IReadOnlyList<Consideration> plan;
+        using (Stages.Begin("plan"))
+        {
+            plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
+        }
         var progressed = false;
 
         // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
@@ -582,7 +612,7 @@ public sealed class Driver(
             var allowed = new List<Consideration>();
             foreach (var start in starts)
             {
-                var decision = await considering.ConsiderAsync(start, ct).ConfigureAwait(false);
+                var decision = await Stages.TimeAsync("consider", () => considering.ConsiderAsync(start, ct), $"#{start.Quest.Id}").ConfigureAwait(false);
                 if (decision.Allowed)
                 {
                     allowed.Add(start);
@@ -599,12 +629,12 @@ public sealed class Driver(
         // A parked intake has no process left to watch — it asked the person and ended — so its record
         // ends when the person answers the ask (D65 §1b). Looked at every tick, whatever the intake
         // setting says now: turning intakes off must not strand one that is waiting.
-        await ConcludeAnsweredAsync(snapshot.Active, events, concluded, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("answered", () => ConcludeAnsweredAsync(snapshot.Active, events, concluded, ct)).ConfigureAwait(false);
 
         // The asks this machine answers with a session (D65 §1b) — only where a harness is named for
         // it, and only in the slots the quests left: work somebody already asked for goes first.
-        var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count - passes, events, ct)
-            .ConfigureAwait(false);
+        var slotsLeft = config.Cap - snapshot.Active.Count - starts.Count - passes;
+        var intakes = await Stages.TimeAsync("intakes", () => IntakesDueAsync(slotsLeft, events, ct)).ConfigureAwait(false);
 
         // 🔴 One run per record the person's words wait on (ANSWER2, D131 §3): a run that took a record up moves it to working a
         // moment after the look planned it (before its spawn since SAIDBACK1e), so a look in between still reads it waiting and
@@ -666,13 +696,14 @@ public sealed class Driver(
         // chooses it now. A start that held or was refused opened nothing, and binds nothing.
         var openedQuests = begun.Where(each => each.Started.Quest is not null && (each.Came is null || each.Came.Opened))
             .Select(each => each.Started.Quest!).ToHashSet(StringComparer.Ordinal);
-        await BindRunsAsync([.. claimed.Where(start => openedQuests.Contains(start.Quest.Id))], events, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("bind", () => BindRunsAsync([.. claimed.Where(start => openedQuests.Contains(start.Quest.Id))], events, ct))
+            .ConfigureAwait(false);
 
-        await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("endings", () => EndingsAsync(events, concluded, ct)).ConfigureAwait(false);
 
         // Done work lands itself (LAND2b, D145 point 2): after the endings and their sync, so a done that just closed is read
         // as the service now holds it. The look chooses; the landings run beside it, as its starts do.
-        await LandDueAsync(events, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("landing", () => LandDueAsync(events, ct)).ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt, signedOutAt), events, progressed, snapshot.Active, concluded)
         {
@@ -681,8 +712,12 @@ public sealed class Driver(
             JudgedOpinions = judgedOpinions,
         };
 
-        async Task<(Begun Started, StartRun? Came)> BeginAsync(Begun started, Func<Action, Task<StartRun>> start) =>
-            (started, await Context.Runs.StartAsync(start).ConfigureAwait(false));
+        // Each start's preparation, from its holds to its record open or to what it came to (LOOKWAIT1), timed with its quest or ask.
+        async Task<(Begun Started, StartRun? Came)> BeginAsync(Begun started, Func<Action, Task<StartRun>> start)
+        {
+            using var preparing = Stages.Begin("start", started.Quest is { } quest ? $"#{quest}" : $"ask#{started.Ask}");
+            return (started, await Context.Runs.StartAsync(start).ConfigureAwait(false));
+        }
 
         // The run, and its claim on the record its words wait on let go once it has ended, however it ended (ANSWER2).
         async Task<StartRun> ClaimedAsync(Consideration start, Action opened)
@@ -892,7 +927,12 @@ public sealed class Driver(
     private async Task SyncAsync(List<string> events, CancellationToken ct)
     {
         if (sync is null) return;
-        var synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+        SyncReport synced;
+        using (var syncing = Stages.Begin("sync"))
+        {
+            synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+            syncing.Queued(synced.Queued);
+        }
 
         lock (events)
         {
@@ -931,7 +971,7 @@ public sealed class Driver(
         {
             foreach (var ended in concluded)
             {
-                events.AddRange(await hooks.EndedAsync(ended, ct).ConfigureAwait(false));
+                events.AddRange(await Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct), ended.Session).ConfigureAwait(false));
             }
         }
 
