@@ -553,6 +553,32 @@ public sealed class NodeRuntimeTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-RUN1g: reconciliation takes the attempts due in turn. Five attempts are due after a restart and the questions about the first
+    /// four in file order keep failing: each pass spends its four on those, so the fifth was never asked. The next pass begins after the last
+    /// attempt the pass before asked, round again from the first.
+    /// </summary>
+    [Fact]
+    public async Task Attempts_due_are_asked_in_turn_so_four_failing_questions_never_starve_the_fifth()
+    {
+        _units = [.. Enumerable.Range(0, NodeRuntime.SendsPerPass + 1).Select(index => QuestOf($"quest:q{index}"))];
+        var first = Runtime();
+        await first.PassAsync(Look(Governed), CancellationToken.None);
+        await first.PassAsync(Look(Governed), CancellationToken.None);
+        Assert.Equal(NodeRuntime.SendsPerPass + 1, _port.Sent.Count);
+
+        // The next loop: every attempt is asked after; the questions about the first four records in file order fail with an I/O error, the
+        // last one's answers.
+        var fifth = Files.All().Records[^1].Unit;
+        _port.Answer = call => call.Unit == fifth ? new(ReconcileStates.Running) : throw new IOException("the pipe broke");
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+
+        Assert.Contains(_port.Asked, call => call.Unit == fifth);
+        Assert.Equal(NodeRuntime.SendsPerPass * 2, _port.Asked.Count);
+    }
+
+    /// <summary>
     /// FABRIC-RUN1e, finding 6: the awaited set is published only while the loop holds the lease, asked after the pass's awaits: a loop that
     /// lost it while its send was out tells nothing.
     /// </summary>
