@@ -644,15 +644,16 @@ public sealed class AutoLander(
             var trees = new SessionTrees(home);
             var ownTree = trees.Holds(tree);
             var (where, repository) = ownTree ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
-            var rule = process is { Named: true } named ? named.Landing.Rule : LandingRules.Choose(config, repository, where).Rule;
-            var verdict = AutoLandingRules.Concluded(rule, status, ownTree, state);
+            // The rule it lands by, its access setup's landing composed in (AUTONOMY1c2), as the look and the landing read it.
+            var landing = process is { Named: true } named ? named.Landing : LandingRules.Effective(config, repository, where);
+            var verdict = AutoLandingRules.Concluded(landing, status, ownTree, state);
             if (verdict == AutoConcluded.Due)
             {
                 new AutoLandings(home).Due(new AutoLanding(session, quest.Id, repository, where, tree, at ?? DateTimeOffset.UtcNow));
             }
             else if (verdict is not null)
             {
-                events.Keep(session, AutoLandingNotes.Concluded(verdict), say: null);
+                events.Keep(session, AutoLandingNotes.Concluded(verdict, landing.Access), say: null);
             }
 
             return verdict;

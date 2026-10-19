@@ -94,9 +94,13 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         ? new LandingWorkflow(named.Workflow, version, named.Level) { Kind = named.Kind }
         : null;
 
-    /// <summary>The rules as they stand, read live as every gate reads them today: Current, and work with no binding here.</summary>
+    /// <summary>
+    /// The rules as they stand, read live as every gate reads them today: Current, and work with no binding here. Its landing is the rule
+    /// work lands by, the access setup's landing composed in (AUTONOMY1c2, <see cref="LandingRules.Effective"/>), so the look's judgement
+    /// and the opinion's gate read what the conclusion and the landing read.
+    /// </summary>
     public static WorkflowProcess Current(DriverConfig config, string repository, string? workspace) =>
-        new(repository, LandingRules.Choose(config, repository, workspace), ReviewRules.Resolve(config, repository, workspace),
+        new(repository, LandingRules.Effective(config, repository, workspace), ReviewRules.Resolve(config, repository, workspace),
             OpinionRules.Resolve(config, repository, workspace));
 
     /// <summary>
