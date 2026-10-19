@@ -74,7 +74,7 @@ public sealed class DriverCommandTests
     public void The_usage_names_every_verb_the_host_answers()
     {
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
-        var verbs = Regex.Matches(program, @"args is \[""(?<verb>[a-z]+)""")
+        var verbs = Regex.Matches(program, @"args is \[""(?<verb>[a-z-]+)""")
             .Select(match => match.Groups["verb"].Value)
             .Distinct()
             .ToList();

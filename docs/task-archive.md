@@ -17277,3 +17277,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCESSWORDS1b — the page's trace and Ask Daoris say a landing the access setup accepted** (web, driver; D184's AUTONOMY1c2 note; after ACCESSWORDS1). The server's trace and `TraceRule` carry `access`, but the page's trace (`HowItCameToBe.tsx`, `work.trace.json`, its TS type) draws only the rule's source, and Ask Daoris's room does not say a landing was the setup's. Proof: the trace's vitest in en and zh; the room's golden.
 
 **Outcome** 2026-10-19: the page's trace (in place of the rule's switch) and the room's landed line say whose access setup accepted a landing, only where the switch accepted it; the full goldens' landed line alone moved. On Opus: about 70 tool calls, 40 minutes. Detail: D184's ACCESSWORDS1b line; `HowItCameToBe.test.tsx`, `HelpRoomMachineNowTests`.
+
+## ACCESSWORDS1c — the server's trace says the setup accepted a landing only where its switch did (2026-10-20, D184)
+
+> - [x] **ACCESSWORDS1c — the server's trace says the setup accepted a landing only where its switch did** (driver; D184's ACCESSWORDS1b line). `Trace.Words.cs:449` says *accepted by the access setup (<level>)* whenever `rule.access` is set, but the record keeps the level on a landing the person pressed under the setup too (`LandingRules.Effective`, `TreeLands.cs:548`), so the trace can say the person's press and the setup at once. Guard on `acceptedBy` as the review's note and the page's trace do. Proof: a `TraceTests` case with `acceptedBy: person` and `access` set keeps the rule's words.
+
+**Outcome** 2026-10-20: the trace says it only where `acceptedBy` is `auto`; a person's press keeps the rule's switch words. Detail: D184's ACCESSWORDS1c line; `TraceTests`.
+
+## VERBCENSUS1 — the usage census misses hyphenated verbs (2026-10-20, D184)
+
+> - [x] **VERBCENSUS1 — the usage census misses hyphenated verbs** (driver; HEAVYRUN1a's hand-back). `DriverCommandTests.The_usage_names_every_verb_the_host_answers` matches `args is ["[a-z]+"`, so a verb such as `run-heavy` could lose its usage line unnoticed. Widen it to `[a-z-]+` and fix any line that turns up missing. Proof: the test fails when `run-heavy`'s usage line is removed.
+
+**Outcome** 2026-10-20: the census matches `[a-z-]+`; `run-heavy`'s usage line was present, and the census failed with it removed; `HeavyRunCommandTests`' redundant usage assertion dropped. Detail: `DriverCommandTests`.
