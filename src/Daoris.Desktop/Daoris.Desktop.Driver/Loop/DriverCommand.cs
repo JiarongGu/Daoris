@@ -189,6 +189,8 @@ public static class DriverCommand
               next look applies it. The page's is What needs you, and the work's foot.
           sync [status | dismiss <quest>] [--workspace <name>]
               one sync pass now, or where each workspace stands.
+          sync forward <quest> <machine> <sequence>
+              bring forward one side of two machines' work on a quest, as its conflict names it.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
           trace <commit|session|quest>  ·  trace commit|session|quest <id>

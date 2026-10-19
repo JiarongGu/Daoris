@@ -1137,6 +1137,25 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<(bool Ok, string Message)> ContinueQuestAsync(string id, CancellationToken ct = default) =>
         PersonMoveAsync(id, "continue", "{}", ct);
 
+    #region Bring-forward (SYNCMERGE1c3)
+
+    /// <summary>
+    /// The person's bring-forward of one side of two machines' work on a quest (SYNCMERGE1c3; D178): <c>POST
+    /// /api/quests/{id}/conflicts/forward</c> with the side's machine and sequence. A refusal or a loss again (409) and a quest not
+    /// found (404) come back as the service's sentence, not as a tool error.
+    /// </summary>
+    public Task<(bool Ok, string Message)> ForwardConflictAsync(
+        string id, string machine, long sequence, CancellationToken ct = default) =>
+        PersonMoveAsync(id, "conflicts/forward", WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("machine", machine);
+            writer.WriteNumber("sequence", sequence);
+            writer.WriteEndObject();
+        }), ct);
+
+    #endregion
+
     /// <summary>A person's door on one quest (FABRIC-CLOSE1c3): its sentence, a refusal's included, and a host older than it said to be.</summary>
     private async Task<(bool Ok, string Message)> PersonMoveAsync(string id, string door, string body, CancellationToken ct)
     {

@@ -73,7 +73,7 @@ public static class VerbLeases
     {
         "land", "remove", "clean", "sync", "hand", "stop", "finish", "decline", "say", "take-back", "reword", "archive",
         "unarchive", "delete", "go-on-new", "helper", "pause", "resume", "abandon", "clear", "rename", "pin", "unpin", "ask",
-        "anyway", "myself", "install", "new", "try", "keep", "dismiss", "--pause", "--resume", "--abandon", "--clear",
+        "anyway", "myself", "install", "new", "try", "keep", "dismiss", "forward","--pause", "--resume", "--abandon", "--clear",
         "--workspace", "--when-idle", "--now", "--cancel", "recovery", "held",
     };
 

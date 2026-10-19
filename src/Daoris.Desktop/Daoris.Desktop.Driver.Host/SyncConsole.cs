@@ -21,6 +21,32 @@ internal static class SyncConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
+        // The bring-forward (SYNCMERGE1c3): parsed in the library, where it is tested.
+        if (SyncForwardCommand.Asks(args))
+        {
+            if (SyncForwardCommand.Read(args, out var problem) is not { } ask)
+            {
+                Console.Error.WriteLine($"sync: {problem}");
+                return Usage();
+            }
+
+            try
+            {
+                using var forwarder = ServiceClient.FromEnvironment();
+                return await SyncForwardCommand.RunAsync(ask, forwarder, Console.Out).ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                Console.Error.WriteLine($"sync: {error.Message}");
+                return 2;
+            }
+            catch (HttpRequestException error)
+            {
+                Console.Error.WriteLine($"sync: the service could not be reached — {error.Message}");
+                return 2;
+            }
+        }
+
         string? workspace = null, dismiss = null;
         var status = false;
         for (var i = 0; i < args.Length; i++)
@@ -109,10 +135,13 @@ internal static class SyncConsole
     private static int Usage()
     {
         Console.Error.WriteLine("usage: daoris-driver sync [status | dismiss <quest>] [--workspace <name>]");
+        Console.Error.WriteLine("       daoris-driver sync forward <quest> <machine> <sequence>");
         Console.Error.WriteLine("  sync                    one pass now, for every workspace with a remote or the one named");
         Console.Error.WriteLine("  sync status             where each workspace stands on this machine — ahead, behind, in");
         Console.Error.WriteLine("                          conflict, and when it last reached its remote; reaches no remote");
         Console.Error.WriteLine("  sync dismiss <quest>    dismiss the conflicts a quest carries; the next pass carries it");
+        Console.Error.WriteLine("  sync forward <quest> <machine> <sequence>");
+        Console.Error.WriteLine("                          bring forward one side of two machines' work on a quest");
         return 2;
     }
 }
