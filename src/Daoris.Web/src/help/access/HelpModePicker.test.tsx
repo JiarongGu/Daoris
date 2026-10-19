@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { HelpMode } from '../bridge/help';
-import i18n from '../locales/i18n';
+import type { HelpMode } from '../../bridge/help';
+import i18n from '../../locales/i18n';
 import { FullAccessConfirm, HelpModeChip, useModeChoice } from './HelpModePicker';
 
 // HELPMODE1b (D183 point 2; the modes design §1, §5): Ask Daoris's access, chosen from its chip. The chip shows the mode the

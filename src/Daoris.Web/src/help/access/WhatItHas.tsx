@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HelpReceipt, HelpWired, HelpWiredLack } from './wired';
-import { Button, Icon, PathText, Prose } from '../design/ui';
-import { clockOf } from '../locales/format';
-import { cn } from '../lib/cn';
+import { Button, Icon, PathText, Prose } from '../../design/ui';
+import { clockOf } from '../../locales/format';
+import { cn } from '../../lib/cn';
 import { lackDoor } from './modes';
-import type { StarterDoor } from './starters';
+import type { StarterDoor } from '../starters';
 
 /**
  * *What it has* (HELPMODE1b, D183 point 4; the modes design §6): what the starts of the conversation in view handed its agent, read
