@@ -375,6 +375,38 @@ describe('noteLines', () => {
     });
   });
 
+  /**
+   * AUTONOMY1b3c (D184's AUTONOMY1b3a note): a permission held for the person under asking, and how it ended, worded around the
+   * call's title as the agent wrote it; the bound's minutes a fact.
+   */
+  describe('a permission held for the person', () => {
+    const title = words('`npm test`', 'agent');
+
+    it('says it waits, and that the person allowed it', () => {
+      expect(noteLines(t, { parts: [coded('asking.held', 'permission waiting for the person:'), title] }, 'en')).toEqual([
+        { kind: 'said', text: 'Permission waiting for your answer:' },
+        { kind: 'words', text: '`npm test`', by: 'agent' },
+      ]);
+      expect(noteLines(zh, { parts: [coded('asking.allowed', 'permission allowed by the person:'), title] }, 'zh')).toEqual([
+        { kind: 'said', text: '你已允许权限：' },
+        { kind: 'words', text: '`npm test`', by: 'agent' },
+      ]);
+    });
+
+    it('says who or what refused it, in either language', () => {
+      const refused = (code: string, values?: Record<string, unknown>) =>
+        [coded('refused.lead', 'permission refused:'), title, coded(code, '—', values)];
+      expect(noteLines(t, { parts: refused('asking.denied') }, 'en').at(-1)).toEqual({ kind: 'said', text: '— you refused it.' });
+      expect(noteLines(t, { parts: refused('asking.cancelled') }, 'en').at(-1)?.text).toBe('— the turn was stopped before you answered.');
+      expect(noteLines(t, { parts: refused('asking.ended') }, 'en').at(-1)?.text).toBe('— the session ended before you answered.');
+      expect(noteLines(t, { parts: refused('asking.bound', { minutes: 15 }) }, 'en').at(-1)?.text)
+        .toBe('— nobody answered within 15 minutes, and a turn is never left waiting for ever.');
+      expect(noteLines(zh, { parts: refused('asking.denied') }, 'zh').at(-1)?.text).toBe('—— 你拒绝了它。');
+      expect(noteLines(zh, { parts: refused('asking.bound', { minutes: 15 }) }, 'zh').at(-1)?.text)
+        .toBe('—— 15 分钟内无人答复，而一轮不会无限期等待。');
+    });
+  });
+
   /** CONVNOTE2c: a press's note, a chat's setting and where the person is, and a browser withheld, worded; others' words as written. */
   describe('a press, a chat’s settings and a browser withheld', () => {
     it('words a press by its lead and leaves the landing’s sentence as written', () => {
