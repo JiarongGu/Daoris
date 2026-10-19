@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- The window minimizes, maximizes and restores with Windows' own animations, Win+Up and Snap maximize it, and a window
+  minimized while maximized comes back maximized from the tray, a notification or a later launch (the UI kit, Shenora
+  0.22).
 - A terminal's words or stop for one session no longer wait behind another session's slow delivery, and the plugins'
   evaluation steps run beside the driver's look instead of holding the next one.
 - A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates

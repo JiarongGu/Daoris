@@ -119,8 +119,9 @@ public sealed class SessionNotifier : IDisposable
         // it minimized; then the managed show/activate; then `SetForegroundWindow` for the OS side,
         // without which restoring while another app holds the foreground leaves the window behind
         // everything, visible only in the taskbar. That type is internal to the package, so the
-        // sequence is written out here rather than reached for.
-        if (_window.WindowState == FormWindowState.Minimized) _window.WindowState = FormWindowState.Normal;
+        // sequence is written out here rather than reached for. The un-minimize restores a window
+        // minimized from maximized as maximized (Shenora 0.22), which `WindowState = Normal` does not.
+        MainForm.Unminimize(_window);
         _window.Show();
         _window.Activate();
         _window.BringToFront();

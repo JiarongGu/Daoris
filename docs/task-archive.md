@@ -17277,3 +17277,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCESSWORDS1b — the page's trace and Ask Daoris say a landing the access setup accepted** (web, driver; D184's AUTONOMY1c2 note; after ACCESSWORDS1). The server's trace and `TraceRule` carry `access`, but the page's trace (`HowItCameToBe.tsx`, `work.trace.json`, its TS type) draws only the rule's source, and Ask Daoris's room does not say a landing was the setup's. Proof: the trace's vitest in en and zh; the room's golden.
 
 **Outcome** 2026-10-19: the page's trace (in place of the rule's switch) and the room's landed line say whose access setup accepted a landing, only where the switch accepted it; the full goldens' landed line alone moved. On Opus: about 70 tool calls, 40 minutes. Detail: D184's ACCESSWORDS1b line; `HowItCameToBe.test.tsx`, `HelpRoomMachineNowTests`.
+
+## SHEN4 — take Shenora 0.22.0 (2026-10-20, D22)
+
+> - [ ] **SHEN4 — take Shenora 0.22.0** (desktop, web; D22's SHEN3 note; the owner, 2026-10-20: "released shenora 0.22 which fixed some issue you can update too").
+
+**Outcome** 2026-10-20: the three packages and `@shenora/react` at 0.22.0; its break (a frameless maximize is the system's, and `WindowState = Normal` un-minimizes a maximized window un-maximized) reached `MainForm.TakeBack` and `SessionNotifier.Show`, which restore with `SW_RESTORE` through `MainForm.Unminimize`; the window-command overrides stay. The app builds; the window's behaviour is the installed proof. Detail: D22's SHEN4 note.

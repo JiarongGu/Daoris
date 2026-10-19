@@ -20,11 +20,12 @@ namespace Daoris.Desktop;
 /// right edge is handed to the OS as real caption buttons — which <b>this window paints</b>
 /// (<c>NativeCaptionButtons</c>), not the page. D56 as amended has the reason.</para>
 ///
-/// <para>🔴 <b><see cref="Form.WindowState"/> is a lie about this window.</b> The frameless maximize
-/// is manual — sized to the monitor work area, keeping <c>WindowState.Normal</c> — so
-/// <see cref="OptimizedForm.AppPlacement"/> is the truth. Reading the WinForms property instead makes
-/// restore a permanent no-op, which is why the framework's own window-state stack reads
-/// <c>IAppMaximizable</c> and why the IPC module is handed the same answer.</para>
+/// <para><b><see cref="OptimizedForm.AppPlacement"/> is the truth about this window's maximize.</b> Since
+/// Shenora 0.22 the frameless maximize is the system's, so <see cref="Form.WindowState"/> reads
+/// <c>Maximized</c> too; but a window minimized from maximized reads <c>Minimized</c> there and
+/// <c>Maximized</c> in <c>AppPlacement</c>, which is what the kit's window-state stack saves and the IPC
+/// module is handed. Un-minimizing with <c>WindowState = Normal</c> brings such a window back
+/// un-maximized: <see cref="Unminimize"/> restores it as it was.</para>
 /// </remarks>
 public sealed class MainForm : OptimizedForm
 {
@@ -120,8 +121,8 @@ public sealed class MainForm : OptimizedForm
         dispatcher.MapModule(new WindowCommandModule(new WindowCommandOptions
         {
             Window = this,
-            // The manual path, both times. The defaults toggle and read `Form.WindowState`, which is
-            // correct for a framed window and wrong for this one on every call.
+            // The form's own members, both times: its toggle, and `AppPlacement`, which says maximized of a
+            // window minimized from maximized where `Form.WindowState` says minimized.
             ToggleMaximize = ToggleMaximize,
             IsMaximized = () => AppPlacement == WindowPlacement.Maximized,
             ApplyTheme = ApplyTheme,
@@ -196,12 +197,30 @@ public sealed class MainForm : OptimizedForm
     /// </summary>
     public void TakeBack() => Post(() =>
     {
-        if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+        Unminimize(this);
         Show();
         Activate();
         BringToFront();
         SetForegroundWindow(Handle);
     });
+
+    /// <summary>
+    /// Un-minimize <paramref name="form"/> to where it was minimized from, maximized if it was (Shenora 0.22): <c>WindowState =
+    /// Normal</c> restores the windowed bounds whatever the window was. The kit's own <c>WindowActivation.Unminimize</c> is
+    /// internal to it, so the tray's and a notification's restore call this. No-op when it is not minimized.
+    /// </summary>
+    internal static void Unminimize(Form form)
+    {
+        if (form.WindowState != FormWindowState.Minimized) return;
+        if (form.IsHandleCreated) ShowWindow(form.Handle, SW_RESTORE);
+        else form.WindowState = FormWindowState.Normal;
+    }
+
+    private const int SW_RESTORE = 9;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool ShowWindow(IntPtr window, int command);
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
