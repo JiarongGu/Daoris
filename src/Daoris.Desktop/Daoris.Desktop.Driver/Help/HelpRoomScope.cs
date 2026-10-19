@@ -24,7 +24,8 @@ internal static class HelpRoomScope
         var repositories = registry.Where(known => Ours(known.Workspace)).ToList();
         var own = repositories.Select(known => known.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
         // A repository named both here and in another workspace is this workspace's: what is said of it is its own.
-        var others = registry.Where(known => !own.Contains(known.Repository)).Select(known => known.Repository).ToList();
+        var others = registry.Where(known => !own.Contains(known.Repository)).Select(known => known.Repository)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var standing = whole.Standing.Where(ask => Ours(ask.Workspace)).ToList();
         var quests = whole.Snapshot.Quests.Where(quest => Ours(quest.Workspace)).ToList();
 
@@ -58,9 +59,9 @@ internal static class HelpRoomScope
             Sessions = whole.Sessions is { } look ? look with { Records = [.. look.Records.Where(record => Ours(record.Workspace))] } : null,
             History = whole.History is { } history ? [.. history.Where(reading => Ours(reading.Workspace))] : null,
             Work = whole.Work is { } units ? [.. units.Where(unit => own.Contains(unit.Repository))] : null,
-            // What the inventory could not read is said in a clause naming its repository, as `work state` says it: one naming
-            // another workspace's is that workspace's.
-            WorkUnread = [.. whole.WorkUnread.Where(said => !others.Any(other => said.Contains($"`{other}`", StringComparison.OrdinalIgnoreCase)))],
+            // What the inventory could not read names its repository as data (FACTSPLIT1a): another workspace's is that workspace's,
+            // whatever the clause's words name; one no workspace registers stays in every room, as before.
+            WorkUnread = [.. whole.WorkUnread.Where(unread => !others.Contains(unread.Repository))],
             WorkRecovery = [.. whole.WorkRecovery.Where(recovery => recovery.Repository is { } repository && own.Contains(repository))],
             NotReadYet = whole.NotReadYet with { Repositories = [.. whole.NotReadYet.Repositories.Where(own.Contains)] },
         };

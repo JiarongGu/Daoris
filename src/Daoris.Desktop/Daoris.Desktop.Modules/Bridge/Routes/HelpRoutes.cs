@@ -276,31 +276,13 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The work's topic's judge (PARALLEL1a): where each unit's work has got to (FABRIC-MILESTONE1b), the inventory's read-only
-    /// derivation as `work state` and the WORK_STATE route read it, with Daoris's own recoveries no unit names (RECOVERYASK1,
-    /// CLEANUP1); null where the service or git could not be read, and the room says so.
+    /// The work's topic's judge (PARALLEL1a), one part at a time since FACTSPLIT1a: where each unit's work has got to
+    /// (FABRIC-MILESTONE1b), the inventory's read-only derivation as `work state` and the WORK_STATE route read it, with Daoris's own
+    /// recoveries no unit names (RECOVERYASK1, CLEANUP1), of the part's repositories alone. Its checkout and the trees in use are the
+    /// service's answers the facts hold (<see cref="HelpFacts.PartOf"/>), so a part asks the service nothing.
     /// </summary>
-    private async Task<HelpWork?> WorkAsync(CancellationToken cancellationToken)
-    {
-        if (_loop.Service is null) return null;
-        try
-        {
-            var unread = new List<string>();
-            var (checkouts, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, null, cancellationToken).ConfigureAwait(false);
-            var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (repository, _, root) in checkouts)
-            {
-                if (!string.IsNullOrWhiteSpace(root)) roots.TryAdd(repository, root);
-            }
-
-            var (units, recovery) = await WorkInventories.ReadAsync(_loop.Home, roots, inUse, unread, cancellationToken).ConfigureAwait(false);
-            return new HelpWork(units, unread, recovery);
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
+    private async Task<HelpWork?> WorkAsync(HelpWorkPart part, CancellationToken cancellationToken) =>
+        await HelpFacts.ReadWorkAsync(_loop.Home, part, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Keep Ask Daoris's facts on the loop's (PARALLEL1a, D181 point 2): this module's judges registered for each of the room's topics,

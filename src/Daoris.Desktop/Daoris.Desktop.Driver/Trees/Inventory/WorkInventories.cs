@@ -10,24 +10,46 @@ public static class WorkInventories
     /// <summary>The facts of this home. <paramref name="roots"/> names each repository's checkout; none is read for a repository without one.</summary>
     /// <param name="inUse">The trees a session still running or waiting holds, from the service.</param>
     /// <param name="unread">Said where a repository's recovery refs were not read, and why.</param>
-    public static async Task<InventoryFacts> GatherAsync(
+    public static Task<InventoryFacts> GatherAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread,
-        CancellationToken ct = default, DateTimeOffset? now = null)
+        CancellationToken ct = default, DateTimeOffset? now = null) =>
+        GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only: null, ct, now);
+
+    /// <summary>
+    /// One part of the inventory (FACTSPLIT1a): the units, the recoveries no unit names and what could not be read, of the
+    /// repositories <paramref name="only"/> holds alone, from their trees, their records and their checkouts' refs. Another
+    /// repository's trees are never listed, so they cost no git. Each line not read names its repository as data.
+    /// </summary>
+    /// <param name="only">Whether a repository the trees or the records name is this part's.</param>
+    public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryUnread> Unread)> ReadPartAsync(
+        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, Func<string, bool> only, CancellationToken ct = default)
     {
+        var unread = new List<InventoryUnread>();
+        var facts = await GatherAsync(home, roots, inUse, (repository, said) => unread.Add(new(repository, said)), only, ct, now: null).ConfigureAwait(false);
+        return (WorkInventory.Derive(facts), WorkInventory.Recoveries(facts), unread);
+    }
+
+    private static async Task<InventoryFacts> GatherAsync(
+        string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, Action<string, string> unread,
+        Func<string, bool>? only, CancellationToken ct, DateTimeOffset? now)
+    {
+        IReadOnlyList<T> Ours<T>(IReadOnlyList<T> all, Func<T, string> repository) => only is null ? all : [.. all.Where(each => only(repository(each)))];
+
         var at = now ?? DateTimeOffset.UtcNow;
         var sessionTrees = new SessionTrees(home);
         // CLEANUP1, after review: a folder moved aside past its date that the purge keeps, read as the purge reads it, so it is said to the
         // person. Only past its date, where the purge has decided: a folder it deletes is walked once more before the next pass takes it.
         // Re-check: one whose delete the purge could not finish, which no read repeats, as the purge kept it.
         var failed = sessionTrees.SetAsideFailed();
-        var trees = (await sessionTrees.ListAsync(ct).ConfigureAwait(false))
+        var trees = (await sessionTrees.ListAsync(only, ct).ConfigureAwait(false))
             .Select(tree => tree.MovedAside is { } moved && at - moved >= BranchTidying.SetAsideFor
                             && (sessionTrees.SetAsideKept(tree.Path, moved)?.Sentence ?? failed.GetValueOrDefault(Path.GetFullPath(tree.Path))) is { } kept
                 ? tree with { PurgeKept = kept }
                 : tree)
             .ToList();
-        var branches = new SessionBranches(home).Entries();
-        var landings = new LandedBranches(home).Entries();
+        // FACTSPLIT1a: a part reads its own repositories' records, so it derives no unit of another's.
+        var branches = Ours(new SessionBranches(home).Entries(), entry => entry.Repository);
+        var landings = Ours(new LandedBranches(home).Entries(), entry => entry.Repository);
         var refs = new List<RecoveryRef>();
         var standing = new List<StandingBranch>();
         var repositories = branches.Select(entry => entry.Repository).Concat(landings.Select(entry => entry.Repository))
@@ -36,7 +58,7 @@ public static class WorkInventories
         {
             if (!roots.TryGetValue(repository, out var root) || string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
             {
-                unread.Add($"`{repository}` has no checkout here, so its recovery refs were not read");
+                unread(repository, $"`{repository}` has no checkout here, so its recovery refs were not read");
                 continue;
             }
 
@@ -45,7 +67,7 @@ public static class WorkInventories
             var (listed, err, branchesHere) = await RecoveryRetention.ReadWithBranchesAsync(root, repository, RecoveryRetention.Made(landings, repository), ct).ConfigureAwait(false);
             if (listed is null)
             {
-                unread.Add($"git could not list `{repository}`'s recovery refs: {err}");
+                unread(repository, $"git could not list `{repository}`'s recovery refs: {err}");
                 continue;
             }
 
@@ -54,7 +76,7 @@ public static class WorkInventories
         }
 
         return new InventoryFacts(
-            branches, landings, trees, new AutoLandings(home).All(), refs, inUse,
+            branches, landings, trees, Ours(new AutoLandings(home).All(), entry => entry.Repository), refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
         { Standing = standing };
     }
@@ -80,3 +102,6 @@ public static class WorkInventories
             || string.Equals(unit.Branch, TreeFollows.SessionPrefix + named, StringComparison.Ordinal)
             || unit.Entries.Any(entry => entry.Kind is InventoryKind.LandingBranch or InventoryKind.SessionBranch && entry.Resource == named))];
 }
+
+/// <summary>What one repository's part of the inventory could not read (FACTSPLIT1a): the repository, as data, and the clause `work state` says.</summary>
+public sealed record InventoryUnread(string Repository, string Said);
