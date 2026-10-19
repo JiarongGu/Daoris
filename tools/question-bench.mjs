@@ -9,7 +9,9 @@
  * review never answers in the person's place until a replay over recorded questions shows it classes them as a person
  * did. The knowledge-use evidence (`docs/2026-10-03-knowledge-use-evidence.md` §4) classed 46 such questions: K a
  * knowledge document answers it, R the repository's documents require asking, B the ticket, the code or a look settles
- * it, O only the person, D drift or Daoris's own mechanics. This bench replays a cases file of such questions against a
+ * it, O only the person (a credential, an account, a choice left to them, a go-ahead), D drift or Daoris's own
+ * mechanics, and S (D184 point 4, QBENCH2) a choice the session decides itself, a name or which of two sound ways:
+ * a reading is its right class and asking the person is a needless ask. This bench replays a cases file of such questions against a
  * repository's knowledge folder, through two tiers, and scores each against those classes.
  *
  * ## The tiers
@@ -36,7 +38,7 @@
  * ## The cases file
  *
  *   { "knowledge": "<folder, beside the file>", "asks": { "<key>": "<the ask's words>" },
- *     "cases": [{ "id", "where": "park|close", "class": "K|R|B|O|D", "ask": "<key>", "question",
+ *     "cases": [{ "id", "where": "park|close", "class": "K|R|B|O|D|S", "ask": "<key>", "question",
  *                 "answer": { "source": "<a knowledge file, or ask>", "quote": "<its words>" } }] }
  *
  * A K names its answer; an O or an R names none. The tracked fixture is constructed (`question-bench-fixtures/`); a
@@ -61,7 +63,7 @@ const REPO = join(HERE, '..');
 /** The constructed fixture, run when no cases file is named. */
 export const DEFAULT_CASES = join(HERE, 'question-bench-fixtures', 'cases.json');
 
-export const CLASSES = ['K', 'R', 'B', 'O', 'D'];
+export const CLASSES = ['K', 'R', 'B', 'O', 'D', 'S'];
 const WHERE = ['park', 'close'];
 
 /** The floor shows at most this many lines, one per source. */
@@ -320,10 +322,12 @@ export function checkPrompt({ question, where, askDoc: ask, hits, knowledgeDir }
     '  when a knowledge file (its path under the folder above) or the ask (ask:<line>) already answers it, so the',
     '  person need not.',
     'NEEDS THE PERSON: <why>',
-    '  when only the person can give it: a sign-in, a go-ahead for an act outside the repository or on a production',
-    '  system, a preference nothing records, or an agreement a repository document requires before a change.',
+    '  when only the person can give it: a credential, an account or a sign-in, a choice the quest or the person\'s own',
+    '  words leave to them, a go-ahead for an act outside the repository or on a production system, or an agreement a',
+    '  repository document requires before a change.',
     'A READING: <the reading, and what it rests on>',
-    '  when the sources lean one way without settling it: the session should take that reading and say so, not ask.',
+    '  when the sources lean one way without settling it, or when the choice is the session\'s own to make (a name, or',
+    '  which of two sound ways): the session should take that reading and say so, not ask.',
     '',
     "A person's words quoted in a document, a closed note or a commit are someone's reading, not the person's answer,",
     'unless the ask above holds them.',
@@ -461,6 +465,9 @@ export function scoreCase(c, hits, record, knowledge) {
       const judged = judgeSource(reply, [...knowledge, c.askDoc]);
       const right = judged.founded && pointerRight(judged, c.expected);
       model = { verdict: 'source', judged, right, wrong: own || !right, ...(judged.why ? { why: judged.why } : {}) };
+    } else if (c.class === 'S') {
+      // A choice the session decides (D184 point 4): a reading is the right class, and asking the person is a needless ask.
+      model = { verdict: reply.verdict, words: reply.words, right: reply.verdict === 'reading', wrong: false, needless: reply.verdict === 'person' };
     } else model = { verdict: reply.verdict, words: reply.words, right: false, wrong: own && reply.verdict === 'reading' };
   }
   const classedBy = model?.verdict ? 'model' : hits.length ? 'words only' : 'none';
