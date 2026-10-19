@@ -88,8 +88,11 @@ public sealed record HarnessSettings(
     public static string ResolvePath() =>
         Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
 
-    /// <summary>The directory the profile tree and the wiring file share — the Daoris home (D63).</summary>
-    public static string HomeOf(string settingsPath) => DriverConfig.HomeOf(settingsPath);
+    /// <summary>
+    /// The Daoris home (D63) the wiring file is in, which the profile tree is under: the home whose <see cref="HomeEntry.Harnesses"/>
+    /// it is, at its new place or its old (HOMELAYOUT3).
+    /// </summary>
+    public static string HomeOf(string settingsPath) => DaorisHome.HomeOf(settingsPath, HomeEntry.Harnesses);
 
     /// <summary>
     /// A missing file is a machine that named no profiles — not an error. Neither is an unreadable
@@ -490,6 +493,22 @@ public sealed record HarnessSettings(
     /// </summary>
     public static string ProfileHome(string home, string harness, string profile) =>
         DaorisHome.Entry(home, HomeEntry.AgentHomes, Name(harness, "agent name"), Name(profile, "profile name"));
+
+    /// <summary>
+    /// The home, the agent and the account a profile's folder is, read back from the layout <see cref="ProfileHome"/> makes, at
+    /// either place of <see cref="HomeEntry.AgentHomes"/>: <c>&lt;home&gt;/harnesses/&lt;agent&gt;/&lt;account&gt;</c> where an
+    /// account was made before HOMELAYOUT3, <c>&lt;Daoris folder&gt;/profiles/agents/&lt;agent&gt;/&lt;account&gt;</c> since. Null
+    /// for a folder outside both.
+    /// </summary>
+    public static (string Home, string Agent, string Account)? AccountAt(string profileHome)
+    {
+        var account = new DirectoryInfo(Path.GetFullPath(profileHome));
+        if (account.Parent is not { Parent: { } holder } agent) return null;
+        var home = holder.Name == "harnesses" ? holder.Parent?.FullName
+            : holder is { Name: "agents", Parent: { Name: "profiles", Parent: { } folder } } ? folder.FullName
+            : null;
+        return home is null ? null : (home, agent.Name, account.Name);
+    }
 
     /// <summary>
     /// The profiles that exist for a harness — <b>the directories that exist</b>, sorted. There is no

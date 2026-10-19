@@ -34,7 +34,8 @@ public sealed class HelpRoomScopeTests : IDisposable
         var help = HelpRoom.PathOf(_home);
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.HelpRoom), help);
         Assert.All(new string?[] { null, "", " ", "default", " Default " }, unsaid => Assert.Equal(help, HelpRoom.PathOf(_home, unsaid)));
-        Assert.Equal(Path.Combine(_home, "help-alpha"), HelpRoom.PathOf(_home, "alpha"));
+        // A sibling of the default's room: under `work/rooms/` in a new home (HOMELAYOUT3), beside `help` in one from before.
+        Assert.Equal(Path.Combine(Path.GetDirectoryName(help)!, "help-alpha"), HelpRoom.PathOf(_home, "alpha"));
         Assert.Equal(HelpRoom.PathOf(_home, "alpha"), HelpRoom.PathOf(_home, " ALPHA "));
 
         string[] names =

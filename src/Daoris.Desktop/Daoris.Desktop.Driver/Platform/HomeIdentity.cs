@@ -107,7 +107,8 @@ public static class HomeIdentity
         var beside = $"{path}.{Guid.NewGuid():N}.writing";
         try
         {
-            Directory.CreateDirectory(home);
+            // The home and the folder its id is in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(beside, Minted(), Utf8);
             File.Move(beside, path, overwrite: false);
         }

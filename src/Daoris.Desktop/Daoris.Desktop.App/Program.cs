@@ -143,7 +143,7 @@ internal static class Program
         // install, and never updates this way.
         builder.Services.AddSingleton(sp => new InstallUpdater(
             inInstallApp ? installRoot : null,
-            Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!,
+            Daoris.Driver.DriverConfig.HomeOf(Daoris.Driver.DriverConfig.ResolvePath()),
             log,
             work: () => sp.GetRequiredService<DriverLoop>().Work(),
             relaunch: ct => UpdateLauncher.StartAsync(installRoot, Environment.ProcessId, ct),
@@ -189,9 +189,9 @@ internal static class Program
         builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
         // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
         // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
-        // the home — the directory `driver.json` sits in, as every machine file's is.
+        // the home — the home `driver.json` is in, as every machine file's is.
         builder.Services.AddSingleton(_ => new EngineBrowserHost(
-            Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!));
+            Daoris.Driver.DriverConfig.HomeOf(Daoris.Driver.DriverConfig.ResolvePath())));
         builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());
         // Its favorites and settings, as a Settings domain (CHR5, CHR7): the files `daoris browser`
         // edits, read by `daoris-browser` each time it starts.

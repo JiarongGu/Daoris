@@ -184,7 +184,8 @@ public static class HelpGrants
 
     private static void Write(string home, IReadOnlyList<HelpApproval> approvals)
     {
-        Directory.CreateDirectory(home);
+        // The home and the folder the approvals are in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(PathIn(home)))!);
         JsonFile.Write(PathIn(home), new JsonObject
         {
             ["help"] = new JsonArray([.. approvals.Select(approval => (JsonNode)new JsonObject

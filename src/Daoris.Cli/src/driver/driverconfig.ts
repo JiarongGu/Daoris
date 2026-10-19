@@ -18,8 +18,7 @@
 // driver's `OrdinalIgnoreCase` matches it, through `casefold.ts` (CASEFOLD1): `straße` is not `STRASSE`, and `İzmir` is not
 // an `i` with a dot above, which a lowered `İzmir` would have met.
 
-import { dirname } from 'node:path';
-import { requireHomeFile } from '../platform/home.ts';
+import { homeOf, requireHomeFile } from '../platform/home.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { flagValue, operands } from '../platform/args.ts';
 import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from '../platform/fsx.ts';
@@ -1383,7 +1382,7 @@ export function commandDriver(
       const problem = rule === null ? null : landingProblem(rule);
       if (problem !== null) throw new DaorisError(problem);
       // The plugin must land work on THIS machine — its plugins sit beside the file, as the driver reads them.
-      const unready = rule?.plugin === undefined ? null : landingPluginProblem(rule.plugin, readPlugins(dirname(path)));
+      const unready = rule?.plugin === undefined ? null : landingPluginProblem(rule.plugin, readPlugins(homeOf(path, 'driver')));
       if (unready !== null) throw new DaorisError(`${unready} Nothing was written.`);
 
       writeDriverChoices(path, landingEdited(choices, name, workspace, rule));
@@ -2215,7 +2214,7 @@ export function commandDriver(
     if (rule !== undefined) {
       // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
       // plugin's agent is judged by what its plugin declares (XAGENT1b2), from the plugins beside the file, as the driver reads them.
-      const sameAgent = rule === false ? [] : sameAgentOf(rule, choices.adapter, readPlugins(dirname(path)));
+      const sameAgent = rule === false ? [] : sameAgentOf(rule, choices.adapter, readPlugins(homeOf(path, 'driver')));
       for (const sentence of [...opinionSays(rule, sameAgent), ...opinionGate(rule)]) write(`  ${sentence}`);
     }
     if (rule !== undefined && rule !== false && workspace) {

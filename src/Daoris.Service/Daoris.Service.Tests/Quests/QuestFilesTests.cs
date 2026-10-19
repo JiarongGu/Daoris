@@ -22,11 +22,14 @@ public sealed class QuestFilesTests : IDisposable
     private static string Sha(string text) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
 
-    /// <summary>The layout: the home, the quest, then the content's head and the file's own name.</summary>
+    /// <summary>
+    /// The layout: the home's kept files (under <c>work/files/</c> in a new home since HOMELAYOUT3), the quest, then the content's
+    /// head and the file's own name.
+    /// </summary>
     [Theory]
-    [InlineData("a1b2c3", "screenshot.png", "0123456789abcdef", "quests/a1b2c3/attachments/0123456789ab-screenshot.png")]
-    [InlineData("a1b2c3", "image.png", "fedcba9876543210", "quests/a1b2c3/attachments/fedcba987654-image.png")]
-    [InlineData("0f0f0f", "notes.txt", "aaaaaaaaaaaaaaaa", "quests/0f0f0f/attachments/aaaaaaaaaaaa-notes.txt")]
+    [InlineData("a1b2c3", "screenshot.png", "0123456789abcdef", "work/files/quests/a1b2c3/attachments/0123456789ab-screenshot.png")]
+    [InlineData("a1b2c3", "image.png", "fedcba9876543210", "work/files/quests/a1b2c3/attachments/fedcba987654-image.png")]
+    [InlineData("0f0f0f", "notes.txt", "aaaaaaaaaaaaaaaa", "work/files/quests/0f0f0f/attachments/aaaaaaaaaaaa-notes.txt")]
     public void The_layout_is_the_home_the_quest_and_the_content(
         string quest, string name, string sha, string expected)
     {

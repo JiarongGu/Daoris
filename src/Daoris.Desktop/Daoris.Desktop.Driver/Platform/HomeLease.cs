@@ -71,7 +71,8 @@ public sealed class HomeLeaseException(string message, Exception? inner = null) 
 /// another case of the path meets the one file.</para>
 ///
 /// <para><b>An older build's <c>driver.lock</c></b> is read as that build's lease while its holder lives, so a desktop or a loop
-/// from before HOMELEASE1 still holds the home against this one; a stale one is left where it is and ignored.</para>
+/// from before HOMELEASE1 still holds the home against this one; a stale one is left where it is and ignored. So is a lease at
+/// the <c>home-lease</c> entry's old place, a build's from before HOMELAYOUT3 switched it to <c>run/</c>.</para>
 ///
 /// <para><b>Compiled into the launcher too</b>, with <see cref="HomeIdentity"/> and <see cref="DaorisHome"/>, whose table names
 /// the lease's place (<c>Daoris.Desktop.Launcher.csproj</c>), so it uses nothing but the base library. The CLI's <c>lease.ts</c> is its twin and shares no code (<c>twins.md</c>).</para>
@@ -111,11 +112,19 @@ public sealed class HomeLease : IDisposable
     /// <summary>The live instance this one runs beside, holding nothing, or null when it holds the home.</summary>
     public LeaseHolder? Beside { get; }
 
-    /// <summary>Where a home's lease is: the home's <c>home-lease</c> entry (D172, HOMELAYOUT2).</summary>
-    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeLease);
+    /// <summary>
+    /// Where this build takes a home's lease: the home's <c>home-lease</c> entry at its new place, <c>run/home.lease</c> (D172,
+    /// HOMELAYOUT3), whichever spelling of the home is asked.
+    /// </summary>
+    public static string PathIn(string home) => DaorisHome.Places(home, HomeEntry.HomeLease)[0];
 
-    /// <summary>Where an older build's lock is: the home's <c>driver-lock</c> entry.</summary>
-    private static string LegacyIn(string home) => DaorisHome.Entry(home, HomeEntry.DriverLock);
+    /// <summary>
+    /// Every other place a lease of this home may be (HOMELAYOUT3): the <c>home-lease</c> entry's old place, where a build from
+    /// before the switch takes it, and an older build's <c>driver-lock</c> at either of its places. A live holder at any of them
+    /// holds the home; a stale one is left where it is.
+    /// </summary>
+    private static IEnumerable<string> OlderIn(string home) =>
+        DaorisHome.Places(home, HomeEntry.HomeLease).Skip(1).Concat(DaorisHome.Places(home, HomeEntry.DriverLock));
 
     /// <summary>Take the home, or null with the live holder that already has it.</summary>
     /// <param name="what">A verb's own words, which a refusal names; never its arguments.</param>
@@ -123,13 +132,17 @@ public sealed class HomeLease : IDisposable
     public static HomeLease? TryAcquire(string home, LeaseKind kind, out LeaseHolder? holder, string? what = null)
     {
         Directory.CreateDirectory(home);
-        if (Live(LegacyIn(home)) is { } legacy)
+        foreach (var older in OlderIn(home))
         {
-            holder = legacy;
-            return null;
+            if (Live(older) is { } elsewhere)
+            {
+                holder = elsewhere;
+                return null;
+            }
         }
 
         var path = PathIn(home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         Exception? last = null;
         for (var attempt = 0; attempt < 8; attempt++)
         {
@@ -177,7 +190,8 @@ public sealed class HomeLease : IDisposable
     }
 
     /// <summary>The live holder of the home, or null when none holds it.</summary>
-    public static LeaseHolder? HeldBy(string home) => Live(PathIn(home)) ?? Live(LegacyIn(home));
+    public static LeaseHolder? HeldBy(string home) =>
+        Live(PathIn(home)) ?? OlderIn(home).Select(Live).FirstOrDefault(holder => holder is not null);
 
     /// <summary>
     /// Whether this process holds the home's lease (FABRIC-END2, design §B5): its instance's loop, or a verb acting alone under the lease

@@ -16,10 +16,10 @@ const DRIVER_TESTS = driverTestFile('ProbeLockTests.cs');
 const source = readFileSync(DRIVER_TESTS, 'utf8');
 
 const PATH_ROWS: [string, string | null, string][] = [
-  ['claude-code', 'account-1', 'harnesses/.probing/claude-code/account-1.lock'],
-  ['claude-code', 'work.account', 'harnesses/.probing/claude-code/work.account.lock'],
-  ['claude-code', null, 'harnesses/.probing/claude-code.lock'],
-  ['codex', 'account-2', 'harnesses/.probing/codex/account-2.lock'],
+  ['claude-code', 'account-1', 'run/probing/claude-code/account-1.lock'],
+  ['claude-code', 'work.account', 'run/probing/claude-code/work.account.lock'],
+  ['claude-code', null, 'run/probing/claude-code.lock'],
+  ['codex', 'account-2', 'run/probing/codex/account-2.lock'],
 ];
 
 const STALE_ROWS: [number, boolean][] = [
@@ -30,8 +30,8 @@ const STALE_ROWS: [number, boolean][] = [
 ];
 
 const MARK_ROWS: [string, string, string][] = [
-  ['claude-code', 'account-1', 'harnesses/.probing/claude-code/account-1.signed-in'],
-  ['codex', 'work', 'harnesses/.probing/codex/work.signed-in'],
+  ['claude-code', 'account-1', 'run/probing/claude-code/account-1.signed-in'],
+  ['codex', 'work', 'run/probing/codex/work.signed-in'],
 ];
 
 test('the lock table is the driver\'s, cell for cell', () => {

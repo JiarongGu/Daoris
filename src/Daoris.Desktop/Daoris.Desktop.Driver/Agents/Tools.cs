@@ -365,7 +365,8 @@ public static class Tools
         var (path, root, locations) = WritableLocations(home);
         if (locations.Any(each => Text(each) == address)) return false;
         locations.Add(address);
-        Directory.CreateDirectory(home);
+        // The home and the folder the file is in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         JsonFile.Write(path, root);
         return true;
     }
@@ -451,7 +452,8 @@ public static class Tools
         if (version is not null) entry["version"] = version;
         if (file is not null) entry["file"] = file;
 
-        Directory.CreateDirectory(home);
+        // The home and the folder the file is in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         JsonFile.Write(path, root);
     }
 

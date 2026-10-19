@@ -78,8 +78,12 @@ function joinsIn(file: string, source: string, csharp: boolean): Join[] {
   const call = csharp ? /\b(?:System\.IO\.)?Path\.Combine\(/g : /(?<![\w.$])(?:join|resolve)\(/g;
   for (const match of source.matchAll(call)) {
     const open = match.index! + match[0].length;
-    const parts = argumentsOf(source, open);
+    let parts = argumentsOf(source, open);
     if (!parts) continue;
+    // C#'s collection form, `Path.Combine([home, .. Folder, name])` (HOMELAYOUT3: `ToolResources.LocationCopy` hid a join so):
+    // its parts are the collection's, a spread read as what it spreads.
+    const collection = parts.length === 1 && /^\[[\s\S]*\]$/.test(parts[0]!) ? argumentsOf(`${parts[0]!.slice(1, -1)})`, 0) : null;
+    if (collection) parts = collection.map((part) => part.replace(/^\.\.\s*/, ''));
     const line = source.slice(0, match.index).split('\n').length;
     found.push({ file, line, text: `${match[0]}${parts.join(', ')})`, parts });
   }
@@ -123,17 +127,43 @@ const isHome = (part: string): boolean => /^(?:[A-Za-z_][\w]*(?:\(\))?\.)*_?[Hh]
 /** The names a test gives the root it hands a tool as its home: a fixture's root, `at`, `root`, a C# test's `DataHome`. */
 const TEST_ROOT = /^(?:fx\.root|at|root|DataHome)$/;
 
-/** The first part of every place the table holds, and the names a place is known by: what a test's join may not name. */
+/**
+ * The top folders of the Daoris folder that are a category and no entry (HOMELAYOUT3): `data`, `profiles`, `work`, `cache` and
+ * `run`. Alone each names nothing, so a test's own `data` (an install's shape) or a workspace it calls `work` is no entry; with
+ * the part after it, it names the entry whose new place begins so. The logs are both their category and their entry.
+ */
+const CATEGORY_FOLDERS: ReadonlySet<string> = new Set(
+  HOME_ENTRIES.map((entry) => entry.category as string).filter((category) => !HOME_ENTRIES.some((entry) => entry.old === category)));
+
+/** A place's first part, or its first two where the first is a category's folder; none where a part is an item's. */
+function head(place: string): string | null {
+  const parts = place.split('/').filter((part) => part.length > 0);
+  const taken = parts.slice(0, CATEGORY_FOLDERS.has(parts[0] ?? '') ? 2 : 1);
+  return taken.length === 0 || taken.some((part) => part.includes('*')) ? null : taken.join('/');
+}
+
+/** The head of every place the table holds, and the names a place is known by: what a test's join may not name. */
 const NAMED = new Set(HOME_ENTRIES.flatMap((entry) => [
-  ...[entry.new, entry.old].map((place) => place.split('/')[0]!).filter((part) => part.length > 0 && !part.includes('*')),
+  ...[entry.new, entry.old].map(head).filter((part): part is string => part !== null),
   ...entry.holds,
 ]));
 
-/** Whether a test's join names an entry: a literal of a place the table holds, or a constant naming a folder or a file. */
-function namesEntry(part: string | undefined): boolean {
+/**
+ * Whether a test's join names an entry: its literal parts after the root begin with a place the table holds, or its first part
+ * is a constant naming a folder or a file.
+ */
+function namesEntry(parts: readonly string[]): boolean {
+  const literals: string[] = [];
+  for (const part of parts) {
+    const literal = /^@?"([^"]*)"$|^'([^']*)'$/.exec(part);
+    if (!literal) break;
+    literals.push(...(literal[1] ?? literal[2])!.split(/[\\/]/).filter(Boolean));
+  }
+  if (literals.length > 0) {
+    return CATEGORY_FOLDERS.has(literals[0]!) ? literals.length > 1 && NAMED.has(`${literals[0]}/${literals[1]}`) : NAMED.has(literals[0]!);
+  }
+  const part = parts[0];
   if (!part) return false;
-  const literal = /^@?"([^"]*)"$|^'([^']*)'$/.exec(part);
-  if (literal) return NAMED.has((literal[1] ?? literal[2])!.split(/[\\/]/)[0]!);
   // An agent's own files sit under an account's home, the item `agent-homes` answers, never under Daoris's.
   if (/^(?:AgentSettings|ClaudeTrust)\.|^AGENT_SETTINGS_FILE$/.test(part)) return false;
   return /^[A-Z][\w]*\.(?:Folder|FileName|[A-Z]\w*(?:File|Folder))$|^[A-Z][A-Z_]*_(?:FILE|FOLDER|DIR)$/.test(part);
@@ -179,7 +209,7 @@ function census(): { found: Join[]; scanned: number } {
         // A test hands its scratch root as `DAORIS_HOME` under names of its own (HOMELAYOUT2c): there too, a place the table
         // holds is asked of it.
         if (!isHome(each.parts[0]!) && !(testing && TEST_ROOT.test(each.parts[0]!))) continue;
-        if (testing && !namesEntry(each.parts[1])) continue;
+        if (testing && !namesEntry(each.parts.slice(1))) continue;
         found.push(each);
       }
     }
@@ -233,10 +263,16 @@ test('the census sees each way of joining a home, and never a join under an entr
   assert.deepEqual(read("const a = join(home, 'keys.json');", false), ["join(home, 'keys.json')"]);
   assert.deepEqual(read('var a = Path.Combine(DaorisHome.Entry(home, HomeEntry.Sessions), "x.log");'), []);
   assert.deepEqual(read('var a = Path.Combine(profileHome, "usage-read");'), []);
+  assert.deepEqual(read('var a = Path.Combine([home, .. LocationsFolder, name]);'), ['Path.Combine(home, LocationsFolder, name)']);
   assert.deepEqual(read("const a = path.join(root, 'driver.json');", false), []);
 
-  assert.ok(namesEntry('"sessions"') && namesEntry('"help/proposals"') && namesEntry('MachineLog.Folder') && namesEntry('COOLING_FILE'));
+  assert.ok(namesEntry(['"sessions"']) && namesEntry(['"help/proposals"']) && namesEntry(['MachineLog.Folder']) && namesEntry(['COOLING_FILE']));
   assert.ok(['fx.root', 'at', 'root', 'DataHome'].every((name) => TEST_ROOT.test(name)) && !TEST_ROOT.test('repoRoot'));
-  assert.ok(namesEntry("'harnesses.json'") && namesEntry('TOOLS_FOLDER'));
-  assert.ok(!namesEntry('"engine"') && !namesEntry('"agent.log"') && !namesEntry('name'));
+  assert.ok(namesEntry(["'harnesses.json'"]) && namesEntry(['TOOLS_FOLDER']));
+  assert.ok(!namesEntry(['"engine"']) && !namesEntry(['"agent.log"']) && !namesEntry(['name']));
+  // HOMELAYOUT3: a category's folder names an entry only with the part after it, as its new place begins.
+  assert.deepEqual([...CATEGORY_FOLDERS].sort(), ['cache', 'data', 'profiles', 'run', 'work']);
+  assert.ok(namesEntry(["'data'", "'driver.json'"]) && namesEntry(['"run/home.lease"']) && namesEntry(['"work"', '"brainstorm-rooms"', '"b1"']));
+  assert.ok(namesEntry(['"logs"']) && namesEntry(['"profiles"', '"agents"']));
+  assert.ok(!namesEntry(["'data'"]) && !namesEntry(['"work"', '"engine"']) && !namesEntry(['"profiles"', 'adapter.Name']));
 });

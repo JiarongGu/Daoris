@@ -381,7 +381,8 @@ const COPY_ROWS: [string, string][] = [
 ];
 
 test('a location’s copy is named by the hash of its address, as the driver names it', () => {
-  for (const [address, name] of COPY_ROWS) assert.equal(locationCopy('HOME', address), join('HOME', ...LOCATIONS_FOLDER, name), address);
+  // Under the cache since HOMELAYOUT3 (D172 §3.4), as the driver's twin asks it.
+  for (const [address, name] of COPY_ROWS) assert.equal(locationCopy('HOME', address), join('HOME', 'cache', ...LOCATIONS_FOLDER, name), address);
 });
 
 /** [the address, what vouches for a list from it (§3.5)]. */

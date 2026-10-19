@@ -58,7 +58,7 @@ function run(argv: string[], path: string): { code: number; out: string } {
 
 test('the path is the override, or the file under the Daoris home, or a refusal naming what to set', () => {
   assert.equal(harnessesPath({ DAORIS_HARNESS_CONFIG: '/x/h.json' }), '/x/h.json');
-  assert.equal(harnessesPath({ DAORIS_HOME: '/x/data' }), join('/x/data', 'harnesses.json'));
+  assert.equal(harnessesPath({ DAORIS_HOME: '/x/daoris' }), join('/x/daoris', 'data', 'harnesses.json'));
   // 🔴 No default under the user profile (D63): a machine nobody pointed is refused, not written to.
   assert.throws(() => harnessesPath({}), /DAORIS_HOME/);
 });
@@ -130,7 +130,7 @@ test('no profile named anywhere means the harness’s own configuration home', (
 test('a managed harness lives under a version of its own, and the name may not escape', () => {
   assert.equal(
     managedHome('/home', 'claude-code', '1.2.3'),
-    join('/home', 'toolchain', 'claude-code', '1.2.3'));
+    join('/home', 'cache', 'toolchain', 'claude-code', '1.2.3'));
 
   // A version is a directory name like any other, so it takes the same refusal a profile does.
   for (const version of ['../escape', 'a/b', 'a\\b', '', '  ', '.', '..']) {

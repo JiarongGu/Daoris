@@ -29,9 +29,13 @@ import { captureError, makeFixture } from '../_fixture.ts';
  * 🔴 Nothing here starts a plugin: an add copies, an update swaps, and the loop starts what runs later.
  */
 
-/** A home under an install-shaped folder: `<root>/data` is the home, `<root>/app/plugin-offers` the offers. */
+/**
+ * A home under an install-shaped folder: `<root>/data` is the home, `<root>/app/plugin-offers` the offers, and the marker that
+ * makes `<root>` the install its `data/` names (D172 point 2), so the home's entries are the install's.
+ */
 function machine(name: string) {
   const fx = makeFixture(name);
+  fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
   const home = join(fx.root, 'data');
   mkdirSync(home, { recursive: true });
   const offers = join(fx.root, ...OFFERS_DIR);

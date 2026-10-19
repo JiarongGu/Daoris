@@ -270,9 +270,14 @@ public static class ToolResources
     public static string BuiltInFor(string home, string baseDirectory) =>
         File.Exists(BesideApplication(baseDirectory)) ? BesideApplication(baseDirectory) : BesideHome(home);
 
-    /// <summary>Where a location's fetched copy is kept: named by the sha256 of its address as written.</summary>
+    /// <summary>
+    /// Where a location's fetched copy is kept: named by the sha256 of its address as written, under the home's
+    /// <see cref="HomeEntry.ToolVersions"/> as the CLI's <c>locationCopy</c> asks it (HOMELAYOUT3: <c>cache/tools/locations</c>, or
+    /// where an older home keeps them).
+    /// </summary>
     public static string LocationCopy(string home, string address) =>
-        System.IO.Path.Combine([home, .. LocationsFolder, Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(address))) + ".json"]);
+        DaorisHome.Entry(home, HomeEntry.ToolVersions,
+            [.. LocationsFolder.Skip(1), Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(address))) + ".json"]);
 
     /// <summary>
     /// Every list, in read order (§3.3): the person's locations top to bottom, each from its fetched copy, then the

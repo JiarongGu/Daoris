@@ -65,14 +65,14 @@ public static class ProbeLock
 
     /// <summary>
     /// Mark a sign-in or a key into the account at <paramref name="profileHome"/> (TOOL6g): a home outside the accounts'
-    /// layout (<c>&lt;home&gt;/harnesses/&lt;agent&gt;/&lt;account&gt;</c>) marks nothing. A mark not written costs the
-    /// walk one sign-out's wait for its backstop, never the sign-in.
+    /// layout (<see cref="HomeEntry.AgentHomes"/>: <c>&lt;home&gt;/harnesses/&lt;agent&gt;/&lt;account&gt;</c> where it was, or
+    /// <c>&lt;Daoris folder&gt;/profiles/agents/&lt;agent&gt;/&lt;account&gt;</c> since HOMELAYOUT3) marks nothing. A mark not
+    /// written costs the walk one sign-out's wait for its backstop, never the sign-in.
     /// </summary>
     public static void MarkSignedIn(string profileHome, DateTimeOffset now)
     {
-        var account = new DirectoryInfo(Path.GetFullPath(profileHome));
-        if (account.Parent is not { Parent: { Name: "harnesses", Parent: { } home } } agent) return;
-        var path = SignedInPathOf(home.FullName, agent.Name, account.Name);
+        if (HarnessSettings.AccountAt(profileHome) is not { } at) return;
+        var path = SignedInPathOf(at.Home, at.Agent, at.Account);
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

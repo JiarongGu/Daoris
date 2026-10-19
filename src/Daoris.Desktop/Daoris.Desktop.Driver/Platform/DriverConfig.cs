@@ -740,10 +740,11 @@ public sealed record DriverConfig(
         OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     /// <summary>
-    /// The Daoris home a config file lives in — the directory holding <c>driver.json</c>, which every
-    /// door derives the home from. Seven places wrote this expression out (REV3 CLEAN1).
+    /// The Daoris home a config file lives in, which every door derives the home from (REV3 CLEAN1): the home whose
+    /// <see cref="HomeEntry.DriverConfig"/> it is, at its new place (<c>data/driver.json</c>) or its old (HOMELAYOUT3), an install's
+    /// spelled as its <c>data/</c>.
     /// </summary>
-    public static string HomeOf(string configPath) => Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+    public static string HomeOf(string configPath) => DaorisHome.HomeOf(configPath, HomeEntry.DriverConfig);
 
     /// <summary>
     /// The text this config was read from, or null for one built in memory (FABRIC-GRAPH1's review, finding 1): the writer keeps from it

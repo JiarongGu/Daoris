@@ -30,7 +30,7 @@ public sealed class BrainstormPostureTests : IDisposable
         catch (IOException) { }
     }
 
-    private string Room(string turn) => Path.Combine(_home, "work", "brainstorm-rooms", "b1", turn);
+    private string Room(string turn) => DaorisHome.Entry(_home, HomeEntry.BrainstormRooms, "b1", turn);
 
     private static string GoldenPath(string file) =>
         Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "golden", "brainstorm-rules", file);

@@ -49,7 +49,7 @@ async function refused(fx: Fixture, argv: string[], checkouts: CheckoutsReader =
 }
 
 function saved(fx: Fixture, id: string): { id: string; name: string; versions: { version: number; at: string; door: string; steps: unknown[] }[] } {
-  return JSON.parse(fx.read(`workflows/${id}.json`));
+  return JSON.parse(readFileSync(homeEntry(fx.root, 'workflows', `${id}.json`), 'utf8'));
 }
 
 test('new from a preset: --plan says the change and writes nothing, then v1 is written, BOM-less, LF and whole', async () => {
@@ -71,7 +71,7 @@ test('new from a preset: --plan says the change and writes nothing, then v1 is w
     '  --plan: nothing was written.',
     WHAT_CHOOSES,
   ].join('\n'));
-  assert.equal(fx.exists('workflows/docs-to-pr.json'), false);
+  assert.equal(existsSync(homeEntry(fx.root, 'workflows', 'docs-to-pr.json')), false);
 
   const { code, out } = await run(fx, ['new', 'docs-to-pr', '--from', 'pull-request-no-press', '--name', 'Documentation to a pull request']);
   assert.equal(code, 0);
@@ -117,7 +117,7 @@ test('new with a second opinion and your look, and from a saved workflow\'s vers
 
 test('new from Current copies a repository\'s rules as Current draws them, and the change is drawn from nothing', async () => {
   const fx = makeFixture('workflowdoor-current');
-  fx.write('driver.json', JSON.stringify({
+  writeFileSync(fx.entry('driver'), JSON.stringify({
     workspaceLandings: { work: { form: 'branch', pattern: 'work/{quest}-{slug}', autoAccept: true } },
     workspaceReviews: { work: { required: true, environments: [{ name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' }] } },
   }));
@@ -250,7 +250,7 @@ test('a round trip: export to a file, import on another home, and show the same 
 
   const plan = await run(two, ['import', 'carried.json', '--plan']);
   assert.match(plan.out, /^daoris: `docs-to-pr` — 文档直接开拉取请求, from carried\.json: 2 versions, its newest v2:/);
-  assert.equal(two.exists('workflows/docs-to-pr.json'), false);
+  assert.equal(existsSync(homeEntry(two.root, 'workflows', 'docs-to-pr.json')), false);
   const imported = await run(two, ['import', 'carried.json']);
   assert.equal(imported.code, 0);
 
@@ -310,7 +310,7 @@ test('import refuses a file a version of which does not read here, and list says
   const broken = await refused(fx, ['edit', 'broken', 'remove', 'look']);
   assert.equal(broken.exitCode, 1);
   assert.equal(broken.message, '`broken` cannot be read: `broken.json` is not readable JSON.');
-  assert.equal(fx.read('workflows/broken.json'), '{ not json');
+  assert.equal(readFileSync(homeEntry(fx.root, 'workflows', 'broken.json'), 'utf8'), '{ not json');
   fx.cleanup();
 });
 

@@ -311,7 +311,8 @@ public static class PermissionRules
                 + "rule in the file with this one change. Fix the file or remove it, then make the change again.");
         }
 
-        Directory.CreateDirectory(home);
+        // The home and the folder the rules are in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(PathOf(home)))!);
         if (file.Understood is { } understood) JsonKeeping.Save(PathOf(home), file.Found, understood, Written(file));
         else JsonFile.Write(PathOf(home), Root(file));
     }

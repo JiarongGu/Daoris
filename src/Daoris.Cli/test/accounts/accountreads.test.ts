@@ -106,7 +106,7 @@ test('the file, its keys and its words are spelled as the driver spells them', (
 
   // The file is the home's `reads` entry, by its place in the driver's table (HOMELAYOUT2).
   assert.match(source, /HomeEntry\.Reads\b/);
-  assert.match(readFileSync(driverFile('DaorisHome.cs'), 'utf8'), new RegExp(`new\\("reads", HomeCategory\\.Data, "${READS_FILE.replace('.', '\\.')}"`));
+  assert.match(readFileSync(driverFile('DaorisHome.cs'), 'utf8'), new RegExp(`new\\("reads", HomeCategory\\.Data, "data/${READS_FILE.replace('.', '\\.')}", "${READS_FILE.replace('.', '\\.')}"`));
   assert.match(source, /Own = "own"/);
   assert.match(source, /AccountsKey = "accounts"/);
   for (const word of ['in', 'out', 'unknown'] as const) assert.match(source, new RegExp(`=> "${word}"`), word);

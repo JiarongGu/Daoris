@@ -60,8 +60,13 @@ public sealed class DriverLoop(
     /// Marked under the home's <c>sessions/</c>, so a terminal's driver sharing the home can tell this
     /// loop's live sessions from orphans, and this loop can tell its (2026-09-25).
     /// </remarks>
-    public SessionProcesses Processes { get; } = new(Path.Combine(
-        Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!, "sessions"));
+    public SessionProcesses Processes { get; } = new(DaorisHome.Entry(HomeOfChoices(), HomeEntry.SessionPids));
+
+    /// <summary>
+    /// The home the person's choices are in, asked at construction as each part below asks it: the home whose <c>driver.json</c>
+    /// the one resolution finds (HOMELAYOUT3: at its new place or its old, never the file's folder alone).
+    /// </summary>
+    private static string HomeOfChoices() => DriverConfig.HomeOf(DriverConfig.ResolvePath());
 
     /// <summary>
     /// What sessions are saying, as they say it (D49 §2) — shared across ticks for the same reason the
@@ -86,16 +91,14 @@ public sealed class DriverLoop(
     /// the same rule, and reachable only over this bridge. Watched from the first event for the call each
     /// session's agent is inside (WAITSAY1b), which <c>SESSION_GROUPS</c> answers whether or not a window watched it begin.
     /// </summary>
-    public SessionEvents Events { get; } = RunningCalls.Watched(new(Path.Combine(
-        Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!, "sessions")));
+    public SessionEvents Events { get; } = RunningCalls.Watched(new(DaorisHome.Entry(HomeOfChoices(), HomeEntry.Sessions)));
 
     /// <summary>
     /// What sessions consumed (TOOL3/D57 §4) — machine-local by the same rule as the console and the
     /// profile name it records, and reachable only over this bridge. Its home is the Daoris home,
-    /// which is the directory `driver.json` sits in.
+    /// which is the home `driver.json` is in.
     /// </summary>
-    public SessionUsage Usage { get; } = new(
-        Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!);
+    public SessionUsage Usage { get; } = new(HomeOfChoices());
 
     /// <summary>
     /// The presses under way (STATEHUB1c2, D169 point 7), the driver's to hold rather than a component's: the shell's
@@ -175,8 +178,13 @@ public sealed class DriverLoop(
     /// <summary>Where this loop reads the person's choices — what the control surface edits.</summary>
     public string ConfigPath { get; } = DriverConfig.ResolvePath();
 
-    /// <summary>The Daoris home (D63): the directory every machine-local file lives in.</summary>
-    public string Home => DriverConfig.HomeOf(ConfigPath);
+    /// <summary>
+    /// The Daoris home (D63) every machine-local file lives in: the home <see cref="ConfigPath"/> is in, asked once, since it
+    /// reads the install's marker (HOMELAYOUT3) and the path never changes.
+    /// </summary>
+    public string Home => _home ??= DriverConfig.HomeOf(ConfigPath);
+
+    private string? _home;
 
     /// <summary>
     /// What establishing the home did on this start, when it is worth a person's attention — state
@@ -233,8 +241,7 @@ public sealed class DriverLoop(
     /// tick re-reads the catalogue and hands the roster the live set.
     /// </summary>
     private static AdapterSet WithPlugins(AdapterSet built) =>
-        built.WithPlugins(PluginCatalog.Load(
-            Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!, built.Names));
+        built.WithPlugins(PluginCatalog.Load(HomeOfChoices(), built.Names));
 
     /// <summary>The plugins that speak (D64): their processes live with this loop and stop with it.</summary>
     private HookSet? _hooks;

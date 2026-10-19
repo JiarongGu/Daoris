@@ -163,16 +163,17 @@ public sealed class SystemWiringTests : IDisposable
 
     /// <summary>
     /// The layout as it runs (the second opinion's point 4): every entry where it is, an install's sign-ins still in its
-    /// <c>data/</c>, said under <c>profiles</c> with why they stay; never the planned table as an installed fact.
+    /// <c>data/</c> (a home from before HOMELAYOUT3 moved them), said under <c>profiles</c> with why they stay; never the planned
+    /// table as an installed fact.
     /// </summary>
     [Fact]
     public void Each_entry_is_shown_where_it_runs_and_an_old_place_says_why_it_stays()
     {
         var (install, home, driver) = Install();
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), "{}");
-        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Keys), "{}");
-        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Trees, "a", "b", "c"));
-        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Bin));
+        File.WriteAllText(DaorisHome.Places(home, HomeEntry.Keys)[^1], "{}");
+        Directory.CreateDirectory(DaorisHome.Places(home, HomeEntry.Trees, "a", "b", "c")[^1]);
+        Directory.CreateDirectory(DaorisHome.Places(home, HomeEntry.Bin)[^1]);
 
         var wiring = SystemWiring.Read(Terminal(home, driver));
 
@@ -197,6 +198,7 @@ public sealed class SystemWiringTests : IDisposable
     {
         var (_, home, driver) = Install();
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), new string('x', 100));
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Sessions));
         Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.SessionFiles, "s1"));
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Sessions, "s1.jsonl"), new string('y', 30));
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.SessionFiles, "s1", "kept.png"), new string('z', 7));

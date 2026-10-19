@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { homeEntry, homeId } from '../../src/platform/home.ts';
+import { basename, dirname, join } from 'node:path';
+import { homeEntry, homeId, homePlaces } from '../../src/platform/home.ts';
 import { leaseForVerb, leaseHolder, leaseNamed, tryLease, VERB_WAIT_MS } from '../../src/platform/lease.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -148,6 +148,42 @@ test('an older build’s driver.lock holds the home while its holder lives', () 
     assert.ok('lease' in stale);
     stale.lease.release();
     assert.ok(existsSync(homeEntry(fx.root, 'driver-lock')), 'a stale one is left where it is');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/**
+ * 🔴 HOMELAYOUT3: the lease is taken at the home's `home-lease` entry's new place, `run/home.lease`, its folder made; a live
+ * holder at the old place (a build from before the switch, whose lease is in the install's `data/`) still holds the home; and a
+ * stale one there is left where it is, never the place this one takes. Every spelling of the install meets the one lease.
+ */
+test('the lease is taken at its new place, and an older build’s lease at the old place still holds the home', () => {
+  const fx = makeFixture('lease-places');
+  try {
+    fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
+    const data = join(fx.root, 'data');
+    const taken = tryLease(data, 'verb', 'daoris driver cap', alive);
+    assert.ok('lease' in taken);
+    const [place] = homePlaces(fx.root, 'home-lease');
+    assert.ok(existsSync(place!) && basename(dirname(place!)) === 'run', 'taken in run/');
+    const met = tryLease(fx.root, 'desktop', null, alive);
+    assert.ok('holder' in met && met.holder.what === 'daoris driver cap', 'the install’s folder meets the lease its data/ took');
+    taken.lease.release();
+
+    // An older build's live lease, at the old place the build before the switch took it.
+    const older = join(data, 'home.lease');
+    mkdirSync(data, { recursive: true });
+    writeFileSync(older, JSON.stringify({ kind: 'desktop', pid: 4242, started: 639000000000000000, since: '2026-10-16T08:02:13Z' }));
+    const blocked = tryLease(data, 'verb', 'daoris driver cap', (pid) => pid === 4242);
+    assert.ok('holder' in blocked && blocked.holder.kind === 'desktop' && blocked.holder.pid === 4242);
+    assert.deepEqual(leaseHolder(fx.root, (pid) => pid === 4242)?.pid, 4242);
+
+    // Its holder gone: the home is taken at the new place, and the stale one is left as it is.
+    const after = tryLease(data, 'verb', 'daoris driver cap', (pid) => pid === process.pid);
+    assert.ok('lease' in after);
+    assert.ok(existsSync(older), 'a stale lease at the old place is left where it is');
+    after.lease.release();
   } finally {
     fx.cleanup();
   }
