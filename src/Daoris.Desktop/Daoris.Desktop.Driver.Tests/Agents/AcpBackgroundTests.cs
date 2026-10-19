@@ -696,7 +696,7 @@ public sealed class AcpBackgroundTests
     /// <summary>
     /// 🔴 BGWAIT2c: work whose ending the wire said before its stream ended has ended, however the wait is woken. The reader
     /// hands the ending to the wait and reads on, so the stream can be over before the wait looks; the wait that then read the
-    /// stream's end first failed a session whose work had ended, one run in five of the case above alone. Here the test's own
+    /// stream's end first failed a session whose work had ended, as the case above did now and then alone. Here the test's own
     /// thread is the reader, the ending and the stream's end one after the other, the wait parked before either: run many
     /// times, since which of the two the wait sees first is the thread pool's to say.
     /// </summary>

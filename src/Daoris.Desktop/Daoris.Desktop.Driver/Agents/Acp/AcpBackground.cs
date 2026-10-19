@@ -86,8 +86,8 @@ internal sealed class AcpBackground
     /// and answer every piece that ran at the start or was announced since, with how it ended. Null when
     /// <paramref name="ended"/> completes while any of it runs: the agent's stream is over, and nothing more will be said of the
     /// work. A stream that ends in the breath after the last ending cuts the breath short and nothing else (BGWAIT2): the wire
-    /// said it all ended, and what the agent said after it, a woken turn's end among it, was read before the stream's end. So
-    /// does one that ended before this wait looked again, however the two reached it (BGWAIT2c).
+    /// said it all ended, and what the agent said after it, a woken turn's end among it, was read before the stream's end. An
+    /// ending the wire said before the stream's end is an ending, whichever of the two this wait sees first (BGWAIT2c).
     /// </summary>
     public async Task<IReadOnlyList<(string Name, string State)>?> EndedAsync(Task ended, CancellationToken ct)
     {
@@ -104,7 +104,7 @@ internal sealed class AcpBackground
             // 🔴 BGWAIT2c: whether the stream is over is read before what the wire said of the work, never after. The reader
             // takes every update before the stream's end completes, so what is read after it is the wire's last word: work
             // it said ended has ended, however this wait was woken. Read the other way, an ending the reader handed over and
-            // read past to the stream's end failed a session whose work had ended (one run in five of a case alone).
+            // read past to the stream's end failed a session whose work had ended.
             var over = ended.IsCompleted;
             Task changed;
             bool running;
