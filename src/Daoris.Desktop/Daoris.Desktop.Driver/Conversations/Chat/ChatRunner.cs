@@ -681,12 +681,15 @@ public sealed class ChatRunner : IDisposable
     internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null)
     {
         var circle = HelpCircle.Of(home, room, workspace);
+        // HELPMODE1c2a (D183's note): the housekeeping the person chose, read once for this start, so its allow-list and its receipt
+        // say the same; each tool's call is judged again by the record then (HelpHousekeeping).
+        var housekeeping = ConfiguredAccess.Read(home).Housekeeping;
         return new(
             HelpRoom.Repository, room,
             (file, id) =>
             {
                 var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
-                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask, circle);
+                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask, circle, housekeeping);
             },
             Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
         {
@@ -695,6 +698,7 @@ public sealed class ChatRunner : IDisposable
             Workspace = RemoteTarget.Workspace(workspace),
             Circle = circle,
             Reads = reads,
+            Housekeeping = housekeeping,
         };
     }
 
@@ -867,6 +871,12 @@ public sealed class ChatRunner : IDisposable
         /// by list, and none for a repository's conversation. What its receipt says it was granted (HELPWIRED1).
         /// </summary>
         public IReadOnlyList<HelpRead> Reads { get; init; } = [];
+
+        /// <summary>
+        /// The housekeeping operations its start was handed (HELPMODE1c2a): Ask Daoris's, as the person chose them when the place was
+        /// composed, in either mode; none for a repository's conversation. Its receipt keeps them, which each call is judged by.
+        /// </summary>
+        public IReadOnlyList<string> Housekeeping { get; init; } = [];
     }
 
     /// <summary>
@@ -1054,6 +1064,7 @@ public sealed class ChatRunner : IDisposable
                     Servers = offered,
                     ServersHanded = !pipe || (servers is not null && HelpWired.Names(info, servers)),
                     Withheld = browserNotice,
+                    Housekeeping = place.Housekeeping,
                 });
             }
 

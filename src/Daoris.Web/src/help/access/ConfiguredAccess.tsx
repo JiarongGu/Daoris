@@ -26,7 +26,7 @@ const READS = 'reads';
  * pages may be affected; and a choice the conversation in view did not start with is marked as taking its next start, since
  * *What it has* keeps what the start was handed (§4.1's traps).
  */
-export function ConfiguredAccess({ agent, grants, opened = [], busy = false, onChoose }: {
+export function ConfiguredAccess({ agent, grants, opened = [], busy = false, built, onChoose }: {
   /** The agent Ask Daoris runs on: whether it takes permission rules decides what it can be held to. */
   agent: HelpGrantAgent;
   /** What this machine has chosen; a grant not named has nothing chosen. */
@@ -34,6 +34,11 @@ export function ConfiguredAccess({ agent, grants, opened = [], busy = false, onC
   /** The grants whose operations show from the start: a door that opens this to them, or a story. */
   opened?: readonly HelpGrantId[];
   busy?: boolean;
+  /**
+   * The operations the driver acts on, for a grant it serves (HELPMODE1c2b): another of its operations is drawn disabled and
+   * said not built yet, so it is never chosen. A grant not named is drawn as the mock draws it.
+   */
+  built?: Partial<Record<HelpGrantId, readonly string[]>>;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -52,6 +57,7 @@ export function ConfiguredAccess({ agent, grants, opened = [], busy = false, onC
             agent={agent}
             open={opened.includes(spec.id)}
             busy={busy}
+            built={built?.[spec.id]}
             onChoose={onChoose}
           />
         ))}
@@ -61,8 +67,9 @@ export function ConfiguredAccess({ agent, grants, opened = [], busy = false, onC
 }
 
 /** One grant's row: its name, state and door; its reach and default; why it is unavailable; and, opened, its operations. */
-function Grant({ spec, choice, agent, open: openAtFirst, busy, onChoose }: {
+function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose }: {
   spec: GrantSpec; choice: HelpGrantChoice | undefined; agent: HelpGrantAgent; open: boolean; busy: boolean;
+  built: readonly string[] | undefined;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -77,17 +84,27 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, onChoose }: {
     : state === 'changed' ? t('help.grants.why.changed')
       : state === 'later' ? t('help.grants.why.shell') : null;
 
-  const box = (operation: string) => (
-    <CheckField
-      key={operation}
-      checked={chosen.includes(operation)}
-      disabled={busy || !held}
-      onChange={(checked) => onChoose(spec.id, operation, checked)}
-      label={t(`help.grants.op.${spec.id}.${operation}`)}
-      // A box the agent cannot be held to reads as disabled, its sentence too, while it keeps what was chosen.
-      className={cn('text-small', !held && 'cursor-not-allowed opacity-60')}
-    />
-  );
+  const box = (operation: string) => {
+    // HELPMODE1c2b: an operation the driver does not act on yet is said so, and never chosen.
+    const later = built !== undefined && !built.includes(operation);
+    const field = (
+      <CheckField
+        key={operation}
+        checked={chosen.includes(operation)}
+        disabled={busy || !held || later}
+        onChange={(checked) => onChoose(spec.id, operation, checked)}
+        label={t(`help.grants.op.${spec.id}.${operation}`)}
+        // A box the agent cannot be held to reads as disabled, its sentence too, while it keeps what was chosen.
+        className={cn('text-small', (!held || later) && 'cursor-not-allowed opacity-60')}
+      />
+    );
+    return later ? (
+      <span key={operation} className="flex min-w-0 flex-wrap items-center gap-x-2">
+        {field}
+        <span className="text-meta text-ink-faint">{t('help.grants.notBuilt')}</span>
+      </span>
+    ) : field;
+  };
 
   return (
     <li aria-label={name} className="grid min-w-0 gap-1 border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">

@@ -55,6 +55,8 @@ public static class KnowledgeServer
         typeof(HelpSetupTool),
         typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),
+        // Ask Daoris's housekeeping (HELPMODE1c2a): requests the driver judges at every call, refused unless the person granted it.
+        typeof(HousekeepingTools),
     ];
 
     /// <summary>

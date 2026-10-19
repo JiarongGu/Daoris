@@ -243,3 +243,98 @@ describe('Ask Daoris’s access on Settings', () => {
     expect(screen.queryByRole('button', { name: /^Ask Daoris’s access:/ })).toBeNull();
   });
 });
+
+/**
+ * HELPMODE1c2b (D183's note; the modes design §4.1): restricted mode's configured access under Ask Daoris's access, its
+ * housekeeping row live: what the driver's state says is chosen, each operation pressed over `SET_HELP_GRANT` one at a time, and
+ * one the driver does not act on yet never sent. The browser, checkouts and settings rows are drawn as the mock draws them.
+ */
+describe('Ask Daoris’s configured access on Settings', () => {
+  let chosen: string[] = [];
+  let grants = true;
+  beforeEach(() => {
+    chosen = [];
+    grants = true;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { operation?: string; chosen?: boolean } }) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'SET_HELP_GRANT') {
+        const operation = request?.payload?.operation ?? '';
+        chosen = request?.payload?.chosen ? [...chosen, operation] : chosen.filter((each) => each !== operation);
+      }
+      if (type === 'STATE' || type === 'SET_HELP_GRANT') {
+        return {
+          ...DRIVER_STATE, helperAdapter: 'claude-code-acp', intakeAdapter: '', helpMode: 'restricted',
+          ...(grants ? { helpGrants: [{ id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'] }] } : {}),
+        };
+      }
+      if (type === 'HARNESSES') return { harnesses: [] };
+      if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
+      return undefined;
+    });
+  });
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    await i18n.changeLanguage('en');
+  });
+
+  const row = (id: string) => screen.getByRole('listitem', { name: i18n.t(`help.grants.name.${id}`) });
+  async function open(id: string, door: string) {
+    const grant = await screen.findByRole('listitem', { name: i18n.t(`help.grants.name.${id}`) });
+    await userEvent.click(within(grant).getByRole('button', {
+      name: i18n.t('help.grants.doorFor', { door: i18n.t(`help.grants.door.${door}`), grant: i18n.t(`help.grants.name.${id}`) }),
+    }));
+    return grant;
+  }
+  const box = (id: string, operation: string) =>
+    within(row(id)).getByRole('checkbox', { name: i18n.t(`help.grants.op.${id}.${operation}`) });
+
+  it.each(['en', 'zh'])('draws housekeeping as the driver holds it, and a press chooses one operation, in %s', async (language) => {
+    await i18n.changeLanguage(language);
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+
+    await open('housekeeping', 'operations');
+    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.off'))).toBeInTheDocument();
+    expect(box('housekeeping', 'inspect')).not.toBeChecked();
+
+    await userEvent.click(box('housekeeping', 'inspect'));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', {
+      payload: { grant: 'housekeeping', operation: 'inspect', chosen: true },
+    });
+    await waitFor(() => expect(box('housekeeping', 'inspect')).toBeChecked());
+    expect(within(row('housekeeping')).getByText(i18n.t('help.grants.state.on'))).toBeInTheDocument();
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      i18n.t('settings.ai.grants.granted', { operation: i18n.t('help.grants.op.housekeeping.inspect') })));
+
+    await userEvent.click(box('housekeeping', 'inspect'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', {
+      payload: { grant: 'housekeeping', operation: 'inspect', chosen: false },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      i18n.t('settings.ai.grants.revoked', { operation: i18n.t('help.grants.op.housekeeping.inspect') })));
+  });
+
+  it('never sends what the driver does not act on yet: dropping recovery refs, and the rows still drawn as the mock', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+
+    await open('housekeeping', 'operations');
+    expect(box('housekeeping', 'drop-recovery')).toBeDisabled();
+    await open('settings', 'settings');
+    await userEvent.click(box('settings', 'notify'));
+
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', expect.anything());
+    expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.notYet'));
+  });
+
+  it('draws no configured access on a shell older than the grant', async () => {
+    grants = false;
+    show(<SettingsView notify={() => {}} section="ai" />);
+
+    expect(await screen.findByText(i18n.t('settings.ai.helpMode.tierRestricted'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('help.grants.title'))).toBeNull();
+  });
+});

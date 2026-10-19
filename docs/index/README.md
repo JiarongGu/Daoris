@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (187)
+## Files over 40 KB (188)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -75,8 +75,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 47 | 904 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 115 | 1850 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 60 | 1142 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 116 | 1854 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 61 | 1153 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 356 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full-access.md` | 52 | 398 |
@@ -109,8 +109,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 129 | 2562 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 133 | 2309 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 131 | 2388 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 52 | 881 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 132 | 2399 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 52 | 886 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 54 | 937 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 202 | 3291 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 52 | 854 |
@@ -165,7 +165,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 51 | 802 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 252 | 4330 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 88 | 1618 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 86 | 1459 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 87 | 1480 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 143 | 2375 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 63 | 745 |
@@ -178,7 +178,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs` | 61 | 1059 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 102 | 2024 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 88 | 1743 |
-| `src/Daoris.Service/README.md` | 96 | 784 |
+| `src/Daoris.Service/README.md` | 97 | 785 |
 
 ### CLI (`cli`)
 
@@ -203,15 +203,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 101 | 1759 |
+| `tools/deployment-rehearsal.mjs` | 102 | 1761 |
 | `tools/desktop-publish.mjs` | 72 | 1284 |
-| `tools/desktop.mjs` | 51 | 1057 |
-| `tools/family-rehearsal.mjs` | 348 | 6101 |
+| `tools/desktop.mjs` | 51 | 1059 |
+| `tools/family-rehearsal.mjs` | 348 | 6103 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 232 | 4110 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 46 | 893 |
-| `tools/usage-report.mjs` | 57 | 1254 |
+| `tools/usage-report.mjs` | 58 | 1256 |
 
 ### No lane
 
@@ -246,6 +246,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/2026-10-16-fabric-events-design.md` | 175 | 2131 |
 | `docs/2026-10-20-flowchart-design.md` | 42 | 549 |
+| `docs/2026-10-20-message-urgency-design.md` | 44 | 503 |
 | `docs/2026-10-20-ui-ux-design.md` | 86 | 959 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 110 | 602 |
+| `src/Daoris.Desktop/README.md` | 111 | 602 |

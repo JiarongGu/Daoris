@@ -121,6 +121,7 @@ export const HOME_ENTRIES = [
   row('setup', 'data', 'setup', 'setup'),
   row('workflows', 'data', 'workflows', 'workflows'),
   row('help-proposals', 'data', 'help/proposals', 'help/proposals'),
+  row('configured-access', 'data', 'configured-access.json', 'configured-access.json'),
   row('opinion-gates', 'data', 'opinions/gates', 'opinions/gates'),
   row('opinion-dues', 'data', 'opinions/due.json', 'opinions/due.json'),
   row('browser-settings', 'data', 'browser/settings.json', 'browser/settings.json'),

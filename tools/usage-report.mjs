@@ -56,6 +56,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 // The install's layout, from the script that makes it: its home is `data/` beside the launcher.
 import { HOME } from './desktop-publish.mjs';
 
@@ -1234,7 +1236,7 @@ export async function main(argv, io = {
     return 2;
   }
 
-  const folder = join(options.home, 'logs');
+  const folder = homeEntry(options.home, 'logs');
   if (!existsSync(folder)) {
     io.err(`usage-report: no machine log in ${folder} — nothing has written one there, or the home is another.`);
     return 2;
@@ -1242,7 +1244,7 @@ export async function main(argv, io = {
 
   const from = new Date(io.now.getTime() - options.days * DAY_MS);
   const read = readLogs(folder, { since: from });
-  const proposals = readProposals(join(options.home, 'proposals'));
+  const proposals = readProposals(homeEntry(options.home, 'rule-proposals'));
   const records = options.service ? await readRecords(options.service, { fetch: io.fetch ?? globalThis.fetch }) : null;
   const report = summarise(read.lines, { from, to: io.now, skipped: read.skipped, proposals, records });
   io.out(options.json ? JSON.stringify(report, null, 2) : render(report, folder));

@@ -32,6 +32,8 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from '../fsx.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
 import { receipt, receiptText } from './receipt.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -138,13 +140,13 @@ export function connectorServer(files, run, executable) {
       DAORIS_RULES_HOME: files.home,
       DAORIS_SESSION_ID: connectorSession(run),
       DAORIS_KNOWLEDGE_REPOSITORY: files.repo,
-      DAORIS_KNOWLEDGE_DB: join(files.home, 'knowledge.db'),
+      DAORIS_KNOWLEDGE_DB: homeEntry(files.home, 'knowledge'),
     },
   };
 }
 
 /** Where the run's connector and the lineage hook write: the connector's `LineageFile`, the driver's `ChildLineage`. */
-export const lineageFile = (files, run) => join(files.home, 'sessions', connectorSession(run), 'lineage.jsonl');
+export const lineageFile = (files, run) => homeEntry(files.home, 'sessions', connectorSession(run), 'lineage.jsonl');
 
 /**
  * Claude Code's launch, the pipe door's shape (`claude -p`, stream-json): the servers from `--mcp-config` alone, rules

@@ -186,7 +186,18 @@ public sealed class HelpFactsTests : IDisposable
                 (HelpFacts.Work, "engine"), (HelpFacts.Work, "site"), (HelpFacts.Work, HelpFacts.NoCheckout),
                 (HelpFacts.Sweep, "engine"), (HelpFacts.Sweep, "site"),
             ],
-            HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests,asks,channel", facts));
+            HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests,asks,channel,words", facts));
+    }
+
+    /// <summary>PUSH1d1b: a word kept without a note wakes the machine's answers and the sessions' look, which reads the words, and no part of the work.</summary>
+    [Fact]
+    public void A_word_kept_wakes_the_machine_and_the_sessions_look()
+    {
+        var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
+
+        Assert.Equal(
+            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole)],
+            HelpFacts.Woken(ChangeTopics.Ledger, "words", facts));
     }
 
     [Fact]
