@@ -103,6 +103,12 @@ public sealed class SessionGroupsTests
     private static readonly QuestView Asking = Quest("q1", "Taken", awaits: "q2");
     private static readonly QuestView Question = Quest("q2", "Open", to: "game");
 
+    /// <summary>A taken step whose standing reopen names session <c>s1</c> (FABRIC-CLOSE1c9), its submission's session.</summary>
+    private static readonly QuestView ReopenNamesS1 = Taken with
+    {
+        Reopened = new QuestReopenView("desk", 3, new QuestSubmissionRef("desk", 2), "Do it again.", T0, Session: "s1"),
+    };
+
     /// <summary>The ref an unforced discard of <see cref="Tree"/> keeps its commits at (SQUASHTIDY1c).</summary>
     private const string Kept = "refs/daoris/discarded/daoris/s-1a2b3c4d";
 
@@ -410,6 +416,33 @@ public sealed class SessionGroupsTests
         ["an earlier session of a quest whose words wait on a later one is ended"] =
             new(Look([Record("s1", "failed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10, said: ["w2"])], [Taken], [GoesOn(Taken)]),
                 "s1", SessionGroup.Ended, "failed"),
+        // FABRIC-CLOSE1c11 (D137 §3.2, D173's CLOSE1c9 note): the planner goes on with a reopen's words in the session the reopen
+        // names though a later one is the quest's last record here, so that row reads going on, or later with the planner's hold.
+        ["the session a reopen names goes on with its words though a later one is the quest's last"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [GoesOn(ReopenNamesS1)]),
+                "s1", SessionGroup.Working, ShownState.GoingOn)
+            {
+                Also = row => Assert.Null(row.Holds),
+            },
+        ["the later last session of a quest whose reopen's words go on in an earlier one rests as it ended"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [GoesOn(ReopenNamesS1)]),
+                "s2", SessionGroup.Ended, "completed"),
+        ["a pause holding a reopen's words on the session it names resumes later, naming the pause"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10)], [ReopenNamesS1], [PausedVerdict(ReopenNamesS1)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row =>
+                {
+                    Assert.Equal(WordsHold.Paused, row.Holds!.Why);
+                    Assert.Equal(ByAsk, row.PausedBy);
+                },
+            },
+        ["the person's stop of the last session holds the words on the session a reopen names"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"]), Record("s2", "stopped", "q1", at: 10)], [ReopenNamesS1], [Verdict(ReopenNamesS1, StartVerdict.Stopped)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal((WordsHold.Waits, "the planner's sentence"), (row.Holds!.Why, row.Holds.Reason)),
+            },
         // MSG1f3: a chat's words are its runner's, which takes them up at once, so a chat they wait on goes on, unless its
         // runner said what holds them; one whose every word could not go on is not among them, and rests as it ended.
         ["an ended chat whose words wait is going on: its runner takes them up at once"] =
