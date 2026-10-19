@@ -17365,3 +17365,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CIPRIO1c — a superseded CI run stops the gate already running** (tools; D180's CIPRIO1 line). A superseded run stops only before its next gate, since `runStep` holds no child handle. `runStep` registers its child and a supersession ends that tree. Proof: a held gate's tree ended within seconds of a newer tip; the run recorded superseded.
 
 **Outcome** 2026-10-20: a run beside of main's tip polls the tip every five seconds while its gates run and, on the first move, ends every step tree it holds by the step's own pid (`taskkill /T /F`; never by image name, never the build servers) and starts nothing more; an ended gate reads ENDED, gives no verdict, and the record stays superseded. A person's Ctrl+C ends the trees the same way and lets the lock go. Left: a run killed outright (CIPRIO1d). On Opus: about 112 tool calls, 50 minutes. Detail: D180's CIPRIO1c note.
+
+## STRUCTHELP1 — the page's `help/` cut into scope folders (2026-10-20, D166)
+
+> - [ ] **STRUCTHELP1 — the page's `help/` cut into scope folders** (web; the code-structure design §5, D166; the CI on f290807). `help/` holds 21 sources at its top, over the 20 `structure.test.ts` allows (HELPMODE1c1's `ConfiguredAccess.tsx` and `grants.ts`). Move the access mode's files (`HelpModePicker`, `WhatItHas`, `ConfiguredAccess`, `modes`, `grants`, `wired`, with their tests and stories) into a scope folder named for what they hold, imports updated. Proof: `structure.test.ts` green; the moved files' tests and the stories test green; the typecheck clean.
+
+**Outcome** 2026-10-20: the access mode's twelve files moved into `help/access/` (`git mv`, imports updated in four files outside it, story titles unchanged), so `help/` holds 33 files at its top and `structure.test.ts` is green. On Sonnet: about 31 tool calls, 13 minutes.

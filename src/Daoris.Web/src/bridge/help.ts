@@ -192,8 +192,8 @@ export const useHelpConversations = (search: string, enabled = true, workspace: 
   });
 };
 
-// The mode's and the receipts' shapes live in `help/wired`, where the panel's molecules take them (the presentational boundary).
-import type { HelpMode, HelpReceipt, HelpWired, HelpWiredCheckout, HelpWiredLack, HelpWiredRules, HelpWiredServer, HelpWiredSkill } from '../help/wired';
+// The mode's and the receipts' shapes live in `help/access/wired`, where the panel's molecules take them (the presentational boundary).
+import type { HelpMode, HelpReceipt, HelpWired, HelpWiredCheckout, HelpWiredLack, HelpWiredRules, HelpWiredServer, HelpWiredSkill } from '../help/access/wired';
 export type { HelpMode, HelpReceipt, HelpWired, HelpWiredCheckout, HelpWiredLack, HelpWiredRules, HelpWiredServer, HelpWiredSkill };
 
 /** A mode as the driver reads one (`HelpModes`): `full` only when it says so, anything else restricted, the default. */
