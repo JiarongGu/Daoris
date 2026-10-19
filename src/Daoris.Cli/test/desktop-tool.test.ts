@@ -276,7 +276,7 @@ test('the engine log is under the root the run gave the application', () => {
   try {
     fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
     const exe = join(fx.root, 'app', 'Daoris.Desktop.exe');
-    const [windowNow] = homePlaces(fx.root, 'window');
+    const windowNow = homePlaces(fx.root, 'window')[0]!;
     assert.equal(sep(windowNow).slice(sep(fx.root).length), '/profiles/window');
     assert.equal(engineLogOf({ install: fx.root, real: true, exe }), join(windowNow, 'chromium', 'cef.log'));
     fx.write('data/chromium/Default/Preferences', '{}');

@@ -49,7 +49,12 @@ async function refused(fx: Fixture, argv: string[], checkouts: CheckoutsReader =
 }
 
 function saved(fx: Fixture, id: string): { id: string; name: string; versions: { version: number; at: string; door: string; steps: unknown[] }[] } {
-  return JSON.parse(readFileSync(homeEntry(fx.root, 'workflows', `${id}.json`), 'utf8'));
+  return JSON.parse(kept(fx, id));
+}
+
+/** A workflow's file as written, its text whole, where the home's table keeps it. */
+function kept(fx: Fixture, id: string): string {
+  return readFileSync(homeEntry(fx.root, 'workflows', `${id}.json`), 'utf8');
 }
 
 test('new from a preset: --plan says the change and writes nothing, then v1 is written, BOM-less, LF and whole', async () => {
@@ -254,7 +259,7 @@ test('apply saves a file\'s graph as the next version, judged whole as the drive
 
   const applied = await run(fx, ['apply', 'docs', 'graph.json']);
   assert.equal(applied.code, 0);
-  const file = fx.read('workflows/docs.json');
+  const file = kept(fx, 'docs');
   assert.match(file, /"weight": 1\.0/);
   assert.match(file, /"order": \{\n\s+"2": "b",\n\s+"1": "a"\n\s+\}/);
   assert.deepEqual(Object.keys(saved(fx, 'docs').versions[1]!), ['version', 'at', 'door', 'schema', 'graph']);
@@ -263,27 +268,27 @@ test('apply saves a file\'s graph as the next version, judged whole as the drive
   assert.match((await run(fx, ['apply', 'docs', 'graph.json'])).out, /^daoris: `docs` v2 already says this: nothing was written\./);
   fx.write('steps.json', JSON.stringify([{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'merge', accept: 'you' }]));
   await run(fx, ['apply', 'docs', 'steps.json']);
-  assert.match(fx.read('workflows/docs.json'), /"weight": 1\.0/);
+  assert.match(kept(fx, 'docs'), /"weight": 1\.0/);
 
   // A graph that does not hold writes nothing, in the driver's words: a loop is refused when saved (§E3).
   fx.write('loop.json', JSON.stringify({ entries: ['a'], end: 'b', nodes: [{ id: 'a', kind: 'human', version: 1, reach: 'pressed' },
     { id: 'b', kind: 'human', version: 1, reach: 'pressed' }], wires: [{ id: 'x', kind: 'after', from: 'a', to: 'b' }, { id: 'y', kind: 'after', from: 'b', to: 'a' }] }));
-  const before = fx.read('workflows/docs.json');
+  const before = kept(fx, 'docs');
   const loop = await refused(fx, ['apply', 'docs', 'loop.json']);
   assert.equal(loop.exitCode, 1);
   assert.match(loop.message, /^v4: its graph does not hold: nodes `a`, `b`: they wait on each other through `x`, `y`; a graph's wires never come back/);
-  assert.equal(fx.read('workflows/docs.json'), before);
+  assert.equal(kept(fx, 'docs'), before);
 
   // A graph whose digest this build cannot write as the driver does is not saved here: the driver's door saves it.
   fx.write('letters.json', GRAPH.replace('Verify the release', 'Vérifier'));
   const letters = await refused(fx, ['apply', 'docs', 'letters.json']);
   assert.match(letters.message, /^v4: its graph does not hold here: node `qa`'s option `brief` holds a value this build cannot write as the driver does/);
-  assert.equal(fx.read('workflows/docs.json'), before);
+  assert.equal(kept(fx, 'docs'), before);
 
   // A version holding a graph is a file's graph to apply too, and export writes the file as read.
   fx.write('version.json', JSON.stringify({ version: 9, at: '2026-10-18T09:00:00Z', door: 'screen', schema: 2, graph: JSON.parse(GRAPH) }));
   assert.match((await run(fx, ['apply', 'docs', 'version.json', '--plan'])).out, /^daoris: `docs` v3 → v4 — Docs: a graph \(schema 2\) of 2 nodes/);
-  assert.equal((await run(fx, ['export', 'docs'])).out, fx.read('workflows/docs.json').slice(0, -1));
+  assert.equal((await run(fx, ['export', 'docs'])).out, kept(fx, 'docs').slice(0, -1));
   fx.cleanup();
 });
 
@@ -295,13 +300,13 @@ test('import takes a file whose versions are graphs that hold, and refuses one w
   const imported = await run(fx, ['import', 'carried.json']);
   assert.equal(imported.code, 0);
   assert.match(imported.out, /^daoris: `release` — Release, from carried\.json: 2 versions, its newest v2: a graph \(schema 2\) of 2 nodes and 1 wire/);
-  assert.match(fx.read('workflows/release.json'), /"weight": 1\.0/);
+  assert.match(kept(fx, 'release'), /"weight": 1\.0/);
 
   fx.write('broken.json', JSON.stringify({ id: 'broken', name: 'Broken', versions: [steps,
     { version: 2, at: '2026-10-18T09:00:00Z', door: 'terminal', schema: 2, graph: { entries: ['qa'], end: 'nowhere', nodes: [{ id: 'qa', kind: 'human', version: 1, reach: 'pressed' }] } }] }));
   const broken = await refused(fx, ['import', 'broken.json']);
   assert.equal(broken.message, '`broken.json` cannot be imported: v2: its graph does not hold: the end `nowhere` names no node of this graph.');
-  assert.equal(fx.exists('workflows/broken.json'), false);
+  assert.equal(existsSync(homeEntry(fx.root, 'workflows', 'broken.json')), false);
   fx.cleanup();
 });
 
