@@ -3,14 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
-import { callsSlice, driverSlice, linesSlice, notPushed, sessionsSlice, useDriverReady, useStateHub, useStateSlices } from '../bridge/shell';
+import { callsSlice, driverSlice, linesSlice, notPushed, sessionsSlice, useDriverReady, useStateHub, useStateSlices, workSlice } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
 
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
 
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
-const PUSHED = [driverSlice, linesSlice, sessionsSlice, callsSlice];
+const PUSHED = [driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice];
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
