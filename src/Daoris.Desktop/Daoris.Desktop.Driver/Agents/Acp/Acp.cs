@@ -284,6 +284,13 @@ public sealed class AcpSession(
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
 
+    /// <summary>
+    /// What the open says where the agent does not offer a required posture, given the mode asked and what the agent offers, said: a
+    /// driven start's repository's permission prompts (AUTONOMY1b, <see cref="DrivenAccess.Unoffered"/>). Null says Ask Daoris's full
+    /// access, whose required posture came first (HELPMODE1a1).
+    /// </summary>
+    public Func<string, string, string>? Unoffered { get; init; }
+
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
@@ -1649,9 +1656,11 @@ public sealed class AcpSession(
     /// future harness's right.</para>
     ///
     /// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
-    /// full access, <see cref="HelpModes.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>. Left alone, an
-    /// agent that does not offer it would run in its own narrower mode under the full label; it fails plainly instead, naming
-    /// what the agent offers and the person's two ways on. Every other posture keeps the leniency above.</para>
+    /// full access, <see cref="HelpModes.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
+    /// session's asking or unrestricted permission prompts (AUTONOMY1b, <see cref="DrivenAccess"/>). Left alone, an agent that does
+    /// not offer it would run in its own mode under that label; it fails plainly instead, naming what the agent offers and the
+    /// person's two ways on (<see cref="Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency
+    /// above.</para>
     /// </remarks>
     private async Task SetPostureAsync(JsonElement created, CancellationToken ct)
     {
@@ -1661,11 +1670,17 @@ public sealed class AcpSession(
 
         var required = posture[0] == HelpModes.Required;
         var named = required ? posture[1..] : posture;
-        DriverException Unoffered(IReadOnlyCollection<string> offers) => new(
-            $"the agent does not offer `{named}`, the mode that asks nothing which full access needs ("
-            + (offers.Count > 0 ? $"it offers {string.Join(", ", offers.Order(StringComparer.Ordinal).Select(mode => $"`{mode}`"))}" : "it offers no modes")
-            + "), so it does not start in a narrower one under that name. Choose restricted access for Ask Daoris "
-            + "(`daoris-driver help mode restricted`), or another agent for it.");
+        DriverException Refused(IReadOnlyCollection<string> offers)
+        {
+            var offered = offers.Count > 0
+                ? $"it offers {string.Join(", ", offers.Order(StringComparer.Ordinal).Select(mode => $"`{mode}`"))}"
+                : "it offers no modes";
+            // A driven start's required posture is its repository's permission prompts' (AUTONOMY1b), said in its setup's words.
+            return new(Unoffered?.Invoke(named, offered)
+                ?? $"the agent does not offer `{named}`, the mode that asks nothing which full access needs ({offered}), so it does not start in "
+                + "a narrower one under that name. Choose restricted access for Ask Daoris (`daoris-driver help mode restricted`), or another "
+                + "agent for it.");
+        }
 
         // An answer that is no object names no modes (HELPMODE1a4): a resume's may be null, and a required posture fails on it too.
         if (created.ValueKind != JsonValueKind.Object
@@ -1673,7 +1688,7 @@ public sealed class AcpSession(
             || !modes.TryGetProperty("availableModes", out var available)
             || available.ValueKind != JsonValueKind.Array)
         {
-            if (required) throw Unoffered([]);
+            if (required) throw Refused([]);
             return;
         }
 
@@ -1689,7 +1704,7 @@ public sealed class AcpSession(
             .FirstOrDefault(offered.Contains);
         if (chosen is null)
         {
-            if (required) throw Unoffered(offered);
+            if (required) throw Refused(offered);
             return;
         }
 

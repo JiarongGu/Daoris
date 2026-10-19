@@ -210,8 +210,10 @@ test('trees opts a repository into session worktrees, and off takes it back out'
   const on = run(['trees', 'engine', 'on'], at(fx));
   assert.deepEqual(readDriverChoices(at(fx)).trees, ['engine']);
   // The price is stated where the choice is made: a fresh tree holds nothing git does not track,
-  // so a repository whose gates need installed dependencies pays that per tree.
+  // so a repository whose gates need installed dependencies pays that per tree — but npm's, which
+  // a tree's open copies from the checkout where the lockfile matches (TREEDEPS1).
   assert.match(on.out, /nothing git does not track/);
+  assert.match(on.out, /npm dependencies copied\s+from\s+your\s+checkout\s+where\s+the\s+tree's\s+lockfile\s+matches/);
 
   run(['trees', 'engine', 'off'], at(fx));
   assert.deepEqual(readDriverChoices(at(fx)).trees, []);

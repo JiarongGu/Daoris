@@ -5,6 +5,17 @@ with the version and date at release.
 
 ## Unreleased
 
+- Two of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
+  `daoris-driver access <repository> routing=intake` lets an ask's intake publish to its own best choice of repository rather
+  than ask you which, saying in the quest that the route was its choice, and you can still publish the ask elsewhere.
+  `goAheads=never` stops a session asking go-aheads before acts outside its repository or on a production system; a go-ahead your
+  own words on the ask or the task demand is still asked. `full` turns both off. Nothing changes until you set it, and a
+  session that goes on in its own conversation is told where its go-aheads changed since it started.
+- A session's own tree of a Node repository starts with the dependencies your checkout installed with npm, copied in where
+  the tree's `package-lock.json` is the checkout's and the checkout's install is at it, so its session no longer spends
+  minutes on a fresh `npm ci`, and is told to skip it. The tree's opening names what was copied, or says why a project was
+  not: its lockfile moved, pnpm or yarn installs it, the checkout has not installed it, or git does not ignore it there. A
+  copy, never a link, so nothing the session installs or builds reaches your checkout.
 - A driven session asks you only what it cannot decide: a credential or a sign-in, a choice the task leaves to you, or a
   go-ahead (for an act outside its repository or on a production system, as before, or one its repository or task names). A
   name, or which of two sound ways, it now decides itself and says under *Readings* in its closing note, for you to change in

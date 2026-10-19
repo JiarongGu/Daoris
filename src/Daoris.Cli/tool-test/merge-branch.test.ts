@@ -3280,7 +3280,7 @@ test('a run beside raises a rehearsal step\'s child to normal, touches no suite\
     again(1);
     again(2);
     assert.equal(said.length, 1);
-    assert.match(said[0], /could not raise a rehearsal to normal priority \(denied\)/);
+    assert.match(said[0] ?? '', /could not raise a rehearsal to normal priority \(denied\)/);
   } finally {
     tool.startBesideRun({ setPriority: () => { throw new Error('reset'); }, env: {}, say: () => {} });
     fx.cleanup();
@@ -3297,7 +3297,7 @@ test('in a real spawn, a rehearsal step\'s grandchild starts at normal and a sui
     const grand = async (run: string) => {
       const gate = planned('g', run);
       await tool.runGate(fx.root, gate, fx.root, {
-        step: (cmd, cwd, fd, options) => tool.runStep(command, cwd, fd, options),
+        step: (_cmd, cwd, fd, options) => tool.runStep(command, cwd, fd, options),
       });
       return Number(/grand=(-?\d+)/.exec(readFileSync(join(fx.root, 'g.log'), 'utf8'))?.[1]);
     };

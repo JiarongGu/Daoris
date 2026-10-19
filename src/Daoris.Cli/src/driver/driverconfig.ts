@@ -962,9 +962,11 @@ export function commandDriver(
         ? `daoris: sessions in \`${repository}\` open their own worktree (D51).`
         : `daoris: sessions in \`${repository}\` run in its registered root again.`);
       if (on) {
-        write('  A fresh tree holds nothing git does not track — no installed dependencies, no build');
-        write('  outputs — so a session pays that repository\'s own setup cost per tree. In exchange,');
-        write('  your uncommitted work in the root no longer holds the driver.');
+        // TREEDEPS1: npm's dependencies are copied in where the tree's lockfile matches the checkout's.
+        write('  A fresh tree holds nothing git does not track but the npm dependencies copied');
+        write('  from your checkout where the tree\'s lockfile matches — no build outputs, no other');
+        write('  installs — so a session pays the rest of that repository\'s own setup cost per tree.');
+        write('  In exchange, your uncommitted work in the root no longer holds the driver.');
       }
 
       write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);

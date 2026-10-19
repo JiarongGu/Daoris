@@ -346,8 +346,9 @@ public sealed class Driver(
     /// <summary>The record the person's words wait on, continued or ended saying why (ANSWER1a): <see cref="DriverContinuations.ContinueAsync"/>.</summary>
     private Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
-        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null) =>
-        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync);
+        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null,
+        DrivenAccess? permissions = null) =>
+        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync, permissions);
 
     /// <summary>
     /// A tree a start goes on in, brought up to date where the line holds some of its commits (LANDSYNC2): what the session is told,
@@ -1527,6 +1528,23 @@ public sealed class Driver(
             return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
         }
 
+        // The access setup this start runs under (AUTONOMY1a, D184 point 1), resolved once here from the file this look read, so its
+        // record keeps the one it started under, as D183 keeps Ask Daoris's mode. Its permission prompts name the harness's mode
+        // (AUTONOMY1b, D184 point 3); one its harness has none of is held here, before any tree grows or any record opens, naming the
+        // harness (D183 point 1), never run in its own mode under that label. A resume goes on under the same.
+        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
+        DrivenAccess permissions;
+        try
+        {
+            permissions = DrivenAccess.For(access, quest.To, Context.Adapters.Resolve(agent));
+        }
+        catch (DriverException error)
+        {
+            return Hold(error.Message);
+        }
+
+        if (permissions.Refusal is { } unsupported) return Hold(unsupported);
+
         // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
         // the same reason every refusal above is asked before it: a failure here holds the quest
         // open and records nothing. The branch grows from the canonical line as WSP4 resolves it.
@@ -1681,7 +1699,8 @@ public sealed class Driver(
         {
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
             (var continued, fellBack, answerKept) = await ContinueAsync(
-                    start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere, inSync: inSync?.Told)
+                    start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere, inSync: inSync?.Told,
+                    permissions: permissions)
                 .ConfigureAwait(false);
             // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
             // D51): a tree and branch for a start that is never made would be left at every look.
@@ -1770,10 +1789,6 @@ public sealed class Driver(
         // from, or one a limit cut off when this runs on another account; named on the record as it opens.
         var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why);
 
-        // The access setup this start runs under (AUTONOMY1a, D184 point 1), resolved once here from the file this look read, so its
-        // record keeps the one it started under, as D183 keeps Ask Daoris's mode.
-        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
-
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
         var (sessionId, message) = await service
@@ -1820,9 +1835,11 @@ public sealed class Driver(
                     prior.Limit ? Context.Events.TurnsEnded(prior.Session) + 1 : null,
                     prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
 
-        // Its setup in one line, after the account's (AUTONOMY1a): a start under today's behaviour notes nothing, so its transcript
-        // reads as it always did; the record keeps the setup either way. Uncoded until the page's note catalogues word it (AUTONOMY1d).
-        if (AccessRules.StartNote(access) is { } accessNote)
+        // Its setup in one line, after the account's (AUTONOMY1a), and the mode it got on its harness (AUTONOMY1b), after the change
+        // from the session it goes on from where its permission prompts moved since: a start under today's behaviour going on from none
+        // that ran otherwise notes nothing, so its transcript reads as it always did; the record keeps the setup either way. Uncoded until
+        // the page's note catalogues word it (AUTONOMY1d).
+        if (DrivenAccess.StartNote(access, permissions, start.Resumes) is { } accessNote)
         {
             Context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = accessNote }, say: null);
         }
@@ -1867,10 +1884,12 @@ public sealed class Driver(
                 RemoteTarget.Effective(Environment.GetEnvironmentVariable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
                 session: sessionId)
                 .ConfigureAwait(false);
-            var target = WithLanguage(WithStanding(
+            var target = WithAccess(WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
-                config), config, start.Workspace) with
+                config), config, start.Workspace), access) with
             {
+                // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
+                Access = permissions,
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -1890,6 +1909,8 @@ public sealed class Driver(
                 InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
                 InSync = inSync?.Told,
+                // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
+                Dependencies = opened?.Dependencies,
                 GrewFrom = opened?.GrewFrom,
                 // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
                 Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
@@ -2753,10 +2774,12 @@ public sealed class Driver(
         var ending = adapter.Wire == SessionWire.Acp ? new AcpEnding() : null;
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
-            // same D37 boundary three different ways, and one of them does not name it on the wire.
+            // same D37 boundary three different ways, and one of them does not name it on the wire. A driven session's repository's
+            // asking or unrestricted permission prompts name the adapter's mode for it, required (AUTONOMY1b, D184 point 3).
             ? CaptureAcpAsync(
-                process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? Context.Servers,
-                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending)
+                process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
+                handedServers ?? Context.Servers, target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending,
+                unoffered: target.Access is { } access ? access.Unoffered : null)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -2993,13 +3016,18 @@ public sealed class Driver(
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
     /// <param name="ending">Where the run's wait says the timeout before its kill (BGWAIT2), handed the door once it is made.</param>
+    /// <param name="unoffered">
+    /// What the open says where the agent does not offer a required posture, a driven start's permission prompts' (AUTONOMY1b); null
+    /// says Ask Daoris's (<see cref="AcpSession.Unoffered"/>).
+    /// </param>
     private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null)
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null,
+        Func<string, string, string>? unoffered = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -3073,7 +3101,10 @@ public sealed class Driver(
             session = new AcpSession(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId),
-                onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation));
+                onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
+            {
+                Unoffered = unoffered,
+            };
             ending?.Open(session);
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
@@ -3206,6 +3237,13 @@ public sealed class Driver(
     /// </summary>
     internal static SessionTarget WithLanguage(SessionTarget target, DriverConfig config, string? workspace) =>
         target with { Language = SessionLanguages.Resolve(config, target.Repository, workspace) };
+
+    /// <summary>
+    /// The go-aheads its repository's access setup asks for (AUTONOMY1c, D184 point 3), from the setup this start resolved once and
+    /// keeps on its record: under <c>never</c>, full access among them, the instruction asks only what the person's words demand.
+    /// </summary>
+    internal static SessionTarget WithAccess(SessionTarget target, ResolvedAccess access) =>
+        target with { NoGoAheads = access.Value(AccessRules.GoAheads) == AccessRules.Never };
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account
