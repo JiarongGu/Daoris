@@ -343,6 +343,7 @@ public static class NoteCodes
         new(OpeningWhy.Cooling, ["agent", "over", "until", "cooling"], "note.opening.why.cooling"),
         new(OpeningWhy.Refused, ["agent", "over"], "note.opening.why.refused"),
         new(OpeningWhy.SignedOut, ["agent", "over"], "note.opening.why.signed-out"),
+        new(OpeningWhy.Locked, ["agent", "over"], "note.opening.why.locked"),
         new(OpeningWhy.KeptSelf, [], "note.opening.why.kept-self"),
         new(OpeningWhy.KeptLast, ["over"], "note.opening.why.kept-last"),
         new(OpeningWhy.Kept, ["over"], "note.opening.why.kept"),
@@ -730,6 +731,8 @@ public static class NoteCodes
     public static readonly NoteCode HeldCoolingAccount = new("held.cooling-account", ["owner", "account", "until", "why"]) { Why = Cooling };
     public static readonly NoteCode HeldCoolingOwn = new("held.cooling-own", ["owner", "until", "why"]) { Why = Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
+    // LOCKPASSED1 (D125's PARALLEL1c note): every account the start could run on was locked past its patience; the accounts by id, a list.
+    public static readonly NoteCode HeldLocked = new("held.locked", ["owner", "accounts"]);
     // OWNSPACE1a (D175 point 2): no Daoris account of the agent's is signed in, and its own home is never a start's.
     public static readonly NoteCode HeldNoAccount = new("held.no-account", ["owner"]);
     public static readonly NoteCode HeldNotInstalled = new("held.not-installed", ["agent"]);
@@ -1028,6 +1031,9 @@ public static class OpeningWhy
 
     /// <summary>The account its scope begins at is not signed in.</summary>
     public const string SignedOut = "signed-out";
+
+    /// <summary>The account its scope begins at was passed because another question held its lock past the start's patience (LOCKPASSED1).</summary>
+    public const string Locked = "locked";
 
     /// <summary>It runs on the account kept for conversations, which is where its scope begins.</summary>
     public const string KeptSelf = "kept-self";

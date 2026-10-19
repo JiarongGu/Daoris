@@ -148,6 +148,10 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal((OpeningWhy.Refused, "agent=claude-code over=account-1"), (refused.Why, Values(refused)));
         var signedOut = One(WalkStep.SignedOut, "account-2", Scope(), "work", new AccountState("account-1", AccountReadiness.SignedOut));
         Assert.Equal((OpeningWhy.SignedOut, "agent=claude-code over=account-1"), (signedOut.Why, Values(signedOut)));
+
+        // LOCKPASSED1: an account passed for its lock is a reason of its own, never one the goal ranked another ahead of it for.
+        var locked = One(WalkStep.Locked, "account-2", Scope(), "work", new AccountState("account-1", AccountReadiness.Ready) { Locked = true });
+        Assert.Equal(("the `claude-code` account `account-1` is being asked about by another question", OpeningWhy.Locked, "agent=claude-code over=account-1"), (locked.Text, locked.Why, Values(locked)));
     }
 
     /// <summary>The rest's step rides beside the first's, as the English joins them.</summary>

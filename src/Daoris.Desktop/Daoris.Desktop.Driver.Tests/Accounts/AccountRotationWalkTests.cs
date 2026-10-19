@@ -527,6 +527,21 @@ public sealed class AccountRotationWalkTests
         Assert.Equal(new WalkChoice(step, rest), AccountRotation.Chose(read, kind, tried, at, known, Now));
     }
 
+    /// <summary>LOCKPASSED1: the first account passed for its lock, still ready, is a step of its own and no rank of the goal's.</summary>
+    [Fact]
+    public void An_account_passed_for_its_lock_is_the_step_that_chose_the_next_and_the_rest_is_chosen_among_the_others()
+    {
+        var read = Scope("account-1 account-2 account-3");
+        var known = Facts("account-2:r1");
+        var tried = AccountRotation.Order(read, StartKind.Driven, Names(read), known, Now)
+            .Select(name => new AccountState(name, AccountReadiness.Ready) { Locked = name == "account-1" })
+            .ToList();
+        var at = tried.FindIndex(state => state.Account == "account-3");
+
+        Assert.Equal(new WalkChoice(WalkStep.Locked, WalkStep.Fewest), AccountRotation.Chose(read, StartKind.Driven, tried, at, known, Now));
+        Assert.Equal(new WalkChoice(WalkStep.Locked), AccountRotation.Chose(read, StartKind.Driven, tried, 1, Facts(""), Now));
+    }
+
     // ——— What each account said, as a start's first line says it (TOOL6c, §16.4): one sentence in the list's order, each
     // account with its age and what it said; one that said nothing is unknown, said as such; none said is no sentence.
 
