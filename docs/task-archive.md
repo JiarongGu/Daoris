@@ -17306,3 +17306,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAVYRUN1c — this repository marks its heavy gates** (tools, records; after HEAVYRUN1b1). `daoris.gates.json` marks none `heavy`, so `run-heavy` refuses here and Daoris's own driven sessions are told nothing. Mark the suites and rehearsals a session would run whole, and hold the shape where `merge-branch.mjs`'s and `dogfood.test.ts`'s readers pin it. Proof: `run-heavy` here runs the marked sequence; the tool tests and the dogfood test green.
 
 **Outcome** 2026-10-20: decided against, not built: this repository's suites run whole in the CI beside after each merge, and marking them would have each driven session run about thirty minutes of them at its end. Detail: D180's HEAVYRUN1c note.
+## ACCESSWORDS1c — the server's trace says the setup accepted a landing only where its switch did (2026-10-20, D184)
+
+> - [x] **ACCESSWORDS1c — the server's trace says the setup accepted a landing only where its switch did** (driver; D184's ACCESSWORDS1b line). `Trace.Words.cs:449` says *accepted by the access setup (<level>)* whenever `rule.access` is set, but the record keeps the level on a landing the person pressed under the setup too (`LandingRules.Effective`, `TreeLands.cs:548`), so the trace can say the person's press and the setup at once. Guard on `acceptedBy` as the review's note and the page's trace do. Proof: a `TraceTests` case with `acceptedBy: person` and `access` set keeps the rule's words.
+
+**Outcome** 2026-10-20: the trace says it only where `acceptedBy` is `auto`; a person's press keeps the rule's switch words. Detail: D184's ACCESSWORDS1c line; `TraceTests`.
+
+## VERBCENSUS1 — the usage census misses hyphenated verbs (2026-10-20, D184)
+
+> - [x] **VERBCENSUS1 — the usage census misses hyphenated verbs** (driver; HEAVYRUN1a's hand-back). `DriverCommandTests.The_usage_names_every_verb_the_host_answers` matches `args is ["[a-z]+"`, so a verb such as `run-heavy` could lose its usage line unnoticed. Widen it to `[a-z-]+` and fix any line that turns up missing. Proof: the test fails when `run-heavy`'s usage line is removed.
+
+**Outcome** 2026-10-20: the census matches `[a-z-]+`; `run-heavy`'s usage line was present, and the census failed with it removed; `HeavyRunCommandTests`' redundant usage assertion dropped. Detail: `DriverCommandTests`.
