@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris follows the window's workspace. A conversation starts in the workspace the window shows when you press send,
+  and stays there if the window moves while it starts. A window that shows every workspace asks which before it starts one,
+  keeping your words in the box. Its history lists the window's workspace's conversations, or every workspace's with each
+  labelled, and searches only the one chosen. Another workspace's conversation can be read from any window, named as that
+  workspace's, and *Switch to games and continue* moves the window there before you write to it. In the terminal,
+  `daoris-driver help list` takes `--workspace <name>` or `--all`.
 - A session's own tree of a Node repository starts with the dependencies your checkout installed with npm, copied in where
   the tree's `package-lock.json` is the checkout's and the checkout's install is at it, so its session no longer spends
   minutes on a fresh `npm ci`, and is told to skip it. The tree's opening names what was copied, or says why a project was
