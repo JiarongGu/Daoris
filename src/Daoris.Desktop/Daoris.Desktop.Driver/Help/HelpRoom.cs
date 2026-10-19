@@ -192,6 +192,14 @@ public static class HelpRoom
 /// <remarks>MOD6: each section says its facts in its own file; PART4 keeps the facts in this one declaration, under a comment per section.</remarks>
 public sealed record HelpMachine
 {
+    // The intro's, which the may-do section reads too.
+
+    /// <summary>
+    /// The access mode its conversation runs in (HELPMODE1a1, D183 point 3), as the driver's file said when the room was written:
+    /// one of <see cref="HelpModes"/>. The room is written again at each start, so it says the mode that start was placed under.
+    /// </summary>
+    public string Mode { get; init; } = HelpModes.Restricted;
+
     // The agents section's.
 
     public IReadOnlyList<HelpAgent> Agents { get; init; } = [];

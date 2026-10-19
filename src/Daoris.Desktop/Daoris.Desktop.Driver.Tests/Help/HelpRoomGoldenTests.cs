@@ -168,6 +168,8 @@ public sealed class HelpRoomGoldenTests
     internal static HelpMachine Named(string name) => name switch
     {
         "full" => Full,
+        // HELPMODE1a1 (D183): every section speaking, in full access, so review reads the room as the helper does there.
+        "full-access" => Full with { Mode = HelpModes.Full },
         "sparse" => Sparse,
         _ => Empty,
     };
@@ -207,6 +209,7 @@ public sealed class HelpRoomGoldenTests
 
     [Theory]
     [InlineData("full")]
+    [InlineData("full-access")]
     [InlineData("sparse")]
     [InlineData("empty")]
     public void The_room_renders_the_text_it_rendered_before_its_sections_were_split(string machine)
