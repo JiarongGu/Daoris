@@ -109,6 +109,12 @@ A branch in one lane cannot run the others; the hand-back then names the rows le
   two requests, so rows 6 and 7 do not apply.
 - **XAGENT1c** (D155): `opinion`, machine-only, set at the open; `said`'s `by` is a word's field, not a record's.
 - **SESSONE1a** (D167) and **CHATTAKE1**: `entry` and `tookQuest`, the travelling fields.
+- **HELPMODE1a2** (D183's note of 2026-10-19): `helpMode`, machine-only, on one kind of record. It is set at Ask Daoris's open
+  (`OpenHelpAsync`, `OpenHelpRequest`, `POST /api/sessions/help`), and later through a driver's door of its own
+  (`POST /api/sessions/{id}/help-mode`, `SessionStore.KeepHelpModeAsync`, no revision). That door is a new route, so it takes a row
+  in `PersonDoors.Table` and in `PersonDoorTableTests` with its class's count. The reader answers a default for that kind alone
+  (`restricted` for a help record from before, null for every other record), so a record from before reads as what it ran.
+  The driver reads it twice, on `PriorSession` (`Prior`) and on `SessionRecord` (`SessionRecords.Parse`), for the history's rows.
 
 ## What this does not cover
 

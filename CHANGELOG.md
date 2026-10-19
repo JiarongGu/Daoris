@@ -10,6 +10,9 @@ with the version and date at release.
   shell, file edits, Daoris's commands and every plugin server here, and your own denies still hold where its agent takes them.
   Restricted, the default, is Ask Daoris as it was: it reads and proposes, and you apply. `daoris-driver help mode restricted`
   takes it back. On an agent with no such mode, the DeepSeek Harness or a plugin's, it does not start in full access, and says so.
+  A conversation keeps the mode it started in while it runs, and its console says when a change takes it: end it, and your next
+  words resume it under the mode you chose, which its transcript says first. `daoris-driver help list` marks a conversation that
+  ran with full access.
 - A session that waited on its own background work no longer hangs after it: when the work ends and Claude Code wakes the
   agent by itself, that turn's end is the session's end, where Daoris used to send a prompt the agent never answered and wait
   for the timeout. A session the timeout ends after its quest reached done is recorded completed, and its conversation says it
