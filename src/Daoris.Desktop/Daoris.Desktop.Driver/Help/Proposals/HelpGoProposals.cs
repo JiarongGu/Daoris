@@ -26,6 +26,24 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         Item = Text(file, "item"),
     };
 
+    /// <summary>
+    /// ASKSCOPE1c: the file's workspace and repository. ASKSCOPE1c2: and the record an item on Quests or Sessions names by id, filed
+    /// under the workspace its record says, as the records its judge reads hold it; a plugin is the machine's, never a workspace's.
+    /// </summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var item = proposal.Item?.Trim().TrimStart('#').Trim() ?? "";
+        IReadOnlyList<(string Said, string? Workspace)> records = item.Length == 0 ? [] : proposal.Target?.Trim().ToLowerInvariant() switch
+        {
+            "sessions" => HelpNames.OfSession(facts, item),
+            "quests" when item.StartsWith(HelpPlaces.AskItem, StringComparison.OrdinalIgnoreCase) =>
+                HelpNames.OfAsk(facts, item[HelpPlaces.AskItem.Length..].Trim().TrimStart('#')),
+            "quests" => HelpNames.OfQuest(facts, item),
+            _ => [],
+        };
+        return new([proposal.Workspace], [proposal.Repository]) { Records = records };
+    }
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var view = proposal.Target?.Trim().ToLowerInvariant() ?? "";
