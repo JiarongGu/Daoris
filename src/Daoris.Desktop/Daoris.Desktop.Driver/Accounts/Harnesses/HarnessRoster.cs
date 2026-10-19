@@ -1402,7 +1402,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <summary>
     /// The hold of a start whose every account it could run on stayed locked by another question past the walk's patience
     /// (PARALLEL1c): nothing counted, nothing run beside the question, and no wait for a time, so the next start tries again. Its
-    /// words alone: a refusal no held note carries by code yet (<see cref="HarnessSelection.RefusalNote"/>).
+    /// words alone, a refusal no held note carries by code (<see cref="HarnessSelection.RefusalNote"/>).
     /// </summary>
     private static HarnessSelection Locked(string owner, IReadOnlyList<string> accounts, IReadOnlyDictionary<string, string> names)
     {

@@ -210,7 +210,7 @@ public sealed class AccountWalkGateTests : IDisposable
 
     /// <summary>
     /// The walk's own status question on an account read signed out (TOOL6g) could not have its lock: the account is unknown for
-    /// this walk, passed and never counted, where it once ran as any unknown and was counted beside the question in flight.
+    /// this walk, passed and never counted, and its lock is not waited for again to count it.
     /// </summary>
     [Fact]
     public async Task A_status_question_that_cannot_have_its_lock_leaves_the_account_unknown_for_the_walk()
