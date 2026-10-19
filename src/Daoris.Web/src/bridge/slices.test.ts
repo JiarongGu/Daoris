@@ -13,6 +13,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
+import { readSlice } from './driver';
 import { notPushed, pushedOf, readPushed, type SliceSpec } from './slices';
 
 const KEY = ['test-slice'] as const;
@@ -21,6 +22,7 @@ const KEY = ['test-slice'] as const;
 const spec: SliceSpec = {
   name: 'test',
   key: KEY,
+  read: () => readSlice('test'),
   compose: (partitions) => {
     const a = partitions.get('a');
     const b = partitions.get('b');

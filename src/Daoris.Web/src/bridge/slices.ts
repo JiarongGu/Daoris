@@ -1,7 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { type Query, type QueryClient, type QueryKey, hashKey, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { call } from './call';
 
 /**
  * A slice of the machine's state the shell pushes with its data (PUSH1a, D182): which cache entry its partitions feed, and how.
@@ -13,6 +12,8 @@ export type SliceSpec = {
   name: string;
   /** The one cache entry its partitions feed: this key exactly, never what is read beneath it. */
   key: QueryKey;
+  /** Its snapshot, as the shell answers it (`readSlice`): a host older than the push refuses it, or answers nothing. */
+  read: () => Promise<unknown>;
   /** The entry's data from the partitions held as judged, or undefined while one it needs is not judged yet. */
   compose: (partitions: ReadonlyMap<string, unknown>) => unknown;
   /** A delta's data applied to its partition; absent where the slice pushes whole replacements only, and a delta is read again whole. */
@@ -180,7 +181,7 @@ class Pushed {
     const asking = (async () => {
       let snapshot: Snapshot | null = null;
       try {
-        snapshot = snapshotOf(await call<unknown>('STATE_SLICE', { slice: name }), name);
+        snapshot = snapshotOf(await slice.spec.read(), name);
       } catch {
         snapshot = null;
       }

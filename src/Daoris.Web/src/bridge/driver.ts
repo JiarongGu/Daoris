@@ -147,6 +147,13 @@ export type DriverState = {
   workspaceHelpers?: { workspace: string; rule: HelperRule }[];
 };
 
+/**
+ * A pushed slice's snapshot, as last judged and read from memory (PUSH1a, D182 point 3): `{ slice, epoch, status, partitions }`,
+ * or nothing for a slice this shell does not push. Every slice's spec reads it here, so the route has one bridge file. A read: it
+ * declares nothing and tells nothing.
+ */
+export const readSlice = (slice: string) => call<unknown>('STATE_SLICE', { slice });
+
 /** The partitions the shell pushes the driver's state in (`DriverStateSlice`), composed in this order. */
 const DRIVER_PARTITIONS = ['shell', 'choices', 'running'] as const;
 
@@ -158,6 +165,7 @@ const DRIVER_PARTITIONS = ['shell', 'choices', 'running'] as const;
 export const driverSlice: SliceSpec = {
   name: 'driver',
   key: keys.driver,
+  read: () => readSlice('driver'),
   compose: (partitions) => {
     const parts = DRIVER_PARTITIONS.map((name) => partitions.get(name));
     if (!parts.every((part) => typeof part === 'object' && part !== null && !Array.isArray(part))) return undefined;
