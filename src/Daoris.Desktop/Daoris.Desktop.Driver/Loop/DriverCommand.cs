@@ -106,6 +106,10 @@ public static class DriverCommand
           brainstorm "<question>" [--repository <name>] [--agents <a,b>]  ·  brainstorm show|send|clear <id>  ·  brainstorm list
               one question put to several agents: Daoris freezes a context packet from its own knowledge for you to read,
               and once you send it each agent proposes, one synthesizes, and the ranked document is kept on this machine.
+          meeting ask "<question>" --agents <a,b> [--repository <name>] [--id <id>]  ·  meeting show|stop|clear <id>
+          meeting send <id> [--round <n>]  ·  meeting list
+              agents of different makers talking in one conversation Daoris runs: each round's packet is yours to read
+              before it goes, each agent speaks once a round in your order, and a second round goes only when you name it.
           history [--workspace <name>] [--json]
               what this machine keeps of finished work, per workspace: quests, asks, sessions and bytes, what a
               clear would take, and what it keeps and why.
