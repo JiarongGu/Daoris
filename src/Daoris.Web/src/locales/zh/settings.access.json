@@ -45,6 +45,7 @@
   "settings.access.from.default": "Daoris 的默认：哪里都没有设定。",
   "settings.access.from.mixed": "下面每一处停顿各自说明它在哪里设定。",
   "settings.access.setHere.machine": "为本机设定",
+  "settings.access.machineHint": "本机的默认，用于每个没有自己设定的工作区和仓库：工作区在它的设置里设定自己的，仓库也在它的设置里设定自己的。",
   "settings.access.twin.full.repository": "`daoris-driver access {{repository}} full|--clear`",
   "settings.access.twin.full.workspace": "`daoris-driver access --workspace {{workspace}} full|--clear`",
   "settings.access.twin.full.machine": "`daoris-driver access full|--clear`",

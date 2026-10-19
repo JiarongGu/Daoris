@@ -45,6 +45,7 @@
   "settings.access.from.default": "Daoris's default: nothing is set.",
   "settings.access.from.mixed": "Each pause below says where it was set.",
   "settings.access.setHere.machine": "Set for this machine",
+  "settings.access.machineHint": "This machine's default, for every workspace and repository that sets none of its own: a workspace sets its own on its Setup, and a repository its own on its Setup.",
   "settings.access.twin.full.repository": "`daoris-driver access {{repository}} full|--clear`",
   "settings.access.twin.full.workspace": "`daoris-driver access --workspace {{workspace}} full|--clear`",
   "settings.access.twin.full.machine": "`daoris-driver access full|--clear`",
