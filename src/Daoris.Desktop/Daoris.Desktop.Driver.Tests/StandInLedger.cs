@@ -147,15 +147,18 @@ internal sealed class StandInLedger : HttpMessageHandler
     private int _changesAsked;
     private int _changesHeld;
 
-    // The stream's count and where the quests family last moved; one epoch for this stand-in's life.
+    // The stream's count and where each family last moved; one epoch for this stand-in's life.
     private long _changeCount;
-    private long _questsMovedAt;
+    private readonly Dictionary<string, long> _movedAt = new(StringComparer.Ordinal);
     private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private const string ChangeEpoch = "5ad1e";
 
+    /// <summary>Every family the service's change stream answers, in its order (PUSH1d1).</summary>
+    private static readonly string[] ChangeFamilies = ["sessions", "quests", "asks", "channel"];
+
     /// <summary>
     /// A wait on the change stream, as the service answers it (the design §A4.2): a cursor it does not know answered every family
-    /// at once, and its own cursor held until the quests family moves or the wait ends. Held outside the gate.
+    /// at once, and its own cursor held until a family moves or the wait ends. Held outside the gate.
     /// </summary>
     private async Task<HttpResponseMessage> ChangesAsync(string query, CancellationToken ct)
     {
@@ -181,8 +184,8 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var cursor = $"{ChangeEpoch}.{_changeCount}";
                     var known = since is { } s && s.StartsWith(ChangeEpoch + ".", StringComparison.Ordinal)
                         && long.TryParse(s[(ChangeEpoch.Length + 1)..], out var n) && n <= _changeCount;
-                    JsonArray moved = !known ? ["sessions", "quests"]
-                        : _questsMovedAt > long.Parse(since![(ChangeEpoch.Length + 1)..]) ? ["quests"] : [];
+                    var after = known ? long.Parse(since![(ChangeEpoch.Length + 1)..]) : -1;
+                    JsonArray moved = [.. ChangeFamilies.Where(family => !known || _movedAt.GetValueOrDefault(family) > after)];
                     answer = new JsonObject { ["since"] = cursor, ["moved"] = moved };
                 }
 
@@ -204,10 +207,23 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     // The quests family moved: a publish. Under the gate.
-    private void QuestsMoved()
+    private void QuestsMoved() => Moved("quests");
+
+    // Families moved under one sample of the stream's. Under the gate.
+    private void Moved(params string[] families)
     {
-        _questsMovedAt = ++_changeCount;
+        ++_changeCount;
+        foreach (var family in families) _movedAt[family] = _changeCount;
         Interlocked.Exchange(ref _changed, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+    }
+
+    /// <summary>
+    /// A write the change stream answers as <paramref name="families"/>, moved together: a connector's ask or channel post (PUSH1d1),
+    /// which this stand-in holds nothing of.
+    /// </summary>
+    public void Wrote(params string[] families)
+    {
+        lock (_gate) Moved(families);
     }
 
     /// <summary>A client over this ledger, as a driver is handed one; <paramref name="timeout"/> is the client's own.</summary>

@@ -94,6 +94,7 @@ public static class HelpFacts
                 bool Moved(string family) => moved.Contains(family, StringComparer.Ordinal);
                 var woken = new List<(string, string)> { (Machine, Whole) };
                 if (Moved("sessions") || Moved("quests")) woken.AddRange([(Sessions, Whole), (History, Whole)]);
+                else if (Moved("asks")) woken.Add((History, Whole));
                 // Which repository's records moved is not said, so every part, as the whole was. Before the answers there is none:
                 // each is judged as they land.
                 if (Moved("sessions") && facts.Value<HelpMachineWhole>(Machine, Whole) is { } whole)
