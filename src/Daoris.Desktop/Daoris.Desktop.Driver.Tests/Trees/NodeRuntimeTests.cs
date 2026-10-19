@@ -290,6 +290,54 @@ public sealed class NodeRuntimeTests : IDisposable
         Assert.Empty(Assert.Single(NodeRuntime.Govern(config, new NodeUnitsRead([Quest], new Dictionary<string, string>()), [])).Dispatchable);
     }
 
+    /// <summary>
+    /// FABRIC-RUN1c (§E7, <i>one governs a run, by its binding</i>): a quest whose run is bound to a named workflow's version is governed by that
+    /// version, whose engine is D157's run until the cutover (FABRIC-CUTOVER1), and never by Current's work cycle as well; an unreadable binding
+    /// likewise. A quest whose run follows Current, or has no binding, keeps Current's graph. Nothing is sent on the bound quest.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_whose_run_is_bound_to_a_named_version_is_never_governed_by_Currents_graph()
+    {
+        _units = [QuestOf("quest:q7"), QuestOf("quest:q8"), QuestOf("quest:q9")];
+        // A version the run is bound to, as ForRun reads it: its identity and the graph a run on it binds.
+        var decoded = new DecodedVersion(2, "wfv-docs", new NodeGraph([new NodeDeclaration("work", NodeKinds.Claimed, 1, NodeReach.Observed)], [], ["work"], "work"),
+            "gph-docs", null);
+        DecodedVersion? BoundOf(WorkUnit unit, IReadOnlyCollection<QuestView> _) => unit.Id switch
+        {
+            "quest:q7" => decoded,
+            "quest:q8" => new DecodedVersion(3, null, null, null, "v3: it does not read."),
+            _ => null,
+        };
+
+        var governed = NodeRuntime.Govern(DriverConfig.Parse(Governed), new NodeUnitsRead(_units, new Dictionary<string, string>()), [Step], versionOf: BoundOf);
+        Assert.Equal(["quest:q9"], governed.Select(each => each.Unit.Id));
+
+        await Runtime().PassAsync(Look(Governed) with { Bound = BoundOf }, CancellationToken.None);
+        Assert.Equal(["quest:q9"], _port.Sent.Select(call => call.Unit));
+    }
+
+    /// <summary>
+    /// FABRIC-RUN1c: the home's own reading of a quest's binding (<see cref="NodeRuntime.BoundIn"/>), its run named by its chain's first quest in
+    /// its repository: a binding to a named workflow is that version's, read as unreadable where the workflow is no longer saved, and a run that
+    /// follows Current, or has no binding, is none.
+    /// </summary>
+    [Fact]
+    public void The_homes_binding_of_a_quests_run_is_read_through_its_chain()
+    {
+        var runs = new WorkflowRunFiles(_home);
+        Assert.True(runs.Bind(new WorkflowRunBinding("q7", "engine", "default", "docs", WorkflowLevels.Repository, _now) { Version = 1, Digest = "wfv-docs" }));
+        Assert.True(runs.Bind(new WorkflowRunBinding("q8", "engine", "default", WorkflowSelection.Current, WorkflowLevels.Current, _now)));
+        WorkUnit Of(string id, QuestView quest) => QuestOf(id) with { Records = new WorkUnitRecords(null, [], quest) };
+        var q7 = new QuestView("q7", "", "engine", "", "", "Taken");
+        var q8 = new QuestView("q8", "", "engine", "", "", "Taken");
+        var q9 = new QuestView("q9", "", "engine", "", "", "Taken");
+        var bound = NodeRuntime.BoundIn(_home);
+
+        Assert.NotNull(bound(Of("quest:q7", q7), [q7, q8, q9]));
+        Assert.Null(bound(Of("quest:q8", q8), [q7, q8, q9]));
+        Assert.Null(bound(Of("quest:q9", q9), [q7, q8, q9]));
+    }
+
     [Fact]
     public async Task A_performed_node_is_started_once_across_two_wakes_and_its_unit_awaited()
     {

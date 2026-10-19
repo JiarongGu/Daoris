@@ -69,6 +69,13 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// </summary>
     public Func<WorkUnit, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> Gates { get; init; } =
         (_, _) => Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
+
+    /// <summary>
+    /// The named workflow's version a quest unit's run is bound to (FABRIC-RUN1c; §E7, D157 §5.1: <see cref="WorkflowGraphs.ForRun"/> through
+    /// <see cref="WorkflowRunNodes.VersionOf"/>), given the quests the pass read for its chain; null where its run follows Current or has no
+    /// binding. A unit bound to one is governed by that version, never by Current's graph (<see cref="NodeRuntime.BoundIn"/> reads the home's).
+    /// </summary>
+    public Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?> Bound { get; init; } = (_, _) => null;
 }
 
 /// <summary>
@@ -222,8 +229,14 @@ public sealed class NodeRuntime(
     /// the graph's version and reach is never sent.
     /// </summary>
     /// <param name="kept">The closure graph this home keeps under a digest (<see cref="ClosureGraphs.Read"/>), or null where it keeps none.</param>
+    /// <param name="versionOf">
+    /// The named version a quest unit's run is bound to (<see cref="NodeRuntimeLook.Bound"/>), or null where none: FABRIC-RUN1c, a quest bound
+    /// to one is governed by it alone (§E7, one governs a run, by its binding), whose engine is D157's run until the cutover (FABRIC-CUTOVER1),
+    /// so Current's graph never governs it beside that engine. An unreadable binding holds it the same way: its run cannot start (D157 §5.2).
+    /// </param>
     public static IReadOnlyList<GovernedUnit> Govern(
-        DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null)
+        DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null,
+        Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?>? versionOf = null)
     {
         var governed = new List<GovernedUnit>();
         var identities = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -250,6 +263,10 @@ public sealed class NodeRuntime(
                 // FABRIC-CLOSE1p: the branches' tips as git answered this read, never their records' kept revisions.
                 if (closes) unit = unit with { Subject = unit.Subject with { Revision = QuestClosing.Revision(quest, quests, read.Units, read.Tips) } };
             }
+
+            // FABRIC-RUN1c: a quest whose run is bound to a named version is that version's (§E7), run by D157's engine: Current's graph does not
+            // govern it as well. A quest bound to a closure graph at its take is that graph's, as above.
+            if (!closes && unit.Kind == WorkUnitKind.Quest && versionOf?.Invoke(unit, quests.Values) is not null) continue;
 
             if (graph is null || (!Acts(graph) && !closes)) continue;
             var dispatchable = new HashSet<string>(StringComparer.Ordinal);
@@ -290,6 +307,21 @@ public sealed class NodeRuntime(
         }
 
         return governed;
+    }
+
+    /// <summary>
+    /// The named version a quest unit's run is bound to in <paramref name="home"/> (FABRIC-RUN1c; D157 §5.1): the run its chain's first quest in
+    /// its repository names (<see cref="WorkflowRunBindings.RunOf"/>), read through the home's workflows and run bindings
+    /// (<see cref="WorkflowRunNodes.VersionOf"/>) and never written; null under Current or with no binding. A home that bound no run reads one
+    /// absent file a quest.
+    /// </summary>
+    public static Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?> BoundIn(string home)
+    {
+        var store = new WorkflowFiles(home);
+        var runs = new WorkflowRunFiles(home);
+        return (unit, quests) => unit.Records.Quest is not { } quest
+            ? null
+            : WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(ReviewGate.ChainOf([.. quests], quest.Id), unit.Owner.Repository ?? "") ?? quest.Id);
     }
 
     /// <summary>
@@ -365,7 +397,7 @@ public sealed class NodeRuntime(
                 var read = await look.Units(ct).ConfigureAwait(false);
                 var home = records.Home;
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
-                (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
+                (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept, look.Bound).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _quests = Quests(read);
                 LastQuests = _quests;
                 QuestReads.Keep(home, _quests); // FABRIC-CLOSE1q5: the terminal's `work held` judges on it; the lease is held here.

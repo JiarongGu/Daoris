@@ -481,8 +481,10 @@ public sealed class DriverWatch(
                         // FABRIC-RUN1b: the look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.
                         Remotes = NodeTips.RemotesAsync,
                         Holds = NodeTips.HoldsAsync,
-                        // FABRIC-RUN1c: D157's gates for a unit whose opinion or look waits, read as a landing door reads them.
+                        // FABRIC-RUN1c: D157's gates for a unit whose opinion or look waits, read as a landing door reads them; and a quest
+                        // whose run is bound to a named version left to that version.
                         Gates = new NodeGates(home, service).ReadAsync,
+                        Bound = NodeRuntime.BoundIn(home),
                     }, token), beside: true).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
