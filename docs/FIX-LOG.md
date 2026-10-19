@@ -41,6 +41,16 @@ repository.
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
 
+## 2026-10-20 — A named workspace's help start sometimes wrote "Not read yet" into its room (HelpStartReadTests)
+
+- **Symptom:** `A_named_workspace_s_start_writes_its_own_room_from_the_facts_and_starts_no_git` failed about one run in three on
+  a loaded machine: the room said *Not read yet*.
+- **Root cause:** a race in the test. It waited for the line's first judgement only, while the sessions, the history and the work
+  are judged beside the lines; the room is written at once from the facts as last judged (PARALLEL1a), so a busy machine wrote it
+  before they landed.
+- **Fix:** the test waits until the facts' reading marks none of the three unread before it starts the conversation.
+- **Verify:** `HelpStartReadTests` five runs in a row, 5 of 5 each.
+
 ## 2026-10-20 — The full set on 3e88bcc failed three gates on tests the merges' filtered runs never reached (CONFIG1, PUSH1d1b)
 
 - **Symptom:** `cli` (the home census: `keeplock.test.ts` joined `driver.json` by hand), `tool-tests` (the reach scan:
