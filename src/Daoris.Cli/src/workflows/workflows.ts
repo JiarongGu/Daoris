@@ -60,7 +60,8 @@ export interface CurrentWorkflow {
 
 /** The rule maps the derivation reads: `driver.json`'s, as `readDriverChoices` reads them. */
 export type WorkflowRules = Pick<DriverChoices,
-  'landings' | 'workspaceLandings' | 'reviews' | 'workspaceReviews' | 'opinions' | 'workspaceOpinions' | 'standing'>;
+  'landings' | 'workspaceLandings' | 'reviews' | 'workspaceReviews' | 'opinions' | 'workspaceOpinions' | 'standing'
+  | 'access' | 'workspaceAccess' | 'machineAccess'>;
 
 /**
  * Each limit a step may carry, said where the step is drawn (design §3.9), in the table's order — the driver's
@@ -99,6 +100,19 @@ export function landingFor(
   if (own !== undefined) return { rule: own, source: 'repository' };
   const shared = atName(rules.workspaceLandings, normalizeWorkspace(workspace));
   return shared !== undefined ? { rule: shared, source: 'workspace' } : { rule: { form: 'merge' }, source: 'default' };
+}
+
+/**
+ * Whether the access setup resolves `landing` to `rule` for a repository (AUTONOMY1c2): its own setup, else its workspace's, else the
+ * machine's, as the driver's `AccessRules.Resolve` reads them (the repository's name trimmed and matched in any case); `full` opens
+ * every pause, so it lands by the rule too.
+ */
+export function accessLandsByRule(
+  rules: Pick<WorkflowRules, 'access' | 'workspaceAccess' | 'machineAccess'>, repository: string, workspace: string | null,
+): boolean {
+  const setting = [atName(rules.access, repository.trim()), atName(rules.workspaceAccess, normalizeWorkspace(workspace)), rules.machineAccess]
+    .find((each) => each !== undefined && each !== null && (each === 'full' || Object.hasOwn(each, 'landing')));
+  return setting === 'full' || (setting !== undefined && setting !== null && setting.landing === 'rule');
 }
 
 /** The plugins a door hands the derivation: those switched on and sound, in its catalogue's order, each with its points. */
@@ -161,7 +175,8 @@ export function currentWorkflow(
   // The plugin a rule names, as the driver's `PluginProblem` finds it: the first of that id in any case.
   const speaker = plugin === null ? undefined : plugins.find((each) => sameName(each.id, plugin));
   const lands = speaker !== undefined && speaker.points.includes(LAND_POINT);
-  const automatic = landing.rule.form === 'branch' && landing.rule.autoAccept === true;
+  // The access setup composed, as the driver's `LandingRules.Effective` (CURRENTVIEW1): a branch rule the setup lands is automatic.
+  const automatic = landing.rule.form === 'branch' && (landing.rule.autoAccept === true || accessLandsByRule(read, named, workspace));
   steps.push({
     id: 'landing', kind: 'landing', participation: automatic ? 'automatic' : 'you', executor: 'daoris',
     press: automatic ? null : 'accept',
