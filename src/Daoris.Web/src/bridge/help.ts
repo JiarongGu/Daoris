@@ -249,7 +249,8 @@ export const HELP_WIRED = ['help-wired'] as const;
 /**
  * What each start of one Ask Daoris conversation handed its agent (HELPMODE1b, D183 point 4): its receipts, the newest first,
  * read as *What it has* opens. A read of this machine's home, desktop-only like the conversation (its paths are this machine's).
- * A start going on adds one, so it is asked again each time it is shown.
+ * A start going on adds one, so it is asked again each time it is shown, and, while it is shown, each time the `help` scope is
+ * published (the state hub's, HELPWIREDLIVE1).
  */
 export const useHelpWired = (session: string | null, enabled = true) => {
   const { isAvailable } = useShenora();
