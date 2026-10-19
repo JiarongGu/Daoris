@@ -114,20 +114,7 @@ public static class BrainstormPackets
                 return null;
             }
 
-            var sources = new List<BrainstormSource>();
-            foreach (var source in Items(root, "sources"))
-            {
-                var lines = source.TryGetProperty("lines", out var range) && range.ValueKind == JsonValueKind.Array ? range : default;
-                var why = source.GetProperty("why");
-                sources.Add(new BrainstormSource(
-                    Json.Text(source, "id") ?? "", Json.Text(source, "kind") ?? "", Json.Text(source, "path") ?? "",
-                    lines.ValueKind == JsonValueKind.Array ? lines[0].GetInt32() : null,
-                    lines.ValueKind == JsonValueKind.Array ? lines[1].GetInt32() : null,
-                    Json.Text(source, "revision"), Json.Text(why, "words") ?? "", Json.Text(why, "tier") ?? "",
-                    Json.Text(source, "text") ?? "", source.GetProperty("kept").GetInt32(), source.GetProperty("of").GetInt32()));
-            }
-
-            var left = Items(root, "leftOut").Select(item => new BrainstormLeftOut(Json.Text(item, "path") ?? "", Json.Text(item, "why") ?? "")).ToList();
+            var (sources, left) = ReadSources(root);
             var packet = new BrainstormPacket(Json.Text(root, "question") ?? "", Json.Text(root, "repository"), Json.Text(root, "tier"), sources, left);
             return Json.Text(root, "digest") == packet.Digest ? packet : null;
         }
@@ -138,7 +125,30 @@ public static class BrainstormPackets
         }
     }
 
-    private static IEnumerable<JsonElement> Items(JsonElement root, string name) =>
+    /// <summary>
+    /// A packet's <c>sources</c> and <c>leftOut</c> read back, as a meeting's packet reads its own (AGENTROOM1a, D177 point 2): one
+    /// shape of a source, whichever packet holds it. Throws as <see cref="Read"/> catches.
+    /// </summary>
+    internal static (List<BrainstormSource> Sources, List<BrainstormLeftOut> LeftOut) ReadSources(JsonElement root)
+    {
+        var sources = new List<BrainstormSource>();
+        foreach (var source in Items(root, "sources"))
+        {
+            var lines = source.TryGetProperty("lines", out var range) && range.ValueKind == JsonValueKind.Array ? range : default;
+            var why = source.GetProperty("why");
+            sources.Add(new BrainstormSource(
+                Json.Text(source, "id") ?? "", Json.Text(source, "kind") ?? "", Json.Text(source, "path") ?? "",
+                lines.ValueKind == JsonValueKind.Array ? lines[0].GetInt32() : null,
+                lines.ValueKind == JsonValueKind.Array ? lines[1].GetInt32() : null,
+                Json.Text(source, "revision"), Json.Text(why, "words") ?? "", Json.Text(why, "tier") ?? "",
+                Json.Text(source, "text") ?? "", source.GetProperty("kept").GetInt32(), source.GetProperty("of").GetInt32()));
+        }
+
+        var left = Items(root, "leftOut").Select(item => new BrainstormLeftOut(Json.Text(item, "path") ?? "", Json.Text(item, "why") ?? "")).ToList();
+        return (sources, left);
+    }
+
+    internal static IEnumerable<JsonElement> Items(JsonElement root, string name) =>
         root.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array ? items.EnumerateArray() : [];
 
     private static string Named(BrainstormFound found) =>
@@ -152,7 +162,7 @@ public static class BrainstormPackets
     private static byte[] Write(BrainstormPacket packet, bool withDigest)
     {
         using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+        using (var writer = Writer(stream))
         {
             writer.WriteStartObject();
             if (withDigest)
@@ -164,55 +174,71 @@ public static class BrainstormPackets
             writer.WriteString("question", packet.Question);
             Nullable(writer, "repository", packet.Repository);
             Nullable(writer, "tier", packet.Tier);
-            writer.WriteStartArray("sources");
-            foreach (var source in packet.Sources)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("id", source.Id);
-                writer.WriteString("kind", source.Kind);
-                writer.WriteString("path", source.Path);
-                if (source.First is { } first)
-                {
-                    writer.WriteStartArray("lines");
-                    writer.WriteNumberValue(first);
-                    writer.WriteNumberValue(source.Last ?? first);
-                    writer.WriteEndArray();
-                }
-                else
-                {
-                    writer.WriteNull("lines");
-                }
-
-                Nullable(writer, "revision", source.Revision);
-                writer.WriteStartObject("why");
-                writer.WriteString("words", source.Words);
-                writer.WriteString("tier", source.Tier);
-                writer.WriteEndObject();
-                writer.WriteNumber("kept", source.Kept);
-                writer.WriteNumber("of", source.Of);
-                writer.WriteString("text", source.Text);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
-            writer.WriteStartArray("leftOut");
-            foreach (var left in packet.LeftOut)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("path", left.Path);
-                writer.WriteString("why", left.Why);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
+            WriteSources(writer, packet.Sources, packet.LeftOut);
             writer.WriteEndObject();
         }
 
-        // LF only, whatever the platform: the digest is of these bytes, on every machine.
-        return Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
+        return Lf(stream);
     }
 
-    private static void Nullable(Utf8JsonWriter writer, string name, string? value)
+    /// <summary>The bytes a packet's writer wrote, LF only whatever the platform: a digest is of these bytes, on every machine.</summary>
+    internal static byte[] Lf(MemoryStream stream) =>
+        Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
+
+    /// <summary>The writer a packet's file is written with: indented, its text as written (D176 point 2).</summary>
+    internal static Utf8JsonWriter Writer(MemoryStream stream) =>
+        new(stream, new JsonWriterOptions { Indented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+
+    /// <summary>
+    /// A packet's <c>sources</c> and <c>leftOut</c>, as a brainstorm's packet writes them and a meeting's packet does too (AGENTROOM1a,
+    /// D177 point 2): one shape of a source, whichever packet holds it.
+    /// </summary>
+    internal static void WriteSources(Utf8JsonWriter writer, IReadOnlyList<BrainstormSource> sources, IReadOnlyList<BrainstormLeftOut> leftOut)
+    {
+        writer.WriteStartArray("sources");
+        foreach (var source in sources)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", source.Id);
+            writer.WriteString("kind", source.Kind);
+            writer.WriteString("path", source.Path);
+            if (source.First is { } first)
+            {
+                writer.WriteStartArray("lines");
+                writer.WriteNumberValue(first);
+                writer.WriteNumberValue(source.Last ?? first);
+                writer.WriteEndArray();
+            }
+            else
+            {
+                writer.WriteNull("lines");
+            }
+
+            Nullable(writer, "revision", source.Revision);
+            writer.WriteStartObject("why");
+            writer.WriteString("words", source.Words);
+            writer.WriteString("tier", source.Tier);
+            writer.WriteEndObject();
+            writer.WriteNumber("kept", source.Kept);
+            writer.WriteNumber("of", source.Of);
+            writer.WriteString("text", source.Text);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+        writer.WriteStartArray("leftOut");
+        foreach (var left in leftOut)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("path", left.Path);
+            writer.WriteString("why", left.Why);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    }
+
+    internal static void Nullable(Utf8JsonWriter writer, string name, string? value)
     {
         if (value is null) writer.WriteNull(name);
         else writer.WriteString(name, value);
