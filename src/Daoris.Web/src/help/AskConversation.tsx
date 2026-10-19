@@ -5,12 +5,16 @@ import { type Carry, NO_CARRY } from '../compose/carry';
 import { sentence } from '../locales/format';
 import { useHelpSessions } from '../data/queries';
 import {
-  type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,
-  useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, usePollUnlessTold, useRenameHelp, useSendMessage,
-  useSessionEvents, useSettleHelp, useStartHelp, useStopSession, stoppedWaiting,
+  type HelpSettled, NO_TURNS, helpModeOf, useCancelTurn, useChatTurns, useDeleteSession, useDriver, useEditQueued, useEndChat,
+  useHarnesses, useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
+  usePollUnlessTold, useRenameHelp, useSendMessage, useSessionEvents, useSetHelpMode, useSettleHelp, useStartHelp, useStopSession,
+  stoppedWaiting,
 } from '../bridge/shell';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
 import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
+import { FullAccessConfirm, HelpModeChip, useModeChoice } from './HelpModePicker';
+import { fullAdds } from './modes';
+import { WhatItHas } from './WhatItHas';
 import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { BackToBottom, SessionConversation, type TailState } from '../work/SessionConversation';
@@ -599,6 +603,68 @@ export function useAskConversation(
     />
   );
 
+  // Ask Daoris's access (HELPMODE1b, D183 points 2-4; the modes design §1, §5, §6). The chip shows the mode the conversation in view
+  // runs under, its record's, or the mode chosen before any start; a shell that answers no mode offers no choice, and no *What it
+  // has*, which came after it.
+  const driver = useDriver();
+  const offered = driver.data !== undefined && 'helpMode' in driver.data;
+  const selectedMode = helpModeOf(driver.data?.helpMode);
+  const runningMode = shown && known?.mode !== undefined ? helpModeOf(known.mode) : null;
+  const setMode = useSetHelpMode();
+  // Its own mutation, so ending the one opened ahead never reads as the person's New conversation pending.
+  const retire = useEndChat();
+  const [chipOpen, setChipOpen] = useState(0);
+  const choice = useModeChoice(selectedMode, (mode) => setMode.mutate({ mode }, {
+    onSuccess: () => {
+      // The conversation opened ahead (HELP5) was started under the mode before: nobody has spoken in it, so it is ended and the
+      // next opens under the mode chosen, rather than the person's first words reaching one the chip no longer names.
+      if (readied === null || !readiedLive) return;
+      retire.mutate(readied, { onSuccess: () => setRound((was) => was + 1) });
+    },
+    onError: (error) => setRefusal(sentence(error)),
+  }));
+  const [wiredOpen, setWiredOpen] = useState(false);
+  useEffect(() => {
+    setWiredOpen(false);
+  }, [shown?.id]);
+  const wired = useHelpWired(shown?.id ?? null, offered && (wiredOpen || choice.confirming));
+  // What full access would add is read only while it is asked: the plugins' servers waiting for an approval, and what the
+  // newest start of the conversation in view lacked.
+  const plugins = usePlugins({ enabled: choice.confirming });
+  const addsKnown = (plugins.isSuccess || plugins.isError) && (shown === null || wired.isSuccess || wired.isError);
+  const adds = addsKnown ? fullAdds(wired.data?.receipts[0], plugins.data?.plugins) : null;
+  const access = offered ? (
+    <div className="grid min-w-0 gap-1.5">
+      <div className="flex min-w-0 items-center gap-2">
+        <HelpModeChip selected={selectedMode} running={runningMode} busy={setMode.isPending} open={chipOpen} onPick={choice.pick} />
+        {shown && (
+          <Button
+            variant="ghost"
+            aria-pressed={wiredOpen}
+            className="ml-auto h-7 shrink-0 px-1.5 text-small"
+            onClick={() => setWiredOpen((was) => !was)}
+          >
+            {t('help.wired.open')}
+          </Button>
+        )}
+      </div>
+      {choice.confirming && (
+        <FullAccessConfirm adds={adds} busy={setMode.isPending} onEnable={choice.enable} onCancel={choice.cancel} />
+      )}
+    </div>
+  ) : undefined;
+  const whatItHas = offered && wiredOpen && shown ? (
+    <WhatItHas
+      wired={wired.data}
+      loading={wired.isPending}
+      error={wired.isError ? sentence(wired.error) : null}
+      onRetry={() => void wired.refetch()}
+      onDoor={(door) => onGo?.(door)}
+      onMode={() => setChipOpen((was) => was + 1)}
+      onClose={() => setWiredOpen(false)}
+    />
+  ) : undefined;
+
   const conversation = shown ? (
     <SessionConversation
       session={shown.id}
@@ -735,6 +801,7 @@ export function useAskConversation(
     escapeToList: shown !== null && left?.row === shown.id,
     history, historyOpen,
     onHistory: end.isPending ? undefined : openHistory,
+    access, wired: whatItHas, full: offered && selectedMode === 'full',
   };
   return slot;
 }

@@ -1446,3 +1446,201 @@ describe('Ask Daoris, with no agent named', () => {
     expect(starts()).toBe(0);
   });
 });
+
+/**
+ * HELPMODE1b (D183 points 2-4; the modes design §1, §5, §6): Ask Daoris's access on its panel. The chip beside the box shows the mode
+ * the conversation in view runs under, its record's, and a switch that waits for its next start; restricted is set at once and
+ * full access asked once; *What it has* reads what its start handed, with the door that grants each thing it lacks.
+ */
+describe('Ask Daoris’s access and what it has', () => {
+  let MODE = 'restricted';
+  let ROWS: unknown[] = [];
+  let WIRED: unknown = { session: HELP.id, recorded: false, receipts: [] };
+  let PLUGINS: unknown = { folder: 'plugins', plugins: [] };
+  const row = (over: Record<string, unknown>) => ({
+    session: HELP.id, title: 'what is a workspace?', name: null, opening: 'what is a workspace?', about: null,
+    created: HELP.created, last: HELP.updated, pinned: null, live: true, mode: 'restricted', resumable: true, from: null,
+    handed: null, found: null, ...over,
+  });
+  const RECEIPT = {
+    at: '2026-10-19T10:00:00+00:00', start: 'new', mode: 'restricted', harness: 'claude-code-acp', version: '0.9.1', account: null,
+    door: 'acp', posture: 'default', permissionMode: null, folder: 'C:/daoris/help/room', tools: [], skills: [],
+    servers: [{ name: 'browser', plugin: 'browser', state: 'withheld', tools: null, why: 'not-approved' }],
+    rules: { allow: ['Read'], ask: [], deny: [] }, guarded: true, checkouts: [],
+    lacks: [
+      { kind: 'server', name: 'browser', door: 'plugins', why: 'not-approved', plugin: 'browser' },
+      { kind: 'server', name: 'deploy', door: 'mode', why: 'not-for-help', plugin: 'deploy' },
+      { kind: 'shell', name: 'shell', door: 'mode', why: 'restricted', plugin: null },
+    ],
+  };
+  const STATE = () => ({ drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER ?? '', helpMode: MODE });
+
+  /** The bridge as {@link bridge} answers it, with the mode in the driver's state, its press, the history, the receipts and the plugins. */
+  function access(start?: { sessionId: string | null; message: string }) {
+    bridge(start);
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { mode?: string } }) => {
+      if (type === 'STATE') return STATE();
+      if (type === 'SET_HELP_MODE') {
+        MODE = request?.payload?.mode ?? MODE;
+        return STATE();
+      }
+      if (type === 'HELP_CONVERSATIONS') return { conversations: ROWS, total: ROWS.length, next: null };
+      if (type === 'HELP_WIRED') return WIRED;
+      if (type === 'PLUGINS') return PLUGINS;
+      return answered(module, type, request);
+    });
+  }
+
+  const chip = (says: string) => screen.findByRole('button', { name: `Ask Daoris’s access: ${says}` });
+  /** The chip's menu, opened by the keyboard as Radix opens it in a page with no pointer, and a mode picked. */
+  async function pick(option: string) {
+    screen.getByRole('button', { name: /^Ask Daoris’s access:/ }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitemradio', { name: option }));
+  }
+  const pressed = (mode: string) => invoke.mock.calls.some(([, type, request]) =>
+    type === 'SET_HELP_MODE' && (request as { payload?: { mode?: string } }).payload?.mode === mode);
+
+  beforeEach(() => {
+    MODE = 'restricted';
+    ROWS = [];
+    WIRED = { session: HELP.id, recorded: false, receipts: [] };
+    PLUGINS = { folder: 'plugins', plugins: [] };
+    SESSIONS = [];
+    HELPER = 'claude-code-acp';
+    asked.length = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+  });
+
+  it('shows the mode its conversation runs under, from its record, and a switch that waits for its next start', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'restricted' })];
+    MODE = 'full';
+    access();
+    show();
+
+    expect(await chip('Restricted · full access next start')).toBeInTheDocument();
+  });
+
+  it('shows the mode chosen before any start, and says what full access does above the box', async () => {
+    MODE = 'full';
+    access();
+    show();
+
+    expect(await chip('Full access')).toBeInTheDocument();
+    expect(screen.getByText(/runs on claude-code-acp with full access: it runs commands and edits files/)).toBeInTheDocument();
+  });
+
+  it('offers no choice on a shell older than the mode', async () => {
+    SESSIONS = [HELP];
+    bridge();
+    show();
+
+    expect(await screen.findByLabelText('Message')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Ask Daoris’s access:/ })).toBeNull();
+  });
+
+  it('sets restricted at once from the chip', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'full' })];
+    MODE = 'full';
+    access();
+    show();
+
+    await chip('Full access');
+    await pick('Restricted — reads and proposes');
+
+    await waitFor(() => expect(pressed('restricted')).toBe(true));
+    expect(await chip('Full access · restricted next start')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Enable full access?' })).toBeNull();
+  });
+
+  it('asks once before full access, naming the servers it would add, and sets it on Enable', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'restricted' })];
+    WIRED = { session: HELP.id, recorded: true, receipts: [RECEIPT] };
+    PLUGINS = {
+      folder: 'plugins',
+      plugins: [{
+        id: 'tracker', name: 'Tracker', version: '1.0.0', description: '', enabled: true, problem: null, harnesses: [], points: [],
+        running: true, folder: 'f', data: 'd', helpServers: [{ name: 'tracker', allow: ['list'], state: 'waits' }],
+      }],
+    };
+    access();
+    show();
+
+    await chip('Restricted');
+    await pick('Full access — acts without Apply');
+
+    const asks = await screen.findByRole('group', { name: 'Enable full access?' });
+    expect(await within(asks).findByText('tracker')).toBeInTheDocument();
+    expect(within(asks).getByText('browser')).toBeInTheDocument();
+    expect(within(asks).getByText('deploy')).toBeInTheDocument();
+    expect(pressed('full')).toBe(false);
+
+    await userEvent.click(within(asks).getByRole('button', { name: 'Enable full access' }));
+    await waitFor(() => expect(pressed('full')).toBe(true));
+    expect(await chip('Restricted · full access next start')).toBeInTheDocument();
+  });
+
+  it('ends the conversation opened ahead and not yet spoken in, so the next opens under the mode chosen', async () => {
+    access();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      // The ledger holds the record from the moment it opens, and ends it at the driver's word.
+      if (type === 'START_HELP') SESSIONS = [HELP];
+      if (type === 'END_CHAT') SESSIONS = [{ ...HELP, state: 'completed' }];
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await waitFor(() => expect(starts()).toBe(1));
+    await chip('Restricted');
+    await pick('Full access — acts without Apply');
+    await userEvent.click(await screen.findByRole('button', { name: 'Enable full access' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: HELP.id } }));
+    await waitFor(() => expect(starts()).toBe(2));
+  });
+
+  it('opens What it has for the conversation in view, each lack with its door', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({ mode: 'restricted' })];
+    WIRED = { session: HELP.id, recorded: true, receipts: [RECEIPT] };
+    const onGo = vi.fn();
+    access();
+    show(undefined, null, onGo);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'What it has' }));
+    const has = await screen.findByRole('region', { name: 'What it has' });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_WIRED', { payload: { session: HELP.id } });
+    expect(await within(has).findByText('C:/daoris/help/room')).toBeInTheDocument();
+
+    await userEvent.click(within(has).getByRole('button', { name: 'Open Plugins' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'plugins', item: 'browser' });
+    // The mode's door opens the chip's menu.
+    await userEvent.click(within(has).getAllByRole('button', { name: 'Choose full access' })[0]!);
+    expect(await screen.findByRole('menuitemradio', { name: 'Full access — acts without Apply' })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+
+    await userEvent.click(within(has).getByRole('button', { name: 'Back to the conversation' }));
+    expect(screen.queryByRole('region', { name: 'What it has' })).toBeNull();
+  });
+
+  it('says a conversation from before as not recorded', async () => {
+    SESSIONS = [HELP];
+    ROWS = [row({})];
+    access();
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'What it has' }));
+    expect(await screen.findByText(/^Not recorded: this conversation started before/)).toBeInTheDocument();
+  });
+});
