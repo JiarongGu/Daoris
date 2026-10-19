@@ -203,6 +203,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new HelpRoutes(context)),
         Domain.Of(context => new HistoryRoutes(context.Loop)),
         Domain.Of(context => new LinesRoutes(context)),
+        Domain.Of(context => new PersonRoutes(context.Loop)),
         Domain.Of(context => new PluginsRoutes(context)),
         Domain.Of(context => new RegistryRoutes(context.Loop)),
         Domain.Of(context => new RulesRoutes(context.Loop)),

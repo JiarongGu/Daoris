@@ -571,6 +571,11 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TRACE", "", null)]
     // WIRING1b: This Daoris's read; asking it to measure starts a walk and moves no state a window shows.
     [InlineData("SYSTEM_WIRING", "", null)]
+    // RPC1c: what waits for the window is told by its own event (`CONFIRMATIONS`), and a confirmed press publishes what it changes
+    // as it runs; the answer itself moves no scope. PERSONDOOR1f: the key is a read.
+    [InlineData("PERSON_CONFIRMATIONS", "", null)]
+    [InlineData("PERSON_CONFIRM", "", null)]
+    [InlineData("PERSON_KEY", "", null)]
     public void The_remaining_presses_declare_what_they_change(string route, string scopes, string? session)
     {
         Assert.Contains(route, DriverModule.Routes);
