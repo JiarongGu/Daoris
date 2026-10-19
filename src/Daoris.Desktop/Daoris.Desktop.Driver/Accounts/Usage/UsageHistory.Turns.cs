@@ -33,8 +33,7 @@ public sealed record TurnsRead(IReadOnlyList<KeptTurn> Turns, IReadOnlyList<Hist
 
 /// <summary>
 /// The turns' log (USAGECAP1a2, D179 point 2): <c>turns-YYYY-MM.jsonl</c> beside the readings, on the same writer and under the
-/// same bound, which counts both logs together (<see cref="Append"/>), so the estimate (USAGECAP1b) finds each window's readings
-/// and the turns between them for the same months.
+/// bound both logs share (<see cref="UsageHistory"/>'s remarks).
 /// </summary>
 /// <remarks>
 /// <para><b>A turn is keyed by its session and its event's sequence</b>: heard twice, it is written once, remembered per home

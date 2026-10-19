@@ -1596,7 +1596,7 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         // The same harness underneath, so the same trust record governs this door too.
         TrustFile: ClaudeTrust.FileName,
         // Its prompt response's `usage` is each turn's own, not a running sum: measured on claude-code-acp 0.79.0, two turns
-        // (stream-json evidence, CONV5). Its own, since a report's meaning is its wire's (USAGECAP1a2).
+        // (stream-json evidence, CONV5; USAGECAP1a2).
         TurnReport: UsageHistory.PerTurn);
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
@@ -2023,7 +2023,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // door reads its owner's through `UsageOf` (AGT7).
         Usage: ClaudeUsage.Question,
         // Its `result.usage` is each turn's own total, summed over the turn's calls: measured on 2.1.282 (stream-json evidence,
-        // CONV5). Read for the usage history's turns (USAGECAP1a2); its protocol door declares its own.
+        // CONV5; USAGECAP1a2).
         TurnReport: UsageHistory.PerTurn);
 
     /// <summary>

@@ -97,8 +97,9 @@ public sealed record PlanEntry(string Content, string? Status = null, string? Pr
 /// zero (TOOL3).
 /// </summary>
 /// <remarks>
-/// Counts only. The total is their sum and is not kept twice; the cost and the models' names stay on
-/// the wire (D24, TOOL3). Measured on both doors: docs/2026-09-25-stream-json-evidence.md, § CONV5.
+/// Counts only. The total is their sum and is not kept twice; the cost stays on the wire, and the record keeps no model's name
+/// (D24, TOOL3): the models ride the turn's event to the usage history alone (<see cref="SessionEvent.Models"/>, USAGECAP1a2).
+/// Measured on both doors: docs/2026-09-25-stream-json-evidence.md, § CONV5.
 /// </remarks>
 public sealed record TurnTokens(long? Input, long? Output, long? CacheRead, long? CacheWrite)
 {

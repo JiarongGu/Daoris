@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 /// </param>
 /// <param name="Door">The adapter the session runs through.</param>
 /// <param name="Meaning">
-/// What its turns' counts mean: the door's own declaration (<see cref="HarnessToolchain.TurnReport"/>), never its owner's, since a
-/// report's meaning is its wire's; <see cref="UsageHistory.MeaningUnknown"/> where it declares none.
+/// What its turns' counts mean: the door's own <see cref="HarnessToolchain.TurnReport"/>, or <see cref="UsageHistory.MeaningUnknown"/>
+/// where it declares none.
 /// </param>
 public sealed record TurnBinding(string? Agent, string? Account, string Door, string Meaning)
 {

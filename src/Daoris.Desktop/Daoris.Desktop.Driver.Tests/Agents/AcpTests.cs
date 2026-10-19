@@ -976,7 +976,7 @@ public sealed class AcpTests
     /// <summary>
     /// CONV5: a turn's tokens are the prompt response's <c>usage</c> — the turn's own totals, measured
     /// on <c>claude-code-acp</c> (the probe's second turn). The total, the cost and the by-model split
-    /// stay on the wire; a response with no <c>usage</c> leaves the turn's tokens unknown, never zero.
+    /// stay off the record; a response with no <c>usage</c> leaves the turn's tokens unknown, never zero.
     /// </summary>
     [Fact]
     public async Task A_turn_carries_the_tokens_its_prompt_response_reported()
