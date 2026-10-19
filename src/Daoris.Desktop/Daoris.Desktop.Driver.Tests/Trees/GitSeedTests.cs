@@ -10,13 +10,11 @@ public sealed class GitSeedTests : IDisposable
 
     public GitSeedTests()
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git"))) directory = directory.Parent;
-        _scratch = Path.Combine(directory?.FullName ?? AppContext.BaseDirectory, "_fixtures", "git-seed-tests", Guid.NewGuid().ToString("N")[..8]);
+        _scratch = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "git-seed-tests", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_scratch);
     }
 
-    public void Dispose() => Directory.Delete(_scratch, recursive: true);
+    public void Dispose() => GitSeed.Discard(_scratch);
 
     [Fact]
     public void A_copy_is_its_own_folder_and_carries_no_worktree_metadata()
@@ -74,6 +72,78 @@ public sealed class GitSeedTests : IDisposable
 
         Assert.False(Directory.Exists(copy));
         Assert.False(Directory.Exists(seed));
+    }
+
+    /// <summary>
+    /// SCRATCHLEAK1: a worktree's <c>.git</c> is a file, and a walk that looked for a directory only passed it and rooted the
+    /// scratch in the main checkout's <c>_fixtures</c>.
+    /// </summary>
+    [Fact]
+    public void The_root_walk_stops_at_a_worktrees_git_file_not_the_checkout_above_it()
+    {
+        var outer = Path.Combine(_scratch, "checkout");
+        var worktree = Path.Combine(outer, ".claude", "worktrees", "one");
+        var deep = Path.Combine(worktree, "src", "bin");
+        Directory.CreateDirectory(Path.Combine(outer, ".git"));
+        Directory.CreateDirectory(deep);
+        File.WriteAllText(Path.Combine(worktree, ".git"), "gitdir: elsewhere\n");
+
+        Assert.Equal(worktree, GitSeed.RootFrom(deep));
+        Assert.Equal(outer, GitSeed.RootFrom(Path.Combine(outer, "src")));
+    }
+
+    /// <summary>SCRATCHLEAK1: a folder something holds for a moment is removed once it lets go, not left behind.</summary>
+    [Fact]
+    public void A_folder_a_file_in_it_holds_for_a_moment_is_removed_once_it_is_let_go()
+    {
+        var folder = Path.Combine(_scratch, "held");
+        Directory.CreateDirectory(folder);
+        var held = new FileStream(Path.Combine(folder, "held.txt"), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(400);
+            held.Dispose();
+        });
+
+        GitSeed.Remove(folder);
+
+        Assert.False(Directory.Exists(folder));
+    }
+
+    /// <summary>SCRATCHLEAK1: <c>Discard</c> is the cleanup a test's <c>Dispose</c> calls: it gives up quietly on a file that stays held.</summary>
+    [Fact]
+    public void A_cleanup_that_cannot_finish_gives_up_without_failing_the_test()
+    {
+        var folder = Path.Combine(_scratch, "stuck");
+        Directory.CreateDirectory(folder);
+        using var held = new FileStream(Path.Combine(folder, "held.txt"), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+
+        GitSeed.Discard(folder);
+
+        Assert.True(Directory.Exists(folder));
+    }
+
+    /// <summary>
+    /// SCRATCHLEAK1: about thirty classes each deleted their scratch once and swallowed the refusal of git's read-only objects, so
+    /// each test left a folder (29,000 entries in two folders on 2026-10-20), and nineteen walked to a <c>.git</c> directory only.
+    /// A test source that roots scratch under <c>_fixtures</c> removes it through <c>GitSeed</c>, and none writes its own walk.
+    /// </summary>
+    [Fact]
+    public void No_test_deletes_its_fixtures_scratch_by_itself_or_walks_to_the_root_by_itself()
+    {
+        var plainDelete = new System.Text.RegularExpressions.Regex(@"Directory\.Delete\([^;]*recursive: true");
+        var ownWalk = new System.Text.RegularExpressions.Regex(@"Exists\(Path\.Combine\([^;]*""\.git""\)\)");
+        var breaches = new List<string>();
+        foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs"))
+        {
+            var name = Path.GetFileName(path);
+            if (name == "GitSeed.cs") continue;
+            var text = File.ReadAllText(path);
+            if (text.Contains("_fixtures", StringComparison.Ordinal) && plainDelete.IsMatch(text)) breaches.Add($"{name}: deletes scratch with Directory.Delete; use GitSeed.Discard or GitSeed.Remove");
+            if (ownWalk.IsMatch(text)) breaches.Add($"{name}: walks to .git by itself; use GitSeed.RepoRoot()");
+        }
+
+        Assert.True(breaches.Count == 0, string.Join('\n', breaches));
     }
 
     [Fact]
