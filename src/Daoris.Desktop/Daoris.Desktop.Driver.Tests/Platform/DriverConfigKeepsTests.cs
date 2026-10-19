@@ -39,6 +39,14 @@ public sealed class DriverConfigKeepsTests
     }
 
     /// <summary>
+    /// CONFIGMERGE1 (D173's CONFIG1 note): which arrays are sets, merged by their names, is one table both twins carry, the CLI's
+    /// <c>DRIVER_SETS</c>; every other array is a value, written whole.
+    /// </summary>
+    [Fact]
+    public void The_arrays_merged_by_their_names_are_the_tables_as_the_terminals_are() =>
+        Assert.Equal(Table.RootElement.GetProperty("sets").EnumerateArray().Select(set => set.GetString()!), DriverConfig.Sets);
+
+    /// <summary>
     /// CASEMAP1 (D173's CONFIG1 note): every per-name map reads a name written twice in any case where first readable, its first
     /// spelling and value, row for row with the CLI's <c>configkeeps.test.ts</c> (the table's <c>names</c>).
     /// </summary>
@@ -122,6 +130,10 @@ public sealed class DriverConfigKeepsTests
         {
             "none" => config,
             "drivable" => config.WithDrivable(Text("repository"), edit.GetProperty("on").GetBoolean()),
+            "hold" => config.WithHold(Text("repository"), edit.GetProperty("on").GetBoolean()),
+            "trees" => config.WithTrees(Text("repository"), edit.GetProperty("on").GetBoolean()),
+            // CONFIGMERGE1: a target declared or taken back, through the door the terminal's `write-across` goes through.
+            "write-across" => config.WithWriteAcross(Text("repository"), Text("to"), edit.GetProperty("on").GetBoolean()),
             "landing" => config.WithLanding(Text("repository"), Rule(edit.GetProperty("rule"))),
             "workspace-landing" => config.WithWorkspaceLanding(Text("workspace"), Rule(edit.GetProperty("rule"))),
             "landing-clear" => config.WithLanding(Text("repository"), null),

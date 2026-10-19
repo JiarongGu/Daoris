@@ -843,7 +843,7 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
   const read = choicesWritten(choicesOf(JSON.parse(choices.source) as Record<string, unknown>));
   let kept: string;
   try {
-    kept = keepEdits(current, read, choicesWritten(choices));
+    kept = keepEdits(current, read, choicesWritten(choices), DRIVER_SETS);
   } catch (error) {
     // The second re-check's finding 1: another writer made a value this edit changes something inside no longer an object.
     if (!(error instanceof EditRefused)) throw error;
@@ -852,6 +852,15 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
   }
   writeJsonTextAtomic(path, kept);
 }
+
+/**
+ * The arrays of `driver.json` that are sets (CONFIGMERGE1, D173's CONFIG1 note): an edit of one is the names it added and took, compared
+ * without case, made onto the file's array as it stands, so two writers each adding a repository keep both (`jsonkeep.ts`' `keepEdits`).
+ * Each is a key path, `*` any one name; every other array is a value, written whole (`commands`' lists are ordered, `heavyGates`' read
+ * whole or not at all, a cycle's its own). Duplicated deliberately as the driver's `DriverConfig.Sets`; both are held to
+ * `test/fixtures/driver-config-keeps.json`'s `sets`.
+ */
+export const DRIVER_SETS: readonly string[] = ['drivable', 'holds', 'trees', 'writeAcross.*'];
 
 /**
  * The choices' own shape, in the driver's order (`DriverConfig.Written`), so a key an edit adds goes where the driver's would: what this
@@ -2386,7 +2395,7 @@ function withEntry<T>(map: Record<string, T>, key: string, value: T | null): Rec
  * The relationships with `to` declared from `repository`, or taken back — matched without case, as the
  * driver matches it, keeping the repository's existing spelling. The last one taken back leaves no entry.
  */
-function withTarget(map: Record<string, string[]>, repository: string, to: string, allow: boolean): Record<string, string[]> {
+export function withTarget(map: Record<string, string[]>, repository: string, to: string, allow: boolean): Record<string, string[]> {
   const key = findName(Object.keys(map), repository.trim()) ?? repository.trim();
   const held = map[key] ?? [];
   const same = (name: string) => sameName(name, to.trim());

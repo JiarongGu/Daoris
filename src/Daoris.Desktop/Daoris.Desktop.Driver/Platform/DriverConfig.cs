@@ -808,6 +808,15 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
+    /// The arrays of <c>driver.json</c> that are sets (CONFIGMERGE1, D173's CONFIG1 note): an edit of one is the names it added and took,
+    /// compared without case, made onto the file's array as it stands, so two writers each adding a repository keep both
+    /// (<see cref="JsonKeeping.Kept"/>). Each is a key path, <c>*</c> any one name; every other array is a value, written whole
+    /// (<c>commands</c>' lists are ordered, <c>heavyGates</c>' read whole or not at all, a cycle's its own). Duplicated deliberately as
+    /// the CLI's <c>DRIVER_SETS</c>; both are held to <c>test/fixtures/driver-config-keeps.json</c>'s <c>sets</c>.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "trees", "writeAcross.*"];
+
+    /// <summary>
     /// Write the choices back — atomically, beside-then-rename, like every write in this family: the
     /// watch loop re-reads this file every tick, and a torn read must never be what it finds.
     /// </summary>
@@ -832,7 +841,7 @@ public sealed record DriverConfig(
         string text;
         try
         {
-            text = Source is not null && string.Equals(SourceFile, file, same) ? JsonKeeping.Kept(Current(path), Understood(), Written()) : ToJson();
+            text = Source is not null && string.Equals(SourceFile, file, same) ? JsonKeeping.Kept(Current(path), Understood(), Written(), Sets) : ToJson();
         }
         catch (JsonEditRefusedException refused)
         {
@@ -877,7 +886,7 @@ public sealed record DriverConfig(
     /// read and written with no edit, the same bytes. A config built in memory is written whole. <see cref="Save"/> writes the edit over the
     /// file as it stands instead.
     /// </summary>
-    public string ToJson() => Source is null ? Written() : JsonKeeping.Kept(Source, Understood(), Written());
+    public string ToJson() => Source is null ? Written() : JsonKeeping.Kept(Source, Understood(), Written(), Sets);
 
     /// <summary>The choices' own shape, written by hand for the same AOT reason it is read by hand.</summary>
     private string Written()

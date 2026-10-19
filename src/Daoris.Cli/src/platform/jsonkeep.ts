@@ -18,13 +18,15 @@
  */
 
 import { basename } from 'node:path';
+import { findName } from './casefold.ts';
 import { DaorisError } from './errors.ts';
 import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from './fsx.ts';
 
 /**
  * An edit refused, nothing written: it changes `editPath`, and `holder`, the value that path lies under, is no longer an object in the
  * file as it stands (the second re-check, finding 1), the driver's `JsonEditRefusedException`. Another writer made it a string, a number
- * or an array since this one read it; writing the stale object over it would undo that writer's change.
+ * or an array since this one read it; writing the stale object over it would undo that writer's change. A set (`list`, CONFIGMERGE1) is
+ * refused where it is no longer an array.
  */
 export class EditRefused extends Error {
   /** The key path the edit changes, its names joined by dots. */
@@ -32,10 +34,10 @@ export class EditRefused extends Error {
   /** The path of the value it lies under that is no longer an object; empty for the file's top. */
   readonly holder: string;
 
-  constructor(editPath: string, holder: string) {
+  constructor(editPath: string, holder: string, list = false) {
     super(holder.length === 0
       ? `this edit changes \`${editPath}\`, and the file is no longer a JSON object`
-      : `this edit changes \`${editPath}\`, and \`${holder}\` is no longer an object there`);
+      : `this edit changes \`${editPath}\`, and \`${holder}\` is no longer ${list ? 'a list' : 'an object'} there`);
     this.editPath = editPath;
     this.holder = holder;
   }
@@ -61,8 +63,14 @@ function isObject(value: unknown): value is Record<string, unknown> {
  * `edited`: the file's text, two spaces deep, one final newline, its lines ended as `original`'s first line is (the re-check's finding
  * 3: an edit wrote LF over a file in CRLF). No edit is `original`'s own text. `original` is the file as it stands when the edit is
  * written, which may be another writer's since the read (finding 1): what that writer changed and this edit did not stays as it is.
+ *
+ * `sets` names the arrays that are sets (CONFIGMERGE1, D173's CONFIG1 note; `driverconfig.ts`' `DRIVER_SETS`), each a key path, `*` any
+ * one name: an edit of one is the names it added and took, compared without case, made onto the file's array as it stands (`merged`),
+ * so two writers each adding a name keep both. Every other array is a value, written whole.
  */
-export function keepEdits(original: string, read: Record<string, unknown>, edited: Record<string, unknown>): string {
+export function keepEdits(
+  original: string, read: Record<string, unknown>, edited: Record<string, unknown>, sets: readonly string[] = [],
+): string {
   const readText = JSON.stringify(read);
   const editedText = JSON.stringify(edited);
   if (readText === editedText) return original;
@@ -70,7 +78,7 @@ export function keepEdits(original: string, read: Record<string, unknown>, edite
   const understood = JSON.parse(readText) as Record<string, unknown>;
   const now = JSON.parse(editedText) as Record<string, unknown>;
   if (!isObject(file)) throw new EditRefused(changed(understood, now, '') ?? '', '');
-  const text = `${JSON.stringify(plan(file, understood, now, '', true), null, 2)}\n`;
+  const text = `${JSON.stringify(plan(file, understood, now, '', true, sets), null, 2)}\n`;
   const end = original.indexOf('\n');
   return end > 0 && original[end - 1] === '\r' ? text.replaceAll('\n', '\r\n') : text;
 }
@@ -156,10 +164,12 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
  * reader did not read and the edit set is the edit's, a map merged into the file's key by key and refused where the file's is no longer an
  * object; one the edit left as read is the file's, as written; an object the edit changed is
  * merged, refused where the file's is no longer an object; else the edit's. A key the edit set that the file no longer holds is added, an
- * object with only the edit's own keys under it (the second re-check, finding 1).
+ * object with only the edit's own keys under it (the second re-check, finding 1). A set of `sets` is merged by its names (`merged`), never
+ * written whole.
  */
 function plan(
   file: Record<string, unknown>, read: Record<string, unknown>, edited: Record<string, unknown>, where: string, top: boolean,
+  sets: readonly string[],
 ): Record<string, unknown> {
   const out: [string, unknown][] = [];
   for (const [name, kept] of Object.entries(file)) {
@@ -168,24 +178,33 @@ function plan(
     const isEdited = Object.hasOwn(edited, name);
     const was = read[name];
     const now = edited[name];
+    const set = isSet(sets, where, name);
     if (!wasRead && !isEdited) out.push([name, kept]);
-    else if (!isEdited) {
+    else if (!isEdited && set) {
+      // A set the edit took whole loses only the names its reader read: another writer's stay, and it goes where none is left.
+      const rest = Array.isArray(kept) ? merged(kept, was, undefined, false) : null;
+      if (rest !== null) out.push([name, rest]);
+    } else if (!isEdited) {
       // The writer leaves an emptied map out, so at the top its edit took the entries its reader read, not the map.
       const first = top && isObject(was) ? changed(was, {}, path) : null;
       if (first === null) continue;
       if (!isObject(kept)) throw new EditRefused(first, path);
-      const unread = plan(kept, was as Record<string, unknown>, {}, path, false);
+      const unread = plan(kept, was as Record<string, unknown>, {}, path, false, sets);
       if (Object.keys(unread).length > 0) out.push([name, unread]);
+    } else if (set && Array.isArray(now) && !(wasRead && same(was, now))) {
+      // CONFIGMERGE1: the names this edit added and took, made onto the set as it stands; one no longer an array refuses it.
+      if (!Array.isArray(kept)) throw new EditRefused(path, path, true);
+      out.push([name, merged(kept, wasRead ? was : undefined, now, true)]);
     } else if (!wasRead && isObject(now)) {
       // A map its reader never saw is no whole value: its keys are the edit's paths, made into what another writer wrote meanwhile (the
       // re-check of round 3: written whole, it deleted that writer's entries, or overwrote its string).
       if (!isObject(kept)) throw new EditRefused(changed({}, now, path) ?? path, path);
-      out.push([name, plan(kept, {}, now, path, false)]);
+      out.push([name, plan(kept, {}, now, path, false, sets)]);
     } else if (!wasRead) out.push([name, now]);
     else if (same(was, now)) out.push([name, kept]);
     else if (isObject(was) && isObject(now)) {
       if (!isObject(kept)) throw new EditRefused(changed(was, now, path) ?? path, path);
-      out.push([name, plan(kept, was, now, path, false)]);
+      out.push([name, plan(kept, was, now, path, false, sets)]);
     } else out.push([name, now]);
   }
 
@@ -200,16 +219,53 @@ function plan(
     }
     if (Object.hasOwn(file, name)) continue;
     const was = read[name];
-    if (!Object.hasOwn(read, name)) out.splice(at++, 0, [name, now]);
+    const wasRead = Object.hasOwn(read, name);
+    if (isSet(sets, where, name) && Array.isArray(now)) {
+      // A set the file no longer holds is made with the names this edit added alone, never the ones it read.
+      const made = merged(undefined, wasRead ? was : undefined, now, false);
+      if (made !== null) out.splice(at++, 0, [name, made]);
+    } else if (!wasRead) out.splice(at++, 0, [name, now]);
     else if (same(was, now)) continue;
     else if (isObject(was) && isObject(now)) {
       // Taken out since the read: made again with only the edit's own keys under it, never the ones it left as read.
-      const made = plan({}, was, now, joined(where, name), false);
+      const made = plan({}, was, now, joined(where, name), false, sets);
       if (Object.keys(made).length > 0) out.splice(at++, 0, [name, made]);
     } else out.splice(at++, 0, [name, now]);
   }
 
   return Object.fromEntries(out);
+}
+
+/** Whether the key `name` of the object at `where` is one of `sets`, as the driver's `JsonKeeping.IsSet` reads them. */
+function isSet(sets: readonly string[], where: string, name: string): boolean {
+  return sets.some((set) => {
+    const dot = set.lastIndexOf('.');
+    const [parent, leaf] = dot < 0 ? ['', set] : [set.slice(0, dot), set.slice(dot + 1)];
+    return parent === where && (leaf === '*' || leaf === name);
+  });
+}
+
+/**
+ * A set made (CONFIGMERGE1, D173's CONFIG1 note), the driver's `JsonKeeping.Merged`: `file`'s array as it stands, undefined for none, with
+ * every name the edit from `was` to `now` took gone in any spelling and every name it added that is not there in any case put at the end
+ * in the edit's order; every other element, another writer's names and a value of any other kind (a number by its own text), stays where
+ * it stands. Names compare through `casefold.ts`, as the driver's `OrdinalIgnoreCase` compares them. Null, written as no key, where
+ * nothing is left and `keepEmpty` does not keep an empty array.
+ */
+function merged(file: unknown[] | undefined, was: unknown, now: unknown, keepEmpty: boolean): unknown[] | null {
+  const names = (array: unknown): string[] => (Array.isArray(array) ? array.filter((item): item is string => typeof item === 'string') : []);
+  const read = names(was);
+  const edited = names(now);
+  const taken = read.filter((name) => findName(edited, name) === null);
+  const kept = (file ?? []).filter((item) => typeof item !== 'string' || findName(taken, item) === null);
+  const present = names(kept);
+  const added: string[] = [];
+  for (const name of edited) {
+    if (findName(read, name) !== null || findName(present, name) !== null) continue;
+    present.push(name);
+    added.push(name);
+  }
+  return kept.length + added.length === 0 && !keepEmpty ? null : [...kept, ...added];
 }
 
 /**
