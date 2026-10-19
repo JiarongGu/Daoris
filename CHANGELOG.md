@@ -15,6 +15,10 @@ with the version and date at release.
   reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says
   what it pruned.
 
+- The machine log (Settings → Logs, `daoris-driver logs`) now holds the warnings and errors of the window's own toolkit and
+  engine, which until now were written nowhere: among them why opening Daoris again did not reach the Daoris that runs. Opening
+  it again is written as it arrives (`window.launch`), and anything that stops its window opening is written too.
+
 - A first brainstorm across agents, at the terminal: `daoris-driver brainstorm "<question>" [--repository <name>] [--agents a,b]`.
   Daoris freezes one context packet from its own knowledge of the repository, which `brainstorm show <id>` prints whole; nothing
   goes to any agent until `brainstorm send <id>`. Each named agent then proposes once, in a folder holding only that packet,

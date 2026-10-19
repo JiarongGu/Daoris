@@ -117,9 +117,13 @@ internal static class Program
         // The in-app browser is a process of its own, which this does not reach.
         builder.Services.AddShenoraColorScheme();
 
-        // The kit's, the engine's and the modules' warnings and errors, into the same log.
+        // The kit's, the engine's and the modules' warnings and errors, into the same log: loggers the container makes, since the
+        // kit asks it for an ILogger<T>, and a provider alone made none (ONEINSTANCE2). And a later launch handed over, which the
+        // single-instance guard and the engine say as information: the engine's line is the only trace of a launch the guard
+        // let through and Chromium's own singleton turned away.
         builder.Services.AddSingleton(log);
-        builder.Services.AddSingleton<Microsoft.Extensions.Logging.ILoggerProvider>(new MachineLogProvider(log));
+        builder.Services.AddMachineLog(log,
+            typeof(SingleInstanceGuard).FullName!, typeof(Shenora.Chromium.ChromiumEngine).FullName!);
 
         builder.Services.AddSingleton(new HostSupervisor(serviceUrl));
         builder.Services.AddSingleton(sp => new DriverLoop(
@@ -306,12 +310,9 @@ internal static class Program
             },
             // One instance per install, the kit's default, and a later launch is a new main window of it (ONEINSTANCE1, D171
             // point 2): the guard brings this instance's main window forward and hands the launch over on the window's thread,
-            // and the hand-over opens the window off it, once the service answers.
-            SingleInstance = new SingleInstanceHostOptions
-            {
-                OnActivated = (running, launch) =>
-                    _ = running.Services.GetRequiredService<SecondLaunch>().OpenAsync(launch.Arguments),
-            },
+            // and the hand-over opens the window off it, once the service answers. Written as it arrives, and every failure on
+            // the way written too (ONEINSTANCE2).
+            SingleInstance = LaterLaunch.Options(log),
         });
 
         using var app = builder.Build();
