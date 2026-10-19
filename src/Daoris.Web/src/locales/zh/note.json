@@ -106,7 +106,7 @@
   "note.landing.opinion": "未自动采纳：它的工作在落地前等第二意见，详情如下。第二意见了结后，或你决定不等它继续后，下一轮会落地它的工作。",
   "note.landing.no-tree": "委托已完成，且它在仓库自己的检出中工作，所以工作已经在那里：不会自动落地任何东西。",
   "note.landing.not-done": "它的委托没有完成，所以不会自动落地任何东西：它的工作等待你的审阅。",
-  "note.opening.opened": "在账户 `{{account}}` 上开始：{{why}}。",
+  "note.landing.merges": "委托已完成，{{access}}按落地规则落地工作，但这条规则是合并进主线，而合并从不自动落地：它的工作等你采纳…",  "note.opening.opened": "在账户 `{{account}}` 上开始：{{why}}。",
   "note.opening.carried-on": "在账户 `{{account}}` 上接续会话 `{{session}}`：{{why}}。",
   "note.opening.rest": "其余账户中，{{why}}。",
   "note.opening.turn-refused": "它的第 {{turn}} 轮被拒绝。",

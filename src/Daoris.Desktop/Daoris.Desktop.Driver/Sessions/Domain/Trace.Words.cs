@@ -446,7 +446,8 @@ internal static class TraceWords
         {
             said.Append($"; under the {rule.Source}'s rule, ")
                 .Append(rule.Plugin is { } named ? $"naming plugin {named}" : "naming no plugin")
-                .Append(rule.AutoAccept ? ", accepting automatically" : ", accepting at a press");
+                .Append(rule.Access is { } access ? $", accepted by the access setup ({access})"
+                    : rule.AutoAccept ? ", accepting automatically" : ", accepting at a press");
         }
 
         // The review that let it go (REVIEWENV1c, design §3.5): the person's reviewed, with its environment and set-up's commit, or

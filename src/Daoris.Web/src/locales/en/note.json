@@ -106,7 +106,7 @@
   "note.landing.opinion": "Not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first look once the opinion is settled, or you go on without one.",
   "note.landing.no-tree": "Its quest was done, and it worked in the repository's own checkout, so its work is already there: nothing lands automatically.",
   "note.landing.not-done": "It did not end on a done, so nothing lands automatically: its work waits for your review.",
-  "note.opening.opened": "Opened on `{{account}}`: {{why}}.",
+  "note.landing.merges": "Its quest was done, and {{access}} lands work by its rule, but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept…",  "note.opening.opened": "Opened on `{{account}}`: {{why}}.",
   "note.opening.carried-on": "Carried on from session `{{session}}` on `{{account}}`: {{why}}.",
   "note.opening.rest": "Of the rest, {{why}}.",
   "note.opening.turn-refused": "Its turn {{turn}} was refused.",

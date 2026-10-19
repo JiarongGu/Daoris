@@ -155,6 +155,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.opinion': { values: [] },
   'landing.no-tree': { values: [] },
   'landing.not-done': { values: [] },
+  // The access setup lands work by its rule, and the rule merges, so Accept stays (ACCESSWORDS1); `access` is the level that set it.
+  'landing.merges': { values: ['access'] },
   // The service's own lines.
   'ledger.answered': { values: [] },
   'ledger.parked': { values: [] },
@@ -431,11 +433,13 @@ export const NOTE_VALUES: Readonly<
   Record<
     string,
     | 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
-    | 'bgstate' | 'setAt'
+    | 'bgstate' | 'setAt' | 'accessAt'
   >
 > = {
   // A commit rule's mode, its own word set as code by the sentence, and where it was set (PROCESS1d-ii).
   mode: 'text', source: 'setAt',
+  // The level whose access setup landed work by its rule (ACCESSWORDS1).
+  access: 'accessAt',
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id', opinion: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
@@ -481,6 +485,13 @@ const SET_AT: Readonly<Record<string, string>> = {
   repository: 'work.handed.source.repository',
   workspace: 'work.handed.source.workspace',
   default: 'work.handed.none.not-set',
+};
+
+/** The level that set the access setup a landing was made under (ACCESSWORDS1), worded whose; one this page does not know shows as recorded. */
+const ACCESS_AT: Readonly<Record<string, string>> = {
+  repository: 'settings.access.setupOf.repository',
+  workspace: 'settings.access.setupOf.workspace',
+  machine: 'settings.access.setupOf.machine',
 };
 
 /**
@@ -549,6 +560,10 @@ function said(
     case 'setAt': {
       const source = text(value);
       return source && Object.hasOwn(SET_AT, source) ? t(SET_AT[source]) : null;
+    }
+    case 'accessAt': {
+      const level = text(value);
+      return level && Object.hasOwn(ACCESS_AT, level) ? t(ACCESS_AT[level]) : null;
     }
     case 'why': {
       const why = text(value);

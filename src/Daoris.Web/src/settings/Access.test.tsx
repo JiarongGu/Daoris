@@ -127,6 +127,11 @@ describe("a level's access rows", () => {
       "Whether a quest's finished work waits for your Accept… or lands by the repository's landing rule, pushed as the rule says.");
   });
 
+  it('says a landing rule still leaves a merge waiting for Accept… (ACCESSWORDS1)', () => {
+    draw(resolveAccess([{ setting: { full: false, pauses: [{ pause: 'landing', value: 'rule' }] }, source: 'workspace' }]), { owner: 'machine' });
+    expect(screen.getByText(/Finished work lands by the landing rule, with no press\. A merge rule still waits for your Accept…/)).toBeInTheDocument();
+  });
+
   it('says questions work as in Claude Code in every setup, with nothing to change', () => {
     draw(MIXED);
 

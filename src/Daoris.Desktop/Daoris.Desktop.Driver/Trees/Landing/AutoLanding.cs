@@ -496,18 +496,12 @@ public static class AutoLandingNotes
     /// <param name="access">Where the access setup that lands work by its rule was set, which a merge's note names (<see cref="Landing.Access"/>).</param>
     public static SessionEvent Concluded(string concluded, string? access = null)
     {
-        // AUTONOMY1c2: uncoded until the page's note catalogues word it (AUTONOMY1d), as the setup's start note is.
-        if (concluded == AutoConcluded.Merges)
-        {
-            return new SessionEvent
-            {
-                Kind = SessionEventKind.Note,
-                Text = $"its quest was done, and {(access is null ? "its" : AccessRules.Whose(access) + "'s")} access setup lands work by its rule, "
-                    + "but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept.",
-            };
-        }
-
-        var said = concluded == AutoConcluded.NoTree
+        var said = concluded == AutoConcluded.Merges
+            ? Noted.Of(NoteCodes.LandingMerges,
+                $"its quest was done, and {(access is null ? "its" : AccessRules.Whose(access) + "'s")} access setup lands work by its rule, "
+                + "but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept.",
+                ("access", access ?? AccessRules.DefaultSource))
+            : concluded == AutoConcluded.NoTree
             ? Noted.Of(NoteCodes.LandingNoTree,
                 "its quest was done, and it worked in the repository's own checkout, so its work is already there: nothing lands automatically.")
             : Noted.Of(NoteCodes.LandingNotDone, "it did not end on a done, so nothing lands automatically: its work waits for your review.");
