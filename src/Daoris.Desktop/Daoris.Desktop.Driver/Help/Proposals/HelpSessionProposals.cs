@@ -140,8 +140,10 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     /// </summary>
     private static HelpPlan EndedPlan(HelpMachineFacts facts)
     {
-        var ended = facts.Placed.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
-        var (you, review) = (facts.Placed.Count(row => row.Group == SessionGroup.You), facts.Placed.Count(row => row.Group == SessionGroup.Review));
+        // ASKSCOPE1c3: under a circle, only the workspace's own rows; a row no session record files is left out.
+        var mine = facts.Placed.Where(row => HelpProposalScope.InCircle(facts, row.Session)).ToList();
+        var ended = mine.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
+        var (you, review) = (mine.Count(row => row.Group == SessionGroup.You), mine.Count(row => row.Group == SessionGroup.Review));
         var stays = (you, review) switch
         {
             (0, 0) => "",

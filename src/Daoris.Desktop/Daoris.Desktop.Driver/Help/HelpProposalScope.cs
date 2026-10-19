@@ -35,6 +35,26 @@ internal sealed record HelpNames(IReadOnlyList<string?> Workspaces, IReadOnlyLis
     public static IReadOnlyList<(string Said, string? Workspace)> OfSession(HelpMachineFacts facts, string id) =>
         facts.Sessions.FirstOrDefault(each => Is(each.Id, id)) is { } session ? [Session(session.Id, session.Workspace)] : [];
 
+    /// <summary>
+    /// ASKSCOPE1c3: the held or parked quest a retry names, filed under its repository's workspace (a quest record carries a
+    /// repository, not a workspace). A repository registered in several workspaces files it under the conversation's where any
+    /// registration is, as a repository is judged (<c>Elsewhere</c>); a quest on neither list, or whose repository is registered
+    /// nowhere, names nothing, and <c>retry</c> refuses it.
+    /// </summary>
+    public static IReadOnlyList<(string Said, string? Workspace)> OfParked(HelpMachineFacts facts, string id)
+    {
+        var (quest, repository) = facts.Held.FirstOrDefault(each => Is(each.Quest, id)) is { } held ? (held.Quest, held.Repository)
+            : facts.Parked.FirstOrDefault(each => Is(each.Quest, id)) is { } parked ? (parked.Quest, parked.Repository)
+            : (null, null);
+        if (quest is null || repository is null) return [];
+        var workspaces = facts.Registered.Where(known => string.Equals(known.Repository.Trim(), repository.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Select(known => known.Workspace).ToList();
+        if (workspaces.Count == 0) return [];
+        var workspace = workspaces.FirstOrDefault(each => string.Equals(RemoteTarget.Workspace(each), RemoteTarget.Workspace(facts.Circle), StringComparison.OrdinalIgnoreCase))
+            ?? workspaces[0];
+        return [Quest(quest, workspace)];
+    }
+
     // An id matched as each kind's judge matches it: without case, its `#` already stripped.
     private static bool Is(string one, string other) => string.Equals(one, other.Trim(), StringComparison.OrdinalIgnoreCase);
 }
@@ -88,6 +108,14 @@ internal static class HelpProposalScope
             : !Same(word, circle) && facts.Workspaces.Any(workspace => Same(workspace, word));
         return Words(named.Either).FirstOrDefault(Beyond) is { } beyond ? Outside(circle, $"`{beyond}`, of another workspace") : null;
     }
+
+    /// <summary>
+    /// ASKSCOPE1c3: whether the placed session <paramref name="session"/> is the conversation's workspace's, by the record that files
+    /// it; true for all where the conversation has no circle. A row no record files is not (its workspace is unknown).
+    /// </summary>
+    public static bool InCircle(HelpMachineFacts facts, string session) =>
+        facts.Circle is not { Length: > 0 } circle
+        || (facts.Sessions.FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)) is { } record && Same(record.Workspace, circle));
 
     private static string Outside(string circle, string named) =>
         $"this conversation is workspace `{circle}`'s, and this proposal names {named}: it proposes for `{circle}` alone. Another "

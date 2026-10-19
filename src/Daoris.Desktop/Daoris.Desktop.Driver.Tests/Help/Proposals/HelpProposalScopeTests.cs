@@ -70,8 +70,20 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         [
             new SessionRecord("sa1alpha", "engine", "completed") { Workspace = "alpha", Deletable = true },
             new SessionRecord("sb1beta0", "game", "completed") { Workspace = "beta", Deletable = true },
+            new SessionRecord("sa2alpha", "engine", "running") { Workspace = "alpha" },
+            new SessionRecord("sb2beta0", "game", "running") { Workspace = "beta" },
         ],
-        Placed = [new SessionGrouping("sa1alpha", SessionGroup.Ended, "completed"), new SessionGrouping("sb1beta0", SessionGroup.Ended, "completed")],
+        Placed =
+        [
+            new SessionGrouping("sa1alpha", SessionGroup.Ended, "completed"),
+            new SessionGrouping("sb1beta0", SessionGroup.Ended, "completed"),
+            new SessionGrouping("sa2alpha", SessionGroup.You, "waiting"),
+            new SessionGrouping("sb2beta0", SessionGroup.Review, "review"),
+            new SessionGrouping("sx9nowhere", SessionGroup.Ended, "completed"),
+        ],
+        // ASKSCOPE1c3: a retry's quest, parked for alpha's repository and held for beta's.
+        Parked = [new ParkedQuest("qa1alpha", "engine")],
+        Held = [new HeldQuest("qb1beta0", "game", "sb1beta0")],
     };
 
     private static HelpMachineFacts Bound(string? circle) => Two with { Circle = circle };
@@ -184,6 +196,46 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         Outside(Of("go", "go", "quests") with { Item = "qb1beta0" }, BetaQuest);
         Outside(Of("go", "go", "quests") with { Item = "ask:ab1beta0" }, BetaAsk);
         Outside(Of("go", "go", "sessions") with { Item = "#sb1beta0" }, BetaSession);
+    }
+
+    /// <summary>
+    /// 🔴 ASKSCOPE1c3: <c>ended</c> archives the conversation's workspace's ended sessions alone, and the list's kept counts are its
+    /// own; a placed row no record files is excluded under a circle, and nothing is filtered under none.
+    /// </summary>
+    [Fact]
+    public void Archive_what_ended_takes_only_the_conversation_s_workspace_s_sessions()
+    {
+        var own = HelpProposals.Plan(Of("session", "archive", value: "ended"), DriverConfig.Empty, Bound("alpha"));
+        Assert.Equal(["sa1alpha"], own.Sessions);
+        Assert.Contains("Archives 1 session that ended.", own.Describe);
+        Assert.Contains("Kept in the list: 1 waiting on you.", own.Describe);
+        Assert.DoesNotContain("to review", own.Describe);
+
+        var whole = HelpProposals.Plan(Of("session", "archive", value: "ended"), DriverConfig.Empty, Bound(null));
+        Assert.Equal(["sa1alpha", "sb1beta0", "sx9nowhere"], whole.Sessions);
+        Assert.Contains("Kept in the list: 1 waiting on you, 1 to review.", whole.Describe);
+    }
+
+    /// <summary>
+    /// 🔴 ASKSCOPE1c3: a retry names a quest by its repository's workspace, so another workspace's parked or held quest is refused,
+    /// and its own is judged as before. A quest in neither list names nothing, and its kind refuses it.
+    /// </summary>
+    [Fact]
+    public void A_retry_of_another_workspace_s_quest_is_refused_and_its_own_is_judged()
+    {
+        Outside(Setting("retry", target: "qb1beta0"), "quest `#qb1beta0`, of workspace `beta`");
+        Outside(Setting("retry", target: "#QB1BETA0"), "quest `#qb1beta0`, of workspace `beta`");
+        Inside(Setting("retry", target: "qa1alpha"));
+        Assert.Null(Refusal(Setting("retry", target: "qa1alpha")));
+        Assert.Contains("neither parked nor held", Refusal(Setting("retry", target: "zz000000")));
+        Assert.Null(Refusal(Setting("retry", target: "qb1beta0"), circle: null));
+
+        // A repository registered in several workspaces is the circle's where any registration is.
+        var shared = Bound("alpha") with
+        {
+            Registered = [.. Two.Registered, ("game", "alpha", "/alpha/game")],
+        };
+        Assert.DoesNotContain("this conversation is workspace", HelpProposals.Plan(Setting("retry", target: "qb1beta0"), DriverConfig.Empty, shared).Refusal ?? "");
     }
 
     /// <summary>
