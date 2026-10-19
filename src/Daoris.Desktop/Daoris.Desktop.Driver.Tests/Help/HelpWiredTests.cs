@@ -242,6 +242,35 @@ public sealed class HelpWiredTests : IDisposable
     }
 
     /// <summary>
+    /// HELPMODE1c2a (D183's note): the receipt says the housekeeping its start was handed, the operations chosen in the record at
+    /// that moment, whatever the agent: on Claude its tools are on the allow-list beside the room's own, and on Codex, which takes
+    /// no rules, the receipt still says them, since the driver judges each call by it. Nothing chosen is none handed.
+    /// </summary>
+    [Fact]
+    public async Task The_receipt_says_the_housekeeping_its_start_was_handed_on_every_agent()
+    {
+        await using var service = StandInService.Start(_home);
+        await StartAsync(service, "help0005", "claude-code", HelpModes.Restricted);
+        Assert.Empty(Assert.Single(new HelpWired(_home).Read("help0005")).Housekeeping);
+
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "clean-up"] }""");
+        var spawned = await StartAsync(service, "help0006", "claude-code", HelpModes.Restricted);
+        await StartAsync(service, "help0007", "codex-acp", HelpModes.Restricted);
+
+        var claude = Assert.Single(new HelpWired(_home).Read("help0006"));
+        Assert.Equal([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp], claude.Housekeeping);
+        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_inspect", claude.Tools);
+        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", claude.Tools);
+        Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__housekeeping_discard_branch", claude.Tools);
+        using var settings = JsonDocument.Parse(spawned.Settings!);
+        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", Strings(settings.RootElement.GetProperty("permissions"), "allow"));
+        var codex = Assert.Single(new HelpWired(_home).Read("help0007"));
+        Assert.Null(codex.Rules);
+        Assert.Equal([ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp], codex.Housekeeping);
+        Assert.Contains("\"housekeeping\"", File.ReadAllText(new HelpWired(_home).PathOf("help0007")));
+    }
+
+    /// <summary>
     /// A conversation going on records a second receipt (design §6), its start said as going on, and the first is kept as it was;
     /// the route's reading answers the newest first.
     /// </summary>

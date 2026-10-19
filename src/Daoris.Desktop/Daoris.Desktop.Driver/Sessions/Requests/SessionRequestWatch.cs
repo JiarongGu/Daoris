@@ -98,6 +98,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? TakeBack { get; init; }
 
     /// <summary>
+    /// A loop's half of Ask Daoris's housekeeping tools (HELPMODE1c2a, D183's note): what it does with a housekeeping request for a
+    /// conversation its registry runs, answered beside the request. A loop on a registry has <see cref="HelpHousekeeping"/>'s by
+    /// default, which judges each call and calls the cleanup's own judges; null takes none.
+    /// </summary>
+    public Func<SessionRequest, CancellationToken, Task<HousekeepingAnswer>>? Housekeep { get; init; }
+
+    /// <summary>
     /// What a loop does with a press a terminal told (STATEHUB1e, D169 point 8): the shell's publishes it to its windows as the
     /// window's press of that route is published. Null takes none: a headless loop has no window, so it leaves each for a loop that
     /// hears them, and drops only what nobody took in time (<see cref="PressesTold"/>).
@@ -123,6 +130,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         var words = new LoopWords(processes, service);
         Say = words.HoldAsync;
         TakeBack = words.TakeBackAsync;
+        Housekeep = new HelpHousekeeping(home, service).AnswerAsync;
         // FABRIC-EVENT2c: made before the watch starts, so its watcher opens at once and the first request after an install is
         // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
         Directory.CreateDirectory(_requests.Folder);
@@ -279,6 +287,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     {
         SessionMove.Say => Say is not null && SaysHere(pending.Session),
         SessionMove.TakeBack => TakeBack is not null && SaysHere(pending.Session),
+        // HELPMODE1c2a: only the loop running the conversation, whose tool is waiting on it now.
+        SessionMove.Housekeep => Housekeep is not null && _runsHere(pending.Session),
         _ => _runsHere(pending.Session) && (!Resolves(pending) || _service() is not null),
     };
 
@@ -296,6 +306,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     {
         if (pending.Move == SessionMove.Say) return await SayAsync(pending, Say, ct).ConfigureAwait(false);
         if (pending.Move == SessionMove.TakeBack) return await SayAsync(pending, TakeBack, ct).ConfigureAwait(false);
+        if (pending.Move == SessionMove.Housekeep) return await HousekeepAsync(pending, ct).ConfigureAwait(false);
         if (!_runsHere(pending.Session)) return null;
 
         var resolves = Resolves(pending);
@@ -382,6 +393,44 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // Unwritten: the door that asked waits out its time and says it could not tell where the words went.
+        }
+
+        return request;
+    }
+
+    /// <summary>
+    /// A housekeeping request (HELPMODE1c2a), taken where this loop runs its conversation and handed to <see cref="Housekeep"/>; what
+    /// became of it is written beside it, a failure included, so the tool is never left to wait out its time. Held in the session's
+    /// claim, so one conversation's requests are judged one after another, never two clean-ups of one repository at once from it.
+    /// Null where it is not this loop's, or another loop took it first.
+    /// </summary>
+    private async Task<SessionRequest?> HousekeepAsync(SessionRequest pending, CancellationToken ct)
+    {
+        if (Housekeep is not { } housekeep || !_runsHere(pending.Session)) return null;
+        if (_requests.Take(pending) is not { } request) return null;
+
+        var operation = request.Operation ?? "";
+        HousekeepingAnswer answer;
+        try
+        {
+            answer = await housekeep(request, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (
+            error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException
+            || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            // Never "nothing was done": a clean-up that failed on its third branch removed the first two.
+            answer = new HousekeepingAnswer(operation, false, HousekeepingAnswer.Failed,
+                $"Daoris could not finish it ({error.Message.TrimEnd('.')}). Look with `housekeeping_inspect` to see what stands now.");
+        }
+
+        try
+        {
+            _requests.Answer(request, answer);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Unwritten: the tool waits out its time and says the act may still be under way.
         }
 
         return request;

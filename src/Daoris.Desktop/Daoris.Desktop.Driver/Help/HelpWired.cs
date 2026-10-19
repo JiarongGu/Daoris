@@ -70,6 +70,12 @@ public sealed record HelpReceipt
 
     /// <summary>In restricted mode, what it lacks, each with the door that grants it (D183 point 4); none in full access.</summary>
     public IReadOnlyList<HelpWiredLack> Lacks { get; init; } = [];
+
+    /// <summary>
+    /// The housekeeping operations its start was handed (HELPMODE1c2a, <see cref="ConfiguredAccess"/>), whatever its agent: each tool's
+    /// call is judged by these and by the record at the call, so a grant chosen since takes the next start. None for a start before.
+    /// </summary>
+    public IReadOnlyList<string> Housekeeping { get; init; } = [];
 }
 
 /// <summary>A plugin's skill composed for the start (HELPPLUG1b): <c>plugin:skill</c>, its <see cref="HelpWired"/> state and why.</summary>
@@ -131,6 +137,9 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Sessio
 
     /// <summary>The note that said a browser server was withheld (D78), or null.</summary>
     public Noted? Withheld { get; init; }
+
+    /// <summary>The housekeeping operations the place was composed with (HELPMODE1c2a).</summary>
+    public IReadOnlyList<string> Housekeeping { get; init; } = [];
 }
 
 /// <summary>
@@ -336,6 +345,7 @@ public sealed class HelpWired(string home)
             Guarded = rules is not null && handed.Guarded,
             Checkouts = rules is null ? [] : handed.Reads,
             Lacks = full ? [] : Lacking(servers, catalog),
+            Housekeeping = handed.Housekeeping,
         };
     }
 
@@ -518,6 +528,7 @@ public sealed class HelpWired(string home)
         }
 
         writer.WriteEndArray();
+        Strings(writer, "housekeeping", receipt.Housekeeping);
         writer.WriteEndObject();
     }
 
@@ -573,6 +584,8 @@ public sealed class HelpWired(string home)
                 .Select(lack => new HelpWiredLack(
                     Json.NonEmpty(lack, "kind")!, Json.Text(lack, "name") ?? "", Json.NonEmpty(lack, "door")!, Json.Text(lack, "why") ?? "",
                     Json.NonEmpty(lack, "plugin")))],
+            // A start before HELPMODE1c2a was handed none.
+            Housekeeping = Json.Strings(element, "housekeeping"),
         };
     }
 }
