@@ -49,6 +49,23 @@ public sealed class Acp3AdapterTests : IDisposable
     }
 
     /// <summary>
+    /// HELPMODE1a1 (D183 point 1): each harness names its own mode that asks nothing, for Ask Daoris's full access, in its own
+    /// vocabulary: Claude Code's <c>bypassPermissions</c> on either door, Codex's <c>agent-full-access</c> (dangerFullAccess with
+    /// approvals never, read from codex-acp 2.1.1's bundle). One with none mapped names none, and a full start on it is refused.
+    /// </summary>
+    [Theory]
+    [InlineData("claude-code", "bypassPermissions")]
+    [InlineData("claude-code-acp", "bypassPermissions")]
+    [InlineData("codex-acp", "agent-full-access")]
+    [InlineData("dsh", null)]
+    [InlineData("acp-stub", null)]
+    [InlineData("stub", null)]
+    public void Each_harness_names_its_mode_that_asks_nothing_in_its_own_vocabulary(string name, string? full)
+    {
+        Assert.Equal(full, Adapter(name).FullPosture);
+    }
+
+    /// <summary>
     /// dsh carries no posture on the wire because its `session/new` offers no modes — so the adapter
     /// says so rather than naming a mode that would never be found. It is set in the environment
     /// instead, and the next test holds that.

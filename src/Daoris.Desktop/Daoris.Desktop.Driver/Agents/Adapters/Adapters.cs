@@ -1018,6 +1018,13 @@ public sealed record ChatTarget(string Repository, string Root, string ServiceUr
     public string? Resume { get; init; }
 
     /// <summary>
+    /// The permission mode a native door runs this conversation in, where it names one (HELPMODE1a1): Ask Daoris in full access,
+    /// the adapter's <see cref="ISessionAdapter.FullPosture"/>. Null keeps the adapter's own, as every conversation had. A protocol
+    /// door sets its mode on the wire instead.
+    /// </summary>
+    public string? PermissionMode { get; init; }
+
+    /// <summary>
     /// The conversation's own record (CHATTAKE1b, D126's CHATTAKE1 note), named on its spawn as a driven session's is (SESS1):
     /// a connector its harness starts itself inherits it, so a take or a publication through it says which conversation made
     /// it. Null names none.
@@ -1082,6 +1089,20 @@ public interface ISessionAdapter
     /// rather than widening it. It is never a licence to guess a neighbouring mode.</para>
     /// </remarks>
     string? AcpPosture => null;
+
+    /// <summary>
+    /// The harness's own mode that asks nothing, in <b>its own vocabulary</b>, for Ask Daoris's full access (HELPMODE1a1, D183
+    /// point 1): a <c>--permission-mode</c> on the native door (<see cref="ChatTarget.PermissionMode"/>), a mode on the protocol
+    /// door, which the session must set or fail (<see cref="HelpModes.Required"/>).
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Never a driven session's or a repository's conversation's</b>: D81's postures stand for them. Only the person's
+    /// choice of full access for Ask Daoris reaches this.</para>
+    ///
+    /// <para><b>Null means none is mapped</b>, and a full start on this harness is refused naming it, never run in a narrower mode
+    /// under the full label: dsh, whose wire carries no modes, and every plugin-declared harness, until one is measured.</para>
+    /// </remarks>
+    string? FullPosture => null;
 
     /// <summary>
     /// The process that would be the session: spawned in the root, target delivered, output
@@ -1510,10 +1531,16 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// <c>auto</c> where the adapter offers it — Claude Code's own mode, in which the harness judges
     /// each action — and <c>acceptEdits</c>, the posture observed in the evaluation's §1a, from one that
     /// does not (D81: a session does as much as the harness would on its own). Never <c>bypassPermissions</c>, which judges nothing, however available the wire
-    /// makes it. The pipe door still passes <c>--permission-mode acceptEdits</c>: <c>auto</c> is measured
+    /// makes it, but for Ask Daoris's full access, the person's own choice (<see cref="FullPosture"/>, D183). The pipe door still passes <c>--permission-mode acceptEdits</c>: <c>auto</c> is measured
     /// on this wire and not yet on that one.
     /// </summary>
     public string? AcpPosture => "auto|acceptEdits";
+
+    /// <summary>
+    /// <c>bypassPermissions</c>, Claude Code's mode that asks nothing, offered on <c>session/new</c> (the evaluation's §1a), and
+    /// only for Ask Daoris's full access (HELPMODE1a1, D183). Where the adapter does not offer it, the start fails saying so.
+    /// </summary>
+    public string? FullPosture => "bypassPermissions";
 
     /// <summary>
     /// The adapter takes turns on its own wire, which is all this seam asks of an interactive
@@ -1723,8 +1750,15 @@ public sealed class CodexAcpAdapter : ISessionAdapter
 
     public bool Interactive => true;
 
-    /// <summary>D37 in Codex's vocabulary. Never <c>agent-full-access</c>, which is approvals off.</summary>
+    /// <summary>D37 in Codex's vocabulary. Never <c>agent-full-access</c>, which is approvals off, but for Ask Daoris's full access.</summary>
     public string? AcpPosture => "agent";
+
+    /// <summary>
+    /// <c>agent-full-access</c>, Codex's full access: the <c>dangerFullAccess</c> sandbox with approvals <c>never</c>, offered on
+    /// every session (codex-acp 2.1.1's bundle, <c>AgentMode.AgentFullAccess</c>), and only for Ask Daoris's full access
+    /// (HELPMODE1a1, D183). Codex takes no rules file, so the person's denies do not reach it in either mode.
+    /// </summary>
+    public string? FullPosture => "agent-full-access";
 
     public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
     {
@@ -1891,6 +1925,11 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     ///
     /// <para>No model is named here either (D24): which model answers is the harness's own
     /// configuration in that repository.</para>
+    ///
+    /// <para>🔴 <b>Ask Daoris ran here in <c>acceptEdits</c> with its allow-list</b>, not the asking mode HELP1a meant, which reached
+    /// the protocol door alone (HELPMODE1a1's finding). Over <c>-p</c> an unlisted tool is never allowed, so it read and proposed
+    /// all the same. In full access it names <see cref="FullPosture"/> (<see cref="ChatTarget.PermissionMode"/>), in place of
+    /// <c>acceptEdits</c>.</para>
     /// </remarks>
     public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
     {
@@ -1901,10 +1940,17 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         return Spawning.ChatInRoot(
             target, resolved[0],
             resolved.Skip(1)
-                .Concat(["-p", "--input-format", "stream-json", "--permission-mode", "acceptEdits"])
+                .Concat(["-p", "--input-format", "stream-json", "--permission-mode", target.PermissionMode ?? "acceptEdits"])
                 .Concat(target.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : [])
                 .Concat(StreamJsonOut));
     }
+
+    /// <summary>
+    /// <c>--permission-mode bypassPermissions</c>, Claude Code's mode that asks nothing, measured on 2.1.281 (the stream-json
+    /// evidence, CONV4a's probe), and only for Ask Daoris's full access (HELPMODE1a1, D183). That its deny rules and its hooks still
+    /// hold under it is the maker's word, not yet measured here (D183's HELPMODE1a1 note).
+    /// </summary>
+    public string? FullPosture => "bypassPermissions";
 
     /// <summary>
     /// `--mcp-config &lt;file&gt;` — verified on the binary (`claude --help`, 2026-09-23: *"Load MCP
