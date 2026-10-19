@@ -17747,3 +17747,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FABRIC-CLOSE1n — the bind door's `atTake` at the host** (service). A `LocalHostTests` case: an open quest's bind with `atTake` answers 200 and the take answers `closure`; a taken quest's answers 409; a shared host does not map it.
 
 **Outcome** 2026-10-20: found done on main by a scout's reading: the take's bind answers 409 without a session and 200 with one (LocalHostTests), and the shared host maps no bind (SharedHostTests). Closed with no change; a respond-take answering `closure` for a bound take is not asked by any row.
+
+## QUESTSTOREVER1 — the quest store refuses a store a newer build marked (2026-10-20, D173)
+
+> - [ ] **QUESTSTOREVER1 — the quest store refuses a store a newer build marked** (service). The quest store keeps no version, so the next change to the take-bind contract would again hide its rows in a new table: stamp a version and refuse take-bind writes into a store stamped ahead, saying "written by a newer Daoris". Proof: a store stamped ahead refuses with those words; an unstamped store is unchanged.
+
+**Outcome** 2026-10-20: built as CLOSETAKE1 (D187): the quest store carries a version stamp in its own table (`quest_store_version`, `QuestStore.StoreVersion` 1, never lowered; not the file's `user_version`, which the knowledge index sharing the file owns); a store stamped by a newer build still opens but refuses a take's bind, saying it was written by a newer Daoris, and the quest closes by its done; an unstamped store binds as before and is stamped. On Sonnet, with CLOSE1o-ii: about 81 tool calls, 12 minutes. Detail: D173's CLOSETAKE1 note.
+
+## FABRIC-CLOSE1o-ii — the loop's line names why a take went unbound (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1o-ii — the loop's line names why a take went unbound** (service, driver; after CLOSE1o; §E5). The end line only says the take did not bind, because the driver never sees the take's outcome: carry `QuestMove.TakeBind` to the driver (beside `took_quest` on the session record) so the line says expired, replaced or remote. Proof: the end line names "expired" for a lapsed bind, and nothing for a bound take.
+
+**Outcome** 2026-10-20: built as CLOSETAKE1: a take's bind outcome (`expired`, `replaced` or `remote`) is carried on the take's answer, kept on the session's record (`took_bind`, machine-local, moving no revision) and answered as `tookBind` on `/api/sessions` to loopback only; the loop's end line for a take that did not bind names why. Detail: D173's CLOSETAKE1 note.

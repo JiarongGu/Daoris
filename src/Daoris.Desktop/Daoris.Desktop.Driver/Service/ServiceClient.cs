@@ -370,6 +370,22 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// Why the closure graph named for this session's take did not bind it (CLOSETAKE1, FABRIC-CLOSE1o-ii): <c>expired</c>,
+    /// <c>replaced</c> or <c>remote</c>, read off its record at its end; null for a bound take, a take no graph was named for, and a
+    /// host from before the field.
+    /// </summary>
+    public async Task<string?> TookBindAsync(string id, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (Text(session, "id") == id) return Text(session, "tookBind") is { Length: > 0 } why ? why : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Answer a driven session that parked to ask the person (STANDDOWN2) — the terminal's form of the
     /// page's box. The service's sentence comes back verbatim, and a refusal is an answer too.
     /// </summary>
