@@ -293,6 +293,12 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         state.Sent = null;
     }
 
+    /// <summary>
+    /// Told the plugin's id once an event of its current process is queued (FABRIC-RUN1d): the lease's loop wakes the evaluation runtime, which
+    /// takes it, rather than leave it for the next look. Called outside the lock; null tells nobody.
+    /// </summary>
+    public Action<string>? Arrived { get; set; }
+
     /// <summary>An event read from generation <paramref name="generation"/>'s process, or null for a frame dropped unread: taken under the bounds.</summary>
     private void Arrive(string id, int generation, JsonElement? @params)
     {
@@ -326,6 +332,8 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
 
             state.Waiting.Enqueue((generation, frame));
         }
+
+        Arrived?.Invoke(id);
     }
 
     private void Dropped(string id, State state, string code, DateTimeOffset now)

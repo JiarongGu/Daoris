@@ -323,8 +323,9 @@ public sealed class WireEvaluationDecodedTests
             ("no read", null),
             ("not shown", Review(ReviewStates.NotShown, "preview")),
             ("shown", Review(ReviewStates.Shown, "preview")),
-            ("the person's skip", Review(ReviewStates.Skipped, "preview")),
-            ("reviewed", Review(ReviewStates.Reviewed, "preview")),
+            // FABRIC-NODE1b: the person's own word moves the look (GateNodesTests): their reviewed reaches it, and their skip passes it over in
+            // their words; a skip kept with no words still waits.
+            ("the person's skip with no words", Review(ReviewStates.Skipped, "preview")),
             ("unread", Review(ReviewStates.Unread)),
             ("cannot start", Review(ReviewStates.CannotStart)),
         })

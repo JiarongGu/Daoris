@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — Four failing questions starved a fifth attempt, and a rule asking no opinion held its node for ever (FABRICRUN1)
+
+- **Symptom:** after a restart with five attempts due, the questions about the first four in file order failing with an I/O error, every
+  pass spent its four sends on those four and the fifth was never asked (`NodeRuntimeTests`' RUN1g case, red first). And once the live
+  second-opinion gate was handed to the runtime, an `opinion` node whose rule asks none stayed active, holding everything wired after it
+  (`GateNodesTests`' none case and `NodeRuntimeReadsTests`' gate case, red first).
+- **Root cause:** `WorkPerformer.ReconcileAsync` walked the records in file order from the first at every pass, and an unanswered
+  question leaves its attempt due at once. `OpinionNode` (WIRE1g) bound every judgement to the commit it was read at, but a landing door's
+  read of a rule asking no opinion returns before reading any commit (`TreeGates.OpinionAsync`), so that read never matched a binding.
+- **Fix:** D173's FABRICRUN1 note. Reconciliation takes the attempts due by unit and invocation from after the last one the pass before
+  reached (`_reconciled`), round again from the first. A `none` read with no commit passes the opinion over, whatever it is bound to; one
+  read at a commit stays that commit's.
+- **Verification:** the two cases above, and the neighbouring node suites (`WireEvaluationDecodedTests`' "none at an older commit" row
+  still pending), filtered, green.
+
 ## 2026-10-20 — Two writers of `driver.json` at once lost one's change, and a name written twice in any case read two ways (CONFIG1)
 
 - **Symptom:** the limits D173's second re-check named, each shown red by a test before the change. Another writer's edit landing

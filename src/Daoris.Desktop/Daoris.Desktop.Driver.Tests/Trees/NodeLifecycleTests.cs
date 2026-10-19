@@ -360,6 +360,62 @@ public sealed class NodeLifecycleTests
         Assert.Equal(NodeRefusal.NotCause, NodeLifecycle.Apply(node, At(NodeStates.Ready), skip).Refused);
     }
 
+    /// <summary>
+    /// Canary 43, extended by FABRIC-NODE1b: every state D157's three gates keep (the opinion's, the look's, the go-ahead's), read from its
+    /// records alone, is a move the one table takes on the started node, by the kind's own authority or in the person's words, and the state
+    /// that says nothing yet is no move: no gate keeps a state model of its own beside the nodes'.
+    /// </summary>
+    [Fact]
+    public void Every_state_a_gates_record_says_is_a_move_the_one_table_takes()
+    {
+        var unit = new WorkUnit(Unit, WorkUnitKind.Branch, new WorkOwner("engine", "default", SessionBranches.FileName, WorkRecord.DriverWriter),
+            new WorkSubject("daoris/s1", "tip-1"), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
+        var active = At(NodeStates.Active) with { Scope = Run };
+        var at = new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
+        var seen = new List<(string Kind, string State, NodeObservation Observation)>();
+
+        foreach (var state in typeof(OpinionGateStates).GetFields().Where(field => field.IsLiteral).Select(field => (string)field.GetRawConstantValue()!))
+        {
+            seen.Add((NodeKinds.Opinion, state, OpinionNode.Observe(unit, Declared(NodeKinds.Opinion), Bind(1), new OpinionGateState(state, "engine") { Tip = "tip-1" })));
+        }
+
+        foreach (var state in typeof(ReviewStates).GetFields().Where(field => field.IsLiteral).Select(field => (string)field.GetRawConstantValue()!))
+        {
+            var decision = new ReviewDecision(ReviewLevels.Repository, "preview")
+            {
+                Repository = "engine", Skip = new QuestReviewVerdictView(ReviewVerdicts.Skipped) { Words = "a copy edit" },
+            };
+            var gate = new ReviewGateState(state, state == ReviewStates.None ? decision with { Environment = null } : decision)
+            {
+                Tip = "tip-1", Verdict = new QuestReviewVerdictView(state == ReviewStates.NotYet ? ReviewVerdicts.NotYet : ReviewVerdicts.Reviewed) { Words = "the chart is cut off" },
+            };
+            seen.Add((NodeKinds.Look, state, LookNode.Observe(unit, Declared(NodeKinds.Look), Bind(1), gate)));
+        }
+
+        var goAhead = Declared(NodeKinds.GoAhead) with { Options = new Dictionary<string, string> { ["act"] = WorkflowCurrent.Quoted("ship it") } };
+        foreach (var (state, answer) in new (string, GoAheadAnswerView?)[] { ("waiting", null), ("yes", new(true, null, at)), ("no", new(false, "not yet", at)) })
+        {
+            GoAheadView[] asked = [new(1, "write", "production", "ship it", []) { Answer = answer }];
+            seen.Add((NodeKinds.GoAhead, state, GoAheadNode.Observe(unit, goAhead, Bind(1), asked)));
+        }
+
+        var moved = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (kind, state, observation) in seen)
+        {
+            Assert.Null(observation.Refused);
+            if (observation.Move is not { } move) continue;
+            var node = kind == NodeKinds.GoAhead ? goAhead : Declared(kind);
+            var applied = NodeLifecycle.Apply(node, active, move.To == NodeStates.Skipped ? move with { Scope = Run } : move);
+            Assert.Equal((kind, state, (string?)null, move.To), (kind, state, applied.Refused, applied.Status.State));
+            moved.Add($"{kind}>{move.To}:{applied.Status.By}");
+        }
+
+        Assert.Equal(
+            ["go-ahead>reached:person", "go-ahead>rejected:person", "look>reached:person", "look>rejected:person", "look>skipped:person", "look>skipped:review",
+                "opinion>reached:opinion", "opinion>skipped:opinion"],
+            moved.Order(StringComparer.Ordinal));
+    }
+
     // ---- retries
 
     /// <summary>Daoris retries only a declared transient failure with attempts left; each start is a new attempt, counted.</summary>

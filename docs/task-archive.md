@@ -17645,3 +17645,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c-ii — work, settings, bridge and projects cut into scopes** (web). Each holds more than twenty sources at its top: cut each into scope folders, one folder per branch, its entry dropped from the structure gate's `wide` list. Design §4–§6; proof: the structure gate with the folder off `wide`, and the web gate.
 
 **Outcome** 2026-10-20: the page's `projects` (27 sources), `settings` (51), `bridge` (34) and `work` (151) folders are cut into scope folders with `tools/move-files.mjs`, one commit per folder, each keeping at its top what its scopes and the other places share; the structure gate's `wide` list is empty. The readers outside the web that listed `bridge/` at its top only (`DriverModuleRoutesTests`, `HelpCoverageTests`, `tools/orient-index.mjs`) read it at any depth since the merge. Nothing a person sees changed. On Opus: about 255 tool calls, 63 minutes. Detail: D166's STRUCT5c-ii note; the web README's *Where things are*.
+
+## FABRIC-RUN1b — the look's git reads in the runtime (2026-10-20, D173)
+
+> - [ ] **FABRIC-RUN1b — the look's git reads in the runtime** (driver; after RUN1; §E2, WIRE1b). Hand the look's ref reads to `WireRun.Git` and the branch revisions, so `pushed` and an ahead `pull-request` can be reached. Proof: a branch cycle (`handed` → plugin step) reaching its performed node; `pushed` from a stand-in remote tip; the no-graph count test still reading no git.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): the runtime reads `pushed`'s remote-tracking ref and an ahead pull request's ancestry once a pass, only where such a node waits (`PassGit`). A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry. On Opus, the whole feature: about 353 tool calls, 76 minutes.
+
+## FABRIC-RUN1d — the runtime's own wakes (2026-10-20, D173)
+
+> - [ ] **FABRIC-RUN1d — the runtime's own wakes** (driver; after RUN1; §A3, §C6). A `nodes` wake and a plugin's `work/step` run link 8 alone, without the local plan. Proof: a `nodes` wake runs no plan; a heard completion kept within a second without a look.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): the runtime's own wakes and a plugin's queued step run link 8 alone (`ChainEvents.Nodes`, `HookSet.StepArrived`), never a look. A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry.
+
+## FABRIC-NODE1b — D157's gates as observed nodes (2026-10-20, D173)
+
+> - [ ] **FABRIC-NODE1b — D157's gates as observed nodes** (driver; after NODE1, before WORKFLOW2; §E4, §E2). `opinion`, `look` and `go-ahead` read from their gates' records (`OpinionGate`, `ReviewGate`, D135's answers) through `NodeLifecycle.Apply`, so WORKFLOW2's graphs have no second state model. Proof: each gate's states from records alone; canary 43 extended.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): the look is read from its gate's verdict and the go-ahead from D135's answers (`LookNode`, `GoAheadNode`); a rule asking no opinion passes its node. A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry.
+
+## FABRIC-RUN1g — reconciliation takes its due attempts in turn (2026-10-20, D173)
+
+> - [ ] **FABRIC-RUN1g — reconciliation takes its due attempts in turn** (driver; after RUN1e). `WorkPerformer.ReconcileAsync` walks the records in file order, so attempts whose questions keep failing can use up the four sends at every pass and starve the rest. Proof: five attempts due, four failing, the fifth asked within two passes.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): reconciliation asks due attempts in turn by unit and invocation, starting after the last one reached. A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry.

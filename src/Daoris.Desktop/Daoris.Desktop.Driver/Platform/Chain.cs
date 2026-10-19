@@ -23,6 +23,12 @@ public static class ChainEvents
     /// <summary>A plugin's believed <c>work/step</c> (§C4).</summary>
     public const string PluginStep = "plugin.step";
 
+    /// <summary>
+    /// The evaluation runtime's own wake (FABRIC-RUN1d, §A3): a timer its records persist came due, or the awaited set it told changed. Link 8
+    /// alone hears it, so it runs no local plan.
+    /// </summary>
+    public const string Nodes = "nodes";
+
     /// <summary>A harness's frame (§A4.4).</summary>
     public const string Harness = "harness";
 
@@ -109,7 +115,8 @@ public static class ChainRanks
 
     /// <summary>
     /// The evaluation runtime (FABRIC-RUN1, <see cref="NodeRuntime"/>): a reader of the units' node records, on every wake the local plan
-    /// hears and on the <c>look</c> topic's deadline, after the plan, so a session the plan ended is read by it in the same wake.
+    /// hears and on the <c>look</c> topic's deadline, after the plan, so a session the plan ended is read by it in the same wake; and alone on
+    /// a plugin's step and its own wakes (FABRIC-RUN1d).
     /// </summary>
     public const int Nodes = 8;
 }
@@ -173,8 +180,10 @@ public sealed class ChainTable
             ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help), ChainEvents.TimerOf(ChangeTopics.Gates),
         ], []),
         // FABRIC-RUN1: the evaluation runtime hears what the plan hears, its deadline the look's, and a plugin's step; it writes only the
-        // units' node records, which no link hears, and emits nothing.
-        new(ChainRanks.Nodes, "nodes", ChainKind.Reader, [ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.TimerOf(ChangeTopics.Look)], []),
+        // units' node records, which no link hears, and emits nothing. FABRIC-RUN1d: and its own wakes, which with a plugin's step it alone
+        // hears, so neither runs the local plan.
+        new(ChainRanks.Nodes, "nodes", ChainKind.Reader,
+            [ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.Nodes, ChainEvents.TimerOf(ChangeTopics.Look)], []),
     ]);
 
     /// <summary>

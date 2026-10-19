@@ -98,7 +98,8 @@ node through `NodeLifecycle.Apply` and proposing the starts within a dispatch li
 units' revisions, with performed and waited attempts limited apart (FABRIC-WIRE1e), and a failure or a rejection kept from another
 graph or run kept for the person, lapsed by a new revision alone (FABRIC-RUN1e, in place of WIRE1f's `run-scope`). A decoded `stop` is
 reached on the receipt of the path into it, and an `opinion` is read from the second opinion's gate as its caller judged it
-(`OpinionNode`, FABRIC-WIRE1g). Both are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
+(`OpinionNode`, FABRIC-WIRE1g), a `look` from its gate's verdict and a `go-ahead` from D135's answers (`LookNode`, `GoAheadNode`,
+FABRIC-NODE1b). All are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
 durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the attempt written with its start before
 `work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
 answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked
@@ -108,7 +109,12 @@ it is then (FABRIC-PERFORM1h). `NodeRuntime` runs them in the lease's loop, link
 reconciles, makes retries due, evaluates the concerned units to settled with their moves kept and starts made, and tells the plugins
 the awaited set; one pass at a time, with the loop's one performer (FABRIC-RUN1, D173's note). A wake under other choices reads
 the units afresh, a disarm withdraws the awaited set before the plan's supervision, the units past 32 are taken in turn, reconciliation
-shares the pass's four sends, and the set is told only while the lease is held (FABRIC-RUN1e).
+shares the pass's four sends, and the set is told only while the lease is held (FABRIC-RUN1e); the attempts due are asked in turn
+(FABRIC-RUN1g). A pass hands the observed built-ins git's reads (`PassGit`: `pushed`'s remote-tracking ref, an ahead pull request's
+ancestry, FABRIC-RUN1b) and D157's gates (`PassGates`), each read once a pass and only where a node waits on it; it begins every built-in
+of observed reach, `opinion`, `look`, `stop` and `all` included, and leaves a quest bound to a named version to that version (FABRIC-RUN1c).
+Its own wakes, the persisted timer and the awaited set's change, and a plugin's step as it is queued (`HookSet.StepArrived`) run link 8
+alone, never the local plan (`ChainEvents.Nodes`, FABRIC-RUN1d).
 A graph holding `quest.close` arms it too (`QuestCloser.cs`, FABRIC-CLOSE1b), and so does a closure graph the home keeps (`ClosureGraphs`,
 FABRIC-CLOSE1l). An open quest's first start names its graph for the take, which binds it in its own write, and its session says `ready`
 (`ClosureBinding.AtStartAsync`, never against a host whose status does not say `closure`, nor in a workspace synced through a remote by

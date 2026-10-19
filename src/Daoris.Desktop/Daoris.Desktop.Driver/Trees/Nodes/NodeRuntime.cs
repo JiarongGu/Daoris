@@ -47,6 +47,35 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// </summary>
     public Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> Tips { get; init; } =
         (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+
+    /// <summary>
+    /// Each named branch's remote-tracking ref in one checkout (FABRIC-RUN1b, <see cref="NodeTips.RemotesAsync"/>): what <c>pushed</c> reads,
+    /// once per checkout per pass, and only where a <c>pushed</c> node waits on a landing a plugin answered it pushed. Empty where the ref is not
+    /// there; a branch it could not read is absent, and its node stays unknown.
+    /// </summary>
+    public Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> Remotes { get; init; } =
+        (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+
+    /// <summary>
+    /// Whether one commit holds another in one checkout (FABRIC-RUN1b, <see cref="NodeTips.HoldsAsync"/>): an ahead <c>pull-request</c>'s check,
+    /// asked only where one waits on a completed answer from a newer commit; null where git could not say.
+    /// </summary>
+    public Func<string, string, string, CancellationToken, Task<bool?>> Holds { get; init; } = (_, _, _, _) => Task.FromResult<bool?>(null);
+
+    /// <summary>
+    /// The second opinion's and the look's gates for a branch unit's work as a landing door reads them (FABRIC-RUN1c, WIRE1g, WIRE1h; NODE1b:
+    /// <see cref="OpinionGate.JudgeAsync"/> and <see cref="ReviewGate"/>'s live read), what its <c>opinion</c> and <c>look</c> nodes observe:
+    /// read once a pass for a unit, and only where one of them waits. Either is null where it was not read, and its node waits.
+    /// </summary>
+    public Func<WorkUnit, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> Gates { get; init; } =
+        (_, _) => Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
+
+    /// <summary>
+    /// The named workflow's version a quest unit's run is bound to (FABRIC-RUN1c; §E7, D157 §5.1: <see cref="WorkflowGraphs.ForRun"/> through
+    /// <see cref="WorkflowRunNodes.VersionOf"/>), given the quests the pass read for its chain; null where its run follows Current or has no
+    /// binding. A unit bound to one is governed by that version, never by Current's graph (<see cref="NodeRuntime.BoundIn"/> reads the home's).
+    /// </summary>
+    public Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?> Bound { get; init; } = (_, _) => null;
 }
 
 /// <summary>
@@ -200,8 +229,14 @@ public sealed class NodeRuntime(
     /// the graph's version and reach is never sent.
     /// </summary>
     /// <param name="kept">The closure graph this home keeps under a digest (<see cref="ClosureGraphs.Read"/>), or null where it keeps none.</param>
+    /// <param name="versionOf">
+    /// The named version a quest unit's run is bound to (<see cref="NodeRuntimeLook.Bound"/>), or null where none: FABRIC-RUN1c, a quest bound
+    /// to one is governed by it alone (§E7, one governs a run, by its binding), whose engine is D157's run until the cutover (FABRIC-CUTOVER1),
+    /// so Current's graph never governs it beside that engine. An unreadable binding holds it the same way: its run cannot start (D157 §5.2).
+    /// </param>
     public static IReadOnlyList<GovernedUnit> Govern(
-        DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null)
+        DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null,
+        Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?>? versionOf = null)
     {
         var governed = new List<GovernedUnit>();
         var identities = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -228,6 +263,10 @@ public sealed class NodeRuntime(
                 // FABRIC-CLOSE1p: the branches' tips as git answered this read, never their records' kept revisions.
                 if (closes) unit = unit with { Subject = unit.Subject with { Revision = QuestClosing.Revision(quest, quests, read.Units, read.Tips) } };
             }
+
+            // FABRIC-RUN1c: a quest whose run is bound to a named version is that version's (§E7), run by D157's engine: Current's graph does not
+            // govern it as well. A quest bound to a closure graph at its take is that graph's, as above.
+            if (!closes && unit.Kind == WorkUnitKind.Quest && versionOf?.Invoke(unit, quests.Values) is not null) continue;
 
             if (graph is null || (!Acts(graph) && !closes)) continue;
             var dispatchable = new HashSet<string>(StringComparer.Ordinal);
@@ -268,6 +307,21 @@ public sealed class NodeRuntime(
         }
 
         return governed;
+    }
+
+    /// <summary>
+    /// The named version a quest unit's run is bound to in <paramref name="home"/> (FABRIC-RUN1c; D157 §5.1): the run its chain's first quest in
+    /// its repository names (<see cref="WorkflowRunBindings.RunOf"/>), read through the home's workflows and run bindings
+    /// (<see cref="WorkflowRunNodes.VersionOf"/>) and never written; null under Current or with no binding. A home that bound no run reads one
+    /// absent file a quest.
+    /// </summary>
+    public static Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?> BoundIn(string home)
+    {
+        var store = new WorkflowFiles(home);
+        var runs = new WorkflowRunFiles(home);
+        return (unit, quests) => unit.Records.Quest is not { } quest
+            ? null
+            : WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(ReviewGate.ChainOf([.. quests], quest.Id), unit.Owner.Repository ?? "") ?? quest.Id);
     }
 
     /// <summary>
@@ -343,7 +397,7 @@ public sealed class NodeRuntime(
                 var read = await look.Units(ct).ConfigureAwait(false);
                 var home = records.Home;
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
-                (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
+                (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept, look.Bound).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _quests = Quests(read);
                 LastQuests = _quests;
                 QuestReads.Keep(home, _quests); // FABRIC-CLOSE1q5: the terminal's `work held` judges on it; the lease is held here.
@@ -356,6 +410,10 @@ public sealed class NodeRuntime(
             // FABRIC-PERFORM1m: the pass's tips, each checkout read once by whatever asks of it first (the hearing, a rebinding's check, a
             // binding), never kept past the pass.
             var tips = new PassTips(look.Tips, Observing(governed.Values));
+
+            // FABRIC-RUN1b: the look's git reads for the observed built-ins, each checkout's remote-tracking refs read once a pass, and only where
+            // a node waits on them. FABRIC-RUN1c: D157's gates likewise, once a pass for a unit whose opinion or look waits on them.
+            var git = new PassReads(new PassGit(look.Remotes, look.Holds, Pushing(governed.Values)), new PassGates(look.Gates));
 
             // FABRIC-RUN1e: one count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
@@ -400,10 +458,10 @@ public sealed class NodeRuntime(
             foreach (var each in concerned)
             {
                 if (each.Closes) Settle(each, done, said);
-                await EvaluateAsync(each, sends, done, said, look.Units, tips, ct).ConfigureAwait(false);
+                await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             }
 
-            await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, ct).ConfigureAwait(false);
+            await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             var changed = Tell(governed.Values);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
         }
@@ -419,7 +477,7 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task EvaluateAsync(
         GovernedUnit governed, WorkSends sends, List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units,
-        PassTips tips, CancellationToken ct)
+        PassTips tips, PassReads git, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         // FABRIC-PERFORM1m: a branch unit's observed plugin nodes bind to its branch's tip read this pass, not to the unit's revision, which is
@@ -434,7 +492,11 @@ public sealed class NodeRuntime(
                 break;
             }
 
-            var (before, evaluated) = Evaluate(governed, record, tipped, tip);
+            // FABRIC-RUN1b: what git says for the built-ins this round's record holds waiting on it, read once a pass; FABRIC-RUN1c: the gates
+            // its opinion and look wait on, likewise.
+            var reads = await GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false);
+            var gates = await GatesAsync(governed, record, git.Gates, ct).ConfigureAwait(false);
+            var (before, evaluated) = Evaluate(governed, record, tipped, tip, reads, gates);
             if (evaluated.Refusal is { } refusal)
             {
                 said.Add($"work  {unit}: its graph was not judged ({refusal}: {string.Join(", ", evaluated.Missing)}), so nothing on it is started.");
@@ -456,7 +518,7 @@ public sealed class NodeRuntime(
                     // next pass reads it again, and no further round reads git again only to find the same stale revision.
                     if (_governed is null) return;
                 }
-                else if (node.Reach == NodeReach.Observed && (BuiltInNodes.Observed.Contains(node.Kind) || governed.Observable.Contains(node.Id)))
+                else if (node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id)))
                 {
                     // FABRIC-PERFORM1m: an observed plugin node whose branch's tip this pass did not read is left as it stands: nothing is
                     // bound on a guess, and the pass that reads the tip begins it there.
@@ -486,9 +548,12 @@ public sealed class NodeRuntime(
     /// <summary>
     /// A unit's graph evaluated on its record as it stands (FABRIC-RUN1): each node's status before (the record's, else a fresh one), and
     /// the evaluation on the unit's revision and the triggers its record has fired; a branch unit's observed plugin nodes on the tip its pass
-    /// read (FABRIC-PERFORM1m), handed in. Pure: what it moves is the caller's to keep. No git is read.
+    /// read (FABRIC-PERFORM1m), and what git said for its built-ins (FABRIC-RUN1b, <paramref name="git"/>), handed in. Pure: what it moves is
+    /// the caller's to keep, and it reads no git itself.
     /// </summary>
-    private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null)
+    private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(
+        GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null, NodeGitReads? git = null,
+        (OpinionGateState? Opinion, ReviewGateState? Review) gates = default)
     {
         var unit = governed.Unit.Id;
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
@@ -499,8 +564,70 @@ public sealed class NodeRuntime(
             NodeRevisions = tipped ? ObservedRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
             Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
+            Git = git,
+            Opinions = gates.Opinion is { } opinion
+                ? new Dictionary<string, OpinionGateState>(StringComparer.Ordinal) { [unit] = opinion }
+                : new Dictionary<string, OpinionGateState>(StringComparer.Ordinal),
+            Reviews = gates.Review is { } review
+                ? new Dictionary<string, ReviewGateState>(StringComparer.Ordinal) { [unit] = review }
+                : new Dictionary<string, ReviewGateState>(StringComparer.Ordinal),
         };
         return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
+    }
+
+    /// <summary>
+    /// The gates a unit's <c>opinion</c> and <c>look</c> observe (FABRIC-RUN1c; WIRE1g, WIRE1h, NODE1b): read through the pass's one read of the
+    /// unit, and only where one of them is active or unknown on its record, so a unit whose graph holds neither, or whose gates are settled,
+    /// asks nothing. Nothing read leaves both null, and the nodes wait.
+    /// </summary>
+    private static async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> GatesAsync(
+        GovernedUnit governed, NodeRecord record, PassGates gates, CancellationToken ct) =>
+        governed.Graph.Nodes.Any(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look
+            && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown)
+            ? await gates.OfAsync(governed.Unit, ct).ConfigureAwait(false)
+            : default;
+
+    /// <summary>One pass's reads beyond the tips (FABRIC-RUN1b, RUN1c): git's for the observed built-ins, and D157's gates.</summary>
+    private sealed record PassReads(PassGit Git, PassGates Gates);
+
+    /// <summary>
+    /// What git says for a branch unit's observed built-ins that wait on it (FABRIC-RUN1b; NODE1's choice 8, the look's git reads): a
+    /// <c>pushed</c> active or unknown on a landing a plugin answered it pushed reads the landed branch's remote-tracking ref, and a
+    /// <c>pull-request</c> active or unknown on an answer completed from another commit asks git's ancestry, each through the pass's one read
+    /// (<paramref name="git"/>). Null where nothing waits on git, so a unit with no such node asks it nothing; what was not read stays absent,
+    /// and its node unknown.
+    /// </summary>
+    private static async Task<NodeGitReads?> GitReadsAsync(GovernedUnit governed, NodeRecord record, PassGit git, CancellationToken ct)
+    {
+        if (governed.Unit.Kind != WorkUnitKind.Branch || BuiltInNodes.LandingOf(governed.Unit) is not { } landing) return null;
+        bool Waits(string kind) => governed.Graph.Nodes.Any(node => node.Kind == kind
+            && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown);
+
+        var root = governed.Watched.Root;
+        var remote = Waits(NodeKinds.Pushed) && BuiltInNodes.AsksRemote(landing);
+        var tip = remote ? await git.RemoteAsync(root, landing.Branch, ct).ConfigureAwait(false) : null;
+        var ancestry = Waits(NodeKinds.PullRequest) ? BuiltInNodes.AncestryOf(landing) : null;
+        var holds = ancestry is var (holder, held) ? await git.HoldsAsync(root, holder, held, ct).ConfigureAwait(false) : null;
+        if (!remote && ancestry is null) return null;
+        return new NodeGitReads(
+            remote ? each => string.Equals(each.Branch, landing.Branch, StringComparison.Ordinal) ? tip : null : null,
+            ancestry is null ? null : (holder, held) => (holder, held) == ancestry ? holds : null);
+    }
+
+    /// <summary>Each checkout's landed branches a pass may judge <c>pushed</c> on (FABRIC-RUN1b): what the pass's one read of its remote refs serves.</summary>
+    private static Dictionary<string, IReadOnlyCollection<string>> Pushing(IEnumerable<GovernedUnit> governed)
+    {
+        var branches = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
+        var pushing = governed.Where(each => each.Unit.Kind == WorkUnitKind.Branch && each.Watched.Root.Length > 0
+                && each.Graph.Nodes.Any(node => node.Kind == NodeKinds.Pushed))
+            .Select(each => (each.Watched.Root, Landing: BuiltInNodes.LandingOf(each.Unit)))
+            .Where(each => each.Landing is { } landing && BuiltInNodes.AsksRemote(landing));
+        foreach (var same in pushing.GroupBy(each => each.Root, StringComparer.Ordinal))
+        {
+            branches[same.Key] = same.Select(each => each.Landing!.Branch).Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        return branches;
     }
 
     /// <summary>
@@ -756,7 +883,7 @@ public sealed class NodeRuntime(
     /// </summary>
     private async Task HearAgainAsync(
         List<WorkLagging> lagging, IReadOnlyDictionary<string, GovernedUnit> governed, IReadOnlyList<GovernedUnit> concerned, WorkSends sends,
-        List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units, PassTips tips, CancellationToken ct)
+        List<WorkPerformed> done, List<string> said, Func<CancellationToken, Task<NodeUnitsRead>> units, PassTips tips, PassReads git, CancellationToken ct)
     {
         if (lagging.Count == 0) return;
         var again = await _observer.HearAsync([.. lagging.Select(each => each.Heard)], governed, tips.ReadAsync, ct).ConfigureAwait(false);
@@ -764,7 +891,7 @@ public sealed class NodeRuntime(
         var taken = again.Where(each => each.What == PerformedWhat.Applied).Select(each => each.Unit).ToHashSet(StringComparer.Ordinal);
         foreach (var each in concerned.Where(each => taken.Contains(each.Unit.Id)))
         {
-            await EvaluateAsync(each, sends, done, said, units, tips, ct).ConfigureAwait(false);
+            await EvaluateAsync(each, sends, done, said, units, tips, git, ct).ConfigureAwait(false);
         }
     }
 
@@ -863,6 +990,14 @@ public sealed class NodeRuntime(
     private string _toldText = "";
 
     private static string PluginOf(string kind) => kind[..kind.IndexOf('/')];
+
+    /// <summary>
+    /// Whether the runtime begins a built-in kind as an observed built-in (FABRIC-RUN1c): every built-in observed from records or settled by the
+    /// evaluation, D157's <c>opinion</c> and <c>look</c> on their gates (WIRE1g, WIRE1h, NODE1b), a <c>stop</c> on its path and an <c>all</c>
+    /// join on its members included; RUN1 began only those <see cref="BuiltInNodes"/> reads. A pressed node's task and a waited node's wait are
+    /// HUMAN1's and WAITUNIT1's to start.
+    /// </summary>
+    private static bool Begins(string kind) => NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) && builtIn.Reach == NodeReach.Observed;
 
     private static bool Performs(NodeDeclaration node) => node.Reach == NodeReach.Performed && NodeKinds.IsPlugin(node.Kind);
 
