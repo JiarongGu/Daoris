@@ -93,6 +93,17 @@
     "    }",
     "  },",
     "  \"workspaceWorkCycles\": {},",
+    "  \"access\": {",
+    "    \"engine\": {",
+    "      \"permissions\": \"asking\",",
+    "      \"goAheads\": \"never\"",
+    "    },",
+    "    \"legacy\": \"full\"",
+    "  },",
+    "  \"machineAccess\": {",
+    "    \"landing\": \"rule\",",
+    "    \"later\": \"a pause a newer build knows\"",
+    "  },",
     "  \"readAcross\": {",
     "    \"shop-api\": false",
     "  },",
@@ -198,6 +209,20 @@
       "edit": { "op": "help-mode", "mode": "restricted" },
       "changes": [
         { "from": ["  \"helperAdapter\": \"claude-code\",", "  \"helpMode\": \"full\","], "to": ["  \"helperAdapter\": \"claude-code\","] }
+      ]
+    },
+    {
+      "name": "a repository's access setup names one more pause (AUTONOMY1a): it goes in the pauses' order, the rest as written",
+      "edit": { "op": "access", "repository": "engine", "setting": { "permissions": "asking", "landing": "rule", "goAheads": "never" } },
+      "changes": [
+        { "from": ["      \"permissions\": \"asking\",", "      \"goAheads\": \"never\""], "to": ["      \"permissions\": \"asking\",", "      \"landing\": \"rule\",", "      \"goAheads\": \"never\""] }
+      ]
+    },
+    {
+      "name": "this machine's access setup made full access (AUTONOMY1a): the level is the one word, the pause a newer build knows going with it",
+      "edit": { "op": "machine-access", "setting": "full" },
+      "changes": [
+        { "from": ["  \"machineAccess\": {", "    \"landing\": \"rule\",", "    \"later\": \"a pause a newer build knows\"", "  },"], "to": ["  \"machineAccess\": \"full\","] }
       ]
     },
     {

@@ -80,10 +80,22 @@ public sealed class DriverConfigKeepsTests
             "line" => config.WithLine(Text("repository"), Text("branch")),
             "intake" => config.WithIntake(Text("adapter")),
             "help-mode" => config.WithHelpMode(Text("mode")),
+            // AUTONOMY1a: the level the row names, through the access edit the route and the terminal make.
+            "access" => config.WithAccess(Access(edit, new AccessEdit { Repository = Text("repository") })),
+            "machine-access" => config.WithAccess(Access(edit, new AccessEdit { Machine = true })),
             "notify" => config.WithNotify(edit.GetProperty("on").GetBoolean()),
             "work-cycle-clear" => config.WithWorkCycle(Text("repository"), Text("kind"), null),
             var op => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
         };
+    }
+
+    /// <summary>A row's <c>setting</c> as an edit at <paramref name="level"/>: <c>"full"</c>, or each pause it names.</summary>
+    private static AccessEdit Access(JsonElement edit, AccessEdit level)
+    {
+        var setting = edit.GetProperty("setting");
+        return setting.ValueKind == JsonValueKind.String
+            ? level with { Full = true }
+            : level with { Set = [.. setting.EnumerateObject().Select(pause => new KeyValuePair<string, string?>(pause.Name, pause.Value.GetString()))] };
     }
 
     private static LandingRule Rule(JsonElement rule)
