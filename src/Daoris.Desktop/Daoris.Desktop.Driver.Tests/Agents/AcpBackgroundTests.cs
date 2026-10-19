@@ -265,6 +265,52 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
+    /// 🔴 BGWAIT2d: the work the note names is what the wire announced, read before the quest's read, never after it. Work that ends
+    /// while the quest is read is still the work the turn ended on, so its note names it, never "ended: " and an empty list.
+    /// </summary>
+    [Fact]
+    public async Task Work_that_ends_while_the_quest_is_read_is_still_named_in_the_note_of_its_ending()
+    {
+        var goOn = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when self.Prompts.Count == 1:
+                    BackgroundsTheGates(self);
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                case "session/prompt":
+                    return Unanswered(frame, goOn);
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+
+        var run = Session(agent, record, Never)
+            .RunAsync(
+                "D:/fam/Game", "close quest #12", CancellationToken.None,
+                waitsOnBackground: async _ =>
+                {
+                    // The quest's read is slow, and the work ends, and its woken turn ends, before the read answers.
+                    GatesEnd(agent);
+                    agent.Push(Said("The gates passed."));
+                    WokenEnds(agent);
+                    await Task.Delay(500);
+                    return true;
+                });
+
+        var outcome = await EndsWithoutGoOn(run, goOn.Task);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Contains("note:— its background work ended: `Run the gates` (completed). The session goes on.", record.Lines);
+    }
+
+    /// <summary>
     /// 🔴 BGWAIT1b: the answered park's resumed run waits on its own background work as a start does. The agent offers
     /// <c>session/resume</c>, the resumed conversation's turn backgrounds the gates and ends, and the run waits for them and
     /// ends with the turn its harness woke (BGWAIT2), as a start's does.

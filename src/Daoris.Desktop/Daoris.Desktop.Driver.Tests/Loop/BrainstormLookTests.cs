@@ -155,6 +155,39 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 PARALLEL1b2 (D181 point 3, PARALLEL1g's note): a freeze that keeps failing says so once until it is judged again, and a look
+    /// that meets it again asks it again but says nothing, so its failing line wakes no look of its own and the loop does not spin.
+    /// </summary>
+    [Fact]
+    public async Task A_freeze_that_keeps_failing_says_so_once()
+    {
+        var id = Files.WriteRequest("How should the daily report stop dropping its last day?", "engine", ["stub", "acp-stub"], At);
+        var read = 0;
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            AdapterSet.Built(), _home)
+        {
+            BrainstormTurns = new Turns().RunAsync,
+            BrainstormCheckouts = (_, _) =>
+            {
+                Interlocked.Increment(ref read);
+                throw new IOException("the checkout will not read");
+            },
+            Wanted = token => Task.Delay(Timeout.Infinite, token),
+        };
+
+        for (var look = 0; look < 3; look++)
+        {
+            await driver.BrainstormsAsync(new Snapshot([], [], []), 0, [], CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+            await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        }
+
+        Assert.Equal(3, read);
+        Assert.Null(Files.ReadState(id));
+        Assert.Single(driver.Running.Drain(), run => run.Line.Contains($"brainstorm `{id}` could not be looked at", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// 🔴 A request is frozen at the look into one packet, whose digest the state names, and waits for the person's send: no turn
     /// runs on a packet nobody saw (D176 point 2).
     /// </summary>

@@ -641,7 +641,8 @@ public sealed class AcpSession(
     /// <exception cref="DriverException">The agent's stream ended first: a failure of the door, never a clean turn's end.</exception>
     private async Task<string?> AfterBackgroundAsync(Func<CancellationToken, Task<bool>>? waits, CancellationToken ct)
     {
-        if (waits is null || _background.Running is not { Count: > 0 } running) return null;
+        if (waits is null || _background.RunningWork is not { Count: > 0 } work) return null;
+        var running = work.Select(each => each.Name).ToList();
 
         bool waiting;
         try
@@ -661,7 +662,7 @@ public sealed class AcpSession(
         const string waited =
             "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it was "
             + "ended.";
-        var ended = await _background.EndedAsync(Ended, ct).ConfigureAwait(false) ?? throw StreamEnded(waited);
+        var ended = await _background.EndedAsync(Ended, ct, work.Select(each => each.Id)).ConfigureAwait(false) ?? throw StreamEnded(waited);
 
         var said = BackgroundNotes.EndedSaid(ended);
         Note(BackgroundNotes.Ended(ended));
