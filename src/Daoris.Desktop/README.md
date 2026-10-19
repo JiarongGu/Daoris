@@ -177,8 +177,16 @@ and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cut
 which reads its stores through `TraceHere`'s values), the pause, abandon, delete, archive and history plans and words, and the
 observation rules. Its stores and use cases sit in scope folders (SCOPE1d): `Work/` (pause, abandon and their records), `Requests/`
 (the session requests, their watch and the moves), `History/` (clearing, its bytes and home files, archive and deletion), `Trace/`
-(the trace, its command and reads) and `Events/` (the event log, the session log and last words); `RunningSessions`,
+(the trace, its command and reads), `Events/` (the event log, the session log and last words) and `Heavy/` (below); `RunningSessions`,
 `SessionProcesses`, `SessionsCommand` and `HarnessEnding` (the loop's too) stay at the top. Review, with fifteen files at its top, stays flat.
+
+A session's heavy checks run through `daoris-driver run-heavy [--gate <name>]` (HEAVYRUN1a, D180's HEAVYRUN1 notes), in
+`Sessions/Heavy/`: run in a checkout, it runs the gates its `daoris.gates.json` marks `"heavy": true` one after another, or the one
+named (`HeavyGates`), holding one slot per repository across its trees (`HeavySlot`: the repository's common git folder, read
+from git's own files, keys a file under the home's `locks/heavy/` whose open handle is the lock, with no lease; a waiting run says
+behind whom and how long from the holder's record beside it). Each gate starts suspended and joins the run's kill-on-close job
+before it runs, writing to the run's own output (`HeavyStep`, `ProcessJob.Create`); a pass, a failure and a stop alike end the
+job and wait until it is empty before the slot goes, and the next holder ends a job a dead holder left. The verb holds no home lease.
 
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,

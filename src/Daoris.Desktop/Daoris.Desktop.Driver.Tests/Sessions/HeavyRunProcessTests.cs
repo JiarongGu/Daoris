@@ -20,22 +20,26 @@ public sealed class HeavyRunProcessTests : IDisposable
 
     public HeavyRunProcessTests()
     {
+        // Marks its start once its child beats, so the child is running from the gate's first mark until it is ended.
         File.WriteAllText(_fixture.At("hold.mjs"), """
-            import { appendFileSync, writeFileSync, existsSync } from 'node:fs';
+            import { appendFileSync, existsSync } from 'node:fs';
             import { spawn } from 'node:child_process';
             import { join } from 'node:path';
             const [tag, folder] = process.argv.slice(2);
-            const child = spawn(process.execPath, [join(folder, 'beat.mjs'), join(folder, `beat-${tag}.txt`)], { detached: true, stdio: 'ignore' });
-            child.unref();
-            writeFileSync(join(folder, `child-${tag}.pid`), String(child.pid));
-            appendFileSync(join(folder, 'intervals.log'), `start ${tag} ${Date.now()}\n`);
-            console.log(`begun ${tag}`);
+            const beat = join(folder, `beat-${tag}.txt`);
+            spawn(process.execPath, [join(folder, 'beat.mjs'), beat], { detached: true, stdio: 'ignore' }).unref();
             const go = join(folder, `go-${tag}`);
-            const timer = setInterval(() => {
-              if (!existsSync(go)) return;
-              clearInterval(timer);
-              appendFileSync(join(folder, 'intervals.log'), `end ${tag} ${Date.now()}\n`);
-              process.exit(0);
+            const begin = setInterval(() => {
+              if (!existsSync(beat)) return;
+              clearInterval(begin);
+              appendFileSync(join(folder, 'intervals.log'), `start ${tag} ${Date.now()}\n`);
+              console.log(`begun ${tag}`);
+              const end = setInterval(() => {
+                if (!existsSync(go)) return;
+                clearInterval(end);
+                appendFileSync(join(folder, 'intervals.log'), `end ${tag} ${Date.now()}\n`);
+                process.exit(0);
+              }, 20);
             }, 20);
             setTimeout(() => process.exit(9), 120000);
             """);
@@ -47,11 +51,16 @@ public sealed class HeavyRunProcessTests : IDisposable
             setInterval(beat, 20);
             setTimeout(() => process.exit(0), 120000);
             """);
+        // Passes once its child beats, so the child is running when the gate ends, never ended before it began.
         File.WriteAllText(_fixture.At("leave.mjs"), """
             import { spawn } from 'node:child_process';
+            import { existsSync } from 'node:fs';
             import { join } from 'node:path';
             const [folder] = process.argv.slice(2);
-            spawn(process.execPath, [join(folder, 'beat.mjs'), join(folder, 'beat-left.txt')], { detached: true, stdio: 'ignore' }).unref();
+            const beat = join(folder, 'beat-left.txt');
+            spawn(process.execPath, [join(folder, 'beat.mjs'), beat], { detached: true, stdio: 'ignore' }).unref();
+            const timer = setInterval(() => { if (existsSync(beat)) { clearInterval(timer); process.exit(0); } }, 20);
+            setTimeout(() => process.exit(9), 120000);
             """);
         File.WriteAllText(_fixture.At("exit.mjs"), "process.exit(Number(process.argv[2]));\n");
         File.WriteAllText(_fixture.At("touch.mjs"), "import { writeFileSync } from 'node:fs';\nwriteFileSync(process.argv[2], process.env.DAORIS_HEAVY_RUN ?? '');\n");
