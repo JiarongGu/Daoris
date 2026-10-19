@@ -45,21 +45,21 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 83 | 1667 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 97 | 1715 |
-| `src/Daoris.Web/src/projects/RepositorySetup.test.tsx` | 42 | 742 |
+| `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 42 | 742 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 55 | 1018 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
-| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 59 | 1115 |
-| `src/Daoris.Web/src/work/SessionHead.test.tsx` | 67 | 1274 |
-| `src/Daoris.Web/src/work/SessionRail.test.tsx` | 52 | 1022 |
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 58 | 1141 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 103 | 1809 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 81 | 1533 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 126 | 2247 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 46 | 851 |
-| `src/Daoris.Web/src/work/attention.test.ts` | 50 | 978 |
-| `src/Daoris.Web/src/work/conversation.test.ts` | 57 | 1085 |
-| `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
+| `src/Daoris.Web/src/work/attention/attention.test.ts` | 50 | 978 |
+| `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 59 | 1115 |
+| `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 57 | 1085 |
+| `src/Daoris.Web/src/work/frame/frame.tsx` | 40 | 877 |
+| `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 67 | 1274 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 79 | 1161 |
+| `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 52 | 1022 |
 
 ### Driver library (`driver`)
 
