@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The fast half: no process starts. The removal is handed in, so each row sees what was let go; the start's own path through the
-/// driver opens its tree with git, which only the Process half runs (GOONTREE1's row in <c>SessionMessagesTickTests</c>).
+/// driver, its tree opened over a stand-in git, is <see cref="StartTreeCloseTests"/>' (QUEUEDTREE1b), and over real git GOONTREE1's
+/// row in the Process half's <c>SessionMessagesTickTests</c>.
 /// </remarks>
 public sealed class FreshTreeTests
 {

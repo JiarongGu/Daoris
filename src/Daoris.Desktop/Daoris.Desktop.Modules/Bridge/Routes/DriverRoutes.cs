@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 using static Daoris.Desktop.DriverArguments;
@@ -83,6 +84,47 @@ public sealed class DriverRoutes(DriverContext context)
         var says = Optional(request, "says");
         _context.Change(config => config.WithStanding(repository, says, DateTimeOffset.UtcNow));
         return State(_loop);
+    }
+
+    /// <summary>
+    /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none (HEAVYRUN1b2b, D180's HEAVYRUN1b2a
+    /// note), the setup page's half of <c>daoris-driver heavy</c> over the same key (D50): <c>repository</c>, and <c>gates</c>, the whole
+    /// list in the order its gates run, each <c>{name, run, cwd?}</c>, or none or null to clear it. Judged by
+    /// <see cref="HeavyMapping.Apply"/> against the file before anything is written, so a list the mapping would not read is refused
+    /// whole in its words. Never an edit to the repository; one gate at a time is not offered, since the list's order is the point.
+    /// </summary>
+    [DriverRoute("SET_HEAVY_GATES")]
+    [Publishes("SET_HEAVY_GATES", StateScopes.Driver)]
+    private object? SetHeavyGates(IpcRequest request)
+    {
+        var repository = Optional(request, "repository") ?? "";
+        var gates = HeavyGatesOf(request);
+        // The refusals come first, before anything is written.
+        HeavyMapping.Apply(DriverConfig.Load(_loop.ConfigPath), repository, gates);
+        _context.Change(config => config.WithHeavyGates(repository, gates));
+        return State(_loop);
+    }
+
+    /// <summary>
+    /// The list as the page sends it: null where it sends none or null; each gate's name, command and folder as written, a field that is
+    /// no text read as none, so the mapping's own rule says what is missing.
+    /// </summary>
+    private static List<HeavyGate>? HeavyGatesOf(IpcRequest request)
+    {
+        if (request.Payload is not { } payload
+            || !payload.TryGetProperty("gates", out var gates)
+            || gates.ValueKind == JsonValueKind.Null) return null;
+        if (gates.ValueKind != JsonValueKind.Array)
+        {
+            throw new DriverException("a repository's heavy gates are a list of gates, each its name, its command and its folder, in the order they run.");
+        }
+
+        static string? Text(JsonElement gate, string name) =>
+            gate.ValueKind == JsonValueKind.Object && gate.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
+
+        return [.. gates.EnumerateArray().Select(gate => new HeavyGate(Text(gate, "name") ?? "", Text(gate, "run") ?? "", Text(gate, "cwd"), Heavy: true))];
     }
 
     // Whether this machine interrupts the person at all (SURF5b). The same file
@@ -367,6 +409,14 @@ public sealed class DriverRoutes(DriverContext context)
             // Each repository's standing answer (KNOWUSE1b), as rows for the same reason; `at` in UTC, or null where unknown.
             Standing = config.Standing.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, p.Value.Says, p.Value.At }).ToArray(),
+            // This machine's heavy gates for each repository that marks none (HEAVYRUN1b2b), as rows for the same reason, each list in
+            // the order its gates run; a gate's folder left out where it runs in the checkout itself.
+            HeavyGates = config.HeavyGates.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new
+                {
+                    Repository = p.Key,
+                    Gates = p.Value.Select(gate => new { gate.Name, gate.Run, Cwd = gate.WorkingDirectory }).ToArray(),
+                }).ToArray(),
             // The session languages as set (LANG1c), as rows for the same reason, and the closed table each screen names its
             // options from, so adding a language is a row in the driver's table and needs no window catalogue.
             Languages = config.Languages.OrderBy(p => p.Key, StringComparer.Ordinal)

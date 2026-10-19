@@ -476,6 +476,65 @@ describe("a repository's Setup on its page (UX6f)", () => {
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Sessions in engine now stop at each pause as today.'));
   });
 
+  /**
+   * HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): this machine's heavy gates for it, read off the driver's state by its name in any case as
+   * the driver keys them, the whole list sent on DAORIS.DRIVER over the key `daoris-driver heavy` edits, and the driver's refusal said
+   * where Save was pressed, the list still open.
+   */
+  it('sets its heavy gates whole on DAORIS.DRIVER, says what changed, and says a refusal where Save was pressed', async () => {
+    let refusing = false;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SET_HEAVY_GATES' && refusing) throw new Error('`build` is named twice: each gate is named once.');
+      return { ...DRIVER_STATE, drivable: ['engine'], heavyGates: [{ repository: 'Engine', gates: [{ name: 'build', run: 'dotnet build' }] }] };
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseRepository('engine');
+    await openSetup('Heavy gates');
+    const heavy = within(repositoryMain()).getByRole('region', { name: 'Heavy gates' });
+
+    expect(within(heavy).getByRole('list', { name: "engine's heavy gates, in the order they run" })).toHaveTextContent('builddotnet build');
+    await vi.waitFor(() => expect(within(heavy).getByRole('button', { name: 'Edit' })).toBeEnabled());
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Edit' }));
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Add a gate' }));
+    await userEvent.type(within(heavy).getByRole('textbox', { name: 'Name of gate 2' }), 'web');
+    await userEvent.type(within(heavy).getByRole('textbox', { name: 'Command of gate 2' }), 'npm test -- --maxWorkers=2');
+    await userEvent.type(within(heavy).getByRole('textbox', { name: 'Folder of gate 2' }), 'src/web');
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Save' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HEAVY_GATES', {
+      payload: {
+        repository: 'engine',
+        gates: [{ name: 'build', run: 'dotnet build' }, { name: 'web', run: 'npm test -- --maxWorkers=2', cwd: 'src/web' }],
+      },
+    });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('2 heavy gates set for engine on this machine, run in the order shown.'));
+
+    refusing = true;
+    await vi.waitFor(() => expect(within(heavy).getByRole('button', { name: 'Edit' })).toBeEnabled());
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Edit' }));
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Add a gate' }));
+    await userEvent.type(within(heavy).getByRole('textbox', { name: 'Name of gate 2' }), 'BUILD');
+    await userEvent.type(within(heavy).getByRole('textbox', { name: 'Command of gate 2' }), 'dotnet test');
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(within(heavy).getByRole('alert')).toHaveTextContent('build is named twice: each gate is named once.'));
+    expect(within(heavy).getByRole('textbox', { name: 'Name of gate 2' })).toHaveValue('BUILD');
+
+    refusing = false;
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Never mind' }));
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Clear' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HEAVY_GATES', { payload: { repository: 'engine', gates: null } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith("engine's heavy gates on this machine are cleared."));
+  });
+
+  it('draws no heavy gates on a shell older than them', async () => {
+    invoke.mockImplementation(async () => ({ ...DRIVER_STATE, drivable: ['engine'] }));
+    show(<ProjectsView notify={() => {}} />);
+    await chooseRepository('engine');
+    await openSetup('Driving');
+
+    expect(within(repositoryMain()).queryByRole('button', { name: 'Heavy gates' })).toBeNull();
+  });
+
   it("sets whether agents outside it read it, what its sessions also write into, and removes one of its rules", async () => {
     show(<ProjectsView notify={() => {}} />);
     await chooseRepository('engine');

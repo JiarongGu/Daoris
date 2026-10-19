@@ -3273,6 +3273,36 @@ test('the gates beside get their own build servers: none reused, none borrowed, 
   assert.deepEqual(env, { KEEP: 'x', MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
 });
 
+// SHUTDOWNBESIDE1: the deployment gate's `dotnet build-server shutdown` ran in the CI beside (its log on 0a5c608 shows it),
+// stopping every build server on the machine, the owner's and the workers' with them. Under the run's own build servers it
+// is pointless as well as harmful, so a run beside leaves it out and says so; a merge's run keeps it.
+test('a run beside never runs the deployment gate\'s build-server shutdown; a merge\'s run does', async () => {
+  const fx = makeFixture('merge-branch-no-shutdown');
+  const saved = Object.fromEntries(Object.keys(tool.BESIDE_ENVIRONMENT).map((name) => [name, process.env[name]]));
+  try {
+    const shutdown = 'dotnet build-server shutdown';
+    const deployment = planned('deployment', 'npm run rehearse:deploy', [shutdown]);
+    const ran: string[] = [];
+    const step: Step = async (command) => { ran.push(command); return 0; };
+
+    for (const name of Object.keys(tool.BESIDE_ENVIRONMENT)) delete process.env[name];
+    await tool.runGate(fx.root, deployment, fx.root, { step });
+    assert.deepEqual(ran, [shutdown, 'npm run rehearse:deploy']);
+
+    ran.length = 0;
+    Object.assign(process.env, tool.BESIDE_ENVIRONMENT);
+    await tool.runGate(fx.root, deployment, fx.root, { step });
+    assert.deepEqual(ran, ['npm run rehearse:deploy']);
+    assert.match(readFileSync(join(fx.root, 'deployment.log'), 'utf8'), /not run beside: dotnet build-server shutdown/);
+  } finally {
+    for (const [name, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+    fx.cleanup();
+  }
+});
+
 test('a gate step started after the run lowered itself runs at the lowered priority', async () => {
   const fx = makeFixture('merge-branch-priority');
   const before = os.getPriority(0);

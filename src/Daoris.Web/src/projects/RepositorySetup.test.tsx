@@ -673,6 +673,54 @@ describe("a repository's landing, its ticket's key and its squash", () => {
   });
 });
 
+/**
+ * HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): *Heavy gates*, after its sessions' access: this machine's list for a repository whose own
+ * daoris.gates.json marks none, folded to its gates by name in their order, open where a list is set, edited and saved whole.
+ */
+describe("a repository's heavy gates", () => {
+  const withHeavy = (heavy: NonNullable<RepositorySetupProps['heavy']>) => ({ ...SETUP_DEFAULTS, heavy });
+
+  it("folds between its line and landing and its sessions to a line saying none is set, and stays folded", () => {
+    draw(withHeavy({ gates: [], onSave: vi.fn() }));
+
+    const [work, heavy, sessions] = ['Line and landing', 'Heavy gates', 'Sessions'].map(head);
+    expect(work!.compareDocumentPosition(heavy!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(heavy!.compareDocumentPosition(sessions!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(heavy).toHaveAccessibleDescription('none set on this machine');
+    expect(heavy).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('opens on a list set here, naming each gate in its order, and saves an edit whole', async () => {
+    const onSave = vi.fn();
+    draw(withHeavy({ gates: [{ name: 'build', run: 'dotnet build' }, { name: 'unit', run: 'dotnet test', cwd: 'tests' }], onSave }));
+
+    expect(head('Heavy gates')).toHaveAttribute('aria-expanded', 'true');
+    const heavy = section('Heavy gates');
+    expect(within(row(heavy, "This machine's heavy gates"))
+      .getByText(code('daoris-driver heavy engine <name>=<command> [--cwd <folder>]…|--clear'))).toBeInTheDocument();
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Edit' }));
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Move gate 2 up' }));
+    await userEvent.click(within(heavy).getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenLastCalledWith(
+      [{ name: 'unit', run: 'dotnet test', cwd: 'tests' }, { name: 'build', run: 'dotnet build' }], expect.anything());
+
+    await userEvent.click(head('Heavy gates'));
+    expect(head('Heavy gates')).toHaveAccessibleDescription('2 heavy gates: build, unit');
+  });
+
+  it('names itself in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    draw(withHeavy({ gates: [], onSave: vi.fn() }));
+
+    expect(head('重型检查')).toHaveAccessibleDescription('本机未设定');
+  });
+
+  it('is absent on a shell older than it', () => {
+    draw(SETUP_OWN);
+    expect(screen.queryByRole('button', { name: 'Heavy gates' })).toBeNull();
+  });
+});
+
 describe('Setup in 中文', () => {
   it('names its sections and marks a default in Chinese', async () => {
     await i18n.changeLanguage('zh');

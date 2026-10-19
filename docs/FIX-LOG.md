@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The CI beside shut down every build server on the machine before its deployment gate (SHUTDOWNBESIDE1)
+
+- **Symptom:** a full set's deployment log (0a5c608) begins `$ dotnet build-server shutdown`, *Shutting down MSBuild
+  server… Shutting down VB/C# compiler server…*: in a run beside, while workers and the owner built.
+- **Root cause:** the gate's `before` step, added for a merge's run (a long-lived server once carried a broken build), ran in
+  every mode; CIPRIO1 gave the run beside its own servers and said it never shuts one down, but nothing held `runSteps` to it.
+  A scout reading the lanes for REHLANE2 found it.
+- **Fix:** under `BESIDE_ENVIRONMENT` (`besideBuilds()`), `runSteps` leaves the shutdown out and writes why in the log.
+- **Verify:** `merge-branch.test.ts`'s new case, red then green (a merge's run keeps the step, a run beside leaves it out), with
+  the shutdown-before-deployment and rehearsal re-run cases green.
+
+## 2026-10-20 — The desktop read a session variable the scratch-environment census had not named (HEAVYRUN1b2a)
+
+- **Symptom:** the CI on `7f72756` failed the CLI's `desktop-tool.test.ts` (*every machine-local override the desktop reads is
+  redirected, cleared, or named*): `DAORIS_REPOSITORY`.
+- **Root cause:** HEAVYRUN1b2a made `run-heavy` read `DAORIS_REPOSITORY` from a file that touches `DaorisHome`, which puts it
+  in the census's scan; its builder ran the driver's classes, not the CLI's census.
+- **Fix:** named as handled with its reason: the driver writes it into a driven session's environment and only `run-heavy`,
+  inside that session, reads it, as `DAORIS_SESSION_ID`.
+- **Verify:** the census green.
+
 ## 2026-10-20 — The heavy-gate tests joined driver.json onto a home by hand (HEAVYRUN1b2a, HOMELAYOUT2)
 
 - **Symptom:** the CI on `ae28dd1` failed the CLI's home census (*no code joins a home path by hand*): five
