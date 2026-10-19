@@ -65,6 +65,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
                     foreach (var account in accounts) said[account] = Safe(() => AccountWindows.SaidOf(roster.Home, agent, account, now));
                     // The person's name for each account (ACCT2), by its id; the lists below name ids.
                     var names = Safe(() => AccountNames.Of(roster.Home, agent)) ?? new Dictionary<string, string>();
+                    var scopes = ScopesOf(settings, agent).ToList();
                     return new
                     {
                         Agent = agent,
@@ -81,7 +82,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)?.Until,
                             // What its agent last said of its windows (CODEXUSE3), read at a person's press and kept under its
                             // own key: beside the accounts, never one of them, so no scope's near reads it.
-                            Said = SaidShown(Safe(() => AccountWindows.SaidOf(roster.Home, agent, AccountWindows.Own, now))),
+                            Said = SaidShown(Safe(() => AccountWindows.SaidOf(roster.Home, agent, AccountWindows.Own, now)), now),
                         },
                         Accounts = accounts.Select(account => new
                         {
@@ -91,12 +92,13 @@ public sealed class AccountsRoutes(DriverLoop loop)
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))?.Until,
                             // Each window's projection beside its reading (USAGEPROBE1b): the roster's own, over its ledger held in
                             // memory and read on as the history grows, so a tick re-parses no month.
-                            Said = SaidShown(said[account], Safe(() => roster.ProjectionOf(agent, account, said[account], now))),
+                            // Each window against the curve of the scope its row is measured by (PUSH1e): judged here, worded on the page.
+                            Said = SaidShown(said[account], now, Safe(() => roster.ProjectionOf(agent, account, said[account], now)), MeasuredBy(scopes, account)),
                             // The weekly reset known for it: told by a limit, or by the agent's own word (TOOL6b, TOOL6c).
                             Week = Safe(() => AccountWindows.WeekOf(roster.Home, agent, account, now, fixedWeek)),
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
                         }).ToArray(),
-                        Scopes = ScopesOf(settings, agent)
+                        Scopes = scopes
                             .Select(scope => ScopeShown(
                                 scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace), now,
                                 Safe(() => roster.InheritsDaorisAccounts(agent, scope.Workspace))))
@@ -122,6 +124,19 @@ public sealed class AccountsRoutes(DriverLoop loop)
             var entry = settings.WorkspaceUses.TryGetValue(workspace, out var uses) ? uses.GetValueOrDefault(agent) : null;
             yield return (workspace, scope, RotationUse.Read(entry).Use.Keep);
         }
+    }
+
+    /// <summary>
+    /// How the list an account's row is measured by is used (PUSH1e; the page's <c>useOf</c> before it): this machine's where its list
+    /// holds the account or no workspace's own list does, else the first workspace's whose own list holds it. An account in two lists
+    /// is measured by this machine's, the scope its row's next start says first.
+    /// </summary>
+    private static RotationUse MeasuredBy(IReadOnlyList<(string? Workspace, RotationScope Scope, string? Keep)> scopes, string account)
+    {
+        var machine = scopes[0].Scope;
+        if (machine.List.Contains(account, StringComparer.Ordinal)) return machine.Use;
+        return scopes.Skip(1).Select(each => each.Scope).FirstOrDefault(scope => scope.List.Contains(account, StringComparer.Ordinal))?.Use
+            ?? machine.Use;
     }
 
     /// <summary>
@@ -173,6 +188,30 @@ public sealed class AccountsRoutes(DriverLoop loop)
             .ToArray(),
         // Which account its next start would take, and why (TOOL6e, D130 §3–§4).
         Next = next,
+        // The verdicts the page words and no longer judges (PUSH1e, D182 point 6), added beside the reading: the curve in effect on each
+        // window it names, the person's points under `curve` where set, else Daoris's, as the switch's charts draw it.
+        Curves = UseCurve.Windows.ToDictionary(
+            window => window, window => (UsageCurves.For(scope.Use, window) ?? []).Select(point => new[] { point.Elapsed, point.Used }).ToArray()),
+        // Each of its list's accounts on each window its agent gave a share of: the curve's value now in whole points, and whether the
+        // share is over it, its room below zero on the exact value (on it is not over).
+        Measured = scope.List
+            .SelectMany(account => (said.GetValueOrDefault(account)?.Windows ?? [])
+                .Select(window => (Account: account, Window: window, Curve: window.Used is null ? null : UsageCurves.Value(scope.Use, window.Window, window.Reset, now)))
+                .Where(each => each.Curve is not null)
+                .Select(each => new
+                {
+                    each.Account,
+                    each.Window.Window,
+                    Curve = UsageCurves.Points(each.Curve!.Value),
+                    Over = each.Curve.Value - each.Window.Used!.Value * 100 < 0,
+                }))
+            .ToArray(),
+        // Each of its list's accounts whose tightest window is over its curve, and the curve's value there: the said line's clause.
+        OverCurve = scope.List
+            .Select(account => (Account: account, Tightest: UsageCurves.TightestSaid(scope.Use, said.GetValueOrDefault(account), now)))
+            .Where(each => each.Tightest is { Room: < 0 })
+            .Select(each => new { each.Account, each.Tightest!.Value.Window.Window, Curve = UsageCurves.Points(each.Tightest.Value.Curve) })
+            .ToArray(),
     };
 
     private static object? CoolingShown(CoolingEntry? entry) => entry is null ? null : new
@@ -180,19 +219,31 @@ public sealed class AccountsRoutes(DriverLoop loop)
         entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved,
     };
 
-    private static object? SaidShown(AccountSaid? said, AccountProjection? projection = null) => said is null ? null : new
-    {
-        said.Seen,
-        Windows = said.Windows.Select(window => new
+    /// <param name="use">How the list the account's row is measured by is used; none for the tool's own sign-in, which no list holds.</param>
+    private static object? SaidShown(AccountSaid? said, DateTimeOffset now, AccountProjection? projection = null, RotationUse? use = null) =>
+        said is null ? null : new
         {
-            // Where its reading came from (SWITCH1d, USAGEREAD2a): `read` from the agent's own answer, `said` by a session's frame.
-            window.Window, window.Used, window.Reset, window.Standing, window.Credits, window.Seen, window.Source,
-            // Its use projected to now, 0 to 1, and how (`reading`, `measured`, `unweighed`), null where it said no number
-            // (USAGEPROBE1b): added beside the reading, which stays as written.
-            Projected = projection?.Of(window.Window)?.Projected,
-            ProjectedBy = projection?.Of(window.Window)?.How,
-        }).ToArray(),
-    };
+            said.Seen,
+            Windows = said.Windows.Select(window =>
+            {
+                var curve = use is null || window.Used is null ? null : UsageCurves.Value(use, window.Window, window.Reset, now);
+                return new
+                {
+                    // Where its reading came from (SWITCH1d, USAGEREAD2a): `read` from the agent's own answer, `said` by a session's frame.
+                    window.Window, window.Used, window.Reset, window.Standing, window.Credits, window.Seen, window.Source,
+                    // Its use projected to now, 0 to 1, and how (`reading`, `measured`, `unweighed`), null where it said no number
+                    // (USAGEPROBE1b): added beside the reading, which stays as written.
+                    Projected = projection?.Of(window.Window)?.Projected,
+                    ProjectedBy = projection?.Of(window.Window)?.How,
+                    // PUSH1e, added beside the reading: when the window began, null for one this build has no length for, which the
+                    // page places it on a chart by; and against its row's scope's curve now, the curve's value in whole points and
+                    // whether the share is over it (its room below zero), null where it is not measured.
+                    From = UsageCurves.From(window.Window, window.Reset),
+                    Curve = curve is { } value ? UsageCurves.Points(value) : (int?)null,
+                    Over = curve is { } at ? at - window.Used!.Value * 100 < 0 : (bool?)null,
+                };
+            }).ToArray(),
+        };
 
     /// <summary>
     /// A scope's curve as <c>harnesses.json</c> holds it (SWITCH1d; the switch design §6): each window the person set, by name,
