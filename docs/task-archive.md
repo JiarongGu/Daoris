@@ -17109,3 +17109,39 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AUTONOMY1e — a session's questions work as Claude Code's do** (driver, web; D184 point 4). A session asks only what it cannot decide, at its turn's end, in its own conversation, and goes on there when answered; the room's and the quest's instructions say to decide and record what it can; the person is told it waits and answers in the conversation. Proof: the instruction text's tests; a parked session's answer goes on in its conversation with no other step; the notice.
 
 **Outcome** 2026-10-19: every quest's instruction (`TargetPrompt.AskingPieces`, shared by claiming, resuming and carrying on) tells its session to decide what it reasonably can, say it under *Readings* with why and keep going, and to ask only for a credential, an account or a sign-in, a choice left to the person, or a go-ahead (every one asked before still asked), in its last message, going on in that conversation with the answer; *Needs you* says the same; canon's *Look before you ask* drops "a preference nothing records", synced. The answer path already had nothing between the question and the session; `AttentionWatch` now says each question once and never an answered park. Nothing loosens by itself. On Opus: about 270 tool calls, 39 minutes. Detail: D184's AUTONOMY1e note, FIX-LOG.
+
+## AUTONOMY1a — a repository's session access setup, its defaults and its record (2026-10-19, D184)
+
+> - [ ] **AUTONOMY1a — a repository's session access setup, its defaults and its record** (driver, modules, cli; D184 points 1, 5; the owner, 2026-10-19: "it's kind of worse than if we just run the Claude Code console … it keeps pausing the development", then "configured and shown in the Daoris setup for the repository, similar to Ask Daoris's permission logic … a full list for permission setup or just simply full access"). The setting per repository with a workspace default and a machine default (full access, or each pause: permission prompts, intake routing, landing, go-aheads, questions), today's behaviour until set; a route and terminal verbs; the effective setup a session started under kept on its record. Proof: the resolution order per pause; route and terminal agree; a session's record names its setup.
+
+**Outcome** 2026-10-19: `driver.json`'s `access` (by repository), `workspaceAccess` and `machineAccess` each hold `full` or the pauses they set (permissions, routing, landing, goAheads, questions); `AccessRules` resolves each pause from repository, workspace, machine or the default and names its source, an unknown value reading as the default and never looser; the CLI twin keeps the keys byte for byte; `SET_ACCESS` and `daoris-driver access` set and read it; `LINES` answers each repository's resolved access and the lines slice pushes it; a driven session's record keeps the setup it started under, its start note saying it where it differs from today's. Left: reading it back (`PriorSession.Access`) with the first effect (AUTONOMY1b, 1c); the page's types and section (AUTONOMY1d). On Opus: about 280 tool calls, 50 minutes; the driven start's Process classes ran at the merge (11 pass). Detail: D184's AUTONOMY1a note.
+
+## HELPMODE1b — the mode and what was wired, on the page (2026-10-19, D183)
+
+> - [ ] **HELPMODE1b — the mode and what was wired, on the page** (web; D183 points 2-4; after HELPMODE1a and HELPWIRED1). The Ask Daoris panel wears its mode as a chip that switches it (full access a warning chip, confirmed once), Settings → Daoris's own AI → Ask Daoris sets it, the history row names a conversation's mode, and a *What it has* section lists what it was handed. en and 中文. Proof: page tests per point; the installed window.
+
+**Outcome** 2026-10-19: A chip beside Ask Daoris's box shows the mode the conversation in view runs under, or the chosen one as next start, full access in the warning colour and asked once with the servers it adds, restricted at once; a conversation opened ahead and unspoken in opens again under the new mode; Settings > AI features holds the same choice; the history marks a full-access conversation; *What it has* reads `HELP_WIRED`'s newest receipt whole, each server's state, in restricted mode each lack with its door, earlier receipts behind a disclosure, an older conversation not recorded; en and 中文, the glossary naming full access and restricted. On Opus: about 255 tool calls, 52 minutes. Detail: D183's HELPMODE1b note.
+
+## NOTICEPLAIN1 — a park's notice is the session's own question (2026-10-19, D184)
+
+> - [ ] **NOTICEPLAIN1 — a park's notice is the session's own question** (driver; D184 point 4, its AUTONOMY1e note). A park's balloon leads with Daoris's "It stopped with its quest still taken, to ask you:" before the question, and a short OS balloon can cut the question off. The body is the agent's words alone (the note's agent part). Proof: `AttentionTests` on a park's `Detail`.
+
+**Outcome** 2026-10-19: A parked session's balloon (`AttentionEvent.Detail`) says the agent's own words, the note's agent part, falling back to the whole note; the page's attention row reads the note as before. On Sonnet, with QBENCH2: about 60 tool calls, 9 minutes. Detail: D184's AUTONOMY1e note, its line of this day.
+
+## QBENCH2 — the question bench scores a decided choice as decided (2026-10-19, D184)
+
+> - [ ] **QBENCH2 — the question bench scores a decided choice as decided** (tools; D184 point 4). `tools/question-bench.mjs`'s "NEEDS THE PERSON" category still names "a preference nothing records", so it would score a session's decided name as a miss. Proof: the bench's own test.
+
+**Outcome** 2026-10-19: `tools/question-bench.mjs`'s NEEDS THE PERSON follows D184 point 4 (a credential, an account or sign-in, a choice left to the person, a go-ahead, a repository agreement), and a class `S` scores a session's decided name or way as right, `needless` when asked, apart from the wrong-answer count D135 §6 gates on.
+
+## PARALLEL1b2 — the freeze judge says a failure once (2026-10-19, D181)
+
+> - [ ] **PARALLEL1b2 — the freeze judge says a failure once** (driver; D181 point 3, its PARALLEL1g note). PARALLEL1b's packet freezing judges a request still unfrozen at every look, so a freeze that fails slower than a look spins the loop, the defect PARALLEL1g found in its own judges. Proof: a freeze that keeps failing says so once and asks no third look, as `LookJudgesTests`' failing judgment does.
+
+**Outcome** 2026-10-19: `DriverBrainstorms.Freezing` reports a failure once until its subject is judged again (`LookFacts.Failed`/`Judged`), for brainstorms and meetings alike, so a freeze that keeps failing no longer wakes a look that fails the same way. On Sonnet, with BGWAIT2d: about 40 tool calls, 13 minutes. Detail: D181's PARALLEL1g note, its line of this day.
+
+## BGWAIT2d — a background-ended note always names its work (2026-10-19, D83)
+
+> - [ ] **BGWAIT2d — a background-ended note always names its work** (driver; D83's BGWAIT1 note). `AfterBackgroundAsync` reads what runs before it awaits the quest's read, so work that ends meanwhile leaves the note "its background work ended: " with an empty list. Proof: an `AcpBackgroundTests` case whose quest read takes the ending before it answers, and whose note names the work.
+
+**Outcome** 2026-10-19: `AcpBackground.RunningWork` is read once before the quest's read and handed to `EndedAsync`, which watches it beside what runs when it starts, so the background-ended note names work that ended meanwhile; BGWAIT2c's order (the stream's end read before the state) kept; the class ran five times alone, green. Detail: D83's BGWAIT2 note, its line of this day.
