@@ -365,6 +365,15 @@ public sealed class DriverLoop(
     };
 
     /// <summary>
+    /// What a look's lines SAY, as one string (IDLECPU1), equal when the same lines are said again, whatever their order and
+    /// however often one repeats. The tick is forwarded when it changes: a standing condition (a plugin's hold, a remote the sync
+    /// cannot reach) says its line at every look, and forwarding each made the page ask every list again every look, git of
+    /// every checkout among them. The page's own rule for a toast (<c>newsFrom</c>): changed since the last, never seen before.
+    /// </summary>
+    public static string LinesSignature(IEnumerable<string> lines) =>
+        string.Join("\n", lines.Distinct(StringComparer.Ordinal).OrderBy(line => line, StringComparer.Ordinal));
+
+    /// <summary>
     /// What the waits SAY, as one string (UX6d), equal when the same accounts hold the same starts until the same time,
     /// whatever the order. The tick is forwarded when it changes, as it is for the considerations' signature: a wait that
     /// begins or ends for an intake alone moves no consideration. A wait on signed-out accounts signs with no time (UX6d1).
@@ -636,6 +645,7 @@ public sealed class DriverLoop(
         string? lastConsidered = null;
         var lastWaited = "";
         var lastJudged = "";
+        var lastSaid = "";
         string? lastAsked = null;
         string? lastActive = null;
         string? lastRegistered = null;
@@ -689,6 +699,11 @@ public sealed class DriverLoop(
                 var judged = JudgedSignature(report.JudgedOpinions);
                 changed |= judged != lastJudged;
                 lastJudged = judged;
+                // …or what the look said (IDLECPU1): a line said again at every look, a standing hold or a remote that does not
+                // answer, is no change, and an idle machine that forwarded it made the page ask every list again every look.
+                var said = LinesSignature(report.Events);
+                changed |= said != lastSaid;
+                lastSaid = said;
 
                 // What this tick held for trust, kept for the screen's grant to be checked against
                 // (D73) — replaced whole, so a folder the driver stopped holding cannot be granted.
@@ -737,7 +752,7 @@ public sealed class DriverLoop(
                     lastRegistered = registered;
                 }
 
-                if (report.PlannedAnything || report.Events.Count > 0 || changed)
+                if (report.PlannedAnything || changed)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
                     {
