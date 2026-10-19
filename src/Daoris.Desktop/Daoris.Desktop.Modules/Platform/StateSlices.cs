@@ -93,7 +93,7 @@ public sealed class StateSlice
     public const string Gone = "gone";
 
     private readonly IEventBus _bus;
-    private readonly Func<CancellationToken, Task<IReadOnlyList<SliceJudged>>> _judge;
+    private readonly Func<CancellationToken, Task<IReadOnlyList<SliceJudged>?>> _judge;
     private readonly Lock _gate = new();
     private readonly Dictionary<string, Held> _held = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _telling = new(1, 1);
@@ -109,9 +109,13 @@ public sealed class StateSlice
 
     /// <param name="name">The slice's name, in the page's words.</param>
     /// <param name="bus">Where its pushes and manifests are raised, the kit's bus each window's pump forwards.</param>
-    /// <param name="judge">One judgement of the slice's partitions, from the truth (files, git, the database).</param>
+    /// <param name="judge">
+    /// One judgement of the slice's partitions, from the truth (files, git, the database, the machine's facts); null where what it is
+    /// judged from has not landed yet (PUSH1b1), which judges nothing: a slice never judged stays <see cref="NotJudged"/>, so a window
+    /// never installs an empty slice as the truth, and one judged keeps what it holds.
+    /// </param>
     /// <param name="epoch">This owner's life; a fresh one where none is named.</param>
-    public StateSlice(string name, IEventBus bus, Func<CancellationToken, Task<IReadOnlyList<SliceJudged>>> judge, string? epoch = null)
+    public StateSlice(string name, IEventBus bus, Func<CancellationToken, Task<IReadOnlyList<SliceJudged>?>> judge, string? epoch = null)
     {
         Name = name;
         _bus = bus;
@@ -130,6 +134,12 @@ public sealed class StateSlice
 
     /// <summary>What on the kit's bus wakes the judge while the worker runs.</summary>
     public IReadOnlyList<SliceWake> WakesOn { get; init; } = [];
+
+    /// <summary>
+    /// Where the slice hears of a move no bus event tells (PUSH1b1: the machine's facts landing), while the worker runs: each is
+    /// handed the slice's <see cref="Wake"/> and answers what stops it hearing, disposed when the worker stops.
+    /// </summary>
+    public IReadOnlyList<Func<Action, IDisposable>> Hears { get; init; } = [];
 
     /// <summary>
     /// Where a judgement's failure is said, once until one succeeds again; the last judged state stands, and the next wake judges
@@ -176,7 +186,7 @@ public sealed class StateSlice
         await _telling.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            IReadOnlyList<SliceJudged> judged;
+            IReadOnlyList<SliceJudged>? judged;
             try
             {
                 judged = await _judge(ct).ConfigureAwait(false);
@@ -194,6 +204,8 @@ public sealed class StateSlice
             }
 
             _failing = false;
+            // Nothing to judge from yet: what is held stands, and a slice never judged stays not judged.
+            if (judged is null) return;
             var pushes = new List<SlicePush>();
             lock (_gate)
             {
@@ -251,6 +263,7 @@ public sealed class StateSlice
             if (wake.When is null || wake.When(message.Payload)) Wake();
             return Task.CompletedTask;
         })).ToList();
+        heard.AddRange(Hears.Select(hear => hear(Wake)));
         try
         {
             var clock = Stopwatch.StartNew();

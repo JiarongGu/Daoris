@@ -14,7 +14,10 @@ public sealed class DriverStateSliceTests : DriverModuleBridge
         JsonSerializer.SerializeToNode(snapshot.Partitions.Single(each => each.Partition == partition).Data, IpcJson.Options)!.AsObject();
 
     private IReadOnlyList<SlicePush> Pushes() =>
-        [.. Raised.Where(each => each.Type == StateSlice.PushType).Select(each => (SlicePush)each.Payload!)];
+    [
+        .. Raised.Where(each => each.Type == StateSlice.PushType).Select(each => (SlicePush)each.Payload!)
+            .Where(push => push.Slice == DriverStateSlice.Name),
+    ];
 
     [Fact]
     public async Task The_driver_s_state_is_pushed_in_three_partitions_of_allow_listed_fields_and_every_field_STATE_answers_is_classed()
@@ -85,7 +88,7 @@ public sealed class DriverStateSliceTests : DriverModuleBridge
     [Fact]
     public async Task A_slice_this_Daoris_does_not_push_answers_nothing_so_the_page_keeps_its_pull()
     {
-        var answer = await AskAsync(Module(), "STATE_SLICE", new { slice = "lines" });
+        var answer = await AskAsync(Module(), "STATE_SLICE", new { slice = "sweeps" });
 
         Assert.True(answer.Success);
         Assert.Null(answer.Data);

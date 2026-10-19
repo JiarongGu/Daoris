@@ -153,17 +153,12 @@ public static class HelpFacts
         var unread = new List<string>();
         foreach (var known in whole.Snapshot.Repositories.OrderBy(known => known.Repository, StringComparer.Ordinal))
         {
-            // As CanonicalLine.ResolveAsync: what is set first, the checkout asked only where nothing is.
-            var line = CanonicalLine.Choose(config, known.Repository, known.Workspace, guess: null);
-            if (line.Branch is null && !string.IsNullOrWhiteSpace(known.Root))
+            // What is set first, the checkout's guess as judged only where nothing is: the lines slice reads it alike (PUSH1b1).
+            if (CanonicalLine.Judged(config, known.Repository, known.Workspace, known.Root, facts.Value<HelpLineGuess>(Lines, known.Repository))
+                is not { } line)
             {
-                if (facts.Value<HelpLineGuess>(Lines, known.Repository) is not { } guessed)
-                {
-                    unread.Add(known.Repository);
-                    continue;
-                }
-
-                line = CanonicalLine.Choose(config, known.Repository, known.Workspace, guessed.Branch);
+                unread.Add(known.Repository);
+                continue;
             }
 
             lines.Add(new(known.Repository, RemoteTarget.Workspace(known.Workspace), line.Branch, line.Source));
