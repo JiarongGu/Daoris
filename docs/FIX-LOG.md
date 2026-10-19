@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The CI beside failed two of the merge tool's own tests: the priority it already had, and a settings file read as a folder (CIPRIO1, PROCPAR1)
+
+- **Symptom:** the full set beside on `f617bc184` failed `tool-tests` twice. *A gate step started after the run lowered itself runs at
+  the lowered priority* said "lowered from 10 to 10". *Every repository file a .NET suite reads …* (MOD9) said `CategoryTests.cs`
+  reads `src/Daoris.Desktop/process.runsettings/probe.txt`, no file the repository tracks.
+- **Root cause:** CIPRIO1's test asserted the priority rose, but a run beside lowers itself before its gates, so its tool-tests
+  start already below normal. MOD9's scan read a `"src", "Daoris.Desktop", "process.runsettings"` run as a folder, since its file
+  test is by extension and `.runsettings` is not one; once read as a file, a change there reached no `driver` gate though the fast
+  `CategoryTests` reads it; and the scan took `CategoryTests` for a Process class of the git half from trait attributes inside its
+  fixtures' raw strings. Neither failed in the branches: each ran its own tests, filtered, at normal priority (D180).
+- **Fix:** the test holds the priority at least below normal; the scan reads a tracked file as itself whatever its extension and
+  reads a class's traits from its code with its strings blanked; `process.runsettings` reaches the `driver` gate too.
+- **Verify:** the scan, lane-table, STRUCT5d and priority tests: 9 pass.
+- **Commit:** `f252a70b2`
+
 ## 2026-10-19 — A finished driven session waited 48 minutes on its own go-on and was recorded failed (BGWAIT2)
 
 - **Symptom:** the owner, "one session just failed". A driven session on the install committed and closed its quest done in
