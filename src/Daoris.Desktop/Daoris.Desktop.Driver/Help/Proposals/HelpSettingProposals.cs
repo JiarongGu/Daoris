@@ -45,7 +45,9 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     {
         var words = proposal.Door == "across" ? (proposal.Value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries) : [];
         var other = words is ["write-to", var to, ..] ? to : null;
-        return new([proposal.Workspace], [proposal.Door == "retry" ? null : proposal.Target, other, proposal.Repository]);
+        // ASKSCOPE1c3: a retry's quest is named as a record, filed under its repository's workspace.
+        var quest = proposal.Door == "retry" ? HelpNames.OfParked(facts, (proposal.Target ?? "").Trim().TrimStart('#').Trim()) : [];
+        return new([proposal.Workspace], [proposal.Door == "retry" ? null : proposal.Target, other, proposal.Repository]) { Records = quest };
     }
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)

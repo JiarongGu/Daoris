@@ -7,6 +7,7 @@ import type { SessionOption } from '../work/SessionOptions';
 import type { Reach } from '../work/say';
 import { toUpload } from '../compose/attachments';
 import { call } from './call';
+import { notPushed } from './slices';
 
 // A session's conversation (MOD3): its record read back and followed live, its turns, its options,
 // and the verbs that start, speak in and finish one (D76).
@@ -526,7 +527,8 @@ export const useParkGoAhead = () => {
       return { ...wordsOf(answered), waits: waits === true, message: typeof message === 'string' ? message : '' };
     },
     onError: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
+      // The records themselves, where the shell pushes them, are pushed as they moved (PUSH1d2).
+      void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allAsks });
     },
   });

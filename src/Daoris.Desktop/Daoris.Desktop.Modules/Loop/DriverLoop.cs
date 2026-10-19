@@ -105,9 +105,24 @@ public sealed class DriverLoop(
     private StateSlice? _driverSlice;
 
     /// <summary>The slices this Daoris pushes (PUSH1a): the snapshot route finds them here, and <see cref="Start"/> runs them.</summary>
-    public StateSlices Slices => LazyInitializer.EnsureInitialized(ref _slices, () => new StateSlices(DriverSlice, LinesStateSlice.Of(this, eventBus)));
+    public StateSlices Slices => LazyInitializer.EnsureInitialized(ref _slices, () =>
+        new StateSlices(DriverSlice, LinesStateSlice.Of(this, eventBus), SessionsStateSlice.Of(this, eventBus)));
 
     private StateSlices? _slices;
+
+    /// <summary>
+    /// Each move the change sources heard, as the watch tells the machine's facts (PARALLEL1a): its topic and subject, a ledger family
+    /// the change stream named among them, so a slice judged from the service's answers hears a connector's write with no desktop
+    /// dispatch (PUSH1d2). Never a press, which is no move.
+    /// </summary>
+    public event Action<string, string>? MoveHeard;
+
+    /// <summary>What the watch tells of each move it heard: the machine's facts it moves woken, then whoever hears the moves.</summary>
+    public void HeardMove(string topic, string subject)
+    {
+        HelpFacts.Wake(Facts, topic, subject);
+        MoveHeard?.Invoke(topic, subject);
+    }
 
     /// <summary>The slices' workers, from <see cref="Start"/> until the stop.</summary>
     private Task? _pushing;
@@ -690,8 +705,9 @@ public sealed class DriverLoop(
             Log = log,
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
-            // PARALLEL1a: each move the sources hear wakes the facts it moves (a ref its repository's line, a ledger family the rest).
-            Heard = (topic, subject) => HelpFacts.Wake(Facts, topic, subject),
+            // PARALLEL1a: each move the sources hear wakes the facts it moves (a ref its repository's line, a ledger family the rest),
+            // and the slices that hear the moves (PUSH1d2: the sessions' on the ledger's `sessions`).
+            Heard = HeardMove,
         };
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);

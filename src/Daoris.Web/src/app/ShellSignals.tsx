@@ -3,14 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
-import { driverSlice, linesSlice, notPushed, useDriverReady, useStateHub, useStateSlices } from '../bridge/shell';
+import { driverSlice, linesSlice, notPushed, sessionsSlice, useDriverReady, useStateHub, useStateSlices } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
 
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
 
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
-const PUSHED = [driverSlice, linesSlice];
+const PUSHED = [driverSlice, linesSlice, sessionsSlice];
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
@@ -69,8 +69,9 @@ export function ShellSignals({ notify, onAttend, attended }: {
 
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
     // world — the two questions are different, and collapsing them would make a stale window the
-    // price of a quiet one.
-    void client.invalidateQueries({ queryKey: keys.allSessions });
+    // price of a quiet one. What is read under the sessions' key, but the records where the shell
+    // pushes them (PUSH1d2): their pushes write them, and a tick reads none of them again.
+    void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     void client.invalidateQueries({ queryKey: keys.allQuests });
     // 🔴 And the asks. A tick takes them (INT4b), and the attention band reads them beside the
     // sessions (INT4d) — so a session list fresher than its asks is worse than both stale: seen on
@@ -140,7 +141,7 @@ export function ShellSignals({ notify, onAttend, attended }: {
           // A park is the one that is WAITING on somebody; an ending, or an answer, is news.
           item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
       }
-      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     });
 
   /**
@@ -150,8 +151,9 @@ export function ShellSignals({ notify, onAttend, attended }: {
    * the ending, or `SESSION_ATTENTION` already told them.
    */
   useShenoraEvent<{ session?: string; state?: string }>('DAORIS', 'SESSION_ENDED', () => {
-    void client.invalidateQueries({ queryKey: keys.allSessions });
-    // What runs, where the shell pushes the driver's state, is pushed by the end itself (PUSH1a).
+    // The record, where the shell pushes the sessions, and what runs, where it pushes the driver's state, are pushed by the end
+    // itself (PUSH1d2, PUSH1a).
+    void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
   });
 

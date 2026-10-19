@@ -29,6 +29,19 @@ judged from the machine's facts, a partition per repository (PUSH1b1); `linesSli
 (`SecondaryWindowRoot`). And a delta is never coalesced: only a whole replacement carries the pump's coalesce key, which
 `StateSlice` sets itself.
 
+## A family read under many keys, and a large one
+
+The sessions (PUSH1d2, `Loop/SessionsStateSlice.cs`, `sessionsSlice` in `bridge/sessions.ts`) are the worked example; D182's PUSH1d2
+note has the measure that chose it.
+
+| Part | The shape | Where it is |
+|---|---|---|
+| One entry | The spec feeds the widest variant's key (every repository, closed included, every workspace); each hook reads it once live and derives its variant with a stable `select` that twins the service's filter and order. Not live, each variant is its own pull under its own key, its `queryFn` first waiting for a snapshot on its way (`readPushed` with a null pull) so a window opening reads none beside it | `useSessionsRead`, `sessionsIn` in `data/queries.ts` |
+| Keyed deltas | A partition whose data is an object of records by key (`StateSlice.Keyed`) pushes the keys that moved and names the keys gone; the page's `merge` is `mergeKeyed` | `StateSlice.Moved`, `slices.ts` |
+| Judged and empty | `compose` is told whether the owner judged (`judged`): a list judged empty composes `[]`, so a last partition gone empties the list instead of leaving it as it was | `Pushed.install`, `Pushed.apply` |
+| A write that bypasses the host | A `Hears` on `DriverLoop.MoveHeard`, which the watch tells each move it heard (`HeardMove`): the ledger's family wakes the slice, so a connector's write is pushed with no desktop dispatch | `SessionsStateSlice.HearLedger` |
+| Its twins' test | The allow-list held against the page's type (`data/api.ts`) and the service's answer record (`ApiContracts.cs`), read from the sources | `SessionsStateSliceTests` |
+
 ## A fact judged per repository, before its slice
 
 A slice partitioned per repository is only as cheap as the fact beneath it: one repository's `refs` wake must judge that

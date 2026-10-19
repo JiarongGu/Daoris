@@ -20,7 +20,7 @@ import {
   Undo2, Workflow, Wrench, WrapText, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, SessionState } from '../data/api';
+import { type Quest, SESSION_ACTIVE, type SessionState } from '../data/api';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { TOAST_LIMIT, withNotice } from '../data/signals';
@@ -318,13 +318,8 @@ export function shownState(
   return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
 }
 
-/**
- * Which states still hold their repository — the wire half of `Session.Active`, exhaustive here for
- * the reason the tone map is: the rail, the quest card and the attention band all ask it, and a set
- * spelled out three times acquires a tenth state in two of them.
- */
-export const SESSION_ACTIVE: ReadonlySet<SessionState> =
-  new Set<SessionState>(['queued', 'starting', 'working', 'awaiting-person']);
+/** Which states still hold their repository: spelled once, beside the states (`data/api`), and said here for the views. */
+export { SESSION_ACTIVE };
 
 /**
  * The same nine states as a LIVENESS mark — `SESSION_TONE`'s sibling, because a pill and a dot
