@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The landed fixtures' cleanup slept five seconds after every test and left its folder (PROCSPEED1)
+
+- **Symptom:** `driver-process-git` took 46 to 65 minutes on the last full sets, its slowest class `PullRequestStateTests` about a
+  minute a test. A git trace of that class showed every test ending with 5.4 to 6.2 s in which no git ran, and the main checkout's
+  `_fixtures/landed/` held 14,619 left-behind test folders, each holding only git's object files.
+- **Root cause:** git writes its objects read-only, `GitSeed.Copy` keeps the attribute, and `Directory.Delete` refuses a read-only
+  file on Windows. `LandedFixture.Dispose` (the base of about 30 git-half classes, about 250 tests on the last full set) and
+  `LandingPluginFixture.Dispose` retried that refusal 20 times at 250 ms, holding a test thread asleep, then gave up and left the
+  folder. The rest of the slow tests' time is git starts: in the trace, between two starts git itself ran 0.0 to 0.1 s and the start
+  took 1 to 5 s while merges loaded the machine. No other clock was found in the slow classes: one 10 s bound that elapses only on
+  failure (`Two_looks_at_once_ask_a_pull_request_once`) and one two-minute spin on a hold count (`EntryLandingTests`).
+- **Fix:** `GitSeed.Remove` makes each file writable, never walking a link, then deletes, as `GitTree`'s cleanup does. Both fixtures
+  call it inside their retry, which stays for a straggling plugin process (FLAKE1); the seeds' exit cleanup and `LandingTests`'
+  cleanup use it too. `LandingTests`, `LandingSquashTests`, `LandingTidyTests`, `ReviewLandingTests` and `OpinionLandingTests`
+  built each test's repository step by step and now copy a seed of their own shape (PROC1h); none reads the first commit's id or
+  time. No assertion changed.
+- **Verification:** red first: `GitSeedTests`' new case failed (the folder stood), then green. Each run below is the named classes
+  alone with `git.process.runsettings`, `DAORIS_HOME` on scratch, merges and other projects' work beside it.
+  - `PullRequestStateTests`, 13 of 13 both times: 1168 s summed (19 m 27 s) before at 70 to 90% CPU, 606 s (10 m 5 s) after at 40 to
+    60%. The load fell between, so the fix's own share is one traced test's: `A_failed_ask_removes_nothing_…` 26 s to 16 s, the
+    same 76 git starts, its closing 5.4 s gone. The after run left no folder (still 14,619).
+  - The five seed classes, traced both times, 85 of 85 both times: 5083 s summed (30 m 46 s) and 3719 git starts before; 2896 s
+    (17 m 21 s) and 3464 starts after, `init` 56 to 5 and `config` 114 to 12. The time fell by more than the starts explain, so
+    the load moved here too.
+  - *Threads (PROC1-KNEE, not settled):* the git half's 600 tests on this branch's first fix, once each. 4 threads: 2033 s from
+    the first start to the last end (7555 s summed), 599 passed, CPU mean 50% with the parent's merges beside it. 6 threads: 3496 s
+    (19,680 s summed), 600 passed, CPU mean 64% with a merge's family rehearsal, two CLI suites and another project's media scans
+    beside it. The load moved more than the setting could, so `MaxParallelThreads` stays 4; 8 was not run.
+  - The four-thread run's one failure, `LandedBranchTests.A_branch_that_changed_since_the_list_keeps_no_recovery_ref`
+    (`worktree add` failing with nothing said, 1 s in), passed alone (2 m 12 s): a load flake.
+
 ## 2026-10-19 — The dev knowledge server ran the build it started on for nine days, a fixed host's watch with it (KNOWHOLD1)
 
 - **Symptom:** twice (the full set of 2026-10-18 on bbc1a24, and again on 10-19) the deployment rehearsal's swap under
