@@ -661,6 +661,17 @@
     }
   ],
   "sets": ["drivable", "holds", "trees", "writeAcross.*"],
+  "lock": [
+    { "name": "a lock a live process wrote a moment ago holds", "pid": "live", "age": 0, "stale": false },
+    { "name": "a lock written within the minute holds", "pid": "live", "age": 59, "stale": false },
+    { "name": "a lock whose process is gone is stale", "pid": "gone", "age": 0, "stale": true },
+    { "name": "a lock written more than a minute ago is stale, its process alive or not", "pid": "live", "age": 61, "stale": true },
+    { "name": "a lock that does not read is no holder's", "text": "{ \"pid\": ", "stale": true },
+    { "name": "a lock that is no object is no holder's", "text": "[]", "stale": true },
+    { "name": "a lock naming no process is no holder's", "text": "{ \"since\": \"2026-10-20T00:00:00.000Z\" }", "stale": true },
+    { "name": "a lock naming a process that is no whole number is no holder's", "text": "{ \"pid\": \"7\", \"since\": \"2026-10-20T00:00:00.000Z\" }", "stale": true },
+    { "name": "a lock whose time does not read is no holder's", "text": "{ \"pid\": 7, \"since\": \"yesterday\" }", "stale": true }
+  ],
   "twice": {
     "changes": [
       { "from": ["  \"notify\": true,"], "to": ["  \"notify\": true,", "  \"notify\": false,"] },

@@ -828,15 +828,19 @@ public sealed record DriverConfig(
     /// re-check, finding 1, <see cref="JsonKeeping"/>): an object taken out since is made again with only the edit's keys, and one that is
     /// no longer an object refuses it. A config built in memory is written whole, and one parsed from a text (<see cref="Parse"/>) or read
     /// from another file over that text (<see cref="ToJson"/>). The CLI's <c>writeDriverChoices</c> does the same.
+    /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>),
+    /// which the CLI's writer takes too: with none, another writer's change landing between them was lost.</para>
     /// </remarks>
     /// <exception cref="DriverConfigUnreadableException">
     /// The file there now does not read, holds a key twice, or holds no object where this edit changes something inside one; nothing was
     /// written.
     /// </exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
     public void Save(string path)
     {
         var file = Path.GetFullPath(path);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        using var held = KeepLock.Take(file);
         var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         string text;
         try

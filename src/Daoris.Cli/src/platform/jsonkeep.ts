@@ -21,6 +21,7 @@ import { basename } from 'node:path';
 import { findName } from './casefold.ts';
 import { DaorisError } from './errors.ts';
 import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from './fsx.ts';
+import { withKeepLock } from './keeplock.ts';
 
 /**
  * An edit refused, nothing written: it changes `editPath`, and `holder`, the value that path lies under, is no longer an object in the
@@ -90,11 +91,19 @@ export function keepEdits(
  * the file read again here. No edit writes nothing. `found` says a file was there at the read: where there was none then and is none
  * now, `edited` is written whole in the writer's own layout, since there is nothing to keep. The driver's twin is `JsonKeeping.Save`.
  *
+ * 🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; `keeplock.ts`), which the driver's
+ * `JsonKeeping.Save` takes too: with none, another writer's change landing between them was lost.
+ *
  * @throws DaorisError The file there now does not read, holds a key twice in one object, or holds no object where this edit changes
- * something inside one; nothing was written.
+ * something inside one, or another writer held its lock for the whole of the wait; nothing was written.
  */
 export function writeKeeping(path: string, found: boolean, read: Record<string, unknown>, edited: Record<string, unknown>): void {
   if (JSON.stringify(read) === JSON.stringify(edited)) return;
+  withKeepLock(path, () => writeHeld(path, found, read, edited));
+}
+
+/** `writeKeeping` once the file's lock is held. */
+function writeHeld(path: string, found: boolean, read: Record<string, unknown>, edited: Record<string, unknown>): void {
   const { problem, text } = readJsonObject(path);
   const name = basename(path);
   // The words every editor of a home file says over one that does not read (REV3, `writeJsonTextAtomic`).

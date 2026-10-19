@@ -57,14 +57,18 @@ public static class JsonKeeping
     /// differ between them are made, under <see cref="Kept"/>'s rules, onto the file read again here. No edit writes nothing.
     /// <paramref name="found"/> says a file was there at the read: where there was none then and is none now, <paramref name="edited"/> is
     /// written whole in the writer's own layout, since there is nothing to keep. The CLI's twin is <c>jsonkeep.ts</c>' <c>writeKeeping</c>.
+    /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>), which
+    /// the CLI's <c>writeKeeping</c> takes too: with none, another writer's change landing between them was lost.</para>
     /// </summary>
     /// <exception cref="DriverException">
     /// The file there now does not read, holds a key twice in one object, or holds no object where this edit changes something inside one;
     /// nothing was written.
     /// </exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
     public static void Save(string path, bool found, string understood, string edited)
     {
         if (understood == edited) return;
+        using var held = KeepLock.Take(path);
         var name = Path.GetFileName(path);
         string? current = null;
         try

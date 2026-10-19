@@ -24,6 +24,7 @@ import { DaorisError } from '../platform/errors.ts';
 import { flagValue, operands } from '../platform/args.ts';
 import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from '../platform/fsx.ts';
 import { EditRefused, keepEdits, twice } from '../platform/jsonkeep.ts';
+import { withKeepLock } from '../platform/keeplock.ts';
 import { atName, findName, sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.ts';
@@ -823,8 +824,16 @@ function accessWritten(setting: AccessSetting): AccessSetting {
  * twice in one object, is refused and left as it is, never overwritten; one that is gone is written from nothing. The edit touches only
  * the key paths it changed (the second re-check, finding 1): an object taken out since is made again with only the edit's keys, and one
  * that is no longer an object refuses it. The driver's `DriverConfig.Save` does the same.
+ *
+ * 🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; `keeplock.ts`), which the driver's
+ * writer takes too: with none, another writer's change landing between them was lost.
  */
 export function writeDriverChoices(path: string, choices: DriverChoices): void {
+  withKeepLock(path, () => writeHeld(path, choices));
+}
+
+/** `writeDriverChoices` once the file's lock is held. */
+function writeHeld(path: string, choices: DriverChoices): void {
   if (choices.source === undefined) {
     writeJsonAtomic(path, choicesWritten(choices));
     return;
