@@ -50,7 +50,8 @@ import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/
 import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { type AnchorState, SessionConversation } from './SessionConversation';
-import type { Usage } from './conversation';
+import type { RunningCall, Usage } from './conversation';
+import { useNow } from './useNow';
 import { isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
@@ -540,8 +541,10 @@ export function WorkFrame({
   const [reading, setReading] = useState<{ session: string; usage?: Usage } | null>(null);
   const onUsage = useCallback((session: string, usage?: Usage) => setReading({ session, usage }), []);
   // When the attended session's agent was asked and has answered nothing (WAITSHOWN1), likewise told by the conversation.
-  const [waiting, setWaiting] = useState<{ session: string; since?: string } | null>(null);
-  const onWaiting = useCallback((session: string, since?: string) => setWaiting({ session, since }), []);
+  const [waiting, setWaiting] = useState<{ session: string; since?: string; calling?: RunningCall } | null>(null);
+  const onWaiting = useCallback((session: string, since?: string, calling?: RunningCall) => setWaiting({ session, since, calling }), []);
+  // The head's *running … for …* steps with the clock (WAITSAY1), only while a call is named.
+  useNow(waiting?.calling ? 15_000 : null);
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that. 🔴 And only a record this
@@ -1652,6 +1655,7 @@ export function WorkFrame({
           : null,
         helping: helps?.title,
         waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
+        calling: waiting?.session === attended.id ? waiting.calling : undefined,
       })}
       acts={headActs}
       primary={headPrimary}

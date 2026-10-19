@@ -37,6 +37,8 @@ export type SessionFactsOf = {
   helping?: string | null;
   /** When the turn its agent is on was asked, while it has answered nothing (`firstAnswerWait`, WAITSHOWN1); absent otherwise. */
   waitingSince?: string | null;
+  /** The call its agent is inside, and since when (`runningCall`, WAITSAY1); absent where none is open. */
+  calling?: { title: string; since: string } | null;
 };
 
 /**
@@ -93,6 +95,8 @@ export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
     if (failed !== null && session.kind !== 'chat') facts.push(t('work.facts.attempt', { count: failed, attempt: failed + 1 }));
     // WAITSHOWN1: its agent has said nothing since it was asked; a resumed long conversation can wait many minutes.
     if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
+    // WAITSAY1: a call that runs for minutes is what the session waits on; said with how long, and only while it is working.
+    if (of.calling && session.state === 'working') facts.push(t('work.facts.calling', { title: of.calling.title, elapsed: elapsed(of.calling.since) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 
