@@ -199,10 +199,108 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>
+    /// AUTONOMY1b (D184 point 3): a driven start under asking runs in its agent's asking mode, set on the wire, and its note names the
+    /// mode it got; answered after the person moved its repository to unrestricted, the same record resumes in the agent's mode that
+    /// asks nothing and says the change first, as HELPMODE1a2 says Ask Daoris's.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_under_a_changed_setup_runs_in_the_mode_set_now_and_says_the_change()
+    {
+        await using var service = ParkStandIn.Start(_repository);
+        await ParkedAsync(service, Postured(service, AccessRules.Asking));
+        Assert.Equal(AccessRules.Asking, service.Session("s1")["access"]![AccessRules.Permissions]!.GetValue<string>());
+        Assert.Equal("default", Heard().Single(line => line["method"]!.GetValue<string>() == "session/set_mode")["mode"]!.GetValue<string>());
+        Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.Note, Text: { } text } && text.Contains("Permission prompts: asking on `acp-stub`"));
+
+        await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
+        await Postured(service, AccessRules.Unrestricted).RunOnceAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal(1, service.SessionCount);
+        Assert.Equal("completed", service.Session("s1")["state"]!.GetValue<string>());
+        var heard = Heard();
+        var resumedAt = heard.ToList().FindIndex(line => line["method"]!.GetValue<string>() == "session/resume");
+        Assert.True(resumedAt >= 0);
+        Assert.Equal("bypassPermissions", heard.Skip(resumedAt).Single(line => line["method"]!.GetValue<string>() == "session/set_mode")["mode"]!.GetValue<string>());
+        Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.Note, Text: { } text }
+            && text.StartsWith("Permission prompts changed since `s1` started: it started under `asking`, and this run goes on under `unrestricted`.", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// AUTONOMY1b (D184 point 2, D183 point 1): unrestricted on a harness with no mode that asks nothing is held before any record
+    /// opens, naming the harness and the way on; nothing is spawned, and it never runs in its own mode under that label.
+    /// </summary>
+    [Fact]
+    public async Task An_unrestricted_start_on_a_harness_with_no_such_mode_is_held_before_any_record_opens()
+    {
+        await using var service = ParkStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), Config(Agent(), "resumes", AccessRules.Unrestricted), adapters, _home,
+            processes: new SessionProcesses(), harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal(0, service.SessionCount);
+        var held = Assert.Single(look.Considerations, c => c.Quest.Id == "q1");
+        Assert.Contains("`acp-stub`", held.Reason);
+        Assert.Contains("`unrestricted`", held.Reason);
+        Assert.Contains("daoris-driver access engine permissions=auto", held.Reason);
+        Assert.False(File.Exists(Log));
+        Assert.Equal("Open", service.Status("q1"));
+    }
+
+    private DriverConfig Config(string agent, string mode, string permissions) => (DriverConfig.Empty with
+    {
+        Drivable = ["engine"],
+        Trees = ["engine"],
+        Adapter = "acp-stub",
+        TimeoutMinutes = 1,
+        PollSeconds = 1,
+        Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", agent, Log, mode] },
+    }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, permissions)] });
+
+    /// <summary>A driver whose protocol stand-in names the asking mode and the mode that asks nothing, as Claude's adapter does.</summary>
+    private Daoris.Driver.Driver Postured(ParkStandIn service, string permissions)
+    {
+        // Every built adapter, the stub whose accounts the protocol stub runs as among them, with the protocol stub postured.
+        var built = AdapterSet.Built();
+        var adapters = new AdapterSet(built.Names.ToDictionary(
+            name => name, name => name == "acp-stub" ? new PosturedStub() : built.Resolve(name), StringComparer.OrdinalIgnoreCase));
+        return new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), Config(Agent(), "modes", permissions), adapters, _home, processes: new SessionProcesses(),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+    }
+
+    /// <summary>The protocol stub with postures: Claude's words for its auto, asking and unrestricted modes.</summary>
+    private sealed class PosturedStub : ISessionAdapter
+    {
+        private readonly AcpStubAdapter _stub = new();
+
+        public string Name => _stub.Name;
+
+        public SessionWire Wire => SessionWire.Acp;
+
+        public bool Interactive => true;
+
+        public string? AcpPosture => "auto";
+
+        public string? AskingPosture => "default";
+
+        public string? FullPosture => "bypassPermissions";
+
+        public HarnessToolchain? Toolchain => _stub.Toolchain;
+
+        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => _stub.Prepare(target, command);
+
+        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => _stub.PrepareChat(target, command);
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, takes the quest and asks which
     /// port; told the answer on a resumed conversation it closes the quest; told a carry-on it closes it too. The mode is
     /// how it resumes: <c>resumes</c> advertises and honours <c>session/resume</c>, <c>gone</c> refuses it
-    /// <c>resource_not_found</c>. Each frame it acts on goes to the log, with where it ran and on which account.
+    /// <c>resource_not_found</c>; <c>modes</c> resumes too, and offers Claude's modes on each session, a mode set going to the log
+    /// (AUTONOMY1b). Each frame it acts on goes to the log, with where it ran and on which account.
     /// </summary>
     private string Agent()
     {
@@ -222,6 +320,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
             let conversation = null;
             let resumed = false;
+            const modes = mode === 'modes'
+              ? { modes: { currentModeId: 'auto', availableModes: [{ id: 'default' }, { id: 'auto' }, { id: 'bypassPermissions' }] } }
+              : {};
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
             const lines = createInterface({ input: process.stdin });
@@ -233,7 +334,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
               } else if (frame.method === 'session/new') {
                 conversation = 'conv-' + session;
                 heard({ method: 'session/new', conversation });
-                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation, ...modes } });
               } else if (frame.method === 'session/resume' || frame.method === 'session/load') {
                 heard({ method: frame.method, conversation: frame.params?.sessionId });
                 if (mode === 'gone') {
@@ -241,8 +342,11 @@ public sealed class AnswerContinuesTickTests : IDisposable
                 } else {
                   conversation = frame.params.sessionId;
                   resumed = true;
-                  send({ jsonrpc: '2.0', id: frame.id, result: {} });
+                  send({ jsonrpc: '2.0', id: frame.id, result: { ...modes } });
                 }
+              } else if (frame.method === 'session/set_mode') {
+                heard({ method: 'session/set_mode', mode: frame.params?.modeId });
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
               } else if (frame.method === 'session/prompt') {
                 const prompt = (frame.params?.prompt ?? []).map((block) => block.text ?? '').join('\n');
                 heard({ method: 'session/prompt', conversation: frame.params?.sessionId, prompt, resumed });
@@ -418,6 +522,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
                             ["baseCommit"] = body["baseCommit"]?.GetValue<string>(),
                             ["profile"] = body["profile"]?.GetValue<string>(),
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
+                            // The setup the start resolved (AUTONOMY1a), kept and answered as the service does on loopback.
+                            ["access"] = body["access"]?.DeepClone(),
                         };
                         _sessions.Add(session);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());

@@ -1326,6 +1326,58 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// AUTONOMY1b (D184 point 3): a driven start's required posture, its repository's asking or unrestricted permission prompts, is
+    /// set where the agent offers it (Codex's <c>read-only</c>, which asks for approval), and where it does not, the open fails naming
+    /// the repository's setup and its way on, never Ask Daoris's.
+    /// </summary>
+    [Fact]
+    public async Task A_driven_required_posture_is_set_where_offered_and_refused_naming_the_repositorys_setup_where_not()
+    {
+        static ResolvedAccess Permissions(string value) => AccessRules.ResolveLevels(
+            new AccessSetting { Pauses = new Dictionary<string, string> { [AccessRules.Permissions] = value } }, null, null);
+        static FakeAgent Offering(string modes) => new((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return method switch
+            {
+                "session/new" => Ok(frame, $$$"""{"sessionId":"s-1","modes":{"currentModeId":"agent","availableModes":[{{{modes}}}]}}"""),
+                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+
+        var codex = Offering("""{"id":"read-only"},{"id":"agent"},{"id":"agent-full-access"}""");
+        var asking = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", AdapterSet.Built().Resolve("codex-acp"));
+        await new AcpSession(codex.Incoming, codex.Outgoing, _ => { }, closeTimeout: null, asking.Posture) { Unoffered = asking.Unoffered }
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+        Assert.Equal("read-only", ModeSet(codex));
+
+        var claude = Offering("""{"id":"default"},{"id":"acceptEdits"},{"id":"agent"}""");
+        var unrestricted = DrivenAccess.For(Permissions(AccessRules.Unrestricted), "engine", AdapterSet.Built().Resolve("claude-code-acp"));
+        var session = new AcpSession(claude.Incoming, claude.Outgoing, _ => { }, closeTimeout: null, unrestricted.Posture)
+        {
+            Unoffered = unrestricted.Unoffered,
+        };
+        try
+        {
+            var refused = await Assert.ThrowsAsync<DriverException>(() => session.OpenAsync("D:/fam/Game", CancellationToken.None));
+
+            Assert.Contains("`bypassPermissions`", refused.Message);
+            Assert.Contains("`acceptEdits`", refused.Message);
+            Assert.Contains("`engine`", refused.Message);
+            Assert.Contains("`unrestricted`", refused.Message);
+            Assert.Contains("`daoris-driver access engine permissions=auto`", refused.Message);
+            Assert.DoesNotContain("Ask Daoris", refused.Message);
+            Assert.Null(ModeSet(claude));
+        }
+        finally
+        {
+            session.Release();
+        }
+    }
+
+    /// <summary>
     /// An adapter too old to offer <c>auto</c> is driven in the next posture it names — the one Daoris
     /// always used — never in a neighbouring mode the adapter did not list (D81, ACP3).
     /// </summary>

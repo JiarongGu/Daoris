@@ -59,6 +59,13 @@ public sealed record SessionTarget(
     public string? Helper { get; init; }
 
     /// <summary>
+    /// The permission prompts a driven session of a quest runs under (AUTONOMY1b, D184 point 3): the posture its protocol door asks, or
+    /// the permission mode its native door names, as its repository's setup resolved at this start or resume. Null keeps the adapter's
+    /// own, as an intake, a reviewer, a helper and a brainstorm have.
+    /// </summary>
+    public DrivenAccess? Access { get; init; }
+
+    /// <summary>
     /// The brainstorm this turn is a pass of (BRAINSTORM1a, D176 point 1): one turn in a room holding the packet and its instruction,
     /// on no quest, ask, opinion or repository. Its spawn carries the brainstorm, the turn and where its result goes. Null for every
     /// other session.
@@ -1138,17 +1145,30 @@ public interface ISessionAdapter
 
     /// <summary>
     /// The harness's own mode that asks nothing, in <b>its own vocabulary</b>, for Ask Daoris's full access (HELPMODE1a1, D183
-    /// point 1): a <c>--permission-mode</c> on the native door (<see cref="ChatTarget.PermissionMode"/>), a mode on the protocol
-    /// door, which the session must set or fail (<see cref="HelpModes.Required"/>).
+    /// point 1) and a driven session whose repository's permission prompts are unrestricted (AUTONOMY1b, D184 point 2): a
+    /// <c>--permission-mode</c> on the native door (<see cref="ChatTarget.PermissionMode"/>, <see cref="DrivenAccess.PermissionMode"/>),
+    /// a mode on the protocol door, which the session must set or fail (<see cref="HelpModes.Required"/>).
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>Never a driven session's or a repository's conversation's</b>: D81's postures stand for them. Only the person's
-    /// choice of full access for Ask Daoris reaches this.</para>
+    /// <para>🔴 <b>Only by the person's own setting</b>: Ask Daoris's full access, or a repository's setup set to unrestricted. A
+    /// repository's conversation and a driven session under auto keep D81's postures.</para>
     ///
     /// <para><b>Null means none is mapped</b>, and a full start on this harness is refused naming it, never run in a narrower mode
     /// under the full label: dsh, whose wire carries no modes, and every plugin-declared harness, until one is measured.</para>
     /// </remarks>
     string? FullPosture => null;
+
+    /// <summary>
+    /// The harness's own asking mode, in <b>its own vocabulary</b>, for a driven session whose repository's permission prompts are
+    /// asking (AUTONOMY1b, D184 point 3): a <c>--permission-mode</c> on the native door, a mode on the protocol door, which the session
+    /// must set or fail (<see cref="HelpModes.Required"/>). Daoris answers every ask with a refusal (D52), so a session in it uses only
+    /// what its rules allow.
+    /// </summary>
+    /// <remarks>
+    /// <b>Null means none is mapped</b>, and an asking start on this harness is refused naming it, never run in the harness's own,
+    /// looser mode under the asking label: dsh and every plugin-declared harness, until one is measured.
+    /// </remarks>
+    string? AskingPosture => null;
 
     /// <summary>
     /// The process that would be the session: spawned in the root, target delivered, output
@@ -1577,16 +1597,24 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// <c>auto</c> where the adapter offers it — Claude Code's own mode, in which the harness judges
     /// each action — and <c>acceptEdits</c>, the posture observed in the evaluation's §1a, from one that
     /// does not (D81: a session does as much as the harness would on its own). Never <c>bypassPermissions</c>, which judges nothing, however available the wire
-    /// makes it, but for Ask Daoris's full access, the person's own choice (<see cref="FullPosture"/>, D183). The pipe door still passes <c>--permission-mode acceptEdits</c>: <c>auto</c> is measured
+    /// makes it, but by the person's own setting (<see cref="FullPosture"/>: Ask Daoris's full access, D183; a repository's unrestricted
+    /// permission prompts, D184). The pipe door still passes <c>--permission-mode acceptEdits</c>: <c>auto</c> is measured
     /// on this wire and not yet on that one.
     /// </summary>
     public string? AcpPosture => "auto|acceptEdits";
 
     /// <summary>
     /// <c>bypassPermissions</c>, Claude Code's mode that asks nothing, offered on <c>session/new</c> (the evaluation's §1a), and
-    /// only for Ask Daoris's full access (HELPMODE1a1, D183). Where the adapter does not offer it, the start fails saying so.
+    /// only by the person's own setting: Ask Daoris's full access (HELPMODE1a1, D183), a repository's unrestricted permission prompts
+    /// (AUTONOMY1b, D184). Where the adapter does not offer it, the start fails saying so.
     /// </summary>
     public string? FullPosture => "bypassPermissions";
+
+    /// <summary>
+    /// <c>default</c>, Claude Code's asking mode (Ask Daoris's restricted posture, <see cref="HelpRoom.Posture"/>), for a repository's
+    /// asking permission prompts (AUTONOMY1b, D184).
+    /// </summary>
+    public string? AskingPosture => "default";
 
     /// <summary>
     /// The adapter takes turns on its own wire, which is all this seam asks of an interactive
@@ -1796,15 +1824,26 @@ public sealed class CodexAcpAdapter : ISessionAdapter
 
     public bool Interactive => true;
 
-    /// <summary>D37 in Codex's vocabulary. Never <c>agent-full-access</c>, which is approvals off, but for Ask Daoris's full access.</summary>
+    /// <summary>
+    /// D37 in Codex's vocabulary. Never <c>agent-full-access</c>, which is approvals off, but by the person's own setting: Ask Daoris's
+    /// full access, a repository's unrestricted permission prompts.
+    /// </summary>
     public string? AcpPosture => "agent";
 
     /// <summary>
     /// <c>agent-full-access</c>, Codex's full access: the <c>dangerFullAccess</c> sandbox with approvals <c>never</c>, offered on
-    /// every session (codex-acp 2.1.1's bundle, <c>AgentMode.AgentFullAccess</c>), and only for Ask Daoris's full access
-    /// (HELPMODE1a1, D183). Codex takes no rules file, so the person's denies do not reach it in either mode.
+    /// every session (codex-acp 2.1.1's bundle, <c>AgentMode.AgentFullAccess</c>), and only by the person's own setting: Ask Daoris's
+    /// full access (HELPMODE1a1, D183), a repository's unrestricted permission prompts (AUTONOMY1b, D184). Codex takes no rules file,
+    /// so the person's denies do not reach it in any mode.
     /// </summary>
     public string? FullPosture => "agent-full-access";
+
+    /// <summary>
+    /// <c>read-only</c>, Codex's asking mode (<i>Ask for approval</i>: approvals on request, reviewed by the user; read from codex-acp
+    /// 1.12.0's bundle, docs/2026-09-22-acp3-probe-evidence.md §2), for a repository's asking permission prompts (AUTONOMY1b, D184).
+    /// Daoris refuses every ask (D52), so it acts only where that mode does not ask; an agent that no longer offers it fails the open.
+    /// </summary>
+    public string? AskingPosture => "read-only";
 
     public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
     {
@@ -1904,11 +1943,18 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
-            .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", "acceptEdits"])
+            .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", DrivenMode(target)])
             .Concat(StreamJsonOut);
 
         return Spawning.InRoot(target, resolved[0], arguments);
     }
+
+    /// <summary>
+    /// The permission mode a driven run names: its repository's permission prompts' (AUTONOMY1b, D184 point 3), <c>default</c> asking or
+    /// <c>bypassPermissions</c> unrestricted, in place of <c>acceptEdits</c>; <c>acceptEdits</c> under auto and for every target the
+    /// setup does not reach (D81).
+    /// </summary>
+    private static string DrivenMode(SessionTarget target) => target.Access?.PermissionMode ?? "acceptEdits";
 
     /// <summary>
     /// The harness's own structured output (D76, CONV3), checked against the binary before it was
@@ -1932,7 +1978,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
-            .Concat(["-p", prompt, "--resume", conversation, "--permission-mode", "acceptEdits"])
+            .Concat(["-p", prompt, "--resume", conversation, "--permission-mode", DrivenMode(target)])
             .Concat(StreamJsonOut);
 
         return Spawning.InRoot(target, resolved[0], arguments);
@@ -1993,10 +2039,17 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 
     /// <summary>
     /// <c>--permission-mode bypassPermissions</c>, Claude Code's mode that asks nothing, measured on 2.1.281 (the stream-json
-    /// evidence, CONV4a's probe), and only for Ask Daoris's full access (HELPMODE1a1, D183). That its deny rules and its hooks still
-    /// hold under it is the maker's word, not yet measured here (D183's HELPMODE1a1 note).
+    /// evidence, CONV4a's probe), and only by the person's own setting: Ask Daoris's full access (HELPMODE1a1, D183), a repository's
+    /// unrestricted permission prompts (AUTONOMY1b, D184). That its deny rules and its hooks still hold under it is the maker's word,
+    /// not yet measured here (D183's HELPMODE1a1 note, D184's AUTONOMY1b note).
     /// </summary>
     public string? FullPosture => "bypassPermissions";
+
+    /// <summary>
+    /// <c>--permission-mode default</c>, Claude Code's asking mode, for a repository's asking permission prompts (AUTONOMY1b, D184).
+    /// Over <c>-p</c> nothing answers an ask, so a tool its rules do not allow is refused (HELPMODE1a1's finding).
+    /// </summary>
+    public string? AskingPosture => "default";
 
     /// <summary>
     /// `--mcp-config &lt;file&gt;` — verified on the binary (`claude --help`, 2026-09-23: *"Load MCP
