@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import { notPushed, readPushed, usePushedLive } from '../bridge/slices';
+import { notPushed, readPushed, usePushedLive } from '../bridge/state/slices';
 import {
   api, type AskAction, HELP_REPOSITORY, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef, type SyncStanding,
   type Verdict,
@@ -47,7 +47,7 @@ export const keys = {
   syncEvery: ['sync', null] as const,
   /**
    * The driver's state, and the prefix of everything read beneath it. The entry itself is written by the shell's pushes where it
-   * pushes them (PUSH1a, `bridge/slices.ts`) and pulled otherwise; what is read beneath it is pulled.
+   * pushes them (PUSH1a, `bridge/state/slices.ts`) and pulled otherwise; what is read beneath it is pulled.
    */
   driver: ['driver'] as const,
   /** The machine's wiring — shell-only, like the driver's state (D48 §5). */

@@ -32,7 +32,7 @@ vi.mock('@shenora/react', async () => {
 
 import '../locales/i18n';
 import { App } from '../app/App';
-import { useStateHub } from '../bridge/stateHub';
+import { useStateHub } from '../bridge/state/stateHub';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { useListPanes } from '../work/listPanes';

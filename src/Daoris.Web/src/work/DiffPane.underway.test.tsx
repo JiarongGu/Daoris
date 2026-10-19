@@ -24,7 +24,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import i18n from '../locales/i18n';
-import { useStateHub } from '../bridge/stateHub';
+import { useStateHub } from '../bridge/state/stateHub';
 import { DiffPane } from './DiffPane';
 
 const FILES = [{ path: 'notes.txt', status: 'added', added: 1, removed: 0, patch: '@@ -0,0 +1 @@\n+notes' }];

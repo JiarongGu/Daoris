@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import {
   type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraphPages,
-} from '../../bridge/git';
-import { useSessionOpenings } from '../../bridge/sessions';
+} from '../../bridge/repositories/git';
+import { useSessionOpenings } from '../../bridge/sessions/sessions';
 import { sentence } from '../../locales/format';
 import { useQuests, useSessions } from '../../data/queries';
 import { questName, sessionTitle } from '../../work/identity';

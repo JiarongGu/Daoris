@@ -27,7 +27,7 @@ import type { HelpProposal } from '../help/ProposalCard';
 import { keys } from '../data/queries';
 import { useSetHelpMode } from './driver';
 import { HELP_PROPOSALS, helpModeOf, settleBound, useHelpWired, useSettleHelp, wiredAnswer, type HelpSettled } from './help';
-import { useStateHub } from './stateHub';
+import { useStateHub } from './state/stateHub';
 
 /**
  * WSR7: Ask Daoris's sync card fetches on its first Apply and replays on its second, each as long as the screen's own

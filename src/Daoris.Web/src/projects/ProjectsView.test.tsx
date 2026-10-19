@@ -31,9 +31,9 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import { sweepSlice } from '../bridge/lines';
-import { useStateSlices } from '../bridge/slices';
-import { useStateHub } from '../bridge/stateHub';
+import { sweepSlice } from '../bridge/repositories/lines';
+import { useStateSlices } from '../bridge/state/slices';
+import { useStateHub } from '../bridge/state/stateHub';
 import { code } from '../test/code';
 import { NEWBIE_SETUP } from './fixtures';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';

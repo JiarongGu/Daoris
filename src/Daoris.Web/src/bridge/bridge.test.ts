@@ -11,9 +11,10 @@ import * as shell from './shell';
  * "for now" is how the god file comes back. A new domain is a new file and one line in the barrel.
  */
 
-// The barrel sits beside its domains since STRUCT5c (D166), and is none of them.
-const sources = import.meta.glob(['./*.ts', '!./shell.ts'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
-const modules = import.meta.glob(['./*.ts', '!./*.test.ts', '!./shell.ts'], { eager: true }) as Record<string, Record<string, unknown>>;
+// The barrel sits beside its domains since STRUCT5c (D166), and is none of them; since STRUCT5c-ii a domain may sit in a
+// scope folder below it, and is named by its path from here (`sessions/conversation`).
+const sources = import.meta.glob(['./**/*.ts', '!./shell.ts'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+const modules = import.meta.glob(['./**/*.ts', '!./**/*.test.ts', '!./shell.ts'], { eager: true }) as Record<string, Record<string, unknown>>;
 
 /** The domains' own helper — a call onto a route by name — shared by the domains and re-exported by none. */
 const INTERNAL = new Set(['call']);
@@ -28,7 +29,7 @@ export function barrelProblems(source: string, names: readonly string[]): string
   for (const line of source.split('\n')) {
     const text = line.trim();
     if (text === '' || text.startsWith('//')) continue;
-    const reexport = /^export \* from '\.\/([\w-]+)';$/.exec(text);
+    const reexport = /^export \* from '\.\/([\w-]+(?:\/[\w-]+)*)';$/.exec(text);
     if (!reexport) {
       problems.push(`shell.ts holds more than re-exports: ${text}`);
       continue;
@@ -87,7 +88,7 @@ describe('the bridge by domain', () => {
 
   it('never imports the barrel from a domain, which would make every domain load every other', () => {
     const circular = Object.entries(sources)
-      .filter(([path, source]) => !/\.test\.ts$/.test(path) && /from\s+'\.\/shell'/.test(source))
+      .filter(([path, source]) => !/\.test\.ts$/.test(path) && /from\s+'(?:\.\.?\/)+shell'/.test(source))
       .map(([path]) => path);
     expect(circular).toEqual([]);
   });

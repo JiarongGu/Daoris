@@ -48,8 +48,8 @@ import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { keys, useHelpSessions, useSessions, useSyncStanding } from '../data/queries';
 import { type DriverState, useDriver } from '../bridge/driver';
-import { useLines, useSweepLook, useSweepPlan, useWorkState } from '../bridge/lines';
-import { useSessionEntries, useSessionGroups } from '../bridge/sessions';
+import { useLines, useSweepLook, useSweepPlan, useWorkState } from '../bridge/repositories/lines';
+import { useSessionEntries, useSessionGroups } from '../bridge/sessions/sessions';
 
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 

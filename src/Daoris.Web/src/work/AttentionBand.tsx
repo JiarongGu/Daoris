@@ -11,7 +11,7 @@ import {
   useWaits, useAnswerPermission, usePermissionWaits,
 } from '../bridge/shell';
 import { permissionSaid } from './PermissionAsks';
-import { useSay } from '../bridge/conversation';
+import { useSay } from '../bridge/sessions/conversation';
 import { SignIn } from '../agents/SignIn';
 import { byTool } from '../agents/tools';
 import { failure, type Notify } from '../design/ui';

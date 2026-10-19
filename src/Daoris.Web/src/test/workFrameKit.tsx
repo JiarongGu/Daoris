@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import realUserEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { useStateHub } from '../bridge/stateHub';
+import { useStateHub } from '../bridge/state/stateHub';
 import type { OpenGroup } from '../app/opener';
 import { WorkFrame } from '../work/WorkFrame';
 

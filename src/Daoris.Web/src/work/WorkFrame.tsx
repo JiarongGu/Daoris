@@ -78,7 +78,7 @@ import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
 import { AddProjectDrawer, ImportFolderDrawer } from '../projects/ProjectManage';
-import { useCheckoutBranch } from '../bridge/git';
+import { useCheckoutBranch } from '../bridge/repositories/git';
 import { type CheckoutReader, NewConversation, type NewStart } from './NewConversation';
 import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './startRecent';
 import { type Carry, NO_CARRY } from '../compose/carry';

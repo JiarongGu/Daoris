@@ -31,7 +31,7 @@ vi.mock('@shenora/react', async () => {
 });
 
 import type { OpenGroup } from '../app/opener';
-import { useStateHub } from '../bridge/stateHub';
+import { useStateHub } from '../bridge/state/stateHub';
 import { SessionRail } from './SessionRail';
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();

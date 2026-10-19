@@ -3,7 +3,7 @@ import type { Consideration } from '../data/signals';
 import type { Answered } from './InlineConfirm';
 
 // Pausing and abandoning an ask's work or a quest's on the screen (PAUSE1e, D132, `docs/2026-10-02-pause-and-clean-up-design.md`
-// §2.6, §3.1, §3.2, §4.2, §7.1): the shapes the driver answers (`bridge/work.ts` asks them) and what each says, as catalogue
+// §2.6, §3.1, §3.2, §4.2, §7.1): the shapes the driver answers (`bridge/sessions/work.ts` asks them) and what each says, as catalogue
 // lines. Pure, so the ask's page, the quest's page and a session's header read one rule, a molecule may read it, and every
 // plan the driver could answer is a test's argument.
 

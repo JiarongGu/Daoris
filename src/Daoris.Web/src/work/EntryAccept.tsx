@@ -5,7 +5,7 @@ import { Button, CheckField, Inline } from '../design/ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import type { LandingConflict, LandsCommit, LeftOutCommit } from './LandingSync';
 
-// Declared here, structurally equal to bridge/entries.ts's shapes, so this molecule imports no bridge domain (LANDSYNC1w).
+// Declared here, structurally equal to bridge/sessions/entries.ts's shapes, so this molecule imports no bridge domain (LANDSYNC1w).
 /** One part as an entry's Accept would land it (ACCEPTALL1): its own plan, what holds it, and what superseded it. */
 export type EntryAcceptPart = {
   session: string;

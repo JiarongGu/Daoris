@@ -3,7 +3,7 @@ import type { Answered } from './InlineConfirm';
 import type { Translate } from './pausing';
 
 // Clearing finished history from this machine on the screen (HIST1e, D153; `docs/2026-10-07-history-clearing-design.md`
-// §2.4, §5, §6.1): the shapes the driver's `HISTORY_PLAN` and `HISTORY_CLEAR` answer (`bridge/history.ts` asks them),
+// §2.4, §5, §6.1): the shapes the driver's `HISTORY_PLAN` and `HISTORY_CLEAR` answer (`bridge/sessions/history.ts` asks them),
 // what the first press lists and the second sends, and what each says. Pure, so the quest's page, the ask's page and the
 // workspace's read one rule, a molecule may read it, and every plan the driver could answer is a test's argument.
 

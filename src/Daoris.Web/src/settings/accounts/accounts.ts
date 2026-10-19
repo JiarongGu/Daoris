@@ -3,7 +3,7 @@ import { ago, elapsed, moment } from '../../locales/format';
 import { type CURVE_WINDOWS, type CurvePoint, type CurveScope, type Switch, tightestSaid, wholePoints } from './usageCurves';
 
 // How each agent's accounts are used, as the page reads it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): the shape
-// `bridge/accounts.ts` answers, and the words each account's row and each scope say, in the reader's language. Pure: the
+// `bridge/agents/accounts.ts` answers, and the words each account's row and each scope say, in the reader's language. Pure: the
 // molecules read these, and so do the tests, with no bridge.
 
 /** An account's cool-off, as `cooling.json` keeps it (D125 §2.3): until when, and why it lasts until then. */

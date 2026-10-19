@@ -2,39 +2,39 @@
 // the query never runs, and every control gated on it stays unrendered. That is the design, not a
 // degradation: the controls act where a driver is attached, and only the desktop has one.
 //
-// The bridge by domain (MOD3): each domain's types and calls live in `bridge/<domain>.ts`, and this
-// file is only the barrel, so no import moved when they did. It re-exports every domain and holds no
+// The bridge by domain (MOD3): each domain's types and calls live in `bridge/<domain>.ts`, or a scope's
+// `bridge/<scope>/<domain>.ts` (STRUCT5c-ii), and this file is only the barrel, so no import moved when they did. It re-exports every domain and holds no
 // code of its own, which `bridge/bridge.test.ts` holds. `bridge/call.ts` is the domains' own helper
 // and is re-exported by nothing.
-export * from './accounts';
-export * from './across';
-export * from './agents';
-export * from './asks';
+export * from './agents/accounts';
+export * from './repositories/across';
+export * from './agents/agents';
+export * from './sessions/asks';
 export * from './browser';
-export * from './console';
-export * from './conversation';
+export * from './sessions/console';
+export * from './sessions/conversation';
 export * from './driver';
-export * from './entries';
+export * from './sessions/entries';
 export * from './help';
-export * from './history';
-export * from './lines';
+export * from './sessions/history';
+export * from './repositories/lines';
 export * from './log';
 export * from './plugins';
-export * from './registry';
-export * from './remotes';
-export * from './rules';
-export * from './sessions';
-export * from './setup';
-export * from './published';
-export * from './slices';
-export * from './stateHub';
+export * from './repositories/registry';
+export * from './repositories/remotes';
+export * from './agents/rules';
+export * from './sessions/sessions';
+export * from './repositories/setup';
+export * from './state/published';
+export * from './state/slices';
+export * from './state/stateHub';
 export * from './system';
 export * from './terminal';
-export * from './tools';
-export * from './git';
-export * from './trace';
-export * from './trees';
+export * from './agents/tools';
+export * from './repositories/git';
+export * from './sessions/trace';
+export * from './sessions/trees';
 export * from './update';
 export * from './windows';
-export * from './work';
-export * from './workflow';
+export * from './sessions/work';
+export * from './repositories/workflow';

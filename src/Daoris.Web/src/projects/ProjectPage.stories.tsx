@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import type { GitLogCommit, GitRepositoryBranches } from '../bridge/git';
+import type { GitLogCommit, GitRepositoryBranches } from '../bridge/repositories/git';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';

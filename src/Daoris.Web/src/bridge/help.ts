@@ -5,9 +5,9 @@ import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { call, pressBound } from './call';
-import { syncLookBound } from './lines';
+import { syncLookBound } from './repositories/lines';
 import { logEvent } from './log';
-import { usePollUnlessTold } from './published';
+import { usePollUnlessTold } from './state/published';
 
 // Ask Daoris (MOD3): its conversation, the one readied ahead, and what it proposes (D89).
 

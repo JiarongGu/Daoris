@@ -45,7 +45,7 @@ import {
   usePermissionWaits,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
-import { useSay } from '../bridge/conversation';
+import { useSay } from '../bridge/sessions/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
 import { LinkOpener } from '../design/links';
 import { BrowserDoor } from '../work/BrowserDoor';

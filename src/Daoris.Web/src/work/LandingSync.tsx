@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button, Inline } from '../design/ui';
 
-// Declared here, structurally equal to bridge/trees.ts's shapes, so these molecules import no bridge domain (LANDSYNC1w).
+// Declared here, structurally equal to bridge/sessions/trees.ts's shapes, so these molecules import no bridge domain (LANDSYNC1w).
 /** One commit a landing leaves out because the line already holds it: short id, subject, why, and the line's commit with the same patch. */
 export type LeftOutCommit = { commit: string; subject: string; why: string; on?: string | null };
 /** One commit a landing would replay onto the line. */
