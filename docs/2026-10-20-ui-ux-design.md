@@ -1006,14 +1006,12 @@ by `Dot`'s tones and folded to `MilestoneLine` (§3.7): it is no `PhaseList`, si
 - **A heavy-run wait in *What needs you*.** It waits on another session, not on the person.
 - **Removing the chips' chevrons** to keep §4's arrow rule to the letter: the platform's own select carries one, and a
   value picker without it reads as a label.
-- **The milestone as a progress sequence** (*End reached → Result kept → Clean-up → Recovery kept*), this design's first
-  proposal: its facts are independent, and a sequence draws a recovery that was never kept as done (R4, §3.7).
-- **A full phase list on every wait**, this design's first proposal: in a head or a row it spends the 200 px the
-  conversation is owed; the line comes first and the list opens (R2).
-- **Round 2 drawn as a phase to come**, this design's first proposal: a second round is the person's choice, and a phase
-  to come says it will happen.
-- **Every surface's verb in the palette** (R5's first wording): a verb on an item needs the item, which the palette cannot
-  choose.
+- **The milestone as a progress sequence** (*End reached → Result kept → Clean-up → Recovery kept*): its facts are
+  independent, and a sequence draws a recovery that was never kept as done (R4, §3.7).
+- **A full phase list on every wait**: in a head or a row it spends the 200 px the conversation is owed; the line comes
+  first and the list opens (R2).
+- **Round 2 drawn as a phase to come**: a second round is the person's choice, and a phase to come says it will happen.
+- **Every surface's verb in the palette**: a verb on an item needs the item, which the palette cannot choose (R5).
 
 ## 8. What this amends
 
@@ -1098,7 +1096,7 @@ likely to make, which its proof must catch.
 13. **STORYGAP1 — Every screen since UX7 is in the catalogue at the frame's widths.** Stories for those with none that no row
     above draws (§1.2 item 6): `WorkspaceRecoveries`, `TeammateAskPage`, `AskReview`, `Conflicts`, `CommitGraph`, `AskLines`,
     `QuestStatus` (*submitted*, *source reopened*) and `AskWorkflowKind` at every width. *Trap:* taking §1.1's list as
-    complete (it missed three screens until DESIGNREAD1) and drawing narrow at 34rem only: the floor is 400 px.
+    complete instead of the screens added since UX7, and drawing narrow at 34rem only: the floor is 400 px.
 
 The backlog holds each in its own shape (contract by this document's section, proof); the steward files them with
 UIDESIGN1's archive entry once the owner accepts the design.
