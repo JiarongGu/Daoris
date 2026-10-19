@@ -185,7 +185,8 @@ export function useSessionActs({ notify, doors = {}, entries }: {
         folder.mutate(session.id, { onError: failure(notify) });
         return;
       case 'detach':
-        openWindow.mutate(sessionWindowName(session.id));
+        // Its window holds the session's own workspace where it names one, else follows this window's (MAINWINDOWS3).
+        openWindow.mutate({ name: sessionWindowName(session.id), workspace: session.workspace });
         return;
       case 'archive':
       case 'unarchive':

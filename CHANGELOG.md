@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Each main window of Daoris holds its own workspace. Choosing one in a window changes that window alone, and reloading it
+  keeps it; a window opened later starts from the workspace last chosen in any. A session's own window keeps the workspace its
+  session belongs to, or follows the window it was opened from, never another main window, and so does the monitor. The page's
+  title names the workspace, *Daoris (道衍) — games*, which a browser's tab shows; the desktop window's own title does not say it
+  yet.
 - Daoris keeps every usage reading it sees, in `usage-history/` in its data folder: each window's use and reset as a session or a
   read said it, the account's plan word and when, for the estimate of how much work each window holds that comes later. Nothing
   reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says
@@ -14,6 +19,9 @@ with the version and date at release.
   the account the session ran as, and the model they were spent on where the agent said it, with a helper model's share kept
   apart and a stopped turn marked. It shares the readings' 90 days and 64 MiB, stays on this machine, and holds no email,
   organisation, key or words. Codex's turns say their counts' meaning is not yet known.
+- The machine log (Settings → Logs, `daoris-driver logs`) now holds the warnings and errors of the window's own toolkit and
+  engine, which until now were written nowhere: among them why opening Daoris again did not reach the Daoris that runs. Opening
+  it again is written as it arrives (`window.launch`), and anything that stops its window opening is written too.
 
 - A first brainstorm across agents, at the terminal: `daoris-driver brainstorm "<question>" [--repository <name>] [--agents a,b]`.
   Daoris freezes one context packet from its own knowledge of the repository, which `brainstorm show <id>` prints whole; nothing

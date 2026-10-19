@@ -546,7 +546,10 @@ app.MapGet("/api/quests", async (
 {
     var quests = await s.Quests.ListAsync(repository, includeClosed ?? false, workspace, ct);
     var deletable = await DeletableAsync(s, quests, ct);
-    return quests.Select(q => ToQuest(q, s.Files, MachineLocal(http), deletable.Contains(q.Id)));
+    // SYNCMERGE1b0: who holds each step and how each lost take stands or ended, read from the logs of those with any.
+    var takes = await s.Quests.ReadTakesAsync(quests, ct);
+    return quests.Select(q => ToQuest(
+        q, s.Files, MachineLocal(http), deletable.Contains(q.Id), takes.GetValueOrDefault(q.Id), HereFor(s, http)));
 });
 
 // Publish and respond go through the same exchange the MCP host uses, so the two doors cannot drift
@@ -1497,7 +1500,7 @@ if (mode == ServiceMode.Local)
         if (!MachineLocal(http)) return OffMachineBrainstorm();
         return brainstorms.Show(id) is { } shown
             ? Results.Ok(new BrainstormShownResponse(ToBrainstorm(shown.Brainstorm), shown.Frozen, shown.Document))
-            : Results.NotFound(new ErrorResponse($"There is no brainstorm `{id.Trim()}` on this machine."));
+            : Results.NotFound(new ErrorResponse(BrainstormDesk.NotFoundSentence(id)));
     });
 
     app.MapPost("/api/brainstorms/{id}/send", (HttpContext http, string id) =>
@@ -2172,7 +2175,12 @@ else
         Results.Ok(new QuestClaimResponse(
             id.TrimStart('#'), (await s.Quests.ClaimAsync(id.TrimStart('#'), ct)).ToString().ToLowerInvariant(),
             // FABRIC-CLOSE1c18: a take lost to the person's reopen, which the driver's stop says as that.
-            await s.Quests.LostToTheReopenAsync(id.TrimStart('#'), ct) ? "source-reopened" : null)));
+            await s.Quests.LostToTheReopenAsync(id.TrimStart('#'), ct) ? "source-reopened" : null,
+            // SYNCMERGE1b0: the take it holds the quest by, where the person's bring-forward made it, which the driver carries a
+            // stood-down session on over (SYNCMERGE1b).
+            (await s.Quests.ReadTakesAsync(id.TrimStart('#'), ct)).BroughtForwardBy(s.Quests.Machine) is { } forward
+                ? ToForward(forward)
+                : null)));
 
     // The retires this machine's checkouts owe a circle (SYNC5b): what the driver's pass carries to
     // that circle's deployment, then clears. The store writes them as the row leaves, so no door that
@@ -2274,13 +2282,37 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
 async Task<IReadOnlySet<string>> DeletableAsync(ComposedService s, IEnumerable<Quest> quests, CancellationToken ct) =>
     mode == ServiceMode.Local ? await s.Exchange.DeletableAsync(quests, ct) : new HashSet<string>();
 
-// One quest as a door answers it, with whether it may be deleted (D95).
+// One quest as a door answers it, with whether it may be deleted (D95), and who holds it and how its lost takes stand (SYNCMERGE1b0).
 async Task<QuestResponse> QuestAnswerAsync(ComposedService s, HttpContext http, Quest quest, CancellationToken ct) =>
-    ToQuest(quest, s.Files, MachineLocal(http), (await DeletableAsync(s, [quest], ct)).Contains(quest.Id));
+    ToQuest(
+        quest, s.Files, MachineLocal(http), (await DeletableAsync(s, [quest], ct)).Contains(quest.Id),
+        await s.Quests.ReadTakesAsync(quest.Id, ct), HereFor(s, http));
+
+// This machine's id (SYNCMERGE1b0), answered to a caller on a local host's own machine, as a path is (D47 §4): the page tells its own
+// conflict and take from another machine's by it. An id, never a name a person gave; a shared host answers none.
+string? HereFor(ComposedService s, HttpContext http) => MachineLocal(http) ? s.Quests.Machine : null;
+
+// A conflict as the quest answers it, with what its log says of it (SYNCMERGE1b0): each fact absent where unset.
+static QuestConflictResponse ToConflict(QuestConflict c, QuestConflictReading? read) => new(
+    c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence,
+    read is { LostToTheReopen: true } ? true : null,
+    read?.Ended switch
+    {
+        QuestConflictEnd.Dropped => "dropped",
+        QuestConflictEnd.BroughtForward => "brought-forward",
+        _ => null,
+    },
+    read?.Forward is { } forward ? ToForward(forward) : null);
+
+// A bring-forward's take, its standing in the claim's words (SYNCMERGE1b0).
+static QuestForwardResponse ToForward(QuestForwardTake forward) =>
+    new(forward.Take.Machine, forward.Take.Sequence, forward.At, forward.Standing.ToString().ToLowerInvariant());
 
 // Links and attachment names travel with every read; a kept file's PATH answers only to a caller on
 // this machine, and only when the bytes are here (D47 §4, D65 §2) — so null says "named, not held".
-static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool deletable = false) => new(
+// SYNCMERGE1b0: `taken` is the quest's log read for its holder and its conflicts, null where nothing was read, which answers none of them.
+static QuestResponse ToQuest(
+    Quest q, QuestFiles? files, bool machineLocal, bool deletable = false, QuestTakeReading? taken = null, string? here = null) => new(
     q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated, q.Workspace,
     q.Links,
     q.Attachments.Select(a => new QuestAttachmentResponse(
@@ -2288,7 +2320,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
         Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
     q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body, s.SetUpIn)).ToList(),
     q.Parent,
-    q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList(),
+    q.Conflicts.Select(c => ToConflict(c, taken?.Conflicts.FirstOrDefault(read => read.Conflict.Machine == c.Machine && read.Conflict.Sequence == c.Sequence)))
+        .ToList(),
     q.Awaits,
     q.PublishedBy,
     deletable,
@@ -2339,7 +2372,11 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
         ? new QuestReopenWire(
             reopen.Machine, reopen.Sequence, new QuestSubmissionRefWire(reopen.Of.Machine, reopen.Of.Sequence), reopen.Note, reopen.At,
             reopen.Session)
-        : null);
+        : null,
+    // SYNCMERGE1b0 (D178 point 7): the conflicts settled on it, the machine holding its step, and this machine, each only where set.
+    taken is { Settled.Count: > 0 } ? taken.Settled.Select(read => ToConflict(read.Conflict, read)).ToList() : null,
+    taken?.Holder,
+    here);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item
@@ -2356,7 +2393,7 @@ IResult AskAnswer(AskOutcome outcome, ComposedService s, HttpContext http) => ou
 {
     AskRefusal.None => Results.Ok(new AskActionResponse(
         ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message,
-        outcome.Quest is null ? null : ToQuest(outcome.Quest, s.Files, MachineLocal(http)))),
+        outcome.Quest is null ? null : ToQuest(outcome.Quest, s.Files, MachineLocal(http), here: HereFor(s, http)))),
     AskRefusal.UnknownWorkspace or AskRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
     AskRefusal.Closed or AskRefusal.QuestRefused => Results.Conflict(new ErrorResponse(outcome.Message)),
     _ => Results.BadRequest(new ErrorResponse(outcome.Message)),

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ColorScheme, getBridge, useShenora } from '@shenora/react';
 import { effectiveDark, subscribeTheme, themeChoice } from '../design/theme';
+import { useScope } from '../data/scope';
 import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 // This build's secondary windows (MOD3): opening one, and telling its frame the theme; telling the engine every window
@@ -20,12 +21,22 @@ import { anotherMainWindow, secondaryWindow } from '../work/window';
  *
  * Nothing is cached. The person can close one of these with its own close button and no page would
  * hear about it, so an "is the monitor open" answer would be stale more often than it was right.
+ *
+ * **The window it opens follows this one's scope** (MAINWINDOWS3), or holds `workspace`, a detached session's own, where
+ * the session names one: said before the shell is asked, so the new page finds it on arrival. The shell is asked by the
+ * name alone.
  */
-export const useOpenWindow = () => useMutation({
-  mutationFn: (name: string) =>
-    getBridge().invoke<{ opened: boolean; windows: string[] }>(
-      'DAORIS.WINDOWS', 'OPEN', { payload: { name } }),
-});
+export const useOpenWindow = () => {
+  const { opens } = useScope();
+  return useMutation({
+    mutationFn: (target: string | { name: string; workspace?: string | null }) => {
+      const { name, workspace } = typeof target === 'string' ? { name: target, workspace: null } : target;
+      opens(name, workspace);
+      return getBridge().invoke<{ opened: boolean; windows: string[] }>(
+        'DAORIS.WINDOWS', 'OPEN', { payload: { name } });
+    },
+  });
+};
 
 /**
  * A secondary window's page telling its own frame which theme it is in (WINDOW2), by the name the

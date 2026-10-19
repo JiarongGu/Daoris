@@ -102,7 +102,15 @@ public sealed record QuestAnswerWire(int? Requirement, string? Met, string? Depa
 // `Then` is what this quest's close will publish next; `Parent` the quest whose close published it;
 // `Conflicts` the moves that lost to another machine's (D68 §5), kept for a person.
 // `Machine` and `Sequence` name the conflict on every machine — what a dismissal names (SYNC6c).
-public sealed record QuestConflictResponse(string Machine, string Attempted, string? Note, DateTimeOffset At, long Sequence);
+// SYNCMERGE1b0 (D178 point 7), each absent where unset and from a host before it: `LostToTheReopen`, true where the take lost to the
+// person's reopen of the work its step grew from (FABRIC-CLOSE1c18, CLOSE1c22's mark); `Ended`, on a settled conflict only, `dropped`
+// (a plain dismissal) or `brought-forward`; `Forward`, the bring-forward that settled it, or else this machine's latest that lost again.
+public sealed record QuestConflictResponse(
+    string Machine, string Attempted, string? Note, DateTimeOffset At, long Sequence,
+    bool? LostToTheReopen = null, string? Ended = null, QuestForwardResponse? Forward = null);
+// A bring-forward's take (SYNCMERGE1b0, D178 points 3 and 8): the machine and sequence that name it, when it was made, and where it stands
+// as a claim reads one: `held` once a remote numbered it, `unconfirmed` while it is only here, `lost` where it lost again.
+public sealed record QuestForwardResponse(string Machine, long Sequence, DateTimeOffset At, string Standing);
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
     string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
@@ -148,7 +156,11 @@ public sealed record QuestResponse(
     // FABRIC-CLOSE1c4 (§E5): the person's last reopen of its own submission that no later submission answered, read from the log as
     // every machine reads it. Absent for a quest never reopened, once a later ready answered it, and from a host from before, so a
     // reader tells a reopened source, with no `submission`, from one whose taker has not said `ready` yet.
-    QuestReopenWire? Reopened = null);
+    QuestReopenWire? Reopened = null,
+    // SYNCMERGE1b0 (D178 point 7), read from the log, each absent where unset and from a host before it: the conflicts settled on it, in the
+    // order they were, each with how it `ended`; the machine whose take holds the step, an id no person gave, while it is taken; and, to a
+    // caller on a local host's own machine, that machine's id, which tells a conflict and a take of its own from another machine's.
+    IReadOnlyList<QuestConflictResponse>? Settled = null, string? Holder = null, string? Here = null);
 // A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
 // the person's words, and when. FABRIC-CLOSE1c8: and the session that said the reopened submission's ready, a name as
 // `submission.session` is; absent where none did and from a host before it.
@@ -583,7 +595,9 @@ public sealed record SyncStandingResponse(
     DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem);
 // Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4). Why a lost one lost, where its take lost to
 // the person's reopen of the work the step grew from (FABRIC-CLOSE1c18): `source-reopened`; null otherwise, as an older host answers.
-public sealed record QuestClaimResponse(string Quest, string Claim, string? Why = null);
+// `Forward` (SYNCMERGE1b0): the take this machine holds the quest by, where the person's bring-forward made it, the one take a stood-down
+// session is carried on over; absent otherwise, and from a host before it.
+public sealed record QuestClaimResponse(string Quest, string Claim, string? Why = null, QuestForwardResponse? Forward = null);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
 // host that brings a teammate's map down reads the same answer the door writes.

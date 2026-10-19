@@ -150,17 +150,23 @@ public sealed class SecondLaunchTests
         Assert.Equal("main%3A2.json", SecondaryWindow.StateFile("main:2"));
 
     /// <summary>
-    /// Held on the application's own source, because nothing short of a second process holds it: the kit's guard hands a later
-    /// launch to the running instance, which passes it to the hand-over above.
+    /// ONEINSTANCE2: the words of a hand-over in the application's source were all ONEINSTANCE1 held, and the installed hand-over
+    /// opened nothing and said nothing. What is run now is the options themselves (<see cref="LaterLaunchTests"/>: the kit's own
+    /// guard and channel, a composed container, the window stubbed) and the container's loggers (<see cref="MachineLoggingTests"/>).
+    /// The source holds only that the application hands the kit those very options and composes those very loggers, before
+    /// anything resolves one.
     /// </summary>
     [Fact]
-    public void The_application_hands_a_later_launch_to_the_hand_over()
+    public void The_application_hands_the_kit_the_tested_hand_over_and_loggers()
     {
-        var program = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App", "Program.cs"));
+        var program = File.ReadAllText(SourceFiles.Find("Daoris.Desktop.App", "Program.cs"));
 
-        Assert.Contains("SingleInstance = new SingleInstanceHostOptions", program);
-        Assert.Contains("OnActivated = ", program);
-        Assert.Contains("GetRequiredService<SecondLaunch>().OpenAsync(", program);
+        Assert.Contains("SingleInstance = LaterLaunch.Options(log),", program);
+        Assert.DoesNotContain("new SingleInstanceHostOptions", program);
+        var logging = program.IndexOf("builder.Services.AddMachineLog(log,", StringComparison.Ordinal);
+        Assert.True(logging > 0, "the container's loggers are not composed");
+        Assert.True(logging < program.IndexOf("builder.Build()", StringComparison.Ordinal));
+        Assert.DoesNotContain("AddSingleton<Microsoft.Extensions.Logging.ILoggerProvider>", program);
     }
 
     /// <summary>
