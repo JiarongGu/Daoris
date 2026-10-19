@@ -3,7 +3,7 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { ReadChange, RepositoryAcross, WriteChange } from '../settings/Across';
 import { call } from './call';
-import type { DriverState } from './driver';
+import { type DriverState, writeAnswered } from './driver';
 
 // Reading and writing across repositories (READ1, D107): how each repository's checkout stands, and the
 // screen's half of `daoris driver across`, over the same `driver.json`.
@@ -31,7 +31,7 @@ export const useSetReadAcross = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: ReadChange) => call<DriverState>('SET_READ_ACROSS', change),
-    onSuccess: (state) => client.setQueryData(keys.driver, state),
+    onSuccess: (state) => writeAnswered(client, state),
   });
 };
 
@@ -40,6 +40,6 @@ export const useSetWriteAcross = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: WriteChange) => call<DriverState>('SET_WRITE_ACROSS', change),
-    onSuccess: (state) => client.setQueryData(keys.driver, state),
+    onSuccess: (state) => writeAnswered(client, state),
   });
 };

@@ -60,9 +60,11 @@ describe('the shell push channel (ShellSignals)', () => {
     // And the rules: a tick settles what agents proposed about them (PERM2), and the band reads that.
     // And the registry (FG4): a folder imported from a terminal left Overview saying *no workspace
     // yet* until a reload, because nothing told the page the registry had moved.
-    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.driver, keys.allRepositories, keys.allSync, keys.rules, keys.allRegistry]) {
+    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.allRepositories, keys.allSync, keys.rules, keys.allRegistry]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
+    // What is read under the driver's key, passing over its state where the shell pushes it (PUSH1a, `pushedState.test.tsx`).
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.driver, predicate: expect.any(Function) });
   });
 
   /**
@@ -76,7 +78,8 @@ describe('the shell push channel (ShellSignals)', () => {
 
     eventHandlers.get('DAORIS.DRIVER_READY')!({ ready: true });
 
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.driver });
+    // Its state itself is passed over where the shell pushes it, whose push says it is up (PUSH1a).
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.driver, predicate: expect.any(Function) });
   });
 
   /**
