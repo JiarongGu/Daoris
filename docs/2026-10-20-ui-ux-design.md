@@ -58,7 +58,7 @@ story has none of its own; one drawn inside another's stories says whose.
 
 | Screen | Mounted | Shows | Keeps | Breaks | Worst problem |
 |---|---|---|---|---|---|
-| The sign-in panel (`agents/SignIn.tsx:86-193`) | Under an account's row; *Add an account…*'s step 2 (UX7 §4.5); *What needs you*'s sign-in row (UX6d) | A live dot, three numbered steps, the link, the device code, the code box, *Cancel*, the output folded | Steps in order, one live control (§4 *a step happens where it was started*), the system browser for the link | No phase, no time, no bound; a refused start closes the panel and becomes a toast (`harnessRuns.tsx:194-199`) against §4's *a refused start is said in the start form*; the code found by one version's words (`:202-207`) | A sign-in at five seconds and at five minutes look the same; an organism holding its hook, so no story shows any state |
+| The sign-in panel (`agents/SignIn.tsx:86-193`) | Under an account's row; *Add an account…*'s step 2 (UX7 §4.5); *What needs you*'s sign-in row (UX6d) | A live dot, three numbered steps, the link, the device code, the code box, *Cancel*, the output folded | Steps in order, one live control (§4 *a step happens where it was started*), the system browser for the link | No phase, no time, no bound. At `02632075f` a refused start also closed the panel into a toast (`harnessRuns.tsx:194-199`) and the code was found by one version's words (`:202-207`); CODEXSIGNIN2 and CODEXSIGNIN3, merged the same day, say the refusal in the panel with *Try again* and *Close* and read the code by its shape | A sign-in at five seconds and at five minutes look the same; an organism holding its hook, so no story shows any state |
 | An account's usage curve (`UsageCurve.tsx` in `AccountUse.tsx:405`) | An agent's page → Usage (D165) | Each account's share against its curve | Drawn in `AccountUse`'s stories | Not read closely here | None found at this reading |
 
 **Ask Daoris, in the side bar**
@@ -123,10 +123,10 @@ story has none of its own; one drawn inside another's stories says whose.
 2. **A wait that says nothing.** The sign-in panel, a heavy run's slot, and (unbuilt) a brainstorm's passes and a meeting's
    rounds: each is a process the person started and waits on, and none says where it is or for how long. Two built
    screens already do it right: the held call (`PermissionAsks.tsx:161-163`) and the running call (WAITSAY1).
-3. **A refusal as a toast.** A refused sign-in start closes its panel and toasts (`harnessRuns.tsx:194-199`); a pause's
-   change refused on Setup or Driver toasts (`DriverDomain.tsx:257`); full access's own confirmation has no place to say one.
-   The language says it in the form, whole, for a start and for a confirm (§4); the newer screens did not carry it to
-   every press.
+3. **A refusal as a toast.** A refused sign-in start closed its panel and toasted (`harnessRuns.tsx:194-199`, until
+   CODEXSIGNIN2 said it in the panel); a pause's change refused on Setup or Driver toasts (`DriverDomain.tsx:257`); full
+   access's own confirmation has no place to say one. The language says it in the form, whole, for a start and for a confirm
+   (§4); the newer screens did not carry it to every press, and each fix so far was one screen's.
 4. **A process said as words.** The work state is read in four places and drawn as lines in each; the milestone's four facts
    are a sequence set as a list; the workflow rail is the only drawn process (FLOWCHART1).
 5. **A surface with no door.** Brainstorms and meetings have no place, the heavy slot no line, a session's access no fact on
@@ -140,7 +140,9 @@ story has none of its own; one drawn inside another's stories says whose.
 ## 2. The rules the audit shows are missing
 
 Each is an amendment, to the platform language unless named otherwise, with the reason that keeps it and the check that
-holds it. They are written into the language by UIRULE1 (§9) once the owner accepts this.
+holds it. Once the owner accepts this, each is written into the language, with its check, by the first feature of §9 that
+applies it: R1, R6 and R7 by *Settings' rows and cards use the pane* and *Forms take the pane*, R2 by the sign-in's, R3 by
+the access feature's, R4 by the milestone's, R5 by the first meeting feature.
 
 ### R1. A setting's value sits beside its words, a form takes the pane, and cards are spaced by one rule
 
@@ -396,7 +398,7 @@ same relay as the tool's output and read by the page.
 | Waiting, device code | The code, *Copy code*, *Expires in …* from the tool's own bound |
 | Code asked | The box, focused, *Continue*; then *Sent* |
 | Longer than usual | Under the phase: *Taking longer than usual: usually under {usual}*, only where CLAUDESIGNIN1 measured it |
-| Refused at the start | The first phase failed, the driver's sentence whole, *Try again* and *Close*; no toast (CODEXSIGNIN2) |
+| Refused at the start | The first phase failed, the driver's sentence whole, *Try again* and *Close*; no toast (CODEXSIGNIN2 built it as a panel of its own; here it is the list's first phase) |
 | Failed at a phase | That phase failed with its sentence; the earlier ones done; *Try again*, *Close* |
 | Stopped at a bound | The driver's sentence (*the tool did not finish in …*), *Try again* |
 | Cancelled | The panel closes; nothing is said (the person pressed it) |
@@ -412,12 +414,12 @@ same relay as the tool's output and read by the page.
 | `signin.device.enter` | Open the page and enter this code: | 打开页面并输入这个代码： |
 | `signin.device.expires` | Expires in {{time}} | {{time}}后过期 |
 | `signin.done` | Signed in as {{who}} in {{time}} | 已登录为 {{who}}，用时 {{time}} |
-| `signin.retry` | Try again | 再试一次 |
 | `phase.elapsed` | {{time}} so far | 已用 {{time}} |
 | `phase.longer` | Taking longer than usual: usually under {{usual}} | 比平常久：通常不到 {{usual}} |
 
-Today's `signin.title`, `signin.waiting`, `signin.opened`, `signin.copy`, `signin.copyCode`, `signin.cancel` and
-`signin.output` stand. `signin.codeLater` and the static step 3 (`signin.ready`) go: the phases say both.
+Today's `signin.title`, `signin.waiting`, `signin.opened`, `signin.copy`, `signin.copyCode`, `signin.cancel`,
+`signin.output`, and CODEXSIGNIN2's `signin.retry` (*Try again*, 重试) and `signin.close` stand. `signin.codeLater` and the
+static step 3 (`signin.ready`) go: the phases say both.
 
 **Keys:** the panel opens with the focus on its first live control (*Copy link* once a link is shown, the code box once it
 is asked); *Cancel* is reached by Tab and is never Escape, since it stops a process. A refusal moves the focus to *Try
@@ -427,9 +429,10 @@ when its phase changes, not each second. **Themes:** the marks are §3's: done's
 person's phase, danger ink for a failed one. **Narrow:** the head's time moves under the title; the link truncates in the
 middle with the whole on *Copy link*.
 
-**What changes in the existing rows:** CLAUDESIGNIN1b draws these phases through `PhaseList` and splits `SignIn` into
-`SignInSteps`, a molecule with a story per state above; its "UX7 §4.5 note first" is this section. CODEXSIGNIN2's refused
-start is the *Refused at the start* state, not a line in the form above the panel.
+**What changes in the existing rows:** CLAUDESIGNIN1b is one feature built end to end by one builder (D187), not split at
+the driver and page seam as its row says: the driver writes the phases, the page draws them through `PhaseList`, and `SignIn`
+splits over `SignInSteps`, a molecule with a story per state above; its "UX7 §4.5 note first" is this section. CODEXSIGNIN2's
+refused panel, merged, becomes the list's *Refused at the start* state, keeping its words and its two presses.
 
 ### 3.3 Sessions' access and the call held for the person
 
@@ -792,7 +795,7 @@ by the row that adds its press.
 | Signing in | Agents, an agent's page, its account's row | the sign-in row, as today | — (a row's act) | as today | the agent page's twins, as today |
 | Sessions' access | Repositories → Setup; Settings → Driver; a session's head | — | as today | `SET_ACCESS` exempt, the person's own (D184) | `daoris-driver access` |
 | Ask Daoris's access | The panel; Settings → AI features | — | — | the panel itself | `daoris-driver help mode` |
-| Heavy runs | Setup (list); a session (running, waiting); a repository's Details (slot) | — | — | a door to the repository's Details (HEAVYSLOT1b's row) | `daoris-driver heavy`, `run-heavy` |
+| Heavy runs | Setup (list); a session (running, waiting); a repository's Details (slot) | — | — | a door to the repository's Details (HEAVYSLOT1's row) | `daoris-driver heavy`, `run-heavy` |
 | Meetings and brainstorms | Sessions, the rail; its `＋` | waiting for your send; an agent's ask | Workspace › New meeting…; the palette | a door to the composer with its question (MEETUX1d's row) | `daoris-driver meeting`, `brainstorm` |
 | Where work stands | A session's record; a quest's page; Branches | held attempts, blocked clean-ups, as today | — | its answer (FABRIC-MILESTONE1c) | `daoris-driver work state` |
 
@@ -905,29 +908,40 @@ heads, and D173's milestone's facts stand.
 
 ## 9. The rows, in the order to build them
 
-Each about a hundred turns; each proof includes its stories at R6's widths, vitest over the mocked bridge, the web's
-`i18n:check` and `names:check -- --strict` where words change, and the parent's look on the window at 1546 and 680 px in
-both themes and languages. UIFIT1a (the parent's shots) comes first, unchanged.
+**The rows follow D187**: each is one feature a person can see working, named by its outcome and built end to end by one
+builder across every lane it needs (driver, modules, service, the page), never a host half and a page half. A feature too
+large for one builder is split only into parts that each work on their own (the meeting's four). A part shared by several
+features (`PhaseList`, `SettingList`) is built by the first feature that shows it. Each is about a hundred turns; each proof
+includes its stories at R6's widths, its tests red first, the web's `i18n:check` and `names:check -- --strict` where words
+change, and the parent's look on the window at 1546 and 680 px in both themes and languages. UIFIT1a (the parent's shots)
+comes first, unchanged.
 
-1. **UIRULE1** — the rules written into the platform language and their checks (web-shell; after the owner's yes).
-2. **UIFIT1b, changed**: `SettingList` and `FormGrid` (R1) in every domain and Setup tab, not only This Daoris; `SettingRow`'s
-   own grid gives way to the card's track; the 40–48rem caps and the `md:` columns go.
-3. **UIFIT1c, changed**: cards 16 px apart by the domain's container in every Settings domain, and `mt-3.5` gone from each card;
-   its condition (*if UIFIT1a shows cards flush*) holds already in the code.
-4. **PHASE1** — `PhaseMark`, `Elapsed` and `PhaseList` (web-shell).
-5. **CLAUDESIGNIN1b, changed**: its page half draws §3.2 through `PhaseList`, `SignIn` split over `SignInSteps`; the "UX7 §4.5
-   note first" is §3.2.
-6. **CODEXSIGNIN2, changed**: the refused start is §3.2's *Refused at the start* state, inside the panel, with *Try again*.
-7. **REFUSEHERE1** — R3 for the access rows (Setup, Driver) and the mode chip; `FullAccessConfirm` into `InlineConfirm`.
-8. **ACCESSUX1** — a session's access on its head and in *Details*; *What it has* by its own width, with its stories.
-9. **MILESTONEUX1** — the milestone on `PhaseList`, with stories; the record head's budget measured again and kept.
-10. **HEAVYSLOT1a** — the slot answered: which session holds a repository's heavy run, at which gate, who waits (driver,
-    modules).
-11. **HEAVYSLOT1b** — the slot shown: the running and waiting lines, the Details row, the editor stacking (web).
-12. **MEETUX1a–d** — meetings and brainstorms in Sessions: the rail and the composer; the page and its packet; the transcript
-    and the document; *What needs you* and Ask Daoris's door. After BRAINSTORM1c and AGENTROOM1b-c.
-13. **PUSHUX1** — an unjudged slice draws skeleton rows, never an empty state.
-14. **STORYGAP1** — stories for the screens with none that no row above draws.
+1. **UIFIT1b, changed — Settings' rows and cards use the pane.** Absorbs UIFIT1c. R1's label track (`SettingList`) and its
+   16 px card spacing in every Settings domain and Setup tab, R6's story widths for them, R1's and R6's notes in the platform
+   language with their checks.
+2. **UIFIT1d — Forms take the pane.** R1's form rule (`FormGrid`): the 40–48rem caps and the `md:` and `max-sm:` columns go,
+   the heavy gates editor and *What it has* lay out by their own width, and R7's check holds it.
+3. **CLAUDESIGNIN1b, changed — The sign-in panel says its phase and how long.** The driver writes the phases, the panel draws
+   them (§3.2), one builder end to end; it builds `PhaseMark`, `Elapsed`, `PhaseList` and `SignInSteps`, and writes R2.
+4. **ACCESSASK1 — Access changes ask once and say a refusal where they were pressed.** Full access through the one
+   `InlineConfirm`, a pause's refusal under its row, a mode switch's under its chip, Driver's lead paragraph to its ⓘ; R3.
+5. **SESSACCESS1 — A session says the access it runs under.** The head's chip and *Details*' pauses from the record (§3.3).
+6. **MILESTONEUX1 — Where a piece of work stands reads as its phases.** The milestone on `PhaseList`, the record head's
+   budget measured again and kept (§3.7); R4.
+7. **HEAVYSLOT1 — A heavy run is seen running and waiting.** The driver answers the slot, the session's line and head and the
+   repository's Details say it (§3.5).
+8. **MEETUX1a — A meeting is started from the window, its context read and sent.** The rail's kind, the composer, the page's
+   head, phases and packet, *Send*, *Stop*, the bridge to the driver's meetings (§3.6); R5. After BRAINSTORM1c and
+   AGENTROOM1b-c.
+9. **MEETUX1b — A meeting's rounds are followed on its page.** The transcript, round 2's packet and *Send round 2*, the side
+   bar's views.
+10. **MEETUX1c — A brainstorm's document is read on its page.** Coverage, ranked groups, flags, the challenge's claims and its
+    presses, left out and needs, *Copy as Markdown*, *Attach to a new ask…*.
+11. **MEETUX1d — A meeting that waits on the person is in What needs you, and Ask Daoris opens one.** Its rows, an agent's ask,
+    the go door and its `HelpCoverageTests` row.
+12. **PUSHUX1 — Nothing reads as empty before it is known.** An unjudged pushed slice draws skeleton rows (§3.8).
+13. **STORYGAP1 — Every screen since UX7 is in the catalogue at the frame's widths.** Stories for those with none that no row
+    above draws (§1.2 item 6).
 
 The backlog holds each in its own shape (contract by this document's section, proof); the steward files them with
 UIDESIGN1's archive entry once the owner accepts the design.
@@ -939,7 +953,7 @@ UIDESIGN1's archive entry once the owner accepts the design.
 - **No count was taken.** UX6's measures (concepts, controls, words, screens) were not run on any story; MEETUX1a's and
   UIFIT1b's proofs take them before and after.
 - **The driver's half is assumed where a phase is read**: the sign-in's phases (CLAUDESIGNIN1b's driver half), the heavy
-  slot (HEAVYSLOT1a), a meeting's state (D176's and D177's records) each must answer what §3 draws; this document names
+  slot (HEAVYSLOT1), a meeting's state (D176's and D177's records) each must answer what §3 draws; this document names
   the fields by meaning, not by wire shape.
 - **The words are proposals** for D116's check. `verify` checks this document's place in the router and D185's shape; it
   checks none of the words, and no claim about what the code does beyond the lines cited.
