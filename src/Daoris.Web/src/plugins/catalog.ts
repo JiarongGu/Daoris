@@ -12,6 +12,8 @@ export type HelpServerShown = {
   state?: 'approved' | 'waits' | 'refused';
   accepted?: string[];
   refusal?: string | null;
+  /** Where it waits: approved once, and an update has changed its tools since, so it asks again (HELPPLUG1c). */
+  changed?: boolean;
 };
 
 /**

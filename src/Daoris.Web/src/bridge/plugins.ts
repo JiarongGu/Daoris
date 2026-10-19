@@ -82,10 +82,13 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
  *
  * HELPPLUG1a's tightening (D170's note): `help-approve`, `help-reads` and `help-withdraw`, with the `server`, are the person's
  * approval of the exact tools a plugin's server offers Ask Daoris, its reads only, or its withdrawal, the page's half of
- * `daoris-driver plugins approve|withdraw`.
+ * `daoris-driver plugins approve|withdraw`. Since HELPPLUG1c `help-approve` carries the `writes` the person ticked, each on its
+ * own (`--writes`); without them it approves every write, as an older page's did.
  */
 export const usePluginAction = () => useMutation({
-  mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' | 'help-approve' | 'help-reads' | 'help-withdraw'; server?: string }) =>
+  mutationFn: (action: {
+    id: string; action: 'enable' | 'disable' | 'remove' | 'help-approve' | 'help-reads' | 'help-withdraw'; server?: string; writes?: string[];
+  }) =>
     call<{ id: string; action: string; data: string | null }>('PLUGIN_ACTION', action),
 });
 
