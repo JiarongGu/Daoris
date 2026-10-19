@@ -2,7 +2,7 @@
 
 **Standing:** proposed under D186 (FLOWCHART1). Pending a second maker's read, which this design has not had yet (the
 workflow design's §11 weighed one the same way), and the owner's review. No row builds before the owner's yes. The design
-builds nothing; its rows (§10) do. UIDESIGN1's design (D185) refers here for every diagram: the component catalogue there
+builds nothing; its rows (§10) do, each one feature end to end as D187 shapes a row. UIDESIGN1's design (D185) refers here for every diagram: the component catalogue there
 names this primitive, and its layout, words and traps are this document's.
 
 Read for it: platform-ux §2-§4 and §6; the workflow design §3.3, §5.2, §6.2, §6.4, §7, §11 and §12; D157; the map design §1
@@ -61,7 +61,7 @@ a node's lifecycle. Section 2 names each record. The drawing is the missing part
 
 | Flow | Kind | Its record | Read through | Mounted |
 |---|---|---|---|---|
-| A quest's life | state machine, with its path | the quest's operation log, replayed by `QuestTransitions` (`QuestLog.cs:4-102`, `:324-349`) | **a new read** of one quest's moves (FLOWCHART1c) | the quest's page |
+| A quest's life | state machine, with its path | the quest's operation log, replayed by `QuestTransitions` (`QuestLog.cs:4-102`, `:324-349`) | **a new read** of one quest's moves (FLOWCHART1a2) | the quest's page |
 | A session's states | state machine, current state only | the session record; `SessionLedger.Allowed` (`SessionLedger.cs:1521-1537`) | the record as the page holds it | the session side bar's *Timeline* view |
 | A line of work's parts | instance | the entry's parts (`SessionEntries.cs:3-50`) | `SESSION_GROUPS`' entries | the session's page, in the parts strip's place |
 | A workflow | process (not lit) | Current, or the named version; after WORKFLOW2, its decoded graph | `WORKFLOW_CURRENT` | the *Workflow* tab |
@@ -91,7 +91,7 @@ says so.
   set-up or by a reopened source says *held for your yes* in open's hue. It is the one place that hue appears in this flow,
   since only that waits on the person (platform-ux §3, lines 91-94, 118-120).
 - **The record's gap.** No door answers one quest's history today. `/api/quests/operations` (`Program.cs:2174-2178`) is the
-  remote's sync feed: every quest's operations since a cursor. FLOWCHART1c adds the read: `GET /api/quests/{id}/moves` on
+  remote's sync feed: every quest's operations since a cursor. FLOWCHART1a2 adds the read: `GET /api/quests/{id}/moves` on
   both hosts.
   - Each move answers its kind, its time, its machine and the session it names, as the quest already answers `holder`.
   - It answers its codes (a hold, a verdict, a conflict's attempted status), and never the published payload or a path.
@@ -384,14 +384,14 @@ layers by hand and say why (map design lines 46-50; `codeLayout.ts:9-10`), and t
 than coordinates. HTML nodes that wrap in either language cannot be sized before they render. Both libraries need those
 sizes up front, which forces a two-pass layout.
 
-**The named exit.** If the layout cannot hold its crossing table on FLOWCHART1a's fixtures (§7, trap 3), it takes
+**The named exit.** If the layout cannot hold its crossing table on FLOWCHART1a1's fixtures (§7, trap 3), it takes
 @dagrejs/dagre for ranks and order alone. It is MIT and about 17 KB gzipped, and choosing it is the decision of that row.
 elkjs is rejected (D186).
 
 ### 4.4 Its stories
 
-The stories are FLOWCHART1b's design review (D42 §5): each one in both themes, en and 中文, at 300, 400, 544 and 1200 px
-by a decorator:
+The stories are the design review (D42 §5), each written by the feature that first draws its case (§10): each one in
+both themes, en and 中文, at 300, 400, 544 and 1200 px by a decorator:
 - **A quest's life:** Open → Taken → Done with a wait and the evidence read; declined while open; a conflict refused; Done
   held for your yes.
 - **A session's states:** working ⇄ waiting on you, with the outcomes as one group.
@@ -436,7 +436,7 @@ covers what was built since UX7, and the Map was built before it.
 - **One new glossary term**, *flowchart* / 流程图, for the drawing. Its chrome is a section's name and a fold's words:
   *Show whole* (显示全部), *n more tries*, *n steps done*, *this record keeps where it stands, not how it got there*.
   Every node and edge word is a state or a cause the catalogues already hold (a quest's statuses, a session's states, a
-  run's states, how a part began, a try's codes). The new ones are a quest's moves (FLOWCHART1c) and a node's states
+  run's states, how a part began, a try's codes). The new ones are a quest's moves (FLOWCHART1a2) and a node's states
   (GRAPHVIEW1).
 - **The names collide** (D173.md:508-514 chose Graph / 图, Node / 节点, Wire / 连线):
   - the glossary's `graph` is the commit graph, 提交图 (`glossary.json:535`);
@@ -529,20 +529,21 @@ covers what was built since UX7, and the Map was built before it.
 
 ## 10. The rows
 
-In build order. Each is sized to about a hundred turns, and each names its Ask Daoris door or its reason (D110). The
-reads here add no press, so they need no `HelpCoverageTests` row.
+**The rows follow D187.** Each is one feature a person can see working, built end to end across every lane it needs by
+one builder, and handed back working. The primitive is never a row of its own: the first feature builds the layout and
+the component as far as it needs them, and each later feature adds the parts it needs (a back edge, a stack, a fold), each
+with its own tests and stories. Only the first feature is too large for one builder, so it comes in two parts, and each
+part works and is seen working. Each row names its Ask Daoris door or its reason (D110). These flows read and add no
+press, so they need no `HelpCoverageTests` row.
 
-- [ ] **FLOWCHART1a — the flow's layout** (web-shell; D186; this design §3.1-§3.2, §3.6). `design/flowLayout.ts`, pure: back edges by a walk from the entries, longest-path ranks, waypoint slots, four barycentre sweeps, the placement by width, the folds. Opus. Proof: `flowLayout.test.ts`'s tables (cycles, stability, no edge through a node, crossings, placement at 300/400/544/1200, folds), seen to fail first.
-- [ ] **FLOWCHART1b — the flow primitive and its stories** (web-shell; after 1a; §3.3-§3.8, §4). `design/Flow.tsx`: one list in reading order, placed by the layout, edges in an `aria-hidden` SVG from measured boxes, the keys, the folds; the glossary's *flowchart*. Opus. Proof: `Flow.test.tsx`, §4.4's stories in both themes and languages, `tokens.test.ts`, `i18n:check`, `names:check --strict`.
-- [ ] **FLOWCHART1c — a quest's moves answered** (service, driver; §2.1, traps 11-13). `GET /api/quests/{id}/moves` on both hosts from `HistoryAsync`, page-safe by allow-list; `TRACE`'s quest link carries them and `daoris-driver trace quest` says them; the census and `quest-operations.md` gain the place. Opus. Proof: the door's tests per kind, `QuestOperationKindsTests`' census, `TraceTests` (the link and the terminal's words).
-- [ ] **FLOWCHART1d — a quest's life drawn** (web-shell; after 1b, 1c; §2.1). On the quest's page, folded to its status and moves: the four statuses from `QuestTransitions` (held by a source test), the path, each move's words, a conflict refused, a held Done in open's hue; a browser too. Opus. Proof: tests en and zh, stories, the rail at 300 px.
-- [ ] **FLOWCHART1e — a session's parts and states drawn** (web-shell; after 1b; §2.2-§2.3). The parts flow in the parts strip's place, the strip as its rail; the *Timeline* view's head draws `SessionLedger.Allowed` (held by a source test) with the current state lit, the outcomes as one node, and no path. Sonnet. Proof: tests en and zh, stories, `PartsStrip`'s tests kept.
-- [ ] **FLOWCHART1f — landing and clean-up drawn** (web-shell; after 1b; §2.7). On a landed branch's page, and from the work's milestone and the run's landing node: `WORK_STATE` by branch and its session's `TRACE`, tries stacked by code, landed, pushed, the pull request, the end, the clean-up, the recovery. Opus. Proof: tests en and zh over fixtures of each try code, stories.
-- [ ] **FLOWCHART1g — a workflow and its run drawn** (web-shell; after 1b; §2.4-§2.5, §5.1). `WorkflowChart` on `Flow`: the Workflow tab and the side bar's Workflow view top to bottom where wide, the rail at the floor; groups as fork and join, failure paths, the landing's divider, the run lit. Opus. Proof: the workflow tests' words unchanged, placement tests, stories.
-- [ ] **FLOWCHART1h — the flows on the install** (parent; after a republish carrying 1d-1g). A quest, a session's parts and states, a landed branch and a workflow with its run, at 1546 and 680 px, both themes, en and 中文. Proof: dated shots and a ledger under D186.
+- [ ] **FLOWCHART1a1 — a quest's statuses drawn as a flowchart on its page** (web-shell; D186, D187; §2.1, §3, §4). The layout, the `Flow` component and its stories, the glossary's *flowchart*; on the quest's page a folded section draws the four statuses from `QuestTransitions` (held by a source test), the current one lit, the moves out of it said, the rail at the side bar's floor; a browser too. Opus. Proof: `flowLayout.test.ts` and `Flow.test.tsx` (placement at 300/400/544/1200, crossings, keys, reader), the quest's test en and zh, stories, `i18n:check`, `names:check --strict`; seen working on the window at 1546 and 680 px, both themes.
+- [ ] **FLOWCHART1a2 — how a quest moved, drawn on its flowchart** (service, driver, web-shell; after 1a1; §2.1, traps 11-13, 18). `GET /api/quests/{id}/moves` on both hosts from `HistoryAsync`, page-safe by allow-list; `TRACE`'s quest link and `daoris-driver trace quest` carry them; the census and `quest-operations.md` gain the place; the page draws the path, each move inside its status, a conflict refused, a held Done in open's hue. Opus. Proof: the door's tests per kind, `QuestOperationKindsTests`, `TraceTests`, the page's tests en and zh; seen on the window.
+- [ ] **FLOWCHART1b — a session's line of work and its states drawn as flowcharts** (web-shell; after 1a1; §2.2-§2.3, §3.5). The parts flow in the parts strip's place, the strip its rail; the *Timeline* view's head draws `SessionLedger.Allowed` (held by a source test), the current state lit, the outcomes as one group node, no path; the layout gains back edges on the outer lane. Opus. Proof: tests en and zh, `PartsStrip`'s kept, stories; seen on the window.
+- [ ] **FLOWCHART1c — a landed branch's landing and clean-up drawn as a flowchart** (web-shell; after 1a1; §2.7, §3.6). On the branch's page, opened from the work's milestone and the run's landing node: `WORK_STATE` by branch and its session's `TRACE`, tries stacked by code, landed, pushed, the pull request, the end, the clean-up, the recovery; the layout gains stacks. Opus. Proof: tests en and zh over each try code, stories; seen on the window.
+- [ ] **FLOWCHART1d — a workflow and its run drawn as flowcharts** (web-shell; after 1a1; §2.4-§2.5, §3.6, §5.1). `WorkflowChart` on `Flow`: the Workflow tab and the side bar's Workflow view top to bottom where wide, the rail at the floor; groups as fork and join, failure paths, the landing's divider, the run lit; the layout gains settled folds, focus and *Show whole*. Opus. Proof: the workflow tests' words unchanged, a 96-node run folded, stories; seen on the window.
 - [ ] **MAPUX1 — the Map's UI/UX, its own design** (design; the map design §1, D186 §5.5). The Map stays the map of requests and was judged poor: shots of the ring and the layers at 1546 and 680 px in both themes first, then what it answers that no page does, and its rows. Opus, with another maker's read. Proof: the document and its rows.
 
 **Two rows change** (the parent's to write into TASKS):
-- **FABRIC-GRAPHVIEW1** is drawn on `Flow` after FLOWCHART1b and 1g, in the side bar's Workflow view, with a node's
-  lifecycle (§2.6) unfolding under it.
-- **FABRIC-GRAPHEDIT1** lays its editor out by FLOWCHART1a's layout, and settles §6's three name collisions.
+- **FABRIC-GRAPHVIEW1** is drawn on `Flow` after FLOWCHART1d, in the side bar's Workflow view, with a node's lifecycle
+  (§2.6) unfolding under it.
+- **FABRIC-GRAPHEDIT1** lays its editor out by the flow's layout (FLOWCHART1a1), and settles §6's three name collisions.
