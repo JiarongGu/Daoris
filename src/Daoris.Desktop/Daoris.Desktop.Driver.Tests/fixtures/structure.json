@@ -192,6 +192,7 @@
     "MachineLogTests.cs": "Platform",
     "MeetingCommandTests.cs": "Brainstorms",
     "MeetingPacketTests.cs": "Brainstorms",
+    "MeetingTests.cs": "Loop",
     "NativeResumeTests.cs": "Loop",
     "NativeStreamsTests.cs": "Agents",
     "NoteCodesTests.cs": "Platform",

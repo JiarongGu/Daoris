@@ -256,6 +256,21 @@ public sealed class Driver(
     internal Task<int> BrainstormsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Brainstorms.BrainstormsAsync(snapshot, taken, events, ct);
 
+    /// <summary>How a meeting's turn is run (AGENTROOM1a): refused with no stand-in, since no tool carries its message yet.</summary>
+    internal Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? MeetingTurns
+    {
+        get => Context.MeetingTurns;
+        init => Context.MeetingTurns = value;
+    }
+
+    private DriverMeetings? _meetings;
+
+    private DriverMeetings Meetings => LazyInitializer.EnsureInitialized(ref _meetings, () => new DriverMeetings(Context, Brainstorms));
+
+    /// <summary>The meetings on file at a look (AGENTROOM1a, D177): <see cref="DriverMeetings.MeetingsAsync"/>.</summary>
+    internal Task<int> MeetingsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
+        Meetings.MeetingsAsync(snapshot, taken, events, ct);
+
     /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
     internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
         HandOvers.HandOversAsync(snapshot, events, ct);
@@ -534,6 +549,10 @@ public sealed class Driver(
         // The brainstorms on file (BRAINSTORM1a, D176): each request frozen into its packet for the person to read, and each one the
         // person sent run beside the look, taking a slot under the cap as a pass does.
         passes += await BrainstormsAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+
+        // The meetings on file (AGENTROOM1a, D177): each round's packet frozen for the person to read, and each round they sent run
+        // beside the look, its turns one at a time through a brainstorm's pass, each taking a slot under the cap.
+        passes += await MeetingsAsync(snapshot, passes, events, ct).ConfigureAwait(false);
 
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
         var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
