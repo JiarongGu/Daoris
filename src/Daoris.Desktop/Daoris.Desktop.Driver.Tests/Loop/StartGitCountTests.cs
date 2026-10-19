@@ -93,7 +93,9 @@ public sealed class StartGitCountTests : IDisposable
 
     // 18 git starts before the change (`symbolic-ref origin/HEAD` x3, `rev-parse --verify --quiet refs/heads/main` x4); 11 after
     // (the line is guessed once, its guess is not checked again, and a fresh tree's `merge-base` and `log` against itself are not asked).
-    private const int Ceiling = 11;
+    // 12 since TREEDEPS1 (D51): a fresh tree lists the checkout's lockfiles once (`git ls-files … package-lock.json …`) to copy
+    // its dependencies, one start that saves the session a whole `npm ci`.
+    private const int Ceiling = 12;
 
     private void Git(params string[] arguments)
     {

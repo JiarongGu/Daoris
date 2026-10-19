@@ -78,6 +78,13 @@ composes them again, each act is judged at execution, each start leaves its rece
 (it takes a recorded identity, checks the owner, and judges again before acting); and a grant shown as in force where
 the agent cannot be held to it (*What it has* keeps the start's receipt; the screen shows a change as pending).
 
+*Drawn 2026-10-20 (HELPMODE1c1, a mock):* the states read *off*, *on*, *needs approval*, *changed since approved*, *unavailable
+on this agent* and the shell's *not available yet* (关闭, 开启, 待批准, 批准后已改动, 这个智能体不可用, 尚未提供); *approved* is
+批准, the plugins page's word, so no glossary term was added. An agent is held to the browser and the checkouts by whether it takes
+permission rules, so on Codex the whole browser row is unavailable, its reads included, since the server goes whole or not at all.
+The molecule is `help/ConfiguredAccess.tsx`, not `HelpGrants`, the driver's plugin approvals. *Left for the owner:* the browser's
+boxes here and its plugin page's approval are one record drawn in two places.
+
 ## 5. The screen (HELPMODE1b)
 
 The picker sits beside the composer, the docked panel included. History keeps its own head. The text is translated, the

@@ -3268,6 +3268,25 @@ test('a run beside raises a rehearsal step\'s child to normal, touches no suite\
     await tool.runGate(fx.root, planned('s', 'dotnet test src/S'), fx.root, { step });
     assert.deepEqual(given, { 'npm run rehearse:family': true, 'dotnet test src/S': false });
 
+    // FAMILYFAIL1c: a Process half's bounds are wall-clock too, so its full run and each test it runs alone get the raise;
+    // the fast half beside them does not.
+    const raised: string[] = [];
+    const flaky = 'Daoris.Desktop.Driver.Tests.ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked';
+    const alone = 'Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 5 s - D.dll (net10.0)\n';
+    const processStep: Step = async (command, _cwd, fd, options) => {
+      if (options?.raise) raised.push(command.includes('--filter') ? 'alone' : 'full');
+      writeSync(fd, command.includes('--filter') ? alone : PROCESS_FAILURE);
+      return command.includes('--filter') ? 0 : 1;
+    };
+    const half = planned('driver-process', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings');
+    assert.equal((await tool.runGate(fx.root, half, fx.root, { step: processStep })).verdict, 'FLAKE');
+    assert.deepEqual(raised, ['full', 'alone'], `${flaky} was run alone without the raise`);
+    let fastRaised = false;
+    await tool.runGate(fx.root, planned('fast', 'dotnet test src/D --filter Category!=Process'), fx.root, {
+      step: async (_command, _cwd, _fd, options) => { fastRaised = Boolean(options?.raise); return 0; },
+    });
+    assert.equal(fastRaised, false);
+
     // A run that could not lower itself raises nothing; one whose raise fails says so once.
     tool.startBesideRun({ setPriority: () => { throw new Error('denied'); }, env: {}, say: () => {} });
     assert.equal(tool.rehearsalRaise(), null);

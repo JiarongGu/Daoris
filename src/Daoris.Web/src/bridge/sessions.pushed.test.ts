@@ -11,9 +11,35 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { Session } from '../data/api';
-import { keys, SESSIONS_SLICE, sessionsIn } from '../data/queries';
-import { sessionsSlice } from './sessions';
+import { CALLS_SLICE, keys, SESSIONS_SLICE, sessionsIn } from '../data/queries';
+import { callsSlice, sessionsSlice, withCall } from './sessions';
 import { mergeKeyed } from './slices';
+
+describe('the running calls, pushed (WAITSAY1c2)', () => {
+  it('feeds its own entry from the one snapshot route, its deltas merged by key', () => {
+    expect(callsSlice.name).toBe(CALLS_SLICE);
+    expect(callsSlice.key).toEqual(keys.calls);
+    expect(callsSlice.merge).toBe(mergeKeyed);
+  });
+
+  it('composes a map of session to call, nothing before judged, and an empty map once judged none', () => {
+    const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
+    expect(callsSlice.compose(new Map(), false)).toBeUndefined();
+    expect(callsSlice.compose(new Map(), true)).toEqual({});
+    expect(callsSlice.compose(new Map<string, unknown>([['calling', { a: call }], ['other', 'x']]), true)).toEqual({ a: call });
+  });
+
+  it("overlays the pushed call on a session's grouping, and clears what the pull still says once none runs", () => {
+    const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
+    const old = { title: 'old', since: '2026-10-20T07:00:00+00:00' };
+    const grouping = { session: 'a', calling: old } as never;
+    expect(withCall(grouping, { a: call })?.calling).toEqual(call);
+    expect(withCall(grouping, {})?.calling).toBeNull();
+    // Not live: the pull's own answer stays, and nothing is made of no grouping.
+    expect(withCall(grouping, undefined)).toBe(grouping);
+    expect(withCall(undefined, { a: call })).toBeUndefined();
+  });
+});
 
 const record = (id: string, extra: Partial<Session> = {}): Session => ({
   id, repository: 'engine', adapter: 'claude-code', state: 'completed', created: '2026-10-19T08:00:00+00:00',

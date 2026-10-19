@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The CI's Process half could not pass beside the work, and a start's git ceiling missed TREEDEPS1 (FAMILYFAIL1c)
+
+- **Symptom:** the full set on `b0a786d` (beside five workers) failed 59 of the driver's Process tests; re-run one at a
+  time, eight failed again: seven timed out, and `StartGitCountTests` counted 12 git starts before a session spawns against
+  a ceiling of 11.
+- **Root cause:** the Process halves and the re-runs alone ran below normal (CIPRIO1), and their tests are bounded by the
+  clock (FAMILYFAIL1b had raised only the rehearsals). The ceiling predates TREEDEPS1, whose lockfile listing
+  (`git ls-files … package-lock.json …`) is one more start on every fresh tree, and its builder did not run the Process class.
+- **Fix:** `runSteps` hands the raise to every Process-lane step and `rerunAlone` to each test it re-runs (D180's
+  FAMILYFAIL1c note); the ceiling is 12, its comment naming TREEDEPS1.
+- **Verify:** `merge-branch.test.ts`'s raise test, red then green (a Process half's full run and its alone re-run raised, the
+  fast half not), with the re-run and rehearsal tests; `StartGitCountTests` green; the CLI typecheck clean.
+
 ## 2026-10-20 — The heavy run's gate start broke three of the driver's start censuses (HEAVYRUN1a)
 
 - **Symptom:** on main after HEAVYRUN1a's merge, `ProcessStartsCensusTests` (three direct starts outside the gate),
