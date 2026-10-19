@@ -108,7 +108,7 @@ public sealed class HelpCommandTests : IDisposable
     [Fact]
     public void Mode_says_the_mode_and_sets_it_from_the_next_start()
     {
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(path, """{ "helperAdapter": "claude-code-acp" }""");
         string Mode(params string[] args)
         {
