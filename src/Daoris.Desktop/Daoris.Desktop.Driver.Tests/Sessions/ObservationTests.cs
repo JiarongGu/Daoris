@@ -279,6 +279,49 @@ public sealed class ObservationTests
         Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", took: true, lastWords: Asked).State);
     }
 
+    private const string PicksUp = "The gates are running in the background (lint, then the tests); I'll pick up when they finish.";
+
+    /// <summary>
+    /// BGWAIT1c (D83's BGWAIT1 note, "the native door"): on the native door the harness ends a session's own background work with
+    /// its turn, so a turn that ended on that work is no question and has nothing to wait for. Where it would have parked, quoting
+    /// what it said of the work, it is cut off by a code of its own, failed, so D80 carries it on in the same tree and the strikes
+    /// bound it, its note naming the work. A start and a resumed run alike; the person's reopen, a close, a wait, a messy exit and a
+    /// failed turn are read as before, and a turn whose work the harness did not cut parks as before.
+    /// </summary>
+    [Fact]
+    public void A_native_turn_that_ended_on_work_its_harness_cut_is_cut_off_not_parked()
+    {
+        foreach (var conclusion in new[]
+                 {
+                     Observation.Conclude(0, "Taken", took: true, lastWords: PicksUp, backgroundCut: ["npm run gates"]),
+                     Observation.Conclude(0, "Taken", resumed: true, lastWords: PicksUp, backgroundCut: ["npm run gates"]),
+                     Observation.Resumed(0, "awaiting-person", "Taken", "Taken", took: true, lastWords: PicksUp, backgroundCut: ["npm run gates"]),
+                 })
+        {
+            Assert.Equal("failed", conclusion.State);
+            var part = Assert.Single(conclusion.Parts!);
+            Assert.Equal(NoteCodes.EndedBackgroundCut.Code, part.Code);
+            Assert.Equal(["npm run gates"], Assert.IsAssignableFrom<IReadOnlyList<string>>(part.Value("works")));
+            Assert.Equal(
+                "its turn ended while its own background work ran: `npm run gates`. Its agent ends such work with the turn, so it "
+                + "was cut off before that work finished, and is carried on in the same tree.",
+                conclusion.Note);
+            Assert.DoesNotContain(PicksUp, conclusion.Note);
+        }
+
+        Assert.Equal("completed", Observation.Conclude(0, "Done", took: true, backgroundCut: ["npm run gates"]).State);
+        Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q9", took: true, backgroundCut: ["npm run gates"]).State);
+        Assert.Equal(
+            NoteCodes.EndedSourceReopened.Code,
+            Observation.Conclude(0, "Taken", took: true, reopenedFrom: "q1", backgroundCut: ["npm run gates"]).Parts![0].Code);
+        Assert.Equal(NoteCodes.EndedTakenExit.Code, Observation.Conclude(1, "Taken", took: true, backgroundCut: ["npm run gates"]).Parts![0].Code);
+        Assert.Equal(
+            NoteCodes.EndedTurnFailedTaken.Code,
+            Observation.Conclude(0, "Taken", turnFailed: "limit reached", took: true, backgroundCut: ["npm run gates"]).Parts![0].Code);
+        Assert.Equal("stood-down", Observation.Conclude(0, "Taken", took: false, backgroundCut: ["npm run gates"]).State);
+        Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", took: true, lastWords: PicksUp, backgroundCut: []).State);
+    }
+
     /// <summary>With no last words to quote, the park still says where they would be.</summary>
     [Fact]
     public void A_park_with_no_last_words_points_at_the_transcript()

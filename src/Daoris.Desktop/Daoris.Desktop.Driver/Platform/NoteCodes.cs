@@ -410,6 +410,12 @@ public static class NoteCodes
     /// A twin: the service's ledger reads this spelling to open that carry-on (<c>SessionLedger.EndedSourceReopened</c>, FABRIC-CLOSE1c26).
     /// </summary>
     public static readonly NoteCode EndedSourceReopened = new("ended.source-reopened", ["quest"]);
+
+    /// <summary>
+    /// BGWAIT1c (D83's BGWAIT1 note): on the native door its turn ended while its own background work ran (`works`, the work's names
+    /// as its agent gave them), and its harness ends such work with the turn, so it was cut off: carried on in the same tree (D80).
+    /// </summary>
+    public static readonly NoteCode EndedBackgroundCut = new("ended.background-cut", ["works"]);
     public static readonly NoteCode EndedTakenExit = new("ended.taken-exit", ["exit"]);
     public static readonly NoteCode EndedUntouched = new("ended.untouched", []);
     public static readonly NoteCode EndedUntouchedExit = new("ended.untouched-exit", ["exit"]);

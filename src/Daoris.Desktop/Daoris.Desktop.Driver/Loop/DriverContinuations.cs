@@ -469,7 +469,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 ? Observation.Resumed(
                     code, park.State, quest.Status, status, quest.Awaits, after?.Awaits, turnFailed,
                     took: !closed && status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                    lastWords: closed ? null : SessionLastWords.ParkedWords(_context.Events, sessionId, transcript))
+                    lastWords: closed ? null : SessionLastWords.ParkedWords(_context.Events, sessionId, transcript),
+                    // BGWAIT1c: the native door's harness ended its own background work with its turn.
+                    backgroundCut: ended.BackgroundCut)
                 // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
                 : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
 
