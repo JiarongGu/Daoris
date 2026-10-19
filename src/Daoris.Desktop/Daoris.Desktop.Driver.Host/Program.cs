@@ -515,6 +515,13 @@ try
         return await Daoris.Driver.Host.HelpConsole.RunAsync(args[1..], log);
     }
 
+    // A repository's session access setup, its workspace's or this machine's (AUTONOMY1a, D184 point 1, D50): the repository's setup
+    // page's `SET_ACCESS` is the other door, over the same file.
+    if (args is ["access", .. var accessArgs])
+    {
+        return await Daoris.Driver.Host.AccessConsole.RunAsync(accessArgs);
+    }
+
     // Finished history from a terminal (HIST1d, D153, the history-clearing design §6.2, D50): what this machine keeps of it, per
     // workspace, and a workspace's clear, listed first and pressed with --yes. The workspace page's *Kept on this machine* is the
     // other door; a clear's log line says this one.
