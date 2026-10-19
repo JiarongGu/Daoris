@@ -1129,7 +1129,8 @@ public sealed class HelpRoutes(DriverContext context)
     {
         Conversations = listing.Conversations.Select(row => new
         {
-            row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Resumable,
+            // HELPMODE1a2: the mode it ran under, its record's, after whether it runs.
+            row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Resumable,
             row.From, row.Handed, row.Found, row.FoundLine,
         }).ToArray(),
         listing.Cut,
