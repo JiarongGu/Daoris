@@ -46,6 +46,19 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
+    /// RPC1c: the terminal's door reads the pipe's words for a confirmation as the pipe says them, a twin the driver library cannot
+    /// see from its side: the notification that says a press waits, and the two endings that are the person's word (exit 1).
+    /// </summary>
+    [Fact]
+    public void The_terminal_s_door_reads_the_pipe_s_confirmation_words_as_the_pipe_says_them()
+    {
+        Assert.Equal(InstancePipe.Module, Daoris.Driver.InstanceClient.PipeModule);
+        Assert.Equal(InstancePipe.Confirming, Daoris.Driver.InstanceDoor.Confirming);
+        Assert.Equal(InstancePipe.Refused, Daoris.Driver.InstanceDoor.Refused);
+        Assert.Equal(InstancePipe.Expired, Daoris.Driver.InstanceDoor.Expired);
+    }
+
+    /// <summary>
     /// The person's presses the host's verbs send over the pipe (RPC1c): each names a route of the driver's module that the census
     /// makes the person's, so the instance shows it in the window and runs it on the person's Confirm alone. A route the census opened
     /// would run unconfirmed, and one it made the window's would be refused: either fails here, naming the verb.

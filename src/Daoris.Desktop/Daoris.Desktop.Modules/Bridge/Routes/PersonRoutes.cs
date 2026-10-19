@@ -13,8 +13,9 @@ public sealed class PersonRoutes(DriverLoop loop)
     private readonly DriverLoop _loop = loop;
 
     // D156 point 2: the key the shell minted for the host it started, answered to the page alone (the census classes it the window's,
-    // so the pipe never answers it), which keeps it in memory and sends it on every write. The shell mints none before PERSONDOOR1g,
-    // and holds none for a host it adopted, so today it answers none and the page writes as it did.
+    // so the pipe never answers it), which keeps it in memory and sends it on every write. This shell mints no key (minting it and
+    // proving its host holds it are PERSONDOOR1g's) and holds none for a host it adopted, so it answers none and the page writes as
+    // it did.
     [DriverRoute("PERSON_KEY")]
     private Task<object?> PersonKeyAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new PersonKey(null));

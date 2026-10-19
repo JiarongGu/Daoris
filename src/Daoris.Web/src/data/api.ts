@@ -554,7 +554,7 @@ export const notFound = (error: unknown): boolean => (error as { status?: unknow
  * The person key (PERSONDOOR1f; D156 point 2, the person-door design §2.1 and §2.2): the key the shell minted for the host it
  * started, asked of it over the bridge as the page loads (`usePersonKey`) and held here, in this module's memory alone, never in
  * the page's storage, a cookie or a URL, and sent as `Daoris-Person` on every write. A reload asks again. None where the shell
- * holds none (before PERSONDOOR1g mints one, a host it adopted, a plain browser), and every write is sent as it was.
+ * holds none (a host it adopted, a plain browser), and every write is sent as it was.
  *
  * @remarks
  * The key goes only where `reach` sends a write: the host's loopback address inside the shell, or the page's own origin, which
@@ -647,7 +647,7 @@ export type ServiceConfirmation = {
  * memory, as `Daoris-Person` on every write; these doors refuse without it, so they come through here, and a refusal for want of
  * it is the host's sentence, said as every refusal is. The other person-only doors (the yes, the done, a go-ahead's answer, a
  * delete) call `post` and take the key there with every write. A local host enforces its doors only once its starter hands it a
- * key (PERSONDOOR1a), and the shell mints none before PERSONDOOR1g, so today the page holds none and writes as it did.
+ * key (PERSONDOOR1a), and the page holds one only where the shell answers one.
  */
 const asThePerson = <T>(path: string, body: unknown): Promise<T> => post<T>(path, body);
 

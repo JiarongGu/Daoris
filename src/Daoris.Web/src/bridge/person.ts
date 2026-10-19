@@ -124,7 +124,7 @@ export function useAnswerConfirmation() {
 /**
  * The person key the shell holds for its host (D156 point 2, design §2.2), asked as the page loads and held in `data/api.ts`'s
  * memory, never in the query cache, the page's storage or a URL; a reload asks again. Answers whether one is held, and whether the
- * ask has settled. None in a browser, from a shell older than the route, or before PERSONDOOR1g mints one.
+ * ask has settled. None in a browser, from a shell older than the route, or where the shell holds none.
  */
 export function usePersonKey(): { held: boolean; settled: boolean } {
   const { isAvailable } = useShenora();
@@ -141,8 +141,8 @@ export function usePersonKey(): { held: boolean; settled: boolean } {
 
 /**
  * Whether the window should say the host gates the person's acts with a key this page does not hold (PERSONDOOR1f, design §2.3's
- * adoption notice): asked once the page's own ask for the key has settled empty, of the host's proof of possession. Before
- * PERSONDOOR1g a host holding a key was started by something other than this Daoris, a gate's or another window's.
+ * adoption notice): asked once the page's own ask for the key has settled empty, of the host's proof of possession. A host that
+ * proves a key this window was never handed was started by something other than this window's shell.
  */
 export function useUnkeyedHost(person: { held: boolean; settled: boolean }): boolean {
   const { isAvailable } = useShenora();
