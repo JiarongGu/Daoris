@@ -124,7 +124,7 @@ public sealed class StartInSyncTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service, "fail");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal("failed", service.Session("s1")["state"]!.GetValue<string>());
         var tree = service.Session("s1")["tree"]!.GetValue<string>();
         SquashOntoLine(tree);
@@ -139,7 +139,7 @@ public sealed class StartInSyncTickTests : IDisposable
         {
             ["machine"] = "desk", ["sequence"] = 7, ["at"] = lostAt.AddSeconds(1).ToString("O"), ["standing"] = "held",
         };
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var carried = Runs().Last();
         var told = carried["target"]!.GetValue<string>();
