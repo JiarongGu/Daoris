@@ -264,7 +264,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // refuse it, which takes the offered one-time rejection, else none. The allow is the person's press for this call alone, and
     // Daoris never answers one by itself (D37, D52); a standing allow is a rule's to give (D74). What cannot is `answered: false` with
     // its code (`unheld`, `unoffered`, `standing`) and the registry's sentence, the hold left as it was. Its session hears the answer
-    // at once, off its own reader; the hold's end moves the registry's `Changed`, which the page's wait reads (AUTONOMY1b3b).
+    // at once, off its own reader, and the hold's end is told through the registry's `Changed`; the route publishes nothing.
     [DriverRoute("SESSION_PERMISSION_ANSWER")]
     private Task<object?> SessionPermissionAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
     {

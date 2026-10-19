@@ -79,7 +79,7 @@ public sealed record PermissionAnswer(bool Answered, string? Why, string Message
 /// its session's cancel, close or stream's end, whichever comes first.</para>
 ///
 /// <para><b>Told as it moves</b>: <see cref="Changed"/> names a session whenever what it holds moved, after the registry's lock is let
-/// go, as <see cref="RunningCalls.Changed"/> does (AUTONOMY1b3b's waiting mark reads it).</para>
+/// go, as <see cref="RunningCalls.Changed"/> does.</para>
 /// </remarks>
 public sealed class HeldPermissions
 {
