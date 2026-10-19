@@ -246,6 +246,7 @@
   "help.grants.state.unavailable": "这个智能体不可用",
   "help.grants.state.later": "尚未提供",
   "help.grants.pending": "下次启动",
+  "help.grants.notBuilt": "尚未提供",
   "help.grants.pendingWhy": "这段对话启动时用的是另一项选择，下次启动时才采用这一项。“配备”显示它启动时拿到的东西。",
   "help.grants.why.changed": "你批准之后，插件的更新改动了它：在你再次批准之前，问道衍得不到它的任何内容。",
   "help.grants.why.browser": "{{agent}} 只能整个接收浏览器的服务器，或者完全不接收，所以在 Daoris 居间转发其工具之前，选定的写入无法被守住。",

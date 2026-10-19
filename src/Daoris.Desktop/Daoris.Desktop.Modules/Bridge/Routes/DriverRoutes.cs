@@ -419,9 +419,17 @@ public sealed class DriverRoutes(DriverContext context)
             // Ask Daoris's access mode as the person chose it (HELPMODE1a2): `restricted` or `full`, what its next start reads. A
             // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
             config.HelpMode,
-            // Restricted mode's configured access as the person chose it (HELPMODE1c2b): each grant the page draws by its id with the
-            // operations chosen, housekeeping's from the home's record, what the next start and every tool call read.
-            HelpGrants = new[] { new { Id = ConfiguredAccess.HousekeepingGrant, Chosen = ConfiguredAccess.Read(loop.Home).Housekeeping } },
+            // Restricted mode's configured access as the person chose it (HELPMODE1c2b): each grant the driver serves by its id, with the
+            // operations chosen, housekeeping's from the home's record, what the next start and every tool call read, and those it acts
+            // on, so the page offers no other.
+            HelpGrants = new[]
+            {
+                new
+                {
+                    Id = ConfiguredAccess.HousekeepingGrant, Chosen = ConfiguredAccess.Read(loop.Home).Housekeeping,
+                    Built = ConfiguredAccess.HousekeepingBuilt,
+                },
+            },
             // The lines as set (WSR2), as rows rather than an object's keys: a key policy on the
             // bridge would respell a repository's name.
             Lines = config.Lines.OrderBy(p => p.Key, StringComparer.Ordinal)

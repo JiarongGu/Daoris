@@ -246,6 +246,7 @@
   "help.grants.state.unavailable": "unavailable on this agent",
   "help.grants.state.later": "not available yet",
   "help.grants.pending": "next start",
+  "help.grants.notBuilt": "not available yet",
   "help.grants.pendingWhy": "This conversation started with another choice, and takes this one at its next start. What it has shows what it was handed.",
   "help.grants.why.changed": "Its plugin’s update changed it since you approved it: Ask Daoris is handed nothing of it until you approve it again.",
   "help.grants.why.browser": "{{agent}} takes the browser’s server whole or not at all, so chosen writes cannot be held until Daoris mediates its tools.",

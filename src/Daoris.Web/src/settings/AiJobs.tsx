@@ -63,6 +63,8 @@ export type HelpGrantsJob = {
   /** The grants whose operations show from the start. */
   opened?: readonly HelpGrantId[];
   busy?: boolean;
+  /** The operations the driver acts on, for each grant it serves (HELPMODE1c2b); a grant not named is drawn as the mock. */
+  built?: Partial<Record<HelpGrantId, readonly string[]>>;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
 };
 
@@ -254,6 +256,7 @@ function HelpAccess({ access, grants }: { access: HelpAccessJob; grants?: HelpGr
             grants={grants.grants}
             opened={grants.opened}
             busy={grants.busy}
+            built={grants.built}
             onChoose={grants.onChoose}
           />
         </div>
