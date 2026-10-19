@@ -167,7 +167,17 @@ public sealed class Driver(
     /// lost-claim stop after it, the sync after an ending), and wait for a start that has not yet opened its record only until this
     /// completes. Null, a one-look run's and a gate's run-until-idle, runs each in the look as before, since each reads one look whole.
     /// </summary>
-    internal Func<CancellationToken, Task>? Wanted { get; init; }
+    internal Func<CancellationToken, Task>? Wanted
+    {
+        get => _wanted;
+        init
+        {
+            _wanted = value;
+            Context.Beside = value is not null;
+        }
+    }
+
+    private readonly Func<CancellationToken, Task>? _wanted;
 
     /// <summary>
     /// What the loop's classes share (PART10m, D166): the constructor's objects, the sessions and trees, the per-look adapters,
