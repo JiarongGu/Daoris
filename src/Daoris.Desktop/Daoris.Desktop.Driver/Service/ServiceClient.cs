@@ -2046,7 +2046,25 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
             // The mode an Ask Daoris record last ran under (HELPMODE1a2), which a conversation going on is compared with.
             HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
+            // The setup a driven record started under (AUTONOMY1a), which a run going on from it compares its own with (AUTONOMY1b).
+            Access = AccessOf(session),
         };
+
+    /// <summary>
+    /// A record's access setup as the service answers it on loopback (AUTONOMY1a): each pause that is a word, read as a stored shape;
+    /// null where the record answers none, a record from before the setting.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string>? AccessOf(JsonElement session)
+    {
+        if (!session.TryGetProperty("access", out var access) || access.ValueKind != JsonValueKind.Object) return null;
+        var pauses = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var pause in access.EnumerateObject())
+        {
+            if (pause.Value.ValueKind == JsonValueKind.String && pause.Value.GetString() is { Length: > 0 } value) pauses[pause.Name] = value;
+        }
+
+        return pauses;
+    }
 
     /// <summary>
     /// Every record's entry key by its id (SESSONE1d), as the service answered it: this machine's and a teammate's mirror, keyed
