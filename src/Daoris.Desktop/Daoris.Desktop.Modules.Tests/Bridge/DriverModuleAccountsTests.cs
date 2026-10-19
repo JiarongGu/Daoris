@@ -100,6 +100,68 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.DoesNotContain("s1a2b3c4", (await AnswerAsync(Module(), "ACCOUNTS")).GetRawText(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// USAGEPROBE1b: each window of an account's reading carries its projection to now and how it was made, from the same
+    /// <see cref="UsageProjection.Of"/> a start reads: the reading alone where Daoris spent nothing since, the reading plus its
+    /// own turns by the account's measured ratio, and the reading alone where a turn since cannot be weighed.
+    /// </summary>
+    [Fact]
+    public async Task Each_window_answers_its_projection_and_how_it_was_made()
+    {
+        Accounts("claude-code", "account-1", "account-2", "account-3");
+        var seen = Now.AddMinutes(-5);
+        foreach (var account in new[] { "account-1", "account-2", "account-3" })
+        {
+            AccountWindows.Said(Home, "claude-code", account, [new WindowReading("session", 0.20, Now.AddHours(4))], seen, "s1");
+        }
+
+        // account-2: a week's runs of readings rising 3 points on each 300,000 of work, then two turns since its last reading.
+        var binding = new TurnBinding("claude-code", "account-2", "claude-code", UsageHistory.PerTurn);
+        var tokens = new TurnTokens(100_000, 20_000, 500_000, 40_000);
+        var seq = 0;
+        for (var day = 3; day >= 1; day--)
+        {
+            var start = Now.AddDays(-day);
+            var used = 0.0;
+            for (var hour = 0; hour < 4; hour++)
+            {
+                var at = start.AddHours(hour);
+                Keep(at, start.AddHours(5), used);
+                var ended = at.AddMinutes(30);
+                UsageHistory.Turned(Home, binding, new TurnSeen("3f9c2a71", ++seq, at.AddMinutes(5), ended, tokens, null, false), ended);
+                used += 0.03;
+            }
+
+            Keep(start.AddHours(4), start.AddHours(5), used);
+        }
+
+        UsageHistory.Turned(Home, binding, new TurnSeen("3f9c2a72", 1, null, Now.AddMinutes(-2), tokens, null, false), Now);
+
+        // account-3: a turn since its reading whose report's meaning is not known, which nothing weighs.
+        UsageHistory.Turned(
+            Home, new TurnBinding("claude-code", "account-3", "claude-code", UsageHistory.MeaningUnknown),
+            new TurnSeen("3f9c2a73", 1, null, Now.AddMinutes(-2), tokens, null, false), Now);
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        var untouched = Account(claude, "account-1").GetProperty("said").GetProperty("windows")[0];
+        Assert.Equal("reading", untouched.GetProperty("projectedBy").GetString());
+        Assert.Equal(0.20, untouched.GetProperty("projected").GetDouble(), 6);
+
+        var measured = Account(claude, "account-2").GetProperty("said").GetProperty("windows")[0];
+        Assert.Equal("measured", measured.GetProperty("projectedBy").GetString());
+        Assert.InRange(measured.GetProperty("projected").GetDouble(), 0.2 + 0.03 * 0.95, 0.2 + 0.03 * 1.5);
+
+        var unweighed = Account(claude, "account-3").GetProperty("said").GetProperty("windows")[0];
+        Assert.Equal("unweighed", unweighed.GetProperty("projectedBy").GetString());
+        Assert.Equal(0.20, unweighed.GetProperty("projected").GetDouble(), 6);
+
+        void Keep(DateTimeOffset at, DateTimeOffset reset, double used) =>
+            UsageHistory.Kept(
+                Home, new ReadingFrom("claude-code", "account-2", "claude-code", UsageHistory.SourceFrame, AccountReadings.HistoryReader, at),
+                [new WindowSeen("five_hour", "session", null, 300, Math.Round(used, 2), 0.01, reset, UsageHistory.ResetSaid)], at);
+    }
+
     /// <summary>D125 §3.7: the tool's own sign-in's cool-off is answered beside the accounts, never as one of them.</summary>
     [Fact]
     public async Task The_own_sign_ins_cool_off_is_answered_beside_the_accounts()
