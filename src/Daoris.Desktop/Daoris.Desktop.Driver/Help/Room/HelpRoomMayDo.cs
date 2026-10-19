@@ -116,8 +116,13 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("This is restricted mode. In full access you would act on this machine yourself; only the person chooses it,\n");
         text.Append("with `daoris-driver help mode full`, from the next conversation's start. When they ask why you cannot do\n");
         text.Append("something yourself, say so and where it is chosen: it is never yours to propose.\n\n");
-        text.Append("Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
+        // HELPMODE1c2a (D183's note): a discard of a session branch granted is the helper's to do through its tool.
+        var discards = machine.Housekeeping.Contains(ConfiguredAccess.DiscardBranch);
+        text.Append(discards
+            ? "Never offer to push, merge, sign in, or handle a key: those stay the person's own presses,\n"
+            : "Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
+        if (machine.Housekeeping.Count > 0) text.Append(Housekeeping(machine.Housekeeping));
         // HELP4: the first repository question met a shell refused before it ran, then a guess at the
         // repository's branches presented as its tree. HELP5: a later one spent a turn on a ticket's URL,
         // refused the same way. Said plainly, so none of them happens again. D107: the checkouts reading
@@ -225,6 +230,36 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append("(`--workspace <name>` in place of the repository for a whole workspace).\n\n");
         }
 
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// HELPMODE1c2a (D183's note): the housekeeping the person granted, the one change restricted mode makes itself, each tool named
+    /// with what it does, and what holds every one of them.
+    /// </summary>
+    private static string Housekeeping(IReadOnlyList<string> granted)
+    {
+        var text = new StringBuilder();
+        text.Append("The person granted you Daoris's own housekeeping, the one change you make yourself here, with these tools alone:\n\n");
+        if (granted.Contains(ConfiguredAccess.Inspect))
+        {
+            text.Append("- `housekeeping_inspect`: Daoris's session branches and the branches its landings made, each cleared to go or kept, and why\n");
+        }
+
+        if (granted.Contains(ConfiguredAccess.CleanUp))
+        {
+            text.Append("- `housekeeping_clean_up`: removes the branches you name, with their trees, where the cleanup clears them\n");
+        }
+
+        if (granted.Contains(ConfiguredAccess.DiscardBranch))
+        {
+            text.Append("- `housekeeping_discard_branch`: discards one session branch by name, where its own proof lets it go\n");
+        }
+
+        text.Append('\n');
+        text.Append("Each target is a repository of this conversation's and a branch's name, never a path; each is judged again\n");
+        text.Append("before it goes, nothing is forced, and a branch a running or waiting session holds is kept. Say what you will\n");
+        text.Append("remove before you do, and what went and what was kept after. A tool the person has not granted is refused.\n\n");
         return text.ToString();
     }
 

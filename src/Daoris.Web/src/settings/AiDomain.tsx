@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useStatus } from '../data/queries';
 import {
-  helpModeOf, useDriver, useHarnesses, usePlugins, useSetHelper, useSetHelpMode, useSetIntake, useStarts,
+  helpModeOf, useDriver, useHarnesses, usePlugins, useSetHelper, useSetHelpGrant, useSetHelpMode, useSetIntake, useStarts,
 } from '../bridge/shell';
+import type { HelpGrantChoice, HelpGrantId } from '../help/access/wired';
 import { doorLabel } from '../agents/tools';
 import { failure, type Notify } from '../design/ui';
 import { workspacesOf } from '../data/workspaces';
@@ -49,8 +50,27 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
     onError: failure(notify),
   }));
   const plugins = usePlugins({ enabled: choice.confirming });
+  const setHelpGrant = useSetHelpGrant();
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  // Restricted mode's configured access (HELPMODE1c2b): the grants the driver serves, as it holds them, each press one operation
+  // over SET_HELP_GRANT; one it does not act on is never sent. The browser, the checkouts and the settings are drawn as the mock
+  // draws them until their grants are built, so a press there says so and sends nothing.
+  const served = Array.isArray(driver.data?.helpGrants) ? driver.data.helpGrants : null;
+  const helperDoor = harnesses.find((door) => door.harness === driver.data?.helperAdapter);
+  const built: Partial<Record<HelpGrantId, readonly string[]>> = Object.fromEntries(
+    (served ?? []).filter((grant) => Array.isArray(grant.built)).map((grant) => [grant.id, grant.built!]));
+  const chooseGrant = (grant: HelpGrantId, operation: string, chosen: boolean) => {
+    if (!built[grant]?.includes(operation)) {
+      notify(t('settings.ai.grants.notYet'));
+      return;
+    }
+    const named = t(`help.grants.op.${grant}.${operation}`);
+    setHelpGrant.mutate({ grant, operation, chosen }, {
+      onSuccess: () => notify(t(chosen ? 'settings.ai.grants.granted' : 'settings.ai.grants.revoked', { operation: named })),
+      onError: failure(notify),
+    });
+  };
   // An agent a person can name here is a way in this machine HAS: one not installed would hold every
   // intake, and a choice whose only outcome is a hold is worse than none.
   const agents = harnesses
@@ -103,6 +123,20 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
           onPick: choice.pick,
           onEnable: choice.enable,
           onCancel: choice.cancel,
+        }
+        : undefined}
+      // Configured access: absent on a shell older than the grant, which keeps none.
+      grants={served
+        ? {
+          // The agent Ask Daoris runs on, and whether it takes Claude's rules; with none named, nothing is unavailable on it yet.
+          agent: {
+            name: helperDoor ? doorLabel(t, helperDoor) : driver.data?.helperAdapter ?? '',
+            rules: helperDoor ? helperDoor.takesRules === true : true,
+          },
+          grants: served.map((grant): HelpGrantChoice => ({ id: grant.id as HelpGrantId, chosen: grant.chosen })),
+          built,
+          busy: setHelpGrant.isPending,
+          onChoose: chooseGrant,
         }
         : undefined}
     />

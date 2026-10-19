@@ -261,6 +261,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Setup = new("setup", HomeCategory.Data, "setup", "setup");
     public static readonly HomeEntry Workflows = new("workflows", HomeCategory.Data, "workflows", "workflows");
     public static readonly HomeEntry HelpProposals = new("help-proposals", HomeCategory.Data, "help/proposals", "help/proposals");
+    public static readonly HomeEntry ConfiguredAccess = new("configured-access", HomeCategory.Data, "configured-access.json", "configured-access.json");
     public static readonly HomeEntry OpinionGates = new("opinion-gates", HomeCategory.Data, "opinions/gates", "opinions/gates");
     public static readonly HomeEntry OpinionDues = new("opinion-dues", HomeCategory.Data, "opinions/due.json", "opinions/due.json");
     public static readonly HomeEntry BrowserSettings = new("browser-settings", HomeCategory.Data, "browser/settings.json", "browser/settings.json");
@@ -309,7 +310,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
-        Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms, UsageHistory,
+        Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
+        UsageHistory,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
         Toolchain, ToolVersions, Bin,

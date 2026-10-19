@@ -55,6 +55,29 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
+    /// HELPMODE1c2a (D183's note): where the person granted Daoris's housekeeping, the room written at the start says which of its
+    /// tools this conversation may use, read from the record then, and that each target is judged again and nothing forced; a
+    /// discard granted no longer sits among the presses that stay the person's. Nothing granted, and the room says nothing new.
+    /// </summary>
+    [Fact]
+    public void The_room_says_the_housekeeping_the_person_granted_at_its_start()
+    {
+        var plain = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
+        Assert.DoesNotContain("housekeeping_", plain);
+        Assert.Contains("Never offer to push, merge, discard, sign in, or handle a key", plain);
+
+        File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect", "discard-branch"] }""");
+        var granted = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
+
+        Assert.Contains("`housekeeping_inspect`", granted);
+        Assert.Contains("`housekeeping_discard_branch`", granted);
+        Assert.DoesNotContain("`housekeeping_clean_up`", granted);
+        Assert.Contains("judged again", granted);
+        Assert.Contains("Never offer to push, merge, sign in, or handle a key", granted);
+        Assert.Equal(HelpRoom.Render(Machine with { Housekeeping = [ConfiguredAccess.Inspect, ConfiguredAccess.DiscardBranch] }), granted);
+    }
+
+    /// <summary>
     /// HELPSTUCK1: a folder beside an agent's accounts that is no account is said in the room, so the helper can answer the
     /// person who misses it: one holding a sign-in with the way to keep it, renamed to an account's name.
     /// </summary>

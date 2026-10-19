@@ -238,6 +238,19 @@ public sealed class DaorisHomeTests
             DaorisHome.Entry(home, HomeEntry.UsageHistory, "epochs.json"));
     }
 
+    /// <summary>
+    /// HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file of the person's choices at the home's root, named
+    /// with no <c>help-</c> prefix, since a workspace's room folder is matched by <c>help-*</c>.
+    /// </summary>
+    [Fact]
+    public void Ask_Daoris_configured_access_is_a_data_file_no_room_is_matched_by()
+    {
+        Assert.Same(HomeEntry.ConfiguredAccess, HomeEntry.Named("configured-access"));
+        Assert.Equal(HomeCategory.Data, HomeEntry.ConfiguredAccess.Category);
+        Assert.Equal("configured-access.json", HomeEntry.ConfiguredAccess.New);
+        Assert.DoesNotMatch("^help", HomeEntry.ConfiguredAccess.New);
+    }
+
     /// <summary>A file asked of the environment's home is the entry, by D172 point 5, or nothing with no home.</summary>
     [Fact]
     public void An_entry_asked_of_the_environment_is_the_entry_or_none_with_no_home()
