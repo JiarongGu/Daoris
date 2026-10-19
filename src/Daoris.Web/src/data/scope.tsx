@@ -12,12 +12,8 @@ import { ownWindowName, secondaryWindow } from '../work/window';
 // Remembered per browser, like the language (D42): a viewer's convenience, not machine wiring. It is
 // never written into a tracked file and never leaves the browser that chose it.
 //
-// 🔴 Each main window holds its own (MAINWINDOWS3, D171's note). One key every document followed meant a choice in one
-// main window moved them all, so two windows could not hold the owner's work and their `games` side by side. Now:
-// - a main window's scope is its own, kept in its own storage, so a reload of it keeps it;
-// - a new main window starts from the last scope chosen anywhere (`daoris.workspace`, written on every choice as before);
-// - a utility window follows the window that opened it, or holds its session's own workspace where the session names one,
-//   and never hears another main window's choice. A window that opens others says what it holds under its own name.
+// 🔴 Each main window holds its own (MAINWINDOWS3; D171's note has the rule and why). One key every document followed
+// meant a choice in one main window moved them all, so two windows could not hold two workspaces side by side.
 
 /** The last scope chosen in any window, which a new main window starts from. Shared; absent for every workspace. */
 const REMEMBERED = 'daoris.workspace';

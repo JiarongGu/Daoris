@@ -60,8 +60,8 @@ export function windowTitle(workspace: string | null): string {
 }
 
 /**
- * Keep this page's title on the workspace its window holds (MAINWINDOWS3). The document's own, so a browser's tab says it; a
- * frame that wears its page's title would say it too, where today the frame wears its own name and the count before it.
+ * Keep this page's title on the workspace its window holds (MAINWINDOWS3): the document's own, which a browser's tab shows. The
+ * desktop frame's title is its own (`WaitingBadge.Title`, the count before the name).
  */
 export function useWindowTitle(workspace: string | null) {
   useEffect(() => {
