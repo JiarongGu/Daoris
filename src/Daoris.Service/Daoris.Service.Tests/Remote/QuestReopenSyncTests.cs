@@ -760,4 +760,276 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         Assert.Null(await _remote.FindAsync(quest.Id));
         Assert.Equal(grewFrom, (await _remote.FindAsync(built.FollowUp!.Id))!.GrewFrom);
     }
+
+    // ——— SYNCMERGE1a (D178 points 3 and 5): a take lost to the person's reopen, brought forward by the person on its machine.
+
+    /// <summary>B's take of the step lost to A's reopen of its source (FABRIC-CLOSE1c18), kept on the step as a conflict on both machines.</summary>
+    private async Task<(Quest Quest, Quest Step, QuestOperationRef Conflict)> LostToTheReopenAsync()
+    {
+        var (quest, step, submission) = await SealedOnBothAsync();
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(3))).Moved);
+        Assert.Equal(QuestReopenRefusal.None, (await _a.ReopenAsync(quest.Id, submission, "Build it again.", Now.AddHours(3))).Refusal);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.True(await _b.LostToTheReopenAsync(step.Id));
+        var lost = Assert.Single((await _b.FindAsync(step.Id))!.Conflicts);
+        return (quest, step, new QuestOperationRef(lost.Machine, lost.Sequence));
+    }
+
+    /// <summary>A's next submission rebinds the withdrawn step, open again on A's new work; both machines hold it, with B's conflict on it.</summary>
+    private async Task<QuestOperationRef> ReboundAsync(Quest quest)
+    {
+        var again = await _a.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4));
+        Assert.True(again.Moved);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        return new QuestOperationRef(again.Quest!.Submission!.Machine, again.Quest.Submission.Sequence);
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a: B's take lost to the person's reopen. While the reopen holds the step's source, the press is refused; once A's next
+    /// submission rebinds the step, B's press writes a take stamped with the step's source as it stands and the conflict's dismissal marked
+    /// with that take, in one write. Pushed, it holds: the step is B's on both machines, a third and the remote, the conflict gone
+    /// everywhere and the mark kept with it. A second press is refused, and a plain dismissal of the same conflict changes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_take_lost_to_the_reopen_is_brought_forward_once_the_step_grows_again_and_holds_everywhere()
+    {
+        var (quest, step, conflict) = await LostToTheReopenAsync();
+        Assert.Equal(QuestForwardRefusal.SourceReopened, (await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(4))).Refusal);
+        var grows = await ReboundAsync(quest);
+        // Only the machine whose take lost brings it forward.
+        Assert.Equal(QuestForwardRefusal.NotOurs, (await _a.BringForwardAsync(step.Id, conflict, Now.AddHours(5))).Refusal);
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+
+        var brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+
+        Assert.Equal(QuestForwardRefusal.None, brought.Refusal);
+        Assert.Equal((QuestStatus.Taken, 0), (brought.Quest!.Status, brought.Quest.Conflicts.Count));
+        Assert.Equal(QuestClaim.Unconfirmed, await _b.ClaimAsync(step.Id));
+        var take = Assert.Single(await _b.HistoryAsync(step.Id), o => o is { Kind: QuestOperationKind.Taken, Number: null });
+        Assert.Equal((new QuestOperationRef(_b.Machine, take.Sequence), grows), (brought.Take, take.Submission));
+
+        var report = await SyncAsync(_b);
+        await SyncAsync(_a);
+        await SyncAsync(_c);
+
+        Assert.Null(report.Problem);
+        Assert.Empty(report.Refused);
+        Assert.Empty(report.Conflicts);
+        Assert.Equal((QuestClaim.Held, false), (await _b.ClaimAsync(step.Id), await _b.LostToTheReopenAsync(step.Id)));
+        foreach (var store in new[] { _a, _b, _c, _remote })
+        {
+            var held = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Taken, (QuestHold?)null, grows), (held.Status, held.Hold, held.GrewFrom));
+            Assert.Empty(held.Conflicts);
+            var mark = Assert.Single(await store.HistoryAsync(step.Id), o => o.Kind == QuestOperationKind.Dismissed);
+            Assert.Equal((conflict, brought.Take), (mark.Dismisses, mark.Forward));
+        }
+
+        // Settled: a second press is refused, and a plain dismissal of it is none.
+        Assert.Equal(QuestForwardRefusal.Settled, (await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(6))).Refusal);
+        Assert.Equal(0, (await _a.DismissAsync(step.Id, conflict.Machine, conflict.Sequence, Now.AddHours(6))).Dismissed);
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a (D178 point 3, the trap of a fresh take losing again): A's take of the step reaches the remote between B's fetch and its
+    /// push. B's fresh take loses too, a new conflict on the step; the mark goes with it, so the conflict it was to resolve stays, on every
+    /// machine and the remote, and nothing anywhere reads brought forward. The step is A's, and B's press is refused while A holds it.
+    /// </summary>
+    [Fact]
+    public async Task A_bring_forward_that_loses_again_leaves_its_conflict_unresolved_and_a_new_one_beside_it()
+    {
+        var (quest, step, conflict) = await LostToTheReopenAsync();
+        await ReboundAsync(quest);
+        var brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+        Assert.Equal(QuestForwardRefusal.None, brought.Refusal);
+
+        var report = await QuestSync.RunAsync(_b, _ => true, new RacedRemote(new StoreRemote(_remote), async () =>
+        {
+            Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(5))).Moved);
+            await SyncAsync(_a);
+        }), Workspaces.Default);
+        await SyncAsync(_a);
+        await SyncAsync(_c);
+
+        Assert.Null(report.Problem);
+        Assert.Empty(report.Refused);
+        var again = Assert.Single(report.Conflicts);
+        Assert.Equal((step.Id, QuestStatus.Taken, brought.Take), (again.Quest, again.Attempted, new QuestOperationRef(again.Machine, again.Sequence)));
+        Assert.Equal((QuestClaim.Lost, false), (await _b.ClaimAsync(step.Id), await _b.LostToTheReopenAsync(step.Id)));
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, _c, _remote })
+        {
+            var taken = (await store.FindAsync(step.Id))!;
+            Assert.Equal(QuestStatus.Taken, taken.Status);
+            Assert.Equal([conflict, brought.Take!], taken.Conflicts.Select(c => new QuestOperationRef(c.Machine, c.Sequence)));
+            Assert.DoesNotContain(await store.HistoryAsync(step.Id), o => o.Kind == QuestOperationKind.Dismissed);
+        }
+
+        Assert.Equal(QuestClaim.Held, await _a.ClaimAsync(step.Id));
+        Assert.Equal(QuestForwardRefusal.TakenElsewhere, (await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(6))).Refusal);
+
+        // A marked dismissal pushed without its take, on the take that lost, is refused at the remote as a done on it is: the mark is the
+        // taker's own, so the conflict it names stays.
+        var stray = new QuestOperation(step.Id, QuestOperationKind.Dismissed, _b.Machine, 999, Now.AddHours(6),
+            Dismisses: conflict, Forward: brought.Take);
+        var pushed = await new StoreRemote(_remote).PushQuestsAsync((await _remote.OperationsSinceAsync(0)).Through, [stray]);
+        Assert.Empty(pushed.Accepted);
+        Assert.Contains("taken on another machine first", Assert.Single(pushed.Refused, r => r.Quest == step.Id).Reason);
+        Assert.Equal(2, (await _remote.FindAsync(step.Id))!.Conflicts.Count);
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a (D178, the trap of a bring-forward racing a plain dismissal): A's person drops B's conflict while B's person brings it
+    /// forward. Whichever reached the remote first is the one choice that stands everywhere. A dismissal first: a settled conflict authorizes
+    /// no take, so B's fresh take loses, kept as a conflict of its own, and its mark goes with it; the step stays open. The bring-forward
+    /// first: the step is B's, and A's dismissal, of a conflict already gone, changes nothing and is refused nowhere.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_bring_forward_racing_a_plain_dismissal_ends_in_the_one_that_reached_the_remote_first(bool dismissalFirst)
+    {
+        var (quest, step, conflict) = await LostToTheReopenAsync();
+        await ReboundAsync(quest);
+
+        QuestBringingForward brought;
+        QuestSyncReport report;
+        if (dismissalFirst)
+        {
+            Assert.Equal(1, (await _a.DismissAsync(step.Id, conflict.Machine, conflict.Sequence, Now.AddHours(5))).Dismissed);
+            await SyncAsync(_a);
+            brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+            report = await SyncAsync(_b);
+        }
+        else
+        {
+            brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+            report = await SyncAsync(_b);
+            Assert.Equal(1, (await _a.DismissAsync(step.Id, conflict.Machine, conflict.Sequence, Now.AddHours(5))).Dismissed);
+        }
+
+        var dismissed = await SyncAsync(_a);
+        await SyncAsync(_b);
+        await SyncAsync(_c);
+
+        Assert.Equal(QuestForwardRefusal.None, brought.Refusal);
+        Assert.Empty(report.Refused);
+        Assert.Empty(dismissed.Refused);
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Equal(dismissalFirst ? QuestClaim.Lost : QuestClaim.Held, await _b.ClaimAsync(step.Id));
+        if (dismissalFirst)
+        {
+            var lost = Assert.Single(report.Conflicts);
+            Assert.Equal((step.Id, QuestStatus.Taken, brought.Take), (lost.Quest, lost.Attempted, new QuestOperationRef(lost.Machine, lost.Sequence)));
+        }
+        else
+        {
+            Assert.Empty(report.Conflicts);
+        }
+
+        foreach (var store in new[] { _a, _b, _c, _remote })
+        {
+            var standing = (await store.FindAsync(step.Id))!;
+            Assert.Equal(dismissalFirst ? QuestStatus.Open : QuestStatus.Taken, standing.Status);
+            Assert.Equal(
+                dismissalFirst ? [brought.Take!] : [],
+                standing.Conflicts.Select(c => new QuestOperationRef(c.Machine, c.Sequence)));
+            Assert.Equal(dismissalFirst ? 0 : 1, (await store.HistoryAsync(step.Id)).Count(o => o.Forward is not null));
+        }
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a (D178 point 8, the offline trap): B presses offline. The fresh take and the marked dismissal stay on B, unconfirmed,
+    /// through a restart; meanwhile A's take of the step reaches the remote. Once B reaches it, the fresh take loses, the mark with it, and
+    /// B's first conflict is back on the step beside the new one: unconfirmed throughout, then lost, and never settled.
+    /// </summary>
+    [Fact]
+    public async Task A_bring_forward_pressed_offline_stays_unconfirmed_through_a_restart_and_then_loses()
+    {
+        var (quest, step, conflict) = await LostToTheReopenAsync();
+        await ReboundAsync(quest);
+        var brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+        Assert.Equal(QuestForwardRefusal.None, brought.Refusal);
+        var offline = await QuestSync.RunAsync(_b, _ => true, new UnreachableRemote(), Workspaces.Default);
+        Assert.NotNull(offline.Problem);
+
+        _b = await QuestStore.OpenAsync(_connections[1]);
+
+        Assert.Equal(QuestClaim.Unconfirmed, await _b.ClaimAsync(step.Id));
+        Assert.Equal(2, (await _b.PendingAsync(Workspaces.Default, _ => true)).Count);
+        Assert.Empty((await _b.FindAsync(step.Id))!.Conflicts);
+        Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(6))).Moved);
+        await SyncAsync(_a);
+
+        var report = await SyncAsync(_b);
+
+        Assert.Empty(report.Refused);
+        var lost = Assert.Single(report.Conflicts);
+        Assert.Equal(brought.Take, new QuestOperationRef(lost.Machine, lost.Sequence));
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(step.Id));
+        foreach (var store in new[] { _b, _remote })
+        {
+            Assert.Equal([conflict, brought.Take!],
+                (await store.FindAsync(step.Id))!.Conflicts.Select(c => new QuestOperationRef(c.Machine, c.Sequence)));
+            Assert.DoesNotContain(await store.HistoryAsync(step.Id), o => o.Kind == QuestOperationKind.Dismissed);
+        }
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a (D178 point 5, the trap of an older build): a marked dismissal reaching a remote built before the mark is kept there as
+    /// a plain one, and one a current remote holds reaches a machine built before it as a plain one. Nothing is refused, and every machine
+    /// reads the step B's with the conflict gone: a mixed family degrades to the conflict dismissed.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_marked_dismissal_reads_as_a_plain_one_on_an_older_remote_or_machine_and_nothing_is_refused(bool olderRemote)
+    {
+        var (quest, step, conflict) = await LostToTheReopenAsync();
+        await ReboundAsync(quest);
+        var brought = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+        Assert.Equal(QuestForwardRefusal.None, brought.Refusal);
+
+        IRemote pushedTo = olderRemote ? new OlderRemote(_remote, "forward") : new StoreRemote(_remote);
+        var report = await QuestSync.RunAsync(_b, _ => true, pushedTo, Workspaces.Default);
+        // A reads through a build before the mark when the remote is current: its reader has no field for it.
+        var read = await QuestSync.RunAsync(_a, _ => true, olderRemote ? new StoreRemote(_remote) : new OlderRemote(_remote, "forward"),
+            Workspaces.Default);
+
+        Assert.Empty(report.Refused);
+        Assert.Empty(report.Conflicts);
+        Assert.Empty(read.Refused);
+        Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(step.Id));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Taken, 0), (held.Status, held.Conflicts.Count));
+            var dismissal = Assert.Single(await store.HistoryAsync(step.Id), o => o.Kind == QuestOperationKind.Dismissed);
+            Assert.Equal(conflict, dismissal.Dismisses);
+            // B keeps its own mark; the older side and whatever it served keep a plain dismissal.
+            var plain = store == _remote ? olderRemote : store == _a;
+            Assert.Equal(plain ? null : brought.Take, dismissal.Forward);
+        }
+    }
+
+    /// <summary>
+    /// SYNCMERGE1a: a step this machine took afresh by an ordinary take holds its claim already, so its lost take has nothing to bring forward:
+    /// the press is refused, and the conflict stays for the person to dismiss.
+    /// </summary>
+    [Fact]
+    public async Task A_step_this_machine_took_afresh_is_not_brought_forward_and_its_conflict_stays_to_dismiss()
+    {
+        var (quest, step, conflict) = await LostToTheReopenAsync();
+        await ReboundAsync(quest);
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's second session.", Now.AddHours(5))).Moved);
+
+        var pressed = await _b.BringForwardAsync(step.Id, conflict, Now.AddHours(6));
+
+        Assert.Equal(QuestForwardRefusal.TakenHere, pressed.Refusal);
+        Assert.Equal([conflict], pressed.Quest!.Conflicts.Select(c => new QuestOperationRef(c.Machine, c.Sequence)));
+        Assert.Single(await _b.PendingAsync(Workspaces.Default, _ => true));
+    }
 }

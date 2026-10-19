@@ -360,4 +360,133 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Contains("not registered at this deployment", Exchange().JudgeReceived(Asked("Stranger"), registered));
         Assert.Contains("not a link a quest can carry", Exchange().JudgeReceived(Asked("Federated", ["javascript:alert(1)"]), registered));
     }
+
+    // ——— SYNCMERGE1a (D178 point 3): the person brings this machine's lost take forward, pushed and awaited as a take is (D69).
+
+    /// <summary>
+    /// This machine's take of a chain's step lost to the other machine's reopen of the step's source (the remote's own store stands in for
+    /// that machine), said so by the take's answer; that machine's next submission has rebound the step since, open again with this
+    /// machine's take kept on it as a conflict.
+    /// </summary>
+    private async Task<(QuestStore Remote, Quest Step, QuestOperationRef Conflict)> LostToTheReopenThenReboundAsync()
+    {
+        var remote = await RemoteStoreAsync();
+        var exchange = Exchange(new StoreRemote(remote));
+        var quest = await _quests.PublishAsync("Asker", "Federated", "Close in a chain", "why", Now,
+            then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
+        await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
+        Assert.True((await remote.MoveAsync(quest.Id, QuestStatus.Taken, "Its session.", Now.AddHours(1))).Moved);
+        Assert.True((await remote.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now.AddHours(1))).Moved);
+        var built = await remote.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
+        var step = built.FollowUp!;
+        await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
+        var submission = new QuestOperationRef(built.Quest!.Submission!.Machine, built.Quest.Submission.Sequence);
+        Assert.Equal(QuestReopenRefusal.None, (await remote.ReopenAsync(quest.Id, submission, "Build it again.", Now.AddHours(3))).Refusal);
+
+        var took = await exchange.RespondAsync(step.Id, "take", "This machine's session.", Now.AddHours(3));
+
+        Assert.Equal(QuestRespondRefusal.AlreadyTaken, took.Refusal);
+        Assert.True(await _quests.LostToTheReopenAsync(step.Id));
+        var lost = Assert.Single((await _quests.FindAsync(step.Id))!.Conflicts);
+        Assert.True((await remote.SubmitAsync(quest.Id, "Built again.", [], Now.AddHours(4))).Moved);
+        await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
+        Assert.Equal(QuestStatus.Open, (await _quests.FindAsync(step.Id))!.Status);
+        return (remote, step, new QuestOperationRef(lost.Machine, lost.Sequence));
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a: the press writes the fresh take and the marked dismissal, pushes them and awaits the remote: confirmed, the answer
+    /// says the take holds and the conflict is dismissed as brought forward, and what the kept session goes on from. A second press is
+    /// refused: the conflict is settled.
+    /// </summary>
+    [Fact]
+    public async Task A_lost_take_brought_forward_is_pushed_and_confirmed_before_it_answers()
+    {
+        var (remote, step, conflict) = await LostToTheReopenThenReboundAsync();
+        var exchange = Exchange(new StoreRemote(remote));
+
+        var brought = await exchange.BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+
+        Assert.Equal(QuestRespondRefusal.None, brought.Refusal);
+        Assert.StartsWith($"Quest `#{step.Id}` is brought forward", brought.Message);
+        Assert.Contains("the remote confirmed", brought.Message);
+        Assert.Contains("up to date", brought.Message);
+        Assert.Equal((QuestStatus.Taken, 0), (brought.Quest!.Status, brought.Quest.Conflicts.Count));
+        Assert.Equal(QuestClaim.Held, await _quests.ClaimAsync(step.Id));
+        Assert.Equal((QuestStatus.Taken, 0), ((await remote.FindAsync(step.Id))!.Status, (await remote.FindAsync(step.Id))!.Conflicts.Count));
+
+        var again = await exchange.BringForwardAsync(step.Id, conflict, Now.AddHours(6));
+        Assert.Equal(QuestRespondRefusal.NoLostTake, again.Refusal);
+        Assert.Contains("settled", again.Message);
+        Assert.Null(again.Quest);
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a (D178 point 3): another machine's take of the step reached the remote first, so the fresh take loses too. The answer says
+    /// the second loss, that the conflict stays unresolved and that the step is not this machine's, and never that anything was brought
+    /// forward; a dismissal of the conflict that reached the remote first says the conflict was settled there, and that a settled conflict
+    /// authorizes no take.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_bring_forward_that_loses_at_the_remote_says_the_second_loss_and_nothing_goes_on(bool dismissedThere)
+    {
+        var (remote, step, conflict) = await LostToTheReopenThenReboundAsync();
+        if (dismissedThere) Assert.Equal(1, (await remote.DismissAsync(step.Id, conflict.Machine, conflict.Sequence, Now.AddHours(5))).Dismissed);
+        else Assert.True((await remote.MoveAsync(step.Id, QuestStatus.Taken, "Its step session.", Now.AddHours(5))).Moved);
+
+        var brought = await Exchange(new StoreRemote(remote)).BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+
+        Assert.Equal(dismissedThere ? QuestRespondRefusal.NoLostTake : QuestRespondRefusal.AlreadyTaken, brought.Refusal);
+        Assert.Null(brought.Quest);
+        Assert.DoesNotContain("is brought forward", brought.Message);
+        Assert.Contains("not this machine's", brought.Message);
+        Assert.Contains(dismissedThere ? "authorizes no take" : "stays unresolved", brought.Message);
+        Assert.Contains(dismissedThere ? "dismissed on another machine" : "taken on another machine", brought.Message);
+        Assert.Equal(QuestClaim.Lost, await _quests.ClaimAsync(step.Id));
+        Assert.Empty(await _quests.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Equal(dismissedThere ? 1 : 2, (await _quests.FindAsync(step.Id))!.Conflicts.Count);
+    }
+
+    /// <summary>
+    /// 🔴 SYNCMERGE1a (D178 point 8): offline, the press stands on this machine, unconfirmed, and the answer says so and why; it is never said
+    /// as settled before the remote answers.
+    /// </summary>
+    [Fact]
+    public async Task A_bring_forward_pressed_offline_is_unconfirmed_and_says_so()
+    {
+        var (_, step, conflict) = await LostToTheReopenThenReboundAsync();
+
+        var brought = await Exchange().BringForwardAsync(step.Id, conflict, Now.AddHours(5));
+
+        Assert.Equal(QuestRespondRefusal.None, brought.Refusal);
+        Assert.StartsWith($"Quest `#{step.Id}` is brought forward, UNCONFIRMED: ", brought.Message);
+        Assert.Contains("could not be reached", brought.Message);
+        Assert.Contains("stays unresolved", brought.Message);
+        Assert.Equal(QuestClaim.Unconfirmed, await _quests.ClaimAsync(step.Id));
+        Assert.Equal(2, (await _quests.PendingAsync(Workspaces.Default, _ => true)).Count);
+    }
+
+    /// <summary>SYNCMERGE1a: each refusal is said in words that name why the press is not offered, and nothing moves.</summary>
+    [Fact]
+    public async Task A_bring_forward_refused_says_why_and_moves_nothing()
+    {
+        var (remote, step, conflict) = await LostToTheReopenThenReboundAsync();
+        var exchange = Exchange(new StoreRemote(remote));
+
+        var none = await exchange.BringForwardAsync("feedfacecafe", conflict, Now.AddHours(5));
+        var other = await exchange.BringForwardAsync(step.Id, conflict with { Machine = "another-machine" }, Now.AddHours(5));
+        Assert.Equal((QuestRespondRefusal.NotFound, QuestRespondRefusal.NoLostTake), (none.Refusal, other.Refusal));
+        Assert.Contains("only the machine whose take lost", other.Message);
+        Assert.True((await remote.MoveAsync(step.Id, QuestStatus.Taken, "Its step session.", Now.AddHours(5))).Moved);
+        await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
+
+        var held = await exchange.BringForwardAsync(step.Id, conflict, Now.AddHours(6));
+
+        Assert.Equal(QuestRespondRefusal.AlreadyTaken, held.Refusal);
+        Assert.Contains("Taken on another machine", held.Message);
+        Assert.Contains("Nothing moved", held.Message);
+        Assert.Empty(await _quests.PendingAsync(Workspaces.Default, _ => true));
+    }
 }

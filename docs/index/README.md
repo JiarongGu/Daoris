@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (174)
+## Files over 40 KB (175)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -151,23 +151,24 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 82 | 1481 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 142 | 2531 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 237 | 4097 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 150 | 2653 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 43 | 651 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 245 | 4215 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 132 | 2221 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 60 | 712 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 151 | 2553 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 134 | 2245 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 60 | 715 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 152 | 2569 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 49 | 846 |
 | `src/Daoris.Service/Daoris.Service.Tests/Quests/QuestClosureTests.cs` | 42 | 786 |
 | `src/Daoris.Service/Daoris.Service.Tests/Quests/QuestReopenTests.cs` | 42 | 724 |
-| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs` | 44 | 763 |
-| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 96 | 1937 |
+| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs` | 60 | 1035 |
+| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 102 | 2018 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
-| `src/Daoris.Service/README.md` | 92 | 780 |
+| `src/Daoris.Service/README.md` | 93 | 781 |
 
 ### CLI (`cli`)
 
