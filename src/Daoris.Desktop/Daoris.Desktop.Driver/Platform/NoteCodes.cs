@@ -460,6 +460,16 @@ public static class NoteCodes
     // ——— While it starts and works, replaced by its end (D51 rule 4).
     public static readonly NoteCode StartedTree = new("started.tree", ["branch", "basedOn"]);
     public static readonly NoteCode StartedTreeUnrecorded = new("started.tree-unrecorded", []);
+    // A tree its checkout's dependencies were copied into (TREEDEPS1, D51's note), `started.tree` kept as recorded; and why a project's
+    // were not, each reason its own line, after the opening.
+    public static readonly NoteCode StartedTreeCopied = new("started.tree-copied", ["branch", "basedOn", "copied"]);
+    public static readonly NoteCode StartedUncopiedManager = new("started.uncopied-manager", ["modules"]);
+    public static readonly NoteCode StartedUncopiedMoved = new("started.uncopied-moved", ["modules"]);
+    public static readonly NoteCode StartedUncopiedUninstalled = new("started.uncopied-uninstalled", ["modules"]);
+    public static readonly NoteCode StartedUncopiedWorkspace = new("started.uncopied-workspace", ["modules", "workspace"]);
+    public static readonly NoteCode StartedUncopiedLink = new("started.uncopied-link", ["modules"]);
+    public static readonly NoteCode StartedUncopiedUnignored = new("started.uncopied-unignored", ["modules"]);
+    public static readonly NoteCode StartedUncopiedFailed = new("started.uncopied-failed", ["modules"]);
     public static readonly NoteCode StartedJoined = new("started.joined", ["session"]);
     public static readonly NoteCode StartedResumesAnswered = new("started.resumes-answered", ["quest", "answered"]);
     public static readonly NoteCode StartedInAskingTree = new("started.in-asking-tree", ["session"]);

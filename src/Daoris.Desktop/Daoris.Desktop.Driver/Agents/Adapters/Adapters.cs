@@ -129,6 +129,13 @@ public sealed record SessionTarget(
     public string? InSync { get; init; }
 
     /// <summary>
+    /// For a session in a tree just opened with its checkout's dependencies copied in (TREEDEPS1, D51's note): what was copied, and
+    /// to skip the <c>npm ci</c> that would delete it (<see cref="DependencyCopy.Told"/>), said before how to take the quest. Null
+    /// where nothing was copied, and the instruction reads as it did.
+    /// </summary>
+    public string? Dependencies { get; init; }
+
+    /// <summary>
     /// What the person answered, when the session before parked to ask them (STANDDOWN2) — the carry-on
     /// is handed it in their words. Null for a carry-on after a cut-off.
     /// </summary>
@@ -359,6 +366,8 @@ public static class TargetPrompt
         // What its start did against the line, in a tree that stands (LANDSYNC2): the driver's own words, so counted with the close
         // they come before, and no page catalogue changed.
         new(HandedSections.Close, target.InSync is { Length: > 0 } told ? $"\n{told}\n" : ""),
+        // What its tree's open copied of the checkout's dependencies (TREEDEPS1): the driver's own words, counted with the close.
+        new(HandedSections.Close, target.Dependencies is { Length: > 0 } copied ? $"\n{copied}\n" : ""),
         // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes, and accounted as its own since the
         // page words it (REVIEWENV1c2).
         new(HandedSections.SetUp, SetUp(target)),

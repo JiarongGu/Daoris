@@ -365,6 +365,85 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
+    /// TREEDEPS1 (D51's note): a tree whose npm lockfile is its checkout's opens with the dependencies the checkout installed at it,
+    /// copied in and never linked, and its opening and its agent say so. Git ignores the copy in the tree as in the checkout.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_whose_lockfile_matches_the_checkout_s_opens_with_its_dependencies_copied()
+    {
+        var root = await MakeNodeRepositoryAsync("engine");
+
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+
+        // The opening first, whole in the failure: where nothing was copied, it says why.
+        Assert.True(opened.Sentence.Contains("copied in: `node_modules`.", StringComparison.Ordinal), opened.Sentence);
+        var copied = Path.Combine(opened.Path, "node_modules", "left-pad", "index.js");
+        Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(copied));
+        Assert.Contains("do not run `npm ci`", opened.Dependencies);
+        var (clean, _) = await WorkingTree.CleanAsync(opened.Path);
+        Assert.True(clean, "the copy is ignored in the tree as in the checkout");
+
+        await File.WriteAllTextAsync(copied, "changed in the tree\n");
+        Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(Path.Combine(root, "node_modules", "left-pad", "index.js")));
+    }
+
+    /// <summary>TREEDEPS1: a checkout whose lockfile moved since it was committed installed another set; the tree copies none, and says why.</summary>
+    [Fact]
+    public async Task A_tree_whose_lockfile_moved_opens_without_dependencies_and_says_why()
+    {
+        var root = await MakeNodeRepositoryAsync("engine");
+        await File.WriteAllTextAsync(Path.Combine(root, "package-lock.json"), "{\n  \"lockfileVersion\": 3,\n  \"packages\": {}\n}\n");
+
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+
+        Assert.False(Directory.Exists(Path.Combine(opened.Path, "node_modules")));
+        Assert.Contains("nothing git does not track", opened.Sentence);
+        Assert.Contains("`node_modules` was not copied from your checkout: this tree's lockfile beside it differs from the checkout's", opened.Sentence);
+        Assert.Null(opened.Dependencies);
+    }
+
+    /// <summary>TREEDEPS1, OPENCUT1: an open cut off while it copies the checkout's dependencies leaves nothing, no half copy among it.</summary>
+    [Fact]
+    public async Task An_open_cancelled_while_it_copies_dependencies_leaves_nothing()
+    {
+        var root = await MakeNodeRepositoryAsync("engine");
+        using var closing = new CancellationTokenSource();
+        TreeDependencies.Copying.Value = _ => closing.Cancel();
+        try
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token));
+        }
+        finally
+        {
+            TreeDependencies.Copying.Value = null;
+        }
+
+        await AssertNothingLeftAsync(root);
+        Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(Path.Combine(root, "node_modules", "left-pad", "index.js")));
+    }
+
+    /// <summary>
+    /// TREEDEPS1, TIDIEDLINK1: a tree holding a copied workspace link is removed as any other, and git's removal takes the link, never
+    /// what the checkout's own link leads to.
+    /// </summary>
+    [Fact]
+    public async Task Removing_a_tree_with_copied_dependencies_removes_their_workspace_link_not_what_it_points_at()
+    {
+        var root = await MakeNodeRepositoryAsync("engine", workspace: true);
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        Assert.True(new DirectoryInfo(Path.Combine(opened.Path, "node_modules", "ui")).Attributes.HasFlag(FileAttributes.ReparsePoint),
+            "the workspace is copied as a link");
+
+        var removal = await trees.RemoveAsync(opened.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.False(Directory.Exists(opened.Path));
+        Assert.Equal("module.exports = 'ui';\n", await File.ReadAllTextAsync(Path.Combine(root, "packages", "ui", "index.js")));
+        Assert.Equal("module.exports = 'ui';\n", await File.ReadAllTextAsync(Path.Combine(root, "node_modules", "ui", "index.js")));
+    }
+
+    /// <summary>
     /// CHAIN2, the owner's answer: a chain's next step to the same repository starts ON the branch the
     /// step before it landed on, so a verify step sees the unmerged work it exists to check.
     /// </summary>
@@ -420,6 +499,42 @@ public sealed class SessionTreesTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(root, "README.md"), $"# {name}\n");
         await GitAsync(root, "add", ".");
         await GitAsync(root, "commit", "-m", "first");
+        return root;
+    }
+
+    /// <summary>
+    /// A repository with an npm project its checkout installed (TREEDEPS1): the lockfile committed, <c>node_modules</c> ignored and
+    /// installed, npm's hidden lockfile written after the lockfile; with <paramref name="workspace"/>, a workspace npm links in.
+    /// </summary>
+    private async Task<string> MakeNodeRepositoryAsync(string name, bool workspace = false)
+    {
+        var root = await MakeRepositoryAsync(name);
+        // The lockfile's bytes are compared: git writes the tree's as committed, so the checkout's is kept as committed too.
+        await GitAsync(root, "config", "core.autocrlf", "false");
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "node_modules/\n");
+        var lockfile = Path.Combine(root, "package-lock.json");
+        await File.WriteAllTextAsync(lockfile, workspace
+            ? "{\n  \"lockfileVersion\": 3,\n  \"packages\": {\n    \"\": { \"workspaces\": [\"packages/ui\"] },\n"
+              + "    \"node_modules/ui\": { \"resolved\": \"packages/ui\", \"link\": true },\n    \"packages/ui\": { \"name\": \"ui\" }\n  }\n}\n"
+            : "{\n  \"lockfileVersion\": 3,\n  \"packages\": {\n    \"\": {},\n    \"node_modules/left-pad\": { \"version\": \"1.3.0\" }\n  }\n}\n");
+        if (workspace)
+        {
+            Directory.CreateDirectory(Path.Combine(root, "packages", "ui"));
+            await File.WriteAllTextAsync(Path.Combine(root, "packages", "ui", "index.js"), "module.exports = 'ui';\n");
+        }
+
+        await GitAsync(root, "add", ".");
+        await GitAsync(root, "commit", "-m", "an npm project");
+        foreach (var package in new[] { "a", "b", "left-pad" })
+        {
+            Directory.CreateDirectory(Path.Combine(root, "node_modules", package));
+            await File.WriteAllTextAsync(Path.Combine(root, "node_modules", package, "index.js"), $"module.exports = '{package}';\n");
+        }
+
+        var hidden = Path.Combine(root, "node_modules", ".package-lock.json");
+        await File.WriteAllTextAsync(hidden, "{}\n");
+        File.SetLastWriteTimeUtc(hidden, File.GetLastWriteTimeUtc(lockfile).AddMinutes(1));
+        if (workspace) TreeDependencies.Link(Path.Combine(root, "node_modules", "ui"), Path.Combine(root, "packages", "ui"));
         return root;
     }
 
