@@ -90,6 +90,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-19-verification-lanes-design.md` | Proposed: a quest step's checks run as lanes beside its work and report back; accepting and verifying are two facts; what stays blocking; a lane's record; a failure's consequences across a chain and across repositories | D180 point 7, D173's FABRIC-VERIFY1 note; FABRIC-VERIFY1a in TASKS |
 | `2026-10-19-ask-daoris-modes-design.md` | Proposed: Ask Daoris's selected mode, effective mode and recorded wiring kept apart; full access per harness; restricted mode's grants as typed capabilities, never a widened mode; the panel's picker, its confirmation and *What it has* | D183; HELPMODE1a-c and HELPWIRED1 in TASKS |
 | `2026-10-19-cross-agent-brainstorming-design.md` | Contract, as D176 places it (filed by the owner from a sibling workshop repository): one scoped question fanned to several agents of different makers, structured proposals back, one synthesis that flags what is hard to reverse for an adversarial check; a ranked proposal document, not a change | D176; BRAINSTORM1a–f in TASKS |
+| `2026-10-20-message-urgency-design.md` | Proposed: how a message reaches a working agent; three levels (ordinary, urgent, now) and no message stops a turn; who may send each; one delivery rule over every path; `said` as each session's durable queue; four receipts | D188; COWORK1a-d proposed |
 
 ## UI, browser, tools and plugin contracts
 
