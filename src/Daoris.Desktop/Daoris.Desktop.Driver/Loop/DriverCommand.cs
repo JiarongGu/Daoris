@@ -65,6 +65,10 @@ public static class DriverCommand
           register [--repository <name>]
               register each repository with a checkout here, or the one named, from what its line declares,
               as `connect` would; a start and a line Daoris moves do the same on their own.
+          result <id>
+              how a press this terminal sent to the running Daoris ended, when its answer did not reach the
+              verb ("Daoris was still working on it (request …)"): asked again with the key it was sent with,
+              for a day. It sends nothing again.
           quest delete <id>  ·  quest accept <id>
               delete a quest nobody has started on, or accept a done's departure from what you required, so what
               it held (the chain's next step, a quest waiting on it) goes on.

@@ -24,6 +24,61 @@ public enum RouteClass
 public sealed record InstanceRoute(string Module, string Route, RouteClass Class);
 
 /// <summary>
+/// The open routes the host's verbs send over the pipe (RPCOPEN1, RPC1e, the terminal RPC design §7.1): the reads, which go through the
+/// instance where one answers and alone otherwise, and the two presses the census leaves open, <c>SYNC_NOW</c> and
+/// <c>REGISTRY_REFRESH</c>. Held to the census route by route by <c>PipeCensusTests</c>, which also names each verb left off the pipe
+/// with its reason (<see cref="Verbs"/>).
+/// </summary>
+public static class OpenRoutes
+{
+    private static InstanceRoute Open(string route) => new(TreesRoutes.DriverModule, route, RouteClass.Open);
+
+    /// <summary><c>trees clean</c>'s list: every session branch here with what it holds.</summary>
+    public static InstanceRoute SweepPlan { get; } = Open("SWEEP_PLAN");
+
+    /// <summary><c>trees sync</c>'s list: what bringing the repositories up to date would change.</summary>
+    public static InstanceRoute TreesSyncPlan { get; } = Open("TREES_SYNC_PLAN");
+
+    /// <summary><c>trees land &lt;session&gt; --plan</c>: where accepting the session would put its work.</summary>
+    public static InstanceRoute Landing { get; } = Open("LANDING");
+
+    /// <summary><c>trees land --entry &lt;id&gt; --plan</c>.</summary>
+    public static InstanceRoute EntryLanding { get; } = Open("ENTRY_LANDING");
+
+    /// <summary><c>trees land --ask &lt;id&gt; --plan</c>.</summary>
+    public static InstanceRoute AskLanding { get; } = Open("ASK_LANDING");
+
+    /// <summary><c>trees hand &lt;session|branch&gt; --plan</c>.</summary>
+    public static InstanceRoute HandoffPlan { get; } = Open("HANDOFF_PLAN");
+
+    /// <summary><c>sessions</c>' list.</summary>
+    public static InstanceRoute SessionGroups { get; } = Open("SESSION_GROUPS");
+
+    /// <summary><c>sync</c>: the tick's own pass for one circle.</summary>
+    public static InstanceRoute SyncNow { get; } = Open("SYNC_NOW");
+
+    /// <summary><c>register</c>: one repository followed from its line.</summary>
+    public static InstanceRoute RegistryRefresh { get; } = Open("REGISTRY_REFRESH");
+
+    /// <summary>
+    /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
+    /// does not go through the pipe (yet).
+    /// </summary>
+    public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
+    [
+        ("trees clean", SweepPlan, "the list; `--yes` is the person's press and acts alone until RPC1c"),
+        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press and acts alone until RPC1c"),
+        ("trees land <session> --plan", Landing, "the plan; the press is the person's and acts alone until RPC1c"),
+        ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until RPC1c"),
+        ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until RPC1c"),
+        ("trees hand <session|branch> --plan", HandoffPlan, "the plan; the press is the person's and acts alone until RPC1c"),
+        ("sessions", SessionGroups, "the list"),
+        ("sync", SyncNow, "an open press (D156 §3: sync)"),
+        ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),
+    ];
+}
+
+/// <summary>
 /// The routes the <c>trees</c> verbs' presses are twins of (RPC1b, the terminal RPC design §1.2 and §7.2): each verb sends its
 /// route over the pipe once the census opens it, and until then acts alone, as it does today.
 /// </summary>

@@ -122,6 +122,11 @@ public sealed class RemoteSyncSet : IDisposable
         }
     }
 
+    /// <summary>The sentence for a circle this machine has no remote for, said by the pass and by the verb that asks the instance for it alike.</summary>
+    public static string NoRemote(string workspace) =>
+        $"this machine has no remote for `{RemoteTarget.Workspace(workspace)}` — `daoris remote add` wires one, "
+        + "and a workspace with none syncs nowhere.";
+
     private async Task<SyncReport> RunLockedAsync(string? workspace, CancellationToken ct)
     {
         Refresh();
@@ -130,9 +135,7 @@ public sealed class RemoteSyncSet : IDisposable
             : _syncs.Where(sync => string.Equals(sync.Workspace, RemoteTarget.Workspace(workspace), StringComparison.OrdinalIgnoreCase)).ToList();
         if (workspace is not null && syncs.Count == 0)
         {
-            throw new DriverException(
-                $"this machine has no remote for `{RemoteTarget.Workspace(workspace)}` — `daoris remote add` wires one, "
-                + "and a workspace with none syncs nowhere.");
+            throw new DriverException(NoRemote(workspace));
         }
 
         // PARALLEL1b (D181 point 3): the circles at once, each against its own host and key with its own clients, so one remote that is

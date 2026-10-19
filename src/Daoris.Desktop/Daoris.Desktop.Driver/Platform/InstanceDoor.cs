@@ -223,6 +223,25 @@ public static class InstanceDoor
     }
 
     /// <summary>
+    /// Which of §7.2's rows a press that goes several routes in one run is in, asked once before the first: the connection it made is
+    /// closed, since each press of <see cref="PressAsync"/> finds its own. A press then refused (<see cref="InstanceFound.Silent"/> or
+    /// <see cref="InstanceFound.Refused"/>) is said by <see cref="RefusedAsync(InstanceLook, InstanceWorld)"/> and is exit 2.
+    /// </summary>
+    public static async Task<InstanceLook> PeekAsync(InstanceWorld world, CancellationToken ct = default)
+    {
+        var look = await FindAsync(world, ct).ConfigureAwait(false);
+        if (look.Client is { } client) await client.DisposeAsync().ConfigureAwait(false);
+        return look with { Client = null };
+    }
+
+    /// <summary>A press refused before it was sent, said as <see cref="PressAsync"/> says it: exit 2.</summary>
+    public static async Task<int> RefusedAsync(InstanceLook look, InstanceWorld world)
+    {
+        await world.Error.WriteLineAsync($"{world.Verb}: {look.Why}").ConfigureAwait(false);
+        return 2;
+    }
+
+    /// <summary>
     /// A read of <paramref name="route"/> as §7.2's read column takes it (RPC1b2, RPC1e): sent where the instance answers, and
     /// <paramref name="alone"/> wherever it does not (no instance, a pipe that is silent or refuses its hello, an answer that is lost
     /// or refused), since a read changes nothing and acting alone beside an instance is harmless. Said nothing of why.

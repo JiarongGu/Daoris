@@ -58,6 +58,9 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <summary>A press's answer.</summary>
     public object Data { get; set; } = new { done = true, message = "done" };
 
+    /// <summary>An answer made from the route and its payload, where one press's answer differs from the next's; else <see cref="Data"/>.</summary>
+    public Func<string, JsonElement, object?>? Respond { get; set; }
+
     /// <summary>A press's refusal code, and its sentence.</summary>
     public string Code { get; set; } = "confirm-in-window";
 
@@ -163,7 +166,9 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                     }));
                 }
 
-                await WriteAsync(server, Success(id, Data));
+                await WriteAsync(server, Success(id, Respond is { } respond && request.TryGetProperty("payload", out var sent)
+                    ? respond(type!, sent)
+                    : Data));
             }
         }
         catch (Exception error) when (error is IOException or OperationCanceledException or ObjectDisposedException)
