@@ -1246,8 +1246,10 @@ test("every repository file a .NET suite reads is one whose change reaches that 
     const suite = suites.find(([folder]) => file.startsWith(folder));
     if (!suite) continue;
     const text = readFileSync(join(repoRoot, file), 'utf8');
-    const isProcess = /\[Trait\(Category\.Name, Category\.Process\)\]/.test(text);
-    const half = /\[Trait\(Category\.Parallel, Category\.Git\)\]/.test(text) ? suite[3] ?? suite[2] : suite[2];
+    // A class's traits are its code's, not its strings': CategoryTests holds both traits in its fixtures' raw strings (PROCPAR1).
+    const code = text.replace(/"""[\s\S]*?"""/g, '""').replace(/"(?:[^"\\\r\n]|\\.)*"/g, '""');
+    const isProcess = /\[Trait\(Category\.Name, Category\.Process\)\]/.test(code);
+    const half = /\[Trait\(Category\.Parallel, Category\.Git\)\]/.test(code) ? suite[3] ?? suite[2] : suite[2];
     const found = srcReads(text, files);
     const outside = treeReads(text, files);
     const fromRoot = sourceRootReads(file, text, files);
@@ -1596,7 +1598,8 @@ function srcReads(text: string, files: readonly string[]): string[] {
     const base = text.slice(0, match.index).trimEnd().replace(/,$/, '').trimEnd();
     if (base.endsWith('"') || BARE_NAME.test(base)) continue;
     const segments = ['src', match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)];
-    if (/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!)) {
+    // A tracked file is read as itself whatever its extension (PROCPAR1's `process.runsettings`), never as a folder.
+    if (/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!) || files.includes(segments.join('/'))) {
       reads.push(segments.join('/'));
       continue;
     }
@@ -3226,7 +3229,8 @@ test('a gate step started after the run lowered itself runs at the lowered prior
   try {
     assert.equal(tool.lowerPriority(), null);
     const lowered = os.getPriority(0);
-    assert.ok(lowered > before, `lowered from ${before} to ${lowered}`);
+    // At least below normal: a run beside already lowered itself, so its tool-tests start there (the CI of 2026-10-19).
+    assert.ok(lowered >= os.constants.priority.PRIORITY_BELOW_NORMAL, `lowered from ${before} to ${lowered}`);
     const log = join(fx.root, 'priority.log');
     writeFileSync(log, '');
     const fd = openSync(log, 'a');
