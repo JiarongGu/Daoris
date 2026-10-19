@@ -488,9 +488,8 @@ public static class TargetPrompt
             + $"characters), commit what you have so far, then respond to `#{target.QuestId}` with `wait`\n"
             + "on that new quest's id, and end your turn. The quest stays yours, and you are started again here,\n"
             + "in this tree, with its answer.\n\n"
-            // AUTONOMY1e (D184 point 4): questions as Claude Code's console asks them. What it can decide it decides and records;
-            // it asks only what it cannot, at its turn's end in its own words, and the answer goes on in this conversation
-            // (ANSWER1a). Every go-ahead asked before is still asked, and one the repository or the quest names is too (point 5).
+            // AUTONOMY1e: every go-ahead asked before is still asked, and one the repository or the quest names is too, since
+            // nothing loosens by itself (D184 point 5).
             + "Decide whatever you reasonably can, such as a name or which of two sound ways: say it under\n"
             + "**Readings** with why, and keep going. Ask the person only for what you cannot decide: a\n"
             + "credential, an account or a sign-in; a choice the quest or the person's words leave to them; a\n"
