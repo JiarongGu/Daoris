@@ -175,6 +175,19 @@ describe('noteLines', () => {
       ].map((text) => ({ kind: 'said', text })));
     });
 
+    /** USAGEPROBE1: a window's use projected from its reading and Daoris's own turns since is a line of its own, said as projected. */
+    it('words a projected use as projected, apart from what the account said', () => {
+      const projected = [
+        coded('opening.said-projected', 'about 85% of its session limit by now, projected from Daoris’s turns since', { projected: 85, window: 'session' }),
+      ];
+      expect(noteLines(t, { parts: projected }, 'en')).toEqual([
+        { kind: 'said', text: 'Projected from Daoris\'s own turns since, about 85% of its five-hour limit is used by now.' },
+      ]);
+      expect(noteLines(zh, { parts: projected }, 'zh')).toEqual([
+        { kind: 'said', text: '按 Daoris 此后自己的轮次推算，它的5 小时上限此刻约已用 85%。' },
+      ]);
+    });
+
     /**
      * USAGEREAD3a: the agent's pace warning is its own line, never near; a line written before, `opening.said-near`, and the
      * step it named, `near-word`, keep being worded as they were.

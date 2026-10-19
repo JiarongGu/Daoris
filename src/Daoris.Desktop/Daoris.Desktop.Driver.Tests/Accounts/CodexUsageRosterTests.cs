@@ -156,7 +156,7 @@ public sealed class CodexUsageRosterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_reading_is_asked_again_only_once_it_is_older_than_fresh_and_an_unknown_one_waits_as_long()
+    public async Task A_reading_is_never_asked_again_within_fresh_and_past_it_only_at_a_set_point_while_an_unknown_one_waits_as_long()
     {
         Accounts("account-1", "account-2");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
@@ -169,13 +169,15 @@ public sealed class CodexUsageRosterTests : IDisposable
         await StartAsync(roster);
         Assert.Equal(2, Asked().Length);
 
+        // Past its floor, a reading far from its curve and read within the interval is not asked (USAGEPROBE1); an account
+        // never read is.
         _now += TimeSpan.FromSeconds(2);
         await StartAsync(roster);
-        Assert.Equal(4, Asked().Length);
+        Assert.Equal(["fake/account-2"], Asked().Skip(2));
 
         // A restart reads the reading's age from `windows.json`, so a fresh one is not asked again.
         await StartAsync(Roster());
-        Assert.Equal(["fake/account-2"], Asked().Skip(4));
+        Assert.Equal(["fake/account-2"], Asked().Skip(3));
     }
 
     [Fact]
@@ -183,7 +185,8 @@ public sealed class CodexUsageRosterTests : IDisposable
     {
         Accounts("account-1");
         Wire(s => s.WithRotation("fake", ["account-1"]));
-        Answers("account-1", 0.10, 0.10);
+        // Within the margin of its session's curve, so a start past the floor asks it again (USAGEPROBE1).
+        Answers("account-1", 0.85, 0.10);
         var roster = Roster(new UsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded, UsageKind.Claude));
 
         await StartAsync(roster);
