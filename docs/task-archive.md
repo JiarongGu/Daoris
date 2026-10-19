@@ -17272,6 +17272,12 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 **Outcome** 2026-10-19: `run-heavy` in `Sessions/Heavy/`: a slot keyed by the repository's common git folder (read from git's files, named by the folder's identity) under the home's `locks/heavy/`, with a holder record a waiter reads to say whom it waits behind and for how long; gates started suspended into a named kill-on-close job and emptied before the slot goes; a dead holder's job ended by the next; a nested run inside the held slot; no home lease, and no access setting read. On Opus: about 193 tool calls, 74 minutes. Detail: D180's HEAVYRUN1a note; `HeavySlotTests`, `HeavyRunCommandTests`, `HeavyRunProcessTests` (Process, run at the merge).
 
+## ACCESSWORDS1b — the page's trace and Ask Daoris say a landing the access setup accepted (2026-10-19, D184)
+
+> - [ ] **ACCESSWORDS1b — the page's trace and Ask Daoris say a landing the access setup accepted** (web, driver; D184's AUTONOMY1c2 note; after ACCESSWORDS1). The server's trace and `TraceRule` carry `access`, but the page's trace (`HowItCameToBe.tsx`, `work.trace.json`, its TS type) draws only the rule's source, and Ask Daoris's room does not say a landing was the setup's. Proof: the trace's vitest in en and zh; the room's golden.
+
+**Outcome** 2026-10-19: the page's trace (in place of the rule's switch) and the room's landed line say whose access setup accepted a landing, only where the switch accepted it; the full goldens' landed line alone moved. On Opus: about 70 tool calls, 40 minutes. Detail: D184's ACCESSWORDS1b line; `HowItCameToBe.test.tsx`, `HelpRoomMachineNowTests`.
+
 ## PARALLEL1f — a queued start's place waits on the loop's token (2026-10-19, D181)
 
 > - [ ] **PARALLEL1f — a queued start's place waits on the loop's token** (driver; D181 point 4, its PARALLEL1de note). `HoldAsync` and `DriverContinuations`' start places wait on no token, so a stopping loop cannot end a start still queued for a place. Proof: a cancelled start's record and the person's words are put back.

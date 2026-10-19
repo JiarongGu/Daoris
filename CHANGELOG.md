@@ -37,7 +37,8 @@ with the version and date at release.
   own words on the ask or the task demand is still asked. `landing=rule` lands a session's finished work when its quest is done,
   without your *Accept…*, as a branch rule's *Accept automatically* does: on its branch, and pushed with a pull request where the
   rule names a plugin. A held done still waits for you, and a rule that merges still waits for your Accept, its conversation
-  saying why. `full` turns them all off. Nothing changes until you set it, and a
+  saying why. A landing the setup accepted says so, and whose setup it was, in its session's *How this came to be* and to Ask
+  Daoris. `full` turns them all off. Nothing changes until you set it, and a
   session that goes on in its own conversation is told where its go-aheads changed since it started.
 - A session's own tree of a Node repository starts with the dependencies your checkout installed with npm, copied in where
   the tree's `package-lock.json` is the checkout's and the checkout's install is at it, so its session no longer spends

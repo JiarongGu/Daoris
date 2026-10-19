@@ -40,6 +40,9 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         {
             State = entry.PullRequestState,
             AskFailed = entry.PullRequestAskFailed,
+            // ACCESSWORDS1b: only where the rule's switch accepted it, as the review's note reads it: a press under the setup keeps
+            // the level on its record too, and the setup accepted nothing there.
+            Access = entry.AcceptedBy == AcceptedBy.Auto ? entry.Rule?.Access : null,
         })],
         Parked = sources.Parked,
         Held = sources.Held,
@@ -163,8 +166,10 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
 
     // PLUGHOOK1c: with what its plugin last answered about its pull request, and when, so the helper reads it rather than guess
     // or ask; asking again is the person's own `trees state`.
+    // ACCESSWORDS1b (D184's AUTONOMY1c2 note): a landing the access setup accepted says so, in the review's note's and the trace's words.
     private static string LandedLine(HelpLanded landed) =>
         $"`{landed.Branch}` in `{landed.Repository}` (session `{landed.Session}`, "
+        + (landed.Access is { } access ? $"accepted by the access setup ({access}), " : "")
         + (landed.Pushed ? "pushed" + (landed.PullRequest is { } pr ? $", pull request {pr}" : "") : "not pushed")
         + PullRequestWords.Row(landed.State, null, landed.AskFailed, null) + ")";
 
@@ -260,6 +265,12 @@ public sealed record HelpLanded(string Repository, string Branch, string Session
 
     /// <summary>The latest ask about it that failed since that answer; null where none did.</summary>
     public PullRequestAskFailed? AskFailed { get; init; }
+
+    /// <summary>
+    /// Where the access setup that accepted it was set (ACCESSWORDS1b, <see cref="LandedRule.Access"/>), as recorded; null where the
+    /// rule's own switch or the person's press accepted it, and in a record from before.
+    /// </summary>
+    public string? Access { get; init; }
 }
 
 /// <summary>A session waiting on the person, as the room lists it (ENTRY1f2): by id and where it runs, so a go names one it was shown.</summary>
