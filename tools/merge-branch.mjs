@@ -2676,6 +2676,12 @@ function runSteps(root, gate, log, step, command = gate.run, trees = null) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
   return withLog(log, async (fd) => {
     for (const before of gate.before) {
+      // SHUTDOWNBESIDE1: under a run beside's own build servers (BESIDE_ENVIRONMENT) a shutdown clears nothing of the run's and
+      // stops every other build's on the machine, the owner's and the workers' (CIPRIO1): it is left out, and said.
+      if (before === SHUTDOWN && besideBuilds()) {
+        writeSync(fd, `(not run beside: ${SHUTDOWN}; this run's builds keep no server, and the machine's others are not its to stop)\n\n`);
+        continue;
+      }
       const beforeCode = await step(before, root, fd);
       if (endedBy(beforeCode, trees)) {
         writeSync(fd, `\n(${endedNote(trees)})\n`);
@@ -3878,6 +3884,9 @@ export function lowerPriority(setPriority = osSetPriority) {
  * none of theirs. The CI never runs `dotnet build-server shutdown`: it would stop the owner's servers too.
  */
 export const BESIDE_ENVIRONMENT = Object.freeze({ MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
+
+/** Whether this process's builds run under a run beside's own build servers: every variable of `BESIDE_ENVIRONMENT` set as it sets it. */
+const besideBuilds = (env = process.env) => Object.entries(BESIDE_ENVIRONMENT).every(([name, value]) => env[name] === value);
 
 /** The start of a run beside, once its lock is taken and before anything is built: lower the priority, set the environment. */
 export function startBesideRun({ setPriority = osSetPriority, env = process.env, say = console.log } = {}) {
