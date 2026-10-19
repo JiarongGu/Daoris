@@ -771,9 +771,15 @@ public sealed class AcpBackgroundTests
         Assert.Equal("ended.timeout", Assert.Single(ended.Why.Parts).Code);
     }
 
-    /// <summary>The same for a turn the timeout cuts while its prompt is unanswered: the prompt's failure is the timeout's.</summary>
-    [Fact]
-    public async Task A_turn_the_timeout_cuts_is_said_as_the_timeout()
+    /// <summary>
+    /// The same for a turn the timeout cuts while its prompt is unanswered: the prompt's failure is the timeout's. Said through
+    /// the driver's carrier (<see cref="AcpEnding"/>), which its wait tells before the kill and its capture hands the door,
+    /// in either order.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_turn_the_timeout_cuts_is_said_as_the_timeout(bool saidFirst)
     {
         var prompted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var agent = new Agent((frame, self) =>
@@ -792,10 +798,15 @@ public sealed class AcpBackgroundTests
             }
         });
         var session = Session(agent, new Record(), Never);
+        var ending = new AcpEnding();
+        if (saidFirst) ending.Say(Observation.TimedOut(90));
+        ending.Open(session);
 
         var run = session.RunAsync("D:/fam/Game", "close quest #12", CancellationToken.None);
         await prompted.Task.WaitAsync(Poll.Patience);
-        session.Ending(Observation.TimedOut(90));
+        if (!saidFirst) ending.Say(Observation.TimedOut(90));
+        // Said once: a second cause is not the one that ended it.
+        ending.Say(Observation.Stopped);
         agent.Close();
 
         var ended = await Assert.ThrowsAsync<AcpEnded>(() => run.WaitAsync(Poll.Patience));
