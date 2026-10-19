@@ -17,6 +17,9 @@
  *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
  *                                                           …the commit the full set gated in its own worktree
  *                                                           (GATEWT1, below), built there
+ *   … --artifacts-path <folder>                             …every build of the publish into <folder>, none into a
+ *                                                           project's own bin/ and obj/ (REHLANE2b): the deployment
+ *                                                           rehearsal's, which runs beside the driver's git half
  *
  * 🔴 **`--to` is required and has no default.** A machine path in a tracked file is exactly what
  * `sensitive-info` forbids, and a default would be one — the same rule `testbed.mjs` follows, for the
@@ -73,7 +76,7 @@ import { extractTarGz } from '../src/Daoris.Cli/src/platform/tarball.ts';
 import { copyTree, isMain, renameHeld, writeAtomic } from './fsx.mjs';
 import { running } from './processes.mjs';
 // The service hosts' one build recipe (CONNECTOR1): what `--service` lays under `app/`, built as the service publish builds it.
-import { HOSTS, executableFor, publishCommand, publishHost } from './service-publish.mjs';
+import { HOSTS, builtInto, executableFor, publishCommand, publishHost } from './service-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider is the guard, exported so `src/Daoris.Cli/test/desktop-publish.test.ts`
@@ -361,9 +364,53 @@ export const DRIVER_HOME = Object.freeze(['app', 'daoris-driver']);
 export const DRIVER_EXE = 'daoris-driver.exe';
 export const DRIVER_LAUNCHERS = Object.freeze(['daoris-driver', 'daoris-driver.cmd']);
 
-/** The publish of the Host into `folder`: a runtime-dependent folder, the shape the application and the launcher have. */
-export function driverPublishCommand(folder, rid = INSTALL_RID) {
-  return `dotnet publish "${DRIVER_PROJECT}" -c Release -r ${rid} --self-contained false -p:DebugType=none -o "${folder}"`;
+/**
+ * The publish of the Host into `folder`: a runtime-dependent folder, the shape the application and the launcher have. Its
+ * builds go into `artifacts` when one is given ({@link artifactsOf}).
+ */
+export function driverPublishCommand(folder, rid = INSTALL_RID, artifacts = null) {
+  return builtInto(`dotnet publish "${DRIVER_PROJECT}" -c Release -r ${rid} --self-contained false -p:DebugType=none -o "${folder}"`, artifacts);
+}
+
+/** The launcher at an install's root (D93) and the application under `app/`, the two projects the shell's publish makes. */
+export const LAUNCHER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Launcher';
+export const APP_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.App';
+
+/** The launcher's publish into `folder` (D93; the publish's own comments say why each option), its builds into `artifacts` when given. */
+export function launcherPublishCommand(folder, artifacts = null) {
+  return builtInto(`dotnet publish "${LAUNCHER_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
+    + '-p:PublishSingleFile=true -p:DebugType=none '
+    + `-p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+}
+
+/** The application's publish into `folder` (D92, D93; the publish's own comments say why each option), its builds into `artifacts` when given. */
+export function appPublishCommand(folder, artifacts = null) {
+  return builtInto(`dotnet publish "${APP_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+}
+
+/**
+ * Where a publish lays its parts out before an install takes them (REHLANE2b): under `artifacts` when the publish was given
+ * one, beside its builds; otherwise in the application project's `bin/`, as always.
+ */
+export function publishStages(repoRoot, artifacts = null) {
+  return artifacts ? join(artifacts, 'publish-stage') : join(repoRoot, ...APP_PROJECT.split('/'), 'bin', 'publish-stage');
+}
+
+/**
+ * `--artifacts-path <folder>` (REHLANE2b): the folder every build of this publish goes into, made absolute against `cwd` as
+ * `--to` is, or null when not given, the install's recipe as it always was: each project's own `bin/` and `obj/`. The
+ * deployment rehearsal gives one of its own, so it can run beside the driver's git half, which builds into and runs from
+ * the desktop projects' folders (`tools/merge-branch.mjs`'s REHLANE2b section). Given with no folder, a refusal.
+ */
+export function artifactsOf(argv, cwd = process.cwd()) {
+  const at = argv.indexOf('--artifacts-path');
+  if (at === -1) return { artifacts: null, refusal: null };
+  const given = argv[at + 1];
+  if (!given || given.startsWith('--')) {
+    return { artifacts: null, refusal: 'desktop-publish: --artifacts-path <folder> names the folder every build of the publish goes into; it was given none.' };
+  }
+  return { artifacts: isAbsolute(given) ? given : resolve(cwd, given), refusal: null };
 }
 
 /** The text of each driver launcher, by name: the Host's executable found from the launcher's own folder. */
@@ -942,6 +989,12 @@ async function main() {
     process.exit(2);
   }
   const to = isAbsolute(toArg) ? toArg : resolve(process.cwd(), toArg);
+  // REHLANE2b: where every build of this publish goes, when told; each project's own folders otherwise.
+  const { artifacts, refusal: artifactsRefused } = artifactsOf(argv);
+  if (artifactsRefused) {
+    console.error(artifactsRefused);
+    process.exit(2);
+  }
 
   // GATEWT1: a stage of the commit the full set gated in its own worktree is built there, by that tree's own publish,
   // never from this checkout, which merges may have moved on since. Its gates are asked here first, and there again.
@@ -970,8 +1023,6 @@ async function main() {
     process.exit(built.status ?? 2);
   }
 
-  const APP = 'src/Daoris.Desktop/Daoris.Desktop.App';
-  const LAUNCHER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Launcher';
   const WEB = 'src/Daoris.Web';
 
   const run = (command) => execSync(command, { cwd: repoRoot, stdio: ['ignore', 'inherit', 'inherit'] });
@@ -1041,7 +1092,7 @@ async function main() {
   // alphabetically among DLLs, `.pdb`s and three stray WebView2 `.xml` doc files. The root holds one
   // small launcher now (D93), framework-dependent and single-file, wearing the application's icon, and
   // everything it starts sits under `app/`.
-  const stages = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App', 'bin', 'publish-stage');
+  const stages = publishStages(repoRoot, artifacts);
   rmSync(stages, { recursive: true, force: true });
 
   // The doctrine tool (WSSETUP2, D124 §1.2): `src/Daoris.Cli` packed as the release packs it, `npm pack` in
@@ -1077,9 +1128,7 @@ async function main() {
 
   console.log('desktop-publish: publishing the launcher…');
   const launcherStage = join(stages, 'launcher');
-  run(`dotnet publish "${LAUNCHER_PROJECT}" -c Release -r win-x64 --self-contained false `
-    + '-p:PublishSingleFile=true -p:DebugType=none '
-    + `-p:AllowedReferenceRelatedFileExtensions=none -o "${launcherStage}" --nologo`);
+  run(launcherPublishCommand(launcherStage, artifacts));
 
   // The application on its own Chromium (D92, D93): CEF's launcher beside the engine and the app's
   // libraries, and Daoris's browser too since CHR8 (D99), which is the same executable started with
@@ -1089,8 +1138,7 @@ async function main() {
   // them. `DebugType=none` drops the symbols an installed app has no use for.
   console.log('desktop-publish: publishing the application…');
   const shellStage = join(stages, 'shell');
-  run(`dotnet publish "${APP}" -c Release -r win-x64 --self-contained false `
-    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${shellStage}" --nologo`);
+  run(appPublishCommand(shellStage, artifacts));
   // The kit lays out only the languages the app project names (SHEN1), each with three 18-byte
   // grammatical-gender stubs beside it (`zh-CN_FEMININE.pak`, …); the install keeps the two plain
   // files, and refuses to ship without them.
@@ -1145,7 +1193,7 @@ async function main() {
   console.log(`desktop-publish: publishing ${DRIVER_HOME.at(-1)} under ${DRIVER_HOME.join('/')}/…`);
   const driverFolder = join(root, ...DRIVER_HOME);
   rmSync(driverFolder, { recursive: true, force: true });
-  run(`${driverPublishCommand(driverFolder)} --nologo`);
+  run(`${driverPublishCommand(driverFolder, INSTALL_RID, artifacts)} --nologo`);
   if (!existsSync(join(driverFolder, DRIVER_EXE))) {
     console.error(`desktop-publish: the publish of ${DRIVER_HOME.at(-1)} made no ${DRIVER_EXE}.`);
     process.exit(1);
@@ -1179,7 +1227,7 @@ async function main() {
       // case study, and once while re-publishing to that same machine afterwards.
       rmSync(step.folder, { recursive: true, force: true });
 
-      if (!publishHost(repoRoot, step.host, INSTALL_RID, step.folder, 'desktop-publish')) process.exit(1);
+      if (!publishHost(repoRoot, step.host, INSTALL_RID, step.folder, 'desktop-publish', artifacts)) process.exit(1);
       if (!existsSync(step.executable)) {
         console.error(`desktop-publish: the publish of ${step.host.binary} made no ${step.executable}.`);
         process.exit(1);
