@@ -279,7 +279,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         {
             var json = await SessionRecords.ReadAsync(
                 service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable), ct: cancellationToken).ConfigureAwait(false);
-            return RunningOn(json, adapter => Known(_loop.Harnesses, adapter)?.Owner(adapter) ?? adapter);
+            return RunningOn(json, Owners(_loop.Harnesses));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or IOException or JsonException
             or TaskCanceledException)
@@ -291,17 +291,28 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// <summary>The live records' count per <c>owner/account</c>, lower case, from the service's answer.</summary>
     public static IReadOnlyDictionary<string, int> RunningOn(string json, Func<string, string> ownerOf)
     {
-        var counted = new Dictionary<string, int>(StringComparer.Ordinal);
         using var document = JsonDocument.Parse(json);
-        if (document.RootElement.ValueKind != JsonValueKind.Array) return counted;
-        foreach (var session in document.RootElement.EnumerateArray())
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return new Dictionary<string, int>(StringComparer.Ordinal);
+        return Counted(
+            document.RootElement.EnumerateArray()
+                .Where(session => session.ValueKind == JsonValueKind.Object)
+                .Select(session => (Json.NonEmpty(session, "id"), Json.NonEmpty(session, "adapter"), Json.NonEmpty(session, "profile"), Json.NonEmpty(session, "state"))),
+            ownerOf);
+    }
+
+    /// <summary>
+    /// The live records' count per <c>owner/account</c>, lower case (D130 §4.2): a record with no id, door or account is none, a
+    /// teammate's is another machine's, and one ended counts nothing. The one rule the route's read and the pushed slice's
+    /// (PUSH1e, the records the loop's sessions slice holds) both count by.
+    /// </summary>
+    public static IReadOnlyDictionary<string, int> Counted(
+        IEnumerable<(string? Id, string? Adapter, string? Profile, string? State)> records, Func<string, string> ownerOf)
+    {
+        var counted = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (id, adapter, profile, state) in records)
         {
-            if (session.ValueKind != JsonValueKind.Object) continue;
-            var id = Json.NonEmpty(session, "id");
-            var adapter = Json.NonEmpty(session, "adapter");
-            var profile = Json.NonEmpty(session, "profile");
             if (id is null || adapter is null || profile is null) continue;
-            var record = new SessionRecord(id, "", Json.NonEmpty(session, "state") ?? "");
+            var record = new SessionRecord(id, "", state ?? "");
             if (record.Teammate || !record.Live) continue;
             var key = Key(ownerOf(adapter), profile);
             counted[key] = counted.GetValueOrDefault(key) + 1;
@@ -309,6 +320,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
         return counted;
     }
+
+    /// <summary>Each door's account owner (AGT7), the door itself where this build knows no toolchain for it.</summary>
+    public static Func<string, string> Owners(HarnessRoster roster) => adapter => Known(roster, adapter)?.Owner(adapter) ?? adapter;
 
     private static string Key(string agent, string account) => $"{agent}/{account}".ToLowerInvariant();
 

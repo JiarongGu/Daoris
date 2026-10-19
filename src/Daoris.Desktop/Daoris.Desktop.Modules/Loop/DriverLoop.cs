@@ -116,7 +116,7 @@ public sealed class DriverLoop(
         DriverSlice, LinesStateSlice.Of(this, eventBus), SessionsStateSlice.Of(this, eventBus), CallsStateSlice.Of(this, eventBus),
         WorkStateSlice.Of(this, eventBus), GroupsStateSlice.Of(this, eventBus), SweepStateSlice.Of(this, eventBus),
         SyncStateSlice.Of(this, eventBus), QuestsStateSlice.Of(this, eventBus), AsksStateSlice.Of(this, eventBus),
-        UsageStateSlice.Of(this, eventBus)));
+        UsageStateSlice.Of(this, eventBus), AccountsStateSlice.Of(this, eventBus)));
 
     private StateSlices? _slices;
 
