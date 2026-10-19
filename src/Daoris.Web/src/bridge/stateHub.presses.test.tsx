@@ -75,7 +75,7 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   ['useStartHelp', useStartHelp, undefined, [keys.allSessions]],
   ['useRenameHelp', useRenameHelp, { id: 'h1', name: 'Lines' }, [[...HELP_HISTORY, ''], keys.allSessions]],
   ['usePinHelp', usePinHelp, { id: 'h1', pinned: true }, [[...HELP_HISTORY, ''], keys.allSessions]],
-  ['useHelpStartFrom', useHelpStartFrom, 'h1', [[...HELP_HISTORY, ''], keys.allSessions]],
+  ['useHelpStartFrom', useHelpStartFrom, { id: 'h1', workspace: 'games' }, [[...HELP_HISTORY, '*', ''], keys.allSessions]],
 ];
 
 /** A client holding an answer under each key of `family`, and the hook rendered in it, with the window's hub or without. */

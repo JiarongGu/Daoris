@@ -277,6 +277,44 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  /**
+   * ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): the list is the window's workspace's, or every workspace's, the person's choice
+   * between the two in its head; every workspace's labels each row with its workspace, a row from before ASKSCOPE1a as
+   * `default`'s, and the window's own labels none. A search says it searched the scope it ran over.
+   */
+  it('offers the window’s workspace or every one’s, labelling each row with its workspace under every one', async () => {
+    await i18n.changeLanguage(language);
+    const onEvery = vi.fn();
+    const rows = [
+      row({ session: 'h1', workspace: 'games' }),
+      row({ session: 'h2', title: 'and the remote?', opening: 'and the remote?', workspace: 'work' }),
+      row({ session: 'h3', title: 'and before?', opening: 'and before?' }),
+    ];
+    const label = (workspace: string) => new RegExp(i18n.t('help.history.in', { workspace }));
+    draw({ rows, scope: { workspace: null, here: 'games', onEvery } });
+
+    const choice = within(history()).getByRole('group', { name: i18n.t('help.history.scope') });
+    expect(within(choice).getByRole('button', { name: i18n.t('help.history.every') })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(history()).getByText(label('games'))).toBeInTheDocument();
+    expect(within(history()).getByText(label('work'))).toBeInTheDocument();
+    expect(within(history()).getByText(label('default'))).toBeInTheDocument();
+    await userEvent.click(within(choice).getByRole('button', { name: 'games' }));
+    expect(onEvery).toHaveBeenCalledWith(false);
+
+    cleanup();
+    draw({ rows: [rows[0]!], search: 'workspace', total: 1, scope: { workspace: 'games', here: 'games', onEvery } });
+    expect(within(history()).getByRole('button', { name: 'games' })).toHaveAttribute('aria-pressed', 'true');
+    expect(door('what is a workspace?')).not.toHaveTextContent(label('games'));
+    expect(screen.getByRole('status')).toHaveTextContent(
+      i18n.t('help.history.searchedIn', { count: 1, words: 'workspace', workspace: 'games' }));
+
+    // A window on every workspace has no workspace of its own to offer: its list is every one's, labelled.
+    cleanup();
+    draw({ rows, scope: { workspace: null } });
+    expect(within(history()).queryByRole('group', { name: i18n.t('help.history.scope') })).toBeNull();
+    expect(within(history()).getByText(label('work'))).toBeInTheDocument();
+  });
+
   it('lists more on a press, saying how many of how many are listed, and takes the reader to the first row it brought', async () => {
     await i18n.changeLanguage(language);
     const onMore = vi.fn();
