@@ -415,6 +415,13 @@ public sealed class DriverLoop(
     public HelpStarting HelpStarting { get; } = new();
 
     /// <summary>
+    /// The machine's facts as the judges keep them (PARALLEL1a, D181 points 1-2): one for the shell's life, its one owner, judged on
+    /// background tasks once the loop is up and woken by what the change sources hear, read as last judged by what a person
+    /// presses. The module registers Ask Daoris's topics on it; a state hub's push reads it next (D182).
+    /// </summary>
+    public MachineFacts Facts { get; } = new() { Log = log };
+
+    /// <summary>
     /// The second-opinion gates the last tick judged (XAGENT1g3), replaced whole each tick: what <c>OPINION_WAITS</c> answers, as of
     /// that tick, at most one poll old. Null before the first.
     /// </summary>
@@ -588,6 +595,10 @@ public sealed class DriverLoop(
             _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", ConversationRoutes.OptionsAnswer(session, options));
         await ComeUpAsync(service, chat).ConfigureAwait(false);
 
+        // PARALLEL1a (D181 point 2): the machine's facts judged from here, on their own tasks, the service answering; every loop on the
+        // home keeps them, whoever holds its lease, since a person presses here either way. The watch below tells them its wakes.
+        Facts.Start(ct);
+
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
         // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
@@ -659,6 +670,8 @@ public sealed class DriverLoop(
             Log = log,
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
+            // PARALLEL1a: each move the sources hear wakes the facts it moves (a ref its repository's line, a ledger family the rest).
+            Heard = (topic, subject) => HelpFacts.Wake(Facts, topic, subject),
         };
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);
@@ -1108,6 +1121,7 @@ public sealed class DriverLoop(
     public void Dispose()
     {
         Stop();
+        Facts.Dispose();
         _stopping.Dispose();
     }
 }
