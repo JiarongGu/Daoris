@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The CLI's graph reader read `1.0` as a whole number and said a graph's first fault in another order (GRAPHTWINS1)
+
+- **Symptom:** found by reading the CLI's reader against the driver's while writing the shared table `graph-problems.json`, each fault
+  now a row of its `unreadable`: a node's `"version": 1.0` read as version 1 in the CLI and as no whole number in the driver, a retry delay past 32 bits read in the CLI alone, and of a graph
+  with two faults the CLI named its cleanup before its nodes, and a node's evidence before its ports, where the driver names the other.
+  A version holding such a graph read in one twin and was unreadable in the other.
+- **Root cause:** FABRIC-GRAPH1b's reader (`graphversions.ts`, b27b51251) judged a whole number on the value `JSON.parse` gives, which has
+  lost its text, while the driver's `NodeGraphs.Parts` asks `TryGetInt32` of the text (`1.0` and `1e2` are none); its delays took any
+  integer; and it read the fields in an order of its own, though the first place that does not read is the one said.
+- **Fix:** D173's GRAPHTWINS1 note. Files are read by `parseWithSource` (`jsonsource.ts`), which keeps each number's text, and a whole
+  number is one written as one within 32 bits, delays too; `readGraphParts` reads in the driver's order (schema, nodes, wires, entries,
+  end, cleanup; a node's retry, id, kind, version, reach, ports, options, then the rest).
+- **Verification:** `graphproblems.test.ts` and the driver's `NodeGraphsTests` on the same rows (a version written `1.0`, a delay past
+  the bound, two faults in each order), every word alike.
+
 ## 2026-10-20 — Four failing questions starved a fifth attempt, and a rule asking no opinion held its node for ever (FABRICRUN1)
 
 - **Symptom:** after a restart with five attempts due, the questions about the first four in file order failing with an I/O error, every
