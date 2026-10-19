@@ -137,6 +137,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                     return await JudgeAsync(due, new OpinionDues(Home), world, quests, OpinionLook.PushHeld(Home), keep: true, beside: true, token)
                         .ConfigureAwait(false);
                 }, $"#{due.Quest}", beside: true).ConfigureAwait(false);
+                _context.Runs.Facts.Judged($"opinion/{subject}");
                 if (_context.Runs.Facts.KeepOpinion(subject, fact ?? Settled)) _context.Runs.FactsMoved();
                 return [];
             }
@@ -144,7 +145,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !token.IsCancellationRequested))
             {
-                return [$"opinion  the second opinion owed on session {due.Session}'s work could not be judged this time, and is judged again at the next look: {error.Message}"];
+                return _context.Runs.Facts.Failed($"opinion/{subject}")
+                    ? [$"opinion  the second opinion owed on session {due.Session}'s work could not be judged this time, and is judged again at a later look: {error.Message}"]
+                    : [];
             }
         }, ct);
 

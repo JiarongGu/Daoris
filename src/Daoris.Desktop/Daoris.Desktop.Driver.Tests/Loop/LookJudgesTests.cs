@@ -106,6 +106,48 @@ public sealed class LookJudgesTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// 🔴 A judgment that keeps failing says so once and spins no look: its line wakes the next look, whose judgment fails again and says
+    /// nothing, so the loop waits for whatever wakes it next. The chain stays held, not judged yet.
+    /// </summary>
+    [Fact]
+    public async Task A_judgment_that_keeps_failing_says_so_once_and_spins_no_look()
+    {
+        Owed();
+        var asked = 0;
+        // It fails after the look that asked it has ended, as git refusing a tree does, so its line is a later look's to say.
+        _ledger.Before = async (request, token) =>
+        {
+            if (request.RequestUri!.AbsolutePath != "/api/quests" || !request.RequestUri.Query.Contains("includeClosed=true", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Interlocked.Increment(ref asked);
+            await Task.Delay(TimeSpan.FromMilliseconds(300), token);
+            throw new HttpRequestException("the stand-in will not read every quest");
+        };
+        var (watch, runs) = Watch();
+        var reports = new List<TickReport>();
+
+        var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
+        try
+        {
+            await Poll.Until(() => Volatile.Read(ref asked) >= 2, () => "the failed judgment was never asked again", Bound);
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            Assert.InRange(Volatile.Read(ref asked), 2, 3);
+            Assert.Single(Snapshot(reports).SelectMany(report => report.Events),
+                line => line.StartsWith("opinion  the second opinion owed on session s1's work could not be judged", StringComparison.Ordinal));
+            Assert.DoesNotContain("q2", runs.Started);
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+    }
+
     /// <summary>🔴 An ask for a helper whose answer's handing does not answer holds no other start: a quest starts meanwhile.</summary>
     [Fact]
     public async Task A_slow_helper_judgment_holds_no_other_start()

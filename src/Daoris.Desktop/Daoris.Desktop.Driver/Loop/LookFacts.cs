@@ -78,6 +78,25 @@ internal sealed class LookFacts
         lock (_gate) return _askers.TryAdd(ask, asker);
     }
 
+    // The subjects whose last judgment failed, said once (PARALLEL1g).
+    private readonly HashSet<string> _failing = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether a judgment's failure is said: once, until <paramref name="subject"/> is judged again. A line beside the look wakes the next
+    /// one, which asks the judgment again; one that keeps failing (git refusing a tree, a door that answers wrongly) would spin the loop.
+    /// Said once, it waits for whatever wakes the look next.
+    /// </summary>
+    internal bool Failed(string subject)
+    {
+        lock (_gate) return _failing.Add(subject);
+    }
+
+    /// <summary><paramref name="subject"/> was judged: a later failure is said again.</summary>
+    internal void Judged(string subject)
+    {
+        lock (_gate) _failing.Remove(subject);
+    }
+
     /// <summary>Only the asks still on file are kept.</summary>
     internal void KeepAsksOf(IEnumerable<string> asks)
     {

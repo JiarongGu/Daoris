@@ -446,7 +446,7 @@ public sealed class DriverWatch(
                     _harnesses, usage, hooks, events, browser, Running)
                 {
                     Runner = Runner, Stops = Stops, Log = Log, Stages = Stages, Reviews = Reviews, Part = part, Woke = taken.Woke,
-                    LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token),
+                    LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
                 };
             try
             {

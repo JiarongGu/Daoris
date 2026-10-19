@@ -43,6 +43,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var config = _context.Config;
         var files = new HelperFiles(_context.Home);
         var asks = files.Asks();
+        var facts = _context.Runs.Facts;
+        if (_context.Beside) facts.KeepAsksOf(asks.Select(ask => ask.Id));
         if (asks.Count == 0) return 0;
 
         var states = asks.ToDictionary(ask => ask.Id, ask => files.ReadState(ask.Id), StringComparer.Ordinal);
@@ -58,24 +60,32 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                     case HelperStates.Refused:
                         continue;
                     case HelperStates.Answered:
-                        if (state.Handed is null && _context.Runs.TryOpinion(HelperClaim(ask.Id)))
-                        {
-                            try { if (await DeliverHelperAsync(ask, state, files, ct).ConfigureAwait(false) is { } line) events.Add(line); }
-                            finally { _context.Runs.OpinionDone(HelperClaim(ask.Id)); }
-                        }
-
+                        if (state.Handed is null) await SettlingAsync(ask, events, token => DeliverHelperAsync(ask, state, files, token), ct).ConfigureAwait(false);
                         continue;
                     case HelperStates.Started:
-                        if (_context.Runs.TryOpinion(HelperClaim(ask.Id)))
-                        {
-                            try { if (await SettleStartedAsync(ask, state, files, ct).ConfigureAwait(false) is { } line) events.Add(line); }
-                            finally { _context.Runs.OpinionDone(HelperClaim(ask.Id)); }
-                        }
-
+                        await SettlingAsync(ask, events, token => SettleStartedAsync(ask, state, files, token), ct).ConfigureAwait(false);
                         continue;
                 }
 
-                var record = await service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
+                // PARALLEL1g (D181 point 3): under the watch the asker's record is read as the `helper` topic's judge beside the look, once
+                // per ask, since what the verdict reads of it never moves; an ask not judged yet begins nothing, and its judgment wakes the
+                // look that judges it. The verdict, its slot and its start stay here, before the plan, so a helper is counted as it was.
+                PriorSession? record;
+                if (!_context.Beside)
+                {
+                    record = await service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
+                }
+                else if (!facts.TryAsker(ask.Id, out record))
+                {
+                    var asker = ask.Asker;
+                    var id = ask.Id;
+                    Judging(id, async token =>
+                    {
+                        if (facts.KeepAsker(id, await service.RecordAsync(asker, token).ConfigureAwait(false))) _context.Runs.FactsMoved();
+                        return [];
+                    }, ct);
+                    continue;
+                }
                 var rule = record is { Repository: { } repository }
                     ? HelperRules.Resolve(config, repository, record.Workspace).Rule
                     : HelperRule.Default;
@@ -115,6 +125,61 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
         return begun;
     }
+
+    /// <summary>How many asks for a helper are judged at once beside the looks (PARALLEL1g; a topic bounded, the events design §A3).</summary>
+    internal const int HelpersAtOnce = 2;
+
+    /// <summary>
+    /// An answered ask handed to its asker, or a started one a restart left settled (<paramref name="settle"/>), once at a time per ask
+    /// under its claim: under the watch as the <c>helper</c> topic's judge beside the look (PARALLEL1g), its line joining a later report,
+    /// so an asker's record or a helpers' door slow to answer holds no start; in the look otherwise, as before.
+    /// </summary>
+    private async Task SettlingAsync(HelperAsk ask, List<string> events, Func<CancellationToken, Task<string?>> settle, CancellationToken ct)
+    {
+        if (_context.Beside)
+        {
+            Judging(ask.Id, async token => await SettleOnceAsync(ask, settle, token).ConfigureAwait(false) is { } said ? [said] : [], ct);
+            return;
+        }
+
+        if (await SettleOnceAsync(ask, settle, ct).ConfigureAwait(false) is { } line) events.Add(line);
+    }
+
+    private async Task<string?> SettleOnceAsync(HelperAsk ask, Func<CancellationToken, Task<string?>> settle, CancellationToken ct)
+    {
+        if (!_context.Runs.TryOpinion(HelperClaim(ask.Id))) return null;
+        try
+        {
+            return await settle(ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _context.Runs.OpinionDone(HelperClaim(ask.Id));
+        }
+    }
+
+    /// <summary>
+    /// One ask judged as the <c>helper</c> topic's judge beside the look (PARALLEL1g): one judgement per ask, <see cref="HelpersAtOnce"/> at a
+    /// time, timed as work beside the look, and what stops it said as the look would have said it.
+    /// </summary>
+    private void Judging(string ask, Func<CancellationToken, Task<IReadOnlyList<string>>> judge, CancellationToken ct) =>
+        _context.Runs.Judge("helper", ask, HelpersAtOnce, async token =>
+        {
+            try
+            {
+                var said = await _driver.Stages.TimeAsync("helpers", () => judge(token), ask, beside: true).ConfigureAwait(false);
+                _context.Runs.Facts.Judged($"helper/{ask}");
+                return said;
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
+                                              or UnauthorizedAccessException
+                                              || (error is OperationCanceledException && !token.IsCancellationRequested))
+            {
+                return _context.Runs.Facts.Failed($"helper/{ask}")
+                    ? [$"helper  the ask for a helper `{ask}` could not be looked at this time, and is looked at again at a later look: {error.Message}"]
+                    : [];
+            }
+        }, ct);
 
     // The asker's tree is read with git, unless a test hands in a stand-in (the context's HelperTrees), since a real read spawns git,
     // which the suite's fast half may not (MOD8); a helper's agent is chosen by HelperChoice.ChooseAsync, whose account walk reads this
