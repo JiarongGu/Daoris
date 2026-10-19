@@ -754,6 +754,31 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
     }
 
+    /// <summary>
+    /// Record the access setup a resumed driven session now runs under (AUTONOMY1b2, D184 point 1), where the person's setup changed
+    /// since it started. A refusal is the ledger's sentence (<see cref="DriverException"/>).
+    /// </summary>
+    public async Task KeepAccessAsync(string sessionId, IReadOnlyDictionary<string, string> access, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartObject("access");
+            foreach (var (pause, value) in access) writer.WriteString(pause, value);
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        });
+
+        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(sessionId)}/access", body, ct)
+            .ConfigureAwait(false);
+        if (!ok)
+        {
+            throw new DriverException(
+                $"the service refused recording the setup session `{sessionId}` goes on under: "
+                + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
+        }
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {
@@ -2046,7 +2071,26 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
             // The mode an Ask Daoris record last ran under (HELPMODE1a2), which a conversation going on is compared with.
             HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
+            // The setup a driven record started under (AUTONOMY1a), which a run going on from it compares its own with: its permission
+            // prompts (AUTONOMY1b) and its go-aheads (AUTONOMY1c).
+            Access = AccessOf(session),
         };
+
+    /// <summary>
+    /// A record's access setup as the service answers it on loopback (AUTONOMY1a): each pause that is a word, read as a stored shape;
+    /// null where the record answers none, a record from before the setting.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string>? AccessOf(JsonElement session)
+    {
+        if (!session.TryGetProperty("access", out var access) || access.ValueKind != JsonValueKind.Object) return null;
+        var pauses = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var pause in access.EnumerateObject())
+        {
+            if (pause.Value.ValueKind == JsonValueKind.String && pause.Value.GetString() is { Length: > 0 } value) pauses[pause.Name] = value;
+        }
+
+        return pauses;
+    }
 
     /// <summary>
     /// Every record's entry key by its id (SESSONE1d), as the service answered it: this machine's and a teammate's mirror, keyed

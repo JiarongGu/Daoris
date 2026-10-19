@@ -388,6 +388,39 @@ public sealed class AdapterTests
     }
 
     /// <summary>
+    /// AUTONOMY1b (D184 point 3): a driven start and its resume run in the permission mode their repository's setup names, on the
+    /// native door: <c>acceptEdits</c> under auto as always (D81), <c>default</c> asking, <c>bypassPermissions</c> unrestricted, each in
+    /// place of the others and never beside them. A target the setup does not reach keeps <c>acceptEdits</c>.
+    /// </summary>
+    [Fact]
+    public void A_driven_start_and_its_resume_run_in_the_permission_mode_their_setup_names()
+    {
+        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var cases = new[]
+        {
+            (AccessRules.Auto, "acceptEdits"), (AccessRules.Asking, "default"), (AccessRules.Unrestricted, "bypassPermissions"),
+        };
+
+        foreach (var (permissions, mode) in cases)
+        {
+            var access = DrivenAccess.For(
+                AccessRules.ResolveLevels(new AccessSetting { Pauses = new Dictionary<string, string> { [AccessRules.Permissions] = permissions } }, null, null),
+                "Game", adapter);
+            var target = Target() with { Access = access };
+
+            foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "0b5e7c1a", "Port 8080.")! })
+            {
+                var arguments = info.ArgumentList.ToList();
+                Assert.Single(arguments, argument => argument == "--permission-mode");
+                Assert.Equal(mode, arguments[arguments.IndexOf("--permission-mode") + 1]);
+            }
+        }
+
+        var plain = adapter.Prepare(Target(), null).ArgumentList.ToList();
+        Assert.Equal("acceptEdits", plain[plain.IndexOf("--permission-mode") + 1]);
+    }
+
+    /// <summary>
     /// An adapter that has not been wired for turn-taking refuses in the harness's own terms, rather
     /// than spawning something that will never answer — the same shape as an unknown adapter name.
     /// </summary>

@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type AccessEdit, AccessRows, accessSummary, type ResolvedPause } from '../settings/Access';
 import type { RepositoryAcross } from '../settings/Across';
 import type { RuleListName } from '../settings/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../settings/Commits';
@@ -12,12 +13,27 @@ import { LineField, type RepositoryLine } from '../settings/Lines';
 import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../settings/Opinions';
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../settings/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../design/ui';
+import type { Answered } from '../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';
 
-/** The four sections of a repository's Setup (UX6f, D150 §4.2), in the order the page draws them. */
-export type SetupSectionId = 'driving' | 'work' | 'sessions' | 'reach';
+/** The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d), in the order the page draws them. */
+export type SetupSectionId = 'driving' | 'work' | 'access' | 'sessions' | 'reach';
+
+/**
+ * The access setup its sessions start under (AUTONOMY1d, D184 points 1-3), as the driver resolves it, and the press that changes it
+ * here; absent on a shell older than it, and the section is not drawn.
+ */
+export type AccessSetup = {
+  /** Its workspace, which a value from it names. */
+  workspace?: string;
+  /** Each pause as it resolves, with where it was set (`LINES`' `access`). */
+  pauses: ResolvedPause[];
+  /** Whether what stands above it, its workspace's over this machine's, is full access. */
+  aboveFull: boolean;
+  onChange: (edit: AccessEdit, answered?: Answered) => void;
+};
 
 /** This machine's driver's standing choices for one repository (D46 §6), and the presses that change them. */
 export type Driving = {
@@ -100,6 +116,8 @@ export type RepositorySetupProps = {
   /** Driving, where it has somewhere to start (INT3c): absent for one with no root here. */
   driving?: Driving | null;
   work?: WorkSetup | null;
+  /** Its sessions' access, where it can be driven. */
+  access?: AccessSetup | null;
   /** Its sessions' language and standing answer, where it can be driven. */
   sessions?: SessionsSetup | null;
   reach?: ReachSetup | null;
@@ -114,11 +132,12 @@ export type RepositorySetupProps = {
 const JOIN = ' · ';
 
 /**
- * **A repository's Setup** (UX6f, D150 §4.2): every setting the repository holds on this machine, in four sections, each
+ * **A repository's Setup** (UX6f, D150 §4.2): every setting the repository holds on this machine, in five sections, each
  * folding to a line that names its values. *Driving* (drive, hold, a tree per session), *Line and landing* (its line, how
  * its work lands, how it is committed, DOORS1b; the design's *Work*, which the catalogue keeps for no name since the view
- * it named was retired), *Sessions* (the language they write in, what a helper their agent asks for does, the standing
- * answer) and *Reach* (read by agents outside it, what its sessions also write into, Claude Code's rules here).
+ * it named was retired), *Sessions' access* (full access or each pause, AUTONOMY1d, D184), *Sessions* (the language they
+ * write in, what a helper their agent asks for does, the standing answer) and *Reach* (read by agents outside it, what its
+ * sessions also write into, Claude Code's rules here).
  *
  * @remarks
  * **What Daoris decides folds; what the person decides shows** (§1 rule 4). A folded section's line names each value, one
@@ -134,7 +153,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, access, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
   const { t } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -214,10 +233,15 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
     ...(reach.rules ? [ruleCount > 0 ? t('projects.setup.summary.rules', { count: ruleCount }) : t('projects.setup.summary.noRules')] : []),
   ];
 
+  // Sessions' access (AUTONOMY1d): full access, or each pause's value, marked where it came from above.
+  const accessShown = access && access.pauses.length > 0 ? access : null;
+  const accessOwn = Boolean(accessShown?.pauses.some((each) => each.source === 'repository'));
+
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
     work: lineOwn || landingOwn || commitsOwn || reviewOwn || opinionOwn,
+    access: accessOwn,
     sessions: languageOwn || helpersOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0,
   };
@@ -364,6 +388,24 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
             />
           )}
         </>
+      ),
+    });
+  }
+  if (accessShown) {
+    sections.push({
+      id: 'access',
+      summary: accessSummary(t, accessShown.pauses, 'repository'),
+      body: (
+        <AccessRows
+          owner="repository"
+          name={repository}
+          workspace={accessShown.workspace}
+          pauses={accessShown.pauses}
+          aboveFull={accessShown.aboveFull}
+          busy={busy}
+          setHere={t('projects.setup.setHere')}
+          onChange={accessShown.onChange}
+        />
       ),
     });
   }

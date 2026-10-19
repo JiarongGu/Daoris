@@ -136,6 +136,32 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(access, (await _sessions.FindAsync(opened.Session!.Id))!.Access);
     }
 
+    /// <summary>
+    /// AUTONOMY1b2 (D184 point 1): a resumed driven record keeps the setup it now runs under, on this machine's driven records alone; a
+    /// mirror, any other kind, an unknown id or a setup that is no short map of words moves nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_resumed_driven_record_keeps_the_access_setup_it_now_runs_under()
+    {
+        var quest = await Publish();
+        var opened = (await _ledger.OpenAsync(quest.Id, "stub", Now, access: new Dictionary<string, string> { ["permissions"] = "auto" })).Session!;
+        var chat = await _sessions.CreateAsync(null, "Engine", "stub", Now, kind: SessionKind.Chat);
+        var now = new Dictionary<string, string> { ["permissions"] = "unrestricted", ["landing"] = "rule" };
+
+        var kept = await _ledger.KeepAccessAsync(opened.Id, now);
+
+        Assert.Equal(now, kept!.Access);
+        Assert.Equal(now, (await _sessions.FindAsync(opened.Id))!.Access);
+        Assert.Equal((opened.State, opened.Updated), (kept.State, kept.Updated));
+        Assert.Null(await _ledger.KeepAccessAsync(chat.Id, now));
+        Assert.Null((await _sessions.FindAsync(chat.Id))!.Access);
+        Assert.Null(await _ledger.KeepAccessAsync("nothere", now));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _ledger.KeepAccessAsync(opened.Id, new Dictionary<string, string> { ["permissions"] = "a word\nand a line" }));
+        await Assert.ThrowsAsync<ArgumentException>(() => _ledger.KeepAccessAsync(opened.Id, new Dictionary<string, string>()));
+        Assert.Equal(now, (await _sessions.FindAsync(opened.Id))!.Access);
+    }
+
     [Fact]
     public async Task An_unknown_quest_is_refused()
     {

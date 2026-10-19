@@ -4,6 +4,7 @@ import { useTidiedBranches } from '../bridge/log';
 import { sentence } from '../locales/format';
 import { useSessions, useSyncStanding } from '../data/queries';
 import { sessionTitle } from '../work/identity';
+import { accessToast, isFull, resolveAccess } from '../settings/Access';
 import { commitToast } from '../settings/Commits';
 import { helperToast } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
@@ -14,7 +15,8 @@ import { sayDiscard, sweepKey, SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useDropRecoveries, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross,
+  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
+  useSetReadAcross,
   useSetReview, useStarts,
   useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWorkState,
@@ -382,6 +384,7 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const setOpinion = useSetOpinion();
   const setCommits = useSetCommits();
   const setHelpers = useSetHelpers();
+  const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
   useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
@@ -405,7 +408,26 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
     open,
     wiring,
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
-      || setCommits.isPending || setHelpers.isPending || setRead.isPending || act.isPending || wire.isPending || unwire.isPending,
+      || setCommits.isPending || setHelpers.isPending || setAccess.isPending || setRead.isPending || act.isPending || wire.isPending
+      || unwire.isPending,
+    // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
+    // the levels as set, since the driver resolves only a repository's; a shell older than it answers none, and nothing is drawn.
+    access: state && Array.isArray(state.workspaceAccess)
+      ? {
+          pauses: resolveAccess([
+            { setting: ofWorkspace(state.workspaceAccess)?.setting, source: 'workspace' },
+            { setting: state.machineAccess, source: 'machine' },
+          ]),
+          aboveFull: isFull(resolveAccess([{ setting: state.machineAccess, source: 'machine' }])),
+          onChange: (edit, answered) => setAccess.mutate({ workspace, ...edit }, {
+            onSuccess: () => {
+              notify(accessToast(t, workspace, edit, false));
+              answered?.done();
+            },
+            onError: (error) => (answered ? answered.refused(sentence(error)) : onError(error)),
+          }),
+        }
+      : null,
     defaults: {
       line: state && {
         set: ofWorkspace(state.workspaceLines)?.branch,

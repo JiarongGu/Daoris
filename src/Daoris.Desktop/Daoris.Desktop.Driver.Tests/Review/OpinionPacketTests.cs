@@ -22,7 +22,7 @@ public sealed class OpinionPacketTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_tree, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { TreeSetAside.DeleteNeverFollowing(_tree); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     private void Write(string path, string text = "x")
@@ -326,5 +326,24 @@ public sealed class OpinionPacketTests : IDisposable
 
         Assert.Null(OpinionTree.RemoveAsync(home, clone).GetAwaiter().GetResult());
         Assert.False(Directory.Exists(clone));
+    }
+
+    // TREELINK1b: .NET's recursive delete throws on a junction and is not proven safe against what it points at.
+    [Fact]
+    public void A_clone_holding_a_link_goes_as_a_link_and_what_it_points_at_stands()
+    {
+        var home = Path.Combine(_tree, "home");
+        var clone = OpinionTree.PathFor(home, "work", "reports");
+        var outside = Path.Combine(_tree, "outside");
+        Directory.CreateDirectory(outside);
+        File.WriteAllText(Path.Combine(outside, "notes.md"), "the person's own\n");
+        File.SetAttributes(Path.Combine(outside, "notes.md"), FileAttributes.ReadOnly);
+        Directory.CreateDirectory(Path.Combine(clone, "node_modules", "@fixture"));
+        TreeDependencies.Link(Path.Combine(clone, "node_modules", "@fixture", "web"), outside);
+
+        Assert.Null(OpinionTree.RemoveAsync(home, clone).GetAwaiter().GetResult());
+
+        Assert.False(Directory.Exists(clone));
+        Assert.Equal("the person's own\n", File.ReadAllText(Path.Combine(outside, "notes.md")));
     }
 }

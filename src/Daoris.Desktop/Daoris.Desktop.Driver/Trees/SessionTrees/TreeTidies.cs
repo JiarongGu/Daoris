@@ -248,6 +248,8 @@ internal sealed class TreeTidies(
 
         if (tree is not null)
         {
+            // TREELINK1: each link in the tree goes as a link first, since git's removal follows a junction out of it.
+            if (TreeLinks.Unlinked(tree) is { } linked) return Kept(linked);
             var (removeCode, _, removeErr) = await WorkingTree.GitAsync(root, ["worktree", "remove", tree], ct).ConfigureAwait(false);
             if (removeCode != 0 && !(await LetGoAsync(root, tree, ct).ConfigureAwait(false)).LetGo)
             {

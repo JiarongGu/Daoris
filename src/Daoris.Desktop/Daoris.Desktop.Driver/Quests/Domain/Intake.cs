@@ -120,7 +120,12 @@ public static class IntakePrompt
     /// <param name="browser">
     /// The line telling it the browser it was handed (<see cref="InAppBrowserServers.Told"/>, BRWHINT1b); null where none was.
     /// </param>
-    public static string Compose(AskView ask, SessionLanguage? language = null, string? browser = null)
+    /// <param name="routedByIntake">
+    /// The workspace's repositories whose access setup takes the intake's route without the person's accept (AUTONOMY1c, D184
+    /// point 3: <c>routing</c> <c>intake</c>), as <see cref="RoutedByIntake"/> reads them. None, today's, and the instruction reads as it did.
+    /// </param>
+    public static string Compose(
+        AskView ask, SessionLanguage? language = null, string? browser = null, IReadOnlyList<string>? routedByIntake = null)
     {
         var text = new StringBuilder();
         text.Append($"You are the intake for workspace `{ask.Workspace}`. You are not any repository's agent: this\n");
@@ -232,8 +237,22 @@ public static class IntakePrompt
         text.Append("you would be guessing at, and no `gate`: a gate is not taken yet.\n\n");
 
         text.Append("When they do not settle it — nothing points at one repository, or more than one could —\n");
-        text.Append("do not guess, and publish nothing. End by saying plainly what you would need to know; the\n");
-        text.Append("person decides.\n\n");
+        if (routedByIntake is { Count: > 0 } routed)
+        {
+            // AUTONOMY1c (D184 point 3): the route to a repository set so is the intake's, and the person may route it again; the
+            // repository chosen is the one whose setup counts, so any other is still the person's to settle.
+            text.Append(string.Join(", ", routed.Select(repository => $"`{repository}`")));
+            text.Append(": the person has set them to take your choice of route without accepting it\n");
+            text.Append("first. Where the one that fits best is among them, publish to it as above, and begin the body by\n");
+            text.Append("saying the route was your choice, why, and which other repositories could own it: the person may\n");
+            text.Append("route it again. Otherwise do not guess, and publish nothing. End by saying plainly what you would\n");
+            text.Append("need to know; the person decides.\n\n");
+        }
+        else
+        {
+            text.Append("do not guess, and publish nothing. End by saying plainly what you would need to know; the\n");
+            text.Append("person decides.\n\n");
+        }
 
         // BRWHINT1b (D78): the browser it was handed, in a block of its own; nothing where none was.
         if (browser is not null) text.Append(browser).Append("\n\n");
@@ -244,6 +263,17 @@ public static class IntakePrompt
         text.Append("Never edit a repository, and never write outside this room: publishing is the whole of your work.\n");
         return text.ToString();
     }
+
+    /// <summary>
+    /// Those of <paramref name="repositories"/>, in their order, whose access setup in <paramref name="workspace"/> routes by the
+    /// intake (AUTONOMY1c, D184 point 3), full access among them: the route an intake chooses to one is taken without the person's
+    /// accept. Read per repository, since the repository the intake chooses is the one whose setup counts.
+    /// </summary>
+    public static IReadOnlyList<string> RoutedByIntake(DriverConfig config, string workspace, IEnumerable<string> repositories) =>
+    [
+        .. repositories.Where(repository =>
+            AccessRules.Resolve(config, repository, workspace).Value(AccessRules.Routing) == AccessRules.Intake),
+    ];
 }
 
 /// <summary>

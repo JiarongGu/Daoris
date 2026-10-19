@@ -60,6 +60,45 @@ describe('the driver domain', () => {
   });
 
   /**
+   * AUTONOMY1d (D184 point 1): this machine's sessions' access, the default for every workspace and repository that sets none of
+   * its own, the same rows as a repository's Setup, each set as `daoris-driver access` with no repository or workspace sets it.
+   */
+  it("sets this machine's sessions' access, full access only through its ask", async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
+      ? { ...DRIVER_STATE, machineAccess: { full: false, pauses: [{ pause: 'goAheads', value: 'never' }] } }
+      : WIRING));
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="driver" />);
+    const access = within(await screen.findByRole('region', { name: "Sessions' access" }));
+    const row = (label: string) => access.getAllByText(label, { selector: 'span' })[0]!.closest('.\\@container') as HTMLElement;
+
+    expect(access.getByText(/This machine's default, for every workspace and repository that sets none of its own/)).toBeTruthy();
+    expect(row('Go-aheads')).toHaveTextContent('No go-ahead is asked, save one the quest or your words demand. Set for this machine.');
+    expect(row('Permission prompts')).toHaveTextContent("Daoris's default: nothing is set.");
+    expect(within(row('Permission prompts')).getByRole('button', { name: 'Set for this machine' })).toBeTruthy();
+    expect(within(row('Go-aheads')).getByText(code('daoris-driver access goAheads=named|never'))).toBeTruthy();
+
+    await userEvent.click(within(row('Go-aheads')).getByRole('button', { name: 'Clear' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { machine: true, access: { goAheads: null } } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Go-aheads for this machine comes from what stands above it again.'));
+
+    await vi.waitFor(() => expect(access.getByRole('checkbox', { name: 'Full access' })).toBeEnabled());
+    await userEvent.click(access.getByRole('checkbox', { name: 'Full access' }));
+    expect(access.getByRole('group', { name: 'Turn on full access for this machine' })).toHaveTextContent(
+      'wherever a workspace or a repository sets none of its own');
+    await userEvent.click(access.getByRole('button', { name: 'Enable full access' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { machine: true, access: 'full' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Sessions on this machine now start with full access.'));
+  });
+
+  it("offers no sessions' access on a shell older than it", async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, home: 'D:/somewhere/Daoris/data' } : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: "Sessions' access" })).toBeNull();
+  });
+
+  /**
    * UX6j (D150 §2.3; the plugins design §5): Settings holds no Plugins domain, and where plugins are looked for is a fact
    * of the Daoris home, so it is a row under the home, read-only, with the door to the Plugins place beside its path.
    */

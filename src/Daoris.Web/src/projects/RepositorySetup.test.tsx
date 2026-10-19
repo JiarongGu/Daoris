@@ -559,6 +559,82 @@ describe("a repository's helpers rule", () => {
 });
 
 /**
+ * AUTONOMY1d (D184 points 1-3): *Sessions' access*, beside its line and landing: full access confirmed once, then each pause with
+ * its value and where it was set, as the driver resolves them (`LINES`' `access`).
+ */
+describe("a repository's sessions' access", () => {
+  const pauses = (overrides: Record<string, { value: string; source: string }> = {}) => [
+    { pause: 'permissions', value: 'auto', source: 'default' },
+    { pause: 'routing', value: 'person', source: 'default' },
+    { pause: 'landing', value: 'person', source: 'default' },
+    { pause: 'goAheads', value: 'named', source: 'default' },
+    { pause: 'questions', value: 'claude-code', source: 'default' },
+  ].map((each) => ({ ...each, ...overrides[each.pause] }));
+  const withAccess = (access: NonNullable<RepositorySetupProps['access']>) => ({ ...SETUP_DEFAULTS, access });
+
+  it("folds beside Line and landing to a line naming each pause, at Daoris's default marked as such", () => {
+    draw(withAccess({ workspace: 'default', pauses: pauses(), aboveFull: false, onChange: vi.fn() }));
+
+    const [work, access, sessions] = ['Line and landing', "Sessions' access", 'Sessions'].map(head);
+    expect(work!.compareDocumentPosition(access!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(access!.compareDocumentPosition(sessions!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(head("Sessions' access")).toHaveAccessibleDescription(
+      "permissions in auto mode, you accept each route, lands on your Accept…, go-aheads before named acts (Daoris's default)");
+  });
+
+  it('opens on a pause set for this repository, whose change and Clear go out as the edit', async () => {
+    const onChange = vi.fn();
+    draw(withAccess({
+      workspace: 'aurora',
+      pauses: pauses({ permissions: { value: 'asking', source: 'workspace' }, landing: { value: 'rule', source: 'repository' } }),
+      aboveFull: false,
+      onChange,
+    }));
+
+    expect(head("Sessions' access")).toHaveAttribute('aria-expanded', 'true');
+    const access = section("Sessions' access");
+    expect(row(access, 'Permission prompts')).toHaveTextContent('From the workspace aurora.');
+    expect(row(access, 'Landing')).toHaveTextContent('Finished work lands by the landing rule, with no press. Set for this repository.');
+    await userEvent.click(within(row(access, 'Landing')).getByRole('button', { name: 'Clear' }));
+    expect(onChange).toHaveBeenLastCalledWith({ access: { landing: null } });
+    await userEvent.click(within(row(access, 'Permission prompts')).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(row(access, 'Permission prompts')).getByRole('radio', { name: 'Auto mode' }));
+    expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'auto' } });
+  });
+
+  it('turns full access on only through its ask, and folds to full access where it is on', async () => {
+    const onChange = vi.fn();
+    draw(withAccess({ workspace: 'default', pauses: pauses(), aboveFull: false, onChange }));
+
+    await userEvent.click(head("Sessions' access"));
+    const access = section("Sessions' access");
+    await userEvent.click(within(access).getByRole('checkbox', { name: 'Full access' }));
+    await userEvent.click(within(access).getByRole('button', { name: 'Enable full access' }));
+    expect(onChange).toHaveBeenLastCalledWith({ access: 'full' }, expect.anything());
+  });
+
+  it("reads full access from the workspace in its folded line, in Chinese too", async () => {
+    const full = pauses({
+      permissions: { value: 'unrestricted', source: 'workspace' }, routing: { value: 'intake', source: 'workspace' },
+      landing: { value: 'rule', source: 'workspace' }, goAheads: { value: 'never', source: 'workspace' },
+      questions: { value: 'claude-code', source: 'workspace' },
+    });
+    const { unmount } = draw(withAccess({ workspace: 'default', pauses: full, aboveFull: true, onChange: vi.fn() }));
+    expect(head("Sessions' access")).toHaveAccessibleDescription("full access (the workspace's default)");
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    draw(withAccess({ workspace: 'default', pauses: full, aboveFull: true, onChange: vi.fn() }));
+    expect(head('会话的访问')).toHaveAccessibleDescription('完全访问（工作区的默认）');
+  });
+
+  it('is absent on a shell older than it', () => {
+    draw(SETUP_OWN);
+    expect(screen.queryByRole('button', { name: "Sessions' access" })).toBeNull();
+  });
+});
+
+/**
  * DOORS1b (D164's amendment point 2): the landing row says what finds its pattern's `{ticket}` and that Accept squashes, and its
  * control sets the key where the pattern says `{ticket}` and the squash on a branch, keeping both where the press does not
  * change them.

@@ -264,6 +264,14 @@ public sealed record PriorSession(
     /// </summary>
     public string? HelpMode { get; init; }
 
+    /// <summary>
+    /// The access setup a driven record started under (AUTONOMY1a, D184 point 1), each pause with its value, as the service answers it on
+    /// loopback: what a resume or a carry-on compares its own with, to say the change, its permission prompts
+    /// (AUTONOMY1b, <see cref="DrivenAccess.ChangedSince"/>) and its go-aheads (AUTONOMY1c, <see cref="Continuations.GoAheadsChanged"/>).
+    /// Null from a record before the setting and from a host before the field, which <see cref="DrivenAccess.Ran"/> reads as today's.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Access { get; init; }
+
     /// <summary>The harness version its record opened on: a resumed run says so where the version moved since (D131 §1).</summary>
     public string? HarnessVersion { get; init; }
 

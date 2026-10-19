@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AccessRows, accessSummary } from '../settings/Access';
 import type { RuleListName } from '../settings/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, type CommitRule, commitRowSays, commitSummary } from '../settings/Commits';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, type HelperRule, helperRowSays, helperSummary } from '../settings/Helpers';
@@ -11,6 +12,7 @@ import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSum
 import { shellWord } from '../lib/shellWord';
 import { Button, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../design/ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
+import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
 import type { WorkspaceSection } from './tabs';
 import { hostOf } from './workspace';
@@ -60,6 +62,11 @@ export type WorkspaceRemote = {
 export type WorkspaceSetupProps = {
   workspace: string;
   defaults: WorkspaceDefaults;
+  /**
+   * The access setup its repositories' sessions start under where they set none of their own (AUTONOMY1d, D184 point 1): each
+   * pause as it resolves from the workspace, this machine or Daoris's default; absent on a shell older than it.
+   */
+  access?: Omit<AccessSetup, 'workspace'> | null;
   remote: WorkspaceRemote;
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
@@ -77,9 +84,9 @@ const MERGE: LandingRule = { form: 'merge' };
 const plain = (text: string) => text.replace(/`/g, '');
 
 /**
- * **A workspace's Setup** (UX6g, D150 §4.3): what it gives each of its repositories that sets none of its own, and where it
- * syncs with Claude Code's rules for it, in two sections that fold to the line naming their values. It is where Settings →
- * Workspace's defaults and wiring and Settings → Permissions' workspace rows went (§3.1).
+ * **A workspace's Setup** (UX6g, D150 §4.3): what it gives each of its repositories that sets none of its own, the access their
+ * sessions start under (AUTONOMY1d), and where it syncs with Claude Code's rules for it, in sections that fold to the line naming
+ * their values. It is where Settings → Workspace's defaults and wiring and Settings → Permissions' workspace rows went (§3.1).
  *
  * @remarks
  * **What Daoris decides folds; what the person decides shows** (§1 rule 4): a value the workspace does not set reads as
@@ -91,7 +98,9 @@ const plain = (text: string) => text.replace(/`/g, '');
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin }: WorkspaceSetupProps) {
+export function WorkspaceSetup({
+  workspace, defaults, access, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
+}: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
   const { line, landing, language, read, review, opinion, commits, helpers } = defaults;
@@ -125,9 +134,13 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
     ...(rules ? [ruleCount > 0 ? t('projects.setup.summary.rules', { count: ruleCount }) : t('projects.setup.summary.noRules')] : []),
   ];
 
+  // Sessions' access (AUTONOMY1d): the same rows as a repository's, one level up.
+  const accessShown = access && access.pauses.length > 0 ? access : null;
+
   const opensItself: Record<WorkspaceSection, boolean> = {
     defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set
       || commits?.set || helpers?.set),
+    access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
 
@@ -278,6 +291,23 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
             />
           )}
         </>
+      ),
+    });
+  }
+  if (accessShown) {
+    sections.push({
+      id: 'access',
+      summary: accessSummary(t, accessShown.pauses, 'workspace'),
+      body: (
+        <AccessRows
+          owner="workspace"
+          name={workspace}
+          pauses={accessShown.pauses}
+          aboveFull={accessShown.aboveFull}
+          busy={busy}
+          setHere={t('projects.workspace.setHere')}
+          onChange={accessShown.onChange}
+        />
       ),
     });
   }
