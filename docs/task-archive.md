@@ -17401,3 +17401,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LOOKSLOW2 — `look.slow` says its queue so far** (driver; the machine-log design §4; D181's QUEUEDTREE1 and LOOKWAIT1b note). A stage named slow while it runs cannot yet say whether it waits for places or works; an additive `queued` field tells the two apart. Proof: a `LookStagesTests` row.
 
 **Outcome** 2026-10-20: `look.slow` carries an additive `queued`, the stage's queue so far with a wait still open counted (`StageSpan.QueuedSoFar`), written always, 0 included, so a reader tells "not waiting" from a missing field. On Sonnet: about 19 tool calls, 8 minutes. Detail: D181's LOOKSLOW2 line; the machine-log design's `look.slow` row.
+
+## HELPWIREDLIVE1b — a resume's receipt published after it is written (2026-10-20, D183)
+
+> - [ ] **HELPWIREDLIVE1b — a resume's receipt published after it is written** (modules; after PUSH1c2a frees `Modules/Loop/DriverLoop.cs`; D183 point 4, its HELPWIREDLIVE1 line and its 2026-10-20 HELPWIREDLIVE1b note). `ChatRunner.WiredKept` (built) is raised once a receipt is written; `DriverLoop.cs` subscribes it and publishes `StateScopes.Help` with the session, as it does `OptionsChanged`, so an open *What it has* reads a resume's new receipt. Proof: a modules test that the publish follows the write.
+
+**Outcome** 2026-10-20: `ChatRunner.WiredKept` is raised once a receipt is written, and `DriverLoop` subscribes it through `DriverLoop.WiredKeptTold(bus)`, publishing the `help` scope with the session, so the event follows the write. On Sonnet, in two halves (the driver's with HEAVYRUN1b2a2). Detail: D183's HELPWIREDLIVE1b notes; `StatePublisherTests`, `HelpWiredTests`.

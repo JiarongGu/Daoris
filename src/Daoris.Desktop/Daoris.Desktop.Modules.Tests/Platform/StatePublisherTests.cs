@@ -608,6 +608,19 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// HELPWIREDLIVE1b (D183 point 4): the loop tells the help scope, with the session, when a conversation's start receipt is written,
+    /// so an open What it has reads a resume's new receipt rather than the old one.
+    /// </summary>
+    [Fact]
+    public async Task A_receipt_written_is_told_as_the_help_scope_with_its_session()
+    {
+        Daoris.Desktop.DriverLoop.WiredKeptTold(Bus)("s1a2b3c4");
+
+        await UntilAsync(() => Changed().Count == 1);
+        Assert.Equal("""{"scopes":["help"],"sessions":["s1a2b3c4"]}""", Shape(Changed().Single()));
+    }
+
+    /// <summary>
     /// BROWSERPUBLISH1: the browser module's edits declare the browser, so every window's Settings → Browser and link opener ask it
     /// again; its read declares nothing. Published on the wire as the driver's marks are, through the shell's own middleware.
     /// </summary>
