@@ -103,6 +103,10 @@ once three batches hold the targets (MODELROLE1).
    (`git worktree unlock`) so the next prune takes it, and dispatch again. Two dispatched in one message
    while a merge's gates ran were both refused the same way (2026-10-08), each a half-made tree holding only
    `.git` and `.claude`: remove each (`git worktree remove --force`, then its branch), and dispatch one at a time.
+   **Never brief a worker to run or time a long run** (a `Process` half, a rehearsal, or a measurement of either):
+   PROCSPEED1 (2026-10-19) waited 120 of its 140 minutes on three runs of the driver's git half it was asked to time on
+   a shared machine, and no number made under that load meant anything. Such a measurement is the parent's, on a quiet
+   machine. A worker that has waited on one run past fifteen minutes is looked at then, not when it hands back.
 6. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
@@ -134,6 +138,8 @@ once three batches hold the targets (MODELROLE1).
      `--continue` to gate the merge again whole, or run `git merge --abort`.
    - For several branches, run `<first> --batch <second> …`. Each merge gets the checks and suites its
      paths reach. Commit it, then `--continue` merges the next. The rehearsals run once, after the last.
+     **Two or more branches ready merge as one batch**, never one after another: a service branch alone paid 11
+     minutes of light gates and 27 of the family rehearsal (CLOSE1c24, 2026-10-19), and a batch pays the rehearsal once.
    - Bisecting a failure, run the test five times at each commit: one pass proves nothing of a test that fails some of
      the time. A single pass at an earlier merge once blamed the wrong change; the test failed 5 of 8 there (AUTOTIDY1r).
    - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that

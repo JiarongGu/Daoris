@@ -176,11 +176,18 @@ export function isLocalService(url: string): boolean {
  * A refusal here is an answer the service composed deliberately — who is addressable, what a retire
  * does not do, why an import found nothing. Replacing it with a status code would make the CLI say
  * less than the service said, which is the failure the driver's own client already learned once.
+ *
+ * A door whose records are this machine's alone (BRAINSTORM1a3: a brainstorm, D176 point 8) names why in `here`, and is asked of
+ * this machine's own service only: a service elsewhere is refused before anything is sent, as `import` refuses a folder.
  */
 export async function request(
-  method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown,
-): Promise<{ status: number; json: Record<string, unknown> | null }> {
+  method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown, { here }: { here?: string } = {},
+): Promise<{ status: number; json: Record<string, unknown> | null; url: string }> {
   const { url, key } = await endpoint();
+  if (here !== undefined && !isLocalService(url)) {
+    throw new DaorisError(`${url} is not this machine's service, and ${here}: nothing was sent.`, 1);
+  }
+
   const response = await fetch(`${url}${path}`, {
     method,
     headers: {
@@ -195,7 +202,7 @@ export async function request(
   });
 
   const json = await response.json().catch(() => null) as Record<string, unknown> | null;
-  return { status: response.status, json };
+  return { status: response.status, json, url };
 }
 
 /** The service's own sentence, or a bare status when it did not compose one. */

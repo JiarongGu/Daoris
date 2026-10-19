@@ -422,4 +422,26 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         Assert.False(host.Composed.Opinions.Local);
         Assert.Equal(Opinions.SharedSentence, (await host.Composed.Opinions.HandAsync("abcd1234", DateTimeOffset.UtcNow)).Message);
     }
+
+    /// <summary>
+    /// BRAINSTORM1a3 (D176 point 8): a brainstorm is kept on the machine that asked it, served to this machine only and never on a
+    /// shared host, so a shared host maps none of its doors, keyed or not, and writes nothing under any home.
+    /// </summary>
+    [Fact]
+    public async Task The_brainstorm_doors_do_not_exist_on_a_shared_host()
+    {
+        Assert.DoesNotContain(host.Routes(), route => route.Pattern.StartsWith("/api/brainstorms", StringComparison.Ordinal));
+        var key = (await host.MintAsync("brainstorm@a-machine")).Key;
+        foreach (var (method, path) in new[]
+                 {
+                     ("GET", "/api/brainstorms"), ("POST", "/api/brainstorms"), ("GET", "/api/brainstorms/abcd1234"),
+                     ("POST", "/api/brainstorms/abcd1234/send"), ("DELETE", "/api/brainstorms/abcd1234"),
+                 })
+        {
+            var refused = await host.SendAsync(method, path, DaorisHost.Loopback, key, method == "POST" ? """{ "question": "Why?" }""" : null);
+            Assert.True(refused.Status is 404 or 405, $"{method} {path} answered {refused.Status}");
+        }
+
+        Assert.False(Directory.Exists(Daoris.Knowledge.DaorisHome.Entry(host.Home, Daoris.Knowledge.HomeEntry.Brainstorms)));
+    }
 }

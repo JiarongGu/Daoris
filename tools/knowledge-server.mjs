@@ -24,6 +24,10 @@
  * chooses, and every answer says the tier). A worktree reaches its main checkout's build and serves the main
  * checkout, unless it built one of its own.
  *
+ * A running session follows the build (KNOWHOLD1): when a merge makes a new one, the relay moves the session onto it at
+ * its next request with nothing owed, or within a minute while it is idle, and ends the server it left (`relayServer`),
+ * so a fix to the host reaches a running session.
+ *
  * A session a driver started (it names `DAORIS_REPOSITORY`) is the driver's: its environment is passed on whole,
  * so its connector speaks to the driver's store, as this file did for a pipe-door session before (D70). It runs
  * the machine's own host first, where the driver would find it for the protocol door (`DAORIS_MCP_HOST`, then the
@@ -228,6 +232,198 @@ function serveAbsence(input, output, sentence) {
   return new Promise((done) => lines.on('close', done));
 }
 
+/** How long a new build has to answer the session's handshake before the relay keeps the server it has. */
+export const REPLAY_WAIT_MS = 30_000;
+/** How often an idle session's relay looks for a newer build, and how long a server it left has to end on its own. */
+export const LOOK_EVERY_MS = 60_000;
+const RETIRE_WAIT_MS = 10_000;
+
+/**
+ * The relay between a session and its server, which follows the current build (KNOWHOLD1).
+ *
+ * A server on the session's own streams runs the build it started on until the session ends, so a fault fixed by a merge
+ * stays in every running session (the fix log's KNOWHOLD1 entry has the case). So the relay reads the session's
+ * messages a line at a time, and when the checkout's current build is not the one serving, it moves the session onto it:
+ * at a request that arrives with none outstanding either way, or at its own look every minute while the session is idle.
+ * The new server is handed the session's own handshake under an id of the relay's, then its `initialized`; once it has
+ * answered, it serves, the session is told its tools may have changed (when the server said it would tell), and the old
+ * server's input is ended, as a session's end ends it. A build that does not answer the handshake is left, and not tried
+ * again; the session keeps the server it had. The session never sees the move.
+ *
+ * With no server able to start, the session is answered in the protocol's own words, every request it already sent too
+ * (`unstarted` says why).
+ *
+ * @param {{ input: NodeJS.ReadableStream, output: NodeJS.WritableStream, first: string,
+ *   start: (entry: string) => import('node:child_process').ChildProcess, current?: () => string | null,
+ *   unstarted?: (error: Error) => string, say?: (line: string) => void }} options
+ *   `first` is the build started with, `start` starts a build's server with piped standard streams, and `current` names
+ *   the build that should serve now, or null when there is none to follow.
+ * @returns {{ done: Promise<number>, check: () => Promise<void> }} `done` settles with the server's exit code once the
+ *   session's input has ended and the serving server has exited; `check` is the relay's look.
+ */
+export function relayServer({ input, output, first, start, current = () => null, unstarted = (error) => String(error), say = () => {} }) {
+  const key = (id) => JSON.stringify(id);
+  const isRequest = (message) => typeof message?.method === 'string' && message.id !== undefined && message.id !== null;
+  const isReply = (message) => message && message.method === undefined && message.id !== undefined && message.id !== null;
+  /** The session's requests the server still owes, by id; and the server's the session still owes. */
+  const owed = new Map();
+  const asked = new Set();
+  const failed = new Set();
+  let hello = null;
+  let initialized = null;
+  let listChanged = false;
+  let absent = null;
+  let ended = false;
+  let replays = 0;
+  let serving;
+  let finish;
+  const done = new Promise((settle) => { finish = settle; });
+
+  const send = (server, message) => server.proc.stdin.write(`${typeof message === 'string' ? message : JSON.stringify(message)}\n`);
+
+  /** No server could start: every request owed and every one after is answered with why. */
+  const fallBack = (error) => {
+    absent = unstarted(error);
+    say(absent);
+    for (const message of owed.values()) {
+      const reply = absenceReply(message, absent);
+      if (reply) output.write(`${JSON.stringify(reply)}\n`);
+    }
+    owed.clear();
+  };
+
+  const attach = (proc, entry, starting = false) => {
+    const server = { proc, entry, starting, spoke: false, waiting: null };
+    proc.stdin?.on('error', () => {
+      // A server that ended takes its input with it; its exit says what happened.
+    });
+    createInterface({ input: proc.stdout, crlfDelay: Infinity }).on('line', (line) => {
+      let message = null;
+      try {
+        message = JSON.parse(line);
+      } catch {
+        // Not a message: passed on as the server wrote it.
+      }
+      if (server.waiting) {
+        if (isReply(message) && key(message.id) === server.waiting.id) server.waiting.settle(!message.error);
+        return;
+      }
+      // A server the session left speaks to nobody.
+      if (server !== serving) return;
+      if (isReply(message)) {
+        owed.delete(key(message.id));
+        if (hello && key(message.id) === key(hello.id)) listChanged = message.result?.capabilities?.tools?.listChanged === true;
+      } else if (isRequest(message)) {
+        asked.add(key(message.id));
+      }
+      output.write(`${line}\n`);
+    });
+    const gone = (code, error) => {
+      if (server.waiting) {
+        server.waiting.settle(false);
+        return;
+      }
+      if (server !== serving) return;
+      if (error && !absent && server.starting && !server.spoke) {
+        fallBack(error);
+        if (ended) finish(0);
+        return;
+      }
+      if (!absent) finish(code ?? 1);
+    };
+    proc.on('exit', (code) => gone(code));
+    proc.on('error', (error) => gone(null, error));
+    proc.stdout.once('data', () => { server.spoke = true; });
+    return server;
+  };
+
+  /** Moves the session onto `entry` when its server answers the session's handshake; else leaves it where it is. */
+  const moveTo = async (entry) => {
+    let proc;
+    try {
+      proc = start(entry);
+    } catch (error) {
+      failed.add(entry);
+      say(`stayed on ${serving.entry}: ${entry} would not start (${error.message})`);
+      return;
+    }
+    const next = attach(proc, entry);
+    const id = `daoris-knowledge-relay-${++replays}`;
+    const answered = await new Promise((settle) => {
+      const timer = setTimeout(() => settle(false), REPLAY_WAIT_MS);
+      timer.unref?.();
+      next.waiting = { id: key(id), settle: (ok) => { clearTimeout(timer); settle(ok); } };
+      send(next, { ...hello, id });
+    });
+    next.waiting = null;
+    if (!answered) {
+      failed.add(entry);
+      say(`stayed on ${serving.entry}: ${entry} did not answer the handshake`);
+      proc.kill();
+      return;
+    }
+    if (initialized) send(next, initialized);
+    const left = serving;
+    serving = next;
+    say(`moved to ${entry}`);
+    if (listChanged) output.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed' })}\n`);
+    left.proc.stdin.end();
+    const stop = setTimeout(() => left.proc.kill(), RETIRE_WAIT_MS);
+    stop.unref?.();
+    left.proc.once('exit', () => clearTimeout(stop));
+  };
+
+  /** The relay's look: a newer build moves the session when its handshake is done and nothing is owed either way. */
+  const look = async () => {
+    if (absent || ended || !hello || owed.size || asked.size) return;
+    const entry = current();
+    if (!entry || entry === serving.entry || failed.has(entry)) return;
+    await moveTo(entry);
+  };
+
+  // The session's messages, a line at a time and in order: a move waits for the line before it, and the line after waits for it.
+  let queue = Promise.resolve();
+  const handle = async (line) => {
+    let message = null;
+    try {
+      message = JSON.parse(line);
+    } catch {
+      // Passed on as the session wrote it.
+    }
+    if (isRequest(message)) {
+      if (message.method === 'initialize') hello = message;
+      else await look();
+    } else if (message?.method === 'notifications/initialized') {
+      initialized = message;
+    } else if (isReply(message)) {
+      asked.delete(key(message.id));
+    }
+    if (absent) {
+      const reply = message ? absenceReply(message, absent) : null;
+      if (reply) output.write(`${JSON.stringify(reply)}\n`);
+      return;
+    }
+    if (isRequest(message)) owed.set(key(message.id), message);
+    send(serving, line);
+  };
+
+  serving = attach(start(first), first, true);
+  createInterface({ input, crlfDelay: Infinity })
+    .on('line', (line) => {
+      if (!line.trim()) return;
+      queue = queue.then(() => handle(line));
+    })
+    .on('close', () => {
+      queue = queue.then(() => {
+        ended = true;
+        if (absent) finish(0);
+        else serving.proc.stdin.end();
+      });
+    });
+
+  return { done, check: () => (queue = queue.then(look)) };
+}
+
 /** Serve: the build, with the environment its session needs, its standard streams the client's own. */
 async function serve(checkout) {
   const located = locateServer(checkout);
@@ -237,15 +433,30 @@ async function serve(checkout) {
     await serveAbsence(process.stdin, process.stdout, absenceSentence(checkout, mode));
     process.exit(0);
   }
-  const child = spawn(command.command, command.args, { stdio: 'inherit', env, windowsHide: true });
-  child.on('error', async (error) => {
-    // The child never started, so the input is still this process's to answer on.
-    await serveAbsence(process.stdin, process.stdout,
-      `the knowledge server could not start (${command.what}: ${error.code ?? error.message}). Is \`dotnet\` on the PATH?`);
-    process.exit(0);
+  // The workspace's build is followed as merges replace it (KNOWHOLD1); the machine's host is the install's, and moves with it.
+  const follows = located !== null && command.args[0] === located.entry;
+  const children = new Set();
+  const relay = relayServer({
+    input: process.stdin,
+    output: process.stdout,
+    first: follows ? located.entry : command.command,
+    start: (entry) => {
+      const child = follows
+        ? spawn('dotnet', [entry], { stdio: ['pipe', 'pipe', 'inherit'], env, windowsHide: true })
+        : spawn(command.command, command.args, { stdio: ['pipe', 'pipe', 'inherit'], env, windowsHide: true });
+      children.add(child);
+      child.once('exit', () => children.delete(child));
+      return child;
+    },
+    current: follows ? () => readBuild(located.served)?.entry ?? null : () => null,
+    unstarted: (error) =>
+      `the knowledge server could not start (${command.what}: ${error.code ?? error.message}). Is \`dotnet\` on the PATH?`,
+    say: (line) => process.stderr.write(`daoris-knowledge: ${line}\n`),
   });
-  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
-  child.on('exit', (code) => process.exit(code ?? 1));
+  const looking = follows ? setInterval(() => relay.check(), LOOK_EVERY_MS) : null;
+  looking?.unref();
+  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => children.forEach((child) => child.kill(signal)));
+  process.exit(await relay.done);
 }
 
 /** What the host is built from, as one digest: the projects it compiles and the tree's build settings. */

@@ -24,6 +24,16 @@ daoris <command> [options]
   import [folder]      register a folder's subdirectories in one go; safe to
                        re-run, and it never re-points anyone's workspace —
                        unless --workspace W names the workspace they land in
+  brainstorm [verb]    a question put to this machine's agents (D176), through
+                       the Daoris running here, and kept on this machine:
+                         "<question>" [--repository R] [--agents A,B]
+                                                   ask it; Daoris freezes its
+                                                   packet at its next look
+                         show <id>                 the packet whole, or the
+                                                   document once it ended
+                         send <id>                 your press: the packet goes
+                         clear <id>                its records and packet go
+                         list                      each, and where it stands
   remote [verb]        this machine's remotes, one per workspace:
                          list                      what is wired (keys redacted)
                          add <workspace> --url U   wire a workspace's deployment
@@ -309,7 +319,8 @@ daoris <command> [options]
                          look                      fetch every location; say what is newer
 
   connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a
-  service, and no gate ever runs them. remote, agent, driver, plugin, browser and
+  service, and no gate ever runs them; brainstorm too, to this machine's own service
+  only. remote, agent, driver, plugin, browser and
   tool are management too — they edit files under the Daoris home ($DAORIS_HOME,
   the installed application's own data folder; nothing lives under your profile),
   and agent spawns each agent's own tooling. Of them only agent pin and agent

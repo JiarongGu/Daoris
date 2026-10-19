@@ -5,6 +5,75 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — The dev knowledge server ran the build it started on for nine days, a fixed host's watch with it (KNOWHOLD1)
+
+- **Symptom:** twice (the full set of 2026-10-18 on bbc1a24, and again on 10-19) the deployment rehearsal's swap under
+  `local/gate-tree/` rolled back `busy`: `app` held for 636.8 s, then 590.4 s, with `app/cli/node_modules` held by
+  `16075bf6 (pid 36544)` (its swap journal's `heldBy`), while the dev knowledge server served this checkout's sessions.
+- **Which handle:** pid 36544 is `dotnet local/knowledge-server/builds/20261009T121055Z-cac379e1/daoris-knowledge.dll`,
+  started on 10-10 by `node tools/knowledge-server.mjs` for the parent's session and still running on 10-19: the process
+  KNOWWALK1 named. Its build predates KNOWWALK1's fix of 10-17, so its host still watches the checkout's root with every
+  folder below it, `local/gate-tree/` too, and walks each folder renamed there (KNOWWALK1's reading of the framework's
+  IL). Asked on 10-19 it held the checkout's root and nothing else, and six renames of a 300-package tree under an ignored
+  folder of a worktree caught it in none: the walk comes with the rehearsal's load and goes, as KNOWWALK1 saw.
+- **Root cause:** not the source's reading or watching. Main's connector opens nothing under `local/`, `node_modules/`
+  or `_fixtures/`: its host watches no file, the freshness watch takes the root alone and hears only its records, and
+  the walks skip what git ignores. Git's own answer opens none of them either: `ls-files --ignored --directory` visited
+  398 folders with and without a 600-folder tree under `local/`. The cause is that a session's server ran the build it
+  started on until the session ended: `serve` handed the build the session's own streams, and nothing moved it, so a
+  merge's build reached new sessions only, and the parent's session kept a fixed host's watch for nine days.
+- **Fix:** `relayServer` in `tools/knowledge-server.mjs` stands between the session and its server, a message a line.
+  When `current.json` names a build other than the one serving, it moves the session at a request that arrives with
+  nothing owed either way, or at its own look each minute while the session is idle. The new server is handed the
+  session's own `initialize` under an id of the relay's, then its `initialized`; once it answers it serves, the session is
+  sent `notifications/tools/list_changed` (the server advertises it), and the old server's input is ended, as a session's
+  end ends it, with a kill after ten seconds. A build that does not answer in 30 s is left, and not tried again. A driven
+  session's machine host is not followed: it is the install's. Nothing is stopped to pass a gate. The server running now
+  runs the old relay too, so it moves only once its session reconnects it (`/mcp`), which is the owner's call.
+- **Verification:** `knowledge-server.test.ts`, 13 tests to 18: the five relay tests failed first on a stub (the session
+  was never answered), then passed: a move at the next request with the handshake replayed and nothing answered twice, a
+  request still owed holding the move, an idle session moved by the look with the old server's input ended, a build that
+  will not answer left and not retried, and a server that cannot start answering in the protocol. A smoke with the real
+  connector in a worktree: two builds, `current.json` repointed mid-session, the search after it answered by the second
+  build's process, the first ended, the relay's exit 0. `CheckoutFreshnessTests.A_checkouts_ignored_folders_at_its_top_are_neither_read_nor_watched`
+  guards the read and the watch of `local/`, `node_modules/` and `_fixtures/`, files held unshared and the install's `app/`
+  moved aside and back: green on arrival, red with the root watched whole as the old host watched it. Service tests
+  2325 to 2326. The deployment rehearsal with the dev server running is the merge's, once pid 36544 has been replaced.
+
+## 2026-10-19 — A session that went on after its landing had its later done's opinion closed before the loop asked it (FABRIC-CLOSE1h18)
+
+- **Symptom:** under *Accept automatically* and an opinion rule, a session that landed, went on with the person's words (D137) and
+  concluded again with more work had the opinion owed on that work closed as `landed` at the loop's next look, never asked. Its landing
+  was then kept as `opinion` and waited on the person's ask, though the gate said *it is asked at the driver's next look*.
+- **Root cause:** `OpinionLook.ClosesAsync` closed a due as landed wherever `LandedBranches.Landing` named its session, whatever the
+  landing's time. A session's landing record outlives its done, so the record of the first landing stood for every later done's work.
+  The automatic landing already compared a landing's acceptance with its entry's done (`AutoLander.JudgeAsync`); the opinion look did not.
+- **Fix:** the record closes the due only where it was made since the due was owed (`OpinionLook.MadeSince`: `AcceptedAt` of the due's
+  session, its landing or its newest advance, at or after the due's `At`). An older landing falls to git's reading of the tree, as a
+  session with no landing does, with its squash as one proof more, so a due owed after a squashed landing whose push was held back still
+  closes once the push lands. D173's FABRIC-CLOSE1h18 note has the behaviour.
+- **Verification:** red first: `OpinionGateTests` (the new theory's 2 older-landing rows), `AutoLandingTriesTests` (the row's proof, 2
+  rows, and the git reading's 2 rows where the tree went on past the landing); the git reading's other 2 rows green before and after, as
+  guards. Then the driver's fast half 9687 of 9687 (9682 before), and the `AutoLanding` Git classes, run once by filter with
+  `git.process.runsettings`, 85 of 85, this row's 6 among them.
+
+## 2026-10-19 — A step's take that went with its source take still closed the step the winner's chain published anew (FABRIC-CLOSE1c24)
+
+- **Symptom:** B took a source, bound, submitted and took the step its submission published, all before syncing, while C's take of
+  the source reached the remote first. B's take of the step went with its submission, and C's chain then published the same step
+  anew under the same id. B's session, still running until its driver's next look, could close, decline or set up that open step:
+  B's store kept the move, a remote kept it from an older build, and B's rebase pushed one an older build left pending.
+- **Root cause:** `QuestLog.OnALostTake` judged an open step lost only where the machine's take lost to the person's reopen
+  (FABRIC-CLOSE1c18, CLOSE1c22), since an open quest is otherwise nobody's work (D95). A take that went with its source's take to
+  another machine's take left nothing that reading could see, so the move counted as one on nobody's work.
+- **Fix:** `QuestLog.LostOnTheOpenStep` reads where the machine's latest take conflict landed: on the step open, the take was made on
+  work the step no longer stands on (withdrawn by a reopen, grown from another submission, or published anew after its submission
+  went). `OnALostTake`'s open branch reads it beside `LostToTheReopen`, so the store, the remote and the rebase refuse alike. The
+  refusal reads the reopen from the history (`QuestMove.LostToTheReopen`), and otherwise says the step was published anew on other work.
+- **Verification:** `QuestSyncTests`, done, decline and set-up, the step published anew after B's pass and before it: the store's
+  refusal red, the remote's red with it set aside, the rebase's red with both, then green; a done after a take lost to a delete still
+  lands (D95). Service tests 2325 before, 2332 after, all passed; HTTP tests 292, all passed.
+
 ## 2026-10-19 — A next step's take that went with a take lost to the reopen was stopped in another machine's words (FABRIC-CLOSE1c22)
 
 - **Symptom:** B took a step before A's reopen of its source reached it, submitted, and took the next step its submission published,
@@ -703,6 +772,8 @@ repository.
   fix, and opens neither after it. `CheckoutFreshnessTests.A_write_in_a_folder_git_ignores_inside_a_watched_one_is_not_heard`:
   writes in `.claude/worktrees/` marked stale before the fix. Service tests went from 2197 to 2203. A running connector keeps
   the old host until its session restarts it on a build made after this fix.
+- **Followed, 2026-10-19 (KNOWHOLD1):** the same pid 36544, still on the build of 10-09, held `app/cli/node_modules` in two
+  later rehearsals; a running session now follows the current build. See that entry.
 
 ## 2026-10-17 — The update's swap said `busy` of a two-minute hold and nothing of what held it (DEPLOYBUSY1)
 

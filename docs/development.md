@@ -208,9 +208,10 @@ a source checkout with old `dist/` can execute that build. Tests and the release
 source/package distinction. `DAORIS_CANON` selects a fixture canon for offline doctrine tests.
 
 `npm run knowledge:build` prepares the repository's read-only knowledge host. `.mcp.json` starts
-that built host through `tools/knowledge-server.mjs`; it does not build at session startup. Its
-development home is isolated from the install. With no build, its handshake explains the absence
-and offers no tools. See the [service guide](../src/Daoris.Service/README.md) for production wiring.
+that built host through `tools/knowledge-server.mjs`; it does not build at session startup. A
+running session moves onto the build a merge made within a minute, its handshake replayed, so a
+fix to the host reaches it without a restart (KNOWHOLD1). Its development home is isolated from
+the install. With no build, its handshake explains the absence and offers no tools. See the [service guide](../src/Daoris.Service/README.md) for production wiring.
 
 `npm run desktop -- doctor|build|run|shot|eval|click|restart|kill` is an instrumented development loop,
 not a gate. The [desktop guide](../src/Daoris.Desktop/README.md) explains scratch versus installed

@@ -114,6 +114,12 @@ abandon's decline carries `whileOpen` and applies only to an open quest, so one 
 after another machine's take becomes a conflict, kept with its reason, and the take stands. A plain
 decline still lands over a take. D132's PAUSE1c note says why a remote's build does not change this.
 
+*Amended by D178 (SYNCMERGE1, 2026-10-19): the person may also bring a lost take's work forward.* On the
+machine whose take lost, one press takes the step as it now stands, dismisses the conflict marked as
+brought forward with that take, and goes on in the kept session with its branch brought up to date.
+The fresh take can lose again like any take, and then the mark is lost with it. A take that reached the
+remote after the person's reopen stays a loss.
+
 ## 6. When it runs — decided: automatic, and on demand
 
 - **Every driver tick**: fetch, rebase, push for each wired workspace, like auto-fetch. A session

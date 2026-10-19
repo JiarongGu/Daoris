@@ -459,6 +459,18 @@ public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? T
 public sealed record HelperHandRequest(string? Text);
 // A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
 public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
+// BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
+// the desk naming which. `Repository` is the one whose knowledge the packet is frozen from, none for the question alone.
+public sealed record BrainstormAskRequest(string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null);
+// One brainstorm as its records stand: `State` is `asked` before the driver's look froze its packet, then the driver's own
+// (`frozen`, `running`, `ended`); `Packet` the frozen packet's digest, `Sent` the digest the person sent, each null for none.
+public sealed record BrainstormResponse(
+    string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, string State, string? Code,
+    string? Packet, string? Sent);
+// One brainstorm shown: the packet as frozen, whole and as written (null before the look froze one), and the document's Markdown.
+public sealed record BrainstormShownResponse(BrainstormResponse Brainstorm, JsonElement? Frozen, string? Document);
+// A press's answer: the brainstorm as it now stands, and the desk's sentence.
+public sealed record BrainstormActionResponse(BrainstormResponse? Brainstorm, string Message);
 // MSG1a (D137 §2.4): the words a session took, by their ids; `By` the session that took them where it is not this one
 // (a fallback's new session).
 public sealed record TakenRequest(IReadOnlyList<string?>? Said, string? By = null);
@@ -676,6 +688,10 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(HelperOpenRequest))]
 [JsonSerializable(typeof(HelperHandRequest))]
 [JsonSerializable(typeof(HelperActionResponse))]
+[JsonSerializable(typeof(BrainstormAskRequest))]
+[JsonSerializable(typeof(IEnumerable<BrainstormResponse>))]
+[JsonSerializable(typeof(BrainstormShownResponse))]
+[JsonSerializable(typeof(BrainstormActionResponse))]
 [JsonSerializable(typeof(HistoryPlanResponse))]
 [JsonSerializable(typeof(HistoryClearRequest))]
 [JsonSerializable(typeof(HistoryClearResponse))]

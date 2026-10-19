@@ -1460,6 +1460,50 @@ if (mode == ServiceMode.Local)
             : OffMachineOpinion());
 }
 
+// A brainstorm (BRAINSTORM1a3; D176 points 1, 2 and 8), the door a terminal's `daoris brainstorm` reaches: the person's question
+// written as the request the driver's look freezes into a packet, the packet and the document read back, the person's send and
+// the clear. LOCAL mode only, and answered only to a caller on this machine: a brainstorm is kept where it was asked, carries the
+// asker's records and this machine's accounts, and is never a quest operation. The passes are the driver's; nothing here runs one.
+if (mode == ServiceMode.Local)
+{
+    var brainstorms = BrainstormDesk.FromEnvironment();
+
+    app.MapGet("/api/brainstorms", (HttpContext http) =>
+        MachineLocal(http) ? Results.Ok(brainstorms.List().Select(ToBrainstorm)) : OffMachineBrainstorm());
+
+    app.MapPost("/api/brainstorms", (HttpContext http, BrainstormAskRequest body) =>
+        MachineLocal(http)
+            ? BrainstormReply(brainstorms.Ask(body.Question, body.Repository, body.Agents, DateTimeOffset.UtcNow))
+            : OffMachineBrainstorm());
+
+    app.MapGet("/api/brainstorms/{id}", (HttpContext http, string id) =>
+    {
+        if (!MachineLocal(http)) return OffMachineBrainstorm();
+        return brainstorms.Show(id) is { } shown
+            ? Results.Ok(new BrainstormShownResponse(ToBrainstorm(shown.Brainstorm), shown.Frozen, shown.Document))
+            : Results.NotFound(new ErrorResponse($"There is no brainstorm `{id.Trim()}` on this machine."));
+    });
+
+    app.MapPost("/api/brainstorms/{id}/send", (HttpContext http, string id) =>
+        MachineLocal(http) ? BrainstormReply(brainstorms.Send(id, DateTimeOffset.UtcNow)) : OffMachineBrainstorm());
+
+    app.MapDelete("/api/brainstorms/{id}", (HttpContext http, string id) =>
+        MachineLocal(http) ? BrainstormReply(brainstorms.Clear(id)) : OffMachineBrainstorm());
+}
+
+// A door to a brainstorm answers as a second opinion's does: a shape is a bad request, nothing by that name is not found, and a state
+// it is in, a clear the disk would not finish or no home is the lock's own shape, 409.
+static IResult BrainstormReply(BrainstormOutcome outcome) => outcome.Refusal switch
+{
+    BrainstormRefusal.None => Results.Ok(new BrainstormActionResponse(outcome.Brainstorm is { } b ? ToBrainstorm(b) : null, outcome.Message)),
+    BrainstormRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+    BrainstormRefusal.BadShape => Results.BadRequest(new ErrorResponse(outcome.Message)),
+    _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+};
+
+static BrainstormResponse ToBrainstorm(BrainstormStanding b) =>
+    new(b.Id, b.Question, b.Repository, b.Agents, b.At, b.State, b.Code, b.Packet, b.Sent);
+
 // A door to a helper answers as a second opinion's does: a shape is a bad request, nothing by that name is not found, and a
 // state it is in is the lock's own shape, 409.
 async Task<IResult> HelperReply(HelperOutcome outcome, ComposedService s, HttpContext http) =>
@@ -2444,6 +2488,10 @@ static OpinionResponse ToOpinion(OpinionStanding standing)
 // An opinion is this machine's (D47 §4): a caller off it is answered none, as a quest's file is not served to one.
 static IResult OffMachineOpinion() =>
     Results.NotFound(new ErrorResponse("A second opinion is kept on this machine, and answered only to a caller on this machine."));
+
+// BRAINSTORM1a3 (D176 point 8): what a brainstorm door says to a caller off this machine.
+static IResult OffMachineBrainstorm() =>
+    Results.NotFound(new ErrorResponse("A brainstorm is kept on this machine, and answered only to a caller on this machine."));
 
 // A say or a take refused (MSG1a), its word as the wire spells it, kebab-case like a session's state.
 static string SayRefusal(SessionSayRefusal refusal) => refusal switch

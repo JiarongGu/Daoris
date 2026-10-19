@@ -412,6 +412,98 @@ test("a set-up step's stub says what it showed through its connector and closes 
   assert.ok(readyAgain.arguments.shows.includes(words), readyAgain.arguments.shows);
 });
 
+// ——— the ACP stub's brainstorm turns (BRAINSTORM1a3, D176 points 3 and 4): the family rehearsal's maker, tried here against a
+// connector that stands in, so a stub that stopped answering through its tool fails in a second rather than in the gate.
+
+/**
+ * One brainstorm turn of the stub, as the driver runs one: a room holding what the turn was handed (`files`), the turn's variables
+ * on the agent's environment and its connector the only server. The calls the connector kept, the answer and what the stub said.
+ */
+async function brainstormTurn(name, turn, files) {
+  const at = folder(name);
+  const stub = join(at, 'acp-agent.mjs');
+  writeFileSync(stub, ACP_STUB_AGENT);
+  const connector = join(at, 'connector.mjs');
+  writeFileSync(connector, STAND_IN_CONNECTOR);
+  const calls = join(at, 'calls.jsonl');
+  writeFileSync(calls, '');
+  const room = join(at, 'room');
+  mkdirSync(room);
+  for (const [file, content] of Object.entries(files)) writeFileSync(join(room, file), content);
+  const answer = join(at, 'answers', `${turn}.json`);
+
+  const env = {
+    DAORIS_SERVICE_URL: 'http://127.0.0.1:9', DAORIS_QUEST_ID: '', DAORIS_QUEST_TITLE: '',
+    DAORIS_BRAINSTORM_ID: 'b1a3test', DAORIS_BRAINSTORM_TURN: turn, DAORIS_BRAINSTORM_ANSWER: answer,
+  };
+  const servers = [{ name: 'daoris-knowledge', command: process.execPath, args: [connector], env: [{ name: 'CALLS', value: calls }] }];
+  const ran = await stubTurn(stub, {
+    cwd: room, env, words: 'Propose answers to the question in packet.json.',
+    opening: { method: 'session/new', params: { cwd: room, mcpServers: servers } },
+  });
+  const kept = readFileSync(calls, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+  return { ...ran, calls: kept, room };
+}
+
+const PACKET = JSON.stringify({
+  packet: 1, digest: 'sha256:0000', question: 'Why does the report drop its last day?', repository: 'newcomer', tier: 'words',
+  sources: [{ id: 'S1', kind: 'decision', path: 'docs/decisions/D1.md', lines: [1, 4], revision: 'abc', why: { words: 'report', tier: 'words' }, kept: 10, of: 10, text: 'The report.' }],
+  leftOut: [],
+});
+
+test("the ACP stub answers a brainstorm generator's turn through brainstorm_give on its connector, on the scales, from the packet's sources",
+  async () => {
+    const { answer, said, calls } = await brainstormTurn('stub-brainstorm-give', 'g1', { 'packet.json': PACKET, 'instruction.md': '# Propose\n' });
+
+    assert.equal(answer?.result?.stopReason, 'end_turn', said);
+    assert.deepEqual(calls.map((call) => call.name), ['brainstorm_give'], said);
+    const { proposals, needs, none } = calls[0].arguments;
+    assert.equal(proposals.length, 1);
+    const [proposal] = proposals;
+    assert.match(proposal.idea, /g1/);
+    assert.ok(proposal.idea.length <= 200 && proposal.rationale.length > 0 && proposal.rationale.length <= 1200, JSON.stringify(proposal));
+    assert.ok(['small', 'medium', 'large', 'unknown'].includes(proposal.effort), proposal.effort);
+    assert.ok(['low', 'medium', 'high', 'unknown'].includes(proposal.risk), proposal.risk);
+    assert.equal(proposal.reversible, 'yes');
+    assert.ok(['low', 'medium', 'high'].includes(proposal.confidence), proposal.confidence);
+    assert.deepEqual(proposal.sources, ['S1'], 'it rests on the packet it was handed, and on no other source');
+    assert.deepEqual([needs, none], [[], undefined]);
+    assert.match(said, /acp-agent: brainstorm_give answered: kept brainstorm_give/);
+  });
+
+test("the ACP stub answers a brainstorm synthesis's turn through brainstorm_synthesize, every anonymous id in one group ranked first",
+  async () => {
+    const proposals = JSON.stringify({ proposals: [{ id: 'P1', idea: 'One' }, { id: 'P2', idea: 'Two' }] });
+    const { answer, said, calls } = await brainstormTurn('stub-brainstorm-synthesize', 's1',
+      { 'packet.json': PACKET, 'instruction.md': '# Synthesize\n', 'proposals.json': proposals });
+
+    assert.equal(answer?.result?.stopReason, 'end_turn', said);
+    assert.deepEqual(calls.map((call) => call.name), ['brainstorm_synthesize'], said);
+    const { groups, leftOut } = calls[0].arguments;
+    assert.equal(groups.length, 1);
+    assert.deepEqual([groups[0].members, groups[0].rank, groups[0].flags], [['P1', 'P2'], 1, []]);
+    assert.ok(groups[0].title && groups[0].idea && groups[0].why, JSON.stringify(groups[0]));
+    assert.deepEqual(leftOut, []);
+  });
+
+test('the ACP stub with no connector fails a brainstorm turn as a failure, and writes nothing in its room', async () => {
+  const at = folder('stub-brainstorm-alone');
+  const stub = join(at, 'acp-agent.mjs');
+  writeFileSync(stub, ACP_STUB_AGENT);
+  const room = join(at, 'room');
+  mkdirSync(room);
+  writeFileSync(join(room, 'packet.json'), PACKET);
+
+  const { answer } = await stubTurn(stub, {
+    cwd: room, env: { DAORIS_QUEST_ID: '', DAORIS_BRAINSTORM_ID: 'b1a3test', DAORIS_BRAINSTORM_TURN: 'g1', DAORIS_BRAINSTORM_ANSWER: join(at, 'a.json') },
+    words: 'Propose.', opening: { method: 'session/new', params: { cwd: room, mcpServers: [] } },
+  });
+
+  assert.match(answer?.error?.message ?? '', /no daoris-knowledge server/);
+  assert.deepEqual(readdirSync(room), ['packet.json']);
+  assert.equal(existsSync(join(at, 'a.json')), false, 'a stub answers only through its tool, never by writing the file itself');
+});
+
 // ——— REHEARSEPORT1: a run's hosts never answer another run's checks. The family rehearsal's hosts sat on fixed ports, and a
 // second run beside the first, the merge gate's beside a worktree's, read the first run's registry and failed ten checks.
 

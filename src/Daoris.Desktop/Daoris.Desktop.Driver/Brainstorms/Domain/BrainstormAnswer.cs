@@ -93,7 +93,8 @@ public static class BrainstormAnswers
         }
 
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("brainstorm", out var schema)
-            || schema.ValueKind != JsonValueKind.Number || schema.GetInt32() != Schema)
+            // A schema that is no whole number is no schema: read as a shape, never thrown (BRAINSTORM1a2's table).
+            || schema.ValueKind != JsonValueKind.Number || !schema.TryGetInt32(out var version) || version != Schema)
         {
             return new(null, [Shape]);
         }

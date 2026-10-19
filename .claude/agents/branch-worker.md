@@ -97,6 +97,11 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   with it. Also `dotnet test` on the .NET project
   your lane changes, one suite at a time. A desktop suite runs its fast half only:
   `dotnet test src/Daoris.Desktop/<project> --filter Category!=Process` (MOD8).
+- **`npm run verify` once, at the end** (Finishing, step 1), never while working: it runs the CLI's whole suite, six
+  minutes and more on a shared machine, and the merge runs it again. While working, run what your change reaches:
+  `dotnet test` filtered to the classes you touch (`--filter FullyQualifiedName~<Class>`), each touched project whole
+  once, and `node --test test/<file>` for a CLI or tools file you touch. On 2026-10-19, verify run twice cost
+  KNOWHOLD1 and BRAINSTORM1b 12 to 14 minutes each, a quarter of their branches.
 - **Never run** any of these:
   - a desktop suite's `Process` half (`--settings src/Daoris.Desktop/process.runsettings`, and the driver's
     git-only classes' `git.process.runsettings`, four at once): the test classes that start real processes or run real ticks
@@ -132,7 +137,8 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 ## Finishing
 
-1. Merge main again, resolve any conflict inside your lane, and run your gates again. Run `post-feature`
+1. Merge main again, resolve any conflict inside your lane, and run your gates: the touched projects whole, then
+   `npm run verify`, once. Run `post-feature`
    (the Skill tool) over your diff; a non-trivial defect fixed also gets its `fix-log` entry.
 2. Commit once per part: `type(scope): <ROW>, <what>`, ending with the session's `Co-Authored-By:`
    line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in

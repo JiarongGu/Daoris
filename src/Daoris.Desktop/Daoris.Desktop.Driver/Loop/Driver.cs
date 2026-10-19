@@ -241,6 +241,13 @@ public sealed class Driver(
         init => Context.BrainstormCheckouts = value;
     }
 
+    /// <summary>How long a brainstorm's minute lasts (BRAINSTORM1b): a minute, unless a test shortens it.</summary>
+    internal TimeSpan? BrainstormMinute
+    {
+        get => Context.BrainstormMinute;
+        init => Context.BrainstormMinute = value;
+    }
+
     private DriverBrainstorms? _brainstorms;
 
     private DriverBrainstorms Brainstorms => LazyInitializer.EnsureInitialized(ref _brainstorms, () => new DriverBrainstorms(Context, this));
@@ -1893,10 +1900,14 @@ public sealed class Driver(
     /// The harness plugins composed for it (HELPPLUG1b, <see cref="SpawnSkills"/>), which the protocol door carries beside its rules;
     /// the pipe door was handed them by its own flag already.
     /// </param>
+    /// <param name="brainstorm">
+    /// A brainstorm's pass (BRAINSTORM1a2, D176 points 1 and 2): its one result tool, and the composition laid under the
+    /// <c>brainstorm</c> posture (<see cref="BrainstormPermissions.Shape"/>), its room the <paramref name="tree"/>; null for any other session.
+    /// </param>
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
-        bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null)
+        bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
@@ -1921,9 +1932,13 @@ public sealed class Driver(
         // A helper's session (MIXAGENT2a-ii) is the reviewer's shape with its own one tool.
         if (opinion || helper) composed = OpinionPermissions.Shape(composed, helper);
 
+        // A brainstorm's pass (BRAINSTORM1a2) reads its room and gives its one answer: the `brainstorm` posture, never the reviewer's.
+        if (brainstorm is not null) composed = BrainstormPermissions.Shape(composed, tree, brainstorm);
+
         var file = SpawnSettings.Write(
             home, sessionId, composed,
-            helper ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HelperHardDeny]
+            brainstorm is not null ? [.. PermissionRules.HardDeny(rules), BrainstormPermissions.HardDeny]
+            : helper ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HelperHardDeny]
             : opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : PermissionRules.HardDeny(rules),
             PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
             // Which agent made each call, and each subagent's start and stop (FABRIC-C1a): the part's children bound by its lineage.

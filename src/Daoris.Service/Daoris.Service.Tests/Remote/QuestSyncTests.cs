@@ -1266,6 +1266,122 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Contains("submission", Assert.Single(lost.Conflicts, c => c.Quest == quest.Id).Note);
     }
 
+    private const string SetUpCommit = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1c24: B, offline, takes the source, binds, submits and takes the step its submission published, while C's take
+    /// of the source reaches the remote first; C's chain then publishes the same step anew (its id comes from the parent and the step),
+    /// after B's pass found its loss or before it. B's take of the step lost with the work it was made on, and B's session runs until
+    /// its driver's next look: its done, decline or set-up on the open step lands nowhere. B's store refuses it inside its write, a
+    /// remote refuses one a build before this one pushes, saying the step was published anew (never the person's reopen), and B's
+    /// rebase loses one such a build left pending. B's claim on the step reads lost, to another machine's take; the step stays open on
+    /// C's work everywhere, and a fresh take of it is still B's to make.
+    /// </summary>
+    [Theory]
+    [InlineData(QuestOperationKind.Done, false)]
+    [InlineData(QuestOperationKind.Done, true)]
+    [InlineData(QuestOperationKind.Declined, false)]
+    [InlineData(QuestOperationKind.Declined, true)]
+    [InlineData(QuestOperationKind.SetUp, false)]
+    [InlineData(QuestOperationKind.SetUp, true)]
+    public async Task A_steps_take_that_went_with_its_source_take_moves_nothing_on_the_step_the_winners_chain_published_anew(
+        QuestOperationKind kind, bool anewFirst)
+    {
+        const string graph = "sha256:0f1e2d3c4b5a6978";
+        var c = await OpenAsync();
+        var quest = await _a.PublishAsync("Asker", "Federated", "Close in a chain", "why", Now,
+            then: [new QuestStep("Federated", "Show {parent} for review", "Set it up and show it.") { SetUpIn = "local" }]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await SyncAsync(c);
+
+        // C's take of the source reaches the remote first.
+        Assert.True((await c.MoveAsync(quest.Id, QuestStatus.Taken, "C's session.", Now.AddHours(1))).Moved);
+        Assert.True((await c.BindAsync(quest.Id, graph, Now.AddHours(1))).Moved);
+        await SyncAsync(c);
+
+        // B works offline: it takes, binds and submits, and takes the step its submission published.
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
+        Assert.True((await _b.BindAsync(quest.Id, graph, Now.AddHours(2))).Moved);
+        var step = (await _b.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(3))).FollowUp!;
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's step session.", Now.AddHours(3))).Moved);
+
+        async Task PublishAnewAsync()
+        {
+            Assert.Equal(step.Id, (await c.SubmitAsync(quest.Id, "Built by C.", [], Now.AddHours(4))).FollowUp!.Id);
+            await SyncAsync(c);
+        }
+
+        if (anewFirst) await PublishAnewAsync();
+        var lost = await SyncAsync(_b);
+        if (!anewFirst)
+        {
+            await PublishAnewAsync();
+            Assert.Empty((await SyncAsync(_b)).Refused);
+        }
+
+        await SyncAsync(c);
+        await SyncAsync(_a);
+
+        Assert.Null(lost.Problem);
+        Assert.Empty(lost.Refused);
+        Assert.Contains(lost.Conflicts, conflict => conflict.Quest == step.Id && conflict.Attempted == QuestStatus.Taken);
+        Assert.Equal((QuestClaim.Lost, false), (await _b.ClaimAsync(step.Id), await _b.LostToTheReopenAsync(step.Id)));
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, c, _remote })
+        {
+            var open = (await store.FindAsync(step.Id))!;
+            var conflict = Assert.Single(open.Conflicts);
+            Assert.Equal((QuestStatus.Open, _b.Machine, QuestStatus.Taken), (open.Status, conflict.Machine, conflict.Attempted));
+        }
+
+        // B's session goes on, and its store refuses what it makes inside the write: no reopen is why.
+        var at = Now.AddHours(5);
+        var setUp = new QuestSetUp(SetUpCommit) { Shows = "The work, shown.", Local = true };
+        var move = kind == QuestOperationKind.SetUp
+            ? await _b.SetUpAsync(step.Id, setUp, at)
+            : await _b.MoveAsync(step.Id, QuestTransitions.Target(kind)!.Value, "After the take lost.", at,
+                byAgent: kind == QuestOperationKind.Done);
+        Assert.Equal((false, true, false), (move.Moved, move.ClaimLost, move.LostToTheReopen));
+        var said = QuestExchange.LostTake(step.Id, "so this move is not this machine's to make. Nothing moved.", move);
+        Assert.Contains("published anew", said);
+        Assert.DoesNotContain("reopen", said);
+
+        // A build before this one pushes it: the remote refuses it, in words that say the step was published anew.
+        var made = kind == QuestOperationKind.SetUp
+            ? new QuestOperation(step.Id, kind, _b.Machine, 999, at, SetUp: setUp)
+            : new QuestOperation(step.Id, kind, _b.Machine, 999, at, "After the take lost.");
+        var pushed = await new StoreRemote(_remote).PushQuestsAsync((await _remote.OperationsSinceAsync(0)).Through, [made]);
+        Assert.Empty(pushed.Accepted);
+        var refused = Assert.Single(pushed.Refused, r => r.Quest == step.Id).Reason;
+        Assert.Contains("published anew", refused);
+        Assert.DoesNotContain("reopen", refused);
+
+        // One such a build left pending, B's rebase loses: a move as a conflict of its own, a set-up forgotten.
+        await WriteAsAnOlderBuildAsync(_connections[1], _b, step.Id, kind, "After the take lost.", at,
+            kind == QuestOperationKind.SetUp ? new { setUp = new { commit = SetUpCommit, local = true } } : null);
+        var upgraded = await SyncAsync(_b);
+        await SyncAsync(c);
+        await SyncAsync(_a);
+
+        Assert.Empty(upgraded.Refused);
+        var attempted = QuestTransitions.Target(kind);
+        Assert.Equal(
+            attempted is null ? [] : new[] { (step.Id, attempted) },
+            upgraded.Conflicts.Select(conflict => (conflict.Quest, conflict.Attempted)));
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, c, _remote })
+        {
+            var open = (await store.FindAsync(step.Id))!;
+            Assert.Equal((QuestStatus.Open, 0), (open.Status, open.SetUps.Count));
+            Assert.DoesNotContain(await store.HistoryAsync(step.Id), o => o.Kind == kind);
+        }
+
+        // An open step is still B's to take afresh, and its claim reads by that take from then on.
+        Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's second session.", at.AddHours(1))).Moved);
+        Assert.Equal(QuestClaim.Unconfirmed, await _b.ClaimAsync(step.Id));
+    }
+
     /// <summary>The take's note stays as it was given, and the waits that went with it follow it, each named (WAITCLAIM1).</summary>
     [Theory]
     [InlineData(null, new[] { "q2" },
@@ -1375,7 +1491,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
     /// pass. Written by hand because no verb of this build writes it.
     /// </summary>
     private static async Task WriteAsAnOlderBuildAsync(
-        SqliteConnection connection, QuestStore machine, string quest, QuestOperationKind kind, string note, DateTimeOffset at)
+        SqliteConnection connection, QuestStore machine, string quest, QuestOperationKind kind, string note, DateTimeOffset at,
+        object? payload = null)
     {
         await using var append = connection.CreateCommand();
         append.CommandText = """
@@ -1390,7 +1507,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         append.Parameters.AddWithValue("$kind", kind.ToString().ToLowerInvariant());
         append.Parameters.AddWithValue("$machine", machine.Machine);
         append.Parameters.AddWithValue("$at", at.ToString("O"));
-        append.Parameters.AddWithValue("$payload", System.Text.Json.JsonSerializer.Serialize(new { note }));
+        append.Parameters.AddWithValue("$payload", System.Text.Json.JsonSerializer.Serialize(payload ?? new { note }));
         await append.ExecuteNonQueryAsync();
     }
 
@@ -1536,6 +1653,36 @@ public sealed class QuestSyncTests : IAsyncLifetime
         {
             var held = (await store.FindAsync(quest.Id))!;
             Assert.Equal((QuestStatus.Done, "Landed."), (held.Status, held.Note));
+        }
+    }
+
+    /// <summary>
+    /// The edge of FABRIC-CLOSE1c24's rule (D95): a take that lost to a delete lands on no quest, never on the quest open, so the quest
+    /// published again after it is nobody's work, and a done its machine makes there with no fresh take lands, here and at the remote.
+    /// </summary>
+    [Fact]
+    public async Task A_done_from_the_machine_whose_take_lost_to_a_delete_still_lands_on_the_quest_published_again()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(quest.Id, (await Publish(_a, body: "Asked properly this time.")).Id);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+        Assert.False(QuestLog.LostOnTheOpenStep(await _b.HistoryAsync(quest.Id), _b.Machine));
+
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Done, "Landed.", Now.AddHours(3))).Moved);
+        Assert.Empty((await SyncAsync(_b)).Refused);
+        await SyncAsync(_a);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var landed = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Done, "Landed."), (landed.Status, landed.Note));
         }
     }
 

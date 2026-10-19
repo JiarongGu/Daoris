@@ -11,10 +11,14 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>The state file is the driver's alone</b> (<see cref="BrainstormFiles"/>): <c>frozen</c> naming the packet's digest,
-/// <c>running</c>, and <c>ended</c>. The person's send is a file of its own, naming the digest they saw.</para>
+/// <c>running</c>, and <c>ended</c>. The person's send and stop are files of their own.</para>
 ///
-/// <para><b>The passes run in sequence, beside the look,</b> on one slot under the cap. Running them side by side within one
-/// deadline, the policy's makers and the stop are BRAINSTORM1b's.</para>
+/// <para><b>Bounded, and never hanging</b> (BRAINSTORM1b, D176 points 6, 7 and 9): the person's policy names the agents and the
+/// minutes. The generators run side by side, each taking a slot under the cap and waiting for one within the deadline; the
+/// generators end at the request's deadline less the synthesis's and the challenge's minutes, reserved from the start; a pass past
+/// its own minutes, or past that deadline, is stopped, and what answered is kept. A crash fails its pass alone. A limit cools its
+/// account (D125) and starts the pass once more on the next ready account, as its one repair. The person's stop ends every pass,
+/// and a restart ends what ran as <c>interrupted</c>; nothing runs again by itself.</para>
 /// </remarks>
 /// <param name="driver">The driver whose run machinery a turn goes through: the spawn's preparation, the rules handed and the hold.</param>
 internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
@@ -26,20 +30,58 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>The most generators one request runs (D176 point 9's proposed default: at most four makers).</summary>
     internal const int MostAgents = DriverBrainstormLimits.MostAgents;
 
-    /// <summary>Each turn's minutes, until the policy names them (D176 point 9's proposed default: ten).</summary>
-    internal const int TurnMinutes = 10;
+    /// <summary>The code of a turn not started because this machine has no connector to hand it, so no result tool (BRAINSTORM1a2).</summary>
+    internal const string NoConnector = "no-connector";
+
+    /// <summary>A pass stopped at its own minutes.</summary>
+    internal const string TimedOut = "timed-out";
+
+    /// <summary>A pass stopped at the request's deadline, before its own minutes ran out.</summary>
+    internal const string Deadline = "deadline";
+
+    /// <summary>A pass that found no slot under the cap before its deadline: never started.</summary>
+    internal const string CapFull = "cap-full";
+
+    /// <summary>A turn whose account met its limit (D125): the account cools, and the pass starts once more on the next one.</summary>
+    internal const string Limit = "limit";
+
+    /// <summary>A turn that ended by a failure of its own, with no answer.</summary>
+    internal const string Crashed = "crashed";
+
+    /// <summary>An agent the request named that the policy does not list (D176 point 9): never run.</summary>
+    internal const string NotInPolicy = "not-in-policy";
+
+    /// <summary>Guards the slots this driver's brainstorm passes hold, and what else held the cap at the last look.</summary>
+    private readonly object _slots = new();
+
+    private int _holding;
+
+    private int _busy;
+
+    private TimeSpan Minute => _context.BrainstormMinute ?? TimeSpan.FromMinutes(1);
+
+    /// <summary>How often a waiting pass asks for a slot again, and a running brainstorm looks for the person's stop.</summary>
+    private TimeSpan Tick => TimeSpan.FromMilliseconds(Math.Clamp(Minute.TotalMilliseconds / 60, 20, 1000));
 
     private static string Claim(string id) => $"brainstorm:{id}";
 
     /// <summary>
-    /// The brainstorms on file, at a look: each request frozen, each sent one run beside the look, and one left running by a driver
-    /// that stopped ended as interrupted. Returns how many this look starts, each taking a slot under the cap as a pass does.
+    /// The brainstorms on file, at a look: each request frozen, each sent one run beside the look, one stopped before it ran ended,
+    /// and one left running by a driver that stopped ended as interrupted. Returns the slots its passes hold now and one for each
+    /// brainstorm this look starts, so the planner leaves them under the cap.
     /// </summary>
     public async Task<int> BrainstormsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct)
     {
+        int held;
+        lock (_slots)
+        {
+            _busy = snapshot.Active.Count + taken;
+            held = _holding;
+        }
+
         var files = new BrainstormFiles(_context.Home);
         var requests = files.Requests();
-        if (requests.Count == 0) return 0;
+        if (requests.Count == 0) return held;
 
         var begun = 0;
         foreach (var request in requests)
@@ -49,23 +91,26 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 var state = files.ReadState(request.Id);
                 switch (state?.State)
                 {
+                    case null when files.Stopped(request.Id):
+                    case BrainstormStates.Frozen when files.Stopped(request.Id):
+                        files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, state?.Packet, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
+                        events.Add($"brainstorm `{request.Id}` stopped by the person before it ran: nothing went to any agent.");
+                        break;
                     case null:
                         events.Add(await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false));
                         break;
                     case BrainstormStates.Frozen when files.Sent(request.Id) == state.Packet:
-                        if (_context.Config.Cap - snapshot.Active.Count - taken - begun <= 0) break;
+                        if (_context.Config.Cap - snapshot.Active.Count - taken - begun - held <= 0) break;
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;
                         files.WriteState(state with { State = BrainstormStates.Running, At = DateTimeOffset.UtcNow });
-                        Beside(request, state.Packet!, files, ct);
+                        Beside(request, state.Packet!, RuleOf(request, snapshot), files, ct);
                         break;
                     case BrainstormStates.Running when _context.Runs.TryOpinion(Claim(request.Id)):
                         // Nothing in this driver runs it: the driver that did stopped. What answered is kept; nothing runs again by itself.
                         try
                         {
-                            files.WriteState(state with { State = BrainstormStates.Ended, Code = "interrupted", At = DateTimeOffset.UtcNow });
-                            files.RemoveRooms(request.Id);
-                            events.Add($"brainstorm `{request.Id}` was running when its driver stopped: ended as interrupted, and what answered is kept.");
+                            events.Add(Interrupted(request, state, files));
                         }
                         finally
                         {
@@ -83,7 +128,17 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             }
         }
 
-        return begun;
+        return held + begun;
+    }
+
+    /// <summary>The policy standing for a request (D176 point 9): its repository's workspace's whole, else this machine's.</summary>
+    private BrainstormRule RuleOf(BrainstormRequest request, Snapshot snapshot)
+    {
+        var workspace = request.Repository is { } repository
+            ? snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace
+              ?? RemoteTarget.DefaultWorkspace
+            : null;
+        return BrainstormRules.Resolve(_context.Config, workspace).Rule;
     }
 
     /// <summary>
@@ -156,14 +211,65 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }
     }
 
+    /// <summary>
+    /// A brainstorm a driver that stopped left running (D176 point 6): each pass it was running ends as <c>interrupted</c>, what
+    /// answered is kept as the unranked document, and nothing runs again by itself.
+    /// </summary>
+    private static string Interrupted(BrainstormRequest request, BrainstormState state, BrainstormFiles files)
+    {
+        var id = request.Id;
+        var passes = new List<BrainstormPassRecord>();
+        foreach (var pass in files.ReadPasses(id))
+        {
+            if (pass.State != BrainstormPassRecord.Running)
+            {
+                passes.Add(pass);
+                continue;
+            }
+
+            var ended = pass with { State = BrainstormPassRecord.Interrupted, Codes = [BrainstormStates.Interrupted] };
+            files.WritePass(id, ended);
+            passes.Add(ended);
+        }
+
+        if (files.PacketBytes(id) is { } bytes && BrainstormPackets.Read(bytes) is { } packet && Kept(id, packet, passes, files) is { Count: > 0 } answered)
+        {
+            files.WriteDocument(id, BrainstormDocuments.Unranked(
+                id, packet, passes, BrainstormSyntheses.Number(answered), Needs(answered), BrainstormDocuments.Interrupted));
+        }
+
+        files.WriteState(new BrainstormState(id, BrainstormStates.Ended, state.Packet, BrainstormStates.Interrupted, DateTimeOffset.UtcNow));
+        files.RemoveRooms(id);
+        return $"brainstorm `{id}` was running when its driver stopped: ended as interrupted, what answered is kept, and nothing runs again by itself.";
+    }
+
+    /// <summary>The answers its generators gave, read again from their files and validated as they were when they answered.</summary>
+    private static List<(BrainstormBy By, BrainstormAnswer Answer)> Kept(
+        string id, BrainstormPacket packet, IEnumerable<BrainstormPassRecord> passes, BrainstormFiles files)
+    {
+        var sources = packet.Sources.Select(source => source.Id).ToHashSet(StringComparer.Ordinal);
+        var answered = new List<(BrainstormBy By, BrainstormAnswer Answer)>();
+        foreach (var pass in passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Answered })
+                     .OrderBy(pass => pass.By.Pass, StringComparer.Ordinal))
+        {
+            var turn = pass.Turns > 1 ? $"{pass.By.Pass}r" : pass.By.Pass;
+            if (BrainstormAnswers.Check(files.ReadAnswer(id, turn), sources).Answer is { } answer) answered.Add((pass.By, answer));
+        }
+
+        return answered;
+    }
+
+    private static List<string> Needs(IEnumerable<(BrainstormBy By, BrainstormAnswer Answer)> answered) =>
+        [.. answered.SelectMany(each => each.Answer.Needs).Distinct(StringComparer.Ordinal)];
+
     /// <summary>A brainstorm run beside the look, as a helper's pass is: told opened at once, its line joining a later look's report.</summary>
-    private void Beside(BrainstormRequest request, string digest, BrainstormFiles files, CancellationToken ct) =>
+    private void Beside(BrainstormRequest request, string digest, BrainstormRule rule, BrainstormFiles files, CancellationToken ct) =>
         _ = _context.Runs.StartAsync(async opened =>
         {
             opened();
             try
             {
-                return new StartRun(await RunAsync(request, digest, files, ct).ConfigureAwait(false), Opened: true);
+                return new StartRun(await RunAsync(request, digest, rule, files, ct).ConfigureAwait(false), Opened: true);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
@@ -180,10 +286,32 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         });
 
     /// <summary>
-    /// The passes of one sent brainstorm, in order: each generator once with its one repair, then the synthesis with its one repair,
-    /// then the document; the rooms removed however it ended.
+    /// The generators a request runs, by pass, in its order (D176 point 9: a request's flags choose within the policy, never beyond
+    /// it): the agents it names that the policy lists, or every one it names where the policy lists none; with none named, the
+    /// policy's, else this machine's agent. One the policy does not list keeps its pass, never run.
     /// </summary>
-    private async Task<string> RunAsync(BrainstormRequest request, string digest, BrainstormFiles files, CancellationToken ct)
+    private List<(string Pass, string Agent, bool Allowed)> Generators(BrainstormRequest request, BrainstormRule rule)
+    {
+        var named = request.Agents.Select(agent => agent.Trim()).Where(agent => agent.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var agents = named.Count > 0 ? named : rule.Agents.Count > 0 ? [.. rule.Agents] : [_context.Config.Adapter];
+        var plan = new List<(string Pass, string Agent, bool Allowed)>();
+        var running = 0;
+        foreach (var agent in agents)
+        {
+            var allowed = rule.Agents.Count == 0 || rule.Agents.Contains(agent, StringComparer.OrdinalIgnoreCase);
+            if (allowed && ++running > MostAgents) break;
+            plan.Add(($"g{plan.Count + 1}", agent, allowed));
+        }
+
+        return plan;
+    }
+
+    /// <summary>
+    /// The passes of one sent brainstorm: the generators side by side within the generators' deadline, then the synthesis within
+    /// its own minutes, the challenge's kept in reserve, then the document; the person's stop watched throughout, and the rooms
+    /// removed however it ended.
+    /// </summary>
+    private async Task<string> RunAsync(BrainstormRequest request, string digest, BrainstormRule rule, BrainstormFiles files, CancellationToken ct)
     {
         var id = request.Id;
         var bytes = files.PacketBytes(id);
@@ -192,27 +320,33 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             throw new DriverException($"its packet is not the one the person sent ({digest}).");
         }
 
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        using var done = new CancellationTokenSource();
+        var watching = WatchAsync(id, files, stop, done.Token);
         try
         {
+            var minutes = rule.Minutes;
+            var started = DateTimeOffset.UtcNow;
+            var deadline = started + minutes.Request * Minute;
+            var generatorsEnd = started + minutes.Generators * Minute;
             var sources = packet.Sources.Select(source => source.Id).ToHashSet(StringComparer.Ordinal);
-            var agents = request.Agents.Count > 0 ? request.Agents.Take(MostAgents).ToList() : [_context.Config.Adapter];
-            var passes = new List<BrainstormPassRecord>();
-            var answered = new List<(BrainstormBy By, BrainstormAnswer Answer)>();
-            for (var at = 0; at < agents.Count; at++)
-            {
-                var turn = $"g{at + 1}";
-                var (record, answer) = await PassAsync<BrainstormAnswer>(
-                    id, turn, agents[at], BrainstormPassRecord.Generate, bytes, BrainstormInstruction.Generator(digest), null,
+            var plan = Generators(request, rule);
+            var generators = plan.Select(each => each.Allowed
+                ? PassAsync<BrainstormAnswer>(
+                    id, each.Pass, each.Agent, BrainstormPassRecord.Generate, bytes, BrainstormInstruction.Generator(digest), null,
                     text =>
                     {
                         var check = BrainstormAnswers.Check(text, sources);
                         return (check.Answer, check.Codes);
-                    }, files, ct).ConfigureAwait(false);
-                passes.Add(record);
-                if (answer is not null) answered.Add((record.By, answer));
-            }
+                    }, files, minutes.Pass * Minute, generatorsEnd, stop.Token, ct)
+                : Task.FromResult(Refused(id, each.Pass, each.Agent, files))).ToList();
+            var results = await Task.WhenAll(generators).ConfigureAwait(false);
+            var passes = results.Select(result => result.Record).ToList();
+            var answered = results.Where(result => result.Valid is not null).Select(result => (result.Record.By, Answer: result.Valid!)).ToList();
+            var needs = Needs(answered);
+            var ran = plan.Count(each => each.Allowed);
 
-            var needs = answered.SelectMany(each => each.Answer.Needs).Distinct(StringComparer.Ordinal).ToList();
+            if (stop.IsCancellationRequested) return Stopped(id, packet, passes, answered, needs, files, digest);
             if (answered.Count == 0)
             {
                 files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.NoAgent, DateTimeOffset.UtcNow));
@@ -227,7 +361,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             }
             else
             {
-                // The synthesizer: the first agent of the request whose generator answered (D176 point 9's proposed default).
+                // The synthesizer: the first agent of the request whose generator answered (D176 point 9's proposed default), within its
+                // own minutes and before the challenge's reserve.
                 var synthesizer = answered[0].By.Adapter;
                 var (record, synthesis) = await PassAsync<BrainstormSynthesized>(
                     id, "s1", synthesizer, BrainstormPassRecord.Synthesize, bytes, BrainstormInstruction.Synthesizer(digest),
@@ -236,77 +371,226 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                     {
                         var check = BrainstormSyntheses.Check(text, handed);
                         return (check.Synthesis, check.Codes);
-                    }, files, ct).ConfigureAwait(false);
+                    }, files, minutes.Synthesis * Minute, deadline - minutes.Challenge * Minute, stop.Token, ct).ConfigureAwait(false);
                 passes.Add(record);
+                if (stop.IsCancellationRequested && synthesis is null) return Stopped(id, packet, passes, answered, needs, files, digest);
                 document = synthesis is not null
                     ? BrainstormDocuments.Ranked(id, packet, passes, handed, synthesis, needs)
-                    : BrainstormDocuments.Unranked(id, packet, passes, handed, needs, BrainstormDocuments.NoSynthesis);
+                    : BrainstormDocuments.Unranked(id, packet, passes, handed, needs, $"{BrainstormDocuments.NoSynthesis}: {string.Join(", ", record.Codes)}");
             }
 
             files.WriteDocument(id, document);
             files.WriteState(new BrainstormState(
                 id, BrainstormStates.Ended, digest, document.Unranked is null ? null : BrainstormStates.Unranked, DateTimeOffset.UtcNow));
             return $"brainstorm `{id}` ended: {document.Rows.Count} {(document.Unranked is null ? "ranked" : "unranked")} rows from "
-                + $"{answered.Count} of {agents.Count} generators. Read it with `daoris-driver brainstorm show {id}`.";
+                + $"{answered.Count} of {ran} generators. Read it with `daoris-driver brainstorm show {id}`.";
         }
         finally
         {
+            await done.CancelAsync().ConfigureAwait(false);
+            await watching.ConfigureAwait(false);
             files.RemoveRooms(id);
         }
     }
 
+    /// <summary>The person's stop (D176 point 6): every pass ended, and what answered kept as the unranked document.</summary>
+    private static string Stopped(
+        string id, BrainstormPacket packet, IReadOnlyList<BrainstormPassRecord> passes, IReadOnlyList<(BrainstormBy By, BrainstormAnswer Answer)> answered,
+        IReadOnlyList<string> needs, BrainstormFiles files, string digest)
+    {
+        if (answered.Count > 0)
+        {
+            files.WriteDocument(id, BrainstormDocuments.Unranked(id, packet, passes, BrainstormSyntheses.Number(answered), needs, BrainstormDocuments.StoppedByPerson));
+        }
+
+        files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
+        return $"brainstorm `{id}` stopped by the person: {answered.Count} answers kept, and nothing runs again by itself.";
+    }
+
+    /// <summary>The person's stop, looked for while a brainstorm runs: its file, written by their verb, ends every pass at once.</summary>
+    private async Task WatchAsync(string id, BrainstormFiles files, CancellationTokenSource stop, CancellationToken done)
+    {
+        try
+        {
+            while (!done.IsCancellationRequested && !stop.IsCancellationRequested)
+            {
+                if (files.Stopped(id))
+                {
+                    await stop.CancelAsync().ConfigureAwait(false);
+                    return;
+                }
+
+                await Task.Delay(Tick, done).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The brainstorm ended: nothing more to watch.
+        }
+    }
+
+    private (BrainstormPassRecord Record, BrainstormAnswer? Valid) Refused(string id, string pass, string agent, BrainstormFiles files)
+    {
+        var family = AgentFamily.Of(_context.Adapters, agent);
+        var record = new BrainstormPassRecord(
+            new BrainstormBy(pass, family.Maker ?? family.Owner, agent, null), BrainstormPassRecord.Generate, BrainstormPassRecord.Unavailable, [NotInPolicy], 0);
+        files.WritePass(id, record);
+        return (record, null);
+    }
+
+    /// <summary>A slot under the machine's cap (D176 point 7, D130), taken by a pass as a reviewer's is; false where the cap is full.</summary>
+    private bool TrySlot()
+    {
+        lock (_slots)
+        {
+            if (_context.Config.Cap - _busy - _holding <= 0) return false;
+            _holding++;
+            return true;
+        }
+    }
+
+    private void FreeSlot()
+    {
+        lock (_slots) _holding--;
+    }
+
     /// <summary>
-    /// One pass: its turn in a fresh room, its answer validated by <paramref name="check"/>, and where that failed its one repair,
-    /// handed the codes (D176 point 3). The pass's record is written whatever it came to.
+    /// One pass (D176 points 3, 6 and 7): a slot under the cap, waited for until <paramref name="until"/>; then its turn in a fresh
+    /// room within its own minutes from its slot, cut at <paramref name="until"/>; its answer validated by <paramref name="check"/>,
+    /// and where that failed its one repair, handed the codes, within the same minutes. A limit starts it once more instead, as that
+    /// repair; a crash is a turn with no answer; the person's stop ends it. Its record is written at each turn's start, so a restart
+    /// knows what ran, and whatever it came to.
     /// </summary>
     private async Task<(BrainstormPassRecord Record, T? Valid)> PassAsync<T>(
         string id, string pass, string agent, string role, byte[] packet, string instruction, byte[]? proposals,
-        Func<string?, (T? Valid, IReadOnlyList<string> Codes)> check, BrainstormFiles files, CancellationToken ct)
+        Func<string?, (T? Valid, IReadOnlyList<string> Codes)> check, BrainstormFiles files, TimeSpan own, DateTimeOffset until,
+        CancellationToken stop, CancellationToken ct)
         where T : class
     {
         var family = AgentFamily.Of(_context.Adapters, agent);
         var maker = family.Maker ?? family.Owner;
-        IReadOnlyList<string> codes = [];
         string? account = null;
-        for (var turns = 1; turns <= 2; turns++)
+        (BrainstormPassRecord, T?) Ended(string state, IReadOnlyList<string> codes, int turns, T? valid = null)
         {
-            var turn = turns == 1 ? pass : $"{pass}r";
-            var said = turns == 1 ? instruction : BrainstormInstruction.Repair(instruction, codes);
-            var room = files.OpenRoom(id, turn, packet, said, proposals);
-            var run = await (_context.BrainstormTurns ?? TurnAsync)(
-                new BrainstormTurn(id, turn, agent, room, said, files.AnswerPath(id, turn), TurnMinutes), ct).ConfigureAwait(false);
-            account = run.Account ?? account;
-            var by = new BrainstormBy(pass, maker, agent, account);
-            if (!run.Ran)
-            {
-                var unavailable = new BrainstormPassRecord(by, role, BrainstormPassRecord.Unavailable, [run.Code ?? "not-started"], turns);
-                files.WritePass(id, unavailable);
-                return (unavailable, null);
-            }
-
-            var (valid, failed) = check(files.ReadAnswer(id, turn));
-            if (valid is not null)
-            {
-                var record = new BrainstormPassRecord(by, role, BrainstormPassRecord.Answered, [], turns);
-                files.WritePass(id, record);
-                return (record, valid);
-            }
-
-            codes = run.Code is { } ended ? [.. failed, ended] : failed;
+            var record = new BrainstormPassRecord(new BrainstormBy(pass, maker, agent, account), role, state, codes, turns);
+            files.WritePass(id, record);
+            return (record, valid);
         }
 
-        var refused = new BrainstormPassRecord(new BrainstormBy(pass, maker, agent, account), role, BrainstormPassRecord.Failed, codes, 2);
-        files.WritePass(id, refused);
-        return (refused, null);
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (stop.IsCancellationRequested) return Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], 0);
+            // The deadline first: a slot let go at the deadline starts nothing.
+            if (DateTimeOffset.UtcNow >= until) return Ended(BrainstormPassRecord.Unavailable, [CapFull], 0);
+            if (TrySlot()) break;
+            try
+            {
+                await Task.Delay(Tick, stop).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                // The person's stop: said at the loop's top.
+            }
+        }
+
+        try
+        {
+            var ownEnd = DateTimeOffset.UtcNow + own;
+            var end = ownEnd < until ? ownEnd : until;
+            var cutCode = until < ownEnd ? Deadline : TimedOut;
+            IReadOnlyList<string> codes = [];
+            var restart = false;
+            for (var turns = 1; turns <= 2; turns++)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (stop.IsCancellationRequested) return Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], turns - 1);
+                var left = end - DateTimeOffset.UtcNow;
+                if (left <= TimeSpan.Zero) return Ended(BrainstormPassRecord.Failed, [.. codes, cutCode], turns - 1);
+
+                var turn = turns == 1 ? pass : $"{pass}r";
+                var said = turns == 1 || restart ? instruction : BrainstormInstruction.Repair(instruction, codes);
+                Ended(BrainstormPassRecord.Running, [], turns);
+                var room = files.OpenRoom(id, turn, packet, said, proposals);
+                using var window = CancellationTokenSource.CreateLinkedTokenSource(stop);
+                window.CancelAfter(left);
+                BrainstormTurnRun run;
+                var cut = false;
+                try
+                {
+                    run = await (_context.BrainstormTurns ?? TurnAsync)(
+                        new BrainstormTurn(id, turn, agent, room, said, files.AnswerPath(id, turn), Math.Max(1, (int)Math.Ceiling(left.TotalMinutes))),
+                        window.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (window.IsCancellationRequested && !ct.IsCancellationRequested)
+                {
+                    cut = true;
+                    run = new BrainstormTurnRun(true, null, null, $"stopped  brainstorm turn {turn}");
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    // A crash ends the turn with no answer: its pass alone fails, after its repair, never the brainstorm.
+                    run = new BrainstormTurnRun(true, null, Crashed, $"crashed  brainstorm turn {turn}: {error.Message}");
+                }
+
+                account = run.Account ?? account;
+                if (!run.Ran)
+                {
+                    return Ended(BrainstormPassRecord.Unavailable, restart ? [Limit, run.Code ?? "not-started"] : [run.Code ?? "not-started"], turns);
+                }
+
+                if (run.Code == Limit && !restart && !cut)
+                {
+                    // D125: the account cooled where the turn ran, no strike is counted, and the pass starts once more on the next
+                    // ready account of that agent's walk, as its one repair, within its minutes.
+                    codes = [Limit];
+                    restart = true;
+                    continue;
+                }
+
+                var (valid, failed) = check(files.ReadAnswer(id, turn));
+                if (valid is not null) return Ended(BrainstormPassRecord.Answered, [], turns, valid);
+                if (cut || window.IsCancellationRequested)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    return stop.IsCancellationRequested
+                        ? Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], turns)
+                        : Ended(BrainstormPassRecord.Failed, [cutCode], turns);
+                }
+
+                codes = run.Code is { } code ? [.. failed, code] : failed;
+                restart = false;
+            }
+
+            return Ended(BrainstormPassRecord.Failed, codes, 2);
+        }
+        finally
+        {
+            FreeSlot();
+        }
     }
 
     /// <summary>
-    /// One real turn (BRAINSTORM1a): the agent's account by the walk, its spawn prepared as any session's, the reviewer's read-only
-    /// rules held to its room, one turn framed as one prompt, no connector beyond its result, and its own minutes. Its record is the
-    /// brainstorm's own, under the home's data: no session record is opened on the service, and nothing of it syncs.
+    /// One real turn (BRAINSTORM1a, BRAINSTORM1a2): the agent's account by the walk, its spawn prepared as any session's, the
+    /// <c>brainstorm</c> posture held to its room, one turn framed as one prompt, its connector its only one and carrying the turn so
+    /// its result tool writes the answer file, and its own minutes. Its record is the brainstorm's own, under the home's data: no
+    /// session record is opened on the service, and nothing of it syncs. A limit its door reports cools the account (D125,
+    /// BRAINSTORM1b), and the pass starts once more on the next.
     /// </summary>
     internal async Task<BrainstormTurnRun> TurnAsync(BrainstormTurn turn, CancellationToken ct)
     {
+        var sessionId = $"brainstorm-{turn.Id}-{turn.Turn}";
+        // Its connector, and no plugin's server beside it (D176 point 2): the turn whole on it, so `brainstorm_give` or
+        // `brainstorm_synthesize` writes the file the driver reads and judges it against the room. A pass answers through that tool
+        // alone, so on a machine with no connector it is not started, and no account is spent on a turn that cannot answer.
+        var scope = BrainstormVariables.Scope(turn);
+        var connector = _driver.Connector(sessionId, scope);
+        if (connector is null)
+        {
+            return new BrainstormTurnRun(false, null, NoConnector,
+                $"held  brainstorm turn {turn.Turn}: this machine has no connector, and a pass answers only through its tool");
+        }
+
         ISessionAdapter adapter;
         HarnessSelection selection;
         try
@@ -326,7 +610,6 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }
 
         var files = new BrainstormFiles(_context.Home);
-        var sessionId = $"brainstorm-{turn.Id}-{turn.Turn}";
         var target = new SessionTarget(QuestId: "", "Brainstorm", "", "Daoris", "", turn.Room, "")
         {
             Brainstorm = turn.Id,
@@ -338,11 +621,14 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         var (info, notice) = _driver.Prepare(adapter, target, selection);
         var transcript = files.PathOf(turn.Id, "passes", $"{turn.Turn}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
-        var rules = _driver.HandRules(adapter, info, sessionId, null, null, tree: turn.Room, kept: null, opinion: true);
+        // The protocol door carries the connector on the wire, with the same scope; the pipe door takes a file under the home.
+        var handed = SpawnServers.Hand(adapter, info, _context.Home, sessionId, [connector]);
+        var rules = _driver.HandRules(
+            adapter, info, sessionId, null, null, tree: turn.Room, kept: null, brainstorm: BrainstormPermissions.ToolOf(turn.Turn));
         try
         {
             return await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: null,
+                adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: handed,
                 refusesInput: "a brainstorm's pass is one turn, and takes no words",
                 conclude: (exitCode, used, turnFailed, _) =>
                 {
@@ -351,17 +637,35 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
-                    var code = turnFailed is { Length: > 0 } ? "turn-failed"
-                        : exitCode is null ? "timed-out"
+                    var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId) ? Limit
+                        : turnFailed is { Length: > 0 } ? "turn-failed"
+                        : exitCode is null ? TimedOut
                         : exitCode != 0 ? "exited" : null;
                     return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, code, $"{code ?? "completed"}  brainstorm turn {turn.Turn}"));
                 },
-                ct, handedServers: [], minutes: turn.Minutes, noConnector: "a brainstorm's pass is handed no connector here", movedFirst: true)
+                ct, scope: scope, handedServers: [], minutes: turn.Minutes,
+                noConnector: "— this machine has no connector, so this pass cannot give its answer.", movedFirst: true)
                 .ConfigureAwait(false);
         }
         finally
         {
             _context.Output?.Close(sessionId);
+        }
+    }
+
+    /// <summary>
+    /// A limit the turn's door reported, read as the roster reads one (D125 §2): the account cools for the time the agent named or
+    /// the machine's cool-off, and no strike is counted. False where the words are no limit, or the cool-off could not be kept.
+    /// </summary>
+    private bool Cooled(ISessionAdapter adapter, HarnessSelection selection, string failure, string sessionId)
+    {
+        try
+        {
+            return _context.Harnesses.Limited(adapter.Name, selection.Profile, failure, sessionId, _context.Config.CoolOff) is not null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 }

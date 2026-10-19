@@ -361,6 +361,14 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
     public bool ClaimLost { get; init; }
 
     /// <summary>
+    /// With <see cref="ClaimLost"/>: the take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18,
+    /// <see cref="QuestLog.LostToTheReopen"/>), read inside the write. On an open step a take that lost otherwise lost with the work it
+    /// was made on, the step standing on another submission since (FABRIC-CLOSE1c24), and on a taken quest to another machine's take;
+    /// the refusal's words say which.
+    /// </summary>
+    public bool LostToTheReopen { get; init; }
+
+    /// <summary>
     /// Refused because the quest's graph closes it (FABRIC-CLOSE1a, §E5): an agent's done on a quest bound to a closure graph,
     /// which says <c>ready</c> instead, so no done slips past the graph.
     /// </summary>
@@ -1584,8 +1592,12 @@ public sealed class QuestStore
                 };
             }
 
-            // A close on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
-            if (QuestLog.OnALostTake(standing, history, judged)) return new QuestMove(held, Moved: false) { ClaimLost = true };
+            // A close on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2); on an open step,
+            // whether the take lost to the person's reopen or with the work it was made on, for the refusal's words (FABRIC-CLOSE1c24).
+            if (QuestLog.OnALostTake(standing, history, judged))
+            {
+                return new QuestMove(held, Moved: false) { ClaimLost = true, LostToTheReopen = QuestLog.LostToTheReopen(history, Machine) };
+            }
 
             // FABRIC-CLOSE1c: a step its source's reopen held goes no further by its agent's done; the person chooses whether it goes
             // on. Their own done and any decline stay theirs.
@@ -2314,7 +2326,10 @@ public sealed class QuestStore
             var shown = said with { Id = said.Id ?? Reviews.IdentityOf(said) };
             var judged = new QuestOperation(id, QuestOperationKind.SetUp, Machine, 0, now, SetUp: shown);
             if (!QuestLog.Applies(quest, judged)) return new QuestMove(quest, Moved: false);
-            if (QuestLog.OnALostTake(quest, history, judged)) return new QuestMove(quest, Moved: false) { ClaimLost = true };
+            if (QuestLog.OnALostTake(quest, history, judged))
+            {
+                return new QuestMove(quest, Moved: false) { ClaimLost = true, LostToTheReopen = QuestLog.LostToTheReopen(history, Machine) };
+            }
 
             var operation = await AppendAsync(
                 id, QuestOperationKind.SetUp, now, note: null, published: null, transaction, inside, setUp: shown).ConfigureAwait(false);
@@ -3379,14 +3394,17 @@ public sealed class QuestStore
                     // allows it, and applied it would close or hold the winner's quest. Refused by the rule the store
                     // judges by, in the words the store's refusal is answered in, so the pushing machine's pass relays the
                     // lost take and its stand-down.
-                    // FABRIC-CLOSE1c18: on an open step the take was lost to the person's reopen, and is said so.
+                    // FABRIC-CLOSE1c18: on an open step the take was lost to the person's reopen, and is said so; or it lost with the
+                    // work it was made on, the step published anew on another submission (FABRIC-CLOSE1c24), said as that.
                     if (why is null && QuestLog.OnALostTake(quest, [.. history, .. staged], filed))
                     {
+                        var open = quest is { Status: QuestStatus.Open };
+                        var reopened = open && QuestLog.LostToTheReopen([.. history, .. staged], filed.Machine);
                         why = QuestExchange.LostTake(group.Key, filed.Kind == QuestOperationKind.Waited
                             ? $"so it does not wait on `#{filed.Note}`. The remote kept nothing this push carried for the quest; "
                               + $"`#{filed.Note}` stays a quest of its own."
                             : $"so this `{KindText(filed.Kind)}` is not this machine's to make. The remote kept nothing this push "
-                              + "carried for the quest.", reopened: quest is { Status: QuestStatus.Open });
+                              + "carried for the quest.", reopened, outgrown: open && !reopened);
                     }
 
                     if (why is not null) break;
