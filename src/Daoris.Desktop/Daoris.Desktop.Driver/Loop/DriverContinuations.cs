@@ -189,7 +189,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         starting?.Dispose();
 
         // Under permission prompts changed since it started it says so first, with the mode it got (AUTONOMY1b, D183 point 3 as
-        // HELPMODE1a2 says Ask Daoris's). Its record keeps the setup it opened under: the ledger has no door to change it yet.
+        // HELPMODE1a2 says Ask Daoris's). Its record keeps the setup it opened under.
         if (permissions is not null && DrivenAccess.GoingOnNote(park, permissions) is { } changed)
         {
             _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = changed }, say: null);

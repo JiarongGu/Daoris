@@ -61,7 +61,8 @@ public static class HelpModes
 
     /// <summary>
     /// The mark before a protocol door's posture that must be set (<c>AcpSession.SetPostureAsync</c>): an agent that does not offer
-    /// it fails the start, so a full start never runs in a narrower mode under the full label (D183 point 3).
+    /// it fails the start, so a full start never runs in a narrower mode under the full label (D183 point 3), nor a driven start in
+    /// another mode than its repository's asking or unrestricted permission prompts name (AUTONOMY1b, <see cref="DrivenAccess"/>).
     /// </summary>
     public const char Required = '!';
 }
