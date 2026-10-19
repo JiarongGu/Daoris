@@ -42,7 +42,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
 
     /// <summary>
-    /// Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1): the room's running conversation set aside, a
+    /// Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1): its workspace's running conversation set aside, a
     /// new one opened as <c>START_HELP</c> opens one, and the earlier one's transcript (<see cref="HelpTranscript"/>) kept as its
     /// file, handed with the person's first message. Never a summary: Daoris makes no model call (D24).
     /// </summary>
@@ -58,8 +58,8 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     }
 
     /// <summary>
-    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for (HELPSTART1b): the room's running conversation set
-    /// aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier one's words kept for it.
+    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for (HELPSTART1b): its workspace's running conversation
+    /// set aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier one's words kept for it.
     /// The room is read and the agent spawned after, by <see cref="ChatRunner.RunHelpAsync"/>, off the request. A conversation
     /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
     /// </summary>

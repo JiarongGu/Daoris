@@ -510,7 +510,7 @@ public sealed class ChatRunner : IDisposable
     /// <para><b>Its tools load with the first request</b> (HELP5), by the adapter's own switch where it names
     /// one, so the first answer is not a search for the tools it was handed.</para>
     ///
-    /// <para><b>One at a time</b>: the ledger refuses a second while one runs, naming it. The caller hands
+    /// <para><b>One at a time in each workspace</b> (ASKSCOPE1a): the ledger refuses a second while one runs, naming it. The caller hands
     /// the person the running one rather than asking for another.</para>
     /// </remarks>
     public async Task<ChatStart> StartHelpAsync(

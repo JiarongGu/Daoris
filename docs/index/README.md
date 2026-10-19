@@ -156,7 +156,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 150 | 2653 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 51 | 802 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 252 | 4330 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 84 | 1552 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 84 | 1551 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 80 | 1382 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 143 | 2375 |

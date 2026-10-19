@@ -393,7 +393,7 @@ internal sealed class ChatGoOn
     {
         var sessionId = record.Session;
 
-        // Its account by name, as a chat's: Ask Daoris belongs to no workspace, so the machine's accounts are asked (D89).
+        // Its account by name, as a chat's, among the machine's accounts (D89): going on keeps the account it ran on.
         var resume = await _context.Harnesses
             .ResumeAsync(adapter.Name, config, workspace: null, record.Profile, StartKind.Conversation, walks: false, ct: ct)
             .ConfigureAwait(false);

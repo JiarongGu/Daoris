@@ -1180,7 +1180,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     // A new Ask Daoris conversation from an earlier one's words (ASKHIST1): opened as START_HELP opens one, on the helper's
-    // agent, the room's running conversation set aside first, and the earlier one's transcript handed with the person's first
+    // agent, its workspace's running conversation set aside first, and the earlier one's transcript handed with the person's first
     // words. Its end reaches the page as a start's does.
     [DriverRoute("HELP_START_FROM")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]

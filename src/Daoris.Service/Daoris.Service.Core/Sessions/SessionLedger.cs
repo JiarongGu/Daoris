@@ -364,9 +364,8 @@ public sealed class SessionLedger(
     /// 1), recorded here and never moved; none named is <c>default</c>, as a record from before reads.</para>
     ///
     /// <para><b>One running per workspace</b> (point 3): a second in the same workspace is refused naming the first, and the
-    /// driver hands the page the running one rather than asking for another; one in another workspace runs beside it. Every
-    /// workspace's conversation runs in the one room folder until ASKSCOPE1b, which is safe while the room says the machine
-    /// alone: each writes the same files whole (<c>AtomicFile</c>), and each harness keeps its conversation by its own id.</para>
+    /// driver hands the page the running one rather than asking for another; one in another workspace runs beside it, in the
+    /// same room folder (D158's ASKSCOPE1a note, point 4, says why that is safe).</para>
     ///
     /// <para><b>A workspace this machine does not hold is refused</b>, naming those it does: <c>default</c> and each registered
     /// repository's. With no registry to ask, the name is taken as told.</para>
