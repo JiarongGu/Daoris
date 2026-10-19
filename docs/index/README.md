@@ -203,15 +203,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 101 | 1759 |
+| `tools/deployment-rehearsal.mjs` | 102 | 1761 |
 | `tools/desktop-publish.mjs` | 72 | 1284 |
-| `tools/desktop.mjs` | 51 | 1057 |
-| `tools/family-rehearsal.mjs` | 348 | 6101 |
+| `tools/desktop.mjs` | 51 | 1059 |
+| `tools/family-rehearsal.mjs` | 348 | 6103 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 232 | 4110 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 46 | 893 |
-| `tools/usage-report.mjs` | 57 | 1254 |
+| `tools/usage-report.mjs` | 58 | 1256 |
 
 ### No lane
 

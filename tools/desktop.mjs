@@ -40,6 +40,8 @@ import {
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 // The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
 import { HOME, LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME, layOffers } from './desktop-publish.mjs';
 import {
@@ -165,11 +167,11 @@ export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost
     // splash forever. Found on this tool's first real run.
     ASPNETCORE_URLS: serviceUrl,
     DAORIS_HOME: home,
-    DAORIS_KNOWLEDGE_DB: join(home, 'knowledge.db'),
+    DAORIS_KNOWLEDGE_DB: homeEntry(home, 'knowledge'),
     DAORIS_KNOWLEDGE_ROOT: family,
-    DAORIS_DRIVER_CONFIG: join(home, 'driver.json'),
-    DAORIS_REMOTE_CONFIG: join(home, 'remotes.json'),
-    DAORIS_HARNESS_CONFIG: join(home, 'harnesses.json'),
+    DAORIS_DRIVER_CONFIG: homeEntry(home, 'driver'),
+    DAORIS_REMOTE_CONFIG: homeEntry(home, 'remotes'),
+    DAORIS_HARNESS_CONFIG: homeEntry(home, 'harnesses'),
     DAORIS_HTTP_HOST: httpHost,
     // The MCP host a driven session is handed over the protocol door (ACP4). Pinned for the same
     // reason the HTTP one is: the locator prefers an INSTALLED binary, so a scratch run would hand
@@ -324,7 +326,7 @@ export function closedPortReport({ port, waitedMs, gone, pid, engineLog, home })
       `⚠ the application (pid ${pid}) ${how} before its debug port ${port} opened, so this run has no window.`,
       '  A Daoris already running from the same folder takes a later start and ends it, and that window has',
       '  no debug port: close it (`kill` closes one this tool started), then `run` again. Otherwise the machine',
-      `  log in ${join(home ?? '(the home)', 'logs')} says why it ended.`,
+      `  log in ${home ? homeEntry(home, 'logs') : join('(the home)', 'logs')} says why it ended.`,
     ].join('\n');
   }
   return [
@@ -777,7 +779,7 @@ function doctor() {
   const bundle = join(HTTP_PROJECT, 'wwwroot', 'index.html');
   // Where `publish:service --install` lands one (D63) — and no home means none installed.
   const installed = process.env.DAORIS_HOME
-    ? join(process.env.DAORIS_HOME, 'bin', 'daoris-knowledge-http', 'daoris-knowledge-http.exe')
+    ? homeEntry(process.env.DAORIS_HOME, 'bin', 'daoris-knowledge-http', 'daoris-knowledge-http.exe')
     : null;
   const state = readRun();
 
