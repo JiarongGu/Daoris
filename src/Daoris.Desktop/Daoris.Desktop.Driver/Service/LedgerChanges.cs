@@ -6,8 +6,10 @@ namespace Daoris.Driver;
 /// <summary>
 /// The driver's one wait on the local service's change stream (FABRIC-EVENT3b, the fabric events design §A4.2): held for the loop's
 /// life, and each answer that names a family wakes the <c>ledger</c> topic once, so the look's local plan runs as soon as a quest
-/// an agent published or a session's record moved, never the remote sync (FABRIC-EVENT3a). The <c>look</c> topic's deadline
-/// (<c>pollSeconds</c>) still runs behind it, the reconciliation for anything the stream does not carry.
+/// an agent published, a session's record, an ask or an ask's channel moved, never the remote sync (FABRIC-EVENT3a). The wake's
+/// subject is the families the answer named, joined with commas (<c>sessions</c>, <c>quests</c>, <c>asks</c>, <c>channel</c>;
+/// PUSH1d1), so whoever hears it tells them apart. The <c>look</c> topic's deadline (<c>pollSeconds</c>) still runs behind it, the
+/// reconciliation for anything the stream does not carry.
 /// </summary>
 /// <remarks>
 /// <para><b>Never a hot loop.</b> The next ask is never sooner than <see cref="Floor"/> after the last began; a refused or dropped

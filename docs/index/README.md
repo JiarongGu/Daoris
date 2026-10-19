@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (180)
+## Files over 40 KB (181)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -74,6 +74,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 47 | 904 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 112 | 1812 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 40 | 755 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 356 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full-access.md` | 52 | 398 |
@@ -93,7 +94,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsCommandTests.cs` | 46 | 904 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs` | 57 | 1163 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/TraceTests.cs` | 41 | 691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 46 | 955 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 47 | 971 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 46 | 832 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 55 | 857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 73 | 1314 |
@@ -153,7 +154,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 82 | 1481 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 83 | 1512 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 150 | 2653 |

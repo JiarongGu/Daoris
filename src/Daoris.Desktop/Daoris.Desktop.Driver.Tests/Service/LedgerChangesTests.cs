@@ -41,7 +41,7 @@ public sealed class LedgerChangesTests : IDisposable
         var listening = Listen(service);
 
         await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held", Bound);
-        Assert.Equal([(ChangeTopics.Ledger, "sessions,quests")], Woken());
+        Assert.Equal([(ChangeTopics.Ledger, Every)], Woken());
 
         _ledger.Publish("q1", "engine", from: "agent");
         await Poll.Until(() => Woken().Count == 2, () => "the publish woke nothing", Bound);
@@ -71,11 +71,42 @@ public sealed class LedgerChangesTests : IDisposable
         var listening = Listen(service);
 
         await Poll.Until(() => Woken().Count == 1, () => "the bootstrap woke nothing", Bound);
-        Assert.Equal((ChangeTopics.Ledger, "sessions,quests"), Woken()[0]);
+        Assert.Equal((ChangeTopics.Ledger, Every), Woken()[0]);
 
         await _closing.CancelAsync();
         await listening.WaitAsync(Bound);
     }
+
+    /// <summary>
+    /// PUSH1d1: an ask or a channel post a connector wrote wakes the <c>ledger</c> topic naming its own family, so a subscriber tells
+    /// them apart from the sessions and the quests; two that moved under one answer are named together.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_or_a_post_wakes_the_ledger_topic_naming_its_family()
+    {
+        _ledger.Changes = StandInLedger.ChangeDoor.Answers;
+        using var service = _ledger.Client();
+        var listening = Listen(service);
+        await Poll.Until(() => _ledger.ChangesHeld == 1 && Woken().Count == 1, () => "no wait held after the bootstrap", Bound);
+
+        _ledger.Wrote("asks");
+        await Poll.Until(() => Woken().Count == 2, () => "the ask woke nothing", Bound);
+        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the ask", Bound);
+        _ledger.Wrote("channel");
+        await Poll.Until(() => Woken().Count == 3, () => "the post woke nothing", Bound);
+        await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the post", Bound);
+        _ledger.Wrote("asks", "channel");
+        await Poll.Until(() => Woken().Count == 4, () => "the ask and its post woke nothing", Bound);
+
+        Assert.Equal(
+            [(ChangeTopics.Ledger, "asks"), (ChangeTopics.Ledger, "channel"), (ChangeTopics.Ledger, "asks,channel")],
+            Woken()[1..]);
+        await _closing.CancelAsync();
+        await listening.WaitAsync(Bound);
+    }
+
+    /// <summary>Every family the service's change stream answers, as a bootstrap names them.</summary>
+    private const string Every = "sessions,quests,asks,channel";
 
     /// <summary>A host from before has no door: asked once, and not again for a minute.</summary>
     [Fact]

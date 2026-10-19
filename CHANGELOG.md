@@ -240,7 +240,9 @@ with the version and date at release.
   asks the loop to look. The machine log says which part each look ran.
 - A quest an agent publishes from its session, and a session record another process writes, now start Daoris's work at once,
   where the driver used to find them at its next look (up to `pollSeconds`, 15 s by default). The local service answers
-  `GET /api/changes`, which says which of its records moved; a sync pass that changes nothing wakes nothing.
+  `GET /api/changes`, which says which of its records moved; a sync pass that changes nothing wakes nothing. An ask, and a
+  message on an ask's channel, that another process writes wake the driver the same way, named `asks` and `channel`; reading
+  a channel wakes nothing.
 - Done work set to land automatically lands as soon as what held it lets it go, rather than at the driver's next look. This
   covers a hold released, a review given or skipped, a second opinion settled or answered, a workflow's declaration or your
   say-so, a commit in its tree, and a change to the landing rule. When a change releases none of the waiting work, the landing
