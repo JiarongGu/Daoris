@@ -278,6 +278,31 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
+    /// PUSH1c2a: the work's parts as a slice pushes them, each by its subject in the merge's order (by repository, the rest's last),
+    /// with its part as last judged or none where it never was, so a part never judged is told apart from one judged empty; none
+    /// before the service's answers, which name the parts.
+    /// </summary>
+    [Fact]
+    public void The_work_s_parts_are_named_in_the_merge_s_order_each_as_last_judged_or_none_where_never()
+    {
+        var site = new HelpWork([Unit("u-site", "site")], [], []);
+        var rest = new HelpWork([], [], []);
+        Assert.Null(HelpFacts.WorkParts(MachineFactsSnapshot.Empty.With(HelpFacts.Work, "site", new JudgedFact(site, At))));
+
+        var partly = MachineFactsSnapshot.Empty
+            .With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At))
+            .With(HelpFacts.Work, "site", new JudgedFact(site, At))
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(rest, At));
+
+        var parts = HelpFacts.WorkParts(partly)!;
+
+        Assert.Equal(["engine", "site", HelpFacts.NoCheckout], parts.Select(part => part.Part));
+        Assert.Null(parts[0].Work);
+        Assert.Same(site, parts[1].Work);
+        Assert.Same(rest, parts[2].Work);
+    }
+
+    /// <summary>
     /// 🔴 FACTSPLIT1b (D181 points 2-3): one repository's refs judge its part of the sessions' trees again alone, and never the look
     /// without them. The other repository's part and the part of the repositories with no checkout here stand as last judged.
     /// </summary>
