@@ -552,6 +552,12 @@ describe('the call a session is running', () => {
     }
   });
 
+  /** WAITSAY1b: a call the rules refused (D52) waits on nobody, on either door: the one still open beside it is running. */
+  it('passes over a call the rules refused', () => {
+    const { turns } = toTurns([ask, call(2, 'a', 'npm test', 'in_progress'), call(3, 'b', 'git push', 'in_progress'), call(4, 'b', 'git push', 'refused')]);
+    expect(runningCall(settle(turns, true))?.title).toBe('npm test');
+  });
+
   it('is none when the session is not live, its open calls read stopped', () => {
     const { turns } = toTurns([ask, call(2, 'a', 'npm test', 'in_progress')]);
     expect(runningCall(settle(turns, false))).toBeNull();

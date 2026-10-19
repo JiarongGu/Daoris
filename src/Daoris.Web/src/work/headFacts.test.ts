@@ -54,6 +54,18 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', calling }).join()).not.toMatch(/running npm/);
   });
 
+  /**
+   * WAITSAY1b: where the page holds none of the call's events (begun before the window opened, or past the history's page), the
+   * head says the call the driver heard, from the row's reader; the record's own reading, live, goes first where it has one.
+   */
+  it('says the call the driver heard where the record read here names none', () => {
+    const heard = grouping({ calling: { title: 'npm test', since: '2026-10-05T09:52:00Z' } });
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: heard }).at(-1)).toBe('running npm test for 8m');
+    const read = { title: 'npm run build', since: '2026-10-05T09:58:00Z' };
+    expect(sessionFacts(t, { session: session(), shown: 'working', grouping: heard, calling: read }).at(-1)).toBe('running npm run build for 2m');
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', grouping: heard }).join()).not.toMatch(/running/);
+  });
+
   /** The install's fourth try, three failed before it, was the fourth line of a strip in mono; the head says it. */
   it('says a working session is another try, and how many failed before it', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))

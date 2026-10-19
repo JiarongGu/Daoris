@@ -169,7 +169,7 @@ public static class SessionsCommand
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
         ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
-            "lands", "discards"];
+            "lands", "discards", "calling"];
 
     /// <summary>The fields of an entry in <c>--json</c>'s <c>entries</c>, in order: <c>SESSION_GROUPS</c>' entry, field for field (SESSONE1b).</summary>
     public static IReadOnlyList<string> JsonEntryFields { get; } = ["entry", "origin", "repository", "group", "leading", "parts"];
@@ -430,6 +430,19 @@ public static class SessionsCommand
                 else
                 {
                     writer.WriteNull("discards");
+                }
+
+                // WAITSAY1b: the call a working session's agent is inside, where the process that read the rows heard one.
+                if (row.Calling is { } call)
+                {
+                    writer.WriteStartObject("calling");
+                    writer.WriteString("title", call.Title);
+                    writer.WriteString("since", call.Since);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("calling");
                 }
 
                 writer.WriteEndObject();

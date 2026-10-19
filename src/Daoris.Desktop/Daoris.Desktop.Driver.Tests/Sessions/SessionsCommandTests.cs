@@ -431,6 +431,26 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// WAITSAY1b: <c>--json</c> carries a row's running call as the screen's answer does (SESSUX1g), its title and when it began,
+    /// and null where none was heard, which is every row the terminal reads, since it runs no session.
+    /// </summary>
+    [Fact]
+    public void A_running_call_is_in_the_json_and_none_is_null()
+    {
+        var since = new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero);
+        var calling = new SessionGrouping("w0rk1ng0", SessionGroup.Working, "working") { Calling = new RunningCall("npm test", since) };
+        var idle = new SessionGrouping("1dle0000", SessionGroup.Working, "working");
+
+        using var answer = JsonDocument.Parse(SessionsCommand.Json([calling, idle]));
+        var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
+
+        Assert.Equal("npm test", rows[0].GetProperty("calling").GetProperty("title").GetString());
+        Assert.Equal(since, rows[0].GetProperty("calling").GetProperty("since").GetDateTimeOffset());
+        Assert.Equal(JsonValueKind.Null, rows[1].GetProperty("calling").ValueKind);
+        Assert.Equal(SessionsCommand.JsonFields, rows[0].EnumerateObject().Select(field => field.Name));
+    }
+
+    /// <summary>
     /// SQUASHTIDY1b: a session whose work the line holds by content is offered no landing at the terminal either: <c>--json</c>
     /// carries the reader's <c>discards</c> whole, and the listing's line says where its work is, in Discard's own clause, with
     /// the door that discards its tree and the ref its commits stay at; or, where the tree holds what no commit does, why it stays.
