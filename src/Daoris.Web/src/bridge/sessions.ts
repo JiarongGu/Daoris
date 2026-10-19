@@ -1,7 +1,7 @@
 import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { type Session, SESSION_ACTIVE } from '../data/api';
-import { keys, SESSIONS_SLICE } from '../data/queries';
+import { CALLS_SLICE, keys, SESSIONS_SLICE } from '../data/queries';
 import { searchable } from '../lib/searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';
@@ -11,7 +11,7 @@ import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
 import { readSlice } from './driver';
-import { mergeKeyed, type SliceSpec } from './slices';
+import { mergeKeyed, type SliceSpec, usePushedLive } from './slices';
 
 // A session's life on this machine (MOD3): the person's answer to a parked one, a stop and how it is
 // said, and finding sessions by their first words and by what they said.
@@ -45,6 +45,55 @@ export const sessionsSlice: SliceSpec = {
   },
   merge: mergeKeyed,
 };
+
+/** The call a running session is making: its title and when it began, as `SESSION_GROUPS` writes `calling`. */
+export type PushedCall = { title: string; since: string };
+
+const isCall = (value: unknown): value is PushedCall =>
+  typeof value === 'object' && value !== null
+  && typeof (value as { title?: unknown }).title === 'string' && typeof (value as { since?: unknown }).since === 'string';
+
+/**
+ * The running calls as the shell pushes them (WAITSAY1c2, D182): one partition `calling`, session id to its call, judged from the
+ * driver's memory as each call starts and ends. A keyed partition is pushed whole once half its keys moved, so an end may be a whole
+ * push or `{}`, and both are taken as well as a delta. Composed into one map by session; nothing judged yet composes nothing.
+ */
+export const callsSlice: SliceSpec = {
+  name: CALLS_SLICE,
+  key: keys.calls,
+  read: () => readSlice(CALLS_SLICE),
+  compose: (partitions, judged) => {
+    if (!judged) return undefined;
+    const calls: Record<string, PushedCall> = {};
+    for (const part of partitions.values()) {
+      if (typeof part !== 'object' || part === null || Array.isArray(part)) continue;
+      for (const [session, call] of Object.entries(part)) if (isCall(call)) calls[session] = call;
+    }
+    return calls;
+  },
+  merge: mergeKeyed,
+};
+
+/** The pushed calls by session where the slice is live, else undefined, so the pull's `calling` is what is read. */
+export const usePushedCalls = (): Record<string, PushedCall> | undefined => {
+  const live = usePushedLive(CALLS_SLICE);
+  const { data } = useQuery({
+    queryKey: keys.calls,
+    queryFn: () => new Promise<Record<string, PushedCall>>(() => {}),
+    enabled: false,
+    staleTime: Infinity,
+  });
+  return live ? data : undefined;
+};
+
+/**
+ * A session's grouping with the pushed call laid over its `calling`: where the slice is live (`calls` given) the pushed map is the
+ * truth, so a session absent from it is making no call, whatever the pull last said; not live, the grouping is as the pull gave it.
+ */
+export function withCall(grouping: SessionGrouping | null | undefined, calls: Record<string, PushedCall> | undefined) {
+  if (!grouping || !calls) return grouping;
+  return { ...grouping, calling: calls[grouping.session] ?? null };
+}
 
 /**
  * The person's answer to a session parked at a checkpoint (design §4).

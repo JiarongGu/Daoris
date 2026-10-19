@@ -5,7 +5,7 @@ import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../da
 import { searchable } from '../lib/searchable';
 import {
   type SessionHit, useAskLanding, useChannelUnreads, useDriver, useLandAsk, useSessionEntries, useSessionGroups, useSessionOpenings,
-  useSessionSearch, useSessionWhere, useUnderWaySubject,
+  usePushedCalls, useSessionSearch, useSessionWhere, useUnderWaySubject, withCall,
 } from '../bridge/shell';
 import { askOfEntry, entryFacts, isIntakeEntry, listedSessions, nameOfEntry, type SessionEntry } from './entries';
 import { EntryAccept } from './EntryAccept';
@@ -211,7 +211,9 @@ export function SessionRail({
     continues: continues[session.id],
     helps: helps[session.id],
   }));
-  const placed = new Map((groupings ?? []).map((row) => [row.session, row]));
+  // The call each session is making, from the shell's push where it is live (WAITSAY1c2): laid over the pull's `calling`.
+  const calls = usePushedCalls();
+  const placed = new Map((groupings ?? []).map((row) => [row.session, withCall(row, calls) ?? row]));
 
   // ACCEPTALL1 (D167's 2026-10-15 amendment point 4): an ask's one Accept, under its heading in the list by ask, where its lines of
   // work hold more than one part with work to land. Its plan reads git for every part, so it is asked only once its ask is open.

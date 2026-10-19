@@ -447,7 +447,7 @@ public sealed class ChatRunner : IDisposable
         // A conversation in a tree it grew is told its repository's process with its first message (PROCESS1d-ii, D164's amendment
         // point 4), as a driven session is in its instruction. Never the person's checkout, nor a tree handed over, whose new
         // conversation is briefed with Daoris's record.
-        if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, ct).ConfigureAwait(false);
+        if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, ct).ConfigureAwait(false);
 
         ChatStart? started = null;
         try
@@ -1558,15 +1558,21 @@ public sealed class ChatRunner : IDisposable
     /// What a conversation in a tree of its own is told of its process (PROCESS1d-ii, D164's amendment point 4): the commit rule
     /// standing for its repository and its landing, in <see cref="ProcessWords.Conversation"/>'s words with the rule's facts.
     /// </summary>
-    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan) =>
-        new(ProcessWords.Conversation(commits, plan), commits.Rule.Mode, commits.Source);
+    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null)
+    {
+        // A copy of the tree's dependencies is told with the process, so the agent does not run the install that would delete it
+        // (TREEDEPS1b, D51's TREEDEPS1 note); no new note code, it rides the process's own.
+        var words = ProcessWords.Conversation(commits, plan);
+        if (!string.IsNullOrEmpty(dependencies)) words = $"{words}\n\n{dependencies}";
+        return new(words, commits.Rule.Mode, commits.Source);
+    }
 
     /// <summary>
     /// <see cref="ProcessTold"/> for the tree a new conversation just grew: its landing read as Review's press would read it. A
     /// landing that cannot be read leaves its lead unsaid, never the start: the record is open, so the run that follows concludes
     /// it, cancelled or not, and the commit rule is said either way.
     /// </summary>
-    private async Task<ProcessBriefing> ProcessToldAsync(string tree, string sessionId, DriverConfig config, RepoView known, CancellationToken ct)
+    private async Task<ProcessBriefing> ProcessToldAsync(string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, CancellationToken ct)
     {
         LandingPlan? plan;
         try
@@ -1578,7 +1584,7 @@ public sealed class ChatRunner : IDisposable
             plan = null;
         }
 
-        return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan);
+        return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies);
     }
 
     /// <summary>
