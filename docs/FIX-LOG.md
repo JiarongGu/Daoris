@@ -21,6 +21,19 @@ repository.
   path opens its tree with git, so its end-to-end proof is the Process half's (GOONTREE1's row in `SessionMessagesTickTests`), not run
   on the branch.
 
+## 2026-10-20 — The CI on f290807: a read no gate reached, a sentence one test still expected, a slow glossary check (PUSH1d2, ACCESSWORDS1)
+
+- **Symptom:** the full set on `f290807` failed the tool tests' read census (`SessionsStateSliceTests` reads the service's
+  `ApiContracts.cs`, and a change to it reached no `modules` gate), `RepositorySetup.test.tsx`'s access row (it expected the
+  `landing: rule` sentence without ACCESSWORDS1's *A merge rule still waits for your Accept…*), and `names.test.ts`'s strict
+  check (20 s, under load); also timeouts in the stub turns, the CLI's plugin test and one end-to-end click, and the page's
+  structure (`help/` at 21 sources, HELPMODE1c1's).
+- **Root cause:** each builder ran its own files; PUSH1d2's twin test read across a lane, and ACCESSWORDS1 changed a sentence
+  a test in another folder held. The glossary check runs the script twice in processes of its own.
+- **Fix:** a path rule sends `ApiContracts.cs` to the service lane's gates and `modules`; the access row's expectation says the
+  sentence; the glossary check takes 90 s. `help/`'s cut is its own row (STRUCTHELP1); the timeouts are load (FLAKE1).
+- **Verify:** the read census green (48 s); `RepositorySetup.test.tsx` and `names.test.ts` green (79).
+
 ## 2026-10-20 — The CI's Process half could not pass beside the work, and a start's git ceiling missed TREEDEPS1 (FAMILYFAIL1c)
 
 - **Symptom:** the full set on `b0a786d` (beside five workers) failed 59 of the driver's Process tests; re-run one at a

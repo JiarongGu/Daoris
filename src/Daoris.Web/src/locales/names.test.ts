@@ -435,7 +435,8 @@ describe('the real glossary and catalogues', () => {
     expect(reported.stdout).toMatch(/names-check: \d+ label keys/);
     const strict = spawnSync(process.execPath, [script, '--strict'], { encoding: 'utf8' });
     expect(strict.status, strict.stdout).toBe(0);
-  });
+    // It runs the check twice in a process of its own: under the CI beside five workers that took past the 20 s default.
+  }, 90_000);
 
   it('are gated by the build: --strict runs beside the parity check, before the bundle is built', () => {
     const scripts = (JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
