@@ -1,5 +1,6 @@
 import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
+import { useEffect, useRef } from 'react';
 import { type Session, SESSION_ACTIVE } from '../data/api';
 import { CALLS_SLICE, keys, SESSIONS_SLICE } from '../data/queries';
 import { searchable } from '../lib/searchable';
@@ -464,12 +465,20 @@ export const PERMISSION_WAITS_KEY = ['sessions', 'permissionWaits'] as const;
 const PERMISSIONS_EVERY = 4_000;
 
 /**
- * When the held permissions are asked again (AUTONOMY1b3c): every few seconds while a session of this machine works, or while one is
- * held, and never otherwise. Neither route publishes (`HeldPermissions` is in the driver's memory), and the pushed calls' wake comes
- * as a call starts, before its agent asks permission for it, so it would read nothing held yet; while one is held, its release at
- * the bound is seen. Once the call's waiting mark rides the calls slice (AUTONOMY1b3b), its wake is exact and this can go.
+ * When the held permissions are asked again on a clock (AUTONOMY1b3c): every few seconds while a session of this machine works, or
+ * while one is held, and never otherwise, since neither route publishes (`HeldPermissions` is in the driver's memory). Where the calls
+ * are pushed (`pushed`), never (AUTONOMY1b3b): a hold marks its call waiting in the calls slice and its answer or release clears the
+ * mark, so the mark's move asks them again (`usePermissionWaits`). The clock stays for a host that pushes no calls.
  */
-export const permissionsAgainIn = (live: boolean, held: number): number | false => (live || held > 0 ? PERMISSIONS_EVERY : false);
+export const permissionsAgainIn = (live: boolean, held: number, pushed = false): number | false =>
+  (!pushed && (live || held > 0) ? PERMISSIONS_EVERY : false);
+
+/**
+ * The pushed calls' waiting marks as one word (AUTONOMY1b3b): each waiting session with when its newest hold began, so a hold, an
+ * answer and a release each change it; null where the calls are not pushed.
+ */
+const waitingMarks = (calls: Record<string, PushedCall> | undefined): string | null =>
+  calls ? Object.entries(calls).filter(([, each]) => each.waiting === true).map(([session, each]) => `${session} ${each.since}`).sort().join('\n') : null;
 
 const readChoice = (value: unknown): PermissionChoice | null => {
   if (!value || typeof value !== 'object') return null;
@@ -498,14 +507,26 @@ const readPermissionWaits = (rows: unknown): PermissionWait[] => {
  * What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
  * point 3): each tool's request with its session, its title and kind as the agent wrote them, and what the person may choose, oldest
  * first, off the driver's memory, so shell-only. `live`: a session of this machine works now, so one may be asked for at any moment.
+ *
+ * Where the calls are pushed, asked again as their waiting marks move (AUTONOMY1b3b), once whichever reader saw it first: each
+ * reader of the waits hears the same push, and one asking already on its way is the others' too. Elsewhere, on the clock.
  */
 export const usePermissionWaits = (live: boolean) => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const calls = usePushedCalls();
+  const marks = waitingMarks(calls);
+  const seen = useRef(marks);
+  useEffect(() => {
+    if (seen.current === marks) return;
+    seen.current = marks;
+    if (marks !== null) void client.invalidateQueries({ queryKey: PERMISSION_WAITS_KEY, exact: true }, { cancelRefetch: false });
+  }, [client, marks]);
   return useQuery({
     queryKey: PERMISSION_WAITS_KEY,
     queryFn: async () => readPermissionWaits((await call<{ waits?: unknown } | null>('PERMISSION_WAITS'))?.waits),
     enabled: isAvailable,
-    refetchInterval: (query) => permissionsAgainIn(live, query.state.data?.length ?? 0),
+    refetchInterval: (query) => permissionsAgainIn(live, query.state.data?.length ?? 0, calls !== undefined),
   });
 };
 

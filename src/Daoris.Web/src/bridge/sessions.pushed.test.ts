@@ -27,6 +27,10 @@ describe('the running calls, pushed (WAITSAY1c2)', () => {
     expect(callsSlice.compose(new Map(), false)).toBeUndefined();
     expect(callsSlice.compose(new Map(), true)).toEqual({});
     expect(callsSlice.compose(new Map<string, unknown>([['calling', { a: call }], ['other', 'x']]), true)).toEqual({ a: call });
+    // AUTONOMY1b3b: a call held for the person's answer keeps its mark, as `SESSION_GROUPS` writes it beside the title.
+    const held = { ...call, waiting: true };
+    expect(callsSlice.compose(new Map<string, unknown>([['calling', { a: held }]]), true)).toEqual({ a: held });
+    expect(withCall({ session: 'a', calling: call } as never, { a: held })?.calling).toEqual(held);
   });
 
   it("overlays the pushed call on a session's grouping, and clears what the pull still says once none runs", () => {
