@@ -18,7 +18,7 @@
   "work.start.tree.detached": "detached HEAD",
   "work.start.tree.own":"Its own tree",
   "work.start.tree.ownNote": "a fresh tree beside the checkout",
-  "work.start.ownTreeCost": "Its own tree holds only what git tracks: no installed dependencies, no build outputs, no untracked local configuration. That cost is paid once per tree, by whatever this repository's own setup costs.",
+  "work.start.ownTreeCost": "Its own tree holds only what git tracks, and the dependencies npm installed in your checkout, copied in where the tree's lockfile matches: no build outputs, no other installs, no untracked local configuration. That cost is paid once per tree, by whatever the rest of this repository's own setup costs.",
   "work.start.agentAccount": "Agent and account",
   "work.start.harness": "Agent",
   "work.start.harnessDefault": "This machine's default",

@@ -198,7 +198,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             resume = new ResumeAsk(
                 kept.Conversation, words,
                 Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
-                Continuations.AfterWords(inSync, after),
+                // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
+                Continuations.AfterWords(
+                    Continuations.AfterWords(inSync, after),
+                    Continuations.GoAheadsChanged(park, AccessRules.Resolve(config, quest.To, start.Workspace))),
                 files: word => ChatFiles.Kept(home, sessionId, word.Files));
 
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the

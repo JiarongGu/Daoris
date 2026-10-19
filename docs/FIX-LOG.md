@@ -25,6 +25,17 @@ repository.
   All eight green after it, with `TreeLinksTests`' four (the bound, `.git`, no link, a gone tree), and the neighbouring Git
   classes' 91 (`SessionTreesTests`, `SweepTests`, `LandingTidyTests`, `CleanupGitTests`, `ContentProofLossTests`,
   `BranchTidyingFolderTests`).
+## 2026-10-19 — The CI on d208b8b: a module named a type of the composition root, and a test the typecheck refused (PARALLEL1g, FAMILYFAIL1b)
+
+- **Symptom:** `driver`'s `StructureTests.The_driver_s_own_tree_keeps_its_structure`: "Sessions/RunningSessions.cs:90 [loop] names
+  LookFacts, declared in Loop/LookFacts.cs: Loop is the composition root, and no module uses it". `cli`'s typecheck: two errors
+  in `tool-test/merge-branch.test.ts` (a `string | undefined` passed as a string, an unused `cmd`).
+- **Root cause:** PARALLEL1g put the judges' facts in `Loop/` and their holder on `RunningSessions` (Sessions), so a module named
+  the composition root; FAMILYFAIL1b's test was run, not typechecked. Neither branch ran the structure test or the CLI's
+  typecheck (their own tests only, D180).
+- **Fix:** `LookFacts.cs` moves to `Sessions/`, beside its holder (the structure's one rule: no module uses Loop); the test reads
+  `said[0] ?? ''` and names its unused parameter `_cmd`.
+- **Verify:** `StructureTests`, `LookJudgesTests` and `BrainstormLookTests` (23) green; the CLI's typecheck clean.
 
 ## 2026-10-19 — A park answered and asking again could go unsaid, and an answered one was said (AUTONOMY1e)
 

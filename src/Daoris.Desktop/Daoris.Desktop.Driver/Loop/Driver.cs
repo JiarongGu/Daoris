@@ -1867,9 +1867,9 @@ public sealed class Driver(
                 RemoteTarget.Effective(Environment.GetEnvironmentVariable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
                 session: sessionId)
                 .ConfigureAwait(false);
-            var target = WithLanguage(WithStanding(
+            var target = WithAccess(WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
-                config), config, start.Workspace) with
+                config), config, start.Workspace), access) with
             {
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
@@ -1890,6 +1890,8 @@ public sealed class Driver(
                 InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
                 InSync = inSync?.Told,
+                // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
+                Dependencies = opened?.Dependencies,
                 GrewFrom = opened?.GrewFrom,
                 // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
                 Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
@@ -3206,6 +3208,13 @@ public sealed class Driver(
     /// </summary>
     internal static SessionTarget WithLanguage(SessionTarget target, DriverConfig config, string? workspace) =>
         target with { Language = SessionLanguages.Resolve(config, target.Repository, workspace) };
+
+    /// <summary>
+    /// The go-aheads its repository's access setup asks for (AUTONOMY1c, D184 point 3), from the setup this start resolved once and
+    /// keeps on its record: under <c>never</c>, full access among them, the instruction asks only what the person's words demand.
+    /// </summary>
+    internal static SessionTarget WithAccess(SessionTarget target, ResolvedAccess access) =>
+        target with { NoGoAheads = access.Value(AccessRules.GoAheads) == AccessRules.Never };
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account

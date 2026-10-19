@@ -129,6 +129,13 @@ public sealed record SessionTarget(
     public string? InSync { get; init; }
 
     /// <summary>
+    /// For a session in a tree just opened with its checkout's dependencies copied in (TREEDEPS1, D51's note): what was copied, and
+    /// to skip the <c>npm ci</c> that would delete it (<see cref="DependencyCopy.Told"/>), said before how to take the quest. Null
+    /// where nothing was copied, and the instruction reads as it did.
+    /// </summary>
+    public string? Dependencies { get; init; }
+
+    /// <summary>
     /// What the person answered, when the session before parked to ask them (STANDDOWN2) — the carry-on
     /// is handed it in their words. Null for a carry-on after a cut-off.
     /// </summary>
@@ -161,6 +168,13 @@ public sealed record SessionTarget(
     /// neither is set, and the instruction reads as it did.
     /// </summary>
     public SessionLanguage? Language { get; init; }
+
+    /// <summary>
+    /// Whether its repository's access setup asks no go-ahead (AUTONOMY1c, D184 point 3: <c>goAheads</c> <c>never</c>, full access
+    /// among them), read for this start: the instruction then asks one only where the quest or the person's words demand it
+    /// (point 5). False is today's, <c>named</c>, and the instruction reads as it did.
+    /// </summary>
+    public bool NoGoAheads { get; init; }
 
     /// <summary>
     /// Whether the quest closes through its closure graph (FABRIC-CLOSE1l, folding CLOSE1g; the fabric events design §E5): bound at its
@@ -352,6 +366,8 @@ public static class TargetPrompt
         // What its start did against the line, in a tree that stands (LANDSYNC2): the driver's own words, so counted with the close
         // they come before, and no page catalogue changed.
         new(HandedSections.Close, target.InSync is { Length: > 0 } told ? $"\n{told}\n" : ""),
+        // What its tree's open copied of the checkout's dependencies (TREEDEPS1): the driver's own words, counted with the close.
+        new(HandedSections.Close, target.Dependencies is { Length: > 0 } copied ? $"\n{copied}\n" : ""),
         // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes, and accounted as its own since the
         // page words it (REVIEWENV1c2).
         new(HandedSections.SetUp, SetUp(target)),
@@ -493,8 +509,8 @@ public static class TargetPrompt
             + "Decide whatever you reasonably can, such as a name or which of two sound ways: say it under\n"
             + "**Readings** with why, and keep going. Ask the person only for what you cannot decide: a\n"
             + "credential, an account or a sign-in; a choice the quest or the person's words leave to them; a\n"
-            + "go-ahead for an act outside this repository or on a production system, or for one this repository\n"
-            + $"or the quest says needs it.{OnceOnTheAsk(target)} Ask it in your last message, with why and what\n"
+            + GoAheadsAsked(target)
+            + $"{OnceOnTheAsk(target)} Ask it in your last message, with why and what\n"
             + "you looked at; commit what you have, and end your turn with the quest still taken, rather than\n"
             + "declining. The person answers in this conversation, and you go on here with their words.\n\n"),
         new(HandedSections.Closing, Closing),
@@ -767,6 +783,20 @@ public static class TargetPrompt
         return $" This repository indexes its own documents in {listed}: start the look there, and read every document "
                + "whose entry matches this work.";
     }
+
+    /// <summary>
+    /// Which go-aheads the session asks, by its repository's access setup (AUTONOMY1c, D184 points 3 and 5): under <c>named</c>,
+    /// today's, one for an act outside the repository or on a production system and one the repository or the quest names; under
+    /// <c>never</c> only what the quest or the person's words demand, since the person wrote it there, and the rest is done and said.
+    /// The boundary's push, publish and release stay as it says: the landing pushes, as its rule says (D145).
+    /// </summary>
+    private static string GoAheadsAsked(SessionTarget target) => target.NoGoAheads
+        ? "go-ahead only where the quest or the person's words demand one before an act. This repository's\n"
+          + "access setup asks no other go-ahead: where the work needs an act on a production system or outside\n"
+          + "this repository, do it without asking and name it under **Readings** in your closing note; a push,\n"
+          + "a publish or a release stays as the boundary below says."
+        : "go-ahead for an act outside this repository or on a production system, or for one this repository\n"
+          + "or the quest says needs it.";
 
     /// <summary>
     /// For a quest an ask asked (KNOWUSE1a, D135 §2): a go-ahead is asked once, on the ask, through the connector, so a
