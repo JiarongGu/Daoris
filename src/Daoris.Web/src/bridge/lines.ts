@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
@@ -11,7 +12,7 @@ import type { OpinionChange, RepositoryOpinion } from '../settings/Opinions';
 import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
-import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult } from '../work/milestone';
+import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../work/milestone';
 import { call, lookBound, pressBound } from './call';
 import { type DriverState, readSlice, useDriverChange, writeAnswered } from './driver';
 import { readPushed, type SliceSpec, usePushedLive } from './slices';
@@ -69,6 +70,32 @@ export const linesSlice: SliceSpec = {
   },
 };
 
+const NO_CHECKOUT = '<no checkout>';
+const HELD = '<held>';
+
+/**
+ * The work as the shell pushes it (PUSH1c2b, D182): a partition per repository with a checkout here, then `<no checkout>`, each
+ * `{units, recovery, unread}`, and `<held>`, `{held}`, apart. Composed into the one entry `WORK_STATE` answers, repositories in name
+ * order with `<no checkout>` last (a name sorts after `<`, so it is placed, not sorted). Not composed until the owner has judged every
+ * part, which keeps the pull; a part of another shape keeps it too.
+ */
+export const workSlice: SliceSpec = {
+  name: 'work',
+  key: keys.workState(null),
+  read: () => readSlice('work'),
+  compose: (partitions, judged) => {
+    if (!judged) return undefined;
+    const names = [...partitions.keys()].filter((name) => name !== HELD && name !== NO_CHECKOUT).sort();
+    if (partitions.has(NO_CHECKOUT)) names.push(NO_CHECKOUT);
+    const object = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+    const parts = names.map((name) => partitions.get(name));
+    const held = partitions.get(HELD);
+    if (!parts.every(object) || (held !== undefined && !object(held))) return undefined;
+    const rows = (field: string) => parts.flatMap((part) => (Array.isArray(part[field]) ? part[field] as unknown[] : []));
+    return readWorkState({ units: rows('units'), recovery: rows('recovery'), unread: rows('unread'), held: held && Array.isArray(held.held) ? held.held : [] });
+  },
+};
+
 export const useLines = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
@@ -120,13 +147,28 @@ export const useSweepPlan = () => {
  */
 export const useWorkState = (unit: string | null = null, enabled = true) => {
   const { isAvailable } = useShenora();
-  return useQuery({
-    queryKey: keys.workState(unit),
-    queryFn: async () => readWorkState(await call<unknown>('WORK_STATE', unit ? { unit } : {})),
-    enabled: isAvailable && enabled,
-    // It asks git in each repository with a checkout here: a minute is fresh enough to say where work stands by.
-    staleTime: 60_000,
-  });
+  const client = useQueryClient();
+  // Pushed (PUSH1c2b): the widest entry is read live from memory and a unit's variant selected from it, so neither a tick nor a focus
+  // asks the shell again. Elsewhere each variant keeps its own pull, after the first snapshot where one is on its way.
+  const pushed = usePushedLive(workSlice.name);
+  const select = useCallback((all: WorkState) => workOf(all, unit), [unit]);
+  const pull = async () => readWorkState(await call<unknown>('WORK_STATE', unit ? { unit } : {}));
+  return useQuery(pushed
+    ? {
+      queryKey: keys.workState(null),
+      queryFn: () => readPushed(client, workSlice.name, async () => readWorkState(await call<unknown>('WORK_STATE', {}))),
+      select, enabled: isAvailable && enabled, staleTime: Infinity, refetchOnWindowFocus: false,
+    }
+    : {
+      queryKey: keys.workState(unit),
+      queryFn: async () => {
+        const all = await readPushed<WorkState | null>(client, workSlice.name, async () => null);
+        return all === null ? pull() : workOf(all, unit);
+      },
+      enabled: isAvailable && enabled,
+      // It asks git in each repository with a checkout here: a minute is fresh enough to say where work stands by.
+      staleTime: 60_000,
+    });
 };
 
 /**

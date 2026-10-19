@@ -212,7 +212,8 @@ public sealed class PipeCensus
             "SESSION_GO_ON_NEW", "SESSION_START_FROM", "SESSION_HAND_OVER", "HELP_RENAME", "HELP_PIN",
             // Their set-up and their standing choices: what a review is set to, how work lands, what agents may reach.
             "SETUP_PRESS", "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HELPER", "SET_HELPERS", "SET_HELP_MODE",
-            "SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
+            // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
+            "SET_HEAVY_GATES", "SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
             "SET_REVIEW", "SET_SESSION_OPTION", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
             "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESS_ACTION",
             // Code that runs in the driver, and the programs it runs with.

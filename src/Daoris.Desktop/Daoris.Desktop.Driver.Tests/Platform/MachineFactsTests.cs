@@ -246,6 +246,74 @@ public sealed class MachineFactsTests
         Assert.Equal("engine #2", facts.Current.Value<string>(Lines, "engine"));
     }
 
+    /// <summary>
+    /// OWNMOVES1: a wake afresh, a move Daoris made itself, is judged at once past the subject's rest and waits for nothing, while a
+    /// plain wake of another subject in the same moment is still held; the clock never moves, so no rest ends.
+    /// </summary>
+    [Fact]
+    public async Task A_wake_afresh_is_judged_past_the_rest_and_a_plain_wake_beside_it_is_held()
+    {
+        var at = DateTimeOffset.Parse("2026-10-19T10:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
+        var asked = new Asked();
+        using var facts = new MachineFacts(() => at);
+        facts.Topic(Lines, Rules with { Rest = TimeSpan.FromMinutes(5) }, (subject, _) =>
+        {
+            asked.Add(subject);
+            return Task.FromResult<object?>($"{subject} #{asked[subject]}");
+        });
+        facts.Subject(Lines, "engine");
+        facts.Subject(Lines, "site");
+        facts.Start();
+        await facts.FirstAsync(Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        await facts.FirstAsync(Lines, "site", CancellationToken.None).WaitAsync(Within);
+
+        facts.Wake(Lines, "engine");
+        facts.Wake(Lines, "site", afresh: true);
+        await Poll.Until(() => facts.Current.Value<string>(Lines, "site") == "site #2", within: Within);
+        await facts.Settled().WaitAsync(Within);
+        await Task.Delay(200);
+
+        Assert.Equal((1, 2), (asked["engine"], asked["site"]));
+    }
+
+    /// <summary>
+    /// OWNMOVES1: a wake afresh that lands while its subject is judged is judged once more right after, past the rest the judgement
+    /// under way just began, since that one may have read the subject before the move.
+    /// </summary>
+    [Fact]
+    public async Task A_wake_afresh_during_a_judgement_is_judged_right_after_it_past_the_rest()
+    {
+        var at = DateTimeOffset.Parse("2026-10-19T10:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
+        var asked = new Asked();
+        var held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var facts = new MachineFacts(() => at);
+        facts.Topic(Lines, Rules with { Rest = TimeSpan.FromMinutes(5) }, async (subject, _) =>
+        {
+            asked.Add(subject);
+            if (asked[subject] == 2)
+            {
+                entered.TrySetResult();
+                await held.Task;
+            }
+
+            return $"{subject} #{asked[subject]}";
+        });
+        facts.Subject(Lines, "engine");
+        facts.Start();
+        await facts.FirstAsync(Lines, "engine", CancellationToken.None).WaitAsync(Within);
+
+        // The second judgement asked afresh, held while it runs; a third asked afresh meanwhile follows it at once.
+        facts.Wake(Lines, "engine", afresh: true);
+        await entered.Task.WaitAsync(Within);
+        facts.Wake(Lines, "engine", afresh: true);
+        held.SetResult();
+
+        await Poll.Until(() => facts.Current.Value<string>(Lines, "engine") == "engine #3", within: Within);
+        await facts.Settled().WaitAsync(Within);
+        Assert.Equal(3, asked["engine"]);
+    }
+
     private static readonly AsyncLocal<string?> Waker = new();
 
     [Fact]

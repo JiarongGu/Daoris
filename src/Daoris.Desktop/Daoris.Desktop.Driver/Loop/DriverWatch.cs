@@ -147,9 +147,11 @@ public sealed class DriverWatch(
     /// <summary>
     /// Told each move a change source heard (PARALLEL1a, D181 point 2): its topic and subject, a repository's refs as the ref watch
     /// judges them and every topic's wake, for the judges that keep the machine's facts. Never a plain nudge, which is a press, not a
-    /// move, and never a deadline. Null tells nobody.
+    /// move, and never a deadline. Null tells nobody. The third argument says a ref Daoris moved itself (OWNMOVES1,
+    /// <see cref="RefMoves.Mine"/>): a landing or an <i>Accept</i>, whose repository the facts judge past their rest; every other move
+    /// is told with it false.
     /// </summary>
-    public Action<string, string>? Heard { get; init; }
+    public Action<string, string, bool>? Heard { get; init; }
 
     private HomeWatch? _files;
 
@@ -228,7 +230,7 @@ public sealed class DriverWatch(
         else if (heard) _landing.Hear(wake.Topic, wake.Subject);
 
         // PARALLEL1a: a move is told to the facts' judges too; a ref's is told where the ref watch hears it, so not twice.
-        if (wake is not null && heard && wake.Topic != ChangeTopics.Refs) Heard?.Invoke(wake.Topic, wake.Subject);
+        if (wake is not null && heard && wake.Topic != ChangeTopics.Refs) Heard?.Invoke(wake.Topic, wake.Subject, false);
         Volatile.Write(ref _woke, wake);
         // FABRIC-END4a: what can unblock a refused tidy wakes link 2 too: a press (a plain nudge), the home's files, a ledger family.
         _refs?.Unblocked(wake is null ? ChainEvents.Press
@@ -349,10 +351,11 @@ public sealed class DriverWatch(
             },
         };
         await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log,
-            heard: repository =>
+            heard: (repository, mine) =>
             {
                 LandingWakes.Moved(home, repository, Nudge); // FABRIC-END7: a due tree that moved wakes its landing.
-                Heard?.Invoke(ChangeTopics.Refs, repository); // PARALLEL1a: and the facts that repository's refs move.
+                // PARALLEL1a: and the facts that repository's refs move; OWNMOVES1: past their rest where Daoris moved them itself.
+                Heard?.Invoke(ChangeTopics.Refs, repository, mine);
             },
             tidy: effect);
         _refs = refs;

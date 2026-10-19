@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The desktop read a session variable the scratch-environment census had not named (HEAVYRUN1b2a)
+
+- **Symptom:** the CI on `7f72756` failed the CLI's `desktop-tool.test.ts` (*every machine-local override the desktop reads is
+  redirected, cleared, or named*): `DAORIS_REPOSITORY`.
+- **Root cause:** HEAVYRUN1b2a made `run-heavy` read `DAORIS_REPOSITORY` from a file that touches `DaorisHome`, which puts it
+  in the census's scan; its builder ran the driver's classes, not the CLI's census.
+- **Fix:** named as handled with its reason: the driver writes it into a driven session's environment and only `run-heavy`,
+  inside that session, reads it, as `DAORIS_SESSION_ID`.
+- **Verify:** the census green.
+
+## 2026-10-20 — The heavy-gate tests joined driver.json onto a home by hand (HEAVYRUN1b2a, HOMELAYOUT2)
+
+- **Symptom:** the CI on `ae28dd1` failed the CLI's home census (*no code joins a home path by hand*): five
+  `Path.Combine(<home>, "driver.json")` in `HeavyRunCommandTests`, `HeavyRunProcessTests` and `HeavyToldTests`, and a sixth
+  since in `StartInSyncTickTests` (HEAVYRUN1b2a2).
+- **Root cause:** the census is a CLI test scanning the desktop's sources; the builders ran their own .NET classes only.
+- **Fix:** each asks `DaorisHome.Entry(home, HomeEntry.DriverConfig)`.
+- **Verify:** the census green; `HeavyRunCommandTests` and `HeavyToldTests` green (25).
+
 ## 2026-10-20 — A start's fresh tree was left at the driver's close (QUEUEDTREE1)
 
 - **Symptom:** PARALLEL1f's hand-back: a continuation that returns as the driver closes leaves the tree its start opened, and its

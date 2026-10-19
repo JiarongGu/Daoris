@@ -161,6 +161,20 @@ export function unitOfBranch(units: readonly MilestoneUnit[], repository: string
     && (unit.branch === branch || unit.entries.some((entry) => (entry.kind === 'session-branch' || entry.kind === 'landing-branch') && entry.resource === branch)));
 }
 
+/**
+ * The units a name picks, as the driver's `WorkInventories.Named` does (PUSH1c2b): a unit's id or session in any case, a branch exact,
+ * a branch equal to `daoris/` and the name, or any session or landing branch entry whose resource is the name. With none named, the
+ * whole; with one, no recovery (the route answers none for a unit) and only the attempts held of the units picked.
+ */
+export function workOf(all: WorkState, unit: string | null): WorkState {
+  if (!unit) return all;
+  const same = (value: string | null | undefined) => typeof value === 'string' && value.toLowerCase() === unit.toLowerCase();
+  const units = all.units.filter((each) => same(each.unit) || same(each.session) || each.branch === unit || each.branch === `daoris/${unit}`
+    || each.entries.some((entry) => (entry.kind === 'landing-branch' || entry.kind === 'session-branch') && entry.resource === unit));
+  const ids = new Set(units.map((each) => each.unit));
+  return { units, recovery: [], unread: all.unread, held: all.held.filter((each) => ids.has(each.unit)) };
+}
+
 /** Older shells answer nothing of the kind, and a malformed answer reads as none. */
 export function readWorkState(answer: unknown): WorkState {
   const read = answer as { units?: unknown; recovery?: unknown; unread?: unknown; held?: unknown } | null | undefined;

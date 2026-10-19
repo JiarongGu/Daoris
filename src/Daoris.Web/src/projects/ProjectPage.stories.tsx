@@ -485,6 +485,34 @@ export const SetupSessions: Story = { args: { start: 'setup', setup: opened('ses
 export const SetupReach: Story = { args: { start: 'setup', setup: opened('reach') } };
 
 /**
+ * Setup's *Heavy gates* (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): this machine's list for it where its own `daoris.gates.json`
+ * marks none, open on its own as a list is set, each gate by name with its command and its folder, then *Edit* and *Clear*. Its
+ * Save says it landed, so *Edit* shows the list editor whole.
+ */
+export const SetupHeavyGates: Story = {
+  args: {
+    start: 'setup',
+    setup: {
+      ...SETUP_DEFAULTS,
+      heavy: {
+        gates: [
+          { name: 'build', run: 'dotnet build -nodeReuse:false' },
+          { name: 'web', run: 'npm test -- --maxWorkers=2', cwd: 'src/web' },
+          { name: 'e2e', run: 'npm run e2e', cwd: 'src/web' },
+        ],
+        onSave: (_gates, answered) => answered.done(),
+      },
+    },
+  },
+};
+
+/** Setup's *Heavy gates* where none is set, folded to its line and offering *Add heavy gates* once opened; narrow, in 中文. */
+export const SetupHeavyGatesNoneChinese: Story = {
+  args: { start: 'setup', setup: { ...opened('heavy'), heavy: { gates: [], onSave: (_gates, answered) => answered.done() } } },
+  decorators: [(Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>, chinese],
+};
+
+/**
  * Setup with the person's own values: its line, a branch rule a plugin pushes and accepts automatically, its session
  * language, a standing answer, read by nobody outside it, writing into the game and two rules. Each section holding one
  * opens on its own, with its *Clear*; Driving folds.

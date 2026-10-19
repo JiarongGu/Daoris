@@ -1918,8 +1918,9 @@ public sealed class Driver(
                 InSync = inSync?.Told,
                 // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
                 Dependencies = opened?.Dependencies,
-                // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb (HEAVYRUN1b1).
-                Heavy = HeavyTold.For(workTree, home),
+                // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb (HEAVYRUN1b1). Looked up
+                // under the quest's repository, the name DAORIS_REPOSITORY hands `run-heavy`, not the checkout's folder (HEAVYRUN1b2a2).
+                Heavy = HeavyTold.For(workTree, home, quest.To),
                 GrewFrom = opened?.GrewFrom,
                 // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
                 Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,

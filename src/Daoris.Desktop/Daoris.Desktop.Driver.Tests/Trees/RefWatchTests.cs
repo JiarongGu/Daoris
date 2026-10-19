@@ -296,6 +296,44 @@ public sealed class RefWatchTests : IDisposable
         Assert.Equal(ChangeWhy.Own, Assert.Single(Lines("change.judged")).GetProperty("why").GetString());
     }
 
+    /// <summary>
+    /// OWNMOVES1: the judgement Daoris's own move asks for is told as its own, the echo taken up with it; another repository's hint
+    /// beside it is told as no own move, and so is the moved repository's next hint, which the own move does not outlive.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_own_move_is_told_as_its_own_and_a_hint_beside_it_is_not()
+    {
+        var told = new List<(string Repository, bool Mine)>();
+        (string, bool)[] Told()
+        {
+            lock (told) return [.. told];
+        }
+
+        _repositories = [Repository("engine"), Repository("deck")];
+        await using var watch = new RefWatch(_home, _ => Task.FromResult(_repositories), Keep, Deadline, _source, () => _now)
+        {
+            Heard = (repository, mine) =>
+            {
+                lock (told) told.Add((repository, mine));
+            },
+        };
+        watch.Open();
+        await watch.RebuildAsync(CancellationToken.None);
+
+        Say("engine", "refs/heads/daoris/s-0001", ChangeKind.Deleted);
+        RefMoves.Mine(_home, "engine");
+        Say("deck", "refs/heads/main");
+        await Step(watch, TimeSpan.Zero);
+        Assert.Equal([("engine", true)], Told());
+
+        await Step(watch, ChangeWatch.Quiet);
+        Assert.Equal([("engine", true), ("deck", false)], Told());
+
+        Say("engine", "refs/heads/main");
+        await Step(watch, ChangeWatch.Quiet);
+        Assert.Equal([("engine", true), ("deck", false), ("engine", false)], Told());
+    }
+
     /// <summary>A tree opened in a repository not yet watched adds its common dir in process, and judges it.</summary>
     [Fact]
     public async Task A_tree_opened_in_a_repository_not_yet_watched_adds_it()

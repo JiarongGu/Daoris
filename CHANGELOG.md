@@ -19,7 +19,7 @@ with the version and date at release.
   evaluation steps run beside the driver's look instead of holding the next one.
 - The sessions list no longer runs git in every ended session's tree each time a window refreshes it. Whether a tree holds
   work to review is judged once per repository as its branches move, and every open window reads that, so more windows cost
-  no more git; a tree's *Accept* may stay offered up to half a minute after a landing that followed close on another change.
+  no more git, and a tree's *Accept* leaves the list as soon as its landing is done.
 - A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates
   its `daoris.gates.json` marks `"heavy": true` one after another, or the one `--gate <name>` names, and stops at the first that
   fails. A second run of the same repository, from its checkout or any tree of it, waits rather than running beside the first,
@@ -33,6 +33,10 @@ with the version and date at release.
   (`--cwd <folder>` after a gate runs it in a folder of the repository), `--clear` takes them away, and `heavy` alone lists
   them. `run-heavy` then runs them for that repository, and its sessions are told to, wherever its own `daoris.gates.json`
   marks none.
+- A repository's Setup shows those heavy gates under *Heavy gates* and edits them there: each gate's name, command and
+  folder, moved up or down, removed or added, then saved as one list in its order, or cleared. A list the driver would not
+  run (a gate with no name or no command, a name twice, a folder outside the repository) is refused under *Save* in the
+  driver's words, with nothing changed.
 - A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
   test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
   call the rules refused no longer reads as still running.

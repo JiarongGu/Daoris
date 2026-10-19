@@ -73,6 +73,14 @@ public sealed partial class HelpCoverageTests
         + "proposal names `SET_ACCESS`, so a helper can neither widen what its own sessions may do nor narrow the person's choice.";
 
     /// <summary>
+    /// *Heavy gates* on a repository's Setup (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): this machine's list for a repository whose own
+    /// <c>daoris.gates.json</c> marks none, the twin of <c>daoris-driver heavy</c>.
+    /// </summary>
+    private const string HeavyGates =
+        "the list is shell commands this machine runs for a repository, which the person writes themselves: no proposal names "
+        + "`SET_HEAVY_GATES`, so a helper never chooses what a session's end runs on the owner's machine.";
+
+    /// <summary>
     /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
     /// person's own word. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
@@ -744,6 +752,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetHelpers", null, new Door("setting", "helpers")),
         // AUTONOMY1d: *Sessions' access*, on a repository's Setup and a workspace's.
         ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
+        // HEAVYRUN1b2b: *Heavy gates*, on a repository's Setup.
+        ("projects", "useSetHeavyGates", null, new Exempt(HeavyGates)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),
