@@ -34,7 +34,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 968 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 53 | 982 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 115 | 2187 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2234 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 47 | 803 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 978 |
 | `src/Daoris.Web/src/app/App.tsx` | 74 | 1327 |

@@ -3,6 +3,8 @@
   "signin.titleNew": "Signing in to another {{harness}} account",
   "signin.readyNew": "The account appears above, under who signed in, once the sign-in finishes. If it does not finish, nothing is kept.",
   "signin.cancel": "Cancel",
+  "signin.retry": "Try again",
+  "signin.close": "Close",
   "signin.step.open": "Sign in on the page that opened.",
   "signin.step.openLink": "Open the link and sign in.",
   "signin.step.openHint": "No browser? Copy the link into one.",

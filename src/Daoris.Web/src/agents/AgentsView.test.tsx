@@ -478,6 +478,53 @@ describe('the Agents place', () => {
     expect(await screen.findByText('Signing in to another Claude Code account')).toBeTruthy();
   });
 
+  /**
+   * CODEXSIGNIN2: a sign-in the driver refuses to start keeps its panel and says the driver's sentence in it, with *Try again*
+   * and *Close*, where it was a toast and the panel closed with it (platform-ux §4).
+   */
+  it('keeps the sign-in panel when its start is refused, says the sentence in it, and starts again from it', async () => {
+    let refuse = true;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') {
+        if (refuse) {
+          refuse = false;
+          throw Object.assign(new Error('refused'), {
+            code: 'DRIVER_REFUSED', parameters: { message: 'A sign-in for `claude-code` is already running.' },
+          });
+        }
+        return { harness: 'claude-code', action: 'login-new', started: true };
+      }
+      return type === 'HARNESSES' ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [] }] } : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign in for Daoris' }));
+    const panel = await screen.findByRole('region', { name: 'Signing in to another Claude Code account' });
+    expect((await within(panel).findByRole('alert')).textContent).toBe('A sign-in for claude-code is already running.');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(within(panel).queryByRole('alert')).toBeNull());
+    expect(invoke.mock.calls.filter(([, type]) => type === 'HARNESS_ACTION')).toHaveLength(2);
+  });
+
+  it('closes a refused sign-in’s panel with Close', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') {
+        throw Object.assign(new Error('refused'), { code: 'DRIVER_REFUSED', parameters: { message: 'Nothing started.' } });
+      }
+      return type === 'HARNESSES' ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [] }] } : WIRING;
+    });
+    place();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign in for Daoris' }));
+    const panel = await screen.findByRole('region', { name: 'Signing in to another Claude Code account' });
+    await within(panel).findByRole('alert');
+    await userEvent.click(within(panel).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Signing in to another Claude Code account' })).toBeNull());
+  });
+
   /** With no account signed out or unknown there is nobody to bring back: *Add an account…* starts the sign-in at once. */
   it('Add an account… starts the sign-in at once where no account reads signed out or unknown', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
