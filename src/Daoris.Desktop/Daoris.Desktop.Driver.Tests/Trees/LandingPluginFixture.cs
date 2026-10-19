@@ -31,7 +31,7 @@ public abstract class LandingPluginFixture : IDisposable
     public void Dispose()
     {
         // A real plugin's process stands in its folder a moment after it is told to go (FLAKE1). Git's read-only objects are made
-        // writable first (PROCSPEED1): refused, they spent the retries' five seconds after every test and stayed.
+        // writable first (PROCSPEED1): refused, every retry fails and the folder stays.
         for (var attempt = 0; Directory.Exists(Scratch); attempt++)
         {
             try
