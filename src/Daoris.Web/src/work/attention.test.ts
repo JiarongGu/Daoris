@@ -681,7 +681,7 @@ describe('work to review', () => {
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', trust: 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       unanswerable: 'word', review: 'ready', work: 'word',
@@ -756,6 +756,41 @@ describe('the groups', () => {
     // A session the page does not hold is named by its id, and no repository is guessed.
     expect(rows[0]).toMatchObject({ where: '', detail: '#g0n3 asked for another agent’s help. Nothing is asked until you let it.' });
     expect(rows.map(attentionActs)).toEqual([['let-ask', 'not-now'], ['let-ask', 'not-now']]);
+  });
+
+  /**
+   * AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person's answer under asking holds work, as a go-ahead does,
+   * since its turn stands still until they answer: the call as the agent named it, the session that holds it and its repository,
+   * since it was held, a press per choice the agent offered, the session's page its door. From the driver's own list.
+   */
+  it('lists a tool call a session holds for the person, with the session and a press per offered choice', () => {
+    const holder = session({ id: 'c0nv0001', quest: '7a82cc' });
+    const held = [
+      {
+        session: 'c0nv0001', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T09:30:00Z',
+        choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
+      },
+      {
+        session: 'g0n3', request: '7', call: null, title: null, kind: 'edit', since: '2026-09-21T09:10:00Z',
+        choices: [{ id: 'no', name: 'Reject', kind: 'reject_once' }, { id: 'later', name: 'Later', kind: 'snooze' }],
+      },
+    ];
+    const rows = needsAPerson([holder], [quest()], [registration('engine')], [], [], [], [], [], undefined, [], [], [], [], held);
+
+    expect(rows.map((row) => `${row.kind}:${row.id}`)).toEqual(['permission:g0n3#7', 'permission:c0nv0001#900']);
+    expect(ATTENTION_GROUP.permission).toBe('holding');
+    expect(rows[1]).toMatchObject({
+      title: 'npm test', where: 'engine', since: '2026-09-21T09:30:00Z', session: 'c0nv0001',
+      detail: 'Expose a streaming budget on the chunk API waits on your answer before this tool call runs; it is refused if nobody '
+        + 'answers within 15 minutes.',
+    });
+    // A session the page does not hold is named by its id, no repository is guessed, and an untitled call says so.
+    expect(rows[0]).toMatchObject({ title: 'An untitled tool call', where: '' });
+    expect(rows[0]!.detail).toMatch(/^#g0n3 waits on your answer/);
+    // One press per choice the agent offered that the page can name; none it did not offer, and no allow where none was.
+    expect(rows.map(attentionActs)).toEqual([['refuse-once'], ['allow-once', 'refuse-once']]);
+    expect(attentionOffers(rows[1]!)).toEqual([{ act: 'allow-once', option: 'allow' }, { act: 'refuse-once', option: 'reject' }]);
+    expect(ASKS_ONCE.has('allow-once')).toBe(false);
   });
 
   /**

@@ -37,6 +37,7 @@ import type { SessionGrouping } from './groups';
 import { sessionTitle } from './identity';
 import type { OpinionWait } from './opinion';
 import type { HelperWait } from './HelperAsks';
+import type { PermissionWait } from './PermissionAsks';
 import type { Session } from '../data/api';
 
 const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', workspace: 'default' };
@@ -107,16 +108,24 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-function start({ considered = [], untrusted = [], proposals = [], groups = [], waits = [], roster = {}, accounts = {}, opinions = [], helpers = [] }: {
+function start({
+  considered = [], untrusted = [], proposals = [], groups = [], waits = [], roster = {}, accounts = {}, opinions = [], helpers = [], permissions = [],
+}: {
   considered?: Consideration[]; untrusted?: TrustHold[]; proposals?: RuleProposal[]; groups?: SessionGrouping[];
   waits?: AccountWaitTick[]; roster?: HarnessRoster | object; accounts?: AccountsAnswer | object; opinions?: OpinionWait[];
-  helpers?: HelperWait[];
+  helpers?: HelperWait[]; permissions?: PermissionWait[];
 }, props: { doors?: AttentionDoors; notify?: (text: string, kind?: 'ok' | 'error') => void; onSessions?: () => void } = {}) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (type === 'RULES') return { proposals };
     if (type === 'OPINION_WAITS') return { waits: opinions };
     if (type === 'HELPER_WAITS') return { waits: helpers };
+    if (type === 'PERMISSION_WAITS') return { waits: permissions };
+    if (type === 'SESSION_PERMISSION_ANSWER') {
+      return request?.payload?.option === 'allow'
+        ? { answered: true, why: null, message: 'Answered `Allow`.' }
+        : { answered: false, why: 'unheld', message: 'Nothing was answered.' };
+    }
     if (type === 'SESSION_HELPER_APPROVE') return { approved: true, why: null, message: 'yes' };
     if (type === 'SESSION_HELPER_DECLINE') return { declined: false, why: 'approved', message: 'x' };
     if (type === 'ASK_OPINION') return { session: request?.payload?.id, done: true, message: 'A second opinion is asked.' };
@@ -179,8 +188,11 @@ describe('What needs you on a machine', () => {
     // The second opinion's waits (XAGENT1g): the driver's own reading of the work it owes an opinion, asked only while the list
     // places work To review, the only work one is owed on. The agents' asks for a helper waiting on the person (MIXAGENT2c): the
     // driver's own files. And each unit's milestone (FABRIC-MILESTONE1b), the driver's read of its records, for the unit whose
-    // clean-up waits on the person. None asks an agent.
-    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'HELPER_WAITS', 'OPINION_WAITS', 'RULES', 'SESSION_GROUPS', 'WORK_STATE']);
+    // clean-up waits on the person. The tool calls the sessions hold for the person (AUTONOMY1b3c): the driver's memory. None asks
+    // an agent.
+    expect([...new Set(asked())].sort()).toEqual([
+      'ACCOUNTS', 'HARNESSES', 'HELPER_WAITS', 'OPINION_WAITS', 'PERMISSION_WAITS', 'RULES', 'SESSION_GROUPS', 'WORK_STATE',
+    ]);
     const roster = invoke.mock.calls.filter(([, type]) => type === 'HARNESSES');
     expect(roster.every(([, , request]) => !request?.payload?.refresh)).toBe(true);
   });
@@ -203,6 +215,33 @@ describe('What needs you on a machine', () => {
     await userEvent.click(within(row).getByRole('button', { name: 'Not now' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_DECLINE', { payload: { session: 'c0nv0001', ask: 'a1' } }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith('It has your yes already: the driver starts it at its next look.', 'error'));
+  });
+
+  /**
+   * AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person's answer holds work, with a press per choice its agent
+   * offered, the session's page's own, sending that choice's id; its answer said in the page's words, a refusal by its code.
+   */
+  it('lists a tool call held for the person, answers it with the choice pressed and says a refused answer in its words', async () => {
+    const notify = vi.fn();
+    start({
+      permissions: [{
+        session: 'c0nv0001', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T09:00:00Z',
+        choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
+      }],
+    }, { notify, doors: { permission: vi.fn() } });
+
+    const holding = await screen.findByRole('group', { name: 'Holding work' });
+    const row = within(holding).getByRole('listitem', { name: 'npm test' });
+    expect(within(row).getByText('an agent asks permission')).toBeInTheDocument();
+    await userEvent.click(within(row).getByRole('button', { name: 'Allow once' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 'c0nv0001', request: '900', option: 'allow' } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Allowed once: the call goes on.'));
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Refuse' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 'c0nv0001', request: '900', option: 'reject' } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('It no longer waits: it was answered or released first. Nothing was answered.', 'error'));
   });
 
   /**
