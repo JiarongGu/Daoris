@@ -2508,7 +2508,8 @@ public sealed class QuestStore
     /// Daoris read a done's evidence (EVID1a, D144 §3): an <see cref="QuestOperationKind.Evidenced"/> operation, judged
     /// against the replayed history inside the write as every move is, so it applies only to a done still waiting on
     /// exactly what it reads. Found, and nothing else holding the done, the chain's next step is published in the same
-    /// transaction, as the yes publishes one; missing, the done stays held, now for that.
+    /// transaction, as the yes publishes one; missing, the done stays held, now for that. A commit read alone keeps the commit of a
+    /// submission that waits on no evidence, once, and publishes nothing (FABRIC-CLOSE1c6, <see cref="QuestEvidenceVerdict.KeepsCommitOf"/>).
     /// </summary>
     /// <returns>
     /// The quest as it now stands, whether this call kept the verdict — false for a quest not waiting on what it reads —
@@ -2534,9 +2535,10 @@ public sealed class QuestStore
                 .ConfigureAwait(false);
             var evidenced = QuestLog.Step(quest, operation)!;
             await WriteCacheAsync(evidenced, transaction, inside).ConfigureAwait(false);
+            // FABRIC-CLOSE1c6: a commit read alone kept the commit of a submission nothing held for it, so it lets nothing go.
             return new QuestMove(
                 evidenced, Moved: true,
-                evidenced.Held ? null : await PublishNextAsync(evidenced, now, transaction, inside).ConfigureAwait(false));
+                evidenced.Held || read.Items.Count == 0 ? null : await PublishNextAsync(evidenced, now, transaction, inside).ConfigureAwait(false));
         }, ct);
 
     /// <summary>

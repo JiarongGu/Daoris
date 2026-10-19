@@ -329,6 +329,73 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Null(found.Quest with { Submission = null } is { } none ? none.SubmissionCommit : "");
     }
 
+    /// <summary>The commit a session's end read alone (FABRIC-CLOSE1c6), for the submission named: a verdict reading no evidence.</summary>
+    private Task<QuestRespondOutcome> CommitAlone(Quest quest, QuestOperationRef? asked, string commit = Commit) =>
+        _exchange.EvidenceAsync(quest.Id, new QuestEvidenceVerdict(commit, "session-end", []) { Session = "s0a1b2c3", Submission = asked }, Now);
+
+    private async Task<QuestOperationRef> Current(Quest quest) =>
+        (await Find(quest.Id)).Submission is { } current ? new QuestOperationRef(current.Machine, current.Sequence) : throw new InvalidOperationException();
+
+    /// <summary>
+    /// 🔴 FABRIC-CLOSE1c6 (§E5, D173's CLOSE1c5 note, <i>Left</i>): a submission whose answers name no evidence is read for none, so its
+    /// commit was never known, and a step that grew from it was brought up to date with the line alone. The commit its session's end read
+    /// is kept alone, for that submission: it answers the commit, holds nothing and lets nothing go. Once, for the current submission
+    /// alone: a second is refused, one for a submission a later ready replaced is refused, and the later one's own is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_submission_that_waits_on_no_evidence_answers_the_commit_its_sessions_end_read()
+    {
+        var quest = await Bound();
+        var ready = (await Ready(quest, Departed, Met(2))).Quest!;
+        Assert.Equal((QuestHold.Departed, (string?)null), (ready.Hold, ready.SubmissionCommit));
+        var first = await Current(quest);
+
+        var kept = await CommitAlone(quest, first);
+
+        Assert.Equal(QuestRespondRefusal.None, kept.Refusal);
+        Assert.Contains(Commit[..7], kept.Message, StringComparison.Ordinal);
+        Assert.Equal(Commit, kept.Quest!.SubmissionCommit);
+        var stands = await Find(quest.Id);
+        Assert.Equal((Commit, QuestHold.Departed, 0), (stands.SubmissionCommit, stands.Hold, stands.Evidence!.Items.Count));
+        Assert.DoesNotContain(await _quests.ListAsync(), q => q.Parent == quest.Id);
+
+        var again = await CommitAlone(quest, first, commit: Blob);
+        Assert.Equal(QuestRespondRefusal.NotAwaitingEvidence, again.Refusal);
+        Assert.Equal(Commit, (await Find(quest.Id)).SubmissionCommit);
+
+        // A later ready replaces the submission: no commit is known for it, one read for the one before is refused, its own is kept.
+        Assert.Equal(QuestRespondRefusal.None, (await Ready(quest, Departed, Met(2))).Refusal);
+        Assert.Null((await Find(quest.Id)).SubmissionCommit);
+        Assert.Equal(QuestRespondRefusal.NotAwaitingEvidence, (await CommitAlone(quest, first, commit: Blob)).Refusal);
+        Assert.Null((await Find(quest.Id)).SubmissionCommit);
+        Assert.Equal(QuestRespondRefusal.None, (await CommitAlone(quest, await Current(quest), commit: Blob)).Refusal);
+        Assert.Equal(Blob, (await Find(quest.Id)).SubmissionCommit);
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1c6: a submission that waits on its evidence is read for it, so a commit read alone is refused, nothing kept: its own
+    /// verdict gives the commit. So is one on a quest with no submission, and a done's.
+    /// </summary>
+    [Fact]
+    public async Task A_commit_read_alone_is_refused_where_evidence_is_waited_on_or_no_submission_stands()
+    {
+        var quest = await Bound();
+        Assert.Equal(QuestRespondRefusal.NotAwaitingEvidence, (await CommitAlone(quest, null)).Refusal);
+        var ready = (await Ready(quest)).Quest!;
+        Assert.Equal(QuestHold.EvidenceUnread, ready.Hold);
+
+        var refused = await CommitAlone(quest, await Current(quest));
+
+        Assert.Equal(QuestRespondRefusal.BadVerdict, refused.Refusal);
+        var stands = await Find(quest.Id);
+        Assert.Equal((QuestHold.EvidenceUnread, (QuestEvidenceVerdict?)null), (stands.Hold, stands.Evidence));
+
+        var done = await Taken(chain: false, title: "Write another report");
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(done.Id, "done", "Built.", Now, answers: [Departed, Met(2)])).Refusal);
+        Assert.Equal(QuestRespondRefusal.NotAwaitingEvidence, (await CommitAlone(done, null)).Refusal);
+        Assert.Null((await Find(done.Id)).Evidence);
+    }
+
     [Fact]
     public async Task An_unheld_submission_publishes_its_chain_step_in_the_same_write()
     {

@@ -295,6 +295,33 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 FABRIC-CLOSE1c6: the commit a submission's session's end read alone, where its answers name no evidence, is an operation, so it
+    /// travels: the machine that synced the step and the remote answer the source's commit, which is what the step's go-on brings its
+    /// branch up to date with on whichever machine holds the step. A second read of it, from another machine, is no move anywhere.
+    /// </summary>
+    [Fact]
+    public async Task A_commit_read_alone_for_a_submission_reads_the_same_on_every_machine()
+    {
+        const string commit = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+        var (quest, _, submission) = await SealedOnBothAsync();
+        var read = new QuestEvidenceVerdict(commit, "session-end", []) { Session = "s0a1b2c3", Submission = submission };
+
+        Assert.True((await _a.EvidenceAsync(quest.Id, read, Now.AddHours(3))).Moved);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var answered = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((commit, (QuestHold?)null), (answered.SubmissionCommit, answered.Hold));
+        }
+
+        var other = read with { Commit = "fedcba9876543210fedcba9876543210fedcba98" };
+        Assert.False((await _b.EvidenceAsync(quest.Id, other, Now.AddHours(4))).Moved);
+        Assert.Single(await _remote.HistoryAsync(quest.Id), o => o.Kind == QuestOperationKind.Evidenced);
+    }
+
+    /// <summary>
     /// FABRIC-CLOSE1c10: the person's go-on clears the held step's own result by the replay's rule, so the step's machine, the source's
     /// machine and the remote read it taken with nothing submitted, grown from the new submission, and its old submission closes nowhere.
     /// </summary>
