@@ -928,6 +928,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, 'modules', 'modules-process']],
     // GATESLIM1: the tests of the tools only the parent runs are the tool-tests gate, reached by those tools and their folder.
     ['the publish script', ['tools/desktop-publish.mjs'], [...BASE, 'tool-tests', 'rehearse-family', 'deployment']],
+    // FAMILYFAIL1: the rehearsals' kit imports it too, to end what a timed-out command left running.
+    ['the process queries the publish and the kit import', ['tools/processes.mjs'], [...BASE, 'tool-tests', 'rehearse', 'rehearse-family', 'deployment']],
     ['the service publisher the publish calls', ['tools/service-publish.mjs'], [...BASE, 'tool-tests', 'rehearse', 'rehearse-family', 'deployment']],
     ["the family rehearsal's set-up kit", ['tools/setup-kit.mjs'], [...BASE, 'tool-tests', 'rehearse-family']],
     ["the rehearsals' kit", ['tools/rehearsal-kit.mjs'], [...BASE, 'tool-tests', 'rehearse', 'rehearse-family', 'deployment']],
