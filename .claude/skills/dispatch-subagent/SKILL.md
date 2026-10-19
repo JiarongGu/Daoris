@@ -110,11 +110,12 @@ once three batches hold the targets (MODELROLE1).
 6. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
-     the baseline (the universal gates, the code map, the orientation index's check, `verify`), the fast halves of the suites the merge's changed paths can reach, and the web gate
-     and the release and family rehearsals they reach, by the tool's lane table (GATE3). **It skips the
-     long halves** (GATE5): the driver's and the modules' `Process` halves and the deployment rehearsal
-     never run at a merge, and every run and `--plan` says each is in the full set before staging. It
-     prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares and
+     **the blocking checks only** (GATESLIM1): the universal gates (with the sensitive scan), the code map and the
+     orientation index's check. Every other gate the paths reach (the suites, `verify`, `tool-tests`, the rehearsals) is
+     listed and skipped, "in the CI beside"; the `Process` halves and the deployment rehearsal say "in the full set before
+     staging" (GATE5). `--gated` runs what the paths reach by the tool's lane table (GATE3), for a merge you judge risky.
+     **After a merge, or a batch, start the CI beside on main's tip with `--full --beside`** and route its failures as fixes
+     (a worker, or you for a record); do not wait on it to dispatch. Every run and `--plan` prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares and
      every rehearsal the release workflow adds. The light gates run beside the serial Process lane
      (GATELANES1); add `--one-at-a-time` on a loaded machine. Each gate's whole log goes to
      `local/scratch/merge-<branch>/`; a Process half also leaves a `.trx` there, with its ten slowest
@@ -136,10 +137,10 @@ once three batches hold the targets (MODELROLE1).
      `--rerun <gate>` (it re-runs that gate, any gate not yet run and any whose verdict the fix's paths
      reach, keeping the other verdicts; outside `--full` it runs a long half only when named), or
      `--continue` to gate the merge again whole, or run `git merge --abort`.
-   - For several branches, run `<first> --batch <second> …`. Each merge gets the checks and suites its
-     paths reach. Commit it, then `--continue` merges the next. The rehearsals run once, after the last.
+   - For several branches, run `<first> --batch <second> …`. Each merge gets the blocking checks.
+     Commit it, then `--continue` merges the next. The CI beside runs once, after the last, and the full set before any stage.
      **Two or more branches ready merge as one batch**, never one after another: a service branch alone paid 11
-     minutes of light gates and 27 of the family rehearsal (CLOSE1c24, 2026-10-19), and a batch pays the rehearsal once.
+     minutes of light gates and 27 of the family rehearsal (CLOSE1c24, 2026-10-19), and a batch pays the light gates once.
    - Bisecting a failure, run the test five times at each commit: one pass proves nothing of a test that fails some of
      the time. A single pass at an earlier merge once blamed the wrong change; the test failed 5 of 8 there (AUTOTIDY1r).
    - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that

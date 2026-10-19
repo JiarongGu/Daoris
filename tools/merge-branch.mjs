@@ -42,10 +42,12 @@
  *    declared ones, so the declaration's last gate, the deployment rehearsal, ends the run. That rehearsal
  *    starts after `dotnet build-server shutdown`: on 2026-09-30 a long-lived build server carried a broken
  *    environment into a publish.
- *    Of the plan, a merge runs the baseline (`BASELINE`: the universal gates, the code map, the orientation
- *    index's check and the CLI's `verify`, at every merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
+ *    GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
+ *    orientation index's check); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
+ *    `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
+ *    merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  *    places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
- *    never run by a merge, reached or not: it says it is in the full set before staging. The lines before
+ *    never run by a merge, reached or not (the Process halves, and the release, family and deployment rehearsals): it says it is in the full set before staging. The lines before
  *    the run say why each gate runs or is skipped. `--full` runs the whole plan, and `--rerun` runs a long
  *    gate when it is named. The merge is gated before it is committed, so the devkit's universal gates, in their
  *    own gate and in `verify`, run through `tools/as-merged.mjs` (GATE1): its docs gate dates each path from
@@ -278,8 +280,8 @@
  * the checks and suites, the parent commits it, and `--continue` merges the next. The rehearsals run
  * once, after the last. The batch is recorded in `local/scratch/merge-batch.json`.
  *
- *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]
- *   node tools/merge-branch.mjs --continue [--full] [--keep-going] [--one-at-a-time] [--no-prune]
+ *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]
+ *   node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]
  *   node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
@@ -525,8 +527,8 @@ function rootScripts(root) {
 }
 
 export const USAGE = [
-  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]',
-  '       node tools/merge-branch.mjs --continue [--full] [--keep-going] [--one-at-a-time] [--no-prune]',
+  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full | --gated] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]',
+  '       node tools/merge-branch.mjs --continue [--full | --gated] [--keep-going] [--one-at-a-time] [--no-prune]',
   '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
@@ -554,7 +556,7 @@ const usageError = (message) => new Refusal(message, 2, true);
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
+    full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
   };
   let batch = false;
   let rerun = false;
@@ -585,6 +587,7 @@ export function parseArgs(argv) {
     else if (arg === '--prune') options.prune = true;
     else if (arg === '--no-prune') options.autoPrune = false;
     else if (arg === '--full') options.full = true;
+    else if (arg === '--gated') options.gated = true;
     else if (arg === '--passed') options.passed = true;
     else if (arg === '--stale') options.stale = true;
     else if (arg === '--rerun') rerun = true;
@@ -630,6 +633,7 @@ export function parseArgs(argv) {
   } else if (options.prune) {
     if (!options.autoPrune) throw usageError('--no-prune is for a merge; --prune is the prune itself');
     if (options.full) throw usageError('--full is for a merge or the checkout; --prune runs no gate');
+    if (options.gated) throw usageError('--gated is for a merge; --prune runs no gate');
     if (options.oneAtATime) throw usageError('--one-at-a-time is for a run of gates; --prune runs no gate');
     if (options.branches.length) throw usageError('--prune takes no branch: it acts on every branch merged into main');
   } else if (options.resume || options.dropBatch) {
@@ -733,6 +737,13 @@ export function readPlan(root) {
  * records, the lanes, the canon and the tools' tests.
  */
 export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 'cli']);
+
+/**
+ * GATESLIM1: what a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
+ * commit), the code map and the orientation index's check. Every other gate is listed and skipped, "in the CI beside"
+ * (`--full --beside`); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
+ */
+export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index']);
 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
 const PAGE_READERS = ['service', 'driver', 'modules'];
@@ -908,6 +919,8 @@ export const REACH = Object.freeze([
     gates: [...DRIVER_READERS, 'service'],
     why: "the driver's own, and the service's McpToolRegistrationTests reads the brainstorm posture's list of the connector's tools (BRAINSTORM1a2)",
   },
+  // GATESLIM1: desktop-publish.test.ts (the tool-tests) imports the tarball reader from the CLI's sources; a path rule replaces the cli lane's.
+  { paths: ['src/Daoris.Cli/src/**/tarball.ts'], gates: [...CLI_READERS, 'tool-tests'], why: "the CLI's own readers (the lane's), and the publish's tool-tests import it (GATESLIM1)" },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
   { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
@@ -1079,7 +1092,7 @@ const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*
  * set before staging; `full` runs every gate. `reached` is the lane table's answer, run or not, which is what
  * its tests hold to the code. `unplaced` is the paths no rule placed.
  */
-export function selectGates(plan, changed, { lanes = [], full = false, reach = REACH } = {}) {
+export function selectGates(plan, changed, { lanes = [], full = false, gated = false, reach = REACH } = {}) {
   const names = new Set(plan.map((gate) => gate.name));
   const named = namedGates(reach);
   const reachedBy = new Map();
@@ -1104,12 +1117,13 @@ export function selectGates(plan, changed, { lanes = [], full = false, reach = R
     return { reached: false, why: 'no changed path reaches it' };
   };
   const gates = plan.map((gate) => {
-    if (BASELINE.includes(gate.name)) return { gate, run: true, reached: true, why: 'runs at every merge' };
-    const { reached, why } = reachOf(gate);
+    if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
+    const { reached, why } = BASELINE.includes(gate.name) ? { reached: true, why: 'the baseline' } : reachOf(gate);
     if (full) return { gate, run: true, reached, why: '--full runs every gate' };
-    if (isLongGate(gate)) {
-      return { gate, run: false, reached, why: `in the full set before staging${reached ? `; ${why.replace(/^everything runs: /, '')}` : ''}` };
-    }
+    const detail = reached ? `; ${why.replace(/^everything runs: /, '')}` : '';
+    if (isLongGate(gate)) return { gate, run: false, reached, why: `in the full set before staging${detail}` };
+    // GATESLIM1: a merge blocks on the checks alone; the CI beside (--full --beside) runs the rest, and --gated runs what is reached.
+    if (!gated) return { gate, run: false, reached, why: `in the CI beside${detail}` };
     return { gate, run: reached, reached, why };
   });
   return { gates, unplaced };
@@ -2875,7 +2889,7 @@ const branchChanges = (root, branch) => zPaths(git(root, ['diff', '-z', '--name-
 function chooseGates(root, state, plan) {
   const branch = state.branches[state.at];
   const last = state.at === state.branches.length - 1;
-  const selection = selectGates(plan, mergeChanges(root), { lanes: readLanes(root)?.lanes ?? [], full: state.full === true });
+  const selection = selectGates(plan, mergeChanges(root), { lanes: readLanes(root)?.lanes ?? [], full: state.full === true, gated: state.gated === true });
   state.reached = { ...(state.reached ?? {}), [branch]: selection.gates.filter((entry) => entry.run).map((entry) => entry.gate.name) };
   const waiting = new Set();
   const display = selection.gates.map((entry) => {
@@ -3285,7 +3299,7 @@ async function start(root, options) {
   readPlan(root);
   return mergeNext(root, {
     branches: options.branches, at: 0, tips: {}, keepGoing: options.keepGoing, commitCheck: options.commitCheck, autoPrune: options.autoPrune,
-    full: options.full, oneAtATime: options.oneAtATime,
+    full: options.full, gated: options.gated, oneAtATime: options.oneAtATime,
   });
 }
 
@@ -3294,6 +3308,7 @@ async function resume(root, options) {
   if (!state) throw new Refusal('nothing to continue: this tool has no merge recorded here');
   state.keepGoing = state.keepGoing || options.keepGoing;
   state.full = state.full === true || options.full;
+  state.gated = state.gated === true || options.gated;
   // GATELANES1: a loaded machine stays loaded through its batch, so one at a time, once given, is kept.
   state.oneAtATime = state.oneAtATime === true || options.oneAtATime;
   state.commitCheck = state.commitCheck && options.commitCheck;
@@ -3343,7 +3358,7 @@ function planOnly(root, options) {
     const problems = options.commitCheck ? commitProblems(root, branch, commits) : [];
     console.log(problems.length ? `  commit check would refuse it:\n${problems.map((problem) => `    ${problem}`).join('\n')}` : '  commit check: nothing to refuse');
     // GATE3: what this branch's paths reach, each gate with why it runs or is skipped.
-    const selection = selectGates(plan, branchChanges(root, branch), { lanes, full: options.full });
+    const selection = selectGates(plan, branchChanges(root, branch), { lanes, full: options.full, gated: options.gated });
     const runs = selection.gates.filter((entry) => entry.run);
     console.log(`  gates it reaches: ${runs.length} of ${plan.length}${options.full ? ' (--full)' : ''}`);
     for (const line of selectionLines(selection.gates)) console.log(`  ${line}`);
