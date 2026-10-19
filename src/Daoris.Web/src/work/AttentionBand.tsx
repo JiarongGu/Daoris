@@ -344,11 +344,11 @@ function Band({ doors, notify, onSessions, onRun }: {
     : undefined;
   const below = (item: Attention) => {
     if (signingNewRow && item === signingNewRow) {
-      return <SignIn id={`${signingNewRow.account!.harness}:login-new`} harness={signingNewRow.account!.harness!} action="login-new" tool={signingNewRow.account!.product} />;
+      return <SignIn id={`${signingNewRow.account!.harness}:login-new`} harness={signingNewRow.account!.harness!} action="login-new" tool={signingNewRow.account!.product} refused={harnessRun.refusal} onRetry={harnessRun.retry} onClose={harnessRun.dismiss} />;
     }
     if (!signing || item !== signingRow) return null;
     const label = item.account?.named.find((one) => one.id === signing.account)?.label ?? signing.account;
-    return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} />;
+    return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} refused={harnessRun.refusal} onRetry={harnessRun.retry} onClose={harnessRun.dismiss} />;
   };
 
   // Each row whose step waits on the person opens its run there (WORKFLOW1c): the session it names, else its quest's newest here.

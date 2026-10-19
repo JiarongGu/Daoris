@@ -313,6 +313,27 @@ describe('What needs you on a machine', () => {
     expect(await within(row).findByRole('region', { name: 'Signing in to another Claude Code account' })).toBeInTheDocument();
   });
 
+  /** CODEXSIGNIN2: a sign-in refused at its start is said in the panel under the row, whole, with the way to try again or close. */
+  it('keeps a refused sign-in’s panel under its row and says the sentence in it', async () => {
+    start({ waits: [WAIT], roster: ROSTER, accounts: ACCOUNTS(['account-2', 'account-1']) });
+    const base = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') {
+        throw Object.assign(new Error('refused'), { code: 'DRIVER_REFUSED', parameters: { message: 'Another sign-in is running.' } });
+      }
+      return base(module, type, request);
+    });
+    const row = await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
+    expect(await within(row).findByText(/account-1 read signed out at/)).toBeInTheDocument();
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Sign in to account-1' }));
+
+    const panel = await within(row).findByRole('region', { name: 'Signing in to account-1' });
+    expect((await within(panel).findByRole('alert')).textContent).toBe('Another sign-in is running.');
+    await userEvent.click(within(panel).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(within(row).queryByRole('region', { name: 'Signing in to account-1' })).toBeNull());
+  });
+
   /** D130 §3.3: a ready account outside the workspace's list joins it only after the row says what that lets Daoris spend. */
   it('lets a ready account run the workspace after asking once, saying where it runs now', async () => {
     const notify = vi.fn();

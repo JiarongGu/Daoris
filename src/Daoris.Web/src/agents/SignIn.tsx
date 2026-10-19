@@ -2,7 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHarnessCancel, useHarnessInput, useSessionConsole } from '../bridge/shell';
 import { ExternalLink } from '../design/links';
-import { Button, Dot, Icon, MonoWell } from '../design/ui';
+import { Button, Dot, Icon, Inline, MonoWell } from '../design/ui';
 
 /**
  * Signing an account in, on the row that asked for it (2026-09-23).
@@ -35,7 +35,7 @@ import { Button, Dot, Icon, MonoWell } from '../design/ui';
  * page. So the first step says to open the link, and the second shows the code to copy, as the link is copied.
  */
 export function SignIn({
-  id, harness, profile, action = 'login', tool,
+  id, harness, profile, action = 'login', tool, refused, onRetry, onClose,
 }: {
   id: string;
   harness: string;
@@ -43,6 +43,13 @@ export function SignIn({
   action?: 'login' | 'login-new';
   /** What a person calls the tool (AGT1) — the id when it does not say. */
   tool?: string;
+  /**
+   * The driver's sentence where it refused to start this sign-in (CODEXSIGNIN2): said here, whole, where the press was, with
+   * *Try again* and *Close*, rather than as a toast with the panel gone. Nothing runs then, so no steps and no cancel.
+   */
+  refused?: string | null;
+  onRetry?: () => void;
+  onClose?: () => void;
 }) {
   const { t } = useTranslation();
   const { lines, live, dropped } = useSessionConsole(id);
@@ -82,6 +89,21 @@ export function SignIn({
   };
 
   const title = profile ? t('signin.title', { profile }) : t('signin.titleNew', { harness: tool ?? harness });
+
+  if (refused) {
+    return (
+      <section aria-label={title} className="mt-2 basis-full rounded-card border border-line bg-raised p-3">
+        <header className="flex items-center gap-2">
+          <span className="text-body font-semibold text-ink">{title}</span>
+        </header>
+        <p role="alert" className="m-0 mt-2 text-small text-ink-danger"><Inline text={refused} /></p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Button variant="primary" onClick={onRetry}>{t('signin.retry')}</Button>
+          <Button variant="ghost" onClick={onClose}>{t('signin.close')}</Button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -194,14 +216,19 @@ export function SignIn({
 }
 
 /**
- * The one-time code a tool shows for the person to enter on its page (CODEXACCT2): the word on the first line with words
- * after the one asking for it, or null where none is shown. Matched loosely, as the link and the prompt are, since the
- * sentence is the tool's to change; measured on Codex 0.160.0 as `2. Enter this one-time code (expires in 15 minutes)`
- * and the code indented on the next line.
+ * The one-time code a tool shows for the person to enter on its page (CODEXACCT2, CODEXSIGNIN3): read by its own shape, not by
+ * a version's words, since the sentence asking for it is the tool's to change. Codex prints a link to its device page and then
+ * a code of capital letters and digits in groups joined by a hyphen (`ABCD-12345` in 0.160.0, on the line after
+ * `2. Enter this one-time code (expires in 15 minutes)`), so the code is the first such group after the first line with a
+ * link, or null where none is shown yet. A line with a link is never the code.
  */
 function deviceCode(texts: readonly string[]): string | null {
-  const asking = texts.findIndex((text) => /one-time code/i.test(text));
-  if (asking < 0) return null;
-  const shown = texts.slice(asking + 1).find((text) => text.trim())?.trim();
-  return shown && /^\S+$/.test(shown) ? shown : null;
+  const linked = texts.findIndex((text) => /https?:\/\/\S+/.test(text));
+  if (linked < 0) return null;
+  for (const text of texts.slice(linked + 1)) {
+    if (/https?:\/\/\S+/.test(text)) continue;
+    const found = text.match(/(?<![\w-])[A-Z0-9]{3,}(?:-[A-Z0-9]{3,})+(?![\w-])/)?.[0];
+    if (found) return found;
+  }
+  return null;
 }
