@@ -17735,3 +17735,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RPC1i — a desktop stop that cannot drain says so** (modules; after RPC1a). `Drain` returns false after 15 s and the stop goes on silently: the machine log names how many presses were left (`pipe.drained`, `left`). §6.3. Proof: a `DriverLoopAddressTests` case with a press held past a short drain.
 
 **Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): `pipe.drained` with `left` is logged when a desktop stop cannot drain. Detail: D171's RPCOPEN1 note.
+
+## FABRIC-CLOSE1z — bind only where the host answers what became of a close (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1z — bind only where the host answers what became of a close** (driver, service; §E5 cutover). A host between CLOSE1a and CLOSE1t says `closure: true` but has no `close/outcome`: add `closeOutcome: true` to `/api/status` and bind only where it is said. Proof: a host without the field binds nothing and its quest closes by its done.
+
+**Outcome** 2026-10-20: found done on main by a scout's reading: `closeOutcome` is answered at `/api/status` (LocalHostTests) and read by `ServiceClient` (ServiceClientClosureTests), built by CLOSECAP1. Closed with no change.
+
+## FABRIC-CLOSE1n — the bind door's `atTake` at the host (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1n — the bind door's `atTake` at the host** (service). A `LocalHostTests` case: an open quest's bind with `atTake` answers 200 and the take answers `closure`; a taken quest's answers 409; a shared host does not map it.
+
+**Outcome** 2026-10-20: found done on main by a scout's reading: the take's bind answers 409 without a session and 200 with one (LocalHostTests), and the shared host maps no bind (SharedHostTests). Closed with no change; a respond-take answering `closure` for a bound take is not asked by any row.
