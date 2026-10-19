@@ -125,7 +125,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var tick = driver.RunOnceAsync(closing.Token);
         await Until(() => processes.Running.Contains("s1"));
         closing.Cancel();
-        try { await tick.WaitAsync(TimeSpan.FromSeconds(90)); }
+        try { await tick.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
 
         var record = service.Session("s1");
@@ -151,7 +151,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var driver = Driver("acp-turns", prompts, service, processes, turns: when == "send-now" ? "hold" : "quick");
 
         var tick = driver.RunOnceAsync();
-        await Poll.Until(() => processes.InboxOf("s1") is not null && File.Exists(prompts), () => "the first turn never began", TimeSpan.FromSeconds(60));
+        await Poll.Until(() => processes.InboxOf("s1") is not null && File.Exists(prompts), () => "the first turn never began");
         var inbox = processes.InboxOf("s1")!;
         Assert.True(inbox.Hold(new ChatMessage("the budget is in level.json, not config.json", [])));
         // Still refused as a line written into the stream: the frames are the driver's (INT4i).
@@ -164,7 +164,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             Assert.Empty(stop.Withdrawn);
         }
 
-        await tick.WaitAsync(TimeSpan.FromSeconds(60));
+        await tick.WaitAsync(Poll.Patience);
 
         var heard = File.ReadAllLines(prompts).Select(line => System.Text.Json.JsonSerializer.Deserialize<string>(line)).ToList();
         Assert.Equal(2, heard.Count);
@@ -248,7 +248,7 @@ public sealed class DrivenSessionInputTests : IDisposable
 
         // About 50 ms on a quiet machine (measured). Bounded generously because the full suite runs
         // classes in parallel, each spawning node, and one loaded run went past 30 s (2026-09-25).
-        try { await tick.WaitAsync(TimeSpan.FromSeconds(90)); }
+        try { await tick.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
 
         Assert.NotEqual("working", service.Session("s1")["state"]!.GetValue<string>());
@@ -283,7 +283,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.Equal(driving, processes.DrivingBrowser);
 
         Assert.True(processes.Stop("s1"));
-        await tick.WaitAsync(TimeSpan.FromSeconds(60));
+        await tick.WaitAsync(Poll.Patience);
         Assert.Empty(processes.DrivingBrowser);
     }
 
@@ -309,7 +309,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             "acp-turns", prompts, service, processes,
             browser: shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var first = System.Text.Json.JsonSerializer.Deserialize<string>(File.ReadAllLines(prompts)[0])!;
         Assert.Equal(shell, first.Contains(InAppBrowserServers.Told(["browser"])!, StringComparison.Ordinal));
@@ -338,7 +338,7 @@ public sealed class DrivenSessionInputTests : IDisposable
                 },
             });
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var first = System.Text.Json.JsonSerializer.Deserialize<string>(File.ReadAllLines(prompts)[0])!;
         Assert.Equal(ownTree, first.Contains("This repository's process on this machine, set for its repository:", StringComparison.Ordinal));
@@ -492,7 +492,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     // wait failed twice in one day under that load while passing alone (TASKS, FLAKE1). It only waits for
     // a START, so a longer bound hides no defect in what the test asserts.
     private static Task Until(Func<bool> condition) =>
-        Poll.Until(condition, () => "the driven session never started", TimeSpan.FromSeconds(60));
+        Poll.Until(condition, () => "the driven session never started");
 
     /// <summary>
     /// A stand-in for the service's doors one driven quest crosses — a real loopback listener, because

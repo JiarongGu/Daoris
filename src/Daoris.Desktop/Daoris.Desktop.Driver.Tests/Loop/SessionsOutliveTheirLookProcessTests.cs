@@ -44,12 +44,12 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         var driver = Driver(processes);
         _ledger.Publish("q1", "engine");
 
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        await Poll.Until(() => processes.Running.Contains("s1"), () => "the first session never started", TimeSpan.FromSeconds(60));
+        await driver.TickAsync().WaitAsync(Poll.Patience);
+        await Poll.Until(() => processes.Running.Contains("s1"), () => "the first session never started");
 
         _ledger.Publish("q2", "tools");
-        var next = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        await Poll.Until(() => processes.Running.Contains("s2"), () => "the second session never started", TimeSpan.FromSeconds(60));
+        var next = await driver.TickAsync().WaitAsync(Poll.Patience);
+        await Poll.Until(() => processes.Running.Contains("s2"), () => "the second session never started");
 
         Assert.Equal(StartVerdict.Start, next.Considerations.Single(c => c.Quest.Id == "q2").Verdict);
         Assert.Contains("s1", processes.Running);
@@ -57,7 +57,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
 
         Assert.True(processes.Stop("s1"));
         Assert.True(processes.Stop("s2"));
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         Assert.All(_ledger.Sessions, record => Assert.Equal("stopped", record["state"]!.GetValue<string>()));
     }
 
@@ -96,10 +96,10 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
             onError: null, closing.Token);
         await Poll.Until(
             () => processes.Running.Contains("s1") && processes.Running.Contains("s2"),
-            () => $"running: {string.Join(", ", processes.Running)}", TimeSpan.FromSeconds(60));
+            () => $"running: {string.Join(", ", processes.Running)}");
 
         await closing.CancelAsync();
-        await watching.WaitAsync(TimeSpan.FromSeconds(90));
+        await watching.WaitAsync(Poll.Patience);
 
         Assert.Empty(processes.Running);
         Assert.Equal(2, _ledger.Sessions.Count);
@@ -126,14 +126,14 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         _ledger.Publish("q1", "engine");
         using var closing = new CancellationTokenSource(TimeSpan.FromSeconds(120));
 
-        await driver.TickAsync(closing.Token).WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.TickAsync(closing.Token).WaitAsync(Poll.Patience);
         await Poll.Until(
             () => processes.Running.Contains("s1") && _ledger.Session("s1")["state"]!.GetValue<string>() == "working",
-            () => "the session never started working", TimeSpan.FromSeconds(60));
+            () => "the session never started working");
 
         Assert.True(processes.Stop("s1", drivers ? Daoris.Driver.Driver.LostClaimNoted : null));
         await closing.CancelAsync();
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         var record = _ledger.Session("s1");
         Assert.Equal(

@@ -65,13 +65,13 @@ public sealed class OpinionResumeTickTests : IDisposable
     {
         await using var service = OpinionTickStandIn.Start(_repository);
         var driver = Protocol(service, "resumes");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         var tip = Head(service.Tree("s1")!);
         service.Hand("op1", "s1", tip, Findings);
         var before = service.Record("s1");
 
-        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"before: {before}\nplan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
                    + $"\nlook: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
@@ -117,12 +117,12 @@ public sealed class OpinionResumeTickTests : IDisposable
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         var tip = Head(service.Tree("s1")!);
         service.Hand("op1", "s1", tip, Findings);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var runs = Heard();
         Assert.Equal(2, runs.Length);
@@ -143,11 +143,11 @@ public sealed class OpinionResumeTickTests : IDisposable
     {
         await using var service = OpinionTickStandIn.Start(_repository);
         var driver = Protocol(service, "elsewhere");
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         service.Hand("op1", "s1", Head(service.Tree("s1")!), Findings);
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((1, "completed"), (service.SessionCount, service.State("s1")));
         Assert.Equal(["op-w1"], service.Said("s1"));

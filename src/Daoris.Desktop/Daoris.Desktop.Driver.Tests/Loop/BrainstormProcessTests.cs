@@ -329,7 +329,7 @@ public sealed class BrainstormProcessTests : IDisposable
         var clock = System.Diagnostics.Stopwatch.StartNew();
         var events = new List<string>();
         await driver.BrainstormsAsync(snapshot, 0, events, CancellationToken.None);
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         clock.Stop();
 
         Assert.True(files.ReadState(id)!.State == BrainstormStates.Ended, string.Join('\n', events));
