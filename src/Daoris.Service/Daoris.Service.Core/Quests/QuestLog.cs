@@ -265,6 +265,62 @@ public sealed record QuestIntegration(long Cursor, IReadOnlyList<QuestOperation>
 /// </param>
 public sealed record QuestConflict(string Machine, QuestStatus Attempted, string? Note, DateTimeOffset At, long Sequence = 0);
 
+/// <summary>How a settled conflict ended (SYNCMERGE1b0, D178 point 7).</summary>
+public enum QuestConflictEnd
+{
+    /// <summary>A plain dismissal (SYNC6c): the person dropped their machine's work, which stays where it is.</summary>
+    Dropped,
+
+    /// <summary>A dismissal marked with the fresh take it made (SYNCMERGE1a): the person brought their machine's work forward.</summary>
+    BroughtForward,
+}
+
+/// <summary>
+/// A bring-forward of a lost take (SYNCMERGE1b0, D178 points 3 and 8): the fresh take it made, when, and where that take stands as a claim
+/// reads one (<see cref="QuestLog.Claim"/>): held once a remote numbered it, unconfirmed while it is only here, lost where a rebase kept
+/// it as a conflict.
+/// </summary>
+public sealed record QuestForwardTake(QuestOperationRef Take, DateTimeOffset At, QuestClaim Standing);
+
+/// <summary>
+/// A bring-forward this machine made (SYNCMERGE1b0): the conflict it was to settle and the take it made, kept by this machine alone and
+/// never pushed. The log forgets a bring-forward whose take lost (D178 point 5), so this is what still says the second loss was one.
+/// </summary>
+public sealed record QuestForwardPress(QuestOperationRef Conflict, QuestOperationRef Take, DateTimeOffset At);
+
+/// <summary>
+/// One conflict as its quest's log tells it (SYNCMERGE1b0): the conflict; whether the take lost to the person's reopen of the work its
+/// step grew from (<see cref="QuestLog.LostToTheReopen"/>'s reading, for this conflict); how it ended, null while it stands; and its
+/// bring-forward: the one that settled it, or else this machine's latest that lost again.
+/// </summary>
+public sealed record QuestConflictReading(
+    QuestConflict Conflict, bool LostToTheReopen = false, QuestConflictEnd? Ended = null, QuestForwardTake? Forward = null);
+
+/// <summary>
+/// Who holds a quest's step and how each take that lost on it stands or ended, read from its log (SYNCMERGE1b0, D178 point 7): the take the
+/// quest stands taken by, null unless it is taken; the conflicts still on it; and those settled, in the order they were.
+/// </summary>
+public sealed record QuestTakeReading(
+    QuestOperation? Take, IReadOnlyList<QuestConflictReading> Conflicts, IReadOnlyList<QuestConflictReading> Settled)
+{
+    /// <summary>Nothing taken and nothing lost: a quest with no history, or none of either.</summary>
+    public static readonly QuestTakeReading None = new(null, [], []);
+
+    /// <summary>The machine whose take holds the step, an id no person gave; null unless the quest is taken.</summary>
+    public string? Holder => Take?.Machine;
+
+    /// <summary>
+    /// The bring-forward the step is held by, where <paramref name="machine"/>'s take holds it and a bring-forward made that take: the
+    /// one take a stood-down session of that machine's is carried on over (SessionLedger), and the claim's answer names. Null otherwise.
+    /// </summary>
+    public QuestForwardTake? BroughtForwardBy(string machine) =>
+        Take is { } held && held.Machine == machine
+            ? Settled.Where(conflict => conflict.Ended == QuestConflictEnd.BroughtForward)
+                .Select(conflict => conflict.Forward)
+                .FirstOrDefault(forward => forward is not null && forward.Take == new QuestOperationRef(held.Machine, held.Sequence))
+            : null;
+}
+
 /// <summary>
 /// The one transition table (D47 §5, kept by D68): judged by the store before an operation is written,
 /// and again by the replay that turns a history into a status — so the lock and the record cannot
@@ -510,6 +566,97 @@ public static class QuestLog
         }
 
         return lost;
+    }
+
+    /// <summary>
+    /// Who holds a quest's step and how each take that lost on it stands or ended (SYNCMERGE1b0, D178 points 3, 7 and 8), read in one pass
+    /// as the replay reads it. A conflict is lost to the reopen by <see cref="LostToTheReopen"/>'s rule, read for each conflict where it
+    /// lands rather than for a machine's latest. A dismissal that removed a conflict settles it, dropped or brought forward by its mark; one
+    /// that found it already gone settles nothing, so the first choice stands. A conflict not settled by a mark names this machine's latest
+    /// bring-forward of it whose take lost again, from <paramref name="presses"/>, since the log forgets that one with its take.
+    /// </summary>
+    /// <param name="presses">This machine's own bring-forwards on the quest (<see cref="QuestForwardPress"/>); none for another's reading.</param>
+    public static QuestTakeReading Read(IEnumerable<QuestOperation> history, IEnumerable<QuestForwardPress>? presses = null)
+    {
+        Quest? quest = null;
+        QuestOperation? take = null;
+        var named = new Dictionary<QuestOperationRef, QuestOperation>();
+        var toTheReopen = new HashSet<QuestOperationRef>();
+        var settled = new List<(QuestConflict Conflict, QuestOperation Dismissal)>();
+        var reopened = false;
+        var superseded = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var operation in history)
+        {
+            var name = new QuestOperationRef(operation.Machine, operation.Sequence);
+            if (operation.Kind is QuestOperationKind.Taken or QuestOperationKind.Conflict) named[name] = operation;
+            if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken }
+                && (operation.LostToTheReopen || (reopened && !superseded.Contains(operation.Machine) && quest is { Status: QuestStatus.Open })))
+            {
+                toTheReopen.Add(name);
+            }
+
+            if (!Applies(quest, operation)) continue;
+            switch (operation.Kind)
+            {
+                case QuestOperationKind.Published:
+                    (reopened, take) = (false, null);
+                    superseded.Clear();
+                    settled.Clear();
+                    break;
+                case QuestOperationKind.Reopened when quest is { Status: QuestStatus.Open }:
+                    reopened = true;
+                    superseded.Clear();
+                    break;
+                case QuestOperationKind.Taken:
+                    take = operation;
+                    break;
+                case QuestOperationKind.Dismissed when operation.Dismisses is { } dismissed:
+                    if (quest!.Conflicts.FirstOrDefault(c => c.Machine == dismissed.Machine && c.Sequence == dismissed.Sequence) is { } gone)
+                    {
+                        settled.Add((gone, operation));
+                    }
+
+                    // SYNCMERGE1a2's rule, for each machine: a plain dismissal of its conflict supersedes the reopen it was lost to.
+                    if (operation.Forward is null) superseded.Add(dismissed.Machine);
+                    break;
+            }
+
+            quest = Step(quest, operation);
+        }
+
+        if (quest is null) return QuestTakeReading.None;
+
+        static QuestClaim StandingOf(QuestOperation made) => made.Kind == QuestOperationKind.Conflict
+            ? QuestClaim.Lost
+            : made.Number is null ? QuestClaim.Unconfirmed : QuestClaim.Held;
+
+        var pressed = (presses ?? []).OrderBy(press => press.At).ToList();
+        QuestForwardTake? Forward(QuestConflict conflict, QuestOperation? dismissal)
+        {
+            if (dismissal?.Forward is { } made)
+            {
+                return named.TryGetValue(made, out var fresh)
+                    ? new QuestForwardTake(made, fresh.At, StandingOf(fresh))
+                    : new QuestForwardTake(made, dismissal.At, dismissal.Number is null ? QuestClaim.Unconfirmed : QuestClaim.Held);
+            }
+
+            var of = new QuestOperationRef(conflict.Machine, conflict.Sequence);
+            return pressed
+                .Where(press => press.Conflict == of && named.TryGetValue(press.Take, out var fresh) && StandingOf(fresh) == QuestClaim.Lost)
+                .Select(press => new QuestForwardTake(press.Take, press.At, QuestClaim.Lost))
+                .LastOrDefault();
+        }
+
+        QuestConflictReading Reading(QuestConflict conflict, QuestOperation? dismissal) => new(
+            conflict,
+            toTheReopen.Contains(new QuestOperationRef(conflict.Machine, conflict.Sequence)),
+            dismissal is null ? null : dismissal.Forward is null ? QuestConflictEnd.Dropped : QuestConflictEnd.BroughtForward,
+            Forward(conflict, dismissal));
+
+        return new QuestTakeReading(
+            quest.Status == QuestStatus.Taken ? take : null,
+            quest.Conflicts.Select(conflict => Reading(conflict, null)).ToList(),
+            settled.Select(ended => Reading(ended.Conflict, ended.Dismissal)).ToList());
     }
 
     /// <summary>
