@@ -183,6 +183,12 @@ public sealed record SessionTarget(
     public string? HandedOver { get; init; }
 
     /// <summary>
+    /// Whether the session before was stood down for a lost take that the person has since brought forward (SYNCMERGE1b2): the carry-on
+    /// is told the press, not that the session was cut off. Its <see cref="CutOff"/> is the words of that bring-forward.
+    /// </summary>
+    public bool BroughtForward { get; init; }
+
+    /// <summary>
     /// For a carry-on (D80): the cut-off session's plan as its record last kept it, the harness's own to-do list (TOOL4f,
     /// D125 §3.5). Empty where the record kept none, and the instruction reads as it did.
     /// </summary>
@@ -509,6 +515,8 @@ public static class TargetPrompt
         : target.Released
             ? "An earlier session on this quest was stopped by the person before it closed it, and they have since released "
               + $"the quest for you to carry on. Its record reads: {record}"
+            : target.BroughtForward
+                ? $"The person brought forward the work of an earlier session on this quest, whose take of it had lost. Its record reads: {record}"
             : $"An earlier session on this quest was cut off before it closed it: {record}";
 
     /// <summary>

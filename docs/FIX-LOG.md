@@ -23,6 +23,20 @@ repository.
   the ending and the stream's end on the test's own thread, 200 times: red on its first iteration in six runs of six before the
   fix. After it, `AcpBackgroundTests` (27) run twenty times alone, green every time, and the stream's-end case thirty times
   alone, green every time.
+## 2026-10-19 — A resumed protocol conversation skipped a required posture (HELPMODE1a4)
+
+- **Symptom:** none observed. HELPMODE1a1's own note says it: an Ask Daoris conversation in full access, resumed on an ACP agent
+  whose `session/load` or `session/resume` answers with no object, would go on without `session/set_mode`, in the agent's own
+  narrower mode under the full label.
+- **Root cause:** ANSWER1a's resume set the posture only on an object answer
+  (`if (resumed.ValueKind == JsonValueKind.Object) await SetPostureAsync(...)`). That was safe while every posture was lenient. An
+  answer with no modes was left alone anyway. HELPMODE1a1 made a posture *required* (`!` before the agent's mode that asks
+  nothing) and enforced it in `SetPostureAsync`, but the resume's guard sat before it, so the required check never ran there.
+- **Fix:** `SetPostureAsync` reads a non-object answer as offering no modes, which fails a required posture plainly and leaves a
+  lenient one alone. `AcpSession.ResumeAsync` calls it on every answer.
+- **Verify:** `AcpResumeTests.A_resume_answered_with_no_object_fails_a_required_posture` (seen red: no exception) and
+  `…_leaves_a_posture_not_required_alone`; the ACP classes pass (`--filter FullyQualifiedName~Tests.AcpResumeTests.|…AcpTests.`).
+- **Commit:** 39bf47714
 
 ## 2026-10-19 — The CLI aborted on a libuv assertion at exit after a service request (CLIEXIT1)
 

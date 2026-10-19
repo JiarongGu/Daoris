@@ -192,6 +192,8 @@ public static class PersonDoors
         new("POST", "/api/sessions/help", DoorClass.Driver, "Ask Daoris's record"),
         new("POST", "/api/sessions/{id}/state", DoorClass.Driver, "a session's state"),
         new("POST", "/api/sessions/{id}/taken", DoorClass.Driver, "the words a session took"),
+        // HELPMODE1a2: the driver spawns it, so it is the half that knows the mode a conversation going on got.
+        new("POST", "/api/sessions/{id}/help-mode", DoorClass.Driver, "the mode Ask Daoris goes on under"),
         new("POST", "/api/sync", DoorClass.Driver, "a sync pass"),
         new("DELETE", "/api/registry/retired/{repository}", DoorClass.Driver, "a retire carried to a workspace's deployment"),
         // Its root and workspace decide where sessions run and which circle sees a quest (WSP1, WSP2), so no agent sets it.

@@ -613,6 +613,12 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>The workspace each Ask Daoris open named in its body, in order: null where it named none (ASKSCOPE1a).</summary>
     public List<string?> HelpAsked { get; } = [];
 
+    /// <summary>The mode each Ask Daoris open was told its start got, in order: null where it told none (HELPMODE1a2).</summary>
+    public List<string?> HelpModesAsked { get; } = [];
+
+    /// <summary>Each mode a conversation going on was recorded under, by its own door (HELPMODE1a2): the session and the mode.</summary>
+    public List<(string Session, string Mode)> HelpModesKept { get; } = [];
+
     /// <summary>One record as the ledger holds it now, a copy.</summary>
     public JsonObject Record(string id)
     {
@@ -784,6 +790,8 @@ internal sealed class ChatLedger : HttpMessageHandler
                     var asked = JsonNode.Parse(body!)!;
                     var named = asked["workspace"]?.GetValue<string>();
                     HelpAsked.Add(named);
+                    var mode = asked["mode"]?.GetValue<string>();
+                    HelpModesAsked.Add(mode);
                     var workspace = named ?? "default";
                     if (_sessions.FirstOrDefault(s => s["repository"]!.GetValue<string>() == HelpRoom.Repository
                                                      && Live.Contains(s["state"]!.GetValue<string>())
@@ -801,9 +809,22 @@ internal sealed class ChatLedger : HttpMessageHandler
                         ["adapter"] = asked["adapter"]!.GetValue<string>(), ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(),
                         ["profile"] = asked["profile"]?.GetValue<string>(), ["tree"] = asked["room"]?.GetValue<string>(),
                         ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["workspace"] = workspace,
+                        // HELPMODE1a2: the mode its start got, none told being restricted, as the ledger keeps it.
+                        ["helpMode"] = mode ?? "restricted",
                     };
                     _sessions.Add(session);
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
+                }
+
+                // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, on its record.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/help-mode", StringComparison.Ordinal):
+                {
+                    var id = IdOf(path, "/help-mode");
+                    var mode = JsonNode.Parse(body!)!["mode"]!.GetValue<string>();
+                    var session = Find(id);
+                    session["helpMode"] = mode;
+                    HelpModesKept.Add((id, mode));
+                    return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                 }
 
                 case ("POST", "/api/sessions/chat"):

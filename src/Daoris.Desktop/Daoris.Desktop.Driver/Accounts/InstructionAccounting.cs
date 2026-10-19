@@ -397,6 +397,7 @@ internal static class InstructionAccounting
         if (target.PersonSaid is not null) facts.Add("the person's answer");
         else if (target.HandedOver is not null) facts.Add("that it was handed over from another agent");
         else if (target.Released) facts.Add("that the person released it");
+        else if (target.BroughtForward) facts.Add("that the person brought its work forward");
         facts.Add(target.InFlight.Count == 0 ? "nothing uncommitted" : Plural(target.InFlight.Count, "uncommitted change"));
         var plan = target.LastPlan.Count;
         if (plan > 0) facts.Add($"its plan of {Plural(plan, "step")}");

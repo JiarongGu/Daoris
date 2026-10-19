@@ -10,6 +10,9 @@ with the version and date at release.
   shell, file edits, Daoris's commands and every plugin server here, and your own denies still hold where its agent takes them.
   Restricted, the default, is Ask Daoris as it was: it reads and proposes, and you apply. `daoris-driver help mode restricted`
   takes it back. On an agent with no such mode, the DeepSeek Harness or a plugin's, it does not start in full access, and says so.
+  A conversation keeps the mode it started in while it runs, and its console says when a change takes it: end it, and your next
+  words resume it under the mode you chose, which its transcript says first. `daoris-driver help list` marks a conversation that
+  ran with full access.
 - A session that waited on its own background work no longer hangs after it: when the work ends and Claude Code wakes the
   agent by itself, that turn's end is the session's end, where Daoris used to send a prompt the agent never answered and wait
   for the timeout. A session the timeout ends after its quest reached done is recorded completed, and its conversation says it
@@ -237,7 +240,9 @@ with the version and date at release.
   asks the loop to look. The machine log says which part each look ran.
 - A quest an agent publishes from its session, and a session record another process writes, now start Daoris's work at once,
   where the driver used to find them at its next look (up to `pollSeconds`, 15 s by default). The local service answers
-  `GET /api/changes`, which says which of its records moved; a sync pass that changes nothing wakes nothing.
+  `GET /api/changes`, which says which of its records moved; a sync pass that changes nothing wakes nothing. An ask, and a
+  message on an ask's channel, that another process writes wake the driver the same way, named `asks` and `channel`; reading
+  a channel wakes nothing.
 - Done work set to land automatically lands as soon as what held it lets it go, rather than at the driver's next look. This
   covers a hold released, a review given or skipped, a second opinion settled or answered, a workflow's declaration or your
   say-so, a commit in its tree, and a change to the landing rule. When a change releases none of the waiting work, the landing

@@ -77,13 +77,27 @@ public static class TreeStartWords
             : $"Tell the person why, and build nothing on `{source}`'s new work until the tree holds it.");
 
     /// <summary>The host names no commit for the new submission (FABRIC-CLOSE1c5): only the line was synced, as a carry-on's start is.</summary>
-    public static string NoSubmissionCommit(string source) =>
-        $"Daoris could not bring this tree up to date with `{source}`'s new submission: the service names no commit for it (a host before "
-        + $"it, or a submission no evidence was read for), so only the line was brought up to date. Read what `{source}` now holds before "
-        + "you build on its work.";
+    /// <param name="broughtForward">
+    /// A bring-forward's carry-on (SYNCMERGE1b2): its source may never have moved, so no new submission is claimed, and the words say only
+    /// the line was brought up to date (D178's rejected wording is a branch said brought up to date where only the line was).
+    /// </param>
+    public static string NoSubmissionCommit(string source, bool broughtForward = false) => broughtForward
+        ? $"Daoris could not tell whether `{source}` moved since this tree last held its work: the service names no commit for its "
+          + "submission (a host before it, or a submission no evidence was read for), so only the line was brought up to date. Read what "
+          + $"`{source}` now holds before you build on its work."
+        : $"Daoris could not bring this tree up to date with `{source}`'s new submission: the service names no commit for it (a host before "
+          + $"it, or a submission no evidence was read for), so only the line was brought up to date. Read what `{source}` now holds before "
+          + "you build on its work.";
 
     /// <summary>The new submission's commit is not in this repository (FABRIC-CLOSE1c5): only the line was synced.</summary>
-    public static string SubmissionNotHere(string source, string commit) =>
+    /// <param name="broughtForward">As <see cref="NoSubmissionCommit"/>'s (SYNCMERGE1b2).</param>
+    public static string SubmissionNotHere(string source, string commit, bool broughtForward = false) => broughtForward
+        ? $"Daoris could not tell whether `{source}` moved since this tree last held its work: its submission's commit (`{commit}`) is not "
+          + "held by this repository (its work is in another repository, or was not fetched here), so only the line was brought up to date. "
+          + $"Read what `{source}` now holds before you build on its work."
+        : SubmissionNotHereMoved(source, commit);
+
+    private static string SubmissionNotHereMoved(string source, string commit) =>
         $"Daoris could not bring this tree up to date with `{source}`'s new submission (`{commit}`): this repository does not hold that "
         + $"commit (its work is in another repository, or was not fetched here), so only the line was brought up to date. Read what "
         + $"`{source}` now holds before you build on its work.";

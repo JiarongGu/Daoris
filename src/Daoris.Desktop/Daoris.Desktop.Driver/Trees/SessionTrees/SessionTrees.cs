@@ -719,8 +719,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     public Task<TreeStartSync> StartInSyncAsync(string tree, CancellationToken ct = default) => Updates.StartInSyncAsync(tree, ct);
 
     /// <inheritdoc cref="TreeUpdates.GoOnInSyncAsync"/>
-    public Task<TreeStartSync> GoOnInSyncAsync(string tree, string source, string? commit, CancellationToken ct = default) =>
-        Updates.GoOnInSyncAsync(tree, source, commit, ct);
+    public Task<TreeStartSync> GoOnInSyncAsync(
+        string tree, string source, string? commit, CancellationToken ct = default, bool broughtForward = false) =>
+        Updates.GoOnInSyncAsync(tree, source, commit, ct, broughtForward);
 
     /// <inheritdoc cref="LandedReviews.LandedReviewAsync"/>
     public Task<LandedReview> LandedReviewAsync(string? root, LandedBranch entry, bool changes = true, CancellationToken ct = default) =>

@@ -180,7 +180,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var forwards = new Dictionary<string, ForwardTake?>(StringComparer.OrdinalIgnoreCase);
         var asked = quests
             .Where(quest => quest is { Status: "Taken", Awaits: null or "", HeldByReopen: false }
-                            && ((lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last)) || stoodDown.ContainsKey(quest.Id)))
+                            && ((lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last)) || (stoodDown.ContainsKey(quest.Id) && HeldHere(quest))))
             .ToArray();
 
         // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
@@ -209,6 +209,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
         return (claims, whys, forwards);
     }
+
+    /// <summary>
+    /// Whether the quest list says this machine holds the quest (SYNCMERGE1b1): its holder is this machine's id. A stood-down quest held
+    /// elsewhere, or by no press, has no bring-forward of this machine's to read, so its claim is not asked.
+    /// </summary>
+    private static bool HeldHere(QuestView quest) =>
+        quest.Holder is { } holder && string.Equals(holder, quest.Here, StringComparison.Ordinal);
 
     /// <summary>How many claim questions a snapshot asks the host together (PARALLEL1b): local, and each one small.</summary>
     private const int ClaimsAtOnce = 4;
@@ -689,9 +696,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The workspace the person's window was on at the press, which the record keeps (ASKSCOPE1a); null sends none, which the
     /// ledger records as <c>default</c>, as it did before.
     /// </param>
+    /// <param name="mode">
+    /// The access mode its start gets (HELPMODE1a2, D183 point 3), the effective one, which the record keeps; null sends none, which
+    /// the ledger records as restricted.
+    /// </param>
     public async Task<(string? SessionId, string Message)> OpenHelpAsync(
         string adapter, string room, string? harnessVersion = null, string? profile = null, string? workspace = null,
-        CancellationToken ct = default)
+        string? mode = null, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
@@ -701,10 +712,34 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
             if (profile is not null) writer.WriteString("profile", profile);
             if (workspace is not null) writer.WriteString("workspace", workspace);
+            if (mode is not null) writer.WriteString("mode", mode);
             writer.WriteEndObject();
         });
 
         return await OpenRecordAsync("/api/sessions/help", body, SessionOpened.Help, adapter, repository: null, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Record the access mode an Ask Daoris conversation going on runs under (HELPMODE1a2, D183 point 3), where the person's mode
+    /// changed since it last ran. A refusal is the ledger's sentence (<see cref="DriverException"/>).
+    /// </summary>
+    public async Task KeepHelpModeAsync(string sessionId, string mode, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("mode", mode);
+            writer.WriteEndObject();
+        });
+
+        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(sessionId)}/help-mode", body, ct)
+            .ConfigureAwait(false);
+        if (!ok)
+        {
+            throw new DriverException(
+                $"the service refused recording that Ask Daoris `{sessionId}` goes on {mode}: "
+                + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
+        }
     }
 
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
@@ -1562,6 +1597,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                         }).ToList()
                     : [],
                 Parent = Text(quest, "parent"),
+                // Who holds the quest and this machine's id where it is the page's (SYNCMERGE1b1). Absent is none: a quest no press settled.
+                Holder = Text(quest, "holder") is { Length: > 0 } held ? held : null,
+                Here = Text(quest, "here") is { Length: > 0 } here ? here : null,
                 // What a list calls it (SESSUX1j). Absent is a host from before the field: the title names it.
                 Short = Text(quest, "short") is { Length: > 0 } named ? named : null,
                 // Absent is not waiting: a host from before D79 answers without it.
@@ -1994,6 +2032,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             // Its session entry and its quest (SESSONE1a): what a later quest of the same line goes into its tree by (SESSONE1d).
             Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
             Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
+            // The mode an Ask Daoris record last ran under (HELPMODE1a2), which a conversation going on is compared with.
+            HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
         };
 
     /// <summary>

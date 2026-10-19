@@ -96,6 +96,21 @@ public sealed class CarryOnHandedTests : IDisposable
         Assert.DoesNotContain("released", counted.Said);
     }
 
+    /// <summary>SYNCMERGE1b2: a brought-forward carry-on is told the press, never that the session before was cut off.</summary>
+    [Fact]
+    public void A_brought_forward_carry_on_says_the_person_brought_the_work_forward_and_never_that_it_was_cut_off()
+    {
+        var forward = Daoris.Driver.Driver.BroughtForwardTold(new ForwardTake("desk", 7, DateTimeOffset.UnixEpoch, "held"));
+
+        var prompt = System.Text.RegularExpressions.Regex.Replace(
+            TargetPrompt.Compose(Target() with { CutOff = forward, BroughtForward = true }), @"\s+", " ");
+
+        Assert.Contains(
+            "The person brought forward the work of an earlier session on this quest, whose take of it had lost. Its record reads: its take of the quest lost",
+            prompt);
+        Assert.DoesNotContain("cut off before it closed it", prompt);
+    }
+
     [Fact]
     public void With_nothing_kept_the_carry_on_reads_as_it_did()
     {
