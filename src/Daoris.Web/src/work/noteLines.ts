@@ -301,6 +301,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.not-installed-own': { values: ['agent'] },
   'held.never-installs': { values: [] },
   'held.kept-aside': { values: ['account'] },
+  'held.locked': { values: ['owner', 'accounts'] },
   'held.outside-machine': { values: ['accounts', 'first', 'door'] },
   'held.outside-workspace': { values: ['workspace', 'accounts', 'first', 'door'] },
 };
@@ -379,6 +380,7 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   cooling: { key: 'note.opening.why.cooling', values: ['agent', 'over', 'until', 'cooling'] },
   refused: { key: 'note.opening.why.refused', values: ['agent', 'over'] },
   'signed-out': { key: 'note.opening.why.signed-out', values: ['agent', 'over'] },
+  locked: { key: 'note.opening.why.locked', values: ['agent', 'over'] },
   'kept-self': { key: 'note.opening.why.kept-self', values: [] },
   'kept-last': { key: 'note.opening.why.kept-last', values: ['over'] },
   kept: { key: 'note.opening.why.kept', values: ['over'] },

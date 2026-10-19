@@ -1320,6 +1320,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             if (walk.Unknown.Contains(account))
             {
                 passed.Add(account);
+                states[i] = states[i] with { Locked = true };
                 continue;
             }
 
@@ -1412,10 +1413,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     {
         var one = accounts.Count == 1;
         var said = string.Join(", ", accounts.Select(account => $"`{AccountNames.Said(names, account)}`"));
-        return new HarnessSelection(
-            $"the `{owner}` account{(one ? "" : "s")} {said} {(one ? "is" : "are")} being asked about by another question that held "
+        var words = $"the `{owner}` account{(one ? "" : "s")} {said} {(one ? "is" : "are")} being asked about by another question that held "
             + $"{(one ? "it" : "them")} longer than a start waits, so nothing starts on {(one ? "it" : "them")} now: a start beside that "
-            + "question could sign the account out. The next start tries again.");
+            + "question could sign the account out. The next start tries again.";
+        return new HarnessSelection(words)
+        {
+            RefusalNote = Noted.Of(NoteCodes.HeldLocked, words, ("owner", owner), ("accounts", (IReadOnlyList<string>)[.. accounts])),
+        };
     }
 
     /// <summary>

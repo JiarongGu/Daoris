@@ -175,6 +175,17 @@ describe('noteLines', () => {
       ].map((text) => ({ kind: 'said', text })));
     });
 
+    /** LOCKPASSED1: an account passed for its lock is a reason of its own, said in both languages. */
+    it('words an account passed for its lock by its own reason', () => {
+      const locked = [
+        coded('opening.opened', 'opened on `account-2`: …', { account: 'account-2', why: 'locked', agent: 'claude-code', over: 'account-1' }),
+      ];
+      expect(noteLines(t, { parts: locked }, 'en')).toEqual([
+        { kind: 'said', text: 'Opened on `account-2`: the `claude-code` account `account-1` is being asked about by another question.' },
+      ]);
+      expect(noteLines(zh, { parts: locked }, 'zh').every((line) => line.kind === 'said')).toBe(true);
+    });
+
     /** USAGEPROBE1: a window's use projected from its reading and Daoris's own turns since is a line of its own, said as projected. */
     it('words a projected use as projected, apart from what the account said', () => {
       const projected = [
@@ -547,6 +558,11 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: signedOut }, 'en')[0].text).toBe(
         "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --profile a-1` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential stays in the agent's own store.",
       );
+      // LOCKPASSED1: the accounts a start was held on for their lock, each by the name the page knows.
+      const locked = [coded('held.locked', '…', { owner: 'claude-code', accounts: ['account-1'] })];
+      expect(noteLines(t, { parts: locked }, 'en', names)[0].text).toBe(
+        'Nothing starts now on the `claude-code` account: `Work`. Another question asking about it has held it longer than a start waits, and a start beside that question could sign the account out. The next start tries again.',
+      );
       const own = [coded('held.cooling-own', '…', { owner: 'codex', until, why: 'default' })];
       expect(noteLines(t, { parts: own }, 'en')[0].text).toMatch(/^`codex`'s own sign-in is cooling until .+\. Daoris starts nothing on it until then\.$/);
       const missing = [coded('held.not-installed', '…', { agent: 'codex' }), coded('held.pin-not-installed', '…', { agent: 'codex', version: '1.2.3' })];
@@ -554,7 +570,7 @@ describe('noteLines', () => {
         '`codex` is not installed on this machine, so there is nothing to spawn — `daoris agent install codex` installs it. Daoris never installs an agent unasked: a tool that changed under a running loop is a moving target.',
         '`codex` is pinned to 1.2.3 on this machine, and nothing is installed at that version — `daoris agent pin codex 1.2.3` installs it, and `daoris agent unpin codex` goes back to PATH. Daoris will not quietly run a different version than the one you asked for.',
       ]);
-      for (const parts of [cooling, signedOut, own, missing]) {
+      for (const parts of [cooling, signedOut, locked, own, missing]) {
         expect(noteLines(zh, { parts }, 'zh', names).every((line) => line.kind === 'said')).toBe(true);
       }
     });

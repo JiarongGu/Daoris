@@ -180,6 +180,10 @@ public sealed class AccountWalkGateTests : IDisposable
             var selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Bound);
 
             Assert.Equal(("account-2", true), (selection.Profile, selection.Allowed));
+            // LOCKPASSED1: the start's line says the account was passed for its lock, never that the goal ranked another ahead of it.
+            Assert.Equal(WalkStep.Locked, selection.Rotated!.Step);
+            Assert.Equal(OpeningWhy.Locked, Assert.Single(selection.Steps!).Why);
+            Assert.Contains("being asked about by another question", selection.Rotated.Why);
         }
 
         Assert.False(roster.Busy("fake", "account-1"));
@@ -201,6 +205,12 @@ public sealed class AccountWalkGateTests : IDisposable
         Assert.False(selection.Allowed);
         Assert.Contains("`account-1`", selection.Refusal);
         Assert.Null(selection.Cooling);
+        // LOCKPASSED1: the hold is said by code, the accounts by id, so the page words it.
+        var part = Assert.Single(selection.RefusalNote!.Parts);
+        Assert.Equal(NoteCodes.HeldLocked.Code, part.Code);
+        Assert.Equal(selection.Refusal, selection.RefusalNote.Note);
+        var accounts = Assert.IsAssignableFrom<IReadOnlyList<string>>(Assert.Single(part.Values!, value => value.Key == "accounts").Value);
+        Assert.Equal(["account-1"], accounts);
         Assert.False(roster.Busy("fake", "account-1"));
 
         // Let go, the next start runs on it.

@@ -59,7 +59,7 @@ public enum StartKind
 /// The step of the walk that chose a start's account (TOOL6b, D130 §13 as §16 amends it): the log's <c>why</c>. <c>Near</c>
 /// and <c>Pace</c> read the agent's own word about its windows (TOOL6c).
 /// </summary>
-public enum WalkStep { Cooling, Refused, SignedOut, Kept, Near, Room, Fewest, Lapsing, Pace, LeastRecent, List }
+public enum WalkStep { Cooling, Refused, SignedOut, Locked, Kept, Near, Room, Fewest, Lapsing, Pace, LeastRecent, List }
 
 /// <summary>
 /// What Daoris knows of one account (TOOL6b, D130 §16.4), and what its agent last said about its windows, where it said
@@ -101,6 +101,12 @@ public sealed record AccountState(string? Account, AccountReadiness Readiness, C
 
     /// <summary><see cref="Refusal"/> by code (ROSTERREFUSE1), its English the same to the byte; null where nothing composed it.</summary>
     public Noted? RefusalNote { get; init; }
+
+    /// <summary>
+    /// A ready account a start's walk passed because another question held its lock past the walk's patience (LOCKPASSED1,
+    /// PARALLEL1c): still <see cref="AccountReadiness.Ready"/>, since it comes free by itself, and said by its own step.
+    /// </summary>
+    public bool Locked { get; init; }
 }
 
 /// <summary>
@@ -356,9 +362,10 @@ public static class AccountRotation
                 AccountReadiness.Cooling => new WalkChoice(WalkStep.Cooling),
                 AccountReadiness.Refused => new WalkChoice(WalkStep.Refused),
                 AccountReadiness.SignedOut => new WalkChoice(WalkStep.SignedOut),
+                _ when passed.Locked => new WalkChoice(WalkStep.Locked),
                 _ => Ahead(ran, begins),
             };
-        if (!goal || step.Step is not (WalkStep.Kept or WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut)) return step;
+        if (!goal || step.Step is not (WalkStep.Kept or WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut or WalkStep.Locked)) return step;
 
         var rest = Next(ran, begins) is { } runnerUp ? Ahead(ran, runnerUp) : new WalkChoice(WalkStep.List);
         return rest.Step == WalkStep.List ? step : step with { Rest = rest.Step, RestOver = rest.Over };
@@ -990,7 +997,7 @@ public static class RotationWords
         var own = facts.GetValueOrDefault(ran) ?? new AccountFacts();
         return step switch
         {
-            WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut => Passed(agent, passed!, zone),
+            WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut or WalkStep.Locked => Passed(agent, passed!, zone),
             WalkStep.Kept when string.Equals(ran, scope.Begins, StringComparison.OrdinalIgnoreCase) => Reason("it is kept for conversations", OpeningWhy.KeptSelf),
             WalkStep.Kept when kind == StartKind.Conversation =>
                 Reason($"`{scope.Begins}` is kept for conversations, which take it last", OpeningWhy.KeptLast, ("over", scope.Begins)),
@@ -1017,6 +1024,13 @@ public static class RotationWords
     /// </summary>
     private static StepSaid Passed(string agent, AccountState state, TimeZoneInfo zone)
     {
+        // Passed for its lock (LOCKPASSED1) it is still ready, so `Why` would call it ready.
+        if (state is { Readiness: AccountReadiness.Ready, Locked: true, Account: { } locked })
+        {
+            return Reason(
+                $"{Who(agent, locked)} is being asked about by another question", OpeningWhy.Locked, ("agent", agent), ("over", locked));
+        }
+
         var text = Why(agent, state, zone);
         return state switch
         {
