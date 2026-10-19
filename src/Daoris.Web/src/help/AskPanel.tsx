@@ -39,6 +39,15 @@ export type AskConversationSlot = {
   historyOpen?: boolean;
   /** Open the history. Absent where there is none to show. */
   onHistory?: () => void;
+  /**
+   * Ask Daoris's access (HELPMODE1b, the modes design §5): its chip, the press that opens *What it has*, and full access's
+   * confirmation, in a strip of its own right above the box. Absent on a shell older than the mode, which offers no choice.
+   */
+  access?: ReactNode;
+  /** *What it has* (HELPMODE1b, design §6), drawn in the conversation's place while it is open, the box still below it. */
+  wired?: ReactNode;
+  /** Whether the next start runs with full access, which the opening words then say: it acts, not proposes (D183 point 1). */
+  full?: boolean;
 };
 
 /** Escape is a field's, a form's, a menu's or a dialog's before it is the conversation's. */
@@ -58,8 +67,8 @@ const KEEPS_ESCAPE = 'input, textarea, select, [contenteditable="true"], form, [
  * dock is the whole frame: the history's (what it is, a new conversation, the search), drawn by `AskHistory`; and the open
  * conversation's, left-led: *← History*, its title whole, and a new conversation at its end. The head says which view is
  * open, where a *History* button at the far right looked the same open or closed. Under the conversation's words, outside
- * their scroll and in this order: the way back to the tail, what the next words do, and the box. Nothing floats over the
- * words.
+ * their scroll and in this order: the way back to the tail, what the next words do, the access chip with *What it has*
+ * (HELPMODE1b), and the box. Nothing floats over the words.
  */
 export function AskPanel({
   starters, helper, setup, conversation, scroller, framed = true, width, range, onResize, onResetWidth, onGo, onClose,
@@ -107,7 +116,7 @@ export function AskPanel({
   const starting = (
     <>
       <Prose className="m-0 text-small text-ink-soft">
-        {t(helper ? 'help.introAgent' : 'help.intro', { agent: helper ?? '' })}
+        {t(helper ? (conversation?.full ? 'help.introAgentFull' : 'help.introAgent') : 'help.intro', { agent: helper ?? '' })}
       </Prose>
 
       {starters.length === 0
@@ -163,18 +172,21 @@ export function AskPanel({
         />
       )}
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        {talking ? (
+        {/* What it has takes the conversation's place while it is open (HELPMODE1b); the box stays below it. */}
+        {conversation?.wired ?? (talking ? (
           <>
             {conversation!.body}
             {conversation!.proposals}
           </>
-        ) : starting}
+        ) : starting)}
       </div>
       {/* Outside the scroll, so neither ever covers the words above it. */}
-      {conversation?.tail && <div className="flex shrink-0 justify-end px-4 pb-1 pt-1.5">{conversation.tail}</div>}
+      {conversation?.tail && !conversation.wired && <div className="flex shrink-0 justify-end px-4 pb-1 pt-1.5">{conversation.tail}</div>}
       {note && (
         <div className="grid shrink-0 grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 border-t border-line px-4 py-2">{note}</div>
       )}
+      {/* The access chip beside the box (HELPMODE1b, design §5), in the side bar's dock as in its own region. */}
+      {conversation?.access && <div className="shrink-0 border-t border-line px-3 py-1.5">{conversation.access}</div>}
       {conversation?.composer}
     </div>
   );

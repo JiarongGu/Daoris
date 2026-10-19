@@ -20,6 +20,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import i18n from '../locales/i18n';
 import { SettingsView } from './SettingsView';
 import { DRIVER_STATE, respond, show, STATUS, WIRING } from '../test/shellHarness';
 
@@ -165,5 +166,80 @@ describe('AI features on Settings', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_INTAKE', { payload: { adapter: null } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('declarations only')));
+  });
+});
+
+/**
+ * HELPMODE1b (D183 point 2; the modes design §5): Ask Daoris's access under Settings → AI features, beside its agent, the same chip
+ * the panel holds: this machine's choice, restricted set at once and full access only on its confirmation, over `SET_HELP_MODE`.
+ */
+describe('Ask Daoris’s access on Settings', () => {
+  let helpMode: string | undefined = 'restricted';
+  beforeEach(() => {
+    helpMode = 'restricted';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { mode?: string } }) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'SET_HELP_MODE') helpMode = request?.payload?.mode;
+      if (type === 'STATE' || type === 'SET_HELP_MODE') {
+        return { ...DRIVER_STATE, helperAdapter: 'claude-code-acp', intakeAdapter: '', ...(helpMode ? { helpMode } : {}) };
+      }
+      if (type === 'HARNESSES') return { harnesses: [] };
+      if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
+      if (type === 'PLUGINS') return { folder: 'plugins', plugins: [] };
+      return undefined;
+    });
+  });
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    await i18n.changeLanguage('en');
+  });
+
+  const chip = (mode: string) => screen.findByRole('button', { name: i18n.t('help.mode.trigger', { mode }) });
+  async function pick(mode: 'restricted' | 'full') {
+    screen.getByRole('button', { name: (name) => name.startsWith(i18n.t('help.mode.trigger', { mode: '' })) }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitemradio', { name: i18n.t(`help.mode.option.${mode}`) }));
+  }
+
+  it.each(['en', 'zh'])('offers it beside Ask Daoris’s agent in %s, restricted until full access is chosen', async (language) => {
+    await i18n.changeLanguage(language);
+    show(<SettingsView notify={() => {}} section="ai" />);
+
+    expect(await chip(i18n.t('help.mode.restricted'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('settings.ai.helpMode.label'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('settings.ai.helpMode.tierRestricted'))).toBeInTheDocument();
+  });
+
+  it('sets restricted at once, and full access only on its confirmation, saying each', async () => {
+    helpMode = 'full';
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+
+    await chip('Full access');
+    expect(screen.getByText('Full access: Ask Daoris acts on this machine itself, without Apply.')).toBeInTheDocument();
+    expect(screen.getByText(/runs on claude-code-acp with full access/)).toBeInTheDocument();
+    await pick('restricted');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'restricted' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs restricted from its next start.'));
+
+    await chip('Restricted');
+    await pick('full');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'full' } });
+    const asks = await screen.findByRole('group', { name: 'Enable full access?' });
+    expect(await within(asks).findByText(i18n.t('help.mode.confirm.addsNone'))).toBeInTheDocument();
+    await userEvent.click(within(asks).getByRole('button', { name: 'Enable full access' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'full' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask Daoris runs with full access from its next start.'));
+  });
+
+  it('offers no access on a shell older than the mode', async () => {
+    helpMode = undefined;
+    show(<SettingsView notify={() => {}} section="ai" />);
+
+    expect(await screen.findByRole('combobox', { name: 'the Ask Daoris agent' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Ask Daoris’s access:/ })).toBeNull();
   });
 });

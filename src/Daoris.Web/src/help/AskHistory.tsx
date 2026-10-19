@@ -380,6 +380,8 @@ function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename
             </span>
           )}
           <span className="min-w-0 wrap-anywhere">{marks.join(' · ')}</span>
+          {/* HELPMODE1b (D183 point 3): the mode it ran under, said where it was full access, in the warning colour. */}
+          {row.mode === 'full' && <span className="text-warn">{t('help.history.full')}</span>}
         </span>
       </button>
 

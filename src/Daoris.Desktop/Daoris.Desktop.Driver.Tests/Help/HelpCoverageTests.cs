@@ -640,6 +640,10 @@ public sealed partial class HelpCoverageTests
     [
         ("ai", "useSetIntake", null, new Door("setting", "intake")),
         ("ai", "useSetHelper", null, new Door("setting", "helper")),
+        // HELPMODE1b: Ask Daoris's access, pressed from Settings → AI features and from the panel's own chip.
+        ("ai", "useSetHelpMode", null, new Exempt(
+            "Ask Daoris's access mode is the person's choice alone, never made for them (D183 point 2): no proposal names it, so "
+            + "a helper can never widen its own access, nor narrow the person's choice.")),
 
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
