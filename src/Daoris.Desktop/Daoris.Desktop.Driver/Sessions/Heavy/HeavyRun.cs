@@ -43,6 +43,10 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 /// that job if it is still there before its own gates start (<see cref="ProcessJob.EndNamedAsync"/>). The gates run with
 /// <c>MSBUILDDISABLENODEREUSE=1</c>, so a build node they start serves this run alone and ends with it, never a neighbour's build.</para>
 ///
+/// <para><b>Its test runners bounded.</b> A gate the repository declares as Jest or Vitest, itself or through its npm script, runs
+/// with <c>--maxWorkers=2</c> where the installed version's flag is known, and as written otherwise; each gate's line says which and
+/// why (<see cref="HeavyWorkers"/>, HEAVYRUN1a2).</para>
+///
 /// <para><b>Never waits on itself.</b> The run hands its gates <see cref="Variable"/>, naming its slot and the gates running. A gate
 /// that runs <c>run-heavy</c> again in the same repository runs inside the held slot without waiting, and one asked for a gate
 /// already running in it is refused, since it would run inside itself without end.</para>
@@ -245,7 +249,10 @@ public static class HeavyRun
                 var folder = current.WorkingDirectory is { } cwd ? Path.GetFullPath(Path.Combine(checkout, cwd)) : checkout;
                 if (!Directory.Exists(folder)) throw new DriverException($"`{current.Name}`'s cwd, {current.WorkingDirectory}, is no folder of {checkout}.");
 
-                output.WriteLine($"run-heavy: `{current.Name}`: {current.Run}");
+                // Its test runner held to two workers where the repository declares it Jest or Vitest, said either way (HEAVYRUN1a2).
+                var bound = HeavyWorkers.Bind(current, folder, checkout);
+                output.WriteLine($"run-heavy: `{current.Name}`: {bound.Run}");
+                output.WriteLine($"run-heavy: {bound.Said}");
                 output.Flush();
                 var added = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -254,7 +261,7 @@ public static class HeavyRun
                     ["MSBUILDDISABLENODEREUSE"] = "1",
                 };
 
-                step = HeavyStep.Start(job, current.Run, folder, added);
+                step = HeavyStep.Start(job, bound.Run, folder, added);
                 var code = await step.ExitAsync(ct).ConfigureAwait(false);
                 step.Dispose();
                 step = null;
