@@ -38,6 +38,8 @@ function WindowCellView({ cell }: { cell: WindowCell }) {
           {cell.curve && <span className={cell.over ? 'text-ink' : 'text-ink-soft'}>{t('agents.said.comma')}{cell.curve}</span>}
         </span>
       </span>
+      {/* Its projection to now (USAGEPROBE1b): what a person checks use for, in the soft ink beside the reading. */}
+      {cell.projected && <span className="min-w-0 text-ink-soft">{cell.projected}</span>}
       {cell.times.length > 0 && (
         <span className="min-w-0 text-ink-soft">
           {/* Each time whole; the floor's narrow cell breaks between them. */}

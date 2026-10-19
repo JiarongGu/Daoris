@@ -583,6 +583,35 @@ describe('what an account’s agent last said, a cell a window', () => {
     expect(usage.notes).toEqual([]);
   });
 
+  // USAGEPROBE1b: the projection to now beside the reading, said as projected and only where it differs or cannot be made.
+  describe('its projected use beside its reading', () => {
+    const projectedOf = (window: Record<string, unknown>) =>
+      usageCells({ said: { seen: SEEN, windows: [{ window: 'session', used: 0.2, reset: RESET, credits: false, seen: SEEN, source: 'read', ...window }] } }, signedIn, { now: NOW })!
+        .cells[0]!.projected;
+
+    it('says a measured projection that differs from the reading, as projected from Daoris’s own turns', () => {
+      expect(projectedOf({ projected: 0.234, projectedBy: 'measured' }))
+        .toBe("about 23% by now, projected from Daoris's own turns since");
+    });
+
+    it('says it cannot project where Daoris cannot weigh its turns since', () => {
+      expect(projectedOf({ projected: 0.2, projectedBy: 'unweighed' })).toBe('not projected: Daoris cannot weigh its turns since');
+    });
+
+    it('says nothing where the projection is the reading, rounds to it, or an older shell sent none', () => {
+      expect(projectedOf({ projected: 0.2, projectedBy: 'reading' })).toBeUndefined();
+      expect(projectedOf({ projected: 0.2004, projectedBy: 'measured' })).toBeUndefined();
+      expect(projectedOf({})).toBeUndefined();
+    });
+
+    it('says each in 中文', async () => {
+      await i18n.changeLanguage('zh');
+      expect(projectedOf({ projected: 0.234, projectedBy: 'measured' })).toBe('此刻约 23%，按 Daoris 此后自己的轮次推算');
+      expect(projectedOf({ projected: 0.2, projectedBy: 'unweighed' })).toBe('未推算：Daoris 无法衡量此后自己的轮次');
+      expect(projectedOf({ projected: 0.2, projectedBy: 'reading' })).toBeUndefined();
+    });
+  });
+
   it('says a window its agent did not report unknown, in words with no bar, never 0%', () => {
     const weekOnly = { seen: SEEN, windows: [said.windows[0]!] };
     const [session, weekly] = usageCells({ said: weekOnly }, signedIn, { now: NOW })!.cells;

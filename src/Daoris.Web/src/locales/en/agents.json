@@ -28,6 +28,8 @@
   "agents.window.unknown": "unknown",
   "agents.window.curve": "its curve allows {{curve}} now",
   "agents.window.overCurve": "over its curve's {{curve}} now",
+  "agents.window.projected": "about {{projected}} by now, projected from Daoris's own turns since",
+  "agents.window.unweighed": "not projected: Daoris cannot weigh its turns since",
   "agents.said.resets": "resets {{when}}",
   "agents.said.comma": ", ",
   "agents.said.bySession": "said by a session {{age}}",
