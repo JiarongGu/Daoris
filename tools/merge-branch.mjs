@@ -919,6 +919,7 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], gates: ['driver'], why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1)" },
   { paths: ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], gates: ['driver'], why: "the driver's WorkflowGraphsTests reads the shared table of D157's versions decoded as graphs (FABRIC-WORKFLOW2)" },
   { paths: ['src/Daoris.Cli/test/fixtures/workflow-graph-versions.json'], gates: ['driver'], why: "the driver's WorkflowGraphVersionsTests reads the shared table of a named graph as a named workflow's version (FABRIC-GRAPH1b)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/graph-problems.json'], gates: ['driver'], why: "the driver's NodeWiresTests and NodeGraphsTests read the shared table of a graph judged when saved (FABRIC-GRAPH1c)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/fence-cases.json'],
     gates: ['service', 'driver'],

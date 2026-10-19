@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-WIRE1a (the fabric events design §E3): the wires' validation when a graph is saved. The six kinds, each with what it may
 /// connect; <c>allOf</c> and <c>anyOf</c> groups on a node's eligibility wires; every data input mandatory and fed once, at its schema;
-/// and every refusal §E3 names, each with a stable code and words. Pure: nothing evaluated, nothing stored.
+/// and every refusal §E3 names, each with a stable code and words. Pure: nothing evaluated, nothing stored. The refusals are rows of the
+/// shared table the CLI's twin reads too (FABRIC-GRAPH1c, <see cref="GraphProblemsTable"/>).
 /// </summary>
 public sealed class NodeWiresTests
 {
@@ -53,101 +54,46 @@ public sealed class NodeWiresTests
         new("i", WireKinds.Rejected, new("qa"), new("redo")),
     ];
 
-    private static Wire Wired(string id) => Wires.Single(wire => wire.Id == id);
-
-    private static Wire[] Adding(Wire extra) => [.. Wires, extra];
-
-    private static Wire[] Replacing(Wire wire) => [.. Wires.Select(each => each.Id == wire.Id ? wire : each)];
-
-    private static Wire[] Without(string id) => [.. Wires.Where(wire => wire.Id != id)];
-
     private static readonly WireGroup AnyOfG = new("g", WireGroupModes.AnyOf);
 
-    /// <summary>Each refusal, alone: the wires and nodes that make it, and the one problem the save names, by code, wire and node.</summary>
-    private static readonly Dictionary<string, (NodeDeclaration[] Nodes, Wire[] Wires, (string Code, string? Wire, string? Node) Expected)> Cases = new()
-    {
-        ["no id"] = (Nodes, Adding(After("", "line", "rollback")), (WireRefusal.NoId, "", null)),
-        ["two wires, one id"] = (Nodes, Adding(After("a", "line", "rollback")), (WireRefusal.WireTwice, "a", null)),
-        ["two nodes, one id"] = ([.. Nodes, Node("qa", NodeKinds.Human)], Wires, (WireRefusal.NodeTwice, null, "qa")),
-        ["a kind none of the six"] = (Nodes, Adding(new("x", "when", new("line"), new("rollback"))), (WireRefusal.UnknownKind, "x", null)),
-        ["a wait from a node"] = (Nodes, Replacing(Wired("b") with { From = new("line") }), (WireRefusal.Shape, "b", null)),
-        ["a wait waiting on nothing"] = (Nodes, Replacing(Wired("b") with { Waits = null }), (WireRefusal.Shape, "b", null)),
-        ["an after with a wait target"] = (Nodes, Adding(After("x", "line", "rollback") with { Waits = new WaitTarget("u2", "r2") { End = true } }), (WireRefusal.Shape, "x", null)),
-        ["an after with no source"] = (Nodes, Adding(new("x", WireKinds.After, null, new("rollback"))), (WireRefusal.Shape, "x", null)),
-        ["an after with a port"] = (Nodes, Adding(new("x", WireKinds.After, new("line", WireEnd.Evidence), new("rollback"))), (WireRefusal.Shape, "x", null)),
-        ["a data wire with no ports"] = (Nodes, Adding(new("x", WireKinds.Data, new("line"), new("rollback"))), (WireRefusal.Shape, "x", null)),
-        ["a source on another unit"] = (Nodes, Adding(new("x", WireKinds.After, new("deploy") { Unit = "u2" }, new("rollback"))), (WireRefusal.ForeignNode, "x", "deploy")),
-        ["a target on another unit"] = (Nodes, Adding(new("x", WireKinds.Trigger, new("line"), new("deploy") { Unit = "u2" })), (WireRefusal.ForeignNode, "x", "deploy")),
-        ["a source not in the graph"] = (Nodes, Adding(After("x", "nowhere", "rollback")), (WireRefusal.MissingNode, "x", "nowhere")),
-        ["a target not in the graph"] = (Nodes, Adding(After("x", "line", "nowhere")), (WireRefusal.MissingNode, "x", "nowhere")),
-        ["an output not declared"] = (Nodes, Replacing(Data("g", "deploy", "previews", "announce", "preview")), (WireRefusal.MissingPort, "g", "deploy")),
-        ["an input not declared"] = (Nodes, Adding(Data("x", "deploy", "preview", "announce", "banner")), (WireRefusal.MissingPort, "x", "announce")),
-        ["evidence a node does not declare"] = (Nodes, Replacing(Data("d", "redo", WireEnd.Evidence, "deploy", "approval")), (WireRefusal.MissingPort, "d", "redo")),
-        ["an incompatible schema"] = (Nodes, Replacing(Data("e", "deploy", "preview", "close", "delivery")), (WireRefusal.IncompatibleSchema, "e", "close")),
-        ["a wait into another kind"] = (Nodes, Adding(Waiting("x", "rollback")), (WireRefusal.NotWaitUnit, "x", "rollback")),
-        ["a wait with no revision"] = (Nodes, Replacing(Wired("b") with { Waits = new WaitTarget("u2", " ") { End = true } }), (WireRefusal.WaitTarget, "b", "dependency")),
-        ["a wait on a node and the end"] = (Nodes, Replacing(Wired("b") with { Waits = new WaitTarget("u2", "r2") { Node = "deploy", End = true } }), (WireRefusal.WaitTarget, "b", "dependency")),
-        ["a wait on neither a node nor the end"] = (Nodes, Replacing(Wired("b") with { Waits = new WaitTarget("u2", "r2") }), (WireRefusal.WaitTarget, "b", "dependency")),
-        ["a wait.unit waiting on nothing"] = (Nodes, Without("b"), (WireRefusal.NoWait, null, "dependency")),
-        ["a wait.unit waiting twice"] = (Nodes, Adding(Waiting("x", "dependency")), (WireRefusal.WaitTwice, "x", "dependency")),
-        ["an input unfed"] = (Nodes, Without("d"), (WireRefusal.InputUnfed, null, "deploy")),
-        ["an input fed twice"] = (Nodes, Adding(Data("x", "qa", WireEnd.Evidence, "deploy", "approval")), (WireRefusal.InputTwice, "x", "deploy")),
-        ["a data wire grouped"] = (Nodes, Replacing(Wired("d") with { Group = AnyOfG }), (WireRefusal.GroupedInput, "d", "deploy")),
-        ["a wait wire grouped"] = (Nodes, Replacing(Wired("b") with { Group = AnyOfG }), (WireRefusal.GroupedInput, "b", "dependency")),
-        ["a group of no mode"] = (Nodes, Replacing(Wired("a") with { Group = new("g", "oneOf") }), (WireRefusal.GroupMode, "a", "qa")),
-        ["a group with no id"] = (Nodes, Replacing(Wired("a") with { Group = new(" ", WireGroupModes.AllOf) }), (WireRefusal.GroupMode, "a", "qa")),
-        ["a group of two modes"] = (Nodes,
-            [.. Replacing(Wired("a") with { Group = new("g", WireGroupModes.AllOf) }), After("x", "dependency", "qa") with { Group = AnyOfG }],
-            (WireRefusal.GroupMode, "x", "qa")),
-        ["a group over two nodes"] = (Nodes,
-            [.. Replacing(Wired("a") with { Group = AnyOfG }), After("x", "line", "rollback") with { Group = AnyOfG }],
-            (WireRefusal.GroupSplit, "x", "rollback")),
-        // FABRIC-WIRE1d: a join's members are its `after` wires' sources whatever their group, so a group there is refused.
-        ["a join's member wire grouped"] = ([.. Nodes, Node("checks", NodeKinds.All)],
-            [.. Wires, After("x", "line", "checks") with { Group = AnyOfG }, After("y", "qa", "checks")],
-            (WireRefusal.GroupedMember, "x", "checks")),
-        ["a failure path from a proof"] =(Nodes, Adding(new("x", WireKinds.Failed, new("line"), new("rollback"))), (WireRefusal.NeverFails, "x", "line")),
-        ["a failure path from a person's task"] = (Nodes, Adding(new("x", WireKinds.Failed, new("qa"), new("rollback"))), (WireRefusal.NeverFails, "x", "qa")),
-        ["a rejection path from a plugin's node not declared rejectable"] = (Nodes, Adding(new("x", WireKinds.Rejected, new("deploy"), new("redo"))), (WireRefusal.NeverRejected, "x", "deploy")),
-        ["a rejection path from a proof"] = (Nodes, Adding(new("x", WireKinds.Rejected, new("line"), new("redo"))), (WireRefusal.NeverRejected, "x", "line")),
-        ["a node's own trigger loop"] = (Nodes, Adding(new("x", WireKinds.Trigger, new("announce"), new("announce"))), (WireRefusal.Cycle, null, "announce")),
-        ["two nodes after each other"] = (Nodes, Adding(After("x", "deploy", "dependency")), (WireRefusal.Cycle, null, "dependency")),
-        ["a failure path back to a producer"] = (Nodes, Adding(new("x", WireKinds.Failed, new("deploy"), new("qa"))), (WireRefusal.Cycle, null, "deploy")),
-    };
+    public static TheoryData<string> CaseNames() => GraphProblemsTable.Names("wires");
 
-    public static TheoryData<string> CaseNames() => new([.. Cases.Keys]);
-
-    /// <summary>The design's example, with every kind: a save of it refuses nothing.</summary>
+    /// <summary>The design's example, with every kind: a save of it refuses nothing, and it is the table's base read from its JSON.</summary>
     [Fact]
     public void The_designs_example_with_each_kind_holds()
     {
         Assert.Empty(NodeWires.Problems(Nodes, Wires));
         Assert.Equal(WireKinds.All.Order(), Wires.Select(wire => wire.Kind).Distinct().Order());
         Assert.All(Nodes, node => Assert.Null(NodeDeclarations.Problem(node)));
+        var read = GraphProblemsTable.Graph(GraphProblemsTable.Row("wires", "the design's example with every kind holds"));
+        Assert.Equal(Nodes, read.Nodes);
+        Assert.Equal(Wires, read.Wires);
     }
 
-    /// <summary>Each refusal §E3 names, alone: the one problem, with its code, its wire and node, and words naming the wire.</summary>
+    /// <summary>
+    /// FABRIC-GRAPH1c: each row of the shared table (`graph-problems.json`'s `wires`), which the CLI's <c>nodegraphs.ts</c> judges too:
+    /// each refusal §E3 names alone, with its code, its wire and node, and its words; the wires that hold; several problems in a stable
+    /// order.
+    /// </summary>
     [Theory]
     [MemberData(nameof(CaseNames))]
     public void Each_refusal_is_named_alone_with_its_code_and_words(string name)
     {
-        var (nodes, wires, expected) = Cases[name];
-        var problems = NodeWires.Problems(nodes, wires);
+        var row = GraphProblemsTable.Row("wires", name);
+        var graph = GraphProblemsTable.Graph(row);
+        var problems = NodeWires.Problems(graph.Nodes, graph.Wires);
 
-        Assert.Equal(new[] { (name, expected) }, problems.Select(problem => (name, (problem.Code, problem.Wire, problem.Node))));
-        var problem = problems[0];
-        Assert.False(string.IsNullOrWhiteSpace(problem.Words));
-        if (problem.Wire is { Length: > 0 } wire) Assert.Contains($"`{wire}`", problem.Words);
-        if (problem.Node is { } node) Assert.Contains($"`{node}`", problem.Words);
+        Assert.Equal(GraphProblemsTable.Expected(row), GraphProblemsTable.Said(problems));
+        Assert.Equal(problems, NodeWires.Problems(graph.Nodes, graph.Wires));
     }
 
-    /// <summary>Every refusal code is held by a case: a code added without one fails here.</summary>
+    /// <summary>Every refusal code is held by a row of the shared table: a code added without one fails here.</summary>
     [Fact]
     public void Every_refusal_code_has_its_case()
     {
         var codes = typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!).ToList();
         Assert.Equal(codes.Count, codes.Distinct().Count());
-        Assert.Equal(codes.Order(), Cases.Values.Select(each => each.Expected.Code).Distinct().Order());
+        Assert.Empty(codes.Except(GraphProblemsTable.Codes()));
     }
 
     /// <summary>
@@ -186,26 +132,6 @@ public sealed class NodeWiresTests
     }
 
     /// <summary>
-    /// FABRIC-WIRE1d: a join's member wires are plain <c>after</c> wires, and saved so; its other eligibility wires are any node's, a group
-    /// on them kept (WIRE1b's choice 6). Only a group on a member wire is refused.
-    /// </summary>
-    [Fact]
-    public void A_join_with_plain_member_wires_holds()
-    {
-        NodeDeclaration[] nodes = [.. Nodes, Node("checks", NodeKinds.All)];
-        Wire[] wires =
-        [
-            .. Wires,
-            After("x", "line", "checks"),
-            After("y", "qa", "checks"),
-            new("t", WireKinds.Trigger, new("announce"), new("checks")) { Group = AnyOfG },
-            new("u", WireKinds.Rejected, new("redo"), new("checks")) { Group = AnyOfG },
-        ];
-
-        Assert.Empty(NodeWires.Problems(nodes, wires));
-    }
-
-    /// <summary>
     /// A node's eligibility groups combine by all: each declared group once, each ungrouped wire a group of its own, every group's wires
     /// in wire-id order (an <c>anyOf</c>'s witness order, WIRE1b), and no data or wait wire among them, since inputs stay mandatory.
     /// </summary>
@@ -231,26 +157,5 @@ public sealed class NodeWiresTests
         Assert.All(NodeWires.Groups("deploy", wires), group => Assert.Equal("deploy", group.Node));
         Assert.Empty(NodeWires.Groups("dependency", wires));
         Assert.Empty(NodeWires.Groups("close", wires));
-    }
-
-    /// <summary>Several problems are all named, in a stable order: the nodes', each wire's in wire order, then the inputs', then cycles.</summary>
-    [Fact]
-    public void Every_problem_is_named_in_a_stable_order()
-    {
-        NodeDeclaration[] nodes = [.. Nodes, Node("qa", NodeKinds.Human)];
-        Wire[] wires = [.. Without("d"), After("x", "line", "nowhere"), new("y", WireKinds.Trigger, new("redo"), new("redo"))];
-
-        var problems = NodeWires.Problems(nodes, wires);
-
-        Assert.Equal(
-            new (string, string?, string?)[]
-            {
-                (WireRefusal.NodeTwice, null, "qa"),
-                (WireRefusal.MissingNode, "x", "nowhere"),
-                (WireRefusal.InputUnfed, null, "deploy"),
-                (WireRefusal.Cycle, null, "redo"),
-            },
-            problems.Select(problem => (problem.Code, problem.Wire, problem.Node)));
-        Assert.Equal(problems, NodeWires.Problems(nodes, wires));
     }
 }
