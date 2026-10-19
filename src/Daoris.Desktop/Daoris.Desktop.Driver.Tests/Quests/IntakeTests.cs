@@ -511,6 +511,25 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
+    /// AUTONOMY1c (D184 points 2 and 3): under full access the route the intake chooses is taken without the person's accept. The
+    /// same unsettled ask that parks above is told its choice is taken, publishes to it, and its record completes: nothing waits on
+    /// the person, who may route it again.
+    /// </summary>
+    [Fact]
+    public async Task Under_full_access_an_unsettled_ask_goes_where_the_intake_chose()
+    {
+        await using var service = StandInService.Start(Circle, Ask("an unsettled widget is broken somewhere"));
+        var driver = Driver(IntakeOn() with { MachineAccess = AccessSetting.FullAccess }, service);
+
+        var report = await driver.RunOnceAsync();
+
+        var published = Assert.Single(service.Published);
+        Assert.Equal("media-api", published["to"]!.GetValue<string>());
+        Assert.Equal("completed", service.Session("i1")["state"]!.GetValue<string>());
+        Assert.Contains(report.Events, line => line.StartsWith("completed  intake i1 (ask #a1b2c3", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// The room is a circle's, so a tick takes one ask per circle — the OLDEST, which the service's
     /// newest-first list puts last — and the next ask in that circle waits for the next tick.
     /// </summary>
@@ -774,7 +793,8 @@ public sealed class IntakeTests : IDisposable
             const agents = existsSync('AGENTS.md') ? readFileSync('AGENTS.md', 'utf8') : '';
             if (agents.includes('`media-api`')) console.log('stub: the room declares media-api');
 
-            if (/unsettled/.test(target)) {
+            // AUTONOMY1c: where the setup takes its choice of route, it publishes its best choice rather than ask.
+            if (/unsettled/.test(target) && !/take your choice of route/.test(target)) {
               console.log('stub: the declarations do not settle this — which repository owns the widget?');
               process.exit(0);
             }
