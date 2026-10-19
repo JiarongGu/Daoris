@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Each window holds Daoris's own state (what it drives and holds, the choices on Settings, what is running) as Daoris sends it
+  when it changes: a choice made in one window or at a terminal shows in every window, and an open window no longer asks for
+  it again when Daoris looks, when something changes elsewhere or when the window is brought forward.
 - Choosing an account for a start no longer waits for a question Daoris is asking another account: a sign-in or usage read
   that is slow to answer holds only the start that asked it. A start whose account another question still holds after 30
   seconds runs on the next account of its list, or waits for the next start where none is left, rather than running beside

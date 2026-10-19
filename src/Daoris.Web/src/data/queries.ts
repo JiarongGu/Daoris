@@ -35,6 +35,10 @@ export const keys = {
   /** Where each circle stands with its remote (SYNC6a) — refetched by every tick, which runs a pass. */
   allSync: ['sync'] as const,
   sync: (workspace: string) => ['sync', workspace] as const,
+  /**
+   * The driver's state, and the prefix of everything read beneath it. The entry itself is written by the shell's pushes where it
+   * pushes them (PUSH1a, `bridge/slices.ts`) and pulled otherwise; what is read beneath it is pulled.
+   */
   driver: ['driver'] as const,
   /** The machine's wiring — shell-only, like the driver's state (D48 §5). */
   remotes: ['remotes'] as const,
