@@ -40,6 +40,13 @@ export type WindowSaid = {
    * a session's frame. A shell older than SWITCH1d answers none, read as `said`.
    */
   source?: 'read' | 'said' | null;
+  /**
+   * Its use projected to now, from 0 to 1 (USAGEPROBE1b): its reading plus Daoris's own turns since, by the account's measured
+   * ratio, the same projection a start reads. A shell older than USAGEPROBE1b answers none.
+   */
+  projected?: number | null;
+  /** How it was made: `reading` (nothing spent since), `measured`, or `unweighed` (turns since that nothing weighs). */
+  projectedBy?: 'reading' | 'measured' | 'unweighed' | (string & {}) | null;
 };
 
 /** What an account's agent last said: each window whose reset has not passed. Absent is nothing said, never zero. */

@@ -991,7 +991,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
       [...BASE, 'service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment']],
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, 'devkit']],
-    ["the Process halves' settings", ['src/Daoris.Desktop/process.runsettings'], [...BASE, 'driver-process', 'modules-process']],
+    // The driver's fast CategoryTests read the file too (PROCPAR1), so a change there runs the driver's fast half.
+    ["the Process halves' settings", ['src/Daoris.Desktop/process.runsettings'], [...BASE, 'driver', 'driver-process', 'modules-process']],
     // PROC1c: the second file runs only the driver's git-only classes, four at once.
     ["the git-only classes' settings", ['src/Daoris.Desktop/git.process.runsettings'], [...BASE, 'driver-process-git']],
     ['the declared gates', ['daoris.gates.json'], ALL],

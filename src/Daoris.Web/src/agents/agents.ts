@@ -175,6 +175,12 @@ export type WindowCell = {
    * window this build has no curve for.
    */
   curve?: string;
+  /**
+   * Its use projected to now, said as projected (USAGEPROBE1b): *about 23% by now, projected from Daoris's own turns since*
+   * where it differs from the reading by a whole percent, or *not projected* where Daoris spent on the account since and cannot
+   * weigh it. Absent where it is the reading itself, or none was sent.
+   */
+  projected?: string;
   /** Its share is over its curve now: said so, and the bar wears the warning hue. Absent where `curve` is. */
   over?: boolean;
   /**
@@ -210,10 +216,17 @@ function windowCell(said: WindowSaid, now: Date, use?: CurveScope, product?: str
   const age = said.source !== 'read'
     ? i18n.t('agents.said.bySession', { age: ago(said.seen) })
     : product ? i18n.t('agents.said.read', { product, age: ago(said.seen) }) : i18n.t('agents.said.readAt', { age: ago(said.seen) });
+  // The projection to now beside the reading (USAGEPROBE1b): the same one a start reads, said only where it adds something.
+  const projected = said.projectedBy === 'unweighed'
+    ? i18n.t('agents.window.unweighed')
+    : said.projectedBy === 'measured' && typeof said.projected === 'number' && used !== null && percent(said.projected) !== percent(used)
+      ? i18n.t('agents.window.projected', { projected: percent(said.projected) })
+      : null;
   return {
     window: said.window, name: windowName(said.window), known: true, used, warned: word !== null,
     reading: readings.join(i18n.t('agents.said.comma')),
     ...against,
+    ...(projected ? { projected } : {}),
     times: [i18n.t('agents.said.resets', { when: clockOf(said.reset, now) }), age],
   };
 }

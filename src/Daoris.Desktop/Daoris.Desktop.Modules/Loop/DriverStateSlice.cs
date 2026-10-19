@@ -33,7 +33,7 @@ public static class DriverStateSlice
         ["shell"] = ["ready", "home", "homeNotice", "homeAccount", "hostNotice"],
         ["choices"] =
         [
-            "drivable", "holds", "trees", "notify", "strikes", "coolOff", "forgiven", "intakeAdapter", "helperAdapter",
+            "drivable", "holds", "trees", "notify", "strikes", "coolOff", "forgiven", "intakeAdapter", "helperAdapter", "helpMode",
             "lines", "workspaceLines", "landings", "workspaceLandings", "readAcross", "workspaceReadAcross", "writeAcross", "standing",
             "languages", "workspaceLanguages", "languageTable", "reviews", "workspaceReviews", "opinions", "workspaceOpinions",
             "helpers", "workspaceHelpers", "commits", "workspaceCommits",

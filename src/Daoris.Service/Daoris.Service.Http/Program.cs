@@ -1253,10 +1253,20 @@ if (mode == ServiceMode.Local)
             return Results.BadRequest(new ErrorResponse("room is required — where Ask Daoris's conversation runs"));
         }
 
-        var outcome = await s.Ledger.OpenHelpAsync(
-            // The adapter is the harness, never a model (D24). Silence takes the supported one.
-            string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
-            body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Workspace, ct);
+        // HELPMODE1a2: the mode its start got, which the ledger knows the spelling of; one it does not know is the caller's mistake.
+        SessionOpenOutcome outcome;
+        try
+        {
+            outcome = await s.Ledger.OpenHelpAsync(
+                // The adapter is the harness, never a model (D24). Silence takes the supported one.
+                string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
+                body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Workspace,
+                string.IsNullOrWhiteSpace(body.Mode) ? null : body.Mode, ct);
+        }
+        catch (ArgumentException refused)
+        {
+            return Results.BadRequest(new ErrorResponse(refused.Message));
+        }
 
         return outcome.Refusal switch
         {
@@ -1267,6 +1277,32 @@ if (mode == ServiceMode.Local)
             SessionOpenRefusal.WorkspaceUnknown => Results.NotFound(new ErrorResponse(outcome.Message)),
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
+    });
+
+    // The access mode an Ask Daoris conversation going on runs under (HELPMODE1a2, D183 point 3): the person's mode changed since it
+    // last ran, and its record says the one it runs under now. Local like the open; only Ask Daoris's records of this machine's have one.
+    app.MapPost("/api/sessions/{id}/help-mode", async (
+        ComposedService s, HttpContext http, string id, HelpModeRequest body, CancellationToken ct) =>
+    {
+        if (string.IsNullOrWhiteSpace(body.Mode))
+        {
+            return Results.BadRequest(new ErrorResponse("mode is required — the access mode Ask Daoris goes on under"));
+        }
+
+        Session? kept;
+        try
+        {
+            kept = await s.Ledger.KeepHelpModeAsync(id, body.Mode, ct);
+        }
+        catch (ArgumentException refused)
+        {
+            return Results.BadRequest(new ErrorResponse(refused.Message));
+        }
+
+        return kept is null
+            ? Results.NotFound(new ErrorResponse($"no Ask Daoris conversation of this machine's is `{id}`"))
+            : Results.Ok(new SessionActionResponse(
+                await ToSessionAsync(s, kept, MachineLocal(http)), $"Ask Daoris `{id}` goes on {kept.HelpMode}."));
     });
 
     // Deleting a conversation that served no quest (SESSUX1f, D126 §5.4): the ledger judges the record's half and removes
@@ -2513,7 +2549,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     FromWhy: loopback ? s.FromWhy : null,
     FromBy: loopback ? s.FromBy : null,
     // The line of work it belongs to (SESSONE1a): a key, no path and no account, so every caller is told. Filled by the ledger's reader.
-    Entry: s.Entry);
+    Entry: s.Entry,
+    // The access mode an Ask Daoris record's run got (HELPMODE1a2): this machine's, like the opinion, so answered to it only.
+    HelpMode: loopback ? s.HelpMode : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper);

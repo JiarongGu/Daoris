@@ -32,17 +32,17 @@ judged from the machine's facts, a partition per repository (PUSH1b1); `linesSli
 ## A fact judged per repository, before its slice
 
 A slice partitioned per repository is only as cheap as the fact beneath it: one repository's `refs` wake must judge that
-repository alone (D181 points 2-3). `Driver/Help/HelpFacts.cs` holds two such topics, the lines (PUSH1b1) and the work
-inventory (FACTSPLIT1a, D181's note), and a third follows their shape (FACTSPLIT1b's sessions' trees, PUSH1c's slices).
+repository alone (D181 points 2-3). `Driver/Help/HelpFacts.cs` holds three such topics, the lines (PUSH1b1), the work
+inventory (FACTSPLIT1a) and the sessions' trees (FACTSPLIT1b, both D181's notes), and PUSH1c's slices follow their shape.
 
 | Part | The shape | Where it is |
 |---|---|---|
 | Subjects | Made from the machine fact (the service's answers), not from configuration: each registry repository with a checkout here, made and forgotten in `Known` as that fact lands, read under a lock so a late answer never undoes a newer one. What belongs to no checkout gets a part of its own under a name no folder can hold (`<no checkout>`) | `HelpFacts.Known`, `HelpFacts.NoCheckout` |
-| Wakes | `Woken(topic, subject, snapshot)`: a `refs` move wakes its repository's subject only; a family move that names no repository wakes every subject the machine fact names, none before it lands | `HelpFacts.Woken` |
-| The judge | Reads its inputs from the machine fact (`PartOf`: the root, the checkouts, the trees in use from the snapshot's active sessions), never a service call of its own, and git only under its repository | `HelpFacts.JudgeWorkAsync`, `WorkInventories.ReadPartAsync` |
-| Re-wake | When the machine fact lands with a part's inputs changed (its root, its trees in use), that part alone is judged again | `HelpFacts.Keep` |
-| Rules | A deadline, a bound, how many parts at once, and a `Rest` where a burst of one repository's moves should be one judgement | `LinesRules`, `WorkRules` |
-| The merge | `HelpFacts.Read` merges the parts in name order, the leftover part last, and reads null while any part was never judged, so *not read yet* keeps its meaning | `HelpFacts.Read`, `HelpNotReadYet` |
+| Wakes | `Woken(topic, subject, snapshot)`: a `refs` move wakes its repository's subject only; a family move that names no repository wakes every subject the machine fact names, none before it lands. A part whose subjects are read from another fact (the trees from the sessions' look) is not woken with that fact's wake, which would judge the fact it is about to replace | `HelpFacts.Woken` |
+| The judge | Reads its inputs from the machine fact (`PartOf`: the root, the checkouts, the trees in use from the snapshot's active sessions; `TreesPartOf`: the look and whose records are the part's), never a service call of its own, and git only under its repository | `HelpFacts.JudgeWorkAsync`, `WorkInventories.ReadPartAsync`, `HelpFacts.ReadTreesAsync` |
+| Re-wake | When the machine fact lands with a part's inputs changed (its root, its trees in use; for the trees, the look with the part's trees to judge moved), that part alone is judged again, the trees' at once rather than after their rest | `HelpFacts.Keep` |
+| Rules | A deadline, a bound, how many parts at once, and a `Rest` where a burst of one repository's moves should be one judgement | `LinesRules`, `WorkRules`, `TreesRules` |
+| The merge | `HelpFacts.Read` merges the parts in name order, the leftover part last (the trees into the look, by path), and reads null while any part was never judged, so *not read yet* keeps its meaning | `HelpFacts.Read`, `HelpNotReadYet` |
 | Its lines | Each part's lines carry their repository as data, so a workspace's room filters them by it, never by the words | `InventoryUnread`, `HelpRoomScope.Project` |
 
 **What `MachineFacts` does underneath.** A judge returning null drops the subject's fact (`Land`); one that throws keeps the

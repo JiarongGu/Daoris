@@ -1666,7 +1666,9 @@ public sealed class AcpSession(
             + "), so it does not start in a narrower one under that name. Choose restricted access for Ask Daoris "
             + "(`daoris-driver help mode restricted`), or another agent for it.");
 
-        if (!created.TryGetProperty("modes", out var modes)
+        // An answer that is no object names no modes (HELPMODE1a4): a resume's may be null, and a required posture fails on it too.
+        if (created.ValueKind != JsonValueKind.Object
+            || !created.TryGetProperty("modes", out var modes)
             || !modes.TryGetProperty("availableModes", out var available)
             || available.ValueKind != JsonValueKind.Array)
         {
@@ -2134,7 +2136,8 @@ public sealed class AcpSession(
         KeepOptions(resumed.ValueKind == JsonValueKind.Object && resumed.TryGetProperty("configOptions", out var options)
             ? AcpConfigOption.Read(options)
             : []);
-        if (resumed.ValueKind == JsonValueKind.Object) await SetPostureAsync(resumed, ct).ConfigureAwait(false);
+        // 🔴 HELPMODE1a4 (D183 point 3): set on every answer, an object or not, so a required posture is never skipped here.
+        await SetPostureAsync(resumed, ct).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -89,7 +89,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
                             DisplayName = names.GetValueOrDefault(account),
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))),
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))?.Until,
-                            Said = SaidShown(said[account]),
+                            // Each window's projection beside its reading (USAGEPROBE1b): the roster's own, over its ledger held in
+                            // memory and read on as the history grows, so a tick re-parses no month.
+                            Said = SaidShown(said[account], Safe(() => roster.ProjectionOf(agent, account, said[account], now))),
                             // The weekly reset known for it: told by a limit, or by the agent's own word (TOOL6b, TOOL6c).
                             Week = Safe(() => AccountWindows.WeekOf(roster.Home, agent, account, now, fixedWeek)),
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
@@ -178,13 +180,17 @@ public sealed class AccountsRoutes(DriverLoop loop)
         entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved,
     };
 
-    private static object? SaidShown(AccountSaid? said) => said is null ? null : new
+    private static object? SaidShown(AccountSaid? said, AccountProjection? projection = null) => said is null ? null : new
     {
         said.Seen,
         Windows = said.Windows.Select(window => new
         {
             // Where its reading came from (SWITCH1d, USAGEREAD2a): `read` from the agent's own answer, `said` by a session's frame.
             window.Window, window.Used, window.Reset, window.Standing, window.Credits, window.Seen, window.Source,
+            // Its use projected to now, 0 to 1, and how (`reading`, `measured`, `unweighed`), null where it said no number
+            // (USAGEPROBE1b): added beside the reading, which stays as written.
+            Projected = projection?.Of(window.Window)?.Projected,
+            ProjectedBy = projection?.Of(window.Window)?.How,
         }).ToArray(),
     };
 

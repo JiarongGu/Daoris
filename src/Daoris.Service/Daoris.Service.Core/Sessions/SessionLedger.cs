@@ -354,6 +354,42 @@ public sealed class SessionLedger(
     /// </summary>
     public static bool IsHelp(Session session) => string.Equals(session.Repository, HelpRepository, StringComparison.Ordinal);
 
+    /// <summary>Ask Daoris's mode that reads and proposes (D89), and what a help record from before the modes ran under (HELPMODE1a2).</summary>
+    public const string HelpRestricted = "restricted";
+
+    /// <summary>Ask Daoris's mode that acts on the machine itself (D183 point 1).</summary>
+    public const string HelpFull = "full";
+
+    /// <summary>
+    /// The access modes an Ask Daoris record's run may get (HELPMODE1a2, D183 point 3), as the ledger spells them. A twin
+    /// (`.claude/knowledge/twins.md`): the driver's <c>HelpModes</c> spells them too, and each side's test holds the spelling.
+    /// </summary>
+    public static IReadOnlyList<string> HelpModes { get; } = [HelpRestricted, HelpFull];
+
+    /// <summary>The mode <paramref name="mode"/> names in any case, trimmed; null names restricted; any other is refused.</summary>
+    /// <exception cref="ArgumentException">A mode the ledger does not know.</exception>
+    private static string HelpModeOf(string? mode) =>
+        mode is null ? HelpRestricted
+            : HelpModes.FirstOrDefault(each => string.Equals(each, mode.Trim(), StringComparison.OrdinalIgnoreCase))
+              ?? throw new ArgumentException(
+                  $"`{mode}` is no access mode of Ask Daoris's — it runs `{HelpRestricted}` or `{HelpFull}`.", nameof(mode));
+
+    /// <summary>
+    /// Record the access mode an Ask Daoris conversation of this machine's goes on under (HELPMODE1a2, D183 point 3): a conversation
+    /// going on after the person's mode changed runs under the new one, and its record says so. Its state, its last move and its
+    /// revision stay as they are: the mode is a fact about its run, and it never travels.
+    /// </summary>
+    /// <returns>The record as it now reads; null where no Ask Daoris record of this machine's has that id.</returns>
+    /// <exception cref="ArgumentException">A mode the ledger does not know.</exception>
+    public async Task<Session?> KeepHelpModeAsync(string id, string mode, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(mode);
+        var named = HelpModeOf(mode);
+        return await sessions.KeepHelpModeAsync(id, named, ct).ConfigureAwait(false)
+            ? await sessions.FindAsync(id, ct).ConfigureAwait(false)
+            : null;
+    }
+
     /// <summary>
     /// Open Ask Daoris's conversation (HELP1a, D89) — a chat about Daoris itself, in the room the
     /// driver keeps for it under its home.
@@ -371,12 +407,19 @@ public sealed class SessionLedger(
     /// repository's. With no registry to ask, the name is taken as told.</para>
     /// </remarks>
     /// <param name="workspace">The workspace the person's window was on at the press; null is <c>default</c>.</param>
+    /// <param name="mode">
+    /// The access mode its start got (HELPMODE1a2, D183 point 3), the driver's to say, since it is the half that spawns it; null is
+    /// <see cref="HelpRestricted"/>, as a driver from before sends it.
+    /// </param>
+    /// <exception cref="ArgumentException">No room, or a mode the ledger does not know.</exception>
     public async Task<SessionOpenOutcome> OpenHelpAsync(
         string adapter, string room, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, string? workspace = null, CancellationToken ct = default)
+        string? harnessVersion = null, string? profile = null, string? workspace = null, string? mode = null,
+        CancellationToken ct = default)
     {
         var holding = Trees.Normalize(room)
             ?? throw new ArgumentException("Ask Daoris runs in a room — name it", nameof(room));
+        var running = HelpModeOf(mode);
         var circle = Workspaces.Normalize(workspace);
 
         if (registry is not null)
@@ -399,13 +442,13 @@ public sealed class SessionLedger(
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var running = await sessions.RunningInWorkspaceAsync(HelpRepository, circle, parked: false, inside).ConfigureAwait(false);
-            if (running is not null)
+            var holder = await sessions.RunningInWorkspaceAsync(HelpRepository, circle, parked: false, inside).ConfigureAwait(false);
+            if (holder is not null)
             {
                 return new SessionOpenOutcome(
                     SessionOpenRefusal.RepositoryBusy,
-                    $"Ask Daoris already has a conversation running in `{running.Workspace}` — `{running.Id}` "
-                    + $"({Spell(running.State)}). One runs at a time in a workspace; carry that one on, or finish it first.",
+                    $"Ask Daoris already has a conversation running in `{holder.Workspace}` — `{holder.Id}` "
+                    + $"({Spell(holder.State)}). One runs at a time in a workspace; carry that one on, or finish it first.",
                     Session: null);
             }
 
@@ -413,7 +456,7 @@ public sealed class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     null, HelpRepository, adapter, now, circle, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit: null, inside, ownEntry: true)
+                    harnessVersion, profile, holding, baseCommit: null, inside, ownEntry: true, helpMode: running)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(

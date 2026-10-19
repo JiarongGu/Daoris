@@ -108,7 +108,7 @@ public sealed class HelpCommandTests : IDisposable
     [Fact]
     public void Mode_says_the_mode_and_sets_it_from_the_next_start()
     {
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(path, """{ "helperAdapter": "claude-code-acp" }""");
         string Mode(params string[] args)
         {
@@ -174,6 +174,30 @@ public sealed class HelpCommandTests : IDisposable
         Assert.Equal(2, document.RootElement.GetProperty("conversations").GetArrayLength());
         Assert.Equal(2, document.RootElement.GetProperty("total").GetInt32());
         Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("next").ValueKind);
+    }
+
+    /// <summary>
+    /// HELPMODE1a2 (D183 point 3): each row names the mode its conversation ran under, as its record keeps it, the same field at both
+    /// doors (<c>mode</c>, after <c>live</c>); a record from before the modes ran restricted. The terminal marks full access, and
+    /// restricted, the default, goes unmarked.
+    /// </summary>
+    [Fact]
+    public async Task Each_row_names_the_mode_its_conversation_ran_under()
+    {
+        var ledger = Ledger();
+        ledger.Edit("h1", record => record["helpMode"] = HelpModes.Full);
+
+        var (_, json) = await RunAsync(ledger, "list", "--json");
+        var (_, listed) = await RunAsync(ledger, "list");
+
+        using var document = JsonDocument.Parse(json);
+        var rows = document.RootElement.GetProperty("conversations").EnumerateArray()
+            .ToDictionary(row => row.GetProperty("session").GetString()!, row => row.GetProperty("mode").GetString());
+        Assert.Equal(HelpModes.Full, rows["h1"]);
+        Assert.Equal(HelpModes.Restricted, rows["h2"]);
+        Assert.Equal("live", HelpCommand.JsonFields[HelpCommand.JsonFields.ToList().IndexOf("mode") - 1]);
+        Assert.Contains("what is a workspace?  · full access", listed);
+        Assert.DoesNotContain("how do I land on a branch?  · restricted", listed);
     }
 
     /// <summary>
