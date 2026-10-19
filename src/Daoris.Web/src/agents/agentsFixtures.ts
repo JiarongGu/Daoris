@@ -1,7 +1,7 @@
 import { byTool, type Tool, type ToolDoor } from './tools';
-import { type AccountSaid, type AgentAccounts, USE_DEFAULTS } from '../settings/accounts';
-import type { AgentRulesState } from '../settings/AgentRules';
-import { scopeOf } from '../settings/accountsFixtures';
+import { type AccountSaid, type AgentAccounts, USE_DEFAULTS } from '../settings/accounts/accounts';
+import type { AgentRulesState } from '../settings/repository/AgentRules';
+import { scopeOf } from '../settings/accounts/accountsFixtures';
 
 // The Agents place as its stories and molecules' tests hand it (UX6e, D150 §5): the design's machine, three Claude Code
 // accounts of which two read signed out, one cooling, the tool's own sign-in never read; Codex with one account; DeepSeek

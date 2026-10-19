@@ -2,16 +2,16 @@ import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration, Repository } from '../data/api';
 import { ago, figure } from '../locales/format';
-import type { RepositoryLine } from '../settings/Lines';
+import type { RepositoryLine } from '../settings/repository/Lines';
 import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../design/ui';
-import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/ViewMain';
+import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/frame/ViewMain';
 import { WorkflowTab, type WorkflowTabProps } from '../workflow/WorkflowTab';
 import { RepositoryMarks } from './ProjectList';
-import { RepositorySetup, type RepositorySetupProps, type SetupSectionId } from './RepositorySetup';
-import { SetUpForAgents, type SetUpForAgentsProps } from './SetUpForAgents';
+import { RepositorySetup, type RepositorySetupProps, type SetupSectionId } from './setup/RepositorySetup';
+import { SetUpForAgents, type SetUpForAgentsProps } from './setup/SetUpForAgents';
 import type { ProjectTab } from './tabs';
 
-export type { Driving } from './RepositorySetup';
+export type { Driving } from './setup/RepositorySetup';
 
 /** One fact of a repository: its label in the page's label column, its content wrapping beside it (POLISH4). */
 function Fact({ label, children }: { label: string; children: ReactNode }) {

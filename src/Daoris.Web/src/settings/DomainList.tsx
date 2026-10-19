@@ -1,5 +1,5 @@
 import { cn } from '../lib/cn';
-import { LIST_ROW } from '../work/listKeys';
+import { LIST_ROW } from '../work/frame/listKeys';
 
 /** A domain as the list names it: the id it is opened at, and its name in the window's language. */
 export type DomainRow = { id: string; label: string };

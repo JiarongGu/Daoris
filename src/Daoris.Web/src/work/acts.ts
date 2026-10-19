@@ -2,8 +2,8 @@ import type { Quest, Session } from '../data/api';
 import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../design/ui';
 import type { SessionGrouping } from './groups';
 import { isHelp, isHelper, isIntake, isOpinion, sessionOrigin } from './identity';
-import { askOf, type WorkTarget } from './pausing';
-import type { SessionWhere } from './SessionRow';
+import { askOf, type WorkTarget } from './pausing/pausing';
+import type { SessionWhere } from './rail/SessionRow';
 
 // The acts on a session, as its row's ⋯ and its page header offer them (SESSUX1d, D126 §3.1): which apply, in which
 // order, how each is named, and what a stop says before it is meant. Pure, so both doors read one rule and a molecule may

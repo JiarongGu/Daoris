@@ -1,0 +1,347 @@
+import type { ReactElement } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import '../../locales/i18n';
+import { StripMark } from '../../design/ui';
+import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
+import { LIST_DOOR, LIST_ROW } from './listKeys';
+import { ListMore, ListPane } from './ListPane';
+
+// D118 §3a, §5: one list pane for every view that has a list, Sessions' rail first. A molecule: every
+// state is reached by its props, and a press goes out.
+
+const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
+
+const OPEN: ListLayout = { mode: 'open', width: 280, beside: 280, auto: false };
+const CLOSED: ListLayout = { mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: false };
+const DRAWN: ListLayout = { mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: true };
+const OVER: ListLayout = { mode: 'over', width: 280, beside: LIST_STRIP, auto: true };
+
+const LABELS = { open: 'Show the session list', close: 'Hide the session list', resize: 'session list width' };
+
+function pane(layout: ListLayout, { children, ...extra }: Partial<Parameters<typeof ListPane>[0]> = {}) {
+  const calls = { onOpen: vi.fn(), onClose: vi.fn(), onDismiss: vi.fn(), onResize: vi.fn(), onMake: vi.fn() };
+  const view = render(
+    <div>
+      <ListPane
+        name="Sessions"
+        labels={LABELS}
+        layout={layout}
+        bounds={LIST_BOUNDS.sessions}
+        make={{ label: 'Start a session', onMake: calls.onMake }}
+        strip={<ul><StripMark label="Chat · engine · working" initialOf="engine" tone="live" /></ul>}
+        onOpen={calls.onOpen}
+        onClose={calls.onClose}
+        onDismiss={calls.onDismiss}
+        onResize={calls.onResize}
+        {...extra}
+      >
+        {children ?? (
+          <ul>
+            {['first', 'second'].map((name) => (
+              <li key={name} {...{ [LIST_ROW]: '' }}><button type="button">{name}</button></li>
+            ))}
+          </ul>
+        )}
+      </ListPane>
+      <p>the main area</p>
+    </div>,
+  );
+  return { ...view, ...calls };
+}
+
+describe('the list pane, open', () => {
+  it('holds its name, its ＋ and its close in its header, and is resized by its right edge within its bounds', async () => {
+    const { onMake, onClose, onResize } = pane(OPEN);
+
+    expect(screen.getByText('Sessions')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Start a session' }));
+    expect(onMake).toHaveBeenCalledWith(undefined);
+    await userEvent.click(screen.getByRole('button', { name: 'Hide the session list' }));
+    expect(onClose).toHaveBeenCalled();
+
+    const edge = screen.getByRole('separator', { name: 'session list width' });
+    expect(edge).toHaveAttribute('aria-valuenow', '280');
+    expect(edge).toHaveAttribute('aria-valuemin', '264');
+    expect(edge).toHaveAttribute('aria-valuemax', '420');
+    fireEvent.doubleClick(edge);
+    expect(onResize).toHaveBeenCalledWith(null);
+    // Its rows are the list, and the strip's marks are not drawn beside them.
+    expect(screen.getByRole('button', { name: 'first' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Chat · engine · working' })).toBeNull();
+  });
+
+  it('moves between its rows by the arrows', async () => {
+    pane(OPEN);
+    screen.getByRole('button', { name: 'first' }).focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('button', { name: 'second' })).toHaveFocus();
+  });
+
+  it('holds the view\'s own ⋯ in its header, before its close', () => {
+    pane(OPEN, { more: <button type="button">filters</button> });
+    const header = screen.getByText('Sessions').closest('header')!;
+    const names = within(header).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent);
+    expect(names).toEqual(['Start a session', 'filters', 'Hide the session list']);
+  });
+
+  /**
+   * UX6i (D150 §2.2): what heads a list sits under its header and above its rows, outside their scroll, so it stays in
+   * reach as they scroll: Knowledge's two-way choice. The arrows that move between rows are not its.
+   */
+  it('holds what heads the list under its header and outside its rows\' scroll', () => {
+    pane(OPEN, { head: <div><button type="button">mode</button></div> });
+    const mode = screen.getByRole('button', { name: 'mode' });
+    const rows = screen.getByRole('button', { name: 'first' }).closest('ul')!.parentElement!;
+    expect(rows).not.toContainElement(mode);
+    expect(mode.compareDocumentPosition(screen.getByText('Sessions')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(mode.compareDocumentPosition(rows) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('holds what heads the list laid over too, and leaves it off the strip, whose marks stand for it', () => {
+    pane(OVER, { head: <button type="button">mode</button> });
+    expect(within(screen.getByRole('region', { name: 'Sessions' })).getByRole('button', { name: 'mode' })).toBeInTheDocument();
+    pane(CLOSED, { head: <button type="button">strip mode</button> });
+    expect(screen.queryByRole('button', { name: 'strip mode' })).toBeNull();
+  });
+});
+
+describe('the list pane, closed to its strip', () => {
+  it('keeps its open, its ＋ and its marks, and no edge to drag', async () => {
+    const { onOpen, onMake } = pane(CLOSED);
+
+    expect(screen.queryByText('Sessions')).toBeNull();
+    expect(screen.queryByRole('separator')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
+    expect(onOpen).toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Start a session' }));
+    expect(onMake).toHaveBeenCalled();
+  });
+
+  /** D118 §3a, amending FRAME6: a strip the window drew has an open too, which lays the list over. */
+  it('offers the open on a strip the window drew as well', async () => {
+    const { onOpen } = pane(DRAWN);
+    const open = screen.getByRole('button', { name: 'Show the session list' });
+    expect(open).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(open);
+    expect(onOpen).toHaveBeenCalled();
+  });
+
+  it('shows its controls and not its marks while the list first loads', () => {
+    pane(CLOSED, { loading: true });
+    expect(screen.getByRole('button', { name: 'Show the session list' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Chat · engine · working' })).toBeNull();
+  });
+});
+
+describe('the list pane, laid over the main area', () => {
+  it('is the list beside its strip, named, with the focus in it', () => {
+    pane(OVER);
+    const over = screen.getByRole('region', { name: 'Sessions' });
+    expect(within(over).getByRole('button', { name: 'first' })).toBeInTheDocument();
+    expect(over).toHaveFocus();
+    expect(over).toHaveStyle({ width: '280px' });
+    // The strip stays, so nothing hides behind a hamburger (platform language §2).
+    expect(screen.getByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show the session list' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  /**
+   * ENTRY1g (D161's ENTRY1b note): a go lays the list over and its list focuses the group's heading as it mounts, which is
+   * before the pane's own effect runs; the pane takes the focus only where nothing in it has it.
+   */
+  it('leaves the focus where something in it took it as it was laid over', () => {
+    pane(OVER, { children: <h3 ref={(heading) => heading?.focus()} tabIndex={-1}>Waiting on you</h3> });
+    expect(screen.getByRole('heading', { name: 'Waiting on you' })).toHaveFocus();
+  });
+
+  it('closes on Escape, handing the focus back to the strip\'s open', async () => {
+    const { onDismiss } = pane(OVER);
+    await userEvent.keyboard('{Escape}');
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: 'Show the session list' })).toHaveFocus();
+  });
+
+  it('leaves Escape to a search inside it that clears on it, and closes on the next', async () => {
+    const { onDismiss } = pane(OVER, {
+      children: (
+        <input
+          aria-label="search"
+          defaultValue="engine"
+          onKeyDown={(event) => {
+            if (event.key !== 'Escape' || !event.currentTarget.value) return;
+            event.preventDefault();
+            event.currentTarget.value = '';
+          }}
+        />
+      ),
+    });
+    const box = screen.getByRole('textbox', { name: 'search' });
+    box.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(onDismiss).not.toHaveBeenCalled();
+    await userEvent.keyboard('{Escape}');
+    expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it('closes on a press outside it, and not on one inside it or on its strip', async () => {
+    const { onDismiss } = pane(OVER);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'first' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Chat · engine · working' }));
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(screen.getByText('the main area'));
+    expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it('leaves a press on one of its doors elsewhere to that door, which toggles it itself', () => {
+    const { onDismiss } = pane(OVER);
+    const door = document.createElement('button');
+    door.setAttribute(LIST_DOOR, '');
+    document.body.append(door);
+    try {
+      fireEvent.pointerDown(door);
+      expect(onDismiss).not.toHaveBeenCalled();
+    } finally {
+      door.remove();
+    }
+  });
+
+  it('closes from its header, and from the strip\'s open pressed again', async () => {
+    const { onDismiss, onClose } = pane(OVER);
+    await userEvent.click(within(screen.getByRole('region', { name: 'Sessions' })).getByRole('button', { name: 'Hide the session list' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
+    expect(onDismiss).toHaveBeenCalledTimes(2);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+});
+
+describe('the list pane\'s ＋', () => {
+  it('offers both kinds where a view makes two, its primary first', async () => {
+    const onMake = vi.fn();
+    pane(OPEN, {
+      make: { label: 'New', kinds: [{ id: 'ask', label: 'Ask' }, { id: 'quest', label: 'New quest' }], onMake },
+    });
+
+    screen.getByRole('button', { name: 'New' }).focus();
+    await userEvent.keyboard('{Enter}');
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual(['Ask', 'New quest']);
+    await userEvent.click(items[1]!);
+    expect(onMake).toHaveBeenCalledWith('quest');
+  });
+});
+
+describe('the list pane\'s states', () => {
+  it('draws skeleton rows while the list first loads, never the empty state', () => {
+    const { container } = pane(OPEN, { loading: true, empty: { headline: 'Nothing is running', body: 'Sessions appear here.' } });
+    expect(screen.queryByRole('button', { name: 'first' })).toBeNull();
+    expect(screen.queryByText('Nothing is running')).toBeNull();
+    expect(container.querySelector('[aria-hidden] .grid, .grid[aria-hidden]')).not.toBeNull();
+  });
+
+  it('says it is empty with the ＋\'s act', async () => {
+    const { onMake } = pane(OPEN, { empty: { headline: 'Nothing is running', body: 'Sessions appear here.' } });
+    expect(screen.getByText('Nothing is running')).toBeInTheDocument();
+    const acts = screen.getAllByRole('button', { name: 'Start a session' });
+    expect(acts).toHaveLength(2);
+    await userEvent.click(acts[1]!);
+    expect(onMake).toHaveBeenCalled();
+  });
+
+  /** PLUGUI1b (D119 §3.1): where the ＋ makes two kinds, an empty list offers each by its own name, its primary first. */
+  it('says it is empty with each of the ＋\'s kinds, where it makes two', async () => {
+    const onMake = vi.fn();
+    pane(OPEN, {
+      make: { label: 'Add a plugin', kinds: [{ id: 'ask', label: 'Ask Daoris for a plugin' }, { id: 'make', label: 'Make a plugin…' }], onMake },
+      empty: { headline: 'No plugins on this machine', body: 'A plugin adds an agent.' },
+    });
+
+    const empty = screen.getByText('No plugins on this machine').parentElement!;
+    const acts = within(empty).getAllByRole('button');
+    expect(acts.map((act) => act.textContent)).toEqual(['Ask Daoris for a plugin', 'Make a plugin…']);
+    await userEvent.click(acts[1]!);
+    expect(onMake).toHaveBeenCalledWith('make');
+  });
+});
+
+describe('the list pane\'s ⋯', () => {
+  it('holds the list\'s own menu, each item told by its id', async () => {
+    const onChoose = vi.fn();
+    pane(OPEN, { more: <ListMore label="More actions" items={[{ id: 'try', label: 'Try a folder…' }]} onChoose={onChoose} /> });
+
+    const header = screen.getByText('Sessions').closest('header')!;
+    within(header).getByRole('button', { name: 'More actions' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Try a folder…' }));
+    expect(onChoose).toHaveBeenCalledWith('try');
+  });
+
+  /** FRAME1d (D118 §2): a list's filters sit in its ⋯, one value among several and a toggle, each ticked as it stands. */
+  it('holds the list\'s filters, each ticked as it stands, and says which was chosen', async () => {
+    const onChoose = vi.fn();
+    const onPick = vi.fn();
+    const more = (closed: boolean) => (
+      <ListMore
+        label="Filter the list"
+        choice={{
+          label: 'Receiver', value: '*', onChoose: onPick,
+          options: [{ value: '*', label: 'Everyone' }, { value: 'engine', label: 'engine' }],
+        }}
+        items={[{ id: 'closed', label: 'Include closed', checked: closed }]}
+        onChoose={onChoose}
+      />
+    );
+    pane(OPEN, { more: more(false) });
+    const user = userEvent.setup();
+    const button = within(screen.getByText('Sessions').closest('header')!).getByRole('button', { name: 'Filter the list' });
+
+    button.focus();
+    await user.keyboard('{Enter}');
+    const receiver = await screen.findByRole('group', { name: 'Receiver' });
+    expect(within(receiver).getByRole('menuitemradio', { name: 'Everyone' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(receiver).getByRole('menuitemradio', { name: 'engine' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Include closed' })).toHaveAttribute('aria-checked', 'false');
+    await user.click(within(receiver).getByRole('menuitemradio', { name: 'engine' }));
+    expect(onPick).toHaveBeenCalledWith('engine');
+
+    button.focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: 'Include closed' }));
+    expect(onChoose).toHaveBeenCalledWith('closed');
+  });
+
+  /** SESSUX1e, D126 §4.1: a rule sets an act apart from the filters above it (*Archive what ended…* below *Show archived*). */
+  it('sets an item apart from those above it by a rule, where it asks for one', async () => {
+    pane(OPEN, {
+      more: (
+        <ListMore
+          label="More actions"
+          items={[{ id: 'archived', label: 'Show archived', checked: false }, { id: 'ended', label: 'Archive what ended…', rule: true }]}
+        />
+      ),
+    });
+    const user = userEvent.setup();
+    within(screen.getByText('Sessions').closest('header')!).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+
+    const menu = await screen.findByRole('menu');
+    const parts = [...menu.querySelectorAll('[role="menuitemcheckbox"], [role="separator"], [role="menuitem"]')]
+      .map((part) => part.getAttribute('role'));
+    expect(parts).toEqual(['menuitemcheckbox', 'separator', 'menuitem']);
+  });
+});
+
+describe('the list pane, named', () => {
+  /** FRAME1d: the list is a landmark named for the view, so a reader, and a test, finds it by its name. */
+  it('is a region of the window named by its list\'s name, open or as a strip', () => {
+    const { unmount } = pane(OPEN);
+    expect(screen.getByRole('complementary', { name: 'Sessions' })).toBeInTheDocument();
+    unmount();
+    pane(CLOSED);
+    expect(screen.getByRole('complementary', { name: 'Sessions' })).toBeInTheDocument();
+  });
+});

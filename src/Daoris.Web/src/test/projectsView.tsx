@@ -6,8 +6,8 @@ import {
   type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
 } from '../projects/tabs';
 import type { Notify } from '../design/ui';
-import { useListPanes } from '../work/listPanes';
-import { ViewFrame } from '../work/ViewFrame';
+import { useListPanes } from '../work/frame/listPanes';
+import { ViewFrame } from '../work/frame/ViewFrame';
 import { useDoor } from './door';
 
 // Repositories alone, as its suites hold it (FRAME1e): the view's list and its main area on a browser's frame, with

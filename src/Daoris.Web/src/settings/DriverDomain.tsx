@@ -6,7 +6,7 @@ import {
 import { useSystemWiring } from '../bridge/system';
 import { Button, Card, CheckField, failure, Icon, PathText, SectionTitle, SettingRow } from '../design/ui';
 import { sentence } from '../locales/format';
-import { accessToast, AccessRows, resolveAccess } from './Access';
+import { accessToast, AccessRows, resolveAccess } from './repository/Access';
 import type { SettingsDomainProps } from './domains';
 import { UpdateSection } from './Update';
 

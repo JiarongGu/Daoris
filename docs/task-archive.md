@@ -17639,3 +17639,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONFIGMERGE1 — two writers adding to one set-like array both kept** (driver, cli; after GRAPH1). The later writer's whole array wins (`drivable`). Proof: a shared-table row adding to `drivable` from two writers, both kept in both twins.
 
 **Outcome** 2026-10-20: built as CONFIG1, one feature end to end (D187): `drivable`, `holds`, `trees` and each `writeAcross` list are sets in both twins (`DriverConfig.Sets`, `DRIVER_SETS`, the fixture's `sets`): an edit applies the names it added and took, compared without case, to the file's array as it stands, so two writers adding to one set are both kept; every other array is written whole. Detail: D173's CONFIG1 note, the FIX-LOG's CONFIG1 entry.
+
+## STRUCT5c-ii — work, settings, bridge and projects cut into scopes (2026-10-20, D166)
+
+> - [ ] **STRUCT5c-ii — work, settings, bridge and projects cut into scopes** (web). Each holds more than twenty sources at its top: cut each into scope folders, one folder per branch, its entry dropped from the structure gate's `wide` list. Design §4–§6; proof: the structure gate with the folder off `wide`, and the web gate.
+
+**Outcome** 2026-10-20: the page's `projects` (27 sources), `settings` (51), `bridge` (34) and `work` (151) folders are cut into scope folders with `tools/move-files.mjs`, one commit per folder, each keeping at its top what its scopes and the other places share; the structure gate's `wide` list is empty. The readers outside the web that listed `bridge/` at its top only (`DriverModuleRoutesTests`, `HelpCoverageTests`, `tools/orient-index.mjs`) read it at any depth since the merge. Nothing a person sees changed. On Opus: about 255 tool calls, 63 minutes. Detail: D166's STRUCT5c-ii note; the web README's *Where things are*.

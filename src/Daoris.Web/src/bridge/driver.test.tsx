@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
 
 import { keys } from '../data/queries';
 import { useDriverReady, useNudge, useSyncNow } from './driver';
-import { useLines } from './lines';
+import { useLines } from './repositories/lines';
 
 describe('the driver domain', () => {
   afterEach(() => {

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useTranslation } from 'react-i18next';
-import { useListPanes } from '../work/listPanes';
-import { ViewFrame } from '../work/ViewFrame';
+import { useListPanes } from '../work/frame/listPanes';
+import { ViewFrame } from '../work/frame/ViewFrame';
 import { agentRows } from './agents';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentPage } from './AgentPage';

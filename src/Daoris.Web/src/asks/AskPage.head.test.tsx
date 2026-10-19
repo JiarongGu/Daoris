@@ -5,8 +5,8 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask } from '../data/api';
 import i18n from '../locales/i18n';
-import type { WorkDoor } from '../work/pausing';
-import { PAUSABLE_ASK, PAUSED_ASK } from '../work/pausingFixtures';
+import type { WorkDoor } from '../work/pausing/pausing';
+import { PAUSABLE_ASK, PAUSED_ASK } from '../work/pausing/pausingFixtures';
 import { AskPage } from './AskPage';
 import { LONG_ASK, PUBLISHED, SHORT_TITLED, WITH_GO_AHEADS } from './fixtures';
 

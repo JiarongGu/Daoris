@@ -4,17 +4,17 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
-import type { AccessLevel } from '../settings/Access';
-import type { CommitRule } from '../settings/Commits';
-import type { HeavyGate, HeavyMarks } from '../settings/HeavyGates';
-import type { HelperRule } from '../settings/Helpers';
-import type { LandingRule } from '../settings/Landings';
-import type { LanguageOption } from '../settings/Languages';
-import type { OpinionRule } from '../settings/Opinions';
-import type { ReviewLook, ReviewRule } from '../settings/Reviews';
-import type { ReviewShown } from '../work/ReviewChip';
+import type { AccessLevel } from '../settings/repository/Access';
+import type { CommitRule } from '../settings/repository/Commits';
+import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
+import type { HelperRule } from '../settings/repository/Helpers';
+import type { LandingRule } from '../settings/repository/Landings';
+import type { LanguageOption } from '../settings/repository/Languages';
+import type { OpinionRule } from '../settings/repository/Opinions';
+import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
+import type { ReviewShown } from '../work/gates/ReviewChip';
 import { call, refusedNotReady } from './call';
-import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './slices';
+import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
 // when a session parks, how many failures park a quest, which agent answers an ask, and a look now.
@@ -336,7 +336,7 @@ export const useTrustFolder = () => {
 };
 
 /**
- * One mutation shape for the standing choices, these and the rules' (`bridge/lines.ts`): edit the file, and the loop looks now,
+ * One mutation shape for the standing choices, these and the rules' (`bridge/repositories/lines.ts`): edit the file, and the loop looks now,
  * not at the poll. The window that pressed writes the state it was answered; the route publishes the change, and every window's
  * state hub asks the driver's state and what is read under its key again (STATEHUB1h, D169).
  */

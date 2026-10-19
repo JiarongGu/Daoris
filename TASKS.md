@@ -25,7 +25,6 @@ holds the detail. The structural changes come first, so the features built after
 
 **Structural, first:**
 
-- **STRUCT5c-ii**: the web's work, settings, bridge and projects folders cut into scope folders before more files land in them (D166); run with no other web branch in flight.
 - **PUSH1d3**: the page renders and .NET judges (D182): quests and asks pushed (PUSH1d3), accounts and usage judged in .NET with their twins (PUSH1e), who needs a person judged in .NET (PUSH1d4), then the terminal's verbs as clients of the running Daoris (PUSH1f with RPC1b2, RPC1d-f).
 - **HOMELAYOUT3**: every home path in its D172 place, an old home moved once on start, the tools and the census asking for entries (HOMELAYOUT2b-c, merged), then the move and the publish (HOMELAYOUT3, 4).
 - **FABRIC-RUN1b**: the fabric (D173), in its blocks: the runtime governs every unit, a branch cycle reaching its `pushed` and pull-request nodes, a look or an opinion moving its node, a `nodes` wake running link 8 alone (RUN1b-d, NODE1b, RUN1g); a bound run governed by its graph (CUTOVER1, WORKFLOW2c, GRAPH1e, GRAPH1j, RUN1f, a design first); both twins judge and save graphs (GRAPH1c, d, f, k); the close correct (the CLOSE1* rows, by sub-feature); a native child a bounded participant (ACP1, C2a, C2b, C1b); clocks become deadlines (END3b, EVENT7).
@@ -505,7 +504,6 @@ into priority since that will make the code better to develop"*; D166's note). N
 folder.
 
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/DriverOpinions.cs`, `OpinionDeliverer.cs` and `OpinionGateLook.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note. After PART10m these are classes in `Loop/` holding the front for its run machinery; the structure gate's `loop` rule lets nothing outside `Loop/` name them, so moving them needs that machinery out of the front first.
-- [ ] **STRUCT5c-ii — work, settings, bridge and projects cut into scopes** (web). Each holds more than twenty sources at its top: cut each into scope folders, one folder per branch, its entry dropped from the structure gate's `wide` list. Design §4–§6; proof: the structure gate with the folder off `wide`, and the web gate.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 

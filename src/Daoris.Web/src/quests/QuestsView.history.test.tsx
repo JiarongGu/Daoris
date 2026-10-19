@@ -18,7 +18,7 @@ vi.mock('@shenora/react', () => ({
 
 import { moreAct, questMain, questPage, QuestsView } from '../test/questsView';
 import { DRIVER_STATE, QUESTS, respond, show, WIRING } from '../test/shellHarness';
-import { ASK_PLAN, FAILED_PLAN, QUEST_CLEARED, QUEST_PLAN } from '../work/historyFixtures';
+import { ASK_PLAN, FAILED_PLAN, QUEST_CLEARED, QUEST_PLAN } from '../work/history/historyFixtures';
 
 const DONE = { ...QUESTS[0]!, status: 'Done', updated: '2026-09-03T00:00:00Z' };
 

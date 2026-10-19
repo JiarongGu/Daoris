@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
-import { ListPane } from '../work/ListPane';
+import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/frame/layout';
+import { ListPane } from '../work/frame/ListPane';
 import { CJK_HIT, HITS } from './fixtures';
 import { HitList, type HitsAnswer } from './HitList';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';

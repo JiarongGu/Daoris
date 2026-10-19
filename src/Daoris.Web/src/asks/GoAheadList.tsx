@@ -5,7 +5,7 @@ import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Pill } from '../design/ui';
 import { type Answered, Refused } from '../work/InlineConfirm';
-import { InConversation } from '../work/WaitAnchor';
+import { InConversation } from '../work/waits/WaitAnchor';
 
 /** A yes or no to a go-ahead: its number, the answer, the person's words if any, and how the answer ended (UXFIX2b3b). */
 export type GoAheadAnswer = (number: number, approved: boolean, words: string | undefined, answered: Answered) => void;

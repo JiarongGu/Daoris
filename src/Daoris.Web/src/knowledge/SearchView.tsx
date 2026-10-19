@@ -8,7 +8,7 @@ import { useEntry, useSearch } from '../data/queries';
 import { page } from '../data/results';
 import { type Notify, useErrorNotify } from '../design/ui';
 import { useDebounced } from '../lib/useDebounced';
-import type { ViewLayout } from '../work/ViewFrame';
+import type { ViewLayout } from '../work/frame/ViewFrame';
 
 /**
  * **The Search view** (FRAME1f, D118 §2): what it hands the frame (D118 §5), its list pane and its main area. The list

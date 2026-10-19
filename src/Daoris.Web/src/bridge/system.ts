@@ -3,7 +3,7 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { SystemWiring } from '../data/wiring';
 import { call, refusedNoRoute } from './call';
-import { pollUnlessTold } from './published';
+import { pollUnlessTold } from './state/published';
 
 // How this Daoris is wired (WIRING1b, the this-Daoris design §6, D50): Settings → This Daoris's read, the screen's door to
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).

@@ -36,7 +36,7 @@ describe('a story in another language (STORY2)', () => {
     expect(localStorage.getItem(KEY)).toBe('en');
 
     // The menu bar's language is an arg a reviewer sets from the controls, and either one is drawn by a reader of its own.
-    const menu = composed(await import('../work/AppMenu.stories'));
+    const menu = composed(await import('../work/strip/AppMenu.stories'));
     render(<menu.Closed language="zh" />);
     cleanup();
     expect(localStorage.getItem(KEY)).toBe('en');

@@ -3,7 +3,7 @@ import type { Ask } from '../data/api';
 import { ago } from '../locales/format';
 
 // The facts line under an ask's title (HEAD2d, D162 §4, the entry-and-heads design §2): where it goes, its age, and the one
-// live fact. Built here, not in `work/headFacts.ts`, which the quest's and the session's heads edit. Pure, so a head is
+// live fact. Built here, not in `work/head/headFacts.ts`, which the quest's and the session's heads edit. Pure, so a head is
 // handed its line and every state is a story.
 
 /** Where a title longer than this is cut by its two lines on a main area's usual width: past it, the request is offered whole. */

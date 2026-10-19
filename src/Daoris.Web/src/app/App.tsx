@@ -16,13 +16,13 @@ import { opensAtStart, setupProgress, setupSteps } from '../help/setup';
 import { useMachine } from '../help/useMachine';
 import { itemOf } from '../help/where';
 import { useSetupAtStart } from '../help/setupGuide';
-import { useFrameClosings } from '../work/closings';
-import { type ListMode, type ListView, listToggled } from '../work/layout';
-import { useListPanes } from '../work/listPanes';
-import { usePlacements, viewsIn } from '../work/placements';
-import { type LayoutRegion, LayoutToggles } from '../work/LayoutToggles';
+import { useFrameClosings } from '../work/frame/closings';
+import { type ListMode, type ListView, listToggled } from '../work/frame/layout';
+import { useListPanes } from '../work/frame/listPanes';
+import { usePlacements, viewsIn } from '../work/frame/placements';
+import { type LayoutRegion, LayoutToggles } from '../work/strip/LayoutToggles';
 import { commandForKey } from '../menus/shortcuts';
-import { focusRegion } from '../work/regions';
+import { focusRegion } from '../work/frame/regions';
 import type { StarterDoor } from '../help/starters';
 import {
   askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
@@ -45,35 +45,35 @@ import {
   usePermissionWaits,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
-import { useSay } from '../bridge/conversation';
+import { useSay } from '../bridge/sessions/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
 import { LinkOpener } from '../design/links';
-import { BrowserDoor } from '../work/BrowserDoor';
-import { browserDrivers } from '../work/browserDrivers';
-import { ReviewChip } from '../work/ReviewChip';
-import { newestSetUp, setUpRef } from '../work/review';
-import { useReviewActs } from '../work/reviewActs';
-import { menuRows } from '../work/appMenus';
-import { KeyboardShortcuts } from '../work/KeyboardShortcuts';
+import { BrowserDoor } from '../work/strip/BrowserDoor';
+import { browserDrivers } from '../work/strip/browserDrivers';
+import { ReviewChip } from '../work/gates/ReviewChip';
+import { newestSetUp, setUpRef } from '../work/gates/review';
+import { useReviewActs } from '../work/gates/reviewActs';
+import { menuRows } from '../work/strip/appMenus';
+import { KeyboardShortcuts } from '../work/strip/KeyboardShortcuts';
 import { offeredActs } from '../work/acts';
-import { SyncStatus } from '../work/SyncStatus';
+import { SyncStatus } from '../work/frame/SyncStatus';
 import { MONITOR_WINDOW } from '../work/window';
 import { WorkFrame } from '../work/WorkFrame';
-import { ViewFrame, type ViewLayout } from '../work/ViewFrame';
-import { ViewMain } from '../work/ViewMain';
-import { type AttentionDoors, useAccountsKnown } from '../work/AttentionBand';
-import type { Attention } from '../work/AttentionRow';
-import { needsAPerson, waitingInSessions } from '../work/attention';
-import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from '../work/frame';
+import { ViewFrame, type ViewLayout } from '../work/frame/ViewFrame';
+import { ViewMain } from '../work/frame/ViewMain';
+import { type AttentionDoors, useAccountsKnown } from '../work/attention/AttentionBand';
+import type { Attention } from '../work/attention/AttentionRow';
+import { needsAPerson, waitingInSessions } from '../work/attention/attention';
+import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from '../work/frame/frame';
 import { useWindowChrome, useWindowTitle } from './windowChrome';
 import { useSplashLift } from './splash';
 import {
   type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, listOf, MENUS, paletteCommands, shortcutGroups,
   type View, VIEWS,
 } from '../menus/commands';
-import { CommandPalette } from '../work/CommandPalette';
-import { CommandCenter } from '../work/CommandCenter';
-import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from '../work/AppMenu';
+import { CommandPalette } from '../work/strip/CommandPalette';
+import { CommandCenter } from '../work/strip/CommandCenter';
+import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from '../work/strip/AppMenu';
 import { useThemeChoice } from '../design/theme';
 import { rememberedDomain, SETTINGS_DOMAINS } from '../settings/domains';
 import { store, stored } from '../lib/stored';
@@ -94,7 +94,7 @@ type Tab = View;
  */
 const VIEW = 'daoris.view';
 
-// What each view's list has chosen is its list's memory since FRAME1c (`work/listPanes.ts`, D118 §3f),
+// What each view's list has chosen is its list's memory since FRAME1c (`work/frame/listPanes.ts`, D118 §3f),
 // in the keys that predate it: the session attended (D56), since relaunching into Sessions landed on
 // *Nothing attended* while a session sat parked, and Settings' domain (D75), so the gear returns to it.
 // A session whose record is gone is let go by the Work frame, a remembered record that closed or went

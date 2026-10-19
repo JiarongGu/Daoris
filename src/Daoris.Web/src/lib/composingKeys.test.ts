@@ -118,7 +118,7 @@ describe('a key an input method is composing with', () => {
 
   it('is looking at files at all — a vacuous check is a check that has stopped working', () => {
     expect(shipped.length).toBeGreaterThan(50);
-    expect(shipped.some(([path]) => path === './work/Composer.tsx')).toBe(true);
+    expect(shipped.some(([path]) => path === './work/conversation/Composer.tsx')).toBe(true);
     // The tree's own checks, seen: the composer's alone are three.
     expect(checks(shipped)).toBeGreaterThan(10);
   });

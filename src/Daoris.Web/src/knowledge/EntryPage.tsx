@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Entry } from '../data/api';
 import { Inline, Pill, Prose } from '../design/ui';
 import type { ContextOffer } from '../menus/press';
-import { type MainNotice, PageHead, ViewMain } from '../work/ViewMain';
+import { type MainNotice, PageHead, ViewMain } from '../work/frame/ViewMain';
 
 /** A document's right-click (CTX1, D138 §4): its path, copied, since the page is read and nothing is done to it here. */
 export function documentMenu(t: (key: string) => string, entry: { title: string; path: string }): ContextOffer {

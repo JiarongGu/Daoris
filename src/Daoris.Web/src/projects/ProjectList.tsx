@@ -6,7 +6,7 @@ import { Button, Icon, Inline, Pill } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { contextOffer } from '../menus/press';
-import { ListRowDoor } from '../work/ListPane';
+import { ListRowDoor } from '../work/frame/ListPane';
 
 /**
  * A repository's standing on this machine, as the session list's group header says it (`RepositoryGroup`): *held*

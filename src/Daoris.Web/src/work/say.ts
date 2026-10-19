@@ -1,5 +1,5 @@
 import type { Session } from '../data/api';
-import { type AccountsAnswer, agentOf } from '../settings/accounts';
+import { type AccountsAnswer, agentOf } from '../settings/accounts/accounts';
 import { toolOf, type ToolDoor } from '../agents/tools';
 import { answeredPark, SESSION_ACTIVE } from '../design/ui';
 

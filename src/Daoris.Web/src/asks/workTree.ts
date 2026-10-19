@@ -1,5 +1,5 @@
 import type { Consideration } from '../data/signals';
-import type { Line, PausedByFact, WorkPlan, WorkPlanQuest, WorkPlanSession } from '../work/pausing';
+import type { Line, PausedByFact, WorkPlan, WorkPlanQuest, WorkPlanSession } from '../work/pausing/pausing';
 
 // An ask's work as its page lists it (PAUSE1h, D132 §7.1, `docs/2026-10-02-pause-and-clean-up-design.md` §1): each quest of
 // `WORK_PLAN`'s answer with its sessions, and under it the questions those sessions asked of other repositories, each listed

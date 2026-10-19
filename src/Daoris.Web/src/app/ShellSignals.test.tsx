@@ -24,7 +24,7 @@ vi.mock('@shenora/react', () => ({
 import { OverviewView } from '../overview/OverviewView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from '../data/queries';
-import { useLanding } from '../bridge/trees';
+import { useLanding } from '../bridge/sessions/trees';
 import { respond, show } from '../test/shellHarness';
 
 describe('the shell push channel (ShellSignals)', () => {

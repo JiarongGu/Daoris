@@ -6,8 +6,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask, Quest } from '../data/api';
 import i18n from '../locales/i18n';
 import type { Consideration } from '../data/signals';
-import type { WorkDoor } from '../work/pausing';
-import { LISTED_ASK, LISTED_CONSIDERED, PAUSED_LISTED_ASK, PAUSED_LISTED_CONSIDERED } from '../work/pausingFixtures';
+import type { WorkDoor } from '../work/pausing/pausing';
+import { LISTED_ASK, LISTED_CONSIDERED, PAUSED_LISTED_ASK, PAUSED_LISTED_CONSIDERED } from '../work/pausing/pausingFixtures';
 import { AskPage } from './AskPage';
 import { PUBLISHED } from './fixtures';
 

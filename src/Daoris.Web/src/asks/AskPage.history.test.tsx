@@ -4,9 +4,9 @@ import { act, render as rtlRender, screen, waitFor, within } from '@testing-libr
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask } from '../data/api';
-import type { HistoryDoor, HistoryPlan } from '../work/history';
+import type { HistoryDoor, HistoryPlan } from '../work/history/history';
 import type { Answered } from '../work/InlineConfirm';
-import { ASK_OPEN, ASK_PLAN } from '../work/historyFixtures';
+import { ASK_OPEN, ASK_PLAN } from '../work/history/historyFixtures';
 import { AskPage } from './AskPage';
 import { CLOSED, DONE, PUBLISHED } from './fixtures';
 

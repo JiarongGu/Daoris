@@ -6,7 +6,7 @@ import { Button, CheckField, EmptyState, Icon, Inline, PathText, SkeletonRows } 
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { contextOffer } from '../menus/press';
-import { ListRowDoor } from '../work/ListPane';
+import { ListRowDoor } from '../work/frame/ListPane';
 
 /**
  * Where a search stands, as its list says it:

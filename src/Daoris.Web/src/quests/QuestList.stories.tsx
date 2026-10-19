@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { INTAKE_ASKED, PROPOSED, PUBLISHED } from '../asks/fixtures';
-import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
-import { ListMore, ListPane } from '../work/ListPane';
+import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/frame/layout';
+import { ListMore, ListPane } from '../work/frame/ListPane';
 import { CHAINED, CJK, CONFLICTED, DECLINED, DONE, HELD, HELD_BY_PERSON, LANED, OPEN, SITTING, TAKEN, WAITING } from './fixtures';
 import { type AskRowFacts, QuestList, type QuestRowFacts } from './QuestList';
 

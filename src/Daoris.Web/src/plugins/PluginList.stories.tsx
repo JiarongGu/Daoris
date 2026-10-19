@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
-import { ListMore, ListPane } from '../work/ListPane';
+import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/frame/layout';
+import { ListMore, ListPane } from '../work/frame/ListPane';
 import { type OfferShown, pluginGroups, type PluginShown } from './catalog';
 import { PluginList, PluginStrip } from './PluginList';
 import { InTheme, PNG_ICON, SVG_ICON } from './storyIcons';

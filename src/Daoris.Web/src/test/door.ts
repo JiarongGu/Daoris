@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { ListView } from '../work/layout';
-import type { ListPanes } from '../work/listPanes';
+import type { ListView } from '../work/frame/layout';
+import type { ListPanes } from '../work/frame/listPanes';
 
 /**
  * A door that names an item as it opens a view (D118 §3i), as the application's opener does: the list chooses it now, so

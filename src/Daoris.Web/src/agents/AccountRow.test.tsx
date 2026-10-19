@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { byTool, type ToolDoor } from './tools';
 import { AccountRow } from './AccountRow';
 import { type AgentActs, AgentPage } from './AgentPage';
-import type { AccountSaid } from '../settings/accounts';
+import type { AccountSaid } from '../settings/accounts/accounts';
 import { accountState, type WindowCell } from './agents';
 import { CLAUDE_USE, DOORS, READ } from './agentsFixtures';
 

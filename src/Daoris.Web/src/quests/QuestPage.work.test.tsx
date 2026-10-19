@@ -6,8 +6,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
-import type { WorkDoor } from '../work/pausing';
-import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
+import type { WorkDoor } from '../work/pausing/pausing';
+import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausing/pausingFixtures';
 import { FAILED, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN, TAKEN_ELSEWHERE } from './fixtures';
 import { QuestPage } from './QuestPage';
 
