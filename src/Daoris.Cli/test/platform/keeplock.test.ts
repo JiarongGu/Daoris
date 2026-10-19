@@ -37,7 +37,7 @@ function plant(file: string, pid: number): string {
 
 test('keeplock: the lock is the file\'s full path with .lock after it, there only while held, saying who holds it since when', () => {
   const fx = makeFixture('keeplock-take');
-  const file = join(fx.root, 'driver.json');
+  const file = join(fx.root, 'choices.json');
   assert.equal(keepLockPath(file), `${resolve(file)}.lock`);
   const held = takeKeepLock(file);
   const said = JSON.parse(readFileSync(keepLockPath(file), 'utf8')) as { pid: number; since: string };
@@ -49,7 +49,7 @@ test('keeplock: the lock is the file\'s full path with .lock after it, there onl
 
 test('keeplock: a lock a live writer holds is waited for, then refused naming it, and left as it is', () => {
   const fx = makeFixture('keeplock-held');
-  const file = join(fx.root, 'driver.json');
+  const file = join(fx.root, 'choices.json');
   const text = plant(file, process.pid);
   assert.throws(() => takeKeepLock(file, { within: 100 }), (error: Error) => error.message.includes(`process ${process.pid}`)
     && error.message.includes(keepLockPath(file)));
@@ -58,7 +58,7 @@ test('keeplock: a lock a live writer holds is waited for, then refused naming it
 
 test('keeplock: a lock whose process is gone is removed and taken', () => {
   const fx = makeFixture('keeplock-stale');
-  const file = join(fx.root, 'driver.json');
+  const file = join(fx.root, 'choices.json');
   plant(file, GONE);
   const held = takeKeepLock(file, { within: 100 });
   assert.equal((JSON.parse(readFileSync(keepLockPath(file), 'utf8')) as { pid: number }).pid, process.pid);
@@ -67,7 +67,7 @@ test('keeplock: a lock whose process is gone is removed and taken', () => {
 
 test('keeplock: a release leaves a lock another holder wrote since', () => {
   const fx = makeFixture('keeplock-other');
-  const file = join(fx.root, 'driver.json');
+  const file = join(fx.root, 'choices.json');
   const held = takeKeepLock(file);
   const other = plant(file, GONE);
   held.release();

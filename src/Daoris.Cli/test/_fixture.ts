@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { findRegion } from '../src/doctrine/region.ts';
 import { tierRuleBody } from '../src/doctrine/tierrender.ts';
+import { homeEntry, type HomeEntryName } from '../src/platform/home.ts';
 
 const FIXTURE_ROOT = join(dirname(dirname(fileURLToPath(import.meta.url))), '_fixtures');
 
@@ -13,6 +14,11 @@ export interface Fixture {
   write(rel: string, text: string): string;
   read(rel: string): string;
   exists(rel: string): boolean;
+  /**
+   * Where a home entry is with this root as the Daoris home (D172, HOMELAYOUT3): asked of the table, never joined by hand
+   * (`home-census.test.ts`), and its folder made, so a test may write the file as the code would find it.
+   */
+  entry(name: HomeEntryName, ...asked: string[]): string;
   /**
    * The doctrine region's body (D59), or null when this repository has none.
    *
@@ -57,6 +63,11 @@ export function makeFixture(name: string): Fixture {
     },
     read: (rel: string) => readFileSync(join(root, rel), 'utf8'),
     exists: (rel: string) => existsSync(join(root, rel)),
+    entry(name: HomeEntryName, ...asked: string[]): string {
+      const place = homeEntry(root, name, ...asked);
+      mkdirSync(dirname(place), { recursive: true });
+      return place;
+    },
     region(): string | null {
       const file = join(root, 'AGENTS.md');
       if (!existsSync(file)) return null;

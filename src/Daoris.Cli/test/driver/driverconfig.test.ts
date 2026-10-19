@@ -20,6 +20,7 @@ import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
 } from '../../src/workflows/workflowchoice.ts';
 import type { RecordsReader } from '../../src/driver/strikes.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture, captureError } from '../_fixture.ts';
 
@@ -32,7 +33,9 @@ import { makeFixture, captureError } from '../_fixture.ts';
  */
 
 function at(fx: { root: string }): string {
-  return join(fx.root, 'driver.json');
+  const path = homeEntry(fx.root, 'driver');
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
 }
 
 function run(argv: string[], path: string): { code: number; out: string } {
@@ -382,7 +385,7 @@ test('only a branch rule names a plugin, and only by an id', () => {
 
 /** A plugin folder under the fixture's home, which is where `driver.json` is (the driver's own reading). */
 function plugin(fx: { root: string }, id: string, points: string[]): void {
-  const folder = join(fx.root, 'plugins', id);
+  const folder = homeEntry(fx.root, 'plugins', id);
   mkdirSync(folder, { recursive: true });
   writeFileSync(join(folder, 'plugin.json'), JSON.stringify({ id, hooks: { command: ['node', '${plugin}/land.mjs'], points } }));
 }
@@ -410,7 +413,7 @@ test('landing --plugin refuses a plugin missing, off, or landing nothing, each i
   assert.match(captureError(set('example.watches')).message, /`work\/land`/);
 
   plugin(fx, 'example.off', ['work/land']);
-  writeFileSync(join(fx.root, 'plugins.json'), JSON.stringify({ disabled: ['example.off'] }));
+  writeFileSync(fx.entry('plugin-state'), JSON.stringify({ disabled: ['example.off'] }));
   assert.match(captureError(set('example.off')).message, /daoris plugin enable example\.off/);
 
   plugin(fx, 'example.lands', ['work/land']);

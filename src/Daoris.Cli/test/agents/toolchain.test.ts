@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
@@ -12,11 +12,11 @@ import {
 import type { HarnessSettings, Toolchain } from '../../src/agents/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../../src/agents/channels.ts';
 import type { Fetcher } from '../../src/agents/channels.ts';
-import { COOLING_FILE, coolingOf, coolingWhen, machineZone } from '../../src/accounts/cooling.ts';
+import { coolingOf, coolingWhen, machineZone } from '../../src/accounts/cooling.ts';
 import { keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
 import { accountNames, renameAccount } from '../../src/accounts/accountnames.ts';
-import { WINDOWS_FILE } from '../../src/accounts/windows.ts';
-import { makeFixture } from '../_fixture.ts';
+import { homeEntry, homePlaces } from '../../src/platform/home.ts';
+import { makeFixture, type Fixture } from '../_fixture.ts';
 import { captureError } from '../_fixture.ts';
 import { TAR_END, tarEntry } from '../_tar.ts';
 
@@ -36,7 +36,9 @@ import { TAR_END, tarEntry } from '../_tar.ts';
 
 /** Everything runs against a fixture, never the developer's real home. */
 function at(fx: { root: string }): string {
-  return join(fx.root, 'harnesses.json');
+  const path = homeEntry(fx.root, 'harnesses');
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
 }
 
 function run(argv: string[], path: string): { code: number; out: string } {
@@ -441,7 +443,7 @@ test('an API key makes an account whose key is kept beside it, in the file both 
   assert.match(account, /^acct-[0-9a-f]{8}$/);
   assert.deepEqual(readdirSync(profileHome(fx.root, 'claude-code', account)), []);
   // The file's shape is the twin contract: the driver's HarnessKeys reads exactly this.
-  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'keys.json'), 'utf8')),
+  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'keys'), 'utf8')),
     { 'claude-code': { [account]: 'sk-ant-api03-cli-test-wxyz' } });
   assert.equal(keyOf(fx.root, 'claude-code', account), 'sk-ant-api03-cli-test-wxyz');
   // ACCT2: its id is never what a person has to read; the end offers a name of theirs.
@@ -494,7 +496,7 @@ test('a new key replaces an account\'s key in place, ends what marked it refused
   run(['profile', 'rename', 'claude-code', first, 'work-key'], at(fx));
   run(['profile', 'default', 'claude-code', first], at(fx));
   keepRead(fx.root, 'claude-code', first, 'out', new Date());
-  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({ 'claude-code': { [first]: { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
+  writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { [first]: { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
   const lines: string[] = [];
 
   replaceKeyAccount(fx.root, 'claude-code', 'work-key', 'sk-ant-api03-new-key-abcd\n', (l) => lines.push(l));
@@ -567,7 +569,7 @@ test('an account verb on a door acts on its owner’s accounts, and says so', ()
   run(['profile', 'default', 'claude-code-acp', 'work'], at(fx));
 
   assert.ok(existsSync(profileHome(fx.root, 'claude-code', 'work')));
-  assert.ok(!existsSync(join(fx.root, 'harnesses', 'claude-code-acp')));
+  assert.ok(homePlaces(fx.root, 'agent-homes', 'claude-code-acp').every((place) => !existsSync(place)));
   assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], 'work');
   assert.equal(readHarnessSettings(at(fx)).defaults['claude-code-acp'], undefined);
   assert.match(added.out, /runs as `claude-code`/);
@@ -653,7 +655,7 @@ test('`login --new` keeps a finished sign-in, names who signed in, and offers it
   assert.match(lines.join('\n'), new RegExp(`daoris agent profile rename fake ${made} someone@example\\.invalid`));
   assert.doesNotMatch(lines.join('\n'), /Org A/);
   // D66 §3: who signed in is offered, never written without the person.
-  assert.ok(!existsSync(join(fx.root, 'accounts.json')));
+  assert.ok(!existsSync(homeEntry(fx.root, 'accounts')));
 
   const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
   assert.equal(listed.profiles[0]!.account, 'someone@example.invalid');
@@ -762,7 +764,7 @@ test('`login --new --name --join` names the new account, joins the lists named, 
   const settings = readHarnessSettings(at(fx));
   assert.deepEqual(settings.workspaceRotation.work!.fake, ['account-1', made]);
   assert.deepEqual(settings.rotation.fake, ['account-1', made]);
-  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), { fake: { [made]: { name: 'spare' } } });
+  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8')), { fake: { [made]: { name: 'spare' } } });
   assert.match(lines.join('\n'), /this machine lists it as `spare`/);
   assert.match(lines.join('\n'), /`spare` runs work in this machine's list, `work`'s list/);
   assert.doesNotMatch(lines.join('\n'), /profile rename/);
@@ -829,7 +831,7 @@ test('`login --profile` signs in to the account that is here, by its id or its n
   const toolchain = fakeHarness(fx);
   mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
   mkdirSync(profileHome(fx.root, 'fake', 'account-2'), { recursive: true });
-  writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ fake: { 'account-2': { name: 'seat' } } }), 'utf8');
+  writeFileSync(fx.entry('accounts'), JSON.stringify({ fake: { 'account-2': { name: 'seat' } } }), 'utf8');
   writeFileSync(at(fx), JSON.stringify({ defaults: { fake: 'account-1' }, rotation: { fake: ['account-1', 'account-2'] } }), 'utf8');
   const reached: string[] = [];
   const signIn = (where: string) => {
@@ -879,7 +881,7 @@ test('signing back in to an account with no name offers who signed in as its nam
 
   assert.match(lines.join('\n'), /daoris agent profile rename fake account-1 back@example\.invalid/);
   assert.match(lines.join('\n'), /no list and no default names `account-1`, and none names another, so Daoris takes its accounts in turn/);
-  assert.ok(!existsSync(join(fx.root, 'accounts.json')));
+  assert.ok(!existsSync(homeEntry(fx.root, 'accounts')));
   fx.cleanup();
 });
 
@@ -931,7 +933,7 @@ test('`profile rename` names an account, and its lists, defaults, readings and r
   run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
   run(['profile', 'default', 'claude-code', 'account-1'], at(fx));
   run(['profile', 'order', 'claude-code', 'account-2', '--workspace', 'work'], at(fx));
-  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({ 'claude-code': { 'account-1': { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
+  writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { 'account-1': { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
   const wiring = readFileSync(at(fx), 'utf8');
 
   const renamed = run(['profile', 'rename', 'claude-code', 'account-1', 'you@work.example'], at(fx));
@@ -961,7 +963,7 @@ test('`profile rename` names an account, and its lists, defaults, readings and r
     /already names `account-1`/);
   const cleared = run(['profile', 'rename', 'claude-code', 'you@work.example', 'account-1'], at(fx));
   assert.match(cleared.out, /has no name of yours now/);
-  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), {});
+  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8')), {});
   fx.cleanup();
 });
 
@@ -983,7 +985,7 @@ test('`agent list` tells two sign-ins of one email apart by their organisations,
       signedIn('acct-0000000c', 'other@example.invalid', 'Org A', 'pro'),
     ],
   };
-  writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ 'claude-code': {
+  writeFileSync(fx.entry('accounts'), JSON.stringify({ 'claude-code': {
     'acct-0000000a': { name: 'person@example.invalid' }, 'acct-0000000b': { name: 'person@example.invalid·Org-B' } } }), 'utf8');
 
   const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
@@ -1008,7 +1010,7 @@ test('`agent list` says an account\'s email once when it is the name, and sizes 
       { name: 'account-2', home: '', login: 'in' as const, account: 'other@work.example', key: null },
     ],
   };
-  writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ 'claude-code': { 'account-1': { name: long } } }), 'utf8');
+  writeFileSync(fx.entry('accounts'), JSON.stringify({ 'claude-code': { 'account-1': { name: long } } }), 'utf8');
   // The machine names account-1, so account-2 runs nowhere and its continuation line is said (OWNSPACE1d: with nothing named, none is).
   writeFileSync(at(fx), JSON.stringify({ defaults: { 'claude-code': 'account-1' } }), 'utf8');
   const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
@@ -1033,7 +1035,7 @@ test('`profile remove` by an account\'s name removes it and forgets its name', (
 
   assert.match(removed.out, /the sign-in in it are gone/);
   assert.deepEqual(profiles(fx.root, 'claude-code'), []);
-  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), {});
+  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8')), {});
   fx.cleanup();
 });
 
@@ -1210,9 +1212,9 @@ test('list says which version is pinned, and whether it is actually installed', 
 // command reads no session record, so it never names that account where a step would choose it (D57, D143). Every agent
 // is pinned to a version nothing installed, so the listing asks no tool anything.
 
-function listedWith(fx: { root: string }, wiring: Record<string, unknown>, held: Record<string, unknown> = {}): string {
+function listedWith(fx: Fixture, wiring: Record<string, unknown>, held: Record<string, unknown> = {}): string {
   const nowhere = { 'claude-code': '0.0.0-none', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none' };
-  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify(held), 'utf8');
+  writeFileSync(fx.entry('cooling'), JSON.stringify(held), 'utf8');
   writeFileSync(at(fx), JSON.stringify({ versions: nowhere, ...wiring }), 'utf8');
   return run(['list'], at(fx)).out;
 }
@@ -1335,7 +1337,7 @@ test('`agent list` reads a Codex account\'s kept reading as one that speaks: its
   for (const name of ['account-1', 'account-2']) mkdirSync(profileHome(fx.root, 'codex', name), { recursive: true });
   const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
   // As the driver keeps the server's answer (evidence §2): a use per window, its reset, when; no standing and no session.
-  writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
+  writeFileSync(fx.entry('windows'), JSON.stringify({
     codex: {
       'account-1': {
         session: { reset: stamp(3 * 3_600_000), used: 0.01, seen: stamp(-20 * 60_000) },

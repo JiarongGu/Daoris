@@ -116,11 +116,11 @@ TABLE.names.forEach((row, index) => {
 
 test('configkeeps: choices read where no file was, written where there still is none, write the edit\'s keys alone', () => {
   const fx = makeFixture('config-keeps-none');
-  const path = join(fx.root, 'driver.json');
+  const path = fx.entry('driver');
   const choices = readDriverChoices(path);
   assert.equal(choices.source, '{}');
   writeDriverChoices(path, { ...choices, notify: false });
-  assert.equal(fx.read('driver.json'), '{\n  "notify": false\n}\n');
+  assert.equal(readFileSync(path, 'utf8'), '{\n  "notify": false\n}\n');
 });
 
 test('configkeeps: a key written twice in one object reads as its last, in its first place, and refuses every edit naming it', () => {

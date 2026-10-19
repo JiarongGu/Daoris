@@ -1,11 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { homeEntry, homeId } from '../../src/platform/home.ts';
-import {
-  LEASE_FILE, LEGACY_LOCK_FILE, leaseForVerb, leaseHolder, leaseNamed, tryLease, VERB_WAIT_MS,
-} from '../../src/platform/lease.ts';
+import { leaseForVerb, leaseHolder, leaseNamed, tryLease, VERB_WAIT_MS } from '../../src/platform/lease.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -15,9 +13,11 @@ import { makeFixture } from '../_fixture.ts';
  */
 
 /** A lease as another holder writes it, the driver's spelling: `started` in UTC ticks. */
-function plant(home: string, kind: string, pid = process.pid, what?: string, file = LEASE_FILE): string {
+function plant(home: string, kind: string, pid = process.pid, what?: string, entry: 'home-lease' | 'driver-lock' = 'home-lease'): string {
   const text = JSON.stringify({ kind, pid, started: 639000000000000000, since: '2026-10-16T08:02:13Z', ...(what ? { what } : {}) });
-  writeFileSync(join(home, file), text);
+  const path = homeEntry(home, entry);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, text);
   return text;
 }
 
@@ -70,7 +70,7 @@ test('a dead holder never blocks: its process gone, or a lease that does not rea
     assert.ok('lease' in replaced);
     replaced.lease.release();
 
-    writeFileSync(join(fx.root, LEASE_FILE), '{ "kind": "verb", "pid": ');
+    writeFileSync(fx.entry('home-lease'), '{ "kind": "verb", "pid": ');
     const torn = tryLease(fx.root, 'verb', 'daoris tool use', alive);
     assert.ok('lease' in torn);
     torn.lease.release();
@@ -114,7 +114,7 @@ test('a verb waits for another verb’s hold, then says which verb holds it', as
     // The other verb ends inside the wait: this one takes the home the moment it is free.
     let looks = 0;
     const taken = await leaseForVerb(fx.root, 'daoris driver cap', {
-      lives: alive, sleep: async () => { if (++looks === 3) rmSync(join(fx.root, LEASE_FILE)); },
+      lives: alive, sleep: async () => { if (++looks === 3) rmSync(homeEntry(fx.root, 'home-lease')); },
     });
     assert.ok('lease' in taken && taken.lease.holds);
     taken.lease.release();
@@ -130,7 +130,7 @@ test('a verb finding an instance acts beside it, holding nothing, and leaves its
     const beside = await leaseForVerb(fx.root, 'daoris driver cap', { lives: alive, sleep: async () => { throw new Error('waited'); } });
     assert.ok('lease' in beside && !beside.lease.holds && beside.lease.beside?.kind === 'desktop');
     beside.lease.release();
-    assert.equal(readFileSync(join(fx.root, LEASE_FILE), 'utf8'), planted);
+    assert.equal(readFileSync(homeEntry(fx.root, 'home-lease'), 'utf8'), planted);
   } finally {
     fx.cleanup();
   }
@@ -139,7 +139,7 @@ test('a verb finding an instance acts beside it, holding nothing, and leaves its
 test('an older build’s driver.lock holds the home while its holder lives', () => {
   const fx = makeFixture('lease-legacy');
   try {
-    plant(fx.root, 'headless', process.pid, undefined, LEGACY_LOCK_FILE);
+    plant(fx.root, 'headless', process.pid, undefined, 'driver-lock');
     const met = tryLease(fx.root, 'verb', 'daoris driver cap', alive);
     assert.ok('holder' in met && met.holder.kind === 'headless');
     assert.equal(leaseNamed(met.holder), `a headless \`daoris-driver\` (pid ${process.pid}, since 2026-10-16T08:02:13Z)`);
@@ -147,7 +147,7 @@ test('an older build’s driver.lock holds the home while its holder lives', () 
     const stale = tryLease(fx.root, 'verb', 'daoris driver cap', gone);
     assert.ok('lease' in stale);
     stale.lease.release();
-    assert.ok(existsSync(join(fx.root, LEGACY_LOCK_FILE)), 'a stale one is left where it is');
+    assert.ok(existsSync(homeEntry(fx.root, 'driver-lock')), 'a stale one is left where it is');
   } finally {
     fx.cleanup();
   }
@@ -160,7 +160,7 @@ test('a release removes only the lease it wrote', () => {
     assert.ok('lease' in taken);
     const planted = plant(fx.root, 'desktop');
     taken.lease.release();
-    assert.equal(readFileSync(join(fx.root, LEASE_FILE), 'utf8'), planted);
+    assert.equal(readFileSync(homeEntry(fx.root, 'home-lease'), 'utf8'), planted);
   } finally {
     fx.cleanup();
   }

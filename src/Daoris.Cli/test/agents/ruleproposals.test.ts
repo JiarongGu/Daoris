@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { PERMISSIONS_FILE, readPermissions } from '../../src/agents/permissions.ts';
 import { PROPOSALS_FOLDER, answerProposal, describeChange, loadProposals } from '../../src/agents/ruleproposals.ts';
 import { commandHarness } from '../../src/agents/toolchain.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 import type { Fixture } from '../_fixture.ts';
 
@@ -69,7 +70,7 @@ function run(argv: string[], home: string): { code: number; out: string } {
   }
 }
 
-const rules = (fx: Fixture) => readPermissions(join(fx.root, PERMISSIONS_FILE));
+const rules = (fx: Fixture) => readPermissions(homeEntry(fx.root, 'permissions'));
 const read = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
 
 // ——— Reading.
@@ -81,7 +82,7 @@ test('proposals read newest first, a file that is not one left out, and each say
     propose(fx, 'p0000002', { action: 'add', list: 'allow', rule: 'WebFetch', session: 'i9n8t7k6', ask: 'a1b2c3', proposed: '2026-09-24T11:00:00.0000000+00:00' });
     fx.write(join(PROPOSALS_FOLDER, 'broken.json'), '{ not json');
 
-    const read = loadProposals(join(fx.root, PROPOSALS_FOLDER));
+    const read = loadProposals(homeEntry(fx.root, 'rule-proposals'));
     assert.deepEqual(read.map((p) => p.id), ['p0000002', 'p0000001']);
     assert.equal(read[0]!.ask, 'a1b2c3');
     assert.equal(read[0]!.change.list, 'allow');

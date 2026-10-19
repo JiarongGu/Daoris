@@ -7,6 +7,7 @@ import { readRemotes, redactKey, remotesPath } from '../../src/service/remotemap
 import { commandStatus } from '../../src/doctrine/commands.ts';
 import { makeFixture } from '../_fixture.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 
 /**
  * `daoris remote` — management parity for the machine's wiring (D50, workspace design §2b).
@@ -23,7 +24,7 @@ const KEY = 'dk_abcd1234wxyzsecret';
 
 /** A remotes map in the fixture, never the developer's real one — and never OS temp. */
 function mapAt(fx: { root: string }): string {
-  return join(fx.root, 'remotes.json');
+  return homeEntry(fx.root, 'remotes');
 }
 
 /** Run a command with the map pointed at a fixture and the environment otherwise clean. */

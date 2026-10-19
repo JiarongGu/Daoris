@@ -191,17 +191,10 @@ const owedMatches = (each: Join, owed: (typeof OWED)[number]): boolean =>
   basename(each.file) === owed.file && (owed.like ? each.text.startsWith(owed.join) : each.text === owed.join);
 
 /**
- * HOMELAYOUT2c's test files still reading a scratch root's place by hand: each joins `fx.root` with a place the table holds,
- * and is converted to `homeEntry` before the move (HOMELAYOUT3) switches the places. A file the scan no longer finds is refused,
- * so the list only shrinks; a new test never joins one.
+ * HOMELAYOUT2c's test files still reading a scratch root's place by hand, each converted to `homeEntry` before the new places
+ * were switched on (HOMELAYOUT3): empty, and a file the scan finds is refused, so a test never joins one again.
  */
-const PENDING_TESTS: ReadonlySet<string> = new Set([
-  'account-join.test.ts', 'accountnames.test.ts', 'accountreads.test.ts', 'agentsettings.test.ts', 'probelock.test.ts',
-  'rotation-use.test.ts', 'rotation.test.ts', 'windows.test.ts', 'channels.test.ts', 'ruleproposals.test.ts', 'toolchain.test.ts',
-  'brainstorms.test.ts', 'configkeeps.test.ts', 'driverconfig.test.ts', 'homefiles.test.ts', 'fsx.test.ts', 'lease.test.ts',
-  'shellword.test.ts', 'plugins.test.ts', 'remotes.test.ts', 'workflowchoice-door.test.ts', 'workflowdoor.test.ts',
-  'workflows.test.ts',
-]);
+const PENDING_TESTS: ReadonlySet<string> = new Set([]);
 
 const owedHere = (each: Join): boolean =>
   OWED.some((owed) => owedMatches(each, owed)) || PENDING_TESTS.has(basename(each.file));

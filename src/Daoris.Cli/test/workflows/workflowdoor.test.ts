@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandDriver } from '../../src/driver/driverconfig.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
-import { HOME_SENTENCE } from '../../src/platform/home.ts';
+import { HOME_SENTENCE, homeEntry, homePlaces } from '../../src/platform/home.ts';
 import type { CheckoutsReader } from '../../src/driver/reviews.ts';
 import { WHAT_CHOOSES, commandWorkflow } from '../../src/workflows/workflowdoor.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
@@ -76,7 +76,7 @@ test('new from a preset: --plan says the change and writes nothing, then v1 is w
   const { code, out } = await run(fx, ['new', 'docs-to-pr', '--from', 'pull-request-no-press', '--name', 'Documentation to a pull request']);
   assert.equal(code, 0);
   assert.match(out, /Written to .*docs-to-pr\.json\./);
-  const bytes = readFileSync(join(fx.root, 'workflows', 'docs-to-pr.json'));
+  const bytes = readFileSync(homeEntry(fx.root, 'workflows', 'docs-to-pr.json'));
   assert.notEqual(bytes[0], 0xef, 'no BOM');
   const text = bytes.toString('utf8');
   assert.ok(!text.includes('\r') && text.endsWith('}\n'));
@@ -86,7 +86,7 @@ test('new from a preset: --plan says the change and writes nothing, then v1 is w
       steps: [{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'branch', accept: 'automatic' }, { id: 'pull-request', kind: 'pull-request' }],
     }],
   });
-  assert.deepEqual(readdirSync(join(fx.root, 'workflows')), ['docs-to-pr.json'], 'nothing written beside it is left');
+  assert.deepEqual(readdirSync(homeEntry(fx.root, 'workflows')), ['docs-to-pr.json'], 'nothing written beside it is left');
 
   // A workflow is new once: a version is added by `edit`.
   const again = await refused(fx, ['new', 'docs-to-pr', '--from', 'merge-after-accept']);
@@ -277,7 +277,7 @@ test('a round trip: export to a file, import on another home, and show the same 
 
 test('import refuses a file a version of which does not read here, and list says what each file holds', async () => {
   const fx = makeFixture('workflowdoor-list');
-  assert.equal((await run(fx, ['list'])).out.split('\n')[0], `daoris: no workflow is named in ${join(fx.root, 'workflows')} yet.`);
+  assert.equal((await run(fx, ['list'])).out.split('\n')[0], `daoris: no workflow is named in ${homeEntry(fx.root, 'workflows')} yet.`);
 
   fx.write('newer.json', JSON.stringify({ id: 'release', name: 'Release', versions: [
     { version: 1, at: '2026-10-09T09:12:00Z', door: 'screen', steps: [{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'branch', accept: 'you' }, { id: 'pull-request', kind: 'pull-request' }] },
@@ -288,13 +288,13 @@ test('import refuses a file a version of which does not read here, and list says
   assert.equal(newer.message, '`newer.json` cannot be imported: v2, step `checks`: this build does not run a step of kind `check` yet.');
 
   // The same file under the home, as a newer build would leave it: kept, listed, and never chosen here.
-  fx.write('workflows/release.json', fx.read('newer.json'));
-  fx.write('workflows/broken.json', '{ not json');
+  writeFileSync(fx.entry('workflows', 'release.json'), fx.read('newer.json'));
+  writeFileSync(fx.entry('workflows', 'broken.json'), '{ not json');
   await run(fx, ['new', 'docs', '--from', 'merge-after-accept', '--name', 'Docs']);
   const { code, out } = await run(fx, ['list']);
   assert.equal(code, 0);
   assert.deepEqual(out.split('\n').slice(0, 4), [
-    `daoris: 3 workflows named in ${join(fx.root, 'workflows')}:`,
+    `daoris: 3 workflows named in ${homeEntry(fx.root, 'workflows')}:`,
     '  `broken` — cannot be read: `broken.json` is not readable JSON.',
     '  `docs` — Docs: v1, 2 steps. You accept each piece of work, and it merges into the line.',
     '  `release` — Release: v2 cannot be read here (v2, step `checks`: this build does not run a step of kind `check` yet.); v1 is the newest that reads.',
@@ -346,7 +346,7 @@ test('with no home, every verb is refused before anything is read or written', a
       assert.throws(() => commandDriver({ root: fx.root, argv, write: () => {}, packageRoot: process.cwd() }, undefined, unread,
         (args, context) => commandWorkflow(args, context)), (error: Error) => error.message.startsWith(HOME_SENTENCE));
     }
-    assert.equal(existsSync(join(fx.root, 'workflows')), false);
+    assert.ok(homePlaces(fx.root, 'workflows').every((place) => !existsSync(place)));
   } finally {
     if (saved.home !== undefined) process.env.DAORIS_HOME = saved.home;
     if (saved.config !== undefined) process.env.DAORIS_DRIVER_CONFIG = saved.config;

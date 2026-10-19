@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandDriver } from '../../src/driver/driverconfig.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import type { CheckoutsReader } from '../../src/driver/reviews.ts';
 import { GATE_READS, WHAT_CHOOSES, commandWorkflow } from '../../src/workflows/workflowdoor.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
@@ -149,7 +150,7 @@ test('kind declares a workspace\'s kind with its paths, use maps it, a repositor
     'daoris: the workspace `work` declares kind `docs` — Documentation, its paths `docs/**`, `**/*.md`.',
     '  It maps to no workflow there: `daoris driver workflow use <id> --workspace work --kind docs` maps one, and `--repository <name>` '
       + 'maps it for one repository.',
-    `  Written to ${join(fx.root, 'driver.json')}.`,
+    `  Written to ${homeEntry(fx.root, 'driver')}.`,
     GATE_READS,
   ].join('\n'));
 

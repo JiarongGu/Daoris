@@ -9,6 +9,7 @@ import {
   TOOLCHAINS, commandHarness, managedHome, profileHome, removeProfile, signInNew, signInTo,
 } from '../../src/agents/toolchain.ts';
 import type { Toolchain } from '../../src/agents/toolchain.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { driverFile, driverRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -32,12 +33,16 @@ const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'account-reads.json
 const DRIVER_TESTS = driverTestFile('AccountReadsTests.cs');
 
 function holding(root: string, file: Cell): void {
-  if (file !== null) writeFileSync(join(root, READS_FILE), file, 'utf8');
+  if (file === null) return;
+  const path = homeEntry(root, 'reads');
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, file, 'utf8');
 }
 
 /** The file as written, or null where there is none. */
 function onDisk(root: string): string | null {
-  return existsSync(join(root, READS_FILE)) ? readFileSync(join(root, READS_FILE), 'utf8') : null;
+  const path = homeEntry(root, 'reads');
+  return existsSync(path) ? readFileSync(path, 'utf8') : null;
 }
 
 /** What a twin writes for `after`: indented two spaces, LF, a final newline. */
@@ -153,7 +158,7 @@ function fakeHarness(root: string): Toolchain {
 
 /** What `reads.json` says of one agent, as the file holds it. */
 function fileOf(root: string): Record<string, { accounts?: Record<string, Record<string, unknown>>; own?: unknown }> {
-  return JSON.parse(readFileSync(join(root, READS_FILE), 'utf8'));
+  return JSON.parse(readFileSync(homeEntry(root, 'reads'), 'utf8'));
 }
 
 /** The moment the driver's `AccountCooling.Stamp` writes, and the first form its reader takes: UTC, to the second. */
@@ -178,7 +183,7 @@ test('`agent list` keeps each account it read, in the shape the driver reads', (
   mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
   mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
   writeFileSync(join(profileHome(fx.root, 'claude-code', 'account-1'), 'credentials.json'), 'someone@example.invalid', 'utf8');
-  const path = join(fx.root, 'harnesses.json');
+  const path = fx.entry('harnesses');
   writeFileSync(path, JSON.stringify({ versions: {
     'claude-code': '1.2.3', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none',
   } }), 'utf8');
@@ -202,7 +207,7 @@ test('`agent list` keeps each account it read, in the shape the driver reads', (
     assert.ok(Date.parse(String(entry.read)) >= before && Date.parse(String(entry.read)) <= Date.now());
   }
   // Who signed in is read fresh and written nowhere (D66 §3).
-  assert.doesNotMatch(readFileSync(join(fx.root, READS_FILE), 'utf8'), /@|\r/);
+  assert.doesNotMatch(readFileSync(homeEntry(fx.root, 'reads'), 'utf8'), /@|\r/);
   // And it reads back as the driver's reader reads it: the twin's rules, held by the shared table above.
   const reads = readsOf(fx.root, 'claude-code');
   assert.equal(readOf(reads, 'account-1')?.login, 'in');
@@ -216,7 +221,7 @@ test('a new account\'s sign-in keeps its reading at its end, and one that did no
   const toolchain = fakeHarness(fx.root);
 
   assert.equal(signInNew('fake', toolchain, fx.root, () => 2, () => {}), 2);
-  assert.ok(!existsSync(join(fx.root, READS_FILE)));
+  assert.ok(!existsSync(homeEntry(fx.root, 'reads')));
 
   signInNew('fake', toolchain, fx.root, (where) => {
     writeFileSync(join(where, 'credentials.json'), 'someone@example.invalid', 'utf8');
@@ -237,7 +242,7 @@ test('signing back in keeps the account\'s reading at its end, a named account t
   const fx = makeFixture('reads-sign-in-to');
   const toolchain = fakeHarness(fx.root);
   mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
-  writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ fake: { 'account-1': { name: 'seat' } } }), 'utf8');
+  writeFileSync(fx.entry('accounts'), JSON.stringify({ fake: { 'account-1': { name: 'seat' } } }), 'utf8');
   keepRead(fx.root, 'fake', 'account-1', 'out', new Date(Date.now() - 60_000));
 
   signInTo('fake', toolchain, fx.root, 'seat', (where) => {
