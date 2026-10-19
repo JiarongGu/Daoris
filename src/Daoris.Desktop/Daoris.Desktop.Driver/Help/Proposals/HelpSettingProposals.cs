@@ -37,6 +37,17 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff",
     ];
 
+    /// <summary>
+    /// ASKSCOPE1c: its target is a repository, save a retry's, which is a quest; <c>across … write-to &lt;other&gt;</c> names a
+    /// second repository in its value.
+    /// </summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var words = proposal.Door == "across" ? (proposal.Value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries) : [];
+        var other = words is ["write-to", var to, ..] ? to : null;
+        return new([proposal.Workspace], [proposal.Door == "retry" ? null : proposal.Target, other, proposal.Repository]);
+    }
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var target = proposal.Target?.Trim();

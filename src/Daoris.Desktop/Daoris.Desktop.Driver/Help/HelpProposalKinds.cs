@@ -36,6 +36,13 @@ internal interface IHelpProposalKind
     /// <summary>The fields only this kind carries, read from a file; one the file lacks reads as null.</summary>
     HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal;
 
+    /// <summary>
+    /// The workspaces and repositories it names (ASKSCOPE1c): what a conversation bound to one workspace may name only of its own,
+    /// judged before <see cref="Plan"/> (<see cref="HelpProposalScope"/>). By default the file's <c>workspace</c> and
+    /// <c>repository</c>; a kind whose target or value names one says so in its file.
+    /// </summary>
+    HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) => new([proposal.Workspace], [proposal.Repository]);
+
     /// <summary>Judge a proposal with the route's own code, against the machine as it stands.</summary>
     HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts);
 

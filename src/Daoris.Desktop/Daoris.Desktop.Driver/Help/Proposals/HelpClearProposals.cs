@@ -37,6 +37,10 @@ internal sealed class HelpClearProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "failed", "workspace"];
 
+    /// <summary>ASKSCOPE1c: a workspace's clear names the workspace as its target; a quest's or an ask's names a record by id.</summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
+        new([proposal.Workspace, proposal.Door == "workspace" ? proposal.Target : null], [proposal.Repository]);
+
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
         if (!file.TryGetProperty("units", out var units) || units.ValueKind != JsonValueKind.Array) return proposal with { Units = null };

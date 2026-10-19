@@ -934,9 +934,14 @@ public sealed class HelpRoutes(DriverContext context)
         var workspaces = snapshot.Repositories.Select(known => known.Workspace)
             .Append(RemoteTarget.DefaultWorkspace).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var config = DriverConfig.Load(_loop.ConfigPath);
+        // ASKSCOPE1c: the workspace the conversation that proposed them is bound to, read from its record, and only where one is
+        // pending; the records are read once, for a go or a session's proposal too.
+        var conversation = proposals.Select(proposal => proposal.Session).FirstOrDefault(session => !string.IsNullOrWhiteSpace(session));
+        var records = conversation is null ? null : await service.SessionRecordsAsync(ct).ConfigureAwait(false);
         var facts = new HelpMachineFacts(
             [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names)
         {
+            Circle = HelpCircle.OfRecord(_loop.Home, records?.FirstOrDefault(record => string.Equals(record.Id, conversation, StringComparison.OrdinalIgnoreCase))),
             // A landing rule naming a plugin is judged by the catalogue the landing route reads (HELP8, D100).
             Plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names),
             // A plugin is added from a registered checkout, never from the home, and may not shadow a
@@ -1000,7 +1005,7 @@ public sealed class HelpRoutes(DriverContext context)
         // This machine's own sessions as the Sessions list reads them (ENTRY1f2), read only when a go names one.
         if (JudgedAgainstSessions(proposals))
         {
-            facts = facts with { Sessions = await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
+            facts = facts with { Sessions = records ?? await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
         }
 
         // A session proposal is judged by where the list places each session, and a delete by what this machine keeps and the
