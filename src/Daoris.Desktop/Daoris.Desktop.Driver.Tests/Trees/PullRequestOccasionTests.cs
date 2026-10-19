@@ -75,6 +75,22 @@ public sealed class PullRequestOccasionTests
     }
 
     /// <summary>
+    /// PUSH1c4a (D182): the clean-up's list of one repository, which the machine's facts judge at a ref's move and at a deadline, is
+    /// no occasion. It reads the answers the landing record keeps and asks no plugin, so a mounted window's list costs no ask; the
+    /// person's look (<c>CleanPlanAsync</c>) stays the occasion that asks.
+    /// </summary>
+    [Fact]
+    public void The_facts_part_of_the_clean_ups_list_reads_the_kept_answers_and_asks_nothing()
+    {
+        var part = Body(File.ReadAllText(SourceFiles.Driver("LandedCleanups.cs")), "SweepPartAsync");
+
+        Assert.DoesNotContain("AskStatesAsync(", part);
+        Assert.DoesNotContain("CleanPlanAsync(", part);
+        Assert.Contains("SweepPlanAsync(", part);
+        Assert.DoesNotContain("SweepPartAsync", Occasions);
+    }
+
+    /// <summary>
     /// PLUGHOOK1c (design §2.1 occasion 3): bringing up to date's look asks, after its fetch, where a merge commit first reaches
     /// this machine, and it is started by a person's door alone: the page's *Look for updates*, Ask Daoris's card's first press
     /// and `trees sync`. Its press, which removes, asks nothing.
