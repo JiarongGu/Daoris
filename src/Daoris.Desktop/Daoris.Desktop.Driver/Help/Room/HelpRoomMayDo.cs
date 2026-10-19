@@ -11,7 +11,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 {
     /// <summary>
     /// The checkouts it may read: every readable one here, in every workspace, from the driver's own setting. In a workspace's room
-    /// too (ASKSCOPE1b): they are what its spawn is granted, which ASKSCOPE1c binds to the record's workspace.
+    /// too (ASKSCOPE1b): they are what its spawn is granted, so the room lists what its rules allow (D158's ASKSCOPE1b note).
     /// </summary>
     public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
     {

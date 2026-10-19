@@ -501,8 +501,8 @@ internal sealed record HelpMachineSources(
 
     /// <summary>
     /// Every repository registered here, every workspace's, where these are projected (ASKSCOPE1b): what the checkouts it may read
-    /// are judged from, which are what its spawn is granted (D107), so they stay the machine's until ASKSCOPE1c binds them to the
-    /// record's workspace. Null for the whole machine, whose <see cref="HelpMachineSources.Snapshot"/> holds them all.
+    /// are judged from. Those are what its spawn is granted (D107), so the room lists what its rules allow (D158's ASKSCOPE1b note,
+    /// point 5). Null for the whole machine, whose <see cref="HelpMachineSources.Snapshot"/> holds them all.
     /// </summary>
     public IReadOnlyList<RepoView>? Registry { get; init; }
 }

@@ -59,7 +59,7 @@ public sealed class HelpRoomScopeTests : IDisposable
     /// 🔴 The room's facts are its workspace's, projected before any count or limit: its repositories and their lines, the sessions
     /// waiting and the list's groups, the asks and their count, the quests parked, held and paused, the finished work, the work
     /// and its recoveries, the landings and the kinds of work. The agents and their accounts, the driver and its cap stay the
-    /// machine's, as do the checkouts it may read, which are what its spawn is granted (ASKSCOPE1c's to bind).
+    /// machine's, as do the checkouts it may read, which are what its spawn is granted, so the room lists what its rules allow.
     /// </summary>
     [Fact]
     public void A_workspace_s_room_says_its_own_facts_and_the_machine_s_alone_for_the_rest()

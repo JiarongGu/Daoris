@@ -8,13 +8,14 @@ namespace Daoris.Driver;
 /// context (PART10h, D166); the going-on of an ended one is <see cref="ChatGoOn"/>'s, which reads this class's set-aside and room.
 /// </summary>
 /// <remarks>
-/// <para><b>One conversation runs in the room at a time</b> (HELP1a): the ledger holds the room as a tree, so going back to an
-/// earlier conversation, or starting one from it, first sets aside the one running here, which keeps its own id and can go on
-/// later. One answering a turn is never set aside: the words wait, said why, and the next word tries again.</para>
+/// <para><b>One conversation runs in each workspace at a time</b> (HELP1a, ASKSCOPE1a), so going back to an earlier conversation,
+/// or starting one from it, first sets aside its workspace's running one, which keeps its own id and can go on later. One
+/// answering a turn is never set aside: the words wait, said why, and the next word tries again.</para>
 ///
 /// <para><b>The room is written again</b> as every open writes it, from the machine as the shell hands it
 /// (<see cref="DescribeHelp"/>): since PARALLEL1a the facts the judges keep, as last judged, so no open waits on a reading of the
-/// machine; where nothing hands one, the room as last written serves and nothing outside it is read.</para>
+/// machine; where nothing hands one, the room as last written serves and nothing outside it is read. It is the room of the
+/// conversation's workspace (ASKSCOPE1b, <see cref="HelpRoom.GoesOnIn"/>), the machine projected to it.</para>
 ///
 /// <para>It holds the runner for the new conversation it opens and for whether a turn is taking, as <see cref="ChatHandOver"/>
 /// does: they are the runner's own start and the runner's own turns.</para>
