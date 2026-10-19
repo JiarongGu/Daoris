@@ -3,6 +3,7 @@ import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tansta
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
+import type { AccessLevel } from '../settings/Access';
 import type { CommitRule } from '../settings/Commits';
 import type { HelperRule } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
@@ -151,6 +152,15 @@ export type DriverState = {
   helpers?: { repository: string; rule: HelperRule }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceHelpers?: { workspace: string; rule: HelperRule }[];
+  /**
+   * The access setups as set (AUTONOMY1a, D184 point 1): what each repository's sessions start under, full access or the pauses it
+   * names — absent on a shell older than it, which offers no access section. What each repository resolves to is `LINES`' `access`.
+   */
+  access?: { repository: string; setting: AccessLevel }[];
+  /** And by workspace, for each pause a repository there does not name. */
+  workspaceAccess?: { workspace: string; setting: AccessLevel }[];
+  /** And this machine's, for each pause neither a repository nor its workspace names: no pause and not full where none is set. */
+  machineAccess?: AccessLevel;
 };
 
 /**

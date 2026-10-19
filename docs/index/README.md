@@ -38,13 +38,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/agents.test.ts` | 47 | 803 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 978 |
 | `src/Daoris.Web/src/app/App.tsx` | 74 | 1320 |
-| `src/Daoris.Web/src/data/api.ts` | 43 | 711 |
+| `src/Daoris.Web/src/data/api.ts` | 43 | 717 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/design/ui.tsx` | 79 | 1683 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 42 | 807 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 82 | 1646 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
-| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 83 | 1481 |
+| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 89 | 1573 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 55 | 1018 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 57 | 1081 |
@@ -74,7 +74,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 47 | 904 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 113 | 1816 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 113 | 1827 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 40 | 755 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 356 |

@@ -1,6 +1,7 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
+import type { AccessChange, RepositoryAccess } from '../settings/Access';
 import type { CommitChange, RepositoryCommits } from '../settings/Commits';
 import type { HelperChange, RepositoryHelpers } from '../settings/Helpers';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
@@ -35,9 +36,13 @@ export type LinesAnswer = {
   // never null, `default` where nothing is set; absent on an older shell, which offers neither row.
   commits?: RepositoryCommits[];
   helpers?: RepositoryHelpers[];
+  // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184 point 1):
+  // never null, `default` where nothing is set; absent on an older shell, which offers no access section.
+  access?: RepositoryAccess[];
 };
 
-const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'commits'] as const;
+// The shell's `LinesStateSlice.Fields`, in its order: a field left out here is pushed and never composed (AUTONOMY1d).
+const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'commits', 'access'] as const;
 
 /**
  * The lines as the shell pushes them (PUSH1b2, D182): a partition per repository, named by it, each holding that repository's rows
@@ -373,3 +378,10 @@ export const useSetCommits = () => useDriverChange<CommitChange>('SET_COMMITS');
  * file `daoris driver helpers` edits (D50). A refusal is the driver's sentence, verbatim.
  */
 export const useSetHelpers = () => useDriverChange<HelperChange>('SET_HELPERS');
+
+/**
+ * Change the access setup a repository's sessions start under, a workspace's or this machine's (AUTONOMY1d, D184 points 1-3): full
+ * access, a pause set or taken back to the level above, or the level cleared, over the file `daoris-driver access` edits (D50). A
+ * refusal is the driver's sentence, verbatim. Full access is the person's press alone: no proposal names it (D184's rejected list).
+ */
+export const useSetAccess = () => useDriverChange<AccessChange>('SET_ACCESS');

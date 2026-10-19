@@ -412,6 +412,70 @@ describe("a repository's Setup on its page (UX6f)", () => {
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Helpers are not offered to sessions in engine now.'));
   });
 
+  /**
+   * AUTONOMY1d (D184 points 1-3): its sessions' access as the driver resolves it, each pause with where it was set, changed on
+   * DAORIS.DRIVER over the file `daoris-driver access` edits, and full access only through its ask; what stands above it is read off
+   * the driver's state, so turning off a full access its workspace gives sets today's pauses here.
+   */
+  it("sets its sessions' access on DAORIS.DRIVER, full access only through its ask, and says what changed", async () => {
+    const open = (source: string) => [
+      { pause: 'permissions', value: 'unrestricted', source }, { pause: 'routing', value: 'intake', source },
+      { pause: 'landing', value: 'rule', source }, { pause: 'goAheads', value: 'never', source },
+      { pause: 'questions', value: 'claude-code', source },
+    ];
+    let pauses = [
+      { pause: 'permissions', value: 'asking', source: 'machine' }, { pause: 'routing', value: 'person', source: 'default' },
+      { pause: 'landing', value: 'person', source: 'default' }, { pause: 'goAheads', value: 'named', source: 'default' },
+      { pause: 'questions', value: 'claude-code', source: 'default' },
+    ];
+    let workspaceAccess: unknown[] = [];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'LINES') return { ...LINES, access: [{ repository: 'engine', workspace: 'aurora', full: false, pauses }] };
+      if (type === 'ACROSS') return ACROSS;
+      if (type === 'RULES') return RULES;
+      if (type === 'PLUGINS') return PLUGINS;
+      return {
+        ...DRIVER_STATE, drivable: ['engine'], workspaceLines: [{ workspace: 'aurora', branch: 'main' }],
+        access: [], workspaceAccess, machineAccess: { full: false, pauses: [{ pause: 'permissions', value: 'asking' }] },
+      };
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseRepository('engine');
+    await openSetup("Sessions' access");
+    const access = within(repositoryMain()).getByRole('region', { name: "Sessions' access" });
+    const permissions = within(access).getByText('Permission prompts', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+
+    expect(permissions).toHaveTextContent('The agent runs in its asking mode: it uses what its rules allow, and any other tool call is refused');
+    expect(permissions).toHaveTextContent('From this machine.');
+    await userEvent.click(within(permissions).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(permissions).getByRole('radio', { name: 'Auto mode' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { repository: 'engine', access: { permissions: 'auto' } } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Permission prompts for engine: Auto mode.'));
+
+    await vi.waitFor(() => expect(within(access).getByRole('checkbox', { name: 'Full access' })).toBeEnabled());
+    await userEvent.click(within(access).getByRole('checkbox', { name: 'Full access' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', expect.objectContaining({ payload: expect.objectContaining({ access: 'full' }) }));
+    await userEvent.click(within(access).getByRole('button', { name: 'Enable full access' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { repository: 'engine', access: 'full' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Sessions in engine now start with full access.'));
+    await vi.waitFor(() => expect(within(access).queryByRole('button', { name: 'Enable full access' })).toBeNull());
+
+    // Its workspace gives full access too: turning it off here sets today's pauses rather than clearing back into it.
+    cleanup();
+    pauses = open('workspace');
+    workspaceAccess = [{ workspace: 'aurora', setting: { full: true, pauses: [] } }];
+    show(<ProjectsView notify={notify} />);
+    await chooseRepository('engine');
+    await openSetup("Sessions' access");
+    const again = within(repositoryMain()).getByRole('region', { name: "Sessions' access" });
+    await userEvent.click(within(again).getByRole('checkbox', { name: 'Full access' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', {
+      payload: { repository: 'engine', access: { permissions: 'auto', routing: 'person', landing: 'person', goAheads: 'named' } },
+    });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Sessions in engine now stop at each pause as today.'));
+  });
+
   it("sets whether agents outside it read it, what its sessions also write into, and removes one of its rules", async () => {
     show(<ProjectsView notify={() => {}} />);
     await chooseRepository('engine');
@@ -594,6 +658,34 @@ describe("a workspace's page (UX6g)", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_READ_ACROSS', { payload: { workspace: 'aurora', read: false } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
       'aurora: its checkout is read by no agent outside it. A session already running keeps what it began with.'));
+  });
+
+  /**
+   * AUTONOMY1d (D184 point 1): the access its repositories' sessions start under, resolved on the page from the driver's state, the
+   * workspace's over this machine's, and set as `daoris-driver access --workspace` sets it.
+   */
+  it("sets its sessions' access on Setup, each pause from the workspace or this machine, and says what changed", async () => {
+    machine({
+      STATE: {
+        ...STATE,
+        access: [],
+        workspaceAccess: [{ workspace: 'aurora', setting: { full: false, pauses: [{ pause: 'landing', value: 'rule' }] } }],
+        machineAccess: { full: false, pauses: [{ pause: 'permissions', value: 'asking' }] },
+      },
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Setup' }));
+    // A pause of its own opens the section.
+    const access = await within(repositoryMain()).findByRole('region', { name: "Sessions' access" });
+    const row = (label: string) => within(access).getByText(label, { selector: 'span' }).closest('.\\@container') as HTMLElement;
+
+    expect(row('Permission prompts')).toHaveTextContent('From this machine.');
+    expect(row('Landing')).toHaveTextContent('Set for this workspace.');
+    await userEvent.click(within(row('Landing')).getByRole('button', { name: 'Clear' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { workspace: 'aurora', access: { landing: null } } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Landing for aurora comes from what stands above it again.'));
   });
 
   /**
