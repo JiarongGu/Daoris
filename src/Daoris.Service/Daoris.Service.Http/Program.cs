@@ -1305,6 +1305,32 @@ if (mode == ServiceMode.Local)
                 await ToSessionAsync(s, kept, MachineLocal(http)), $"Ask Daoris `{id}` goes on {kept.HelpMode}."));
     });
 
+    // The access setup a resumed driven session runs under (AUTONOMY1b2, D184 point 1): the person's setup changed since it started, and
+    // its record says the one this run goes on under. Local like the open; only driven records of this machine's have one.
+    app.MapPost("/api/sessions/{id}/access", async (
+        ComposedService s, HttpContext http, string id, AccessKeepRequest body, CancellationToken ct) =>
+    {
+        if (body.Access is not { Count: > 0 })
+        {
+            return Results.BadRequest(new ErrorResponse("access is required — the setup the session goes on under, each pause with its value"));
+        }
+
+        Session? kept;
+        try
+        {
+            kept = await s.Ledger.KeepAccessAsync(id, body.Access, ct);
+        }
+        catch (ArgumentException refused)
+        {
+            return Results.BadRequest(new ErrorResponse(refused.Message));
+        }
+
+        return kept is null
+            ? Results.NotFound(new ErrorResponse($"no driven session of this machine's is `{id}`"))
+            : Results.Ok(new SessionActionResponse(
+                await ToSessionAsync(s, kept, MachineLocal(http)), $"Session `{id}` goes on under the setup it was told."));
+    });
+
     // Deleting a conversation that served no quest (SESSUX1f, D126 §5.4): the ledger judges the record's half and removes
     // it, and the driver, which judged the machine's half first, removes what this machine kept of it after this yes. LOCAL
     // mode only, as D95's deletes are: a person deletes on their own machine, and a session record does not travel as a
