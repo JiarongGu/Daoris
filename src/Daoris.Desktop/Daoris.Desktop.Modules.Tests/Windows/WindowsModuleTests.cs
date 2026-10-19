@@ -45,8 +45,65 @@ public sealed class WindowsModuleTests : Bridge
     /// <summary>What the main window was told to wear on its taskbar button (NOTIFY1b).</summary>
     private readonly List<(int Count, string? Description)> _badges = [];
 
+    /// <summary>The workspace each window was told to wear in its title (MAINWINDOWS3b); a null name is the first main window.</summary>
+    private readonly List<(string? Name, string? Workspace)> _workspaces = [];
+
     private WindowsModule Module() => new(Bus, _windows, new PlatformAddress(Service),
-        badge: (count, description) => _badges.Add((count, description)));
+        badge: (count, description) => _badges.Add((count, description)),
+        workspace: (name, workspace) => _workspaces.Add((name, workspace)));
+
+    /// <summary>
+    /// MAINWINDOWS3b: the frame's title is the count, the application's own name, then the workspace the page names. The name is
+    /// the frame's: only the part after the separator is taken, and only from a page title that starts with that name.
+    /// </summary>
+    [Theory]
+    [InlineData("Daoris (道衍) — games", "games")]
+    [InlineData("Daoris (道衍) — 工作区", "工作区")]
+    [InlineData("Daoris (道衍) — a — b", "a — b")]
+    [InlineData("Daoris (道衍)", null)]
+    [InlineData("Daoris (道衍) — ", null)]
+    [InlineData("Daoris (道衍) —   ", null)]
+    [InlineData("Daoris (道衍)x — games", null)]
+    [InlineData("Other — games", null)]
+    [InlineData("games", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void The_workspace_is_read_from_a_page_title_that_starts_with_the_name(string? pageTitle, string? workspace)
+    {
+        Assert.Equal(workspace, WaitingBadge.Workspace(pageTitle));
+    }
+
+    [Theory]
+    [InlineData(0, null, "Daoris (道衍)")]
+    [InlineData(0, "games", "Daoris (道衍) — games")]
+    [InlineData(3, "games", "(3) Daoris (道衍) — games")]
+    [InlineData(100, "工作区", "(99+) Daoris (道衍) — 工作区")]
+    [InlineData(2, "", "(2) Daoris (道衍)")]
+    public void The_title_is_the_count_then_the_name_then_the_workspace(int count, string? workspace, string title)
+    {
+        Assert.Equal(title, WaitingBadge.Title(count, workspace));
+    }
+
+    [Fact]
+    public async Task A_page_tells_its_frame_the_workspace_its_title_names()
+    {
+        var first = await AnswerAsync(Module(), "SET_TITLE", new { title = "Daoris (道衍) — games" });
+        await AnswerAsync(Module(), "SET_TITLE", new { name = "main:2", title = "Daoris (道衍) — work" });
+        await AnswerAsync(Module(), "SET_TITLE", new { name = "main:3", title = "Daoris (道衍)" });
+        await AnswerAsync(Module(), "SET_TITLE", new { title = "Elsewhere — x" });
+
+        Assert.True(first.GetProperty("applied").GetBoolean());
+        Assert.Equal([(null, "games"), ("main:2", "work"), ("main:3", null), (null, null)], _workspaces);
+    }
+
+    [Fact]
+    public async Task A_title_names_only_a_window_this_build_opens()
+    {
+        var refusal = await RefusalAsync(Module(), "SET_TITLE", new { name = "session:../x", title = "Daoris (道衍) — x" });
+
+        Assert.Contains("WINDOW_UNKNOWN", refusal);
+        Assert.Empty(_workspaces);
+    }
 
     [Fact]
     public async Task The_monitor_opens_at_its_own_route_into_the_same_bundle()

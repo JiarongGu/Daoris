@@ -79,6 +79,15 @@ public sealed class SecondaryWindowHost(
         }
     }
 
+    /// <summary>The workspace the page of the main window opened under <paramref name="name"/> holds, worn in its title (MAINWINDOWS3b). Any thread.</summary>
+    public void ShowWorkspace(string name, string? workspace)
+    {
+        if (!SecondaryWindow.IsMain(name)) return;
+        SecondaryForm? form;
+        lock (_forms) _forms.TryGetValue(name, out form);
+        form?.ShowWorkspace(workspace);
+    }
+
     public bool Open(string name, string address)
     {
         lock (_asked)

@@ -236,8 +236,28 @@ public sealed class MainForm : OptimizedForm
             return;
         }
 
-        Text = WaitingBadge.Title(count);
+        _waitingCount = count;
+        Text = WaitingBadge.Title(count, _workspace);
         _badge.Show(count, description);
+    }
+
+    private int _waitingCount;
+    private string? _workspace;
+
+    /// <summary>
+    /// The workspace this window's page holds, worn in the title after the application's name (MAINWINDOWS3b), so two main
+    /// windows on two workspaces read apart in the taskbar and Alt-Tab. On this window's thread, posted from the bridge's.
+    /// </summary>
+    public void ShowWorkspace(string? workspace)
+    {
+        if (InvokeRequired)
+        {
+            Post(() => ShowWorkspace(workspace));
+            return;
+        }
+
+        _workspace = workspace;
+        Text = WaitingBadge.Title(_waitingCount, workspace);
     }
 
     /// <summary>

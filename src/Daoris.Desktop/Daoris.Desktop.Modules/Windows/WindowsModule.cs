@@ -33,7 +33,9 @@ public sealed class WindowsModule(
     // host carries none, which is only a test that does not care.
     Daoris.Driver.IInAppBrowser? browser = null,
     // The main window's taskbar button and title (NOTIFY1b). Null where there is no main window to badge.
-    ShowWaiting? badge = null)
+    ShowWaiting? badge = null,
+    // The workspace each main window's title wears (MAINWINDOWS3b). Null where there is no window to title.
+    ShowWorkspace? workspace = null)
     : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.WINDOWS";
@@ -85,6 +87,17 @@ public sealed class WindowsModule(
                 var description = PayloadHelper.GetOptionalValue<string>(request.Payload, "description");
                 badge?.Invoke(count, count > 0 && !string.IsNullOrWhiteSpace(description) ? description : null);
                 return Task.FromResult<object?>(new { Applied = badge is not null });
+            }
+
+            // A main window's page telling its frame its own title (MAINWINDOWS3b), so two windows on two workspaces read apart
+            // in the taskbar and Alt-Tab. Only the workspace is taken from it, by `WaitingBadge.Workspace`; the frame keeps the
+            // application's name. No name is the first main window, whose page is not opened under one.
+            case "SET_TITLE":
+            {
+                var name = PayloadHelper.GetOptionalValue<string>(request.Payload, "name") is { } named ? Known(named) : null;
+                var title = PayloadHelper.GetOptionalValue<string>(request.Payload, "title");
+                workspace?.Invoke(name, WaitingBadge.Workspace(title));
+                return Task.FromResult<object?>(new { Applied = workspace is not null });
             }
 
             case "OPEN":

@@ -245,7 +245,11 @@ public sealed record HarnessToolchain(
     // for a test double whose own home is nobody's, the stub, its protocol twin and a test's fake. Every real agent leaves it
     // false, since its own home is the person's and never Daoris's working space (D175 point 1). Not a twin: the CLI starts
     // no session.
-    bool RunsInOwnHome = false)
+    bool RunsInOwnHome = false,
+    // What this door's turn counts mean (USAGECAP1a2, D179 point 2), the usage history's `meaning`: `per-turn` where a probe
+    // measured each turn's own counts. A report's meaning is its wire's, so a door onto another agent declares its own and never
+    // reads its owner's; null says it was never measured, which the history keeps as `unknown`. Not a twin: the CLI keeps no turn.
+    string? TurnReport = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
