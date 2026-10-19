@@ -26,9 +26,14 @@ public static class JsonKeeping
     /// <paramref name="original"/> is the file as it stands when the edit is written, which may be another writer's since the read (the
     /// re-check's finding 1): what that writer changed and this edit did not stays as it is. Its lines end as its first line does (finding 3:
     /// an edit wrote LF over a file in CRLF).
+    /// <para><paramref name="sets"/> names the arrays that are sets (CONFIGMERGE1, D173's CONFIG1 note; <see cref="DriverConfig.Sets"/>), each
+    /// a key path, <c>*</c> any one name: an edit of one is the names it added and took, compared without case, made onto the file's array
+    /// as it stands (<see cref="Merged"/>), so two writers each adding a name keep both. Every other array is a value, written whole.</para>
     /// </summary>
-    /// <exception cref="JsonEditRefusedException">A path the edit changes lies under a value that is no longer an object.</exception>
-    public static string Kept(string original, string read, string edited)
+    /// <exception cref="JsonEditRefusedException">
+    /// A path the edit changes lies under a value that is no longer an object, or is a set that is no longer an array.
+    /// </exception>
+    public static string Kept(string original, string read, string edited, IReadOnlyList<string>? sets = null)
     {
         if (read == edited) return original;
         using var file = JsonDocument.Parse(original);
@@ -39,7 +44,7 @@ public static class JsonKeeping
             throw new JsonEditRefusedException(Changed(understood.RootElement, now.RootElement, "") ?? "", "");
         }
 
-        var plan = Plan(file.RootElement, understood.RootElement, now.RootElement, "", top: true);
+        var plan = Plan(file.RootElement, understood.RootElement, now.RootElement, "", top: true, sets ?? []);
         var text = JsonFile.Serialize(writer => Write(writer, plan));
         var end = original.IndexOf('\n');
         return end > 0 && original[end - 1] == '\r' ? text.Replace("\n", "\r\n", StringComparison.Ordinal) : text;
@@ -52,14 +57,18 @@ public static class JsonKeeping
     /// differ between them are made, under <see cref="Kept"/>'s rules, onto the file read again here. No edit writes nothing.
     /// <paramref name="found"/> says a file was there at the read: where there was none then and is none now, <paramref name="edited"/> is
     /// written whole in the writer's own layout, since there is nothing to keep. The CLI's twin is <c>jsonkeep.ts</c>' <c>writeKeeping</c>.
+    /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>), which
+    /// the CLI's <c>writeKeeping</c> takes too: with none, another writer's change landing between them was lost.</para>
     /// </summary>
     /// <exception cref="DriverException">
     /// The file there now does not read, holds a key twice in one object, or holds no object where this edit changes something inside one;
     /// nothing was written.
     /// </exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
     public static void Save(string path, bool found, string understood, string edited)
     {
         if (understood == edited) return;
+        using var held = KeepLock.Take(path);
         var name = Path.GetFileName(path);
         string? current = null;
         try
@@ -201,8 +210,10 @@ public static class JsonKeeping
     /// refused where the file's is no longer an object; one the edit left as read is the file's, as
     /// written; an object the edit changed is merged, refused where the file's is no longer an object; else the edit's. A key the edit
     /// set that the file no longer holds is added, an object with only the edit's own keys under it (the second re-check, finding 1).
+    /// A set of <paramref name="sets"/> is merged by its names (<see cref="Merged"/>), never written whole.
     /// </summary>
-    private static List<(string Name, Action<Utf8JsonWriter> Value)> Plan(JsonElement file, JsonElement read, JsonElement edited, string where, bool top)
+    private static List<(string Name, Action<Utf8JsonWriter> Value)> Plan(
+        JsonElement file, JsonElement read, JsonElement edited, string where, bool top, IReadOnlyList<string> sets)
     {
         var plan = new List<(string Name, Action<Utf8JsonWriter> Value)>();
         foreach (var property in file.EnumerateObject())
@@ -211,21 +222,33 @@ public static class JsonKeeping
             var path = Join(where, property.Name);
             var wasRead = read.TryGetProperty(property.Name, out var was);
             var isEdited = edited.TryGetProperty(property.Name, out var now);
+            var set = IsSet(sets, where, property.Name);
             if (!wasRead && !isEdited) plan.Add((property.Name, kept.WriteTo));
+            else if (!isEdited && set)
+            {
+                // A set the edit took whole loses only the names its reader read: another writer's stay, and it goes where none is left.
+                if (kept.ValueKind == JsonValueKind.Array && Merged(kept, was, null, keepEmpty: false) is { } rest) plan.Add((property.Name, rest));
+            }
             else if (!isEdited)
             {
                 // The writer leaves an emptied map out, so at the top its edit took the entries its reader read, not the map.
                 if (!top || was.ValueKind != JsonValueKind.Object || Changed(was, Nothing.RootElement, path) is not { } first) continue;
                 if (kept.ValueKind != JsonValueKind.Object) throw new JsonEditRefusedException(first, path);
-                var unread = Plan(kept, was, Nothing.RootElement, path, top: false);
+                var unread = Plan(kept, was, Nothing.RootElement, path, top: false, sets);
                 if (unread.Count > 0) plan.Add((property.Name, writer => Write(writer, unread)));
+            }
+            else if (set && now.ValueKind == JsonValueKind.Array && !(wasRead && was.GetRawText() == now.GetRawText()))
+            {
+                // CONFIGMERGE1: the names this edit added and took, made onto the set as it stands; one no longer an array refuses it.
+                if (kept.ValueKind != JsonValueKind.Array) throw new JsonEditRefusedException(path, path, list: true);
+                plan.Add((property.Name, Merged(kept, wasRead ? was : null, now, keepEmpty: true)!));
             }
             else if (!wasRead && now.ValueKind == JsonValueKind.Object)
             {
                 // A map its reader never saw is no whole value: its keys are the edit's paths, made into what another writer wrote
                 // meanwhile (the re-check of round 3: written whole, it deleted that writer's entries, or overwrote its string).
                 if (kept.ValueKind != JsonValueKind.Object) throw new JsonEditRefusedException(Changed(Nothing.RootElement, now, path) ?? path, path);
-                var merged = Plan(kept, Nothing.RootElement, now, path, top: false);
+                var merged = Plan(kept, Nothing.RootElement, now, path, top: false, sets);
                 plan.Add((property.Name, writer => Write(writer, merged)));
             }
             else if (!wasRead) plan.Add((property.Name, now.WriteTo));
@@ -233,7 +256,7 @@ public static class JsonKeeping
             else if (was.ValueKind == JsonValueKind.Object && now.ValueKind == JsonValueKind.Object)
             {
                 if (kept.ValueKind != JsonValueKind.Object) throw new JsonEditRefusedException(Changed(was, now, path) ?? path, path);
-                var merged = Plan(kept, was, now, path, top: false);
+                var merged = Plan(kept, was, now, path, top: false, sets);
                 plan.Add((property.Name, writer => Write(writer, merged)));
             }
             else plan.Add((property.Name, now.WriteTo));
@@ -252,18 +275,76 @@ public static class JsonKeeping
             }
 
             if (file.TryGetProperty(property.Name, out _)) continue;
-            if (!read.TryGetProperty(property.Name, out var was)) plan.Insert(at++, (property.Name, property.Value.WriteTo));
+            var wasRead = read.TryGetProperty(property.Name, out var was);
+            if (IsSet(sets, where, property.Name) && property.Value.ValueKind == JsonValueKind.Array)
+            {
+                // A set the file no longer holds is made with the names this edit added alone, never the ones it read.
+                if (Merged(null, wasRead ? was : null, property.Value, keepEmpty: false) is { } made) plan.Insert(at++, (property.Name, made));
+            }
+            else if (!wasRead) plan.Insert(at++, (property.Name, property.Value.WriteTo));
             else if (was.GetRawText() == property.Value.GetRawText()) continue;
             else if (was.ValueKind == JsonValueKind.Object && property.Value.ValueKind == JsonValueKind.Object)
             {
                 // Taken out since the read: made again with only the edit's own keys under it, never the ones it left as read.
-                var made = Plan(Nothing.RootElement, was, property.Value, Join(where, property.Name), top: false);
+                var made = Plan(Nothing.RootElement, was, property.Value, Join(where, property.Name), top: false, sets);
                 if (made.Count > 0) plan.Insert(at++, (property.Name, writer => Write(writer, made)));
             }
             else plan.Insert(at++, (property.Name, property.Value.WriteTo));
         }
 
         return plan;
+    }
+
+    /// <summary>Whether the key <paramref name="name"/> of the object at <paramref name="where"/> is one of <paramref name="sets"/>.</summary>
+    private static bool IsSet(IReadOnlyList<string> sets, string where, string name)
+    {
+        foreach (var set in sets)
+        {
+            var dot = set.LastIndexOf('.');
+            var (parent, leaf) = dot < 0 ? ("", set) : (set[..dot], set[(dot + 1)..]);
+            if (parent == where && (leaf == "*" || leaf == name)) return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A set made (CONFIGMERGE1, D173's CONFIG1 note): <paramref name="file"/>'s array as it stands, null for none, with every name the edit
+    /// from <paramref name="was"/> to <paramref name="now"/> took gone in any spelling and every name it added that is not there in any case
+    /// put at the end in the edit's order; every other element, another writer's names and a value of any other kind, stays where it
+    /// stands. Names compare as <c>OrdinalIgnoreCase</c> compares them, as the CLI's <c>casefold.ts</c> does. Null, written as no key,
+    /// where nothing is left and <paramref name="keepEmpty"/> does not keep an empty array.
+    /// </summary>
+    private static Action<Utf8JsonWriter>? Merged(JsonElement? file, JsonElement? was, JsonElement? now, bool keepEmpty)
+    {
+        static List<string> Names(JsonElement? array) => array is { ValueKind: JsonValueKind.Array } items
+            ? [.. items.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
+            : [];
+        var read = Names(was);
+        var edited = Names(now);
+        var taken = read.Where(name => !edited.Contains(name, StringComparer.OrdinalIgnoreCase)).ToList();
+        var kept = file is { ValueKind: JsonValueKind.Array } array
+            ? array.EnumerateArray()
+                .Where(item => item.ValueKind != JsonValueKind.String || !taken.Contains(item.GetString()!, StringComparer.OrdinalIgnoreCase))
+                .ToList()
+            : [];
+        var present = kept.Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!).ToList();
+        var added = new List<string>();
+        foreach (var name in edited)
+        {
+            if (read.Contains(name, StringComparer.OrdinalIgnoreCase) || present.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
+            present.Add(name);
+            added.Add(name);
+        }
+
+        if (kept.Count + added.Count == 0 && !keepEmpty) return null;
+        return writer =>
+        {
+            writer.WriteStartArray();
+            foreach (var item in kept) item.WriteTo(writer);
+            foreach (var name in added) writer.WriteStringValue(name);
+            writer.WriteEndArray();
+        };
     }
 
     /// <summary>
@@ -297,12 +378,12 @@ public static class JsonKeeping
 /// An edit refused, nothing written: it changes <see cref="EditPath"/>, and <see cref="Holder"/>, the value that path lies under, is no
 /// longer an object in the file as it stands (FABRIC-GRAPH1's second re-check, finding 1). Another writer made it a string, a number or
 /// an array since this one read it; writing the stale object over it would undo that writer's change. The CLI's twin is
-/// <c>EditRefused</c> in <c>jsonkeep.ts</c>.
+/// <c>EditRefused</c> in <c>jsonkeep.ts</c>. A set (<paramref name="list"/>, CONFIGMERGE1) is refused where it is no longer an array.
 /// </summary>
-public sealed class JsonEditRefusedException(string editPath, string holder)
+public sealed class JsonEditRefusedException(string editPath, string holder, bool list = false)
     : Exception(holder.Length == 0
         ? $"this edit changes `{editPath}`, and the file is no longer a JSON object"
-        : $"this edit changes `{editPath}`, and `{holder}` is no longer an object there")
+        : $"this edit changes `{editPath}`, and `{holder}` is no longer {(list ? "a list" : "an object")} there")
 {
     /// <summary>The key path the edit changes, its names joined by dots.</summary>
     public string EditPath { get; } = editPath;

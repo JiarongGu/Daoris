@@ -32,7 +32,14 @@ public static class SessionMove
     /// </summary>
     public const string TakeBack = "take-back";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack;
+    /// <summary>
+    /// Ask Daoris's housekeeping tool asking for one operation (HELPMODE1c2a, D183's note): written by the connector, the agent's
+    /// and never the person's, taken by the loop running the conversation, judged there at the call, and answered beside the
+    /// request in <see cref="HousekeepingAnswer"/>'s shape. Keyed as a say is.
+    /// </summary>
+    public const string Housekeep = "housekeep";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack or Housekeep;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -46,6 +53,9 @@ public static class RequestDoor
 
     /// <summary>An abandon stopping or ending what of its work another process runs (PAUSE1d, D132 §3.4): <see cref="WorkAbandoning"/>.</summary>
     public const string Abandon = "abandon";
+
+    /// <summary>Ask Daoris's housekeeping tool (HELPMODE1c2a): the agent's, through its connector, never the person's.</summary>
+    public const string Help = "help";
 }
 
 /// <summary>One move asked of one session, for whichever loop on the home runs it.</summary>
@@ -91,6 +101,57 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
 
     /// <summary>A take-back's word: the id it waits under on the record (SAIDBACK1c); null for any other move.</summary>
     public string? Word { get; init; }
+
+    /// <summary>A housekeeping request's operation, one of <see cref="ConfiguredAccess.HousekeepingBuilt"/> (HELPMODE1c2a); null for any other move.</summary>
+    public string? Operation { get; init; }
+
+    /// <summary>A housekeeping request's repository, by its registered name; null for a look at every one, and for any other move.</summary>
+    public string? Repository { get; init; }
+
+    /// <summary>A housekeeping request's branches, by name, never a path; none for a look, and for any other move.</summary>
+    public IReadOnlyList<string> Branches { get; init; } = [];
+}
+
+/// <summary>
+/// What became of a housekeeping request (HELPMODE1c2a), written beside it for the tool that asked: the operation, whether it was
+/// carried out, a code where it was not, and the words the agent reads. A twin: the service's <c>HousekeepingBox</c> reads
+/// <c>said</c> by the same name.
+/// </summary>
+public sealed record HousekeepingAnswer(string Operation, bool Done, string? Code, string Said)
+{
+    /// <summary>No service answered, so no record could be read.</summary>
+    public const string NoService = "no-service";
+
+    /// <summary>The session is not an Ask Daoris conversation of this machine's.</summary>
+    public const string NotHelp = "not-help";
+
+    /// <summary>The person has not chosen the operation in configured access.</summary>
+    public const string NotGranted = "not-granted";
+
+    /// <summary>Chosen after this conversation's start, which was not handed it: it holds from the next start.</summary>
+    public const string NotHanded = "not-handed";
+
+    /// <summary>The repository is registered in another workspace than the conversation's.</summary>
+    public const string Outside = "outside";
+
+    /// <summary>No repository of that name is registered here.</summary>
+    public const string Unknown = "unknown";
+
+    /// <summary>The repository has no checkout on this machine.</summary>
+    public const string NoCheckout = "no-checkout";
+
+    /// <summary>The request did not name what its operation acts on, or named it as no branch of Daoris's.</summary>
+    public const string Named = "named";
+
+    /// <summary>The discard's judge kept the branch.</summary>
+    public const string Kept = "kept";
+
+    /// <summary>The judgement failed on its way: git, the service or the disk.</summary>
+    public const string Failed = "failed";
+
+    /// <summary>A refusal of <paramref name="operation"/> with its code, its words ending that nothing was done.</summary>
+    public static HousekeepingAnswer Refused(string operation, string code, string said) =>
+        new(operation, false, code, $"{said} Nothing was done.");
 }
 
 /// <summary>
@@ -118,6 +179,10 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
 /// <para><b>And for a terminal's words</b> (MSG1e, D137 §5.2): a say is named by its own key beside the session's id, and the
 /// loop that takes it writes where the words stand beside it (<see cref="Answer"/>), since a say moves no record the asker could
 /// watch. An answer nobody read is dropped with the requests nobody took.</para>
+///
+/// <para><b>And for Ask Daoris's housekeeping tools</b> (HELPMODE1c2a, D183's note): the connector, which reaches no judge of its own,
+/// writes a keyed <see cref="SessionMove.Housekeep"/> for its conversation's session and waits for the answer beside it
+/// (<see cref="HousekeepingAnswer"/>), withdrawing it where nobody took it in time. The connector is the twin writer.</para>
 /// </remarks>
 public sealed partial class SessionRequests(string home)
 {
@@ -373,6 +438,14 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(held));
     }
 
+    /// <summary>What became of a housekeeping request (HELPMODE1c2a), written beside it as a say's answer is, for the tool that asked.</summary>
+    public void Answer(SessionRequest request, HousekeepingAnswer answer)
+    {
+        var path = AnswerPath(request);
+        Directory.CreateDirectory(Folder);
+        AtomicFile.WriteText(path, ToJson(answer));
+    }
+
     /// <summary>
     /// A say's answer, read once and removed; null while none is written. One held open that moment is read at the next ask,
     /// never dropped; one that does not read as an answer is removed.
@@ -448,6 +521,11 @@ public sealed partial class SessionRequests(string home)
                 Key = Text("key"),
                 Now = root.TryGetProperty("now", out var now) && now.ValueKind == JsonValueKind.True,
                 Word = Text("takeBackWord"),
+                Operation = Text("operation"),
+                Repository = Text("repository"),
+                Branches = root.TryGetProperty("branches", out var branches) && branches.ValueKind == JsonValueKind.Array
+                    ? [.. branches.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
+                    : [],
             };
         }
         catch (JsonException)
@@ -507,6 +585,27 @@ public sealed partial class SessionRequests(string home)
         if (request.Key is not null) writer.WriteString("key", request.Key);
         if (request.Now) writer.WriteBoolean("now", true);
         if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
+        if (request.Operation is not null)
+        {
+            writer.WriteString("operation", request.Operation);
+            if (request.Repository is not null) writer.WriteString("repository", request.Repository);
+            writer.WriteStartArray("branches");
+            foreach (var branch in request.Branches) writer.WriteStringValue(branch);
+            writer.WriteEndArray();
+        }
+
+        writer.WriteEndObject();
+    });
+
+    // The twin's fields, in its order (HELPMODE1c2a): the service's HousekeepingBox reads `said`.
+    private static string ToJson(HousekeepingAnswer answer) => JsonFile.Serialize(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteString("operation", answer.Operation);
+        writer.WriteBoolean("done", answer.Done);
+        if (answer.Code is null) writer.WriteNull("code");
+        else writer.WriteString("code", answer.Code);
+        writer.WriteString("said", answer.Said);
         writer.WriteEndObject();
     });
 

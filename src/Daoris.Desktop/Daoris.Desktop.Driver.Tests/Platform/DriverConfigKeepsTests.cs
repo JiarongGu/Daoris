@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -35,6 +36,61 @@ public sealed class DriverConfigKeepsTests
         {
             if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
         }
+    }
+
+    /// <summary>
+    /// CONFIGMERGE1 (D173's CONFIG1 note): which arrays are sets, merged by their names, is one table both twins carry, the CLI's
+    /// <c>DRIVER_SETS</c>; every other array is a value, written whole.
+    /// </summary>
+    [Fact]
+    public void The_arrays_merged_by_their_names_are_the_tables_as_the_terminals_are() =>
+        Assert.Equal(Table.RootElement.GetProperty("sets").EnumerateArray().Select(set => set.GetString()!), DriverConfig.Sets);
+
+    /// <summary>
+    /// CASEMAP1 (D173's CONFIG1 note): every per-name map reads a name written twice in any case where first readable, its first
+    /// spelling and value, row for row with the CLI's <c>configkeeps.test.ts</c> (the table's <c>names</c>).
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Names))]
+    public void A_name_written_twice_in_any_case_reads_as_the_terminal_reads_it(string name, string map, string file, string read)
+    {
+        var config = DriverConfig.Parse(file);
+        JsonNode? Value(object value) => value switch
+        {
+            string text => JsonValue.Create(text),
+            bool flag => JsonValue.Create(flag),
+            int count => JsonValue.Create(count),
+            IReadOnlyList<string> names => new JsonArray([.. names.Select(each => (JsonNode?)JsonValue.Create(each))]),
+            _ => throw new InvalidOperationException($"the table names a map this test does not read: {map}"),
+        };
+        IEnumerable<KeyValuePair<string, object>> Entries<T>(IReadOnlyDictionary<string, T> entries) where T : notnull =>
+            entries.Select(pair => new KeyValuePair<string, object>(pair.Key, pair.Value));
+        var entries = map switch
+        {
+            "lines" => Entries(config.Lines),
+            "workspaceLines" => Entries(config.WorkspaceLines),
+            "readAcross" => Entries(config.ReadAcross),
+            "workspaceReadAcross" => Entries(config.WorkspaceReadAcross),
+            "writeAcross" => Entries(config.WriteAcross),
+            "forgiven" => Entries(config.Forgiven),
+            "languages" => Entries(config.Languages),
+            "released" => Entries(config.Released),
+            _ => throw new InvalidOperationException($"the table names a map this test does not read: {map}"),
+        };
+        var actual = new JsonObject([.. entries.Select(pair => new KeyValuePair<string, JsonNode?>(pair.Key, Value(pair.Value)))]);
+        Assert.Equal((name, read), (name, actual.ToJsonString()));
+    }
+
+    public static TheoryData<string, string, string, string> Names()
+    {
+        var rows = new TheoryData<string, string, string, string>();
+        foreach (var row in Table.RootElement.GetProperty("names").EnumerateArray())
+        {
+            rows.Add(row.GetProperty("name").GetString()!, row.GetProperty("map").GetString()!, row.GetProperty("file").GetRawText(),
+                JsonNode.Parse(row.GetProperty("read").GetRawText())!.ToJsonString());
+        }
+
+        return rows;
     }
 
     /// <summary>The re-check's finding 3: one rule for a key written twice in one object, the table's <c>twice</c>.</summary>
@@ -74,6 +130,10 @@ public sealed class DriverConfigKeepsTests
         {
             "none" => config,
             "drivable" => config.WithDrivable(Text("repository"), edit.GetProperty("on").GetBoolean()),
+            "hold" => config.WithHold(Text("repository"), edit.GetProperty("on").GetBoolean()),
+            "trees" => config.WithTrees(Text("repository"), edit.GetProperty("on").GetBoolean()),
+            // CONFIGMERGE1: a target declared or taken back, through the door the terminal's `write-across` goes through.
+            "write-across" => config.WithWriteAcross(Text("repository"), Text("to"), edit.GetProperty("on").GetBoolean()),
             "landing" => config.WithLanding(Text("repository"), Rule(edit.GetProperty("rule"))),
             "workspace-landing" => config.WithWorkspaceLanding(Text("workspace"), Rule(edit.GetProperty("rule"))),
             "landing-clear" => config.WithLanding(Text("repository"), null),

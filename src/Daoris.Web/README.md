@@ -52,6 +52,10 @@ Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside i
 *This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`Wiring*.tsx`, molecules over props); its card
 *Left in your own tool home* (`WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
 ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand.
+*AI features* (`AiDomain.tsx`) draws Ask Daoris's *Configured access* (`help/access/ConfiguredAccess.tsx`) under its access row
+while restricted: each grant the driver serves comes from `STATE`'s `helpGrants`, with the operations it acts on (`built`), and is
+pressed over `SET_HELP_GRANT` one operation at a time; an operation not built is drawn disabled, and a grant the driver does not
+serve yet is drawn from `help/access/grants.ts` alone and sends nothing (HELPMODE1c2b: housekeeping is served).
 
 **An account is named by one rule, wherever it is said** (`src/agents/agents.ts`, D125's ACCTNAME1 and ACCOUNTID1b notes):
 `accountName` leads a row, `accountWho` sits beside it, and `accountLabel` is the one line a chip, a pill, a note or the

@@ -71,6 +71,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_INTAKE: { scopes: ['driver', 'harnesses'] },
   SET_HELPER: { scopes: ['driver'] },
   SET_HELP_MODE: { scopes: ['driver'] },
+  SET_HELP_GRANT: { scopes: ['driver'] },
   TRUST_FOLDER: { scopes: ['driver'] },
   RETRY_QUEST: { scopes: ['sessions', 'driver'] },
   SHOW_REVIEW_AGAIN: { scopes: ['driver'] },

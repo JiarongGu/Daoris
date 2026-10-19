@@ -259,6 +259,30 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotContain(ToolNames(), name => name.StartsWith("channel_") && name is not ("channel_post" or "channel_read"));
     }
 
+    /// <summary>
+    /// HELPMODE1c2a (the Ask Daoris modes design §4.1): the housekeeping tools are Ask Daoris's alone and act only as the person
+    /// granted them; the two that remove take a repository and branch names, never a path, and say each target is judged again
+    /// and nothing is forced. No tool drops a recovery ref.
+    /// </summary>
+    [Fact]
+    public void The_housekeeping_tools_say_whose_they_are_and_what_holds_them()
+    {
+        var tools = ToolNames().Where(name => name.StartsWith("housekeeping_", StringComparison.Ordinal)).Order(StringComparer.Ordinal).ToList();
+        string Said(string tool) => string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
+
+        Assert.Equal(["housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect"], tools);
+        Assert.All(tools, tool => Assert.Contains("Ask Daoris only", Said(tool)));
+        Assert.All(tools, tool => Assert.Contains("granted", Said(tool)));
+        foreach (var act in new[] { "housekeeping_clean_up", "housekeeping_discard_branch" })
+        {
+            Assert.Contains("never a path", Said(act));
+            Assert.Contains("judged again", Said(act));
+            Assert.Contains("never forced", Said(act));
+        }
+
+        Assert.DoesNotContain(ToolNames(), name => name.Contains("recovery") || name.Contains("force"));
+    }
+
     // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]

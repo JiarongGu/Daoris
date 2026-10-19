@@ -151,6 +151,14 @@ public sealed class DaorisHomeTests
         Assert.Equal(HomeCategory.Data, HomeEntry.UsageHistory.Category);
     }
 
+    /// <summary>HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
+    [Fact]
+    public void Ask_Daoris_configured_access_is_a_data_file()
+    {
+        Assert.Same(HomeEntry.ConfiguredAccess, HomeEntry.Named("configured-access"));
+        Assert.Equal(HomeCategory.Data, HomeEntry.ConfiguredAccess.Category);
+    }
+
     /// <summary>
     /// 🔴 SERVICEHOME2 (D171 point 1), the driver's FINDDAORIS1 rows: a connector a person's own agent starts from its
     /// <c>.mcp.json</c>, or the HTTP host started from a terminal, is handed no variable, so a program the install carries
