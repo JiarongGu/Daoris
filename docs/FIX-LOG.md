@@ -41,6 +41,19 @@ repository.
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
 
+## 2026-10-20 — The full set on 3e88bcc failed three gates on tests the merges' filtered runs never reached (CONFIG1, PUSH1d1b)
+
+- **Symptom:** `cli` (the home census: `keeplock.test.ts` joined `driver.json` by hand), `tool-tests` (the reach scan:
+  `KeepLockProcessTests` read a CLI source no rule sent to `driver-process`) and `service` (`ChangeStreamHostTests` expected four
+  families where PUSH1d1b's `words` made five).
+- **Root cause:** each branch ran its own classes filtered, as the brief asks; the census, the reach scan and the HTTP host's
+  tests sit outside those filters, and CONFIG1 and HOMELAYOUT2 landed the same day, so neither saw the other's census.
+  `KeepLockProcessTests` built its import paths from spread parts, which the scan cannot read, so it saw a probe file.
+- **Fix:** `keeplock.test.ts` asks `homeEntry(fx.root, 'driver')`; `KeepLockProcessTests` names `keeplock.ts` and `driverconfig.ts`
+  whole; `ChangeStreamHostTests.Every` names `ChangeFamilies.Words`.
+- **Verify:** `keeplock.test.ts` 15 of 15; the census and the reach scan pass; `ChangeStreamHostTests` 5 of 5;
+  `KeepLockProcessTests` 2 of 2 under `process.runsettings`.
+
 ## 2026-10-20 — A repository's Setup test still read asking mode's old hint, that any other call is refused (AUTONOMY1b3)
 
 - **Symptom:** `ProjectsView.test.tsx`'s *sets its sessions' access on DAORIS.DRIVER, full access only through its ask, and
