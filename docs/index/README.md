@@ -152,14 +152,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 55 | 1086 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 150 | 2653 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 43 | 655 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 247 | 4238 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 80 | 1499 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 51 | 802 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 252 | 4330 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 81 | 1510 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 134 | 2245 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 60 | 715 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 152 | 2569 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 143 | 2375 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 62 | 729 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 154 | 2606 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 49 | 846 |
@@ -167,8 +167,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Quests/QuestReopenTests.cs` | 42 | 724 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestReopenSyncTests.cs` | 61 | 1059 |
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 102 | 2024 |
-| `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 81 | 1615 |
-| `src/Daoris.Service/README.md` | 93 | 781 |
+| `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 85 | 1696 |
+| `src/Daoris.Service/README.md` | 94 | 781 |
 
 ### CLI (`cli`)
 

@@ -433,6 +433,87 @@ public sealed class SessionLedgerTests : IAsyncLifetime
             refused.Message);
     }
 
+    // ——— SYNCMERGE1b0 (D178 point 3): a lost take's session goes on once the person brings its work forward.
+
+    /// <summary>
+    /// A quest this machine's take lost, as a fetch leaves one: published by another machine, and this machine's take kept on the open
+    /// step as a conflict. Its last session here stood down when the take lost, as the driver ends one (D68 §5).
+    /// </summary>
+    private async Task<(Quest Quest, Session StoodDown, QuestOperationRef Conflict)> LostTakeAsync()
+    {
+        var asked = new Quest("feedc0ffee01", "Asker", "Owner", "Do the thing", "Here is why.", QuestStatus.Open, null, Now, Now, Workspaces.Default);
+        await _quests.IntegrateAsync(Workspaces.Default,
+            [new QuestOperation(asked.Id, QuestOperationKind.Published, "m2", 1, Now, Published: asked, Number: 1)], 1);
+        var lost = await Working(asked, Now);
+        var conflict = new QuestOperationRef(_quests.Machine, 900001);
+        await _quests.IntegrateAsync(Workspaces.Default,
+        [
+            new QuestOperation(asked.Id, QuestOperationKind.Conflict, _quests.Machine, 900001, Now.AddMinutes(1), "This machine's session.",
+                Attempted: QuestStatus.Taken, Number: 2),
+        ], 2);
+        Assert.Equal(QuestClaim.Lost, await _quests.ClaimAsync(asked.Id));
+        Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(
+            lost.Id, "stood-down", "stopped by this machine's driver: its take lost.", null, null, Now.AddMinutes(2))).Refusal);
+        return (asked, lost, conflict);
+    }
+
+    /// <summary>
+    /// 🔴 Its take lost, a session here stood down, and the person brought the work forward (D178 point 3): the quest is taken here again
+    /// by a fresh take, which settles the conflict. The stood-down session is carried on over that take, which is this machine's own for it
+    /// though no session here marked it and it was made after the session ended, whether or not a remote confirmed it. Once: the session
+    /// carried on stands down in its turn, and the same take carries nothing on again.
+    /// </summary>
+    [Fact]
+    public async Task A_stood_down_session_whose_lost_take_was_brought_forward_is_carried_on_once()
+    {
+        var (quest, stoodDown, conflict) = await LostTakeAsync();
+        Assert.Equal(QuestForwardRefusal.None, (await _quests.BringForwardAsync(quest.Id, conflict, Now.AddMinutes(3))).Refusal);
+        Assert.Equal(QuestClaim.Unconfirmed, await _quests.ClaimAsync(quest.Id));
+
+        var carried = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(4));
+
+        Assert.Equal(SessionOpenRefusal.None, carried.Refusal);
+        Assert.NotEqual(stoodDown.Id, carried.Session!.Id);
+        Assert.Equal(quest.Id, carried.Session.Quest);
+
+        foreach (var state in new[] { "starting", "working", "stood-down" })
+        {
+            Assert.Equal(SessionAdvanceRefusal.None,
+                (await _ledger.AdvanceAsync(carried.Session.Id, state, null, null, null, Now.AddMinutes(5))).Refusal);
+        }
+
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
+    }
+
+    /// <summary>
+    /// 🔴 A stand-down goes on only after a bring-forward: taken here again by an ordinary take (a chat's, or work outside Daoris), the
+    /// stood-down session is not carried on, as before.
+    /// </summary>
+    [Fact]
+    public async Task A_stood_down_session_is_not_carried_on_over_an_ordinary_take()
+    {
+        var (quest, _, _) = await LostTakeAsync();
+        Assert.True((await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(3))).Moved);
+
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(4))).Refusal);
+    }
+
+    /// <summary>
+    /// 🔴 A bring-forward that lost again (D178 point 3): another machine's take reached the remote before the fresh take, which the
+    /// rebase keeps as a conflict, and its mark goes with it. Nothing goes on: the quest is the other machine's.
+    /// </summary>
+    [Fact]
+    public async Task A_stood_down_session_whose_bring_forward_lost_again_is_not_carried_on()
+    {
+        var (quest, _, conflict) = await LostTakeAsync();
+        Assert.Equal(QuestForwardRefusal.None, (await _quests.BringForwardAsync(quest.Id, conflict, Now.AddMinutes(3))).Refusal);
+        await _quests.IntegrateAsync(Workspaces.Default,
+            [new QuestOperation(quest.Id, QuestOperationKind.Taken, "m3", 1, Now.AddMinutes(3), Number: 3)], 3);
+        Assert.Equal(QuestClaim.Lost, await _quests.ClaimAsync(quest.Id));
+
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(4))).Refusal);
+    }
+
     /// <summary>
     /// Interrupted says whose decision a STOP was, so only a stop carries it: a move anywhere else asking
     /// for it is refused, and the record does not move.
