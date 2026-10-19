@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A terminal's words or stop for one session no longer wait behind another session's slow delivery, and the plugins'
+  evaluation steps run beside the driver's look instead of holding the next one.
 - A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
   test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
   call the rules refused no longer reads as still running.
