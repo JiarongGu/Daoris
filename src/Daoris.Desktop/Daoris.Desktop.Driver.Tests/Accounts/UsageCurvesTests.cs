@@ -48,12 +48,17 @@ public sealed class UsageCurvesTests
     public void A_three_point_curve_joins_its_points_with_straight_lines(double elapsed, double expected) =>
         Assert.Equal(expected, UsageCurves.Value([new CurvePoint(20, 10), new CurvePoint(60, 50), new CurvePoint(90, 90)], elapsed), 6);
 
+    // USAGERESET1: from three-quarters gone the week's tail rises evenly to the whole week at its reset, never in a jump, so
+    // the last 5% is spent rather than left to lapse, and headroom shrinks only as the reset nears.
     [Theory]
     [InlineData(0, 20)]
     [InlineData(50, 70)]
     [InlineData(75, 95)]
-    [InlineData(100, 95)]
-    public void The_smart_weekly_is_its_pace_plus_twenty_never_above_ninety_five(double elapsed, double expected) =>
+    [InlineData(80, 96)]
+    [InlineData(90, 98)]
+    [InlineData(99, 99.8)]
+    [InlineData(100, 100)]
+    public void The_smart_weekly_is_its_pace_plus_twenty_to_ninety_five_then_rises_evenly_to_a_hundred_at_its_reset(double elapsed, double expected) =>
         Assert.Equal(expected, UsageCurves.Value(UsageCurves.Smart("weekly")!, elapsed), 6);
 
     [Theory]

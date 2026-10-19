@@ -19,7 +19,9 @@ public static class UsageCurves
     /// </summary>
     public const int SwitchMargin = 10;
 
-    private const int WeeklyLead = 20, WeeklyCap = 95;
+    // The smart week: its pace plus the lead up to the knee, then evenly to the end at its reset (USAGERESET1). Duplicated
+    // deliberately in the CLI's and the page's `usagecurves.ts` / `usageCurves.ts`; the shared table holds the three as one.
+    private const int WeeklyLead = 20, WeeklyKnee = 95, WeeklyEnd = 100;
 
     /// <summary>A window's length, or null for a window this build does not know.</summary>
     public static TimeSpan? Length(string window) => window switch
@@ -52,13 +54,15 @@ public static class UsageCurves
     }
 
     /// <summary>
-    /// Daoris's own curve: <c>session</c> flat at <see cref="RotationUse.SmartSession"/>; <c>weekly</c> its pace plus twenty,
-    /// never above ninety-five. Null for a window this build does not know.
+    /// Daoris's own curve: <c>session</c> flat at <see cref="RotationUse.SmartSession"/>; <c>weekly</c> its pace plus twenty up
+    /// to ninety-five at three-quarters gone, then rising evenly to the whole week at its reset (USAGERESET1): never in a jump,
+    /// so what would lapse is spent as the reset nears while some headroom stays at every moment before it. Null for a
+    /// window this build does not know.
     /// </summary>
     public static IReadOnlyList<CurvePoint>? Smart(string window) => window switch
     {
         "session" => [new CurvePoint(0, RotationUse.SmartSession)],
-        "weekly" => [new CurvePoint(0, WeeklyLead), new CurvePoint(WeeklyCap - WeeklyLead, WeeklyCap), new CurvePoint(100, WeeklyCap)],
+        "weekly" => [new CurvePoint(0, WeeklyLead), new CurvePoint(WeeklyKnee - WeeklyLead, WeeklyKnee), new CurvePoint(100, WeeklyEnd)],
         _ => null,
     };
 

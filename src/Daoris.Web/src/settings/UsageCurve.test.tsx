@@ -70,12 +70,13 @@ describe('a window’s own points, edited', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Set my own curve' }));
 
     const editor = screen.getByRole('group', { name: 'Your rows for the weekly window' });
-    expect(within(editor).getAllByRole('spinbutton').map((field) => (field as HTMLInputElement).value)).toEqual(['0', '20', '75', '95', '100', '95']);
+    // Daoris's week rises from 95 at three-quarters gone to the whole week at its reset (USAGERESET1).
+    expect(within(editor).getAllByRole('spinbutton').map((field) => (field as HTMLInputElement).value)).toEqual(['0', '20', '75', '95', '100', '100']);
     await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 1' }));
     await userEvent.type(within(editor).getByRole('spinbutton', { name: 'Used, % · row 1' }), '30');
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
 
-    expect(onSave).toHaveBeenCalledWith([[0, 30], [75, 95], [100, 95]]);
+    expect(onSave).toHaveBeenCalledWith([[0, 30], [75, 95], [100, 100]]);
   });
 
   /** A point added after the last, and one taken out; the terminal's twin of what is saved. */
