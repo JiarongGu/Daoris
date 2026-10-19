@@ -33,6 +33,7 @@ public sealed class VerbLeasesTests
     [InlineData("register")]
     [InlineData("sync")]
     [InlineData("sync dismiss 12")]
+    [InlineData("sync forward 12 desk 41")]
     [InlineData("plugins install a.nupkg")]
     [InlineData("plugins new id --point p")]
     [InlineData("update --now")]

@@ -21,6 +21,7 @@ import type { Session } from '../data/api';
 import { list } from '../locales/format';
 import i18n from '../locales/i18n';
 import { en, zh } from '../locales';
+import { WorkspaceScopeProvider } from '../data/scope';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 
 /**
@@ -43,7 +44,11 @@ const session = (over: Partial<Session> = {}): Session => ({
 function acts(doors?: SessionDoors) {
   const notify = vi.fn();
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>
+      <WorkspaceScopeProvider initial="games">{children}</WorkspaceScopeProvider>
+    </QueryClientProvider>
+  );
   const { result } = renderHook(() => useSessionActs({ notify, doors }), { wrapper });
   return { result, notify };
 }
@@ -103,6 +108,14 @@ describe('the acts on a session', () => {
 
     act(() => result.current.run('detach', { session: session() }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:s1a2b3c4' } }));
+    // MAINWINDOWS3: a session naming no workspace is followed in the window that detached it.
+    expect(JSON.parse(window.localStorage.getItem('daoris.workspace.opened')!)['session:s1a2b3c4']).toEqual({ follows: 'main' });
+
+    // …and one naming its workspace is held there, whatever this window moves to.
+    act(() => result.current.run('detach', { session: session({ workspace: 'studio' }) }));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem('daoris.workspace.opened')!)['session:s1a2b3c4'])
+      .toEqual({ workspace: 'studio' }));
+    window.localStorage.clear();
 
     act(() => result.current.run('copy', { session: session() }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Copied s1a2b3c4.'));

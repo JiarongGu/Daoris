@@ -102,7 +102,10 @@ once three batches hold the targets (MODELROLE1).
    starts, or after its commit and before `--continue`.** The harness's worktree isolation reads the checkout's git
    metadata, refuses while the merge tool is writing it, and leaves a locked worktree behind. A dispatch made once a merge's
    first gates had passed was refused the same way (2026-10-10), so a merge's gates are no safe moment either. Unlock it
-   (`git worktree unlock`) so the next prune takes it, and dispatch again. Two dispatched in one message
+   (`git worktree unlock`) so the next prune takes it, and dispatch again. The same refusal ("git could not be run to
+   resolve it") comes while a git-heavy run goes on beside (the driver's git half, a rehearsal): on 2026-10-19 one
+   `git rev-parse` took five seconds then, and the harness's check gave up. Remove the half-made tree it leaves (look
+   first: a clean checkout of an old commit, no commits of its own), and dispatch again; a retry usually goes through. Two dispatched in one message
    while a merge's gates ran were both refused the same way (2026-10-08), each a half-made tree holding only
    `.git` and `.claude`: remove each (`git worktree remove --force`, then its branch), and dispatch one at a time.
    **Never brief a worker to run or time a long run** (a `Process` half, a rehearsal, or a measurement of either):

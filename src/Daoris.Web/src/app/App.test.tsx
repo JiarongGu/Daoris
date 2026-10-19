@@ -136,6 +136,18 @@ describe('the shell in a browser, over two workspaces', () => {
     expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora');
   });
 
+  /** MAINWINDOWS3: two main windows on two workspaces would otherwise read the same on the taskbar and in Alt-Tab. */
+  it('the page\'s title names the workspace this window holds, and none for every workspace', async () => {
+    const every = shell();
+    expect(await screen.findByRole('combobox', { name: 'workspace' })).toHaveTextContent('Every workspace · 2');
+    expect(document.title).toBe('Daoris (道衍)');
+    every.unmount();
+
+    shell('aurora');
+    expect(await screen.findByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora');
+    expect(document.title).toBe('Daoris (道衍) — aurora');
+  });
+
   /**
    * D75: the Workspace menu is the scope's second door. It lists every workspace with what it holds,
    * ticks the scope, and choosing one scopes the window as the switcher does.

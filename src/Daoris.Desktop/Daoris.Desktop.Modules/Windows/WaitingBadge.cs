@@ -12,6 +12,12 @@ namespace Daoris.Desktop;
 public delegate void ShowWaiting(int count, string? description);
 
 /// <summary>
+/// A main window's page telling its frame the workspace it holds (MAINWINDOWS3b), for the title: <paramref name="name"/> is the
+/// window's, or null for the first main window; <paramref name="workspace"/> is null where the page names none.
+/// </summary>
+public delegate void ShowWorkspace(string? name, string? workspace);
+
+/// <summary>
 /// What the main window's taskbar button and title say of a count (NOTIFY1b): the judgement, here where it is tested,
 /// while the window draws the overlay and sets the title.
 /// </summary>
@@ -39,10 +45,29 @@ public static class WaitingBadge
     /// The window's title: the count before the name while anything waits. Past ninety-nine it says <c>99+</c>, as the
     /// page's own badge does (<c>design/ui.tsx</c>).
     /// </summary>
-    public static string Title(int count) => count switch
+    public static string Title(int count, string? workspace = null)
     {
-        <= 0 => Name,
-        <= 99 => $"({count.ToString(System.Globalization.CultureInfo.InvariantCulture)}) {Name}",
-        _ => $"(99+) {Name}",
-    };
+        var named = string.IsNullOrWhiteSpace(workspace) ? Name : $"{Name}{Separator}{workspace}";
+        return count switch
+        {
+            <= 0 => named,
+            <= 99 => $"({count.ToString(System.Globalization.CultureInfo.InvariantCulture)}) {named}",
+            _ => $"(99+) {named}",
+        };
+    }
+
+    /// <summary>What the page's title puts between the application's name and the workspace (<c>windowTitle</c>, the page's).</summary>
+    private const string Separator = " — ";
+
+    /// <summary>
+    /// The workspace a window's page names in its title (MAINWINDOWS3b): the part after the separator, taken only from a title
+    /// that starts with <see cref="Name"/> and the separator, so the frame's name stays its own and no other page text reaches
+    /// the taskbar. Null when the page names none.
+    /// </summary>
+    public static string? Workspace(string? pageTitle)
+    {
+        if (pageTitle is null || !pageTitle.StartsWith(Name + Separator, StringComparison.Ordinal)) return null;
+        var workspace = pageTitle[(Name.Length + Separator.Length)..].Trim();
+        return workspace.Length == 0 ? null : workspace;
+    }
 }

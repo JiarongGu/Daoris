@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Http;
 
@@ -32,5 +33,31 @@ public sealed class QuestResponseTests
         // A reason for something a quest no longer has, or that the answer now carries, is a stale reason.
         Assert.All(LeftOut.Keys, name => Assert.Contains(name, carried));
         Assert.All(LeftOut.Keys, name => Assert.DoesNotContain(name, answered));
+    }
+
+    /// <summary>
+    /// SYNCMERGE1b0: an older host answers none of a bring-forward's fields, and its answer reads as it did: a conflict neither lost to the
+    /// reopen nor brought forward, nothing settled, nobody named as holding the step, no machine named as this one, and a claim with no
+    /// bring-forward. Each field is written only when set, so a newer host's answer without them is the same.
+    /// </summary>
+    [Fact]
+    public void An_older_hosts_answer_reads_with_nothing_settled_held_or_brought_forward()
+    {
+        var web = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        const string Older = """
+            {"id":"abcdefabcdef","from":"Asker","to":"Keeper","title":"t","body":"b","status":"Taken","note":null,
+             "filed":"2026-10-19T00:00:00+00:00","updated":"2026-10-19T00:00:00+00:00","workspace":"default",
+             "links":[],"attachments":[],"then":[],"parent":null,
+             "conflicts":[{"machine":"m1","attempted":"Taken","note":null,"at":"2026-10-19T00:00:00+00:00","sequence":3}]}
+            """;
+
+        var read = JsonSerializer.Deserialize<QuestResponse>(Older, web)!;
+
+        Assert.Null(read.Settled);
+        Assert.Null(read.Holder);
+        Assert.Null(read.Here);
+        var conflict = Assert.Single(read.Conflicts);
+        Assert.Equal((null, null, null), (conflict.LostToTheReopen, conflict.Ended, conflict.Forward));
+        Assert.Null(JsonSerializer.Deserialize<QuestClaimResponse>("""{"quest":"abcdefabcdef","claim":"held"}""", web)!.Forward);
     }
 }

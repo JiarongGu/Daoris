@@ -1052,6 +1052,136 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             .Single(row => row.GetProperty("id").GetString() == quest).GetProperty("status").GetString());
     }
 
+    // ——— SYNCMERGE1b0 (D178 points 3, 7 and 8): what a bring-forward needs said, to the driver and the page.
+
+    /// <summary>A quest as the list answers it, closed ones included, to a caller on this machine or off it.</summary>
+    private async Task<JsonElement> QuestRowAsync(string id, System.Net.IPAddress? from = null) =>
+        (await host.GetAsync("/api/quests?includeClosed=true", from)).Json.EnumerateArray()
+        .Single(row => row.GetProperty("id").GetString() == id);
+
+    /// <summary>
+    /// A chain's step whose take this machine lost, as a fetch leaves one: published by another machine, and this machine's take kept on
+    /// the open step as a conflict, with whatever came before it. A fetch names an operation by its machine and sequence, and the host is
+    /// the class's, so each is named by a sequence of its own, far from any this machine issues.
+    /// </summary>
+    private async Task<QuestOperationRef> LostHereAsync(
+        string id, long sequence, string circle, DateTimeOffset now, params QuestOperation[] before)
+    {
+        var lost = new QuestOperationRef(host.Composed.Quests.Machine, sequence);
+        var asked = new Quest(id, "Asker", "Keeper", "A step this machine lost", "why", QuestStatus.Open, null, now, now, circle)
+        {
+            Parent = "feedfeedfeed", GrewFrom = new QuestOperationRef("m2", 5),
+        };
+        QuestOperation[] fetched =
+        [
+            new(id, QuestOperationKind.Published, "m2", sequence, now, Published: asked),
+            .. before,
+            new(id, QuestOperationKind.Conflict, lost.Machine, lost.Sequence, now, "This machine's session.", Attempted: QuestStatus.Taken),
+        ];
+        await host.Composed.Quests.IntegrateAsync(circle, fetched.Select((operation, at) => operation with { Number = at + 1 }).ToList(), fetched.Length);
+        return lost;
+    }
+
+    /// <summary>
+    /// The person brings their machine's lost take forward. The quest answers the conflict settled, brought forward, with the take it made
+    /// and that take's standing, unconfirmed on a host with no remote (D178 point 8); this machine holds the step, and the answer names this
+    /// machine, to a caller on it, so the page knows the conflict and the take as its own. The claim says the take came from the
+    /// bring-forward, which the driver carries the kept session on from (SYNCMERGE1b). Before the press: an open conflict, nobody holding the
+    /// step, and a claim lost with no bring-forward.
+    /// </summary>
+    [Fact]
+    public async Task A_brought_forward_conflict_is_answered_settled_with_its_take_and_the_claim_names_that_take()
+    {
+        var now = DateTimeOffset.Parse("2026-10-19T12:00:00Z");
+        var machine = host.Composed.Quests.Machine;
+        const string id = "5e771ed00001";
+        var lost = await LostHereAsync(id, 9_100_000, "forwarded", now);
+
+        var before = await QuestRowAsync(id);
+        Assert.Equal(lost.Sequence, Assert.Single(before.GetProperty("conflicts").EnumerateArray()).GetProperty("sequence").GetInt64());
+        Assert.False(before.TryGetProperty("holder", out _));
+        Assert.False(before.TryGetProperty("settled", out _));
+        var lostClaim = (await host.GetAsync($"/api/quests/{id}/claim")).Json;
+        Assert.Equal("lost", lostClaim.GetProperty("claim").GetString());
+        Assert.False(lostClaim.TryGetProperty("forward", out _));
+
+        var pressed = await host.PostAsync($"/api/quests/{id}/conflicts/forward", new { machine, sequence = lost.Sequence });
+        Assert.Equal(200, pressed.Status);
+
+        var after = await QuestRowAsync(id);
+        Assert.Empty(after.GetProperty("conflicts").EnumerateArray());
+        var settled = Assert.Single(after.GetProperty("settled").EnumerateArray());
+        Assert.Equal((machine, lost.Sequence, "Taken", "brought-forward"), (
+            settled.GetProperty("machine").GetString(), settled.GetProperty("sequence").GetInt64(),
+            settled.GetProperty("attempted").GetString(), settled.GetProperty("ended").GetString()));
+        Assert.False(settled.TryGetProperty("lostToTheReopen", out _));
+        var forward = settled.GetProperty("forward");
+        Assert.Equal((machine, "unconfirmed"), (forward.GetProperty("machine").GetString(), forward.GetProperty("standing").GetString()));
+        Assert.Equal(machine, after.GetProperty("holder").GetString());
+        Assert.Equal(machine, after.GetProperty("here").GetString());
+        Assert.Equal(machine, pressed.Json.GetProperty("quest").GetProperty("here").GetString());
+
+        var claim = (await host.GetAsync($"/api/quests/{id}/claim")).Json;
+        Assert.Equal("unconfirmed", claim.GetProperty("claim").GetString());
+        var made = claim.GetProperty("forward");
+        Assert.Equal((machine, forward.GetProperty("sequence").GetInt64()), (made.GetProperty("machine").GetString(), made.GetProperty("sequence").GetInt64()));
+        Assert.Equal(forward.GetProperty("at").GetDateTimeOffset(), made.GetProperty("at").GetDateTimeOffset());
+
+        // This machine's id is the page's, on this machine: a caller off it is told none.
+        Assert.False((await QuestRowAsync(id, DaorisHost.OffMachine)).TryGetProperty("here", out _));
+    }
+
+    /// <summary>
+    /// How each other conflict reads (D178 point 7): one lost to the person's reopen of the work its step grew from says so, and one lost to
+    /// another machine's take does not, that machine holding the step; dropped by a plain dismissal it is settled, `dropped`, with no
+    /// take; and brought forward but lost again to another machine's take, the conflict stays, its bring-forward named with the take it
+    /// made, now `lost`, which is a conflict of its own beside it, and the other machine holds the step. The claim then names no
+    /// bring-forward: nothing goes on from a take that lost.
+    /// </summary>
+    [Fact]
+    public async Task A_conflict_answers_a_loss_to_the_reopen_a_drop_and_a_bring_forward_lost_again()
+    {
+        var now = DateTimeOffset.Parse("2026-10-19T13:00:00Z");
+        var machine = host.Composed.Quests.Machine;
+        var source = new QuestOperationRef("m2", 5);
+        const string toTheReopen = "5e771ed00002", toATake = "5e771ed00003", lostAgain = "5e771ed00004";
+
+        await LostHereAsync(toTheReopen, 9_200_000, "contested", now,
+            new QuestOperation(toTheReopen, QuestOperationKind.Reopened, "m2", 9_200_001, now, "Build it again.", Submission: source));
+        Assert.Equal("source-reopened", (await host.GetAsync($"/api/quests/{toTheReopen}/claim")).Json.GetProperty("why").GetString());
+        Assert.True(Assert.Single((await QuestRowAsync(toTheReopen)).GetProperty("conflicts").EnumerateArray())
+            .GetProperty("lostToTheReopen").GetBoolean());
+
+        var taken = await LostHereAsync(
+            toATake, 9_300_000, "contested", now, new QuestOperation(toATake, QuestOperationKind.Taken, "m3", 9_300_001, now));
+        var held = await QuestRowAsync(toATake);
+        Assert.Equal("m3", held.GetProperty("holder").GetString());
+        Assert.False(Assert.Single(held.GetProperty("conflicts").EnumerateArray()).TryGetProperty("lostToTheReopen", out _));
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{toATake}/conflicts/dismiss", new { machine, sequence = taken.Sequence })).Status);
+        var dropped = Assert.Single((await QuestRowAsync(toATake)).GetProperty("settled").EnumerateArray());
+        Assert.Equal((taken.Sequence, "dropped"), (dropped.GetProperty("sequence").GetInt64(), dropped.GetProperty("ended").GetString()));
+        Assert.False(dropped.TryGetProperty("forward", out _));
+
+        var first = await LostHereAsync(lostAgain, 9_400_000, "contested", now);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{lostAgain}/conflicts/forward", new { machine, sequence = first.Sequence })).Status);
+        var fresh = Assert.Single((await QuestRowAsync(lostAgain)).GetProperty("settled").EnumerateArray()).GetProperty("forward").GetProperty("sequence").GetInt64();
+        await host.Composed.Quests.IntegrateAsync("contested",
+            [new QuestOperation(lostAgain, QuestOperationKind.Taken, "m4", 9_400_001, now.AddMinutes(1), Number: 9)], 9);
+
+        var again = await QuestRowAsync(lostAgain);
+        Assert.False(again.TryGetProperty("settled", out _));
+        Assert.Equal("m4", again.GetProperty("holder").GetString());
+        var conflicts = again.GetProperty("conflicts").EnumerateArray().ToList();
+        Assert.Equal([first.Sequence, fresh], conflicts.Select(conflict => conflict.GetProperty("sequence").GetInt64()));
+        var forward = conflicts[0].GetProperty("forward");
+        Assert.Equal((machine, fresh, "lost"), (
+            forward.GetProperty("machine").GetString(), forward.GetProperty("sequence").GetInt64(), forward.GetProperty("standing").GetString()));
+        Assert.False(conflicts[1].TryGetProperty("forward", out _));
+        var claim = (await host.GetAsync($"/api/quests/{lostAgain}/claim")).Json;
+        Assert.Equal("lost", claim.GetProperty("claim").GetString());
+        Assert.False(claim.TryGetProperty("forward", out _));
+    }
+
     /// <summary>
     /// FABRIC-CLOSE1c10: the person's word to go on with a started step that had submitted answers the step taken with no submission,
     /// and says its old result is cleared and that it must submit again.

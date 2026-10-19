@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 
 // The secondary windows' calls (MOD3: moved from `shell.test.tsx` beside the domain they call).
 
@@ -24,8 +24,11 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { setThemeChoice } from '../design/theme';
-import { useSecondaryWindowTheme, useTaskbarCount } from './windows';
+import { useScope, WorkspaceScopeProvider, type WindowStore } from '../data/scope';
+import { useOpenWindow, useSecondaryWindowTheme, useTaskbarCount } from './windows';
 
 /**
  * WINDOW2: a secondary window's page tells its own frame which theme it is in, by the name it was
@@ -105,5 +108,75 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
     renderHook(() => useTaskbarCount(3, '3 waiting on you'));
 
     expect(told()).toEqual([]);
+  });
+});
+
+/**
+ * MAINWINDOWS3 (D171's note): a window opened from a page follows that page's window, or holds its session's own
+ * workspace, so the page says which before it asks the shell for the window, and the new page finds it on arrival.
+ */
+describe('opening a window from a main window', () => {
+  const memory = (): WindowStore => {
+    const kept = new Map<string, string>();
+    return { read: (key) => kept.get(key) ?? null, write: (key, value) => void (value === null ? kept.delete(key) : kept.set(key, value)) };
+  };
+
+  afterEach(() => {
+    invoke.mockReset();
+    window.localStorage.clear();
+  });
+
+  /** The opener at `search` holding `workspace`, its `useOpenWindow`, and what a window opened under `name` holds. */
+  function opener(search: string, workspace: string) {
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>
+        <WorkspaceScopeProvider search={search} own={memory()}>{children}</WorkspaceScopeProvider>
+      </QueryClientProvider>
+    );
+    const { result } = renderHook(() => ({ open: useOpenWindow(), scope: useScope() }), { wrapper });
+    act(() => result.current.scope.setWorkspace(workspace));
+    return result;
+  }
+
+  function holds(name: string): string | null {
+    const held: { workspace?: string | null } = {};
+    function Probe() {
+      held.workspace = useScope().workspace;
+      return null;
+    }
+    render(<WorkspaceScopeProvider search={`?window=${encodeURIComponent(name)}`} own={memory()}><Probe /></WorkspaceScopeProvider>);
+    return held.workspace ?? null;
+  }
+
+  it('says the window follows this one before it asks the shell for it', async () => {
+    // Which windows were said to follow which when the shell was asked: the new page reads it on arrival.
+    let asked: string | null = null;
+    invoke.mockImplementation(async () => {
+      asked = window.localStorage.getItem('daoris.workspace.opened');
+      return { opened: true, windows: ['monitor'] };
+    });
+    const result = opener('?window=main%3A2', 'games');
+    window.localStorage.setItem('daoris.workspace', 'work');
+
+    await act(async () => {
+      await result.current.open.mutateAsync('monitor');
+    });
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'monitor' } });
+    expect(JSON.parse(asked ?? '{}')).toEqual({ monitor: { follows: 'main:2' } });
+    expect(holds('monitor')).toBe('games');
+  });
+
+  it('opens a session into its own workspace where the session names one, and asks the shell by its name alone', async () => {
+    invoke.mockResolvedValue({ opened: true, windows: ['session:abc12345'] });
+    const result = opener('', 'games');
+
+    await act(async () => {
+      await result.current.open.mutateAsync({ name: 'session:abc12345', workspace: 'studio' });
+    });
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:abc12345' } });
+    expect(holds('session:abc12345')).toBe('studio');
   });
 });

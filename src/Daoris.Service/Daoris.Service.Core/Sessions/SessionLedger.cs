@@ -961,10 +961,18 @@ public sealed class SessionLedger(
             ? await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false)
             : null;
         var tookHere = last is not null && await sessions.TookHereAsync(quest.Id, ct).ConfigureAwait(false);
+        // And a stand-down whose take lost, once the person brought its work forward (SYNCMERGE1b0, D178 point 3): the quest stands
+        // taken by the fresh take that settled its conflict, made after the record began. Once, since the session carried on is the
+        // newest record from then, and a later one is never older than the take. Read from the log; no record marks it.
+        var forward = last is { State: SessionState.StoodDown }
+            ? (await quests.ReadTakesAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
+            : null;
+        var brought = forward is not null && forward.At > last!.Created;
         var carriesOn = last is { State: SessionState.Failed }
                 or { State: SessionState.Completed, Answer: not null }
                 or { State: SessionState.Stopped, Interrupted: true }
-            || (last is { State: SessionState.Stopped } && tookHere);
+            || (last is { State: SessionState.Stopped } && tookHere)
+            || brought;
 
         if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)
         {
@@ -980,7 +988,7 @@ public sealed class SessionLedger(
 
         // A carry-on goes on with this machine's take, so it asks whose the take is (CARRY2). D80 asked none, so a
         // session that failed before its take carried on over whoever took the quest since.
-        if (carriesOn && await TakenElsewhereAsync(quest, last!, tookHere, ct).ConfigureAwait(false) is { } elsewhere)
+        if (carriesOn && await TakenElsewhereAsync(quest, last!, tookHere, brought, ct).ConfigureAwait(false) is { } elsewhere)
         {
             return new(SessionOpenRefusal.TakenElsewhere, elsewhere, Session: null);
         }
@@ -1352,8 +1360,11 @@ public sealed class SessionLedger(
     /// session here marked it (STANDDOWN2): a chat's connector took it, whose mark names no quest (CHATTAKE1), or work
     /// outside Daoris did. Both times are this machine's own clock. A take with no mark made before the session ended
     /// is still carried on, as D80 did: the HTTP door marks none, and a take from before STANDDOWN2 has none.</para>
+    ///
+    /// <para><b>A take the person's bring-forward made</b> (SYNCMERGE1b0, <paramref name="broughtForward"/>) is made after the session
+    /// ended and marked by no session, and is this machine's own for the session it carries on: the person made it for that work.</para>
     /// </remarks>
-    private async Task<string?> TakenElsewhereAsync(Quest quest, Session last, bool tookHere, CancellationToken ct)
+    private async Task<string?> TakenElsewhereAsync(Quest quest, Session last, bool tookHere, bool broughtForward, CancellationToken ct)
     {
         var take = (await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false))
             .LastOrDefault(operation => operation.Kind == QuestOperationKind.Taken);
@@ -1367,7 +1378,7 @@ public sealed class SessionLedger(
                 : $"Quest `#{quest.Id}` is taken on another machine: {over}";
         }
 
-        return !tookHere && take.At > last.Updated
+        return !tookHere && !broughtForward && take.At > last.Updated
             ? $"Quest `#{quest.Id}` was taken here after session `{last.Id}` ended, by a chat or by work outside Daoris: {over}"
             : null;
     }

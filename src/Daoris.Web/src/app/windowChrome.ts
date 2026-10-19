@@ -3,8 +3,8 @@ import type { CaptionButtonRect } from '@shenora/react';
 import { WindowCommands, useShenora, useWindowMaximized } from '@shenora/react';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from '../work/caption';
 import { effectiveDark, subscribeTheme } from '../design/theme';
-import { tellFrameTheme, useEngineTheme } from '../bridge/shell';
-import { anotherMainWindow } from '../work/window';
+import { tellFrameTheme, tellFrameTitle, useEngineTheme } from '../bridge/shell';
+import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from '../work/caption';
 
@@ -46,6 +46,34 @@ export function captionRects(container: HTMLElement | null): CaptionButtonRect[]
   });
 }
 
+
+/** The application's name as its frame wears it (`WaitingBadge.Name`, the desktop's): a name, so it is never translated. */
+export const APPLICATION_NAME = 'Daoris (道衍)';
+
+/**
+ * The page's title (MAINWINDOWS3): the application, and the workspace this window holds where one is chosen. Each main window
+ * holds its own, so two of them on two workspaces would otherwise read alike wherever a title is read. A workspace's name is
+ * the person's and is written as they wrote it; every workspace adds nothing, as the frame's bare name says today.
+ */
+export function windowTitle(workspace: string | null): string {
+  return workspace ? `${APPLICATION_NAME} — ${workspace}` : APPLICATION_NAME;
+}
+
+/**
+ * Keep this page's title on the workspace its window holds (MAINWINDOWS3): the document's own, which a browser's tab shows. The
+ * desktop frame's title is its own (`WaitingBadge.Title`, the count before the name).
+ */
+export function useWindowTitle(workspace: string | null) {
+  const { isAvailable } = useShenora();
+  useEffect(() => {
+    const title = windowTitle(workspace);
+    document.title = title;
+    // The frame wears the workspace after its own count and name (MAINWINDOWS3b): the kit raises no title event to the host.
+    if (isAvailable && secondaryWindow(globalThis.location?.search ?? '') === null) {
+      tellFrameTitle(title, anotherMainWindow(globalThis.location?.search ?? ''));
+    }
+  }, [workspace, isAvailable]);
+}
 
 /**
  * The app strip, wired to the window it sits in.

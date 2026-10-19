@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A second launch of the installed Daoris opened no window and the desktop wrote nothing of why (ONEINSTANCE2)
+
+- **Symptom:** a second `Daoris.exe`, and a direct `app\Daoris.Desktop.exe`, each exited while Daoris ran; no second main window
+  opened, and the machine log held no `window.launched`, which the hand-over writes on every path it reaches. Nor did it hold
+  any `log` line, the kit's warnings, ever.
+- **Root cause:** two silences, and the path behind them not yet known (D171's ONEINSTANCE2 note reads each). (1) The desktop's
+  container made no loggers. LOG1a (`b2a6dc4f0`) registered `MachineLogProvider` as an `ILoggerProvider` and nothing else; a
+  provider is only what a logger factory makes loggers of, the kit calls no `AddLogging`, and it asks the container for an
+  `ILogger<T>`, which nothing answered, so every warning it wrote went to a null logger: the single-instance guard's (a channel
+  that would not open, a running instance not reached, a mutex not taken, a callback that threw), the engine's (Chromium handing
+  over a launch the guard let through) and the window registry's (a window that failed to create). `MachineLogProviderTests` held
+  the provider alone, never a container. (2) ONEINSTANCE1 (`5aea0e835`) wired the hand-over as `_ = …OpenAsync(…)` inside
+  `OnActivated`: a resolution that threw went into the kit's callback, reported to the null logger, and a faulted hand-over was
+  an unobserved task. Its only proof was a test that those words were in `Program.cs`.
+- **Fix:** `MachineLogging.AddMachineLog` (modules) answers `ILoggerFactory` and `ILogger<>` with the provider, which now also
+  writes information from the categories the application names (the guard's and the engine's hand-over lines).
+  `LaterLaunch.Options` (modules) is the options `Program.cs` hands the kit: `window.launch` is written before anything is
+  resolved or awaited, and the hand-over is observed, so a failure is an `error` with `where` `a later launch`.
+- **Verify:** `LaterLaunchTests` run the options through the kit's own `SingleInstanceGuard` (one holding the scope on a thread
+  of its own, a later one handing over its channel) into a composed container with the window stubbed, and the throwing paths;
+  `MachineLoggingTests` run the kit's guard with the container's logger. Both were red against the old wiring (no arrival
+  line, the exception thrown into the callback, no `ILogger<SingleInstanceGuard>` in the container), then green. The installed
+  proof (a second click opens `main:2`; the log says `window.launch` then `window.launched`) is the parent's, after the next
+  install.
+- **Rule:** the desktop README's 🔴 "The kit's loggers are the container's": register loggers through `AddMachineLog`, never a
+  provider alone. A later desktop process writes no line of Daoris's own until the driver's `MachineLog` writes at the file's
+  end (two writers of one day's file overwrite each other, measured).
+- **Commit:** `21a3b6501`
+
 ## 2026-10-19 — The landed fixtures' cleanup slept five seconds after every test and left its folder (PROCSPEED1)
 
 - **Symptom:** `driver-process-git` took 46 to 65 minutes on the last full sets, its slowest class `PullRequestStateTests` about a

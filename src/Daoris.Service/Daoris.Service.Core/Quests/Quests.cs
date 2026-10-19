@@ -880,6 +880,19 @@ public sealed class QuestStore
                   published_sequence INTEGER NOT NULL,
                   expires            TEXT NOT NULL
                 );
+                -- Each bring-forward this machine made (SYNCMERGE1b0, D178 points 3 and 8): the conflict it was to settle and the take it
+                -- made, each by machine and sequence, and when. The log forgets one whose take lost, with its mark (D178 point 5), and this
+                -- still says that second loss was a bring-forward's. It goes with the quest's log. Never pushed or served to another machine.
+                CREATE TABLE IF NOT EXISTS quest_forwards (
+                  quest             TEXT NOT NULL,
+                  conflict_machine  TEXT NOT NULL,
+                  conflict_sequence INTEGER NOT NULL,
+                  take_machine      TEXT NOT NULL,
+                  take_sequence     INTEGER NOT NULL,
+                  at                TEXT NOT NULL,
+                  PRIMARY KEY (take_machine, take_sequence)
+                );
+                CREATE INDEX IF NOT EXISTS quest_forwards_quest ON quest_forwards (quest);
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -2628,7 +2641,86 @@ public sealed class QuestStore
                 .ConfigureAwait(false);
             var taken = QuestLog.Replay([.. history, take, mark])!;
             await WriteCacheAsync(taken, transaction, inside).ConfigureAwait(false);
+            await KeepPressAsync(id, new QuestForwardPress(conflict, brought, now), transaction, inside).ConfigureAwait(false);
             return new QuestBringingForward(QuestForwardRefusal.None, taken, brought);
+        }, ct);
+
+    /// <summary>
+    /// Keep this machine's own bring-forward (SYNCMERGE1b0, <see cref="QuestForwardPress"/>) in the write that made it, so a take the rebase
+    /// later loses with its mark still says it was one.
+    /// </summary>
+    private async Task KeepPressAsync(string id, QuestForwardPress press, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.Transaction = transaction;
+        command.CommandText = """
+            INSERT INTO quest_forwards (quest, conflict_machine, conflict_sequence, take_machine, take_sequence, at)
+            VALUES ($quest, $conflictMachine, $conflictSequence, $takeMachine, $takeSequence, $at)
+            """;
+        command.Parameters.AddWithValue("$quest", id);
+        command.Parameters.AddWithValue("$conflictMachine", press.Conflict.Machine);
+        command.Parameters.AddWithValue("$conflictSequence", press.Conflict.Sequence);
+        command.Parameters.AddWithValue("$takeMachine", press.Take.Machine);
+        command.Parameters.AddWithValue("$takeSequence", press.Take.Sequence);
+        command.Parameters.AddWithValue("$at", Moments.Write(press.At));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>This machine's bring-forwards on a quest (SYNCMERGE1b0), in the order they were made.</summary>
+    private async Task<IReadOnlyList<QuestForwardPress>> PressesAsync(string id, CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            SELECT conflict_machine, conflict_sequence, take_machine, take_sequence, at FROM quest_forwards
+            WHERE quest = $quest ORDER BY at, take_sequence
+            """;
+        command.Parameters.AddWithValue("$quest", id);
+        var presses = new List<QuestForwardPress>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            presses.Add(new QuestForwardPress(
+                new QuestOperationRef(reader.GetString(0), reader.GetInt64(1)), new QuestOperationRef(reader.GetString(2), reader.GetInt64(3)),
+                Moments.ReadRequired(reader.GetString(4))));
+        }
+
+        return presses;
+    }
+
+    /// <summary>
+    /// Who holds a quest's step and how each take that lost on it stands or ended (SYNCMERGE1b0, <see cref="QuestLog.Read"/>), with this
+    /// machine's own bring-forwards: what the quest's answer and the claim's say of them, and what the session ledger carries a
+    /// stand-down on by. <see cref="QuestTakeReading.None"/> for a quest this store does not hold.
+    /// </summary>
+    public Task<QuestTakeReading> ReadTakesAsync(string id, CancellationToken ct = default) =>
+        InGateAsync(async () => QuestLog.Read(
+            await HistoryAsync(id, transaction: null, ct).ConfigureAwait(false), await PressesAsync(id, ct).ConfigureAwait(false)), ct);
+
+    /// <summary>
+    /// <see cref="ReadTakesAsync(string, CancellationToken)"/> for each of <paramref name="quests"/> with something to read: taken, or one
+    /// whose log holds a conflict, settled or not. By id; a quest with neither is absent, and reads as <see cref="QuestTakeReading.None"/>.
+    /// A list answers many quests, so only those have their log read.
+    /// </summary>
+    public Task<IReadOnlyDictionary<string, QuestTakeReading>> ReadTakesAsync(IEnumerable<Quest> quests, CancellationToken ct = default) =>
+        InGateAsync<IReadOnlyDictionary<string, QuestTakeReading>>(async () =>
+        {
+            var contested = new HashSet<string>(StringComparer.Ordinal);
+            await using (var command = _db.Command())
+            {
+                command.CommandText = $"SELECT DISTINCT quest FROM quest_log WHERE kind = '{KindText(QuestOperationKind.Conflict)}'";
+                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await reader.ReadAsync(ct).ConfigureAwait(false)) contested.Add(reader.GetString(0));
+            }
+
+            var read = new Dictionary<string, QuestTakeReading>(StringComparer.Ordinal);
+            foreach (var quest in quests.Where(quest => quest.Status == QuestStatus.Taken || contested.Contains(quest.Id)))
+            {
+                read[quest.Id] = QuestLog.Read(
+                    await HistoryAsync(quest.Id, transaction: null, ct).ConfigureAwait(false),
+                    await PressesAsync(quest.Id, ct).ConfigureAwait(false));
+            }
+
+            return read;
         }, ct);
 
     /// <summary>
@@ -2660,7 +2752,7 @@ public sealed class QuestStore
                 command.Transaction = transaction;
                 command.CommandText = tombstoned
                     ? "DELETE FROM quests WHERE id = $id"
-                    : "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id";
+                    : "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quest_forwards WHERE quest = $id; DELETE FROM quests WHERE id = $id";
                 command.Parameters.AddWithValue("$id", id);
                 await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             }
@@ -2701,7 +2793,7 @@ public sealed class QuestStore
 
         await using var command = _db.Command();
         command.CommandText = (numbered ? "INSERT OR IGNORE INTO quest_forgotten (id, at) VALUES ($id, $at);" : "")
-                              + "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id;";
+                              + "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quest_forwards WHERE quest = $id; DELETE FROM quests WHERE id = $id;";
         command.Parameters.AddWithValue("$id", id);
         command.Parameters.AddWithValue("$at", Moments.Write(at));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);

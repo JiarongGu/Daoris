@@ -194,6 +194,8 @@ using Daoris.Driver;
 //                 one pass now, the tick's own, for every circle with a remote or the one named; with
 //                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a);
 //                 with `dismiss`, the conflicts a quest carries go, here and at the next pass (SYNC6c).
+//   sync forward <quest> <machine> <sequence>
+//                 bring forward one side of two machines' work on a quest (SYNCMERGE1c3, D178).
 //
 //   logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
 //                 the machine log (LOG1c, D94): every source's lines under the home, merged by time,
