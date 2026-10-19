@@ -75,9 +75,9 @@ public sealed record AccessEdit
 /// pause's default at that level, never as the next level's, which may be looser. Both stay in the file as written, since an edit
 /// changes only the key paths it changed. A level of another shape is not read.</para>
 ///
-/// <para><b>Not here: the effects.</b> This row builds the setting and the record of it. The permission prompts (AUTONOMY1b), the
-/// routing, the landing and the go-aheads (AUTONOMY1c) and the questions (AUTONOMY1e) read <see cref="Resolve"/>
-/// in their own rows; a go-ahead the ask itself demands is asked whatever this says (D184 point 5).</para>
+/// <para><b>Not here: the effects.</b> What a pause changes in a session (the permission prompts, AUTONOMY1b; the routing, the
+/// landing and the go-aheads, AUTONOMY1c; the questions, AUTONOMY1e) reads <see cref="Resolve"/> where it acts. A go-ahead the ask
+/// itself demands is asked whatever this says (D184 point 5).</para>
 /// </remarks>
 public static class AccessRules
 {
