@@ -7,6 +7,7 @@ import type { AccountNamer } from '../agents/tools';
 import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../design/ui';
 import { HandedAccount } from './HandedAccount';
 import { Note } from './Note';
+import { ACCESS_AT } from './noteLines';
 import {
   short, type TraceAnswer, type TraceAskLink, type TraceBranch, type TraceDue, type TraceKind, type TraceQuestLink,
   type TraceSessionLink, type TraceState, traceStory,
@@ -537,7 +538,14 @@ function Landed({ branch }: { branch: TraceBranch }) {
     ...(branch.rule ? [
       t(`work.trace.rule.${branch.rule.source}`, { defaultValue: branch.rule.source }),
       branch.rule.plugin ? t('work.trace.rulePlugin', { plugin: branch.rule.plugin }) : t('work.trace.ruleNoPlugin'),
-      t(branch.rule.autoAccept ? 'work.trace.ruleAuto' : 'work.trace.rulePress'),
+      // ACCESSWORDS1b (D184's AUTONOMY1c2 note): where the access setup turned the switch on and the switch accepted it, whose setup
+      // it was stands in for the switch, as the server's trace says it; a level this page does not know shows as recorded, never
+      // guessed. A press under the setup keeps its level on the record too, and the setup accepted nothing there.
+      branch.rule.access && branch.acceptedBy === 'auto'
+        ? Object.hasOwn(ACCESS_AT, branch.rule.access)
+          ? t('work.trace.ruleAccess', { setup: t(ACCESS_AT[branch.rule.access]) })
+          : t('work.trace.ruleAccessAs', { access: branch.rule.access })
+        : t(branch.rule.autoAccept ? 'work.trace.ruleAuto' : 'work.trace.rulePress'),
     ] : []),
   ];
   return (
