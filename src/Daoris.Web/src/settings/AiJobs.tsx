@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import type { HelpMode } from '../help/wired';
+import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpMode } from '../help/wired';
 import { Card, Pill, Prose, SelectField, SettingRow } from '../design/ui';
+import { ConfiguredAccess } from '../help/ConfiguredAccess';
 import { FullAccessConfirm, HelpModeChip } from '../help/HelpModePicker';
 import type { StartWiring } from '../map/wiring';
 
@@ -52,6 +53,19 @@ export type HelpAccessJob = {
   onCancel: () => void;
 };
 
+/**
+ * Restricted mode's configured access on THIS machine (HELPMODE1c1, D183 point 1; the modes design §4.1, §5): the agent the
+ * grants are held on, what is chosen, and each choice handed up. A mock for the owner's review: no domain passes it yet.
+ */
+export type HelpGrantsJob = {
+  agent: HelpGrantAgent;
+  grants: readonly HelpGrantChoice[];
+  /** The grants whose operations show from the start. */
+  opened?: readonly HelpGrantId[];
+  busy?: boolean;
+  onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
+};
+
 /** Off, as the control's value. The terminal spells it the same way (`daoris driver intake off`). */
 const OFF = 'off';
 
@@ -74,8 +88,10 @@ const OFF = 'off';
  * intake <agent>|off` (D50), and which account an intake runs as is the driver's answer per circle,
  * read rather than recomputed, so the page cannot name an account the loop would not take.
  */
-export function AiJobs({ search, intake, helper, access }: {
+export function AiJobs({ search, intake, helper, access, grants }: {
   search?: SearchTier; intake?: IntakeJob; helper?: HelperJob; access?: HelpAccessJob;
+  /** Restricted mode's configured access, drawn under the access row while restricted (HELPMODE1c1). */
+  grants?: HelpGrantsJob;
 }) {
   const { t } = useTranslation();
 
@@ -97,7 +113,7 @@ export function AiJobs({ search, intake, helper, access }: {
 
       {intake && <Intake intake={intake} />}
       {helper && <Helper helper={helper} />}
-      {access && <HelpAccess access={access} />}
+      {access && <HelpAccess access={access} grants={grants} />}
     </Card>
   );
 }
@@ -211,9 +227,10 @@ function Helper({ helper }: { helper: HelperJob }) {
 
 /**
  * Ask Daoris's access (HELPMODE1b, D183 point 2; the modes design §5): the panel's own chip, beside its agent, this machine's choice
- * for every workspace. Full access's confirmation opens under the row, where it has the row's width.
+ * for every workspace. Full access's confirmation opens under the row, where it has the row's width, and so does restricted mode's
+ * configured access while restricted (HELPMODE1c1, design §5's sketch): full access hands everything, so it has nothing to grant.
  */
-function HelpAccess({ access }: { access: HelpAccessJob }) {
+function HelpAccess({ access, grants }: { access: HelpAccessJob; grants?: HelpGrantsJob }) {
   const { t } = useTranslation();
   return (
     <SettingRow
@@ -228,6 +245,17 @@ function HelpAccess({ access }: { access: HelpAccessJob }) {
       {access.confirming && (
         <div className="mt-2">
           <FullAccessConfirm adds={access.adds} busy={access.busy} onEnable={access.onEnable} onCancel={access.onCancel} />
+        </div>
+      )}
+      {grants && access.mode === 'restricted' && (
+        <div className="mt-3">
+          <ConfiguredAccess
+            agent={grants.agent}
+            grants={grants.grants}
+            opened={grants.opened}
+            busy={grants.busy}
+            onChoose={grants.onChoose}
+          />
         </div>
       )}
     </SettingRow>
