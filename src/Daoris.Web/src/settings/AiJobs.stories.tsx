@@ -76,3 +76,24 @@ export const InABrowser: Story = {
 export const TierNotYetKnown: Story = {
   args: { search: undefined, intake: undefined },
 };
+
+/**
+ * HELPMODE1c1 (the modes design §5's sketch): Ask Daoris on Claude Code, restricted, with its configured access under the access
+ * row, housekeeping's inspection chosen and the browser waiting for approval. A mock: no domain passes the grants yet.
+ */
+export const RestrictedWithConfiguredAccess: Story = {
+  args: {
+    intake: undefined,
+    helper: {
+      adapter: 'claude-code-acp',
+      agents: [{ value: 'claude-code-acp', label: 'Claude Code — claude-code-acp' }, { value: 'codex-acp', label: 'Codex — codex-acp' }],
+      onChange: () => {},
+    },
+    access: { mode: 'restricted', confirming: false, adds: [], onPick: () => {}, onEnable: () => {}, onCancel: () => {} },
+    grants: {
+      agent: { name: 'Claude Code', rules: true },
+      grants: [{ id: 'housekeeping', chosen: ['inspect'] }, { id: 'checkouts', chosen: ['read'] }],
+      onChoose: () => {},
+    },
+  },
+};
