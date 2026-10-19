@@ -10,7 +10,10 @@ public enum RouteClass
     /// <summary>A read, or a press D156 §3 leaves to an agent or to the driver: the instance runs it as asked.</summary>
     Open,
 
-    /// <summary>A press D156 §3 makes the person's alone: its verb acts alone until RPC1c confirms it in the window (§7.2).</summary>
+    /// <summary>
+    /// A press D156 §3 makes the person's alone: sent to the instance that answers, which shows it in its window and runs it on the
+    /// person's Confirm (RPC1c), the verb saying it waits; a verb with no client path yet acts alone, as it did.
+    /// </summary>
     Person,
 
     /// <summary>What only a window does: no terminal verb sends it.</summary>
@@ -66,12 +69,12 @@ public static class OpenRoutes
     /// </summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
-        ("trees clean", SweepPlan, "the list; `--yes` is the person's press and acts alone until RPC1c"),
-        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press and acts alone until RPC1c"),
-        ("trees land <session> --plan", Landing, "the plan; the press is the person's and acts alone until RPC1c"),
-        ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until RPC1c"),
-        ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until RPC1c"),
-        ("trees hand <session|branch> --plan", HandoffPlan, "the plan; the press is the person's and acts alone until RPC1c"),
+        ("trees clean", SweepPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
+        ("trees sync", TreesSyncPlan, "the list; `--yes` is the person's press and acts alone until its client path is built"),
+        ("trees land <session> --plan", Landing, "the plan; the press is the person's and acts alone until its client path is built"),
+        ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until its client path is built"),
+        ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
+        ("trees hand <session|branch> --plan", HandoffPlan, "the plan; the press is the person's and acts alone until its client path is built"),
         ("sessions", SessionGroups, "the list"),
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),
@@ -87,15 +90,40 @@ public static class OpenRoutes
 }
 
 /// <summary>
-/// The routes the <c>trees</c> verbs' presses are twins of (RPC1b, the terminal RPC design §1.2 and §7.2): each verb sends its
-/// route over the pipe once the census opens it, and until then acts alone, as it does today.
+/// The person's presses the host's verbs send over the pipe (RPC1c, D156 §4.2, the terminal RPC design §4.2 and §7.2): each goes to
+/// the instance that answers, which shows it in its window naming this terminal, and runs on the person's Confirm alone; the verb says
+/// it waits, then says the confirmed press's answer in its own words, or the person's refusal or the two minutes' end, exit 1. Where
+/// no instance runs, the verb acts alone, as it did. Held to the census route by route by <c>PipeCensusTests</c>.
+/// </summary>
+/// <remarks>
+/// The first, <c>sessions archive</c> and <c>unarchive</c>, prove the door; the other sessions verbs (RPC1d), the host's presses
+/// (RPC1e) and the CLI's edits (RPC1f) follow it, each with its words from its route's answer (<c>said</c>), held to the alone path's.
+/// </remarks>
+public static class PersonPresses
+{
+    /// <summary><c>sessions archive &lt;id&gt;…</c> and <c>unarchive &lt;id&gt;…</c>: this machine's marks, the person's close.</summary>
+    public static InstanceRoute SessionArchive { get; } = new(TreesRoutes.DriverModule, "SESSION_ARCHIVE", RouteClass.Person);
+
+    /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
+    public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
+    [
+        ("sessions archive <id>…", SessionArchive),
+        ("sessions unarchive <id>…", SessionArchive),
+    ];
+}
+
+/// <summary>
+/// The routes the <c>trees</c> verbs' presses are twins of (RPC1b, the terminal RPC design §1.2 and §7.2): each verb acts alone, as it
+/// does today, until its client path is built.
 /// </summary>
 /// <remarks>
 /// 🔴 Every one is the person's (D171's RPC1a note: a landing is the person's yes, a discard and a sweep their deletes, and
-/// <c>TREES_SYNC</c> moves their lines and branches), so each waits for RPC1c, which confirms a person's press in the window. A
-/// route the census opens fails <c>PipeCensusTests</c> here, naming the verb that then owes its client path: its words from the
-/// route's answer, held to the alone path's case for case (§7.3). RPC1b3 built the words: each route answers them as <c>said</c>,
-/// which <see cref="TreesSaid.Words"/> prints and <see cref="TreesWords"/> builds for the alone path and the route alike.
+/// <c>TREES_SYNC</c> moves their lines and branches). RPC1c built the window's confirmation of a person's press, which
+/// <see cref="PersonPresses"/>' verbs use; a trees verb that becomes a client sends its route through
+/// <see cref="InstanceDoor.PressAsync"/> as they do, and the three land presses send <c>follow: true</c> (RPC1b5), so the lines they
+/// move are followed as the alone path follows them. Its words come from the route's answer, held to the alone path's case for case
+/// (§7.3): each route answers them as <c>said</c>, which <see cref="TreesSaid.Words"/> prints and <see cref="TreesWords"/> builds for
+/// the alone path and the route alike (RPC1b3).
 /// </remarks>
 public static class TreesRoutes
 {

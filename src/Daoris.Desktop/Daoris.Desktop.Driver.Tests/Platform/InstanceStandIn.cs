@@ -67,6 +67,12 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <summary>A progress line told before the answer, or null for none.</summary>
     public string? Progress { get; set; }
 
+    /// <summary>
+    /// Whether a press is first told to wait for the person in the window (RPC1c), as the pipe tells a person's press, before it is
+    /// answered or refused as <see cref="Press"/> says: how the window's Confirm, Refuse or two minutes reach the terminal.
+    /// </summary>
+    public bool Confirming { get; set; }
+
     /// <summary><c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>), <c>running</c>, <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.</summary>
     public string Result { get; set; } = "answered";
 
@@ -143,6 +149,16 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                         ? new { state = "answered", answer = JsonNode.Parse(Success(asked, Data)) }
                         : (object)new { state = Result }));
                     continue;
+                }
+
+                if (Confirming)
+                {
+                    await WriteAsync(server, JsonSerializer.Serialize(new
+                    {
+                        category = "notification",
+                        id = Guid.NewGuid().ToString("N"),
+                        payload = new[] { new { module = "DAORIS.PIPE", type = "CONFIRMING", payload = new { id, expires = DateTimeOffset.UtcNow.AddMinutes(2) } } },
+                    }));
                 }
 
                 switch (Press)

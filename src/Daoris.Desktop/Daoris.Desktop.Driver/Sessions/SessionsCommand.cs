@@ -338,7 +338,7 @@ public static class SessionsCommand
             "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),
             "archive" => await ArchiveAsync(world, ask.Ids, output, ct).ConfigureAwait(false),
-            "unarchive" => Unarchive(world, ask.Ids, output),
+            "unarchive" => await UnarchiveAsync(world, ask.Ids, output, ct).ConfigureAwait(false),
             "delete" => await DeleteAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             _ => await ListAsync(world, ask, output, ct).ConfigureAwait(false),
         };
@@ -1430,27 +1430,26 @@ public static class SessionsCommand
 
     // ——— Archive, unarchive and delete: the screen's owners.
 
-    private static async Task<int> ArchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
+    /// <summary>
+    /// <c>archive &lt;id&gt;…</c>: the running Daoris's <c>SESSION_ARCHIVE</c> where one runs, a person's press its window confirms (RPC1c),
+    /// said in the words its answer carries; this process's own archive where none runs. Both say <see cref="SessionArchive.ArchiveSaid"/>.
+    /// </summary>
+    private static async Task<int> ArchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct) =>
+        world.Instance is { } instance
+            ? await InstanceDoor.PressAsync(
+                PersonPresses.SessionArchive, new { ids, archived = true, said = true }, () => ArchiveAloneAsync(world, ids, output, ct),
+                TreesSaid.Words(output, instance.Error, "sessions"), instance, ct).ConfigureAwait(false)
+            : await ArchiveAloneAsync(world, ids, output, ct).ConfigureAwait(false);
+
+    private static async Task<int> ArchiveAloneAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
     {
         var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
         var answer = new SessionArchive(world.Home).Archive(
             ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
-        foreach (var outcome in answer.Outcomes)
-        {
-            output.WriteLine(outcome.Verdict switch
-            {
-                ArchiveVerdict.Archived => $"sessions: archived {outcome.Session}.",
-                ArchiveVerdict.Live => $"sessions: kept {outcome.Session}: it is still running; stop it first.",
-                ArchiveVerdict.NeedsYou when outcome.Group == SessionGroup.Review =>
-                    $"sessions: kept {outcome.Session}: it has work to review; archive never hides what needs you.",
-                ArchiveVerdict.NeedsYou => $"sessions: kept {outcome.Session}: it is waiting on you; archive never hides what needs you.",
-                _ => $"sessions: kept {outcome.Session}: no session here is {outcome.Session}.",
-            });
-        }
-
-        var archived = answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived);
-        SessionArchive.Said(world.Log, archived, PluginEvents.Terminal);
-        return archived == answer.Outcomes.Count ? 0 : 1;
+        var said = SessionArchive.ArchiveSaid(answer.Outcomes);
+        said.Print(output, output);
+        SessionArchive.Said(world.Log, answer.Outcomes.Count(outcome => outcome.Verdict == ArchiveVerdict.Archived), PluginEvents.Terminal);
+        return said.Code;
     }
 
     /// <summary>§5.3 at a terminal: the list first, what it would take and what stays; <c>--yes</c> archives what it holds, each judged again.</summary>
@@ -1489,17 +1488,20 @@ public static class SessionsCommand
         return 0;
     }
 
+    /// <summary><c>unarchive &lt;id&gt;…</c>: as <see cref="ArchiveAsync"/>, the same route with <c>archived: false</c> (RPC1c).</summary>
+    private static async Task<int> UnarchiveAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct) =>
+        world.Instance is { } instance
+            ? await InstanceDoor.PressAsync(
+                PersonPresses.SessionArchive, new { ids, archived = false, said = true }, () => Task.FromResult(Unarchive(world, ids, output)),
+                TreesSaid.Words(output, instance.Error, "sessions"), instance, ct).ConfigureAwait(false)
+            : Unarchive(world, ids, output);
+
     private static int Unarchive(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output)
     {
         var back = new SessionArchive(world.Home).Unarchive(ids);
-        foreach (var id in ids)
-        {
-            output.WriteLine(back.NotArchived.Contains(id, StringComparer.Ordinal)
-                ? $"sessions: {id} was not archived, so nothing changed."
-                : $"sessions: unarchived {id}; it is back in the group its state puts it in.");
-        }
-
-        return 0;
+        var said = SessionArchive.UnarchiveSaid(ids, back.NotArchived);
+        said.Print(output, output);
+        return said.Code;
     }
 
     /// <summary>The screen's owner at the terminal's door: 0 deleted, 1 refused, 2 deleted with a file the disk kept (SESSDEL1), as a clear's is.</summary>

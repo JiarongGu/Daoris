@@ -46,6 +46,25 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
+    /// The person's presses the host's verbs send over the pipe (RPC1c): each names a route of the driver's module that the census
+    /// makes the person's, so the instance shows it in the window and runs it on the person's Confirm alone. A route the census opened
+    /// would run unconfirmed, and one it made the window's would be refused: either fails here, naming the verb.
+    /// </summary>
+    [Fact]
+    public void Each_person_press_a_verb_sends_names_a_route_the_census_makes_the_person_s()
+    {
+        Assert.NotEmpty(Daoris.Driver.PersonPresses.Presses);
+        foreach (var (verb, route) in Daoris.Driver.PersonPresses.Presses)
+        {
+            Assert.Equal(DriverModule.Name, route.Module);
+            Assert.Contains(route.Route, DriverModule.Routes);
+            Assert.True(
+                PipeCensus.Daoris.Of(route.Module, route.Route) == PipeClass.Person && route.Class == Daoris.Driver.RouteClass.Person,
+                $"`{verb}` sends {route.Route} as the person's, and the census classes it {PipeCensus.Daoris.Of(route.Module, route.Route)}");
+        }
+    }
+
+    /// <summary>
     /// The open reads and presses the host's verbs send (RPCOPEN1, RPC1e): each names a route of the driver's module that the census
     /// opens, and each verb of the scope left off the pipe says why. A route the census closes fails here, naming the verb that
     /// would send a press the instance refuses.
