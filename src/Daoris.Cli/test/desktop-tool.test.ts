@@ -89,10 +89,12 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
   // attachments directory is the same shape (D65 §2): written into a session's environment from what
   // the service answered, and read by nothing on this side. An intake's ask and session are too (`IntakeRoom.Scope`),
   // written into its spawn's environment; its room is asked of the home since HOMELAYOUT2, which puts the file in this scan.
+  // A session's repository is the same (HEAVYRUN1b2a): written into a driven session's environment, read only by `run-heavy`
+  // inside that session, never by the desktop a scratch run starts.
   const handled = new Set([
     ...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST',
     'DAORIS_PLUGIN_ID', 'DAORIS_PLUGIN_FOLDER', 'DAORIS_PLUGIN_DATA',
-    'DAORIS_QUEST_ATTACHMENTS', 'DAORIS_ASK_ID', 'DAORIS_SESSION_ID',
+    'DAORIS_QUEST_ATTACHMENTS', 'DAORIS_ASK_ID', 'DAORIS_SESSION_ID', 'DAORIS_REPOSITORY',
   ]);
   const missed = [...found].filter((name) => !handled.has(name));
   assert.deepEqual(missed, [], `a scratch run would inherit ${missed.join(', ')} from the real machine`);
