@@ -344,8 +344,11 @@ public sealed class SessionsRoutes(DriverContext context)
     /// </summary>
     /// <remarks>
     /// <para><b>From the records, the quests, the planner's verdicts, the trees and the marks</b>: the loop's last look where
-    /// it has looked, a plan over a fresh snapshot where it has not; git asked only of an ended session's own tree that
-    /// could be to review. Never from what a session printed.</para>
+    /// it has looked, a plan over a fresh snapshot where it has not. Never from what a session printed.</para>
+    ///
+    /// <para><b>No git at a window's tick</b> (PUSH1c1, D182 point 4): an ended session's tree that could be to review is read as the
+    /// machine's facts judged it, a part per repository (<see cref="HelpFacts.WithTreesAsync"/>), so more windows never mean more git.
+    /// Only a tree no part judged yet is walked here, once the parts' first judgement was waited for.</para>
     ///
     /// <para><b>Nothing machine-local comes back</b>: ids, groups, words and counts. A tree's path stays here. The one
     /// exception is a working session's running call (WAITSAY1b): its title is the agent's own words, which may name a file,
@@ -402,7 +405,7 @@ public sealed class SessionsRoutes(DriverContext context)
             return new { Archived = back.Marks.Select(Mark).ToArray(), back.NotArchived };
         }
 
-        var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
+        var (look, grouped) = await GroupsAsync(ids, cancellationToken, walked: true).ConfigureAwait(false);
         var answer = marks.Archive(ids, grouped, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
         var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).ToList();
         // SESSUX1g (D126 §7.4): counted in the machine log as the screen's, as the terminal's archive is counted as its own.
@@ -417,20 +420,36 @@ public sealed class SessionsRoutes(DriverContext context)
     }
 
     /// <summary>One look at the sessions, gathered by the driver library's one gatherer, which the terminal's <c>sessions</c> reads too.</summary>
+    /// <param name="walked">
+    /// Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them: a press is judged as the trees
+    /// stand when it is pressed, never as the facts last judged them, so archive never hides work a tree gained since. The list's
+    /// trees are the facts' (PUSH1c1).
+    /// </param>
     private async Task<(SessionLook Look, IReadOnlyList<SessionGrouping> Grouped)> GroupsAsync(
-        IReadOnlyCollection<string>? only, CancellationToken cancellationToken)
+        IReadOnlyCollection<string>? only, CancellationToken cancellationToken, bool walked = false)
     {
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         // When it began, which its records are as old as.
         var at = DateTimeOffset.UtcNow;
-        var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
+        // PUSH1c1 (D182 point 4): the records, the quests, the verdicts and the marks read now, as fresh as before, and no tree judged
+        // here unless walked: each tree's judgement is the machine's facts', judged per repository on its own wakes, so no window's
+        // tick starts git.
+        var look = await SessionGroups.LookAsync(
+                service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, walked ? only : [], cancellationToken)
             .ConfigureAwait(false);
         // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset. And the
         // call each live session's agent is inside, as this loop heard it from the events its sessions write (WAITSAY1b).
         look = look with { Waits = _loop.Look.Waits, Calls = RunningCalls.Of(_loop.Events).Now() };
-        // A look at every session is kept with its time, for Ask Daoris's room to read where it is recent (HELPSTART1).
+        // A look at every session is kept with its time, for Ask Daoris's room to read where it is recent (HELPSTART1), and kept before
+        // its trees are read, so a facts' look judged again for a session that just ended reads this one.
         if (only is null) _loop.SessionsLooked.Keep(look, at);
+        if (!walked)
+        {
+            var trees = new SessionTrees(_loop.Home);
+            look = await HelpFacts.WithTreesAsync(_loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: cancellationToken).ConfigureAwait(false);
+        }
+
         return (look, SessionGroups.Read(look, only));
     }
 
