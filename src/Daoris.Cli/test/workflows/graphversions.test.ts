@@ -9,13 +9,13 @@ import { decodeVersion } from '../../src/workflows/workflowgraphs.ts';
 /**
  * FABRIC-GRAPH1b: a named graph as a named workflow's version (schema 2), read as the driver reads it. One table,
  * `fixtures/workflow-graph-versions.json`, row for row, the driver's `WorkflowGraphVersionsTests` reading it as this file does: each
- * version's graph, its problem and the digest a run bound to it binds. A row the driver alone judges (`judged: "driver"`) is read here
- * and its judgement left to the driver, which holds `NodeGraphs.Problems`.
+ * version's graph, its problem and the digest a run bound to it binds. Since FABRIC-GRAPH1c and GRAPH1k the CLI judges a graph whole
+ * (`nodegraphs.ts`), so every row the driver judges is judged here too.
  */
 
 interface ReadRow {
   name: string;
-  judged: 'both' | 'driver' | 'cli-refuses';
+  judged: 'both' | 'cli-refuses';
   cli?: string;
   graph: boolean;
   problem: string | null;
@@ -47,12 +47,6 @@ test('graph-versions: each read row of the shared table reads as the driver read
       assert.equal(read.problem, row.cli, row.name);
       assert.equal(read.graph, undefined, row.name);
       assert.equal(read.digest, null, row.name);
-      continue;
-    }
-
-    if (row.judged === 'driver') {
-      // The CLI reads the graph's shape and digests it; whether it holds is the driver's (NodeGraphs.Problems).
-      assert.ok(read.graph !== undefined || read.problem === row.problem, `${row.name}: ${read.problem}`);
       continue;
     }
 

@@ -16,7 +16,8 @@ import { sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { landingProblem } from '../driver/driverconfig.ts';
 import { isPluginId } from '../plugins/plugins.ts';
-import { GRAPH_SCHEMA, graphFormDigest, readGraphForm, type GraphForm } from './graphversions.ts';
+import { GRAPH_SCHEMA, graphFormDigest, type GraphForm } from './graphversions.ts';
+import { readGraph } from './nodegraphs.ts';
 import { ID_SHAPE, isDeviceName, isWorkflowId } from './workflowid.ts';
 
 // The id is `workflowid.ts`'s, which `workflowchoice.ts` reads too; read here as it always was.
@@ -246,12 +247,12 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
         return unread(`v${number}: its schema is ${GRAPH_SCHEMA}, so its \`graph\` is the graph's JSON object.`);
       }
 
-      const read = readGraphForm(raw);
+      // Judged whole as the driver's `NodeGraphs.Read` judges it (FABRIC-GRAPH1c, GRAPH1k), its first problem said.
+      const read = readGraph(raw);
+      if (read.problems.length > 0) return unread(`v${number}: its graph does not hold: ${read.problems[0]!.words}`);
       // The driver reads this graph and this build cannot write its options as the driver does: no digest, and no rewriting of the file.
-      if (read.lossy !== undefined) return { ...unread(`v${number}: its graph does not hold here: ${read.lossy}`), rewrites: true };
-      return read.graph === null
-        ? unread(`v${number}: its graph does not hold: ${read.problem}`)
-        : { version: number, at, door, steps: null, problem: null, digest: graphFormDigest(read.graph), graph: read.graph };
+      if (read.lossy !== null) return { ...unread(`v${number}: its graph does not hold here: ${read.lossy}`), rewrites: true };
+      return { version: number, at, door, steps: null, problem: null, digest: graphFormDigest(read.graph!), graph: read.graph! };
     }
   }
 
