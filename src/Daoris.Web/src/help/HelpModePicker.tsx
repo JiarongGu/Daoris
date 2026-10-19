@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { HelpMode } from '../bridge/help';
+import type { HelpMode } from './wired';
 import { Button, Icon, Menu, Prose } from '../design/ui';
 import { cn } from '../lib/cn';
 import { chipOf } from './modes';

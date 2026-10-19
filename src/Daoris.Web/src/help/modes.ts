@@ -1,6 +1,5 @@
-import type { HelpMode, HelpReceipt, HelpWiredLack } from '../bridge/help';
-import type { PluginEntry } from '../bridge/plugins';
 import type { StarterDoor } from './starters';
+import type { HelpMode, HelpPluginOffer, HelpReceipt, HelpWiredLack } from './wired';
 
 // Ask Daoris's access modes on the page (HELPMODE1b, D183 points 2-4; the modes design §1, §5, §6), as values: the chip, what full
 // access would add, and the door each lack names.
@@ -24,7 +23,7 @@ const FULL_HANDS = new Set(['plugins', 'mode']);
  * plugins, each server one that contributes offers Ask Daoris and the person has not approved. Full access brings no host, no
  * other agent's door and no server that is not running (design §3).
  */
-export function fullAdds(newest: HelpReceipt | null | undefined, plugins: readonly PluginEntry[] | undefined): string[] {
+export function fullAdds(newest: HelpReceipt | null | undefined, plugins: readonly HelpPluginOffer[] | undefined): string[] {
   const names = new Set<string>();
   for (const lack of newest?.lacks ?? []) {
     if (lack.kind === 'server' && FULL_HANDS.has(lack.door)) names.add(lack.name);
