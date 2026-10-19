@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates
+  its `daoris.gates.json` marks `"heavy": true` one after another, or the one `--gate <name>` names, and stops at the first that
+  fails. A second run of the same repository, from its checkout or any tree of it, waits rather than running beside the first,
+  and says whose run it waits behind and for how long. Everything a gate starts, a build's lingering workers included, is ended
+  before the next run begins, whether the run passed, failed, was stopped with Ctrl+C or was killed.
 - Three of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
 - Ask Daoris follows the window's workspace. A conversation starts in the workspace the window shows when you press send,
   and stays there if the window moves while it starts. A window that shows every workspace asks which before it starts one,
