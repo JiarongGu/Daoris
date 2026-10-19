@@ -13,6 +13,9 @@ with the version and date at release.
   goes on with them the next time Daoris starts.
 - A terminal's words or stop for one session no longer wait behind another session's slow delivery, and the plugins'
   evaluation steps run beside the driver's look instead of holding the next one.
+- The sessions list no longer runs git in every ended session's tree each time a window refreshes it. Whether a tree holds
+  work to review is judged once per repository as its branches move, and every open window reads that, so more windows cost
+  no more git; a tree's *Accept* may stay offered up to half a minute after a landing that followed close on another change.
 - A repository's heavy checks run one at a time across its trees: `daoris-driver run-heavy`, run in a checkout, runs the gates
   its `daoris.gates.json` marks `"heavy": true` one after another, or the one `--gate <name>` names, and stops at the first that
   fails. A second run of the same repository, from its checkout or any tree of it, waits rather than running beside the first,
