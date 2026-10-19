@@ -93,6 +93,18 @@ describe('the machine, read once for the guide and the starters', () => {
     expect(setupProgress(setupSteps(machine))).toEqual({ done: 5, of: 5 });
   });
 
+  it('does not count a line not read yet (the pushed flag, PUSH1b2) among the lines that name none', () => {
+    const base = MACHINES.everythingDone;
+    const machine = readMachine({
+      ...base,
+      lines: [
+        { repository: 'engine', workspace: 'default', source: 'none', notReadYet: true },
+        { repository: 'game', workspace: 'default', source: 'none' },
+      ],
+    });
+    expect(machine.unnamedLines).toEqual(['game']);
+  });
+
   it('reads a browser as knowing only what is registered, and the rest as the desktop\'s', () => {
     const machine = readMachine(MACHINES.browser);
     expect(machine).toMatchObject({

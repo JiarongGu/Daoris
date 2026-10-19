@@ -178,6 +178,43 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 PARALLEL1b (D181 point 3): under the watch a meeting's first packet is frozen beside the look as the <c>freeze</c> topic's
+    /// judge, once, however many looks meet it while a checkout slow to answer holds it.
+    /// </summary>
+    [Fact]
+    public async Task Under_the_watch_a_meeting_s_first_packet_is_frozen_beside_the_look_and_once()
+    {
+        Assert.Equal(0, Verb("ask", Question, "--agents", "stub,acp-stub", "--id", "m1", "--repository", "engine"));
+        var reading = new TaskCompletionSource<(string? Root, string? Revision)>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var read = 0;
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            AdapterSet.Built(), _home)
+        {
+            BrainstormSearches = (words, _, _) => Task.FromResult(new BrainstormSearch([], "words")),
+            BrainstormCheckouts = (_, ct) =>
+            {
+                Interlocked.Increment(ref read);
+                return reading.Task.WaitAsync(ct);
+            },
+            Wanted = token => Task.Delay(Timeout.Infinite, token),
+        };
+        var events = new List<string>();
+
+        await driver.MeetingsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await driver.MeetingsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        Assert.Null(Files.ReadState("m1"));
+
+        reading.TrySetResult((null, "0123456789abcdef"));
+        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Equal(BrainstormStates.Frozen, Files.ReadState("m1")?.State);
+        Assert.Single(driver.Running.Drain(), run => run.Line.Contains("meeting `m1` frozen", StringComparison.Ordinal));
+        Assert.Equal(1, read);
+        Assert.Empty(events);
+    }
+
+    /// <summary>
     /// 🔴 The relay: the first round runs on the person's send, each participant in their order and one at a time, every room holding
     /// the packet they sent byte for byte; each message is relayed with its author from Daoris's binding of the turn, naming the packet
     /// it answered; and the round ends with the second round's packet frozen, waiting.

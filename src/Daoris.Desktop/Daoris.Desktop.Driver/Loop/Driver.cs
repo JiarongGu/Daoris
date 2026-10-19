@@ -8,7 +8,9 @@ namespace Daoris.Driver;
 /// plans it (pure), starts every planned start, and returns once each has opened its record or come to
 /// nothing. The sessions run on beside the looks that follow, and each one's ending joins the next
 /// look's report (DEV3, D115 §3.1): a quest published while a long session runs starts at the next look,
-/// not after that session.
+/// not after that session. Under the watch (PARALLEL1b, D181 point 3) a look waits for a start only until
+/// something else wants the loop, the start reserved and running on beside it, and leaves beside it the
+/// work none of its parts waits on: the remote sync, the plugins' word on an ending, a packet frozen.
 /// </summary>
 /// <remarks>
 /// <para><b>The driver never writes quest state.</b> It opens and advances SESSION records through the
@@ -71,6 +73,18 @@ public sealed class Driver(
     /// run was ended before awaiting it (ANSWER2). Null where nothing keeps one, as in a gate's driver; the console says it still.
     /// </summary>
     public MachineLog? Log { get; init; }
+
+    /// <summary>
+    /// Where this driver's looks time their stages (LOOKWAIT1, D181 point 6): the watch's, shared across its looks and read into each
+    /// <c>watch.looked</c>; else this driver's own, which still names a stage that hangs in <see cref="Log"/>.
+    /// </summary>
+    public LookStages Stages
+    {
+        get => LazyInitializer.EnsureInitialized(ref _stages, () => new LookStages(Log));
+        init => _stages = value;
+    }
+
+    private LookStages? _stages;
 
     /// <summary>
     /// The review's showing in Daoris's browser (REVIEWENV1d, D154 point 5), shared across looks as the browser is: a local
@@ -148,6 +162,24 @@ public sealed class Driver(
     /// it held back meanwhile.
     /// </summary>
     public Action? LandingEnded { get; init; }
+
+    /// <summary>
+    /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
+    /// deadline. Handed by the watch, whose looks then leave beside them the work no part of the look waits on (the remote sync and the
+    /// lost-claim stop after it, the sync after an ending), and wait for a start that has not yet opened its record only until this
+    /// completes. Null, a one-look run's and a gate's run-until-idle, runs each in the look as before, since each reads one look whole.
+    /// </summary>
+    internal Func<CancellationToken, Task>? Wanted
+    {
+        get => _wanted;
+        init
+        {
+            _wanted = value;
+            Context.Beside = value is not null;
+        }
+    }
+
+    private readonly Func<CancellationToken, Task>? _wanted;
 
     /// <summary>
     /// What the loop's classes share (PART10m, D166): the constructor's objects, the sessions and trees, the per-look adapters,
@@ -421,6 +453,8 @@ public sealed class Driver(
     /// <remarks>
     /// A <see cref="LookPart.Plan"/> (FABRIC-EVENT3a) is the same look without the remote sync at its head and the lost-claim stop
     /// after it; everything else it runs as the whole look does, the sync after an ending it reports included (the sync design §8).
+    /// Where the watch hands <see cref="Wanted"/> (PARALLEL1b), the syncs run beside the look and a start still preparing when
+    /// something else wants the loop runs on beside it, reserved, what it came to said by a later look.
     /// </remarks>
     /// <param name="failed">
     /// Handed what the look had said when it fails or is closed (DEV3c): its lines and what ended, which its report would have
@@ -456,24 +490,36 @@ public sealed class Driver(
         // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
         // An unconfirmed take keeps working. A wake's plan does neither (FABRIC-EVENT3a): the claims it would ask after move
         // only when the sync runs, so both wait for the `look` topic's deadline, and a wake costs the remote nothing.
+        // PARALLEL1b (D181 point 3): under the watch the sync runs beside the look, on its own task, so a remote that does not answer
+        // holds that pass and no local start; this look plans over what the last pass brought, and the change stream wakes the plan
+        // that reads what this one brings. The stop stays the look's, so a stop a look made is said with it: at every whole look, and
+        // at the first look after a pass beside ended while a session here held a quest. Both are `|`, so a whole look takes the due.
         if (Part == LookPart.Look)
         {
-            await SyncAsync(events, ct).ConfigureAwait(false);
-            if (sync is not null) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            if (Wanted is not null) SyncBeside(ct);
+            else await SyncAsync(events, ct).ConfigureAwait(false);
+        }
+
+        if (sync is not null && (Part == LookPart.Look | Context.Runs.TakeClaimsDue()))
+        {
+            using (Stages.Begin("claims")) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
         }
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process
         // disabled since is stopped now. The catalogue refuses a name this build carries before
         // anything of that plugin is taken.
-        var catalog = PluginCatalog.Load(home, _built.Names);
-        Context.Adapters = _built.WithPlugins(catalog);
-        Context.Servers = catalog.Servers;
-        Context.Catalog = catalog;
-        Context.Harnesses.Use(Context.Adapters);
-        if (Context.Hooks is { } hooks)
+        using (Stages.Begin("plugins"))
         {
-            events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
+            var catalog = PluginCatalog.Load(home, _built.Names);
+            Context.Adapters = _built.WithPlugins(catalog);
+            Context.Servers = catalog.Servers;
+            Context.Catalog = catalog;
+            Context.Harnesses.Use(Context.Adapters);
+            if (Context.Hooks is { } hooks)
+            {
+                events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
+            }
         }
 
         // What sessions proposed about the rules (PERM2, D74), settled BEFORE this tick spawns anything:
@@ -481,7 +527,7 @@ public sealed class Driver(
         // is held for the person — who alone may let an agent do more.
         try
         {
-            events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow));
+            using (Stages.Begin("rules")) events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -491,35 +537,41 @@ public sealed class Driver(
         // The lines Daoris moved since each was last followed (WSSETUP5, D124 §3.1), registered from the line before this
         // look reads the registry, so a set-up that just landed is planned by what it now declares. Nothing is read with
         // git, or asked of the service, unless a line moved.
-        await FollowMovedLinesAsync(events, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("lines", () => FollowMovedLinesAsync(events, ct)).ConfigureAwait(false);
 
         // The workspace plans (WSSETUP6, D124 §4.1), worked before this look reads the quests, so a set-up a plan publishes now
         // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
-        await WorkSetupPlansAsync(events, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("setup", () => WorkSetupPlansAsync(events, ct)).ConfigureAwait(false);
 
         // The goal's walk counts Daoris's sessions from this look's records (TOOL6b, D130 §4.2), and every start chosen
         // while they were read: marked first, so a conversation chosen meanwhile is not lost.
         var mark = Context.Harnesses.Mark();
-        var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
+        // PARALLEL1b: the starts still opening, read before the snapshot as well as at the plan, so one whose record opened while the
+        // snapshot was read is held by one of the two, whichever the ledger's answer missed.
+        var reservedBefore = Context.Runs.Reserved;
+        var snapshot = await Stages.TimeAsync("snapshot", () => service.SnapshotAsync(ct)).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
-        snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
+        snapshot = await Stages.TimeAsync("paused", () => PausedWork.LookAsync(service, config, snapshot, ct)).ConfigureAwait(false);
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a
         // reopen names is one the planner goes on with too (FABRIC-CLOSE1c9).
         snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)) };
         // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
         // stands read for the planner, which reads the stop that handed one over as released.
-        snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);
+        var read = snapshot;
+        snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
         Context.Harnesses.Look(snapshot.Started, mark);
 
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
         // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
-        events.AddRange(await Context.Channel
-            .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(snapshot, Context.Processes), ct)
+        var looked = snapshot;
+        events.AddRange(await Stages.TimeAsync("channel", () => Context.Channel
+            .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(looked, Context.Processes), ct))
             .ConfigureAwait(false));
 
         // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,
         // and the planner's go-on resumes it at the next look. Read from the quests this look read: nothing more where none is reopened.
-        events.AddRange(await Context.Reopens.LookAsync(new ServiceReopenDoors(service), snapshot, ct).ConfigureAwait(false));
+        events.AddRange(await Stages.TimeAsync("reopens", () => Context.Reopens.LookAsync(new ServiceReopenDoors(service), looked, ct))
+            .ConfigureAwait(false));
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
@@ -527,7 +579,8 @@ public sealed class Driver(
         {
             try
             {
-                events.AddRange(await showing.LookAsync(snapshot.Quests, service.FindQuestAsync, ct).ConfigureAwait(false));
+                events.AddRange(await Stages.TimeAsync("reviews", () => showing.LookAsync(looked.Quests, service.FindQuestAsync, ct))
+                    .ConfigureAwait(false));
             }
             catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -539,23 +592,33 @@ public sealed class Driver(
         // The second opinions owed (XAGENT1f, the second-agent design §2.1, §7, §8.1): asked and delivered beside the look, and the
         // starts they sit held. A pass finishes work already done, so it takes its slot before any quest's first start (D130).
         var judgedOpinions = new List<OpinionJudged>();
-        var (opinionSits, passes) = await OpinionsAsync(snapshot, events, ct, judgedOpinions).ConfigureAwait(false);
+        var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
         // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
         // the cap as a pass does, and each answer handed to the session that asked.
-        passes += await HelpersAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+        var judged = snapshot;
+        var taken = passes;
+        passes += await Stages.TimeAsync("helpers", () => HelpersAsync(judged, taken, events, ct)).ConfigureAwait(false);
 
         // The brainstorms on file (BRAINSTORM1a, D176): each request frozen into its packet for the person to read, and each one the
         // person sent run beside the look, taking a slot under the cap as a pass does.
-        passes += await BrainstormsAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+        taken = passes;
+        passes += await Stages.TimeAsync("brainstorms", () => BrainstormsAsync(judged, taken, events, ct)).ConfigureAwait(false);
 
         // The meetings on file (AGENTROOM1a, D177): each round's packet frozen for the person to read, and each round they sent run
         // beside the look, its turns one at a time through a brainstorm's pass, each taking a slot under the cap.
-        passes += await MeetingsAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+        taken = passes;
+        passes += await Stages.TimeAsync("meetings", () => MeetingsAsync(judged, taken, events, ct)).ConfigureAwait(false);
 
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
-        var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
+        IReadOnlyList<Consideration> plan;
+        using (Stages.Begin("plan"))
+        {
+            snapshot = snapshot with { Starting = [.. reservedBefore.Union(Context.Runs.Reserved)] };
+            plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
+        }
+
         var progressed = false;
 
         // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
@@ -573,38 +636,19 @@ public sealed class Driver(
             .Select(c => c with { Channel = ChannelEntry.ForQuest(c.Quest, snapshot) })
             .ToList();
 
-        // The plugins' say, BEFORE a start costs anything (D64 §4): the first hold in catalogue order
-        // is the quest's reason for sitting, exactly as a dirty tree or a missing binary would be —
-        // and a plugin that could not decide holds too, naming itself. Asked in plan order, one at a
-        // time, so two plugins' answers arrive in an order a person can predict.
-        if (Context.Hooks is { } considering && starts.Count > 0)
-        {
-            var allowed = new List<Consideration>();
-            foreach (var start in starts)
-            {
-                var decision = await considering.ConsiderAsync(start, ct).ConfigureAwait(false);
-                if (decision.Allowed)
-                {
-                    allowed.Add(start);
-                    continue;
-                }
-
-                heldAt[start.Quest.Id] = decision.Reason!;
-                events.Add($"held  #{start.Quest.Id} → {start.Quest.To}: {decision.Reason}");
-            }
-
-            starts = allowed;
-        }
-
         // A parked intake has no process left to watch — it asked the person and ended — so its record
         // ends when the person answers the ask (D65 §1b). Looked at every tick, whatever the intake
         // setting says now: turning intakes off must not strand one that is waiting.
-        await ConcludeAnsweredAsync(snapshot.Active, events, concluded, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("answered", () => ConcludeAnsweredAsync(snapshot.Active, events, concluded, ct)).ConfigureAwait(false);
 
         // The asks this machine answers with a session (D65 §1b) — only where a harness is named for
-        // it, and only in the slots the quests left: work somebody already asked for goes first.
-        var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count - passes, events, ct)
-            .ConfigureAwait(false);
+        // it, and only in the slots the quests left: work somebody already asked for goes first. PARALLEL1b: a start still opening
+        // holds its slot, and an ask whose intake is still opening is not begun again. A start a plugin will hold still counts here,
+        // since each start asks its plugins on its own below: the intakes may wait a look for a slot a hold left, never overrun the cap.
+        var slotsLeft = config.Cap - snapshot.Active.Count - Planner.Opening(snapshot).Count - starts.Count - passes;
+        var intakes = (await Stages.TimeAsync("intakes", () => IntakesDueAsync(slotsLeft, events, ct)).ConfigureAwait(false))
+            .Where(ask => !snapshot.Starting.Any(start => string.Equals(start.Ask, ask.Id, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
 
         // 🔴 One run per record the person's words wait on (ANSWER2, D131 §3): a run that took a record up moves it to working a
         // moment after the look planned it (before its spawn since SAIDBACK1e), so a look in between still reads it waiting and
@@ -630,49 +674,74 @@ public sealed class Driver(
             claimed.Add(start);
         }
 
-        // Every start begun at once, as before: sessions in different repositories, or in trees of their own, run
-        // together. The look waits for each only until it has opened its record or come to nothing (DEV3), so a
-        // hold, a refusal and an error before the spawn are still this look's to say, and every session it opened
-        // is in the ledger before the next look plans. The rest of each run is the running set's.
-        var run = Runner ?? ((start, opened, token) => RunAsync(start, snapshot.Repositories, untrusted, opened, token));
-        var begun = await Task.WhenAll(
-                claimed.Select(start => BeginAsync(
-                        // The agent it runs on: a handed quest's own (MIXAGENT1a-ii), which the held-wait report names its cooling by.
-                        new Begun(start.Quest.Id, null, start.Quest.To, start.Workspace, new HandedQuests(home).Read(start.Quest.Id)?.Agent ?? config.Adapter),
-                        opened => ClaimedAsync(start, opened)))
-                    .Concat(intakes.Select(ask => BeginAsync(
-                        new Begun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, config.IntakeAdapter!),
-                        opened => RunIntakeAsync(ask, untrusted, opened, ct)))))
-            .ConfigureAwait(false);
-        foreach (var (started, came) in begun)
+        // Every start begun at once, as before: sessions in different repositories, or in trees of their own, run together. 🔴 PARALLEL1b
+        // (D181 point 3): each is reserved first, its quest or ask, the tree it goes back into and its place under the cap, so a look
+        // that runs before its record opens neither plans it again nor gives its place (Snapshot.Starting). The look then waits for
+        // each until it has opened its record or come to nothing (DEV3), so a hold, a refusal and an error before the spawn are still
+        // this look's to say; but under the watch only until something else wants the loop (Wanted): a start still preparing (git
+        // under a scan, an account's probe, a plugin slow to answer) runs on beside the look, reserved, and what it comes to joins a
+        // later look's report. The rest of each run is the running set's.
+        var beginning = new List<(StartBegun Started, LookStages.StageSpan Span, StartReservation Reserved, Task<StartCame> Came)>();
+        foreach (var start in claimed)
         {
-            // Null is a session opened, and running on: its ending joins a later look's report.
-            if (came is null)
+            // The agent it runs on: a handed quest's own (MIXAGENT1a-ii), which the held-wait report names its cooling by.
+            var started = new StartBegun(
+                start.Quest.Id, null, start.Quest.To, start.Workspace, new HandedQuests(home).Read(start.Quest.Id)?.Agent ?? config.Adapter, start);
+            Begin(started, new StartReservation(start.Quest.Id, null, start.Quest.To, TreeGoneBackInto(start)), (own, opened) => ClaimedAsync(start, own, opened));
+        }
+
+        foreach (var ask in intakes)
+        {
+            var started = new StartBegun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, config.IntakeAdapter!);
+            Begin(started, new StartReservation(null, ask.Id, $"ask #{ask.Id}", null), (own, opened) => RunIntakeAsync(ask, own, opened, ct));
+        }
+
+        var begun = await SettledAsync(beginning).ConfigureAwait(false);
+
+        // What the starts an earlier look let go of came to since (PARALLEL1b), said first, as that look would have said it; this
+        // look's own outcome for the same quest is said after it, and stands.
+        var carried = Context.Runs.TakeCame();
+        IReadOnlyList<StartCame> outcomes = [.. carried, .. begun];
+        foreach (var came in outcomes)
+        {
+            untrusted.AddRange(came.Untrusted);
+            if (came.Came is null)
             {
+                // Null is a session opened, and running on: its ending joins a later look's report.
                 progressed = true;
+                if (came.Started.Quest is { } opened)
+                {
+                    heldAt.Remove(opened);
+                    signedOutAt.Remove(opened);
+                }
+
                 continue;
             }
 
-            events.Add(came.Line);
-            progressed |= came.Opened;
-            if (came.Ended is not null) concluded.Add(came.Ended);
-            if (started.Quest is { } quest && came.Held is not null) heldAt[quest] = came.Held;
-            if (started.Quest is { } passed && came.SignedOut is not null) signedOutAt[passed] = came.SignedOut;
+            events.Add(came.Came.Line);
+            progressed |= came.Came.Opened;
+            if (came.Came.Ended is not null) concluded.Add(came.Came.Ended);
+            if (came.Started.Quest is { } quest && came.Came.Held is not null) heldAt[quest] = came.Came.Held;
+            if (came.Started.Quest is { } passed && came.Came.SignedOut is not null) signedOutAt[passed] = came.Came.SignedOut;
         }
 
-        var waits = Waits(begun);
+        var waits = Waits(outcomes);
 
         // WORKFLOW1e (design §4.5): each run whose session opened in this look is bound, at its first start, to the workflow that
-        // chooses it now. A start that held or was refused opened nothing, and binds nothing.
-        var openedQuests = begun.Where(each => each.Started.Quest is not null && (each.Came is null || each.Came.Opened))
-            .Select(each => each.Started.Quest!).ToHashSet(StringComparer.Ordinal);
-        await BindRunsAsync([.. claimed.Where(start => openedQuests.Contains(start.Quest.Id))], events, ct).ConfigureAwait(false);
+        // chooses it now. A start that held or was refused opened nothing, and binds nothing. PARALLEL1b: one an earlier look let go
+        // of is bound by the look after it opened, from the start that look planned.
+        var openedStarts = outcomes
+            .Where(each => each.Opened && each.Started.Start is not null)
+            .Select(each => each.Started.Start!)
+            .DistinctBy(start => start.Quest.Id, StringComparer.Ordinal)
+            .ToList();
+        await Stages.TimeAsync("bind", () => BindRunsAsync(openedStarts, events, ct)).ConfigureAwait(false);
 
-        await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("endings", () => EndingsAsync(events, concluded, ct)).ConfigureAwait(false);
 
         // Done work lands itself (LAND2b, D145 point 2): after the endings and their sync, so a done that just closed is read
         // as the service now holds it. The look chooses; the landings run beside it, as its starts do.
-        await LandDueAsync(events, ct).ConfigureAwait(false);
+        await Stages.TimeAsync("landing", () => LandDueAsync(events, ct)).ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt, signedOutAt), events, progressed, snapshot.Active, concluded)
         {
@@ -681,15 +750,102 @@ public sealed class Driver(
             JudgedOpinions = judgedOpinions,
         };
 
-        async Task<(Begun Started, StartRun? Came)> BeginAsync(Begun started, Func<Action, Task<StartRun>> start) =>
-            (started, await Context.Runs.StartAsync(start).ConfigureAwait(false));
+        // PARALLEL1b: one start reserved, then begun. The planner holds a reserved quest, ask and tree, so a reservation refused here is
+        // a start outside the look's plan reaching the same work first: said, and nothing begun twice.
+        void Begin(StartBegun started, StartReservation reserved, Func<List<TrustHold>, Action, Task<StartRun>> start)
+        {
+            if (!Context.Runs.TryReserve(reserved))
+            {
+                events.Add($"starting  {started.Where}: a start of this machine's is already opening its session, so none is begun beside it.");
+                if (started.Quest is { } quest && goingOn.TryGetValue(quest, out var session)) Context.Runs.WentOn(session);
+                return;
+            }
 
-        // The run, and its claim on the record its words wait on let go once it has ended, however it ended (ANSWER2).
-        async Task<StartRun> ClaimedAsync(Consideration start, Action opened)
+            var span = Stages.Begin("start", started.Quest is { } named ? $"#{named}" : $"ask#{started.Ask}");
+            beginning.Add((started, span, reserved, BeginAsync(started, span, reserved, start)));
+        }
+
+        // Each start's preparation, from its holds to its record open or to what it came to (LOOKWAIT1), timed with its quest or ask. Its
+        // reservation is let go the moment its record opens, when the ledger holds it, or once it came to nothing (PARALLEL1b).
+        async Task<StartCame> BeginAsync(StartBegun started, LookStages.StageSpan span, StartReservation reserved, Func<List<TrustHold>, Action, Task<StartRun>> start)
+        {
+            var own = new List<TrustHold>();
+            try
+            {
+                var came = await Context.Runs.StartAsync(opened => start(own, () =>
+                {
+                    Context.Runs.Release(reserved);
+                    opened();
+                })).ConfigureAwait(false);
+                return new StartCame(started, came, own);
+            }
+            finally
+            {
+                Context.Runs.Release(reserved);
+                span.Dispose();
+            }
+        }
+
+        // The starts, each to its record open or to what it came to (DEV3). PARALLEL1b: under the watch only until something else wants
+        // the loop (Wanted); each still preparing then runs on beside the look, reserved, and what it comes to is carried to a later
+        // look's report. A start that threw before its record opened fails the look, as it always did.
+        async Task<IReadOnlyList<StartCame>> SettledAsync(List<(StartBegun Started, LookStages.StageSpan Span, StartReservation Reserved, Task<StartCame> Came)> starting)
+        {
+            if (starting.Count == 0) return [];
+            var all = Task.WhenAll(starting.Select(each => each.Came));
+            if (Wanted is not { } wanted) return await all.ConfigureAwait(false);
+
+            using (var waiting = CancellationTokenSource.CreateLinkedTokenSource(ct))
+            {
+                var first = await Task.WhenAny(all, wanted(waiting.Token)).ConfigureAwait(false);
+                await waiting.CancelAsync().ConfigureAwait(false);
+                if (first == all) return await all.ConfigureAwait(false);
+            }
+
+            // Partitioned once: a start that settles after this is carried, never said twice.
+            var settled = new List<Task<StartCame>>();
+            foreach (var each in starting)
+            {
+                if (each.Came.IsCompleted)
+                {
+                    settled.Add(each.Came);
+                    continue;
+                }
+
+                each.Span.Aside();
+                Context.Runs.Carry(each.Started, each.Came);
+            }
+
+            var came = new List<StartCame>();
+            foreach (var task in settled) came.Add(await task.ConfigureAwait(false));
+            return came;
+        }
+
+        // The tree a start goes back into, where its repository opens trees (PARALLEL1b): a further part's, a resume's or a carry-on's.
+        // A first start grows its own, and in a repository whose sessions run in its root, the root is held by its repository.
+        string? TreeGoneBackInto(Consideration start) =>
+            config.OpensOwnTree(start.Quest.To) ? start.Entry?.Into?.Tree ?? start.Resumes?.Tree : null;
+
+        // The run, and its claim on the record its words wait on let go once it has ended, however it ended (ANSWER2). The plugins' say
+        // first, BEFORE a start costs anything (D64 §4): the first hold in catalogue order is the quest's reason for sitting, exactly as a
+        // dirty tree or a missing binary would be, and a plugin that could not decide holds too, naming itself. PARALLEL1b: each start
+        // asks on its own, at once with the others, so one plugin slow to answer for one quest holds that start alone.
+        async Task<StartRun> ClaimedAsync(Consideration start, List<TrustHold> own, Action opened)
         {
             try
             {
-                return await run(start, opened, ct).ConfigureAwait(false);
+                if (Context.Hooks is { } considering)
+                {
+                    var decision = await Stages.TimeAsync("consider", () => considering.ConsiderAsync(start, ct), $"#{start.Quest.Id}")
+                        .ConfigureAwait(false);
+                    if (!decision.Allowed)
+                    {
+                        return new StartRun($"held  #{start.Quest.Id} → {start.Quest.To}: {decision.Reason}", Opened: false, Held: decision.Reason);
+                    }
+                }
+
+                return await (Runner is { } runner ? runner(start, opened, ct) : RunAsync(start, snapshot.Repositories, own, opened, ct))
+                    .ConfigureAwait(false);
             }
             finally
             {
@@ -698,15 +854,12 @@ public sealed class Driver(
         }
     }
 
-    /// <summary>What one start of a look was: a quest's or an ask's intake, where it would run, and on which adapter.</summary>
-    private sealed record Begun(string? Quest, string? Ask, string Where, string? Workspace, string Adapter);
-
     /// <summary>
     /// The starts this look held on a cooling account, one wait per account (TOOL4d, D125 §4), each written to the
     /// machine log the first look it appears in and never again until a new cool-off; then the starts it held on accounts not
     /// signed in with none cooling, one wait per agent with no time (UX6d1), written once per set of accounts.
     /// </summary>
-    private IReadOnlyList<AccountWait> Waits(IEnumerable<(Begun Started, StartRun? Came)> begun)
+    private IReadOnlyList<AccountWait> Waits(IEnumerable<StartCame> begun)
     {
         var waits = begun
             .Where(each => each.Came?.Cooling is not null)
@@ -771,7 +924,7 @@ public sealed class Driver(
 
         return [.. waits, .. signedOut];
 
-        static IReadOnlyList<string> SignedOutOf(IEnumerable<(Begun Started, StartRun? Came)> held) =>
+        static IReadOnlyList<string> SignedOutOf(IEnumerable<StartCame> held) =>
             [.. held.SelectMany(each => each.Came?.SignedOut?.Accounts ?? []).Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
@@ -889,10 +1042,16 @@ public sealed class Driver(
     /// next retries, and every verb has already committed here — but a sync dying quietly looks exactly like
     /// a family with nothing to say, so the wall is named.
     /// </summary>
-    private async Task SyncAsync(List<string> events, CancellationToken ct)
+    /// <param name="beside">Whether it runs beside the look (<see cref="SyncBeside"/>), for its stage's mark (LOOKWAIT1).</param>
+    private async Task SyncAsync(List<string> events, CancellationToken ct, bool beside = false)
     {
         if (sync is null) return;
-        var synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+        SyncReport synced;
+        using (var syncing = Stages.Begin("sync", beside: beside))
+        {
+            synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+            syncing.Queued(synced.Queued);
+        }
 
         lock (events)
         {
@@ -906,6 +1065,22 @@ public sealed class Driver(
             // Reported as its own kind of line: each is news about the family, not a fault here.
             foreach (var note in synced.Notes) events.Add($"held  {note}");
         }
+    }
+
+    /// <summary>
+    /// The sync, run beside the look on the running set's own task (PARALLEL1b, D181 point 3): what it says joins a later look's report,
+    /// one pass at a time, and one asked for while a pass works follows it once. The lost-claim stop after it is the next look's
+    /// (<see cref="RunningSessions.TakeClaimsDue"/>), so a stop is still said by the look that made it.
+    /// </summary>
+    private void SyncBeside(CancellationToken ct)
+    {
+        if (sync is null) return;
+        Context.Runs.SyncBeside(async token =>
+        {
+            var said = new List<string>();
+            await SyncAsync(said, token, beside: true).ConfigureAwait(false);
+            return said;
+        }, ct);
     }
 
     /// <summary>
@@ -926,16 +1101,28 @@ public sealed class Driver(
         }
 
         // Contained: nothing a plugin says here changes the record, which moved on the exit code and the
-        // quest before this line ran (D46 §4).
+        // quest before this line ran (D46 §4). PARALLEL1b: under the watch, as the `hooks` topic's judge beside the look, a session's
+        // ending told once and HooksAtOnce endings at a time, so a plugin slow to hear holds no later look; what it says joins a later
+        // report. A one-look run and a gate's run-until-idle tell them in the look, as before.
         if (Context.Hooks is { } hooks)
         {
             foreach (var ended in concluded)
             {
-                events.AddRange(await hooks.EndedAsync(ended, ct).ConfigureAwait(false));
+                if (Wanted is not null)
+                {
+                    Context.Runs.Judge("hooks", ended.Session, HooksAtOnce,
+                        token => Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, token), ended.Session, beside: true), ct);
+                    continue;
+                }
+
+                events.AddRange(await Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct), ended.Session).ConfigureAwait(false));
             }
         }
 
-        if (concluded.Count > 0) await SyncAsync(events, ct).ConfigureAwait(false);
+        // Under the watch, beside the look (PARALLEL1b): the report after it carries what the sync said.
+        if (concluded.Count == 0) return;
+        if (Wanted is not null) SyncBeside(ct);
+        else await SyncAsync(events, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -949,29 +1136,43 @@ public sealed class Driver(
     /// </remarks>
     private async Task StopLostClaimsAsync(List<string> events, CancellationToken ct)
     {
-        foreach (var (quest, session) in Context.Runs.Live)
-        {
-            string claim;
-            string? why;
-            try
+        // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
+        // question alone, not every session's after it until the client gives up on it.
+        await Parallel.ForEachAsync(
+            Context.Runs.Live.ToArray(), new ParallelOptions { MaxDegreeOfParallelism = ClaimsAtOnce, CancellationToken = ct },
+            async (live, token) =>
             {
-                (claim, why) = await service.ClaimStandingAsync(quest, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
-                                              // The client's own timeout (DEV3a): a host that took the question and stalled.
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                continue; // The host did not answer; the next pass asks again.
-            }
+                var (quest, session) = (live.Key, live.Value);
+                string claim;
+                string? why;
+                try
+                {
+                    (claim, why) = await service.ClaimStandingAsync(quest, token).ConfigureAwait(false);
+                }
+                catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                                  // The client's own timeout (DEV3a): a host that took the question and stalled.
+                                                  || (error is OperationCanceledException && !ct.IsCancellationRequested))
+                {
+                    return; // The host did not answer; the next pass asks again.
+                }
 
-            // FABRIC-CLOSE1c18: a take lost to the person's reopen is stopped alike, and said as that, never as another machine's take.
-            var reopened = why == "source-reopened";
-            if (claim == "lost" && (Stops ?? StopForLostClaim)(session, reopened ? LostClaimToReopenNoted : LostClaimNoted))
-            {
-                lock (events) events.Add($"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}");
-            }
-        }
+                // FABRIC-CLOSE1c18: a take lost to the person's reopen is stopped alike, and said as that, never as another machine's take.
+                var reopened = why == "source-reopened";
+                if (claim == "lost" && (Stops ?? StopForLostClaim)(session, reopened ? LostClaimToReopenNoted : LostClaimNoted))
+                {
+                    lock (events) events.Add($"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}");
+                }
+            }).ConfigureAwait(false);
     }
+
+    /// <summary>How many claim questions the lost-claim stop asks this machine's host together (PARALLEL1b): local, and each one small.</summary>
+    internal const int ClaimsAtOnce = 4;
+
+    /// <summary>
+    /// How many endings the plugins hear at once beside the looks (PARALLEL1b; a topic bounded, the events design §A3): one slow answer
+    /// holds its own ending, and a burst of endings reaches each plugin's one process two requests at a time, never all at once.
+    /// </summary>
+    internal const int HooksAtOnce = 2;
 
     /// <summary>The process's stop, unless the driver already stopped it for its reason: true only when it stopped it now.</summary>
     private bool StopForLostClaim(string session, Noted reason) =>
@@ -1715,7 +1916,8 @@ public sealed class Driver(
                                 lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
                                 // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends.
                                 reopenedFrom: after is { HeldByReopen: true } ? after.Parent : null)
-                            : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
+                            // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
+                            : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
@@ -2443,12 +2645,15 @@ public sealed class Driver(
             });
             held.Attach(interrupt: null);
         }
+        // BGWAIT2: the timeout is said to the protocol door before the process is killed, so the stream's end it causes is said as
+        // the timeout's, never as the agent having exited.
+        var ending = adapter.Wire == SessionWire.Acp ? new AcpEnding() : null;
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
             ? CaptureAcpAsync(
                 process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? Context.Servers,
-                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector)
+                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -2473,7 +2678,9 @@ public sealed class Driver(
 
         working?.Invoke();
 
-        var exitCode = await WaitAsync(process, ct, minutes).ConfigureAwait(false);
+        var exitCode = await WaitAsync(
+                process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)))
+            .ConfigureAwait(false);
         await capture.ConfigureAwait(false);
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
@@ -2567,10 +2774,15 @@ public sealed class Driver(
     /// nobody is observing is the one thing worse than a failed one.
     /// </summary>
     /// <param name="minutes">The bound where it is not the machine's session timeout: a reviewer's pass (XAGENT1d).</param>
-    internal async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null)
+    /// <param name="timingOut">
+    /// Told the bound, in minutes, when the timeout ends the process, before it is killed (BGWAIT2): what lets the protocol door
+    /// say the stream's end that follows as the timeout's. Never told for a shutdown.
+    /// </param>
+    internal async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null, Action<int>? timingOut = null)
     {
+        var bound = minutes ?? config.TimeoutMinutes;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromMinutes(minutes ?? config.TimeoutMinutes));
+        timeout.CancelAfter(TimeSpan.FromMinutes(bound));
         try
         {
             await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
@@ -2578,6 +2790,8 @@ public sealed class Driver(
         }
         catch (OperationCanceledException)
         {
+            // Said before the kill, since the stream's end can reach the door's reader before anything after it here runs.
+            if (!ct.IsCancellationRequested) timingOut?.Invoke(bound);
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"
@@ -2675,13 +2889,14 @@ public sealed class Driver(
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
+    /// <param name="ending">Where the run's wait says the timeout before its kill (BGWAIT2), handed the door once it is made.</param>
     private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null)
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -2756,6 +2971,7 @@ public sealed class Driver(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId),
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation));
+            ending?.Open(session);
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
@@ -2824,8 +3040,9 @@ public sealed class Driver(
             // cannot carry it here: the driver closes stdin below and the agent winds up and exits 0,
             // so an account limit that refused the turn mid-edit read as a clean exit, and a taken
             // quest as a stand-down. A failed call is not the session describing its work, which is
-            // the self-report D46 §4 keeps out; it is the door saying the work was cut off.
-            SaidByCode(DoorNotes.Failed(error.Message));
+            // the self-report D46 §4 keeps out; it is the door saying the work was cut off. 🔴 BGWAIT2: a stream the timeout
+            // ended is said as the timeout, by its own line; the install's record said "the agent exited" of one.
+            SaidByCode(error is AcpEnded ended ? ended.Why : DoorNotes.Failed(error.Message));
             // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
             // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
             // finally below says nothing of them.

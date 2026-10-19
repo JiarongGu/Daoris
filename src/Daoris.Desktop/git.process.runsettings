@@ -2,7 +2,8 @@
 <!--
   The driver's Process half's git-only classes (PROC1b, PROC1c): the Process classes that start git and
   nothing a neighbour's load could fail carry Parallel=Git beside Category=Process, and run four at once
-  in one host. process.runsettings runs every other Process class one at a time. The driver's
+  in one host. process.runsettings runs every other Process class, eight at once (PROCPAR1), with
+  the classes that share the process run alone after the rest. The driver's
   Category.cs says which classes may carry the trait, and its CategoryTests holds them to it.
 
   Four, in one host: PROC1a measured the half as git starts made one at a time, four classes at once at

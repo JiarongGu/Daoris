@@ -33,6 +33,7 @@ import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { keys } from '../data/queries';
 import { type DriverState, useDriver } from '../bridge/driver';
+import { useLines } from '../bridge/lines';
 
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 
@@ -43,6 +44,21 @@ const SNAPSHOT = {
     { partition: 'shell', seq: 1, status: 'ready', data: { ready: true } },
     { partition: 'choices', seq: 1, status: 'ready', data: CHOICES },
     { partition: 'running', seq: 1, status: 'ready', data: { running: [] } },
+  ],
+};
+
+const lineRow = (repository: string, extra: Record<string, unknown> = {}) =>
+  ({ repository, workspace: 'default', branch: 'main', source: 'checkout', ...extra });
+const linesPart = (repository: string, extra: Record<string, unknown> = {}) => ({
+  lines: [lineRow(repository, extra)], landings: [], languages: [], reviews: [], opinions: [], helpers: [], commits: [],
+});
+
+/** The lines slice as the shell's owner holds it: a partition per repository. */
+const LINES_SNAPSHOT = {
+  slice: 'lines', epoch: 'l1', status: 'ready',
+  partitions: [
+    { partition: 'engine', seq: 1, status: 'ready', data: linesPart('engine') },
+    { partition: 'site', seq: 1, status: 'ready', data: linesPart('site', { branch: null, source: 'none', notReadYet: true }) },
   ],
 };
 
@@ -73,12 +89,13 @@ const since = (before: Map<string, number>, after: Map<string, number>) => Objec
 function host(pushes: boolean) {
   vi.useFakeTimers();
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-  invoke.mockImplementation(async (module: string, type: string) => {
+  invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { slice?: string } }) => {
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
     if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE') {
-      if (pushes) return SNAPSHOT;
+      if (pushes) return options?.payload?.slice === 'lines' ? LINES_SNAPSHOT : SNAPSHOT;
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
+    if (module === 'DAORIS.DRIVER' && type === 'LINES') return { lines: [lineRow('engine')], landings: [] };
     if (module === 'DAORIS.DRIVER' && type === 'STATE') return { ...CHOICES, running: [] };
     return {};
   });
@@ -124,8 +141,10 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   it('is read once as its snapshot when the window opens, and a tick reads none of it again', async () => {
     host(true);
     const client = await open();
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(1);
+    // One snapshot for each slice the window reads pushed (the driver's state, the lines), and no pull beside either.
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(2);
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
+    expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
     expect(client.getQueryData<DriverState>(keys.driver)?.drivable).toEqual(['engine']);
 
     const before = asked();
@@ -138,7 +157,48 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(tick['DAORIS.DRIVER.STATE']).toBeUndefined();
     expect(tick['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
     // Every other family keeps its pulls until its own slice moves.
-    expect(tick).toMatchObject({ 'DAORIS.DRIVER.LINES': 1, 'DAORIS.DRIVER.SWEEP_PLAN': 1 });
+    expect(tick['DAORIS.DRIVER.LINES']).toBeUndefined();
+    expect(tick).toMatchObject({ 'DAORIS.DRIVER.SWEEP_PLAN': 1 });
+  });
+
+  it('puts the lines in the cache composed from the repositories, with no pull', async () => {
+    host(true);
+    const client = await open();
+    const lines = client.getQueryData<{ lines: { repository: string; notReadYet?: boolean }[] }>(keys.lines);
+    expect(lines?.lines.map((line) => line.repository)).toEqual(['engine', 'site']);
+    expect(lines?.lines[1].notReadYet).toBe(true);
+  });
+
+  it('changes the lines where a push says, with no read, and drops a repository pushed gone', async () => {
+    host(true);
+    const client = await open();
+    const before = asked();
+
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'lines', epoch: 'l1', partition: 'engine', seq: 2, status: 'ready', data: linesPart('engine', { branch: 'dev' }) });
+      heard.get('STATE_PUSH')?.({ slice: 'lines', epoch: 'l1', partition: 'site', seq: 2, status: 'gone', data: null });
+      heard.get('STATE_CHANGED')?.({ scopes: ['lines'] });
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    const lines = client.getQueryData<{ lines: { repository: string; branch: string }[] }>(keys.lines);
+    expect(lines?.lines).toMatchObject([{ repository: 'engine', branch: 'dev' }]);
+    const changed = since(before, asked());
+    expect(changed['DAORIS.DRIVER.LINES']).toBeUndefined();
+    expect(changed['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+  });
+
+  it('asks nothing of the lines when the window takes the focus again', async () => {
+    host(true);
+    await open();
+    await later(20_000);
+    const before = asked();
+
+    hidden(true);
+    hidden(false);
+    await later(1_000);
+
+    expect(since(before, asked())['DAORIS.DRIVER.LINES']).toBeUndefined();
   });
 
   it('changes where a push says, with no read, and a change the driver declared reads none of it either', async () => {
@@ -178,12 +238,14 @@ describe("the driver's state, pushed (PUSH1a)", () => {
 
     function Second() {
       useDriver();
+      useLines();
       return <ShellSignals notify={() => {}} />;
     }
     render(<QueryClientProvider client={new QueryClient()}><Second /></QueryClientProvider>);
     await later(2_000);
 
-    expect(since(before, asked())).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 1, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+    // One snapshot for each slice, and neither pull.
+    expect(since(before, asked())).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 2, 'DAORIS.DRIVER.UNDER_WAY': 1 });
   });
 
   it('keeps the pull on a host older than the push: its state is read, and read again at a tick', async () => {
@@ -199,5 +261,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     });
 
     expect(since(before, asked())['DAORIS.DRIVER.STATE']).toBe(1);
+    // And the lines with it: an older host's page pulls them at the tick, as before.
+    expect(since(before, asked())['DAORIS.DRIVER.LINES']).toBe(1);
   });
 });

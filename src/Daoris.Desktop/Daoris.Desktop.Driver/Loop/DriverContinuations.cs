@@ -427,7 +427,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     code, park.State, quest.Status, status, quest.Awaits, after?.Awaits, turnFailed,
                     took: !closed && status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
                     lastWords: closed ? null : SessionLastWords.ParkedWords(_context.Events, sessionId, transcript))
-                : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
+                // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
+                : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
 
         conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
         conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);

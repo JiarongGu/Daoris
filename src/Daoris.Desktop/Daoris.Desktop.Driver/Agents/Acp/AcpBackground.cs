@@ -84,7 +84,9 @@ internal sealed class AcpBackground
     /// <summary>
     /// Wait until none of the work runs, as the wire says, then a breath for its last word (<see cref="AcpStreams.Settle"/>);
     /// and answer every piece that ran at the start or was announced since, with how it ended. Null when
-    /// <paramref name="ended"/> completes first: the agent's stream is over, and nothing more will be said of the work.
+    /// <paramref name="ended"/> completes while any of it runs: the agent's stream is over, and nothing more will be said of the
+    /// work. A stream that ends in the breath after the last ending cuts the breath short and nothing else (BGWAIT2): the wire
+    /// said it all ended, and what the agent said after it, a woken turn's end among it, was read before the stream's end.
     /// </summary>
     public async Task<IReadOnlyList<(string Name, string State)>?> EndedAsync(Task ended, CancellationToken ct)
     {
@@ -112,7 +114,6 @@ internal sealed class AcpBackground
                 // starts as it is woken, before the work is said to have ended.
                 await Task.WhenAny(Task.Delay(AcpStreams.Settle, ct), ended).ConfigureAwait(false);
                 ct.ThrowIfCancellationRequested();
-                if (ended.IsCompleted) return null;
                 lock (_gate)
                 {
                     if (_work.Any(work => work.State is null)) continue;

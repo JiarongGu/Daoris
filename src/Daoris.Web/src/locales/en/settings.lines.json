@@ -7,6 +7,7 @@
   "settings.lines.from.repository": "`{{branch}}`, set for this repository.",
   "settings.lines.from.workspace": "`{{branch}}`, set for the workspace {{workspace}}.",
   "settings.lines.from.checkout": "`{{branch}}`, the checkout's own.",
+  "settings.lines.from.notReadYet": "Not read yet: this machine has not read the line from the checkout yet.",
   "settings.lines.from.none": "No line: none is set, and git names none here.",
   "settings.lines.set": "Save",
   "settings.lines.clear": "Clear",

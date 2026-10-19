@@ -557,6 +557,18 @@ public sealed record SessionView(
 /// </summary>
 public sealed record SessionStarted(string Adapter, string? Profile, DateTimeOffset? Created, bool Running);
 
+/// <summary>
+/// A start of this machine's loop that has not yet opened its record (PARALLEL1b, D181 point 3): reserved by the look that began it,
+/// which no longer waits for it, until the record opens or the start comes to nothing. No snapshot the service answers holds it, so
+/// the look hands it to the planner (<see cref="Snapshot.Starting"/>), which holds its quest, its place under the cap, the root of a
+/// repository whose sessions run there, and the tree it goes back into, as it holds a live session's.
+/// </summary>
+/// <param name="Quest">The quest it serves, or null for an ask's intake.</param>
+/// <param name="Ask">The ask an intake answers, or null for a quest's start.</param>
+/// <param name="Repository">Where it runs: the quest's receiver, or an intake's <c>ask #id</c>, which no quest names.</param>
+/// <param name="Tree">The tree it goes back into (a resume, a carry-on, a further part), or null for one that grows its own.</param>
+public sealed record StartReservation(string? Quest, string? Ask, string Repository, string? Tree);
+
 public static class ActiveSessions
 {
     /// <summary>
@@ -660,6 +672,13 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, string> Entries { get; init; } =
         new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The starts of this machine's loop not yet open (PARALLEL1b, D181 point 3), as the look reserved them: the planner holds each
+    /// as it holds a live session (<see cref="StartReservation"/>), and counts under the cap each one no active session already
+    /// stands for. Absent is none, as for a caller that waits for each start to open.
+    /// </summary>
+    public IReadOnlyList<StartReservation> Starting { get; init; } = [];
 }
 
 public enum StartVerdict
@@ -906,7 +925,10 @@ public static class Planner
         // The trees a start planned at this look goes into, each with its quest (SESSONE1d): a tree takes one session (D51), and a
         // further part of a session may now go into a tree a resume or a carry-on goes back into, so each holds it for the other.
         var treesThisTick = new List<(string Tree, string Quest)>();
-        var slots = config.Cap - snapshot.Active.Count;
+        // PARALLEL1b: a start of this machine's still opening takes its place as a live session does, counted once where its record
+        // has opened since and an active session already stands for its quest.
+        var opening = Opening(snapshot);
+        var slots = config.Cap - snapshot.Active.Count - opening.Count;
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts
         // first" one implementation rather than two that drift. 🔴 But a record the person wrote to goes first (MSG1b, D137
@@ -1353,6 +1375,14 @@ public static class Planner
                     $"session `{serving.Id}` is already working on `#{quest.Id}`.");
             }
 
+            // PARALLEL1b: a start of this machine's that has not yet opened its record holds the quest as its session will: the look
+            // that began it no longer waits for it, so a wake meanwhile plans the quest again, and would start it twice.
+            if (opening.Any(start => string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase)))
+            {
+                return new(quest, StartVerdict.RepositoryBusy,
+                    $"`#{quest.Id}` is starting on this machine already: its session opens once its tree and account are ready.");
+            }
+
             // 🔴 The TREE is the lock (D51), and where every session here opens its own there is no
             // reason to run one at a time (PAR1). What still holds is the one tree a resume or a carry-on goes back into.
             if (config.OpensOwnTree(quest.To))
@@ -1362,6 +1392,14 @@ public static class Planner
                 {
                     return new(quest, StartVerdict.RepositoryBusy,
                         $"session `{holder.Id}` is active in the tree `#{quest.Id}` goes back into — one session per tree.");
+                }
+
+                // PARALLEL1b: a start still opening holds the tree it goes back into, as its session will.
+                if (into is { Tree: { Length: > 0 } reserved }
+                    && opening.FirstOrDefault(start => SameTree(start.Tree, reserved)) is { Quest: { } going })
+                {
+                    return new(quest, StartVerdict.RepositoryBusy,
+                        $"queued behind quest `#{going}`, which is starting in the tree `#{quest.Id}` goes back into — one session per tree.");
                 }
 
                 // A further part planned into that tree at this look holds it as a live session would (SESSONE1d).
@@ -1384,6 +1422,14 @@ public static class Planner
             {
                 return new(quest, StartVerdict.RepositoryBusy,
                     $"queued behind quest `#{ahead}` in `{quest.To}` — oldest first, one at a time.");
+            }
+            // PARALLEL1b: a start still opening in the root holds it, as its session will once it opens.
+            else if (opening.FirstOrDefault(start => string.Equals(start.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
+                                                     && !string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase))
+                     is { Quest: { } before })
+            {
+                return new(quest, StartVerdict.RepositoryBusy,
+                    $"queued behind quest `#{before}`, which is starting in `{quest.To}` — one session per repository, whose root is its one tree.");
             }
 
             // An answered park already holds its slot among the active (ANSWER1a): going on, it starts no second session. An
@@ -1467,8 +1513,17 @@ public static class Planner
         !take.Here
         || (!take.Took && quest.Updated is { } taken && last.Updated is { } ended && taken > ended);
 
+    /// <summary>
+    /// The starts still opening a snapshot carries that take a place of their own (PARALLEL1b): each but one whose quest an active
+    /// session already stands for, its record opened since, which the active sessions count. What the planner and a look's intakes
+    /// count under the cap.
+    /// </summary>
+    internal static IReadOnlyList<StartReservation> Opening(Snapshot snapshot) =>
+        [.. snapshot.Starting.Where(start => start.Quest is null
+                                             || !snapshot.Active.Any(s => string.Equals(s.Quest, start.Quest, StringComparison.OrdinalIgnoreCase)))];
+
     /// <summary>Two tree paths are one tree — separators and case aside, as Windows sees them.</summary>
-    private static bool SameTree(string? a, string? b) =>
+    internal static bool SameTree(string? a, string? b) =>
         a is { Length: > 0 } && b is { Length: > 0 }
         && string.Equals(
             a.Replace('\\', '/').TrimEnd('/'), b.Replace('\\', '/').TrimEnd('/'), StringComparison.OrdinalIgnoreCase);

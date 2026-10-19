@@ -62,7 +62,7 @@ export function readMachine(answers: {
     drivable,
     tools: byTool(answers.harnesses ?? []),
     waiting: (answers.sessions ?? []).filter((session) => session.state === 'awaiting-person' && !answeredPark(session)).length,
-    unnamedLines: (answers.lines ?? []).filter((line) => line.source === 'none').map((line) => line.repository),
+    unnamedLines: (answers.lines ?? []).filter((line) => !line.notReadYet && line.source === 'none').map((line) => line.repository),
     helper: answers.driver?.helperAdapter || null,
     intake: answers.driver?.intakeAdapter || null,
     unlanded: (answers.landings ?? [])

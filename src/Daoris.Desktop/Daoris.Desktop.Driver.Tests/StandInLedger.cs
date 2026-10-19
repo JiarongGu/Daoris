@@ -530,11 +530,18 @@ internal sealed class StandInLedger : HttpMessageHandler
         lock (_gate) return _claims.GetValueOrDefault(quest);
     }
 
+    /// <summary>
+    /// What a request waits on before it is answered, outside the gate, where a test holds one (PARALLEL1b): which requests are asked
+    /// at once is what such a test reads. Null holds none.
+    /// </summary>
+    public Func<HttpRequestMessage, CancellationToken, Task>? Before { get; set; }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var path = request.RequestUri!.AbsolutePath;
         var all = request.RequestUri.Query.Contains("includeClosed=true", StringComparison.Ordinal);
         var body = request.Content is null ? null : JsonNode.Parse(await request.Content.ReadAsStringAsync(ct))?.AsObject();
+        if (Before is { } before) await before(request, ct);
 
         if (ClaimHangs && request.Method == HttpMethod.Get && path.StartsWith("/api/quests/", StringComparison.Ordinal)
             && path.EndsWith("/claim", StringComparison.Ordinal))

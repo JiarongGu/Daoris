@@ -1228,15 +1228,26 @@ public sealed class RemoteSyncSetTests
         """;
 
     /// <summary>Records the BODY as well as the call: which rows went where is the whole question.</summary>
+    /// <remarks>PARALLEL1b: the circles' passes run at once, so the record is kept under a lock.</remarks>
     private sealed class RecordingTransport : HttpMessageHandler
     {
-        public List<(string Call, string Body)> Calls { get; } = [];
+        private readonly List<(string Call, string Body)> _calls = [];
+
+        public List<(string Call, string Body)> Calls
+        {
+            get { lock (_calls) return [.. _calls]; }
+        }
+
         public Func<HttpRequestMessage, HttpResponseMessage>? Answer { get; init; }
+
+        /// <summary>What a request waits on before it is answered, where a test holds one.</summary>
+        public Func<HttpRequestMessage, Task>? Before { get; init; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
-            Calls.Add(($"{request.Method} {request.RequestUri}", body));
+            lock (_calls) _calls.Add(($"{request.Method} {request.RequestUri}", body));
+            if (Before is { } before) await before(request);
             return Answer!(request);
         }
     }
@@ -1299,6 +1310,34 @@ public sealed class RemoteSyncSetTests
         Assert.DoesNotContain("Foundry", Assert.Single(toAurora).Body);
         Assert.Contains("Foundry", Assert.Single(toTools).Body);
         Assert.DoesNotContain("Atelier", Assert.Single(toTools).Body);
+    }
+
+    /// <summary>
+    /// PARALLEL1b (D181 point 3): the circles' passes run at once, so one remote that is slow to answer holds its own circle's pass
+    /// and not the other's. Here the first circle's remote answers only once the second's has been asked: one after another, it
+    /// never would.
+    /// </summary>
+    [Fact]
+    public async Task Every_circle_s_pass_runs_at_once_so_a_slow_remote_holds_only_its_own()
+    {
+        var toolsAsked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var transport = new RecordingTransport
+        {
+            Answer = Answer,
+            Before = async request =>
+            {
+                var url = request.RequestUri!.ToString();
+                if (url.StartsWith(Tools, StringComparison.Ordinal)) toolsAsked.TrySetResult();
+                if (url.StartsWith(Aurora, StringComparison.Ordinal)) await toolsAsked.Task.WaitAsync(TimeSpan.FromSeconds(20));
+            },
+        };
+        using var set = Set(transport);
+
+        var report = await set.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        Assert.Null(report.Problem);
+        Assert.Contains(transport.Calls, c => c.Call == $"POST {Aurora}/api/registry");
+        Assert.Contains(transport.Calls, c => c.Call == $"POST {Tools}/api/registry");
     }
 
     /// <summary>

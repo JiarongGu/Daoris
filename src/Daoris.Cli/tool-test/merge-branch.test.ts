@@ -1,7 +1,8 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync, writeSync } from 'node:fs';
+import os from 'node:os';
+import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync, writeSync } from 'node:fs';
 import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture } from '../test/_fixture.ts';
@@ -92,6 +93,7 @@ const tool = await import(
     scripts?: Record<string, string>;
     run?: (root: string, gate: Gate, dir: string, beside?: Beside) => Promise<GateResult>;
     print?: (line: string) => void;
+    halt?: () => boolean;
   }) => Promise<GateResult[]>;
   isProcessLane: (gate: { name: string; run: string }) => boolean;
   isGitHalf: (gate: { name: string; run: string }) => boolean;
@@ -178,6 +180,14 @@ const tool = await import(
   copyPrivateFiles: (home: string, tree: string, files: string[]) => string[];
   keepGateLogs: (tree: string, home: string, sha: string) => boolean;
   rescueGateLogs: (tree: string, home: string) => string[];
+  /** CIPRIO1: a full set beside the merges is a guest: below normal priority, its own build servers, stopped when main moves on. */
+  lowerPriority: (setPriority?: (pid: number, priority: number) => void) => string | null;
+  BESIDE_ENVIRONMENT: Readonly<Record<string, string>>;
+  startBesideRun: (options?: { setPriority?: (pid: number, priority: number) => void; env?: Record<string, string | undefined>; say?: (line: string) => void }) => void;
+  watchTip: (commit: string | null, resolveTip?: () => string | null) => { check: () => boolean; superseded: { from: string; to: string } | null };
+  supersededLines: (superseded: { from: string; to: string }, ran: string[], left: string[]) => string[];
+  besideOutcome: (code: number, superseded: { from: string; to: string } | null) => { passed: boolean; superseded: string | null };
+  runStep: Step;
 };
 
 // The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
@@ -903,7 +913,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // run as well (WEBSPLIT1), and not its build.
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
       [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'web-unit', 'deployment']]),
-    // PROC1b: the driver's Process classes run in two halves, one class at a time and the git-only ones four at once.
+    // PROC1b: the driver's Process classes run in two halves, the git-only ones four at once and the rest eight at once (PROCPAR1).
     ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process', 'driver-process-git']],
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
@@ -3174,12 +3184,103 @@ test('a Process gate writes its trx beside its log, and the slowest classes are 
   assert.equal(fast.slowest, undefined);
 
   const printed: string[] = [];
+  result.ms = 1000;
   await tool.runGates(fx.root, [processGate], fx.root, { run: async () => result, print: (line) => printed.push(line) });
   assert.match(printed[0]!, /PASS\s+driver-process/);
-  assert.match(printed[1]!, /slowest classes of driver-process, from driver-process\.trx:/);
+  // PROCPAR1b: the classes run at once, so the wall is the run's own (result.ms), never the classes' sum.
+  assert.match(printed[1]!, /slowest classes of driver-process, by their own times; the half's wall was 1 s \(its classes ran at once, so the times do not add up to it\), from driver-process\.trx:/);
   assert.match(printed[2]!, /^\s+1\.\s+4 m 1 s\s+2 tests\s+SlowTests$/);
   assert.match(printed[3]!, /^\s+2\.\s+2 m 0 s\s+1 test\s+Outer\+InnerTests$/);
   fx.cleanup();
+});
+
+// ---------------------------------------------------------------------------------------------------
+// CIPRIO1: a full set beside the merges is a guest on the machine
+
+test('a full set beside lowers its own priority to below normal at its start, and says so when it cannot', () => {
+  const asked: [number, number][] = [];
+  const said: string[] = [];
+  const env: Record<string, string | undefined> = {};
+  tool.startBesideRun({ setPriority: (pid, priority) => { asked.push([pid, priority]); }, env, say: (line) => said.push(line) });
+  assert.deepEqual(asked, [[0, os.constants.priority.PRIORITY_BELOW_NORMAL]]);
+  assert.deepEqual(said, []);
+
+  // A failure to lower is said and the run goes on: the environment is still set.
+  const failed: string[] = [];
+  const bare: Record<string, string | undefined> = {};
+  tool.startBesideRun({ setPriority: () => { throw new Error('access denied'); }, env: bare, say: (line) => failed.push(line) });
+  assert.match(failed.join('\n'), /could not lower its priority \(access denied\)/);
+  assert.equal(bare.MSBUILDDISABLENODEREUSE, '1');
+});
+
+test('the gates beside get their own build servers: none reused, none borrowed, none left for the owner\'s builds', () => {
+  assert.deepEqual({ ...tool.BESIDE_ENVIRONMENT }, { MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
+  const env: Record<string, string | undefined> = { KEEP: 'x' };
+  tool.startBesideRun({ setPriority: () => {}, env, say: () => {} });
+  assert.deepEqual(env, { KEEP: 'x', MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
+});
+
+test('a gate step started after the run lowered itself runs at the lowered priority', async () => {
+  const fx = makeFixture('merge-branch-priority');
+  const before = os.getPriority(0);
+  try {
+    assert.equal(tool.lowerPriority(), null);
+    const lowered = os.getPriority(0);
+    assert.ok(lowered > before, `lowered from ${before} to ${lowered}`);
+    const log = join(fx.root, 'priority.log');
+    writeFileSync(log, '');
+    const fd = openSync(log, 'a');
+    const code = await tool.runStep('node -e "console.log(\'priority=\' + require(\'os\').getPriority())"', fx.root, fd);
+    closeSync(fd);
+    assert.equal(code, 0);
+    assert.match(readFileSync(log, 'utf8'), new RegExp(`priority=${lowered}\\b`));
+  } finally {
+    os.setPriority(0, before);
+    fx.cleanup();
+  }
+});
+
+test('a run of main\'s tip stops before its next gate once a newer tip supersedes it, and is recorded superseded, never passed', async () => {
+  let tip: string | null = 'aaaaaaa1';
+  const watch = tool.watchTip('aaaaaaa1', () => tip);
+  const gates = ['a', 'b', 'c'].map((name) => planned(name, `dotnet build src/S/${name}`));
+  const lanes = laneRun(['a', 'b', 'c']);
+  const printed: string[] = [];
+  const results = await tool.runGates('root', gates, 'logs', {
+    keepGoing: true,
+    run: async (root, gate, at, beside) => {
+      const result = await lanes.run(root, gate, at, beside);
+      tip = 'bbbbbbb2';
+      return result;
+    },
+    halt: watch.check,
+    print: (line) => printed.push(line),
+  });
+  assert.deepEqual(results.map((result) => result.gate.name), ['a'], 'gate b never ran');
+  assert.deepEqual(lanes.events, ['start a', 'end a']);
+  assert.deepEqual(watch.superseded, { from: 'aaaaaaa1', to: 'bbbbbbb2' });
+  assert.match(printed.at(-1)!, /NOT RUN\s+c/);
+  const lines = tool.supersededLines(watch.superseded!, ['a'], ['b', 'c']).join('\n');
+  assert.match(lines, /superseded/);
+  assert.match(lines, /aaaaaaa.*bbbbbbb/);
+  assert.match(lines, /ran: a/);
+  assert.match(lines, /left: b, c/);
+  assert.deepEqual(tool.besideOutcome(1, watch.superseded), { passed: false, superseded: 'bbbbbbb2' });
+  assert.deepEqual(tool.besideOutcome(0, null), { passed: true, superseded: null });
+  // Even a run whose gates all passed is not passed once it was superseded.
+  assert.equal(tool.besideOutcome(0, watch.superseded).passed, false);
+});
+
+test('a run given a named commit is never superseded: no commit to watch, no tip read', () => {
+  let reads = 0;
+  const watch = tool.watchTip(null, () => { reads += 1; return 'bbbbbbb2'; });
+  assert.equal(watch.check(), false);
+  assert.equal(reads, 0);
+  assert.equal(watch.superseded, null);
+  // A tip that cannot be read is not a newer one.
+  assert.equal(tool.watchTip('aaaaaaa1', () => null).check(), false);
+  // The same tip is not newer.
+  assert.equal(tool.watchTip('aaaaaaa1', () => 'aaaaaaa1').check(), false);
 });
 
 // ---------------------------------------------------------------------------------------------------

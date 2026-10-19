@@ -31,6 +31,33 @@ public sealed class ObservationTests
         Assert.Equal(("stopped", "stopped for the pause.", false), (closed.State, closed.Note, interrupted));
     }
 
+    /// <summary>
+    /// 🔴 BGWAIT2: a run the timeout killed after its work brought its quest to done ended its work, so it is completed, as a
+    /// done outranks a messy exit, and its note says both the done and the timeout. The install's session committed and closed
+    /// its quest done, then waited 48 minutes on a prompt its adapter never answered, and was recorded failed. Only a done this
+    /// run reached counts: one whose quest had closed before it went on with the person's words is judged on those (MSG1b), and
+    /// a quest still taken at the timeout is failed, which D80 carries on.
+    /// </summary>
+    [Fact]
+    public void A_timeout_after_the_run_brought_its_quest_to_done_completes_and_says_both()
+    {
+        foreach (var startedOn in new[] { "Open", "Taken" })
+        {
+            var done = Observation.AfterTimeout(90, startedOn, "Done");
+            Assert.Equal("completed", done.State);
+            Assert.Equal(["ended.done", "ended.timeout"], done.Parts!.Select(part => part.Code));
+            Assert.Equal("the quest reached done. timed out after 90 minutes and was killed.", done.Note);
+            Assert.Equal(90, done.Parts![1].Value("minutes"));
+        }
+
+        foreach (var (startedOn, status) in new[] { ("Taken", "Taken"), ("Open", "Open"), ("Done", "Done"), ("Taken", "Declined") })
+        {
+            var failed = Observation.AfterTimeout(90, startedOn, status);
+            Assert.Equal(("failed", "ended.timeout"), (failed.State, Assert.Single(failed.Parts!).Code));
+            Assert.Equal("timed out after 90 minutes and was killed.", failed.Note);
+        }
+    }
+
     /// <summary>Whose decision a stop was (SURF5b): the person's where the driver gave no reason of its own.</summary>
     [Fact]
     public void A_stop_with_the_drivers_reason_is_the_drivers_and_any_other_the_persons()
