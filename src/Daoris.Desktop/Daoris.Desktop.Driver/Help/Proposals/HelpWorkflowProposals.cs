@@ -39,6 +39,10 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["new", "edit", "use"];
 
+    /// <summary>ASKSCOPE1c: its scope is one word, a repository's name or a workspace's, which its judge finds which of.</summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
+        new([proposal.Workspace], [proposal.Repository]) { Either = [proposal.Scope] };
+
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
         if (file.ValueKind != JsonValueKind.Object) return proposal;

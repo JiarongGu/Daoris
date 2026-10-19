@@ -139,6 +139,15 @@ public sealed record HelpProposal(
 public sealed record HelpMachineFacts(
     IReadOnlyCollection<string> Repositories, IReadOnlyCollection<string> Workspaces, IReadOnlyCollection<string> Agents)
 {
+    // Every kind's.
+
+    /// <summary>
+    /// The workspace the conversation that proposed it is bound to (ASKSCOPE1c, D158's ASKSCOPE1 note point 5), read from its record
+    /// (<see cref="HelpCircle.OfRecord"/>): a proposal naming another workspace, a repository of another, or every workspace at once
+    /// is refused before its kind judges it (<see cref="HelpProposalScope"/>). Null for <c>default</c>'s room, the whole machine.
+    /// </summary>
+    public string? Circle { get; init; }
+
     /// <summary>Each door as the Agents screen's roster reads it (HELP6), for an agent's update or pin and an account's settings.</summary>
     public IReadOnlyList<HelpDoorFacts> Doors { get; init; } = [];
 
@@ -558,11 +567,16 @@ public static class HelpProposals
         return HelpProposalKinds.All.Aggregate(read, (proposal, kind) => kind.Read(proposal, root));
     }
 
-    /// <summary>Judge a proposal with the route's own code, against the machine as it stands.</summary>
+    /// <summary>
+    /// Judge a proposal with the route's own code, against the machine as it stands: first against the workspace its conversation is
+    /// bound to (ASKSCOPE1c, <see cref="HelpProposalScope"/>), then by its kind.
+    /// </summary>
     public static HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts) =>
-        HelpProposalKinds.Find(proposal.Kind) is { } kind
-            ? kind.Plan(proposal, config, facts)
-            : new HelpPlan(Unknown(proposal.Kind), "", "", null);
+        HelpProposalKinds.Find(proposal.Kind) is not { } kind
+            ? new HelpPlan(Unknown(proposal.Kind), "", "", null)
+            : HelpProposalScope.Refusal(kind.Named(proposal, facts), facts) is { } outside
+                ? new HelpPlan(outside, "", "", null)
+                : kind.Plan(proposal, config, facts);
 
     /// <summary>
     /// A card drawn for the person (HIST1f-b): <c>HELP_PROPOSALS</c> calls this for each proposal it shows, with the plan it

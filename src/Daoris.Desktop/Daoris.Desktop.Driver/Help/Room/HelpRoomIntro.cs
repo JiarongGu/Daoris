@@ -33,7 +33,31 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         text.Append("this machine: how to set up a workspace, what a screen means, why a start was refused, how to drive\n");
         text.Append("a repository, write a rule, or start a task. Written by Daoris each time the conversation opens; an\n");
         text.Append("edit here is overwritten.\n\n");
-        if (machine.Workspace is { } workspace) text.Append(Scope(workspace));
+        if (machine.Workspace is { } workspace) text.Append(Scope(workspace)).Append(Bound(workspace, machine.Mode == HelpModes.Full));
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): what binds its tools to its workspace. Restricted: its connector and its checkouts
+    /// are its workspace's, and another, or all, is refused. Full access (D183 point 5, the modes design §7's trap of a workspace's
+    /// label read as confinement): its shell reaches the whole machine, so the workspace is said to be no fence, and what stays
+    /// scoped is said as such. Words, not a gate; the mode is the gate.
+    /// </summary>
+    private static string Bound(string workspace, bool full)
+    {
+        var text = new StringBuilder();
+        if (full)
+        {
+            text.Append($"Full access is not confined to `{workspace}`: your shell and file edits reach this whole machine, other workspaces'\n");
+            text.Append($"checkouts and records among them. `{workspace}` is where this conversation belongs, not a fence around it, so leave\n");
+            text.Append("another workspace's work to a conversation started from a window on that workspace.\n");
+            text.Append($"`daoris-knowledge` still answers for `{workspace}` alone, and a proposal naming another workspace is refused.\n\n");
+            return text.ToString();
+        }
+
+        text.Append($"`daoris-knowledge` answers for `{workspace}` alone: its registry, its search, its reads and its quests are `{workspace}`'s,\n");
+        text.Append($"and a call naming another workspace, or `all`, is refused. The checkouts you may read are `{workspace}`'s, and a\n");
+        text.Append("proposal naming another workspace or one of its repositories is refused before the person sees it.\n\n");
         return text.ToString();
     }
 

@@ -142,7 +142,12 @@ builder.Services.AddSingleton(BrainstormBox.FromEnvironment());
 // directory a client launched this from is the fact; anything later is drift. An intake's room is no
 // repository: its circle is its ask's, read once here.
 var circle = intake.Ask is { } askId ? (await composed.Asks.FindAsync(askId).ConfigureAwait(false))?.Workspace : null;
-builder.Services.AddSingleton(new AmbientWorkspace(Directory.GetCurrentDirectory(), circle));
+// ASKSCOPE1c: Ask Daoris in a workspace's room is bound to that workspace by its record, which the driver names here; its
+// tools answer from it alone and refuse another, or all.
+builder.Services.AddSingleton(new AmbientWorkspace(Directory.GetCurrentDirectory(), circle)
+{
+    Bound = AmbientWorkspace.BoundFrom(Environment.GetEnvironmentVariable),
+});
 
 builder.Services
     .AddMcpServer(options =>

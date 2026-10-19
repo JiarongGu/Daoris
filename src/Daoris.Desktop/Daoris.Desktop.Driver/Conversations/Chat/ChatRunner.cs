@@ -668,33 +668,42 @@ public sealed class ChatRunner : IDisposable
     internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => HelpPlaceIn(_home, room, reads, workspace);
 
     /// <inheritdoc cref="HelpPlace"/>
-    internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null) =>
-        new(
+    /// <remarks>
+    /// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): its tools are bound to its room's workspace (<see cref="HelpCircle.Of"/>): its
+    /// connector's circle, and the person's denies for that workspace in its rules beside the checkouts its room grants.
+    /// </remarks>
+    internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads, string? workspace = null)
+    {
+        var circle = HelpCircle.Of(home, room, workspace);
+        return new(
             HelpRoom.Repository, room,
             (file, id) =>
             {
                 var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
-                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask);
+                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask, circle);
             },
             Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
         {
             Keeps = true,
             ServersTo = PluginServerTo.Help,
             Workspace = RemoteTarget.Workspace(workspace),
+            Circle = circle,
             Reads = reads,
         };
+    }
 
     /// <summary>
     /// Ask Daoris's place under the access its start got (HELPMODE1a1, D183 point 1). Restricted is the place as HELP1a made it. Full
     /// asks nothing and allows nothing by list, its harness's mode doing neither; keeps every deny the person's rules compose; is
     /// handed every plugin server here, approved or not (D170 as D183 amends it); and is handed no tree guard, which would keep its
-    /// file writes inside the room when Daoris's own housekeeping, its trees and its home, is outside it (D183 point 5).
+    /// file writes inside the room when Daoris's own housekeeping, its trees and its home, is outside it (D183 point 5). Its circle
+    /// stays its room's workspace (ASKSCOPE1c), so its connector's searches stay scoped though its shell reaches anything.
     /// </summary>
     internal static ChatPlace HelpUnder(ChatPlace place, HelpAccess access) => access is not { Full: true, Refusal: null }
         ? place
         : place with
         {
-            Rules = (file, _) => HelpRoom.FullRules(file),
+            Rules = (file, _) => HelpRoom.FullRules(file, place.Circle),
             Posture = access.Posture,
             PermissionMode = access.PermissionMode,
             EveryServer = true,
@@ -727,13 +736,46 @@ public sealed class ChatRunner : IDisposable
     /// under another is told on its console that the switch takes its next start. Nothing it runs with changes: a live switch of
     /// its harness's mode alone would leave the rules, servers and room its start handed for the old one (D183's HELPMODE1a2 note).
     /// </summary>
+    /// <remarks>
+    /// HELPMODE1a5: a narrowing (full to restricted) is the exception, since full access is never kept past the person's choice
+    /// (D183 point 2): the conversation ends at its turn's end, never mid-turn, and at once where it is idle; its next words resume
+    /// it restricted, as any go-on reads the mode chosen then and says the change. A widening still takes the next start.
+    /// </remarks>
     public void HelpModeChosen(string mode)
     {
         foreach (var (sessionId, running) in _context.HelpModes)
         {
-            if (HelpModes.TakesNextStart(running, mode) is { } line) _output?.Append(sessionId, line);
+            if (HelpModes.Recorded(running) == HelpModes.Recorded(mode))
+            {
+                // Chosen back to what it runs under: an end scheduled for the turn's end is withdrawn.
+                _context.HelpEnding.TryRemove(sessionId, out _);
+                continue;
+            }
+
+            if (HelpModes.Narrows(running, mode))
+            {
+                var idle = !Taking(sessionId);
+                _output?.Append(sessionId, HelpModes.EndsForNarrowing(idle));
+                if (idle) Finish(sessionId);
+                else _context.HelpEnding[sessionId] = true;
+            }
+            else if (HelpModes.TakesNextStart(running, mode) is { } line) _output?.Append(sessionId, line);
         }
     }
+
+    /// <summary>
+    /// Where a conversation's turns stand (HELPMODE1a5): one a narrowing switch scheduled to end is ended once nothing runs or
+    /// waits, as its turn has ended. Called by each start's turns, under their lock, so it ends off it.
+    /// </summary>
+    internal void HelpTurnChanged(string sessionId, ChatQueue queue)
+    {
+        if (queue.Taking || queue.Opening || queue.Queued.Count > 0) return;
+        if (!_context.HelpEnding.TryRemove(sessionId, out _)) return;
+        _ = Task.Run(() => Finish(sessionId));
+    }
+
+    /// <summary>The runner's shared state, for tests that stand a conversation up without a spawn.</summary>
+    internal ChatContext Context => _context;
 
     /// <summary>
     /// Keep what an Ask Daoris start handed as its receipt (HELPWIRED1, D183 point 4), each server's approval and what restricted mode
@@ -791,6 +833,12 @@ public sealed class ChatRunner : IDisposable
         /// sets aside only its own workspace's. Null for a repository's conversation.
         /// </summary>
         public string? Workspace { get; init; }
+
+        /// <summary>
+        /// The workspace its tools are bound to (ASKSCOPE1c, <see cref="HelpCircle"/>): Ask Daoris's room's, under either mode, so its
+        /// connector answers from that workspace alone. Null for <c>default</c>'s room, the whole machine, and for a repository's.
+        /// </summary>
+        public string? Circle { get; init; }
 
         /// <summary>The native door's permission mode for it, where one is named (HELPMODE1a1, Ask Daoris in full access); null keeps the adapter's own.</summary>
         public string? PermissionMode { get; init; }
@@ -975,7 +1023,7 @@ public sealed class ChatRunner : IDisposable
             // protocol door carries them on `session/new` (`Servers`); a driven or intake session on the
             // pipe is handed a file — and a conversation on the pipe was handed nothing at all. A room
             // has no `.mcp.json` of its own, so its connector goes in the same file (HELP1a).
-            offered = resolved.Wire == SessionWire.Acp || place.ConnectorOnPipe ? Servers(sessionId, pluginServers) : pluginServers;
+            offered = resolved.Wire == SessionWire.Acp || place.ConnectorOnPipe ? Servers(sessionId, place.Circle, pluginServers) : pluginServers;
             if (resolved.Wire == SessionWire.Pipe) servers = SpawnServers.Hand(resolved, info, _home, sessionId, offered);
 
             // HELPWIRED1 (D183 point 4): what Ask Daoris's start handed, kept now its every input is composed and before its process
@@ -1052,6 +1100,8 @@ public sealed class ChatRunner : IDisposable
         void Changed(ChatQueue queue)
         {
             QueueChanged?.Invoke(sessionId, queue);
+            // A full-access conversation the person narrowed mid-turn ends as its turn ends (HELPMODE1a5).
+            HelpTurnChanged(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
             _handOver.Due(sessionId, queue, config, onEnded);
             // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once.
@@ -1640,6 +1690,7 @@ public sealed class ChatRunner : IDisposable
             _context.Turned.TryRemove(sessionId, out _);
             _context.Rooms.TryRemove(sessionId, out _);
             _context.HelpModes.TryRemove(sessionId, out _);
+            _context.HelpEnding.TryRemove(sessionId, out _);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
@@ -1763,12 +1814,13 @@ public sealed class ChatRunner : IDisposable
     /// is, and every server the plugins declare. Located per conversation, because a machine can gain
     /// either between two.
     /// </summary>
-    private IReadOnlyList<AcpMcpServer> Servers(string sessionId, IReadOnlyList<AcpMcpServer> plugins)
+    /// <param name="circle">The workspace its tools are bound to (<see cref="ChatPlace.Circle"/>, ASKSCOPE1c); null for none.</param>
+    private IReadOnlyList<AcpMcpServer> Servers(string sessionId, string? circle, IReadOnlyList<AcpMcpServer> plugins)
     {
         var offered = new List<AcpMcpServer>();
         if (KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
-                AppContext.BaseDirectory, scope: KnowledgeConnector.SessionScope(_home, sessionId, null)) is { } connector)
+                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle)) is { } connector)
         {
             offered.Add(connector);
         }
@@ -1776,6 +1828,14 @@ public sealed class ChatRunner : IDisposable
         offered.AddRange(plugins);
         return offered;
     }
+
+    /// <summary>
+    /// What a conversation's knowledge connector carries beyond the store: who it is and where its rules live (PERM2), and the
+    /// workspace it is bound to, as a driven session's circle is named for its connector (ASKSCOPE1c); none for a conversation bound
+    /// to none.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> ConnectorScope(string home, string sessionId, string? circle) =>
+        KnowledgeConnector.SessionScope(home, sessionId, HelpCircle.Scope(circle));
 
     /// <summary>
     /// A conversation's capture on the protocol door (CONV3b): its session opened on the wire, what each

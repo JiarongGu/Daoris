@@ -221,11 +221,15 @@ public static class HelpRoom
     /// The writes of an approved server the person did not accept (<see cref="HelpGrantSet.Ask"/>): asked, which its asking mode
     /// refuses, so a write is never made silently (D89).
     /// </param>
+    /// <param name="workspace">
+    /// The workspace its tools are bound to (ASKSCOPE1c, <see cref="HelpCircle"/>), whose denies the person wrote it is handed;
+    /// null is <c>default</c>'s, the whole machine's room, as before.
+    /// </param>
     public static RuleLists Rules(
         PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null, IReadOnlyList<string>? plugins = null,
-        IReadOnlyList<string>? asked = null)
+        IReadOnlyList<string>? asked = null, string? workspace = null)
     {
-        var composed = PermissionRules.Compose(file, workspace: null, repository: null);
+        var composed = PermissionRules.Compose(file, workspace, repository: null);
         return new RuleLists(
             [
                 .. Allowed, PermissionRules.ReadRule(kept),
@@ -238,10 +242,11 @@ public static class HelpRoom
 
     /// <summary>
     /// What its session is handed in full access (HELPMODE1a1, D183 point 1): no allow-list and nothing asked, since its harness's
-    /// mode asks nothing; every deny the person's rules compose, the shipped no-push among them while it is on, which still wins.
+    /// mode asks nothing; every deny the person's rules compose, the shipped no-push among them while it is on, which still wins;
+    /// those of the workspace its tools are bound to (ASKSCOPE1c), <c>default</c>'s where null.
     /// </summary>
-    public static RuleLists FullRules(PermissionFile file) =>
-        new([], [], PermissionRules.Compose(file, workspace: null, repository: null).Deny);
+    public static RuleLists FullRules(PermissionFile file, string? workspace = null) =>
+        new([], [], PermissionRules.Compose(file, workspace, repository: null).Deny);
 
     /// <summary>
     /// The machine as the driver already holds it — its file, the registry, each repository's line, the

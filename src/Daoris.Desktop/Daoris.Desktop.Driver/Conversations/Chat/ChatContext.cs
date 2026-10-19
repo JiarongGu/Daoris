@@ -71,6 +71,12 @@ internal sealed class ChatContext(
     /// </summary>
     public ConcurrentDictionary<string, string> HelpModes { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The Ask Daoris conversations running full access that the person narrowed to restricted mid-turn (HELPMODE1a5): each ends as
+    /// its turn ends, and the entry goes with it.
+    /// </summary>
+    public ConcurrentDictionary<string, bool> HelpEnding { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>What a conversation started from an earlier one is handed with the person's first words: that one's transcript as a file.</summary>
     public ConcurrentDictionary<string, ChatRunner.Handing> Handing { get; } = new(StringComparer.OrdinalIgnoreCase);
 
