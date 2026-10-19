@@ -114,7 +114,8 @@ word.
 `usage` on the other, kept on the turn's own event. A report whose every count is zero is kept as no
 report, since no turn that ran read nothing. Time comes from the driver's clock, from the ask
 to the turn's end, so it means the same on both doors. **Left on the wire:** the cost, the models'
-names and the by-model split (D24, TOOL3), and `totalTokens`, which is only the sum.
+names and the by-model split (D24, TOOL3), and `totalTokens`, which is only the sum. The models' names and the split are read
+for the usage history alone, never the record (USAGECAP1a2, D179's note).
 
 **Why a message sent mid-turn is held by Daoris, not written at once.** The SDK's own declarations say
 a user line that arrives while a turn runs may be *folded into* that turn rather than answered after

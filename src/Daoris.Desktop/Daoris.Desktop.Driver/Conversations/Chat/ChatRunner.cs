@@ -124,7 +124,8 @@ public sealed class ChatRunner : IDisposable
         _usage = usage ?? new SessionUsage(home);
         _plugins = plugins ?? PluginLog.None;
         _harnesses = harnesses ?? new HarnessRoster(adapters);
-        _events = events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
+        // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
+        _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
         _handOver = new ChatHandOver(_context, this);
         _curve = new CurveMove(_context, _handOver);
@@ -801,6 +802,10 @@ public sealed class ChatRunner : IDisposable
             if (cancelled) throw;
             return new(null, error.Message);
         }
+
+        // Its turns are kept in the usage history under the account it runs as (USAGECAP1a2), as a driven session's are: bound
+        // before any word is queued to it.
+        UsageTurns.Bound(_home, _events, sessionId, TurnBinding.Of(resolved, selection.Profile));
 
         // The conversation outlives this call: the person types, the harness answers, and the record
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended

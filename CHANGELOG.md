@@ -15,6 +15,10 @@ with the version and date at release.
   reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says
   what it pruned.
 
+- Beside the readings, Daoris keeps every turn's tokens in `usage-history/`: input, output and cache as the agent reported them,
+  the account the session ran as, and the model they were spent on where the agent said it, with a helper model's share kept
+  apart and a stopped turn marked. It shares the readings' 90 days and 64 MiB, stays on this machine, and holds no email,
+  organisation, key or words. Codex's turns say their counts' meaning is not yet known.
 - The machine log (Settings → Logs, `daoris-driver logs`) now holds the warnings and errors of the window's own toolkit and
   engine, which until now were written nowhere: among them why opening Daoris again did not reach the Daoris that runs. Opening
   it again is written as it arrives (`window.launch`), and anything that stops its window opening is written too.
