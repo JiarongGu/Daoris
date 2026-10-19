@@ -1146,9 +1146,11 @@ public sealed partial class HelpCoverageTests
     public void The_headless_hosts_help_history_is_exempt_and_the_room_says_so()
     {
         Assert.Contains("help list [--search \"…\"] [--json]", DriverCommand.Usage);
+        Assert.Contains("[--workspace <name> | --all]", DriverCommand.Usage);
         Assert.Contains("help rename <id> \"…\" | --clear", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("help"));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver help list [--search \"…\"]`", StringComparison.Ordinal)
+        // ASKSCOPE1e: the list's door names its workspace flags, as the usage above spells them.
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver help rename|pin|unpin|delete <id>`", StringComparison.Ordinal)
             && door.Screen.Contains("History", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));

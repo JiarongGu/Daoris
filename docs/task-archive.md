@@ -17229,3 +17229,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CURRENTVIEW1 — the Current workflow's view composes the access setup** (driver, cli; D184's AUTONOMY1c2 note). `WorkflowCurrent.cs` (~200-206) and the CLI's `workflows.ts` show Current's landing step from the rule's own switch, so they say "person" where the setup lands it. Compose the setup in both, held by `workflow-current.json`.
 
 **Outcome** 2026-10-19: the driver's `WorkflowCurrent.Derive` reads `LandingRules.Effective`, and the CLI's `currentWorkflow` composes the setup by `accessLandsByRule` (repository, then workspace, then machine; `full` opens every pause): a branch rule the setup lands is automatic, a merge rule keeps its press. Five rows of `workflow-current.json` hold both twins equal. Built with ACCESSWORDS1. Detail: D184's AUTONOMY1c2 note, its dated line.
+
+## ASKSCOPE1c2 — Ask Daoris's proposals that name a record by id are bound to the conversation's workspace (2026-10-19, D158)
+
+> - [ ] **ASKSCOPE1c2 — Ask Daoris's proposals that name a record by id are bound to the conversation's workspace** (driver, modules; D158's ASKSCOPE1c note, *Not bound here*). A delete, accept, pause, clear or archive of another workspace's quest, ask or session from a workspace's room is judged against the machine today. Each kind's `Named` resolves the record's workspace from its facts. Proof: a test refuses each kind for `beta` from `alpha`.
+
+**Outcome** 2026-10-19: a proposal naming a quest, an ask or a session by id (delete, accept, pause, clear, archive, a go's item) is refused from a workspace's conversation when its record is another workspace's (`HelpNames.Records`, each kind's `Named` reading the facts its judge already reads, so nothing more is fetched); an unknown id or a blank workspace fails open to its kind's own refusal. Left: what ended and a retry (ASKSCOPE1c3). On Opus, with ASKSCOPE1e: about 138 tool calls, 47 minutes. Detail: D158's ASKSCOPE1c note, its ASKSCOPE1c2 line.
+
+## ASKSCOPE1e — the room's doors table names the history's workspace flags (2026-10-19, D158)
+
+> - [ ] **ASKSCOPE1e — the room's doors table names the history's workspace flags** (driver; D158's ASKSCOPE1d note). `HelpRoomDoors`' terminal column still reads `help list [--search "…"]`, an older door than the CLI's help now spells. Name `--workspace <name> | --all` and regenerate the five help-room goldens. Proof: the doors' row and the goldens; `HelpCoverageTests` green.
+
+**Outcome** 2026-10-19: the room's history door names `daoris-driver help list [--workspace <name> | --all] [--search "…"]`; the five room goldens change in that line alone. Built with ASKSCOPE1c2. Detail: D158's ASKSCOPE1c note, its ASKSCOPE1e line.

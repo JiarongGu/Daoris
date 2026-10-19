@@ -359,11 +359,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "its turn ends, or the same session goes on with them (Ask Daoris never proposes it: the words are yours)",
             "Sessions → the session's page → its box", "`daoris-driver sessions say <id> \"…\" [--file <path>]…`"),
         // ASKHIST1: exempt from Ask Daoris, since its conversations and what the person keeps of them are the person's own; the
-        // room names both doors, so the helper points there when asked about an earlier conversation.
+        // room names both doors, so the helper points there when asked about an earlier conversation. ASKSCOPE1e: the list's
+        // workspace flags, as its usage spells them (D158's ASKSCOPE1d note point 1).
         ("find an earlier conversation with Ask Daoris and go on in it, start a new one from its words, or name, pin or delete "
             + "one; they are kept on this machine only (Ask Daoris never proposes it: the conversations are yours)",
             "Ask Daoris → History",
-            "`daoris-driver help list [--search \"…\"]`, `daoris-driver help resume <id> \"…\"`, "
+            "`daoris-driver help list [--workspace <name> | --all] [--search \"…\"]`, `daoris-driver help resume <id> \"…\"`, "
             + "`daoris-driver help rename|pin|unpin|delete <id>`"),
         // KNOWUSE1a: a go-ahead is the person's yes or no to an act outside a repository, asked once on the ask. Ask Daoris
         // never answers one: the production acts stay the person's (D135 §2).
