@@ -107,8 +107,8 @@ public sealed class HelpProposalBox(string? home)
     /// <inheritdoc cref="HelpPluginProposalWriter.Propose"/>
     public (string? Id, string Message) ProposePlugin(
         string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at,
-        string? offer = null) =>
-        new HelpPluginProposalWriter(file).Propose(action, id, folder, repository, why, session, at, offer);
+        string? offer = null, string? server = null, IReadOnlyList<string>? writes = null) =>
+        new HelpPluginProposalWriter(file).Propose(action, id, folder, repository, why, session, at, offer, server, writes);
 
     /// <inheritdoc cref="HelpHandProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeHand(string target, string? repository, string? plugin, string why, string? session, DateTimeOffset at) =>

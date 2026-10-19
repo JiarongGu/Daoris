@@ -193,7 +193,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
     [InlineData("enable", "nowhere.lands", "no plugin `nowhere.lands` on this machine")]
     [InlineData("enable", "example.lands", "`example.lands` is already on")]
     [InlineData("disable", "example.off", "`example.off` is already off")]
-    [InlineData("remove", "example.lands", "`add`, `enable`, `disable` or `update`")]
+    [InlineData("remove", "example.lands", "`add`, `enable`, `disable`, `update`, `approve` or `withdraw`")]
     public void A_switch_the_catalogue_would_refuse_is_never_proposed(string door, string id, string says)
     {
         var plan = HelpProposals.Plan(Of("plugin", door, id), DriverConfig.Empty, PluginMachine());
