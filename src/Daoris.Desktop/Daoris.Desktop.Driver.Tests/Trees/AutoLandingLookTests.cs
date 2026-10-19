@@ -61,6 +61,42 @@ public sealed class AutoLandingLookTests : IDisposable
     }
 
     /// <summary>
+    /// AUTONOMY1c2 (D184 points 2 and 3): the look judges each entry by the effective rule. Under the repository's setup saying
+    /// <c>rule</c>, or full access, a branch rule whose own switch is off does not close it as off: its tree is gone here, so it closes
+    /// as that. Under <c>person</c> it closes as off, and a merge rule under <c>rule</c> does too, since a merge lands nothing by itself
+    /// (D51 rule 6) and the person's press is the way.
+    /// </summary>
+    [Theory]
+    [InlineData(AccessRules.Rule, LandingForm.Branch, AutoLandingCode.Gone)]
+    [InlineData(AccessRules.FullWord, LandingForm.Branch, AutoLandingCode.Gone)]
+    [InlineData(AccessRules.Person, LandingForm.Branch, AutoLandingCode.Off)]
+    [InlineData(AccessRules.Rule, LandingForm.Merge, AutoLandingCode.Off)]
+    public async Task A_look_judges_each_entry_by_the_setups_landing(string landing, string form, string code)
+    {
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        var due = new AutoLandings(_home);
+        due.Due(new AutoLanding("s8", "q8", "engine", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "s-8"), At));
+        var setting = landing == AccessRules.FullWord
+            ? AccessSetting.FullAccess
+            : new AccessSetting { Pauses = new Dictionary<string, string>(StringComparer.Ordinal) { [AccessRules.Landing] = landing } };
+        var config = DriverConfig.Empty
+            .WithLanding("engine", form == LandingForm.Merge ? LandingRule.Merge : new LandingRule(LandingForm.Branch, "feature/{quest}")) with
+        {
+            Access = new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase) { ["engine"] = setting },
+        };
+
+        using var service = _ledger.Client();
+        var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var look = await driver.TickAsync().WaitAsync(Bound);
+
+        Assert.Equal(code, due.Of("s8")!.Last!.Code);
+        Assert.Equal(code == AutoLandingCode.Off,
+            look.Events.Any(line => line.StartsWith("landing  session s8 (#q8 → engine): its repository's rule no longer accepts automatically", StringComparison.Ordinal)));
+        Assert.Empty(due.Open());
+    }
+
+    /// <summary>
     /// FABRIC-END7's review, finding 2: only the process holding the home's lease selects or launches an automatic landing. A loop beside
     /// it (<c>drive --share</c>) reads nothing of the due list and says nothing of it; its wakes are spent, since they are not its to land.
     /// </summary>

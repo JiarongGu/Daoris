@@ -108,7 +108,9 @@ internal sealed class TreeLands(
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
-        var landing = process is { Named: true } named ? named.Landing : LandingRules.Choose(context.Config(), repository, workspace);
+        // The rule it lands by, its access setup's landing composed in (AUTONOMY1c2): the session is told it is accepted automatically
+        // exactly where the look would land it.
+        var landing = process is { Named: true } named ? named.Landing : LandingRules.Effective(context.Config(), repository, workspace);
         // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
         if (process?.LandingCannot is not null)
         {
@@ -440,9 +442,10 @@ internal sealed class TreeLands(
         // edited, so nothing changes under it. Under Current the rule is read again here, as before.
         var process = gate?.Process;
         var named = process is { Named: true } ? process : null;
-        var landing = named?.Landing ?? LandingRules.Choose(context.Config(), repository, workspace);
+        var landing = named?.Landing ?? LandingRules.Effective(context.Config(), repository, workspace);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
-        // at done merge into the person's checkout with no press (D145 point 1, D51 rule 6), nor land under a switch now off.
+        // at done merge into the person's checkout with no press (D145 point 1, D51 rule 6), nor land under a switch now off. The switch
+        // is the effective rule's (AUTONOMY1c2): the access setup's `landing: rule` turns a branch rule's on, and never a merge's.
         if (acceptedBy == AcceptedBy.Auto && landing.Rule is not { Form: LandingForm.Branch, AutoAccept: true })
         {
             return new(false, "its repository's rule no longer accepts automatically, so nothing was landed: your Accept lands it.")
@@ -539,9 +542,10 @@ internal sealed class TreeLands(
                     DateTimeOffset.UtcNow)
                 {
                     From = from,
-                    // Who accepted it, and the rule as it stood (LAND2b, D145 point 6): a choice keeps its facts (D143).
+                    // Who accepted it, and the rule as it stood (LAND2b, D145 point 6): a choice keeps its facts (D143). Where the access
+                    // setup turned its switch on, where that was set, so the record says the setup accepted it (AUTONOMY1c2).
                     AcceptedBy = acceptedBy,
-                    Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source),
+                    Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source) { Access = landing.Access },
                     // The review that let it go (REVIEWENV1c, design §3.5): reviewed with its set-up's commit, or skipped.
                     Review = review?.Landing,
                     // The second opinion that let it go (XAGENT1f, design §8.6), or why it landed without one.

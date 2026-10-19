@@ -69,7 +69,16 @@ public static class LandingSource
 }
 
 /// <summary>A repository's landing rule and what said so.</summary>
-public sealed record Landing(LandingRule Rule, string Source);
+public sealed record Landing(LandingRule Rule, string Source)
+{
+    /// <summary>
+    /// Where the repository's access setup said <c>landing: rule</c> (AUTONOMY1c2, D184 point 3), one of <see cref="AccessRules.FromRepository"/>
+    /// and the rest, where it changes how this rule lands: a branch rule whose own switch is off, which it accepts automatically
+    /// (<see cref="LandingRules.Effective"/>), or a merge rule, which it cannot (D51 rule 6). Null where the setup is the person's, or the
+    /// rule accepts by its own switch.
+    /// </summary>
+    public string? Access { get; init; }
+}
 
 /// <summary>
 /// What a pattern is expanded from: the session's quest (or the session itself), its title's words, the repository, and the
@@ -1011,5 +1020,25 @@ public static class LandingRules
         if (config.Landings.TryGetValue(repository, out var own)) return new(own, LandingSource.Repository);
         if (config.WorkspaceLandings.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)) return new(shared, LandingSource.Workspace);
         return new(LandingRule.Merge, LandingSource.Default);
+    }
+
+    /// <summary>
+    /// The rule work lands by (AUTONOMY1c2, D184 points 2, 3 and 5): the chosen rule (<see cref="Choose"/>), its switch on where it is a
+    /// branch rule and the repository's access setup resolves <c>landing</c> to <c>rule</c>, full access among them, and where that was
+    /// set (<see cref="Landing.Access"/>). Every place that judges whether done work lands with no press reads it, so none disagrees: the
+    /// conclusion, the look's judgement and the gate's process (<see cref="WorkflowProcess.Current"/>), the landing's own refusal and the
+    /// session's plan. Composed here and never written to <c>driver.json</c>, so the settings page, which reads the file's rules, still
+    /// shows each rule's own switch. A merge rule keeps no switch whatever the setup: a merge writes into the person's checkout with no
+    /// step after it (D51 rule 6, D145), so <i>Accept…</i> stays.
+    /// </summary>
+    public static Landing Effective(DriverConfig config, string repository, string? workspace)
+    {
+        var chosen = Choose(config, repository, workspace);
+        var access = AccessRules.Resolve(config, repository, workspace);
+        if (access.Value(AccessRules.Landing) != AccessRules.Rule || chosen.Rule is { Form: LandingForm.Branch, AutoAccept: true }) return chosen;
+        var source = access.Source(AccessRules.Landing);
+        return chosen.Rule.Form == LandingForm.Branch
+            ? chosen with { Rule = chosen.Rule with { AutoAccept = true }, Access = source }
+            : chosen with { Access = source };
     }
 }

@@ -106,6 +106,225 @@ public sealed class AutoLandingRulesTests : IDisposable
     public void A_merge_rule_makes_nothing_due() =>
         Assert.Null(AutoLandingRules.Concluded(new LandingRule(LandingForm.Merge, AutoAccept: true), "Done", ownTree: true, "completed"));
 
+    // ——— the access setup's landing (AUTONOMY1c2, D184 points 2, 3 and 5)
+
+    /// <summary>The setup at one level: full access, or its <c>landing</c> pause alone.</summary>
+    private static AccessSetting LandingPause(string value) => value == AccessRules.FullWord
+        ? AccessSetting.FullAccess
+        : new() { Pauses = new Dictionary<string, string>(StringComparer.Ordinal) { [AccessRules.Landing] = value } };
+
+    /// <summary><paramref name="config"/> with the setup set for <c>engine</c>, for <c>aurora</c> and for this machine, where each is named.</summary>
+    private static DriverConfig Setup(DriverConfig config, string? repository = null, string? workspace = null, string? machine = null) =>
+        config with
+        {
+            Access = repository is null
+                ? config.Access
+                : new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase) { ["engine"] = LandingPause(repository) },
+            WorkspaceAccess = workspace is null
+                ? config.WorkspaceAccess
+                : new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase) { ["aurora"] = LandingPause(workspace) },
+            MachineAccess = machine is null ? config.MachineAccess : LandingPause(machine),
+        };
+
+    /// <summary>
+    /// One effective rule: the chosen rule, its switch on where it is a branch rule and the repository's <c>landing</c> resolves
+    /// <c>rule</c> at whichever level, full access among them, naming where the setup was set. <c>person</c>, today's, and the rule's own
+    /// switch leave it as the rule says. A merge rule is left a merge with no switch, the setup named beside it (D51 rule 6). The file's
+    /// rule is never changed, so what the settings page reads stays the rule's own; the gate's process under Current reads the same.
+    /// </summary>
+    [Theory]
+    [InlineData(LandingForm.Branch, false, null, null, null, false, null)]
+    [InlineData(LandingForm.Branch, false, AccessRules.Rule, null, null, true, AccessRules.FromRepository)]
+    [InlineData(LandingForm.Branch, false, null, AccessRules.Rule, null, true, AccessRules.FromWorkspace)]
+    [InlineData(LandingForm.Branch, false, null, null, AccessRules.FullWord, true, AccessRules.FromMachine)]
+    [InlineData(LandingForm.Branch, false, AccessRules.Person, null, AccessRules.FullWord, false, null)]
+    [InlineData(LandingForm.Branch, true, null, null, AccessRules.FullWord, true, null)]
+    [InlineData(LandingForm.Branch, true, AccessRules.Person, null, null, true, null)]
+    [InlineData(LandingForm.Merge, false, AccessRules.Rule, null, null, false, AccessRules.FromRepository)]
+    [InlineData(LandingForm.Merge, false, null, null, AccessRules.FullWord, false, AccessRules.FromMachine)]
+    public void The_effective_rule_accepts_automatically_where_the_setup_says_rule_over_a_branch_rule(
+        string form, bool own, string? repository, string? workspace, string? machine, bool accepts, string? access)
+    {
+        var rule = form == LandingForm.Merge ? LandingRule.Merge : Automatic with { AutoAccept = own };
+        var config = Setup(DriverConfig.Empty.WithWorkspaceLanding("aurora", rule), repository, workspace, machine);
+
+        var effective = LandingRules.Effective(config, "engine", "aurora");
+
+        Assert.Equal((form, accepts, access, LandingSource.Workspace), (effective.Rule.Form, effective.Rule.AutoAccept, effective.Access, effective.Source));
+        Assert.Equal(rule with { AutoAccept = accepts }, effective.Rule);
+        Assert.Equal(rule, config.WorkspaceLandings["aurora"]);
+        Assert.Equal(rule, LandingRules.Choose(config, "engine", "aurora").Rule);
+        Assert.Equal(effective, WorkflowProcess.Current(config, "engine", "aurora").Landing);
+    }
+
+    /// <summary>
+    /// The conclusion reads the effective rule: under the setup's <c>rule</c>, or full access, a done in its own tree is due under a branch
+    /// rule whose own switch is off; under <c>person</c> nothing is written. A merge rule makes nothing due whatever the setup (D51 rule 6,
+    /// D145), and its conversation says why its work waits for Accept…; an end that is not a done keeps today's review, said nothing more.
+    /// </summary>
+    [Fact]
+    public void A_conclusion_under_the_setups_rule_is_due_and_under_a_merge_rule_says_why_Accept_stays()
+    {
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var quest = new QuestView("q1", "game", "engine", "Fix the gap", "Fix it.", "Done") { Workspace = "aurora" };
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "s-1a2b3c4d");
+        var pressed = DriverConfig.Empty.WithWorkspaceLanding("aurora", Automatic with { AutoAccept = false });
+
+        Assert.Null(AutoLander.Concluded(_home, Setup(pressed, workspace: AccessRules.Person), events, "s1", quest, "Done", "completed", tree, "aurora", At));
+        Assert.Empty(new AutoLandings(_home).All());
+        Assert.Equal(AutoConcluded.Due,
+            AutoLander.Concluded(_home, Setup(pressed, workspace: AccessRules.Rule), events, "s2", quest, "Done", "completed", tree, "aurora", At));
+        Assert.Equal(AutoConcluded.Due,
+            AutoLander.Concluded(_home, Setup(pressed, machine: AccessRules.FullWord), events, "s3", quest, "Done", "completed", tree, "aurora", At));
+        Assert.Equal(["s2", "s3"], new AutoLandings(_home).Open().Select(entry => entry.Session).Order());
+
+        var merges = Setup(DriverConfig.Empty.WithWorkspaceLanding("aurora", LandingRule.Merge), machine: AccessRules.FullWord);
+        Assert.Equal(AutoConcluded.Merges, AutoLander.Concluded(_home, merges, events, "s4", quest, "Done", "completed", tree, "aurora", At));
+        var said = Assert.Single(events.After("s4", 0).Events);
+        Assert.Equal(SessionEventKind.Note, said.Kind);
+        Assert.Contains("this machine's access setup lands work by its rule", said.Text);
+        Assert.Contains("merges", said.Text);
+        Assert.Contains("Accept", said.Text);
+        Assert.Null(AutoLander.Concluded(_home, merges, events, "s5", quest with { Status = "Open" }, "Open", "declined", tree, "aurora"));
+        Assert.Empty(events.After("s5", 0).Events);
+        Assert.Equal(2, new AutoLandings(_home).All().Count);
+    }
+
+    /// <summary>
+    /// The pure verdict over the effective landing: a merge rule under the setup's <c>rule</c> is said only for a done in a tree of its
+    /// own, whose work Accept… would land; a done in the checkout is there already, and a parked record or another end is not said.
+    /// </summary>
+    [Theory]
+    [InlineData(AccessRules.FromWorkspace, "Done", true, "completed", AutoConcluded.Merges)]
+    [InlineData(AccessRules.FromWorkspace, "Done", false, "completed", null)]
+    [InlineData(AccessRules.FromWorkspace, "Open", true, "declined", null)]
+    [InlineData(AccessRules.FromWorkspace, "Done", true, "awaiting-person", null)]
+    [InlineData(null, "Done", true, "completed", null)]
+    public void A_merge_rule_under_the_setups_rule_is_said_only_for_a_done_in_its_own_tree(
+        string? access, string status, bool ownTree, string state, string? expected) =>
+        Assert.Equal(expected,
+            AutoLandingRules.Concluded(new Landing(LandingRule.Merge, LandingSource.Workspace) { Access = access }, status, ownTree, state));
+
+    /// <summary>
+    /// The landing reads the effective rule where it lands, as the look does: under the setup's <c>rule</c>, or full access, a branch rule
+    /// whose own switch is off is not refused as off (here it goes on, and finds no tree); under <c>person</c> it is, and a merge rule
+    /// lands nothing by itself under any setup (D51 rule 6), refused before git is asked anything.
+    /// </summary>
+    [Theory]
+    [InlineData(LandingForm.Branch, AccessRules.Rule, false)]
+    [InlineData(LandingForm.Branch, AccessRules.FullWord, false)]
+    [InlineData(LandingForm.Branch, AccessRules.Person, true)]
+    [InlineData(LandingForm.Merge, AccessRules.Rule, true)]
+    [InlineData(LandingForm.Merge, AccessRules.FullWord, true)]
+    public async Task A_landing_at_done_reads_the_setup_where_it_lands(string form, string landing, bool off)
+    {
+        var rule = form == LandingForm.Merge ? LandingRule.Merge : new LandingRule(LandingForm.Branch, "feature/{quest}");
+        Setup(DriverConfig.Empty.WithWorkspaceLanding("aurora", rule), workspace: landing).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "s-1a2b3c4d");
+
+        var landed = await new SessionTrees(_home).LandAsync(tree, new LandingSubject("s1", "q1", "Fix"), acceptedBy: AcceptedBy.Auto);
+
+        Assert.False(landed.Landed);
+        Assert.Equal(off, AutoLandingRules.CodeOf(landed) == AutoLandingCode.Off);
+        if (!off) Assert.StartsWith("there is no tree at", landed.Message);
+    }
+
+    /// <summary>
+    /// The session's landing plan reads the effective rule, so its instruction says the work is accepted automatically where the setup
+    /// says <c>rule</c>, or full access, and goes through review under <c>person</c>.
+    /// </summary>
+    [Theory]
+    [InlineData(AccessRules.Person, false)]
+    [InlineData(AccessRules.Rule, true)]
+    [InlineData(AccessRules.FullWord, true)]
+    public async Task The_sessions_plan_reads_the_setups_landing(string landing, bool accepts)
+    {
+        Setup(DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{quest}")), workspace: landing)
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "s-1a2b3c4d");
+
+        var plan = await new SessionTrees(_home).PlanAsync(tree, new LandingSubject("s1", "q1", "Fix"));
+
+        Assert.Equal((LandingForm.Branch, "feature/q1", accepts), (plan.Form, plan.Target, plan.AutoAccept));
+    }
+
+    /// <summary>
+    /// D184 point 5: the setup accepts as the switch does, and is held as the switch is. A done held for the person's yes or evidence's
+    /// verdict waits under <c>rule</c>, said once and read again at every look; a done turned down closes it, and nothing lands.
+    /// </summary>
+    [Fact]
+    public async Task A_held_done_stays_held_under_the_setups_rule()
+    {
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "aurora", "engine", "s-1a2b3c4d");
+        Directory.CreateDirectory(tree);
+        File.WriteAllText(Path.Combine(tree, "work.txt"), "the work");
+        var due = new AutoLandings(_home);
+        due.Due(new AutoLanding("s1", "q1", "engine", "aurora", tree, At));
+        var world = new World();
+        world.Quests["q1"] = new QuestView("q1", "game", "engine", "Fix the gap", "Fix it.", "Done") { Held = true, Hold = EvidenceCodes.MissingHold };
+        var config = Setup(DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{quest}")),
+            workspace: AccessRules.Rule);
+        var lander = new AutoLander(_home, world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)));
+
+        var (chosen, said) = await lander.ChooseAsync(config);
+
+        Assert.Empty(chosen);
+        Assert.StartsWith("landing  session s1 (#q1 → engine): its quest is done and held for your yes", Assert.Single(said));
+        Assert.Equal(AutoLandingCode.Held, due.Of("s1")!.Last!.Code);
+        var again = await lander.ChooseAsync(config);
+        Assert.Empty(again.Chosen);
+        Assert.Empty(again.Said);
+        Assert.Null(due.Of("s1")!.Closed);
+
+        world.Quests["q1"] = world.Quests["q1"] with { Status = "Open", Held = false, Hold = null };
+        Assert.Contains("its quest is no longer done", Assert.Single((await lander.ChooseAsync(config)).Said));
+        Assert.Equal(AutoLandingCode.Undone, due.Of("s1")!.Last!.Code);
+        Assert.Empty(new LandedBranches(_home).All());
+    }
+
+    /// <summary>
+    /// The landing's record says the setup accepted it: its rule's <c>access</c>, where the setup turned a branch rule's switch on, kept
+    /// beside the rule's own source and read back. A record from before, and one the rule's own switch accepted, read none.
+    /// </summary>
+    [Fact]
+    public void The_landing_record_says_the_setup_accepted_it()
+    {
+        var landings = new LandedBranches(_home);
+        landings.Record(new LandedBranch("engine", "aurora", "feature/q1", "main", "tip00001", "s1", "q1", "Fix the gap", At)
+        {
+            AcceptedBy = AcceptedBy.Auto,
+            Rule = new LandedRule(null, AutoAccept: true, LandingSource.Workspace) { Access = AccessRules.FromMachine },
+        });
+        landings.Record(new LandedBranch("engine", "aurora", "feature/q2", "main", "tip00002", "s2", "q2", "Fix the gap", At)
+        {
+            AcceptedBy = AcceptedBy.Auto,
+            Rule = new LandedRule(null, AutoAccept: true, LandingSource.Workspace),
+        });
+
+        Assert.Matches("\"source\": \"workspace\",\\s*\"access\": \"machine\"", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings)));
+        var again = new LandedBranches(_home);
+        Assert.Equal(new LandedRule(null, true, LandingSource.Workspace) { Access = AccessRules.FromMachine }, again.Landing("s1")!.Rule);
+        Assert.Null(again.Landing("s2")!.Rule!.Access);
+    }
+
+    /// <summary>The service's quests and records, standing in: none of its records holds the tree.</summary>
+    private sealed class World : IAutoLandingWorld
+    {
+        public Dictionary<string, QuestView> Quests { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public Task<QuestView?> QuestAsync(string id, CancellationToken ct) => Task.FromResult(Quests.GetValueOrDefault(id));
+
+        public Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<SessionRecord>>([]);
+
+        public Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
+
+        public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests.Values]);
+
+        public Task<AskView?> AskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
+
+        public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => Task.FromResult<OpinionView?>(null);
+    }
+
     // ——— when a due session is tried again
 
     /// <summary>

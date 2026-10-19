@@ -510,6 +510,8 @@ public sealed class LandedBranches(string home)
                 if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
                 writer.WriteBoolean("autoAccept", rule.AutoAccept);
                 writer.WriteString("source", rule.Source);
+                // AUTONOMY1c2: added beside the rest, only where the access setup turned the switch on; a record from before reads none.
+                if (rule.Access is not null) writer.WriteString("access", rule.Access);
                 writer.WriteEndObject();
             }
 
@@ -788,6 +790,7 @@ public sealed class LandedBranches(string home)
                     Text(rule, "plugin"),
                     rule.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
                     Text(rule, "source") ?? LandingSource.Default)
+                { Access = Text(rule, "access") }
                 : null,
             Review = ReviewOf(element),
             Opinion = OpinionOf(element),

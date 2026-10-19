@@ -69,6 +69,40 @@ public sealed class AutoLandingTriesTests : AutoLandingFixture
     }
 
     /// <summary>
+    /// AUTONOMY1c2 (D184 points 2 and 3): where the repository's access setup says <c>landing: rule</c>, a branch rule whose own switch
+    /// is off lands as the switch lands it. The session is told so, its done is due, and the look lands it with its plugin told once; its
+    /// record says the setup accepted it, and the file's rule keeps its own switch, as the settings page reads it.
+    /// </summary>
+    [Fact]
+    public async Task A_done_session_under_the_setups_rule_lands_at_the_look_and_its_record_says_the_setup_accepted_it()
+    {
+        var root = await RepositoryAsync("engine");
+        (DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin)) with
+        {
+            WorkspaceAccess = new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["aurora"] = new() { Pauses = new Dictionary<string, string>(StringComparer.Ordinal) { [AccessRules.Landing] = AccessRules.Rule } },
+            },
+        }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        InstallManifest();
+        Assert.Contains("This work is accepted automatically.", Instruction(root));
+        await DoneSessionAsync(root, "s1", "q1");
+
+        var (chosen, said) = await Lander().ChooseAsync(Config());
+        Assert.Empty(said);
+        var line = Assert.Single(await Lander().LandAsync(chosen));
+
+        const string branch = "feature/q1-fix-the-gap";
+        Assert.True(await BranchAsync(root, branch), line);
+        Assert.StartsWith($"landing  session s1 (#q1 → engine): {LandingRules.AutoAccepted} its work is on `{branch}`.", line);
+        var record = new LandedBranches(_home).Landing("s1")!;
+        Assert.Equal(AcceptedBy.Auto, record.AcceptedBy);
+        Assert.Equal(new LandedRule(Plugin, AutoAccept: true, LandingSource.Repository) { Access = AccessRules.FromWorkspace }, record.Rule);
+        Assert.Single(_frames);
+        Assert.False(Config().Landings["engine"].AutoAccept, "the file's rule keeps its own switch");
+    }
+
+    /// <summary>
     /// *To review* lists only what could not land (design §4): with no tidy the tree stays, and its work is on a branch of the
     /// person's now, so D88's proof finds nothing unaccepted in it.
     /// </summary>
