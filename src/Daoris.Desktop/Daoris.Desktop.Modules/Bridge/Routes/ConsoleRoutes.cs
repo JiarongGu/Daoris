@@ -64,7 +64,9 @@ public sealed class ConsoleRoutes(DriverLoop loop)
             throw new DriverException($"`{key}` is not background work of session {id}: only a task can be stopped from its tab.");
         }
 
-        var stopped = await _loop.Processes.StopTaskAsync(id, key[prefix.Length..], CancellationToken.None)
+        // PARALLEL1e (D181 point 4): the stop is a question asked of the agent, which may never answer; the page's own wait
+        // ends it, where none did and the route waited on the agent for ever.
+        var stopped = await _loop.Processes.StopTaskAsync(id, key[prefix.Length..], cancellationToken)
             .ConfigureAwait(false);
         return new { Stopped = stopped ?? false };
     }
