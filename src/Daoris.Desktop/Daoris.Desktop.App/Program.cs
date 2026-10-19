@@ -318,17 +318,6 @@ internal static class Program
         using var app = builder.Build();
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
-        try
-        {
-            app.Run();
-        }
-        catch (Exception error)
-        {
-            // Written here, while the log is open (ONEINSTANCE2, as HOSTSTART2 found for the hosts): leaving Main closes it before
-            // the runtime reports the exception as unhandled, so an engine that would not start, as a launch Chromium turned
-            // away does, ended the process without a line.
-            log.Failed("the application's run", error, terminating: true);
-            throw;
-        }
+        app.Run();
     }
 }
