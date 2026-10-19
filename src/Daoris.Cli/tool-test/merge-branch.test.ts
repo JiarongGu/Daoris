@@ -174,7 +174,7 @@ const tool = await import(
   readVerdicts: (root: string) => { schema: number; verdicts: Verdict[] };
   addVerdicts: (root: string, entries: Verdict[], options?: { keep?: number }) => void;
   readGateLock: (home: string, alive?: (pid: number) => boolean) => { pid: number; commit: string; at: string; running: boolean } | null;
-  takeGateLock: (home: string, options: { commit: string; alive?: (pid: number) => boolean; now?: () => string }) => { stale: { pid: number; commit: string; at: string } | null };
+  takeGateLock: (home: string, options: { commit: string; alive?: (pid: number) => boolean; now?: () => string; end?: (pid: number, since: number) => number[] }) => { stale: { pid: number; commit: string; at: string; ended: number[] } | null };
   releaseGateLock: (home: string) => void;
   gateTreeVerdict: (facts: GateTreeFacts, options?: { atMerge?: boolean }) => { remove: boolean; why: string; said?: string };
   staleDependencies: (tree: string) => string[];
@@ -354,12 +354,37 @@ test('one full set beside at a time: a second is refused naming the run that hol
   assert.equal(tool.readGateLock(fx.root, () => true)!.commit, sha, 'a refusal leaves the lock as it was');
 
   // Its process ended without letting go (a window closed on it): the lock is taken over, and the caller says so.
-  const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, now: () => '2026-10-18T11:00:00Z' });
-  assert.deepEqual(taken.stale, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z' });
+  const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, now: () => '2026-10-18T11:00:00Z', end: () => [] });
+  assert.deepEqual(taken.stale, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z', ended: [] });
   assert.equal(tool.readGateLock(fx.root, () => true)!.commit, 'b'.repeat(40));
   tool.releaseGateLock(fx.root);
   assert.equal(tool.readGateLock(fx.root), null);
   assert.equal(existsSync(join(fx.root, tool.GATE_TREE_LOCK)), false);
+  fx.cleanup();
+});
+
+test('a taken-over lock ends what its dead pid started since the lock\'s at, and only then (CIPRIO1d)', () => {
+  const fx = makeFixture('merge-branch-gate-lock-end');
+  const calls: [number, number][] = [];
+  const end = (pid: number, since: number): number[] => { calls.push([pid, since]); return [7, 8]; };
+  tool.takeGateLock(fx.root, { commit: 'a'.repeat(40), alive: () => true, now: () => '2026-10-18T10:00:00Z', end });
+  assert.deepEqual(calls, [], 'a first take has no dead run to end');
+  refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => true, end }));
+  assert.deepEqual(calls, [], 'a refusal ends nothing: the run holding the lock runs');
+  const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, end });
+  assert.deepEqual(calls, [[process.pid, Date.parse('2026-10-18T10:00:00Z')]]);
+  assert.deepEqual(taken.stale, { pid: process.pid, commit: 'a'.repeat(40), at: '2026-10-18T10:00:00Z', ended: [7, 8] });
+  fx.cleanup();
+});
+
+test('a taken-over lock whose at does not parse ends nothing', () => {
+  const fx = makeFixture('merge-branch-gate-lock-badat');
+  mkdirSync(join(fx.root, 'local'), { recursive: true });
+  writeFileSync(join(fx.root, tool.GATE_TREE_LOCK), `${JSON.stringify({ pid: 4242, commit: 'a'.repeat(40), at: 'not a time' })}\n`);
+  const calls: number[] = [];
+  const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => false, end: (pid: number) => { calls.push(pid); return []; } });
+  assert.deepEqual(calls, []);
+  assert.deepEqual(taken.stale?.ended, []);
   fx.cleanup();
 });
 
@@ -3479,6 +3504,47 @@ test('a run that ends its trees ends a running step\'s whole tree, its shell, ch
     for (const pid of pids) if (alive(pid)) process.kill(pid);
     await stillRunning(pids);
     closeSync(fd);
+    await cleanupAfterKill(fx);
+  }
+});
+
+// CIPRIO1d: killed outright (no SIGINT), the run's node leaves its steps' shells and everything under them running
+const PARENT = [
+  "import { spawn } from 'node:child_process';",
+  "import { mkdirSync, writeFileSync } from 'node:fs';",
+  "const [home, tree, at] = process.argv.slice(2);",
+  "mkdirSync(home + '/local', { recursive: true });",
+  "writeFileSync(home + '/local/gate-tree.lock', JSON.stringify({ pid: process.pid, commit: 'a'.repeat(40), at: new Date().toISOString() }) + '\\n');",
+  // A direct child that outlives its parent, as a step's shell does under a console. Detached: a child node starts in
+  // libuv's job object and ends with its killed parent, as a `cmd.exe` shell does in this harness (the limit of
+  // `endOrphans`, which lists the dead pid's direct children only: what such a shell started is left under a dead parent).
+  "spawn(process.execPath, [tree, at], { detached: true, stdio: 'ignore', windowsHide: true }).unref();",
+  'setTimeout(() => {}, 600000);',
+  '',
+].join('\n');
+
+test('a run killed outright leaves no gate tree: the next run taking its lock ends what the dead pid started (CIPRIO1d)', { skip: process.platform !== 'win32' }, async () => {
+  const fx = makeFixture('merge-branch-killed-run');
+  const tree = join(fx.root, 'tree.mjs');
+  const parent = join(fx.root, 'parent.mjs');
+  const at = join(fx.root, 'pids');
+  mkdirSync(at, { recursive: true });
+  writeFileSync(tree, TREE);
+  writeFileSync(parent, PARENT);
+  const run = spawn(process.execPath, [parent, fx.root, tree, at], { stdio: 'ignore', windowsHide: true });
+  const pids: number[] = [];
+  try {
+    pids.push(...await treePids(at));
+    assert.ok(alive(run.pid!));
+    process.kill(run.pid!, 'SIGKILL');
+    await stillRunning([run.pid!]);
+    const taken = tool.takeGateLock(fx.root, { commit: 'b'.repeat(40) });
+    assert.equal(taken.stale?.pid, run.pid);
+    assert.ok((taken.stale?.ended.length ?? 0) > 0, 'the shell the dead run started was ended');
+    assert.deepEqual(await stillRunning(pids), [], 'the shell, child and grandchild have ended');
+  } finally {
+    for (const pid of [run.pid!, ...pids]) if (alive(pid)) process.kill(pid);
+    await stillRunning([run.pid!, ...pids]);
     await cleanupAfterKill(fx);
   }
 });
