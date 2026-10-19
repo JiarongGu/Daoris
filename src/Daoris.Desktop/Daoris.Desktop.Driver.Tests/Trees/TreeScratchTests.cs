@@ -15,7 +15,7 @@ public sealed class TreeScratchTests : IDisposable
 
     public TreeScratchTests() => Directory.CreateDirectory(_scratch);
 
-    public void Dispose() => Directory.Delete(_scratch, recursive: true);
+    public void Dispose() => GitSeed.Discard(_scratch);
 
     private void Write(string root, string relative, DateTime at, string content = "x\n")
     {

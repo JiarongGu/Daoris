@@ -33,7 +33,7 @@ public sealed class DoorUpdateTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        GitSeed.Remove(_home);
     }
 
     private static HarnessToolchain Built(string name) => AdapterSet.Built().Resolve(name).Toolchain!;

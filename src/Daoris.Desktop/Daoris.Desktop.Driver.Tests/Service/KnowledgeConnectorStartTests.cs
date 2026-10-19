@@ -21,21 +21,7 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
     /// </remarks>
     public void Dispose()
     {
-        for (var attempt = 0; attempt < 5 && Directory.Exists(_root); attempt++)
-        {
-            try
-            {
-                Directory.Delete(_root, recursive: true);
-            }
-            catch (IOException) when (attempt < 4)
-            {
-                Thread.Sleep(200);
-            }
-            catch (IOException)
-            {
-                // Held past the tries: left for a later clean.
-            }
-        }
+        GitSeed.Discard(_root);
     }
 
     private static string? DevelopmentHost() =>

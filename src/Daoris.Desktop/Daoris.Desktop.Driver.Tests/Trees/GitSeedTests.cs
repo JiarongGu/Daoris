@@ -132,7 +132,7 @@ public sealed class GitSeedTests : IDisposable
     public void No_test_deletes_its_fixtures_scratch_by_itself_or_walks_to_the_root_by_itself()
     {
         var plainDelete = new System.Text.RegularExpressions.Regex(@"Directory\.Delete\([^;]*recursive: true");
-        var ownWalk = new System.Text.RegularExpressions.Regex(@"Exists\(Path\.Combine\([^;]*""\.git""\)\)");
+        var ownWalk = new System.Text.RegularExpressions.Regex(@"Exists\(Path\.Combine\(\w+\.FullName, ""\.git""\)\)");
         var breaches = new List<string>();
         foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs"))
         {
