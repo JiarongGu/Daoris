@@ -10,6 +10,9 @@ D79; D155 points 7-8 and its XAGENT1e note; D163 points 2-3 and its MIXAGENT2a-i
 and its AGENTROOM1a note; D173's ADR-D and the collaboration proposal §6; the fabric contract audit's rows 5 and 6;
 `person-waits.md` and `session-record-fields.md`. Every file reference below was read at `b5ff8dfb9`.
 
+**Revised 2026-10-20 (DESIGNREAD2)** after a second maker's read, before the owner's review. The references the revision added
+were read at `3e88bcc79`. D188's DESIGNREAD2 note says what the read changed and what it did not.
+
 ## 0. The case
 
 ### 0.1 The rule decided
@@ -20,23 +23,42 @@ every door and in every state. It then gives every path one delivery rule, one d
 
 ### 0.2 What happens today, path by path
 
+The doors first, since what a word does depends on the door and on the kind of session, not on the door's capability alone.
+
+| Door | Its agents | A word said while a turn runs | *Send now* while a turn runs | An interrupt that keeps the session | Where |
+|---|---|---|---|---|---|
+| **Steers** | a protocol agent saying `promptQueueing: true` and `_meta.steering.supported: true` (`claude-agent-acp`), driven or a conversation | at its next step, once the first prompt is on the wire and nothing waits before it; else it waits behind them | steered: the step in flight cut, the turn going on | yes | `Acp.cs:814-834`; D136's STEER2a note |
+| **Next step** | a protocol agent saying `promptQueueing: true` only | the same | at its next step, said `no-interrupt` or `behind` | yes | `DrivenInbox.cs:195-207`, `:225-265`; `ChatTurns.cs:213-245`, `:289-335` |
+| **Protocol, turn's end** | `codex-acp` (its steering declaration alone is not enough), dsh, the stub, a plugin's | held, then the next prompt in the same session (D90) | held, and **the turn is stopped** so they go next | yes (`session/cancel`) | the same |
+| **Native conversation** | Claude Code's stream-json conversation | the same | held, and **the turn is stopped** by the `interrupt` control request | yes | `Adapters.cs:2007-2017`; `ChatRunner.cs:1153-1165` |
+| **Native driven run** | `claude -p`, no stdin | the same | held, said `no-interrupt`: nothing stops | **no** | `DrivenInbox.cs:78-84`, `:252-259` |
+| **Text-only conversation** | an agent whose wire marks no turn | **sent at once** to its stdin, whatever runs, and kept in no record | sent at once, said `no-interrupt` | **no**: it has no turns, and `CANCEL_TURN` refuses | `ChatRunner.cs:1320-1366`, `:1422-1427` |
+
+Then each path, on those doors.
+
 | Path | Running, its door takes words at its next step | Running, its door takes words only at its turn's end | Parked or ended | Where |
 |---|---|---|---|---|
-| The person's words | sent at once, read at its next step (D136) | held, then the next prompt in the same session (D90) | kept on the record's `said`; the record reopens (D137) | `DrivenInbox.cs:195-207`; `ChatTurns.cs:213-245`; `SessionWords.cs:320-394` |
-| The person's *Send now* (`SESSION_INPUT` `now`, `sessions say --now`) | steered where the agent steers (`AcpSession.SteersNow`): the step in flight is cut and the turn goes on; else at its next step, said `no-interrupt` or `behind` | held, and **the turn is stopped** so they go next, on a protocol door with an interrupt (codex-acp, dsh, the stub); the native run and a text door say `no-interrupt` | goes on with them, as without it | `DrivenInbox.cs:225-265`, `:434-445`; `ChatRunner.cs:1309` |
-| Daoris's own words: a source's reopen told, a step's go-on | not said: the say door refuses a running record, so they are told at the first look that finds it parked or ended | the same | kept on `said` **as the person's words**, and the record reopens | `ReopenTelling.cs:16-53`; FABRIC-CLOSE1c17 |
-| Another session's message on the ask's channel | at its next step, as Daoris's words around that agent's claim | not held; it waits on the channel for the entry's next part, and if none comes it is never delivered | waits for the entry's next part; never reopens | `ChannelReach.cs:182-211`; `DrivenInbox.cs:289-295` |
+| The person's words | read at its next step (D136), on the conditions above | held, then the next prompt in the same session (D90); a text-only conversation sends them at once | kept on the record's `said`; the record reopens (D137) | `DrivenInbox.cs:195-207`; `ChatTurns.cs:213-245`; `SessionWords.cs:320-394` |
+| The person's *Send now* (`SESSION_INPUT` `now`, `sessions say --now`) | steered where the agent steers; else at its next step, said `no-interrupt` or `behind` | held, and the turn stopped, where the door has an interrupt; the native driven run and a text-only conversation say `no-interrupt` | goes on with them, as without it | `DrivenInbox.cs:225-265`; `ChatTurns.cs:289-335`; `ChatRunner.cs:1331` |
+| Daoris's own words: a source's reopen told, a step's go-on | not said: `ReopenTelling` returns on `record.Running` before it asks the say door (`ReopenTelling.cs:152`), and the say door refuses a running record besides, so they are told at the first look that finds it parked or ended | the same | kept on `said` **as the person's words**: on a park they are its answer, on an ended record they reopen it | `ReopenTelling.cs:35-44`, `:152-181`; FABRIC-CLOSE1c17 |
+| Another session's message on the ask's channel | at its next step, as Daoris's words around that agent's claim, to the entry's newest part here | not held: it waits on the channel for the entry's next part, or for the agent's own `channel_read`, which reads it with no new part | the entry's next part, handed it in its instruction; or the agent's own `channel_read` | `ChannelReach.cs:74-92`, `:182-211`; `DrivenInbox.cs:289-295` |
 | The person's message on the ask's channel | as their words, at its next step | as their words, at its turn's end | to its repository: reopens; to everyone: the next part | `ChannelReach.cs:189-209` |
-| A helper's answer (solicited) | a driven asker: waits until the record ends, then reopens it; a conversation: a turn of its own, queued behind the turn in flight and never handed in at its next step | the same | an ended asker reopens; a parked one waits for the person's answer | `DriverHelpers.cs:355-360`; `ChatTurns.cs:222-223`; `ChatHelperWords.cs:52-62` |
+| A helper's answer (solicited) | a driven asker: waits until the record ends, then reopens it; a conversation: a turn of its own, queued behind the turn in flight and never handed in at its next step; a text-only conversation: sent at once, whatever runs | the same | an ended asker reopens; a parked one waits for the person's answer | `DriverHelpers.cs:355-360`; `ChatTurns.cs:222-223`; `ChatHelperWords.cs:47-62` |
 | A second opinion's findings (solicited) | wait, then reopen the ended record | the same | an ended record reopens; a parked one waits; a conversation's go to the person | `OpinionDeliverer.cs:124-143` |
 | A quest | never a word into a turn: a request of the entry starts a further part alongside (D167's amendment), and an asker waiting on it (`quest_respond wait`) is resumed with its outcome (D79) | the same | the same | D79; D167 |
-| A meeting's message | never into a turn: each turn reads its round's packet alone, and the next round's packet, sent by the person's press, carries the round's messages | the same | the same | `DriverMeetings.cs:19-21`; D177 |
+| A meeting's message | never into a turn: each turn reads its round's packet alone, and the next round's packet, sent by the person's press, carries the round's messages. The barrier is built, but a real agent's turn is refused `no-message-tool` until a tool carries a meeting's message (AGENTROOM1b): only a stand-in takes a turn today | the same | the same | `DriverMeetings.cs:19-28`, `:305-311`; D177 |
 
-The doors are the ones D136 and its STEER2a note name. **Takes words at its next step**: a protocol agent whose
-`initialize` says `promptQueueing: true` (`claude-agent-acp`), for a driven session (STEER1) and a conversation (MSG1c).
-**Steers**: the same agent where it also says `_meta.steering.supported: true`. **Only at its turn's end**: every other
-protocol agent (`codex-acp`, dsh, the stub, a plugin's), the native driven run (`claude -p`, no stdin) and a native
-conversation's stream-json, until STEER3 measures Codex's `turn/steer` and Claude Code's stream-json input.
+**How the channel's mark moves today.** One moment per entry. The look moves it through the messages that reached a part, and
+stops before the first one held (`ChannelReach.cs:162-179`). A part's start moves it to the newest item its read held, though
+its instruction carries only the newest twenty, each cut at 1,500 characters, and counts the older in one line
+(`ChannelReach.cs:101-133`, `ChannelWords.cs:211-251`). The agent's own `channel_read` moves it to the newest item before its
+answer reaches the agent (`Channel.cs:544-569`). A message is past the mark only where its moment is later than the mark's
+(`ChannelWords.cs:80-83`), so one mirrored late from a teammate, or one at the mark's very moment, is never handed.
+
+**How a word is identified and recorded today.** The say door gives each word a new id (`SessionLedger.cs:711`), so a producer
+that says again after a crash keeps a second copy (`ReopenTelling` says, then marks: its own remarks name the gap). The queues
+give a word their own ids (`said-n` in the driven inbox, a fresh one in a conversation's steer). On a protocol session with no
+prompt open, the words are recorded as taken before the prompt goes on the wire (`Acp.cs:1110-1119`).
 
 ### 0.3 What disagrees
 
@@ -48,13 +70,18 @@ conversation's stream-json, until STEER3 measures Codex's `turn/steer` and Claud
    helper's answer, which the asker asked for, never does, and waits for the turn's end or the record's.
 4. **Daoris's own words are recorded as the person's**, and reach a running session only after it parks or ends, though
    the fabric events design §E5 says its session is told at its next step.
-5. **A claim with no next part is lost silently.** It stays on the channel past the entry's mark, and nobody is told it
-   never reached anyone.
-6. **Queues are lost at a restart.** The record may show a waiting word, but a conversation's waiting words are delivered
-   from `ChatTurns`' memory alone (MSG1d2), and a driven session's held words from `DrivenInbox`'s. The channel's mark moves when a message is held, not when it is taken
-   (`ChannelReach.cs:169-178`), so a restart between the two loses that message for the part.
-7. **ADR-D's four states are not told apart.** The record tells *said* from *taken*. The channel tells posted from read.
-   Nothing tells a word sent to the harness from one it took, or one it took from one it answered (audit row 6).
+5. **A claim with no next part is never pushed.** It stays on the channel past the entry's mark. Unless the agent reads the
+   channel itself, it never reaches anyone, and nobody is told.
+6. **Two queues are lost at a restart.** The record may show a waiting word, but a conversation's waiting words are
+   delivered from `ChatTurns`' memory alone (MSG1d2), and a driven session's held words from `DrivenInbox`'s. The words held
+   while a session winds up are kept in a file and read back (`SessionWords.cs:869-898`), and a helper's answer waits on
+   `said` until its turn is on the wire (`ChatHelperWords.cs:15-45`). The channel's mark moves when a message is held, not when
+   it is taken (`ChannelReach.cs:169-178`), so a restart between the two loses that message for the part.
+7. **ADR-D's four states are not told apart.** The record tells *said* from *taken*, and writes *taken* before the wire for a
+   prompt to an idle protocol session. The channel tells posted from read. Nothing tells a word sent to the harness from one
+   it took, or one it took from one it answered (audit row 6).
+8. **Nothing is delivered by identity.** A producer's retry makes a second word. The channel's mark is a moment, moved by
+   three hands, and passes messages it never handed whole.
 
 ## 1. Words
 
@@ -75,11 +102,15 @@ conversation's stream-json, until STEER3 measures Codex's `turn/steer` and Claud
 
 ### 2.1 Three levels, and a stop that is not one
 
-| Level | Where it reaches a running turn | What it cuts | en / zh |
+| Level | What it asks for on a running turn | What it cuts | en / zh |
 |---|---|---|---|
-| **ordinary** | at a natural point: never inside a turn in flight | nothing | ordinary / 普通 |
-| **urgent** | at the agent's next step, where its door takes words then: after the tool calls in flight finish and before its next model call | nothing: it folds into the running turn | urgent / 紧急 |
+| **ordinary** | a natural point: never inside a turn in flight | nothing | ordinary / 普通 |
+| **urgent** | the agent's next step, where its door takes words then: after the tool calls in flight finish and before its next model call | nothing: it folds into the running turn | urgent / 紧急 |
 | **now** | at once, where the agent steers: the step in flight is cut and the turn goes on with the words | the step in flight, never the turn | now / 立即 |
+
+**A level is a request, not a guarantee.** Each door gives what it can, and the answer says what it gave and why (§3.0). On
+a door that takes words only at its turn's end, urgent and now get what ordinary gets, marked and said so. On a text-only
+conversation no level is honoured, since the driver cannot tell its turns apart.
 
 **No level stops a turn.** A turn or a session is stopped only by a stop. The person's stops are *Stop* (the session),
 *Stop turn* (a conversation's turn, CONV4a) and the keeping stop (§3.2); each is its own press with its own words. Daoris's
@@ -112,6 +143,23 @@ point 4). Two agents answering each other with no person between is a loop with 
 the agreement it reaches establishes nothing (D155 point 8). An urgent claim at the next step creates no turn, since it
 folds into a turn that already runs. So it is allowed, as the channel's claim at the next step is today.
 
+**The race at a turn's end, decided: the rule is weakened to what Daoris does, and the race is narrowed and named.** A claim is
+judged under the inbox's lock (`HoldDuringTurn`), which guards Daoris's own closing, not the harness's turn. A claim that passes
+after the harness ended its turn, and before Daoris closes the inbox, goes as `session/prompt`, and that starts another turn
+(D167's SESSONE2f note: not measured). No door offers a queueing prompt that refuses an idle session. The steer's
+`promptRequired` does refuse one, but it cuts the step, so it is *now*'s door and never a claim's. So:
+- **The rule reads: Daoris never prompts a claim at a turn's end, and never holds one for it.** It does not say that no claim
+  ever lands in a turn of its own.
+- **The window is narrowed.** The inbox stops taking claims on the reader's thread the moment the answer to its last open prompt
+  is read (`Acp.cs:1124-1127`'s `answered`), before the run's next step is judged.
+- **What is left is named.** The harness's answer may still be in the pipe when the claim is written. Such a claim may start one
+  turn. The run ends after it unless something else holds it, and the poster's three urgent posts bound how often it can happen.
+- **STEER3 measures** whether a door answers a queueing prompt to an idle session apart. Where one does, the claim is refused
+  there instead, and the race closes for that door.
+
+The race costs the person's and Daoris's words nothing, since either may make a turn happen (§4.1). A solicited urgent answer
+that lands so counts as its one go-on.
+
 **Amended: a solicited answer may extend or reopen its asker's run, once per ask.** The asker asked under the person's
 rule (`helpers` `ask|on|off`, the opinion's level), and the answerer cannot ask back: a helper cannot ask for a helper
 (D163 point 2), and an opinion's recheck goes to the person (D155 point 7). So the run that goes on is the asker's own,
@@ -123,7 +171,32 @@ beside them, goes on at most **twice in a row**. The third such answer waits for
 (*Go on with this answer*, §8.3). Under `ask` the person's yes is already between each ask. Two is a first value,
 a judgement that the row's tests hold and the owner may move.
 
+- **It is counted from the records, over the whole line of work.** A go-on is a turn whose prompt took only solicited answers.
+  The count is read back over the line: the entry's parts for a quest's work, and the `from` chain for a conversation. It runs
+  across hand-overs and retries, which never reset it, and across both paths that go on, the driver's go-on and a conversation's
+  turn pump. Only a word of the person's or Daoris's on the line resets it. Being read from the records, it survives a restart
+  and needs no counter of its own.
+- **It is judged by the session's one dispatcher** (§6), so two answers handed under separate asks' claims
+  (`DriverHelpers.cs:137-159`) never both pass as the second.
+- **An urgent answer taken inside a running turn is no go-on, and counts nothing.** An asker that asks again and again within
+  its own turn is not this loop: no run goes on past its own turn. D163's two helpers at work (`too-many`) and the run's own
+  minutes bound it, under the `helpers: on` the person chose.
+
 ## 3. The doors, until STEER3
+
+### 3.0 What each level gets, door by door
+
+The doors are §0.2's. A cell says what a word of the person's gets while a turn runs. Another sender's word gets the same, with
+§4.1's limits on making a turn happen.
+
+| Door | ordinary | urgent | now | The keeping stop | The receipts it can observe (§7) |
+|---|---|---|---|---|---|
+| Steers | the turn's end | the next step | the step cut, the turn going on | not needed: words reach sooner | held, sent, taken, answered |
+| Next step | the turn's end | the next step | the next step, said `no-interrupt` or `behind` | not needed | held, sent, taken, answered |
+| Protocol, turn's end | the turn's end | the turn's end, marked urgent, said so | the turn's end, said `no-interrupt` | offered | held, sent, taken, answered |
+| Native conversation | the turn's end | the same | the same | offered: the `interrupt` control request | held, sent, taken, answered |
+| Native driven run | the turn's end | the same | the same | **not offered**: it has no interrupt that keeps the session, and *Stop* ends the session | held, sent, taken, answered |
+| Text-only conversation | **at once**: no level is honoured, and the composer offers no level, saying why | at once | at once | **not offered**: it has no turns | the person's words: none, since they stay in the console as today; another sender's: held and sent |
 
 ### 3.1 An urgent word on a door that takes words only at its turn's end
 
@@ -132,14 +205,16 @@ Code's stream-json input on a driven run, **an urgent word on a turn-end door is
 and said so.** It is never a stop, and never a steer whose effect is not measured.
 
 - **The person's urgent or *now* words** go into the next prompt when the turn ends. Their line says *its door takes words
-  only when its turn ends* (`work.steer.notNowTurnEnd`, already worded) and offers the keeping stop (§3.2) as the
-  person's own press.
+  only when its turn ends* (`work.steer.notNowTurnEnd`, already worded). Where the door has an interrupt that keeps the
+  session, it offers the keeping stop (§3.2) as the person's own press. On the native driven run it offers none.
 - **Daoris's urgent words** are held the same way and go into the next prompt, since Daoris's words may go on with a run
   (§4.1).
-- **An agent's urgent claim** is held for the entry's next part, since at the turn's end it would extend the run (§2.3).
-  The session's channel panel shows it to the person as urgent and not yet read, with the keeping stop. Where the person
-  presses it, the claim goes as the next prompt on the person's press, marked as the claim it is and as passed on by the
-  person.
+- **An agent's urgent claim** waits as an ordinary claim does (§4.2). It rides a prompt the run sends anyway at the turn's end,
+  or waits for the entry's next part or the agent's own read, since a prompt of its own would extend the run (§2.3). **Here its
+  level earns no earlier delivery at all**: it is a label, and a line to the person. The session's channel panel shows it as
+  urgent and not yet read. The person may pass it on (§4.2), which goes as the next prompt on the person's press, marked as the
+  claim it is and as passed on by them. Where the door has an interrupt, the panel also offers the keeping stop, so the passed-on
+  claim goes next.
 
 After STEER3, MSG1h and MSG1i decide each door again under this rule. A step drained at the top of each loop with no cut is
 a next-step door for *urgent*. A measured cut of the step in flight is a steering door for *now*. Neither door is used
@@ -153,10 +228,13 @@ before its turn is measured.
   on. The record keeps the words with `reaches: "now"`.
 - **On a next-step door whose agent does not steer**: at the next step, said `no-interrupt` or `behind`, as built.
 - **On a turn-end door**: held for the turn's end, said `no-interrupt` (today's `turn-end` answer that stopped the turn
-  retires). The line beside the held words offers **the keeping stop**, *Stop its turn so this goes next…*, which is
-  `CANCEL_TURN` with `keep: true` for a conversation and a driven session alike (STEER2a point 5). It asks once, as a stop:
-  it names the step it cuts, and says that the work done stays and what waits goes next.
-- **With nothing typed**, *Send now* is not offered: the stop it was is the keeping stop's press.
+  retires). Where the door has an interrupt that keeps the session (a protocol door, the native conversation), the line
+  beside the held words offers **the keeping stop**, *Stop its turn so this goes next…*, which is `CANCEL_TURN` with
+  `keep: true` for a conversation and a driven session alike (STEER2a point 5). It asks once, as a stop: it names the step it
+  cuts, and says that the work done stays and what waits goes next. The native driven run has no such interrupt
+  (`DrivenInbox.cs:78-84`), so the line offers nothing there: a stop could not make the words go sooner.
+- **On a text-only conversation**: sent at once, said `no-interrupt`, as today. No keeping stop.
+- **With nothing typed**, *Send now* is not offered: the stop it was is the keeping stop's press, where there is one.
 - **The terminal**: `sessions say --now` is `--level now` and prints the same answers. *sent now: its turn is stopping, so
   this goes next* retires, and `sessions stop <id> --turn` is the keeping stop's twin.
 - **A conversation's *Stop turn*** stays the withdrawal (CONV4a): it hands waiting words back to the box.
