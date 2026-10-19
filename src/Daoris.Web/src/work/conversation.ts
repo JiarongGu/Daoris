@@ -613,7 +613,8 @@ export function runningCall(turns: readonly Turn[]): RunningCall | null {
   for (let at = turn.items.length - 1; at >= 0; at -= 1) {
     const item = turn.items[at]!;
     if (item.kind !== 'tool' || item.finished || item.stopped) continue;
-    if (item.status === 'completed' || item.status === 'failed' || item.status === 'cut') continue;
+    // WAITSAY1b: a call the rules refused (D52) ended too; it waits on nobody, on either door.
+    if (item.status === 'completed' || item.status === 'failed' || item.status === 'cut' || item.status === 'refused') continue;
     if (item.title) return { title: item.title, since: item.at };
   }
   return null;

@@ -187,6 +187,21 @@ export const Parked: Story = {
   },
 };
 
+/**
+ * WAITSAY1b: a working session inside a long call, as the driver heard it begin before this window opened: its line says
+ * the call and how long it has run, where the rail holds none of its events.
+ */
+export const RunningACall: Story = {
+  args: {
+    session: { ...SESSION, created: at(62), updated: at(40) },
+    grouping: placed({ group: 'working', shown: 'working', calling: { title: 'npm test', since: at(38) } }),
+    place: 'engine',
+  },
+};
+
+/** The same, in 中文. */
+export const RunningACallChinese: Story = { ...RunningACall, decorators: [chinese] };
+
 /** Awaiting a reply: its quest asked another repository and resumes by itself. Quiet: nothing runs, nothing waits on you. */
 export const AwaitingReply: Story = {
   args: {
