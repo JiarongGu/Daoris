@@ -108,7 +108,8 @@ public static class WorkStateSlice
         var whole = false;
         return new(Name, bus, _ =>
         {
-            var judged = Judge(HelpFacts.WorkParts(facts.Current), held(), partly: whole);
+            // The node records are read only once the service's answers name the parts: before, nothing is judged.
+            var judged = HelpFacts.WorkParts(facts.Current) is { } parts ? Judge(parts, held(), partly: whole) : null;
             whole |= judged is not null;
             return Task.FromResult(judged);
         })
