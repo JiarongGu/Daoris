@@ -4,9 +4,10 @@ import { readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  landingEdited, readDriverChoices, writeDriverChoices, type AccessSetting, type DriverChoices, type HelpMode, type MappedHeavyGate,
-  type LandingRule,
+  DRIVER_SETS, landingEdited, readDriverChoices, withTarget, writeDriverChoices, type AccessSetting, type DriverChoices, type HelpMode,
+  type MappedHeavyGate, type LandingRule,
 } from '../../src/driver/driverconfig.ts';
+import { sameName } from '../../src/platform/casefold.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -17,21 +18,40 @@ import { makeFixture } from '../_fixture.ts';
 
 type Edit = {
   op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string;
-  mode?: HelpMode; setting?: AccessSetting; gates?: MappedHeavyGate[] | null;
+  mode?: HelpMode; setting?: AccessSetting; gates?: MappedHeavyGate[] | null; to?: string;
 };
 type Change = { from: string[]; to: string[] };
 type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string; missing?: boolean };
 type Twice = { changes: Change[]; notify: boolean; workCycles: Record<string, Record<string, unknown>>; refused: string };
+type Named = { name: string; map: keyof DriverChoices; file: Record<string, unknown>; read: Record<string, unknown> };
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
-const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'driver-config-keeps.json'), 'utf8')) as { file: string[]; rows: Row[]; twice: Twice };
+const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'driver-config-keeps.json'), 'utf8')) as {
+  file: string[]; rows: Row[]; twice: Twice; names: Named[]; sets: string[];
+};
+
+// CONFIGMERGE1 (D173's CONFIG1 note): which arrays are sets, merged by their names, is one table both twins carry, the driver's
+// `DriverConfig.Sets`; every other array is a value, written whole.
+test('configkeeps: the arrays merged by their names are the table\'s, as the driver\'s are', () => {
+  assert.deepEqual([...DRIVER_SETS], TABLE.sets);
+});
 const FILE = `${TABLE.file.join('\n')}\n`;
+
+/** A repository toggled in a list as the `drive`, `hold` and `trees` verbs toggle it: matched without case, added at the end. */
+function toggled(names: string[], repository: string, on: boolean): string[] {
+  const kept = names.filter((name) => !sameName(name, repository));
+  return on ? [...kept, repository] : kept;
+}
 
 /** The edit as the door that makes it makes it: the `landing` verb through `landingEdited`, the rest as their verbs set the field. */
 function applied(choices: DriverChoices, edit: Edit): DriverChoices {
   switch (edit.op) {
     case 'none': return choices;
-    case 'drivable': return { ...choices, drivable: edit.on ? [...choices.drivable, edit.repository!] : choices.drivable.filter((name) => name !== edit.repository) };
+    case 'drivable': return { ...choices, drivable: toggled(choices.drivable, edit.repository!, edit.on!) };
+    case 'hold': return { ...choices, holds: toggled(choices.holds, edit.repository!, edit.on!) };
+    case 'trees': return { ...choices, trees: toggled(choices.trees, edit.repository!, edit.on!) };
+    // CONFIGMERGE1: a target declared or taken back as the `write-across` verb does it.
+    case 'write-across': return { ...choices, writeAcross: withTarget(choices.writeAcross, edit.repository!, edit.to!, edit.on!) };
     case 'landing': return landingEdited(choices, edit.repository!, null, edit.rule!);
     case 'workspace-landing': return landingEdited(choices, '', edit.workspace!, edit.rule!);
     case 'landing-clear': return landingEdited(choices, edit.repository!, null, null);
@@ -81,6 +101,16 @@ TABLE.rows.forEach((row, index) => {
     if (row.refused === undefined) write();
     else assert.throws(write, (error: Error) => error.message.includes(row.refused!), row.name);
     assert.equal(fx.read('driver.json'), expected(row.changes, row.crlf));
+  });
+});
+
+// CASEMAP1 (D173's CONFIG1 note): every per-name map reads a name written twice in any case where first readable, its first spelling
+// and value, row for row with the driver's `DriverConfigKeepsTests`.
+TABLE.names.forEach((row, index) => {
+  test(`configkeeps: a name written twice in any case reads as the driver reads it: ${row.name}`, () => {
+    const fx = makeFixture(`config-names-${index}`);
+    const choices = readDriverChoices(fx.write('driver.json', JSON.stringify(row.file)));
+    assert.deepEqual(Object.entries(choices[row.map] as Record<string, unknown>), Object.entries(row.read), row.name);
   });
 });
 

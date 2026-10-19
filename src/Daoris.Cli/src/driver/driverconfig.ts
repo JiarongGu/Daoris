@@ -24,6 +24,7 @@ import { DaorisError } from '../platform/errors.ts';
 import { flagValue, operands } from '../platform/args.ts';
 import { readJsonObject, writeJsonAtomic, writeJsonTextAtomic } from '../platform/fsx.ts';
 import { EditRefused, keepEdits, twice } from '../platform/jsonkeep.ts';
+import { withKeepLock } from '../platform/keeplock.ts';
 import { atName, findName, sameName } from '../platform/casefold.ts';
 import { isoMoment } from '../accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from '../plugins/plugins.ts';
@@ -823,8 +824,16 @@ function accessWritten(setting: AccessSetting): AccessSetting {
  * twice in one object, is refused and left as it is, never overwritten; one that is gone is written from nothing. The edit touches only
  * the key paths it changed (the second re-check, finding 1): an object taken out since is made again with only the edit's keys, and one
  * that is no longer an object refuses it. The driver's `DriverConfig.Save` does the same.
+ *
+ * 🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; `keeplock.ts`), which the driver's
+ * writer takes too: with none, another writer's change landing between them was lost.
  */
 export function writeDriverChoices(path: string, choices: DriverChoices): void {
+  withKeepLock(path, () => writeHeld(path, choices));
+}
+
+/** `writeDriverChoices` once the file's lock is held. */
+function writeHeld(path: string, choices: DriverChoices): void {
   if (choices.source === undefined) {
     writeJsonAtomic(path, choicesWritten(choices));
     return;
@@ -843,7 +852,7 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
   const read = choicesWritten(choicesOf(JSON.parse(choices.source) as Record<string, unknown>));
   let kept: string;
   try {
-    kept = keepEdits(current, read, choicesWritten(choices));
+    kept = keepEdits(current, read, choicesWritten(choices), DRIVER_SETS);
   } catch (error) {
     // The second re-check's finding 1: another writer made a value this edit changes something inside no longer an object.
     if (!(error instanceof EditRefused)) throw error;
@@ -852,6 +861,15 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
   }
   writeJsonTextAtomic(path, kept);
 }
+
+/**
+ * The arrays of `driver.json` that are sets (CONFIGMERGE1, D173's CONFIG1 note): an edit of one is the names it added and took, compared
+ * without case, made onto the file's array as it stands, so two writers each adding a repository keep both (`jsonkeep.ts`' `keepEdits`).
+ * Each is a key path, `*` any one name; every other array is a value, written whole (`commands`' lists are ordered, `heavyGates`' read
+ * whole or not at all, a cycle's its own). Duplicated deliberately as the driver's `DriverConfig.Sets`; both are held to
+ * `test/fixtures/driver-config-keeps.json`'s `sets`.
+ */
+export const DRIVER_SETS: readonly string[] = ['drivable', 'holds', 'trees', 'writeAcross.*'];
 
 /**
  * The choices' own shape, in the driver's order (`DriverConfig.Written`), so a key an edit adds goes where the driver's would: what this
@@ -2348,23 +2366,29 @@ function releases(value: unknown): Record<string, string> {
   return held;
 }
 
-/** The forgiveness marks, as a map of quest id to the failure count it was restarted at. */
+/**
+ * The forgiveness marks, as a map of quest id to the failure count it was restarted at. A quest written twice in any case is read
+ * where first readable, as the driver's `ForgivenMap` reads it (CASEMAP1, D173's CONFIG1 note: each spelling was read here).
+ */
 function marks(value: unknown): Record<string, number> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, number> = {};
   for (const [quest, mark] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof mark === 'number' && Number.isInteger(mark) && mark > 0) held[quest] = mark;
+    if (typeof mark === 'number' && Number.isInteger(mark) && mark > 0 && findName(Object.keys(held), quest) === null) held[quest] = mark;
   }
 
   return held;
 }
 
-/** A map of names to branch names; an entry git would not take is skipped, as the driver skips it. */
+/**
+ * A map of names to branch names; an entry git would not take is skipped, as the driver skips it. A name written twice in any case is
+ * read where first readable, as the driver's `BranchMap` reads it (CASEMAP1: each spelling was read here, the last value there).
+ */
 function branchMap(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, string> = {};
   for (const [name, branch] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof branch === 'string' && isBranchName(branch)) held[name] = branch;
+    if (typeof branch === 'string' && isBranchName(branch) && findName(Object.keys(held), name) === null) held[name] = branch;
   }
 
   return held;
@@ -2380,7 +2404,7 @@ function withEntry<T>(map: Record<string, T>, key: string, value: T | null): Rec
  * The relationships with `to` declared from `repository`, or taken back — matched without case, as the
  * driver matches it, keeping the repository's existing spelling. The last one taken back leaves no entry.
  */
-function withTarget(map: Record<string, string[]>, repository: string, to: string, allow: boolean): Record<string, string[]> {
+export function withTarget(map: Record<string, string[]>, repository: string, to: string, allow: boolean): Record<string, string[]> {
   const key = findName(Object.keys(map), repository.trim()) ?? repository.trim();
   const held = map[key] ?? [];
   const same = (name: string) => sameName(name, to.trim());
@@ -2389,12 +2413,16 @@ function withTarget(map: Record<string, string[]>, repository: string, to: strin
   return kept.length > 0 ? { ...rest, [key]: kept } : rest;
 }
 
-/** A map of names to booleans; an entry of any other type is not read, as the driver does not read it (D107). */
+/**
+ * A map of names to booleans; an entry of any other type is not read, as the driver does not read it (D107). A name written twice in
+ * any case is read where first readable, as the driver's `FlagMap` reads it (CASEMAP1).
+ */
 function flagMap(value: unknown): Record<string, boolean> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, boolean> = {};
   for (const [name, flag] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof flag === 'boolean' && name.trim().length > 0) held[name.trim()] = flag;
+    const named = name.trim();
+    if (typeof flag === 'boolean' && named.length > 0 && findName(Object.keys(held), named) === null) held[named] = flag;
   }
 
   return held;
@@ -2403,13 +2431,14 @@ function flagMap(value: unknown): Record<string, boolean> {
 /**
  * The declared relationships (D107): each repository's list of other names, once each in any case, in the
  * order first written. A list that is not one, an entry that is not a name, and the repository itself are
- * not read, as the driver does not read them; a repository left with none has no entry.
+ * not read, as the driver does not read them; a repository left with none has no entry. A repository written
+ * twice in any case is read where first readable, as the driver's `TargetMap` reads it (CASEMAP1).
  */
 function targetMap(value: unknown): Record<string, string[]> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, string[]> = {};
   for (const [name, list] of Object.entries(value as Record<string, unknown>)) {
-    if (!Array.isArray(list) || name.trim().length === 0) continue;
+    if (!Array.isArray(list) || name.trim().length === 0 || findName(Object.keys(held), name.trim()) !== null) continue;
     const targets: string[] = [];
     for (const item of list) {
       if (typeof item !== 'string' || writeAcrossProblem(name, item) !== null) continue;
