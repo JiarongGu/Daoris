@@ -164,7 +164,9 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
   const workParts = work && [
     ...(line
       ? [marked(
-          line.branch ? t('projects.setup.summary.line', { branch: line.branch }) : t('projects.setup.summary.noLine'),
+          line.notReadYet
+            ? t('projects.setup.summary.lineNotRead')
+            : line.branch ? t('projects.setup.summary.line', { branch: line.branch }) : t('projects.setup.summary.noLine'),
           line.source === 'repository' ? 'repository' : line.source === 'workspace' ? 'workspace' : 'daoris')]
       : []),
     ...(landing ? [marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source)] : []),
@@ -264,7 +266,9 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
               setHere={t('projects.setup.setHere')}
               label={t('projects.setup.line')}
               twin={t('projects.setup.twin.line', { repository })}
-              says={line.branch
+              says={line.notReadYet
+                ? t('settings.lines.from.notReadYet')
+                : line.branch
                 ? t(`settings.lines.from.${line.source}`, { branch: line.branch, workspace: line.workspace })
                 : t('settings.lines.from.none')}
               own={lineOwn}

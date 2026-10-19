@@ -120,6 +120,18 @@ describe("Setup's Driving", () => {
 });
 
 describe("Setup's Work", () => {
+  /** PUSH1b2: the shell pushes a repository whose line is not judged yet with `notReadYet`, read before the source. */
+  it('says a line not read yet as that, not as no line', async () => {
+    const line = { repository: 'engine', workspace: 'default', source: 'none' as const, notReadYet: true };
+    draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, line } });
+    expect(head('Line and landing').getAttribute('aria-describedby')).not.toBeNull();
+    expect(head('Line and landing')).toHaveAccessibleDescription(/line not read yet/);
+    await userEvent.click(head('Line and landing'));
+    const says = row(section('Line and landing'), 'Its line');
+    expect(within(says).getByText(/Not read yet/)).toBeInTheDocument();
+    expect(within(says).queryByText(/No line/)).toBeNull();
+  });
+
   it("offers Set for this repository on a line from its workspace, which opens the line's field in place", async () => {
     const onLine = vi.fn();
     draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, onLine } });

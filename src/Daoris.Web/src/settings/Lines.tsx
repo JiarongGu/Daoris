@@ -7,7 +7,11 @@ import { Button } from '../design/ui';
 export type LineSource = 'repository' | 'workspace' | 'checkout' | 'none';
 
 /** One repository's line on this machine, as the driver resolves it — the answer every door reads. */
-export type RepositoryLine = { repository: string; workspace: string; branch?: string; source: LineSource };
+export type RepositoryLine = {
+  repository: string; workspace: string; branch?: string; source: LineSource;
+  /** The pushed lines only (PUSH1b2): the checkout's guess is not judged yet, so `none` is not an answer. Read before `source`. */
+  notReadYet?: boolean;
+};
 
 /** A change to a line: a repository's or a workspace's, cleared when it names no branch. */
 export type LineChange = { repository?: string; workspace?: string; branch?: string };
