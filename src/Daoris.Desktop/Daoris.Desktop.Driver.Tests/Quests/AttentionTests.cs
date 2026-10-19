@@ -80,6 +80,38 @@ public sealed class AttentionTests
         Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person")])));
     }
 
+    /// <summary>
+    /// AUTONOMY1e (D184 point 4): Daoris puts nothing between a session's question and the person but the notice that it waits,
+    /// so each question is said. An answered park stays parked with the words until the look takes it up (ANSWER1b) and waits on
+    /// nobody (ANSWER1c); its resumed turn can end on a second question before any look sees it working, and that one is said too.
+    /// </summary>
+    [Fact]
+    public void An_answered_park_that_asks_again_is_said_again_though_no_look_saw_it_working()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Tick([Session("s1", "working")]));
+        Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person")])));
+        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Answer = "Port 8080." }])));
+
+        var again = Assert.Single(watch.Observe(Tick([Session("s1", "awaiting-person") with { Note = "Which host should it bind?" }])));
+
+        Assert.Equal(AttentionKind.Parked, again.Kind);
+        Assert.Equal("Which host should it bind?", again.Detail);
+    }
+
+    /// <summary>
+    /// A park the person answered before any look saw it waiting waits on nobody (ANSWER1c): a notice would tell them what they
+    /// just did, which is how people learn to dismiss notices unread.
+    /// </summary>
+    [Fact]
+    public void A_park_already_answered_when_first_seen_is_not_said()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Tick([Session("s1", "working")]));
+
+        Assert.Empty(watch.Observe(Tick([Session("s1", "awaiting-person") with { Answer = "yes, the second" }])));
+    }
+
     [Fact]
     public void A_session_the_driver_concluded_is_worth_saying()
     {
