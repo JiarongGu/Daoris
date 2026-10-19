@@ -116,6 +116,19 @@ public sealed record DrivenAccess(string Permissions, string Said)
         : $"Permission prompts changed since `{prior.Session}` started: it started under `{Ran(prior.Access)}`, and this run goes on under `{now}`.";
 
     /// <summary>
+    /// Tell the service the setup a resumed record now runs under (AUTONOMY1b2, D184 point 1), where its permission prompts changed since
+    /// it started, so the record names what this run runs under; a resume under the same setup calls nothing. The change is noted first
+    /// (<see cref="GoingOnNote"/>) and the setup kept before anything is spawned.
+    /// </summary>
+    /// <param name="access">The setup standing now, each pause with its value, which the record keeps whole.</param>
+    /// <exception cref="DriverException">The service refused it.</exception>
+    public static async Task KeepAsync(ServiceClient service, PriorSession prior, DrivenAccess got, ResolvedAccess access, CancellationToken ct)
+    {
+        if (ChangedSince(prior, got.Permissions) is null) return;
+        await service.KeepAccessAsync(prior.Session, access.Values, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// What a driven start's record notes of its setup once it opens: the change from the session it goes on from, where there is one,
     /// then its setup's line (<see cref="AccessRules.StartNote"/>) and the mode it got. A start nobody changed, going on from none that
     /// ran otherwise, notes nothing, so its transcript reads as it always did.

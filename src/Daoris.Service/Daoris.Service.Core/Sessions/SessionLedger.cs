@@ -391,6 +391,22 @@ public sealed class SessionLedger(
     }
 
     /// <summary>
+    /// Record the access setup a resumed driven session of this machine's now runs under (AUTONOMY1b2, D184 point 1), where the setup
+    /// changed since it started: its record says the setup this run goes on under. Its state, its last move and its revision stay as
+    /// they are: the setup is a fact about its run, and it never travels.
+    /// </summary>
+    /// <returns>The record as it now reads; null where no driven record of this machine's has that id.</returns>
+    /// <exception cref="ArgumentException">A setup that is not a short map of words, or none.</exception>
+    public async Task<Session?> KeepAccessAsync(string id, IReadOnlyDictionary<string, string> access, CancellationToken ct = default)
+    {
+        var setup = SessionAccess.Judged(access)
+            ?? throw new ArgumentException("access is the setup the session now runs under, and names at least one pause.", nameof(access));
+        return await sessions.KeepAccessAsync(id, setup, ct).ConfigureAwait(false)
+            ? await sessions.FindAsync(id, ct).ConfigureAwait(false)
+            : null;
+    }
+
+    /// <summary>
     /// Open Ask Daoris's conversation (HELP1a, D89) — a chat about Daoris itself, in the room the
     /// driver keeps for it under its home.
     /// </summary>
