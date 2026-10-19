@@ -190,8 +190,33 @@ export interface DriverChoices {
   workflows: Record<string, WorkflowChoice>;
   /** A workspace's choice of workflow, for every repository in it that names none, and the kinds it declares. */
   workspaceWorkflows: Record<string, WorkflowChoice>;
+  /**
+   * Each repository's session access setup (AUTONOMY1a, D184 points 1-3): full access, or the pauses it names. Each pause resolves on
+   * its own, the repository's over its workspace's over this machine's; absent everywhere is today's behaviour. Only the driver edits
+   * and resolves it (`AccessRules`, `daoris-driver access`); this editor reads it as the driver does and keeps it.
+   */
+  access: Record<string, AccessSetting>;
+  /** A workspace's access setup, for each pause a repository in it does not name. */
+  workspaceAccess: Record<string, AccessSetting>;
+  /** This machine's access setup, for each pause neither a repository nor its workspace names; null sets none. */
+  machineAccess: AccessSetting | null;
   rest: Record<string, unknown>;
 }
+
+/** One level's session access setup as the driver's file keeps it (AUTONOMY1a): `full`, or the pauses it names, each with its value. */
+export type AccessSetting = 'full' | Record<string, string>;
+
+/**
+ * The pauses, each with its values and the one that is today's behaviour, in the driver's order — a deliberate copy of the driver's
+ * `AccessRules.Pauses`, which the shared keeps table holds both twins to.
+ */
+const ACCESS_PAUSES: ReadonlyArray<readonly [pause: string, values: readonly string[], today: string]> = [
+  ['permissions', ['asking', 'auto', 'unrestricted'], 'auto'],
+  ['routing', ['person', 'intake'], 'person'],
+  ['landing', ['person', 'rule'], 'person'],
+  ['goAheads', ['named', 'never'], 'named'],
+  ['questions', ['claude-code'], 'claude-code'],
+];
 
 /**
  * The closed table of session languages (LANG1c, D142 point 7): each code and the name the line gives the agent — the driver's
@@ -277,6 +302,7 @@ const EMPTY: DriverChoices = {
   brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
   workflows: {}, workspaceWorkflows: {},
+  access: {}, workspaceAccess: {}, machineAccess: null,
   rest: {},
 };
 
@@ -592,7 +618,7 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
       workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
       brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
-      workflows: {}, workspaceWorkflows: {}, rest: {},
+      workflows: {}, workspaceWorkflows: {}, access: {}, workspaceAccess: {}, machineAccess: null, rest: {},
     };
   }
 
@@ -600,7 +626,7 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, helpMode, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, workCycles, workspaceWorkCycles, readAcross, workspaceReadAcross, writeAcross, standing,
     languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, brainstorms,
-    workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, ...rest
+    workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, access, workspaceAccess, machineAccess, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -675,8 +701,53 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     // As the driver reads them (WORKFLOW1e): an entry with a problem, or naming nothing, is not read.
     workflows: workflowChoicesOf(workflows, false),
     workspaceWorkflows: workflowChoicesOf(workspaceWorkflows, true),
+    // As the driver reads them (AUTONOMY1a): a pause it does not know passed over, a value it does not know read as today's.
+    access: accessMap(access),
+    workspaceAccess: accessMap(workspaceAccess),
+    machineAccess: accessOf(machineAccess),
     rest,
   };
+}
+
+/**
+ * One level as the driver's `AccessRules.Kept` reads it, a stored shape: `"full"` in any case, or an object of the pauses it knows, a
+ * value it does not know (or one that is no word) read as that pause's today's and a null one unset; null for any other shape.
+ */
+function accessOf(value: unknown): AccessSetting | null {
+  if (typeof value === 'string') return value.trim().toLowerCase() === 'full' ? 'full' : null;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  const pauses: Record<string, string> = {};
+  for (const [name, said] of Object.entries(value)) {
+    const pause = ACCESS_PAUSES.find(([known]) => known.toLowerCase() === name.trim().toLowerCase());
+    if (pause === undefined || Object.hasOwn(pauses, pause[0]) || said === null) continue;
+    const [known, values, today] = pause;
+    pauses[known] = (typeof said === 'string' ? values.find((each) => each === said.trim().toLowerCase()) : undefined) ?? today;
+  }
+  return pauses;
+}
+
+/** A map of levels as the driver's `AccessRules.Map` reads it: each name trimmed, one not read or blank passed over, the first of a name in any case kept. */
+function accessMap(value: unknown): Record<string, AccessSetting> {
+  const map: Record<string, AccessSetting> = {};
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return map;
+  for (const [name, level] of Object.entries(value)) {
+    const named = name.trim();
+    const setting = accessOf(level);
+    if (named.length === 0 || setting === null || findName(Object.keys(map), named) !== null) continue;
+    map[named] = setting;
+  }
+  return map;
+}
+
+/** A map of levels, each as the driver writes it. */
+function accessLevels(map: Record<string, AccessSetting>): Record<string, AccessSetting> {
+  return Object.fromEntries(Object.entries(map).map(([name, setting]) => [name, accessWritten(setting)]));
+}
+
+/** One level as the driver writes it (`AccessRules.Write`): `full`, or the pauses it names in their order. */
+function accessWritten(setting: AccessSetting): AccessSetting {
+  if (setting === 'full') return setting;
+  return Object.fromEntries(ACCESS_PAUSES.filter(([pause]) => Object.hasOwn(setting, pause)).map(([pause]) => [pause, setting[pause]!]));
 }
 
 /**
@@ -785,6 +856,10 @@ function choicesWritten(choices: DriverChoices): Record<string, unknown> {
     ...(Object.keys(choices.workflows).length > 0 ? { workflows: ordered(writtenChoices(choices.workflows, false)) } : {}),
     ...(Object.keys(choices.workspaceWorkflows).length > 0
       ? { workspaceWorkflows: ordered(writtenChoices(choices.workspaceWorkflows, true)) } : {}),
+    // Written only when set (AUTONOMY1a), as the driver writes them: absent is today's behaviour, and nothing loosens by itself.
+    ...(Object.keys(choices.access).length > 0 ? { access: ordered(accessLevels(choices.access)) } : {}),
+    ...(Object.keys(choices.workspaceAccess).length > 0 ? { workspaceAccess: ordered(accessLevels(choices.workspaceAccess)) } : {}),
+    ...(choices.machineAccess !== null ? { machineAccess: accessWritten(choices.machineAccess) } : {}),
     // Written only when set (D107): absent is reading on and no relationship.
     ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: ordered(choices.readAcross) } : {}),
     ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: ordered(choices.workspaceReadAcross) } : {}),

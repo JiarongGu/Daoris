@@ -394,6 +394,13 @@ public sealed class DriverRoutes(DriverContext context)
                 .Select(p => new { Repository = p.Key, Rule = LinesRoutes.CommitWire(p.Value) }).ToArray(),
             WorkspaceCommits = config.WorkspaceCommits.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.CommitWire(p.Value) }).ToArray(),
+            // The access setups as set (AUTONOMY1a), as rows for the same reason, and this machine's, none set being no pause: a
+            // workspace's Defaults and Settings read their own here, a repository's setup reads what it resolves to off LINES.
+            Access = config.Access.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Setting = LinesRoutes.AccessWire(p.Value) }).ToArray(),
+            WorkspaceAccess = config.WorkspaceAccess.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Setting = LinesRoutes.AccessWire(p.Value) }).ToArray(),
+            MachineAccess = LinesRoutes.AccessWire(config.MachineAccess),
             Running = loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = loop.Processes.DrivingBrowser,

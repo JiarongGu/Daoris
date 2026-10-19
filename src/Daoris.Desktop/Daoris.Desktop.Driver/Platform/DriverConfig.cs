@@ -327,6 +327,26 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, WorkflowChoice> WorkspaceWorkflows { get; init; } =
         new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Each repository's session access setup (AUTONOMY1a, D184 points 1-3), by repository: full access, or the pauses it names. Each
+    /// pause resolves on its own, the repository's over its workspace's over this machine's (<see cref="AccessRules.Resolve"/>);
+    /// absent everywhere is today's behaviour. Edited only through <see cref="AccessRules.Apply"/>; the CLI's <c>driverconfig.ts</c>
+    /// reads and keeps it the same way.
+    /// </summary>
+    public IReadOnlyDictionary<string, AccessSetting> Access { get; init; } =
+        new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's access setup, for each pause a repository in it does not name.</summary>
+    public IReadOnlyDictionary<string, AccessSetting> WorkspaceAccess { get; init; } =
+        new Dictionary<string, AccessSetting>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>This machine's access setup, for each pause neither a repository nor its workspace names; null sets none.</summary>
+    public AccessSetting? MachineAccess { get; init; }
+
+    /// <summary>One change to an access setup, through <see cref="AccessRules.Apply"/>.</summary>
+    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
+    public DriverConfig WithAccess(AccessEdit edit) => AccessRules.Apply(this, edit);
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -918,6 +938,10 @@ public sealed record DriverConfig(
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
             WorkflowSelection.WriteMap(writer, "workflows", Workflows, workspace: false);
             WorkflowSelection.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
+            // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
+            AccessRules.WriteMap(writer, "access", Access);
+            AccessRules.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
+            AccessRules.WriteMachine(writer, MachineAccess);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
@@ -1301,6 +1325,10 @@ public sealed record DriverConfig(
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
             Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowSelection.Map(root, "workspaceWorkflows", workspace: true),
+            // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
+            Access = AccessRules.Map(root, "access"),
+            WorkspaceAccess = AccessRules.Map(root, "workspaceAccess"),
+            MachineAccess = AccessRules.Machine(root),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),

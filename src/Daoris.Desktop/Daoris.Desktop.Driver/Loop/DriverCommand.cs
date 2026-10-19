@@ -159,6 +159,11 @@ public static class DriverCommand
           help mode [restricted|full]
               Ask Daoris's access mode (D183), from its next start: restricted, the default, reads and proposes and
               you apply; full acts on this machine itself, in its agent's mode that asks nothing. Alone, says which.
+          access [<repository> | --workspace <name>] [full | <pause>=<value>… | --clear]
+              the access setup a repository's sessions start under, its workspace's, or this machine's (D184): full
+              access, or each pause chosen (permissions, routing, landing, goAheads, questions). A pause a repository
+              does not name comes from its workspace, then this machine, then today's behaviour; alone, says each
+              pause with where it came from.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]

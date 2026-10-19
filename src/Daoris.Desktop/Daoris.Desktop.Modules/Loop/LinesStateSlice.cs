@@ -37,14 +37,14 @@ public static class LinesStateSlice
     public const string Name = "lines";
 
     /// <summary>What each partition carries: every field of <c>LINES</c>' answer, each holding that repository's rows of it.</summary>
-    public static readonly IReadOnlyList<string> Fields = ["lines", "landings", "languages", "reviews", "opinions", "helpers", "commits"];
+    public static readonly IReadOnlyList<string> Fields = ["lines", "landings", "languages", "reviews", "opinions", "helpers", "commits", "access"];
 
     /// <summary>What <c>LINES</c> answers that is never pushed: none, every field a view reads.</summary>
     public static readonly IReadOnlyList<string> PulledOnly = [];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change a press declared to the driver's file (a line, a language, a review, an opinion, a
-    /// helper or a commit rule), to the lines (a landing rule) or to the agents (the families an opinion rule names); and the service
+    /// helper or a commit rule, an access setup), to the lines (a landing rule) or to the agents (the families an opinion rule names); and the service
     /// coming up. The facts it reads wake it too (<see cref="HearFacts"/>).
     /// </summary>
     public static readonly IReadOnlyList<SliceWake> WakesOn =

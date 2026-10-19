@@ -417,7 +417,10 @@ public sealed record SessionResponse(
     string? Entry = null,
     // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris record's run got, `restricted` or `full`; absent for every other record.
     // This machine's own, like the opinion: answered to it only.
-    string? HelpMode = null);
+    string? HelpMode = null,
+    // AUTONOMY1a (D184 point 1): the access setup a driven session started under, each pause with its value; absent for a record told
+    // none. This machine's own, like the opinion: answered to it only.
+    IReadOnlyDictionary<string, string>? Access = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
@@ -536,9 +539,11 @@ public sealed record AnswerSessionRequest(string? Answer);
 // look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
 // MIXAGENT1a-iii: `from`, `fromWhy` and `fromBy` name the session the new one continues, as the driver knows it: a conversation
 // handed over, a quest's session carried on after a hand-over or onto another account after a limit. Absent for any other open.
+// AUTONOMY1a: `access`, the access setup the driver resolved for this start, each pause with its value; absent from a driver before it.
 public sealed record OpenSessionRequest(
     string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree,
-    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null);
+    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null,
+    Dictionary<string, string>? Access = null);
 public sealed record OpenChatRequest(
     string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null);

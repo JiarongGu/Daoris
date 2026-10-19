@@ -1770,6 +1770,10 @@ public sealed class Driver(
         // from, or one a limit cut off when this runs on another account; named on the record as it opens.
         var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why);
 
+        // The access setup this start runs under (AUTONOMY1a, D184 point 1), resolved once here from the file this look read, so its
+        // record keeps the one it started under, as D183 keeps Ask Daoris's mode.
+        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
+
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
         var (sessionId, message) = await service
@@ -1779,7 +1783,7 @@ public sealed class Driver(
             .OpenSessionAsync(
                 quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
                 // Whether this is a set-up, for the machine log alone, so a set-up's cost can be read back (WSSETUP11).
-                setup: SetupQuests.IsSetup(quest.Title), from: continues)
+                setup: SetupQuests.IsSetup(quest.Title), from: continues, access: access.Values)
             .ConfigureAwait(false);
         if (sessionId is null)
         {
@@ -1815,6 +1819,13 @@ public sealed class Driver(
                     prior.Session,
                     prior.Limit ? Context.Events.TurnsEnded(prior.Session) + 1 : null,
                     prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
+
+        // Its setup in one line, after the account's (AUTONOMY1a): a start under today's behaviour notes nothing, so its transcript
+        // reads as it always did; the record keeps the setup either way. Uncoded until the page's note catalogues word it (AUTONOMY1d).
+        if (AccessRules.StartNote(access) is { } accessNote)
+        {
+            Context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = accessNote }, say: null);
+        }
 
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
