@@ -72,11 +72,14 @@ dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=P
 The driver's tests project also builds the launcher (a build-only reference, LAUNCHGATE1), which compiles driver files in
 by link, so a driver file naming a type the launcher lacks fails this gate rather than the publish.
 
-Real-process suites use `src/Daoris.Desktop/process.runsettings`; they run serially and may take
-substantial time. The driver's git-only Process classes, marked `Parallel=Git` beside `Category=Process`,
-run four at once in one host with `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`,
-PROC1c): four at once is load, so that half runs after the serial one, never beside it, and a class
-marked so is run alone with that file, not the other, whose filter leaves it out. A git test copies its
+Real-process suites use `src/Daoris.Desktop/process.runsettings` and may take substantial time. The driver's
+runs eight classes at once, and a class that sets the process's environment, measures the whole process or
+holds a bound of a few seconds on a real process runs alone after the rest, in the `Alone` collection
+(PROCPAR1); the modules' runs one class at a time, as its assembly says. The driver's git-only Process
+classes, marked `Parallel=Git` beside `Category=Process`, run four at once in one host with
+`src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`, PROC1c): four at once is load, so
+that half runs after the other one, never beside it, and a class marked so is run alone with that file, not
+the other, whose filter leaves it out. A git test copies its
 repositories from a seed (`GitSeed`, PROC1h) unless it reads the first commit's id or time, and removes its scratch with
 `GitSeed.Remove`: git writes its objects read-only, which `Directory.Delete` refuses on Windows (PROCSPEED1). Rehearsals also run
 serially, use repository scratch and record transcripts there; the merge tool runs only the family rehearsal beside the
