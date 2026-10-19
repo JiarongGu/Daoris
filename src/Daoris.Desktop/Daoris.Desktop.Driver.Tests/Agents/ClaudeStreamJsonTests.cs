@@ -129,6 +129,67 @@ public sealed class ClaudeStreamJsonTests
         Assert.Equal(new TurnTokens(Input: 4, Output: 80, CacheRead: 51061, CacheWrite: 16717), turn.Tokens);
     }
 
+    /// <summary>
+    /// USAGECAP1a2 (D179 point 2): a turn's models, for the usage history alone. The model is each top-level answer's
+    /// <c>message.model</c>, and the split <c>result.modelUsage</c> by model, taken where it agrees with the turn's total; a helper
+    /// model's tokens beside it, outside the total, make the turn not whole. Neither reaches the session's record (D24, TOOL3).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 No frame on this machine holds <c>message.model</c> or <c>modelUsage</c>'s counts: the lines are built from the Messages
+    /// API's message shape and the SDK's declared <c>ModelUsage</c> (<c>inputTokens</c>, <c>outputTokens</c>,
+    /// <c>cacheReadInputTokens</c>, <c>cacheCreationInputTokens</c>, <c>contextWindow</c>, <c>costUSD</c>), with the probe's tool
+    /// turn's totals (stream-json evidence, CONV5). A subagent's answer (<c>parent_tool_use_id</c> set) names no turn's model.
+    /// </remarks>
+    [Fact]
+    public void A_turn_s_models_are_its_answers_model_and_its_model_usage_split_and_neither_reaches_the_record()
+    {
+        const string first = """{"type":"assistant","message":{"id":"msg_a","model":"claude-opus-4-1","content":[{"type":"tool_use","id":"t1","name":"Read","input":{"file_path":"a.md"}}],"usage":{"input_tokens":2}},"parent_tool_use_id":null}""";
+        const string child = """{"type":"assistant","message":{"id":"msg_c","model":"claude-sonnet-4-5","content":[{"type":"text","text":"a subagent"}]},"parent_tool_use_id":"t1"}""";
+        const string second = """{"type":"assistant","message":{"id":"msg_b","model":"claude-opus-4-1","content":[{"type":"text","text":"hello"}],"usage":{"input_tokens":2}},"parent_tool_use_id":null}""";
+        const string result = """{"type":"result","subtype":"success","is_error":false,"usage":{"input_tokens":4,"cache_creation_input_tokens":16717,"cache_read_input_tokens":51061,"output_tokens":80},"modelUsage":{"claude-opus-4-1":{"inputTokens":4,"outputTokens":80,"cacheReadInputTokens":51061,"cacheCreationInputTokens":16717,"webSearchRequests":0,"costUSD":0.14,"contextWindow":1000000},"claude-haiku-3-5":{"inputTokens":909,"outputTokens":30,"cacheReadInputTokens":0,"cacheCreationInputTokens":0,"costUSD":0.001,"contextWindow":200000}}}""";
+
+        var (_, events, _) = Map(Init, first, child, second, result);
+
+        var turn = Assert.Single(events, e => e.Kind == SessionEventKind.Turn);
+        var models = turn.Models!;
+        Assert.Equal(("claude-opus-4-1", (bool?)false, TurnModels.FromModelUsage), (models.Model, models.Whole, models.From));
+        Assert.Equal(
+            [("claude-haiku-3-5", new TurnTokens(909, 30, 0, 0)), ("claude-opus-4-1", new TurnTokens(4, 80, 51061, 16717))],
+            models.Split!.Select(each => (each.Model, each.Tokens)));
+
+        // The record keeps the counts and no model's name.
+        var line = System.Text.Json.JsonSerializer.Serialize(turn, SessionEventText.Json);
+        Assert.Contains("51061", line, StringComparison.Ordinal);
+        Assert.DoesNotContain("claude-", line, StringComparison.Ordinal);
+        Assert.DoesNotContain("models", line, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// USAGECAP1a2: a model switched mid-session splits by turn. The second turn's answers name the new model, and a
+    /// <c>modelUsage</c> that ran on from the first turn is read as the second's own less the first's: the process's running
+    /// total, which only agrees with the turn's total so. The same turn reported as its own reads the same.
+    /// </summary>
+    /// <remarks>🔴 Built as the test above: whether <c>modelUsage</c> is the turn's or the process's is not yet recorded.</remarks>
+    [Fact]
+    public void A_model_switched_mid_session_splits_by_turn_whether_model_usage_runs_on_or_is_the_turn_s_own()
+    {
+        const string opus = """{"type":"assistant","message":{"id":"msg_1","model":"claude-opus-4-1","content":[{"type":"text","text":"one"}]},"parent_tool_use_id":null}""";
+        const string firstResult = """{"type":"result","subtype":"success","is_error":false,"usage":{"input_tokens":4,"cache_creation_input_tokens":16717,"cache_read_input_tokens":51061,"output_tokens":80},"modelUsage":{"claude-opus-4-1":{"inputTokens":4,"outputTokens":80,"cacheReadInputTokens":51061,"cacheCreationInputTokens":16717}}}""";
+        const string sonnet = """{"type":"assistant","message":{"id":"msg_2","model":"claude-sonnet-4-5","content":[{"type":"text","text":"two"}]},"parent_tool_use_id":null}""";
+        const string runningResult = """{"type":"result","subtype":"success","is_error":false,"usage":{"input_tokens":2,"cache_creation_input_tokens":300,"cache_read_input_tokens":60000,"output_tokens":10},"modelUsage":{"claude-opus-4-1":{"inputTokens":4,"outputTokens":80,"cacheReadInputTokens":51061,"cacheCreationInputTokens":16717},"claude-sonnet-4-5":{"inputTokens":2,"outputTokens":10,"cacheReadInputTokens":60000,"cacheCreationInputTokens":300}}}""";
+        const string ownResult = """{"type":"result","subtype":"success","is_error":false,"usage":{"input_tokens":2,"cache_creation_input_tokens":300,"cache_read_input_tokens":60000,"output_tokens":10},"modelUsage":{"claude-sonnet-4-5":{"inputTokens":2,"outputTokens":10,"cacheReadInputTokens":60000,"cacheCreationInputTokens":300}}}""";
+
+        foreach (var (second, from) in new[] { (runningResult, TurnModels.FromModelUsage + TurnModels.Since), (ownResult, TurnModels.FromModelUsage) })
+        {
+            var (_, events, _) = Map(opus, firstResult, sonnet, second);
+
+            var turns = events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.Models!).ToList();
+            Assert.Equal([("claude-opus-4-1", (bool?)true), ("claude-sonnet-4-5", true)], turns.Select(each => (each.Model, each.Whole)));
+            Assert.Equal(from, turns[1].From);
+            Assert.Equal([("claude-sonnet-4-5", new TurnTokens(2, 10, 60000, 300))], turns[1].Split!.Select(each => (each.Model, each.Tokens)));
+        }
+    }
+
     /// <summary>Absent is never zero: a result that reported no usage leaves the turn's tokens unknown.</summary>
     [Fact]
     public void A_result_that_reported_no_usage_leaves_the_turns_tokens_unknown()

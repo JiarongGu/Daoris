@@ -97,8 +97,9 @@ public sealed record PlanEntry(string Content, string? Status = null, string? Pr
 /// zero (TOOL3).
 /// </summary>
 /// <remarks>
-/// Counts only. The total is their sum and is not kept twice; the cost and the models' names stay on
-/// the wire (D24, TOOL3). Measured on both doors: docs/2026-09-25-stream-json-evidence.md, § CONV5.
+/// Counts only. The total is their sum and is not kept twice; the cost stays on the wire, and the record keeps no model's name
+/// (D24, TOOL3): the models ride the turn's event to the usage history alone (<see cref="SessionEvent.Models"/>, USAGECAP1a2).
+/// Measured on both doors: docs/2026-09-25-stream-json-evidence.md, § CONV5.
 /// </remarks>
 public sealed record TurnTokens(long? Input, long? Output, long? CacheRead, long? CacheWrite)
 {
@@ -272,6 +273,14 @@ public sealed record SessionEvent
 
     /// <summary>For <see cref="SessionEventKind.Turn"/>: what the turn consumed, where the wire said (CONV5).</summary>
     public TurnTokens? Tokens { get; init; }
+
+    /// <summary>
+    /// For <see cref="SessionEventKind.Turn"/>: which models its tokens were spent on, as its door said them (USAGECAP1a2, D179
+    /// point 2), for the usage history alone. Never written: the record and every page keep no model's name (D24, TOOL3), so it
+    /// rides in memory from the door to the history's watch, and an event read back from the record has none.
+    /// </summary>
+    [JsonIgnore]
+    public TurnModels? Models { get; init; }
 
     /// <summary>
     /// For the instruction the driver composed (origin <c>target</c>): what it was handed, section by section (CONTEXT1, D143
