@@ -141,6 +141,8 @@
   "work.trace.ruleNoPlugin": "未指定插件",
   "work.trace.ruleAuto": "自动采纳",
   "work.trace.rulePress": "按下时采纳",
+  "work.trace.ruleAccess": "由{{setup}}采纳",
+  "work.trace.ruleAccessAs": "由访问配置（`{{access}}`）采纳",
   "work.trace.due.title": "等待自动落地",
   "work.trace.due.closed": "自 {{since}} 起等待 · 已于 {{closed}} 结束",
   "work.trace.due.waiting": "自 {{since}} 起等待 · 仍在等待",
