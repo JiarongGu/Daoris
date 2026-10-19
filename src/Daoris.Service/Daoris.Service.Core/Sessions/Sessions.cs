@@ -541,6 +541,27 @@ public sealed class SessionStore
             await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        // PUSH1d1b: a count the words kept move, for the change stream's `words` family. A word kept without a note issues no
+        // revision (it never travels), so the family has its own. A trigger, as the others are, so a connector built before it
+        // still moves it; it fires only when the list grows, so a take and a push's mark or cursor move nothing.
+        await using (var words = _db.Command())
+        {
+            words.CommandText = """
+                CREATE TABLE IF NOT EXISTS words_revision (
+                  one      INTEGER PRIMARY KEY CHECK (one = 1),
+                  revision INTEGER NOT NULL
+                );
+                INSERT OR IGNORE INTO words_revision (one, revision) VALUES (1, 0);
+
+                CREATE TRIGGER IF NOT EXISTS words_revision_kept AFTER UPDATE OF said ON sessions
+                WHEN NEW.said IS NOT NULL AND json_array_length(NEW.said) > json_array_length(COALESCE(OLD.said, '[]'))
+                BEGIN
+                  UPDATE words_revision SET revision = revision + 1 WHERE one = 1;
+                END;
+                """;
+            await words.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         // SESSUX1f (D126 §5.4): whether a record went up to a remote, after the cursor it is derived from. For rows that
         // already exist it is read once from that cursor: a record of this machine's at or before what its workspace
         // pushed was examined by a push, so it is marked, which errs toward refusing a delete (a record of a repository
