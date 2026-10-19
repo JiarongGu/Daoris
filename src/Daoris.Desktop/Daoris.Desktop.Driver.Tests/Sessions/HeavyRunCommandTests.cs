@@ -103,6 +103,34 @@ public sealed class HeavyRunCommandTests : IDisposable
         Assert.Contains("`build`'s \"heavy\" is true or false", Assert.Throws<DriverException>(() => HeavyGates.Read(_fixture.Checkout)).Message);
     }
 
+    /// <summary>
+    /// HEAVYRUN1b2c: whether the repository's own file wins, read-only. It marks some (their names), marks none, has no file, or does not
+    /// read (the driver's words): the last is "cannot tell", never "marks none".
+    /// </summary>
+    [Fact]
+    public void Marks_says_whether_the_file_wins_and_cannot_tell_is_never_marks_none()
+    {
+        var file = Path.Combine(_fixture.Checkout, "daoris.gates.json");
+
+        var noFile = HeavyGates.Marks(_fixture.Checkout);
+        Assert.False(noFile.Marks);
+        Assert.Empty(noFile.Names);
+        Assert.Null(noFile.Refusal);
+
+        File.WriteAllText(file, """{ "gates": [ { "name": "build", "run": "x" }, { "name": "web", "run": "y", "heavy": true }, { "name": "e2e", "run": "z", "heavy": true } ] }""");
+        var some = HeavyGates.Marks(_fixture.Checkout);
+        Assert.True(some.Marks);
+        Assert.Equal(["web", "e2e"], some.Names);
+
+        File.WriteAllText(file, """{ "gates": [ { "name": "build", "run": "x", "heavy": false } ] }""");
+        Assert.False(HeavyGates.Marks(_fixture.Checkout).Marks);
+
+        File.WriteAllText(file, "{ \"gates\": [ ");
+        var unreadable = HeavyGates.Marks(_fixture.Checkout);
+        Assert.Null(unreadable.Marks);
+        Assert.Contains("daoris.gates.json is not valid JSON", unreadable.Refusal);
+    }
+
     /// <summary>A gate's folder is the repository's, where it names one: its <c>cwd</c>, as the devkit reads it.</summary>
     [Fact]
     public void A_gate_s_folder_is_its_cwd_under_the_checkout()

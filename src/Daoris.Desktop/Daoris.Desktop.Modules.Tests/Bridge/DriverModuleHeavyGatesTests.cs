@@ -113,6 +113,63 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         Assert.Contains("dotnet build -nodeReuse:false", Terminal("engine"));
     }
 
+    /// <summary>
+    /// HEAVYRUN1b2c: <c>HEAVY_MARKS</c> reads the repository's checkout file and says whether its own gates win (marks some, with their
+    /// names), marks none or has no file (this machine's list is used), or does not read (null, with the driver's words: never "marks
+    /// none"). A read of one file, never <c>Resolve</c>, which throws with no file and no mapping.
+    /// </summary>
+    [Fact]
+    public async Task Heavy_marks_says_whether_the_repositorys_own_file_wins()
+    {
+        string Checkout(string name, string? gates)
+        {
+            var folder = Path.Combine(Home, name);
+            Directory.CreateDirectory(folder);
+            if (gates is not null) File.WriteAllText(Path.Combine(folder, "daoris.gates.json"), gates);
+            return folder;
+        }
+
+        var rows = new[]
+        {
+            ("marks", Checkout("marks", """{"gates":[{"name":"build","run":"x"},{"name":"web","run":"y","heavy":true}]}""")),
+            ("none", Checkout("none", """{"gates":[{"name":"build","run":"x"}]}""")),
+            ("nofile", Checkout("nofile", null)),
+            ("broken", Checkout("broken", "{ \"gates\": [ ")),
+        };
+        var body = "[" + string.Join(",", rows.Select(row => $$"""{"repository":"{{row.Item1}}","workspace":"w","adopted":true,"root":{{JsonSerializer.Serialize(row.Item2)}}}""")) + "]";
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new RegistryStandIn(body))));
+
+        var marks = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "marks" });
+        Assert.True(marks.GetProperty("marks").GetBoolean());
+        Assert.Equal(["web"], marks.GetProperty("names").EnumerateArray().Select(name => name.GetString()));
+
+        var none = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "NONE" });
+        Assert.False(none.GetProperty("marks").GetBoolean());
+
+        var noFile = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "nofile" });
+        Assert.False(noFile.GetProperty("marks").GetBoolean());
+
+        var broken = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "broken" });
+        Assert.Equal(JsonValueKind.Null, broken.GetProperty("marks").ValueKind);
+        Assert.Contains("is not valid JSON", broken.GetProperty("refusal").GetString());
+
+        // A repository with no checkout here cannot be told either, and the page is not made to guess.
+        var absent = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "ghost" });
+        Assert.Equal(JsonValueKind.Null, absent.GetProperty("marks").ValueKind);
+        Assert.NotNull(absent.GetProperty("refusal").GetString());
+    }
+
+    private sealed class RegistryStandIn(string registry) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(request.RequestUri!.AbsolutePath == "/api/registry" ? registry : "[]", System.Text.Encoding.UTF8, "application/json"),
+            });
+    }
+
     [Fact]
     public async Task A_machine_that_kept_none_answers_none()
     {
