@@ -244,17 +244,18 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * HELPPLUG1a's tightening (D170's note): a server's tools reach Ask Daoris only once the person approves them here, its writes
-   * too or its reads only; an approved one can be withdrawn; a refused one says why and offers no approval.
+   * HELPPLUG1a's tightening (D170's note), and HELPPLUG1c: a server's tools reach Ask Daoris only once the person approves them
+   * here, all its reads and each write they tick, one by one; an approved one can be withdrawn; a refused one says why and
+   * offers no approval.
    */
-  it('approves what a server offers Ask Daoris, its reads only, or withdraws it, and offers nothing for a refused one', async () => {
+  it('approves all of a server\'s reads and each write ticked, or withdraws it, and offers nothing for a refused one', async () => {
     const onHelp = vi.fn();
     const { unmount } = page({
       onHelp,
       plugin: {
         ...PLUGIN,
         helpServers: [
-          { name: 'tickets', allow: ['search'], writes: ['create_issue'], state: 'waits' },
+          { name: 'tickets', allow: ['search'], writes: ['create_issue', 'close_issue'], state: 'waits' },
           { name: 'wiki', allow: ['lookup'], state: 'approved' },
           { name: 'shell', allow: ['run_command'], state: 'refused', refusal: 'its tool `run_command` runs commands, by its name.' },
         ],
@@ -262,16 +263,53 @@ describe("a plugin's page", () => {
     });
     const section = screen.getByRole('region', { name: 'Ask Daoris' });
 
-    expect(within(section).getByText('Waits for your approval: Ask Daoris is handed nothing of it')).toBeInTheDocument();
+    expect(within(section).getByText('Not approved: Ask Daoris is handed nothing of it')).toBeInTheDocument();
+    expect(within(section).getByText('Reads with search')).toBeInTheDocument();
     await userEvent.click(within(section).getByRole('button', { name: 'Approve tickets for Ask Daoris' }));
-    expect(onHelp).toHaveBeenCalledWith('acme.gate', 'tickets', 'help-approve');
-    await userEvent.click(within(section).getByRole('button', { name: 'Approve its reads only' }));
-    expect(onHelp).toHaveBeenCalledWith('acme.gate', 'tickets', 'help-reads');
+    expect(onHelp).toHaveBeenLastCalledWith('acme.gate', 'tickets', 'help-approve', []);
+    const close = within(section).getByRole('checkbox', { name: 'Accept close_issue, a write outside Daoris' });
+    expect(close).not.toBeChecked();
+    await userEvent.click(close);
+    await userEvent.click(within(section).getByRole('button', { name: 'Approve tickets for Ask Daoris' }));
+    expect(onHelp).toHaveBeenLastCalledWith('acme.gate', 'tickets', 'help-approve', ['close_issue']);
     await userEvent.click(within(section).getByRole('button', { name: 'Withdraw wiki' }));
-    expect(onHelp).toHaveBeenCalledWith('acme.gate', 'wiki', 'help-withdraw');
+    expect(onHelp).toHaveBeenLastCalledWith('acme.gate', 'wiki', 'help-withdraw', []);
     expect(section).toHaveTextContent('its tool run_command runs commands, by its name.');
     expect(within(section).queryByRole('button', { name: 'Approve shell for Ask Daoris' })).toBeNull();
+    expect(within(section).queryByRole('checkbox', { name: /run_command/ })).toBeNull();
     unmount();
+  });
+
+  /**
+   * HELPPLUG1c: never taken away in silence. A server not approved, or one an update changed since its approval, is said at the
+   * head of the page, and its state says which, in English and in 中文.
+   */
+  it('says at its head what Ask Daoris is not handed yet, and an approval an update changed, in English and in 中文', async () => {
+    const waiting: PluginShown = {
+      ...PLUGIN,
+      helpServers: [
+        { name: 'browser', allow: ['browser_navigate'], writes: ['browser_click'], state: 'waits', changed: true },
+        { name: 'wiki', allow: ['lookup'], state: 'approved' },
+      ],
+    };
+    const { unmount } = page({ plugin: waiting, onHelp: vi.fn() });
+    expect(screen.getByText(/Ask Daoris is handed nothing of browser until you approve it/)).toBeInTheDocument();
+    const section = screen.getByRole('region', { name: 'Ask Daoris' });
+    expect(within(section).getByText('Changed since you approved it: asks again, and Ask Daoris is handed nothing of it until you do')).toBeInTheDocument();
+    unmount();
+
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      const shown = page({ plugin: waiting, onHelp: vi.fn() });
+      expect(screen.getByText(/问道衍拿不到 browser/)).toBeInTheDocument();
+      shown.unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    page({ plugin: { ...PLUGIN, helpServers: [{ name: 'wiki', allow: ['lookup'], state: 'approved' }] } });
+    expect(screen.queryByText(/is handed nothing of/)).toBeNull();
   });
 
   /**

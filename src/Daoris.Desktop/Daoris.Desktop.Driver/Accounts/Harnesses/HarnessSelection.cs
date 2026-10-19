@@ -350,6 +350,12 @@ public static class HarnessProbe
         /// <summary>What it said, without whether it was asked.</summary>
         public LoginRead Said => new(Login, Account, Org, Plan);
 
+        /// <summary>
+        /// Not asked because another holder kept the account's lock past the asker's patience (PARALLEL1c): a question may be in
+        /// flight on it, so a start's walk leaves the account unknown for that walk, never runs beside it.
+        /// </summary>
+        public bool Locked { get; init; }
+
         /// <summary>An answer saying what <paramref name="said"/> says.</summary>
         public static LoginAnswer Of(LoginRead said, bool asked) => new(said.Login, said.Account, asked, said.Org, said.Plan);
     }
@@ -375,16 +381,17 @@ public static class HarnessProbe
     /// it, an agent with no login question, a lock another holder kept, or an account a session of Daoris's runs on
     /// (<paramref name="busy"/>, whose answer is then <paramref name="kept"/>) is no reading.
     /// </summary>
+    /// <param name="patience">How long the lock is waited for (<see cref="ProbeLock.Patience"/> where null).</param>
     internal static async Task<LoginAnswer> AskAccountAsync(
         string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command,
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct, string? lockPath,
-        IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, LoginRead kept = default)
+        IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null)
     {
         // The pin, as the probe resolves it; nothing installed at it is nobody to ask.
         var run = CommandOf(adapter, toolchain, command, settings, home);
         return run.Missing
             ? new LoginAnswer(LoginState.Unknown, null, false)
-            : await LoginAsync(run.Run, toolchain, profileHome, managed: run.Managed is not null, ct, key, lockPath, busy, kept)
+            : await LoginAsync(run.Run, toolchain, profileHome, managed: run.Managed is not null, ct, key, lockPath, busy, kept, patience)
                 .ConfigureAwait(false);
     }
 
@@ -424,17 +431,18 @@ public static class HarnessProbe
     /// Whether a session of Daoris's runs on the home, asked once the lock is held, so a start that took the lock to count
     /// itself is never asked about in between (TOOL6g); <paramref name="kept"/> is then the answer, and nothing runs.
     /// </param>
+    /// <param name="patience">How long the lock is waited for (<see cref="ProbeLock.Patience"/> where null).</param>
     /// <returns>The answer, and whether the question was asked: none asked is no reading (ROSTER1).</returns>
     private static async Task<LoginAnswer> LoginAsync(
         IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, bool managed,
         CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
-        Func<bool>? busy = null, LoginRead kept = default)
+        Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null)
     {
         if (toolchain.LoginCheck is not { } question) return new LoginAnswer(LoginState.Unknown, null, false);
 
         // One status question per account at a time, in this process and across them (TOOL6g).
-        await using var held = lockPath is null ? null : await ProbeLock.TakeAsync(lockPath, ct: ct).ConfigureAwait(false);
-        if (lockPath is not null && held is null) return new LoginAnswer(LoginState.Unknown, null, false);
+        await using var held = lockPath is null ? null : await ProbeLock.TakeAsync(lockPath, patience, ct).ConfigureAwait(false);
+        if (lockPath is not null && held is null) return new LoginAnswer(LoginState.Unknown, null, false) { Locked = true };
         if (busy?.Invoke() == true) return LoginAnswer.Of(kept, asked: false);
 
         var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)

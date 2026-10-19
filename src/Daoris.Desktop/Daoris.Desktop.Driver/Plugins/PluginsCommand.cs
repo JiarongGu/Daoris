@@ -28,7 +28,7 @@ public static class PluginsCommand
         PluginKitCommand.Usage + "\n"
         + "       daoris-driver plugins show <id> [--json]\n"
         + "       daoris-driver plugins activity <id> [--since <30m|2h|3d>] [--json]\n"
-        + "       daoris-driver plugins approve <id> <server> [--reads-only]\n"
+        + "       daoris-driver plugins approve <id> <server> [--reads-only | --writes <tool,…>]\n"
         + "       daoris-driver plugins withdraw <id> <server>";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
@@ -53,9 +53,16 @@ public static class PluginsCommand
                 case ["activity", .. var rest]:
                     return ActivityVerb(rest, output, home);
                 // HELPPLUG1a's tightening (D170's note): the page's Approve and Withdraw, at a terminal (D50).
-                case ["approve", var id, var server, .. var flags] when flags.All(flag => flag == "--reads-only"):
+                // HELPPLUG1c: `--writes` names the writes accepted, each on its own, as the page's choice does.
+                case ["approve", var id, var server, .. var flags] when flags is [] or ["--reads-only"] or ["--writes", _]:
                 {
-                    var grant = HelpGrants.Approve(Home(home), PluginCatalog.Load(Home(home), AdapterSet.Built().Names), id, server, flags.Length > 0);
+                    IReadOnlyList<string>? writes = flags switch
+                    {
+                        ["--reads-only"] => [],
+                        ["--writes", var named] => [.. named.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)],
+                        _ => null,
+                    };
+                    var grant = HelpGrants.Approve(Home(home), PluginCatalog.Load(Home(home), AdapterSet.Built().Names), id, server, writes);
                     var asked = grant.Server.Writes.Except(grant.Accepted, StringComparer.Ordinal).ToList();
                     var may = new List<string>();
                     if (grant.Server.Allow.Count > 0) may.Add($"read with {string.Join(", ", grant.Server.Allow)}");
@@ -73,7 +80,8 @@ public static class PluginsCommand
                     output.WriteLine(Usage);
                     output.WriteLine("  new and try are the plugin kit's; show is a plugin's page, its health read from the machine");
                     output.WriteLine("  log's last word; activity is what it did, from the machine log, the last 7 days unless --since;");
-                    output.WriteLine("  approve hands Ask Daoris a server's exact tools, its writes too unless --reads-only; withdraw takes it back.");
+                    output.WriteLine("  approve hands Ask Daoris a server's exact tools, its writes too unless --reads-only, or only those --writes");
+                    output.WriteLine("  names; withdraw takes it back.");
                     return 2;
             }
         }

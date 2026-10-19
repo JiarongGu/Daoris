@@ -88,6 +88,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     internal Func<string, string, CancellationToken, Task<LoginState>>? Asking { get; init; }
 
     /// <summary>
+    /// How long a start's walk waits for an account's lock (TOOL6g), held by a question in flight, before it leaves that account
+    /// unknown for the walk (PARALLEL1c): its own status question's wait, and a counted start's wait to count the account it chose,
+    /// which then counts nothing there. <see cref="ProbeLock.Patience"/>, unless a test's.
+    /// </summary>
+    internal TimeSpan LockPatience { get; init; } = ProbeLock.Patience;
+
+    /// <summary>
     /// This machine's zone (D125 §2.1): it stands in for a zone a limit's sentence names that is not an IANA name, and
     /// every cool-off is said in it, with the zone named.
     /// </summary>
@@ -637,9 +644,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// Ask one account's status, under its lock, with its key where it is a key (AGT3), and keep the answer under the home
     /// (ROSTER1), so the next start, the screen's next start (<see cref="Next"/>) and a restart read it too: a start asking a
     /// signed-out account again (TOOL6g), and an account's own *Read again*. One a session of Daoris's runs on is not asked,
-    /// and keeps its word and its time.
+    /// and keeps its word and its time. Its lock is waited for <see cref="LockPatience"/>: one not had is said
+    /// (<see cref="HarnessProbe.LoginAnswer.Locked"/>), so a walk leaves the account unknown for itself (PARALLEL1c).
     /// </summary>
-    private async Task<LoginState> AskOneAsync(
+    private async Task<HarnessProbe.LoginAnswer> AskOneAsync(
         string adapter, HarnessToolchain toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
     {
         var key = toolchain.KeyVariable is { Length: > 0 } variable && HarnessKeys.Of(Home, owner, account) is { } held
@@ -651,14 +659,15 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             : await HarnessProbe.AskAccountAsync(
                 adapter, toolchain, config.Commands.GetValueOrDefault(adapter), Settings, Home,
                 HarnessSettings.ProfileHome(Home, owner, account), ct, ProbeLock.PathOf(Home, owner, account), key,
-                busy: () => Busy(owner, account), kept: new LoginRead(before?.Login ?? LoginState.Unknown, null)).ConfigureAwait(false);
+                busy: () => Busy(owner, account), kept: new LoginRead(before?.Login ?? LoginState.Unknown, null),
+                patience: LockPatience).ConfigureAwait(false);
         // A mark this question answered is spent, whatever the file's clock says against the roster's.
         var asked = Clock();
         if (ProbeLock.SignedIn(Home, owner, account) is { } marked && marked > asked) asked = marked;
         _askedAt[AccountKey(owner, account)] = asked;
 
         if (answer.Asked) Keep(owner, account, answer.Said, Clock());
-        return answer.Login;
+        return answer;
     }
 
     /// <summary>
@@ -815,7 +824,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// cooling or refused, with one sentence naming the first reset, and the accounts the scope does not list.</para>
     /// <para><b>Counted as chosen</b>: the goal reads Daoris's sessions as of the driver's last look (<see cref="Look"/>)
     /// and every start chosen since, so starts in one look spread. A start's choice and its count are made one at a time,
-    /// which a probe may make wait.</para>
+    /// under a gate no question is asked under (PARALLEL1c, D181 point 3): a question on one account never holds a start on
+    /// another, and an account whose lock stays held past its patience is left unknown for that walk, never counted.</para>
     /// </remarks>
     /// <param name="workspace">The repository's circle, for the per-workspace default (D49 §4).</param>
     /// <param name="chosen">The person's pick for this session, when they made one.</param>
@@ -939,22 +949,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// and so is never counted as a start chosen.
     /// </summary>
     /// <param name="own">A resume of a record that began in the tool's own home, which goes on there (D175 point 3).</param>
-    private async Task<HarnessSelection> ChooseAsync(
+    private Task<HarnessSelection> ChooseAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, CancellationToken ct,
-        bool own = false)
-    {
-        if (!counts) return await WalkAsync(adapter, config, workspace, chosen, kind, counts, own, ct).ConfigureAwait(false);
-
-        await _walking.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            return await WalkAsync(adapter, config, workspace, chosen, kind, counts, own, ct).ConfigureAwait(false);
-        }
-        finally
-        {
-            _walking.Release();
-        }
-    }
+        bool own = false) =>
+        // No gate here (PARALLEL1c): the walk takes its own only to read again and count, never across a question.
+        WalkAsync(adapter, config, workspace, chosen, kind, counts, own, ct);
 
     /// <summary>
     /// The scope a start walks (OWNSPACE1a, D175 points 1-2 and its OWNSPACE1a note): <paramref name="scope"/>, unless it names no
@@ -1031,23 +1030,15 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         // Where the agent's door carries none of its windows, its own server is asked them first, for each account of the list
         // the start could take whose last reading is stale (CODEXUSE1): a start, never a look or a panel, which count nothing.
+        // Each under its own account's lock and under no gate of the walk's (PARALLEL1c), so another start never waits on them.
         if (counts && picked is null && scope.List.Count > 0)
         {
             await FreshenAsync(resolved.Name, owner, scope.List, config, ct).ConfigureAwait(false);
         }
 
-        // The accounts this start may use, in the order it tries them (TOOL6b, D130 §16.3; D125 §3.3 under `order`). A pick,
-        // a scope that names one account, and the tool's own sign-in are the one account, and nothing more is read.
+        // The first look, before any question: read again under the gate once the questions are asked (PARALLEL1c).
         var now = Clock();
-        var facts = NoFacts;
-        List<string?> order;
-        if (picked is not null) order = [picked];
-        else if (ownHome || scope.List.Count == 0) order = [ownHome ? null : scope.Begins];
-        else
-        {
-            facts = Facts(owner, scope.List, now);
-            order = [.. AccountRotation.Order(scope, kind, HarnessSettings.Profiles(Home, owner), facts, now)];
-        }
+        var (order, _) = OrderOf(owner, scope, kind, picked, ownHome, now);
 
         // What a hold says names each account by the person's name, read now, as it is said (ACCT2b); the selection's facts
         // and the record's opening line keep the ids.
@@ -1145,64 +1136,69 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // The account's state is its owner's answer when this build carries the owner — a door
         // declares no login question of its own, which is what `accountOf` says.
         var asker = AccountAgent(resolved.Name, toolchain);
-        // A report is an adapter's: an owner declared for a door it has none of (CODEXACCT1) reads its accounts in the door's.
-        var reporting = ReportingDoor(resolved.Name, toolchain);
-        var accounts = reporting == resolved.Name
-            ? report
-            : await ReportAsync(reporting, config, refresh: false, ct).ConfigureAwait(false);
 
-        // The walk (TOOL4f, D125 §3.3): the first account still ready once the agent has said who is signed in, in the
-        // order the start tries them. Signed out (a key gone included) is walked past as cooling and refused are.
-        var at = -1;
-        for (var i = 0; i < states.Count && at < 0; i++)
+        // 🔴 The walk (TOOL4f, D125 §3.3), with no question asked under its gate (PARALLEL1c, D181 point 3). A pass reads again
+        // the order, each account's state and what the agent last said of each, and chooses the first still ready, counting it
+        // where the start counts, under the gate alone, so starts made together each see the others' counts. A question the walk
+        // owes an account, a wait for the chosen account's lock, and every other question are outside it: a question that does
+        // not answer on one account holds no start on another.
+        var walk = new WalkMemory();
+        WalkPass pass;
+        while (true)
         {
-            if (!states[i].IsReady) continue;
-            var account = states[i].Account!;
-            var said = ProfileOf(accounts, account);
-            var login = said?.Login ?? LoginState.Unknown;
-            // The one fresh reading a refusal of a signed-in reading owes it (TOOL6h), spent here whatever it answers.
-            var owed = login == LoginState.Out && _owed.TryRemove(AccountKey(owner, account), out _);
-            if (login == LoginState.Out && (owed || AskAgain(owner, account, said?.Read)))
+            if (counts)
+            {
+                lock (_walking) pass = Pass(owner, scope, kind, picked, circle, ours, counts, names, walk);
+            }
+            else
+            {
+                pass = Pass(owner, scope, kind, picked, circle, ours, counts, names, walk);
+            }
+
+            if (pass.Held is { } hold) return hold;
+            if (pass.Ask is { } asking)
             {
                 // Asked again, as the install above is, since the person may have signed in since (TOOL6g): that account
                 // alone, and only once a sign-in marked it or the word is `SignedOutAskedAgain` old, or once after a refusal
                 // its last reading said signed in (TOOL6h). Before, a start held on a signed-out account asked every account's
                 // status at every look. An account never read is unknown, and a start runs on it as on any unknown (SES3): a
-                // look asks nothing (ROSTER1).
-                login = await AskOneAsync(asker.Name, asker.Toolchain, owner, account, config, ct).ConfigureAwait(false);
-                if (owed && AccountReads.Of(Home, owner).Accounts.GetValueOrDefault(account) is { Login: LoginState.In } fresh)
+                // look asks nothing (ROSTER1). One whose lock another question kept past its patience is unknown for this walk
+                // alone, and passed (PARALLEL1c).
+                HarnessProbe.LoginAnswer answer;
+                try
                 {
-                    _fresh[AccountKey(owner, account)] = fresh.At;
+                    answer = await AskOneAsync(asker.Name, asker.Toolchain, owner, asking, config, ct).ConfigureAwait(false);
                 }
-            }
-
-            if (login == LoginState.Out)
-            {
-                var profile = ShellWord.Of(account, ShellWord.Account);
-                var refusal = $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
-                    + $"nothing to run as — `daoris agent login {owner} --profile {profile}` runs "
-                    + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
-                    + "credential stays in the agent's own store.";
-                states[i] = states[i] with
+                finally
                 {
-                    Readiness = AccountReadiness.SignedOut,
-                    Refusal = refusal,
-                    RefusalNote = Noted.Of(NoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
-                };
+                    _asking.TryRemove(AccountKey(owner, asking), out _);
+                }
+
+                if (answer.Locked) walk.Unknown.Add(asking);
+                else walk.Said[asking] = answer.Login;
+                if (pass.Owed && AccountReads.Of(Home, owner).Accounts.GetValueOrDefault(asking) is { Login: LoginState.In } fresh)
+                {
+                    _fresh[AccountKey(owner, asking)] = fresh.At;
+                }
+
                 continue;
             }
 
-            at = i;
+            // Counted already, and busy from then on (TOOL6g): a status question another caller is asking the account now is
+            // waited out, and no question begun after asks it while the session's own process may refresh its token. Where its
+            // lock stays held past its patience, the count is taken back and the account passed for this walk (PARALLEL1c).
+            if (counts && !await WaitedOutAsync(owner, pass.States[pass.At].Account!, pass.Number, ct).ConfigureAwait(false))
+            {
+                walk.Unknown.Add(pass.States[pass.At].Account!);
+                continue;
+            }
+
+            break;
         }
 
-        if (at < 0)
-        {
-            // Every Daoris account the person never named said signed out: none is signed in, so the same sentence (OWNSPACE1a).
-            return ours && states.All(state => state.Readiness == AccountReadiness.SignedOut)
-                ? NoAccount(owner, RotationWords.SignedOut(states), names)
-                : Unready(owner, states, picked is null ? scope : null, circle, kind, now, names);
-        }
-
+        // What the pass that chose it read: the start's line says the walk as it was when the account was counted.
+        (states, order, now) = (pass.States, pass.Order, pass.Now);
+        var (at, facts) = (pass.At, pass.Facts);
         var runs = states[at].Account!;
         var home = HarnessSettings.ProfileHome(Home, owner, runs);
 
@@ -1212,17 +1208,6 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             && HarnessKeys.Of(Home, owner, runs) is { } held
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
-
-        // Counted from here on as one of this account's sessions, so the next start chosen before the next look spreads. And
-        // busy from here on (TOOL6g): a status question another caller is asking this account now is waited out first, and
-        // no probe asks it while the session's own process may refresh its token.
-        if (counts)
-        {
-            await using (await ProbeLock.TakeAsync(ProbeLock.PathOf(Home, owner, runs), ct: ct).ConfigureAwait(false))
-            {
-                Chose(owner, runs);
-            }
-        }
 
         var selection = new HarnessSelection(null, runs, home, report?.Version, managed, claude, key);
         if (picked is not null || scope.List.Count == 0 || scope.Begins is not { } begins) return selection;
@@ -1251,6 +1236,182 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                     ToSaid = Standing(runs),
                 },
         };
+    }
+
+    /// <summary>
+    /// The accounts a start may use, in the order it tries them (TOOL6b, D130 §16.3; D125 §3.3 under `order`), and what the walk
+    /// knows of each. A pick, a scope that names one account, and the tool's own sign-in are the one account, and nothing more
+    /// is read.
+    /// </summary>
+    private (List<string?> Order, IReadOnlyDictionary<string, AccountFacts> Facts) OrderOf(
+        string owner, RotationScope scope, StartKind kind, string? picked, bool ownHome, DateTimeOffset now)
+    {
+        if (picked is not null) return ([picked], NoFacts);
+        if (ownHome || scope.List.Count == 0) return ([ownHome ? null : scope.Begins], NoFacts);
+
+        var facts = Facts(owner, scope.List, now);
+        return ([.. AccountRotation.Order(scope, kind, HarnessSettings.Profiles(Home, owner), facts, now)], facts);
+    }
+
+    /// <summary>
+    /// What one start's walk learned across its passes (PARALLEL1c): what its own status questions answered, by account, and the
+    /// accounts left unknown for it, whose lock another question kept past its patience.
+    /// </summary>
+    private sealed class WalkMemory
+    {
+        public Dictionary<string, LoginState> Said { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public HashSet<string> Unknown { get; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// What one pass of a start's walk found (PARALLEL1c): a hold to answer with; an account to ask first, then pass again
+    /// (<see cref="Owed"/> where TOOL6h's one fresh reading is what asks it); or the account chosen, at <see cref="At"/> of the
+    /// states it read, counted as start <see cref="Number"/> where the start counts.
+    /// </summary>
+    private sealed record WalkPass(HarnessSelection? Held = null, string? Ask = null, bool Owed = false)
+    {
+        public List<AccountState> States { get; init; } = [];
+
+        public List<string?> Order { get; init; } = [];
+
+        public IReadOnlyDictionary<string, AccountFacts> Facts { get; init; } = NoFacts;
+
+        public DateTimeOffset Now { get; init; }
+
+        public int At { get; init; } = -1;
+
+        public long Number { get; init; }
+    }
+
+    /// <summary>
+    /// One pass of a start's walk (TOOL4f, D125 §3.3), asking nothing (PARALLEL1c): the order and each account's state read again,
+    /// with what this walk's own questions answered and every other account's last reading (ROSTER1), and the first account still
+    /// ready chosen, and counted where the start counts. A counted start's pass runs under the walk's gate, so it reads and counts
+    /// as one; it reads files and asks no agent.
+    /// </summary>
+    /// <remarks>
+    /// An account read signed out that is owed a question (TOOL6g's mark or hour, TOOL6h's fresh reading) is handed back to be
+    /// asked outside the gate, claimed so no other walk asks it beside this one; one another walk is asking now is passed as its
+    /// last reading says, never waited on. An account unknown for this walk is passed; where nothing else is chosen, the start is
+    /// held on it, for the next start to try again.
+    /// </remarks>
+    private WalkPass Pass(
+        string owner, RotationScope scope, StartKind kind, string? picked, string? circle, bool ours, bool counts,
+        IReadOnlyDictionary<string, string> names, WalkMemory walk)
+    {
+        var now = Clock();
+        var (order, facts) = OrderOf(owner, scope, kind, picked, ownHome: false, now);
+        var states = order.Select(account => Before(owner, account, now, names)).ToList();
+        // What the agent last said of each account (ROSTER1), as a report says it: an account not on this machine said nothing.
+        var present = HarnessSettings.Profiles(Home, owner);
+        var reads = AccountReads.Of(Home, owner);
+
+        var at = -1;
+        List<string> passed = [];
+        for (var i = 0; i < states.Count && at < 0; i++)
+        {
+            if (!states[i].IsReady) continue;
+            var account = states[i].Account!;
+            if (walk.Unknown.Contains(account))
+            {
+                passed.Add(account);
+                continue;
+            }
+
+            var read = present.FirstOrDefault(name => string.Equals(name, account, StringComparison.OrdinalIgnoreCase)) is { } listed
+                ? reads.Accounts.GetValueOrDefault(listed)
+                : null;
+            var asked = walk.Said.TryGetValue(account, out var answered);
+            var login = asked ? answered : read?.Login ?? LoginState.Unknown;
+            var key = AccountKey(owner, account);
+            if (login == LoginState.Out && !asked && _asking.TryAdd(key, true))
+            {
+                // The one fresh reading a refusal of a signed-in reading owes it (TOOL6h), spent here whatever it answers.
+                var owed = _owed.TryRemove(key, out _);
+                if (owed || AskAgain(owner, account, read?.At)) return new WalkPass(Ask: account, Owed: owed);
+                _asking.TryRemove(key, out _);
+            }
+
+            if (login == LoginState.Out)
+            {
+                var profile = ShellWord.Of(account, ShellWord.Account);
+                var refusal = $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
+                    + $"nothing to run as — `daoris agent login {owner} --profile {profile}` runs "
+                    + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
+                    + "credential stays in the agent's own store.";
+                states[i] = states[i] with
+                {
+                    Readiness = AccountReadiness.SignedOut,
+                    Refusal = refusal,
+                    RefusalNote = Noted.Of(NoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
+                };
+                continue;
+            }
+
+            at = i;
+        }
+
+        if (at < 0)
+        {
+            // An account passed for its lock comes free by itself: the start is held for the next to try, never waiting for a time.
+            if (passed.Count > 0) return new WalkPass(Held: Locked(owner, passed, names));
+
+            // Every Daoris account the person never named said signed out: none is signed in, so the same sentence (OWNSPACE1a).
+            return new WalkPass(Held: ours && states.All(state => state.Readiness == AccountReadiness.SignedOut)
+                ? NoAccount(owner, RotationWords.SignedOut(states), names)
+                : Unready(owner, states, picked is null ? scope : null, circle, kind, now, names));
+        }
+
+        return new WalkPass
+        {
+            States = states, Order = order, Facts = facts, Now = now, At = at,
+            // Counted from here on as one of this account's sessions, so the next start chosen before the next look spreads.
+            Number = counts ? Chose(owner, states[at].Account!) : 0,
+        };
+    }
+
+    /// <summary>
+    /// A counted start waits out a question in flight on the account it chose (TOOL6g), counted already, so no question begun
+    /// since asks it. False, the count taken back, where the account's lock stays held past <see cref="LockPatience"/>
+    /// (PARALLEL1c): a start beside a question in flight could spend its single-use refresh token twice, which signs it out.
+    /// </summary>
+    private async Task<bool> WaitedOutAsync(string owner, string account, long number, CancellationToken ct)
+    {
+        IAsyncDisposable? held;
+        try
+        {
+            held = await ProbeLock.TakeAsync(ProbeLock.PathOf(Home, owner, account), LockPatience, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            Unchose(number);
+            throw;
+        }
+
+        if (held is null)
+        {
+            Unchose(number);
+            return false;
+        }
+
+        await held.DisposeAsync().ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>
+    /// The hold of a start whose every account it could run on stayed locked by another question past the walk's patience
+    /// (PARALLEL1c): nothing counted, nothing run beside the question, and no wait for a time, so the next start tries again. Its
+    /// words alone, a refusal no held note carries by code (<see cref="HarnessSelection.RefusalNote"/>).
+    /// </summary>
+    private static HarnessSelection Locked(string owner, IReadOnlyList<string> accounts, IReadOnlyDictionary<string, string> names)
+    {
+        var one = accounts.Count == 1;
+        var said = string.Join(", ", accounts.Select(account => $"`{AccountNames.Said(names, account)}`"));
+        return new HarnessSelection(
+            $"the `{owner}` account{(one ? "" : "s")} {said} {(one ? "is" : "are")} being asked about by another question that held "
+            + $"{(one ? "it" : "them")} longer than a start waits, so nothing starts on {(one ? "it" : "them")} now: a start beside that "
+            + "question could sign the account out. The next start tries again.");
     }
 
     /// <summary>
@@ -1429,8 +1590,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     private static readonly IReadOnlyDictionary<string, AccountFacts> NoFacts =
         new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);
 
-    // One choice and its count at a time, so starts begun together in one look see each other's.
-    private readonly SemaphoreSlim _walking = new(1, 1);
+    // One choice and its count at a time, so starts begun together see each other's: a pass of a counted start's walk, which
+    // reads files and counts, and is held across no question, binary or lock wait (PARALLEL1c, D181 point 3).
+    private readonly object _walking = new();
+
+    // The accounts a walk is asking its status now (PARALLEL1c), by owner and account: another walk passes such an account as its
+    // last reading says, never waiting on that question nor asking it again beside it.
+    private readonly ConcurrentDictionary<string, bool> _asking = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly object _load = new();
 
@@ -1463,10 +1629,20 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         }
     }
 
-    /// <summary>A start chosen on an account: one of its sessions until the next look reads the records.</summary>
-    private void Chose(string owner, string account)
+    /// <summary>A start chosen on an account: one of its sessions until the next look reads the records. Its number, to take it back.</summary>
+    private long Chose(string owner, string account)
     {
-        lock (_load) _chosen.Add((++_numbered, owner, account));
+        lock (_load)
+        {
+            _chosen.Add((++_numbered, owner, account));
+            return _numbered;
+        }
+    }
+
+    /// <summary>A start counted on an account that did not run there after all (PARALLEL1c): no longer one of its sessions.</summary>
+    private void Unchose(long number)
+    {
+        lock (_load) _chosen.RemoveAll(start => start.Number == number);
     }
 
     /// <summary>

@@ -114,8 +114,9 @@ repository names one, and a scratch run redirects it with everything else.
   (letters, digits, `_` and `-`), which its spawn's rules allow as `mcp__<server>__<tool>` and nothing else. A bad `to` or
   `allow`, or an `allow` on a server not handed to Ask Daoris, refuses the plugin as a server's other problems do. Tightened
   the same day (D170's note): `writes` names the tools that change something outside Daoris, and a server's tools reach Ask
-  Daoris only once the person approved them on the plugin's page or with `daoris-driver plugins approve`, a write only where
-  they accepted it; a generic execution tool is refused for Ask Daoris whatever the manifest says.)*
+  Daoris only once the person approved them on the plugin's page, on Ask Daoris's own proposal of it, or with
+  `daoris-driver plugins approve`, each write only where they accepted it; a generic execution tool is refused for Ask Daoris
+  whatever the manifest says.)*
 
 - *(D170, HELPPLUG1b)* **`skills`** names the skills the plugin hands, each `{ "name": "<skill>", "to": [...] }`, its folder
   `skills/<name>/` beside the manifest holding a `SKILL.md`; `to` as a server's. Daoris copies each for a session as it starts,

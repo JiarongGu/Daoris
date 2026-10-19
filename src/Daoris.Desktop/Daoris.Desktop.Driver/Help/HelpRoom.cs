@@ -268,6 +268,12 @@ public sealed record HelpMachine
     /// <summary>The servers plugins offer it that wait for the person's approval, so it is handed none of them.</summary>
     public IReadOnlyList<HelpPluginServer> PluginServersWaiting { get; init; } = [];
 
+    /// <summary>
+    /// The servers the install's newer copy of a plugin installed here would offer it, which the installed copy does not
+    /// (HELPPLUG1c): its update first, then the person's approval.
+    /// </summary>
+    public IReadOnlyList<HelpPluginServerOffered> PluginServersOffered { get; init; } = [];
+
     /// <summary>The skills plugins hand it (HELPPLUG1b, D170 point 4), as the harness names them, <c>plugin:skill</c>.</summary>
     public IReadOnlyList<string> PluginSkills { get; init; } = [];
 

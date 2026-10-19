@@ -100,7 +100,7 @@ public sealed class GatedStartsTests : IDisposable
     public async Task A_plugins_trial_process_passes_the_gate()
     {
         using var _ = Refusing();
-        await Assert.ThrowsAsync<Win32Exception>(() => Calling(() => PluginTrialProcess.StartAsync(Plugin(), _home, noRepositoryAt: null)));
+        await Assert.ThrowsAsync<Win32Exception>(() => Calling(() => PluginTrialProcess.StartAsync(Plugin(), _home, noRepositoryAt: null, CancellationToken.None)));
 
         SeenOnceOffTheCaller();
     }

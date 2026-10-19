@@ -493,8 +493,9 @@ public static class HarnessActions
         Process process;
         try
         {
-            // Through the start gate (PROCSTART2): an agent's install or sign-in is a press.
-            process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
+            // Through the start gate (PROCSTART2): an agent's install or sign-in is a press, so a person's start (PARALLEL1d);
+            // its caller's token ends its wait for a place as it ends the run (PARALLEL1e).
+            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
                 ?? throw new DriverException($"`{command[0]}` did not start");
         }
         catch (System.ComponentModel.Win32Exception)

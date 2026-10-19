@@ -391,7 +391,8 @@ Repositories' Add repository or Import a folder may carry the `workspace` the dr
 may carry the `repository` and `sentence` the composer opens with, written to the common fields, a repository never a folder), and since PLUG9
 `plugin_propose` (a plugin that has landed, added from its folder in a repository's checkout, or one
 installed here switched on or off; since D103 also one of the install's own plugins by its id in
-`offer`, or an `update` of an installed one from where it came from), and since WSR5b `hand_propose` (a
+`offer`, or an `update` of an installed one from where it came from; since HELPPLUG1c an `approve` of what a
+plugin's server offers Ask Daoris, with its `server` and the `writes` the person accepts, or a `withdraw`), and since WSR5b `hand_propose` (a
 branch a landing made, handed to a landing plugin that pushes it and opens the pull request), and since
 HELP10 `browser_propose` (Daoris's browser's settings and favorites, as Settings → Browser sets them) and
 `sync_propose` (bringing repositories up to date after a pull request merged; the driver's card looks first, which

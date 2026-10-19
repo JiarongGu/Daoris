@@ -34,7 +34,9 @@ public static class ChildProcess
     /// info must redirect it.</param>
     /// <remarks>
     /// The start passes the process-wide gate (<see cref="ProcessStarts"/>, UIFREEZE1): a few at a time, on the thread pool,
-    /// so no caller's thread waits on the runtime's process-start lock. Cancelling while it waits for its place throws.
+    /// so no caller's thread waits on the runtime's process-start lock. Cancelling while it waits for its place throws. Every
+    /// run here is a question read to its end (git, a version, an agent's status, a plugin's tool check), so its start is the
+    /// background's (<see cref="StartClass.Background"/>, PARALLEL1d): a person's start never queues behind one.
     /// </remarks>
     public static Task<ChildRun> RunAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct, bool closeInput) =>
         RunAsync(info, patience, ct, closeInput, ProcessStarts.Shared);
@@ -55,7 +57,7 @@ public static class ChildProcess
         Process? process;
         try
         {
-            process = await starts.StartAsync(info, ct).ConfigureAwait(false);
+            process = await starts.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)
         {

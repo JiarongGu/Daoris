@@ -125,4 +125,43 @@ public sealed class HelpGrantsTests : IDisposable
         Assert.Empty(HelpGrants.Read(_home, catalog).Servers);
         Assert.Throws<DriverException>(() => HelpGrants.Approve(_home, catalog, "acme.none", "tickets", readsOnly: false));
     }
+
+    /// <summary>
+    /// HELPPLUG1c: a server that waits says whether it was never approved or was approved and an update changed its tools since,
+    /// so the page and the room say "changed since: asks again" rather than taking it away in silence.
+    /// </summary>
+    [Fact]
+    public void A_server_whose_tools_changed_since_its_approval_waits_marked_changed_and_one_never_approved_does_not()
+    {
+        Assert.False(Assert.Single(HelpGrants.Read(_home, Tickets()).All).Changed);
+
+        HelpGrants.Approve(_home, Tickets(), "acme.tickets", "tickets", readsOnly: false);
+        Assert.False(Assert.Single(HelpGrants.Read(_home, Tickets()).All).Changed);
+
+        var widened = Assert.Single(HelpGrants.Read(_home, Tickets(allow: """["search", "get_issue", "list_all"]""")).All);
+        Assert.Equal(HelpGrants.Waits, widened.State);
+        Assert.True(widened.Changed);
+    }
+
+    /// <summary>
+    /// HELPPLUG1c: the person accepts each write on its own: all the reads, and only the writes they chose, the rest asked, which
+    /// Ask Daoris's asking mode refuses (D89). An approval naming a write the server does not declare approves nothing.
+    /// </summary>
+    [Fact]
+    public void Approved_with_the_writes_the_person_chose_allows_those_and_asks_the_others()
+    {
+        var catalog = Tickets(writes: """["create_issue", "close_issue"]""");
+
+        var grant = HelpGrants.Approve(_home, catalog, "acme.tickets", "tickets", writes: ["close_issue"]);
+        var grants = HelpGrants.Read(_home, catalog);
+
+        Assert.Equal(["close_issue"], grant.Accepted);
+        Assert.Equal(HelpGrants.Approved, Assert.Single(grants.All).State);
+        Assert.Equal(["mcp__tickets__search", "mcp__tickets__get_issue", "mcp__tickets__close_issue"], grants.Allow);
+        Assert.Equal(["mcp__tickets__create_issue"], grants.Ask);
+
+        var refused = Assert.Throws<DriverException>(() => HelpGrants.Approve(_home, catalog, "acme.tickets", "tickets", writes: ["delete_all"]));
+        Assert.Contains("`delete_all`", refused.Message);
+        Assert.Equal(["close_issue"], Assert.Single(HelpGrants.Read(_home, catalog).All).Accepted);
+    }
 }

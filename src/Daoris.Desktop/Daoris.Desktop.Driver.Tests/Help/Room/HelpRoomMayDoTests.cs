@@ -102,8 +102,8 @@ public sealed class HelpRoomMayDoTests
         Assert.Contains("- `docs` (plugin `acme.docs`): none of its tools", agents);
         Assert.Contains("the plugin's own act", agents);
         Assert.Contains("a change to Daoris itself is still a proposal", agents);
-        Assert.Contains("wait for the person's approval on the plugin's page", agents);
-        Assert.Contains("`wiki` (plugin `acme.wiki`)", agents);
+        Assert.Contains("you are handed none of them until the person approves", agents);
+        Assert.Contains("- `wiki` (plugin `acme.wiki`): would read with `lookup`", agents);
     }
 
     /// <summary>
@@ -150,6 +150,94 @@ public sealed class HelpRoomMayDoTests
     public void With_no_plugin_server_nothing_is_said_of_one()
     {
         Assert.DoesNotContain("hand you these servers", HelpRoom.Render(HelpRoomFixture.Machine));
+        Assert.DoesNotContain("Not yours yet", HelpRoom.Render(HelpRoomFixture.Machine));
+    }
+
+    /// <summary>
+    /// HELPPLUG1c: a server a plugin offers it that the person has not approved, or whose tools an update changed since, is never
+    /// taken away in silence. The room names what it would have, reads and writes apart, says it once at the start, and where it is
+    /// approved: the plugin's page, or its own proposal (`plugin_propose`'s `approve`), rather than only opening the page. One the
+    /// installed copy lacks and the install's newer copy offers is said with its update first.
+    /// </summary>
+    [Fact]
+    public void A_server_waiting_for_approval_is_said_once_at_the_start_with_what_it_would_have_and_where_it_is_approved()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            PluginServersWaiting =
+            [
+                new("in-app-browser", "browser", ["browser_navigate", "browser_snapshot"]) { Writes = ["browser_click"] },
+                new("acme.wiki", "wiki", ["lookup"]) { Changed = true },
+            ],
+            PluginServersOffered = [new HelpPluginServerOffered("acme.pages", "pages", "1.0.0", "1.1.0")],
+        });
+
+        Assert.Contains("### Not yours yet", room);
+        Assert.Contains("- `browser` (plugin `in-app-browser`): would read with `browser_navigate`, `browser_snapshot`; would change "
+            + "things outside Daoris with `browser_click`, each write only as the person accepts it", room);
+        Assert.Contains("- `wiki` (plugin `acme.wiki`): would read with `lookup`; approved once, and an update has changed its tools since, so it asks again", room);
+        Assert.Contains("- `pages` (plugin `acme.pages`): this install's own `acme.pages` 1.1.0 offers it you, and the 1.0.0 installed "
+            + "here does not, so it is updated first (`plugin_propose`, `update`), then approved", room);
+        Assert.Contains("Say so once, at the start of your first answer", room);
+        Assert.Contains("Plugins → the plugin's page → Ask Daoris → Approve", room);
+        Assert.Contains("propose the approval with `plugin_propose` (`approve`", room);
+        Assert.DoesNotContain("These servers wait for the person's approval", room);
+    }
+
+    /// <summary>
+    /// HELPPLUG1c: the waiting servers are described from the person's approvals, each write apart and one changed since marked;
+    /// an installed offer whose newer copy offers a server the installed one lacks is named with both versions.
+    /// </summary>
+    [Fact]
+    public void Waiting_servers_and_ones_an_update_would_bring_are_described_from_the_approvals_and_the_offers()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-help-waiting-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var installed = DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools");
+            Directory.CreateDirectory(installed);
+            File.WriteAllText(Path.Combine(installed, PluginCatalog.ManifestName), """
+                { "id": "acme.tools", "version": "1.0.0", "servers": [
+                    { "name": "wiki", "command": ["wiki"], "to": ["help"], "allow": ["lookup"], "writes": ["edit_page"] } ] }
+                """);
+            var old = DaorisHome.Entry(home, HomeEntry.Plugins, "in-app-browser");
+            Directory.CreateDirectory(old);
+            File.WriteAllText(Path.Combine(old, PluginCatalog.ManifestName), """
+                { "id": "in-app-browser", "version": "1.0.0", "servers": [ { "name": "browser", "command": ["b"] } ] }
+                """);
+            var shipped = Path.Combine(home + "-offers", "in-app-browser");
+            Directory.CreateDirectory(shipped);
+            File.WriteAllText(Path.Combine(shipped, PluginCatalog.ManifestName), """
+                { "id": "in-app-browser", "version": "1.1.0", "servers": [
+                    { "name": "browser", "command": ["b"], "to": ["sessions", "help"], "allow": ["browser_navigate"] } ] }
+                """);
+            var catalog = PluginCatalog.Load(home);
+            HelpGrants.Approve(home, catalog, "acme.tools", "wiki", readsOnly: true);
+            File.WriteAllText(Path.Combine(installed, PluginCatalog.ManifestName), """
+                { "id": "acme.tools", "version": "1.1.0", "servers": [
+                    { "name": "wiki", "command": ["wiki"], "to": ["help"], "allow": ["lookup", "list_pages"], "writes": ["edit_page"] } ] }
+                """);
+            catalog = PluginCatalog.Load(home);
+            var (manifest, _) = PluginCatalog.ReadAsWritten("in-app-browser", Path.Combine(shipped, PluginCatalog.ManifestName));
+
+            var machine = HelpRoom.Describe(
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: catalog,
+                offers: [new PluginOffer("in-app-browser", shipped, manifest!, null, [], Installed: true)],
+                grants: HelpGrants.Read(home, catalog));
+
+            var waiting = Assert.Single(machine.PluginServersWaiting);
+            Assert.Equal(("acme.tools", "wiki", true), (waiting.Plugin, waiting.Server, waiting.Changed));
+            Assert.Equal(["lookup", "list_pages"], waiting.Tools);
+            Assert.Equal(["edit_page"], waiting.Writes);
+            Assert.Equal(new HelpPluginServerOffered("in-app-browser", "browser", "1.0.0", "1.1.0"), Assert.Single(machine.PluginServersOffered));
+        }
+        finally
+        {
+            foreach (var folder in new[] { home, home + "-offers" })
+            {
+                try { Directory.Delete(folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+        }
     }
 
     /// <summary>

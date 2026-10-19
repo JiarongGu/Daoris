@@ -63,6 +63,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  one of Daoris's own plugins by its id instead (`offer`, below), and an `update` (the plugin's `id`) takes a\n");
         text.Append("  newer copy from where an installed one came from, the card saying what changes; one with no record of\n");
         text.Append("  where it came from cannot be updated.\n");
+        // HELPPLUG1c (D170's note): the person's approval of what a plugin's server offers Ask Daoris, by their press.
+        text.Append("  An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,\n");
+        text.Append("  and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you\n");
+        text.Append("  are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.\n");
         // WSR5b: the review's own hand-off, for a ticket landed before its workspace named a plugin, or whose plugin failed.
         text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
         text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
