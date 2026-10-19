@@ -17175,3 +17175,21 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AUTONOMY1b2 — a resumed record keeps the setup it runs under now** (service, driver; D184 point 1, its AUTONOMY1b note). A resumed driven record still holds the setup it opened under, and the ledger has no door to change it (Ask Daoris's mode has `/help-mode`). Proof: a resume under a changed setup leaves the record's `access` naming the new values.
 
 **Outcome** 2026-10-19: `POST /api/sessions/{id}/access` keeps a driven record's access map (this machine's driven records only, no revision, a malformed or empty map refused, a mirror, chat or help record a 404); a resume whose permission prompts changed (`DrivenAccess.KeepAsync`) posts the whole setup standing now before its spawn, and a refused door is said and the run goes on. A go-ahead changed alone does not call it. On Sonnet: about 55 tool calls, 9 minutes; `AnswerContinuesTickTests` ran at the merge (5 pass). Detail: D184's AUTONOMY1b note, its AUTONOMY1b2 line.
+
+## AUTONOMY1d — the repository setup page's access section (2026-10-19, D184)
+
+> - [ ] **AUTONOMY1d — the repository setup page's access section** (web; D184 points 1-3; after AUTONOMY1a). On a repository's setup: a full-access switch and the list of pauses, each with what it means, its effective value and where it comes from (repository, workspace, machine), confirmed once for full access; en and 中文. Proof: page tests per control; the installed window.
+
+**Outcome** 2026-10-19: A repository's Setup has *Sessions' access* after *Line and landing*; a workspace's Setup and Settings > Driver hold the same rows one level up (`settings/Access.tsx`'s `AccessRows`). Full access is asked once, saying what it turns off and what stays; switching it off clears the level, or sets today's pauses where the level above is full; each pause shows its value and where it was set, set here or cleared back to the level above; *Questions* read-only. The lines slice carries `access`; en and 中文, the glossary's traps noted. On Opus: about 320 tool calls, 49 minutes. Detail: D184's AUTONOMY1d note.
+
+## TREELINK1b — a second opinion's copy is removed without following a link (2026-10-19, D51)
+
+> - [ ] **TREELINK1b — a second opinion's copy is removed without following a link** (driver; D51's TREELINK1 note). `Review/OpinionTree.cs` (~142) deletes a second opinion's copy under the trees home with .NET's recursive `Directory.Delete`, which throws on a junction although it removes it. It uses `TreeSetAside.DeleteNeverFollowing`, as the purge does. Proof: a copy holding a junction to a folder outside it is removed, and the folder's file still stands.
+
+**Outcome** 2026-10-19: `OpinionTree.RemoveAsync` removes a second opinion's copy through `TreeSetAside.DeleteNeverFollowing`; a junction test passed on the old delete too (this .NET took the junction as a link), so the change is the named safety, not a fix seen to fail. On Sonnet, with TREESCRATCH2: about 25 tool calls, 9 minutes. Detail: D51's TREELINK1 note, its TREELINK1b line.
+
+## TREESCRATCH2 — `SessionTreesTests` leaves no folders behind (2026-10-19, D51)
+
+> - [ ] **TREESCRATCH2 — `SessionTreesTests` leaves no folders behind** (driver tests; TREEDEPS1's hand-back). Its `Dispose` uses .NET's recursive delete, which leaves each test's `engine/.git` and throws on a workspace junction, leaving `node_modules`. Remove through `TreeSetAside.DeleteNeverFollowing`. Proof: a run of the class leaves its scratch empty.
+
+**Outcome** 2026-10-19: `SessionTreesTests`' cleanup removes through `DeleteNeverFollowing`; a run of the class (20 pass) leaves its scratch empty.
