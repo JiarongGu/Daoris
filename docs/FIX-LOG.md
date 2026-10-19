@@ -5,6 +5,15 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The heavy-gate tests joined driver.json onto a home by hand (HEAVYRUN1b2a, HOMELAYOUT2)
+
+- **Symptom:** the CI on `ae28dd1` failed the CLI's home census (*no code joins a home path by hand*): five
+  `Path.Combine(<home>, "driver.json")` in `HeavyRunCommandTests`, `HeavyRunProcessTests` and `HeavyToldTests`, and a sixth
+  since in `StartInSyncTickTests` (HEAVYRUN1b2a2).
+- **Root cause:** the census is a CLI test scanning the desktop's sources; the builders ran their own .NET classes only.
+- **Fix:** each asks `DaorisHome.Entry(home, HomeEntry.DriverConfig)`.
+- **Verify:** the census green; `HeavyRunCommandTests` and `HeavyToldTests` green (25).
+
 ## 2026-10-20 — A start's fresh tree was left at the driver's close (QUEUEDTREE1)
 
 - **Symptom:** PARALLEL1f's hand-back: a continuation that returns as the driver closes leaves the tree its start opened, and its

@@ -125,7 +125,7 @@ public sealed class HeavyRunProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        File.WriteAllText(Path.Combine(_fixture.Home, "driver.json"), JsonSerializer.Serialize(new Dictionary<string, object>
+        File.WriteAllText(DaorisHome.Entry(_fixture.Home, HomeEntry.DriverConfig), JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["heavyGates"] = new Dictionary<string, object>
             {

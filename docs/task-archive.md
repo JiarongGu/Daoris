@@ -17365,3 +17365,39 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CIPRIO1c — a superseded CI run stops the gate already running** (tools; D180's CIPRIO1 line). A superseded run stops only before its next gate, since `runStep` holds no child handle. `runStep` registers its child and a supersession ends that tree. Proof: a held gate's tree ended within seconds of a newer tip; the run recorded superseded.
 
 **Outcome** 2026-10-20: a run beside of main's tip polls the tip every five seconds while its gates run and, on the first move, ends every step tree it holds by the step's own pid (`taskkill /T /F`; never by image name, never the build servers) and starts nothing more; an ended gate reads ENDED, gives no verdict, and the record stays superseded. A person's Ctrl+C ends the trees the same way and lets the lock go. Left: a run killed outright (CIPRIO1d). On Opus: about 112 tool calls, 50 minutes. Detail: D180's CIPRIO1c note.
+
+## STRUCTHELP1 — the page's `help/` cut into scope folders (2026-10-20, D166)
+
+> - [ ] **STRUCTHELP1 — the page's `help/` cut into scope folders** (web; the code-structure design §5, D166; the CI on f290807). `help/` holds 21 sources at its top, over the 20 `structure.test.ts` allows (HELPMODE1c1's `ConfiguredAccess.tsx` and `grants.ts`). Move the access mode's files (`HelpModePicker`, `WhatItHas`, `ConfiguredAccess`, `modes`, `grants`, `wired`, with their tests and stories) into a scope folder named for what they hold, imports updated. Proof: `structure.test.ts` green; the moved files' tests and the stories test green; the typecheck clean.
+
+**Outcome** 2026-10-20: the access mode's twelve files moved into `help/access/` (`git mv`, imports updated in four files outside it, story titles unchanged), so `help/` holds 33 files at its top and `structure.test.ts` is green. On Sonnet: about 31 tool calls, 13 minutes.
+
+## OWNMOVES1 — the facts told which ref moves are Daoris's own (2026-10-20, D182)
+
+> - [ ] **OWNMOVES1 — the facts told which ref moves are Daoris's own** (driver; D181 points 2-3, D182 point 4; PUSH1c1's hand-back). A landing or an Accept (`RefMoves.Mine`) reaches the facts as an ordinary refs hint, so the trees' 30 s rest can keep a landed tree's Accept offer on the list for up to 30 s since PUSH1c1 reads the groups from the facts. Telling the facts a move is Daoris's own lets that repository's trees part be judged at once (`RefWatch`/`DriverWatch`'s `heard`, then `HelpFacts`). Proof: a landing right after the part's judgement clears its tree's offer within one judgement, the facts' clock frozen.
+
+**Outcome** 2026-10-20: Daoris's own ref moves judge their repository's trees and work parts at once, past the rest: `RefWatch.Heard` says whether an own move asked for the judgement, `DriverWatch.Heard` and `DriverLoop.HeardMove` pass it on, and `HelpFacts.Wake`'s `mine` wakes the two parts afresh (`MachineFacts.Wake`'s `afresh`); a plain hint and every other repository keep the rest. On Opus: about 102 tool calls, 32 minutes. Detail: D182's OWNMOVES1 note.
+
+## HEAVYRUN1b2a2 — a driven start names its repository to the heavy instruction (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1b2a2 — a driven start names its repository to the heavy instruction** (driver; after QUEUEDTREE1 and LOOKWAIT1b free `Loop/Driver.cs`; D180's HEAVYRUN1b2a note). `Driver.cs` ~1915 calls `HeavyTold.For(workTree, home)`, so a start looks this machine's heavy gates up under the checkout's folder name while `run-heavy` in the same session looks them up under `DAORIS_REPOSITORY`; a repository registered under another name is told nothing though its run would run them. Pass `quest.To` as the third argument. Proof: a start test where the folder and the registered name differ is told the mapped gates.
+
+**Outcome** 2026-10-20: `Driver.cs` passes `quest.To` to `HeavyTold.For`, so a start looks this machine's heavy gates up under the repository `run-heavy` is handed (`DAORIS_REPOSITORY` carries the same name); a Process tick test where the checkout's folder and the quest's name differ proves it (`StartInSyncTickTests`). Built with HELPWIREDLIVE1b's driver half (`ChatRunner.WiredKept`). On Sonnet. Detail: D180's HEAVYRUN1b2a2 note.
+
+## CIPRIO1d — a run beside killed outright leaves no gate tree running (2026-10-20, D180)
+
+> - [ ] **CIPRIO1d — a run beside killed outright leaves no gate tree running** (tools; D180's CIPRIO1c note, "Left"). A harness's stop ends node with no SIGINT, so the steps' shells and all under them run on, holding the machine and the rehearsals' ports. When `takeGateLock` takes over a stale lock, end what the dead pid started since the lock's `at` (`tools/processes.mjs` `endOrphans`). Proof: a run beside killed during a held gate with a grandchild; the next run's takeover ends both.
+
+**Outcome** 2026-10-20: `takeGateLock` ends what the dead pid started since the lock's `at` (`endOrphans`, Windows only, a seam `end`, `stale.ended` said in the takeover line). Its real-tree test found the limit: a killed node's non-detached children end with it, so a step's shell's orphans sit under a dead parent id a listing by the run's pid cannot find (CIPRIO1e). On Sonnet: about 48 tool calls, 22 minutes. Detail: D180's CIPRIO1d note.
+
+## PUSH1c2a — work milestones pushed, the host half (2026-10-20, D182)
+
+> - [ ] **PUSH1c2a — work milestones pushed, the host half** (modules, web; D182; after WAITSAY1c2). A slice partitioned per repository from `HelpFacts.Work` (woken per repository by refs, all by the ledger's `sessions`), the unit variants derived with `select`; `Held` (a file read) pushed or kept pulled, decided. Proof: a tick reads no `WORK_STATE`; a refs move judges its repository alone.
+
+**Outcome** 2026-10-20: the `work` slice pushes `WORK_STATE`'s units, recoveries and unread lines per part from the machine's facts' work parts (`HelpFacts.WorkParts`), beside a `<held>` partition read from the node records, with no git or service call; nothing is pushed for a part never judged, and the slice is not judged until every part the service names has been; every field is named by an allow-list held by a twin test of the route; a `landing` or `sweep` press wakes every part afresh, `sessions` under the rest. The page half is PUSH1c2b. On Opus: about 207 tool calls, 65 minutes. Detail: D182's PUSH1c2a note.
+
+## LOOKSLOW2 — `look.slow` says its queue so far (2026-10-20, D181)
+
+> - [ ] **LOOKSLOW2 — `look.slow` says its queue so far** (driver; the machine-log design §4; D181's QUEUEDTREE1 and LOOKWAIT1b note). A stage named slow while it runs cannot yet say whether it waits for places or works; an additive `queued` field tells the two apart. Proof: a `LookStagesTests` row.
+
+**Outcome** 2026-10-20: `look.slow` carries an additive `queued`, the stage's queue so far with a wait still open counted (`StageSpan.QueuedSoFar`), written always, 0 included, so a reader tells "not waiting" from a missing field. On Sonnet: about 19 tool calls, 8 minutes. Detail: D181's LOOKSLOW2 line; the machine-log design's `look.slow` row.

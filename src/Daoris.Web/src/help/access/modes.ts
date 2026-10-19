@@ -1,4 +1,4 @@
-import type { StarterDoor } from './starters';
+import type { StarterDoor } from '../starters';
 import type { HelpMode, HelpPluginOffer, HelpReceipt, HelpWiredLack } from './wired';
 
 // Ask Daoris's access modes on the page (HELPMODE1b, D183 points 2-4; the modes design §1, §5, §6), as values: the chip, what full

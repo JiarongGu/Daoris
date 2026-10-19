@@ -73,7 +73,7 @@ public sealed class HeavyToldTests : IDisposable
     {
         Launcher("daoris-driver.cmd");
         File.WriteAllText(
-            Path.Combine(Home, "driver.json"),
+            DaorisHome.Entry(Home, HomeEntry.DriverConfig),
             """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"},{"name":"e2e","run":"npm run e2e"}],"shop":[{"name":"web","run":"npm test"}]}}""");
 
         Assert.Equal(Said, HeavyTold.For(_fixture.Checkout, Home));
@@ -93,7 +93,7 @@ public sealed class HeavyToldTests : IDisposable
     public void A_driver_file_that_does_not_read_tells_nothing_of_a_mapping()
     {
         Launcher("daoris-driver.cmd");
-        File.WriteAllText(Path.Combine(Home, "driver.json"), "{ not json");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{ not json");
 
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
     }

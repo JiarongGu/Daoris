@@ -186,6 +186,32 @@ public sealed class LookStagesTests : IDisposable
         Assert.True(slow.GetProperty("ms").GetInt64() >= 0);
     }
 
+    /// <summary>LOOKSLOW2: the slow line says its queue so far, a wait still open counted, a wait ended counted, none as 0.</summary>
+    [Fact]
+    public async Task A_slow_line_says_its_queue_so_far_counting_a_wait_still_open()
+    {
+        using (var log = new MachineLog(_home, "driver"))
+        {
+            var stages = Stages(log, TimeSpan.FromMilliseconds(200));
+            var open = stages.Begin("start", "#open");
+            var ended = stages.Begin("start", "#ended");
+            var idle = stages.Begin("start", "#idle");
+            using (ended.Waiting()) Pass(100);
+            var wait = open.Waiting();
+            Pass(300);
+            await Poll.Until(() => Slow().Length == 3, () => $"{Slow().Length} slow line(s)");
+            wait.Dispose();
+            open.Dispose();
+            ended.Dispose();
+            idle.Dispose();
+        }
+
+        var queued = Slow().ToDictionary(line => line.GetProperty("subject").GetString()!, line => line.GetProperty("queued").GetInt64());
+        Assert.Equal(300, queued["#open"]);
+        Assert.Equal(100, queued["#ended"]);
+        Assert.Equal(0, queued["#idle"]);
+    }
+
     [Fact]
     public async Task A_stage_that_ends_before_the_threshold_writes_no_slow_line()
     {

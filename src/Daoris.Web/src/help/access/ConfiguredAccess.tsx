@@ -1,8 +1,8 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpGrantState } from './wired';
-import { Button, CheckField, Icon, Inline, Pill } from '../design/ui';
-import { cn } from '../lib/cn';
+import { Button, CheckField, Icon, Inline, Pill } from '../../design/ui';
+import { cn } from '../../lib/cn';
 import { GRANTS, grantState, type GrantSpec } from './grants';
 
 // Restricted mode's configured access (HELPMODE1c1, D183 point 1; the modes design §4.1 and §5's Settings sketch), drawn from

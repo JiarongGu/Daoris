@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HelpMode } from './wired';
-import { Button, Icon, Menu, Prose } from '../design/ui';
-import { cn } from '../lib/cn';
+import { Button, Icon, Menu, Prose } from '../../design/ui';
+import { cn } from '../../lib/cn';
 import { chipOf } from './modes';
 
 // Ask Daoris's access, chosen from its chip (HELPMODE1b, D183 point 2; the modes design §1, §5): beside the panel's composer, and in

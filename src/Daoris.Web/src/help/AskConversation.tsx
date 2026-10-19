@@ -14,9 +14,9 @@ import {
 } from '../bridge/shell';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
 import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
-import { FullAccessConfirm, HelpModeChip, useModeChoice } from './HelpModePicker';
-import { fullAdds } from './modes';
-import { WhatItHas } from './WhatItHas';
+import { FullAccessConfirm, HelpModeChip, useModeChoice } from './access/HelpModePicker';
+import { fullAdds } from './access/modes';
+import { WhatItHas } from './access/WhatItHas';
 import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { BackToBottom, SessionConversation, type TailState } from '../work/SessionConversation';

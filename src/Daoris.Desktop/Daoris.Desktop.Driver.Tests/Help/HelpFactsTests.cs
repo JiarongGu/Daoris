@@ -278,6 +278,31 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
+    /// PUSH1c2a: the work's parts as a slice pushes them, each by its subject in the merge's order (by repository, the rest's last),
+    /// with its part as last judged or none where it never was, so a part never judged is told apart from one judged empty; none
+    /// before the service's answers, which name the parts.
+    /// </summary>
+    [Fact]
+    public void The_work_s_parts_are_named_in_the_merge_s_order_each_as_last_judged_or_none_where_never()
+    {
+        var site = new HelpWork([Unit("u-site", "site")], [], []);
+        var rest = new HelpWork([], [], []);
+        Assert.Null(HelpFacts.WorkParts(MachineFactsSnapshot.Empty.With(HelpFacts.Work, "site", new JudgedFact(site, At))));
+
+        var partly = MachineFactsSnapshot.Empty
+            .With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At))
+            .With(HelpFacts.Work, "site", new JudgedFact(site, At))
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(rest, At));
+
+        var parts = HelpFacts.WorkParts(partly)!;
+
+        Assert.Equal(["engine", "site", HelpFacts.NoCheckout], parts.Select(part => part.Part));
+        Assert.Null(parts[0].Work);
+        Assert.Same(site, parts[1].Work);
+        Assert.Same(rest, parts[2].Work);
+    }
+
+    /// <summary>
     /// 🔴 FACTSPLIT1b (D181 points 2-3): one repository's refs judge its part of the sessions' trees again alone, and never the look
     /// without them. The other repository's part and the part of the repositories with no checkout here stand as last judged.
     /// </summary>
@@ -316,6 +341,55 @@ public sealed class HelpFactsTests : IDisposable
 
         Assert.Equal((1, 2, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
         Assert.Equal(1, Volatile.Read(ref looked));
+    }
+
+    /// <summary>
+    /// 🔴 OWNMOVES1 (D181 points 2-3, D182 point 4): Daoris's own ref move, a landing or an <i>Accept</i>, judges its repository's
+    /// trees and work parts at once, past the rest a burst of hints is held to, so a landed tree's offer leaves within one judgement;
+    /// another repository's plain refs in the same moment are still held. The facts' clock never moves.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_own_ref_move_judges_that_repository_s_trees_and_work_at_once_and_a_plain_hint_keeps_the_rest()
+    {
+        var trees = new Dictionary<string, int>(StringComparer.Ordinal);
+        var work = new Dictionary<string, int>(StringComparer.Ordinal);
+        var offered = new HelpTrees(new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase));
+        var landed = new HelpTrees(new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase));
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            Trees = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                int count;
+                lock (trees) count = trees[subject] = trees.GetValueOrDefault(subject) + 1;
+                return Task.FromResult<HelpTrees?>(subject == "site" ? count == 1 ? offered : landed : NoTrees);
+            },
+            Work = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                lock (work) work[subject] = work.GetValueOrDefault(subject) + 1;
+                return Task.FromResult<HelpWork?>(new HelpWork([], [], []));
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "engine");
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "site", mine: true);
+        await Poll.Until(() => Judged(trees, "site") == 2 && Judged(work, "site") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+        await Task.Delay(200);
+
+        Assert.Same(landed, facts.Current.Value<HelpTrees>(HelpFacts.Trees, "site"));
+        Assert.Equal((1, 2, 1), (Judged(trees, "engine"), Judged(trees, "site"), Judged(trees, HelpFacts.NoCheckout)));
+        Assert.Equal((1, 2, 1), (Judged(work, "engine"), Judged(work, "site"), Judged(work, HelpFacts.NoCheckout)));
     }
 
     /// <summary>

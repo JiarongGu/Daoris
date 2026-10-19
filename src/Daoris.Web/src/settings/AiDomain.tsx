@@ -6,8 +6,8 @@ import {
 import { doorLabel } from '../agents/tools';
 import { failure, type Notify } from '../design/ui';
 import { workspacesOf } from '../data/workspaces';
-import { useModeChoice } from '../help/HelpModePicker';
-import { fullAdds } from '../help/modes';
+import { useModeChoice } from '../help/access/HelpModePicker';
+import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
 import { namer } from './namer';
 

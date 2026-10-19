@@ -224,7 +224,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     public async Task A_run_reads_the_mapping_under_its_session_s_repository_else_its_folder_s()
     {
         File.WriteAllText(
-            Path.Combine(_fixture.Home, "driver.json"),
+            DaorisHome.Entry(_fixture.Home, HomeEntry.DriverConfig),
             """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"}],"shop":[{"name":"web","run":"npm test"}]}}""");
 
         var byFolder = new SaidWriter();
@@ -242,7 +242,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     [Fact]
     public async Task A_run_whose_driver_file_does_not_read_is_refused_where_it_needs_the_mapping()
     {
-        File.WriteAllText(Path.Combine(_fixture.Home, "driver.json"), "{ not json");
+        File.WriteAllText(DaorisHome.Entry(_fixture.Home, HomeEntry.DriverConfig), "{ not json");
         var said = new SaidWriter();
 
         Assert.Equal(2, await HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Tree), said, CancellationToken.None).WaitAsync(Poll.Patience));

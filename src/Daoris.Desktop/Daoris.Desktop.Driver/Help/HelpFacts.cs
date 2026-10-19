@@ -143,9 +143,18 @@ public static class HelpFacts
     }
 
     /// <summary>Wake the facts <paramref name="topic"/>'s <paramref name="subject"/> moves (<see cref="Woken"/>).</summary>
-    public static void Wake(MachineFacts facts, string topic, string subject)
+    /// <param name="mine">
+    /// A ref this process moved itself, a landing or an <i>Accept</i> (OWNMOVES1): that repository's parts of the trees and of the work
+    /// are judged at once, past the rest a burst of a committing session's refs is held to, so a landed tree's offer leaves within one
+    /// judgement. Its line has no rest, and any other topic's wake is as it was.
+    /// </param>
+    public static void Wake(MachineFacts facts, string topic, string subject, bool mine = false)
     {
-        foreach (var (factTopic, factSubject) in Woken(topic, subject, facts.Current)) facts.Wake(factTopic, factSubject);
+        var afresh = mine && topic == ChangeTopics.Refs;
+        foreach (var (factTopic, factSubject) in Woken(topic, subject, facts.Current))
+        {
+            facts.Wake(factTopic, factSubject, afresh && factTopic is Trees or Work);
+        }
     }
 
     /// <summary>
@@ -545,15 +554,26 @@ public static class HelpFacts
     private static HelpWork? WorkOf(MachineFactsSnapshot facts, HelpMachineWhole whole)
     {
         var parts = new List<HelpWork>();
-        foreach (var subject in Parts(whole))
+        foreach (var (_, part) in WorkParts(facts, whole))
         {
-            if (facts.Value<HelpWork>(Work, subject) is not { } part) return null;
+            if (part is null) return null;
             parts.Add(part);
         }
 
         return new HelpWork(
             [.. parts.SelectMany(part => part.Units)], [.. parts.SelectMany(part => part.Unread)], [.. parts.SelectMany(part => part.Recovery)]);
     }
+
+    /// <summary>
+    /// The work's parts the service's answers name, as a slice pushes them (PUSH1c2a, D182): each by its subject in the merge's order
+    /// (each repository with a checkout here by name, <see cref="NoCheckout"/> last), with its part as last judged, or null where it
+    /// never was, so a part never judged differs from one judged empty. Null where the service's answers were never judged.
+    /// </summary>
+    public static IReadOnlyList<(string Part, HelpWork? Work)>? WorkParts(MachineFactsSnapshot facts) =>
+        facts.Value<HelpMachineWhole>(Machine, Whole) is { } whole ? WorkParts(facts, whole) : null;
+
+    private static IReadOnlyList<(string Part, HelpWork? Work)> WorkParts(MachineFactsSnapshot facts, HelpMachineWhole whole) =>
+        [.. Parts(whole).Select(subject => (subject, facts.Value<HelpWork>(Work, subject)))];
 
     /// <summary>
     /// The sessions as the room reads them (FACTSPLIT1b), the look as the Sessions list takes it: the look without trees, with each

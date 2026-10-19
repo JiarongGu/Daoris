@@ -529,7 +529,9 @@ public sealed class LinesRoutes(DriverContext context)
     /// `daoris-driver work state` says (D50): whether its end was reached, the result kept, the cleanup pending (what waits and
     /// why) or completed (what went), and the recovery retained until its date, each with the inventory entries it is read from.
     /// Derived at each read from the records the tree lifecycle keeps, never stored; a look that changes nothing, so it declares
-    /// nothing (D169 point 2). With `unit`, the units that name picks (its id, session or branch).
+    /// nothing (D169 point 2). With `unit`, the units that name picks (its id, session or branch). The work slice pushes the same
+    /// units, entries and held attempts per repository, judged from the machine's facts (PUSH1c2a, D182); this pull stays for a
+    /// page that does not read the slice, and for a unit's own read.
     /// </summary>
     [DriverRoute("WORK_STATE")]
     private async Task<object?> WorkStateAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -549,20 +551,11 @@ public sealed class LinesRoutes(DriverContext context)
             recovery = [];
         }
 
-        static object Entry(InventoryEntry each) => new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof, each.Repository, each.Commit };
         return new
         {
-            Units = units.Select(unit => new
-            {
-                unit.Unit, unit.Repository, unit.Branch, unit.Session,
-                End = new { unit.End.State, unit.End.By, unit.End.On, unit.End.Revision, unit.End.At, unit.End.Said },
-                Result = unit.Result.Select(Entry).ToArray(),
-                Cleanup = new { unit.Cleanup.State, Waits = unit.Cleanup.Waits.Select(Entry).ToArray(), Gone = unit.Cleanup.Gone.Select(Entry).ToArray() },
-                Recovery = unit.Recovery.Select(Entry).ToArray(),
-                Entries = unit.Entries.Select(Entry).ToArray(),
-            }).ToArray(),
+            Units = units.Select(WorkUnit).ToArray(),
             // CLEANUP1, additive: Daoris's own recoveries no unit names (a folder moved aside, a recovery ref), each by its rule.
-            Recovery = recovery.Select(Entry).ToArray(),
+            Recovery = recovery.Select(WorkEntry).ToArray(),
             Unread = unread.ToArray(),
             // FABRIC-PERFORM1g, additive: the plugin steps whose attempt is held for the person, of every unit (a quest's too), or of the
             // units the name picked. An install no graph naming a plugin's performed node governs keeps no node record, and lists none.
@@ -570,6 +563,24 @@ public sealed class LinesRoutes(DriverContext context)
                 .Where(held => Optional(request, "unit") is not { } picked || held.Unit == picked || units.Any(unit => unit.Unit == held.Unit))),
         };
     }
+
+    /// <summary>
+    /// One unit's milestone as <c>WORK_STATE</c> answers it and the work slice pushes it (PUSH1c2a): one builder, two doors, so the pull
+    /// and the push cannot drift. A field added here is pushed only once <see cref="WorkStateSlice.Fields"/> names it.
+    /// </summary>
+    public static object WorkUnit(WorkMilestone unit) => new
+    {
+        unit.Unit, unit.Repository, unit.Branch, unit.Session,
+        End = new { unit.End.State, unit.End.By, unit.End.On, unit.End.Revision, unit.End.At, unit.End.Said },
+        Result = unit.Result.Select(WorkEntry).ToArray(),
+        Cleanup = new { unit.Cleanup.State, Waits = unit.Cleanup.Waits.Select(WorkEntry).ToArray(), Gone = unit.Cleanup.Gone.Select(WorkEntry).ToArray() },
+        Recovery = unit.Recovery.Select(WorkEntry).ToArray(),
+        Entries = unit.Entries.Select(WorkEntry).ToArray(),
+    };
+
+    /// <summary>One inventory entry as <c>WORK_STATE</c> answers it and the work slice pushes it (PUSH1c2a).</summary>
+    public static object WorkEntry(InventoryEntry each) =>
+        new { each.Unit, each.Kind, each.Resource, each.Role, each.Disposition, each.Detail, each.Until, each.Proof, each.Repository, each.Commit };
 
     /// <summary>
     /// The attempts held for the person as the wire carries them: the page words <c>why</c> by its code. FABRIC-CLOSE1q, additive: <c>words</c>,
