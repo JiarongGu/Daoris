@@ -21,7 +21,7 @@ import { makeFixture } from '../test/_fixture.ts';
  * this suite sits in would merge into it.
  */
 
-interface Gate { name: string; run: string; kind: string; before: string[]; cwd?: string; clock?: boolean }
+interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean }
 interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options {
@@ -881,8 +881,9 @@ test('the plan is the declared gates plus the rehearsals only the workflow runs,
   assert.deepEqual(plan.map((gate) => gate.name), ['universal', 'cli', 'service', 'rehearse', 'rehearse-family', 'web', 'deployment']);
   assert.deepEqual(plan.map((gate) => gate.kind), ['check', 'suite', 'suite', 'rehearsal', 'rehearsal', 'rehearsal', 'rehearsal']);
   // A long-lived build server carried a broken environment into a publish on 2026-09-30, and the deployment rehearsal ran
-  // after a shutdown of every build server; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
-  assert.ok(plan.every((gate) => gate.before.length === 0));
+  // after a shutdown of every build server; since REHLANE2b its builds keep servers of their own, and BEFORESTEP1 left a gate no
+  // step before it at all: a planned gate has no `before`.
+  assert.ok(plan.every((gate) => !('before' in gate)));
 });
 
 test("this repository's plan runs every declared gate once, fast first, and the rehearsals and the web gate's two halves last", () => {
@@ -901,7 +902,7 @@ test("this repository's plan runs every declared gate once, fast first, and the 
   });
   assert.deepEqual(plan.filter((gate) => gate.kind === 'rehearsal').map((gate) => gate.run),
     ['npm run rehearse', 'npm run rehearse:family', 'npm run test:web:e2e', 'npm run test:web:unit', 'npm run rehearse:deploy']);
-  assert.deepEqual(plan.at(-1)!.before, []);
+  assert.ok(!('before' in plan.at(-1)!));
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -2175,7 +2176,7 @@ test('every tracked file has a place, so a new path is placed on purpose, never 
 // ---------------------------------------------------------------------------------------------------
 // Running gates, with the step that starts a process replaced: the stop, the logs, the flakes
 
-const planned = (name: string, run: string, before: string[] = []): Gate => ({ name, run, kind: 'suite', before });
+const planned = (name: string, run: string): Gate => ({ name, run, kind: 'suite' });
 
 /**
  * A step that answers each command from a function and records what it was asked, in order. It heads
@@ -2658,7 +2659,7 @@ test("this repository's Process lane runs the release, family and deployment reh
   }
   // No gate is planned a step before it: the deployment rehearsal's builds keep build servers of their own in place of the
   // shutdown it once ran after, which would stop the builds of every gate beside it (REHLANE2b).
-  assert.deepEqual(repoPlan.filter((gate) => gate.before.length).map((gate) => gate.name), []);
+  assert.deepEqual(repoPlan.filter((gate) => 'before' in gate).map((gate) => gate.name), []);
 });
 
 /** The projects a rehearsal script names as `const name = join(repoRoot, 'src', …)`, by name, as repository paths. */
@@ -2713,7 +2714,6 @@ test('a rehearsal that runs beside the git half builds what the Process lane bui
   // that do are named here, and the one that publishes the desktop.
   assert.deepEqual(building, ['rehearse:family', 'rehearse:deploy']);
   assert.deepEqual(publishing, ['rehearse:deploy']);
-  for (const gate of repoPlan.filter(tool.runsBesideGitHalf)) assert.deepEqual(gate.before, [], `${gate.name} is planned a step before it`);
   // In place of that shutdown, every build the deployment rehearsal makes keeps build servers of its own, as a run beside's
   // do (CIPRIO1): it joins none a build before it left, one of which once carried a broken environment into a publish.
   const deploy = readFileSync(join(repoRoot, 'tools', 'deployment-rehearsal.mjs'), 'utf8');
@@ -2865,20 +2865,17 @@ test("the web gate's unit run starts beside service, and the web gate's build af
   assert.ok(at('start web') > at('end service'), lanes.events.join(', '));
 });
 
-// A gate's steps before it (`before`) run first, into its log: the deployment rehearsal had a build-server shutdown there until
-// REHLANE2b, and no gate is planned one now, so the steps here are a stand-in's.
-test("a gate's whole output is kept in its log, its steps before it first", async () => {
+test("a gate's whole output is kept in its log", async () => {
   const fx = makeFixture('merge-branch-gate-log');
   const long = Array.from({ length: 5000 }, (_, i) => `line ${i + 1}`).join('\n');
-  const { asked, step } = fakeStep((command) => ({ out: command.startsWith('dotnet build-server') ? 'shut down\n' : `${long}\n`, code: 0 }));
+  const { asked, step } = fakeStep(() => ({ out: `${long}\n`, code: 0 }));
 
-  const result = await tool.runGate(fx.root, planned('deployment', 'npm run rehearse:deploy', ['dotnet build-server shutdown']), fx.root, { step });
+  const result = await tool.runGate(fx.root, planned('deployment', 'npm run rehearse:deploy'), fx.root, { step });
   assert.equal(result.verdict, 'PASS');
-  assert.deepEqual(asked, ['dotnet build-server shutdown', 'npm run rehearse:deploy']);
+  assert.deepEqual(asked, ['npm run rehearse:deploy']);
   const log = readFileSync(join(fx.root, 'deployment.log'), 'utf8');
   assert.match(log, /\nline 1\n/);
   assert.match(log, /\nline 5000\n/);
-  assert.ok(log.indexOf('shut down') < log.indexOf('\nline 1\n'), 'the shutdown ran first');
   assert.equal(existsSync(join(fx.root, 'deployment.log.partial')), false, 'the log is renamed into place when its gate ends');
   fx.cleanup();
 });
@@ -3004,14 +3001,6 @@ test('a rehearsal that died is run again once, with its steps: a pass is a FLAKE
   assert.equal(result.verdict, 'FAIL');
   assert.equal(fake.asked.length, 2, 'run again once, not until it passes');
   assert.match(result.note, /exit 127.*failed again.*family\.rerun\.log/);
-
-  // A gate's steps before it run again before its re-run, as before its first run (a stand-in's: none is planned since REHLANE2b).
-  const deployment = planned('deployment', 'npm run rehearse:deploy', ['dotnet build-server shutdown']);
-  runs = 0;
-  fake = fakeStep((command) => (command.startsWith('dotnet') ? { out: 'shut down\n', code: 0 } : (++runs === 1 ? { out: '', code: 1 } : { out: '  70/70 checks passed\n', code: 0 })));
-  result = await tool.runGate(fx.root, deployment, fx.root, { step: fake.step });
-  assert.equal(result.verdict, 'FLAKE');
-  assert.deepEqual(fake.asked, ['dotnet build-server shutdown', deployment.run, 'dotnet build-server shutdown', deployment.run]);
 
   // A rehearsal that reported failed checks is never run again.
   fake = fakeStep(() => ({ out: `${OK_LINES}  FAIL  a quest closes done\n`, code: 1 }));
@@ -3367,37 +3356,6 @@ test('the gates beside get their own build servers: none reused, none borrowed, 
   const env: Record<string, string | undefined> = { KEEP: 'x' };
   tool.startBesideRun({ setPriority: () => {}, env, say: () => {} });
   assert.deepEqual(env, { KEEP: 'x', MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
-});
-
-// SHUTDOWNBESIDE1: the deployment gate's `dotnet build-server shutdown` ran in the CI beside (its log on 0a5c608 shows it),
-// stopping every build server on the machine, the owner's and the workers' with them. Under the run's own build servers it
-// is pointless as well as harmful, so a run beside leaves it out and says so; a merge's run keeps it. REHLANE2b planned it for no
-// gate (the deployment rehearsal builds on servers of its own), so the gate here is a stand-in given one.
-test('a run beside never runs a gate\'s build-server shutdown; a merge\'s run does', async () => {
-  const fx = makeFixture('merge-branch-no-shutdown');
-  const saved = Object.fromEntries(Object.keys(tool.BESIDE_ENVIRONMENT).map((name) => [name, process.env[name]]));
-  try {
-    const shutdown = 'dotnet build-server shutdown';
-    const deployment = planned('deployment', 'npm run rehearse:deploy', [shutdown]);
-    const ran: string[] = [];
-    const step: Step = async (command) => { ran.push(command); return 0; };
-
-    for (const name of Object.keys(tool.BESIDE_ENVIRONMENT)) delete process.env[name];
-    await tool.runGate(fx.root, deployment, fx.root, { step });
-    assert.deepEqual(ran, [shutdown, 'npm run rehearse:deploy']);
-
-    ran.length = 0;
-    Object.assign(process.env, tool.BESIDE_ENVIRONMENT);
-    await tool.runGate(fx.root, deployment, fx.root, { step });
-    assert.deepEqual(ran, ['npm run rehearse:deploy']);
-    assert.match(readFileSync(join(fx.root, 'deployment.log'), 'utf8'), /not run beside: dotnet build-server shutdown/);
-  } finally {
-    for (const [name, value] of Object.entries(saved)) {
-      if (value === undefined) delete process.env[name];
-      else process.env[name] = value;
-    }
-    fx.cleanup();
-  }
 });
 
 test('a gate step started after the run lowered itself runs at the lowered priority', async () => {
@@ -3783,15 +3741,10 @@ test('a gate whose step the run ended reads ENDED, never FAIL, and nothing of it
       assert.doesNotMatch(log, /\(exited -?\d+\)\s*$/);
     };
 
-    // Ended in a step before it: the next step before it and the gate never start.
-    const before = await gateOf(planned('rf', 'npm run rehearse:family', ['b1', 'b2']), endedAt('b1'));
-    isEnded(before);
-    assert.deepEqual(before.ran, ['b1']);
-
     // Ended while it ran: a rehearsal is not run again.
-    const running = await gateOf(planned('rf', 'npm run rehearse:family', ['b1']), endedAt('npm run rehearse:family'));
+    const running = await gateOf(planned('rf', 'npm run rehearse:family'), endedAt('npm run rehearse:family'));
     isEnded(running);
-    assert.deepEqual(running.ran, ['b1', 'npm run rehearse:family']);
+    assert.deepEqual(running.ran, ['npm run rehearse:family']);
     assert.equal(existsSync(join(fx.root, 'rf.rerun.log')), false);
 
     // A step that answered a failure of its own once the run had ended it (a person's Ctrl+C reaches the console's
@@ -3820,10 +3773,10 @@ test('a gate whose step the run ended reads ENDED, never FAIL, and nothing of it
     assert.equal(existsSync(join(fx.root, 'driver-process.rerun.log')), false);
 
     // Once the run has ended its trees, a gate asked to run starts no step at all.
-    const late = await gateOf(planned('s', 'dotnet build src/S', ['b1']), (ended) => { ended.end(why); return async () => 0; });
+    const late = await gateOf(planned('s', 'dotnet build src/S'), (ended) => { ended.end(why); return async () => 0; });
     assert.equal(late.result.verdict, 'ENDED');
     assert.deepEqual(late.ran, []);
-    assert.match(late.log, /not started: b1/);
+    assert.match(late.log, /not started: dotnet build src\/S/);
   } finally {
     fx.cleanup();
   }
@@ -4392,7 +4345,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(repo.ran().slice(0, 3), ran, 'the first merge\'s, as read above');
     assert.deepEqual(repo.ran().slice(3), [
       'dotnet-run', 'cli', 'dotnet-test', 'dotnet-test-alone FullyQualifiedName=N.ProcessJobTests.A_child',
-      'rehearse', 'rehearse', 'build-server-shutdown', 'deployment',
+      'rehearse', 'rehearse', 'deployment',
     ]);
     assert.match(result.out, /FLAKE\s+driver\s.*ProcessJobTests\.A_child.*driver\.rerun\.log/);
     assert.match(result.out, /FLAKE\s+rehearse\s.*exit 127.*passed when run again.*rehearse\.rerun\.log/);
