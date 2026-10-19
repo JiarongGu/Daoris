@@ -7,9 +7,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// AUTOTIDY2a and AUTOTIDY2b over real git: the look waits for the line to hold what Accept landed on a branch of the person's,
 /// and takes the branches landings made once it does, after their sessions' branches. Split from
-/// <see cref="BranchTidyingProcessTests"/> (PROC1g), and run one at a time: its looks judge the most branches of the tidy's
-/// classes, and with a gate set beside it one ran past the fixture's four-minute <c>Bound</c> alone, so four at once would
-/// break it.
+/// <see cref="BranchTidyingProcessTests"/> (PROC1g), and kept out of the git half: its looks judge the most branches of the tidy's
+/// classes, and with a gate set beside it one ran past the fixture's four-minute <c>Bound</c> alone, so four at once there would
+/// break it. Three classes of one look each (PROCPAR1): a class runs its tests one after another, and the three in one were the
+/// Process half's longest class, three minutes the half waited on; eight at once with the half's other classes, a look took about
+/// a minute, as it did one class at a time.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class BranchTidyingLandingTests : BranchTidyingFixture
@@ -60,7 +62,12 @@ public sealed class BranchTidyingLandingTests : BranchTidyingFixture
         Assert.DoesNotContain(merged.Branch, after, StringComparison.Ordinal);
         Assert.DoesNotContain(fetched.Branch, after, StringComparison.Ordinal);
     }
+}
 
+/// <summary>The landing branches a look takes, a class of their own look (PROCPAR1, <see cref="BranchTidyingLandingTests"/>).</summary>
+[Trait(Category.Name, Category.Process)]
+public sealed class BranchTidyingLandingBranchesTests : BranchTidyingFixture
+{
     /// <summary>
     /// 🔴 AUTOTIDY2b, the row's own case: the branches Accept's landings made (D102's group) go by the look once the line holds
     /// their work, after their sessions' branches, as the press takes them: one merged into the line, and one squash-merged, its
@@ -118,7 +125,12 @@ public sealed class BranchTidyingLandingTests : BranchTidyingFixture
         Assert.Equal(LandedKind.OnLine, record.Landing("s2")!.RemovedAs);
         Assert.Null(record.Landing("s3")!.GoneAt);
     }
+}
 
+/// <summary>The landing branches a look keeps, a class of their own look (PROCPAR1, <see cref="BranchTidyingLandingTests"/>).</summary>
+[Trait(Category.Name, Category.Process)]
+public sealed class BranchTidyingLandingKeptTests : BranchTidyingFixture
+{
     /// <summary>
     /// AUTOTIDY2b: a landing's branch whose work the line holds stays from the look, as the press keeps it, saying nothing, where it
     /// is checked out in a tree of the person's, holds a commit its remote lacks (pushed, then moved), or a session branch a session
