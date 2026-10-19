@@ -3440,7 +3440,7 @@ async function stillRunning(pids: number[], ms = 10_000): Promise<number[]> {
 
 /**
  * A scratch folder removed just after its processes were killed: Windows may still hold it a moment, and `rmSync` does not
- * wait on a denied access as it does on a busy one (seen on this branch, the test's assertions all held).
+ * wait on a denied access as it does on a busy one.
  */
 async function cleanupAfterKill(fx: { cleanup(): void }): Promise<void> {
   for (let tries = 1; ; tries += 1) {

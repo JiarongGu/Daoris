@@ -3896,8 +3896,8 @@ export const rehearsalRaise = () => raiser;
 
 /**
  * CIPRIO1c: how often a run of main's tip reads the tip while its gates run. A gate on an old tip runs this long at most
- * after main moves, where it ran to its end before (a Process half or a rehearsal, up to an hour beside five workers); each
- * read is one `git rev-parse` at the run's lowered priority, tens of milliseconds every five seconds.
+ * after main moves, against a Process half's or a rehearsal's hour; each read is one `git rev-parse` at the run's lowered
+ * priority, tens of milliseconds every five seconds.
  */
 export const TIP_POLL_MS = 5_000;
 
@@ -3922,7 +3922,14 @@ export function watchTip(commit, resolveTip = () => null, { onMove = () => {} } 
     },
     poll(ms) {
       if (!commit) return () => {};
-      const timer = setInterval(() => watch.check(), ms);
+      const timer = setInterval(() => {
+        // A throw here would end the run uncaught and leave its gates running; a tip not read is not a newer one.
+        try {
+          watch.check();
+        } catch {
+          // Asked again at the next tick.
+        }
+      }, ms);
       timer.unref();
       return () => clearInterval(timer);
     },
