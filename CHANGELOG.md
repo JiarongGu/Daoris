@@ -29,6 +29,10 @@ with the version and date at release.
   (`--cwd <folder>` after a gate runs it in a folder of the repository), `--clear` takes them away, and `heavy` alone lists
   them. `run-heavy` then runs them for that repository, and its sessions are told to, wherever its own `daoris.gates.json`
   marks none.
+- A repository's Setup shows those heavy gates under *Heavy gates* and edits them there: each gate's name, command and
+  folder, moved up or down, removed or added, then saved as one list in its order, or cleared. A list the driver would not
+  run (a gate with no name or no command, a name twice, a folder outside the repository) is refused under *Save* in the
+  driver's words, with nothing changed.
 - A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
   test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
   call the rules refused no longer reads as still running.
