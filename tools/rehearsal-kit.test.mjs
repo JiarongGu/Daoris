@@ -2,7 +2,8 @@
  * What a rehearsal keeps of a failed check (DEV3b): the print it read and the files it names, under a folder of the run's
  * own named for the check, so a rerun keeps the sighting it is rerun after. And how a phase waits on a session and restarts
  * the host it talks to (DEV3d): by the clock, and only between the session's requests. And the two things a run never
- * shares with another or with the checkout it runs in: its hosts' ports (REHEARSEPORT1) and its git (REHEARSEGIT1).
+ * shares with another or with the checkout it runs in: its hosts' ports (REHEARSEPORT1) and its git (REHEARSEGIT1). And that a
+ * command its timeout ends goes with what it started (FAMILYFAIL1).
  *
  *   node --test tools/rehearsal-kit.test.mjs
  *
@@ -19,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { createServer as createTcpServer } from 'node:net';
 import { portIsFree } from './cdp.mjs';
 import {
-  ACP_STUB_AGENT, PORT_BAND, STUB_COMMIT, checkFolderName, evidenceFolder, gitRefusal, keepEvidence, makeChecker, ownBuild,
+  ACP_STUB_AGENT, PORT_BAND, STUB_COMMIT, capture, checkFolderName, evidenceFolder, gitRefusal, keepEvidence, makeChecker, ownBuild,
   ownBuildRoot, ownBuilt, portHolder, portRefusal, rehearsalRun, restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 
@@ -716,3 +717,64 @@ test('the ACP stub started in a folder that is not its own repository fails the 
     assert.equal(git(outer, 'status', '--porcelain'), '?? scratch/');
     assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
   });
+
+// ——— FAMILYFAIL1: what every phase runs a command through, `capture`. Its timeout ends what the command started too: on
+// Windows the kill reached the shell the command ran in and no further, and the family rehearsal's driver, a `dotnet` under
+// it, ran on past its bound holding its home's lease, so the 22 checks after it read or raced what it went on to do.
+
+/** Whether a process of this id still runs. */
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+test('a command its timeout ends is ended with what it started, never only the shell it ran in', async () => {
+  const at = folder('capture-timeout');
+  // A stand-in for a driver whose look outlived its bound: it says its id in a file, then waits a minute.
+  const waiter = join(at, 'waiter.mjs');
+  writeFileSync(waiter, [
+    "import { writeFileSync } from 'node:fs';",
+    'writeFileSync(process.argv[2], String(process.pid));',
+    'setTimeout(() => {}, 60_000);',
+    '',
+  ].join('\n'));
+  const said = join(at, 'pid');
+  let pid = 0;
+  try {
+    const ran = capture(`node "${waiter}" "${said}"`, at, { timeout: 5_000 });
+    if (existsSync(said)) pid = Number(readFileSync(said, 'utf8'));
+    assert.match(ran.out, /\[killed: exceeded the timeout\]/);
+    assert.equal(ran.code, -1, ran.out);
+    assert.ok(pid > 0, 'the command never said its id within its timeout, so nothing here was asked');
+
+    // Ended by the time the runner answers; a little patience for an exit the system is still recording.
+    for (let waited = 0; waited < 10_000 && alive(pid); waited += 250) await sleep(250);
+    assert.equal(alive(pid), false, `pid ${pid}, which the timed-out command started, still runs`);
+  } finally {
+    // A survivor holds the folder as its own until it has gone, and the scratch's removal would fail on it.
+    if (pid > 0 && alive(pid)) process.kill(pid);
+    for (let waited = 0; waited < 10_000 && pid > 0 && alive(pid); waited += 250) await sleep(250);
+  }
+});
+
+test('a command that ends answers as it always did: standard output alone on success, both streams on a failure, its input and its variables handed', () => {
+  const at = folder('capture-answers');
+  const sayer = join(at, 'sayer.mjs');
+  writeFileSync(sayer, [
+    "process.stdout.write('out');",
+    "process.stderr.write('err');",
+    "let input = '';",
+    "process.stdin.on('data', (chunk) => { input += chunk; });",
+    "process.stdin.on('end', () => { process.stdout.write(input + (process.env.REHEARSAL_KIT_WORD ?? '')); process.exitCode = Number(process.argv[2]); });",
+    '',
+  ].join('\n'));
+
+  assert.deepEqual(capture(`node "${sayer}" 0`, at), { code: 0, out: 'out' });
+  assert.deepEqual(capture(`node "${sayer}" 3`, at), { code: 3, out: 'outerr' });
+  assert.deepEqual(capture(`node "${sayer}" 0`, at, { input: 'handed' }), { code: 0, out: 'outhanded' });
+  assert.deepEqual(capture(`node "${sayer}" 0`, at, { env: { REHEARSAL_KIT_WORD: 'set' } }), { code: 0, out: 'outset' });
+});
