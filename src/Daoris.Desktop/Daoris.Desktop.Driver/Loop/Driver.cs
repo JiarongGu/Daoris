@@ -620,7 +620,8 @@ public sealed class Driver(
         snapshot = snapshot with { Opinions = opinionSits };
 
         // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
-        // the cap as a pass does, and each answer handed to the session that asked.
+        // the cap as a pass does, and each answer handed to the session that asked. PARALLEL1g: under the watch an asker's record, an
+        // answer's handing and a restart's settling are the `helper` topic's judge's; the verdict and its start stay here.
         var judged = snapshot;
         var taken = passes;
         passes += await Stages.TimeAsync("helpers", () => HelpersAsync(judged, taken, events, ct)).ConfigureAwait(false);
@@ -764,7 +765,8 @@ public sealed class Driver(
         await Stages.TimeAsync("endings", () => EndingsAsync(events, concluded, ct)).ConfigureAwait(false);
 
         // Done work lands itself (LAND2b, D145 point 2): after the endings and their sync, so a done that just closed is read
-        // as the service now holds it. The look chooses; the landings run beside it, as its starts do.
+        // as the service now holds it. The look chooses; the landings run beside it, as its starts do. PARALLEL1g: under the watch the
+        // choosing runs beside it too, in the landing's pass (SelectBeside).
         await Stages.TimeAsync("landing", () => LandDueAsync(events, ct)).ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt, signedOutAt), events, progressed, snapshot.Active, concluded)

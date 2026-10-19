@@ -1,6 +1,6 @@
 ---
 name: pushed-slices
-applies_when: moving a family of the page's queries from pulls to the shell's pushes (D182's PUSH1 rows), adding a partition to a pushed slice, changing what a pushed slice's owner judges, wakes on or answers, or judging a machine fact per repository (FACTSPLIT rows)
+applies_when: moving a family of the page's queries from pulls to the shell's pushes (D182's PUSH1 rows), adding a partition to a pushed slice, changing what a pushed slice's owner judges, wakes on or answers, judging a machine fact per repository (FACTSPLIT rows), or moving a part of the driver's look beside it as its topic's judge (PARALLEL rows)
 enforces: a pushed slice has one owner in .NET whose partitions are allow-listed, a wake that only asks, its snapshot read from memory through `STATE_SLICE`, and on the page a spec in its domain's bridge file read from memory once live, with every broad invalidation and every press's answer passing over its entry; an older host keeps the pull
 ---
 
@@ -49,3 +49,19 @@ inventory (FACTSPLIT1a, D181's note), and a third follows their shape (FACTSPLIT
 last fact. Judgements run in the execution context captured at `Start()`, so a test counting git starts wraps `facts.Start()`
 in `ProcessStarts.Within`, not the wake. The tests to copy: `HelpFactsTests`' per-repository count (a `refs` wake judges only
 its part), its merge, a gone repository dropping its part, and the git count under the seam.
+
+## A part of the look judged beside it
+
+The look's own judges (the ending hooks and the packets, PARALLEL1b; the opinions, the helpers and the landing, PARALLEL1g) are not
+`MachineFacts`: they run on the running set (`RunningSessions.Judge`: one judgement per subject, a bound per topic, waited for at
+the loop's close) and keep in `LookFacts` only what the next look's plan reads.
+
+| Part | The shape | Where it is |
+|---|---|---|
+| Not judged yet | A subject no judgment has answered for holds what it could hold (a chain's next steps, an ask that begins nothing), never read as a let-go | `OpinionGateLook.NotJudged` |
+| A slot | What takes a place under the cap is begun by the look before its plan, from an act the judgment kept and one look takes; the next judgment is asked after it, so it reads the claim held | `LookFacts.TakeAct`, `OpinionGateLook.Begin` |
+| The wake | A judgment wakes the loop only where it moved what the plan reads, so a hold never spins it | `RunningSessions.FactsMoved`, `LookFacts.KeepOpinion` |
+| A failure | Said once until its subject is judged again: its line wakes the next look, whose judgment fails again | `LookFacts.Failed` |
+| One look whole | A one-look run and a gate's run-until-idle judge in the look (`LoopContext.Beside` false), so the rehearsals read each look whole | `Driver.Wanted` |
+
+The tests to copy: `LookJudgesTests`, each judgment held on a door only it asks, so no git runs.
