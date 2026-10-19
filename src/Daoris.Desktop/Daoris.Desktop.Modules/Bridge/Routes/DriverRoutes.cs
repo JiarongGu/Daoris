@@ -142,6 +142,21 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // Ask Daoris's access mode (HELPMODE1a2, D183 point 2): `restricted` or `full`, the person's press alone, over the same key
+    // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it; a conversation running under another is told on
+    // its console that the switch takes its next start, since nothing it runs with changes while it runs. A mode it does not know, or
+    // none, is the driver's refusal, with nothing written.
+    [DriverRoute("SET_HELP_MODE")]
+    [Publishes("SET_HELP_MODE", StateScopes.Driver)]
+    private object? SetHelpMode(IpcRequest request)
+    {
+        var mode = Optional(request, "mode")
+            ?? throw new DriverException($"Ask Daoris's mode is `{HelpModes.Restricted}` or `{HelpModes.Full}`; the press named none.");
+        _context.Change(config => config.WithHelpMode(mode));
+        _loop.Chat?.HelpModeChosen(HelpModes.Named(mode)!);
+        return State(_loop);
+    }
+
     // The person's grant of a folder the driver is holding for the harness's trust (D73) — the
     // screen's half of `daoris agent trust`. Only a pair this machine's last tick held is
     // granted, in the file that tick read; the terminal is the door that names any folder. The holds themselves are the tick's
@@ -320,6 +335,9 @@ public sealed class DriverRoutes(DriverContext context)
             IntakeAdapter = config.IntakeAdapter ?? "",
             // Off is "" on the wire for the intake's reason: a shell older than Ask Daoris sends no field.
             HelperAdapter = config.HelperAdapter ?? "",
+            // Ask Daoris's access mode as the person chose it (HELPMODE1a2): `restricted` or `full`, what its next start reads. A
+            // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
+            config.HelpMode,
             // The lines as set (WSR2), as rows rather than an object's keys: a key policy on the
             // bridge would respell a repository's name.
             Lines = config.Lines.OrderBy(p => p.Key, StringComparer.Ordinal)
