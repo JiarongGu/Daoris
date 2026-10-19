@@ -91,4 +91,85 @@ public sealed class QuestBringForwardTests
     [Fact]
     public void A_lost_marked_dismissal_is_forgotten() =>
         Assert.Equal(QuestLoss.Forgotten, QuestLog.Lost(QuestOperationKind.Dismissed));
+
+    // ——— SYNCMERGE1b0 (D178 points 3, 7 and 8): the log read for who holds the step and how each lost take stands or ended.
+
+    /// <summary>
+    /// Brought forward, the conflict reads settled by the mark, with the take it made: held once a remote numbered it, unconfirmed while it
+    /// is only here. That take holds the step, and it is the one the bring-forward made for its own machine, never another's.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_brought_forward_conflict_reads_settled_with_its_take_held_once_numbered(bool numbered)
+    {
+        var fresh = Op(QuestOperationKind.Taken, "b", 3) with { Number = numbered ? 3 : null };
+        var reading = QuestLog.Read([Published, Lost, fresh, Marked() with { Number = numbered ? 4 : null }]);
+
+        Assert.Equal("b", reading.Holder);
+        Assert.Empty(reading.Conflicts);
+        var settled = Assert.Single(reading.Settled);
+        Assert.Equal((2L, QuestConflictEnd.BroughtForward), (settled.Conflict.Sequence, settled.Ended));
+        var made = new QuestForwardTake(new QuestOperationRef("b", 3), fresh.At, numbered ? QuestClaim.Held : QuestClaim.Unconfirmed);
+        Assert.Equal(made, settled.Forward);
+        Assert.Equal(made, reading.BroughtForwardBy("b"));
+        Assert.Null(reading.BroughtForwardBy("a"));
+    }
+
+    /// <summary>
+    /// The first choice stands (D178's traps): dropped by a plain dismissal first, the conflict reads dropped, and a mark landing after it
+    /// settles nothing, so no take holds the step by a bring-forward. A second plain dismissal changes nothing either.
+    /// </summary>
+    [Fact]
+    public void A_conflict_dropped_first_reads_dropped_whatever_lands_after()
+    {
+        var reading = QuestLog.Read([Published, Lost, Plain("a", 3), Op(QuestOperationKind.Taken, "b", 4), Marked(5, take: 4), Plain("c", 6)]);
+
+        var settled = Assert.Single(reading.Settled);
+        Assert.Equal((QuestConflictEnd.Dropped, null), (settled.Ended, settled.Forward));
+        Assert.Equal("b", reading.Holder);
+        Assert.Null(reading.BroughtForwardBy("b"));
+    }
+
+    /// <summary>
+    /// Lost again: the log forgot the mark with its take, now a conflict of its own, and only this machine's press still says it was a
+    /// bring-forward. The first conflict stands, naming that take, lost; the step is held by the take that won. Read on another machine,
+    /// which has no press, the two are two conflicts.
+    /// </summary>
+    [Fact]
+    public void A_bring_forward_lost_again_reads_on_its_conflict_from_this_machines_press()
+    {
+        IReadOnlyList<QuestOperation> history =
+            [Published, Lost, Op(QuestOperationKind.Taken, "c", 1) with { Number = 3 }, Op(QuestOperationKind.Conflict, "b", 3) with { Attempted = QuestStatus.Taken }];
+        var press = new QuestForwardPress(new QuestOperationRef("b", 2), new QuestOperationRef("b", 3), Now.AddMinutes(3));
+
+        var here = QuestLog.Read(history, [press]);
+
+        Assert.Equal("c", here.Holder);
+        Assert.Empty(here.Settled);
+        Assert.Equal([2L, 3L], here.Conflicts.Select(conflict => conflict.Conflict.Sequence));
+        Assert.Equal(new QuestForwardTake(press.Take, press.At, QuestClaim.Lost), here.Conflicts[0].Forward);
+        Assert.Null(here.Conflicts[1].Forward);
+        Assert.All(QuestLog.Read(history).Conflicts, conflict => Assert.Null(conflict.Forward));
+    }
+
+    /// <summary>
+    /// A conflict lost to the person's reopen reads so where it lands, as <see cref="QuestLog.LostToTheReopen"/> reads a machine's latest:
+    /// on the step the reopen withdrew, and by CLOSE1c22's mark. One lost to another machine's take does not, nor one landing after a plain
+    /// dismissal of that machine's own conflict superseded the reopen (SYNCMERGE1a2).
+    /// </summary>
+    [Fact]
+    public void A_conflict_reads_lost_to_the_reopen_where_it_lands()
+    {
+        var source = new QuestOperationRef("a", 9);
+        var step = Published with { Published = Asked with { Parent = "feedfeedfeed", GrewFrom = source } };
+        var reopen = Op(QuestOperationKind.Reopened, "a", 2) with { Submission = source };
+        QuestOperation Conflict(long sequence) => Op(QuestOperationKind.Conflict, "b", sequence) with { Attempted = QuestStatus.Taken };
+
+        var reading = QuestLog.Read([step, reopen, Conflict(3), Plain("a", 4) with { Dismisses = new QuestOperationRef("b", 3) }, Conflict(5),
+            Op(QuestOperationKind.Conflict, "c", 6) with { Attempted = QuestStatus.Taken, LostToTheReopen = true }]);
+
+        Assert.True(Assert.Single(reading.Settled).LostToTheReopen);
+        Assert.Equal([(5L, false), (6L, true)], reading.Conflicts.Select(conflict => (conflict.Conflict.Sequence, conflict.LostToTheReopen)));
+    }
 }

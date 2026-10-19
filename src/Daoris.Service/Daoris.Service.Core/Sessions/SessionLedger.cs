@@ -965,7 +965,7 @@ public sealed class SessionLedger(
         // taken by the fresh take that settled its conflict, made after the record began. Once, since the session carried on is the
         // newest record from then, and a later one is never older than the take. Read from the log; no record marks it.
         var forward = last is { State: SessionState.StoodDown }
-            ? QuestLog.Read(await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
+            ? (await quests.ReadTakesAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
             : null;
         var brought = forward is not null && forward.At > last!.Created;
         var carriesOn = last is { State: SessionState.Failed }
