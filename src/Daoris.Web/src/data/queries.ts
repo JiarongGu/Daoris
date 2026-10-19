@@ -479,6 +479,15 @@ export const CALLS_SLICE = 'calls';
  */
 export const GROUPS_SLICE = 'groups';
 
+/** What sessions consumed, as the shell pushes it (PUSH1e; its spec is `usageSlice` in `bridge/agents/agents`): `USAGE`'s answer. */
+export const USAGE_SLICE = 'usage';
+
+/**
+ * How each agent's accounts are used, as the shell pushes it (PUSH1e; its spec is `accountsSlice` in `bridge/agents/accounts`):
+ * `ACCOUNTS`' answer, a partition per agent, with the verdicts .NET judges beside each reading (its curve and whether it is over it).
+ */
+export const ACCOUNTS_SLICE = 'accounts';
+
 /** The service's own name for a workspace asked of it (`Workspaces.Normalize`), its ASCII letters folded as its `NOCASE` folds them. */
 const circle = (workspace: string) => (workspace.trim() || 'default').replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 

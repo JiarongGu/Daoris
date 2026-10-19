@@ -551,37 +551,11 @@ public sealed class AgentsRoutes(DriverContext context)
     //
     // 🔴 Over this bridge and nowhere else. Per-account usage names a credential profile, and
     // a profile name is already served only over loopback (`ToSession`), so this inherits
-    // that boundary rather than arguing for its own. There is no HTTP route onto it.
+    // that boundary rather than arguing for its own. There is no HTTP route onto it. Its builder is the pushed slice's
+    // (`UsageStateSlice`, PUSH1e), so the pull an older page makes and the push cannot drift.
     [DriverRoute("USAGE")]
-    private async Task<object?> UsageAsync(IpcRequest request, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        var sessions = _loop.Usage.Sessions;
-        return new
-        {
-            // Newest first: a person looking at this is asking about recent work.
-            Sessions = sessions
-                .OrderByDescending(entry => entry.When)
-                .Select(entry => new
-                {
-                    entry.Session,
-                    entry.Repository,
-                    entry.Harness,
-                    entry.Profile,
-                    entry.Used,
-                    entry.Size,
-                    entry.When,
-                })
-                .ToArray(),
-            Accounts = _loop.Usage.ByAccount().Select(account => new
-            {
-                account.Harness,
-                account.Profile,
-                account.Sessions,
-                account.Used,
-            }).ToArray(),
-        };
-    }
+    private Task<object?> UsageAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<object?>(UsageStateSlice.Answer(_loop.Usage));
 
     /// <summary>
     /// One setting's change as the page sent it (AGT6): a text sets it, null clears it, and a key left out

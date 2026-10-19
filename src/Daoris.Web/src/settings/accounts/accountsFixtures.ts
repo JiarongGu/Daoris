@@ -18,9 +18,22 @@ export const CHOICES: AccountChoice[] = [
 
 export const SIX_CHOICES: AccountChoice[] = SIX.map((name, at) => ({ name, label: `seat-${at + 1}@example.invalid`, login: 'in' }));
 
+/** Daoris's curve on each window, as the accounts' answer carries the curve in effect (PUSH1e): the five-hour flat, the week's pace. */
+export const SMART_CURVES = { session: [[0, 90]], weekly: [[0, 20], [75, 95], [100, 100]] } as AccountScope['curves'];
+
 export const scopeOf = (over: Partial<AccountScope> = {}): AccountScope => ({
-  workspace: null, default: null, list: [], begins: null, use: USE_DEFAULTS, unknown: [], problem: null, near: [], ...over,
+  workspace: null, default: null, list: [], begins: null, use: USE_DEFAULTS, unknown: [], problem: null, near: [],
+  curves: SMART_CURVES, measured: [], overCurve: [], ...over,
 });
+
+/**
+ * account-2's two windows against Daoris's curve, as .NET judges them (PUSH1e): 88% of the five-hour window under its 90%, and 14%
+ * of the week, three sevenths of it gone, under its 63%.
+ */
+const UNDER_SMART = [
+  { account: 'account-2', window: 'session', curve: 90, over: false },
+  { account: 'account-2', window: 'weekly', curve: 63, over: false },
+];
 
 /** account-1 cooling until a stated reset; account-2 said 88% of its five-hour window; account-3 said nothing yet. */
 export const THREE: AgentAccounts = {
@@ -37,8 +50,14 @@ export const THREE: AgentAccounts = {
       said: {
         seen: minutesFrom(-180),
         windows: [
-          { window: 'session', used: 0.88, reset: minutesFrom(120), standing: 'clear', credits: false, seen: minutesFrom(-180) },
-          { window: 'weekly', used: 0.14, reset: minutesFrom(60 * 24 * 4), credits: false, seen: minutesFrom(-180) },
+          {
+            window: 'session', used: 0.88, reset: minutesFrom(120), standing: 'clear', credits: false, seen: minutesFrom(-180),
+            from: minutesFrom(120 - 300), curve: 90, over: false,
+          },
+          {
+            window: 'weekly', used: 0.14, reset: minutesFrom(60 * 24 * 4), credits: false, seen: minutesFrom(-180),
+            from: minutesFrom(60 * 24 * (4 - 7)), curve: 63, over: false,
+          },
         ],
       },
     },
@@ -47,14 +66,14 @@ export const THREE: AgentAccounts = {
   scopes: [
     // Its default cooling: of the rest, the one running fewer of Daoris's sessions (TOOL6e).
     scopeOf({
-      default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', near: [],
+      default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', near: [], measured: UNDER_SMART,
       next: {
         account: 'account-3', reason: 'fewest', over: 'account-2',
         others: [{ account: 'account-1', hold: 'cooling', until: minutesFrom(190) }, { account: 'account-2', hold: 'ready' }],
       },
     }),
     scopeOf({
-      workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: { ...USE_DEFAULTS, use: 'order' },
+      workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: { ...USE_DEFAULTS, use: 'order' }, measured: UNDER_SMART,
       next: {
         account: 'account-2', reason: 'onlyReady',
         others: [{ account: 'account-1', hold: 'cooling', until: minutesFrom(190) }, { account: 'account-3', hold: 'outside' }],
@@ -72,20 +91,29 @@ export const AHEAD: AccountFacts = {
   said: {
     seen: minutesFrom(-180),
     windows: [
-      { window: 'weekly', used: 0.6, reset: minutesFrom(60 * 24 * 4), standing: 'warned', credits: false, seen: minutesFrom(-180) },
-      { window: 'session', used: 0.88, reset: minutesFrom(120), credits: false, seen: minutesFrom(-180) },
+      {
+        window: 'weekly', used: 0.6, reset: minutesFrom(60 * 24 * 4), standing: 'warned', credits: false, seen: minutesFrom(-180),
+        from: minutesFrom(60 * 24 * (4 - 7)), curve: 63, over: false,
+      },
+      {
+        window: 'session', used: 0.88, reset: minutesFrom(120), credits: false, seen: minutesFrom(-180),
+        from: minutesFrom(120 - 300), curve: 90, over: false,
+      },
     ],
   },
 };
 
 /**
  * The machine's list on the person's own curve, its five-hour window flat at 85 (SWITCH1d; the old `near` derived from it):
- * account-2's five-hour window at 88% is over it.
+ * account-2's five-hour window at 88% is over it, as .NET judges it (PUSH1e).
  */
 export const MACHINE_NEAR = scopeOf({
   default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
   use: { ...USE_DEFAULTS, keep: 'account-3', near: 85, switch: 'curve', curve: { session: [[0, 85]] } },
   near: [{ account: 'account-2', window: 'session', by: 'number' }],
+  curves: { ...SMART_CURVES, session: [[0, 85]] },
+  measured: [{ account: 'account-2', window: 'session', curve: 85, over: true }, { account: 'account-2', window: 'weekly', curve: 63, over: false }],
+  overCurve: [{ account: 'account-2', window: 'session', curve: 85 }],
 });
 
 /** Six accounts, none of which has said anything, one kept for conversations. */
