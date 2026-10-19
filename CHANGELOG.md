@@ -8,6 +8,10 @@ with the version and date at release.
 - Each window holds Daoris's own state (what it drives and holds, the choices on Settings, what is running) as Daoris sends it
   when it changes: a choice made in one window or at a terminal shows in every window, and an open window no longer asks for
   it again when Daoris looks, when something changes elsewhere or when the window is brought forward.
+- Ask Daoris starts at once. It no longer reads every repository and session tree with git before its first answer: Daoris
+  keeps what it knows of the machine as it changes (a branch moved, a session ended) and Ask Daoris starts on that. Where
+  something is not read yet, a repository whose line Daoris has not looked at, say, Ask Daoris is told so rather than guessing,
+  its conversation says so first, and it learns the rest as it is read.
 - Choosing an account for a start no longer waits for a question Daoris is asking another account: a sign-in or usage read
   that is slow to answer holds only the start that asked it. A start whose account another question still holds after 30
   seconds runs on the next account of its list, or waits for the next start where none is left, rather than running beside

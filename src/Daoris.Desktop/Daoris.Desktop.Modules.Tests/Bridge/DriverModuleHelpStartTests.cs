@@ -110,8 +110,52 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The room reads the whole look this shell took a moment ago, the Sessions list's, rather than judge every tree with git again,
-    /// and says so in its log line; where the one kept is older than the span it takes a fresh one, and keeps that in turn.
+    /// PARALLEL1a's proof through the module (D181 point 1): the press reads the facts the judges keep as last judged, so Ask Daoris
+    /// starts at once while one repository's line never answers. Its room says that repository not read yet and the other's line,
+    /// its conversation says first that some of the machine is not read yet, and the start's path starts no git.
+    /// </summary>
+    [Fact]
+    public async Task A_start_reads_the_facts_at_once_saying_what_is_not_read_yet_and_starts_no_git()
+    {
+        var (loop, module, service) = await UpAsync();
+        var folder = Path.GetDirectoryName(DriverConfigPath)!;
+        string Root(string name) => Path.Combine(folder, name).Replace('\\', '/');
+        service.Registry = $$"""
+            [{"repository":"engine","workspace":"default","adopted":true,"root":"{{Root("engine")}}"},
+             {"repository":"site","workspace":"default","adopted":true,"root":"{{Root("site")}}"}]
+            """;
+        // The lines' judge stands in for git: engine's checkout says `main`, site's never answers.
+        loop.Facts.Topic(HelpFacts.Lines, HelpFacts.LinesRules, (repository, _) => repository == "site"
+            ? new TaskCompletionSource<object?>().Task
+            : Task.FromResult<object?>(new HelpLineGuess("main")));
+        using (ProcessStarts.Within(_ => null)) loop.Facts.Start();
+        await loop.Facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        var gits = 0;
+        var took = Stopwatch.StartNew();
+
+        using (ProcessStarts.Within(info =>
+               {
+                   if (Path.GetFileNameWithoutExtension(info.FileName).Equals("git", StringComparison.OrdinalIgnoreCase)) Interlocked.Increment(ref gits);
+                   return null;
+               }))
+        {
+            var answer = await AnswerAsync(module, "START_HELP").WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal("h1", answer.GetProperty("sessionId").GetString());
+            await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
+        }
+
+        Assert.True(took.Elapsed < TimeSpan.FromSeconds(10), $"the start took {took.Elapsed}");
+        Assert.Equal(0, gits);
+        var room = File.ReadAllText(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md"));
+        Assert.Contains("| `site` | not driven | not read yet |", room);
+        Assert.Contains("| `engine` | not driven | `main` (the checkout's own) |", room);
+        Assert.Contains(loop.Events.Page("h1").Events, e => e.Parts?.Any(part => part.Code == "help.room-not-read-yet") == true);
+    }
+
+    /// <summary>
+    /// The room's sessions are the facts' judgement of them (PARALLEL1a), which reads the whole look this shell took a moment ago,
+    /// the Sessions list's, rather than judge every tree with git again, and says so in its log line; where the one kept is older
+    /// than the span it takes a fresh one, and keeps that in turn.
     /// </summary>
     [Fact]
     public async Task The_room_reads_a_recent_look_and_takes_a_fresh_one_where_none_is()
@@ -126,12 +170,15 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var look = new SessionLook([ended], [], []);
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow);
-        var read = await loop.DescribeHelp!(CancellationToken.None);
+        using (ProcessStarts.Within(_ => null)) loop.Facts.Start();
+        await loop.Facts.FirstAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        var read = await loop.DescribeHelp!(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
 
         Assert.Contains(read!.Sessions!.Listed, each => each.Id == ended.Id);
         Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow - HelpRoomLookLog.Recent - TimeSpan.FromSeconds(1));
+        await loop.Facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
         var fresh = await loop.DescribeHelp!(CancellationToken.None);
 
         Assert.DoesNotContain(fresh!.Sessions!.Listed, each => each.Id == ended.Id);
@@ -193,6 +240,9 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         public int Opened { get; private set; }
 
+        /// <summary>What <c>/api/registry</c> answers: none registered unless a test says otherwise.</summary>
+        public string Registry { get; set; } = "[]";
+
         public string? State(string id)
         {
             lock (_gate) return Find(id)?["state"]?.GetValue<string>();
@@ -234,8 +284,9 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
                 {
                     case ("GET", "/api/sessions"):
                         return (HttpStatusCode.OK, new JsonArray([.. _sessions.Select(s => s.DeepClone())]).ToJsonString());
-                    case ("GET", "/api/quests"):
                     case ("GET", "/api/registry"):
+                        return (HttpStatusCode.OK, Registry);
+                    case ("GET", "/api/quests"):
                     case ("GET", "/api/asks"):
                         return (HttpStatusCode.OK, "[]");
                     case ("POST", "/api/sessions/help"):
