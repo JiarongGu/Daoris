@@ -119,9 +119,10 @@ public sealed class DriverLoop(
     public event Action<string, string>? MoveHeard;
 
     /// <summary>What the watch tells of each move it heard: the machine's facts it moves woken, then whoever hears the moves.</summary>
-    public void HeardMove(string topic, string subject)
+    /// <param name="mine">A ref Daoris moved itself (OWNMOVES1): its repository's facts judged past their rest; the hearers as for any move.</param>
+    public void HeardMove(string topic, string subject, bool mine = false)
     {
-        HelpFacts.Wake(Facts, topic, subject);
+        HelpFacts.Wake(Facts, topic, subject, mine);
         MoveHeard?.Invoke(topic, subject);
     }
 

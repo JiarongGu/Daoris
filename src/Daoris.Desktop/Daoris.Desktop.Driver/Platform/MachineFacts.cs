@@ -13,7 +13,8 @@ public sealed record FactRules(TimeSpan Deadline, TimeSpan Bound, int AtOnce = 2
 {
     /// <summary>
     /// The least time between two judgements of one subject that wakes ask for: a burst of wakes on a busy machine is one judgement
-    /// each rest, for a topic whose judgement reads the whole machine. None by default.
+    /// each rest, for a topic whose judgement reads the whole machine. None by default. A wake afresh (<see cref="MachineFacts.Wake"/>'s,
+    /// OWNMOVES1) and an ask that waits (<see cref="MachineFacts.JudgedAsync"/>) are never held by it.
     /// </summary>
     public TimeSpan Rest { get; init; } = TimeSpan.Zero;
 }
@@ -171,12 +172,17 @@ public sealed class MachineFacts : IDisposable
     /// <paramref name="subject"/> of <paramref name="topic"/> moved: it is judged again, once, after any judgement under way. A
     /// wake for a subject not known yet makes it known; one for a topic with no judge is nothing.
     /// </summary>
-    public void Wake(string topic, string subject)
+    /// <param name="afresh">
+    /// Past the subject's rest (OWNMOVES1): a move this process made itself, which a person is waiting to see land, judged at once, or
+    /// right after a judgement under way, which may have read the subject before the move. It waits for nothing, as a wake never does.
+    /// </param>
+    public void Wake(string topic, string subject, bool afresh = false)
     {
         Action? start;
         lock (_gate)
         {
             if (Known(topic, subject, out _) is not { } state) return;
+            if (afresh) state.Afresh = true;
             start = Due(_topics[topic], state);
         }
 

@@ -143,9 +143,18 @@ public static class HelpFacts
     }
 
     /// <summary>Wake the facts <paramref name="topic"/>'s <paramref name="subject"/> moves (<see cref="Woken"/>).</summary>
-    public static void Wake(MachineFacts facts, string topic, string subject)
+    /// <param name="mine">
+    /// A ref this process moved itself, a landing or an <i>Accept</i> (OWNMOVES1): that repository's parts of the trees and of the work
+    /// are judged at once, past the rest a burst of a committing session's refs is held to, so a landed tree's offer leaves within one
+    /// judgement. Its line has no rest, and any other topic's wake is as it was.
+    /// </param>
+    public static void Wake(MachineFacts facts, string topic, string subject, bool mine = false)
     {
-        foreach (var (factTopic, factSubject) in Woken(topic, subject, facts.Current)) facts.Wake(factTopic, factSubject);
+        var afresh = mine && topic == ChangeTopics.Refs;
+        foreach (var (factTopic, factSubject) in Woken(topic, subject, facts.Current))
+        {
+            facts.Wake(factTopic, factSubject, afresh && factTopic is Trees or Work);
+        }
     }
 
     /// <summary>

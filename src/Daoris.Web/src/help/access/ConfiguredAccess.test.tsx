@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import i18n from '../locales/i18n';
+import i18n from '../../locales/i18n';
 import { ConfiguredAccess } from './ConfiguredAccess';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId } from './wired';
 

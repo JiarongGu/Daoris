@@ -239,7 +239,7 @@ public sealed class RunningSessions
             if (!_topics.TryGetValue(topic, out places!)) _topics[topic] = places = new SemaphoreSlim(bound, bound);
         }
 
-        _ = Task.Run(() => JudgeAsync(topic, subject, places, work, ct), CancellationToken.None);
+        _ = Task.Run(() => ApartAsync(() => JudgeAsync(topic, subject, places, work, ct)), CancellationToken.None);
         return true;
     }
 
@@ -312,7 +312,7 @@ public sealed class RunningSessions
                 return false;
             }
 
-            _syncing = Task.Run(() => KeepSyncingAsync(pass, ct), CancellationToken.None);
+            _syncing = Task.Run(() => ApartAsync(() => KeepSyncingAsync(pass, ct)), CancellationToken.None);
             return true;
         }
     }
@@ -382,7 +382,7 @@ public sealed class RunningSessions
                 return false;
             }
 
-            _passing = Task.Run(() => KeepPassingAsync(pass, ct), CancellationToken.None);
+            _passing = Task.Run(() => ApartAsync(() => KeepPassingAsync(pass, ct)), CancellationToken.None);
             return true;
         }
     }
@@ -451,7 +451,7 @@ public sealed class RunningSessions
         lock (_gate)
         {
             if (_landing is not null) return false;
-            _landing = Task.Run(() => KeepLandingAsync(pass, ct, ended), CancellationToken.None);
+            _landing = Task.Run(() => ApartAsync(() => KeepLandingAsync(pass, ct, ended)), CancellationToken.None);
             return true;
         }
     }
@@ -617,6 +617,12 @@ public sealed class RunningSessions
     }
 
     private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// Work kept beside the looks, begun from a look's stage that does not wait on it: its starts' waits for a place are said to no
+    /// stage until a span of its own takes them, never as the queue of the stage that began it (LOOKWAIT1b, D181 point 6).
+    /// </summary>
+    private static Task ApartAsync(Func<Task> work) => ProcessStarts.QueuedToAsync(queue: null, work);
 }
 
 /// <summary>What one start of a look is (DEV3): a quest's or an ask's intake, where it runs, on which adapter, and the plan's start.</summary>

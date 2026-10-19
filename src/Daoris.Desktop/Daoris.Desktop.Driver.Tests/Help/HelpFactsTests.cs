@@ -344,6 +344,55 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 OWNMOVES1 (D181 points 2-3, D182 point 4): Daoris's own ref move, a landing or an <i>Accept</i>, judges its repository's
+    /// trees and work parts at once, past the rest a burst of hints is held to, so a landed tree's offer leaves within one judgement;
+    /// another repository's plain refs in the same moment are still held. The facts' clock never moves.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_own_ref_move_judges_that_repository_s_trees_and_work_at_once_and_a_plain_hint_keeps_the_rest()
+    {
+        var trees = new Dictionary<string, int>(StringComparer.Ordinal);
+        var work = new Dictionary<string, int>(StringComparer.Ordinal);
+        var offered = new HelpTrees(new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase));
+        var landed = new HelpTrees(new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase));
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            Trees = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                int count;
+                lock (trees) count = trees[subject] = trees.GetValueOrDefault(subject) + 1;
+                return Task.FromResult<HelpTrees?>(subject == "site" ? count == 1 ? offered : landed : NoTrees);
+            },
+            Work = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                lock (work) work[subject] = work.GetValueOrDefault(subject) + 1;
+                return Task.FromResult<HelpWork?>(new HelpWork([], [], []));
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Trees, part, CancellationToken.None).WaitAsync(Within);
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "engine");
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "site", mine: true);
+        await Poll.Until(() => Judged(trees, "site") == 2 && Judged(work, "site") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+        await Task.Delay(200);
+
+        Assert.Same(landed, facts.Current.Value<HelpTrees>(HelpFacts.Trees, "site"));
+        Assert.Equal((1, 2, 1), (Judged(trees, "engine"), Judged(trees, "site"), Judged(trees, HelpFacts.NoCheckout)));
+        Assert.Equal((1, 2, 1), (Judged(work, "engine"), Judged(work, "site"), Judged(work, HelpFacts.NoCheckout)));
+    }
+
+    /// <summary>
     /// 🔴 FACTSPLIT1b: the room reads the sessions as it read the whole look, the look without trees with every part's trees merged
     /// in by their path; while the look or any part was never judged the sessions are not read yet, as the whole was.
     /// </summary>

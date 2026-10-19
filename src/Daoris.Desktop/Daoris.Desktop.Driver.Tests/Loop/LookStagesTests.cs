@@ -73,6 +73,65 @@ public sealed class LookStagesTests : IDisposable
         Assert.Equal("sync=400 sync.queue=3000", stages.Take());
     }
 
+    /// <summary>
+    /// LOOKWAIT1b: a stage's starts waiting for a place are its queue, apart from its hold. A fan-out's waits overlap, so the queue is
+    /// the time any of them waited, never their sum, and never longer than the stage.
+    /// </summary>
+    [Fact]
+    public void A_stage_s_waits_for_a_place_are_its_queue_and_waits_that_overlap_count_once()
+    {
+        var stages = Stages();
+        using (var start = stages.Begin("start", "#q1"))
+        {
+            var first = start.Waiting();
+            Pass(1000);
+            var second = start.Waiting();
+            Pass(1500);
+            first.Dispose();
+            Pass(500);
+            second.Dispose();
+            second.Dispose();
+            Pass(300);
+        }
+
+        Assert.Equal("start=300@#q1 start.queue=3000", stages.Take());
+    }
+
+    /// <summary>A wait still open as its stage ends is no wait the stage's work made it wait on: said nowhere, never late.</summary>
+    [Fact]
+    public void A_wait_still_open_as_its_stage_ends_is_said_nowhere()
+    {
+        var stages = Stages();
+        IDisposable outlived;
+        using (var start = stages.Begin("start", "#q1"))
+        {
+            outlived = start.Waiting();
+            Pass(800);
+        }
+
+        Pass(2000);
+        outlived.Dispose();
+
+        Assert.Equal("start=800@#q1", stages.Take());
+        Assert.Null(stages.Take());
+    }
+
+    /// <summary>The remote sync's own gate and its git's waits for a place are one queue, said once.</summary>
+    [Fact]
+    public void A_gate_s_queue_and_its_starts_waits_are_one_queue()
+    {
+        var stages = Stages();
+        using (var sync = stages.Begin("sync"))
+        {
+            Pass(1000);
+            sync.Queued(TimeSpan.FromMilliseconds(1000));
+            using (sync.Waiting()) Pass(500);
+            Pass(200);
+        }
+
+        Assert.Equal("sync=200 sync.queue=1500", stages.Take());
+    }
+
     [Fact]
     public void Work_beside_the_look_is_marked_apart_from_the_look_s_own()
     {

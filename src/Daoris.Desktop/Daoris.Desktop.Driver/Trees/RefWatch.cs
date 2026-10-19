@@ -116,6 +116,10 @@ public sealed class RefWatch : IAsyncDisposable
     private readonly Chain _chain;
     private readonly object _gate = new();
     private readonly Dictionary<string, RefRepository> _watched = new(StringComparer.OrdinalIgnoreCase);
+
+    // OWNMOVES1: the repositories Daoris's own move made due, until the judgement that takes them up tells Heard so. The chain's event
+    // names a subject alone, so the move's own word travels here, under the gate, beside it.
+    private readonly HashSet<string> _mine = new(StringComparer.OrdinalIgnoreCase);
     private IDisposable? _listening;
 
     /// <param name="repositories">The repositories holding Daoris's work now, read at each whole deadline.</param>
@@ -150,10 +154,13 @@ public sealed class RefWatch : IAsyncDisposable
     public static IReadOnlyList<string> Unblocking { get; } = [ChainEvents.Ledger, ChainEvents.Press, ChainEvents.Home];
 
     /// <summary>The driver's: the registry's repositories holding Daoris's work (<see cref="RepositoriesAsync"/>), judged by the end keeper.</summary>
-    /// <param name="heard">Told each repository judged (<see cref="Heard"/>): the landing's wake (FABRIC-END7).</param>
+    /// <param name="heard">
+    /// Told each repository judged, and whether Daoris's own move asked for it (<see cref="Heard"/>): the landing's wake (FABRIC-END7)
+    /// and the machine's facts (OWNMOVES1).
+    /// </param>
     public static RefWatch ForDriver(
         string home, Func<CancellationToken, Task<IReadOnlyList<RepoView>>> registry, TimeSpan? every = null, IChangeSource? source = null,
-        MachineLog? log = null, Action<string>? heard = null, IChainEffect? tidy = null) =>
+        MachineLog? log = null, Action<string, bool>? heard = null, IChainEffect? tidy = null) =>
         new(
             home,
             ct => RepositoriesAsync(home, registry, ct),
@@ -169,8 +176,10 @@ public sealed class RefWatch : IAsyncDisposable
     /// <summary>
     /// Told each repository a hint, Daoris's own move or a root's recovery judges, before its ends are kept (FABRIC-END7): the landing's
     /// wake, which looks at the due entries of that repository alone (<see cref="LandingWakes.Moved"/>). Never told at a deadline.
+    /// The second argument says whether Daoris's own move (<see cref="RefMoves.Mine"/>) asked for the judgement, the watcher's echo
+    /// taken up with it (OWNMOVES1): the machine's facts judge that repository past their rest then, and a hint keeps it.
     /// </summary>
-    public Action<string>? Heard { get; init; }
+    public Action<string, bool>? Heard { get; init; }
 
     /// <summary>
     /// Something that can unblock a refused tidy happened (§C6): <paramref name="wake"/> is one of <see cref="Unblocking"/>. Coalesced on
@@ -289,6 +298,7 @@ public sealed class RefWatch : IAsyncDisposable
             {
                 _changes.Unwatch(ChangeTopics.Refs, _watched[name].Repository);
                 _watched.Remove(name);
+                _mine.Remove(name);
             }
 
             RefRepository[] added = [.. now.Values.Where(repository => !_watched.ContainsKey(repository.Repository))];
@@ -321,6 +331,8 @@ public sealed class RefWatch : IAsyncDisposable
                 Watch(added);
                 subject = added.Repository;
             }
+
+            if (subject is not null) _mine.Add(subject);
         }
 
         if (subject is not null) _changes.Now(ChangeTopics.Refs, subject);
@@ -344,9 +356,15 @@ public sealed class RefWatch : IAsyncDisposable
 
             if (@event.Type != ChainEvents.Refs) continue;
             RefRepository? repository;
-            lock (_gate) _watched.TryGetValue(@event.Subject, out repository);
+            bool mine;
+            lock (_gate)
+            {
+                _watched.TryGetValue(@event.Subject, out repository);
+                mine = _mine.Remove(@event.Subject);
+            }
+
             if (repository is null) continue;
-            Heard?.Invoke(repository.Repository);
+            Heard?.Invoke(repository.Repository, mine);
             PullRequestMoments.Moved(_home, repository); // FABRIC-END6: origin's line may have moved, link 6's moment.
             var written = await _keep(repository, ct).ConfigureAwait(false);
             if (written <= 0) continue;

@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { Card } from '../design/ui';
-import { chinese } from '../design/storyLanguage';
-import { InTheme } from '../plugins/storyIcons';
+import { Card } from '../../design/ui';
+import { chinese } from '../../design/storyLanguage';
+import { InTheme } from '../../plugins/storyIcons';
 import { ConfiguredAccess } from './ConfiguredAccess';
 import { HelpModeChip } from './HelpModePicker';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId } from './wired';
