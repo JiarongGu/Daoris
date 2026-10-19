@@ -5,7 +5,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '../../locales/i18n';
 import {
   WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_EMPTY_FILES, WORKSPACE_RECORDS_ONLY,
-} from '../../work/historyFixtures';
+} from '../../work/history/historyFixtures';
 import type { Answered } from '../../work/InlineConfirm';
 import { KeptHistory } from './KeptHistory';
 

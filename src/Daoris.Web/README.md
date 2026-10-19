@@ -165,6 +165,16 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   and an ask's channel), `repositories/` (a repository's line and rules, Git's reads, reading across, set-up, workflow,
   the registry's machine half and the remotes), `agents/` (the agents, their accounts, rules and tools) and `state/`
   (the state hub, the pushed slices and what the driver publishes).
+- `work/` (Sessions): its view (`WorkFrame`), the attended session, the acts on a session and the model every scope
+  and place reads (identity, the list's groups and entries, an ask's channel, a note's words, the one ask) at its top;
+  `frame/` (the window's frame: regions, lists, the dock, a page's header, the status bar), `strip/` (the app strip:
+  its menus, command center and palette, the browser's door), `rail/` (Sessions' list), `head/` (a session's head,
+  timeline, trace and milestone), `conversation/` (the conversation, its composer and box), `review/` (a session's
+  review: the diff, the patch, the landing, the file preview), `gates/` (a landing's review and second-opinion gates),
+  `waits/` (what waits on the person, and its answers), `attention/` (*What needs you*), `start/` (starting a
+  conversation, a hand-over or a helper), `console/` (a session's console and streams, the monitor, a detached
+  session), `terminals/` (the person's terminals), `history/` (clearing finished work) and `pausing/` (pausing and
+  abandoning it).
 
 A take the person's own reopen made lose is said as that wherever a lost claim is read (FABRIC-CLOSE1c20): the hand-over's
 `quest-reopened`, the abandon's `source-reopened` and the pause's `asks.work.reopenedTake` each have their own sentence,

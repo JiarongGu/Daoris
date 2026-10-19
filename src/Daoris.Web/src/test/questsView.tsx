@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import type { OpenGroup } from '../app/opener';
 import { useQuestsView } from '../quests/QuestsView';
 import type { Notify } from '../design/ui';
-import { useListPanes } from '../work/listPanes';
-import { ViewFrame } from '../work/ViewFrame';
+import { useListPanes } from '../work/frame/listPanes';
+import { ViewFrame } from '../work/frame/ViewFrame';
 import { useDoor } from './door';
 
 // Quests alone, as its suites hold it (FRAME1d): the view's list and its main area on a browser's frame, with the

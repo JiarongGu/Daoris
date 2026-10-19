@@ -6,7 +6,7 @@ import {
   Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, Tip,
 } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
-import { PageHead, ViewMain } from '../work/ViewMain';
+import { PageHead, ViewMain } from '../work/frame/ViewMain';
 import {
   type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, useOf, workspaceScope,
 } from '../settings/accounts/accounts';

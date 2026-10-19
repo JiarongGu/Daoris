@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Consideration } from '../data/signals';
-import type { WorkPlan, WorkPlanQuest } from '../work/pausing';
-import { LISTED_ASK, LISTED_CONSIDERED, PAUSABLE_ASK, PAUSED_LISTED_ASK } from '../work/pausingFixtures';
+import type { WorkPlan, WorkPlanQuest } from '../work/pausing/pausing';
+import { LISTED_ASK, LISTED_CONSIDERED, PAUSABLE_ASK, PAUSED_LISTED_ASK } from '../work/pausing/pausingFixtures';
 import { whyItSits, type WorkItem, workTree } from './workTree';
 
 // An ask's work as its page lists it (PAUSE1h, D132 §7.1): each quest with its sessions and the questions they asked, each

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
-import type { AbandonAnswer, PauseAnswer, ResumeAnswer, WorkPlan, WorkTarget } from '../../work/pausing';
+import type { AbandonAnswer, PauseAnswer, ResumeAnswer, WorkPlan, WorkTarget } from '../../work/pausing/pausing';
 import { call, lookBound } from '../call';
 
 // The work of an ask or a quest on this machine (MOD3; PAUSE1e, D132 §7.3): what it holds and what a pause and an abandon
@@ -9,12 +9,12 @@ import { call, lookBound } from '../call';
 // answer each, which `daoris-driver ask --pause|--resume|--abandon` and `quest pause|resume|abandon` call too (D50).
 
 /**
- * The shapes the routes answer live with the screen's own rule (`work/pausing.ts`), since a molecule may read a shape and
+ * The shapes the routes answer live with the screen's own rule (`work/pausing/pausing.ts`), since a molecule may read a shape and
  * never a bridge domain.
  */
 export type {
   AbandonAnswer, AbandonEntry, PauseAnswer, ResumeAnswer, WorkPlan, WorkScopeName, WorkTarget,
-} from '../../work/pausing';
+} from '../../work/pausing/pausing';
 
 /**
  * Under the quests' key, so whatever asks the quests again asks the plan again: a tick, which may have stopped or started a

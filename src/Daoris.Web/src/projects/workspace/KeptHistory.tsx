@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose } from '../../design/ui';
-import { ClearAsk, KeptDoorButton, type KeptDoors } from '../../work/ClearAsk';
-import { clearOffered, type HistoryPlan, type HistoryUnitName, readingSaid } from '../../work/history';
+import { ClearAsk, KeptDoorButton, type KeptDoors } from '../../work/history/ClearAsk';
+import { clearOffered, type HistoryPlan, type HistoryUnitName, readingSaid } from '../../work/history/history';
 import type { Answered } from '../../work/InlineConfirm';
-import { PageSection } from '../../work/ViewMain';
+import { PageSection } from '../../work/frame/ViewMain';
 
 /**
  * **A workspace's *Kept on this machine*** (HIST1e, D153; the history-clearing design §2.4, §6.1), the last section of its

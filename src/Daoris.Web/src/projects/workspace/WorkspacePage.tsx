@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StartWiringList } from '../../map/StartWiring';
 import type { StartWiring } from '../../map/wiring';
 import { Button, Icon, Prose } from '../../design/ui';
-import { PageHead, PageSection, PageTabs, ViewMain } from '../../work/ViewMain';
+import { PageHead, PageSection, PageTabs, ViewMain } from '../../work/frame/ViewMain';
 import type { WorkspaceTab } from '../tabs';
 import type { AccountsHere } from './workspace';
 

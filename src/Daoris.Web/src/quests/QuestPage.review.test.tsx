@@ -4,7 +4,7 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
-import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN, WORK } from '../work/reviewFixtures';
+import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN, WORK } from '../work/gates/reviewFixtures';
 import { QuestPage } from './QuestPage';
 
 // REVIEWENV1g (D154 point 8; the review environment design §3.3): a set-up step's page gains *Review in `<environment>`*,

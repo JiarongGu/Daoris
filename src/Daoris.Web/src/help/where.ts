@@ -5,8 +5,8 @@ import type { SettingsSection } from '../settings/SettingsView';
 import { projectsItem, questsItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import { answeredPark } from '../design/ui';
-import type { ChoiceStanding } from '../work/listPanes';
-import type { ViewId } from '../work/placements';
+import type { ChoiceStanding } from '../work/frame/listPanes';
+import type { ViewId } from '../work/frame/placements';
 
 /**
  * What is on the screen, as Ask Daoris is told it (HELP1b, D89): the view, the workspace in scope, the

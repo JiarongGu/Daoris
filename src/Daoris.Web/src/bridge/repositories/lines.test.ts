@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { linesSlice, sweepSlice, workSlice } from './lines';
-import { workOf, type MilestoneUnit, type WorkState } from '../../work/milestone';
+import { workOf, type MilestoneUnit, type WorkState } from '../../work/head/milestone';
 
 // The lines slice's page half (PUSH1b2, D182): one partition per repository, composed into the eight arrays `LINES` answers.
 

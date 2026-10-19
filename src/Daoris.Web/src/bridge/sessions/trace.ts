@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
-import type { TraceAnswer, TraceKind } from '../../work/trace';
+import type { TraceAnswer, TraceKind } from '../../work/head/trace';
 import { call } from '../call';
 
 // How a session or a quest came to be (TRACE1b, D143, D50): the screen's door to `daoris-driver trace`, the same read over

@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 import type { Quest, QuestConflict, SubmissionRef } from '../data/api';
 import { ago } from '../locales/format';
 import { Button, Icon, SectionTitle } from '../design/ui';
-import { PageSection } from '../work/ViewMain';
+import { PageSection } from '../work/frame/ViewMain';
 
 /**
  * Why *Bring mine forward* is not offered on this machine's lost take (SYNCMERGE1c2, D178 point 3), in the order the service refuses

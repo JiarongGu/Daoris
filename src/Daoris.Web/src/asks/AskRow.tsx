@@ -5,7 +5,7 @@ import { Dot, Pill } from '../design/ui';
 import { CarriedCount } from '../compose/carry';
 import { contextOffer } from '../menus/press';
 import { askName } from '../work/identity';
-import { ListRowDoor } from '../work/ListPane';
+import { ListRowDoor } from '../work/frame/ListPane';
 
 /**
  * An ask's state as a pill tone: waiting on a person while it is asked or proposed — a proposal is a

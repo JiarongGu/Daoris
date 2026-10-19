@@ -28,8 +28,8 @@ import {
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
-import { ListMore } from '../work/ListPane';
-import type { ViewLayout } from '../work/ViewFrame';
+import { ListMore } from '../work/frame/ListPane';
+import type { ViewLayout } from '../work/frame/ViewFrame';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
 

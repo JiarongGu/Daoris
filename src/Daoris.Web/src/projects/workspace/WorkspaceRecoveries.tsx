@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { moment, sentence } from '../../locales/format';
 import { Button, Inline } from '../../design/ui';
 import { InlineConfirm } from '../../work/InlineConfirm';
-import { entryName, type MilestoneEntry, type RecoveryDropGroup, type RecoveryDropResult } from '../../work/milestone';
+import { entryName, type MilestoneEntry, type RecoveryDropGroup, type RecoveryDropResult } from '../../work/head/milestone';
 
 /** The command the driver says deletes a recovery ref nothing holds (D102's CLEANUP1 note): no new verb. */
 const DELETE = 'git update-ref -d';

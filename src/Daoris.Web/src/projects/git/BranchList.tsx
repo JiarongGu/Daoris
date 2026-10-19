@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { ago, stamp } from '../../locales/format';
 import { ExternalLink } from '../../design/links';
-import { ListMore } from '../../work/ListPane';
+import { ListMore } from '../../work/frame/ListPane';
 import { Button, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../../design/ui';
 import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStanding';
 

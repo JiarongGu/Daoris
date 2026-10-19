@@ -1,7 +1,7 @@
 {
   "modules": ["app", "data", "design", "lib", "locales", "bridge", "menus", "overview", "quests", "projects", "knowledge", "map", "agents", "asks", "compose", "help", "plugins", "settings", "update", "work", "workflow", "test"],
   "entry": ["main.tsx", "tokens.css", "vite-env.d.ts"],
-  "wide": ["work"],
+  "wide": [],
   "loose": {
     "asks/asks.test.tsx": "the asks place's rows, page and composer, not bridge/sessions/asks.ts's calls",
     "asks/asks.stories.tsx": "the asks place's rows, page and composer, not bridge/sessions/asks.ts's calls",

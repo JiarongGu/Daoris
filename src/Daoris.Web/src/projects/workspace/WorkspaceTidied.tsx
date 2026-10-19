@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../../locales/format';
 import type { LogRow } from '../../settings/Logs';
 import { Button } from '../../design/ui';
-import { unitOfBranch, type MilestoneUnit } from '../../work/milestone';
-import { MilestoneLine } from '../../work/WorkMilestone';
+import { unitOfBranch, type MilestoneUnit } from '../../work/head/milestone';
+import { MilestoneLine } from '../../work/head/WorkMilestone';
 
 /** Rows drawn before the rest are one press away, as the groups above are (UX6h2b2). */
 export const TIDIED_SHOWN = 5;

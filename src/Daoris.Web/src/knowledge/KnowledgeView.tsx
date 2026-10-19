@@ -5,8 +5,8 @@ import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 import { type KnowledgeMode, readKnowledgeMode, storeKnowledgeMode } from './modes';
 import { useSearchView } from './SearchView';
 import type { Notify } from '../design/ui';
-import type { ListPanes } from '../work/listPanes';
-import type { ViewLayout } from '../work/ViewFrame';
+import type { ListPanes } from '../work/frame/listPanes';
+import type { ViewLayout } from '../work/frame/ViewFrame';
 
 /**
  * Knowledge's mode as the application holds it (UX6i, D150 §2.2): the one it was left in, remembered for the place, and

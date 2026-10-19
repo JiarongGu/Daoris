@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useKnowledgeMode, useKnowledgeView } from '../knowledge/KnowledgeView';
 import { type KnowledgeMode, storeKnowledgeMode } from '../knowledge/modes';
-import { useListPanes } from '../work/listPanes';
-import { ViewFrame } from '../work/ViewFrame';
+import { useListPanes } from '../work/frame/listPanes';
+import { ViewFrame } from '../work/frame/ViewFrame';
 import { useDoor } from './door';
 
 // Search and Convergence as their suites hold them (FRAME1f), through the place they are since UX6i (D150 §2.2): Knowledge

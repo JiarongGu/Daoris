@@ -2,12 +2,12 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
-import type { HistoryDoor } from '../work/history';
-import { FAILED_PLAN, QUEST_ASKED, QUEST_PLAN } from '../work/historyFixtures';
-import type { WorkDoor } from '../work/pausing';
-import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
-import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN } from '../work/reviewFixtures';
-import { answer, QUEST_CHAIN } from '../work/traceFixtures';
+import type { HistoryDoor } from '../work/history/history';
+import { FAILED_PLAN, QUEST_ASKED, QUEST_PLAN } from '../work/history/historyFixtures';
+import type { WorkDoor } from '../work/pausing/pausing';
+import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausing/pausingFixtures';
+import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN } from '../work/gates/reviewFixtures';
+import { answer, QUEST_CHAIN } from '../work/head/traceFixtures';
 import { IN_REVIEW } from '../workflow/runFixtures';
 import {
   ACCEPTED, BROUGHT_FORWARD, BROUGHT_FORWARD_UNCONFIRMED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, DROPPED_FIRST, EXHAUSTED,

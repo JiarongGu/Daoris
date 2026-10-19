@@ -38,35 +38,35 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
  * Adding a name here is the deliberate act; it is meant to be noticed in review.
  */
 const ORGANISMS = new Set<string>([
-  './work/SessionConsole.tsx',
+  './work/console/SessionConsole.tsx',
   // The asks' organism (INT4c; FRAME1d): it holds the queries so the row, the page and the composer do not.
   './asks/AsksPart.tsx',
-  './work/AttentionBand.tsx',
+  './work/attention/AttentionBand.tsx',
   // The conversation's organism (D76, CONV2): it holds the record and the scroll, so the view,
   // the tool card and the Markdown below it hold neither.
-  './work/SessionConversation.tsx',
-  './work/DetachedSession.tsx',
-  './work/DiffPane.tsx',
-  './work/MonitorWindow.tsx',
-  './work/SessionRail.tsx',
+  './work/conversation/SessionConversation.tsx',
+  './work/console/DetachedSession.tsx',
+  './work/review/DiffPane.tsx',
+  './work/console/MonitorWindow.tsx',
+  './work/rail/SessionRail.tsx',
   // The one owner of each act on a session (SESSUX1d, D126 §3.1): it holds the bridge's hooks, so the row, the list and
   // the page header, which each press it, hold none.
   './work/sessionActs.ts',
   // The one owner of a pause, a resume and an abandon (PAUSE1e, D132 §7.1): it holds the bridge's hooks, so the ask's page,
   // the quest's page and a session's header, which each press them, hold none.
-  './work/workActs.ts',
+  './work/pausing/workActs.ts',
   // The one owner of a clear (HIST1e, D153 §6.1): it holds the bridge's hook, so the quest's page, the ask's page and a
   // workspace's Details, which each press it, hold none.
-  './work/historyActs.ts',
+  './work/history/historyActs.ts',
   // The one owner of a review's presses (REVIEWENV1g, D154 point 8): it holds the service's and the bridge's hooks, so the
   // gate, the quest's page and What needs you, which each press them, hold none.
-  './work/reviewActs.ts',
+  './work/gates/reviewActs.ts',
   // The one owner of the second opinion's presses (XAGENT1g, D155 point 10): it holds the bridge's hooks, so the gate and What
   // needs you, which each press them, hold none.
-  './work/opinionActs.ts',
+  './work/gates/opinionActs.ts',
   // The one owner of the answer to an agent's rule proposal (PROPOSEHERE1b, D74's note): it holds the bridge's hook, so the
   // Agents page's card, What needs you and a session's conversation, which each press it, hold none.
-  './work/ruleAnswer.ts',
+  './work/waits/ruleAnswer.ts',
   './work/WorkFrame.tsx',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',

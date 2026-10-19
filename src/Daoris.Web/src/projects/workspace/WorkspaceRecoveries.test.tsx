@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import { type MilestoneEntry, readWorkState } from '../../work/milestone';
+import { type MilestoneEntry, readWorkState } from '../../work/head/milestone';
 import { WorkspaceRecoveries } from './WorkspaceRecoveries';
 
 // What Daoris keeps for recovery that no unit names, in a workspace's Branches tab (RECOVERYVIEW1, CLEANUP1): a molecule over

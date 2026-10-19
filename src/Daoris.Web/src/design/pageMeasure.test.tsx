@@ -32,10 +32,10 @@ const modules = rooted(import.meta.glob([
   '/src/projects/setup/StandingAnswer.stories.tsx',
   '/src/knowledge/EntryPage.stories.tsx',
   '/src/knowledge/FindingPage.stories.tsx',
-  '/src/work/SessionHead.stories.tsx',
-  '/src/work/SessionPageHead.stories.tsx',
-  '/src/work/WorkAsks.stories.tsx',
-  '/src/work/ConversationView.stories.tsx',
+  '/src/work/head/SessionHead.stories.tsx',
+  '/src/work/head/SessionPageHead.stories.tsx',
+  '/src/work/pausing/WorkAsks.stories.tsx',
+  '/src/work/conversation/ConversationView.stories.tsx',
   '/src/settings/**/*.stories.tsx',
 ], { eager: true }) as Record<string, StoriesModule>);
 

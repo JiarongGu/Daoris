@@ -4,7 +4,7 @@ import type { Ask } from '../data/api';
 import { ago } from '../locales/format';
 import { Button, Inline, SelectField } from '../design/ui';
 import { shellWord } from '../lib/shellWord';
-import { choiceWords } from '../work/ReviewGate';
+import { choiceWords } from '../work/gates/ReviewGate';
 
 /**
  * **An ask's review choice** (REVIEWENV1g, D154 point 3; the review environment design §1.5–§1.6): what the person chose for its

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { Button, Icon, Inline, Prose, Tip } from '../design/ui';
-import { Splitter } from '../work/frame';
+import { Splitter } from '../work/frame/frame';
 import type { Starter, StarterDoor } from './starters';
 
 /** The conversation, as the organism hands it over: the record, the composer, and the way to start again. */

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose } from '../../design/ui';
-import { PageSection } from '../../work/ViewMain';
+import { PageSection } from '../../work/frame/ViewMain';
 
 /**
  * A set-up's plan as the driver answers it (LAYOUT8; `SETUP_PLAN`, and Ask Daoris's `setup` card): the twin of

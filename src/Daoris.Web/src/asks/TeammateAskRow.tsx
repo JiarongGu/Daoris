@@ -3,7 +3,7 @@ import { ago } from '../locales/format';
 import { Pill } from '../design/ui';
 import { contextOffer } from '../menus/press';
 import type { ElsewhereAsk } from '../work/channel';
-import { ListRowDoor } from '../work/ListPane';
+import { ListRowDoor } from '../work/frame/ListPane';
 
 /**
  * **A row of the asks held elsewhere** (SESSONE2h): a teammate's ask this machine has only the channel messages of. It has no record

@@ -4,16 +4,16 @@ import { sentence } from '../locales/format';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import { useRegistry, useSessions } from '../data/queries';
 import { useScope } from '../data/scope';
-import { SessionConsole } from '../work/SessionConsole';
+import { SessionConsole } from '../work/console/SessionConsole';
 import {
   useAccountUse, useAccounts, useHarnessAction, useHarnesses, useReadAccounts, useRefreshHarnesses, useRuleAction, useRules,
   useSetAgentSettings, useUsage,
 } from '../bridge/shell';
-import { ruleHearing, useRuleAnswer } from '../work/ruleAnswer';
+import { ruleHearing, useRuleAnswer } from '../work/waits/ruleAnswer';
 import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
-import type { ViewLayout } from '../work/ViewFrame';
+import type { ViewLayout } from '../work/frame/ViewFrame';
 import { workspacesOf } from '../data/workspaces';
 import { agentOf } from '../settings/accounts/accounts';
 import type { ScopeActs } from '../settings/accounts/AccountUse';

@@ -1,11 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
-import type { EntryAcceptPlan } from '../../work/EntryAccept';
+import type { EntryAcceptPlan } from '../../work/review/EntryAccept';
 import type { LandingConflict, LeftOutCommit, PluginLanding } from './trees';
 import { call, pluginBound, pressBound } from '../call';
 
-export type { EntryAcceptPart, EntryAcceptPlan } from '../../work/EntryAccept';
+export type { EntryAcceptPart, EntryAcceptPlan } from '../../work/review/EntryAccept';
 
 // A line of work as one (D167): its one Accept and its ask's (ACCEPTALL1, the amendment of 2026-10-15), over the driver's
 // `EntriesRoutes`. Each part lands by its own landing, so what a part's answer carries is what `LAND_SESSION_TREE` answers.

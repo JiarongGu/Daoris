@@ -23,8 +23,8 @@ import {
 } from '../../bridge/shell';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';
-import type { KeptDoors } from '../../work/ClearAsk';
-import { useHistoryActs } from '../../work/historyActs';
+import type { KeptDoors } from '../../work/history/ClearAsk';
+import { useHistoryActs } from '../../work/history/historyActs';
 import { WorkflowTab } from '../../workflow/WorkflowTab';
 import { KeptHistory } from './KeptHistory';
 import { WorkspaceBranchGroups } from '../git/RepositoryGitView';

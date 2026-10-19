@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import {
   type HistoryClearAnswer, historyPayload, historyPlanOf, type HistoryTarget, type HistoryUnitName,
-} from '../../work/history';
+} from '../../work/history/history';
 import { call, lookBound } from '../call';
 
 // Clearing finished history from this machine (HIST1e, D153; the history-clearing design §5, §6.1, §6.3): what a clear of a
@@ -10,12 +10,12 @@ import { call, lookBound } from '../call';
 // driver library's `HistoryClearing` answers both, which `daoris-driver history` and its `clear` verbs call too (D50).
 
 /**
- * The shapes the routes answer live with the screen's own rule (`work/history.ts`), since a molecule may read a shape and
+ * The shapes the routes answer live with the screen's own rule (`work/history/history.ts`), since a molecule may read a shape and
  * never a bridge domain.
  */
 export type {
   HistoryClearAnswer, HistoryPlan, HistoryReading, HistoryReason, HistoryScopeName, HistoryTarget, HistoryUnit, HistoryUnitName,
-} from '../../work/history';
+} from '../../work/history/history';
 
 /**
  * Under its own root, so a tick asks none of them again: a workspace's reading walks the home's files (design §12 leaves how

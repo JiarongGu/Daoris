@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { keys } from '../../data/queries';
-import type { WorkPlan } from '../../work/pausing';
+import type { WorkPlan } from '../../work/pausing/pausing';
 import { useAbandonWork, usePauseWork, useResumeWork, useWorkPlan, workKey } from './work';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (

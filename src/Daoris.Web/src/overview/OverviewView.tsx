@@ -9,7 +9,7 @@ import {
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from '../design/ui';
 import { QuestStatus } from '../quests/QuestStatus';
-import { AttentionBand, type AttentionDoors } from '../work/AttentionBand';
+import { AttentionBand, type AttentionDoors } from '../work/attention/AttentionBand';
 import { questName } from '../work/identity';
 
 /**

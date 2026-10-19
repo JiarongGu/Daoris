@@ -24,16 +24,16 @@ import {
 } from '../bridge/shell';
 import { sittingBecause } from '../data/signals';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
-import type { HistoryDoor } from '../work/history';
-import { useHistoryActs } from '../work/historyActs';
-import { stepState } from '../work/review';
-import { useReviewActs } from '../work/reviewActs';
+import type { HistoryDoor } from '../work/history/history';
+import { useHistoryActs } from '../work/history/historyActs';
+import { stepState } from '../work/gates/review';
+import { useReviewActs } from '../work/gates/reviewActs';
 import type { Answered } from '../work/InlineConfirm';
-import { groupHeading, ListMore, useBringGroup } from '../work/ListPane';
-import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
-import type { TraceDoor } from '../work/HowItCameToBe';
-import type { ViewLayout } from '../work/ViewFrame';
-import { useWorkActs } from '../work/workActs';
+import { groupHeading, ListMore, useBringGroup } from '../work/frame/ListPane';
+import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing/pausing';
+import type { TraceDoor } from '../work/head/HowItCameToBe';
+import type { ViewLayout } from '../work/frame/ViewFrame';
+import { useWorkActs } from '../work/pausing/workActs';
 
 /** A radio item cannot carry an empty value, so "every receiver" travels as a sentinel. */
 const EVERYONE = '*';

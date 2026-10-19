@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
-import { ListPane } from '../work/ListPane';
+import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/frame/layout';
+import { ListPane } from '../work/frame/ListPane';
 import { CJK_FINDING, CONVERGENT, FINDINGS } from './fixtures';
 import { FindingList, type FindingsAnswer } from './FindingList';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';

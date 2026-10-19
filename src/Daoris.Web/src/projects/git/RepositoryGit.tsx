@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Inline, Prose, SkeletonRows } from '../../design/ui';
 import { BranchList, type BranchListValue } from './BranchList';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
-import { ListMore } from '../../work/ListPane';
+import { ListMore } from '../../work/frame/ListPane';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
 
 const noop = () => {};

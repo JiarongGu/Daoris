@@ -83,7 +83,7 @@ export const keys = {
   allWorkState: ['driver', 'work-state'] as const,
   workState: (unit: string | null) => ['driver', 'work-state', unit] as const,
   /**
-   * The clean-up's list (WSR3, WSR5), as the shell pushes it where it does (PUSH1c4b; its spec is `sweepSlice` in `bridge/lines`):
+   * The clean-up's list (WSR3, WSR5), as the shell pushes it where it does (PUSH1c4b; its spec is `sweepSlice` in `bridge/repositories/lines`):
    * its pushes write it, so no tick asks it again; pulled under the driver's key elsewhere.
    */
   sweep: ['driver', 'sweep'] as const,
@@ -385,16 +385,16 @@ export const useQuests = (repository: string | null, includeClosed: boolean, ena
 };
 
 /**
- * The session records the shell pushes (PUSH1d2, D182; its spec is `sessionsSlice` in `bridge/sessions`): the widest list, every
+ * The session records the shell pushes (PUSH1d2, D182; its spec is `sessionsSlice` in `bridge/sessions/sessions`): the widest list, every
  * repository, closed included, every workspace, under the key the pull of that list reads, from which each view's list is read.
  */
 export const SESSIONS_SLICE = 'sessions';
 
-/** The call each running session is making, as the shell pushes it (WAITSAY1c2; its spec is `callsSlice` in `bridge/sessions`). */
+/** The call each running session is making, as the shell pushes it (WAITSAY1c2; its spec is `callsSlice` in `bridge/sessions/sessions`). */
 export const CALLS_SLICE = 'calls';
 
 /**
- * The session list's groups and entries, as the shell pushes them (PUSH1c3b; its spec is `groupsSlice` in `bridge/sessions`): what
+ * The session list's groups and entries, as the shell pushes them (PUSH1c3b; its spec is `groupsSlice` in `bridge/sessions/sessions`): what
  * `SESSION_GROUPS` answers for every session, under that pull's widest key.
  */
 export const GROUPS_SLICE = 'groups';

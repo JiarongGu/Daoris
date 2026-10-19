@@ -12,7 +12,7 @@ import type { LandingRule } from '../settings/repository/Landings';
 import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
-import type { ReviewShown } from '../work/ReviewChip';
+import type { ReviewShown } from '../work/gates/ReviewChip';
 import { call, refusedNotReady } from './call';
 import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
 

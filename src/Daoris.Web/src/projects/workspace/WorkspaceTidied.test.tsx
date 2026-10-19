@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { LogRow } from '../../settings/Logs';
-import type { MilestoneUnit } from '../../work/milestone';
+import type { MilestoneUnit } from '../../work/head/milestone';
 import { WorkspaceTidied } from './WorkspaceTidied';
 
 // What the look cleaned up on its own, in a workspace's Branches tab (AUTOTIDY1a, D88): a molecule over the log's lines, each

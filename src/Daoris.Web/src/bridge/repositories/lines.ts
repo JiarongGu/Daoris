@@ -12,7 +12,7 @@ import type { OpinionChange, RepositoryOpinion } from '../../settings/repository
 import type { RepositoryReview, ReviewChange } from '../../settings/repository/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../../settings/Sync';
-import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../../work/milestone';
+import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../../work/head/milestone';
 import { call, lookBound, pressBound } from '../call';
 import { type DriverState, readSlice, useDriverChange, writeAnswered } from '../driver';
 import { pushedOf, readPushed, type SliceSpec, usePushedLive } from '../state/slices';

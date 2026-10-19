@@ -4,15 +4,15 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
-import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../../work/diff';
-import type { OpinionDetail, OpinionGate, OpinionWait } from '../../work/opinion';
-import type { TreeFile } from '../../work/preview';
-import type { SessionProcessAnswer } from '../../work/process';
-import type { ReviewWaits } from '../../work/review';
+import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../../work/review/diff';
+import type { OpinionDetail, OpinionGate, OpinionWait } from '../../work/gates/opinion';
+import type { TreeFile } from '../../work/review/preview';
+import type { SessionProcessAnswer } from '../../work/head/process';
+import type { ReviewWaits } from '../../work/gates/review';
 import { call, pluginBound } from '../call';
 
-export type { DiffFile, SessionDiff } from '../../work/diff';
-export type { TreeFile } from '../../work/preview';
+export type { DiffFile, SessionDiff } from '../../work/review/diff';
+export type { TreeFile } from '../../work/review/preview';
 
 // A session's tree on this machine (MOD3): what it did, the files in it, and the acts on it once
 // reviewed: land it by its repository's rule, hand its branch on, or discard it (D51, WSR1, WSR5).

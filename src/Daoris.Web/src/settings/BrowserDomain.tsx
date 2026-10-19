@@ -6,7 +6,7 @@ import {
 import {
   Button, Card, failure, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingRow, useErrorNotify,
 } from '../design/ui';
-import type { BrowserDriver } from '../work/browserDrivers';
+import type { BrowserDriver } from '../work/strip/browserDrivers';
 
 /**
  * Daoris's browser (CHR5, CHR7): its favorites, which it shows in a Daoris folder on its bookmarks

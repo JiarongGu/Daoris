@@ -4,7 +4,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import {
   WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_EMPTY_FILES, WORKSPACE_RECORDS_ONLY,
-} from '../../work/historyFixtures';
+} from '../../work/history/historyFixtures';
 import { KeptHistory } from './KeptHistory';
 
 // A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1), the last section of its

@@ -4,7 +4,7 @@ import type { Registration, Repository } from '../data/api';
 import { ago, figure } from '../locales/format';
 import type { RepositoryLine } from '../settings/repository/Lines';
 import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../design/ui';
-import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/ViewMain';
+import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/frame/ViewMain';
 import { WorkflowTab, type WorkflowTabProps } from '../workflow/WorkflowTab';
 import { RepositoryMarks } from './ProjectList';
 import { RepositorySetup, type RepositorySetupProps, type SetupSectionId } from './setup/RepositorySetup';
