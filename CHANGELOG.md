@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can use Daoris's browser again, once you approve it. The *In-app browser* plugin, 1.1.0 (its page offers the
+  update), offers its `browser` to Ask Daoris as well as to every session: its page says at its head what Ask Daoris is not
+  handed yet, and under *Ask Daoris* you approve all its reads and tick each write you accept (clicking, typing, filling a form
+  and the like), or withdraw it. An approval an update changed says so and asks again. Ask Daoris says once, at the start, what
+  it lacks and where it is approved, and can propose the approval itself: its card names the plugin, the server and every tool,
+  reads and writes apart, and nothing changes until you press Apply. A tool that runs commands or a page's own code is never
+  handed to it. At a terminal, `daoris-driver plugins approve <id> <server> --writes <tool,…>` accepts only the writes named.
 - Each main window of Daoris holds its own workspace. Choosing one in a window changes that window alone, and reloading it
   keeps it; a window opened later starts from the workspace last chosen in any. A session's own window keeps the workspace its
   session belongs to, or follows the window it was opened from, never another main window, and so does the monitor. The page's
