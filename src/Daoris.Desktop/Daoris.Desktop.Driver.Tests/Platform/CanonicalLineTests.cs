@@ -24,12 +24,7 @@ public sealed class CanonicalLineTests : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            Directory.Delete(_scratch, recursive: true);
-        }
-        catch (IOException) { /* a straggling git handle */ }
-        catch (UnauthorizedAccessException) { /* read-only pack files under .git */ }
+        GitSeed.Discard(_scratch);
     }
 
     /// <summary>The branch-name rule. The CLI's <c>driverconfig.test.ts</c> holds these cases, answer for answer.</summary>
@@ -266,14 +261,5 @@ public sealed class CanonicalLineTests : IDisposable
         await GitAsync(tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", message);
     }
 
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

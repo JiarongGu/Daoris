@@ -66,7 +66,7 @@ internal sealed class HeavyFixture : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(Folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(Folder);
     }
 }
 

@@ -16,7 +16,7 @@ public sealed class HeavyMappingCommandTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_folder);
     }
 
     private string ConfigPath => Path.Combine(_folder, "driver.json");

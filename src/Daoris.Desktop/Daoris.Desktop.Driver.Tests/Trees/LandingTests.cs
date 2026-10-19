@@ -24,13 +24,7 @@ public sealed class LandingTests : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            // Git's read-only objects made writable first (PROCSPEED1): refused, the folder stays.
-            GitSeed.Remove(_scratch);
-        }
-        catch (IOException) { /* a straggling git handle */ }
-        catch (UnauthorizedAccessException) { /* a file something still holds */ }
+        GitSeed.Discard(_scratch);
     }
 
     /// <summary>The pattern rule. The CLI's <c>driverconfig.test.ts</c> holds these cases, answer for answer.</summary>
@@ -818,15 +812,5 @@ public sealed class LandingTests : IDisposable
     }
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git"))
-               && !File.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
-    }
+    private static string RepoRoot() => GitSeed.RepoRoot();
 }

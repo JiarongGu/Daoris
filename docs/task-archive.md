@@ -17442,3 +17442,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AUTONOMY1b3c — the page shows a held ask and answers it** (web; after AUTONOMY1b3b and WAITSAY1c2). A wait kind beside the rule proposal's (`work/waits.ts`, `WaitStrip`, *What needs you*, whether it counts in the badge decided), the rail's and the head's *waiting on you*, en and 中文. Proof: the card answers with an offered option; both languages.
 
 **Outcome** 2026-10-20: a held request is a `permission` wait drawn by `PermissionAsks` in the session's head and foot, with a press per choice its agent offered (*Allow once*, *Refuse*, *Always refuse*; never an allow not offered), and a *Holding work* row in *What needs you* that the badge counts; `usePermissionWaits` polls every 4 s while a session works, since neither route publishes; the six `asking.*` codes and the asking-mode sentence worded in en and 中文. The rail's and the head's mark stay AUTONOMY1b3b's. On Opus. Detail: D184's AUTONOMY1b3c note.
+
+## SCRATCHLEAK1 — git test cleanups that leave their folders (2026-10-20, D180)
+
+> - [ ] **SCRATCHLEAK1 — git test cleanups that leave their folders** (driver tests). Every git class but the landed fixtures deletes once and ignores the refusal (git's read-only objects), so each test leaves a folder under the main checkout's `_fixtures/*` (14,619 under `_fixtures/landed` alone, 2026-10-19), and a worktree's runs write there too. Route them through `GitSeed.Remove` and have scratch stop at a worktree's `.git` file, as `LandingTests.RepoRoot` does. Clearing the existing leftovers follows the repository cleanup procedure. Proof: a class run leaves its `_fixtures/<name>/` count unchanged.
+
+**Outcome** 2026-10-20: `GitSeed.Remove` makes git's read-only objects writable and retries a held file (12 × 250 ms); `GitSeed.Discard` is every test's `Dispose` cleanup; `GitSeed.RepoRoot` is the one root walk, stopping at a worktree's `.git` file; every `_fixtures` cleanup and root in the driver's tests (51 files) goes through them, and a guard in `GitSeedTests` keeps it so. The git and Process classes swept run in the CI beside. Leftovers already there are the parent's to clear under the cleanup procedure. On Sonnet: about 178 tool calls, 20 minutes. Detail: FIX-LOG's SCRATCHLEAK1 entry.
+## PUSH1c3a — session groups pushed, the host half (2026-10-20, D182)
+
+> - [ ] **PUSH1c3a — session groups pushed, the host half** (modules; D182; after PUSH1c1; a scout's plan, 2026-10-20). A keyed `groups` slice, `rows` by session and `entries` by entry key, its judge taking its own look per wake as `GroupsAsync` does (fresh as the pull, a tree no part asked walked once), the rows carrying their sort inputs, `calling` pull-only; woken by the ledger's `sessions` and `quests`, an archive, an ending, the loop's report and a trees part landing. Proof: one session's move pushes its row alone; a hostile field never pushed; the twin of `SessionsRoutes.Grouped`.
+
+**Outcome** 2026-10-20: `Loop/GroupsStateSlice.cs` is registered in `DriverLoop.Slices`. Each row carries only the sort inputs its group is ordered by, so a working record's write pushes nothing. The loop's report wakes it through `DRIVER_TICK`, not beside `DriverSlice.Wake()`. The freshness, order, page twin, allow-list and wakes are in D182's PUSH1c3a note. The page half is PUSH1c3b.
+
+## WAITKIND1 — a knowledge document: every place a new wait the person answers goes (2026-10-20, D184)
+
+> - [ ] **WAITKIND1 — a knowledge document: every place a new wait the person answers goes** (records; AUTONOMY1b3c's hand-back). waits.ts, WaitStrip, SessionHead, AttendedSession, WorkFrame, attention.ts, AttentionRow, AttentionBand, App's badge and door, the glossary's kinds and accepted budgets, HelpCoverageTests' `Starts`, the band's route-set test, the stories; the helper ask (MIXAGENT2c) as the exemplar. Proof: the document and its index row.
+
+**Outcome** 2026-10-20: `.claude/knowledge/person-waits.md` (local) lists every place a wait the person answers goes, in order, with the rules each keeps (one set of handlers, never an answer not offered, counted where it holds work, "waiting on you" taken), the helper's ask as the exemplar; its index row regenerated. Written by the parent from AUTONOMY1b3c's hand-back.
+
+## PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's (2026-10-20, D182)
+
+> - [ ] **PUSH1c3c — `SESSION_GROUPS` takes its look through the groups slice's** (modules; D182's PUSH1c3a note). The route and the slice take the same look in two places (`SessionsRoutes.GroupsAsync`, `GroupsStateSlice.LookAsync`), which can drift; the route takes it through the slice's builder. Proof: `DriverModuleSessionsTests` and `GroupsStateSliceTests` unchanged and green, one look builder.
+
+**Outcome** 2026-10-20: `SessionsRoutes.GroupsAsync` takes its look through `GroupsStateSlice.LookAsync` (new `only` and `walked` parameters), its answer unchanged; an archive still walks its asked trees with git at the press. On Sonnet. Detail: D182's PUSH1c3c note.
+
+## REHLANE2 — the rehearsals run beside the suites, not after them (2026-10-20, D180)
+
+> - [ ] **REHLANE2 — the rehearsals run beside the suites, not after them** (tools; D180's budget note). The full set ran the release, family and deployment rehearsals after the `Process` halves; each has its own scratch and builds, so they can run beside the suites (ports and scratch apart, REHEARSEPORT1). Proof: the merge test's lane tables; a full set's wall with the rehearsals beside.
+
+**Outcome** 2026-10-20: the release rehearsal is of `BESIDE_GIT_HALF`: it runs beside the driver's git half before the family rehearsal and never beside it (the family runs the CLI's bin, which the release's pack shadows with a staged `dist/`; no desktop test reads what a pack stages, which a merge test now holds), so at most two Process-lane gates run at once; the deployment rehearsal stays alone and last (REHLANE2b). A full set's wall with it beside is not yet measured. On Opus: about 129 tool calls, 32 minutes. Detail: D180's REHLANE2 note; D115's REHLANE1 line.
+
+## HEAVYRUN1b2c — the setup says whether the repository's own file wins (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1b2c — the setup says whether the repository's own file wins** (driver, modules, web; D180's HEAVYRUN1b2a and HEAVYRUN1b2b notes). The *Heavy gates* section says its list is used only where the repository's `daoris.gates.json` marks no heavy gate, but cannot say whether this repository's does, so a person may edit a list never run. `LINES` or `STATE` carries per repository whether its file marks heavy gates (`HeavyGates.Resolve`'s source), and the section says so. Proof: a route test on a checkout whose file marks one; the section's vitest.
+
+**Outcome** 2026-10-20: a read route `HEAVY_MARKS` (from `HeavyGates.Marks`, one file, never `Resolve`) answers whether a repository's file marks heavy gates, marks none or has no file, or cannot be told (the driver's words, never "marks none"). *Heavy gates* says it in its `where` sentence and cues "not used" on the folded line where the file wins (`useHeavyMarks`; not on `LINES` or `STATE`, which have no checkout file to read). On Sonnet: about 94 tool calls, 29 minutes. Detail: D180's HEAVYRUN1b2c line.

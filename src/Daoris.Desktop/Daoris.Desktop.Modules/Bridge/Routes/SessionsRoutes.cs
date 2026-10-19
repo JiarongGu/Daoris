@@ -460,26 +460,9 @@ public sealed class SessionsRoutes(DriverContext context)
         IReadOnlyCollection<string>? only, CancellationToken cancellationToken, bool walked = false)
     {
         var service = _loop.Service ?? throw NotReady();
-        var config = DriverConfig.Load(_loop.ConfigPath);
-        // When it began, which its records are as old as.
-        var at = DateTimeOffset.UtcNow;
-        // PUSH1c1 (D182 point 4): the records, the quests, the verdicts and the marks read now, as fresh as before, and no tree judged
-        // here unless walked: each tree's judgement is the machine's facts', judged per repository on its own wakes, so no window's
-        // tick starts git.
-        var look = await SessionGroups.LookAsync(
-                service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, walked ? only : [], cancellationToken)
-            .ConfigureAwait(false);
-        // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset. And the
-        // call each live session's agent is inside, as this loop heard it from the events its sessions write (WAITSAY1b).
-        look = look with { Waits = _loop.Look.Waits, Calls = RunningCalls.Of(_loop.Events).Now() };
-        // A look at every session is kept with its time, for Ask Daoris's room to read where it is recent (HELPSTART1), and kept before
-        // its trees are read, so a facts' look judged again for a session that just ended reads this one.
-        if (only is null) _loop.SessionsLooked.Keep(look, at);
-        if (!walked)
-        {
-            var trees = new SessionTrees(_loop.Home);
-            look = await HelpFacts.WithTreesAsync(_loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: cancellationToken).ConfigureAwait(false);
-        }
+        // PUSH1c3c: the one look, in the groups slice's builder (PUSH1c1: no tree judged here unless walked; the waits, the calls and
+        // the kept look are laid there), so the route and the pushed slice cannot drift.
+        var look = await GroupsStateSlice.LookAsync(_loop, service, cancellationToken, only, walked).ConfigureAwait(false);
 
         return (look, SessionGroups.Read(look, only));
     }
