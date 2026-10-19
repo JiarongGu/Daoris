@@ -24,7 +24,7 @@ vi.mock('@shenora/react', () => ({
 import { OverviewView } from '../overview/OverviewView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from '../data/queries';
-import { useLanding } from '../bridge/trees';
+import { useLanding } from '../bridge/sessions/trees';
 import { respond, show } from '../test/shellHarness';
 
 describe('the shell push channel (ShellSignals)', () => {
@@ -60,9 +60,12 @@ describe('the shell push channel (ShellSignals)', () => {
     // And the rules: a tick settles what agents proposed about them (PERM2), and the band reads that.
     // And the registry (FG4): a folder imported from a terminal left Overview saying *no workspace
     // yet* until a reload, because nothing told the page the registry had moved.
-    // What is read under the sessions' key, passing over the records where the shell pushes them (PUSH1d2).
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
-    for (const key of [keys.allQuests, keys.allAsks, keys.allRepositories, keys.rules, keys.allRegistry]) {
+    // What is read under the sessions', the quests' and the asks' keys, passing over the records where the shell pushes them (PUSH1d2,
+    // PUSH1d3).
+    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks]) {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: key, predicate: expect.any(Function) });
+    }
+    for (const key of [keys.allRepositories, keys.rules, keys.allRegistry]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
     // Where each circle stands, passing over the standings where the shell pushes them (PUSH1a2): each pass pushes what it moved.

@@ -3,7 +3,7 @@ import type { Quest } from '../data/api';
 import { QuestStatus } from '../quests/QuestStatus';
 import { type Consideration, sittingBecause, sittingSentence } from '../data/signals';
 import { Inline, Pill, SESSION_TONE, type ShownState } from '../design/ui';
-import type { WorkPlanSession } from '../work/pausing';
+import type { WorkPlanSession } from '../work/pausing/pausing';
 import { whyItSits, type WorkItem } from './workTree';
 
 /** A door into another page, in the accent, as the ask's other doors are. */

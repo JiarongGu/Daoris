@@ -5,17 +5,17 @@ import { failure, useErrorNotify } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
-import { WiringFiles } from './WiringFiles';
-import { WiringFolders } from './WiringFolders';
-import { WiringHead, WiringOlder } from './WiringHead';
-import { WiringKnowledge } from './WiringKnowledge';
-import { WiringLogs } from './WiringLogs';
-import { WiringLoop } from './WiringLoop';
-import { WiringService } from './WiringService';
-import { WiringTerminal } from './WiringTerminal';
-import { WiringToolHome } from './WiringToolHome';
-import { WiringVariablesCard } from './WiringVariables';
-import { WiringVersions } from './WiringVersions';
+import { WiringFiles } from './wiring/WiringFiles';
+import { WiringFolders } from './wiring/WiringFolders';
+import { WiringHead, WiringOlder } from './wiring/WiringHead';
+import { WiringKnowledge } from './wiring/WiringKnowledge';
+import { WiringLogs } from './wiring/WiringLogs';
+import { WiringLoop } from './wiring/WiringLoop';
+import { WiringService } from './wiring/WiringService';
+import { WiringTerminal } from './wiring/WiringTerminal';
+import { WiringToolHome } from './wiring/WiringToolHome';
+import { WiringVariablesCard } from './wiring/WiringVariables';
+import { WiringVersions } from './wiring/WiringVersions';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {

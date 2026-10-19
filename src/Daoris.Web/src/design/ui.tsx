@@ -436,7 +436,7 @@ export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_
  * name and its tip, since the strip has no room for the words and a mark is never hue alone (D41 §6).
  *
  * @remarks
- * A row of its list (`data-list-row`), so the list's arrows move along the strip too (`work/listKeys`).
+ * A row of its list (`data-list-row`), so the list's arrows move along the strip too (`work/frame/listKeys`).
  * The first character is taken whole, by code point, so a 中文 name shows its first character rather than
  * half of one.
  */

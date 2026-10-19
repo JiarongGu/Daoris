@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 // The bridge the Work frame's suites mock, once for the files that share it (WEBSPEED1 cut `WorkFrame.test.tsx` into
 // parts that run beside each other). A part mocks the module with
-// `vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock())`: the factory is lazy,
+// `vi.mock('@shenora/react', async () => (await import('./workFrameBridge')).shenoraMock())`: the factory is lazy,
 // so this file is loaded after the mock exists and never imports the frame, which would make the two wait on each other.
 
 // Every hook listening to an event hears it, as in the shell: each hook's latest handler is kept,

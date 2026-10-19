@@ -7,29 +7,29 @@ import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
-import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './RepositoryGitView';
-import type { Driving, RepositorySetupProps } from './RepositorySetup';
+import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './git/RepositoryGitView';
+import type { Driving, RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
-import { WorkspaceView } from './WorkspaceView';
+import { WorkspaceView } from './workspace/WorkspaceView';
 import { useRegistry, useRepositories } from '../data/queries';
 import { useScope } from '../data/scope';
-import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/Access';
-import { type CommitEdit, commitToast } from '../settings/Commits';
-import { heavyToast } from '../settings/HeavyGates';
-import { type HelperEdit, helperToast } from '../settings/Helpers';
-import type { LandingRule } from '../settings/Landings';
-import { type OpinionEdit, opinionToast } from '../settings/Opinions';
-import { type ReviewEdit, reviewToast } from '../settings/Reviews';
+import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/repository/Access';
+import { type CommitEdit, commitToast } from '../settings/repository/Commits';
+import { heavyToast } from '../settings/repository/HeavyGates';
+import { type HelperEdit, helperToast } from '../settings/repository/Helpers';
+import type { LandingRule } from '../settings/repository/Landings';
+import { type OpinionEdit, opinionToast } from '../settings/repository/Opinions';
+import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
-import type { SetUpForAgentsProps } from './SetUpForAgents';
+import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
-import { ListMore } from '../work/ListPane';
-import type { ViewLayout } from '../work/ViewFrame';
+import { ListMore } from '../work/frame/ListPane';
+import type { ViewLayout } from '../work/frame/ViewFrame';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
 

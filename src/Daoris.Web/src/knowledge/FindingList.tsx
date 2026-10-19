@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Convergence } from '../data/api';
 import { Button, EmptyState, Inline, SkeletonRows } from '../design/ui';
 import { cn } from '../lib/cn';
-import { ListRowDoor } from '../work/ListPane';
+import { ListRowDoor } from '../work/frame/ListPane';
 import { atFloor, findingId, findingTitle, lower, SIMILARITY } from './records';
 
 /**

@@ -2588,7 +2588,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The access mode an Ask Daoris record's run got (HELPMODE1a2): this machine's, like the opinion, so answered to it only.
     HelpMode: loopback ? s.HelpMode : null,
     // The access setup a driven session started under (AUTONOMY1a): this machine's, like the opinion, so answered to it only.
-    Access: loopback ? s.Access : null);
+    Access: loopback ? s.Access : null,
+    // Why the graph named for its take did not bind it (CLOSETAKE1): this machine's, so answered to it only.
+    TookBind: loopback ? s.TookBind : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper);

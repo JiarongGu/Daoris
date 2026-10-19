@@ -30,7 +30,7 @@ vi.mock('@shenora/react', async () => {
 
 import i18n from '../locales/i18n';
 import { keys } from '../data/queries';
-import { useStateHub } from '../bridge/stateHub';
+import { useStateHub } from '../bridge/state/stateHub';
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';

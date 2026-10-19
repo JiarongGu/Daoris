@@ -5,8 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useQuestsView } from './QuestsView';
-import { useListPanes } from '../work/listPanes';
-import { ViewFrame } from '../work/ViewFrame';
+import { useListPanes } from '../work/frame/listPanes';
+import { ViewFrame } from '../work/frame/ViewFrame';
 import {
   chooseRow, makeFromList, moreAct, openFilters, QuestsView, questList, questMain, questPage,
 } from '../test/questsView';

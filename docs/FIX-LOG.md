@@ -5,6 +5,50 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — The CLI's graph reader read `1.0` as a whole number and said a graph's first fault in another order (GRAPHTWINS1)
+
+- **Symptom:** found by reading the CLI's reader against the driver's while writing the shared table `graph-problems.json`, each fault
+  now a row of its `unreadable`: a node's `"version": 1.0` read as version 1 in the CLI and as no whole number in the driver, a retry delay past 32 bits read in the CLI alone, and of a graph
+  with two faults the CLI named its cleanup before its nodes, and a node's evidence before its ports, where the driver names the other.
+  A version holding such a graph read in one twin and was unreadable in the other.
+- **Root cause:** FABRIC-GRAPH1b's reader (`graphversions.ts`, b27b51251) judged a whole number on the value `JSON.parse` gives, which has
+  lost its text, while the driver's `NodeGraphs.Parts` asks `TryGetInt32` of the text (`1.0` and `1e2` are none); its delays took any
+  integer; and it read the fields in an order of its own, though the first place that does not read is the one said.
+- **Fix:** D173's GRAPHTWINS1 note. Files are read by `parseWithSource` (`jsonsource.ts`), which keeps each number's text, and a whole
+  number is one written as one within 32 bits, delays too; `readGraphParts` reads in the driver's order (schema, nodes, wires, entries,
+  end, cleanup; a node's retry, id, kind, version, reach, ports, options, then the rest).
+- **Verification:** `graphproblems.test.ts` and the driver's `NodeGraphsTests` on the same rows (a version written `1.0`, a delay past
+  the bound, two faults in each order), every word alike.
+
+## 2026-10-20 — Four failing questions starved a fifth attempt, and a rule asking no opinion held its node for ever (FABRICRUN1)
+
+- **Symptom:** after a restart with five attempts due, the questions about the first four in file order failing with an I/O error, every
+  pass spent its four sends on those four and the fifth was never asked (`NodeRuntimeTests`' RUN1g case, red first). And once the live
+  second-opinion gate was handed to the runtime, an `opinion` node whose rule asks none stayed active, holding everything wired after it
+  (`GateNodesTests`' none case and `NodeRuntimeReadsTests`' gate case, red first).
+- **Root cause:** `WorkPerformer.ReconcileAsync` walked the records in file order from the first at every pass, and an unanswered
+  question leaves its attempt due at once. `OpinionNode` (WIRE1g) bound every judgement to the commit it was read at, but a landing door's
+  read of a rule asking no opinion returns before reading any commit (`TreeGates.OpinionAsync`), so that read never matched a binding.
+- **Fix:** D173's FABRICRUN1 note. Reconciliation takes the attempts due by unit and invocation from after the last one the pass before
+  reached (`_reconciled`), round again from the first. A `none` read with no commit passes the opinion over, whatever it is bound to; one
+  read at a commit stays that commit's.
+- **Verification:** the two cases above, and the neighbouring node suites (`WireEvaluationDecodedTests`' "none at an older commit" row
+  still pending), filtered, green.
+## 2026-10-20 — The real ledger refused the carry-on of a step the person's reopen stopped (FABRIC-CLOSE1c26)
+
+- **Symptom:** found by reading, then shown red: `SessionLedger.OpenAsync` answered `QuestNotOpen` for a taken quest whose last
+  record here was `completed`, no answer, its note coded `ended.source-reopened`, which is the driver's carry-on once the person
+  goes on with the step (`SessionLedgerTests.A_take_the_persons_reopen_stopped_is_carried_on`, the code's row failed first).
+- **Root cause:** FABRIC-CLOSE1c2 taught the driver's planner to carry such a record on (`Planner.CarriesOn`, `StoppedByReopen`, by
+  the note's code), but its tests opened the carry-on through `StandInLedger`, which judges no carry-on, so the real ledger's own
+  list (failed, completed with an answer, stopped interrupted or by the person after a take here, a stand-down brought forward)
+  was never asked; a `completed` record is a finished one there.
+- **Fix:** the ledger reads the code off the record's note parts (`NoteParts.Carries`, `SessionLedger.EndedSourceReopened`, the
+  driver's `NoteCodes.EndedSourceReopened` its twin by spelling) and carries such a record on; CARRY2's question of whose the take
+  is still follows. D126's SESSTRUE1 note, D173's note of this date.
+- **Verification:** `SessionLedgerTests` (102), the code's row red first; a completed record with no code, or another code, is
+  still refused.
+
 ## 2026-10-20 — Two writers of `driver.json` at once lost one's change, and a name written twice in any case read two ways (CONFIG1)
 
 - **Symptom:** the limits D173's second re-check named, each shown red by a test before the change. Another writer's edit landing
@@ -25,6 +69,41 @@ repository.
 - **Verification:** `DriverConfigKeepsTests`, `KeepLockTests`, `KeepLockProcessTests` (Process), and the CLI's `configkeeps.test.ts`
   and `keeplock.test.ts`, over `driver-config-keeps.json`'s rows, `sets`, `names` and `lock`; the driver classes over every config
   and home-file writer (1,011 and 323 tests) and the CLI's config, home-file, plugin, permission and toolchain tests pass.
+
+## 2026-10-20 — The decoder's guard flagged the runtime's read of a run's bound version (FABRICRUN1)
+
+- **Symptom:** `WorkflowGraphsTests.Nothing_outside_the_read_only_projection_reads_the_decoder` failed on main after FABRICRUN1:
+  `Trees/Nodes/NodeRuntime.cs` named `WorkflowRunNodes.VersionOf`.
+- **Root cause:** FABRIC-RUN1c's `NodeRuntime.BoundIn` asks which version a quest's run is bound to, to leave that unit ungoverned by
+  Current's graph; the guard is a text scan for any read of the decoder or its projection, and the branch's filtered run did not
+  reach it. The guard's purpose (no record binds a decoded graph's digest, so a decoder change moves nothing stored) still holds:
+  the runtime evaluates nothing on the version and stores no digest of it.
+- **Fix:** the guard allows that one named read in `NodeRuntime.cs`, with its reason; every other reader still fails it. The
+  runtime's doc comment names the decoder in words.
+- **Verify:** `WorkflowGraphsTests` 25 of 25.
+
+## 2026-10-20 — A named workspace's help start sometimes wrote "Not read yet" into its room (HelpStartReadTests)
+
+- **Symptom:** `A_named_workspace_s_start_writes_its_own_room_from_the_facts_and_starts_no_git` failed about one run in three on
+  a loaded machine: the room said *Not read yet*.
+- **Root cause:** a race in the test. It waited for the line's first judgement only, while the sessions, the history and the work
+  are judged beside the lines; the room is written at once from the facts as last judged (PARALLEL1a), so a busy machine wrote it
+  before they landed.
+- **Fix:** the test waits until the facts' reading marks none of the three unread before it starts the conversation.
+- **Verify:** `HelpStartReadTests` five runs in a row, 5 of 5 each.
+
+## 2026-10-20 — The full set on 3e88bcc failed three gates on tests the merges' filtered runs never reached (CONFIG1, PUSH1d1b)
+
+- **Symptom:** `cli` (the home census: `keeplock.test.ts` joined `driver.json` by hand), `tool-tests` (the reach scan:
+  `KeepLockProcessTests` read a CLI source no rule sent to `driver-process`) and `service` (`ChangeStreamHostTests` expected four
+  families where PUSH1d1b's `words` made five).
+- **Root cause:** each branch ran its own classes filtered, as the brief asks; the census, the reach scan and the HTTP host's
+  tests sit outside those filters, and CONFIG1 and HOMELAYOUT2 landed the same day, so neither saw the other's census.
+  `KeepLockProcessTests` built its import paths from spread parts, which the scan cannot read, so it saw a probe file.
+- **Fix:** `keeplock.test.ts` asks `homeEntry(fx.root, 'driver')`; `KeepLockProcessTests` names `keeplock.ts` and `driverconfig.ts`
+  whole; `ChangeStreamHostTests.Every` names `ChangeFamilies.Words`.
+- **Verify:** `keeplock.test.ts` 15 of 15; the census and the reach scan pass; `ChangeStreamHostTests` 5 of 5;
+  `KeepLockProcessTests` 2 of 2 under `process.runsettings`.
 
 ## 2026-10-20 — A repository's Setup test still read asking mode's old hint, that any other call is refused (AUTONOMY1b3)
 

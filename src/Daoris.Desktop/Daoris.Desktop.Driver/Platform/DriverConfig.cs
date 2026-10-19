@@ -1195,30 +1195,50 @@ public sealed record DriverConfig(
         {
             foreach (var property in element.EnumerateObject())
             {
-                if (property.Value.ValueKind != JsonValueKind.Object) continue;
-                // Only JSON `true` switches the tidy or the automatic acceptance on (LAND2a): `"true"` or 1 is not the
-                // person's say-so for a push with no press.
-                var rule = new LandingRule(
-                    Json.NonEmpty(property.Value,"form") ?? "", Json.NonEmpty(property.Value,"pattern"),
-                    property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
-                    Json.NonEmpty(property.Value,"plugin"),
-                    property.Value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
-                    Json.NonEmpty(property.Value,"key"),
-                    // Only JSON `true` squashes (PROCESS1b-ii), as only it accepts automatically.
-                    property.Value.TryGetProperty("squash", out var squash) && squash.ValueKind == JsonValueKind.True);
-                // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never
-                // drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
-                if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
-                // FABRIC-GRAPH1: the cycle is kept as written whether or not it is a graph that holds, said where it is read, so a
-                // mistyped end never changes how the work lands; only null is none (the review's finding 2: `[]` was dropped).
-                if (property.Value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = NodeGraphHomes.Compact(cycle) };
                 // The first rule written in any case governs, as the CLI reads it, and a later spelling is said (the review's finding 3:
                 // the driver kept the last and the terminal the first, so the two chose different graphs).
-                if (LandingRules.Problem(rule) is null && !map.ContainsKey(property.Name)) map[property.Name] = Kept(rule);
+                if (RuleOf(property.Value, out _) is { } rule && !map.ContainsKey(property.Name)) map[property.Name] = Kept(rule);
             }
         }
 
         return map;
+    }
+
+    /// <summary>
+    /// A landing rule as the file holds it, read as <see cref="RuleMap"/> reads it, or null where it is none or does not read: then
+    /// <paramref name="unread"/> says why (FABRIC-GRAPH1d) — no object, no <c>form</c>, or a rule <see cref="LandingRules.Problem"/> refuses
+    /// — and is null for a rule written null, which is none. Both readers skip such a rule, and <see cref="NodeGraphHomes.Strays"/> says it;
+    /// the CLI's twin is <c>driverconfig.ts</c>'s <c>landingRuleUnread</c>.
+    /// </summary>
+    internal static LandingRule? RuleOf(JsonElement value, out string? unread)
+    {
+        unread = null;
+        if (value.ValueKind == JsonValueKind.Null) return null;
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            unread = "it holds no rule's object.";
+            return null;
+        }
+
+        // Only JSON `true` switches the tidy or the automatic acceptance on (LAND2a): `"true"` or 1 is not the person's say-so for a
+        // push with no press.
+        var rule = new LandingRule(
+            Json.NonEmpty(value, "form") ?? "", Json.NonEmpty(value, "pattern"),
+            value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
+            Json.NonEmpty(value, "plugin"),
+            value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
+            Json.NonEmpty(value, "key"),
+            // Only JSON `true` squashes (PROCESS1b-ii), as only it accepts automatically.
+            value.TryGetProperty("squash", out var squash) && squash.ValueKind == JsonValueKind.True);
+        // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never drops the rule,
+        // which would land the repository's work by its workspace's rule or a merge unasked.
+        if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
+        // FABRIC-GRAPH1: the cycle is kept as written whether or not it is a graph that holds, said where it is read, so a mistyped end
+        // never changes how the work lands; only null is none (the review's finding 2: `[]` was dropped).
+        if (value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = NodeGraphHomes.Compact(cycle) };
+        if (LandingRules.Problem(rule) is not { } problem) return rule;
+        unread = rule.Form.Length == 0 ? "it names no `form`, `merge` or `branch`." : problem;
+        return null;
     }
 
     /// <summary>

@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import type { GitBranchList, GitGraphPage } from '../bridge/git';
+import type { GitBranchList, GitGraphPage } from '../bridge/repositories/git';
 import {
   GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
 } from './fixtures';

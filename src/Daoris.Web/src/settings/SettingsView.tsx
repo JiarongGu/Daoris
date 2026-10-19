@@ -5,10 +5,10 @@ import { useDriver } from '../bridge/shell';
 import type { Notify } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
 import type { SetupStepId } from '../help/setup';
-import type { BrowserDriver } from '../work/browserDrivers';
-import { useListPanes } from '../work/listPanes';
-import { ViewFrame, type ViewLayout } from '../work/ViewFrame';
-import { ViewMain } from '../work/ViewMain';
+import type { BrowserDriver } from '../work/strip/browserDrivers';
+import { useListPanes } from '../work/frame/listPanes';
+import { ViewFrame, type ViewLayout } from '../work/frame/ViewFrame';
+import { ViewMain } from '../work/frame/ViewMain';
 // The frame reaches a domain only through the list (MOD4): each domain is `settings/<Name>Domain.tsx`,
 // and the list in `settings/domains.ts` is the one place one is added. `DomainList` draws the list's rows.
 import { SETTINGS_DOMAINS, type SettingsDomainProps, type SettingsSection } from './domains';

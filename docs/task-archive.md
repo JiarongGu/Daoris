@@ -17639,3 +17639,141 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONFIGMERGE1 — two writers adding to one set-like array both kept** (driver, cli; after GRAPH1). The later writer's whole array wins (`drivable`). Proof: a shared-table row adding to `drivable` from two writers, both kept in both twins.
 
 **Outcome** 2026-10-20: built as CONFIG1, one feature end to end (D187): `drivable`, `holds`, `trees` and each `writeAcross` list are sets in both twins (`DriverConfig.Sets`, `DRIVER_SETS`, the fixture's `sets`): an edit applies the names it added and took, compared without case, to the file's array as it stands, so two writers adding to one set are both kept; every other array is written whole. Detail: D173's CONFIG1 note, the FIX-LOG's CONFIG1 entry.
+
+## STRUCT5c-ii — work, settings, bridge and projects cut into scopes (2026-10-20, D166)
+
+> - [ ] **STRUCT5c-ii — work, settings, bridge and projects cut into scopes** (web). Each holds more than twenty sources at its top: cut each into scope folders, one folder per branch, its entry dropped from the structure gate's `wide` list. Design §4–§6; proof: the structure gate with the folder off `wide`, and the web gate.
+
+**Outcome** 2026-10-20: the page's `projects` (27 sources), `settings` (51), `bridge` (34) and `work` (151) folders are cut into scope folders with `tools/move-files.mjs`, one commit per folder, each keeping at its top what its scopes and the other places share; the structure gate's `wide` list is empty. The readers outside the web that listed `bridge/` at its top only (`DriverModuleRoutesTests`, `HelpCoverageTests`, `tools/orient-index.mjs`) read it at any depth since the merge. Nothing a person sees changed. On Opus: about 255 tool calls, 63 minutes. Detail: D166's STRUCT5c-ii note; the web README's *Where things are*.
+
+## FABRIC-RUN1b — the look's git reads in the runtime (2026-10-20, D173)
+
+> - [ ] **FABRIC-RUN1b — the look's git reads in the runtime** (driver; after RUN1; §E2, WIRE1b). Hand the look's ref reads to `WireRun.Git` and the branch revisions, so `pushed` and an ahead `pull-request` can be reached. Proof: a branch cycle (`handed` → plugin step) reaching its performed node; `pushed` from a stand-in remote tip; the no-graph count test still reading no git.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): the runtime reads `pushed`'s remote-tracking ref and an ahead pull request's ancestry once a pass, only where such a node waits (`PassGit`). A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry. On Opus, the whole feature: about 353 tool calls, 76 minutes.
+
+## FABRIC-RUN1d — the runtime's own wakes (2026-10-20, D173)
+
+> - [ ] **FABRIC-RUN1d — the runtime's own wakes** (driver; after RUN1; §A3, §C6). A `nodes` wake and a plugin's `work/step` run link 8 alone, without the local plan. Proof: a `nodes` wake runs no plan; a heard completion kept within a second without a look.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): the runtime's own wakes and a plugin's queued step run link 8 alone (`ChainEvents.Nodes`, `HookSet.StepArrived`), never a look. A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry.
+
+## FABRIC-NODE1b — D157's gates as observed nodes (2026-10-20, D173)
+
+> - [ ] **FABRIC-NODE1b — D157's gates as observed nodes** (driver; after NODE1, before WORKFLOW2; §E4, §E2). `opinion`, `look` and `go-ahead` read from their gates' records (`OpinionGate`, `ReviewGate`, D135's answers) through `NodeLifecycle.Apply`, so WORKFLOW2's graphs have no second state model. Proof: each gate's states from records alone; canary 43 extended.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): the look is read from its gate's verdict and the go-ahead from D135's answers (`LookNode`, `GoAheadNode`); a rule asking no opinion passes its node. A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry.
+
+## FABRIC-RUN1g — reconciliation takes its due attempts in turn (2026-10-20, D173)
+
+> - [ ] **FABRIC-RUN1g — reconciliation takes its due attempts in turn** (driver; after RUN1e). `WorkPerformer.ReconcileAsync` walks the records in file order, so attempts whose questions keep failing can use up the four sends at every pass and starve the rest. Proof: five attempts due, four failing, the fifth asked within two passes.
+
+**Outcome** 2026-10-20: built as FABRICRUN1, one feature end to end (D187): reconciliation asks due attempts in turn by unit and invocation, starting after the last one reached. A node reaching its state shows in the unit's node record; `WORK_STATE` lists held attempts only. Detail: D173's FABRICRUN1 note, the FIX-LOG's FABRICRUN1 entry.
+
+## QUEUED1 — a `queued` record whose driver went is ended without a person's stop (2026-10-20, D126)
+
+> - [ ] **QUEUED1 — a `queued` record whose driver went is ended without a person's stop** (driver; the `Orphans` remarks). Only the person's stop ends one now; the loop ends a `queued` record no live driver here is starting, judged with care since another driver may be mid-start. Proof: a sweep test with a stale `queued` record and one being started.
+
+**Outcome** 2026-10-20: built as SESSTRUE1, one feature end to end (D187): each start marks its record with the process that opened it (`SessionProcesses.MarkOpening`, at all five places that open a record) until its spawn replaces the mark; the loop's sweep ends a `queued` or `starting` record whose opener is proven gone and leaves one a live driver is starting. Commit `e2412cce5`. Detail: D126's SESSTRUE1 note. On Opus, the whole feature: about 342 tool calls, 68 minutes.
+
+## ACCEPTFOOT1b — the terminal and the Sessions list offer an open conversation's Accept (2026-10-20, D126)
+
+> - [ ] **ACCEPTFOOT1b — the terminal and the Sessions list offer an open conversation's Accept** (driver; D164's ACCEPTFOOT1 note, LAND4). The look reads only records, so `daoris-driver sessions` and the Sessions list show no offer for an open conversation between turns, though its chat now does: decide whether the look takes the chat runner's turn state (`ChatRunner.Taking`) and offer it there by the same judgement. Proof: `SessionGroupsTests`.
+
+**Outcome** 2026-10-20: built as SESSTRUE1, one feature end to end (D187): the look takes an open conversation's turn state from its runner, or from its own record of turns where no runner in that process holds it; between turns the Sessions list and `daoris-driver sessions` offer its work to land as an ended session's tree does, and the groups slice wakes on `SESSION_QUEUED`. The head may lag one judgement. Commit `598d95ad8`. Detail: D126's SESSTRUE1 note.
+
+## FABRIC-CLOSE1c11 — the session list shows where a reopen's words wait on the named session (2026-10-20, D126)
+
+> - [ ] **FABRIC-CLOSE1c11 — the session list shows where a reopen's words wait on the named session** (driver, web; after CLOSE1c9; D137 §3.2). Since CLOSE1c9 the planner goes on with a reopen's words in the session the reopen names though a later one is the quest's last record, but the list reads words and the planner's verdict only on the last record (`SessionGroups.cs` ~1061 `WordsWait`, ~1073 `VerdictOnLast`), so the named session's row neither reads going on nor names what holds its words. Proof: a `SessionGroups` test where a verdict's `Resumes` names a session that is not the last record, and that row reads going on, or later with the planner's hold.
+
+**Outcome** 2026-10-20: built as SESSTRUE1, one feature end to end (D187): the session list reads a reopen's words on the session the reopen names, as the planner's `WordsOn` does, and that row reads going on, or later with the planner's hold. Commit `2a9e5da99`. Detail: D126's SESSTRUE1 note.
+
+## FABRIC-CLOSE1c26 — the real ledger carries on a step stopped by the reopen (2026-10-20, D126)
+
+> - [ ] **FABRIC-CLOSE1c26 — the real ledger carries on a step stopped by the reopen** (service, driver; verify first; found by SYNCMERGE1b's scout). CLOSE1c2's carry-on of a `completed` record ended `ended.source-reopened` with no answer is modelled by `StandInLedger` only; the real `SessionLedger.carriesOn` (~960-967) takes failed, completed with an answer, or stopped and interrupted, so the driver's carry-on may be refused `QuestNotOpen` on a real host. Confirm with a `SessionLedger` test of that record; if refused, let the ledger take it and say so in D173's CLOSE1c2 note. Proof: the ledger test, red first if it is a defect.
+
+**Outcome** 2026-10-20: built as SESSTRUE1, one feature end to end (D187): a confirmed defect: the real ledger refused the carry-on of a step the person's reopen stopped (`QuestNotOpen`); it now carries it on by reading `ended.source-reopened` off the record's note parts. D173's note, the FIX-LOG entry; commit `d759f62e4`. Detail: D126's SESSTRUE1 note.
+
+## ANSWER2b — resumed run through second look (2026-10-20, D126)
+
+> - [ ] **ANSWER2b — resumed run through second look** (driver Process). One resume/record while next look runs. D131 note.
+
+**Outcome** 2026-10-20: built as SESSTRUE1, one feature end to end (D187): an answered park's real resumed run, still in its turn at the next look, goes on once (`SessionMessagesTickTests`). Commit `ecca23303`. Detail: D126's SESSTRUE1 note.
+
+## BGWAIT1c — native background cutoff (2026-10-20, D126)
+
+> - [ ] **BGWAIT1c — native background cutoff** (driver/web). Coded cutoff instead of park after harness-killed work. D83/D137/D142; stream fixture.
+
+**Outcome** 2026-10-20: built as SESSTRUE1, one feature end to end (D187): a native turn whose own background work the harness ended with the turn is cut off (`ended.background-cut`, worded in en and zh) and carried on in the same tree, where it used to park. Commit `826f25a13`. Detail: D126's SESSTRUE1 note.
+
+## PUSH1d3 — quests and asks pushed (2026-10-20, D182)
+
+> - [ ] **PUSH1d3 — quests and asks pushed** (modules, web; D182 points 2-4, 7; after PUSH1d2). As PUSH1d2 for `/api/quests` and `/api/asks`, each allow-listed (an attachment's `path` stripped), `notPushed` on their invalidations and on the mutations' settling (`useAskChange`, `useDelete`, the quest families). Proof: a tick reads neither; a connector's ask reaches the windows by a push.
+
+**Outcome** 2026-10-20: the `quests` and `asks` slices (`Loop/QuestsStateSlice.cs`, `AsksStateSlice.cs`), a keyed partition per workspace carrying only the fields the page's types declare (a quest's evidence and an ask's words never pushed; a file's `path` replaced by `kept`), woken by the `quests`, `asks` and `sessions` families; on the page `questsSlice` and `asksSlice` read through `pushedList` with `questsIn`/`asksIn`, every family invalidation passing `notPushed`. A tick, a focus and a declared change read neither route; an ask a connector writes reaches two windows by one push; an older host still pulls. The install's measurement (D182 point 8) is open. On Opus: about 196 tool calls, 35 minutes. Detail: D182's PUSH1d3 note.
+
+## RPC1b2 — the trees reads are the running Daoris's clients (2026-10-20, D171)
+
+> - [ ] **RPC1b2 — the trees reads are the running Daoris's clients** (driver host; after RPC1b). The `clean` and `sync` lists, `land --plan` and `hand --plan` send `SWEEP_PLAN`, `TREES_SYNC_PLAN`, `LANDING` and `HANDOFF_PLAN` (open in the census) where the instance answers, and stay alone otherwise (§7.2's read column); each answer gains the fields the terminal's words need. Proof: per read, the text from the route's answer equals the alone path's against `InstanceStandIn`. Also `land --plan`, `--entry --plan` and `--ask --plan` as `said` from `LANDING`, `ENTRY_LANDING` and `ASK_LANDING` (`TreesConsole.Planned`, `EntryPlanned`).
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): the `trees clean`, `trees sync`, `land` / `land --entry` / `land --ask --plan` and `hand --plan` lists go through `SWEEP_PLAN`, `TREES_SYNC_PLAN`, `LANDING`, `ENTRY_LANDING`, `ASK_LANDING` and `HANDOFF_PLAN` where the instance answers, each route answering `said` when asked, built by `TreesPlanWords` for the alone path and the route alike; a terminal's `trees clean` asking through the instance is still the person's occasion (D148). Detail: D171's RPCOPEN1 note. On Sonnet, the whole feature: about 264 tool calls, 46 minutes.
+
+## RPC1j — `daoris-driver result <id>` asks again (2026-10-20, D171)
+
+> - [ ] **RPC1j — `daoris-driver result <id>` asks again** (driver host; after RPC1b). §6.1 tells a lost press to ask later, but `InstanceDoor` keeps its key nowhere. Keep `{ id, key, route, at }` under the home for a day and answer `result <id>` with `RESULT`. Proof: host tests against the stand-in: a lost press answered later, an unknown id said as unknown, another key's id refused.
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): every press is kept under the home's `pipe/sent/` for a day, and `daoris-driver result <id>` asks `RESULT` with the stored key (lost then running, answered, unknown, another key's refused). Detail: D171's RPCOPEN1 note.
+
+## RPC1h — the pipe takes a cancel for its own requests (2026-10-20, D171)
+
+> - [ ] **RPC1h — the pipe takes a cancel for its own requests** (modules; after RPC1a). §6.2's Ctrl+C sends the kit's `CANCEL` by request id, but the census does not name `SHENORA.REQUESTS`: accept a cancel only for ids the pipe began (with the sender's key) and pass it to the tracker. Proof: an `InstancePipeTests` case where a held press is cancelled and `RESULT` says how it ended; a window's request id refused.
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): the pipe takes the kit's `CANCEL` for its own presses with the sender's key and passes it to the tracker; a window's id, an unknown id and another key's are refused. The verb's own Ctrl+C that sends it is not built. Detail: D171's RPCOPEN1 note.
+
+## RPC1i — a desktop stop that cannot drain says so (2026-10-20, D171)
+
+> - [ ] **RPC1i — a desktop stop that cannot drain says so** (modules; after RPC1a). `Drain` returns false after 15 s and the stop goes on silently: the machine log names how many presses were left (`pipe.drained`, `left`). §6.3. Proof: a `DriverLoopAddressTests` case with a press held past a short drain.
+
+**Outcome** 2026-10-20: built as RPCOPEN1, one feature end to end (D187): `pipe.drained` with `left` is logged when a desktop stop cannot drain. Detail: D171's RPCOPEN1 note.
+
+## FABRIC-CLOSE1z — bind only where the host answers what became of a close (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1z — bind only where the host answers what became of a close** (driver, service; §E5 cutover). A host between CLOSE1a and CLOSE1t says `closure: true` but has no `close/outcome`: add `closeOutcome: true` to `/api/status` and bind only where it is said. Proof: a host without the field binds nothing and its quest closes by its done.
+
+**Outcome** 2026-10-20: found done on main by a scout's reading: `closeOutcome` is answered at `/api/status` (LocalHostTests) and read by `ServiceClient` (ServiceClientClosureTests), built by CLOSECAP1. Closed with no change.
+
+## FABRIC-CLOSE1n — the bind door's `atTake` at the host (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1n — the bind door's `atTake` at the host** (service). A `LocalHostTests` case: an open quest's bind with `atTake` answers 200 and the take answers `closure`; a taken quest's answers 409; a shared host does not map it.
+
+**Outcome** 2026-10-20: found done on main by a scout's reading: the take's bind answers 409 without a session and 200 with one (LocalHostTests), and the shared host maps no bind (SharedHostTests). Closed with no change; a respond-take answering `closure` for a bound take is not asked by any row.
+
+## QUESTSTOREVER1 — the quest store refuses a store a newer build marked (2026-10-20, D173)
+
+> - [ ] **QUESTSTOREVER1 — the quest store refuses a store a newer build marked** (service). The quest store keeps no version, so the next change to the take-bind contract would again hide its rows in a new table: stamp a version and refuse take-bind writes into a store stamped ahead, saying "written by a newer Daoris". Proof: a store stamped ahead refuses with those words; an unstamped store is unchanged.
+
+**Outcome** 2026-10-20: built as CLOSETAKE1 (D187): the quest store carries a version stamp in its own table (`quest_store_version`, `QuestStore.StoreVersion` 1, never lowered; not the file's `user_version`, which the knowledge index sharing the file owns); a store stamped by a newer build still opens but refuses a take's bind, saying it was written by a newer Daoris, and the quest closes by its done; an unstamped store binds as before and is stamped. On Sonnet, with CLOSE1o-ii: about 81 tool calls, 12 minutes. Detail: D173's CLOSETAKE1 note.
+
+## FABRIC-CLOSE1o-ii — the loop's line names why a take went unbound (2026-10-20, D173)
+
+> - [ ] **FABRIC-CLOSE1o-ii — the loop's line names why a take went unbound** (service, driver; after CLOSE1o; §E5). The end line only says the take did not bind, because the driver never sees the take's outcome: carry `QuestMove.TakeBind` to the driver (beside `took_quest` on the session record) so the line says expired, replaced or remote. Proof: the end line names "expired" for a lapsed bind, and nothing for a bound take.
+
+**Outcome** 2026-10-20: built as CLOSETAKE1: a take's bind outcome (`expired`, `replaced` or `remote`) is carried on the take's answer, kept on the session's record (`took_bind`, machine-local, moving no revision) and answered as `tookBind` on `/api/sessions` to loopback only; the loop's end line for a take that did not bind names why. Detail: D173's CLOSETAKE1 note.
+
+## FABRIC-GRAPH1c — the CLI judges a cycle at its door (2026-10-20, D173)
+
+> - [ ] **FABRIC-GRAPH1c — the CLI judges a cycle at its door** (cli; after GRAPH1; §E3, §E7). `daoris driver landing … --cycle <file>` and a `workCycles` verb validate as `NodeGraphs.Problems` does, over a shared table of graphs and their codes. Proof: WIRE1a's 21 and GRAPH1's 19 codes from one table read by both twins.
+
+**Outcome** 2026-10-20: built as GRAPHTWINS1, one feature end to end (D187): the CLI's `nodegraphs.ts` judges a graph as `NodeGraphs.Problems` does, both twins held to one table (`graph-problems.json`: every `WireRefusal` (22) and `GraphRefusal` (21) code with its words), the driver's `NodeWiresTests` and `NodeGraphsTests` reading their cases from it; `daoris driver landing … --cycle <file>|--no-cycle` and `daoris driver work-cycle` refuse a cycle with its first problem in the driver's words and write nothing. Detail: D173's GRAPHTWINS1 note. On Opus, the whole feature: about 335 tool calls, 83 minutes.
+
+## FABRIC-GRAPH1f — the CLI saves a graph version (2026-10-20, D173)
+
+> - [ ] **FABRIC-GRAPH1f — the CLI saves a graph version** (cli; after GRAPH1c, GRAPH1b). With GRAPH1c's `NodeGraphs.Problems` in the CLI and a parse that keeps option values' raw text, `planAddVersion` saves a graph version, and the shared table's `judged: "driver"` and `cli-refuses` rows go to `both`. Proof: every row of `workflow-graph-versions.json` from both twins, its adds included.
+
+**Outcome** 2026-10-20: built as GRAPHTWINS1, one feature end to end (D187): `planAddVersion` saves a graph version, and `daoris driver workflow apply` and `import` take one; workflow files are read and written keeping every value's text (`jsonsource.ts`), so the driver's digest holds; one row the CLI still refuses: a letter outside ASCII and Chinese, whose escape depends on the driver's runtime. Detail: D173's GRAPHTWINS1 note.
+
+## FABRIC-GRAPH1k — the CLI twin judges the two new codes (2026-10-20, D173)
+
+> - [ ] **FABRIC-GRAPH1k — the CLI twin judges the two new codes** (cli; with GRAPH1c). When the CLI gets `Problems`, the two `judged: "driver"` rows for `observed-twice` and `protected-wire` become `both`.
+
+**Outcome** 2026-10-20: built as GRAPHTWINS1, one feature end to end (D187): `observed-twice` and `protected-wire` are judged by both twins, their rows in `workflow-graph-versions.json` and `graph-problems.json` read by both. Detail: D173's GRAPHTWINS1 note.

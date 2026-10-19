@@ -49,8 +49,8 @@ Repositories. The desktop's seven menus share one command table, with shortcuts 
 Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
 `src/settings/domains.ts` lists them: the one place a domain is added, since the frame
 (`settings/SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
-*This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`Wiring*.tsx`, molecules over props); its card
-*Left in your own tool home* (`WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
+*This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`wiring/Wiring*.tsx`, molecules over props); its card
+*Left in your own tool home* (`wiring/WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
 ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand.
 *AI features* (`AiDomain.tsx`) draws Ask Daoris's *Configured access* (`help/access/ConfiguredAccess.tsx`) under its access row
 while restricted: each grant the driver serves comes from `STATE`'s `helpGrants`, with the operations it acts on (`built`), and is
@@ -59,7 +59,7 @@ serve yet is drawn from `help/access/grants.ts` alone and sends nothing (HELPMOD
 
 **An account is named by one rule, wherever it is said** (`src/agents/agents.ts`, D125's ACCTNAME1 and ACCOUNTID1b notes):
 `accountName` leads a row, `accountWho` sits beside it, and `accountLabel` is the one line a chip, a pill, a note or the
-roster's namer (`settings/namer.ts`, so a session's header) says. Where two of an agent's sign-ins share an email, each
+roster's namer (`settings/accounts/namer.ts`, so a session's header) says. Where two of an agent's sign-ins share an email, each
 says what tells it apart, after the email and once. A surface that names an account goes through these, never its own.
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
@@ -84,9 +84,9 @@ for until it is drawn, else on the page's heading: `src/lib/returnFocus.ts` (UX6
 | Styling | **Tailwind v4** — the validated tokens are the theme (`src/tokens.css`), utilities live beside the markup |
 | Primitives | **Radix UI** — dialog (the drawer), toast, select, tooltip, checkbox: behaviour without a look |
 | Icons | **lucide-react**, tree-shaken |
-| Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation; a driver press's is the driver's `STATE_CHANGED`, asked again at one place in every window (`bridge/stateHub.ts`, D169), so a hook asks nothing again itself and a test that presses a declared route mounts the hub over a mocked shell that publishes what the route declares (`test/publishing.ts`); a press under way is read by every view through `useUnderWay(route, session)`, never one component's `isPending`, and the hub reads the driver's list as it mounts, so a window opened mid-press says it too (STATEHUB1c2); Ask Daoris's open *What it has* is asked again on the `help` scope, so a receipt recorded meanwhile shows (HELPWIREDLIVE1) |
+| Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation; a driver press's is the driver's `STATE_CHANGED`, asked again at one place in every window (`bridge/state/stateHub.ts`, D169), so a hook asks nothing again itself and a test that presses a declared route mounts the hub over a mocked shell that publishes what the route declares (`test/publishing.ts`); a press under way is read by every view through `useUnderWay(route, session)`, never one component's `isPending`, and the hub reads the driver's list as it mounts, so a window opened mid-press says it too (STATEHUB1c2); Ask Daoris's open *What it has* is asked again on the `help` scope, so a receipt recorded meanwhile shows (HELPWIREDLIVE1) |
 | i18n | **react-i18next**, `en` + `zh`, flat dotted keys, **one file per area** (`src/locales/<language>/<area>.json`, merged at load by `src/locales/index.ts`): a key lives in the file named by its longest dotted prefix that has one, so `settings.rules.add` is in `settings.rules.json` and `nav.quests` in `nav.json`. `scripts/i18n-check.mjs` fails the build when an area's two files diverge, a key is in two files, or a key is not in its home (MOD2); `scripts/names-check.mjs --strict` beside it fails the build when a label breaks the glossary (`src/locales/glossary.json`), its kind's form or its door, and reports the budgets without failing (D116, NAME1b) |
-| Shell bridge | **@shenora/react** (0.22, with the shell's packages: SHEN4, D22) — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`app/ShellSignals.tsx`, which says no toast for a conversation's answer when that conversation is the one attended in a window in front, NOTIFY1c), which mounts the state hub (the running call each session makes arrives as its `calls` slice and is laid over the pulled `calling` on the rail and the head where live, WAITSAY1c2; the work milestones arrive as its `work` slice, which `useWorkState` reads live at its widest key and selects a unit's variant from, so a tick and a focus ask no `WORK_STATE`, PUSH1c2b; the session groups arrive as its `groups` slice, composed in the driver's reader's order, which `useSessionGroups` and `useSessionEntries` read live at its widest key and select some sessions' variant from, so a tick and a focus ask no `SESSION_GROUPS`, PUSH1c3b; where each wired circle stands arrives as its `sync` slice, one entry by circle, which `useSyncStanding` reads live and selects the asked circle from as `/api/sync` answers it, a circle with no partition `wired: false`, so a tick, a pass's scope and a focus ask no `/api/sync`, PUSH1a2; the clean-up's list arrives as its `sweep` slice, a partition per repository, which `useSweepPlan` reads live, so a tick and a focus ask no `SWEEP_PLAN` and the pull-request plugin is asked only at the Branches tab's *Look again*, the person's press of it, `useSweepLook`, PUSH1c4b); in a browser none of it mounts, by design, and the standing stays its HTTP pull. **One file per domain** (MOD3): each domain's types and calls are `src/bridge/<domain>.ts` (driver, sessions, conversation, console, terminal, trees, lines, agents, plugins, rules, help, browser, windows, remotes, registry, log), `src/bridge/shell.ts` is only the barrel re-exporting them, and `bridge/bridge.test.ts` holds that it stays one. The desktop answers each route in a handler class per domain, `<Domain>Routes.cs` in `Daoris.Desktop.Modules` (D166), which is the file a comment here names for a route's refusals |
+| Shell bridge | **@shenora/react** (0.22, with the shell's packages: SHEN4, D22) — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`app/ShellSignals.tsx`, which says no toast for a conversation's answer when that conversation is the one attended in a window in front, NOTIFY1c), which mounts the state hub (the running call each session makes arrives as its `calls` slice and is laid over the pulled `calling` on the rail and the head where live, WAITSAY1c2; the work milestones arrive as its `work` slice, which `useWorkState` reads live at its widest key and selects a unit's variant from, so a tick and a focus ask no `WORK_STATE`, PUSH1c2b; the session groups arrive as its `groups` slice, composed in the driver's reader's order, which `useSessionGroups` and `useSessionEntries` read live at its widest key and select some sessions' variant from, so a tick and a focus ask no `SESSION_GROUPS`, PUSH1c3b; where each wired circle stands arrives as its `sync` slice, one entry by circle, which `useSyncStanding` reads live and selects the asked circle from as `/api/sync` answers it, a circle with no partition `wired: false`, so a tick, a pass's scope and a focus ask no `/api/sync`, PUSH1a2; the clean-up's list arrives as its `sweep` slice, a partition per repository, which `useSweepPlan` reads live, so a tick and a focus ask no `SWEEP_PLAN` and the pull-request plugin is asked only at the Branches tab's *Look again*, the person's press of it, `useSweepLook`, PUSH1c4b); in a browser none of it mounts, by design, and the standing stays its HTTP pull. **One file per domain** (MOD3): each domain's types and calls are `src/bridge/<domain>.ts`, or `src/bridge/<scope>/<domain>.ts` in one of its scopes (*Where things are* below), `src/bridge/shell.ts` is only the barrel re-exporting them, and `bridge/bridge.test.ts` holds that it stays one. The desktop answers each route in a handler class per domain, `<Domain>Routes.cs` in `Daoris.Desktop.Modules` (D166), which is the file a comment here names for a route's refusals |
 | Design tool | **Storybook** (`npm run storybook`) — the component states and the token gallery, on the shipped code |
 | Test loop | **Vitest + Testing Library** as the millisecond inner loop (view logic, primitives, catalogs — with the sibling's proven jsdom shims), **Playwright** as the outer loop — the real host over `examples/`, driving the shipped bundle. `npm run test:web` at the workspace root runs the whole pyramid |
 
@@ -124,7 +124,7 @@ at all — the remote is an API until person-auth exists, and the person's windo
 its local host; locally — the default — the full surface works.
 
 **An ask's channel is the desktop's** (SESSONE2c, D167): where an ask's sessions and the person talk is read, posted to and marked
-read through the driver's `CHANNEL_READ`, `CHANNEL_POST` and `CHANNEL_MARK` (`bridge/asks.ts`), so a browser draws no *Channel*, no
+read through the driver's `CHANNEL_READ`, `CHANNEL_POST` and `CHANNEL_MARK` (`bridge/sessions/asks.ts`), so a browser draws no *Channel*, no
 unread count and no composer. The ask's page, each session's panel under its head and the unread counts on the ask's row and in
 *Group by ask* are molecules over those answers (`asks/ChannelSection.tsx`, `work/channel.ts`), with Daoris's lines worded from
 their codes in the reader's language and the messages shown as written. **A teammate's ask** (SESSONE2h) has a row in the Asks list's
@@ -151,6 +151,31 @@ names that folder until a row cuts it into scopes. A gate that reads the whole t
 names each path from the sources' top (`test/sources.ts`). A view in a folder the presentational boundary covers is an
 organism by name in `design/presentational.test.ts`.
 
+A folder past twenty sources keeps its scopes in folders named for what they hold, its tests and stories beside them
+(STRUCT5c-ii, D166):
+- `projects/`: the place's view, its list, a repository's page and the drawers at its top; `git/` (a repository's
+  Branches and History, a branch's page and the graph), `setup/` (a repository's and a workspace's Setup, its parts and
+  rules, the standing answer) and `workspace/` (a workspace's page and its sections).
+- `settings/`: the frame, the domains' list and each `<Name>Domain.tsx` at its top, with the parts one domain draws;
+  `wiring/` (This Daoris's cards), `accounts/` (how each agent's accounts are used, the usage curve, the roster's namer)
+  and `repository/` (what a repository's Setup, a workspace's and this machine's set, each where it was set, and the
+  agents' rules).
+- `bridge/`: the barrel, the domains' helper, the driver's standing state and the machine's own domains at its top;
+  `sessions/` (a session's life, conversation, console, tree, entries and trace, an ask's or a quest's work, its clear,
+  and an ask's channel), `repositories/` (a repository's line and rules, Git's reads, reading across, set-up, workflow,
+  the registry's machine half and the remotes), `agents/` (the agents, their accounts, rules and tools) and `state/`
+  (the state hub, the pushed slices and what the driver publishes).
+- `work/` (Sessions): its view (`WorkFrame`), the attended session, the acts on a session and the model every scope
+  and place reads (identity, the list's groups and entries, an ask's channel, a note's words, the one ask) at its top;
+  `frame/` (the window's frame: regions, lists, the dock, a page's header, the status bar), `strip/` (the app strip:
+  its menus, command center and palette, the browser's door), `rail/` (Sessions' list), `head/` (a session's head,
+  timeline, trace and milestone), `conversation/` (the conversation, its composer and box), `review/` (a session's
+  review: the diff, the patch, the landing, the file preview), `gates/` (a landing's review and second-opinion gates),
+  `waits/` (what waits on the person, and its answers), `attention/` (*What needs you*), `start/` (starting a
+  conversation, a hand-over or a helper), `console/` (a session's console and streams, the monitor, a detached
+  session), `terminals/` (the person's terminals), `history/` (clearing finished work) and `pausing/` (pausing and
+  abandoning it).
+
 A take the person's own reopen made lose is said as that wherever a lost claim is read (FABRIC-CLOSE1c20): the hand-over's
 `quest-reopened`, the abandon's `source-reopened` and the pause's `asks.work.reopenedTake` each have their own sentence,
 never the one for a take on another machine.
@@ -169,8 +194,8 @@ the kit's colour scheme (`useEngineTheme` in `bridge/windows.ts`, THEMESCHEME1),
 also tells its frame Overview's *What needs you* count (`useTaskbarCount` in `bridge/windows.ts`, `SET_BADGE`,
 NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. That
 count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
-their word (`useResolveHeld` in `bridge/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), and a tool call a session holds for
-their answer under asking (`usePermissionWaits` in `bridge/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
+their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), and a tool call a session holds for
+their answer under asking (`usePermissionWaits` in `bridge/sessions/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
 with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
 `SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself: as a pushed call's `waiting`
 mark comes and goes where the calls are pushed, and every few seconds on a host that pushes none (D184's AUTONOMY1b3c

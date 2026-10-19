@@ -49,6 +49,40 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Null(events.LastAt("../x"));
     }
 
+    /// <summary>
+    /// ACCEPTFOOT1b: whether a conversation's last turn has ended with nothing said since, read from its record's end: the newest
+    /// event that says where its turns stand is a turn's end. A note or a usage after it says nothing of a turn; a word said, or an
+    /// agent's words, a call or a plan after it (a turn its harness woke) are a turn under way; no turn yet, or no record, is none.
+    /// </summary>
+    [Fact]
+    public void Whether_a_conversations_last_turn_ended_is_read_from_its_end()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("rest1", Asked("hi"));
+        events.Append("rest1", Message(new string('x', 60_000)));
+        events.Append("rest1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        events.Append("rest1", new SessionEvent { Kind = SessionEventKind.Usage });
+        events.Append("rest1", new SessionEvent { Kind = SessionEventKind.Note, Text = "a note of the driver's" });
+        events.Append("said1", Asked("hi"));
+        events.Append("said1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        events.Append("said1", Asked("and then?"));
+        events.Append("woke1", Asked("hi"));
+        events.Append("woke1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        events.Append("woke1", Message("the tests passed"));
+        events.Append("open1", Asked("hi"));
+        events.Append("open1", Message("thinking it over"));
+
+        Assert.True(events.TurnEnded("rest1"));
+        Assert.False(events.TurnEnded("said1"));
+        Assert.False(events.TurnEnded("woke1"));
+        Assert.False(events.TurnEnded("open1"));
+        Assert.False(events.TurnEnded("nobody0"));
+        Assert.False(events.TurnEnded("../x"));
+        // A torn last line costs itself.
+        File.AppendAllText(events.PathOf("rest1"), "{\"kind\":\"user\",\"te");
+        Assert.True(events.TurnEnded("rest1"));
+    }
+
     /// <summary>ASKHIST1d: one Han character is a word to search for, within a session as in Ask Daoris's list; one other letter is not.</summary>
     [Fact]
     public void One_han_character_is_enough_to_search_with()

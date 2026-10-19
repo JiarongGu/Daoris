@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import { notPushed, readPushed, usePushedLive } from '../bridge/slices';
 import {
-  api, type AskAction, HELP_REPOSITORY, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef, type SyncStanding,
-  type Verdict,
+  keepPreviousData, type QueryClient, type QueryKey, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions,
+} from '@tanstack/react-query';
+import { notPushed, readPushed, usePushedLive } from '../bridge/state/slices';
+import {
+  api, type Ask, type AskAction, HELP_REPOSITORY, type Quest, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef,
+  type SyncStanding, type Verdict,
 } from './api';
 import { useScope } from './scope';
 import { workspaceOf, workspacesOf } from './workspaces';
@@ -47,7 +49,7 @@ export const keys = {
   syncEvery: ['sync', null] as const,
   /**
    * The driver's state, and the prefix of everything read beneath it. The entry itself is written by the shell's pushes where it
-   * pushes them (PUSH1a, `bridge/slices.ts`) and pulled otherwise; what is read beneath it is pulled.
+   * pushes them (PUSH1a, `bridge/state/slices.ts`) and pulled otherwise; what is read beneath it is pulled.
    */
   driver: ['driver'] as const,
   /** The machine's wiring — shell-only, like the driver's state (D48 §5). */
@@ -83,7 +85,7 @@ export const keys = {
   allWorkState: ['driver', 'work-state'] as const,
   workState: (unit: string | null) => ['driver', 'work-state', unit] as const,
   /**
-   * The clean-up's list (WSR3, WSR5), as the shell pushes it where it does (PUSH1c4b; its spec is `sweepSlice` in `bridge/lines`):
+   * The clean-up's list (WSR3, WSR5), as the shell pushes it where it does (PUSH1c4b; its spec is `sweepSlice` in `bridge/repositories/lines`):
    * its pushes write it, so no tick asks it again; pulled under the driver's key elsewhere.
    */
   sweep: ['driver', 'sweep'] as const,
@@ -315,13 +317,78 @@ export const useWorkspaceHoldings = () =>
     },
   });
 
-/** Asks (D65 §1a), scoped like every other cross-repository read — an ask is made in a circle. */
-/** The asks in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a park's go-aheads). */
+/**
+ * The asks, as the shell pushes them (PUSH1d3, D182; its spec is `asksSlice` in `bridge/sessions/quests`): the widest list, every
+ * workspace, closed and done included, under the key the pull of that list reads, from which each view's list is read.
+ */
+export const ASKS_SLICE = 'asks';
+
+/** The quests, as the shell pushes them (PUSH1d3; its spec is `questsSlice` in `bridge/sessions/quests`), as the asks are. */
+export const QUESTS_SLICE = 'quests';
+
+/**
+ * A list the shell pushes (PUSH1d2, PUSH1d3) as one view reads it. Live, the widest entry its pushes write, from memory: never stale,
+ * never asked on a focus, the view's list derived by `select`. Elsewhere (a plain browser, an older shell) the view's own pull under its
+ * own key, which, while a window's first snapshot is on its way, waits for it and is read from it, never pulled beside it.
+ */
+function pushedList<T>(
+  client: QueryClient, live: boolean, slice: string,
+  widest: { key: QueryKey; pull: () => Promise<T[]> },
+  own: { key: QueryKey; pull: (signal: AbortSignal) => Promise<T[]> },
+  select: (all: T[]) => T[],
+): UseQueryOptions<T[], Error, T[]> {
+  return live
+    ? { queryKey: widest.key, queryFn: () => readPushed(client, slice, widest.pull), select, staleTime: Infinity, refetchOnWindowFocus: false }
+    : {
+      queryKey: own.key,
+      queryFn: async ({ signal }) => {
+        const all = await readPushed<T[] | null>(client, slice, async () => null);
+        return all === null ? own.pull(signal) : select(all);
+      },
+    };
+}
+
+/**
+ * One view's asks read from the widest the shell pushes (PUSH1d3), as the service filters `/api/asks`: the workspace as the service
+ * compares it, and neither a closed nor a done one unless the closed are asked for (`Asks.ListAsync`), in the order given.
+ */
+export function asksIn(all: Ask[], includeClosed: boolean, workspace: string | null): Ask[] {
+  if (includeClosed && workspace === null) return all;
+  const named = workspace === null ? null : circle(workspace);
+  return all.filter((ask) => (named === null || circle(ask.workspace) === named)
+    && (includeClosed || (ask.state !== 'Closed' && ask.state !== 'Done')));
+}
+
+/**
+ * One view's quests read from the widest the shell pushes (PUSH1d3), as the service filters `/api/quests` (`Quests.ListAsync`): the
+ * receiver named exactly, the workspace as the service compares it, and, unless the closed are asked for, the outstanding alone (open,
+ * taken, or a done a departure holds for the person's yes), in the order given.
+ */
+export function questsIn(all: Quest[], repository: string | null, includeClosed: boolean, workspace: string | null): Quest[] {
+  if (repository === null && includeClosed && workspace === null) return all;
+  const named = workspace === null ? null : circle(workspace);
+  return all.filter((quest) => (repository === null || quest.to === repository)
+    && (named === null || circle(quest.workspace ?? '') === named)
+    && (includeClosed || quest.status === 'Open' || quest.status === 'Taken' || quest.held === true));
+}
+
+/**
+ * Asks (D65 §1a), scoped like every other cross-repository read — an ask is made in a circle. The asks in scope; `enabled` false asks
+ * nothing, for a reader that needs them only sometimes (a park's go-aheads). Where the shell pushes them (PUSH1d3), read from the one
+ * entry its pushes write, so neither a tick nor a focus asks them again.
+ */
 export const useAsks = (includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
+  const client = useQueryClient();
+  const live = usePushedLive(ASKS_SLICE);
+  const select = useCallback((all: Ask[]) => asksIn(all, includeClosed, workspace), [includeClosed, workspace]);
   return useQuery({
-    queryKey: keys.asks(includeClosed, workspace),
-    queryFn: ({ signal }) => api.asks(includeClosed, workspace, signal),
+    ...pushedList(
+      client, live, ASKS_SLICE,
+      { key: keys.asks(true, null), pull: () => api.asks(true, null) },
+      { key: keys.asks(includeClosed, workspace), pull: (signal) => api.asks(includeClosed, workspace, signal) },
+      select,
+    ),
     enabled,
   });
 };
@@ -329,15 +396,16 @@ export const useAsks = (includeClosed: boolean, enabled = true) => {
 /**
  * Asking, publishing an ask and closing one. Each can publish a quest, so the quests move with the
  * asks — and they are asked again whether or not the door said yes: a named receiver that refused
- * still leaves the ask kept, with its proposal (INT4a), which the list must then show.
+ * still leaves the ask kept, with its proposal (INT4a), which the list must then show. Where the shell
+ * pushes them (PUSH1d3), the change is heard on the service's change stream and pushed.
  */
 function useAskChange<TVariables>(fn: (variables: TVariables) => Promise<AskAction>) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: fn,
     onSettled: () => {
-      void client.invalidateQueries({ queryKey: keys.allAsks });
-      void client.invalidateQueries({ queryKey: keys.allQuests });
+      void client.invalidateQueries({ queryKey: keys.allAsks, predicate: notPushed(client) });
+      void client.invalidateQueries({ queryKey: keys.allQuests, predicate: notPushed(client) });
     },
   });
 }
@@ -352,8 +420,9 @@ function useDelete(fn: (id: string) => ReturnType<typeof api.deleteQuest>) {
   return useMutation({
     mutationFn: fn,
     onSettled: () => {
-      void client.invalidateQueries({ queryKey: keys.allQuests });
-      void client.invalidateQueries({ queryKey: keys.allAsks });
+      // Where the shell pushes the quests and the asks (PUSH1d3), the delete is heard on the change stream and pushed.
+      void client.invalidateQueries({ queryKey: keys.allQuests, predicate: notPushed(client) });
+      void client.invalidateQueries({ queryKey: keys.allAsks, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allRegistry });
       // Where the shell pushes the standings, a delete's quest write is heard on the change stream and pushed (PUSH1a2).
       void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
@@ -374,27 +443,38 @@ export const useAnswerGoAhead = () =>
   useAskChange(({ id, number, approved, words }: { id: string; number: number; approved: boolean; words?: string }) =>
     api.answerGoAhead(id, number, approved, words));
 
-/** The quests in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a session branch's title, UX6h2a). */
+/**
+ * The quests in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a session branch's title, UX6h2a).
+ * Where the shell pushes them (PUSH1d3), read from the one entry its pushes write, so neither a tick nor a focus asks them again.
+ */
 export const useQuests = (repository: string | null, includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
+  const client = useQueryClient();
+  const live = usePushedLive(QUESTS_SLICE);
+  const select = useCallback(
+    (all: Quest[]) => questsIn(all, repository, includeClosed, workspace), [repository, includeClosed, workspace]);
   return useQuery({
-    queryKey: keys.quests(repository, includeClosed, workspace),
-    queryFn: ({ signal }) => api.quests(repository, includeClosed, workspace, signal),
+    ...pushedList(
+      client, live, QUESTS_SLICE,
+      { key: keys.quests(null, true, null), pull: () => api.quests(null, true, null) },
+      { key: keys.quests(repository, includeClosed, workspace), pull: (signal) => api.quests(repository, includeClosed, workspace, signal) },
+      select,
+    ),
     enabled,
   });
 };
 
 /**
- * The session records the shell pushes (PUSH1d2, D182; its spec is `sessionsSlice` in `bridge/sessions`): the widest list, every
+ * The session records the shell pushes (PUSH1d2, D182; its spec is `sessionsSlice` in `bridge/sessions/sessions`): the widest list, every
  * repository, closed included, every workspace, under the key the pull of that list reads, from which each view's list is read.
  */
 export const SESSIONS_SLICE = 'sessions';
 
-/** The call each running session is making, as the shell pushes it (WAITSAY1c2; its spec is `callsSlice` in `bridge/sessions`). */
+/** The call each running session is making, as the shell pushes it (WAITSAY1c2; its spec is `callsSlice` in `bridge/sessions/sessions`). */
 export const CALLS_SLICE = 'calls';
 
 /**
- * The session list's groups and entries, as the shell pushes them (PUSH1c3b; its spec is `groupsSlice` in `bridge/sessions`): what
+ * The session list's groups and entries, as the shell pushes them (PUSH1c3b; its spec is `groupsSlice` in `bridge/sessions/sessions`): what
  * `SESSION_GROUPS` answers for every session, under that pull's widest key.
  */
 export const GROUPS_SLICE = 'groups';
@@ -532,14 +612,15 @@ export const useSearch = (q: string, localOnly: boolean, { enabled = true, holdi
 /**
  * Everything a quest mutation can change: every quests query, the registry's counts, and the asks — an
  * ask is done once every quest it became has closed (USE1c), which the service derives on each read, so
- * closing the last one changes what the asks list says.
+ * closing the last one changes what the asks list says. Where the shell pushes the quests and the asks (PUSH1d3), the change is heard
+ * on the service's change stream and pushed, and only what is read beneath them is asked again.
  */
 function useInvalidateQuestWork() {
   const client = useQueryClient();
   return () => {
-    void client.invalidateQueries({ queryKey: keys.allQuests });
+    void client.invalidateQueries({ queryKey: keys.allQuests, predicate: notPushed(client) });
     void client.invalidateQueries({ queryKey: keys.allRegistry });
-    void client.invalidateQueries({ queryKey: keys.allAsks });
+    void client.invalidateQueries({ queryKey: keys.allAsks, predicate: notPushed(client) });
   };
 }
 
@@ -584,8 +665,9 @@ function useReviewChange<TVariables>(fn: (variables: TVariables) => Promise<Ques
   return useMutation({
     mutationFn: fn,
     onSettled: () => {
-      void client.invalidateQueries({ queryKey: keys.allQuests });
-      void client.invalidateQueries({ queryKey: keys.allAsks });
+      // The quests and the asks, where the shell pushes them (PUSH1d3): the change stream tells their owner.
+      void client.invalidateQueries({ queryKey: keys.allQuests, predicate: notPushed(client) });
+      void client.invalidateQueries({ queryKey: keys.allAsks, predicate: notPushed(client) });
       void client.invalidateQueries({ queryKey: keys.allLandings });
       // What is read under the sessions' key, but the records where the shell pushes them (PUSH1d2): their pushes write them.
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });

@@ -29,7 +29,7 @@ vi.mock('@shenora/react', async () => {
 });
 
 import i18n from '../locales/i18n';
-import { useStateHub } from '../bridge/stateHub';
+import { useStateHub } from '../bridge/state/stateHub';
 import { WorkspaceScopeProvider, useScope } from '../data/scope';
 import { AskDaoris } from './AskDaoris';
 

@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { AskPage } from '../asks/AskPage';
 import { PUBLISHED } from '../asks/fixtures';
 import { QuestPage } from '../quests/QuestPage';
-import { WORK } from '../work/reviewFixtures';
+import { WORK } from '../work/gates/reviewFixtures';
 import { IN_REVIEW, PULL_REQUEST_OPEN, SEVERAL } from './runFixtures';
 
 // WORKFLOW1c (the workflow design §7): a quest's page and an ask's carry their work's run in one line among their head's facts,

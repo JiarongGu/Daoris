@@ -1,6 +1,6 @@
 // An ask's channel as the shell answers it (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): where an ask's
 // sessions and the person talk, messages and Daoris's own coded lines in one time order. Pure, so every channel a person could
-// have is an argument; the bridge (`bridge/asks.ts`) asks, and the molecules draw from these.
+// have is an argument; the bridge (`bridge/sessions/asks.ts`) asks, and the molecules draw from these.
 
 /**
  * One item. A `message` is words a session or the person wrote, addressed to everyone (`to` absent) or one repository, and

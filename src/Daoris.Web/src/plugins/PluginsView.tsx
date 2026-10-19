@@ -8,8 +8,8 @@ import { Drawer, failure, type Notify, useErrorNotify } from '../design/ui';
 import { type KitPoint, PluginKitCard, type PluginTrialResult } from './PluginKit';
 import type { PluginUpdatePlanShown } from './PluginUpdate';
 import type { Answered } from '../work/InlineConfirm';
-import { ListMore } from '../work/ListPane';
-import type { ViewLayout } from '../work/ViewFrame';
+import { ListMore } from '../work/frame/ListPane';
+import type { ViewLayout } from '../work/frame/ViewFrame';
 import {
   chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type SkillShown, takesShipped,
 } from './catalog';

@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
 import { keys } from '../data/queries';
 import { chooseRow, QuestsView } from '../test/questsView';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
-import { ABANDON_ANSWER, PAUSABLE_ASK, PAUSABLE_QUEST } from '../work/pausingFixtures';
+import { ABANDON_ANSWER, PAUSABLE_ASK, PAUSABLE_QUEST } from '../work/pausing/pausingFixtures';
 
 const ASK = {
   id: 'a1b2c3', workspace: 'aurora', sentence: 'Make chunk streaming smooth', state: 'Published', tier: 'named',

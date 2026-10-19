@@ -4,22 +4,27 @@
  * `ReadVersion` with `NodeGraphs.Read` and `NodeGraphs.Digest` (`NodeGraphs.cs`); both read `test/fixtures/workflow-graph-versions.json`,
  * row for row, every digest included (`graphversions.test.ts`, `WorkflowGraphVersionsTests`).
  *
- * The driver judges a graph whole (`NodeGraphs.Problems`: bounds, entries, the end, the protected order, a node's declaration), which the
- * CLI does not hold, as for a decoded graph (`workflowgraphs.ts`). This reader holds what the digest needs, the graph's shape, and
- * says the driver's sentence where a place is not a graph's shape; the table's `judged: "driver"` rows are the driver's alone, and the
- * CLI never saves a graph version (`planAddVersion` refuses one, and says where it is saved).
+ * This reader holds what the digest needs, the graph's shape, read in the driver's order (`NodeGraphs.Parts`), each place that is not a
+ * graph's shape said in the driver's sentence. `nodegraphs.ts` judges the graph whole (FABRIC-GRAPH1c), as `NodeGraphs.Problems` does.
+ * An option's value enters the digest as the driver's compact writer writes it (D173's GRAPH1b choice 3): read by `parseWithSource`,
+ * its numbers by their own text and its keys in the order written (FABRIC-GRAPH1f); its text in ASCII and Chinese, and the escapes the
+ * driver writes for a control character and a character past the basic plane. Any other value is one this build cannot write as the
+ * driver does, and says so (`lossy`).
  */
 import { createHash } from 'node:crypto';
+import { numberText, sourceOf } from './jsonsource.ts';
 
 /** A node as the file declares it, each field as written, absence as its default. */
 export interface FormNode {
   id: string; kind: string; version: number; reach: string; evidence: string | null; retry: { maxAttempts: number; delays: number[] } | null;
   timeoutSeconds: number | null; rejectable: boolean; skippable: boolean;
   inputs: Record<string, string>; outputs: Record<string, string>; options: Record<string, string>;
+  /** Made by decoding, never authored (the driver's `NodeDeclaration.Synthetic`): a file declares none. */
+  synthetic?: boolean;
 }
 
-/** A wire's end: a node, and on a `data` wire its port. */
-interface FormEnd { node: string; port: string | null }
+/** A wire's end: a node, on a `data` wire its port, and another unit's node where a wire names one (never read from a file). */
+export interface FormEnd { node: string; port: string | null; unit?: string | null }
 
 /** A wire as the file declares it: its source a node, or what a `wait` waits on. */
 export interface FormWire {
@@ -31,6 +36,11 @@ export interface FormWire {
 /** A graph as a version holds it. */
 export interface GraphForm {
   schemaVersion: number; nodes: FormNode[]; wires: FormWire[]; entries: string[]; end: string; cleanup: { until: string; days: number | null };
+}
+
+/** What a graph's or a cycle's JSON declares, each part as written: an absent end or cleanup is null — the driver's `GraphParts`. */
+export interface GraphParts {
+  schemaVersion: number; nodes: FormNode[]; wires: FormWire[]; entries: string[]; end: string | null; cleanup: GraphForm['cleanup'] | null;
 }
 
 /** The schema of a version that is a graph; a version of steps is schema 1, named or not. */
@@ -55,10 +65,20 @@ function text(parent: Record<string, unknown>, name: string, where: string): str
   throw new Unread(`${where}'s \`${name}\``, 'text');
 }
 
+/**
+ * A whole number as the driver's `TryGetInt32` reads it: within 32 bits, and where the text was kept, written as one — `1.0` and `1e2`
+ * are numbers the driver reads as no whole number.
+ */
+function isWhole(value: unknown, holder: unknown, key: string | number): value is number {
+  const own = numberText(holder, key);
+  return typeof value === 'number' && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647
+    && (own === undefined || /^-?[0-9]+$/.test(own));
+}
+
 function whole(parent: Record<string, unknown>, name: string, where: string): number | null {
   const value = parent[name];
   if (absent(value)) return null;
-  if (typeof value === 'number' && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647) return value;
+  if (isWhole(value, parent, name)) return value;
   throw new Unread(`${where}'s \`${name}\``, 'whole number');
 }
 
@@ -77,64 +97,92 @@ function list(parent: Record<string, unknown>, name: string, where: string): unk
 }
 
 /**
- * A place the driver reads and this build cannot write as the driver does (FABRIC-GRAPH1b's review): an option's value enters the digest
- * as the driver's compact writer writes it, which parsed JSON cannot reproduce for a number (its own text, `1.0`, or past a double), an
- * object's keys that are numbers (JavaScript writes them first, by value), or a character outside the basic plane (the driver writes a
- * pair of escapes). Such a version is read as unreadable, and a file holding one is never written over by this build.
+ * Why an option's value cannot be written as the driver's compact writer writes it. `rewrites` where this build could not write the file
+ * back as read either (a number or a key read with no record of its text, a key written twice): a character it cannot digest is still a
+ * string it writes back whole.
  */
 class Lossy extends Error {
-  option: string | null;
-  node: string | null;
+  readonly rewrites: boolean;
 
-  constructor(option: string | null = null, node: string | null = null) {
+  constructor(rewrites: boolean) {
     super('lossy');
-    this.option = option;
-    this.node = node;
-  }
-
-  /** The sentence for the node and option it is in. */
-  says(): string {
-    return `node \`${this.node}\`'s option \`${this.option}\` holds a value this build cannot write as the driver does (a number, a key that is a `
-      + 'number, or a character outside ASCII and Chinese); the driver reads it.';
+    this.rewrites = rewrites;
   }
 }
 
-/** A text this build and the driver's compact writer write alike: printable ASCII and the Chinese block, no more. */
-const ALIKE = /^[ -~一-鿿]*$/;
+/** A JSON escape's hex, as the driver's writer spells it: four upper-case digits. */
+const hex = (unit: number): string => `\\u${unit.toString(16).toUpperCase().padStart(4, '0')}`;
 
-/** An option's value as compact JSON, the driver's bytes, or a refusal where this build cannot write them alike. */
-function compact(value: unknown): string {
+const SHORT: Record<string, string> = { '\b': '\\b', '\t': '\\t', '\n': '\\n', '\f': '\\f', '\r': '\\r', '"': '\\"', '\\': '\\\\' };
+
+/**
+ * A text as the driver's compact writer escapes it (`JavaScriptEncoder.UnsafeRelaxedJsonEscaping`): printable ASCII and the Chinese
+ * block as they are, a quote and a backslash and the short controls by their short escapes, any other control and a character past
+ * the basic plane by `\u` escapes, the latter as its two halves. Any other character is the driver's own Unicode table's to escape or
+ * not, which this build does not hold: refused.
+ */
+function compactText(value: string): string {
+  let out = '"';
+  for (const ch of value) {
+    const code = ch.codePointAt(0)!;
+    if (SHORT[ch] !== undefined) out += SHORT[ch];
+    else if (code < 0x20 || code === 0x7f) out += hex(code);
+    else if (code < 0x7f || (code >= 0x4e00 && code <= 0x9fff)) out += ch;
+    else if (code > 0xffff) out += hex(ch.charCodeAt(0)) + hex(ch.charCodeAt(1));
+    else throw new Lossy(false);
+  }
+  return `${out}"`;
+}
+
+/**
+ * An option's value as compact JSON, the driver's bytes: a number by its own text and an object's keys in the order written, where
+ * `parseWithSource` read them; or a refusal where this build cannot write them alike — a number or a key that is a number read with no
+ * record of its text, a key written twice, a character `compactText` refuses.
+ */
+function compact(value: unknown, holder: unknown, key: string | number): string {
   if (value === null) return 'null';
   if (typeof value === 'boolean') return value ? 'true' : 'false';
-  if (typeof value === 'string') {
-    if (!ALIKE.test(value)) throw new Lossy();
-    return JSON.stringify(value);
+  if (typeof value === 'string') return compactText(value);
+  if (typeof value === 'number') {
+    const own = numberText(holder, key);
+    if (own === undefined) throw new Lossy(true);
+    return own;
   }
 
-  if (Array.isArray(value)) return `[${value.map(compact).join(',')}]`;
+  if (Array.isArray(value)) return `[${value.map((each, index) => compact(each, value, index)).join(',')}]`;
   if (isObject(value)) {
-    return `{${Object.entries(value).map(([key, each]) => {
-      if (!ALIKE.test(key) || /^(0|[1-9][0-9]*)$/.test(key)) throw new Lossy();
-      return `${JSON.stringify(key)}:${compact(each)}`;
-    }).join(',')}}`;
+    const source = sourceOf(value);
+    if (source?.twice === true) throw new Lossy(true);
+    const keys = source?.keys ?? Object.keys(value);
+    if (source === undefined && keys.some((name) => /^(0|[1-9][0-9]*)$/.test(name))) throw new Lossy(true);
+    return `{${keys.map((name) => `${compactText(name)}:${compact(value[name], value, name)}`).join(',')}}`;
   }
 
-  throw new Lossy();
+  throw new Lossy(true);
 }
 
+/** The sentence for an option this build cannot write as the driver does. */
+const lossySaid = (node: string, option: string): string =>
+  `node \`${node}\`'s option \`${option}\` holds a value this build cannot write as the driver does (a character outside ASCII and `
+  + 'Chinese, a key written twice, or a number read with no record of its text); the driver reads it.';
+
 /** A map of names to text, or, with `anyValue`, to each value's compact JSON (an option's). Its own keys only: `__proto__` is a name. */
-function names(parent: Record<string, unknown>, name: string, where: string, anyValue = false): Record<string, string> {
+function names(
+  parent: Record<string, unknown>, name: string, where: string, anyValue: ((option: string, rewrites: boolean) => void) | null = null,
+): Record<string, string> {
   const map: Record<string, string> = Object.create(null) as Record<string, string>;
   const value = parent[name];
   if (absent(value)) return map;
   if (!isObject(value)) throw new Unread(`${where}'s \`${name}\``, 'object');
   for (const [key, each] of Object.entries(value)) {
-    if (anyValue) {
+    if (anyValue !== null) {
       try {
-        map[key] = compact(each);
+        map[key] = compact(each, value, key);
       } catch (error) {
-        if (error instanceof Lossy) throw new Lossy(key, null);
-        throw error;
+        if (!(error instanceof Lossy)) throw error;
+        // Said once the whole graph has read, so a place that is not a graph's shape is said first, as the driver says it.
+        anyValue(key, error.rewrites);
+        map[key] = '';
       }
     } else if (typeof each === 'string') map[key] = each;
     else throw new Unread(`${where}'s \`${name}.${key}\``, 'schema');
@@ -142,18 +190,21 @@ function names(parent: Record<string, unknown>, name: string, where: string, any
   return map;
 }
 
-function nodeOf(raw: unknown, where: string): FormNode {
+/** A node, its fields read in the driver's order (`NodeGraphs.Node`): its retry, then id, kind, version, reach, ports, options and the rest. */
+function nodeOf(raw: unknown, where: string, lossy: (said: string, rewrites: boolean) => void): FormNode {
   if (!isObject(raw)) throw new Unread(where, 'node');
   if ('synthetic' in raw) throw new Unread(`${where}'s \`synthetic\``, "field a person's graph declares");
   let retry: FormNode['retry'] = null;
   if (!absent(raw['retry'])) {
     const declared = raw['retry'];
-    if (!isObject(declared)) throw new Unread(`${where}'s \`retry\``, 'object');
     const here = `${where}'s \`retry\``;
+    if (!isObject(declared)) throw new Unread(here, 'object');
+    const maxAttempts = whole(declared, 'maxAttempts', here) ?? (() => { throw new Unread(`${here}'s \`maxAttempts\``, 'whole number'); })();
+    const delays = list(declared, 'delaysSeconds', here);
     retry = {
-      maxAttempts: whole(declared, 'maxAttempts', here) ?? (() => { throw new Unread(`${here}'s \`maxAttempts\``, 'whole number'); })(),
-      delays: list(declared, 'delaysSeconds', here).map((delay) => {
-        if (typeof delay === 'number' && Number.isInteger(delay)) return delay;
+      maxAttempts,
+      delays: delays.map((delay, index) => {
+        if (isWhole(delay, delays, index)) return delay;
         throw new Unread(`${here}'s \`delaysSeconds\``, 'whole number');
       }),
     };
@@ -163,27 +214,20 @@ function nodeOf(raw: unknown, where: string): FormNode {
     if (value === null) throw new Unread(`${where}'s \`${name}\``, what);
     return value;
   };
-  let options: Record<string, string>;
-  try {
-    options = names(raw, 'options', where, true);
-  } catch (error) {
-    if (error instanceof Lossy) throw new Lossy(error.option, typeof raw['id'] === 'string' ? raw['id'] : where);
-    throw error;
-  }
-
+  const id = need(text(raw, 'id', where), 'id', 'text');
+  const kind = need(text(raw, 'kind', where), 'kind', 'text');
+  const version = need(whole(raw, 'version', where), 'version', 'whole number');
+  const reach = need(text(raw, 'reach', where), 'reach', 'text');
+  const inputs = names(raw, 'inputs', where);
+  const outputs = names(raw, 'outputs', where);
+  const options = names(raw, 'options', where, (option, rewrites) => lossy(lossySaid(id, option), rewrites));
   return {
-    id: need(text(raw, 'id', where), 'id', 'text'),
-    kind: need(text(raw, 'kind', where), 'kind', 'text'),
-    version: need(whole(raw, 'version', where), 'version', 'whole number'),
-    reach: need(text(raw, 'reach', where), 'reach', 'text'),
+    id, kind, version, reach, inputs, outputs, options,
     evidence: text(raw, 'evidence', where),
     retry,
     timeoutSeconds: whole(raw, 'timeoutSeconds', where),
     rejectable: flag(raw, 'rejectable', where) ?? false,
     skippable: flag(raw, 'skippable', where) ?? true,
-    inputs: names(raw, 'inputs', where),
-    outputs: names(raw, 'outputs', where),
-    options,
   };
 }
 
@@ -219,37 +263,49 @@ function wireOf(raw: unknown, where: string): FormWire {
   return { id: text(raw, 'id', where) ?? '', kind, from, to: endOf(to, kind), waits, group };
 }
 
-/** A graph read from the version's JSON: whole, or the sentence saying where it is not a graph's shape. Never in part. */
-export function readGraphForm(value: unknown): { graph: GraphForm | null; problem: string | null; lossy?: string } {
+/**
+ * What a graph's or a cycle's JSON declares, read in the driver's order (`NodeGraphs.Parts`: its schema, nodes, wires, entries, end,
+ * then cleanup), or the sentence saying the first place that is not a graph's shape. Never read in part. `lossy` names the first option
+ * this build cannot write as the driver does: the parts still read, and are judged, but no digest is taken of them; `rewrites` where
+ * some option's text was not kept either, so a write of the file holding it would change what the driver reads.
+ */
+export function readGraphParts(value: unknown): { parts: GraphParts | null; problem: string | null; lossy: string | null; rewrites: boolean } {
+  let lossy: string | null = null;
+  let rewrites = false;
   try {
     if (!isObject(value)) throw new Unread('the graph', 'an object');
     const here = 'the graph';
-    let cleanup: GraphForm['cleanup'] = { until: 'held', days: null };
+    const schemaVersion = whole(value, 'schemaVersion', here) ?? GRAPH_SCHEMA;
+    const nodes = list(value, 'nodes', here).map((node, index) => nodeOf(node, `nodes[${index}]`, (said, kept) => {
+      lossy ??= said;
+      rewrites ||= kept;
+    }));
+    const wires = list(value, 'wires', here).map((wire, index) => wireOf(wire, `wires[${index}]`));
+    const entries = list(value, 'entries', here).map((entry, index) => {
+      if (typeof entry === 'string') return entry;
+      throw new Unread(`entries[${index}]`, "a node's id");
+    });
+    const end = text(value, 'end', here);
+    let cleanup: GraphParts['cleanup'] = null;
     if (!absent(value['cleanup'])) {
       const declared = value['cleanup'];
       if (!isObject(declared)) throw new Unread("the graph's `cleanup`", 'object');
       cleanup = { until: text(declared, 'until', "the graph's `cleanup`") ?? 'held', days: whole(declared, 'days', "the graph's `cleanup`") };
     }
 
-    return {
-      problem: null,
-      graph: {
-        schemaVersion: whole(value, 'schemaVersion', here) ?? GRAPH_SCHEMA,
-        nodes: list(value, 'nodes', here).map((node, index) => nodeOf(node, `nodes[${index}]`)),
-        wires: list(value, 'wires', here).map((wire, index) => wireOf(wire, `wires[${index}]`)),
-        entries: list(value, 'entries', here).map((entry, index) => {
-          if (typeof entry === 'string') return entry;
-          throw new Unread(`entries[${index}]`, "a node's id");
-        }),
-        end: text(value, 'end', here) ?? '',
-        cleanup,
-      },
-    };
+    return { parts: { schemaVersion, nodes, wires, entries, end, cleanup }, problem: null, lossy, rewrites };
   } catch (error) {
-    if (error instanceof Unread) return { graph: null, problem: error.message };
-    if (error instanceof Lossy) return { graph: null, problem: null, lossy: error.says() };
+    if (error instanceof Unread) return { parts: null, problem: error.message, lossy: null, rewrites: false };
     throw error;
   }
+}
+
+/** A graph read from the version's JSON: whole, or the sentence saying where it is not a graph's shape. Never in part. */
+export function readGraphForm(value: unknown): { graph: GraphForm | null; problem: string | null; lossy?: string } {
+  const { parts, problem, lossy } = readGraphParts(value);
+  if (parts === null) return { graph: null, problem };
+  if (lossy !== null) return { graph: null, problem: null, lossy };
+  return { graph: { ...parts, end: parts.end ?? '', cleanup: parts.cleanup ?? { until: 'held', days: null } }, problem: null };
 }
 
 const ordinal = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -277,7 +333,7 @@ export function graphFormDigest(graph: GraphForm): string {
   const end = (each: FormEnd | null): void => {
     line(each?.node ?? null);
     line(each?.port ?? null);
-    line(null); // a wire end's unit, which a file never names
+    line(each?.unit ?? null);
   };
 
   line('graph');
@@ -289,7 +345,7 @@ export function graphFormDigest(graph: GraphForm): string {
     line(node.kind);
     line(node.version);
     line(node.reach);
-    line(false); // synthetic: a file declares none
+    line(node.synthetic === true);
     line(node.evidence);
     line(node.retry?.maxAttempts ?? null);
     line(node.retry === null ? null : node.retry.delays.join(','));

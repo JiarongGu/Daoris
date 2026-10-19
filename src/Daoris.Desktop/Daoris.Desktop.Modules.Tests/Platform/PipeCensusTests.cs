@@ -45,6 +45,33 @@ public sealed class PipeCensusTests
         }
     }
 
+    /// <summary>
+    /// The open reads and presses the host's verbs send (RPCOPEN1, RPC1e): each names a route of the driver's module that the census
+    /// opens, and each verb of the scope left off the pipe says why. A route the census closes fails here, naming the verb that
+    /// would send a press the instance refuses.
+    /// </summary>
+    [Fact]
+    public void Each_open_verb_names_an_open_route_and_each_verb_left_off_the_pipe_says_why()
+    {
+        Assert.NotEmpty(Daoris.Driver.OpenRoutes.Verbs);
+        Assert.Equal(Daoris.Driver.OpenRoutes.Verbs.Count, Daoris.Driver.OpenRoutes.Verbs.Select(each => each.Verb).Distinct().Count());
+        foreach (var (verb, route, reason) in Daoris.Driver.OpenRoutes.Verbs)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(reason), $"`{verb}` says no reason");
+            if (route is null) continue;
+            Assert.Equal(DriverModule.Name, route.Module);
+            Assert.Contains(route.Route, DriverModule.Routes);
+            Assert.True(
+                PipeCensus.Daoris.Of(route.Module, route.Route)?.ToString() == nameof(Daoris.Driver.RouteClass.Open) && route.Class == Daoris.Driver.RouteClass.Open,
+                $"`{verb}` sends {route.Route}, which the census classes {PipeCensus.Daoris.Of(route.Module, route.Route)}");
+        }
+
+        // The verbs left off are exactly those with no route, and each is a read: no press of the person's waits on RPC1c here.
+        Assert.All(
+            Daoris.Driver.OpenRoutes.Verbs.Where(each => each.Route is null),
+            each => Assert.StartsWith("alone:", each.Reason, StringComparison.Ordinal));
+    }
+
     /// <summary>The census fails on a route it does not class, and on a class that names no route: the check the test above runs.</summary>
     [Fact]
     public void The_census_names_a_route_it_does_not_class_and_a_class_that_names_none()

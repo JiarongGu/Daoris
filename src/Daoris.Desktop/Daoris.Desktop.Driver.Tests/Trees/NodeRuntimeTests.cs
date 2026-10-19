@@ -138,7 +138,31 @@ public sealed class NodeRuntimeTests : IDisposable
             Interlocked.Increment(ref _stepsRead);
             return [Step, Build];
         },
+        // FABRIC-RUN1b, RUN1c: every git read and gate read the runtime may make, counted, so an install with no graph is seen to make none.
+        Tips = (_, _, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+        },
+        Remotes = (_, _, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+        },
+        Holds = (_, _, _, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<bool?>(null);
+        },
+        Gates = (_, _) =>
+        {
+            Interlocked.Increment(ref _gitRead);
+            return Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
+        },
     };
+
+    /// <summary>The git and gate reads a pass made (FABRIC-RUN1b, RUN1c).</summary>
+    private int _gitRead;
 
     /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>
     private static readonly NodeDeclaration Build = Step with { Id = Plugin + "/build", Kind = Plugin + "/build" };
@@ -239,7 +263,7 @@ public sealed class NodeRuntimeTests : IDisposable
         }
 
         Assert.False(NodeRuntime.Armed(DriverConfig.Parse(config)));
-        Assert.Equal((0, 0), (_unitsRead, _stepsRead));
+        Assert.Equal((0, 0, 0), (_unitsRead, _stepsRead, _gitRead));
         Assert.Equal((0, 0, 0, 0), (_port.Told.Count, _port.Taken, _port.Sent.Count, _port.Asked.Count));
         Assert.False(Directory.Exists(NodeRecordFiles.FolderOf(_home)));
         Assert.Null(runtime.NextDue);
@@ -264,6 +288,54 @@ public sealed class NodeRuntimeTests : IDisposable
 
         // Without the plugin's step, the node is declared as the graph has it and is never sent.
         Assert.Empty(Assert.Single(NodeRuntime.Govern(config, new NodeUnitsRead([Quest], new Dictionary<string, string>()), [])).Dispatchable);
+    }
+
+    /// <summary>
+    /// FABRIC-RUN1c (§E7, <i>one governs a run, by its binding</i>): a quest whose run is bound to a named workflow's version is governed by that
+    /// version, whose engine is D157's run until the cutover (FABRIC-CUTOVER1), and never by Current's work cycle as well; an unreadable binding
+    /// likewise. A quest whose run follows Current, or has no binding, keeps Current's graph. Nothing is sent on the bound quest.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_whose_run_is_bound_to_a_named_version_is_never_governed_by_Currents_graph()
+    {
+        _units = [QuestOf("quest:q7"), QuestOf("quest:q8"), QuestOf("quest:q9")];
+        // A version the run is bound to, as ForRun reads it: its identity and the graph a run on it binds.
+        var decoded = new DecodedVersion(2, "wfv-docs", new NodeGraph([new NodeDeclaration("work", NodeKinds.Claimed, 1, NodeReach.Observed)], [], ["work"], "work"),
+            "gph-docs", null);
+        DecodedVersion? BoundOf(WorkUnit unit, IReadOnlyCollection<QuestView> _) => unit.Id switch
+        {
+            "quest:q7" => decoded,
+            "quest:q8" => new DecodedVersion(3, null, null, null, "v3: it does not read."),
+            _ => null,
+        };
+
+        var governed = NodeRuntime.Govern(DriverConfig.Parse(Governed), new NodeUnitsRead(_units, new Dictionary<string, string>()), [Step], versionOf: BoundOf);
+        Assert.Equal(["quest:q9"], governed.Select(each => each.Unit.Id));
+
+        await Runtime().PassAsync(Look(Governed) with { Bound = BoundOf }, CancellationToken.None);
+        Assert.Equal(["quest:q9"], _port.Sent.Select(call => call.Unit));
+    }
+
+    /// <summary>
+    /// FABRIC-RUN1c: the home's own reading of a quest's binding (<see cref="NodeRuntime.BoundIn"/>), its run named by its chain's first quest in
+    /// its repository: a binding to a named workflow is that version's, read as unreadable where the workflow is no longer saved, and a run that
+    /// follows Current, or has no binding, is none.
+    /// </summary>
+    [Fact]
+    public void The_homes_binding_of_a_quests_run_is_read_through_its_chain()
+    {
+        var runs = new WorkflowRunFiles(_home);
+        Assert.True(runs.Bind(new WorkflowRunBinding("q7", "engine", "default", "docs", WorkflowLevels.Repository, _now) { Version = 1, Digest = "wfv-docs" }));
+        Assert.True(runs.Bind(new WorkflowRunBinding("q8", "engine", "default", WorkflowSelection.Current, WorkflowLevels.Current, _now)));
+        WorkUnit Of(string id, QuestView quest) => QuestOf(id) with { Records = new WorkUnitRecords(null, [], quest) };
+        var q7 = new QuestView("q7", "", "engine", "", "", "Taken");
+        var q8 = new QuestView("q8", "", "engine", "", "", "Taken");
+        var q9 = new QuestView("q9", "", "engine", "", "", "Taken");
+        var bound = NodeRuntime.BoundIn(_home);
+
+        Assert.NotNull(bound(Of("quest:q7", q7), [q7, q8, q9]));
+        Assert.Null(bound(Of("quest:q8", q8), [q7, q8, q9]));
+        Assert.Null(bound(Of("quest:q9", q9), [q7, q8, q9]));
     }
 
     [Fact]
@@ -550,6 +622,32 @@ public sealed class NodeRuntimeTests : IDisposable
         // The next pass makes the two starts left over.
         await runtime.PassAsync(Look(Governed), CancellationToken.None);
         Assert.Equal(NodeRuntime.SendsPerPass * 2 + 2, _port.Sent.Count);
+    }
+
+    /// <summary>
+    /// FABRIC-RUN1g: reconciliation takes the attempts due in turn. Five attempts are due after a restart and the questions about the first
+    /// four in file order keep failing: each pass spends its four on those, so the fifth was never asked. The next pass begins after the last
+    /// attempt the pass before asked, round again from the first.
+    /// </summary>
+    [Fact]
+    public async Task Attempts_due_are_asked_in_turn_so_four_failing_questions_never_starve_the_fifth()
+    {
+        _units = [.. Enumerable.Range(0, NodeRuntime.SendsPerPass + 1).Select(index => QuestOf($"quest:q{index}"))];
+        var first = Runtime();
+        await first.PassAsync(Look(Governed), CancellationToken.None);
+        await first.PassAsync(Look(Governed), CancellationToken.None);
+        Assert.Equal(NodeRuntime.SendsPerPass + 1, _port.Sent.Count);
+
+        // The next loop: every attempt is asked after; the questions about the first four records in file order fail with an I/O error, the
+        // last one's answers.
+        var fifth = Files.All().Records[^1].Unit;
+        _port.Answer = call => call.Unit == fifth ? new(ReconcileStates.Running) : throw new IOException("the pipe broke");
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+
+        Assert.Contains(_port.Asked, call => call.Unit == fifth);
+        Assert.Equal(NodeRuntime.SendsPerPass * 2, _port.Asked.Count);
     }
 
     /// <summary>

@@ -6,8 +6,8 @@ import { ContextMenus } from '../menus/ContextMenu';
 import { clipped } from '../menus/press';
 import { ShellSignals } from './ShellSignals';
 import { failure, Toasts, useToasts } from '../design/ui';
-import { DetachedSession } from '../work/DetachedSession';
-import { MonitorWindow } from '../work/MonitorWindow';
+import { DetachedSession } from '../work/console/DetachedSession';
+import { MonitorWindow } from '../work/console/MonitorWindow';
 import { useLinkOpener, useOpenBrowser, useSecondaryWindowTheme } from '../bridge/shell';
 import { MONITOR_WINDOW, type SecondaryWindow, sessionWindowName } from '../work/window';
 

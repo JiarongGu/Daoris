@@ -733,7 +733,8 @@ function sends(text, senders) {
  * `DriverModuleRoutesTests.Forwarders`, for the driver's alone).
  */
 function pageCalls(ctx) {
-  const files = ctx.files.filter((path) => path.startsWith(BRIDGE) && /^[^/]+\.ts$/.test(path.slice(BRIDGE.length)) && !path.endsWith('.test.ts'));
+  // STRUCT5c-ii: the bridge is cut into scope folders, so a domain file sits at any depth under it.
+  const files = ctx.files.filter((path) => path.startsWith(BRIDGE) && /\.ts$/.test(path.slice(BRIDGE.length)) && !path.endsWith('.test.ts'));
   for (const shell of ctx.files.filter((path) => path.startsWith(WEB_SRC) && path.endsWith(SHELL) && !files.includes(path))) files.push(shell);
   const sources = files.map((file) => {
     const text = ctx.read(file);

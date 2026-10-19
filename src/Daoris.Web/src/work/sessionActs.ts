@@ -8,12 +8,12 @@ import { list, sentence } from '../locales/format';
 import { failure, type Notify, SESSION_ACTIVE } from '../design/ui';
 import { handOverSaid } from './say';
 import { type ActFacts, folderOf, type SessionActId, workTargetOf } from './acts';
-import { forgetDraft } from './drafts';
+import { forgetDraft } from './conversation/drafts';
 import { partIds, type SessionEntry } from './entries';
 import type { Answered } from './InlineConfirm';
-import type { Translate, WorkTarget } from './pausing';
+import type { Translate, WorkTarget } from './pausing/pausing';
 import { sessionWindowName } from './window';
-import { useWorkActs } from './workActs';
+import { useWorkActs } from './pausing/workActs';
 
 /**
  * What only the frame can do with a session, because the frame holds the attended session and its regions (D118 §5):

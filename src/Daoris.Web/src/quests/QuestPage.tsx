@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Quest, type Session, type SubmissionRef } from '../data/api';
+import { api, fileKept, type Quest, type Session, type SubmissionRef } from '../data/api';
 import { isImage } from '../compose/attachments';
 import { ago, sessionTool, size, stamp } from '../locales/format';
 import { ExternalLink } from '../design/links';
@@ -11,24 +11,24 @@ import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } 
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../design/ui';
 import { type SessionGrouping, shownOf } from '../work/groups';
 import { liveParts } from '../work/noteLines';
-import { placedFact } from '../work/SessionRow';
-import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
-import { ClearAsk } from '../work/ClearAsk';
-import { DetailsFold } from '../work/DetailsFold';
-import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/history';
-import { questFacts } from '../work/headFacts';
-import { HowItCameToBe, type TraceDoor } from '../work/HowItCameToBe';
+import { placedFact } from '../work/rail/SessionRow';
+import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing/pausing';
+import { ClearAsk } from '../work/history/ClearAsk';
+import { DetailsFold } from '../work/head/DetailsFold';
+import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/history/history';
+import { questFacts } from '../work/head/headFacts';
+import { HowItCameToBe, type TraceDoor } from '../work/head/HowItCameToBe';
 import { questName, sessionOrigin } from '../work/identity';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Note } from '../work/Note';
-import { stepState } from '../work/review';
-import { ReviewGate, type ReviewGateActs } from '../work/ReviewGate';
+import { stepState } from '../work/gates/review';
+import { ReviewGate, type ReviewGateActs } from '../work/gates/ReviewGate';
 import { QuestConflicts, readConflicts, SettledConflicts } from './Conflicts';
 import { QuestRequirements } from './Requirements';
 import { shownStatus } from './records';
-import { TrustAsk } from '../work/TrustAsk';
-import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
-import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
+import { TrustAsk } from '../work/waits/TrustAsk';
+import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
+import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/pausing/WorkAsks';
 import type { RunLineDoor } from '../workflow/run';
 import { WorkflowLine } from '../workflow/WorkflowLine';
 
@@ -877,13 +877,13 @@ export function QuestPage({
       {(quest.attachments?.length ?? 0) > 0 && (
         /* The files, by name (D65 §2). One this machine keeps opens through the host's own route — never by its
            path, which a page does not show — and a picture is shown as one. One named on the record and kept
-           elsewhere says so, rather than looking like a broken link. */
+           elsewhere says so, rather than looking like a broken link. Kept here is a path pulled or `kept` pushed (PUSH1d3). */
         <div className="mt-4">
           <PageSection title={t('quests.detail.files')}>
             <ul className="m-0 grid list-none gap-2 p-0">
               {quest.attachments!.map((file) => (
                 <li key={file.sha256} className="min-w-0 text-body">
-                  {file.path ? (
+                  {fileKept(file) ? (
                     <ExternalLink href={api.attachmentUrl(quest.id, file.sha256)} className="group inline-grid max-w-full gap-1.5 text-accent">
                       <span className="inline-flex min-w-0 items-center gap-1.5">
                         <Icon name="attach" size={12} />

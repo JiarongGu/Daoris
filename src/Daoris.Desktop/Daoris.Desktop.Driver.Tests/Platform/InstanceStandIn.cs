@@ -58,13 +58,16 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <summary>A press's answer.</summary>
     public object Data { get; set; } = new { done = true, message = "done" };
 
+    /// <summary>An answer made from the route and its payload, where one press's answer differs from the next's; else <see cref="Data"/>.</summary>
+    public Func<string, JsonElement, object?>? Respond { get; set; }
+
     /// <summary>A press's refusal code, and its sentence.</summary>
     public string Code { get; set; } = "confirm-in-window";
 
     /// <summary>A progress line told before the answer, or null for none.</summary>
     public string? Progress { get; set; }
 
-    /// <summary><c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>), <c>running</c> or <c>unknown</c>.</summary>
+    /// <summary><c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>), <c>running</c>, <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.</summary>
     public string Result { get; set; } = "answered";
 
     public int Connections => Volatile.Read(ref _connections);
@@ -130,6 +133,12 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                 if (module == "DAORIS.PIPE" && type == "RESULT")
                 {
                     var asked = request.GetProperty("payload").GetProperty("id").GetString()!;
+                    if (Result == "id-taken")
+                    {
+                        await WriteAsync(server, Refusal(id, "id-taken", null));
+                        continue;
+                    }
+
                     await WriteAsync(server, Success(id, Result == "answered"
                         ? new { state = "answered", answer = JsonNode.Parse(Success(asked, Data)) }
                         : (object)new { state = Result }));
@@ -157,7 +166,9 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                     }));
                 }
 
-                await WriteAsync(server, Success(id, Data));
+                await WriteAsync(server, Success(id, Respond is { } respond && request.TryGetProperty("payload", out var sent)
+                    ? respond(type!, sent)
+                    : Data));
             }
         }
         catch (Exception error) when (error is IOException or OperationCanceledException or ObjectDisposedException)

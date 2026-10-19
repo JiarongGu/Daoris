@@ -23,6 +23,8 @@ internal static class RegisterConsole
         using var service = ServiceClient.FromEnvironment();
         service.RegistryFollowed += followed => SessionLog.WriteFollowed(log, followed);
 
-        return await RegisterCommand.RunAsync(args, Console.Out, new RegistrationWorld(service, home, config)).ConfigureAwait(false);
+        // RPCOPEN1: through the running Daoris where one answers (each repository a REGISTRY_REFRESH), alone otherwise.
+        return await RegisterCommand.RunAsync(args, Console.Out, new RegistrationWorld(service, home, config), InstanceHost.World(home, "register"))
+            .ConfigureAwait(false);
     }
 }

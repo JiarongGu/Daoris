@@ -6,8 +6,8 @@ import {
   answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
   WAITING_ON_YOU, WORKING,
 } from './runFixtures';
-import { OpinionGate } from '../work/OpinionGate';
-import { DETAIL, GATES } from '../work/opinionFixtures';
+import { OpinionGate } from '../work/gates/OpinionGate';
+import { DETAIL, GATES } from '../work/gates/opinionFixtures';
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import { TIDIED_EVENTS } from '../projects/WorkspaceTidied';
+import { TIDIED_EVENTS } from '../projects/workspace/WorkspaceTidied';
 import type { LogFilters, LogReading, LogSince } from '../settings/Logs';
 
 // The machine log (MOD3): what the page reports into it, and Settings → Logs reading it back (D94).

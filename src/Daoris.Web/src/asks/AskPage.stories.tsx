@@ -1,12 +1,12 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
-import { ASK_PLAN } from '../work/historyFixtures';
-import type { WorkDoor } from '../work/pausing';
+import { ASK_PLAN } from '../work/history/historyFixtures';
+import type { WorkDoor } from '../work/pausing/pausing';
 import {
   ABANDON_ANSWER, ABANDONED_ASK, ABANDONED_ENTRY, LISTED_ASK, LISTED_CONSIDERED, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK,
   PAUSED_LISTED_ASK, PAUSED_LISTED_CONSIDERED, SPENT_ASK,
-} from '../work/pausingFixtures';
+} from '../work/pausing/pausingFixtures';
 import { AskPage } from './AskPage';
 import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_ASK, LONG_CJK, NAMED, NAMES_ITS_REPOSITORY, PROPOSED,

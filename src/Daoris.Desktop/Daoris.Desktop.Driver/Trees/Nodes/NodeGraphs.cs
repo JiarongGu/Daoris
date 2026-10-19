@@ -680,6 +680,12 @@ public sealed record CycleStray(IReadOnlyList<string> At, string Code, string Wo
 
     /// <summary>A name an earlier entry of the same map spells in another case: the first written governs.</summary>
     public const string Shadowed = "shadowed";
+
+    /// <summary>
+    /// A landing rule that reads as no rule (FABRIC-GRAPH1d): no object, no <c>form</c>, or one that could not land work. Both readers skip
+    /// it, so the work there lands as though it set none, and it is said here rather than passed over without a word.
+    /// </summary>
+    public const string Unread = "unread";
 }
 
 /// <summary>
@@ -775,21 +781,34 @@ public static class NodeGraphHomes
 
     /// <summary>
     /// What the file keeps under the cycle's homes that no unit reads (FABRIC-GRAPH1's review, findings 2 and 3), each kept as written and
-    /// said here: a kind with no work cycle under <c>workCycles</c> or <c>workspaceWorkCycles</c>, a branch's included; and a name an earlier
-    /// entry of <c>landings</c>, <c>workspaceLandings</c> or the work cycles spells in another case, where the first written governs. The CLI's
-    /// <c>cycleStrays</c> says the same, row for row (<c>graph-homes.json</c>'s <c>strays</c>).
+    /// said here: a kind with no work cycle under <c>workCycles</c> or <c>workspaceWorkCycles</c>, a branch's included; a name an earlier
+    /// entry of <c>landings</c>, <c>workspaceLandings</c> or the work cycles spells in another case, where the first written governs; and a
+    /// landing rule that reads as no rule (FABRIC-GRAPH1d, <see cref="DriverConfig.RuleOf"/>), with why. The CLI's <c>cycleStrays</c> says the
+    /// same, row for row (<c>graph-homes.json</c>'s <c>strays</c>).
     /// </summary>
     public static IReadOnlyList<CycleStray> Strays(DriverConfig config)
     {
         if (config.Source is null) return [];
         using var document = JsonDocument.Parse(config.Source);
         var strays = new List<CycleStray>();
-        void Map(string name, IEnumerable<string> read, Action<JsonProperty>? governing = null)
+        void Map(string name, IEnumerable<string> read, Action<JsonProperty>? governing = null, bool rules = false)
         {
             if (!document.RootElement.TryGetProperty(name, out var map) || map.ValueKind != JsonValueKind.Object) return;
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var entry in map.EnumerateObject())
             {
+                // FABRIC-GRAPH1d: a rule both readers skip is said, never passed over without a word; null is none.
+                if (rules && DriverConfig.RuleOf(entry.Value, out var unread) is null)
+                {
+                    if (unread is not null)
+                    {
+                        strays.Add(new([name, entry.Name], CycleStray.Unread, $"`{entry.Name}` in `{name}` does not read as a landing rule, so work there lands as though "
+                            + $"it set none: {unread} It is kept as written, and nothing reads it."));
+                    }
+
+                    continue;
+                }
+
                 // The entry its reader kept for this name in any case; entries before it did not read, and those after it are shadowed.
                 if (read.FirstOrDefault(key => string.Equals(key, entry.Name, StringComparison.OrdinalIgnoreCase)) is not { } governs) continue;
                 if (seen.Contains(entry.Name))
@@ -815,8 +834,8 @@ public static class NodeGraphHomes
             }
         }
 
-        Map("landings", config.Landings.Keys);
-        Map("workspaceLandings", config.WorkspaceLandings.Keys);
+        Map("landings", config.Landings.Keys, rules: true);
+        Map("workspaceLandings", config.WorkspaceLandings.Keys, rules: true);
         Map("workCycles", config.WorkCycles.Keys, owner => Kinds("workCycles", owner));
         Map("workspaceWorkCycles", config.WorkspaceWorkCycles.Keys, owner => Kinds("workspaceWorkCycles", owner));
         return strays;

@@ -11,7 +11,7 @@ import {
   Tip, Toasts, WaitingCard,
 } from './ui';
 import { code } from '../test/code';
-import { CommandPalette } from '../work/CommandPalette';
+import { CommandPalette } from '../work/strip/CommandPalette';
 import { InlineConfirm } from '../work/InlineConfirm';
 
 describe('the primitives', () => {

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
-import { DOCK } from '../work/layout';
+import { DOCK } from '../work/frame/layout';
 import { AskHistory } from './AskHistory';
 import type { HelpConversationRow } from './history';
 

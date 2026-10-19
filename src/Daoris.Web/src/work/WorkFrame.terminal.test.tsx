@@ -25,7 +25,7 @@ vi.mock('@shenora/react', () => ({
     eventHandlers.set(`${module}.${type}`, handler);
   },
 }));
-vi.mock('./terminalScreen', () => ({ createScreen }));
+vi.mock('./terminals/terminalScreen', () => ({ createScreen }));
 
 import '../locales/i18n';
 import { WorkFrame } from './WorkFrame';

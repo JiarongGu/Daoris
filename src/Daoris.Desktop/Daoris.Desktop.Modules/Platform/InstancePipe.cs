@@ -83,6 +83,9 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The pipe's own module on the wire: its hello, its census and how a request ended.</summary>
     public const string Module = "DAORIS.PIPE";
 
+    /// <summary>The kit's request tracker's module, whose <c>CANCEL</c> a terminal's Ctrl+C sends for a press of its own (RPC1h, §6.2).</summary>
+    public const string RequestsModule = "SHENORA.REQUESTS";
+
     /// <summary>The wire's version, which the hello names; another is refused <see cref="WrongProtocol"/>.</summary>
     public const int Protocol = 1;
 
@@ -218,6 +221,25 @@ public sealed class InstancePipe : IDisposable
     /// waiting on it: false where one had not.
     /// </summary>
     public bool Drain(TimeSpan within)
+    {
+        var drained = DrainWithin(within);
+        if (!drained)
+        {
+            // RPC1i (§6.3): the stop goes on, and the machine log names how many presses it left, so a terminal told `nothing was done`
+            // by a closing Daoris can be read against what the instance knew. Presses not yet answered, not lines not yet written.
+            int left;
+            lock (_gate)
+            {
+                left = _running.Count;
+            }
+
+            _log.Warn("pipe.drained", ("left", left));
+        }
+
+        return drained;
+    }
+
+    private bool DrainWithin(TimeSpan within)
     {
         var until = DateTime.UtcNow + within;
         Task[] running;
@@ -434,6 +456,13 @@ public sealed class InstancePipe : IDisposable
             }), null);
         }
 
+        // RPC1h (§6.2): a terminal's Ctrl+C, taken for its own press alone. Before the census, which names no kit module, and before
+        // the stop's refusal, which a press under way outlives: a cancel is how a terminal ends one while the instance closes.
+        if (string.Equals(request.Module, RequestsModule, StringComparison.OrdinalIgnoreCase) && request.Type == "CANCEL")
+        {
+            return (null, CancelAsync(request, key));
+        }
+
         if (IsStopping) return (IpcJson.Serialize(RefuseStopping(request)), null);
         switch (_census.Of(request.Module, request.Type, request.Payload))
         {
@@ -541,6 +570,44 @@ public sealed class InstancePipe : IDisposable
         }
 
         answered.SetResult(text);
+    }
+
+    /// <summary>
+    /// The kit's <c>CANCEL { requestId }</c> from a terminal (RPC1h, §6.2), for a press this pipe began and with the key that sent it:
+    /// passed to the dispatcher's own <c>SHENORA.REQUESTS</c> module, which aborts the token the press runs under, so the press ends as
+    /// a cancelled one and <c>RESULT</c> says so. A press that has ended answers <c>cancelled: false</c> and nothing runs; an id this pipe
+    /// did not begin (a window's, an id nobody sent) or one begun with another key is refused as an id bound elsewhere is, and
+    /// nothing is cancelled. The cancel carries its own key, a secret only its sender holds, as a press does.
+    /// </summary>
+    private async Task<string> CancelAsync(IpcRequest request, string? key)
+    {
+        var target = Field(request, "requestId");
+        if (string.IsNullOrEmpty(target))
+        {
+            return IpcJson.Serialize(IpcResponse.CreateError(request.Id, IpcErrorCodes.MissingPayloadValue, null, "CANCEL names the request's id (requestId)."));
+        }
+
+        if (!IsKey(key)) return IpcJson.Serialize(Refuse(request, KeyMissing, "a request carries a key of its own, 16 to 128 characters."));
+        var holder = PipeBinding.Fingerprint(key!);
+        lock (_gate)
+        {
+            if (_running.TryGetValue(target, out var running))
+            {
+                if (running.Binding.Key != holder) return IpcJson.Serialize(RefuseTaken(request));
+            }
+            else if (_journal?.Find(target) is { } seen && seen.Binding.Key == holder)
+            {
+                return IpcJson.Serialize(IpcResponse.CreateSuccess(request.Id, new { cancelled = false, state = "ended" }));
+            }
+            else
+            {
+                return IpcJson.Serialize(RefuseTaken(request));
+            }
+        }
+
+        _log.Info("pipe.cancelled", ("request", target));
+        var answer = await _dispatcher.DispatchAsync(request, _lifetime.Token).ConfigureAwait(false);
+        return IpcJson.Serialize(answer);
     }
 
     /// <summary><c>RESULT { id, key }</c>: how the press ended, told only to the key that sent it, whichever connection asks.</summary>

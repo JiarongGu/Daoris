@@ -371,6 +371,15 @@ public sealed class RunningSessions
     /// after it, however many were asked. What a pass says joins the next look's report and wakes nothing, as it joined its own look's
     /// before: what wakes a plan is the pass's own nudge (a set naming a plugin anew, a timer the records persist).
     /// </summary>
+    /// <summary>Whether a pass of the evaluation runtime works beside the looks now, or one asked for follows it (FABRIC-RUN1d's tests).</summary>
+    internal bool Passing
+    {
+        get
+        {
+            lock (_gate) return _passing is not null;
+        }
+    }
+
     /// <returns>True where the pass began now; false where one works, and this one follows it.</returns>
     internal bool PassBeside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
     {

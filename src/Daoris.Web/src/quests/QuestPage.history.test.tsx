@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { HistoryDoor, HistoryPlan } from '../work/history';
+import type { HistoryDoor, HistoryPlan } from '../work/history/history';
 import type { Answered } from '../work/InlineConfirm';
-import { FAILED_NONE, FAILED_PLAN, QUEST_ASKED, QUEST_PLAN, QUEST_TREE_HERE } from '../work/historyFixtures';
+import { FAILED_NONE, FAILED_PLAN, QUEST_ASKED, QUEST_PLAN, QUEST_TREE_HERE } from '../work/history/historyFixtures';
 import { DECLINED, DONE, TAKEN } from './fixtures';
 import { QuestPage } from './QuestPage';
 

@@ -357,24 +357,36 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// <see cref="ReconcileAsync(Func{string, string, NodeDeclaration?}, CancellationToken)"/> within a pass's calls (FABRIC-RUN1e): each attempt
     /// asked after or delivered again takes one of <paramref name="sends"/>, and the attempts past them are asked at the next pass.
     /// </summary>
+    /// <remarks>
+    /// FABRIC-RUN1g: the attempts due are taken in turn, by unit and invocation, beginning after the last one the pass before reached and round
+    /// again from the first, so attempts whose questions keep failing (an I/O error leaves one due at every pass) never spend the four at every
+    /// pass while the rest wait.
+    /// </remarks>
     public async Task<IReadOnlyList<WorkPerformed>> ReconcileAsync(Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct)
     {
         var done = new List<WorkPerformed>();
         var now = clock();
-        foreach (var record in records.All().Records)
+        // FABRIC-CLOSE1b: Daoris's own close is asked after by its closer, which sends the same close again; no plugin is asked about it.
+        var due = records.All().Records
+            .SelectMany(record => record.Attempts.Where(attempt => attempt.Plugin != QuestClosing.Sender && Asked(attempt, now))
+                .Select(attempt => (record.Unit, Attempt: attempt, Key: $"{record.Unit}\n{attempt.Call.Invocation}")))
+            .OrderBy(each => each.Key, StringComparer.Ordinal).ToList();
+        var next = _reconciled is null ? 0 : due.FindIndex(each => string.CompareOrdinal(each.Key, _reconciled) > 0);
+        if (next < 0) next = 0;
+        foreach (var (unit, attempt, key) in due.Skip(next).Concat(due.Take(next)))
         {
-            // FABRIC-CLOSE1b: Daoris's own close is asked after by its closer, which sends the same close again; no plugin is asked about it.
-            foreach (var attempt in record.Attempts.Where(attempt => attempt.Plugin != QuestClosing.Sender && Asked(attempt, now)).ToList())
-            {
-                // FABRIC-RUN1e: the pass's calls spent, the attempts left are asked at the next pass, still before any start there.
-                if (sends.Left <= 0) return done;
-                if (declared(record.Unit, attempt.Node) is not { } node) continue;
-                done.Add(await ReconcileOneAsync(record.Unit, attempt.Call.Invocation, node, sends, ct).ConfigureAwait(false));
-            }
+            // FABRIC-RUN1e: the pass's calls spent, the attempts left are asked at the next pass, still before any start there.
+            if (sends.Left <= 0) return done;
+            _reconciled = key;
+            if (declared(unit, attempt.Node) is not { } node) continue;
+            done.Add(await ReconcileOneAsync(unit, attempt.Call.Invocation, node, sends, ct).ConfigureAwait(false));
         }
 
         return done;
     }
+
+    /// <summary>The last attempt reconciliation reached (FABRIC-RUN1g), as its unit and invocation: the next pass begins after it.</summary>
+    private string? _reconciled;
 
     /// <summary>Every declared retry whose persisted delay has passed: its node made ready for a new attempt, with a new key at its start.</summary>
     public IReadOnlyList<WorkPerformed> Due(Func<string, string, NodeDeclaration?> declared)

@@ -7,8 +7,8 @@
  *
  * The driver's twin is `WorkflowGraphs` (`WorkflowGraphs.cs`); both read `test/fixtures/workflow-graphs.json`, row for row, every graph
  * and digest included (`workflowgraphs.test.ts`, `WorkflowGraphsTests`). The driver also judges each decoded graph whole
- * (`NodeGraphs.Problems`), which the CLI does not hold; the table's rows show that every version that reads decodes to a graph that
- * holds, so the twins agree on what is unreadable.
+ * (`NodeGraphs.Problems`, not as a saved graph), which the CLI asks of an authored graph alone (`nodegraphs.ts`, FABRIC-GRAPH1c); the
+ * table's rows show that every version that reads decodes to a graph that holds, so the twins agree on what is unreadable.
  */
 import { createHash } from 'node:crypto';
 import type { GraphForm } from './graphversions.ts';
