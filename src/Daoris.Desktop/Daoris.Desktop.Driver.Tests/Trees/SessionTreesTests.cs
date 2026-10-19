@@ -375,9 +375,10 @@ public sealed class SessionTreesTests : IDisposable
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
 
+        // The opening first, whole in the failure: where nothing was copied, it says why.
+        Assert.True(opened.Sentence.Contains("copied in: `node_modules`.", StringComparison.Ordinal), opened.Sentence);
         var copied = Path.Combine(opened.Path, "node_modules", "left-pad", "index.js");
         Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(copied));
-        Assert.Contains("copied in: `node_modules`.", opened.Sentence);
         Assert.Contains("do not run `npm ci`", opened.Dependencies);
         var (clean, _) = await WorkingTree.CleanAsync(opened.Path);
         Assert.True(clean, "the copy is ignored in the tree as in the checkout");

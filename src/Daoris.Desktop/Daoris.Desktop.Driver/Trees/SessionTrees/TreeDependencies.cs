@@ -67,8 +67,10 @@ internal static class TreeDependencies
         if (code != 0) return DependencyCopy.None;
         var plans = Plan(root, tree, listed.Split('\0', StringSplitOptions.RemoveEmptyEntries));
         var folders = plans.Where(plan => plan.Why is null).SelectMany(plan => plan.Folders).ToList();
-        var ignored = folders.Count == 0 ? [] : await IgnoredAsync(tree, folders, ct).ConfigureAwait(false);
-        return await Task.Run(() => Copy(root, tree, plans, ignored.Contains, ct), ct).ConfigureAwait(false);
+        var (ignored, unsaid) = folders.Count == 0 ? ([], "") : await IgnoredAsync(tree, folders, ct).ConfigureAwait(false);
+        // git unable to say what it ignores is no proof either way: each project that would copy says so, and copies nothing.
+        if (ignored is null) plans = [.. plans.Select(plan => plan.Why is null ? plan with { Why = UncopiedWhy.Failed, Detail = unsaid } : plan)];
+        return await Task.Run(() => Copy(root, tree, plans, (ignored ?? []).Contains, ct), ct).ConfigureAwait(false);
     }
 
     /// <summary>The gate and the copy, git's facts handed in: <paramref name="lockfiles"/> tracked, <paramref name="ignored"/> by folder.</summary>
@@ -145,7 +147,7 @@ internal static class TreeDependencies
         {
             if (plan.Why is { } why)
             {
-                declined.Add(new(plan.Modules, why, plan.Workspace));
+                declined.Add(new(plan.Modules, why, plan.Workspace, plan.Detail));
                 continue;
             }
 
@@ -384,16 +386,22 @@ internal static class TreeDependencies
     private static extern bool DeviceIoControl(
         SafeFileHandle device, uint code, byte[] input, int inputSize, IntPtr output, int outputSize, out int returned, IntPtr overlapped);
 
-    /// <summary>The folders git ignores in the tree among <paramref name="folders"/>, as given; none where git cannot say.</summary>
-    private static async Task<HashSet<string>> IgnoredAsync(string tree, IReadOnlyList<string> folders, CancellationToken ct)
+    /// <summary>The folders git ignores in the tree among <paramref name="folders"/>, as given; null, and git's words, where git cannot say.</summary>
+    private static async Task<(HashSet<string>? Ignored, string Said)> IgnoredAsync(string tree, IReadOnlyList<string> folders, CancellationToken ct)
     {
-        // A folder's own slash makes git read it as one, though the tree does not hold it yet.
-        var (code, said, _) = await WorkingTree.GitAsync(tree, ["check-ignore", "-z", "--", .. folders.Select(folder => folder + "/")], ct)
+        // A folder's own slash makes git read it as one, though the tree does not hold it yet. 🔴 git takes `-z` only with
+        // `--stdin` (128 and nothing said otherwise, which read as nothing ignored and declined every copy): the folders go in there.
+        var (code, said, err) = await WorkingTree.GitAsync(
+                tree, ["check-ignore", "--stdin", "-z"], string.Concat(folders.Select(folder => folder + "/\0")), ct)
             .ConfigureAwait(false);
+        if (code is not (0 or 1))
+        {
+            return (null, $"git could not say whether it ignores it: {err.Trim().Split('\n')[0].Trim()}");
+        }
+
         var ignored = new HashSet<string>(StringComparer.Ordinal);
-        if (code is not (0 or 1)) return ignored;
         foreach (var each in said.Split('\0', StringSplitOptions.RemoveEmptyEntries)) ignored.Add(each.TrimEnd('/'));
-        return ignored;
+        return (ignored, "");
     }
 
     /// <summary>What was made of a copy that did not finish, deleted never following a link (TIDIEDLINK1), as far as it goes.</summary>
@@ -479,7 +487,8 @@ internal static class TreeDependencies
 /// <param name="Folders">Every folder it copies, its workspaces' own among them; empty where it copies none.</param>
 /// <param name="Why">Why it copies none (<see cref="UncopiedWhy"/>); null where it copies.</param>
 /// <param name="Workspace">The workspace whose own lockfile moved, where that is why.</param>
-internal sealed record DependencyPlan(string Modules, IReadOnlyList<string> Folders, string? Why, string? Workspace = null);
+/// <param name="Detail">What failed, in the program's words, where that is why.</param>
+internal sealed record DependencyPlan(string Modules, IReadOnlyList<string> Folders, string? Why, string? Workspace = null, string? Detail = null);
 
 /// <summary>What a tree's open copied of its checkout's dependencies (TREEDEPS1), and why it copied none of the rest.</summary>
 /// <param name="Copied">The folders copied, relative to the repository in git's spelling.</param>

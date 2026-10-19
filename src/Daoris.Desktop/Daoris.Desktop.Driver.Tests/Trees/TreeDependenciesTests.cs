@@ -298,6 +298,48 @@ public sealed class TreeDependenciesTests : IDisposable
         Assert.Equal("module.exports = 'ui';\n", File.ReadAllText(Path.Combine(Checkout, "node_modules", "ui", "index.js")));
     }
 
+    /// <summary>
+    /// git's two questions as the open asks them, git's answers stood in: which lockfiles it tracks, and which folders it ignores,
+    /// those on standard input, since git takes <c>-z</c> only with <c>--stdin</c> (the first form answered 128 in every real tree,
+    /// and every copy was declined as unignored). Where git cannot say what it ignores, nothing is copied and git's words are said.
+    /// </summary>
+    [Fact]
+    public async Task The_open_asks_git_what_it_tracks_and_ignores_and_copies_nothing_where_git_cannot_say()
+    {
+        Tracked("package-lock.json", Lock);
+        Install(".", "left-pad");
+        var asked = new List<string>();
+        (int Code, string Stdout, string Stderr) ignores = (0, "node_modules/\0", "");
+        WorkingTree.Answered.Value = arguments =>
+        {
+            lock (asked) asked.Add(string.Join(' ', arguments));
+            return arguments[0] switch
+            {
+                "ls-files" => (0, "package-lock.json\0", ""),
+                "check-ignore" => ignores,
+                _ => null,
+            };
+        };
+        try
+        {
+            Assert.Equal(["node_modules"], (await TreeDependencies.CopyAsync(Checkout, Tree, CancellationToken.None)).Copied);
+            Assert.Contains("check-ignore --stdin -z", asked);
+
+            TreeSetAside.DeleteNeverFollowing(Path.Combine(Tree, "node_modules"));
+            ignores = (128, "", "fatal: not a git repository\n");
+            var unsaid = await TreeDependencies.CopyAsync(Checkout, Tree, CancellationToken.None);
+
+            Assert.Equal(
+                [new Uncopied("node_modules", UncopiedWhy.Failed, Detail: "git could not say whether it ignores it: fatal: not a git repository")],
+                unsaid.Declined);
+            Assert.False(Directory.Exists(Path.Combine(Tree, "node_modules")));
+        }
+        finally
+        {
+            WorkingTree.Answered.Value = null;
+        }
+    }
+
     [Fact]
     public void A_link_made_here_is_one_a_reader_finds_as_a_link_to_its_target()
     {
