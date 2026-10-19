@@ -70,5 +70,37 @@ public sealed class ChangeStreamProcessTests : IDisposable
         Assert.Empty(stopped.GetProperty("moved").EnumerateArray());
     }
 
+    /// <summary>
+    /// PUSH1d1 (D182 point 5): an ask a connector writes from its own process wakes the host's held wait, naming the asks family
+    /// alone, so the windows hear it without waiting for the look.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_written_from_another_process_wakes_the_wait()
+    {
+        using var host = await RealHost.StartAsync(_scratch, new Dictionary<string, string?> { [InputEndStop.Variable] = "1" });
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(40) };
+
+        var since = Since(await http.GetStringAsync($"{host.Url}{ChangeStream.Route}"));
+        var waiting = http.GetStringAsync($"{host.Url}{ChangeStream.Route}?since={since}&wait=15");
+        await Task.Delay(300);
+        Assert.False(waiting.IsCompleted, "a current cursor was answered before anything moved");
+
+        var clock = Stopwatch.StartNew();
+        await using (var connector = new SqliteConnection($"Data Source={Path.Combine(_scratch, "index", "knowledge.db")};Pooling=False"))
+        {
+            await connector.OpenAsync();
+            var asks = await AskStore.OpenAsync(connector);
+            var now = DateTimeOffset.UtcNow;
+            await asks.SaveAsync(new Ask("a5c0de", Workspaces.Default, "Make the bridge faster", AskState.Open, "declarations", now, now));
+        }
+
+        var answer = JsonDocument.Parse(await waiting.WaitAsync(TimeSpan.FromSeconds(15))).RootElement;
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"{clock.Elapsed}");
+        Assert.Equal(
+            [ChangeFamilies.Asks],
+            answer.GetProperty("moved").EnumerateArray().Select(family => family.GetString()!).ToArray());
+        Assert.Null(host.StopByInput(TimeSpan.FromSeconds(15)));
+    }
+
     private static string Since(string body) => JsonDocument.Parse(body).RootElement.GetProperty("since").GetString()!;
 }

@@ -164,6 +164,27 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Empty(HelpFacts.Woken(ChangeTopics.Focus, "window", facts));
     }
 
+    /// <summary>
+    /// PUSH1d1: an ask moved wakes the facts that read the asks, the machine's answers and the history's count of asks kept, and no
+    /// session or part of the work; a channel's post wakes the machine's answers alone, as every ledger move does.
+    /// </summary>
+    [Fact]
+    public void An_ask_moved_wakes_the_machine_and_the_history_and_a_post_the_machine()
+    {
+        var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
+
+        Assert.Equal(
+            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole)],
+            HelpFacts.Woken(ChangeTopics.Ledger, "asks", facts));
+        Assert.Equal([(HelpFacts.Machine, HelpFacts.Whole)], HelpFacts.Woken(ChangeTopics.Ledger, "channel", facts));
+        Assert.Equal(
+            [
+                (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole),
+                (HelpFacts.Work, "engine"), (HelpFacts.Work, "site"), (HelpFacts.Work, HelpFacts.NoCheckout),
+            ],
+            HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests,asks,channel", facts));
+    }
+
     [Fact]
     public async Task A_refs_wake_judges_that_repository_s_line_again_alone_and_the_next_room_has_it()
     {

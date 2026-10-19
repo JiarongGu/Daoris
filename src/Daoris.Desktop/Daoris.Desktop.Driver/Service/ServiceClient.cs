@@ -180,7 +180,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         var forwards = new Dictionary<string, ForwardTake?>(StringComparer.OrdinalIgnoreCase);
         var asked = quests
             .Where(quest => quest is { Status: "Taken", Awaits: null or "", HeldByReopen: false }
-                            && ((lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last)) || stoodDown.ContainsKey(quest.Id)))
+                            && ((lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last)) || (stoodDown.ContainsKey(quest.Id) && HeldHere(quest))))
             .ToArray();
 
         // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
@@ -209,6 +209,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
         return (claims, whys, forwards);
     }
+
+    /// <summary>
+    /// Whether the quest list says this machine holds the quest (SYNCMERGE1b1): its holder is this machine's id. A stood-down quest held
+    /// elsewhere, or by no press, has no bring-forward of this machine's to read, so its claim is not asked.
+    /// </summary>
+    private static bool HeldHere(QuestView quest) =>
+        quest.Holder is { } holder && string.Equals(holder, quest.Here, StringComparison.Ordinal);
 
     /// <summary>How many claim questions a snapshot asks the host together (PARALLEL1b): local, and each one small.</summary>
     private const int ClaimsAtOnce = 4;
@@ -1590,6 +1597,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                         }).ToList()
                     : [],
                 Parent = Text(quest, "parent"),
+                // Who holds the quest and this machine's id where it is the page's (SYNCMERGE1b1). Absent is none: a quest no press settled.
+                Holder = Text(quest, "holder") is { Length: > 0 } held ? held : null,
+                Here = Text(quest, "here") is { Length: > 0 } here ? here : null,
                 // What a list calls it (SESSUX1j). Absent is a host from before the field: the title names it.
                 Short = Text(quest, "short") is { Length: > 0 } named ? named : null,
                 // Absent is not waiting: a host from before D79 answers without it.

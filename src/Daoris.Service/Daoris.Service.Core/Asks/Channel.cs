@@ -181,6 +181,36 @@ public sealed class ChannelStore
             );
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+        // PUSH1d1 (D182 point 5): the channel's revision, the change stream's `channel` family, one row moved by every insert,
+        // update and delete of a message. The newest `seq` would not do: an ask's channel forgotten with it deletes older messages
+        // and leaves the newest where it was. Kept by triggers, as the asks' is, so a connector built before them still moves it.
+        // The read marks and the cursors move nothing: a mark is one reader's place, moved by a read and by the driver as a part
+        // starts, and a cursor is the sync's own.
+        await using var revision = _db.Command();
+        revision.CommandText = """
+            CREATE TABLE IF NOT EXISTS channel_revision (
+              one      INTEGER PRIMARY KEY CHECK (one = 1),
+              revision INTEGER NOT NULL
+            );
+            INSERT OR IGNORE INTO channel_revision (one, revision) VALUES (1, 0);
+
+            CREATE TRIGGER IF NOT EXISTS channel_revision_kept AFTER INSERT ON channel
+            BEGIN
+              UPDATE channel_revision SET revision = revision + 1 WHERE one = 1;
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS channel_revision_changed AFTER UPDATE ON channel
+            BEGIN
+              UPDATE channel_revision SET revision = revision + 1 WHERE one = 1;
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS channel_revision_forgotten AFTER DELETE ON channel
+            BEGIN
+              UPDATE channel_revision SET revision = revision + 1 WHERE one = 1;
+            END;
+            """;
+        await revision.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         return this;
     }
 
