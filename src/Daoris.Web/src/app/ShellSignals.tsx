@@ -4,8 +4,8 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
 import {
-  asksSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice, sweepSlice, syncSlice, useDriverReady,
-  useStateHub, useStateSlices, workSlice,
+  asksSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice,
+  useDriverReady, useStateHub, useStateSlices, workSlice,
 } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
@@ -14,7 +14,7 @@ type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: Trust
 
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
 const PUSHED = [
-  driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice,
+  driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice, usageSlice,
 ];
 
 /**

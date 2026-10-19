@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { keys } from '../../data/queries';
+import { keys, USAGE_SLICE } from '../../data/queries';
 import type { AccountPlace, AccountSettings, AccountSettingsChange, ToolDoor } from '../../agents/tools';
 import type { WiringAnswer } from '../../map/wiring';
 import { call } from '../call';
+import { readSlice } from '../driver';
+import { byInstant } from '../sessions/sessions';
+import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
 
 // The toolchain (MOD3): this machine's agents and their accounts, what each carried, each tool's own
 // actions, and what a start in each workspace would run on (D49 §4, D57).
@@ -66,12 +69,55 @@ export type UsedAccount = {
   used: number;
 };
 
+/** What `USAGE` answers: the sessions newest first, and each account's share. */
+export type UsageAnswer = { sessions: UsedSession[]; accounts: UsedAccount[] };
+
+const isUsedSession = (value: unknown): value is UsedSession =>
+  typeof value === 'object' && value !== null && typeof (value as { session?: unknown }).session === 'string';
+
+const isUsedAccount = (value: unknown): value is UsedAccount =>
+  typeof value === 'object' && value !== null && typeof (value as { harness?: unknown }).harness === 'string';
+
+const records = <T>(part: unknown, is: (value: unknown) => value is T): T[] | null =>
+  (typeof part === 'object' && part !== null && !Array.isArray(part) ? Object.values(part).filter(is) : null);
+
+/** By UTF-16 unit, as C#'s `StringComparer.Ordinal` compares. */
+const ordinal = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+/**
+ * What sessions consumed, as the shell pushes it (PUSH1e, D182): a keyed slice of two partitions, `sessions` (each measured session
+ * under its id) and `accounts` (each account's share under its door and account), a session's end a delta of what it moved
+ * (`mergeKeyed`), composed into `USAGE`'s answer in the route's order: the sessions newest first by `when` as an instant (a tie by
+ * id, where the route keeps the file's order), the accounts by door, then account, the own home's first (`UsageStateSlice`).
+ * Nothing judged yet, or a partition missing, composes nothing, which keeps the pull.
+ */
+export const usageSlice: SliceSpec = {
+  name: USAGE_SLICE,
+  key: keys.usage,
+  read: () => readSlice(USAGE_SLICE),
+  compose: (partitions, judged) => {
+    if (!judged) return undefined;
+    const sessions = records(partitions.get('sessions'), isUsedSession);
+    const accounts = records(partitions.get('accounts'), isUsedAccount);
+    if (!sessions || !accounts) return undefined;
+    return {
+      sessions: sessions.sort((a, b) => byInstant(b.when, a.when) || ordinal(a.session, b.session)),
+      accounts: accounts.sort((a, b) => ordinal(a.harness, b.harness) || ordinal(a.profile ?? '', b.profile ?? '')),
+    } satisfies UsageAnswer;
+  },
+  merge: mergeKeyed,
+};
+
+/** What sessions consumed: pushed where the shell pushes it (PUSH1e), read from memory with no focus refetch; pulled elsewhere. */
 export const useUsage = () => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const pushed = usePushedLive(USAGE_SLICE);
   return useQuery({
     queryKey: keys.usage,
-    queryFn: () => call<{ sessions: UsedSession[]; accounts: UsedAccount[] }>('USAGE'),
+    queryFn: () => readPushed(client, USAGE_SLICE, () => call<UsageAnswer>('USAGE')),
     enabled: isAvailable,
+    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
   });
 };
 
