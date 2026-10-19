@@ -1,7 +1,8 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Ask Daoris's history from a terminal (ASKHIST1, D50): <c>daoris-driver help list|resume|rename|pin|unpin|delete</c>. The
+/// Ask Daoris's history from a terminal (ASKHIST1, D50): <c>daoris-driver help list|resume|rename|pin|unpin|delete</c>, and its
+/// access mode, <c>help mode</c> (HELPMODE1a1), which reads and writes the driver's file alone. The
 /// words are the library's (<see cref="HelpCommand"/>); this wires the real world as <c>sessions</c> does: the service, the
 /// home's choices and files, the configured agent's wire, and this host's machine log, where a delete says the terminal's door.
 /// </summary>
@@ -18,6 +19,20 @@ internal static class HelpConsole
         }
 
         var configPath = DriverConfig.ResolvePath();
+        // Ask Daoris's mode (HELPMODE1a1) is the driver's file alone: no service is asked.
+        if (ask.Verb == "mode")
+        {
+            try
+            {
+                return HelpCommand.Mode(ask, configPath, Console.Out);
+            }
+            catch (DriverConfigUnreadableException unreadable)
+            {
+                Console.Error.WriteLine($"help: {unreadable.Message}");
+                return 2;
+            }
+        }
+
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();

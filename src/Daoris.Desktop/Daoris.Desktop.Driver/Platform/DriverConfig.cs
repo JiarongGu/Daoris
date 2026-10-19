@@ -360,6 +360,25 @@ public sealed record DriverConfig(
     public string? HelperAdapter { get; init; }
 
     /// <summary>
+    /// Ask Daoris's access mode (HELPMODE1a1, D183 point 1): <see cref="HelpModes.Restricted"/>, the default, or
+    /// <see cref="HelpModes.Full"/>. Read at each start of its conversation. The CLI's <c>driverconfig.ts</c> reads it the same way.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Restricted unless the file names full</b>: a value that is neither reads as restricted, so nothing but the person's own
+    /// choice ever widens it (D183 point 2). Written only while full, so an edit elsewhere never pins the default.
+    /// </remarks>
+    public string HelpMode { get; init; } = HelpModes.Restricted;
+
+    /// <summary>Ask Daoris's access mode here, as the person chose it (HELPMODE1a1).</summary>
+    /// <exception cref="DriverException">A mode that is neither restricted nor full.</exception>
+    public DriverConfig WithHelpMode(string mode) =>
+        this with
+        {
+            HelpMode = HelpModes.Named(mode)
+                ?? throw new DriverException($"Ask Daoris's mode is `{HelpModes.Restricted}` or `{HelpModes.Full}`, not `{mode}`."),
+        };
+
+    /// <summary>
     /// How long an account cools, in minutes, when its agent's limit names no time this reads, or one it does not believe
     /// (TOOL4e, D125 §2.2): <c>cooloff</c>, a whole number of at least 1. Null — absent, or anything else in the file —
     /// is the default, <see cref="AccountLimits.DefaultCoolOff"/>. The CLI's <c>driverconfig.ts</c> reads it the same way
@@ -847,6 +866,8 @@ public sealed record DriverConfig(
             // Written only when named: absent IS off, and the CLI twin writes it the same way.
             if (IntakeAdapter is not null) writer.WriteString("intakeAdapter", IntakeAdapter);
             if (HelperAdapter is not null) writer.WriteString("helperAdapter", HelperAdapter);
+            // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
+            if (HelpMode == HelpModes.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
             writer.WriteNumber("pollSeconds", PollSeconds);
@@ -1248,6 +1269,8 @@ public sealed record DriverConfig(
             IntakeAdapter = Json.NonEmpty(root,"intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
             // Absent means OFF, as the intake's does (D89).
             HelperAdapter = Json.NonEmpty(root,"helperAdapter")?.Trim() is { Length: > 0 } helper ? helper : null,
+            // Restricted unless the file names full (HELPMODE1a1): never widened by a value it does not know.
+            HelpMode = HelpModes.Named(Json.NonEmpty(root, "helpMode")) == HelpModes.Full ? HelpModes.Full : HelpModes.Restricted,
             // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,

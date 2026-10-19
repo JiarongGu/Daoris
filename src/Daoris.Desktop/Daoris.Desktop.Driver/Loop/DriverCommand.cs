@@ -156,6 +156,9 @@ public static class DriverCommand
               Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, go on
               in one with your words (it goes on in the window), name, pin or unpin one, or delete one, listed
               first and deleted with --yes.
+          help mode [restricted|full]
+              Ask Daoris's access mode (D183), from its next start: restricted, the default, reads and proposes and
+              you apply; full acts on this machine itself, in its agent's mode that asks nothing. Alone, says which.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]

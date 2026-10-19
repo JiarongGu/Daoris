@@ -27,6 +27,7 @@ public sealed class VerbLeasesTests
     [InlineData("history clear --workspace w --yes")]
     [InlineData("help rename c-1 name")]
     [InlineData("help delete c-1")]
+    [InlineData("help mode full")]
     [InlineData("opinion myself 12")]
     [InlineData("setup some-repository")]
     [InlineData("setup --workspace w --pause")]
@@ -59,6 +60,7 @@ public sealed class VerbLeasesTests
     [InlineData("plugins activity id")]
     [InlineData("sync status")]
     [InlineData("help list")]
+    [InlineData("help mode")]
     [InlineData("opinion show 12")]
     [InlineData("update")]
     [InlineData("trees --help")]
@@ -93,6 +95,7 @@ public sealed class VerbLeasesTests
     [InlineData("setup some-repository", "daoris-driver setup")]
     [InlineData("trees remove some/tree/path", "daoris-driver trees remove")]
     [InlineData("register", "daoris-driver register")]
+    [InlineData("help mode full", "daoris-driver help mode")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

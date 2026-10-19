@@ -55,6 +55,9 @@ export function driverConfigPath(env: Record<string, string | undefined> = proce
   return env[PATH_VARIABLE] ?? requireHomeFile(env, 'driver');
 }
 
+/** Ask Daoris's access mode (HELPMODE1a1, D183): the driver's `HelpModes`, read by the same table. */
+export type HelpMode = 'restricted' | 'full';
+
 /** The choices, plus everything else the file held — this is an editor, not the file's owner. */
 export interface DriverChoices {
   /**
@@ -91,6 +94,11 @@ export interface DriverChoices {
   intakeAdapter: string | null;
   /** The agent Ask Daoris runs on (HELP1, D89) — null, and it offers only its starters. */
   helperAdapter: string | null;
+  /**
+   * Ask Daoris's access mode (HELPMODE1a1, D183 points 1-2): `restricted`, the default, or `full`, which only the person names
+   * (`daoris-driver help mode`). Read as the driver's `DriverConfig.HelpMode` reads it, and written only while full.
+   */
+  helpMode: HelpMode;
   /** How long a session may run before the driver kills it — null is the driver's own default. */
   timeoutMinutes: number | null;
   /**
@@ -261,7 +269,8 @@ export const DEFAULT_COOLOFF_MINUTES = 60;
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
+  strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, helpMode: 'restricted',
+  timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, workCycles: {}, workspaceWorkCycles: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {},
   standing: {}, languages: {},
   workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
@@ -588,7 +597,7 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
   }
 
   const {
-    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
+    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, helpMode, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, workCycles, workspaceWorkCycles, readAcross, workspaceReadAcross, writeAcross, standing,
     languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, brainstorms,
     workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, ...rest
@@ -620,6 +629,8 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     // Absent means OFF, as the intake's does — the driver's reading (D89).
     helperAdapter: typeof helperAdapter === 'string' && helperAdapter.trim().length > 0
       ? helperAdapter.trim() : null,
+    // Restricted unless the file names full (HELPMODE1a1): anything else reads as restricted, never as full, as the driver reads it.
+    helpMode: typeof helpMode === 'string' && helpMode.trim().toLowerCase() === 'full' ? 'full' : 'restricted',
     // Read as the driver reads it (`DriverConfig`: a whole number, lifted to at least one), so the
     // listing never names a number the driver would not use.
     timeoutMinutes: typeof timeoutMinutes === 'number' && Number.isInteger(timeoutMinutes)
@@ -723,6 +734,8 @@ function choicesWritten(choices: DriverChoices): Record<string, unknown> {
     // Written only when named — absent IS off, and the driver writes it the same way.
     ...(choices.intakeAdapter ? { intakeAdapter: choices.intakeAdapter } : {}),
     ...(choices.helperAdapter ? { helperAdapter: choices.helperAdapter } : {}),
+    // Written only while full (HELPMODE1a1), as the driver writes it: absent is restricted.
+    ...(choices.helpMode === 'full' ? { helpMode: choices.helpMode } : {}),
     notify: choices.notify,
     // Written only when set: absent is the driver's own default, and an edit elsewhere must not
     // pin today's default into a file that never chose it.
@@ -1503,7 +1516,9 @@ export function commandDriver(
     write(`  notify     ${choices.notify ? 'on' : 'off'}`
       + `  (a session parking, or ending without you asking${choices.notify ? '' : ' — not said'})`);
     write(choices.helperAdapter
-      ? `  helper     ${choices.helperAdapter}  (Ask Daoris — it proposes, and you apply)`
+      ? `  helper     ${choices.helperAdapter}  (${choices.helpMode === 'full'
+        ? 'Ask Daoris, full access: it acts on this machine itself, with no asking'
+        : 'Ask Daoris, restricted: it proposes, and you apply'} — \`daoris-driver help mode\` says and sets it)`
       : '  helper     off — Ask Daoris offers its starters; `daoris driver helper <adapter>` names an agent');
     write(choices.intakeAdapter
       ? `  intake     ${choices.intakeAdapter}  (an ask the declarations do not settle opens a session — a login each)`

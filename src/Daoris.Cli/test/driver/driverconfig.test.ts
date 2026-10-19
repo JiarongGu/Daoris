@@ -861,6 +861,30 @@ test('helper names the agent Ask Daoris runs on, apart from the intake, and off 
   fx.cleanup();
 });
 
+/**
+ * HELPMODE1a1 (D183 points 1-2): Ask Daoris's access mode is the driver's `helpMode`, set by `daoris-driver help mode`. This twin
+ * reads it as the driver does (restricted until `full` is named, anything else restricted, never full), writes it only while full,
+ * keeps it through every other edit, and lists it beside the helper, so a terminal's rewrite never drops it.
+ */
+test('helpMode is read as the driver reads it, kept by every other edit, and listed beside the helper', () => {
+  const fx = makeFixture('driver-help-mode');
+  writeFileSync(at(fx), '{ "helperAdapter": "claude-code-acp", "helpMode": " Full " }\n');
+
+  assert.equal(readDriverChoices(at(fx)).helpMode, 'full');
+  assert.match(run(['list'], at(fx)).out, /helper {5}claude-code-acp {2}\(Ask Daoris, full access: it acts on this machine itself/);
+  run(['notify', 'off'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).helpMode, 'full');
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).helpMode, ' Full ');
+
+  writeDriverChoices(at(fx), { ...readDriverChoices(at(fx)), helpMode: 'restricted' });
+  assert.equal('helpMode' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.match(run(['list'], at(fx)).out, /helper {5}claude-code-acp {2}\(Ask Daoris, restricted: it proposes, and you apply/);
+
+  writeFileSync(at(fx), '{ "helpMode": "everything" }\n');
+  assert.equal(readDriverChoices(at(fx)).helpMode, 'restricted');
+  fx.cleanup();
+});
+
 test('intake needs a harness or off, and says so', () => {
   const fx = makeFixture('driver-intake-arg');
   assert.match(captureError(() => run(['intake'], at(fx))).message, /<adapter>\|off/);

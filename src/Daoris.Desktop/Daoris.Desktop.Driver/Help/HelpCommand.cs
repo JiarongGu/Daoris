@@ -59,10 +59,12 @@ public static class HelpCommand
                daoris-driver help resume <id> "…" [--file <path>]…
                daoris-driver help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
                daoris-driver help delete <id> [--yes]
+               daoris-driver help mode [restricted|full]
         """;
 
     /// <summary>The verbs this door answers; <c>help</c> alone, or anything else after it, is the host's usage.</summary>
-    public static IReadOnlySet<string> Verbs { get; } = new HashSet<string>(StringComparer.Ordinal) { "list", "resume", "rename", "pin", "unpin", "delete" };
+    public static IReadOnlySet<string> Verbs { get; } =
+        new HashSet<string>(StringComparer.Ordinal) { "list", "resume", "rename", "pin", "unpin", "delete", "mode" };
 
     /// <summary>The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
@@ -104,10 +106,51 @@ public static class HelpCommand
             case ["delete", ..]:
                 problem = "`delete` takes one conversation's id, and `--yes` once you have read what it takes.";
                 return null;
+            case ["mode"]:
+                return new HelpVerbAsk("mode");
+            case ["mode", var mode] when HelpModes.Named(mode) is { } named:
+                return new HelpVerbAsk("mode") { Text = named };
+            case ["mode", ..]:
+                problem = $"`mode` takes `{HelpModes.Restricted}` or `{HelpModes.Full}`, or nothing to say which Ask Daoris runs in.";
+                return null;
         }
 
-        problem = "`help` takes `list`, `resume`, `rename`, `pin`, `unpin` or `delete`.";
+        problem = "`help` takes `list`, `resume`, `rename`, `pin`, `unpin`, `delete` or `mode`.";
         return null;
+    }
+
+    /// <summary>
+    /// <c>help mode [restricted|full]</c> (HELPMODE1a1, D183 points 1-2): which access mode Ask Daoris runs in, or the person's choice
+    /// of one, written to the driver's file at <paramref name="configPath"/> and taken at its next start. Asks no service.
+    /// </summary>
+    /// <remarks>A conversation already open keeps the mode it started in; a switch mid-conversation is HELPMODE1a2's.</remarks>
+    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing was written.</exception>
+    public static int Mode(HelpVerbAsk ask, string configPath, TextWriter output)
+    {
+        var config = DriverConfig.Load(configPath);
+        if (ask.Text is not { } mode)
+        {
+            output.WriteLine($"help: {Says(config.HelpMode)}");
+            return 0;
+        }
+
+        if (mode == config.HelpMode)
+        {
+            output.WriteLine($"help: Ask Daoris already runs {Named(mode)}.");
+            return 0;
+        }
+
+        config.WithHelpMode(mode).Save(configPath);
+        output.WriteLine($"help: from its next start, {Says(mode)}");
+        return 0;
+
+        static string Named(string mode) => mode == HelpModes.Full ? "with full access" : "restricted";
+
+        static string Says(string mode) => mode == HelpModes.Full
+            ? "Ask Daoris runs with full access: it acts on this machine itself, with a shell, file edits, Daoris's commands and every "
+              + "plugin server, and asks nothing; your own denies still hold. `daoris-driver help mode restricted` takes it back."
+            : "Ask Daoris runs restricted: it reads, advises and proposes, and you apply. `daoris-driver help mode full` lets it act "
+              + "on this machine itself.";
     }
 
     private static HelpVerbAsk? ReadList(IReadOnlyList<string> rest, out string? problem)
