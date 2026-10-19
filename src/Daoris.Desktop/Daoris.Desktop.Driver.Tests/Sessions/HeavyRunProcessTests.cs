@@ -116,6 +116,36 @@ public sealed class HeavyRunProcessTests : IDisposable
         Assert.Contains("run-heavy: 1 heavy gate passed", secondSaid.Text);
     }
 
+    /// <summary>
+    /// HEAVYRUN1b2a's proof: a repository with no gates file runs this machine's mapping for it, from its home's driver file, one gate
+    /// after another under its slot, and says whose gates they are.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_with_no_gates_file_runs_this_machine_s_mapping()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        File.WriteAllText(Path.Combine(_fixture.Home, "driver.json"), JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["heavyGates"] = new Dictionary<string, object>
+            {
+                ["engine"] = new[]
+                {
+                    new { name = "first", run = $"node \"{_fixture.At("touch.mjs")}\" \"{_fixture.At("first.txt")}\"" },
+                    new { name = "second", run = $"node \"{_fixture.At("touch.mjs")}\" \"{_fixture.At("second.txt")}\"" },
+                },
+            },
+        }));
+        var said = new SaidWriter();
+
+        var exit = await HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Checkout), said, CancellationToken.None).WaitAsync(Poll.Patience);
+
+        Assert.Equal(0, exit);
+        Assert.True(File.Exists(_fixture.At("first.txt")) && File.Exists(_fixture.At("second.txt")), said.Text);
+        Assert.Contains("run-heavy: `engine` marks no heavy gate of its own, so this machine's run for it: first, second.", said.Lines);
+        Assert.Contains("run-heavy: 2 heavy gates passed", said.Text);
+    }
+
     /// <summary>The first gate that fails ends the sequence: the gates after it are not run, and the run says so and exits 1.</summary>
     [Fact]
     public async Task A_gate_that_fails_stops_the_sequence_and_the_run_exits_1()

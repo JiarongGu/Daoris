@@ -4,7 +4,8 @@ import { readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  landingEdited, readDriverChoices, writeDriverChoices, type AccessSetting, type DriverChoices, type HelpMode, type LandingRule,
+  landingEdited, readDriverChoices, writeDriverChoices, type AccessSetting, type DriverChoices, type HelpMode, type MappedHeavyGate,
+  type LandingRule,
 } from '../../src/driver/driverconfig.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -16,7 +17,7 @@ import { makeFixture } from '../_fixture.ts';
 
 type Edit = {
   op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string;
-  mode?: HelpMode; setting?: AccessSetting;
+  mode?: HelpMode; setting?: AccessSetting; gates?: MappedHeavyGate[] | null;
 };
 type Change = { from: string[]; to: string[] };
 type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string; missing?: boolean };
@@ -40,6 +41,11 @@ function applied(choices: DriverChoices, edit: Edit): DriverChoices {
     // AUTONOMY1a: the level as `daoris-driver access` leaves it, which only the driver edits.
     case 'access': return { ...choices, access: { ...choices.access, [edit.repository!]: edit.setting! } };
     case 'machine-access': return { ...choices, machineAccess: edit.setting! };
+    // HEAVYRUN1b2a: a repository's heavy gates as `daoris-driver heavy` leaves them, which only the driver edits.
+    case 'heavy': {
+      const { [edit.repository!]: _gone, ...others } = choices.heavyGates;
+      return { ...choices, heavyGates: edit.gates ? { ...choices.heavyGates, [edit.repository!]: edit.gates } : others };
+    }
     case 'notify': return { ...choices, notify: edit.on! };
     case 'work-cycle-clear': {
       const { [edit.kind!]: _gone, ...kinds } = choices.workCycles[edit.repository!] ?? {};

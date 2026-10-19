@@ -206,6 +206,11 @@ public static class DriverCommand
               run this checkout's heavy gates, those its daoris.gates.json marks "heavy": true, one after another, or the
               one named, holding its repository's one heavy-run slot: a run from any tree of it waits, saying behind whom and
               how long. What a gate starts is ended before the slot is let go. 0 passed · 1 a gate failed · 2 could not run.
+          heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
+              this machine's heavy gates for a repository whose own daoris.gates.json marks none, in the order they run:
+              what run-heavy runs there, and what its sessions are told to run once, at their end. Kept here, never in
+              the repository; a command may bound its own workers (npm test -- --maxWorkers=2). Alone, lists each
+              repository's; with a repository alone, says its gates.
           trace <commit|session|quest>  ·  trace commit|session|quest <id>
               one read back to the ask: the person's words and go-aheads, the quest's requirements and answers, each
               session's agent, account, instruction, rules and landing, each from the store that keeps it. Reads only.
