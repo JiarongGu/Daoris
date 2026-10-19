@@ -41,6 +41,33 @@ public sealed class SessionAccessHostTests(LocalHost host) : IClassFixture<Local
         Assert.Null(Access(await ListedAsync(id, DaorisHost.OffMachine)));
     }
 
+    /// <summary>
+    /// AUTONOMY1b2 (D184 point 1): a resumed record keeps the setup it now runs under through its own door, which knows this machine's
+    /// driven records alone; a malformed or missing map is a 400, an unknown or other record a 404.
+    /// </summary>
+    [Fact]
+    public async Task A_resumed_record_keeps_the_setup_it_now_runs_under_through_its_door()
+    {
+        var quest = await QuestAsync("A quest resumed under another setup");
+        var opened = await host.PostAsync("/api/sessions", new
+        {
+            quest, adapter = "stub", tree = host.RootOf("warden-resumed"), access = new { permissions = "auto" },
+        });
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+
+        var kept = await host.PostAsync($"/api/sessions/{id}/access", new { access = new { permissions = "asking", landing = "rule" } });
+
+        Assert.Equal(200, kept.Status);
+        Assert.Equal("""{"permissions":"asking","landing":"rule"}""", Access(kept.Json.GetProperty("session")));
+        Assert.Equal("""{"permissions":"asking","landing":"rule"}""", Access(await ListedAsync(id)));
+        Assert.Equal(400, (await host.PostAsync($"/api/sessions/{id}/access", new { access = new Dictionary<string, string> { ["permissions"] = "a b" } })).Status);
+        Assert.Equal(400, (await host.PostAsync($"/api/sessions/{id}/access", new { })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/sessions/nothere/access", new { access = new { permissions = "auto" } })).Status);
+        var help = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room = Path.Combine(host.Repositories, "rooms", "autonomy1b2") });
+        var helpId = help.Json.GetProperty("session").GetProperty("id").GetString()!;
+        Assert.Equal(404, (await host.PostAsync($"/api/sessions/{helpId}/access", new { access = new { permissions = "auto" } })).Status);
+    }
+
     /// <summary>A setup that is no short map of words is the caller's mistake: a 400, and no record.</summary>
     [Fact]
     public async Task An_access_setup_that_is_not_a_short_map_of_words_is_refused()

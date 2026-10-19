@@ -187,6 +187,18 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             }
         }
 
+        // Nothing was removed: the refs this call kept the commits on go again, as before it.
+        async Task<TreeRemoval> KeptAsync(string said)
+        {
+            if (judged is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
+            if (recovery is not null) await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false);
+            return new(false, said);
+        }
+
+        // TREELINK1: git's removal follows a junction out of the tree and deletes what it points at, so each link in it goes as a
+        // link first, forced or not; a tree whose links cannot all go stays.
+        if (TreeLinks.Unlinked(full) is { } linked) return await KeptAsync($"the tree at {path} stays: {linked}.").ConfigureAwait(false);
+
         // A tree past Windows' 260 characters is removed with long paths, which every git call here says:
         // without them git let go of the tree, then failed deleting its files (2026-09-28).
         var removeArgs = force
@@ -199,12 +211,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             // Git lets go of a tree before its folder, and a folder something holds open stays (the first real
             // post-merge run): then the tree is gone and only its folder is left, which is said plainly.
             var (letGo, why) = await LetGoAsync(root, full, ct).ConfigureAwait(false);
-            if (!letGo)
-            {
-                if (judged is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
-                if (recovery is not null) await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false);
-                return new(false, $"git would not remove the tree: {FirstLine(removeErr)}");
-            }
+            if (!letGo) return await KeptAsync($"git would not remove the tree: {FirstLine(removeErr)}").ConfigureAwait(false);
 
             left = why;
         }

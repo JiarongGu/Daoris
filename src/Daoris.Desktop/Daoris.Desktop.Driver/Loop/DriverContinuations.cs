@@ -195,6 +195,22 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = changed }, say: null);
         }
 
+        // AUTONOMY1b2 (D184 point 1): and its record names the setup this run goes on under, before anything is spawned, as Ask Daoris's
+        // record names its mode (HELPMODE1a2). A refusal is said on its console; the run goes on, since the setup it runs under is
+        // already set.
+        if (permissions is not null)
+        {
+            try
+            {
+                await DrivenAccess.KeepAsync(
+                    service, park, permissions, AccessRules.Resolve(config, quest.To, start.Workspace), ct).ConfigureAwait(false);
+            }
+            catch (DriverException refused)
+            {
+                _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = refused.Message }, say: null);
+            }
+        }
+
         ResumeAsk? resume = null;
         // Whether its process started: a failure before then started no run, so the record goes back with its words (SAIDBACK1e).
         var spawned = false;
