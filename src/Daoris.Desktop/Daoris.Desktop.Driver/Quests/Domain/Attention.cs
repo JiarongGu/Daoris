@@ -76,8 +76,27 @@ public sealed record AttentionEvent(
         _ => $"{Repository} — a session {State}",
     };
 
-    /// <summary>What it said about that, where it said anything. Null is a state, not a gap.</summary>
-    public string? Detail => string.IsNullOrWhiteSpace(Note) ? null : Note.Trim();
+    /// <summary>The note's lines by code, for a park: its notice is the agent's part alone (NOTICEPLAIN1, D184). Null where unsaid.</summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
+    /// <summary>
+    /// What it said about that, where it said anything. Null is a state, not a gap. A park's is the session's own question,
+    /// without Daoris's lead, so a short balloon cannot cut the question off (NOTICEPLAIN1); a park with no agent part, and
+    /// every other kind, says its note whole.
+    /// </summary>
+    public string? Detail
+    {
+        get
+        {
+            if (Kind == AttentionKind.Parked
+                && string.Concat(NoteParts?.Where(part => part.By == NoteBy.Agent).Select(part => part.Words) ?? []).Trim() is { Length: > 0 } asked)
+            {
+                return asked;
+            }
+
+            return string.IsNullOrWhiteSpace(Note) ? null : Note.Trim();
+        }
+    }
 
     /// <summary>Both halves on one line, for a door that has only lines.</summary>
     public string Line => Detail is null ? Headline : $"{Headline}: {Detail}";
@@ -201,7 +220,7 @@ public sealed class AttentionWatch
             if (previous.TryGetValue(session.Id, out var was) && SessionStates.IsParked(was)) continue;
 
             events.Add(new AttentionEvent(
-                AttentionKind.Parked, session.Id, session.Repository, Note: session.Note));
+                AttentionKind.Parked, session.Id, session.Repository, Note: session.Note) { NoteParts = session.NoteParts });
         }
 
         events.AddRange(parked.Select(park => new AttentionEvent(

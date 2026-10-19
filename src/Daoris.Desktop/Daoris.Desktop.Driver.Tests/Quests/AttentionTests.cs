@@ -254,6 +254,33 @@ public sealed class AttentionTests
         Assert.Null(new AttentionEvent(AttentionKind.Parked, "s1", "engine", Note: "   ").Detail);
     }
 
+    /// <summary>
+    /// A park's notice is the session's own question (NOTICEPLAIN1, D184): Daoris's coded lead is no part of it, and a short
+    /// balloon cannot cut the question off behind it. A note with no agent part says what it always said.
+    /// </summary>
+    [Fact]
+    public void A_parks_detail_is_the_agents_question_alone()
+    {
+        const string Lead = "It stopped with its quest still taken, to ask you:";
+        IReadOnlyList<NotePart> parts =
+        [
+            new() { Code = NoteCodes.EndedParkedAsked.Code, Text = Lead },
+            NotePart.Said("\n\n", NoteBy.Before),
+            NotePart.Said("Which port?", NoteBy.Agent),
+        ];
+        var watch = new AttentionWatch();
+        watch.Observe(Tick([Session("s1", "working")]));
+
+        var events = watch.Observe(Tick([Session("s1", "awaiting-person") with { Note = Lead + "\n\nWhich port?", NoteParts = parts }]));
+
+        var parked = Assert.Single(events);
+        Assert.Equal("Which port?", parked.Detail);
+        Assert.Equal("engine — a session needs you: Which port?", parked.Line);
+
+        var plain = new AttentionEvent(AttentionKind.Parked, "s1", "engine", Note: Lead + "\n\nWhich port?");
+        Assert.Equal(Lead + "\n\nWhich port?", plain.Detail);
+    }
+
     private static readonly QuestView Q1 = new("q1", "game", "engine", "Expose a streaming budget", "A body.", "Taken");
 
     private static Consideration Exhausted(QuestView quest) => new(quest, StartVerdict.Exhausted, "3 session(s) have failed.");

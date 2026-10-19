@@ -239,6 +239,23 @@ test('the score: right sources on K and B, O left to the person, and every answe
   assert.deepEqual(sum.classedBy, { model: 6, 'words only': 0, none: 0 });
 });
 
+test('a choice the session decides (an S) is not the person\'s: a reading is right, asking the person is a needless ask (QBENCH2, D184)', () => {
+  const p = prepared();
+  const c = { id: 's-name', where: 'park', class: 'S', ask: 'panel', question: 'What should the new panel be called?', askDoc: byId(p.cases, 'o-prod').askDoc };
+  const run = (stdout) => scoreCase(c, [], { id: c.id, command: 'stub', stdout, stderr: '', code: 0, timedOut: false }, p.knowledge);
+  const asked = run('NEEDS THE PERSON: a name is a preference nothing records');
+  assert.equal(asked.model.needless, true, 'a decided name is not the person\'s to give');
+  assert.equal(asked.model.right, false);
+  const read = run('A READING: call it the humidity panel, as the ticket does.');
+  assert.equal(read.model.right, true);
+  assert.equal(read.model.wrong, false, 'a reading on a decided choice is no answer in the person\'s place');
+  assert.equal(read.model.needless, false);
+  const prompt = checkPrompt({ question: c.question, where: 'park', askDoc: c.askDoc, hits: [], knowledgeDir });
+  assert.doesNotMatch(prompt, /preference nothing records/);
+  assert.match(prompt, /a name, or\s+which of two sound ways/);
+  assert.match(prompt, /credential|sign-in/);
+});
+
 test('a reading or a source on an O is an answer in the person\'s place; an unfounded source is wrong on any class', () => {
   const p = prepared();
   const index = indexPassages(p.knowledge);
