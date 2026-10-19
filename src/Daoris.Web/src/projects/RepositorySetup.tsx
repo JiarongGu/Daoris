@@ -4,7 +4,7 @@ import { type AccessEdit, AccessRows, accessSummary, type ResolvedPause } from '
 import type { RepositoryAcross } from '../settings/Across';
 import type { RuleListName } from '../settings/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../settings/Commits';
-import { type HeavyGate, HeavyGates, heavySummary } from '../settings/HeavyGates';
+import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary } from '../settings/HeavyGates';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../settings/Helpers';
 import {
   type Accepting, AcceptingNote, LandingField, landingFrom, landingProcessSays, type LandingRule, type RepositoryLanding,
@@ -32,6 +32,8 @@ export type SetupSectionId = 'driving' | 'work' | 'access' | 'heavy' | 'sessions
 export type HeavySetup = {
   /** In the order they run; none where none is set here. */
   gates: HeavyGate[];
+  /** Whether its own file wins, as the driver read it (HEAVYRUN1b2c); none until it has answered. */
+  marks?: HeavyMarks | null;
   onSave: (gates: HeavyGate[] | null, answered: Answered) => void;
 };
 
@@ -431,8 +433,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, sess
   if (heavy) {
     sections.push({
       id: 'heavy',
-      summary: heavySummary(t, heavy.gates),
-      body: <HeavyGates repository={repository} gates={heavy.gates} busy={busy} onSave={heavy.onSave} />,
+      summary: heavySummary(t, heavy.gates, heavy.marks),
+      body: <HeavyGates repository={repository} gates={heavy.gates} marks={heavy.marks} busy={busy} onSave={heavy.onSave} />,
     });
   }
   if (sessions && sessionsParts && sessionsParts.length > 0) {

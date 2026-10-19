@@ -432,12 +432,14 @@ public static class SessionsCommand
                     writer.WriteNull("discards");
                 }
 
-                // WAITSAY1b: the call a working session's agent is inside, where the process that read the rows heard one.
+                // WAITSAY1b: the call a working session's agent is inside, where the process that read the rows heard one; AUTONOMY1b3b:
+                // whether it waits on the person's answer to its permission request.
                 if (row.Calling is { } call)
                 {
                     writer.WriteStartObject("calling");
                     writer.WriteString("title", call.Title);
                     writer.WriteString("since", call.Since);
+                    writer.WriteBoolean("waiting", call.Waiting);
                     writer.WriteEndObject();
                 }
                 else

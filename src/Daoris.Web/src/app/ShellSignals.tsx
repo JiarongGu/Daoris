@@ -3,14 +3,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
-import { callsSlice, driverSlice, linesSlice, notPushed, sessionsSlice, useDriverReady, useStateHub, useStateSlices, workSlice } from '../bridge/shell';
+import {
+  callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, sessionsSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
+} from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
 
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
 
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
-const PUSHED = [driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice];
+const PUSHED = [driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice];
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
@@ -69,8 +71,8 @@ export function ShellSignals({ notify, onAttend, attended }: {
 
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
     // world — the two questions are different, and collapsing them would make a stale window the
-    // price of a quiet one. What is read under the sessions' key, but the records where the shell
-    // pushes them (PUSH1d2): their pushes write them, and a tick reads none of them again.
+    // price of a quiet one. What is read under the sessions' key, but the records and the groups where
+    // the shell pushes them (PUSH1d2, PUSH1c3b): their pushes write them, and a tick reads none of them again.
     void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     void client.invalidateQueries({ queryKey: keys.allQuests });
     // 🔴 And the asks. A tick takes them (INT4b), and the attention band reads them beside the

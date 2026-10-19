@@ -76,7 +76,8 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
 import {
-  ACP_STUB_AGENT, STUB_COMMIT, makeChecker, openTranscript, portRefusal, rehearsalRun, takePorts,
+  ACP_STUB_AGENT, OWN_BUILD_SERVERS, STUB_COMMIT, makeChecker, openTranscript, ownBuild, ownBuildRoot, ownBuilt, portRefusal, rehearsalRun,
+  takePorts,
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
@@ -428,6 +429,10 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
 const examplesRoot = join(repoRoot, 'examples');
 const scratch = join(repoRoot, '_fixtures', 'deployment-rehearsal');
+// REHLANE2b: this rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own
+// folders, so every publish it makes builds into an output of this rehearsal's own (`desktop-publish --artifacts-path`), and
+// so does its build of the driver's host. Outside the scratch, which each run wipes, so the next run's builds are incremental.
+const ownOutput = ownBuildRoot(repoRoot, 'deployment');
 const install = join(scratch, 'install');
 const home = join(scratch, 'home');
 const family = join(scratch, 'family');
@@ -465,6 +470,11 @@ const children = [];
 // Every command this run makes, its git held to the repositories it made under its scratch (REHEARSEGIT1): git walks UP from
 // a folder that is not one, and the family rehearsal committed a worktree's uncommitted work that way.
 const run = rehearsalRun({ within: scratch });
+
+/** `publish:desktop` into `to` with `flags`, every build of it into this rehearsal's own output (REHLANE2b). */
+const publishDesktop = (to, flags, timeout) => run(
+  `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${to}" ${flags} --artifacts-path "${ownOutput}"`,
+  repoRoot, {}, timeout);
 
 const {
   CLEARED, PAGE_IDENTITY, REDIRECTED, debugEnvironment, isShell,
@@ -638,6 +648,12 @@ async function main() {
   openTranscript(repoRoot, 'deployment', { beforeExit: () => stopEverything() });
   const { totals, check, section } = makeChecker();
 
+  // REHLANE2b: every build this run makes, its publishes' and its driver host's, on build servers of its own, for every child
+  // inherits these. It joins no server a build before it left (one carried a broken environment into a publish on
+  // 2026-09-30, which the merge tool once answered by stopping every server on the machine before this gate), and leaves
+  // none behind, so it stops nothing of the git half's beside it nor anyone else's.
+  Object.assign(process.env, OWN_BUILD_SERVERS);
+
   // Each port this run starts something on, taken free before anything starts (REHEARSEPORT1): walked from a random port of
   // the kit's band, so a run beside another takes ports apart, where a walk from a fixed one handed both runs the same port.
   // The debug port's band is clear of the dev loop's 9333 and the ports after it, which an install the owner looks at holds.
@@ -663,9 +679,7 @@ async function main() {
   rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
   mkdirSync(scratch, { recursive: true });
 
-  const published = run(
-    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${install}" --service`,
-    repoRoot, {}, 15 * 60_000);
+  const published = publishDesktop(install, '--service', 15 * 60_000);
   check('publish:desktop --service exits 0', published.code === 0,
     published.out.split('\n').slice(-12).join('\n'));
 
@@ -761,9 +775,7 @@ async function main() {
   mkdirSync(foreign, { recursive: true });
   writeFileSync(join(foreign, 'notes.txt'), 'someone else was here\n');
 
-  const refused = run(
-    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${foreign}" --service`,
-    repoRoot, {}, 60_000);
+  const refused = publishDesktop(foreign, '--service', 60_000);
   check('a folder holding something else is refused', refused.code === 2, refused.out);
   check('…and the refusal names what it found', /notes\.txt/.test(refused.out), refused.out);
   check('…and it refused BEFORE building anything',
@@ -774,9 +786,7 @@ async function main() {
   // The accepting branch is unit-tested (`desktop-publish.test.ts`) and costs a full build here; the
   // refusing branch is free, so it is the one this gate drives.
   mkdirSync(join(foreign, 'app'));
-  const besideRefused = run(
-    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${foreign}" --service --beside`,
-    repoRoot, {}, 60_000);
+  const besideRefused = publishDesktop(foreign, '--service --beside', 60_000);
   check('--beside still refuses a folder where `app/` is somebody else’s',
     besideRefused.code === 2 && /\bapp\b/.test(besideRefused.out), besideRefused.out);
   check('…and touched nothing there', readdirSync(foreign).sort().join() === 'app,notes.txt',
@@ -834,9 +844,7 @@ async function main() {
   const neighbour = join(install, 'a-neighbours-notes.txt');
   writeFileSync(neighbour, 'not the application’s\n');
 
-  const republished = run(
-    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${install}" --service`,
-    repoRoot, {}, 15 * 60_000);
+  const republished = publishDesktop(install, '--service', 15 * 60_000);
   check('a second publish into its own install is accepted', republished.code === 0,
     republished.out.split('\n').slice(-8).join('\n'));
   check('…and it left no bundle from the publish before it', !existsSync(decoy),
@@ -1484,9 +1492,10 @@ if (!done.ok) throw new Error(done.text);
 
   // The terminal's door to the update (D50): the headless host's `update`, built from this workspace and run on this
   // run's home, naming the install, since a scratch home is no install's `data/`.
+  // REHLANE2b: into this rehearsal's own output, never the host's folders, which the driver's Process halves build and run.
   const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
-  const driverDll = join(driverProject, 'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
-  const builtHost = run(`dotnet build "${driverProject}" --nologo -v q`, repoRoot, {}, 10 * 60_000);
+  const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
+  const builtHost = run(`${ownBuild(driverProject, ownOutput)} --nologo -v q`, repoRoot, {}, 10 * 60_000);
   check('the headless host builds, for its `update` door', builtHost.code === 0, builtHost.out.split('\n').slice(-6).join('\n'));
   const driverUpdate = (words) => run(`dotnet "${driverDll}" update ${words} --install "${install}"`, scratch, { ...HERMETIC }, 60_000);
 
@@ -1599,8 +1608,7 @@ if (!done.ok) throw new Error(done.text);
   check('a session is working when the build is staged', Boolean(heldQuest) && Boolean(heldWorking), held.text);
 
   // 9b. Staged beside the running install, by the publish's own `--stage`: nothing it holds is written over.
-  const staged = run(
-    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${install}" --service --stage`, repoRoot, {}, 15 * 60_000);
+  const staged = publishDesktop(install, '--service --stage', 15 * 60_000);
   check('publish:desktop --stage exits 0 beside the running install', staged.code === 0, staged.out.split('\n').slice(-8).join('\n'));
   const stagedManifestPath = join(install, ...STAGED, BUILD_MANIFEST);
   const stagedManifest = existsSync(stagedManifestPath) ? JSON.parse(readFileSync(stagedManifestPath, 'utf8')) : null;

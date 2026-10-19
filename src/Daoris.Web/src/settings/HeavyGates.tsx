@@ -34,11 +34,31 @@ const same = (sent: HeavyGate[] | null, set: readonly HeavyGate[]) =>
   (sent ?? []).length === set.length
   && (sent ?? []).every((gate, at) => gate.name === set[at]!.name && gate.run === set[at]!.run && (gate.cwd ?? null) === (set[at]!.cwd ?? null));
 
-/** A repository's heavy gates in its Setup's folded line: each by name in its order, or that none is set here. */
-export function heavySummary(t: TFunction, gates: readonly HeavyGate[]): string {
-  return gates.length === 0
-    ? t('settings.heavy.summaryNone')
-    : t('settings.heavy.summary', { count: gates.length, names: gates.map((gate) => gate.name).join(t('projects.setup.summary.listJoin')) });
+/**
+ * Whether the repository's own `daoris.gates.json` wins over this machine's list, as the driver read it (`HEAVY_MARKS`, HEAVYRUN1b2c):
+ * `marks` true where the file marks heavy gates (their `names`), false where it marks none or there is no file, null with the driver's
+ * `refusal` where it cannot be told. The page judges nothing of its own.
+ */
+export type HeavyMarks = { marks: boolean | null; names: string[]; refusal?: string | null };
+
+/**
+ * A repository's heavy gates in its Setup's folded line: each by name in its order, or that none is set here; cued "not used" where the
+ * repository's own file marks heavy gates and so wins.
+ */
+export function heavySummary(t: TFunction, gates: readonly HeavyGate[], marks?: HeavyMarks | null): string {
+  if (gates.length === 0) return t('settings.heavy.summaryNone');
+  const listed = t('settings.heavy.summary', { count: gates.length, names: gates.map((gate) => gate.name).join(t('projects.setup.summary.listJoin')) });
+  return marks?.marks === true ? t('settings.heavy.summaryUnused', { summary: listed }) : listed;
+}
+
+/** The section's sentence on where this list applies: what the driver read of the repository's own file, or the general rule until it has. */
+function whereOf(t: TFunction, repository: string, marks?: HeavyMarks | null): string {
+  if (!marks) return t('settings.heavy.where', { repository });
+  if (marks.marks === true) {
+    return t('settings.heavy.whereMarks', { repository, names: marks.names.join(t('projects.setup.summary.listJoin')) });
+  }
+  if (marks.marks === false) return t('settings.heavy.whereNone', { repository });
+  return t('settings.heavy.whereUnknown', { repository, refusal: marks.refusal ?? '' });
 }
 
 /** What a save said once the driver took it: the list set, by its count, or cleared. */
@@ -65,8 +85,10 @@ const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raise
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function HeavyGates({ repository, gates, busy = false, onSave }: {
+export function HeavyGates({ repository, gates, marks, busy = false, onSave }: {
   repository: string;
+  /** Whether the repository's own file wins, as the driver read it; none until it has answered, and the section says the general rule. */
+  marks?: HeavyMarks | null;
   /** The gates set for it on this machine, in the order they run; none where none is. */
   gates: readonly HeavyGate[];
   busy?: boolean;
@@ -109,7 +131,7 @@ export function HeavyGates({ repository, gates, busy = false, onSave }: {
       )}
     >
       <div className="grid gap-2">
-        <p className="m-0 text-small text-ink-soft"><Inline text={t('settings.heavy.where', { repository })} /></p>
+        <p className="m-0 text-small text-ink-soft"><Inline text={whereOf(t, repository, marks)} /></p>
         <p className="m-0 text-small text-ink-soft"><Inline text={t('settings.heavy.workers')} /></p>
         {!editing && gates.length === 0 && <p className="m-0 text-small text-ink-soft">{t('settings.heavy.none')}</p>}
         {!editing && gates.length > 0 && (

@@ -436,6 +436,26 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/running dotnet test for 1h 35m/)).toBeInTheDocument();
   });
 
+  /**
+   * AUTONOMY1b3b: a call whose permission request is held for the person says it waits for their answer, timed from the hold, and
+   * its tip says where to answer it and its bound; never that it runs, and never in the words a parked intake's region reads.
+   */
+  it('says a call held for the person waits for their answer, and for how long', () => {
+    const calling = { title: 'git push', since: '2026-09-21T11:57:00Z', waiting: true };
+    const { rerender } = render(<SessionRow session={session()} place="engine" grouping={placed({ group: 'working', shown: 'working', calling })} />);
+    expect(screen.getByText(/^engine · waiting for your answer to git push for 3m · driven · /)).toBeInTheDocument();
+    expect(screen.queryByText(/running/)).toBeNull();
+    expect(screen.queryByText(/waiting on you/i)).toBeNull();
+    expect(screen.getByTitle(/answer it on its page or in What needs you.*15 minutes/)).toBeInTheDocument();
+
+    // A request the agent named nothing for still waits on the person.
+    rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { ...calling, title: '' } })} />);
+    expect(screen.getByText(/waiting for your answer to a tool call for 3m/)).toBeInTheDocument();
+    // A call that runs says it runs.
+    rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { ...calling, waiting: false } })} />);
+    expect(screen.getByText(/running git push for 3m/)).toBeInTheDocument();
+  });
+
   /** WAITSAY1c2: a pushed call arrives once, so its time steps by the row's own clock with no new record. */
   it('steps a call\'s elapsed time on its own while it is said', () => {
     const calling = { title: 'npm test', since: '2026-09-21T11:52:00Z' };
@@ -457,6 +477,11 @@ describe("a row as the list's reader places it", () => {
       render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'npm test', since: '2026-09-21T11:52:00Z' } })} />);
       expect(screen.getByText(/正在运行 npm test，已 8 分钟/)).toBeInTheDocument();
       expect(screen.getByTitle(/它的智能体正在进行的工具调用/)).toBeInTheDocument();
+
+      // AUTONOMY1b3b: a call held for the person's answer.
+      render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'git push', since: '2026-09-21T11:57:00Z', waiting: true } })} />);
+      expect(screen.getByText(/git push 等你答复，已 3 分钟/)).toBeInTheDocument();
+      expect(screen.getByTitle(/“等你处理”.*15 分钟/)).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }

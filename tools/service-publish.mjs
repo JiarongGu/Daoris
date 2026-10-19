@@ -36,25 +36,32 @@ export const HOSTS = Object.freeze([
 export const executableFor = (binary, rid) => (rid.startsWith('win') ? `${binary}.exe` : binary);
 
 /**
+ * A `dotnet publish` built into `artifacts` when one is given (REHLANE2b): the SDK's `--artifacts-path`, which puts the
+ * `obj/` and `bin/` of every project the publish reaches, the referenced ones too, under that folder and none under the
+ * project's own, and leaves `-o`, where the published files go, as it was. With none, the command as it is.
+ */
+export const builtInto = (command, artifacts = null) => (artifacts ? `${command} --artifacts-path "${artifacts}"` : command);
+
+/**
  * The recipe: the `dotnet publish` that makes `host` a self-contained single-file executable in `folder`, run from the
- * workspace root.
+ * workspace root; its builds into `artifacts` when one is given (`builtInto`, REHLANE2b).
  *
  * IncludeNativeLibrariesForSelfExtract, because "single file" otherwise leaves e_sqlite3 BESIDE the executable — and an
  * installed copy that took only the exe dies on first store open with a DllNotFound. Found by running the installed
  * binary, not by reading the docs.
  */
-export function publishCommand(host, rid, folder) {
-  return `dotnet publish "${host.project}" -c Release -r ${rid} --self-contained `
-    + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${folder}"`;
+export function publishCommand(host, rid, folder, artifacts = null) {
+  return builtInto(`dotnet publish "${host.project}" -c Release -r ${rid} --self-contained `
+    + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${folder}"`, artifacts);
 }
 
 /**
  * Publish one host by the recipe, answering whether it was built. stdout is KEPT and shown when the publish fails (REV3):
  * MSBuild writes its errors to stdout, and a publish that discarded it failed with nothing but an exit code to read.
  */
-export function publishHost(repoRoot, host, rid, folder, said = 'service-publish') {
+export function publishHost(repoRoot, host, rid, folder, said = 'service-publish', artifacts = null) {
   try {
-    execSync(publishCommand(host, rid, folder), { cwd: repoRoot, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024 });
+    execSync(publishCommand(host, rid, folder, artifacts), { cwd: repoRoot, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024 });
     return true;
   } catch (error) {
     process.stdout.write(error.stdout ?? '');

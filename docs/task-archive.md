@@ -17471,3 +17471,39 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REHLANE2 — the rehearsals run beside the suites, not after them** (tools; D180's budget note). The full set ran the release, family and deployment rehearsals after the `Process` halves; each has its own scratch and builds, so they can run beside the suites (ports and scratch apart, REHEARSEPORT1). Proof: the merge test's lane tables; a full set's wall with the rehearsals beside.
 
 **Outcome** 2026-10-20: the release rehearsal is of `BESIDE_GIT_HALF`: it runs beside the driver's git half before the family rehearsal and never beside it (the family runs the CLI's bin, which the release's pack shadows with a staged `dist/`; no desktop test reads what a pack stages, which a merge test now holds), so at most two Process-lane gates run at once; the deployment rehearsal stays alone and last (REHLANE2b). A full set's wall with it beside is not yet measured. On Opus: about 129 tool calls, 32 minutes. Detail: D180's REHLANE2 note; D115's REHLANE1 line.
+
+## HEAVYRUN1b2c — the setup says whether the repository's own file wins (2026-10-20, D180)
+
+> - [ ] **HEAVYRUN1b2c — the setup says whether the repository's own file wins** (driver, modules, web; D180's HEAVYRUN1b2a and HEAVYRUN1b2b notes). The *Heavy gates* section says its list is used only where the repository's `daoris.gates.json` marks no heavy gate, but cannot say whether this repository's does, so a person may edit a list never run. `LINES` or `STATE` carries per repository whether its file marks heavy gates (`HeavyGates.Resolve`'s source), and the section says so. Proof: a route test on a checkout whose file marks one; the section's vitest.
+
+**Outcome** 2026-10-20: a read route `HEAVY_MARKS` (from `HeavyGates.Marks`, one file, never `Resolve`) answers whether a repository's file marks heavy gates, marks none or has no file, or cannot be told (the driver's words, never "marks none"). *Heavy gates* says it in its `where` sentence and cues "not used" on the folded line where the file wins (`useHeavyMarks`; not on `LINES` or `STATE`, which have no checkout file to read). On Sonnet: about 94 tool calls, 29 minutes. Detail: D180's HEAVYRUN1b2c line.
+
+## PUSH1c3b — the page reads the session groups pushed (2026-10-20, D182)
+
+> - [ ] **PUSH1c3b — the page reads the session groups pushed** (web; after PUSH1c3a). A `groupsSlice` spec feeding `groupsKey(undefined)`, composed in `SessionGroups.Ordered`'s order from the pushed sort inputs; `useSessionGroups` and `useSessionEntries` read it live with `select`; in `PUSHED`. Proof: a tick and a focus read no `SESSION_GROUPS`; a delta changes the rail with no read; an older host pulls.
+
+**Outcome** 2026-10-20: `groupsSlice` (`bridge/sessions.ts`) composes the pushed `rows` and `entries` into `SESSION_GROUPS`' widest answer in the reader's order, with instants compared to the tick, and composes nothing until the `rows` partition is judged; `useSessionGroups` and `useSessionEntries` read it live and select the `ids` variants from it (`groupsIn`); it is in `PUSHED`, so a tick and a focus read no `SESSION_GROUPS`. A second window's count left out the permission poll AUTONOMY1b3b removes. On Opus: about 104 tool calls, 34 minutes. Detail: D182's PUSH1c3b note.
+
+## AUTONOMY1b3b — a held ask marks its call waiting on the person (2026-10-20, D184)
+
+> - [ ] **AUTONOMY1b3b — a held ask marks its call waiting on the person** (driver, modules; after AUTONOMY1b3a; WAITSAY1b's half). `RunningCalls` carries the mark (moving `Changed`), the `calls` slice and `SESSION_GROUPS`' `calling` twin carry `waiting`, `sessions --json` too. Proof: the mark comes and clears with the hold; the twins equal. Then the page's 4 s poll of `PERMISSION_WAITS` (`permissionsAgainIn`, AUTONOMY1b3c) gives way to the mark's wake.
+
+**Outcome** 2026-10-20: a session's newest held request is its call, `RunningCall.Waiting`, timed from the hold and named as the record named its open call, else by the request's title, since a hold writes no call's event and may come before the call's announcement. `calling` is {title, since, waiting} in the `calls` slice, `SESSION_GROUPS` and `sessions --json`. The rail and the head say *waiting for your answer to … for …*. Where the calls are pushed, `PERMISSION_WAITS` is asked as the marks move, never on the 4 s clock, which mends `pushedState`'s second-window test (FIX-LOG). The conversation's own line is AUTONOMY1b3e. On Opus: about 175 tool calls, 58 minutes. Detail: D184's AUTONOMY1b3b note.
+
+## USAGECAP1a4 — a brainstorm's and a meeting's passes keep their account in the usage history (2026-10-20, D179)
+
+> - [ ] **USAGECAP1a4 — a brainstorm's and a meeting's passes keep their account in the usage history** (driver; D179 point 2, D176). `DriverBrainstorms` and `DriverMeetings` never call `Driver.Said`, so their turns, where recorded, carry no account. Proof: a pass's turn read back with its account.
+
+**Outcome** 2026-10-20: a brainstorm pass's `HoldAsync` passes `said: _driver.Said(adapter, selection, sessionId)`, so its `brainstorm-<id>-<turn>` turns keep the walk's account in the usage history (both doors' events reach `Context.Events`), and the pass also writes account-window readings through the roster callback, as every start holding a session does. A meeting's turn is refused without a stand-in until AGENTROOM1b, so its account follows then. The call-site proof is a Process assertion in `BrainstormProcessTests`, first run by the next full set. On Sonnet: about 24 tool calls, 5 minutes. Detail: D179's USAGECAP1a4 line.
+
+## REHLANE2b — the deployment rehearsal beside the Process lane (2026-10-20, D180)
+
+> - [ ] **REHLANE2b — the deployment rehearsal beside the Process lane** (tools; D180's REHLANE2 note; after REHLANE2). It still runs alone and last (12 to 14 minutes) because `desktop-publish` publishes every desktop project into the `bin/` and `obj/` the Process halves run from, and packs the CLI's folder in place as the release rehearsal does; give its publish an output of its own and chain it after the release and family rehearsals, beside the git half. Contract: D115's REHLANE1 note (why it stayed alone), D180's budget, SHUTDOWNBESIDE1 and REHLANE2 notes. Proof: the merge test's lane tables and own-output rule over its tools; a full set's wall with it beside.
+
+**Outcome** 2026-10-20: `desktop-publish --artifacts-path` builds every `dotnet publish` it runs and its stages into the folder it is told (untold, the install's recipe as before); the deployment rehearsal publishes and builds its driver host into `_fixtures/rehearsal-builds/deployment` on build servers of its own (`OWN_BUILD_SERVERS`), so no build-server shutdown runs before it, and it is of `BESIDE_GIT_HALF`, last: `driver-process`, `driver-process-git`, `rehearse`, `rehearse-family`, `deployment`, `modules-process`. No full set, rehearsal or publish ran on the branch; the next full set is its proof. The `before` machinery no gate plans now is BEFORESTEP1. On Opus: about 214 tool calls, 43 minutes. Detail: D180's REHLANE2b note.
+
+## REHLANE1b — the deployment rehearsal beside the git half (2026-10-20, D115)
+
+> - [ ] **REHLANE1b — the deployment rehearsal beside the git half** (tools; after REHLANE1's three full sets show no new flake). It still waits for the whole Process lane (13–15 m): give its builds and publish their own `--artifacts-path` through `tools/desktop-publish.mjs`'s recipes and their own build servers in place of the shutdown, then run it after the family rehearsal beside the git half. Proof: three full sets' walls, no new flake.
+
+**Outcome** 2026-10-20: done by REHLANE2b; its full sets' walls are the next runs'. Detail: D180's REHLANE2b note.

@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A pushed window asked the held permissions every 4 s, which a second window's snapshot test counted (AUTONOMY1b3b)
+
+- **Symptom:** `pushedState.test.tsx`'s *reads one snapshot in a second window, and nothing judged again* failed on main: the
+  reads in its 2 s window held a third route beside `STATE_SLICE` and `UNDER_WAY`.
+- **Root cause:** AUTONOMY1b3c (`c8a0de1e8`) made `usePermissionWaits` ask `PERMISSION_WAITS` on a 4 s clock while a session
+  works, pushed slices or not, since nothing woke the page as a request was held; the test's pushed session works, so the
+  clock's read could land in its window.
+- **Fix:** AUTONOMY1b3b marks a held request's call `waiting` in the pushed `calls` slice; where the calls are pushed, the waits
+  are asked as the marks move and never on the clock (`permissionsAgainIn`'s `pushed`, `bridge/sessions.ts`). A host that
+  pushes no calls keeps the clock.
+- **Verify:** the test red with the clock, green after; `pushedState.test.tsx`'s two new cases (no read over 20 s, one read per
+  mark's move; the older host's clock kept).
+
 ## 2026-10-20 — The CI beside shut down every build server on the machine before its deployment gate (SHUTDOWNBESIDE1)
 
 - **Symptom:** a full set's deployment log (0a5c608) begins `$ dotnet build-server shutdown`, *Shutting down MSBuild
