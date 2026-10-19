@@ -318,4 +318,23 @@ public sealed record HarnessReport(
     string? OwnAccount = null,
     DateTimeOffset? OwnRead = null,
     string? OwnOrg = null,
-    string? OwnPlan = null);
+    string? OwnPlan = null)
+{
+    /// <summary>
+    /// The folders beside its accounts that are no account (HELPSTUCK1, <see cref="HarnessSettings.Strays"/>), each with whether
+    /// it holds a sign-in, so one is said rather than lost. Carried for Ask Daoris's room; no wire answer carries it yet.
+    /// </summary>
+    public IReadOnlyList<StrayFolder> Strays { get; init; } = [];
+}
+
+/// <summary>
+/// A folder beside an agent's accounts that is no account (HELPSTUCK1): a lock's or a hidden one, never listed, walked or
+/// touched as one.
+/// </summary>
+/// <param name="Name">Its folder's name.</param>
+/// <param name="SignedIn">
+/// Whether it holds a sign-in by what Daoris kept of it while it was listed as an account: a reading that said signed in, a
+/// sign-in's or a key's mark, or a key. Such a folder is a sign-in the person would lose by its removal, so it is said with the
+/// way to keep it: renamed to an account's name while nothing runs on it.
+/// </param>
+public sealed record StrayFolder(string Name, bool SignedIn);

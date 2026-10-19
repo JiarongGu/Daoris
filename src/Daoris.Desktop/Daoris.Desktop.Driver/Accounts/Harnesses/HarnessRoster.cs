@@ -488,6 +488,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 names.GetValueOrDefault(account), who?.Org, who?.Plan);
         }).ToList();
 
+        // HELPSTUCK1: the folders beside the accounts that are no account, each with whether Daoris kept a sign-in of it while it
+        // was listed as one, so a sign-in in a lock's folder is said rather than lost.
+        var strays = HarnessSettings.Strays(Home, owner).Select(stray => new StrayFolder(
+            stray,
+            reads.Accounts.GetValueOrDefault(stray)?.Login == LoginState.In
+            || ProbeLock.SignedIn(Home, owner, stray) is not null
+            || HarnessKeys.Of(Home, owner, stray) is not null)).ToList();
+
         var own = WhoOf(owner, null, reads.Own);
         return new HarnessReport(
             name,
@@ -501,7 +509,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             own?.Account,
             reads.Own?.At,
             own?.Org,
-            own?.Plan);
+            own?.Plan)
+        {
+            Strays = strays,
+        };
     }
 
     /// <summary>

@@ -626,15 +626,26 @@ export function ownerOf(harness: string): string {
 
 /**
  * The profiles that exist — the directories that exist, sorted. There is no second register. Both places of the account homes
- * are read, as a list of an entry's items is (D172 point 5, HOMELAYOUT2).
+ * are read, as a list of an entry's items is (D172 point 5, HOMELAYOUT2). A lock's folder or a hidden one is no account
+ * (`notAnAccount`, HELPSTUCK1).
  */
 export function profiles(home: string, harness: string): string[] {
   const names = homePlaces(home, 'agent-homes', safeName(harness, 'agent name'))
     .filter((root) => existsSync(root))
     .flatMap((root) => readdirSync(root, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
+    .filter((entry) => entry.isDirectory() && !notAnAccount(entry.name))
     .map((entry) => entry.name);
   return [...new Set(names)].sort();
+}
+
+/**
+ * Whether a folder beside the accounts is no account (HELPSTUCK1, twin rule 1): a lock's, its name ending `.lock` in any case,
+ * since a lockfile library locks a folder by making `<folder>.lock` beside it, and Claude Code locks its configuration home so;
+ * or a hidden one, its name starting `.`. Listed as an account, a lock's folder was signed in to and run in, and a lock of the
+ * account it is named after then met a home. The driver's `HarnessSettings.NotAnAccount` is the twin.
+ */
+export function notAnAccount(name: string): boolean {
+  return name.startsWith('.') || name.toLowerCase().endsWith('.lock');
 }
 
 /**
