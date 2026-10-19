@@ -62,7 +62,7 @@ public static class DriverStateSlice
 
     /// <summary>The slice the shell's loop owns, judging <paramref name="loop"/>'s state.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, _ => Task.FromResult(Judge(loop)))
+        new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judge(loop)))
         {
             WakesOn = WakesOn,
             // The file unreadable: the windows keep what was judged, and the page's own reads say the driver's refusal.
