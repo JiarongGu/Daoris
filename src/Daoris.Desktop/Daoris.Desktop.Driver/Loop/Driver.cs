@@ -177,6 +177,12 @@ public sealed class Driver(
     public Action? LandingEnded { get; init; }
 
     /// <summary>
+    /// Hands back the wakes this look took (PARALLEL1g): told by a selection beside the look that failed before it judged with them, as a
+    /// look whose selection failed leaves them unspent (FABRIC-END7's review), so the next look judges them again.
+    /// </summary>
+    internal Action? WokeBack { get; init; }
+
+    /// <summary>
     /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
     /// deadline. Handed by the watch, whose looks then leave beside them the work no part of the look waits on (the remote sync and the
     /// lost-claim stop after it, the sync after an ending), and wait for a start that has not yet opened its record only until this
@@ -604,12 +610,18 @@ public sealed class Driver(
 
         // The second opinions owed (XAGENT1f, the second-agent design §2.1, §7, §8.1): asked and delivered beside the look, and the
         // starts they sit held. A pass finishes work already done, so it takes its slot before any quest's first start (D130).
+        // PARALLEL1g (D181 point 3): under the watch each is judged as its topic's judge beside the look, and the plan reads what each last
+        // found; one not judged yet holds its chain. The facts' wake is taken first, so a judgment landing after this wakes the next look.
+        Context.Runs.TakeFactsMoved();
         var judgedOpinions = new List<OpinionJudged>();
-        var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
+        var (opinionSits, passes) = await Stages.TimeAsync("opinions", () => Context.Beside
+            ? Task.FromResult(Gate.OpinionsBeside(looked, judgedOpinions, Stages, ct))
+            : OpinionsAsync(looked, events, ct, judgedOpinions)).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
         // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
-        // the cap as a pass does, and each answer handed to the session that asked.
+        // the cap as a pass does, and each answer handed to the session that asked. PARALLEL1g: under the watch an asker's record, an
+        // answer's handing and a restart's settling are the `helper` topic's judge's; the verdict and its start stay here.
         var judged = snapshot;
         var taken = passes;
         passes += await Stages.TimeAsync("helpers", () => HelpersAsync(judged, taken, events, ct)).ConfigureAwait(false);
@@ -753,7 +765,8 @@ public sealed class Driver(
         await Stages.TimeAsync("endings", () => EndingsAsync(events, concluded, ct)).ConfigureAwait(false);
 
         // Done work lands itself (LAND2b, D145 point 2): after the endings and their sync, so a done that just closed is read
-        // as the service now holds it. The look chooses; the landings run beside it, as its starts do.
+        // as the service now holds it. The look chooses; the landings run beside it, as its starts do. PARALLEL1g: under the watch the
+        // choosing runs beside it too, in the landing's pass (SelectBeside).
         await Stages.TimeAsync("landing", () => LandDueAsync(events, ct)).ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt, signedOutAt), events, progressed, snapshot.Active, concluded)
@@ -975,6 +988,12 @@ public sealed class Driver(
                 home, new ServiceAutoLandingWorld(service),
                 new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log)),
                 Context.Events, service.LandingSaid);
+            if (Context.Beside)
+            {
+                SelectBeside(lander, ct);
+                return;
+            }
+
             var (chosen, said) = await lander.ChooseAsync(config, ct, Woke).ConfigureAwait(false);
             WokeSpent = true;
             events.AddRange(said);
@@ -990,6 +1009,54 @@ public sealed class Driver(
         {
             events.Add($"landing  the sessions due to land could not be looked at this look, and are tried again at the next: {error.Message}");
         }
+    }
+
+    /// <summary>
+    /// The selection and its landings, under the watch, as one landing pass beside the look (PARALLEL1g, D181 point 3): a due list, a
+    /// workflow, a quest or a tree slow to read holds that pass, never a start. The wakes this look took are the pass's to judge with, so
+    /// they are spent here, once (FABRIC-END7); a selection that fails hands them back (<see cref="WokeBack"/>) before it says so, and
+    /// its line wakes the look that judges them again. A look while the pass runs leaves its own wakes for the pass's end, as before.
+    /// </summary>
+    private void SelectBeside(AutoLander lander, CancellationToken ct)
+    {
+        if (lander.Due.Open().Count == 0)
+        {
+            WokeSpent = true;
+            return;
+        }
+
+        var woke = Woke;
+        var back = WokeBack;
+        if (!Context.Runs.Beside(async token =>
+            {
+                AutoChosen chosen;
+                try
+                {
+                    chosen = await Stages.TimeAsync("landing", () => lander.ChooseAsync(config, token, woke), beside: true).ConfigureAwait(false);
+                }
+                catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
+                                                  or UnauthorizedAccessException
+                                                  || (error is OperationCanceledException && !token.IsCancellationRequested))
+                {
+                    back?.Invoke();
+                    // Said once until a selection reads again, so one that keeps failing wakes no look of its own (LookFacts.Failed).
+                    return Context.Runs.Facts.Failed("landing")
+                        ? [$"landing  the sessions due to land could not be looked at this time, and are tried again at a later look: {error.Message}"]
+                        : [];
+                }
+
+                Context.Runs.Facts.Judged("landing");
+                if (chosen.Chosen.Count == 0) return chosen.Said;
+                IReadOnlyList<string> landed = await lander.LandAsync(chosen.Chosen, token).ConfigureAwait(false);
+                return [.. chosen.Said, .. landed];
+            }, ct, LandingEnded))
+        {
+            // A pass began meanwhile (looks run one at a time, so none should): its end offers the wakes again.
+            LandingBusy = true;
+            return;
+        }
+
+        WokeSpent = true;
     }
 
     /// <summary>
