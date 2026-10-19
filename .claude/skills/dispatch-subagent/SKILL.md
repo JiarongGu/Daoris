@@ -5,8 +5,10 @@ description: The parent's half of dispatching a subagent to work a branch of thi
 
 # dispatch-subagent
 
-A row is built by two agents: a **branch-scout** orients it and returns an orientation pack, and a
-**branch-worker** builds it from the pack on its own branch (D160). Each one's brief is its agent
+A feature is built by two agents: a **branch-scout** orients it and returns an orientation pack, and a
+**branch-worker** builds it from the pack on its own branch, end to end across the lanes it needs (D160, D187).
+The unit is a feature a person can see working, named by its outcome; the backlog rows it covers become one
+block row when it is dispatched. Each one's brief is its agent
 definition in `.claude/agents/`, which the harness loads as that agent's instructions, so a dispatch prompt
 carries only what differs per branch (MOD9, `docs/2026-09-30-parallel-development-design.md` §3 rule 7).
 This skill is the parent's half; a worker never reads it.
@@ -33,7 +35,8 @@ empty goes back to it.
 The worker, with `subagent_type: branch-worker` and the model the table below chooses:
 
 ```
-Task: <ROW>: <what, and why>. The contract is <design document, section> and the <ROW> row in TASKS.md.
+Task: <FEATURE>: <the outcome a person will see working, and why>. It gathers <ROWS> in TASKS.md; the contract is
+<design document, section>. Build it end to end across the lanes it needs and hand it back working (D187).
 Model: <model>, because <the row's kind in the table>.
 Start from: main at <sha> or later.
 Lanes: <lane ids in daoris.lanes.json, e.g. cli, tools>. Do not touch: <files a branch in flight holds>.
@@ -90,15 +93,17 @@ once three batches hold the targets (MODELROLE1).
    hand-off, linked worktrees), GRAPH1b two and CLOSE1b one, each 30 to 60 minutes of building and a re-check.
 2. **Reserve the decision number** before dispatching. It is the next number after both the highest file
    in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
-3. **Size the branch to about a hundred turns.** Cost grows with the square of a branch's turns: in the
-   evidence, branches of 100 to 200 turns cost three times those under 100, and branches of 200 to 300 cost
-   seven times. A row that changes more than one surface, or more than one lane, is split into rows that
-   each fit, and each gets its own pack. A pack's *one sitting* does not override this: ENTRY1f2, sized so
-   across driver, modules, service and page with the room's goldens, ran 129 turns and cost what a branch
-   did before the split (D160's third batch). A lane that only takes a sentence or a parameter may ride along.
+3. **Dispatch a feature, end to end** (D187). One builder takes one feature a person can see working, across every
+   lane it needs, driver to page, and hands it back working; its rows become one block row in the backlog, with one
+   decision note where something is decided and one archive entry. Never split a feature into a host half and a page
+   half: each slice's scout, brief, merge, records and CI pass were round trips, and the person saw nothing until the
+   last landed. Split only a feature too large for one builder's context, into parts that each work and are each
+   seen working. The longer branch's cost per turn (D160: branches of 100 to 200 turns cost three times those under
+   100) is accepted against those rounds. A hand-back proposes no new row; a follow-up is done in the branch or
+   dropped, and a row is filed only from the owner or for something a person would see broken.
 4. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
-   which is anything a branch in flight holds. When two branches need the same lane, one waits for the
-   other or the work is split.
+   which is anything a branch in flight holds. When two features need the same file, one waits for the
+   other.
 5. **Run at most five workers at once, and a CI run beside never lowers that** (the owner's decision, 2026-10-19: more
    workers, and development keeps going while a CI run is beside, never held back for a full set; the CI
    is the guest, below normal (CIPRIO1), so it slows and development does not; three before, while every merge
@@ -182,7 +187,8 @@ once three batches hold the targets (MODELROLE1).
      🔴 **Lock a worktree you make by hand** (`git worktree add --lock …`, or `git worktree lock` after):
      an integration worktree at main's tip before its first commit counts as merged and clean, and the
      next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
-   - **A hand-back that names `Process` tests it wrote and could not run** is run by the parent on the open merge before
+   - **A builder runs its own feature's `Process` classes, filtered, before it hands back** (D187 point 4). A hand-back that
+     still names `Process` tests it wrote and did not run (one from before D187, or one the load made flake) is run by the parent on the open merge before
      the commit: `dotnet test <the test project> --settings src/Daoris.Desktop/process.runsettings --filter
      "FullyQualifiedName~<class>"`, or `git.process.runsettings` for a class marked `Parallel=Git` (PROC1c), which
      the first file's filter leaves out: run with it, such a class matches no test. A merge never runs those halves,
