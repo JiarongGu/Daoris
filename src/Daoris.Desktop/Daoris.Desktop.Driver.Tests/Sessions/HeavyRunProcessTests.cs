@@ -146,6 +146,37 @@ public sealed class HeavyRunProcessTests : IDisposable
         Assert.Contains("run-heavy: 2 heavy gates passed", said.Text);
     }
 
+    /// <summary>
+    /// HEAVYRUN1a2's proof: a gate whose npm script runs Jest, and one whose script runs Vitest, reach their runner with two workers at
+    /// most, through npm, and the run says what it bound. Each runner is a stub in the checkout's <c>node_modules/.bin</c>, where npm
+    /// finds a script's command, recording the words it was handed; each package's version is one whose flag was read.
+    /// </summary>
+    [Fact]
+    public async Task A_gate_s_runner_is_handed_two_workers_through_npm()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        File.WriteAllText(_fixture.At("argv.mjs"), "import { writeFileSync } from 'node:fs';\nwriteFileSync(process.argv[2], JSON.stringify(process.argv.slice(3)));\n");
+        var bin = Path.Combine(_fixture.Checkout, "node_modules", ".bin");
+        Directory.CreateDirectory(bin);
+        File.WriteAllText(Path.Combine(bin, "jest.cmd"), $"@node \"{_fixture.At("argv.mjs")}\" \"{_fixture.At("jest.json")}\" %*\r\n");
+        File.WriteAllText(Path.Combine(bin, "vitest.cmd"), $"@node \"{_fixture.At("argv.mjs")}\" \"{_fixture.At("vitest.json")}\" %*\r\n");
+        _fixture.Installed(_fixture.Checkout, "jest", "29.7.0");
+        _fixture.Installed(_fixture.Checkout, "vitest", "5.0.1");
+        _fixture.Scripts(_fixture.Checkout, ("test", "jest --ci"), ("unit", "vitest run"));
+        _fixture.Gates(_fixture.Checkout, ("jest", "npm test", true), ("vitest", "npm run unit -- --reporter=dot", true));
+        var said = new SaidWriter();
+
+        var exit = await HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Checkout), said, CancellationToken.None).WaitAsync(Poll.Patience);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(["--ci", "--maxWorkers=2"], JsonSerializer.Deserialize<string[]>(File.ReadAllText(_fixture.At("jest.json"))) ?? []);
+        Assert.Equal(["run", "--reporter=dot", "--maxWorkers=2"], JsonSerializer.Deserialize<string[]>(File.ReadAllText(_fixture.At("vitest.json"))) ?? []);
+        Assert.Contains("run-heavy: `jest`: npm test -- --maxWorkers=2", said.Lines);
+        Assert.Contains("run-heavy: `jest` runs Jest 29.7.0 through npm's `test` script, so its workers are bounded to two (`--maxWorkers=2`).", said.Lines);
+        Assert.Contains("run-heavy: `vitest`: npm run unit -- --reporter=dot --maxWorkers=2", said.Lines);
+    }
+
     /// <summary>The first gate that fails ends the sequence: the gates after it are not run, and the run says so and exits 1.</summary>
     [Fact]
     public async Task A_gate_that_fails_stops_the_sequence_and_the_run_exits_1()
