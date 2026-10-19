@@ -190,6 +190,7 @@
     "LineRegistrationTests.cs": "Service",
     "MachineLogReaderTests.cs": "Platform",
     "MachineLogTests.cs": "Platform",
+    "MeetingCommandTests.cs": "Brainstorms",
     "MeetingPacketTests.cs": "Brainstorms",
     "NativeResumeTests.cs": "Loop",
     "NativeStreamsTests.cs": "Agents",
