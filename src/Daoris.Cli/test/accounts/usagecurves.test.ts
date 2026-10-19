@@ -67,10 +67,11 @@ test('the curve\'s constants are the driver\'s, each copy naming the other', () 
   const driver = readFileSync(driverFile('UsageCurves.cs'), 'utf8');
   const cli = readFileSync(join(SOURCES, cliSource('usagecurves.ts')), 'utf8');
 
-  assert.match(driver, /WeeklyLead = 20, WeeklyCap = 95;/);
+  assert.match(driver, /WeeklyLead = 20, WeeklyKnee = 95, WeeklyEnd = 100;/);
   assert.match(driver, /"session" => TimeSpan\.FromHours\(5\),\s+"weekly" => TimeSpan\.FromDays\(7\),/);
   assert.match(cli, /WEEKLY_LEAD = 20;/);
-  assert.match(cli, /WEEKLY_CAP = 95;/);
+  assert.match(cli, /WEEKLY_KNEE = 95;/);
+  assert.match(cli, /WEEKLY_END = 100;/);
   assert.match(cli, /UsageCurves/);
   // The driver's twin test reads this table by its name.
   assert.match(readFileSync(driverTestFile('UsageCurvesTwinTests.cs'), 'utf8'), /"usage-curves\.json"/);

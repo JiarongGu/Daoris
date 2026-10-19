@@ -470,6 +470,11 @@ public sealed partial class HelpCoverageTests
         ("quests", "useDismissConflict", null, new Exempt(
             "it puts away a conflict the person has read, an operation that travels and changes no status of the quest or its "
             + "work (SYNC6c), as the banner's *Dismiss* is exempt, so there is nothing to propose.")),
+        // SYNCMERGE1c2 (D178 point 3): a person-only door, which no agent's call may reach.
+        ("quests", "useForwardConflict", null, Own("quests",
+            "bringing this machine's lost take forward is the person's choice, made on the machine whose take lost (D178 point 3), a "
+            + "person-only door pressed on the quest's conflict beside its *Drop mine*, and `daoris-driver sync forward <quest> "
+            + "<machine> <sequence>` at a terminal")),
 
         // Asks, on Quests: the composer and an ask's page.
         ("asks", "useAsk", null, new Door("ask", "ask")),

@@ -51,7 +51,8 @@ public sealed class OpeningNoteTests : IDisposable
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W40@+4d account-2:W10@+4d", OpeningWhy.MostRoom, "room=53 window=weekly" },
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W40@+4d account-2:S70,W10@+4d", OpeningWhy.MostRoom, "room=20 window=session" },
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W95@+4d account-2:W90@+4d", OpeningWhy.OverCurve, "over=account-1 window=weekly used=95 curve=63" },
-        { "account-2", WalkStep.Lapsing, null, "work", "account-2:w+20h", OpeningWhy.Lapsing, "at=2026-10-03T08:00:00Z" },
+        // What would lapse (USAGERESET1): the week that won, how much of it is unused, its reset and when it was read.
+        { "account-2", WalkStep.Lapsing, null, "work", "account-2:W60@+20h", OpeningWhy.Lapses, "window=weekly unused=40 at=2026-10-03T08:00:00Z seen=2026-10-02T11:50:00Z" },
         { "account-2", WalkStep.LeastRecent, null, "work", "account-2:s-1d", OpeningWhy.LeastRecent, "" },
         { "account-2", WalkStep.LeastRecent, null, "work", "", OpeningWhy.NotStarted, "" },
         { "account-1", WalkStep.List, null, "work", "", OpeningWhy.First, "workspace=work" },
@@ -107,6 +108,23 @@ public sealed class OpeningNoteTests : IDisposable
 
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.NearUsed);
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.Room);
+    }
+
+    /// <summary>
+    /// USAGERESET1: step 4 says what would lapse, the winning window, its unused share, when it resets and how old its reading
+    /// is, where it said only that its week reset first. <c>lapsing</c> stays declared for the lines already on machines.
+    /// </summary>
+    [Theory]
+    [InlineData("account-2:W60@+20h", "its weekly window resets in 20 h with 40% of it unused, read 10 min ago")]
+    [InlineData("account-2:W97@+30m", "its weekly window resets in 30 min with 3% of it unused, read 10 min ago")]
+    [InlineData("account-2:W0@+7.6h", "its weekly window resets in 8 h with 100% of it unused, read 10 min ago")]
+    public void What_would_lapse_is_said_by_its_window_its_unused_share_its_reset_and_its_reading_s_age(string facts, string text)
+    {
+        var said = Assert.Single(RotationWords.Steps(new WalkChoice(WalkStep.Lapsing), "claude-code", "account-2", Scope(), "work", null,
+            AccountRotationWalkTests.Facts(facts), StartKind.Driven, Now, TimeZoneInfo.Utc));
+
+        Assert.Equal((text, OpeningWhy.Lapses), (said.Text, said.Why));
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.Lapsing);
     }
 
     [Fact]

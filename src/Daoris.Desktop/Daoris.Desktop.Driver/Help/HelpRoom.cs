@@ -63,6 +63,12 @@ public static class HelpRoom
 
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpRoom);
 
+    /// <summary>
+    /// Whether the room was ever written (HELPSTUCK1): its <c>AGENTS.md</c> is there, so a start whose reading of the machine
+    /// does not answer in time can start on it as last written.
+    /// </summary>
+    public static bool Written(string home) => File.Exists(Path.Combine(PathOf(home), "AGENTS.md"));
+
     /// <summary>Write the room from the machine as it stands, and answer where it is.</summary>
     public static string Prepare(string home, HelpMachine machine)
     {

@@ -10,9 +10,10 @@ import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN } from '..
 import { answer, QUEST_CHAIN } from '../work/traceFixtures';
 import { IN_REVIEW } from '../workflow/runFixtures';
 import {
-  ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, FINISHED_HERE, HELD, HELD_BY_PERSON, HELD_CJK,
-  LANED, MET, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REQUIRING, STARTING,
-  STOPPED, TAKEN, TAKEN_ELSEWHERE, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
+  ACCEPTED, BROUGHT_FORWARD, BROUGHT_FORWARD_UNCONFIRMED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, DROPPED_FIRST, EXHAUSTED,
+  FAILED, FINISHED_HERE, HELD, HELD_BY_PERSON, HELD_CJK, HELD_ELSEWHERE, LANED, LOST_AGAIN, LOST_CLOSED, LOST_TO_REOPEN, MET, MINE_LOST,
+  OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REOPENED_HERE, REQUIRING,
+  SETTLED_DROPPED, STARTING, STOPPED, TAKEN, TAKEN_ELSEWHERE, THEIRS_LOST, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
@@ -105,6 +106,60 @@ export const WaitingOnAQuestion: Story = { args: { quest: WAITING, question: { i
 
 /** A move that reached the remote second (D68 §5), kept for a person with its dismissal. */
 export const Conflict: Story = { args: { quest: CONFLICTED } };
+
+/**
+ * This machine's lost take on a step open again (SYNCMERGE1c2, D178 point 2): *Bring mine forward* and *Drop mine*, and what each does,
+ * the dismissal's apart from the bring-forward's.
+ */
+export const ConflictMine: Story = { args: { quest: MINE_LOST, onForward: nothing } };
+
+/** The same in 中文. */
+export const ConflictMineChinese: Story = { ...ConflictMine, decorators: [chinese] };
+
+/** The same in dark. */
+export const ConflictMineDark: Story = { ...ConflictMine, decorators: [dark] };
+
+/** Another machine's lost take on a step open here: its dismissal only, as before. */
+export const ConflictTheirs: Story = { args: { quest: THEIRS_LOST, onForward: nothing } };
+
+/** Lost to the person's reopen of the work it grew from, this machine's take and another's, each said as that. */
+export const ConflictLostToTheReopen: Story = { args: { quest: LOST_TO_REOPEN, onForward: nothing } };
+
+/** Another machine holds the step: no *Bring mine forward*, and the row says which machine holds it. */
+export const ConflictHeldElsewhere: Story = { args: { quest: HELD_ELSEWHERE, onForward: nothing } };
+
+/** The step closed since: *Drop mine* only, and why nothing can be brought forward. */
+export const ConflictOnAClosedStep: Story = { args: { quest: LOST_CLOSED, onForward: nothing } };
+
+/** Brought forward and lost again: one row, the second loss said on the conflict it was to settle, and *Drop mine* takes both. */
+export const ConflictLostAgain: Story = { args: { quest: LOST_AGAIN, onForward: nothing } };
+
+/** The same in 中文. */
+export const ConflictLostAgainChinese: Story = { ...ConflictLostAgain, decorators: [chinese] };
+
+/** Brought forward offline (D178 point 8): unconfirmed until a sync reaches the remote, and never said as settled. */
+export const ConflictUnconfirmed: Story = { args: { quest: BROUGHT_FORWARD_UNCONFIRMED, onForward: nothing } };
+
+/** Brought forward, and the remote confirmed it: settled, below what it carries, with nothing to press. */
+export const ConflictBroughtForward: Story = { args: { quest: BROUGHT_FORWARD, onForward: nothing } };
+
+/** The same in 中文. */
+export const ConflictBroughtForwardChinese: Story = { ...ConflictBroughtForward, decorators: [chinese] };
+
+/** Dropped on another machine before this machine's bring-forward reached the remote: its fresh take is a conflict with its own choices. */
+export const ConflictDroppedFirst: Story = { args: { quest: DROPPED_FIRST, onForward: nothing } };
+
+/** Dropped: settled, and nothing waits. */
+export const ConflictDropped: Story = { args: { quest: SETTLED_DROPPED, onForward: nothing } };
+
+/**
+ * A step its source's reopen held after this machine's take landed (D178 point 2): its go-on and abandon named as a lost take's two
+ * choices, *Bring mine forward* and *Drop mine…*, and a decline's consequence said apart from a dismissal's.
+ */
+export const HeldStepMine: Story = { args: { quest: REOPENED_HERE, goOn: { ready: true, onGoOn: nothing } } };
+
+/** The same in 中文. */
+export const HeldStepMineChinese: Story = { ...HeldStepMine, decorators: [chinese] };
 
 /** Addressed to two of the engine's lanes, each named where its registration says (D115 §2.2). */
 export const Lanes: Story = { args: { quest: LANED, lanes: 'assets (Assets), core (Core)' } };

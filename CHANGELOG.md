@@ -12,6 +12,20 @@ with the version and date at release.
   it lacks and where it is approved, and can propose the approval itself: its card names the plugin, the server and every tool,
   reads and writes apart, and nothing changes until you press Apply. A tool that runs commands or a page's own code is never
   handed to it. At a terminal, `daoris-driver plugins approve <id> <server> --writes <tool,…>` accepts only the writes named.
+- In a week's last day, a start now goes to the account where the most of its week would otherwise go unused, for the hours
+  left to its reset, rather than to the one that resets first: three points resetting in two hours no longer go ahead of half
+  a week resetting in twenty. Only a reading of the week's use counts; a reset known with no reading ranks nothing. Daoris's
+  smart curve lets the week rise from 95% to 100% as its reset nears, so less of it lapses, and a session that has to move
+  goes where more would lapse. The start's first line says why: *its weekly window resets in 20 h with 40% of it unused, read
+  10 min ago*, in English and 中文.
+- Ask Daoris no longer sits silently while it starts on a busy machine. It waits up to 30 seconds to read this machine for its
+  room; past that it starts on the room as last written and says so in the conversation, and the room is written again once the
+  reading finishes. On a machine where Ask Daoris never ran before, the start ends saying why instead of waiting. A
+  conversation left waiting to start by a Daoris that closed, which kept every new Ask Daoris conversation from opening, now
+  ends when you stop it.
+- A folder beside an agent's accounts whose name ends `.lock`, or starts with `.`, is no longer taken for an account: Claude Code
+  makes such folders to lock an account's home, and two were listed, signed in to and run in. Nothing is deleted. Ask Daoris
+  names each one, and says when one holds a sign-in: rename it to an account's name while nothing runs on it to keep it.
 - Each main window of Daoris holds its own workspace. Choosing one in a window changes that window alone, and reloading it
   keeps it; a window opened later starts from the workspace last chosen in any. A session's own window keeps the workspace its
   session belongs to, or follows the window it was opened from, never another main window, and so does the monitor. The page's
@@ -21,6 +35,14 @@ with the version and date at release.
   read said it, the account's plan word and when, for the estimate of how much work each window holds that comes later. Nothing
   reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says
   what it pruned.
+
+- A quest whose take on this machine lost, to another machine's take or to the reopen of the work it grew from, offers two
+  choices under *Conflicts* on its page: *Drop mine* puts the conflict away and moves nothing else, and *Bring mine forward* takes
+  the step again from this machine, so its kept session goes on (`daoris-driver sync forward` at a terminal). Where it cannot be
+  brought forward (another machine holds the step, the step is closed, or its source is reopened) the page says why. A
+  bring-forward that loses again says so, one made offline reads *unconfirmed* until the remote answers, and a settled conflict
+  says how it ended. A step the reopen holds names its go-on and abandon the same way, and says that abandoning declines it for
+  every machine.
 
 - Beside the readings, Daoris keeps every turn's tokens in `usage-history/`: input, output and cache as the agent reported them,
   the account the session ran as, and the model they were spent on where the agent said it, with a helper model's share kept

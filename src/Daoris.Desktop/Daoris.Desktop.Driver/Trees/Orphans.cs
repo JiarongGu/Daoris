@@ -22,8 +22,9 @@ public sealed record OrphanEnded(string Id, string Repository)
 ///
 /// <para><b>The sweep takes only <c>working</c>.</b> A record is <c>starting</c> between its opening and
 /// its spawn, which another driver here may be in the middle of, and a parked one waits on the person
-/// by design. The person's own stop on one record also takes <c>starting</c>: they asked about that
-/// one, and a start that never spawned is exactly what would otherwise hold its repository forever.</para>
+/// by design. The person's own stop on one record also takes <c>starting</c> and <c>queued</c>: they asked
+/// about that one, and a start that never spawned is exactly what would otherwise hold its repository, or
+/// Ask Daoris's room, forever (HELPSTUCK1).</para>
 ///
 /// <para><b>One home per service is the assumption</b>, and it is the deployed shape: a driver drives
 /// its machine's local host (a shared host is reached through the sync, never driven directly — D47
@@ -63,7 +64,9 @@ public static class Orphans
         foreach (var session in await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
         {
             if (only is not null && !string.Equals(session.Id, only, StringComparison.OrdinalIgnoreCase)) continue;
-            var claimsProcess = session.State == "working" || (only is not null && session.State == "starting");
+            // The person's stop takes a start that never spawned, `starting` or still `queued` (HELPSTUCK1: an Ask Daoris start left
+            // `queued` by a driver that went held the room, and every later start was refused naming it).
+            var claimsProcess = session.State == "working" || (only is not null && session.State is "starting" or "queued");
             if (!claimsProcess || processes.AliveOnThisMachine(session.Id)) continue;
 
             var evidence = await LostDoneAsync(service, session, git, ct).ConfigureAwait(false);

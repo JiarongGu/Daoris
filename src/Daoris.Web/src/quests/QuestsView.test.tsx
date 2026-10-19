@@ -361,6 +361,93 @@ describe('QuestsView', () => {
     await waitFor(() => expect(within(questMain()).queryByRole('region', { name: 'Conflicts' })).toBeNull());
   });
 
+  // ——— SYNCMERGE1c2 (D178 points 3 and 7): this machine's lost take brought forward from its page, by the conflict's name.
+
+  /** This machine's take lost on a step open again, as a local host answers it to its own machine's page. */
+  const lostHere = (conflicts: Record<string, unknown>[]) => [{
+    ...QUESTS[0], status: 'Open', here: 'desk',
+    conflicts: [{ machine: 'desk', sequence: 7, attempted: 'Taken', note: 'desk, on the train', at: '2026-09-02T00:00:00Z' }, ...conflicts],
+  }];
+
+  it('brings this machine’s lost take forward by name and says what the service answered', async () => {
+    const lost = lostHere([]);
+    let forwarded: unknown = null;
+    const message = 'Quest `#abc123` is brought forward: this machine\'s fresh take is Taken, the remote confirmed it.';
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/conflicts/forward') {
+        forwarded = JSON.parse(String(init.body));
+        return Response.json({
+          quest: {
+            ...lost[0], status: 'Taken', holder: 'desk', conflicts: [],
+            settled: [{ ...lost[0].conflicts[0], ended: 'brought-forward', forward: { machine: 'desk', sequence: 9, at: '2026-09-02T01:00:00Z', standing: 'held' } }],
+          },
+          message,
+        });
+      }
+      return url.startsWith('/api/quests') ? Response.json(lost) : respond(url);
+    }));
+    const notify = view();
+    const conflicts = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'Conflicts' });
+
+    await userEvent.click(within(conflicts).getByRole('button', { name: 'Bring mine forward' }));
+
+    await waitFor(() => expect(forwarded).toEqual({ machine: 'desk', sequence: 7 }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(message));
+    // The page shows how it ended before the list catches up.
+    await waitFor(() => expect(within(questMain()).getByRole('region', { name: 'Settled conflicts' }))
+      .toHaveTextContent('brought forward, and the remote confirmed it'));
+  });
+
+  it('says a refused or lost-again bring-forward in the service’s words, and reads the quest again', async () => {
+    const lost = lostHere([]);
+    const refusal = 'Quest `#abc123` moved under this machine again: it was taken on another machine before this bring-forward reached '
+      + 'the remote, so the fresh take lost too and is kept on the quest as a new conflict.';
+    let reads = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/conflicts/forward') {
+        return Response.json({ error: refusal }, { status: 409 });
+      }
+      if (url.startsWith('/api/quests')) reads += 1;
+      return url.startsWith('/api/quests') ? Response.json(lost) : respond(url);
+    }));
+    const notify = view();
+    const conflicts = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'Conflicts' });
+    const before = reads;
+
+    await userEvent.click(within(conflicts).getByRole('button', { name: 'Bring mine forward' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(refusal, 'error'));
+    // A loss again moved the quest (a new conflict), so it is read again though the door refused.
+    await waitFor(() => expect(reads).toBeGreaterThan(before));
+  });
+
+  it('drops a second loss with the conflict it lost again on, one after the other', async () => {
+    const lost = lostHere([{ machine: 'desk', sequence: 9, attempted: 'Taken', note: null, at: '2026-09-02T01:00:00Z' }]);
+    lost[0].conflicts[0].forward = { machine: 'desk', sequence: 9, at: '2026-09-02T01:00:00Z', standing: 'lost' };
+    const dismissed: unknown[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/conflicts/dismiss') {
+        const named = JSON.parse(String(init.body)) as { machine: string; sequence: number };
+        dismissed.push(named);
+        return Response.json({
+          quest: { ...lost[0], conflicts: lost[0].conflicts.filter((c) => Number(c.sequence) > named.sequence) },
+          message: `Dismissed conflict ${named.sequence}.`,
+        });
+      }
+      return url.startsWith('/api/quests') ? Response.json(lost) : respond(url);
+    }));
+    const notify = view();
+    const conflicts = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'Conflicts' });
+
+    await userEvent.click(within(conflicts).getByRole('button', { name: 'Drop mine' }));
+
+    await waitFor(() => expect(dismissed).toEqual([{ machine: 'desk', sequence: 7 }, { machine: 'desk', sequence: 9 }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Dismissed conflict 9.'));
+  });
+
   // ——— Deleting a quest made by mistake (QUEST1, D95): offered only where the service says it may go,
   // asked once, and answered in the service's own words.
 

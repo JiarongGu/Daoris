@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Quest, type Session } from '../data/api';
+import { api, type Quest, type Session, type SubmissionRef } from '../data/api';
 import { isImage } from '../compose/attachments';
 import { ago, sessionTool, size, stamp } from '../locales/format';
 import { ExternalLink } from '../design/links';
@@ -23,6 +23,7 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Note } from '../work/Note';
 import { stepState } from '../work/review';
 import { ReviewGate, type ReviewGateActs } from '../work/ReviewGate';
+import { QuestConflicts, readConflicts, SettledConflicts } from './Conflicts';
 import { QuestRequirements } from './Requirements';
 import { shownStatus } from './records';
 import { TrustAsk } from '../work/TrustAsk';
@@ -142,8 +143,8 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
-  busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
-  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
+  busy = false, retrying = false, trusting = false, granting = false, dismissing = false, forwarding = false, accepting = false,
+  onRespond, onDelete, onDismiss, onForward, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
   nameOf, review, workflow, grouping, reopen, goOn,
 }: {
   /**
@@ -205,6 +206,8 @@ export function QuestPage({
   trusting?: boolean;
   granting?: boolean;
   dismissing?: boolean;
+  /** A bring-forward of this machine's lost take is on its way (SYNCMERGE1c2). */
+  forwarding?: boolean;
   /** The person's yes to a departure is on its way (DRIFT1d2). */
   accepting?: boolean;
   /**
@@ -214,7 +217,16 @@ export function QuestPage({
   onRespond: (action: 'take' | 'done' | 'decline', reason?: string | null, answered?: Answered) => void;
   /** Delete the quest (D95), told back to its ask (UXFIX2) — absent where there is no door to do it. */
   onDelete?: (answered: Answered) => void;
-  onDismiss: (machine: string, sequence: number) => void;
+  /**
+   * Dismiss a conflict by its name (SYNC6c): this machine's lost take's *Drop mine*, then the fresh takes' conflicts its lost
+   * bring-forwards left, which its row reads as its own (SYNCMERGE1c2).
+   */
+  onDismiss: (machine: string, sequence: number, also?: SubmissionRef[]) => void;
+  /**
+   * Bring this machine's lost take forward by the conflict's name (SYNCMERGE1c2, D178 point 3). Absent where there is no door to say
+   * it through, and then never offered.
+   */
+  onForward?: (machine: string, sequence: number) => void;
   /**
    * *Try again* (RETRY1; D126 §3.4): start a quest parked by its strikes again, or release one the person's stop holds
    * — the shell's, which the driver judges by its verdict.
@@ -302,6 +314,14 @@ export function QuestPage({
   const reopenHeld = quest.held === true && quest.hold === 'source-reopened';
   const reopenable = reopen !== undefined && reads === 'Submitted' && quest.held !== true;
   const goesOn = reopenHeld && quest.status === 'Taken' && goOn?.ready === true;
+  // SYNCMERGE1c2 (D178 point 2): a held step this machine's take holds offers its go-on and abandon as a lost take's two choices, by
+  // their names; held by another machine, or where no host says which, each keeps its own.
+  const holdsHere = quest.here != null && quest.holder === quest.here;
+  const heldMine = reopenHeld && holdsHere;
+  const labelOf = (act: QuestAct) => (act === 'goOn' && heldMine ? 'quests.conflict.forward' : QUEST_ACT[act].label);
+  // This machine's take lost and the step is not its own (D178 point 7): the person's done here is refused as its session's would
+  // be, so the done's ask names the choices that stand for it.
+  const lostHere = !holdsHere && readConflicts(quest).rows.some((row) => row.mine);
   const headActs: QuestAct[] = [
     ...(!(moving || offers.abandon) ? [] : [
       ...(quest.status === 'Open' && !reopenHeld ? ['take' as const] : []),
@@ -416,7 +436,7 @@ export function QuestPage({
     label: questName(quest),
     acts: [
       ...[...headActs, ...bodyActs].map((act) => ({
-        id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon,
+        id: act, label: t(labelOf(act)), icon: QUEST_ACT[act].icon,
         // What waits on a press waits in the menu too: the header's on the quest's own, Try again on its own.
         disabled: act === 'retry' ? retrying : act === 'accept' ? accepting : act === 'goOn' ? goOn?.going === true
           : act === 'session' || act === 'trust' ? false : waiting,
@@ -524,11 +544,10 @@ export function QuestPage({
         <InlineConfirm
           className="mb-4"
           label={t('quests.detail.doneTitle')}
-          says={requirements.length > 0
-            ? t('quests.requirements.join', {
-              first: t('quests.detail.doneConfirm', { id: quest.id }), second: t('quests.detail.doneRequirements'),
-            })
-            : t('quests.detail.doneConfirm', { id: quest.id })}
+          says={[
+            ...(requirements.length > 0 ? [t('quests.detail.doneRequirements')] : []),
+            ...(lostHere ? [t('quests.conflict.doneChoices')] : []),
+          ].reduce((first, second) => t('quests.requirements.join', { first, second }), t('quests.detail.doneConfirm', { id: quest.id }))}
           meanIt={t('quests.detail.doneMeanIt')}
           busy={busy}
           onConfirm={(answered) => onRespond('done', doneNote.trim() || null, answered)}
@@ -756,16 +775,18 @@ export function QuestPage({
             <span className="mt-2 flex flex-wrap gap-2">
               {goesOn && (
                 <Button variant="primary" disabled={goOn?.going === true} onClick={() => press('goOn')}>
-                  {t(QUEST_ACT.goOn.label)}
+                  {t(labelOf('goOn'))}
                 </Button>
               )}
               {/* Abandoning it is the person's decline (CLOSE1c's choice 2): this machine's abandon where its driver offers one,
                   which stops its work too, and the decline's own ask otherwise. */}
               <Button disabled={waiting} onClick={() => press(offers.abandon ? 'abandon' : 'decline')}>
-                {t(QUEST_ACT.abandon.label)}
+                {t(heldMine ? 'quests.reopened.drop' : QUEST_ACT.abandon.label)}
               </Button>
             </span>
           )}
+          {/* A decline closes the step for every machine, where a lost take's dismissal moves only its conflict (D178 point 2). */}
+          {moving && <p className="m-0 mt-2 text-small text-ink-soft">{t('quests.reopened.declines')}</p>}
         </section>
       )}
 
@@ -800,36 +821,9 @@ export function QuestPage({
         />
       )}
 
-      {(quest.conflicts?.length ?? 0) > 0 && (
-        /* A move that reached the remote second (D68 §5): kept on the quest for a person and never merged, so
-           it sits above the body — it is what this quest is waiting on. The note is that session's own words. */
-        <section
-          aria-label={t('quests.detail.conflicts')}
-          className="mb-4 rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5"
-        >
-          <SectionTitle>{t('quests.detail.conflicts')}</SectionTitle>
-          <p className="m-0 mb-2 text-small text-ink-soft">{t('quests.detail.conflictsHint')}</p>
-          <ul className="m-0 grid list-none gap-1.5 p-0">
-            {quest.conflicts!.map((conflict) => (
-              <li key={`${conflict.machine}-${conflict.sequence}`} className="flex items-start justify-between gap-3 text-body">
-                <span className="grid min-w-0 gap-0.5">
-                  <span className="inline-flex flex-wrap items-center gap-1.5">
-                    <Icon name="conflict" size={12} className="text-warn" />
-                    {t('quests.detail.conflictLine', { machine: conflict.machine, attempted: t(`status.${conflict.attempted}`) })}
-                    <span className="text-meta text-ink-faint">· {ago(conflict.at)}</span>
-                  </span>
-                  {conflict.note && <span className="text-small text-ink-soft">{conflict.note}</span>}
-                </span>
-                {/* Seen, and nothing more to do here: the dismissal travels, so every machine stops showing it
-                    (SYNC6c). */}
-                <Button variant="ghost" disabled={dismissing} onClick={() => onDismiss(conflict.machine, conflict.sequence)}>
-                  {t('quests.detail.dismiss')}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* A move that reached the remote second (D68 §5): kept on the quest for a person and never merged, so it sits above the body,
+          as what this quest waits on; this machine's own lost take with its two choices (SYNCMERGE1c2, D178 point 2). */}
+      <QuestConflicts className="mb-4" quest={quest} busy={dismissing || forwarding} onDismiss={onDismiss} onForward={onForward} />
 
       {/* The ask itself, as the asker wrote it: content, wrapping at the column's edge with the title above it (D141: a
           65ch body beside a title that ran the pane left 750 px empty on the install). Its first line is left out where
@@ -916,6 +910,9 @@ export function QuestPage({
           </PageSection>
         </div>
       )}
+
+      {/* How its conflicts ended (SYNCMERGE1c2, D178 point 7): history, so below what it carries, with nothing to press. */}
+      <SettledConflicts quest={quest} />
 
       {chain.length > 1 && (
         /* The chain this quest belongs to (MAP1): the ask, the steps before and after it, what its close will

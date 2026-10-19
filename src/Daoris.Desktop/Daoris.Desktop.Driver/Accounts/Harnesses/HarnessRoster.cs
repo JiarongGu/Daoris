@@ -276,22 +276,6 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         string.Equals(seen.Window ?? seen.Hit, AccountWindows.Weekly, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Whether the agent that owns <paramref name="agent"/>'s accounts has its weekly reset fixed by its maker (TOOL6b): its
-    /// own toolchain's word, a door reading its owner's (AGT7).
-    /// </summary>
-    private bool WeekFixed(string agent)
-    {
-        try
-        {
-            return adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) && adapters.Resolve(agent).Toolchain is { WeekFixed: true };
-        }
-        catch (DriverException)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
     /// End an account's cool-off early: the person's <i>Try now</i>, since they may know the limit was raised (D125 §2.3).
     /// True when it was cooling; one that was not is told so, and nothing changes.
     /// </summary>
@@ -488,6 +472,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 names.GetValueOrDefault(account), who?.Org, who?.Plan);
         }).ToList();
 
+        // HELPSTUCK1: the folders beside the accounts that are no account, each with whether Daoris kept a sign-in of it while it
+        // was listed as one, so a sign-in in a lock's folder is said rather than lost.
+        var strays = HarnessSettings.Strays(Home, owner).Select(stray => new StrayFolder(
+            stray,
+            reads.Accounts.GetValueOrDefault(stray)?.Login == LoginState.In
+            || ProbeLock.SignedIn(Home, owner, stray) is not null
+            || HarnessKeys.Of(Home, owner, stray) is not null)).ToList();
+
         var own = WhoOf(owner, null, reads.Own);
         return new HarnessReport(
             name,
@@ -501,7 +493,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             own?.Account,
             reads.Own?.At,
             own?.Org,
-            own?.Plan);
+            own?.Plan)
+        {
+            Strays = strays,
+        };
     }
 
     /// <summary>
@@ -1480,7 +1475,6 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </summary>
     private Dictionary<string, AccountFacts> Facts(string owner, IReadOnlyList<string> list, DateTimeOffset now)
     {
-        var fixedWeek = WeekFixed(owner);
         var facts = new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);
         lock (_load)
         {
@@ -1499,15 +1493,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             try
             {
-                facts[account] = facts[account] with
-                {
-                    WeekResets = AccountWindows.WeekOf(Home, owner, account, now, fixedWeek),
-                    Said = AccountWindows.SaidOf(Home, owner, account, now),
-                };
+                // A weekly reset a limit told is not read here (USAGERESET1): it says when, not how much would lapse, which
+                // only the week's reading says.
+                facts[account] = facts[account] with { Said = AccountWindows.SaidOf(Home, owner, account, now) };
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // A week not read ranks nothing, and a reading not read is nothing said, as one never told is.
+                // A reading not read is nothing said, as one never told is.
             }
         }
 

@@ -19,6 +19,7 @@ internal sealed class HelpRoomAgents : IHelpRoomSection
                 Present = report.Present,
                 Version = report.Version,
                 Accounts = [.. report.Profiles.Select(profile => new HelpAccount(profile.Name, Spell(profile.Login)))],
+                Strays = report.Strays,
             })],
         };
     }
@@ -46,7 +47,19 @@ internal sealed class HelpRoomAgents : IHelpRoomSection
         var noneSignedIn = agent.Accounts.All(account => account.Login == "out");
         if (accounts.Length > 0) line += accounts;
         if (noneSignedIn) line += (accounts.Length > 0 ? "; " : "") + "no Daoris account is signed in, so its starts wait for a sign-in";
+        // HELPSTUCK1: a folder beside the accounts that is no account, said so the helper can answer a person who misses one.
+        foreach (var stray in agent.Strays) line += (line.EndsWith(": ", StringComparison.Ordinal) ? "" : "; ") + StrayLine(stray);
         return line;
+    }
+
+    /// <summary>A folder beside the accounts that is no account (HELPSTUCK1), with the way to keep a sign-in it holds.</summary>
+    private static string StrayLine(StrayFolder stray)
+    {
+        var kind = stray.Name.StartsWith('.') ? "a hidden folder's name" : "a lock's name";
+        return stray.SignedIn
+            ? $"the folder `{stray.Name}` beside its accounts holds a sign-in but is {kind}, so it is no account: rename it to an "
+              + "account's name while nothing runs on it, and it is one again"
+            : $"the folder `{stray.Name}` beside its accounts is {kind}, so it is no account";
     }
 
     private static string Login(string login) => login switch
@@ -69,6 +82,9 @@ public sealed record HelpAgent(string Name)
     public string? Version { get; init; }
 
     public IReadOnlyList<HelpAccount> Accounts { get; init; } = [];
+
+    /// <summary>The folders beside its accounts that are no account (HELPSTUCK1), each with whether it holds a sign-in.</summary>
+    public IReadOnlyList<StrayFolder> Strays { get; init; } = [];
 }
 
 /// <summary>An account Daoris keeps for an agent, by its name — never its key (AGT3).</summary>

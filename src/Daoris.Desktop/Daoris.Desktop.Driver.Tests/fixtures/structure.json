@@ -187,6 +187,7 @@
     "LandingTests.cs": "Trees",
     "LandingTidyTests.cs": "Trees",
     "LayoutReaderTests.cs": "Service",
+    "LineGuessesTests.cs": "Platform",
     "LineRegistrationTests.cs": "Service",
     "MachineLogReaderTests.cs": "Platform",
     "MachineLogTests.cs": "Platform",

@@ -65,8 +65,12 @@ public enum WalkStep { Cooling, Refused, SignedOut, Kept, Near, Room, Fewest, La
 /// What Daoris knows of one account (TOOL6b, D130 §16.4), and what its agent last said about its windows, where it said
 /// anything (TOOL6c, §5.2): null is unknown, never spent and never fresh.
 /// </summary>
+/// <remarks>
+/// It holds no weekly reset a limit told (USAGERESET1): that says when a week turns over and not how much of it would lapse,
+/// which only a reading of its use says (<see cref="UsageCurves.Lapsing"/>).
+/// </remarks>
 public sealed record AccountFacts(
-    int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, DateTimeOffset? WeekResets = null, AccountSaid? Said = null);
+    int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, AccountSaid? Said = null);
 
 /// <summary>The step that chose a start's account, and the one that chose it among the rest where the first passed one.</summary>
 public sealed record WalkChoice(WalkStep Step, WalkStep? Rest = null)
@@ -150,7 +154,10 @@ public enum NextReason
     /// <summary>It runs fewer of Daoris's sessions (step 3).</summary>
     Fewest,
 
-    /// <summary>Its known weekly reset falls within the next day (step 4).</summary>
+    /// <summary>
+    /// Within its week's last day, more of its week would lapse at its reset, per hour left, than of the other's (step 4,
+    /// USAGERESET1).
+    /// </summary>
     Lapsing,
 
     /// <summary>It has more room under its curve on its tightest window, or under <c>switch: off</c> is further behind its week's pace (step 5).</summary>
@@ -258,11 +265,10 @@ public sealed record StepSaid(string Text, string? Why, IReadOnlyList<(string Na
 public static class AccountRotation
 {
     /// <summary>
-    /// How near a week's reset must be for its account to go first (D130 §16.3 step 4): a day holds about five five-hour
-    /// windows, so before an account's last day what it has left can still be spent in any order. A constant, not a
-    /// setting; TOOL4h's report says whether it is right.
+    /// How near a week's reset must be for what would lapse there to rank its account first (D130 §16.3 step 4):
+    /// <see cref="UsageCurves.LastDay"/>, which measures it.
     /// </summary>
-    public static readonly TimeSpan LastDay = TimeSpan.FromDays(1);
+    public static readonly TimeSpan LastDay = UsageCurves.LastDay;
 
     /// <summary>
     /// The accounts of a scope's list, in the order a start tries them (TOOL6b, D130 §16.3; D125 §3.3 under <c>order</c>).
@@ -276,7 +282,8 @@ public static class AccountRotation
     /// place.</para>
     /// <para>Under <c>goal</c> each step after keep is stable, so the order handed on stands where a step has no reason to
     /// change it: an account near (its limit reached, credits, or over its curve, D165 point 2) goes last, the least over
-    /// first; then fewest of Daoris's sessions running, a week resetting within <see cref="LastDay"/> (sooner first), the most
+    /// first; then fewest of Daoris's sessions running, within a week's <see cref="LastDay"/> the most of it that would lapse
+    /// per hour to its reset (<see cref="UsageCurves.Lapsing"/>, USAGERESET1), the most
     /// room under its curve on its tightest window (one that said no number between those with room and those over; under
     /// <c>switch: off</c> furthest behind its week's pace, as D130 §16.3 wrote it), least recently started (never first, a
     /// start this look chose last), then the sequence. Under <c>order</c> the sequence is the walk, as D125 built it, with a
@@ -445,7 +452,7 @@ public static class AccountRotation
         return new NextStart(runs, reason, others)
         {
             Over = against,
-            When = reason == NextReason.Lapsing ? own.WeekResets : null,
+            When = reason == NextReason.Lapsing ? UsageCurves.Lapsing(scope.Use, own.Said, now)?.Window.Reset : null,
         };
 
         AccountHeld Held(AccountState state) => state.Readiness switch
@@ -489,8 +496,9 @@ public static class AccountRotation
     /// <summary>
     /// The first step at which <paramref name="a"/> and <paramref name="b"/> differ, and which goes first there (negative:
     /// <paramref name="a"/>); <see cref="WalkStep.List"/> and zero where none does. Under <c>order</c> only near is a step.
+    /// Every step compares a key of each account alone, so the ranking is a total preorder and a sort over it well defined.
     /// </summary>
-    private static (WalkStep Step, int Order) Rank(
+    internal static (WalkStep Step, int Order) Rank(
         string a, string b, IReadOnlyDictionary<string, AccountFacts> facts, DateTimeOffset now, RotationUse use)
     {
         var (x, y) = (facts.GetValueOrDefault(a) ?? new AccountFacts(), facts.GetValueOrDefault(b) ?? new AccountFacts());
@@ -509,8 +517,10 @@ public static class AccountRotation
 
         if (x.Running != y.Running) return (WalkStep.Fewest, x.Running.CompareTo(y.Running));
 
-        var (lapsesX, lapsesY) = (Lapses(x, now), Lapses(y, now));
-        if (lapsesX != lapsesY) return (WalkStep.Lapsing, lapsesX.CompareTo(lapsesY));
+        // Step 4, what would lapse (USAGERESET1): within its week's last day, the most room under its curve per hour to its
+        // reset first; nothing that is not known earns any, and a tie goes on to step 5's tightest room.
+        var (lapseX, lapseY) = (UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0, UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0);
+        if (lapseX != lapseY) return (WalkStep.Lapsing, lapseY.CompareTo(lapseX));
 
         // Step 5. An account that said no number ranks as one on its curve, between those with room and those over, and as
         // on pace under `off` (absent is never zero, D57).
@@ -534,10 +544,6 @@ public static class AccountRotation
         AccountReadings.NearWindow(said, use, now) is { By: NearBy.Refused } || AccountReadings.MostUsed(said) >= 1 ? (2, 0)
         : UsageCurves.TightestSaid(use, said, now) is { } tightest ? (0, -tightest.Room)
         : (1, 0);
-
-    /// <summary>When its week resets, where that is within the last day; else the end of time, which ranks nothing.</summary>
-    private static DateTimeOffset Lapses(AccountFacts facts, DateTimeOffset now) =>
-        facts.WeekResets is { } reset && reset > now && reset - now <= LastDay ? reset : DateTimeOffset.MaxValue;
 
     /// <summary>How recently Daoris started on it: never, then by when, then a start this look chose, in the order chosen.</summary>
     private static (int Tier, long At) Started(AccountFacts facts) =>
@@ -979,8 +985,7 @@ public static class RotationWords
             // Both near, it the least over (ACCTWALK3): the other's own reason for going last, its numbers against its curve.
             WalkStep.Near or WalkStep.Room => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.Fewest => Reason("it runs the fewest of Daoris's sessions", OpeningWhy.Fewest),
-            WalkStep.Lapsing => Reason(
-                $"its week resets first, at {CoolingWords.When(own.WeekResets!.Value, zone)}", OpeningWhy.Lapsing, ("at", NoteCodes.Moment(own.WeekResets.Value))),
+            WalkStep.Lapsing => Lapses(own.Said, scope.Use, now),
             WalkStep.Pace when scope.Use.Switch == "off" => Pace(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, now),
             WalkStep.Pace => MostRoom(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.LeastRecent => own is { Chosen: null, LastStarted: null }
@@ -1041,6 +1046,28 @@ public static class RotationWords
                 $"it has the most room under its curve, {Points(mine.Room)} points on its {mine.Window.Window} window",
                 OpeningWhy.MostRoom, ("room", Points(mine.Room)), ("window", mine.Window.Window))
             : Near(over, other, use, now);
+
+    /// <summary>
+    /// Why the account it ran on ranked ahead by what would lapse (step 4, USAGERESET1): the window that won, how much of it is
+    /// unused, when it resets, and how old that reading is. <see cref="OpeningWhy.Lapsing"/>, its reset alone, is no longer
+    /// written. A step this account's reading cannot say keeps the line's English with no parts.
+    /// </summary>
+    private static StepSaid Lapses(AccountSaid? own, RotationUse use, DateTimeOffset now) =>
+        UsageCurves.Lapsing(use, own, now) is { Window: { Used: { } used } week }
+            ? Reason(
+                $"its {week.Window} window resets in {Until(week.Reset - now)} with {Percent(1 - used)} of it unused, read {Age(week.Seen, now)}",
+                OpeningWhy.Lapses,
+                ("window", week.Window), ("unused", Whole(1 - used)), ("at", NoteCodes.Moment(week.Reset)), ("seen", NoteCodes.Moment(week.Seen)))
+            : Reason("its week resets first", null);
+
+    /// <summary>How long until a moment, as a reset is said: <i>40 min</i>, <i>8 h</i> (the nearest hour).</summary>
+    private static string Until(TimeSpan left)
+    {
+        var minutes = (long)Math.Floor(left.TotalMinutes);
+        return minutes < 1 ? "less than a minute"
+            : minutes < 60 ? $"{minutes} min"
+            : $"{(long)Math.Round(left.TotalHours, MidpointRounding.AwayFromZero)} h";
+    }
 
     /// <summary>
     /// Why the account it ran on ranked ahead by its week's pace (§16.3 step 5, under <c>switch: off</c>): it is behind, where

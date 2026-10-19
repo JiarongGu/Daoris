@@ -19,7 +19,20 @@ public static class UsageCurves
     /// </summary>
     public const int SwitchMargin = 10;
 
-    private const int WeeklyLead = 20, WeeklyCap = 95;
+    /// <summary>
+    /// How near its reset a week must be for what would lapse there to rank its account first (D130 §16.3 step 4, as
+    /// USAGERESET1 weighs it): a day holds about five five-hour windows, so before an account's last day what it has left can
+    /// still be spent in any order. A constant, not a setting; TOOL4h's report says whether it is right.
+    /// </summary>
+    public static readonly TimeSpan LastDay = TimeSpan.FromDays(1);
+
+    // A read places a week not yet opened a whole week after its own moment (`ClaudeUsage`), a few seconds before the reading
+    // is stamped `seen`, both to the second: a week read at 0% with its reset this close to a week on is that made-up reset.
+    private static readonly TimeSpan MadeUp = TimeSpan.FromMinutes(1);
+
+    // The smart week: its pace plus the lead up to the knee, then evenly to the end at its reset (USAGERESET1). Duplicated
+    // deliberately in the CLI's and the page's `usagecurves.ts` / `usageCurves.ts`; the shared table holds the three as one.
+    private const int WeeklyLead = 20, WeeklyKnee = 95, WeeklyEnd = 100;
 
     /// <summary>A window's length, or null for a window this build does not know.</summary>
     public static TimeSpan? Length(string window) => window switch
@@ -52,13 +65,15 @@ public static class UsageCurves
     }
 
     /// <summary>
-    /// Daoris's own curve: <c>session</c> flat at <see cref="RotationUse.SmartSession"/>; <c>weekly</c> its pace plus twenty,
-    /// never above ninety-five. Null for a window this build does not know.
+    /// Daoris's own curve: <c>session</c> flat at <see cref="RotationUse.SmartSession"/>; <c>weekly</c> its pace plus twenty up
+    /// to ninety-five at three-quarters gone, then rising evenly to the whole week at its reset (USAGERESET1): never in a jump,
+    /// so what would lapse is spent as the reset nears while some headroom stays at every moment before it. Null for a
+    /// window this build does not know.
     /// </summary>
     public static IReadOnlyList<CurvePoint>? Smart(string window) => window switch
     {
         "session" => [new CurvePoint(0, RotationUse.SmartSession)],
-        "weekly" => [new CurvePoint(0, WeeklyLead), new CurvePoint(WeeklyCap - WeeklyLead, WeeklyCap), new CurvePoint(100, WeeklyCap)],
+        "weekly" => [new CurvePoint(0, WeeklyLead), new CurvePoint(WeeklyKnee - WeeklyLead, WeeklyKnee), new CurvePoint(100, WeeklyEnd)],
         _ => null,
     };
 
@@ -111,5 +126,32 @@ public static class UsageCurves
         }
 
         return least;
+    }
+
+    /// <summary>
+    /// What would lapse of an account's week at its reset, as the walk's step 4 weighs it (USAGERESET1, D165's note): within
+    /// its <see cref="LastDay"/>, the week's room under the curve now and that room over the hours left to its reset, an hour
+    /// at the least, so a sliver resetting in minutes does not outrank a large room a day off. Null where none is known.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Only the whole plan's week</b>, <c>weekly</c>: the five-hour window recovers in hours, so its reset never
+    /// lapses anything, and a model's own week draws only that model's work, which a start may not be (the walk reads neither).
+    /// Credits never count.</para>
+    /// <para><b>Nothing that is not known earns any</b> (absent is never zero, D57): a week with no reading or no number; a
+    /// reset carried a week on, which has no reading; one now or past, whose week has already turned over; a reading older
+    /// than the account's newest window, since the account ran after it; and a week read at 0% whose reset a read made up a
+    /// week on, since one not yet opened lapses nothing. An explicit zero with its reset said is a week all unused, and earns
+    /// its whole room.</para>
+    /// </remarks>
+    public static (WindowSaid Window, double Room, double Rate)? Lapsing(RotationUse use, AccountSaid? said, DateTimeOffset now)
+    {
+        if (said?.Of(AccountWindows.Weekly) is not { Used: { } used } week) return null;
+        var left = week.Reset - now;
+        if (left <= TimeSpan.Zero || left > LastDay || week.Seen < said.Seen) return null;
+        if (used == 0 && Length(week.Window) is { } length && week.Reset - week.Seen >= length - MadeUp) return null;
+        if (Value(use, week.Window, week.Reset, now) is not { } curve) return null;
+        var room = curve - used * 100;
+
+        return room > 0 ? (week, room, room / Math.Max(left.TotalHours, 1)) : null;
     }
 }

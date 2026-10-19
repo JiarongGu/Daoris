@@ -5,6 +5,49 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — An idle Daoris told every window a tick at every look, and each tick asked git of every checkout (IDLECPU1)
+
+- **Symptom:** the installed Daoris used about 1.7 cores with no session running and nobody pressing anything (the main process
+  0.7, its page's renderer 0.7, its GPU process 0.3, over five seconds); 31 processes held 4.1 GB.
+- **Root cause:** (1) the shell forwarded `DRIVER_TICK` whenever a look's report had any line (`DriverLoop.cs`, the condition
+  `report.Events.Count > 0`), and a standing condition says its line at every look: a plugin holding a quest (`held  #q → repo`),
+  a remote the sync cannot reach (`sync  …`), a note the remote gives at each pass. Each tick made every window ask its lists
+  again, about 17 reads in the application's window (`idle.test.tsx` counts them), `LINES` and `SWEEP_PLAN` among them, which ask
+  git of every checkout. (2) `LINES` asked git one to three times per checkout with no line set, at every ask, and every program
+  start on this machine costs 170-720 ms (DEVDRIVE1), paid partly in the shell's own process.
+- **Fix:** the tick is forwarded when the look's lines changed since the last look (`DriverLoop.LinesSignature`, the page's own
+  `newsFrom` rule), beside the signatures it already compared. A checkout's line guess is kept while the files git reads for it
+  keep their write time and size (`LineGuesses`, through `CanonicalLine.ResolveAsync`).
+- **Verify:** `TickLinesTests` and `LineGuessesTests` red first (neither member existed), then green; `idle.test.tsx` holds an
+  idle window's minute (the update's slow look only, and nothing while hidden) and what one tick asks. The install's CPU over a
+  minute idle, before and after, is the parent's measure; the page's own clocks were already quiet in the probe, so the
+  renderer's and the GPU's share is read from that measure, not from a test.
+## 2026-10-19 — An Ask Daoris message stayed queued and never started, and a lock's folder was an account (HELPSTUCK1)
+
+- **Symptom:** the owner's, on the install, under load (test runs beside, each git taking seconds): *I just tried input 1
+  message and it stucked*. The message (`message.sent` 01:59:39Z) placed help conversation `dc46ef27` (02:00:11Z), rotated from
+  `Gmail` over its curve to `account-3.lock`; its events held the opening note alone, it stayed `queued` for minutes, and no
+  agent process started. The accounts folder held `Gmail.lock` and `account-3.lock` beside the accounts, both listed as accounts.
+- **Root cause:** two. `ChatRunner.RunHelpAsync` awaited the room's reading of the machine (`HelpRoutes.HelpMachineAsync`, through
+  the loop's `DescribeHelp`) before anything else, unbounded and on `CancellationToken.None` from `HelpRoutes.RunPlacedAsync`;
+  that reading walks git across every repository and tree in turn (the lines, the session look's trees, each workspace's
+  history, the work inventory), and under that load it did not answer. Nothing said why meanwhile, and the held words were
+  never handed back (`RunPlacedAsync`'s `finally` never ran), which the events file's single event shows. It waits on neither
+  the loop's look nor the planner. Separately, the account listing took every folder for an account, and Claude Code locks a
+  configuration home by a folder named after it with `.lock` beside it, so two locks were walked to, signed in to and run in.
+- **Fix:** the reading is waited for 30 s (`ChatHelp.ReadAsync`); past it the room as last written serves, said first in the
+  conversation by code (`help.room-as-written`), the late reading writing the room when it answers; with no room ever written the
+  start ends `failed` saying so (`help.room-unread`). A conversation going on in the room takes the same bound. A folder ending
+  `.lock` or starting `.` is no account (twin rule 1, `NotAnAccount` and `notAnAccount`), named as a stray with whether it holds
+  a sign-in (`HarnessReport.Strays`, Ask Daoris's room); nothing touches it. A record left `queued` by a start whose driver went
+  holds the room and nothing ended it, so the person's stop on it now takes `queued` as it took `starting` (`Orphans`). D89's
+  and D125's notes of this date.
+- **Verification:** `HelpStartReadTests` (a reading that never answers, both timed out first; the person's stop on a `queued`
+  record, failed first), `RosterReadTests`' stray test,
+  `HelpRoomTests`' stray line and `HarnessSettingsTests`' rows, each seen failing first, and the CLI's profiles test, failed
+  first; the driver's fast half, the touched modules classes, and the web's note tests pass. Not run here: the Process half, the
+  window, the install.
+
 ## 2026-10-19 — A second launch of the installed Daoris opened no window and the desktop wrote nothing of why (ONEINSTANCE2)
 
 - **Symptom:** a second `Daoris.exe`, and a direct `app\Daoris.Desktop.exe`, each exited while Daoris ran; no second main window

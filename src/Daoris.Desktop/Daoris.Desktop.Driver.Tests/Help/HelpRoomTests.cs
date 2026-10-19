@@ -55,6 +55,32 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
+    /// HELPSTUCK1: a folder beside an agent's accounts that is no account is said in the room, so the helper can answer the
+    /// person who misses it: one holding a sign-in with the way to keep it, renamed to an account's name.
+    /// </summary>
+    [Fact]
+    public void A_stray_folder_beside_the_accounts_is_said_with_its_sign_in()
+    {
+        IReadOnlyList<HarnessReport> roster =
+        [
+            new("claude-code", true, "2.1.0", null, null, null, [new ProfileReport("account-3", "/profiles/account-3", LoginState.In)])
+            {
+                Strays = [new StrayFolder("Gmail.lock", SignedIn: false), new StrayFolder("account-3.lock", SignedIn: true)],
+            },
+        ];
+
+        var machine = HelpRoom.Describe(
+            DriverConfig.Empty, new Snapshot([], [], []), [], roster, _ => "Claude Code", asks: 0, []);
+        var room = HelpRoom.Render(machine);
+
+        Assert.Contains(
+            "- `claude-code` (Claude Code 2.1.0): account `account-3` signed in; the folder `Gmail.lock` beside its accounts is a lock's"
+            + " name, so it is no account; the folder `account-3.lock` beside its accounts holds a sign-in but is a lock's name, so it"
+            + " is no account: rename it to an account's name while nothing runs on it, and it is one again",
+            room);
+    }
+
+    /// <summary>
     /// It reads the family and nothing else: over the protocol door an unlisted tool is refused by
     /// construction (D52), which is the point. Proposing arrives with HELP1c.
     /// </summary>

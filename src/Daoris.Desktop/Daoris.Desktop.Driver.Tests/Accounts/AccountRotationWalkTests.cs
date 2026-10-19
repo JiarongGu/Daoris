@@ -14,10 +14,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>curve=weekly=0:10,100:60</c> as points (D165 point 2), and the old names <c>early=on|off</c> and <c>near=85</c>,
 /// read on; it is read through the file's own reader (<see cref="HarnessSettings.ResolveScope"/>), so a default outside its
 /// list is read with the list winning, as a start reads it. What Daoris knows is <c>name:flags</c>, each flag one of
-/// <c>r&lt;n&gt;</c> sessions running, <c>s&lt;offset&gt;</c> last started that long from now, <c>c&lt;n&gt;</c> chosen
-/// by this look as its n-th start, and <c>w&lt;offset&gt;</c> its week resets that long from now.</para>
-/// <para>Steps 2 and 5, over its curve and most room under it, read the agent's word (TOOL6c) against the scope's curve
-/// (SWITCH1b-ii). Nothing here counts accounts: rows with one account and with six read by the same rules (§2 rule 6).</para>
+/// <c>r&lt;n&gt;</c> sessions running, <c>s&lt;offset&gt;</c> last started that long from now and <c>c&lt;n&gt;</c> chosen
+/// by this look as its n-th start; what its agent said is <c>S</c>, <c>W</c>, <c>N</c>, <c>X</c> and <c>C</c> (step 2's
+/// table below).</para>
+/// <para>Steps 2, 4 and 5, over its curve, what would lapse at its week's reset and most room under its curve, read the
+/// agent's word (TOOL6c) against the scope's curve (SWITCH1b-ii, USAGERESET1). Nothing here counts accounts: rows with one
+/// account and with six read by the same rules (§2 rule 6).</para>
 /// </remarks>
 public sealed class AccountRotationWalkTests
 {
@@ -60,7 +62,6 @@ public sealed class AccountRotationWalkTests
                     'r' => fact with { Running = int.Parse(flag[1..]) },
                     's' => fact with { LastStarted = Now + Offset(flag[1..]) },
                     'c' => fact with { Chosen = long.Parse(flag[1..]) },
-                    'w' => fact with { WeekResets = Now + Offset(flag[1..]) },
                     'S' or 'W' or 'N' or 'X' or 'C' => fact,
                     _ => throw new ArgumentException($"no flag `{flag}`"),
                 };
@@ -173,7 +174,7 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2 account-3", "account-1:r2 account-2:r1 account-3:r1", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-2:r1 account-3:r1", "account-1 account-2 account-3")]
     // It outranks a week lapsing: the five-hour window is kept below its limit by spreading.
-    [InlineData("account-1 account-2 account-3", "account-3:r1,w+5h", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-3:r1,W60@+5h", "account-1 account-2 account-3")]
     // Six accounts, one free: nothing counts them.
     [InlineData("account-1 account-2 account-3 account-4 account-5 account-6",
         "account-1:r1 account-2:r1 account-3:r1 account-4:r1 account-5:r1", "account-6 account-1 account-2 account-3 account-4 account-5")]
@@ -182,20 +183,109 @@ public sealed class AccountRotationWalkTests
         Assert.Equal(order, Order(scope, facts));
     }
 
-    // ——— Step 4, its week lapsing (§16.3): a known weekly reset within the next day first, sooner first.
+    // ——— Step 4, what would lapse at its week's reset (§16.3, as USAGERESET1 weighs it): within its last day, the most room
+    // under its weekly curve over the hours to its reset first, an hour at the least; a tie goes on to step 5's tightest room.
+    // The smart week's tail: with 20 hours left, 97.6; with 8, 99.0; with 2, 99.8.
 
     [Theory]
-    [InlineData("account-1 account-2 account-3", "account-3:w+20h", "account-3 account-1 account-2")]
-    [InlineData("account-1 account-2 account-3", "account-2:w+20h account-3:w+5h", "account-3 account-2 account-1")]
-    [InlineData("account-1 account-2 account-3", "account-3:w+24h", "account-3 account-1 account-2")]
+    [InlineData("account-1 account-2 account-3", "account-3:W60@+20h", "account-3 account-1 account-2")]
+    [InlineData("account-1 account-2 account-3", "account-3:W60@+24h", "account-3 account-1 account-2")]
+    // The owner's case: 3 points resetting in 2 hours (1.4 an hour) and 58 in 20 (2.9 an hour). By its time alone the
+    // sooner went first and the larger lapsed.
+    [InlineData("account-1 account-2 account-3", "account-2:W97@+2h account-3:W40@+20h", "account-3 account-2 account-1")]
+    // The same room sooner is the more urgent.
+    [InlineData("account-1 account-2 account-3", "account-2:W60@+20h account-3:W60@+5h", "account-3 account-2 account-1")]
+    // A tie goes on to the tightest room: account-2's five-hour window leaves it 10 points.
+    [InlineData("account-1 account-2 account-3", "account-2:S80,W60@+8h account-3:W60@+8h", "account-3 account-2 account-1")]
+    // An explicit zero is a week all unused, the most there is to lapse, where no reading earns nothing.
+    [InlineData("account-1 account-2 account-3", "account-2:W50@+8h account-3:W0@+8h", "account-3 account-2 account-1")]
     // Beyond a day it ranks nothing: ranked all week, one account's work would pile onto it while the others' weeks went by.
-    [InlineData("account-1 account-2 account-3", "account-3:w+25h", "account-1 account-2 account-3")]
-    [InlineData("account-1 account-2 account-3", "account-1:w+6d account-2:w+3d", "account-1 account-2 account-3")]
+    // Step 5's room decides, and 53 points four days off come before 47 a day and an hour off.
+    [InlineData("account-1 account-2 account-3", "account-2:W10@+4d account-3:W50@+25h", "account-2 account-3 account-1")]
     // It outranks least recently started.
-    [InlineData("account-1 account-2 account-3", "account-3:s-1m,w+10h", "account-3 account-1 account-2")]
-    public void A_week_lapsing_within_the_day_first(string scope, string facts, string order)
+    [InlineData("account-1 account-2 account-3", "account-3:s-1m,W60@+10h", "account-3 account-1 account-2")]
+    public void Within_its_last_day_what_would_lapse_first(string scope, string facts, string order)
     {
         Assert.Equal(order, Order(scope, facts));
+    }
+
+    // The five-hour window beside a week about to reset: it stays at its curve's 90 and is not ranked by its reset. Under it,
+    // the week's lapse puts the account first; over it, the account goes last whatever would lapse.
+    [Theory]
+    [InlineData("account-1 account-2 account-3", "account-3:S80,W40@+3h", "account-3 account-1 account-2")]
+    [InlineData("account-1 account-2 account-3", "account-3:S89,W40@+3h", "account-3 account-1 account-2")]
+    [InlineData("account-1 account-2 account-3", "account-3:S91,W40@+3h", "account-1 account-2 account-3")]
+    // The five-hour window's own reset, three hours off, earns nothing: 80 points there would be 27 an hour.
+    [InlineData("account-1 account-2 account-3", "account-2:S10 account-3:W40@+20h", "account-3 account-2 account-1")]
+    public void The_five_hour_window_beside_a_week_about_to_reset(string scope, string facts, string order)
+    {
+        Assert.Equal(order, Order(scope, facts));
+    }
+
+    // The week's tail spends what would lapse, and a week far from its reset is still never run into its limit while another
+    // has room: three days off, its curve stands at 77, so 85% is over it and goes last. Twelve hours off it stands at 98.6:
+    // 97% is spent on, where the old cap at 95 passed it, and 99% still goes last.
+    [Theory]
+    [InlineData("account-1 account-2 account-3", "account-1:W85@+3d account-2:W20@+3d", "account-2 account-3 account-1")]
+    [InlineData("account-1 account-2 account-3", "account-1:W97@+12h account-2:W20@+3d", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-1:W99@+12h account-2:W20@+3d", "account-2 account-3 account-1")]
+    public void The_week_s_tail_spends_what_would_lapse_and_a_week_far_off_is_spared(string scope, string facts, string order)
+    {
+        Assert.Equal(order, Order(scope, facts));
+    }
+
+    /// <summary>
+    /// The walk's ranking is a total preorder over any set of accounts (USAGERESET1): antisymmetric, and transitive in both
+    /// its order and its ties, so a sort over it is well defined whatever the list's order. Generated: every step's input,
+    /// readings with and without numbers, words, credits, resets past, near and far, and readings older than the newest.
+    /// </summary>
+    [Theory]
+    [InlineData("account-1", 7)]
+    [InlineData("account-1 switch=off", 11)]
+    [InlineData("account-1 switch=curve curve=weekly=0:10,60:70,100:90 curve=session=70", 13)]
+    [InlineData("account-1 order", 17)]
+    public void The_ranking_is_a_total_preorder_over_a_generated_set(string written, int seed)
+    {
+        var random = new Random(seed);
+        var use = Scope(written).Use;
+        var facts = new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);
+        var names = Enumerable.Range(1, 24).Select(n => $"a{n}").ToList();
+        foreach (var name in names)
+        {
+            var windows = new List<WindowSaid>();
+            if (random.Next(3) > 0)
+            {
+                windows.Add(new WindowSaid(
+                    "session", random.Next(4) == 0 ? null : random.Next(0, 101) / 100.0, Now.AddMinutes(random.Next(-30, 300)),
+                    random.Next(8) == 0 ? AccountReadings.RefusedWord : null, random.Next(10) == 0, Now.AddMinutes(-random.Next(0, 600)), "s0"));
+            }
+
+            if (random.Next(4) > 0)
+            {
+                windows.Add(new WindowSaid(
+                    "weekly", random.Next(5) == 0 ? null : random.Next(0, 101) / 100.0, Now.AddHours(random.Next(-2, 7 * 24)),
+                    null, false, Now.AddMinutes(-random.Next(0, 600)), "s0"));
+            }
+
+            facts[name] = new AccountFacts(
+                Running: random.Next(3),
+                LastStarted: random.Next(2) == 0 ? null : Now.AddMinutes(-random.Next(1, 5000)),
+                Chosen: random.Next(5) == 0 ? random.Next(1, 4) : null,
+                Said: windows.Count == 0 ? null : new AccountSaid(windows));
+        }
+
+        int Sign(string a, string b) => Math.Sign(AccountRotation.Rank(a, b, facts, Now, use).Order);
+        foreach (var a in names)
+        {
+            foreach (var b in names)
+            {
+                Assert.Equal(-Sign(b, a), Sign(a, b));
+                foreach (var c in names)
+                {
+                    if (Sign(a, b) <= 0 && Sign(b, c) <= 0) Assert.True(Sign(a, c) <= 0, $"{a} ≤ {b} ≤ {c}, yet {a} > {c}");
+                }
+            }
+        }
     }
 
     // ——— Step 2, over its curve last (TOOL6c; §6, §16.3 as the evidence corrects them; D165 point 2, the switch design §3):
@@ -291,7 +381,7 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2", "account-1:S50,W10@+84h account-2:W40@+84h", "account-1 account-2")]
     [InlineData("account-1 account-2 switch=curve curve=session=60", "account-1:S50,W10@+84h account-2:W40@+84h", "account-2 account-1")]
     // Below a week lapsing within the day; above least recently started.
-    [InlineData("account-1 account-2 account-3", "account-1:W89@+20h,w+20h account-2:W10@+4d", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-1:W89@+20h account-2:W10@+4d", "account-1 account-2 account-3")]
     [InlineData("account-1 account-2", "account-1:W10@+4d,s-1m account-2:s-5h", "account-1 account-2")]
     // Below fewest running.
     [InlineData("account-1 account-2", "account-1:W5@+4d,r1 account-2:W60@+4d", "account-2 account-1")]
@@ -353,7 +443,7 @@ public sealed class AccountRotationWalkTests
     // ——— `use: order` (D125's walk, exactly): the list begun at its default, whatever Daoris knows.
 
     [Theory]
-    [InlineData("account-1 account-2 account-3 order", "account-1:r3 account-3:w+5h", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3 order", "account-1:r3 account-3:W60@+5h", "account-1 account-2 account-3")]
     [InlineData("account-1 account-2 account-3 @account-2 order", "account-2:r1,s-1m", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3 @account-3 order", "", "account-3 account-1 account-2")]
     public void Order_keeps_D125_s_walk(string scope, string facts, string order)
@@ -401,8 +491,8 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2 account-3", "account-1:r1 account-2:r1", StartKind.Driven, "", "account-3", WalkStep.Fewest, null },
         { "account-1 account-2 account-3", "account-2:r1", StartKind.Driven, "", "account-1", WalkStep.List, null },
         { "account-1 account-2 account-3", "account-2:r1 account-3:r1", StartKind.Driven, "", "account-1", WalkStep.Fewest, null },
-        { "account-1 account-2 account-3", "account-3:w+5h", StartKind.Driven, "", "account-3", WalkStep.Lapsing, null },
-        { "account-1 account-2 account-3", "account-1:w+5h", StartKind.Driven, "", "account-1", WalkStep.Lapsing, null },
+        { "account-1 account-2 account-3", "account-3:W60@+5h", StartKind.Driven, "", "account-3", WalkStep.Lapsing, null },
+        { "account-1 account-2 account-3", "account-1:W60@+5h", StartKind.Driven, "", "account-1", WalkStep.Lapsing, null },
         { "account-1 account-2 account-3", "account-1:s-1h", StartKind.Driven, "", "account-2", WalkStep.LeastRecent, null },
         { "account-1 account-2 account-3", "account-1:c1", StartKind.Driven, "", "account-2", WalkStep.LeastRecent, null },
         { "account-1 account-2 account-3", "", StartKind.Driven, "account-1=Cooling", "account-2", WalkStep.Cooling, null },
@@ -500,6 +590,8 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2 account-3", "account-1:W50@+4d account-3:W10@+4d", "", "account-3", WalkStep.Pace, "account-1", null, null },
         { "account-1 account-2 switch=off", "account-1:S70,W10@+4d account-2:W40@+4d", "", "account-1", WalkStep.Pace, "account-2", null, null },
         { "account-1 account-2 account-3 switch=off", "account-1:W50@+4d account-3:W10@+4d", "", "account-3", WalkStep.Pace, "account-1", null, null },
+        // A tie on what would lapse goes on to the tightest room (USAGERESET1): account-1's five-hour window leaves it 10 points.
+        { "account-1 account-2 account-3", "account-1:S80,W60@+8h account-2:W60@+8h", "", "account-2", WalkStep.Pace, "account-1", null, null },
         // Over its curve while the account where the list begins cools: the step among the rest names it.
         { "account-1 account-2 account-3", "account-2:S30,W70@+4d", "account-1=Cooling", "account-3", WalkStep.Cooling, null, WalkStep.Near, "account-2" },
     };
