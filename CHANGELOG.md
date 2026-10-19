@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Two changes to this machine's driver settings made at once, from Setup, Ask Daoris or the terminal, no longer lose one:
+  each waits for the other's write, and two repositories made drivable, held or given trees from two places at once are
+  both kept. Plugins, permission rules and API keys wait for each other's writes the same way. A repository named twice in
+  different case in `driver.json` (a line, reading or writing across, a forgiven quest) is now read as first written by
+  both the desktop and the terminal.
 - Restricted Ask Daoris can clean up Daoris's own branches and trees where you grant it: Settings → AI features → Ask Daoris's
   access → *Configured access* → Daoris's housekeeping lets you choose to inspect what the cleanup would remove, clean up the
   branches it clears, and discard a session branch by name, each on its own. It does these through Daoris's own tools, on
