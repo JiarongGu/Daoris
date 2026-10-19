@@ -489,7 +489,8 @@ nobody takes is handed today.
 
 - `sessions say <id> "…" [--level ordinary|urgent|now]`, where `--now` is read as `--level now`. It prints the reach, and
   the level where the door could not honour it, with the reason.
-- `sessions stop <id> --turn` is the keeping stop.
+- `sessions stop <id> --turn` is the keeping stop, where the door has an interrupt that keeps the session; elsewhere it
+  refuses and says why, as `CANCEL_TURN` does on a text-only conversation today.
 - `ask channel <id> [--urgent] "…"` posts the person's message at urgent.
 
 ## 9. Stored shapes
