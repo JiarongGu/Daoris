@@ -241,7 +241,7 @@ each working session's running call the fourth (`CallsStateSlice`, WAITSAY1c1), 
 (`RunningCalls`) and woken by `RunningCalls.Changed`, so a call's start and end are pushed as they happen; and each unit of
 work's milestone the fifth (`WorkStateSlice`, PUSH1c2a), judged from the machine's facts' work parts and the node records' held
 attempts with no git and no service call, `WORK_STATE`'s own builders (`LinesRoutes.WorkUnit`, `WorkEntry`) per repository, every
-part judged afresh at a landing's or a sweep's declared scope, since neither need move a ref the watch hears. A keyed
+part woken afresh at a landing's or a sweep's declared scope, since the clean-up's presses tell no own ref move. A keyed
 slice's partition (`StateSlice.Keyed`) pushes the keys a judgement moved as a delta {baseSeq, removed}, never coalesced.
 
 | Domain | What it carries |
