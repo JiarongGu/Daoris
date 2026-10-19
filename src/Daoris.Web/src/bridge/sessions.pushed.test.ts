@@ -11,8 +11,10 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { Session } from '../data/api';
-import { CALLS_SLICE, keys, SESSIONS_SLICE, sessionsIn } from '../data/queries';
-import { callsSlice, sessionsSlice, withCall } from './sessions';
+import { CALLS_SLICE, GROUPS_SLICE, keys, SESSIONS_SLICE, sessionsIn } from '../data/queries';
+import type { SessionEntry } from '../work/entries';
+import type { SessionGrouping } from '../work/groups';
+import { callsSlice, groupsIn, groupsSlice, sessionsSlice, withCall } from './sessions';
 import { mergeKeyed } from './slices';
 
 describe('the running calls, pushed (WAITSAY1c2)', () => {
@@ -89,5 +91,100 @@ describe('the sessions, pushed (PUSH1d2)', () => {
     expect(sessionsIn(all, null, true, ' games').map((each) => each.id)).toEqual(['open-site']);
     expect(sessionsIn(all, null, true, 'DEFAULT').map((each) => each.id)).toEqual(['open-engine', 'closed-engine', 'help']);
     expect(sessionsIn(all, 'daoris:help', true, null).map((each) => each.id)).toEqual(['help']);
+  });
+});
+
+// The session groups as the shell pushes them (PUSH1c3b, D182's PUSH1c3a note): each row under its session with its group's sort
+// inputs, each entry under its key, composed in `SessionGroups.Ordered`'s order into the answer `SESSION_GROUPS` gives.
+
+const row = (session: string, group: SessionGrouping['group']): SessionGrouping =>
+  ({ session, group, shown: group === 'working' ? 'working' : 'completed', archived: group === 'archived', teammate: false });
+
+/** What `SESSION_GROUPS` answers for the rows below, in its order: each group's rule, and each tie by the session's id by unit. */
+const PULLED: SessionGrouping[] = [
+  // Waiting on you, oldest move first: 09:00 at +02:00 is 07:00, before 08:00 though later as a string; 'Yb' before 'ya' by unit.
+  row('yz', 'you'), row('Yb', 'you'), row('ya', 'you'),
+  // To review, by repository without case ('alpha' before 'Engine' before 'Zeta'), then when each began, to the tick.
+  row('r-alpha', 'review'), row('r-eng-early', 'review'), row('r-Eng-late', 'review'), row('r-zeta', 'review'),
+  // Working, by repository then when each began as an instant: 10:00 at +02:00 is 08:00, before 09:00.
+  row('w-2', 'working'), row('w-1', 'working'),
+  // Resumes later, oldest move first; ended and archived newest first, a tie by id.
+  row('l-old', 'later'), row('l-new', 'later'),
+  row('e-new', 'ended'), row('e-tie-a', 'ended'), row('e-tie-b', 'ended'), row('e-old', 'ended'),
+  row('a-new', 'archived'), row('a-old', 'archived'),
+];
+
+/** Each row's sort inputs as the slice pushes them (`GroupsStateSlice.OrderedBy`): never a field of the answer. */
+const ORDER: Record<string, Record<string, string>> = {
+  yz: { updated: '2026-10-19T09:00:00+02:00' },
+  Yb: { updated: '2026-10-19T08:00:00+00:00' },
+  ya: { updated: '2026-10-19T08:00:00+00:00' },
+  'r-zeta': { repository: 'Zeta', created: '2026-10-19T07:00:00+00:00' },
+  'r-alpha': { repository: 'alpha', created: '2026-10-19T09:00:00+00:00' },
+  'r-Eng-late': { repository: 'Engine', created: '2026-10-19T08:00:00.1234567+00:00' },
+  'r-eng-early': { repository: 'engine', created: '2026-10-19T08:00:00.1234561+00:00' },
+  'w-1': { repository: 'engine', created: '2026-10-19T09:00:00+00:00' },
+  'w-2': { repository: 'engine', created: '2026-10-19T10:00:00+02:00' },
+  'l-new': { updated: '2026-10-19T10:00:00+00:00' },
+  'l-old': { updated: '2026-10-19T06:00:00+00:00' },
+  'e-old': { updated: '2026-10-19T06:00:00+00:00' },
+  'e-tie-b': { updated: '2026-10-19T08:00:00+00:00' },
+  'e-tie-a': { updated: '2026-10-19T08:00:00+00:00' },
+  'e-new': { updated: '2026-10-19T10:00:00+00:00' },
+  'a-old': { updated: '2026-10-19T06:00:00+00:00' },
+  'a-new': { updated: '2026-10-19T07:00:00+00:00' },
+};
+
+const part = (session: string, group: SessionGrouping['group']) =>
+  ({ session, quest: null, shown: 'completed', group, began: 'opened', after: null, askedBy: null });
+
+/** The entries `SESSION_GROUPS` answers beside them, each placed by its leading row's place. */
+const ENTRIES: SessionEntry[] = [
+  { entry: 'session:yz/engine', origin: 'session:yz', repository: 'engine', group: 'you', leading: 'yz', parts: [part('yz', 'you')] },
+  {
+    entry: 'quest:q1/engine', origin: 'quest:q1', repository: 'engine', group: 'working', leading: 'w-1',
+    parts: [part('w-2', 'working'), part('w-1', 'working')],
+  },
+  {
+    entry: 'ask:k1/intake', origin: 'ask:k1', repository: 'intake', group: 'ended', leading: 'e-new',
+    parts: [part('e-old', 'ended'), part('e-new', 'ended')],
+  },
+];
+
+/** The partitions as the owner holds them, each keyed in an order the composition must not keep. */
+const partitions = () => new Map<string, unknown>([
+  ['entries', Object.fromEntries([...ENTRIES].reverse().map((entry) => [entry.entry, entry]))],
+  ['rows', Object.fromEntries([...PULLED].reverse().map((each) => [each.session, { ...each, ...ORDER[each.session] }]))],
+]);
+
+describe('the session groups, pushed (PUSH1c3b)', () => {
+  it("feeds SESSION_GROUPS' widest entry, read from the one snapshot route, its deltas merged by key", () => {
+    expect(groupsSlice.name).toBe(GROUPS_SLICE);
+    expect(GROUPS_SLICE).toBe('groups');
+    expect(groupsSlice.key).toEqual(['sessions', 'groups', '*']);
+    expect(groupsSlice.merge).toBe(mergeKeyed);
+  });
+
+  it("composes the rows in the reader's order and the entries by their leading rows, the order's inputs left out", () => {
+    expect(groupsSlice.compose(partitions(), true)).toEqual({ sessions: PULLED, entries: ENTRIES });
+  });
+
+  it('composes nothing before the owner judged or while it holds no rows, and empty lists once it judged none', () => {
+    expect(groupsSlice.compose(partitions(), false)).toBeUndefined();
+    expect(groupsSlice.compose(new Map([['entries', {}]]), true)).toBeUndefined();
+    expect(groupsSlice.compose(new Map([['rows', {}], ['entries', {}]]), true)).toEqual({ sessions: [], entries: [] });
+    // A malformed row or entry is left out rather than guessed at.
+    expect(groupsSlice.compose(new Map<string, unknown>([
+      ['rows', { yz: { ...row('yz', 'you'), ...ORDER.yz }, bad: { group: 'you' } }],
+      ['entries', { 'session:yz/engine': ENTRIES[0], empty: { ...ENTRIES[0], entry: 'empty', parts: [] } }],
+    ]), true)).toEqual({ sessions: [row('yz', 'you')], entries: [ENTRIES[0]] });
+  });
+
+  it("reads a variant for some sessions as the reader's `only` answers it: their rows, and each entry holding one whole", () => {
+    const all = groupsSlice.compose(partitions(), true) as { sessions: SessionGrouping[]; entries: SessionEntry[] };
+    const some = groupsIn(all, ['w-2', 'yz', 'w-2']);
+    expect(some.sessions.map((each) => each.session)).toEqual(['yz', 'w-2']);
+    expect(some.entries).toEqual([ENTRIES[0], ENTRIES[1]]);
+    expect(groupsIn(all, undefined)).toBe(all);
   });
 });

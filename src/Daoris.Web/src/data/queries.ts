@@ -336,6 +336,12 @@ export const SESSIONS_SLICE = 'sessions';
 /** The call each running session is making, as the shell pushes it (WAITSAY1c2; its spec is `callsSlice` in `bridge/sessions`). */
 export const CALLS_SLICE = 'calls';
 
+/**
+ * The session list's groups and entries, as the shell pushes them (PUSH1c3b; its spec is `groupsSlice` in `bridge/sessions`): what
+ * `SESSION_GROUPS` answers for every session, under that pull's widest key.
+ */
+export const GROUPS_SLICE = 'groups';
+
 /** The service's own name for a workspace asked of it (`Workspaces.Normalize`), its ASCII letters folded as its `NOCASE` folds them. */
 const circle = (workspace: string) => (workspace.trim() || 'default').replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 
