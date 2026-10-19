@@ -513,6 +513,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_OPINION", "driver", null)]
     [InlineData("SET_COMMITS", "driver", null)]
     [InlineData("SET_HELPERS", "driver", null)]
+    [InlineData("SET_ACCESS", "driver", null)]
     [InlineData("LINES", "", null)]
     [InlineData("SET_READ_ACROSS", "driver", null)]
     [InlineData("SET_WRITE_ACROSS", "driver", null)]

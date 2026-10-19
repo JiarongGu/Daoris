@@ -121,6 +121,39 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
         Assert.Equal(("trunk", "repository"), (Line(Pushed("alpha")[0])["branch"]!.GetValue<string>(), Line(Pushed("alpha")[0])["source"]!.GetValue<string>()));
     }
 
+    /// <summary>
+    /// AUTONOMY1a (D184 point 1): each repository's session access setup as it resolves, every pause with its value and where it came
+    /// from, is answered by <c>LINES</c> and pushed in the repository's partition beside its other rules, which the page's setup reads.
+    /// </summary>
+    [Fact]
+    public async Task Each_repository_s_access_setup_is_pushed_as_it_resolves_with_where_each_pause_came_from()
+    {
+        DriverConfig.Empty
+            .WithAccess(new AccessEdit { Workspace = "w1", Full = true })
+            .WithAccess(new AccessEdit { Repository = "alpha", Set = [new("permissions", "asking")] })
+            .Save(DriverConfigPath);
+        _service.Registry = Registry(("alpha", "w1", true), ("beta", "w2", false));
+        var (loop, module, slice) = await UpAsync();
+        await LandedAsync(loop);
+
+        await slice.JudgeAsync();
+        var pushed = slice.Snapshot().Partitions.ToDictionary(
+            each => each.Partition, each => JsonSerializer.SerializeToElement(each.Data, Page).GetProperty("access").EnumerateArray().Single().GetRawText());
+        var pulled = (await AnswerAsync(module, "LINES")).GetProperty("access");
+
+        Assert.Equal(
+            """{"repository":"alpha","workspace":"w1","full":false,"pauses":[{"pause":"permissions","value":"asking","source":"repository"},"""
+            + """{"pause":"routing","value":"intake","source":"workspace"},{"pause":"landing","value":"rule","source":"workspace"},"""
+            + """{"pause":"goAheads","value":"never","source":"workspace"},{"pause":"questions","value":"claude-code","source":"workspace"}]}""",
+            pushed["alpha"]);
+        Assert.Equal(
+            """{"repository":"beta","workspace":"w2","full":false,"pauses":[{"pause":"permissions","value":"auto","source":"default"},"""
+            + """{"pause":"routing","value":"person","source":"default"},{"pause":"landing","value":"person","source":"default"},"""
+            + """{"pause":"goAheads","value":"named","source":"default"},{"pause":"questions","value":"claude-code","source":"default"}]}""",
+            pushed["beta"]);
+        Assert.Equal([pushed["alpha"], pushed["beta"]], pulled.EnumerateArray().Select(row => row.GetRawText()));
+    }
+
     [Fact]
     public async Task A_hostile_field_in_the_driver_s_file_or_the_registry_never_reaches_a_partition()
     {
