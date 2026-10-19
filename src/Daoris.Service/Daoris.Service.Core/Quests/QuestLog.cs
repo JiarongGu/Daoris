@@ -502,6 +502,10 @@ public static class QuestLog
             if (!Applies(quest, operation)) continue;
             if (operation.Kind == QuestOperationKind.Published) reopened = false;
             if (operation.Kind == QuestOperationKind.Reopened && quest is { Status: QuestStatus.Open }) reopened = true;
+            // SYNCMERGE1a2: a plain dismissal of this machine's conflict supersedes the reopen it was lost to, so a fresh take lost after
+            // it lost to what stands then, not to the reopen. A later reopen sets it again.
+            if (operation is { Kind: QuestOperationKind.Dismissed, Forward: null, Dismisses: { } settled } && settled.Machine == machine)
+                reopened = false;
             quest = Step(quest, operation);
         }
 
