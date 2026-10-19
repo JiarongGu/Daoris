@@ -141,6 +141,47 @@ public static class AccountReadings
         }
     }
 
+    /// <summary>The version of <see cref="Seen"/>, which each reading the usage history keeps from a frame carries.</summary>
+    public const int HistoryReader = 1;
+
+    /// <summary>
+    /// What the usage history keeps of a frame (USAGECAP1a1, D179 point 2): a parse beside <see cref="Read"/>, which it leaves
+    /// unchanged. Every window the frame says a use or a reset of, the named window (<c>rateLimitType</c>) from the frame's own
+    /// where its windows leave it out, each by the agent's key with its length and scope (<see cref="ClaudeWindows.Shape"/>),
+    /// Daoris's name where the walk reads it, and the precision its number was written to. Never a standing or a credit: the
+    /// history keeps numbers and times.
+    /// </summary>
+    public static IReadOnlyList<WindowSeen> Seen(JsonElement info, WindowWords words)
+    {
+        if (info.ValueKind != JsonValueKind.Object) return [];
+
+        var seen = new List<WindowSeen>();
+        if (info.TryGetProperty("unifiedWindows", out var windows) && windows.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var window in windows.EnumerateObject())
+            {
+                if (window.Value.ValueKind == JsonValueKind.Object) Add(window.Name, window.Value);
+            }
+        }
+
+        if (Json.NonEmpty(info, "rateLimitType") is { } named && seen.All(each => each.Window != named)) Add(named, info);
+        return seen;
+
+        void Add(string key, JsonElement at)
+        {
+            var used = Used(at, "utilization", words.Scale);
+            var reset = Moment(at, "resetsAt");
+            if (used is null && reset is null) return;
+
+            var (minutes, scope) = ClaudeWindows.Shape(key);
+            seen.RemoveAll(each => each.Window == key);
+            seen.Add(new WindowSeen(
+                key, words.Windows.GetValueOrDefault(key), scope, minutes, used,
+                used is null ? null : UsageHistory.Precision(at.GetProperty("utilization"), words.Scale),
+                reset, reset is null ? null : UsageHistory.ResetSaid));
+        }
+    }
+
     /// <summary>
     /// Whether an account is near a limit, which a start passes (D130 §6 as the evidence corrects it, D165 point 2): its
     /// agent's word that a limit was reached, its word that it is drawing on usage credits, or a window's use over the
@@ -277,4 +318,18 @@ public static class ClaudeWindows
             new("""{"status":"allowed_warning"}""", "2026-10-02", Declared),
             new("""{"status":"rejected"}""", "2026-10-02", Declared),
         ]);
+
+    /// <summary>
+    /// A window's length and scope as Claude Code's key names it, for the usage history (USAGECAP1a1): <c>five_hour</c> five
+    /// hours and <c>seven_day</c> a week, the whole plan's; <c>seven_day_&lt;scope&gt;</c> a week of what the rest names (a model
+    /// family: <c>seven_day_opus</c>, limit-signals evidence §1.2 and the usage-read evidence's field table); any other key
+    /// neither, never guessed.
+    /// </summary>
+    public static (int? Minutes, string? Scope) Shape(string key) => key switch
+    {
+        "five_hour" => (300, null),
+        "seven_day" => (10080, null),
+        _ when key.StartsWith("seven_day_", StringComparison.Ordinal) && key.Length > "seven_day_".Length => (10080, key["seven_day_".Length..]),
+        _ => (null, null),
+    };
 }

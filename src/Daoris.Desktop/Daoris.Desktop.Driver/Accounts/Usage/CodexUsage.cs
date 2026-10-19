@@ -39,6 +39,39 @@ public enum UsageKind
 }
 
 /// <summary>
+/// What a <see cref="UsageQuestion"/> answered (USAGECAP1a1, D179 point 2): the walk's readings, as every caller always had
+/// them, and beside them what the usage history keeps: every window the answer said (<see cref="Seen"/>), the plan's word where
+/// the answer names it, the question asked and its reader's version. A caller that reads the walk's alone is unchanged.
+/// </summary>
+public sealed class UsageAnswer(
+    IReadOnlyList<WindowReading> walk, IReadOnlyList<WindowSeen> seen, string? plan, string source, int reader)
+    : IReadOnlyList<WindowReading>
+{
+    /// <summary>An answer that said nothing: no reading, nothing for the history.</summary>
+    public static UsageAnswer None(string source, int reader) => new([], [], null, source, reader);
+
+    /// <summary>Every window the answer said, read beside the walk's own (<see cref="WindowSeen"/>).</summary>
+    public IReadOnlyList<WindowSeen> Seen => seen;
+
+    /// <summary>The plan's word as the answer said it (Claude's <c>subscription_type</c>), or null: never who, nor the organisation.</summary>
+    public string? Plan => plan;
+
+    /// <summary>The question asked: <c>get_usage</c>, or Codex's <see cref="CodexUsage.Method"/>.</summary>
+    public string Source => source;
+
+    /// <summary>The version of the reader that parsed it.</summary>
+    public int Reader => reader;
+
+    public WindowReading this[int index] => walk[index];
+
+    public int Count => walk.Count;
+
+    public IEnumerator<WindowReading> GetEnumerator() => walk.GetEnumerator();
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
+/// <summary>
 /// Codex's windows, asked of its own app server (CODEXUSE1; the Codex usage evidence): <c>codex app-server</c> speaks
 /// JSON-RPC 2.0 over stdio, one object per line, and <c>account/rateLimits/read</c> answers the account's windows and spends
 /// no model usage. Read into the same <see cref="WindowReading"/> Claude Code's frames fill, so near, pace, the roster and the
@@ -51,8 +84,9 @@ public enum UsageKind
 /// credential and calls no provider, as with the status question it already asks there (D49 §4).</para>
 /// <para><b>Absent is never zero</b> (D57): a binary not there, a refused read, a server that ends or is silent past
 /// <see cref="Patience"/>, and an answer with no window read whole all leave the account unknown, and nothing is kept.</para>
-/// <para><b>Never the agent's words, an id or a credit</b>: the answer's account id, plan, credits and reset credits are not
-/// read, and no reset credit is ever redeemed.</para>
+/// <para><b>Never the agent's words, an account's id or a credit</b>: the answer's account id, plan, credits and reset credits
+/// are not read, and no reset credit is ever redeemed. A limit's own id (<c>limitId</c>) is read as its windows' scope for the
+/// usage history (USAGECAP1a1).</para>
 /// </remarks>
 public static class CodexUsage
 {
@@ -105,15 +139,18 @@ public static class CodexUsage
     /// answer's words for those were not recorded with any value but none.
     /// </summary>
     /// <remarks>
-    /// Only <c>rateLimits</c>, the account's own limit (<c>limitId: codex</c>): <c>rateLimitsByLimitId</c> repeats it, and any
-    /// other limit there would name windows of the same lengths.
+    /// <para>Only <c>rateLimits</c>, the account's own limit (<c>limitId: codex</c>): <c>rateLimitsByLimitId</c> repeats it, and
+    /// any other limit there would name windows of the same lengths.</para>
+    /// <para>Beside the walk's, what the usage history keeps (USAGECAP1a1, D179 point 8): each window said in part or whole,
+    /// named by its length and its limit's scope (<c>limitId</c>), never its slot, the other limits of <c>rateLimitsByLimitId</c>
+    /// among them. The plan (<c>planType</c>) is still not read.</para>
     /// </remarks>
-    public static IReadOnlyList<WindowReading> Read(JsonElement answer)
+    public static UsageAnswer Read(JsonElement answer)
     {
         if (answer.ValueKind != JsonValueKind.Object
             || !answer.TryGetProperty("rateLimits", out var limits) || limits.ValueKind != JsonValueKind.Object)
         {
-            return [];
+            return UsageAnswer.None(Method, HistoryReader);
         }
 
         var readings = new List<WindowReading>();
@@ -129,8 +166,44 @@ public static class CodexUsage
             readings.Add(reading);
         }
 
-        return readings;
+        var seen = new List<WindowSeen>();
+        var own = Json.NonEmpty(limits, "limitId");
+        Seen(limits, own, walked: true);
+        if (answer.TryGetProperty("rateLimitsByLimitId", out var byId) && byId.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var other in byId.EnumerateObject())
+            {
+                if (other.Value.ValueKind != JsonValueKind.Object) continue;
+                var id = Json.NonEmpty(other.Value, "limitId") ?? other.Name;
+                if (!string.Equals(id, own, StringComparison.Ordinal)) Seen(other.Value, id, walked: false);
+            }
+        }
+
+        return new UsageAnswer(readings, seen, plan: null, Method, HistoryReader);
+
+        // A limit's windows as the history keeps them: a window with no length has only its slot to name it, and says nothing.
+        void Seen(JsonElement limit, string? scope, bool walked)
+        {
+            foreach (var name in new[] { "primary", "secondary" })
+            {
+                if (!limit.TryGetProperty(name, out var window) || window.ValueKind != JsonValueKind.Object) continue;
+                if (Whole(window, "windowDurationMins") is not { } minutes || minutes <= 0) continue;
+                var used = Json.Number(window, "usedPercent") is { } percent && percent >= 0 ? percent / 100 : (double?)null;
+                var reset = Moment(window, "resetsAt");
+                if (used is null && reset is null) continue;
+
+                var key = $"{minutes.ToString(CultureInfo.InvariantCulture)}-minute";
+                seen.RemoveAll(each => each.Window == key && each.Scope == scope);
+                seen.Add(new WindowSeen(
+                    key, walked ? WindowOf(minutes) : null, scope, minutes, used,
+                    used is null ? null : UsageHistory.Precision(window.GetProperty("usedPercent"), 100),
+                    reset, reset is null ? null : UsageHistory.ResetSaid));
+            }
+        }
     }
+
+    /// <summary>The version of <see cref="Read"/>'s history parse, which each reading it keeps carries (USAGECAP1a1).</summary>
+    public const int HistoryReader = 1;
 
     /// <summary>
     /// The read over a server's lines (usage evidence §1): <c>initialize</c>, its answer, <c>initialized</c>, then the read,

@@ -114,6 +114,47 @@ public sealed class CodexUsageTests
         Assert.Equal([new WindowReading(named, 0.42, In(2))], Read(Answer(Window(42, minutes, Seconds(2)))));
     }
 
+    // ——— What the usage history keeps of an answer (USAGECAP1a1, D179 point 8): each window by its length and its limit's
+    // scope (`limitId`), never its slot; its plan not read, as before.
+
+    private static UsageAnswer Kept(string answer) => CodexUsage.Read(JsonDocument.Parse(answer).RootElement.Clone());
+
+    [Fact]
+    public void The_recorded_answer_is_kept_for_the_history_by_length_and_the_limit_s_scope()
+    {
+        var answer = Kept(Recorded(3.5, 100.25));
+
+        Assert.Equal([new WindowReading("session", 0.01, In(3.5)), new WindowReading("weekly", 0.15, In(100.25))], answer);
+        Assert.Equal(
+            [
+                new WindowSeen("300-minute", "session", "codex", 300, 0.01, 0.01, In(3.5), UsageHistory.ResetSaid),
+                new WindowSeen("10080-minute", "weekly", "codex", 10080, 0.15, 0.01, In(100.25), UsageHistory.ResetSaid),
+            ],
+            answer.Seen);
+        Assert.Null(answer.Plan);
+        Assert.Equal(CodexUsage.Method, answer.Source);
+        Assert.Equal(1, answer.Reader);
+    }
+
+    [Fact]
+    public void Another_limit_s_windows_are_kept_for_the_history_by_its_scope_and_the_plan_is_never_read()
+    {
+        var limit = $$"""{"limitId":"codex","planType":"pro","primary":{{Window(1, 300, Seconds(3))}},"secondary":{{Window(15.5, 10080, Seconds(90))}}}""";
+        var other = $$"""{"limitId":"codex_spark","primary":{{Window(60, 10080, Seconds(50))}},"secondary":{{Window(5, null, Seconds(2))}}}""";
+        var answer = Kept($$$"""{"rateLimits":{{{limit}}},"rateLimitsByLimitId":{"codex":{{{limit}}},"codex_spark":{{{other}}}}}""");
+
+        Assert.Equal([new WindowReading("session", 0.01, In(3)), new WindowReading("weekly", 0.155, In(90))], answer);
+        Assert.Equal(
+            [
+                new WindowSeen("300-minute", "session", "codex", 300, 0.01, 0.01, In(3), UsageHistory.ResetSaid),
+                new WindowSeen("10080-minute", "weekly", "codex", 10080, 0.155, 0.001, In(90), UsageHistory.ResetSaid),
+                // A window with no length has no name but its slot, and is kept nowhere.
+                new WindowSeen("10080-minute", null, "codex_spark", 10080, 0.6, 0.01, In(50), UsageHistory.ResetSaid),
+            ],
+            answer.Seen);
+        Assert.Null(answer.Plan);
+    }
+
     public static TheoryData<string, string> Unread => new()
     {
         { "no rate limits", """{"accountId":"…","rateLimits":null}""" },
