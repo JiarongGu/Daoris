@@ -242,7 +242,7 @@ public static class SystemWiring
     /// <summary>Why an entry stays at its old place (D172 point 6): what names it by path, or that it moves at a start after an update.</summary>
     private static string Stays(HomeEntry entry) => entry.Name switch
     {
-        "agent-homes" or "trees" or "help-room" or "intake" => "resumes",
+        "agent-homes" or "trees" or "help-room" or "help-rooms" or "intake" => "resumes",
         "session-files" or "quest-files" or "ask-files" => "kept",
         "bin" => "mcp",
         _ => "not-moved",

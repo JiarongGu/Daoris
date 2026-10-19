@@ -123,7 +123,7 @@ public static class ToolHomeLeftovers
                     : string.IsNullOrWhiteSpace(Text(record, "profile")) ? ConversationKeeps(home, id)
                     : null;
                 if (Text(record, "tree") is { Length: > 0 } tree) origins.Add(new ToolOrigin(tree, "tree", keeps, id));
-                if (Text(record, "repository") == "daoris:help") origins.Add(new ToolOrigin(HelpRoom.PathOf(home), "help", keeps, id));
+                if (Text(record, "repository") == "daoris:help") origins.Add(new ToolOrigin(HelpRoom.PathOf(home, Text(record, "workspace")), "help", keeps, id));
                 if (Text(record, "ask") is { Length: > 0 })
                 {
                     origins.Add(new ToolOrigin(IntakeRoom.PathOf(home, RemoteTarget.Workspace(Text(record, "workspace"))), "intake", keeps, id));
