@@ -36,7 +36,7 @@ note has the measure that chose it.
 
 | Part | The shape | Where it is |
 |---|---|---|
-| One entry | The spec feeds the widest variant's key (every repository, closed included, every workspace); each hook reads it once live and derives its variant with a stable `select` that twins the service's filter and order. Not live, each variant is its own pull under its own key, its `queryFn` first waiting for a snapshot on its way (`readPushed` with a null pull) so a window opening reads none beside it | `useSessionsRead`, `sessionsIn` in `data/queries.ts` |
+| One entry | The spec feeds the widest variant's key (every repository, closed included, every workspace); each hook reads it once live and derives its variant with a stable `select` that twins the service's filter and order. Not live, each variant is its own pull under its own key, its `queryFn` first waiting for a snapshot on its way (`readPushed` with a null pull) so a window opening reads none beside it | `useSessionsRead`, `sessionsIn` in `data/queries.ts`; `pushedList` for any list (the quests' and the asks', PUSH1d3) |
 | Keyed deltas | A partition whose data is an object of records by key (`StateSlice.Keyed`) pushes the keys that moved and names the keys gone; the page's `merge` is `mergeKeyed` | `StateSlice.Moved`, `slices.ts` |
 | Judged and empty | `compose` is told whether the owner judged (`judged`): a list judged empty composes `[]`, so a last partition gone empties the list instead of leaving it as it was | `Pushed.install`, `Pushed.apply` |
 | A write that bypasses the host | A `Hears` on `DriverLoop.MoveHeard`, which the watch tells each move it heard (`HeardMove`): the ledger's family wakes the slice, so a connector's write is pushed with no desktop dispatch | `SessionsStateSlice.HearLedger` |
@@ -47,8 +47,6 @@ note has the measure that chose it.
 | A route that answers one subject at a time | No pull answers the widest, so the spec feeds a key no variant uses (`keys.syncEvery`), a subject with no partition reads as the route answers it (`wired: false`), and live but not yet judged leaves the read unanswered rather than pulling a partial map | `SyncStateSlice`, `standingOf` (PUSH1a2) |
 | A machine path the page reads only as present | The path is never pushed: a flag says what its presence said (a file's `kept`), the page's type gains it beside the path, and one helper reads either, so a pulled answer and a pushed one render alike | `QuestsStateSlice.Kept`, `fileKept` (PUSH1d3) |
 | An answer judged from other families | The service's answer reads more than its own table (an open quest's `deletable` reads the sessions, an ask's standing its quests): the slice hears each family its answer reads, not only its own | `QuestsStateSlice.Families`, `AsksStateSlice.Families` (PUSH1d3) |
-| One read shared by the variants | `pushedList` in `data/queries.ts`: live, the widest key with the view's `select`; not live, the view's own pull, waiting for a snapshot on its way | `useQuests`, `useAsks` (PUSH1d3) |
-
 ## A fact judged per repository, before its slice
 
 A slice partitioned per repository is only as cheap as the fact beneath it: one repository's `refs` wake must judge that
