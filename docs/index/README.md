@@ -206,7 +206,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 217 | 3831 |
 | `tools/orient-index.mjs` | 66 | 1424 |
-| `tools/rehearsal-kit.mjs` | 45 | 876 |
+| `tools/rehearsal-kit.mjs` | 46 | 884 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
 ### No lane
