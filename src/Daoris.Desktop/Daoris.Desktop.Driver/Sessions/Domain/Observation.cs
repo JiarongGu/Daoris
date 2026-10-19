@@ -237,6 +237,26 @@ public static class Observation
     public static Noted TimedOut(int minutes) =>
         Noted.Of(NoteCodes.EndedTimeout, $"timed out after {minutes} minutes and was killed.", ("minutes", minutes));
 
+    /// <summary>
+    /// How a driven run the timeout killed ends (BGWAIT2): failed, saying the timeout, unless this run brought its quest to done,
+    /// which outranks the kill as it outranks a messy exit, so it is completed and says both.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 The install's session committed and closed its quest done, then waited 48 minutes on a prompt its adapter never
+    /// answered, and the timeout recorded it failed (2026-10-19). Its work had ended; only its wait had not.</para>
+    ///
+    /// <para><b>Only a done this run reached.</b> A run that went on with the person's words after its quest closed is judged on
+    /// those words alone (MSG1b, <see cref="Resumed"/>), and its quest's old done says nothing of them, so its timeout is failed
+    /// as before and the words it carried wait to go again (<see cref="FailedTurnWords"/>). A quest still taken at the timeout is
+    /// failed, and D80 carries it on, bounded by the strikes. The person's stop is read before this, and stands.</para>
+    /// </remarks>
+    /// <param name="startedOn">Its quest's status as the look planned the run.</param>
+    /// <param name="questStatus">Its quest's status as the run left it.</param>
+    public static SessionConclusion AfterTimeout(int minutes, string? startedOn, string questStatus) =>
+        questStatus == "Done" && startedOn is ("Open" or "Taken")
+            ? SessionConclusion.Of("completed", Noted.Of(NoteCodes.EndedDone, "the quest reached done.").Then(" ", TimedOut(minutes)))
+            : SessionConclusion.Of("failed", TimedOut(minutes));
+
     /// <summary>A session the driver's own shutdown ended (row 21), for a driven session, a resumed one and an intake alike.</summary>
     public static Noted DriverClosed =>
         Noted.Of(NoteCodes.EndedDriverClosed, "the driver was stopped while this ran; the session's process was ended with it.");
