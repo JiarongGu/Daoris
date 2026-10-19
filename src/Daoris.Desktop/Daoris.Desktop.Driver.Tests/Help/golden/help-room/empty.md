@@ -73,6 +73,9 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   one of Daoris's own plugins by its id instead (`offer`, below), and an `update` (the plugin's `id`) takes a
   newer copy from where an installed one came from, the card saying what changes; one with no record of
   where it came from cannot be updated.
+  An `approve` proposes the person's approval of what a plugin's server offers you (its `id`, its `server`,
+  and in `writes` only the writes outside Daoris they said they accept): the card names every tool, and you
+  are handed it from your next conversation once they press Apply. A `withdraw` takes an approval back.
 - `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it
   and opens the pull request, signed in as the person. Name the session that landed it or the branch, and
   a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded
@@ -213,7 +216,7 @@ session named; never propose adding one that has not landed.
 | read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, or one named after it on the same history (a done no session here ended needs the commit named) | (no screen yet) | `daoris-driver quest check <id> [--commit <sha>]` |
 | add a plugin that has landed, or switch one on or off | Plugins → the plugin's page → Turn on or Turn off | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
 | install one of Daoris's own plugins, or update one from where it came from | Plugins → Daoris's own plugins → Install; Plugins → the plugin's page → Update… | `daoris plugin add --offer <id>`, `daoris plugin update <id>` |
-| let Ask Daoris call the exact tools a plugin's server offers it, its reads and its writes outside Daoris or its reads only, or take that back; an update that adds or widens a tool asks again (Ask Daoris never proposes it: what a plugin may do as you is your own trust) | Plugins → the plugin's page → Ask Daoris → Approve, Approve reads only, Withdraw | `daoris-driver plugins approve <id> <server> [--reads-only]`, `daoris-driver plugins withdraw <id> <server>` |
+| let Ask Daoris call the exact tools a plugin's server offers it, all its reads and each write outside Daoris you accept, or take that back; an update that adds or widens a tool asks again | Plugins → the plugin's page → Ask Daoris → Approve, Withdraw | `daoris-driver plugins approve <id> <server> [--reads-only | --writes <tool,…>]`, `daoris-driver plugins withdraw <id> <server>` |
 | choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites | Settings → Browser | `daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, `daoris browser favorite add|remove <address>` |
 | install the build staged beside this install: when its work allows (nothing new starts, and once no driven session runs Daoris closes and starts again on it), now (Daoris closes at once, ending what runs as a close does), or not now (it stays staged, for that build only); plain `update` says what is staged and how the last update ended (Ask Daoris never proposes it: an update is your act on the application) | the update banner, and Settings → Driver → Update: *Update when idle*, *Update now*, *Not now* | `daoris-driver update --when-idle|--now|--cancel`, `daoris-driver update` |
 | start a task | Quests → Ask | `daoris-driver ask --workspace <name> "…"` |
