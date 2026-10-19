@@ -48,6 +48,8 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             .. sources.Config.PausedQuests.Keys.Order(StringComparer.Ordinal).Select(quest => new PausedBy(WorkScope.Quest, quest))],
         Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
         History = sources.History,
+        // PARALLEL1a: what the judges' facts had not read yet, which each section says where it says its part.
+        NotReadYet = sources.NotReadYet,
     };
 
     /// <summary>
@@ -78,6 +80,13 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
     {
         var text = new StringBuilder();
         text.Append("## This machine, now\n\n");
+        // PARALLEL1a (D181 point 1): the room is written at once from the facts as last judged, so a part may not be read yet.
+        if (machine.NotReadYet.Any)
+        {
+            text.Append("- Not read yet: some of this machine was not read when this room was written. Where a line here says *not read "
+                + "yet*, say so rather than guess; this room is written again as each part is read.\n");
+        }
+
         text.Append(machine.Adapter is { Length: > 0 } adapter
             ? $"- The driver: quests run on `{adapter}`, up to {machine.Cap} sessions at once.\n"
             : "- The driver: no agent is set for quests.\n");
@@ -106,7 +115,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         }
         else
         {
-            text.Append("- This machine's sessions by the Sessions list's groups: not read.\n");
+            text.Append($"- This machine's sessions by the Sessions list's groups: {NotRead(machine.NotReadYet.Sessions)}.\n");
         }
 
         // HELP10: by id and repository, so a retry names one the quest's page would offer Try again on.
@@ -126,7 +135,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             + (machine.Paused.Count > 0 ? string.Join(", ", machine.Paused.Select(paused => $"{paused.Word} `#{paused.Id}`")) : "none")
             + ".\n");
         // HIST1f-b (design §2.4, §6.4): what each workspace keeps, so a clear names one that keeps something.
-        text.Append(HistoryLines(machine.History));
+        text.Append(HistoryLines(machine.History, machine.NotReadYet.History));
         // HELP10: as its two files hold it, so a browser proposal names a favorite kept; only where the desktop read them.
         if (machine.Browser is { } browser)
         {
@@ -178,15 +187,18 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
 
     private static string Count(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
 
+    /// <summary>A part with nothing read: not judged yet by the facts (PARALLEL1a), or not read at all.</summary>
+    internal static string NotRead(bool yet) => yet ? "not read yet" : "not read";
+
     /// <summary>
     /// What each workspace keeps of finished work (HIST1f-b), in the terminal's words (<c>daoris-driver history</c>): its closed
     /// work and sessions with their size, what a clear would take now, and how many units stay by the word that keeps them; the
     /// home's left-over files once, since every workspace's clear takes them.
     /// </summary>
-    private static string HistoryLines(IReadOnlyList<HistoryReading>? readings)
+    private static string HistoryLines(IReadOnlyList<HistoryReading>? readings, bool notReadYet)
     {
         const string Head = "- Finished history this machine keeps, by workspace";
-        if (readings is null) return $"{Head}: not read.\n";
+        if (readings is null) return $"{Head}: {NotRead(notReadYet)}.\n";
         if (readings.Count == 0) return $"{Head}: none.\n";
 
         var text = new StringBuilder($"{Head}:\n");

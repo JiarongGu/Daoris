@@ -543,9 +543,10 @@ public sealed record OpenChatRequest(
 // that is about to run a process there. The circle comes from the ask, never from the caller.
 public sealed record OpenIntakeRequest(
     string? Ask, string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
-// Ask Daoris (HELP1a, D89): the room its conversation runs in, the driver's to name.
+// Ask Daoris (HELP1a, D89): the room its conversation runs in, the driver's to name. `Workspace` (ASKSCOPE1a): the one its
+// window was on at the press, which the record keeps; none is `default`, as a driver from before sends it.
 public sealed record OpenHelpRequest(
-    string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
+    string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Workspace = null);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
 // that an account's limit made. Silence is the old reading of both. `NoteParts` (LANG1a): the note's lines by code, beside
 // it; a note sent without them clears the record's, and an older driver sends none.

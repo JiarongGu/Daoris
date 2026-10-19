@@ -309,6 +309,26 @@ public static class UsageHistory
         return new(turns, gaps, unread);
     }
 
+    /// <summary>One month's file of a log as it stands (USAGEPROBE1): where <see cref="UsageLedger"/> reads on from.</summary>
+    internal sealed record HistoryMonth(string Name, DateTimeOffset Month, long Length);
+
+    /// <summary>The readings' month files now, oldest first; none where the history has none or its folder does not read.</summary>
+    internal static IReadOnlyList<HistoryMonth> ReadingMonths(string home) => MonthsOf(home, ReadingsLog);
+
+    /// <summary>The turns' month files now, oldest first; none where the history has none or its folder does not read.</summary>
+    internal static IReadOnlyList<HistoryMonth> TurnMonths(string home) => MonthsOf(home, TurnsLog);
+
+    /// <summary>
+    /// The readings a month's file holds from <paramref name="offset"/> on, added to <paramref name="into"/>: the offset read to
+    /// (the end of its last whole line), or -1 where the file is shorter than the offset, begun again since. Never throws.
+    /// </summary>
+    internal static long ReadingsOn(string home, HistoryMonth month, long offset, List<KeptReading> into) =>
+        ReadOn(home, ReadingsLog, month, offset, "reading", ReadingOf, into);
+
+    /// <summary>The turns a month's file holds from <paramref name="offset"/> on, as <see cref="ReadingsOn"/> reads its readings.</summary>
+    internal static long TurnsOn(string home, HistoryMonth month, long offset, List<KeptTurn> into) =>
+        ReadOn(home, TurnsLog, month, offset, "turn", TurnOf, into);
+
     /// <summary>A maker's name as the history keeps it: a plain name of letters, digits and <c>_ . : -</c>, else null.</summary>
     public static string? Word(string? said) => said is not null && Plain.IsMatch(said) ? said : null;
 
@@ -725,6 +745,60 @@ public static class UsageHistory
         }
 
         return (records, gaps, unread);
+    }
+
+    /// <summary>A log's month files as <see cref="HistoryMonth"/>s, oldest first; none where its folder is not there or does not read.</summary>
+    private static IReadOnlyList<HistoryMonth> MonthsOf(string home, string log)
+    {
+        try
+        {
+            return Directory.Exists(FolderOf(home))
+                ? [.. Segments(home, log).Select(segment => new HistoryMonth(segment.Name, segment.Month, segment.Length))]
+                : [];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Every whole line of a month's file from <paramref name="offset"/> on, each record of <paramref name="kind"/> added to
+    /// <paramref name="into"/> (USAGEPROBE1): only the bytes appended since the last read are read, a line still being written
+    /// is left for the next. The offset read to, -1 where the file is shorter than the offset, and the offset itself where the
+    /// file does not read.
+    /// </summary>
+    private static long ReadOn<T>(
+        string home, string log, HistoryMonth month, long offset, string kind, Func<JsonObject, T?> parse, List<T> into)
+        where T : class
+    {
+        try
+        {
+            using var stream = new FileStream(
+                DaorisHome.Entry(home, HomeEntry.UsageHistory, month.Name), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var length = stream.Length;
+            if (length < offset) return -1;
+            if (length == offset) return offset;
+
+            stream.Seek(offset, SeekOrigin.Begin);
+            var bytes = new byte[length - offset];
+            stream.ReadExactly(bytes);
+            var end = Array.LastIndexOf(bytes, (byte)'\n');
+            if (end < 0) return offset;
+
+            var segment = new Segment(log, month.Name, month.Month, length);
+            foreach (var line in Utf8.GetString(bytes, 0, end + 1).Split('\n'))
+            {
+                if (line.Length > 0 && Record(line, segment, kind, parse) is T record) into.Add(record);
+            }
+
+            return offset + end + 1;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Read again from here next time: what could not be read is not there yet.
+            return offset;
+        }
     }
 
     /// <summary>A reading read back whole, or null where it does not read.</summary>

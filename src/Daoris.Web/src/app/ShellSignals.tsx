@@ -3,11 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
-import { useDriverReady, useStateHub } from '../bridge/shell';
+import { driverSlice, linesSlice, notPushed, useDriverReady, useStateHub, useStateSlices } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
 
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
+
+/** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
+const PUSHED = [driverSlice, linesSlice];
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
@@ -74,7 +77,9 @@ export function ShellSignals({ notify, onAttend, attended }: {
     // the window, an ask made by the other door was missing from *What needs you*, and its parked
     // intake read as a bare session, because the band could not see the ask it belonged to.
     void client.invalidateQueries({ queryKey: keys.allAsks });
-    void client.invalidateQueries({ queryKey: keys.driver });
+    // What is read under the driver's key, but its state where the shell pushes it (PUSH1a, D182): its pushes write it, and a
+    // tick reads none of it again.
+    void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
     // And the rules: a tick settles what agents proposed about them (PERM2), applying a narrowing and
     // holding a widening for the person — which *What needs you* reads.
     void client.invalidateQueries({ queryKey: keys.rules });
@@ -100,6 +105,9 @@ export function ShellSignals({ notify, onAttend, attended }: {
 
   // What a press changed, wherever it was pressed (STATEHUB1b, D169): asked again here at the one place, in every window.
   useStateHub();
+
+  // What the shell pushes with its data (PUSH1a, D182): heard first, then each slice's snapshot asked, in every window.
+  useStateSlices(PUSHED);
 
   // A failure the driver names is worded from the catalogue, in the reader's language (UX5 U30): a
   // refused connection toasted the .NET socket's own words. Anything else keeps the driver's.
@@ -143,7 +151,8 @@ export function ShellSignals({ notify, onAttend, attended }: {
    */
   useShenoraEvent<{ session?: string; state?: string }>('DAORIS', 'SESSION_ENDED', () => {
     void client.invalidateQueries({ queryKey: keys.allSessions });
-    void client.invalidateQueries({ queryKey: keys.driver });
+    // What runs, where the shell pushes the driver's state, is pushed by the end itself (PUSH1a).
+    void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
   });
 
   /** The person clicked an OS notification, so the window comes forward on that session. */

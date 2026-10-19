@@ -24,6 +24,8 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 Held = Named(config.Holds, known.Repository),
                 OwnTree = config.OpensOwnTree(known.Repository),
                 Line = lineOf.TryGetValue(known.Repository, out var line) ? new Line(line.Branch, line.Source) : new Line(null, LineSource.None),
+                // PARALLEL1a: a checkout whose line the facts have not judged yet, said so rather than as none git can name.
+                LineNotReadYet = Named(sources.NotReadYet.Repositories, known.Repository),
                 Landing = LandingRules.Choose(config, known.Repository, known.Workspace),
                 // KNOWUSE1b: what the person says holds for every session there, in their words.
                 Standing = config.StandingFor(known.Repository)?.Says,
@@ -88,7 +90,8 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             text.Append("|---|---|---|---|---|---|---|\n");
             foreach (var repository in circle.OrderBy(repository => repository.Name, StringComparer.Ordinal))
             {
-                text.Append($"| `{repository.Name}` | {Driven(repository)} | {LineOf(repository.Line)} | {Lands(repository.Landing)} | "
+                var line = repository.LineNotReadYet ? "not read yet" : LineOf(repository.Line);
+                text.Append($"| `{repository.Name}` | {Driven(repository)} | {line} | {Lands(repository.Landing)} | "
                     + $"{ReviewRules.RoomCell(repository.Review)} | {OpinionRules.RoomCell(repository.Opinion)} | {Follows(repository.Workflow)} |\n");
             }
 
@@ -201,6 +204,9 @@ public sealed record HelpRepository(string Name, string Workspace)
     public bool OwnTree { get; init; }
 
     public Line Line { get; init; } = new(null, LineSource.None);
+
+    /// <summary>Whether its checkout's line was not judged yet when the room was written (PARALLEL1a).</summary>
+    public bool LineNotReadYet { get; init; }
 
     public Landing Landing { get; init; } = new(LandingRule.Merge, LandingSource.Default);
 

@@ -125,6 +125,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Ask Daoris's start, where the machine's reading for its room did not answer in time (HELPSTUCK1).
   'help.room-as-written': { values: ['seconds'] },
   'help.room-unread': { values: ['seconds'] },
+  // Ask Daoris started at once on the facts the judges keep, some of the machine not read yet (PARALLEL1a).
+  'help.room-not-read-yet': { values: [] },
   // A landing at the quest's done, under a rule that accepts automatically (LAND2b).
   'landing.accepted': { values: ['branch'] },
   'landing.plugin-unready': { values: ['branch', 'plugin'] },
@@ -172,6 +174,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The scope's one number, no longer written (SWITCH1b-ii); a line written before keeps it. Over its curve since.
   'opening.said-near-at': { values: ['near'] },
   'opening.said-over': { values: ['window', 'curve'] },
+  // A window's use projected from its reading and Daoris's own turns since, never near or over (USAGEPROBE1).
+  'opening.said-projected': { values: ['projected', 'window'] },
   'opening.said-clear': { values: [] },
   // A resumed conversation's first line (CONVNOTE2a): the adapter and whose words, a version that moved riding inside it.
   'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
@@ -434,6 +438,8 @@ export const NOTE_VALUES: Readonly<
   used: 'percent', near: 'percent', gone: 'percent', against: 'percent', curve: 'percent',
   // The share of a week unused at its reset, as a window's use is (USAGERESET1).
   unused: 'percent',
+  // A window's use projected to now, as a window's use is (USAGEPROBE1).
+  projected: 'percent',
   adapter: 'text', now: 'text', then: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account', first: 'account',

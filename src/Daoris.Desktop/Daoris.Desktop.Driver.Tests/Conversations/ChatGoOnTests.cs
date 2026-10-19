@@ -610,6 +610,15 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>Each take of words: the session and the ids joined.</summary>
     public List<(string Session, string Ids)> Taken { get; } = [];
 
+    /// <summary>The workspace each Ask Daoris open named in its body, in order: null where it named none (ASKSCOPE1a).</summary>
+    public List<string?> HelpAsked { get; } = [];
+
+    /// <summary>One record as the ledger holds it now, a copy.</summary>
+    public JsonObject Record(string id)
+    {
+        lock (_gate) return Find(id).DeepClone().AsObject();
+    }
+
     /// <summary>Each take of words with the session it named as taking them (MSG1f2's start-from), or null for its own.</summary>
     public List<(string Session, string Ids, string? By)> TakenBy { get; } = [];
 
@@ -768,16 +777,21 @@ internal sealed class ChatLedger : HttpMessageHandler
                 case ("GET", "/api/quests"):
                     return (HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]).ToJsonString());
 
-                // ASKHIST1: Ask Daoris's open, its record in the room's "repository", one running at a time.
+                // ASKHIST1: Ask Daoris's open, its record in the room's "repository", one running at a time in its workspace
+                // (ASKSCOPE1a), none named being `default`'s.
                 case ("POST", "/api/sessions/help"):
                 {
                     var asked = JsonNode.Parse(body!)!;
+                    var named = asked["workspace"]?.GetValue<string>();
+                    HelpAsked.Add(named);
+                    var workspace = named ?? "default";
                     if (_sessions.FirstOrDefault(s => s["repository"]!.GetValue<string>() == HelpRoom.Repository
-                                                     && Live.Contains(s["state"]!.GetValue<string>())) is { } running)
+                                                     && Live.Contains(s["state"]!.GetValue<string>())
+                                                     && string.Equals(s["workspace"]?.GetValue<string>() ?? "default", workspace, StringComparison.OrdinalIgnoreCase)) is { } running)
                     {
                         return (HttpStatusCode.Conflict, new JsonObject
                         {
-                            ["error"] = $"Ask Daoris already has a conversation running — `{running["id"]}`.",
+                            ["error"] = $"Ask Daoris already has a conversation running in `{workspace}` — `{running["id"]}`.",
                         }.ToJsonString());
                     }
 
@@ -786,7 +800,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                         ["id"] = $"h{_sessions.Count + 1}", ["repository"] = HelpRoom.Repository, ["state"] = "queued", ["kind"] = "chat",
                         ["adapter"] = asked["adapter"]!.GetValue<string>(), ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(),
                         ["profile"] = asked["profile"]?.GetValue<string>(), ["tree"] = asked["room"]?.GetValue<string>(),
-                        ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
+                        ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["workspace"] = workspace,
                     };
                     _sessions.Add(session);
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());

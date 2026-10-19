@@ -561,6 +561,10 @@ public static class NoteCodes
     public static readonly NoteCode HelpRoomAsWritten = new("help.room-as-written", ["seconds"]);
     public static readonly NoteCode HelpRoomUnread = new("help.room-unread", ["seconds"]);
 
+    // ——— Ask Daoris's start on the facts the judges keep (PARALLEL1a, D181 point 1): started at once, on a room that says what is
+    // not read yet, or on the room as last written where no fact was ever judged.
+    public static readonly NoteCode HelpRoomNotReadYet = new("help.room-not-read-yet", []);
+
     // ——— A landing at the quest's done, under a rule that accepts automatically (LAND2b): said in the conversation's record.
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
     public static readonly NoteCode LandingUnready = new("landing.plugin-unready", ["branch", "plugin"]);
@@ -603,6 +607,9 @@ public static class NoteCodes
     // before keeps `opening.said-near-at`, the scope's one number, which nothing writes now.
     public static readonly NoteCode OpeningSaidNearAt = new("opening.said-near-at", ["near"]);
     public static readonly NoteCode OpeningSaidOver = new("opening.said-over", ["window", "curve"]);
+    // A window's use projected to now from its reading and Daoris's own turns since, by the account's measured ratio
+    // (USAGEPROBE1): what decided the start asked nothing of it, never near or over, which a reading alone says.
+    public static readonly NoteCode OpeningSaidProjected = new("opening.said-projected", ["projected", "window"]);
     public static readonly NoteCode OpeningSaidClear = new("opening.said-clear", []);
 
     // ——— A resumed conversation's first line (CONVNOTE2a, Continuations.Opening): the adapter it resumed on is a fact, and

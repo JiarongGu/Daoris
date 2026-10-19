@@ -542,6 +542,12 @@ public sealed record SessionView(
     /// on nobody (ANSWER1c), which Ask Daoris's room reads as the Sessions list does (ENTRY1f2). Answered on loopback alone.
     /// </summary>
     public string? Answer { get; init; }
+
+    /// <summary>
+    /// The workspace its record is filed under (D48), <c>default</c> where a host from before answers none: what Ask Daoris's
+    /// start hands the running conversation of its own workspace by (ASKSCOPE1a).
+    /// </summary>
+    public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
 }
 
 /// <summary>

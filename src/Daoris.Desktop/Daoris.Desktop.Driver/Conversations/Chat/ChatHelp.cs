@@ -12,8 +12,9 @@ namespace Daoris.Driver;
 /// earlier conversation, or starting one from it, first sets aside the one running here, which keeps its own id and can go on
 /// later. One answering a turn is never set aside: the words wait, said why, and the next word tries again.</para>
 ///
-/// <para><b>The room is written again</b> as every open writes it, from the machine as the shell reads it now
-/// (<see cref="DescribeHelp"/>); where nothing hands a reading, the room as last written serves and nothing outside it is read.</para>
+/// <para><b>The room is written again</b> as every open writes it, from the machine as the shell hands it
+/// (<see cref="DescribeHelp"/>): since PARALLEL1a the facts the judges keep, as last judged, so no open waits on a reading of the
+/// machine; where nothing hands one, the room as last written serves and nothing outside it is read.</para>
 ///
 /// <para>It holds the runner for the new conversation it opens and for whether a turn is taking, as <see cref="ChatHandOver"/>
 /// does: they are the runner's own start and the runner's own turns.</para>
@@ -24,9 +25,10 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     private static readonly TimeSpan SetAsideBound = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// How long a start waits for the machine's reading before the room as last written serves (HELPSTUCK1). The reading walks git
+    /// How long a start waits for the machine's reading before the room as last written serves (HELPSTUCK1). The reading walked git
     /// across every tree and repository: 24.9 s for its session look alone on a loaded machine at HELPSTART1, and no answer for
-    /// minutes at HELPSTUCK1, while the conversation sat at <c>queued</c>.
+    /// minutes at HELPSTUCK1, while the conversation sat at <c>queued</c>. Since PARALLEL1a the reading is the facts as last
+    /// judged, which answer at once, so this bounds only a home whose facts were never judged and with no room written.
     /// </summary>
     public static readonly TimeSpan DefaultReadBound = TimeSpan.FromSeconds(30);
 
@@ -40,7 +42,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
 
     /// <summary>
-    /// Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1): the room's running conversation set aside, a
+    /// Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1): its workspace's running conversation set aside, a
     /// new one opened as <c>START_HELP</c> opens one, and the earlier one's transcript (<see cref="HelpTranscript"/>) kept as its
     /// file, handed with the person's first message. Never a summary: Daoris makes no model call (D24).
     /// </summary>
@@ -49,19 +51,21 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         string earlier, string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        var placed = await PlaceHelpFromAsync(earlier, adapter, config, ct).ConfigureAwait(false);
+        var placed = await PlaceHelpFromAsync(earlier, adapter, config, ct: ct).ConfigureAwait(false);
         return placed.SessionId is null
             ? new(null, placed.Message)
             : await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for (HELPSTART1b): the room's running conversation set
-    /// aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier one's words kept for it.
+    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for (HELPSTART1b): its workspace's running conversation
+    /// set aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier one's words kept for it.
     /// The room is read and the agent spawned after, by <see cref="ChatRunner.RunHelpAsync"/>, off the request. A conversation
     /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
     /// </summary>
-    public async Task<HelpPlaced> PlaceHelpFromAsync(string earlier, string adapter, DriverConfig config, CancellationToken ct = default)
+    /// <param name="workspace">The workspace the person's window was on at the press (ASKSCOPE1a): the new one's, whose running one is set aside.</param>
+    public async Task<HelpPlaced> PlaceHelpFromAsync(
+        string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default)
     {
         if (context.Closing) return new(null, "the application is closing, so no conversation starts now.");
 
@@ -73,9 +77,9 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
             return new(null, $"nothing was said in conversation `{earlier}`, so there is nothing to start from.");
         }
 
-        if (await SetAsideHelpAsync(null, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
+        if (await SetAsideHelpAsync(null, workspace, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
 
-        var placed = await runner.PlaceHelpAsync(adapter, config, ct).ConfigureAwait(false);
+        var placed = await runner.PlaceHelpAsync(adapter, config, workspace, ct).ConfigureAwait(false);
         if (placed.SessionId is not { } id) return placed;
 
         try
@@ -93,14 +97,16 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     }
 
     /// <summary>
-    /// Set aside the room's running conversation (HELP1a holds one at a time): each other Ask Daoris conversation running here
-    /// is stopped, keeping its own id to go on later, and waited for until its record ends. One answering a turn is never
-    /// stopped: its id comes back instead (<see cref="HeldWords.Answering"/> says why).
+    /// Set aside its workspace's running conversation (HELP1a holds one at a time, ASKSCOPE1a one in each workspace): each other
+    /// Ask Daoris conversation of that workspace running here is stopped, keeping its own id to go on later, and waited for until
+    /// its record ends; another workspace's runs on. One answering a turn is never stopped: its id comes back instead
+    /// (<see cref="HeldWords.Answering"/> says why).
     /// </summary>
     /// <param name="goingOn">The conversation going on, which is never its own obstacle; null for a new one.</param>
-    public async Task<string?> SetAsideHelpAsync(string? goingOn, CancellationToken ct)
+    /// <param name="workspace">The workspace of the one going on or starting, as its record keeps it; null is <c>default</c>.</param>
+    public async Task<string?> SetAsideHelpAsync(string? goingOn, string? workspace, CancellationToken ct)
     {
-        foreach (var other in context.Rooms.Keys.Where(id => !string.Equals(id, goingOn, StringComparison.OrdinalIgnoreCase)).ToList())
+        foreach (var other in Aside(context.Rooms, goingOn, workspace))
         {
             if (runner.Taking(other))
             {
@@ -115,6 +121,19 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     }
 
     /// <summary>
+    /// Which of the conversations running here (<paramref name="rooms"/>, each by its workspace) <see cref="SetAsideHelpAsync"/>
+    /// sets aside: those of <paramref name="workspace"/>, never <paramref name="goingOn"/> itself.
+    /// </summary>
+    internal static IReadOnlyList<string> Aside(IReadOnlyDictionary<string, string> rooms, string? goingOn, string? workspace)
+    {
+        var circle = RemoteTarget.Workspace(workspace);
+        return [.. rooms
+            .Where(room => !string.Equals(room.Key, goingOn, StringComparison.OrdinalIgnoreCase)
+                           && string.Equals(RemoteTarget.Workspace(room.Value), circle, StringComparison.OrdinalIgnoreCase))
+            .Select(room => room.Key)];
+    }
+
+    /// <summary>
     /// The room as the machine stands now, written again as an open writes it, and what reading across lets it read (D107); the
     /// room as last written, reading nothing outside it, where nothing hands a reading, the reading failed, or it did not answer
     /// within <see cref="ReadBound"/> (HELPSTUCK1), which the conversation <paramref name="sessionId"/> is told.
@@ -125,9 +144,15 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         {
             try
             {
-                var (machine, late) = await ReadAsync(describe, ct).ConfigureAwait(false);
-                if (machine is not null) return (HelpRoom.Prepare(context.Home, machine), machine.Reads);
-                if (late) context.Note(sessionId, AsWritten(ReadBound));
+                var (machine, late, waited) = await ReadAsync(describe, ct).ConfigureAwait(false);
+                if (machine is not null)
+                {
+                    var room = HelpRoom.Prepare(context.Home, machine);
+                    if (machine.NotReadYet.Any) context.Note(sessionId, NotReadYet());
+                    return (room, machine.Reads);
+                }
+
+                if (late) context.Note(sessionId, waited ? AsWritten(ReadBound) : NotReadYet());
             }
             catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
             {
@@ -145,13 +170,15 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     public static readonly TimeSpan ReadBackstop = TimeSpan.FromMinutes(10);
 
     /// <summary>
-    /// The machine read for the room within <see cref="ReadBound"/> (HELPSTUCK1): its reading, or null and late where it did not
-    /// answer in time. A start never waits past the bound in silence: the caller starts on the room as last written, saying so,
-    /// or ends saying why. The reading left behind goes on, until <see cref="ReadBackstop"/>, and writes the room when it answers,
-    /// so the next conversation starts on the machine as read rather than on the room this one was handed.
+    /// The machine for the room (PARALLEL1a, D181 point 1): the facts as last judged, which answer at once. A reading still under
+    /// way is a home whose facts were never judged at all: with a room written before, it is not waited for, and comes back late
+    /// at once, the room as last written serving; with none, it is waited for within <see cref="ReadBound"/> (HELPSTUCK1's
+    /// bound, now the backstop), and comes back late, having waited, where it did not answer in time. The caller starts on the
+    /// room as last written, saying so, or ends saying why. The reading left behind goes on, until <see cref="ReadBackstop"/>,
+    /// and writes the room when it answers, so the next conversation starts on the machine as read.
     /// </summary>
     /// <exception cref="OperationCanceledException"><paramref name="ct"/> was cancelled while it waited.</exception>
-    public async Task<(HelpMachine? Read, bool Late)> ReadAsync(
+    public async Task<(HelpMachine? Read, bool Late, bool Waited)> ReadAsync(
         Func<CancellationToken, Task<HelpMachine?>> machine, CancellationToken ct)
     {
         var backstop = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -168,14 +195,20 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         }
 
         _ = reading.ContinueWith(_ => backstop.Dispose(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+        if (!reading.IsCompleted && HelpRoom.Written(context.Home))
+        {
+            _ = WriteWhenReadAsync(reading);
+            return (null, true, false);
+        }
+
         try
         {
-            return (await reading.WaitAsync(ReadBound, ct).ConfigureAwait(false), false);
+            return (await reading.WaitAsync(ReadBound, ct).ConfigureAwait(false), false, false);
         }
         catch (TimeoutException)
         {
             _ = WriteWhenReadAsync(reading);
-            return (null, true);
+            return (null, true, true);
         }
     }
 
@@ -204,6 +237,15 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         $"This machine was not read within {Seconds(bound)} seconds, so Ask Daoris starts on its room as last written, reading no "
         + "checkout outside it; the room is written again once the machine is read.",
         ("seconds", Seconds(bound)));
+
+    /// <summary>
+    /// The line a conversation is told first where it starts on facts that leave a part of the machine not read yet, or on the room
+    /// as last written before any was judged (PARALLEL1a, D181 point 1): it started at once, and its room says what is not read yet.
+    /// </summary>
+    public static Noted NotReadYet() => Noted.Of(
+        NoteCodes.HelpRoomNotReadYet,
+        "Ask Daoris started at once on this machine as read so far: what is not read yet, its room says, and the room is written "
+        + "again as each part is read.");
 
     /// <summary>
     /// What a start says where the machine was not read within the bound and no room was ever written (HELPSTUCK1): nothing can

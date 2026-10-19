@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A job's heartbeat read threw on its child's write handle once the Process half ran eight at once (PROCPAR1)
+
+- **Symptom:** `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked` failed at its first run eight
+  classes at once (a filtered group under `process.runsettings`): `IOException`, the heartbeat file "being used by another process",
+  thrown from the test's own `Beating`.
+- **Root cause:** `Beating` read the heartbeat with `File.ReadAllText`, which opens sharing reading alone, while the detached node
+  child rewrites the file every 100 ms: a read that met the child's open write handle was refused. `PseudoConsoleTests` met the same
+  refusal under load and was fixed in its own copy (TEST4: share reading, writing and deletion, retry briefly); `ProcessJobTests`
+  kept the old copy, which one class at a time rarely reached and eight at once did at once.
+- **Fix:** one read for both, `Heartbeat` in the driver's tests (`ReadAsync` shares `ReadWrite | Delete` and retries an
+  `IOException` twenty times; `Beating` compares two reads 800 ms apart); both classes' copies removed.
+- **Verify:** `HeartbeatTests`, red first (no `Heartbeat`), then green: a heartbeat held open for writing is read, and none yet is
+  none; `ProcessJobTests` and `PseudoConsoleTests` green under `process.runsettings`, and the group that failed green on its
+  next run.
+- **Commit:** `1691ba181`
+## 2026-10-19 — Ask Daoris's start waited on its own reading of the whole machine, bounded at 30 seconds (PARALLEL1a)
+
+- **Symptom:** the owner's Ask Daoris message sat `queued` for minutes (HELPSTUCK1); HELPSTUCK1's fix bounded the wait at
+  30 seconds, which the owner refused: "30 s blocking is still blocking" (D181).
+- **Root cause:** the start awaited the module's reading of the machine (`HelpRoutes.HelpMachineAsync`) before writing the room:
+  every repository's line, the session look across every tree, each workspace's history plan and the work inventory, read in
+  turn with git, on every start. The change sources already heard each ref and record move (FABRIC-EVENT2-4); nothing kept
+  what they woke, so every press read again.
+- **Fix:** `MachineFacts` keeps the facts, judged on background tasks on the loop's wakes and at each deadline, read as an
+  immutable snapshot; `HelpFacts` names the room's topics, and the room is written from the snapshot with no git, saying
+  *not read yet* for what is not judged and written again as it lands. The 30-second bound holds only a home with no fact ever
+  judged and no room written. D181's PARALLEL1a note has the rest.
+- **Verify:** `MachineFactsTests`, `HelpFactsTests`, `HelpStartReadTests` (a repository whose judge never answers: the start
+  is at once, its room says it not read yet, and the start's path starts no git), `DriverWatchTopicsTests`' move told and
+  `DriverModuleHelpStartTests` through `START_HELP`, each red first, then green.
+
 ## 2026-10-19 — A start waited on another account's question, and one beside a question in flight was counted (PARALLEL1c)
 
 - **Symptom:** (read, not observed on the install; Codex's wait inventory, 2026-10-19) every counted start took one gate

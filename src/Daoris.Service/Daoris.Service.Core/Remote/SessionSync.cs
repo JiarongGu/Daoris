@@ -25,6 +25,14 @@ public sealed record SessionSyncReport(int Pushed, int Fetched, string? Problem)
 /// </remarks>
 public static class SessionSync
 {
+    /// <summary>
+    /// Whether one of this machine's records goes up: its repository joined the circle, and it is no Ask Daoris record. A help
+    /// record stays home whatever its workspace (ASKSCOPE1a, D158's ASKSCOPE1 note point 2), judged by its kind, never by its
+    /// workspace, which it has now, nor by its repository's name never joining.
+    /// </summary>
+    public static bool GoesUp(Session session, IReadOnlySet<string> joined) =>
+        !SessionLedger.IsHelp(session) && joined.Contains(session.Repository);
+
     public static async Task<SessionSyncReport> RunAsync(
         SessionStore store, QuestStore quests, KnowledgeService service, IRemote remote, string workspace,
         CancellationToken ct = default)
@@ -45,7 +53,7 @@ public static class SessionSync
             // team then groups as this machine does. Nothing is written back here.
             var facts = new StoreEntryFacts(quests, store);
             var feed = new List<FedSessionRecord>();
-            foreach (var c in changed.Where(c => joined.Contains(c.Session.Repository)))
+            foreach (var c in changed.Where(c => GoesUp(c.Session, joined)))
             {
                 feed.Add(new FedSessionRecord(
                     c.Session.Id, c.Session.Quest, c.Session.Repository, c.Session.Adapter, c.Session.StateName,
@@ -66,7 +74,7 @@ public static class SessionSync
             {
                 await remote.PushSessionsAsync(feed, ct).ConfigureAwait(false);
                 // The team holds these now (SESSUX1f): a delete here would leave their copy, so it is refused.
-                await store.MarkPushedAsync(changed.Where(c => joined.Contains(c.Session.Repository)).Select(c => c.Session.Id), ct).ConfigureAwait(false);
+                await store.MarkPushedAsync(changed.Where(c => GoesUp(c.Session, joined)).Select(c => c.Session.Id), ct).ConfigureAwait(false);
             }
 
             // Past everything examined, sent or not: a record of a repository that was not joined when

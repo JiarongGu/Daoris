@@ -4,9 +4,10 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// WSR4 (D100): a plugin that never answers is a timeout, and the branch stands. A class of its own (PROC1f): its three seconds
-/// of patience are a wall-clock bound a neighbour's load could break, so it runs one at a time, where
-/// <see cref="LandingPluginTests"/> run four at once with the git-only classes.
+/// of patience are a wall-clock bound a neighbour's load could break, so it runs alone, after the rest of the Process half
+/// (<see cref="Alone"/>, PROCPAR1), where <see cref="LandingPluginTests"/> run four at once with the git-only classes.
 /// </summary>
+[Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class LandingPluginPatienceTests : LandingPluginFixture
 {

@@ -28,7 +28,9 @@ internal sealed class HelpRoomWork : IHelpRoomSection
         text.Append("## Where work has got to\n\n");
         if (machine.Work is not { } units)
         {
-            text.Append("The milestones were not read, so do not say where any work stands: the person may ask in the terminal, `daoris-driver work state`.\n\n");
+            // PARALLEL1a: not judged yet by the facts, which write the room again once they are.
+            text.Append(machine.NotReadYet.Work ? "The milestones are not read yet" : "The milestones were not read");
+            text.Append(", so do not say where any work stands: the person may ask in the terminal, `daoris-driver work state`.\n\n");
             return text.ToString();
         }
 

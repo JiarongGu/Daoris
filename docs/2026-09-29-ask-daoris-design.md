@@ -401,7 +401,8 @@ line git can name. With an agent named, a starter is also a first message.
    history resume and management with Ask Daoris, so that we can reuse a session or continue with more knowledge"*. *Built, with
    no decision of its own; what it amends is named below for the steward's note:*
    - **Kept on this machine only.** Each conversation is the help record the host already keeps and its words this machine's
-     record (D76). A help record belongs to no workspace, so no feed pushes it. What the person adds (a name, a pin, the
+     record (D76). A help record belongs to no workspace, so no feed pushes it (*amended by D158's ASKSCOPE1 note, 2026-10-19:
+     a help record keeps the workspace its window started it in, one runs per workspace, and the sync skips it by its kind*). What the person adds (a name, a pin, the
      earlier conversation one started from) is `<home>/sessions/<id>.help.json` beside its other files, in the home's one
      inventory (`SessionHomeFiles`), so a delete or a clear takes it too. Never the record, never a repository.
    - **The history** (`HelpConversations`): the conversations the person spoke in, pinned first, then the newest by their last
@@ -411,7 +412,7 @@ line git can name. With an agent named, a starter is also a first message.
    - **It goes on in itself** (D137 §2.2, as a chat does, MSG1c): its harness conversation's id is kept now, and words written
      to one that ended reopen its record and resume that conversation in its room, with the room's place (its rules, `default`,
      its tools up front), the room written again from the machine as `START_HELP` writes it. The room holds one conversation at
-     a time, so going back to one first stops the one running here, which keeps its own id; one answering a turn is never
+     a time (*one per workspace since ASKSCOPE1a*), so going back to one first stops the one running here, which keeps its own id; one answering a turn is never
      stopped, and the words wait, said why. `help` is no longer a never for words; a new session and a conversation started in
      a repository are still refused it, by the same code.
    - **A new one from an earlier one's words**: handed its **transcript**, never a summary: Daoris has none of its own (D24), and

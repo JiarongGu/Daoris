@@ -9,8 +9,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// be found on it, and a passing test failed as "not found" under a loaded full run (seen during the
 /// merges of 2026-09-30). Every other test only ever reads a <c>PATH</c> that still holds all it had,
 /// so only these need to be kept apart from each other.
+///
+/// Since the Process half runs its classes several at once (PROCPAR1), these run alone, after the rest, as
+/// <see cref="Alone"/>'s do: <see cref="ToolsChildProcessTests"/> sets <c>DAORIS_HOME</c> too, and a child any class
+/// beside it started meanwhile would inherit that home.
 /// </remarks>
-[CollectionDefinition(Name)]
+[CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class ProcessPath
 {
     public const string Name = "the process PATH";

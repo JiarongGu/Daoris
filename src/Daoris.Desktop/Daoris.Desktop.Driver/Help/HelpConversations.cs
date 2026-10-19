@@ -84,9 +84,9 @@ public sealed record HelpListing(IReadOnlyList<HelpConversation> Conversations, 
 /// record of it, D76), and what the person adds to it is <c>&lt;home&gt;/sessions/&lt;id&gt;.help.json</c> beside its other files.
 /// </summary>
 /// <remarks>
-/// <para><b>This machine's, and the person's.</b> A help record belongs to no workspace, so no feed pushes it (SYNC4 pushes a
-/// workspace's records), and its words, its name and its pin are files under the home (D63), never the record, which travels
-/// where a record does (D47 §4), and never a repository. RAIL1 rejected hand-naming a session because its derived name made it
+/// <para><b>This machine's, and the person's.</b> A help record keeps the workspace it started in, and no feed pushes it whatever
+/// that is (SYNC4 skips it by its kind, ASKSCOPE1a). Its words, its name and its pin are files under the home (D63), never the
+/// record, which travels where a record does (D47 §4), and never a repository. RAIL1 rejected hand-naming a session because its derived name made it
 /// unneeded; a conversation the person goes back to is named by them as a chat history is, and the name stays here.</para>
 ///
 /// <para><b>Listed from the records and the words</b>: a record of Ask Daoris's of this machine's the person spoke in, or named,

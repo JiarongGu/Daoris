@@ -239,6 +239,7 @@
   "projects.setup.summary.sharedTree": "会话在它的检出中工作",
   "projects.setup.summary.line": "主线 `{{branch}}`",
   "projects.setup.summary.noLine": "没有主线",
+  "projects.setup.summary.lineNotRead": "主线尚未读取",
   "projects.setup.summary.landsMerge": "落地时并入主线",
   "projects.setup.summary.landsBranch": "落地到 `{{pattern}}`",
   "projects.setup.summary.pushedBy": "由 {{plugin}} 推送",

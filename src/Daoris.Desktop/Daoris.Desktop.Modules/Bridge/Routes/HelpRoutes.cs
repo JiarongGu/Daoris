@@ -30,13 +30,19 @@ public sealed class HelpRoutes(DriverContext context)
     // are built (PART10e).
     private string OffersFolder => _context.OffersFolder;
 
-    // Ask Daoris's conversation (HELP1a, D89): the one this machine is running, carried on — one
-    // per machine — or a new one in its room, written from the machine as the driver holds it now.
+    // Ask Daoris's conversation (HELP1a, D89): the one this machine is running in the press's workspace, carried on — one per
+    // workspace (ASKSCOPE1a) — or a new one in its room, written from the machine as the driver holds it now.
     //
     // HELPSTART1 (D89's note): answered once the conversation is placed, its record open, with `starting`; the room is read and
     // its agent spawned after, off the request, its end told as the conversation's events. On a loaded machine the room's
     // session look alone took 24.9 s, and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to
-    // the next press. Its record opens, so it declares the sessions (STATEHUB1h, D169); the history lists it once it is spoken in.
+    // the next press in its workspace. Its record opens, so it declares the sessions (STATEHUB1h, D169); the history lists it
+    // once it is spoken in.
+    //
+    // ASKSCOPE1a (D158's ASKSCOPE1 note, points 1-3): `workspace`, the one the person's window is on, is read here at the press
+    // and carried to the record, so a window that changes workspace while it starts moves nothing; every answer names it, so a
+    // late one is known for the workspace it was asked in. None is `default`'s, as before. A name this machine does not hold is
+    // refused before anything is opened.
     [DriverRoute("START_HELP")]
     [Publishes("START_HELP", StateScopes.Sessions)]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -50,37 +56,61 @@ public sealed class HelpRoutes(DriverContext context)
                 + "`daoris driver helper <agent>`. Its starters need none.");
         }
 
+        var named = WorkspaceAsked(request);
+        var circle = RemoteTarget.Workspace(named);
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
         var starting = _loop.HelpStarting;
-        await starting.Placing.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var placing = starting.PlacingIn(circle);
+        await placing.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (starting.Session is { } placed)
+            if (starting.SessionIn(circle) is { } placed)
             {
-                return new { SessionId = placed, Message = $"Ask Daoris `{placed}` is starting.", Running = false, Starting = true };
+                return new { SessionId = placed, Message = $"Ask Daoris `{placed}` is starting.", Running = false, Starting = true, Workspace = circle };
             }
 
             var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+            var spelled = HeldWorkspace(snapshot, circle);
             var held = _loop.Processes.Running;
             if (snapshot.Active.FirstOrDefault(session =>
-                    session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)) is { } running)
+                    session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)
+                    && string.Equals(session.Workspace, circle, StringComparison.OrdinalIgnoreCase)) is { } running)
             {
-                return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true };
+                return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle };
             }
 
-            var place = await chat.PlaceHelpAsync(helper, config, cancellationToken).ConfigureAwait(false);
-            if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false };
+            var place = await chat.PlaceHelpAsync(helper, config, named is null ? null : spelled, cancellationToken).ConfigureAwait(false);
+            if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false, Workspace = circle };
 
-            starting.Placed(id);
+            starting.Placed(circle, id);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = id, place.Message, Running = false, Starting = true };
+            return new { SessionId = id, place.Message, Running = false, Starting = true, Workspace = circle };
         }
         finally
         {
-            starting.Placing.Release();
+            placing.Release();
         }
+    }
+
+    /// <summary>The workspace a start's press names (ASKSCOPE1a), trimmed; null where it names none, which is <c>default</c>'s.</summary>
+    private static string? WorkspaceAsked(IpcRequest request) =>
+        PayloadHelper.GetOptionalValue<string>(request.Payload, "workspace") is { } named && !string.IsNullOrWhiteSpace(named)
+            ? named.Trim()
+            : null;
+
+    /// <summary>
+    /// The workspace as this machine spells it, or refused where it does not hold it (ASKSCOPE1a), naming those it does:
+    /// <c>default</c> and each registered repository's, as Ask Daoris's proposals judge one (BRSCOPE1b).
+    /// </summary>
+    private static string HeldWorkspace(Snapshot snapshot, string circle)
+    {
+        var held = snapshot.Repositories.Select(known => known.Workspace).Append(RemoteTarget.DefaultWorkspace)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+        return held.FirstOrDefault(name => string.Equals(name, circle, StringComparison.OrdinalIgnoreCase))
+            ?? throw new DriverException(
+                $"there is no workspace `{circle}` on this machine — one of {string.Join(", ", held.Select(name => $"`{name}`"))}.");
     }
 
     /// <summary>
@@ -132,25 +162,62 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The machine as Ask Daoris's room says it (HELP1a), from the driver's own answers: its file, the registry and each
-    /// repository's line, the roster, the asks, the plugins and offers, the landings, what the loop parked and held, and the
-    /// browser's files. What every open writes the room from, and since ASKHIST1 a conversation going on too.
+    /// The machine as Ask Daoris's room says it (HELP1a), from the facts the judges keep (PARALLEL1a, <see cref="HelpFacts"/>) and the
+    /// driver's own files: its file, the registry and each repository's line, the roster, the asks, the plugins and offers, the
+    /// landings, what the loop parked and held, and the browser's files. What every open writes the room from, and since ASKHIST1 a
+    /// conversation going on too. Reads no git and asks the service nothing: what the facts have not judged yet is said so.
     /// </summary>
-    private async Task<HelpMachine> HelpMachineAsync(
-        ServiceClient service, DriverConfig config, Snapshot snapshot, CancellationToken cancellationToken)
+    private HelpMachine HelpMachineOf(DriverConfig config, HelpFactsRead read)
     {
-        var lines = await CanonicalLine.OfAsync(
-            config,
-            snapshot.Repositories
-                .OrderBy(known => known.Repository, StringComparer.Ordinal)
-                .Select(known => (known.Repository, (string?)known.Workspace, known.Root)),
-            cancellationToken).ConfigureAwait(false);
+        var whole = read.Whole;
+        // The asks by id too (HELP6), so a delete of one made by mistake can name it.
+        var asks = whole.Standing.Count(ask => ask.State == "Proposed");
+        // This machine's sessions as the Sessions list places them (SESSUX1h3), with what holds them as the loop's last look says.
+        var sessions = read.Sessions is { } look ? look with { Waits = _loop.Look.Waits } : null;
+        // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
+        var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+        return HelpRoom.Describe(
+            config, whole.Snapshot, read.Lines, whole.Roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, whole.Standing,
+            plugins, new LandedBranches(_loop.Home).All(),
+            // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
+            PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
+            // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
+            _loop.Parked.Latest,
+            // Daoris's browser as its files hold it (HELP10), so a favorite removed is one kept.
+            BrowserModule.HelpFacts(BrowserModule.Home),
+            // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
+            HeldQuest.From(_loop.Look.Latest),
+            sessions, read.History,
+            // The named workflows saved here, so each repository's Workflow column names the version it follows (WORKFLOW1h-c).
+            WorkflowStore.List(_loop.Home),
+            // What the person approved of the servers plugins offer it (HELPPLUG1a's tightening, D170's note).
+            HelpGrants.Read(_loop.Home, plugins), read.Work?.Units, read.Work?.Unread, read.Work?.Recovery,
+            read.NotReadYet);
+    }
+
+    /// <summary>
+    /// The machine's topic's judge (PARALLEL1a): the registry, the quests and active sessions, the asks and the roster, as the service
+    /// and the probes answer now; null before the service answers.
+    /// </summary>
+    private async Task<HelpMachineWhole?> MachineWholeAsync(CancellationToken cancellationToken)
+    {
+        if (_loop.Service is not { } service) return null;
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
         var roster = await _loop.Harnesses.RosterAsync(config, ct: cancellationToken).ConfigureAwait(false);
         var standing = await service.AsksAsync(cancellationToken).ConfigureAwait(false);
-        var asks = standing.Count(ask => ask.State == "Proposed");
-        // This machine's sessions as the Sessions list places them (SESSUX1h3), so an archive or a delete names one it was shown;
-        // the room still opens where the look cannot be taken, saying the sessions were not read. The look this shell took last
-        // is read where it is recent (HELPSTART1): a fresh one judges every tree with git, 24.9 s on a loaded machine.
+        return new HelpMachineWhole(snapshot, standing, roster);
+    }
+
+    /// <summary>
+    /// The sessions' topic's judge (PARALLEL1a): this machine's sessions as the Sessions list places them (SESSUX1h3), so an archive
+    /// or a delete names one it was shown. The look this shell took last is read where it is recent (HELPSTART1): a fresh one judges
+    /// every tree with git, 24.9 s on a loaded machine. Null where the look cannot be taken, and the room says so.
+    /// </summary>
+    private async Task<SessionLook?> SessionsAsync(CancellationToken cancellationToken)
+    {
+        if (_loop.Service is not { } service) return null;
+        var config = DriverConfig.Load(_loop.ConfigPath);
         var looking = System.Diagnostics.Stopwatch.StartNew();
         var at = DateTimeOffset.UtcNow;
         var kept = _loop.SessionsLooked.Within(HelpRoomLookLog.Recent, at);
@@ -166,16 +233,21 @@ public sealed class HelpRoutes(DriverContext context)
             }
             catch (DriverException)
             {
-                // Left null: the room says `not read`, and a go still names a session the person names.
+                // Left null: the room says `not read yet`, and a go still names a session the person names.
             }
         }
 
-        sessions = sessions is null ? null : sessions with { Waits = _loop.Look.Waits };
         HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null, kept: kept is not null, times: times);
+        return sessions;
+    }
 
-        // What each workspace keeps of finished work (HIST1f-c), the workspaces `daoris-driver history` reads; null where the
-        // service could not be read, and the room says so.
-        IReadOnlyList<HistoryReading>? history = null;
+    /// <summary>
+    /// The history's topic's judge (PARALLEL1a): what each workspace keeps of finished work (HIST1f-c), the workspaces
+    /// `daoris-driver history` reads; null where the service could not be read, and the room says so.
+    /// </summary>
+    private async Task<IReadOnlyList<HistoryReading>?> HistoryAsync(CancellationToken cancellationToken)
+    {
+        if (_loop.Service is not { } service) return null;
         try
         {
             var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
@@ -194,21 +266,25 @@ public sealed class HelpRoutes(DriverContext context)
                 if (plan.Reading is { } reading) readings.Add(reading);
             }
 
-            history = readings;
+            return readings;
         }
         catch (DriverException)
         {
-            // Left null: the room says `not read`.
+            return null;
         }
+    }
 
-        // Where each unit's work has got to (FABRIC-MILESTONE1b): the inventory's read-only derivation, as `work state` and the
-        // WORK_STATE route read it; null where the service or git could not be read, and the room says so.
-        IReadOnlyList<WorkMilestone>? work = null;
-        var workUnread = new List<string>();
-        // Daoris's own recoveries no unit names (RECOVERYASK1, CLEANUP1), read in the same pass.
-        IReadOnlyList<InventoryEntry> workRecovery = [];
+    /// <summary>
+    /// The work's topic's judge (PARALLEL1a): where each unit's work has got to (FABRIC-MILESTONE1b), the inventory's read-only
+    /// derivation as `work state` and the WORK_STATE route read it, with Daoris's own recoveries no unit names (RECOVERYASK1,
+    /// CLEANUP1); null where the service or git could not be read, and the room says so.
+    /// </summary>
+    private async Task<HelpWork?> WorkAsync(CancellationToken cancellationToken)
+    {
+        if (_loop.Service is null) return null;
         try
         {
+            var unread = new List<string>();
             var (checkouts, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, null, cancellationToken).ConfigureAwait(false);
             var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var (repository, _, root) in checkouts)
@@ -216,37 +292,37 @@ public sealed class HelpRoutes(DriverContext context)
                 if (!string.IsNullOrWhiteSpace(root)) roots.TryAdd(repository, root);
             }
 
-            (work, workRecovery) = await WorkInventories.ReadAsync(_loop.Home, roots, inUse, workUnread, cancellationToken).ConfigureAwait(false);
+            var (units, recovery) = await WorkInventories.ReadAsync(_loop.Home, roots, inUse, unread, cancellationToken).ConfigureAwait(false);
+            return new HelpWork(units, unread, recovery);
         }
         catch (DriverException)
         {
-            // Left null: the room says the milestones were not read.
+            return null;
         }
-
-        // The asks by id too (HELP6), so a delete of one made by mistake can name it.
-        // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
-        var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
-        return HelpRoom.Describe(
-            config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
-            plugins, new LandedBranches(_loop.Home).All(),
-            // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
-            PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
-            // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
-            _loop.Parked.Latest,
-            // Daoris's browser as its files hold it (HELP10), so a favorite removed is one kept.
-            BrowserModule.HelpFacts(BrowserModule.Home),
-            // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
-            HeldQuest.From(_loop.Look.Latest),
-            sessions, history,
-            // The named workflows saved here, so each repository's Workflow column names the version it follows (WORKFLOW1h-c).
-            WorkflowStore.List(_loop.Home),
-            // What the person approved of the servers plugins offer it (HELPPLUG1a's tightening, D170's note).
-            HelpGrants.Read(_loop.Home, plugins), work, workUnread, workRecovery);
     }
 
     /// <summary>
-    /// The room's reading for a conversation going on (ASKHIST1): the loop's service and this machine's file as they are now;
-    /// null before the service answers, when the room as last written serves.
+    /// Keep Ask Daoris's facts on the loop's (PARALLEL1a, D181 point 2): this module's judges registered for each of the room's topics,
+    /// and the room written again, off the judge's thread, as the facts it said were not read yet land.
+    /// </summary>
+    /// <remarks>A static over the context, as <see cref="HelpMachineNowAsync"/> is: the instance holds nothing of its own.</remarks>
+    internal static void KeepFacts(DriverContext context)
+    {
+        var help = new HelpRoutes(context);
+        var facts = help._loop.Facts;
+        HelpFacts.Keep(facts, new HelpFactJudges(help.MachineWholeAsync, help.SessionsAsync, help.HistoryAsync, help.WorkAsync));
+        var catchUp = new HelpRoomCatchUp(help._loop.Home, () =>
+        {
+            var config = DriverConfig.Load(help._loop.ConfigPath);
+            return HelpFacts.Read(facts.Current, config) is { } read ? help.HelpMachineOf(config, read) : null;
+        }, help._loop.Log);
+        facts.Changed += _ => catchUp.Landed();
+    }
+
+    /// <summary>
+    /// The room's reading for a start or a conversation going on (ASKHIST1): since PARALLEL1a the facts the judges keep, as last
+    /// judged, at once, and this machine's file as it is now. Where the service's answers were never judged it waits for their first
+    /// judgement, which the start bounds (HELPSTUCK1) and does not wait for at all where a room was written before.
     /// </summary>
     /// <remarks>
     /// A static over the context, which the module's constructor hands the loop as <c>DescribeHelp</c> (PART10f). The class
@@ -255,10 +331,10 @@ public sealed class HelpRoutes(DriverContext context)
     internal static async Task<HelpMachine?> HelpMachineNowAsync(DriverContext context, CancellationToken cancellationToken)
     {
         var help = new HelpRoutes(context);
-        if (help._loop.Service is not { } service) return null;
         var config = DriverConfig.Load(help._loop.ConfigPath);
-        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
-        return await help.HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
+        return await HelpFacts.ReadAsync(help._loop.Facts, config, cancellationToken).ConfigureAwait(false) is { } read
+            ? help.HelpMachineOf(config, read)
+            : null;
     }
 
     // Ask Daoris's proposals (HELP1c, D89): what one conversation proposed that waits for the
@@ -1104,7 +1180,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     // A new Ask Daoris conversation from an earlier one's words (ASKHIST1): opened as START_HELP opens one, on the helper's
-    // agent, the room's running conversation set aside first, and the earlier one's transcript handed with the person's first
+    // agent, its workspace's running conversation set aside first, and the earlier one's transcript handed with the person's first
     // words. Its end reaches the page as a start's does.
     [DriverRoute("HELP_START_FROM")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
@@ -1121,25 +1197,31 @@ public sealed class HelpRoutes(DriverContext context)
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
             .ConfigureAwait(false);
         var chat = _loop.Chat ?? throw NotReady();
-        _ = _loop.Service ?? throw NotReady();
+        var service = _loop.Service ?? throw NotReady();
+
+        // ASKSCOPE1a: in the workspace its press names, as START_HELP's, whatever the earlier one's was; its running one set aside.
+        var named = WorkspaceAsked(request);
+        var circle = RemoteTarget.Workspace(named);
+        var spelled = HeldWorkspace(await service.SnapshotAsync(cancellationToken).ConfigureAwait(false), circle);
 
         // Placed as START_HELP places one (HELPSTART1b): answered once the record is open and the earlier words kept; the room is
         // read through the loop's DescribeHelp and the agent spawned after, off the request, so a slow room cannot pass the page's bound.
         var starting = _loop.HelpStarting;
-        await starting.Placing.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var placing = starting.PlacingIn(circle);
+        await placing.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var place = await chat.PlaceHelpFromAsync(id, helper, config, cancellationToken).ConfigureAwait(false);
-            if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id };
+            var place = await chat.PlaceHelpFromAsync(id, helper, config, named is null ? null : spelled, cancellationToken).ConfigureAwait(false);
+            if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id, Workspace = circle };
 
-            starting.Placed(placedId);
+            starting.Placed(circle, placedId);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = placedId, place.Message, From = id };
+            return new { SessionId = placedId, place.Message, From = id, Workspace = circle };
         }
         finally
         {
-            starting.Placing.Release();
+            placing.Release();
         }
     }
 
