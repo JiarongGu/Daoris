@@ -74,6 +74,12 @@ internal sealed class LoopContext(
     /// </summary>
     public TimeSpan? BrainstormMinute { get; set; }
 
+    /// <summary>
+    /// How a meeting's turn is run (AGENTROOM1a), where a test hands in a stand-in that writes its message. With none, a meeting's turn
+    /// is refused and never started: no tool carries a meeting's message yet, so a real agent's turn could not answer.
+    /// </summary>
+    public Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? MeetingTurns { get; set; }
+
     public ServiceClient Service { get; } = service;
 
     public DriverConfig Config { get; } = config;
