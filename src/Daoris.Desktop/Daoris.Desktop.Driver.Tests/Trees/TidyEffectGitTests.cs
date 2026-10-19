@@ -302,6 +302,28 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         Assert.DoesNotContain(after, each => each.Branch == recorded && each.Entries.Any(entry => entry.Disposition == "blocked"));
     }
 
+    /// <summary>
+    /// FABRIC-UNKNOWN1b over real git: with an empty home, a registered repository whose checkout holds an unrecorded <c>daoris/x</c> is
+    /// read, in one git listing, and the branch is an unknown owner, blocked, as one in a repository a record names is.
+    /// </summary>
+    [Fact]
+    public async Task A_registered_repository_no_record_names_has_its_unrecorded_daoris_branch_read()
+    {
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "branch", "daoris/x");
+        var unread = new List<string>();
+        var roots = new Dictionary<string, string> { ["engine"] = root };
+
+        IReadOnlyList<WorkMilestone> units = [];
+        var starts = await CountedAsync(async () => units = await WorkInventories.MilestonesAsync(Home, roots, NoneInUse, unread));
+
+        var unit = Assert.Single(units);
+        Assert.Equal(("daoris/x", "unknown"), (unit.Branch, unit.End.State));
+        Assert.Equal("blocked", Assert.Single(unit.Cleanup.Waits).Disposition);
+        Assert.Empty(unread);
+        Assert.Equal(1, starts);
+    }
+
     private static async Task<int> CountedAsync<T>(Func<Task<T>> act)
     {
         var started = 0;

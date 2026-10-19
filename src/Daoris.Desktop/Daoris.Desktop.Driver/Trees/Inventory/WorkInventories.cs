@@ -52,9 +52,14 @@ public static class WorkInventories
         var landings = Ours(new LandedBranches(home).Entries(), entry => entry.Repository);
         var refs = new List<RecoveryRef>();
         var standing = new List<StandingBranch>();
-        var repositories = branches.Select(entry => entry.Repository).Concat(landings.Select(entry => entry.Repository))
-            .Concat(trees.Select(entry => entry.Repository)).Distinct(StringComparer.OrdinalIgnoreCase);
-        foreach (var repository in repositories)
+        List<string> named = [.. branches.Select(entry => entry.Repository).Concat(landings.Select(entry => entry.Repository))
+            .Concat(trees.Select(entry => entry.Repository)).Distinct(StringComparer.OrdinalIgnoreCase)];
+        // FABRIC-UNKNOWN1b: every registered repository with a checkout here, this part's, is read too, one listing each, so a daoris/*
+        // branch no record and no tree names is seen where nothing of Daoris's is recorded. One whose checkout is not here has nothing
+        // recorded to say of, so nothing is said.
+        var registered = roots.Keys.Where(repository => !named.Contains(repository, StringComparer.OrdinalIgnoreCase) && (only is null || only(repository))
+            && roots[repository] is { } root && !string.IsNullOrWhiteSpace(root) && Directory.Exists(root));
+        foreach (var repository in named.Concat(registered).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (!roots.TryGetValue(repository, out var root) || string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
             {
