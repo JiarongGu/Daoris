@@ -548,16 +548,18 @@ public sealed class ChatRunner : IDisposable
         }
 
         // HELPMODE1a1 (D183 point 3): full access on an agent with no mode that asks nothing is refused before anything is opened.
-        if (HelpAccess.For(config.HelpMode, resolved).Refusal is { } refused) return new(null, refused);
+        var access = HelpAccess.For(config.HelpMode, resolved);
+        if (access.Refusal is { } refused) return new(null, refused);
 
         // The account its workspace names, then the machine's (ASKSCOPE1a), as a start in that workspace takes one; a press that
         // named none asks the machine's, as before (D89).
         var selection = await _harnesses.SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
-        // Its workspace's own room (ASKSCOPE1b), which its record keeps as its tree: the folder its harness keeps it by.
+        // Its workspace's own room (ASKSCOPE1b), which its record keeps as its tree: the folder its harness keeps it by. With the mode
+        // its start gets (HELPMODE1a2), which its run reads from the same file below.
         var (sessionId, message) = await _service
-            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home, workspace), selection.Version, selection.Profile, workspace, ct)
+            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home, workspace), selection.Version, selection.Profile, workspace, access.Mode, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
 
@@ -701,15 +703,34 @@ public sealed class ChatRunner : IDisposable
     /// <summary>
     /// A conversation's place under Ask Daoris's mode as the person chose it, read at this start (HELPMODE1a1), a conversation going on
     /// among them; a repository's conversation's is its own, and says nothing. With it, what the start got, for the first line of
-    /// its transcript (D183 point 3): the mode its harness runs in, kept apart from the mode chosen until HELPMODE1a2 records it.
+    /// its transcript (D183 point 3), and the mode its harness runs in, the effective one, which its record keeps (HELPMODE1a2).
     /// </summary>
+    /// <param name="ran">
+    /// The mode a conversation going on last ran under, as its record says (HELPMODE1a2); its first line says the change first where
+    /// it now goes on under another. Null for a new conversation.
+    /// </param>
     /// <exception cref="DriverException">Full access on an agent with no mode that asks nothing: it ends saying so.</exception>
-    internal static (ChatPlace Place, string? Said) UnderHelpMode(ChatPlace place, ISessionAdapter resolved, DriverConfig config)
+    internal static (ChatPlace Place, string? Said, string? Mode) UnderHelpMode(
+        ChatPlace place, ISessionAdapter resolved, DriverConfig config, string? ran = null)
     {
-        if (!string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) return (place, null);
+        if (!string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) return (place, null, null);
         var access = HelpAccess.For(config.HelpMode, resolved);
         if (access.Refusal is { } refused) throw new DriverException(refused);
-        return (HelpUnder(place, access), $"— {access.Said}");
+        var changed = ran is null ? null : HelpModes.ChangedSince(ran, access.Mode);
+        return (HelpUnder(place, access), changed is null ? $"— {access.Said}" : $"— {changed} {access.Said}", access.Mode);
+    }
+
+    /// <summary>
+    /// The person chose <paramref name="mode"/> for Ask Daoris (HELPMODE1a2, D183 point 2): each of its conversations running here
+    /// under another is told on its console that the switch takes its next start. Nothing it runs with changes: a live switch of
+    /// its harness's mode alone would leave the rules, servers and room its start handed for the old one (D183's HELPMODE1a2 note).
+    /// </summary>
+    public void HelpModeChosen(string mode)
+    {
+        foreach (var (sessionId, running) in _context.HelpModes)
+        {
+            if (HelpModes.TakesNextStart(running, mode) is { } line) _output?.Append(sessionId, line);
+        }
     }
 
     /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
@@ -835,13 +856,22 @@ public sealed class ChatRunner : IDisposable
         Noted? browserNotice = null;
         var drivesBrowser = false;
         string? modeSaid = null;
+        string? helpMode = null;
         try
         {
             // A conversation going on is working already: the ledger moved it there before anything was spawned.
             if (goOn is null) await _service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             // HELPMODE1a1 (D183 point 1): Ask Daoris's place under the mode the person chose, refused where its agent has none such.
-            (place, modeSaid) = UnderHelpMode(place, resolved, config);
+            var ran = goOn is null ? null : HelpModes.Recorded(goOn.Record.HelpMode);
+            (place, modeSaid, helpMode) = UnderHelpMode(place, resolved, config, ran);
+
+            // HELPMODE1a2 (D183 point 3): one going on under another mode than it last ran under runs under the new one, and its record
+            // says so before anything is spawned, as its transcript's first line does.
+            if (ran is not null && helpMode is not null && helpMode != ran)
+            {
+                await _service.KeepHelpModeAsync(sessionId, helpMode, ct).ConfigureAwait(false);
+            }
 
             var info = resolved.PrepareChat(
                 // The native door resumes its own conversation by the id kept for it; the protocol door on its wire.
@@ -953,6 +983,8 @@ public sealed class ChatRunner : IDisposable
         // One at a time in each workspace (ASKHIST1, ASKSCOPE1a): going back to an earlier conversation of its workspace sets this one
         // aside first, and one of another workspace's leaves it be.
         if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = RemoteTarget.Workspace(place.Workspace);
+        // The mode it got, which a switch of the person's mode is compared with while it runs (HELPMODE1a2).
+        if (helpMode is not null) _context.HelpModes[sessionId] = helpMode;
 
         // 🔴 On the protocol door a conversation is ONE session held over the wire (CONV3b): opened
         // once, each message a turn on it. It used to be spawned as a pipe, and a person's words went
@@ -1553,6 +1585,7 @@ public sealed class ChatRunner : IDisposable
             _context.Talking.TryRemove(sessionId, out _);
             _context.Turned.TryRemove(sessionId, out _);
             _context.Rooms.TryRemove(sessionId, out _);
+            _context.HelpModes.TryRemove(sessionId, out _);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);

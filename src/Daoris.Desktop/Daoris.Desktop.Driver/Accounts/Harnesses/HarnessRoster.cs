@@ -1905,7 +1905,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// An account's windows projected to now (USAGEPROBE1): its last reading plus Daoris's own turns on it since, by its measured
     /// ratio, read from the usage history in memory; null where it said no number.
     /// </summary>
-    private AccountProjection? ProjectionOf(string owner, string account, AccountSaid? said, DateTimeOffset now)
+    public AccountProjection? ProjectionOf(string owner, string account, AccountSaid? said, DateTimeOffset now)
     {
         if (said is null) return null;
         var (readings, turns) = Ledger.Of(owner, account, now);

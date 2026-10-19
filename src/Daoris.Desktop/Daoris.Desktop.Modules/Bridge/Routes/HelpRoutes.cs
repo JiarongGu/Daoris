@@ -212,8 +212,9 @@ public sealed class HelpRoutes(DriverContext context)
 
     /// <summary>
     /// The sessions' topic's judge (PARALLEL1a): this machine's sessions as the Sessions list places them (SESSUX1h3), so an archive
-    /// or a delete names one it was shown. The look this shell took last is read where it is recent (HELPSTART1): a fresh one judges
-    /// every tree with git, 24.9 s on a loaded machine. Null where the look cannot be taken, and the room says so.
+    /// or a delete names one it was shown, without their trees since FACTSPLIT1b, which each repository's part judges
+    /// (<see cref="TreesAsync"/>): the records, the quests, the verdicts and the marks, with no git. The look this shell took last is
+    /// read where it is recent (HELPSTART1). Null where the look cannot be taken, and the room says so.
     /// </summary>
     private async Task<SessionLook?> SessionsAsync(CancellationToken cancellationToken)
     {
@@ -228,8 +229,9 @@ public sealed class HelpRoutes(DriverContext context)
         {
             try
             {
+                // No session's tree judged here (`only` none, as a landing's look whose trees are judged after): the parts judge them.
                 sessions = await SessionGroups.LookAsync(
-                    service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken, times: times).ConfigureAwait(false);
+                    service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, [], cancellationToken, times: times).ConfigureAwait(false);
                 _loop.SessionsLooked.Keep(sessions, at);
             }
             catch (DriverException)
@@ -240,6 +242,20 @@ public sealed class HelpRoutes(DriverContext context)
 
         HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null, kept: kept is not null, times: times);
         return sessions;
+    }
+
+    /// <summary>
+    /// The trees' topic's judge (FACTSPLIT1b, D181 points 2-3), one part at a time: what each of its repository's ended sessions' trees
+    /// holds, judged with git in those trees alone (<see cref="HelpFacts.ReadTreesAsync"/>). A part that asked any tree says its walk's
+    /// time and how many it asked in the room's look line, as the whole look's trees step said them; one with none ran no git.
+    /// </summary>
+    private async Task<HelpTrees?> TreesAsync(HelpTreesPart part, CancellationToken cancellationToken)
+    {
+        var looking = System.Diagnostics.Stopwatch.StartNew();
+        var times = new LookTimes();
+        var trees = await HelpFacts.ReadTreesAsync(_loop.Home, part, cancellationToken, times).ConfigureAwait(false);
+        if (times.Trees > 0) HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, read: true, times: times);
+        return trees;
     }
 
     /// <summary>
@@ -293,7 +309,10 @@ public sealed class HelpRoutes(DriverContext context)
     {
         var help = new HelpRoutes(context);
         var facts = help._loop.Facts;
-        HelpFacts.Keep(facts, new HelpFactJudges(help.MachineWholeAsync, help.SessionsAsync, help.HistoryAsync, help.WorkAsync));
+        HelpFacts.Keep(facts, new HelpFactJudges(help.MachineWholeAsync, help.SessionsAsync, help.HistoryAsync, help.WorkAsync)
+        {
+            Trees = help.TreesAsync,
+        });
         var catchUp = new HelpRoomCatchUp(help._loop.Home, () =>
         {
             var config = DriverConfig.Load(help._loop.ConfigPath);
@@ -1129,7 +1148,8 @@ public sealed class HelpRoutes(DriverContext context)
     {
         Conversations = listing.Conversations.Select(row => new
         {
-            row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Resumable,
+            // HELPMODE1a2: the mode it ran under, its record's, after whether it runs.
+            row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Resumable,
             row.From, row.Handed, row.Found, row.FoundLine,
         }).ToArray(),
         listing.Cut,

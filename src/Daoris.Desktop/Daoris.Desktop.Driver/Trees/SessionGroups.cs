@@ -79,6 +79,12 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public string? From { get; init; }
 
     /// <summary>
+    /// The access mode an Ask Daoris record ran under (HELPMODE1a2, D183 point 3), as the service answers it to this machine; null for
+    /// every other record and from a host before the field, which <see cref="HelpModes.Recorded"/> reads as restricted.
+    /// </summary>
+    public string? HelpMode { get; init; }
+
+    /// <summary>
     /// The key it is grouped by: the service's, else the record its own line of work, as the service derives a record whose
     /// facts are gone (<c>session:&lt;id&gt;/&lt;repository&gt;</c>, SESSONE1b), so a host from before still lists every record.
     /// </summary>
@@ -135,6 +141,8 @@ public static class SessionRecords
                 // SESSONE1b: the key's group, and what a part continues; absent from a host before them.
                 Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
                 From = Text(session, "from") is { Length: > 0 } from ? from : null,
+                // HELPMODE1a2: an Ask Daoris record's mode, answered on loopback alone; absent from a host before it.
+                HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
             });
         }
 

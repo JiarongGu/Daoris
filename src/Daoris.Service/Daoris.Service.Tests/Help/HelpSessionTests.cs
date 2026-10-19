@@ -169,6 +169,68 @@ public sealed class HelpSessionTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.None, (await ledger.OpenHelpAsync("stub", Room(), Now)).Refusal);
     }
 
+    // ——— HELPMODE1a2 (D183 point 3): the record keeps the mode its start got, the effective one, apart from the mode chosen.
+
+    /// <summary>The open keeps the mode the driver says its start got, spelled as the ledger spells it; none told is restricted.</summary>
+    [Fact]
+    public async Task A_help_record_keeps_the_mode_its_start_got()
+    {
+        var full = (await _ledger.OpenHelpAsync("stub", Room(), Now, workspace: "alpha", mode: "FULL")).Session!;
+        var unsaid = (await _ledger.OpenHelpAsync("stub", Room(), Now, workspace: "beta")).Session!;
+
+        Assert.Equal("full", full.HelpMode);
+        Assert.Equal("full", (await _sessions.FindAsync(full.Id))!.HelpMode);
+        Assert.Equal("restricted", unsaid.HelpMode);
+        Assert.Equal("restricted", (await _sessions.FindAsync(unsaid.Id))!.HelpMode);
+    }
+
+    /// <summary>
+    /// 🔴 A record from before the mode has none kept and reads as restricted, which is what every start before HELPMODE1a1 ran
+    /// under; the stored row is not rewritten. A record that is not Ask Daoris's has no mode at all.
+    /// </summary>
+    [Fact]
+    public async Task A_help_record_from_before_the_mode_reads_restricted_and_no_other_record_has_one()
+    {
+        var before = await _sessions.CreateAsync(null, SessionLedger.HelpRepository, "stub", Now, kind: SessionKind.Chat, tree: Room());
+        var chat = await _sessions.CreateAsync(null, "Engine", "stub", Now, kind: SessionKind.Chat);
+
+        Assert.Equal("restricted", (await _sessions.FindAsync(before.Id))!.HelpMode);
+        Assert.Null((await _sessions.FindAsync(chat.Id))!.HelpMode);
+    }
+
+    /// <summary>A mode the ledger does not know is no mode: the open is refused, and nothing is recorded.</summary>
+    [Fact]
+    public async Task A_mode_the_ledger_does_not_know_is_refused()
+    {
+        var refused = await Assert.ThrowsAsync<ArgumentException>(() => _ledger.OpenHelpAsync("stub", Room(), Now, mode: "sometimes"));
+
+        Assert.Contains("`sometimes`", refused.Message);
+        Assert.Empty(await _sessions.ListAsync(includeClosed: true));
+    }
+
+    /// <summary>
+    /// A conversation going on after the mode changed records the mode it goes on under (D183 point 3), on Ask Daoris's records of
+    /// this machine's alone; any other record, or an unknown mode, is refused and nothing moves.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_going_on_records_the_mode_it_goes_on_under()
+    {
+        var help = (await _ledger.OpenHelpAsync("stub", Room(), Now)).Session!;
+        var chat = await _sessions.CreateAsync(null, "Engine", "stub", Now, kind: SessionKind.Chat);
+
+        var kept = await _ledger.KeepHelpModeAsync(help.Id, "full");
+
+        Assert.Equal("full", kept!.HelpMode);
+        Assert.Equal("full", (await _sessions.FindAsync(help.Id))!.HelpMode);
+        // Its state and its last move are untouched: the mode is a fact about its run, not a move.
+        Assert.Equal((help.State, help.Updated), (kept.State, kept.Updated));
+        Assert.Null(await _ledger.KeepHelpModeAsync(chat.Id, "full"));
+        Assert.Null((await _sessions.FindAsync(chat.Id))!.HelpMode);
+        Assert.Null(await _ledger.KeepHelpModeAsync("nothere", "full"));
+        await Assert.ThrowsAsync<ArgumentException>(() => _ledger.KeepHelpModeAsync(help.Id, "sometimes"));
+        Assert.Equal("full", (await _sessions.FindAsync(help.Id))!.HelpMode);
+    }
+
     /// <summary>A ledger over this test's sessions whose registry holds each repository in its workspace.</summary>
     private async Task<SessionLedger> RegisteredAsync(params (string Repository, string Workspace)[] repositories)
     {

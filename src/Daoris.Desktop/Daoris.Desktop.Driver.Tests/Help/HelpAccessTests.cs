@@ -114,18 +114,73 @@ public sealed class HelpAccessTests : IDisposable
         var repository = help with { Name = "engine" };
         var full = DriverConfig.Empty.WithHelpMode(HelpModes.Full);
 
-        Assert.Equal((repository, (string?)null), ChatRunner.UnderHelpMode(repository, Adapter("claude-code-acp"), full));
+        Assert.Equal((repository, (string?)null, (string?)null), ChatRunner.UnderHelpMode(repository, Adapter("claude-code-acp"), full));
 
-        var (restricted, saidRestricted) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), DriverConfig.Empty);
+        var (restricted, saidRestricted, restrictedMode) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), DriverConfig.Empty);
         Assert.Same(help, restricted);
         Assert.StartsWith("— Ask Daoris runs restricted on `claude-code-acp`", saidRestricted);
+        Assert.Equal(HelpModes.Restricted, restrictedMode);
 
-        var (fully, saidFull) = ChatRunner.UnderHelpMode(help, Adapter("codex-acp"), full);
+        var (fully, saidFull, fullMode) = ChatRunner.UnderHelpMode(help, Adapter("codex-acp"), full);
         Assert.Equal("!agent-full-access", fully.Posture);
         Assert.Contains("full access", saidFull);
         Assert.Contains("takes no rules", saidFull);
+        Assert.Equal(HelpModes.Full, fullMode);
 
         var refused = Assert.Throws<DriverException>(() => ChatRunner.UnderHelpMode(help, Adapter("dsh"), full));
         Assert.Contains("`dsh`", refused.Message);
     }
+
+    /// <summary>
+    /// 🔴 HELPMODE1a2 (D183 point 3): a conversation going on under another mode than it last ran under says the change first, then
+    /// what it runs under now, in one line; one going on under the same mode says what it runs under alone. A record from before the
+    /// modes ran restricted.
+    /// </summary>
+    [Fact]
+    public void A_conversation_going_on_under_another_mode_says_the_change_first()
+    {
+        var help = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+        var full = DriverConfig.Empty.WithHelpMode(HelpModes.Full);
+
+        var (_, widened, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Restricted);
+        var (_, narrowed, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), DriverConfig.Empty, ran: HelpModes.Full);
+        var (_, same, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Full);
+        var (_, before, _) = ChatRunner.UnderHelpMode(help, Adapter("claude-code-acp"), full, ran: HelpModes.Recorded(null));
+
+        Assert.StartsWith(
+            "— Ask Daoris's mode changed since this conversation last ran: it ran restricted, and goes on with full access. Ask Daoris "
+            + "runs with full access on `claude-code-acp`", widened);
+        Assert.StartsWith(
+            "— Ask Daoris's mode changed since this conversation last ran: it ran with full access, and goes on restricted. Ask Daoris "
+            + "runs restricted", narrowed);
+        Assert.StartsWith("— Ask Daoris runs with full access", same);
+        Assert.Equal(widened, before);
+        Assert.DoesNotContain('\n', widened!);
+    }
+
+    /// <summary>
+    /// HELPMODE1a2 (D183 point 2): a switch takes a running conversation's next start, never the conversation as it runs; its console
+    /// is told when, and why the start is what changes. A switch to the mode it runs under says nothing.
+    /// </summary>
+    [Fact]
+    public void A_switch_while_a_conversation_runs_says_its_next_start_takes_it()
+    {
+        var widened = HelpModes.TakesNextStart(running: HelpModes.Restricted, chosen: HelpModes.Full);
+        var narrowed = HelpModes.TakesNextStart(running: HelpModes.Full, chosen: HelpModes.Restricted);
+
+        Assert.StartsWith("— Ask Daoris's mode is now full access, from this conversation's next start: it runs restricted until then", widened);
+        Assert.Contains("rules, servers and room", widened);
+        Assert.StartsWith("— Ask Daoris's mode is now restricted, from this conversation's next start: it runs with full access until then", narrowed);
+        Assert.Null(HelpModes.TakesNextStart(running: HelpModes.Full, chosen: HelpModes.Full));
+        Assert.DoesNotContain('\n', widened!);
+    }
+
+    /// <summary>A record's mode as read: as kept, any case; none, or one this build does not know, is restricted, what it ran before the modes.</summary>
+    [Theory]
+    [InlineData(null, "restricted")]
+    [InlineData("full", "full")]
+    [InlineData("FULL", "full")]
+    [InlineData("configured", "restricted")]
+    public void A_records_mode_reads_restricted_unless_it_says_full(string? kept, string read) =>
+        Assert.Equal(read, HelpModes.Recorded(kept));
 }

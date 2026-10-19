@@ -414,7 +414,10 @@ public sealed record SessionResponse(
     // SESSONE1a (D167 points 2 and 3): the line of work this record belongs to, `<origin>/<repository>` — the key the records that
     // continue one line of work share. It names no path and no account, so every caller is told; a record from before it is answered
     // the key the same rule derives, never one written back.
-    string? Entry = null);
+    string? Entry = null,
+    // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris record's run got, `restricted` or `full`; absent for every other record.
+    // This machine's own, like the opinion: answered to it only.
+    string? HelpMode = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
@@ -544,9 +547,13 @@ public sealed record OpenChatRequest(
 public sealed record OpenIntakeRequest(
     string? Ask, string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
 // Ask Daoris (HELP1a, D89): the room its conversation runs in, the driver's to name. `Workspace` (ASKSCOPE1a): the one its
-// window was on at the press, which the record keeps; none is `default`, as a driver from before sends it.
+// window was on at the press, which the record keeps; none is `default`, as a driver from before sends it. `Mode` (HELPMODE1a2):
+// the access mode its start got, `restricted` or `full`, which the record keeps; none is `restricted`, as a driver from before sends it.
 public sealed record OpenHelpRequest(
-    string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Workspace = null);
+    string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Workspace = null,
+    string? Mode = null);
+// HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris conversation going on runs under, as its driver resolved it.
+public sealed record HelpModeRequest(string? Mode);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
 // that an account's limit made. Silence is the old reading of both. `NoteParts` (LANG1a): the note's lines by code, beside
 // it; a note sent without them clears the record's, and an older driver sends none.
@@ -690,6 +697,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(OpenChatRequest))]
 [JsonSerializable(typeof(OpenIntakeRequest))]
 [JsonSerializable(typeof(OpenHelpRequest))]
+[JsonSerializable(typeof(HelpModeRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
 [JsonSerializable(typeof(SessionDeletionResponse))]

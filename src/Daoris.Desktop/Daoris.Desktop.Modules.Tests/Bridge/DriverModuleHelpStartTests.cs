@@ -242,9 +242,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The room's sessions are the facts' judgement of them (PARALLEL1a), which reads the whole look this shell took a moment ago,
-    /// the Sessions list's, rather than judge every tree with git again, and says so in its log line; where the one kept is older
-    /// than the span it takes a fresh one, and keeps that in turn.
+    /// The room's sessions are the facts' judgement of them (PARALLEL1a), which reads the look this shell took a moment ago, the
+    /// Sessions list's, rather than read the service again, and says so in its log line; where the one kept is older than the span
+    /// it takes a fresh one, and keeps that in turn. Since FACTSPLIT1b what is kept is the look without its trees, which each
+    /// repository's part judges with git, saying its own time; neither the look nor a part whose tree is gone starts git.
     /// </summary>
     [Fact]
     public async Task The_room_reads_a_recent_look_and_takes_a_fresh_one_where_none_is()
@@ -252,31 +253,53 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var logs = Path.GetDirectoryName(DriverConfigPath)!;
         using var log = new MachineLog(logs, "driver");
         var (loop, _, _) = await UpAsync(log);
+        // A tree this home opened and no longer has: its part asks it, and git is never started for it.
+        var tree = Path.Combine(new SessionTrees(loop.Home).TreesRoot, "default", "engine", "s-c9e1d000");
         var ended = new SessionRecord("c9e1d000", "engine", "completed")
         {
-            Kind = "chat", Created = DateTimeOffset.UtcNow.AddHours(-1), Updated = DateTimeOffset.UtcNow.AddMinutes(-30),
+            Kind = "chat", Tree = tree, Created = DateTimeOffset.UtcNow.AddHours(-1), Updated = DateTimeOffset.UtcNow.AddMinutes(-30),
         };
-        var look = new SessionLook([ended], [], []);
+        var judged = new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase) { [SessionGroups.Normal(tree)] = new TreeWork(3, 0) };
+        var look = new SessionLook([ended], [], []) { Trees = judged };
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow);
-        using (ProcessStarts.Within(_ => null)) loop.Facts.Start();
+        Assert.Empty(loop.SessionsLooked.Within(HelpRoomLookLog.Recent, DateTimeOffset.UtcNow)!.Trees);
+        var gits = 0;
+        using (ProcessStarts.Within(info =>
+               {
+                   if (Path.GetFileNameWithoutExtension(info.FileName).Equals("git", StringComparison.OrdinalIgnoreCase)) Interlocked.Increment(ref gits);
+                   return null;
+               }))
+        {
+            loop.Facts.Start();
+        }
+
         await loop.Facts.FirstAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await loop.Facts.FirstAsync(HelpFacts.Trees, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
         var read = await loop.DescribeHelp!(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
 
         Assert.Contains(read!.Sessions!.Listed, each => each.Id == ended.Id);
+        // The kept look's trees are none of the room's: its part judged the tree gone, so nothing waits to review.
+        Assert.Equal(0, read.Sessions.Review);
         Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
+        // FACTSPLIT1b: the part's walk says its own time and how many trees it asked, with none of the look's steps.
+        Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
+            && line.Contains("\"trees\":1") && !line.Contains("recordsMs"));
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow - HelpRoomLookLog.Recent - TimeSpan.FromSeconds(1));
         await loop.Facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
         var fresh = await loop.DescribeHelp!(CancellationToken.None);
 
         Assert.DoesNotContain(fresh!.Sessions!.Listed, each => each.Id == ended.Id);
-        // HELPROOM1: a fresh look says where its time went; a kept one took no steps and says none.
+        // HELPROOM1: a fresh look says where its time went; a kept one took no steps and says none. The look judges no tree itself.
         Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":false")
             && line.Contains("\"recordsMs\":") && line.Contains("\"questsMs\":") && line.Contains("\"verdictsMs\":")
             && line.Contains("\"marksMs\":") && line.Contains("\"waitingMs\":") && line.Contains("\"treesMs\":") && line.Contains("\"trees\":0"));
         Assert.DoesNotContain(LogLines(logs), line => line.Contains("\"kept\":true") && line.Contains("Ms\":") && line.Contains("recordsMs"));
         Assert.NotNull(loop.SessionsLooked.Within(HelpRoomLookLog.Recent, DateTimeOffset.UtcNow));
+        // The look's verdicts are a fresh plan's here, no loop having looked: it, the parts and the rest of the facts start no git.
+        await loop.Facts.JudgedAsync(HelpFacts.Trees, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        Assert.Equal(0, Volatile.Read(ref gits));
     }
 
     /// <summary>The machine log's lines under a home, read while the log may still be writing them.</summary>

@@ -65,6 +65,12 @@ internal sealed class ChatContext(
     /// <summary>Ask Daoris's conversations running here, by session, each with its workspace: one at a time runs in each (ASKSCOPE1a).</summary>
     public ConcurrentDictionary<string, string> Rooms { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The access mode each of Ask Daoris's running conversations got at its start (HELPMODE1a2, D183 point 3), by session: what a
+    /// switch of the person's mode is compared with, since a switch takes its next start.
+    /// </summary>
+    public ConcurrentDictionary<string, string> HelpModes { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>What a conversation started from an earlier one is handed with the person's first words: that one's transcript as a file.</summary>
     public ConcurrentDictionary<string, ChatRunner.Handing> Handing { get; } = new(StringComparer.OrdinalIgnoreCase);
 

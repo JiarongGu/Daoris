@@ -174,6 +174,18 @@ public sealed record Session(
     public string? FromBy { get; init; }
 
     /// <summary>
+    /// The access mode an Ask Daoris record's run actually got (HELPMODE1a2, D183 point 3): <c>restricted</c> or <c>full</c>, the
+    /// effective mode, kept apart from the mode the person chose, which a switch reaches only at its next start. Written at the open
+    /// and again where a conversation going on runs under another; a help record from before reads <c>restricted</c>, what every
+    /// start before the modes ran under, and every other record has none.
+    /// </summary>
+    /// <remarks>
+    /// <b>This machine's own, as <see cref="Opinion"/> is</b> (D47 §4): answered to a caller on it only, and no feed carries it, since a
+    /// help record never travels (<see cref="SessionLedger.IsHelp"/>). Moving it writes no revision.
+    /// </remarks>
+    public string? HelpMode { get; init; }
+
+    /// <summary>
     /// The line of work this record belongs to, <c>&lt;origin&gt;/&lt;repository&gt;</c> (SESSONE1a, D167 points 2 and 3): written by the ledger
     /// when the session opens, and the one key the records that continue one line of work share. Null for a record from before it, which
     /// every reader is answered the rule's key for (<see cref="SessionEntries"/>), never written back.
@@ -469,6 +481,10 @@ public sealed class SessionStore
         // entry does, since a teammate's reader keys the quest by it. A record from before says none, which is the old reading.
         await SchemaColumns.EnsureAsync(_db, "sessions", "took_quest", "took_quest TEXT NULL", ct).ConfigureAwait(false);
 
+        // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris record's run got. This machine's own, as `opinion` is: no wire carries
+        // it, and a help record from before says none, which reads as restricted, what it ran under.
+        await SchemaColumns.EnsureAsync(_db, "sessions", "help_mode", "help_mode TEXT NULL", ct).ConfigureAwait(false);
+
         await using (var cursor = _db.Command())
         {
             cursor.CommandText = """
@@ -618,7 +634,7 @@ public sealed class SessionStore
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
-        string? entryOrigin = null, string? entryPart = null, bool ownEntry = false) => _db.RunAsync<Session>(async () =>
+        string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null) => _db.RunAsync<Session>(async () =>
     {
         // A why or an asker with no session continued is no link (MIXAGENT1a-iii): the three are kept together or not at all.
         var continues = Blank(from);
@@ -641,13 +657,17 @@ public sealed class SessionStore
             Entry = ownEntry ? SessionEntries.Compose($"session:{id}", entryPart ?? repository)
                 : Blank(entryOrigin) is { } origin ? SessionEntries.Compose(origin, entryPart ?? repository) : null,
         };
+        // HELPMODE1a2: an Ask Daoris record told none reads as one from before does, restricted; any other record has none.
+        session = session with { HelpMode = Blank(helpMode) ?? HelpModeRead(repository, null) };
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, from_session, from_why, from_by, entry, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $from, $fromWhy, $fromBy, $entry, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, from_session, from_why, from_by, entry, help_mode, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $from, $fromWhy, $fromBy, $entry, $helpMode, {NextRevision})
             """;
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
+        // What it was told only: a record told none keeps none, and reads as one from before.
+        command.Parameters.AddWithValue("$helpMode", (object?)Blank(helpMode) ?? DBNull.Value);
         command.Parameters.AddWithValue("$serves", (object?)session.Serves ?? DBNull.Value);
         command.Parameters.AddWithValue("$from", (object?)session.From ?? DBNull.Value);
         command.Parameters.AddWithValue("$fromWhy", (object?)session.FromWhy ?? DBNull.Value);
@@ -1131,7 +1151,31 @@ public sealed class SessionStore
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
         Pushed = !reader.IsDBNull(reader.GetOrdinal("pushed")) && reader.GetInt64(reader.GetOrdinal("pushed")) != 0,
         NoteParts = reader.IsDBNull(reader.GetOrdinal("note_parts")) ? null : reader.GetString(reader.GetOrdinal("note_parts")),
+        HelpMode = HelpModeRead(
+            reader.GetString(reader.GetOrdinal("repository")),
+            reader.IsDBNull(reader.GetOrdinal("help_mode")) ? null : reader.GetString(reader.GetOrdinal("help_mode"))),
     };
+
+    /// <summary>
+    /// A record's access mode as kept (HELPMODE1a2): Ask Daoris's as written, or <see cref="SessionLedger.HelpRestricted"/> where none
+    /// was, a record from before the modes; null for every other record, which runs under none.
+    /// </summary>
+    private static string? HelpModeRead(string repository, string? kept) =>
+        string.Equals(repository, SessionLedger.HelpRepository, StringComparison.Ordinal) ? kept ?? SessionLedger.HelpRestricted : null;
+
+    /// <summary>
+    /// Write the access mode an Ask Daoris record of this machine's runs under (HELPMODE1a2). Blind, like every write here: which mode
+    /// is the ledger's to judge. No revision, since nothing that travels changed. False when there is no such record.
+    /// </summary>
+    public Task<bool> KeepHelpModeAsync(string id, string mode, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE sessions SET help_mode = $mode WHERE id = $id AND origin IS NULL AND repository = $help";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$mode", mode);
+        command.Parameters.AddWithValue("$help", SessionLedger.HelpRepository);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
 
     /// <summary>
     /// Mark these records as gone up to a remote (SESSUX1f, D126 §5.4), once a push took them. No revision moves: the mark
