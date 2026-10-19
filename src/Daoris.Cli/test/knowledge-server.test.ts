@@ -201,6 +201,11 @@ test('a driven session on an install runs the connector the install carries, ahe
   const scratch = join(fx.root, 'scratch', 'data');
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: scratch }, null, 'win32')?.command, join(scratch, 'bin', 'daoris-knowledge.exe'));
   assert.equal(tool.installConnector(join(fx.root, 'install', 'elsewhere'), 'daoris-knowledge.exe'), null);
+
+  // HOMELAYOUT3: a home made since keeps its copy in `cache/bin/` under its Daoris folder, which is found too.
+  const fresh = join(fx.root, 'fresh');
+  const cached = fx.write('fresh/cache/bin/daoris-knowledge.exe', '');
+  assert.equal(tool.serverCommand('driven', { DAORIS_HOME: fresh }, null, 'win32')?.command, cached);
   fx.cleanup();
 });
 

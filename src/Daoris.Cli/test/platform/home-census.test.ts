@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { basename, join, relative } from 'node:path';
-import { HOME_ENTRIES, INSTALL_DATA, homePlaces } from '../../src/platform/home.ts';
+import { basename, join, relative, resolve } from 'node:path';
+import { HOME_ENTRIES, INSTALL_DATA, INSTALL_MARKER, homePlaces } from '../../src/platform/home.ts';
 import { DESKTOP } from '../_csharp.ts';
+import { makeFixture } from '../_fixture.ts';
 
 /**
  * 🔴 HOMELAYOUT2's census (D172 point 5, the install layout design §6.2 and §11): no code joins a home path by hand. Each file
@@ -28,11 +29,6 @@ const TWINS = new Set(['DaorisHome.cs', 'home.ts']);
  * the list holds only what is still there.
  */
 const OWED: readonly { readonly file: string; readonly join: string; readonly why: string; readonly like?: boolean }[] = [
-  {
-    file: 'knowledge-server.mjs',
-    join: "join(home, 'bin', executable)",
-    why: 'the connector locator starts before anything resolves, so it keeps its own copy of `data` and `bin` by design; the test below holds both to the table',
-  },
   {
     file: 'merge-branch.mjs',
     join: 'join(home, ',
@@ -243,15 +239,24 @@ test('no code joins a home path by hand: each asks its twin for the entry by nam
   }
 });
 
-test('the connector locator’s own copy of `data` and `bin` is held to the table (HOMELAYOUT2b)', async () => {
+test('the connector locator’s own copy of `data` and `bin` is held to the table (HOMELAYOUT2b, HOMELAYOUT3)', async () => {
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
-  const { INSTALL_HOME } = await import('../../../../tools/knowledge-server.mjs') as { INSTALL_HOME: string };
+  const { INSTALL_HOME, homeBins } = await import('../../../../tools/knowledge-server.mjs') as {
+    INSTALL_HOME: string; homeBins: (home: string, executable: string) => string[];
+  };
   assert.equal(INSTALL_HOME, INSTALL_DATA, 'the install’s home folder is the table’s `data`');
-  const home = join(SRC, 'X-daoris', 'home');
   const executable = process.platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge';
-  // The locator’s `bin` candidate is one of the places the table gives the entry; the move changes the table, and this fails
-  // until the copy follows it.
-  assert.ok(homePlaces(home, 'bin', executable).includes(join(home, 'bin', executable)), '`bin` moved: update the locator’s copy');
+  // The locator’s `bin` candidates are the places the table gives the entry, new then old, for a scratch home, an install’s
+  // `data/` and the install itself; the table changes, and this fails until the copy follows it.
+  const fx = makeFixture('census-connector-bins');
+  try {
+    fx.write(join('install', INSTALL_MARKER), '# Daoris — installed desktop\n');
+    for (const home of [join(fx.root, 'scratch'), join(fx.root, 'install', INSTALL_DATA), join(fx.root, 'install')]) {
+      assert.deepEqual(homeBins(home, executable).map((path) => resolve(path)), homePlaces(home, 'bin', executable).map((path) => resolve(path)), home);
+    }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('the census sees each way of joining a home, and never a join under an entry or another folder', () => {

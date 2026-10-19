@@ -50,6 +50,9 @@ public sealed class HomePlacingProcessTests : IDisposable
 
     private string Home => Path.Combine(_install, InstallHome.Folder);
 
+    /// <summary>An entry's old place in this install's home, where the build before HOMELAYOUT3 kept it, and asked here.</summary>
+    private string Old(HomeEntry entry) => DaorisHome.Places(Home, entry)[^1];
+
     private HomeEstablished? Start(Func<string, IReadOnlyList<int>>? others = null)
     {
         var process = new Dictionary<string, string>(StringComparer.Ordinal) { [DaorisHome.Variable] = Home };
@@ -86,7 +89,7 @@ public sealed class HomePlacingProcessTests : IDisposable
 
         Assert.Empty(held!.Placed);
         Assert.Contains($"{child.Id}", held.PlaceHeld);
-        Assert.True(File.Exists(Path.Combine(Home, "keys.json")));
+        Assert.True(File.Exists(Old(HomeEntry.Keys)));
 
         child.Kill(entireProcessTree: true);
         child.WaitForExit(10_000);
@@ -103,7 +106,7 @@ public sealed class HomePlacingProcessTests : IDisposable
     public void A_log_held_open_keeps_the_logs_where_they_are_while_the_rest_moves()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var log = Path.Combine(Home, "logs", "2026-10-19.desktop.jsonl");
+        var log = Path.Combine(Old(HomeEntry.Logs), "2026-10-19.desktop.jsonl");
         Dictionary<string, HomeMove> placed;
         HomeMove notPlaced;
         using (new FileStream(log, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
@@ -138,7 +141,7 @@ public sealed class HomePlacingProcessTests : IDisposable
             CreateNoWindow = true,
         })!;
         _spawned.Add(child);
-        var lease = Path.Combine(Home, HomeLease.FileName);
+        var lease = Old(HomeEntry.HomeLease);
         File.WriteAllText(lease, new JsonObject
         {
             ["kind"] = "headless", ["pid"] = child.Id, ["started"] = child.StartTime.ToUniversalTime().Ticks,
@@ -150,7 +153,7 @@ public sealed class HomePlacingProcessTests : IDisposable
         Assert.Empty(held!.Placed);
         Assert.Contains("headless", held.PlaceHeld);
         Assert.True(File.Exists(lease));
-        Assert.True(File.Exists(Path.Combine(Home, "keys.json")));
+        Assert.True(File.Exists(Old(HomeEntry.Keys)));
 
         child.Kill(entireProcessTree: true);
         child.WaitForExit(10_000);

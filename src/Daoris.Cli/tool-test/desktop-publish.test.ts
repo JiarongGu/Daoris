@@ -475,6 +475,28 @@ test('the install note says Daoris’s own children find the doctrine tool first
   assert.equal(installBin(join(folder(), HOME)), null);
 });
 
+/**
+ * HOMELAYOUT4 (D172 point 1, the install layout design §2 and §4): the note says what each top folder of the Daoris folder is
+ * and who may lose it, a row each, in the design's order; that `data/` is the one to back up and holds no key; and what a start
+ * after an update moves out of an older `data/`, once, and what it never moves.
+ */
+test('the install note says what each top folder is, and what a start moves out of an older data/ (HOMELAYOUT4)', () => {
+  const note: string = installedNote();
+  const rows = note.split('\n').filter((line) => line.startsWith('| `'));
+  const named = rows.map((line) => /^\| `([^`]+)`/.exec(line)?.[1]);
+  assert.deepEqual(named, [LAUNCHER, `${SHELL_HOME[0]}/`, `${STAGE[0]}/`, `${HOME}/`, 'profiles/', 'work/', 'cache/', 'run/', 'logs/']);
+  const row = (name: string) => rows.find((line) => line.startsWith(`| \`${name}\``)) ?? '';
+  assert.match(row(`${HOME}/`), /back it up/i);
+  assert.match(row(`${HOME}/`), /no key/);
+  assert.match(row('profiles/'), /sign-ins/);
+  assert.match(row('cache/'), /never back it up/i);
+  assert.match(row('run/'), /while Daoris is closed/);
+  const prose = note.replace(/\s+/g, ' ');
+  assert.match(prose, /moves what an older version kept in `data\/` into the folders above, once/);
+  assert.match(prose, /account homes, session trees, rooms, kept files and `data\/bin\/` stay where they are/i);
+  assert.doesNotMatch(note, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, 'a machine path in the note');
+});
+
 test('a marker without the header is not ours — a file with that name proves nothing', () => {
   const at = folder();
   writeFileSync(join(at, MARKER), '# something else\n');
