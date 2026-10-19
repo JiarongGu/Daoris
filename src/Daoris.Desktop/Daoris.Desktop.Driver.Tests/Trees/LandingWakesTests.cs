@@ -357,7 +357,7 @@ public sealed class LandingWakesTests : IDisposable
         RefRepository engine = new("engine", "aurora", Path.Combine(_home, "engine"));
         Directory.CreateDirectory(engine.CommonDir);
         await using var watch = new RefWatch(_home, _ => Task.FromResult<IReadOnlyList<RefRepository>>([engine]), (_, _) => Task.FromResult(0),
-            TimeSpan.FromMinutes(5), _source, () => now) { Heard = heard.Enqueue };
+            TimeSpan.FromMinutes(5), _source, () => now) { Heard = (repository, _) => heard.Enqueue(repository) };
         watch.Open();
         await watch.RebuildAsync(CancellationToken.None);
 

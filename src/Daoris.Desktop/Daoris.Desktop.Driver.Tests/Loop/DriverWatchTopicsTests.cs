@@ -320,6 +320,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
     /// <summary>
     /// PARALLEL1a (D181 point 2): each move a source heard is told to the facts' judges, a topic's wake as it comes and a repository's
     /// refs once the ref watch judges them; a plain nudge, a press, is no move and tells nothing, and a ref is never told twice.
+    /// OWNMOVES1: a ref Daoris moved itself is told as its own, and a hint as none.
     /// </summary>
     [Fact]
     public async Task A_move_heard_is_told_to_the_facts_judges_and_a_press_is_not()
@@ -328,23 +329,23 @@ public sealed class DriverWatchTopicsTests : IDisposable
         Directory.CreateDirectory(common);
         new SessionBranches(_home).Record(new GrownBranch("engine", "default", "daoris/s-0001", "main", new string('a', 40), null, DateTimeOffset.UtcNow));
         var source = new FakeChangeSource();
-        var told = new List<(string Topic, string Subject)>();
-        List<(string Topic, string Subject)> Told()
+        var told = new List<(string Topic, string Subject, bool Mine)>();
+        List<(string Topic, string Subject, bool Mine)> Told()
         {
             lock (told) return [.. told];
         }
 
         using var sync = Counted();
-        var (watch, _) = Watch(sync, pollSeconds: 60, source: source, heard: (topic, subject) =>
+        var (watch, _) = Watch(sync, pollSeconds: 60, source: source, heard: (topic, subject, mine) =>
         {
-            lock (told) told.Add((topic, subject));
+            lock (told) told.Add((topic, subject, mine));
         });
 
         watch.Nudge();
         watch.Nudge(ChangeTopics.Ledger, "quests");
         watch.Said("s1");
         watch.Nudge(ChangeTopics.Refs, "engine");
-        Assert.Equal([(ChangeTopics.Ledger, "quests"), (ChangeTopics.Requests, "s1")], Told());
+        Assert.Equal([(ChangeTopics.Ledger, "quests", false), (ChangeTopics.Requests, "s1", false)], Told());
 
         var reports = new List<TickReport>();
         var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
@@ -352,7 +353,10 @@ public sealed class DriverWatchTopicsTests : IDisposable
         {
             await Poll.Until(() => Count(reports) >= 1 && source.On(common) is not null, () => "no look, or the repository never watched", Bound);
             source.On(common)!.Raise("refs/heads/daoris/s-0001", ChangeKind.Renamed);
-            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine")), () => string.Join(", ", Told()), Bound);
+            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine", false)), () => string.Join(", ", Told()), Bound);
+
+            RefMoves.Mine(_home, "engine");
+            await Poll.Until(() => Told().Contains((ChangeTopics.Refs, "engine", true)), () => string.Join(", ", Told()), Bound);
         }
         finally
         {
@@ -362,7 +366,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
     }
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(
-        RemoteSyncSet sync, int pollSeconds, MachineLog? log = null, IChangeSource? source = null, Action<string, string>? heard = null)
+        RemoteSyncSet sync, int pollSeconds, MachineLog? log = null, IChangeSource? source = null, Action<string, string, bool>? heard = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
