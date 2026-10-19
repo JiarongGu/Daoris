@@ -1,11 +1,11 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { Answered } from '../work/InlineConfirm';
-import { type HeavyGate, HeavyGates, heavySummary, heavyToast } from './HeavyGates';
+import { type HeavyGate, HeavyGates, type HeavyMarks, heavySummary, heavyToast } from './HeavyGates';
 
 // HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): this machine's heavy gates for a repository whose own daoris.gates.json marks none, shown
 // and edited on its Setup. The list is one sequence, so it is edited whole and saved whole, in its order, or cleared; the driver
@@ -19,10 +19,10 @@ const GATES: HeavyGate[] = [
   { name: 'e2e', run: 'npm run e2e' },
 ];
 
-const draw = (gates: HeavyGate[], onSave = vi.fn()) => {
+const draw = (gates: HeavyGate[], onSave = vi.fn(), marks?: HeavyMarks) => {
   render(
     <Tooltip.Provider>
-      <HeavyGates repository="engine" gates={gates} onSave={onSave} />
+      <HeavyGates repository="engine" gates={gates} marks={marks} onSave={onSave} />
     </Tooltip.Provider>,
   );
   return onSave;
@@ -160,8 +160,40 @@ describe("a repository's heavy gates on its Setup", () => {
     expect(onSave).toHaveBeenLastCalledWith(null, expect.anything());
   });
 
+  /**
+   * HEAVYRUN1b2c (D180): the section says whether this repository's own file wins, as the driver read it (`HEAVY_MARKS`). The page judges
+   * nothing: a file that does not read is "cannot tell" in the driver's words, never "marks none".
+   */
+  it("says whether the repository's own file wins, and cues the folded line where it does", async () => {
+    const wins: HeavyMarks = { marks: true, names: ['web', 'e2e'] };
+    draw(GATES, vi.fn(), wins);
+    const mine = row("This machine's heavy gates");
+    expect(mine).toHaveTextContent("engine's own daoris.gates.json marks heavy gates (web, e2e), so those are run and this list is not.");
+    expect(heavySummary(t, GATES, wins)).toBe('3 heavy gates: build, web, e2e (not used: its own file marks heavy gates)');
+    expect(heavySummary(t, [], wins)).toBe('none set on this machine');
+  });
+
+  it('says this list is used where the file marks none or there is none, and says cannot tell in the driver\'s words', () => {
+    const { unmount } = render(
+      <Tooltip.Provider><HeavyGates repository="engine" gates={GATES} marks={{ marks: false, names: [] }} onSave={vi.fn()} /></Tooltip.Provider>,
+    );
+    expect(row("This machine's heavy gates")).toHaveTextContent("engine's own daoris.gates.json marks no heavy gate, or there is none here, so this list is used.");
+    expect(heavySummary(t, GATES, { marks: false, names: [] })).toBe('3 heavy gates: build, web, e2e');
+    unmount();
+
+    draw(GATES, vi.fn(), { marks: null, names: [], refusal: 'daoris.gates.json is not valid JSON: x' });
+    const mine = row("This machine's heavy gates");
+    expect(mine).toHaveTextContent("Cannot tell whether engine's own daoris.gates.json marks heavy gates: daoris.gates.json is not valid JSON: x");
+    expect(mine).not.toHaveTextContent('marks no heavy gate');
+    expect(heavySummary(t, GATES, { marks: null, names: [], refusal: 'x' })).toBe('3 heavy gates: build, web, e2e');
+  });
+
   it('reads in Chinese', async () => {
     await i18n.changeLanguage('zh');
+    draw(GATES, vi.fn(), { marks: true, names: ['web'] });
+    expect(row('本机的重型检查')).toHaveTextContent('engine 自己的 daoris.gates.json 标出了重型检查（web），所以运行它标出的，本列表不运行。');
+    expect(heavySummary(t, GATES, { marks: true, names: ['web'] })).toBe('3 项重型检查：build、web、e2e（未使用：它自己的文件标出了重型检查）');
+    cleanup();
     draw(GATES);
 
     const mine = row('本机的重型检查');

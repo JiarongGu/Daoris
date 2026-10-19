@@ -106,6 +106,29 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>
+    /// Whether a repository's own <c>daoris.gates.json</c> wins over this machine's heavy gates (HEAVYRUN1b2c, D180's HEAVYRUN1b2c note):
+    /// <c>{ repository, marks, names, refusal? }</c>, <c>marks</c> true where the file marks some (their names), false where it marks none or
+    /// there is no file, null with <c>refusal</c> where it cannot be told (a file that does not read, or no checkout here). A read of one
+    /// file in the checkout the registry holds, the first of the name that is on this disk as <c>RECOVERY_DROP</c> picks, with no git; it
+    /// never resolves a run, which throws where there is no file and no mapping. The page judges nothing itself.
+    /// </summary>
+    [DriverRoute("HEAVY_MARKS")]
+    private async Task<object?> HeavyMarksAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = (Optional(request, "repository") ?? "").Trim();
+        var service = _loop.Service ?? throw NotReady();
+        var root = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken), repository, null)
+            .Select(row => row.Root).FirstOrDefault(path => Directory.Exists(path));
+        if (root is null)
+        {
+            return new { repository, marks = (bool?)null, names = Array.Empty<string>(), refusal = $"`{repository}` has no checkout on this machine to read." };
+        }
+
+        var marks = HeavyGates.Marks(root);
+        return new { repository, marks = marks.Marks, names = marks.Names, refusal = marks.Refusal };
+    }
+
+    /// <summary>
     /// The list as the page sends it: null where it sends none or null; each gate's name, command and folder as written, a field that is
     /// no text read as none, so the mapping's own rule says what is missing.
     /// </summary>
