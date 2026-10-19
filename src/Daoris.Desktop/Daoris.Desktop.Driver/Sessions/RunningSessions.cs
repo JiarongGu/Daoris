@@ -18,8 +18,8 @@ namespace Daoris.Driver;
 /// (<see cref="Carry"/>).</para>
 ///
 /// <para><b>The work beside the looks is kept here too</b> (PARALLEL1b, D181 point 3): the remote sync's
-/// pass, the landing's, and each topic's judges, one judgement per subject and each topic bounded, so a
-/// closing loop waits for them as it waits for its sessions.</para>
+/// pass, the landing's, the evaluation runtime's (PARALLEL1h), and each topic's judges, one judgement per
+/// subject and each topic bounded, so a closing loop waits for them as it waits for its sessions.</para>
 ///
 /// <para><b>Nothing here decides how a session ends.</b> Each run concludes its own record, on its exit code
 /// and its quest, as it always has (D46 §4). This keeps the runs and hands their endings on.</para>
@@ -195,13 +195,18 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Whether nothing runs, no landing pass or remote sync works beside the looks, and nothing ended that a look has not yet reported.
+    /// Whether nothing runs, no landing pass, remote sync, judge or evaluation pass works beside the looks, and nothing ended or was
+    /// said that a look has not yet reported.
     /// </summary>
     public bool Idle
     {
         get
         {
-            lock (_gate) return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _landing is null && _syncing is null && _judging.Count == 0;
+            lock (_gate)
+            {
+                return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _landing is null && _syncing is null && _judging.Count == 0
+                       && _passing is null && _passSaid.Count == 0;
+            }
         }
     }
 
@@ -354,6 +359,75 @@ public sealed class RunningSessions
         }
     }
 
+    // The evaluation runtime's pass beside the looks (PARALLEL1h), while one works, and the pass asked for meanwhile, which runs once
+    // after it; and what the passes said since the last look took it.
+    private Task? _passing;
+    private (Func<CancellationToken, Task<IReadOnlyList<string>>> Pass, CancellationToken Ct)? _passAgain;
+    private readonly List<string> _passSaid = [];
+
+    /// <summary>
+    /// Run the evaluation runtime's pass beside the looks (PARALLEL1h, D181 point 3), so a pass that a read or a plugin holds never holds
+    /// the next look. One pass at a time, since the runtime judges its units under one lock; one asked for while a pass works runs once
+    /// after it, however many were asked. What a pass says joins the next look's report and wakes nothing, as it joined its own look's
+    /// before: what wakes a plan is the pass's own nudge (a set naming a plugin anew, a timer the records persist).
+    /// </summary>
+    /// <returns>True where the pass began now; false where one works, and this one follows it.</returns>
+    internal bool PassBeside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            if (_passing is not null)
+            {
+                _passAgain = (pass, ct);
+                return false;
+            }
+
+            _passing = Task.Run(() => KeepPassingAsync(pass, ct), CancellationToken.None);
+            return true;
+        }
+    }
+
+    private async Task KeepPassingAsync(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        while (true)
+        {
+            IReadOnlyList<string> said;
+            try
+            {
+                said = await pass(ct).ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                // A closing loop cancels it; anything else past the pass's own catches is said once, in the next report.
+                said = ct.IsCancellationRequested ? [] : [$"work  the plugins' steps were not judged this time, and are judged again at the next look: {error.Message}"];
+            }
+
+            TaskCompletionSource moved;
+            var again = false;
+            lock (_gate)
+            {
+                _passSaid.AddRange(said);
+                if (_passAgain is { } next && !next.Ct.IsCancellationRequested)
+                {
+                    (pass, ct) = next;
+                    again = true;
+                }
+                else
+                {
+                    _passing = null;
+                }
+
+                _passAgain = null;
+                moved = _moved;
+                _moved = NewSignal();
+            }
+
+            // Wakes only what waits for the set to settle: an ending's wait reads its own conditions again, and none is the pass's.
+            moved.TrySetResult();
+            if (!again) return;
+        }
+    }
+
     // The landing pass beside the looks (LAND2b), while it works: one at a time, since a plugin's two minutes may outlast a look.
     private Task? _landing;
 
@@ -444,13 +518,17 @@ public sealed class RunningSessions
         return opened.Task.IsCompleted ? null : await kept.ConfigureAwait(false);
     }
 
-    /// <summary>Every ending not yet reported, in the order they ended — each handed on once.</summary>
+    /// <summary>
+    /// Every ending not yet reported, in the order they ended, then what the evaluation runtime's passes beside the looks said
+    /// (PARALLEL1h) — each handed on once.
+    /// </summary>
     internal IReadOnlyList<StartRun> Drain()
     {
         lock (_gate)
         {
-            var ended = _ended.ToList();
+            List<StartRun> ended = [.. _ended, .. _passSaid.Select(line => new StartRun(line, Opened: false))];
             _ended.Clear();
+            _passSaid.Clear();
             return ended;
         }
     }
@@ -475,8 +553,8 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once nothing runs: every session concluded and its record written, and no landing pass, remote sync or judge works
-    /// (LAND2b, PARALLEL1b). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended
+    /// Completes once nothing runs: every session concluded and its record written, and no landing pass, remote sync, judge or
+    /// evaluation pass works (LAND2b, PARALLEL1b, PARALLEL1h). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended
     /// (REV3, D104).
     /// </summary>
     public async Task SettledAsync()
@@ -486,7 +564,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_running == 0 && _landing is null && _syncing is null && _judging.Count == 0) return;
+                if (_running == 0 && _landing is null && _syncing is null && _judging.Count == 0 && _passing is null) return;
                 moved = _moved.Task;
             }
 

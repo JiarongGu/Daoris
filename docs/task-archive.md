@@ -17260,6 +17260,18 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 **Outcome** 2026-10-19: under a circle, `EndedPlan` takes only the rows whose session record is the workspace's (a row no record files is excluded), counts included; a retry names its held or parked quest under its repository's workspace, so another workspace's is refused as ASKSCOPE1c2's are. No route change. Detail: D158's ASKSCOPE1c3 line; `HelpProposalScopeTests`.
 
+## PARALLEL1h — the terminal requests and the node pass off the look's path (2026-10-19, D181)
+
+> - [ ] **PARALLEL1h — the terminal requests and the node pass off the look's path** (driver; D181 point 3). Terminal requests wait under one gate (`SessionRequestWatch._one`), and the node runtime's pass runs after each plan on the look's chain. Proof: a slow request holds only its own session; a slow node pass holds no next look.
+
+**Outcome** 2026-10-19: a look claims each session it has a request for and honours it beside the others, a session's own in the order asked; the folder's look returns once begun, and the watch's close cancels and waits. Link 8 begins the runtime's pass beside the look (`RunningSessions.PassBeside`, one at a time and one after), timed `~nodes`, its lines joining the next report without a wake; the runtime's one lock stays exclusive. On Opus: about 130 tool calls, 39 minutes. Detail: D181's PARALLEL1h note; `SessionRequestBesideTests`, `LookParallelTests.A_slow_node_pass_holds_no_next_look`.
+
+## HEAVYRUN1a — one heavy-run slot per repository, through a wrapper a session runs (2026-10-19, D180)
+
+> - [ ] **HEAVYRUN1a — one heavy-run slot per repository, through a wrapper a session runs** (driver; D180's HEAVYRUN1 note; the owner, 2026-10-19: "current local Daoris spends 1 hour doing nothing"). `daoris-driver run-heavy [--gate <name>]` holds one slot per repository across its trees (keyed so a root checkout and every tree of it share it), runs the gates its repository's `daoris.gates.json` marks heavy one after another inside a kill-on-close job, says a waiting run with the holder and the elapsed time, and releases the slot only once its own descendants have ended (cancel and failure included, never by a timed lease). Proof: two runs never overlap (instrumented intervals); a cancel releases after its children end; a killed wrapper admits no second run beside survivors.
+
+**Outcome** 2026-10-19: `run-heavy` in `Sessions/Heavy/`: a slot keyed by the repository's common git folder (read from git's files, named by the folder's identity) under the home's `locks/heavy/`, with a holder record a waiter reads to say whom it waits behind and for how long; gates started suspended into a named kill-on-close job and emptied before the slot goes; a dead holder's job ended by the next; a nested run inside the held slot; no home lease, and no access setting read. On Opus: about 193 tool calls, 74 minutes. Detail: D180's HEAVYRUN1a note; `HeavySlotTests`, `HeavyRunCommandTests`, `HeavyRunProcessTests` (Process, run at the merge).
+
 ## PARALLEL1f — a queued start's place waits on the loop's token (2026-10-19, D181)
 
 > - [ ] **PARALLEL1f — a queued start's place waits on the loop's token** (driver; D181 point 4, its PARALLEL1de note). `HoldAsync` and `DriverContinuations`' start places wait on no token, so a stopping loop cannot end a start still queued for a place. Proof: a cancelled start's record and the person's words are put back.

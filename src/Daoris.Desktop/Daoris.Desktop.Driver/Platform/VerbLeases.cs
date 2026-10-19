@@ -19,6 +19,8 @@ namespace Daoris.Driver;
 /// <c>hand-over</c>): it runs for as long as the person talks, and holding the home that long would keep the desktop's loop
 /// from starting; RPC1g moves its turns into the running instance.</item>
 /// <item><b>The loop</b> (<c>drive</c>), which takes the lease as an instance, for its life.</item>
+/// <item><b>A repository's heavy gates</b> (<c>run-heavy</c>, HEAVYRUN1a): they run for minutes, and holding the home that long would
+/// keep every other verb and the desktop's start waiting on a build; the run writes the home only in its own slot's files.</item>
 /// </list>
 /// </remarks>
 public static class VerbLeases
@@ -45,6 +47,7 @@ public static class VerbLeases
         {
             "chat" or "answer" => false,
             "drive" or "--once" or "--until-idle" => false,
+            "run-heavy" => false,
             "workflow" => next == "keep",
             "ask" => args.Skip(1).Any(AskWork.Contains),
             "quest" => next is not null && !ServiceQuests.Contains(next),
