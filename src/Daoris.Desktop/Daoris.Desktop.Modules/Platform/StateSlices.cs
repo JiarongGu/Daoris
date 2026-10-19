@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Shenora.Core.Events;
@@ -105,7 +106,8 @@ public sealed class StateSlice
     /// <summary>Whether the last judgement failed; read and written only within a judgement's turn.</summary>
     private bool _failing;
 
-    private sealed record Held(long Seq, string Status, object? Data, string Json);
+    /// <param name="Keys">A keyed partition's keys, each as the wire writes it, which the next judgement's delta is read against.</param>
+    private sealed record Held(long Seq, string Status, object? Data, string Json, IReadOnlyDictionary<string, string>? Keys = null);
 
     /// <param name="name">The slice's name, in the page's words.</param>
     /// <param name="bus">Where its pushes and manifests are raised, the kit's bus each window's pump forwards.</param>
@@ -134,6 +136,14 @@ public sealed class StateSlice
 
     /// <summary>What on the kit's bus wakes the judge while the worker runs.</summary>
     public IReadOnlyList<SliceWake> WakesOn { get; init; } = [];
+
+    /// <summary>
+    /// Whether each partition is keyed (PUSH1d2, D182 point 3): its data written as an object of keys, each one record, so a judgement
+    /// that moved fewer than half of them pushes those alone as a delta on the number held (<see cref="SlicePush.BaseSeq"/>, the keys
+    /// gone in <see cref="SlicePush.Removed"/>), which the pump never coalesces. A first push, a return from gone and a delta that would
+    /// carry half the partition or more are pushed whole; the snapshot is always whole.
+    /// </summary>
+    public bool Keyed { get; init; }
 
     /// <summary>
     /// Where the slice hears of a move no bus event tells (PUSH1b1: the machine's facts landing), while the worker runs: each is
@@ -206,31 +216,31 @@ public sealed class StateSlice
             _failing = false;
             // Nothing to judge from yet: what is held stands, and a slice never judged stays not judged.
             if (judged is null) return;
-            var pushes = new List<SlicePush>();
+
+            // Written and compared outside the lock (PUSH1d2: a keyed partition may be megabytes): a judgement's turn is the one writer of
+            // what is held, so it reads it here unlocked, and the lock is held only to swap.
+            var moves = new List<(Held Held, SlicePush Push)>();
+            var named = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var (partition, data) in judged)
+            {
+                named.Add(partition);
+                if (Moved(partition, data, _held.GetValueOrDefault(partition)) is { } moved) moves.Add(moved);
+            }
+
+            foreach (var (partition, held) in _held.Where(each => each.Value.Status != Gone && !named.Contains(each.Key)).ToList())
+            {
+                moves.Add((new Held(held.Seq + 1, Gone, null, ""), new SlicePush(Name, Epoch, partition, held.Seq + 1, Gone, null)));
+            }
+
             lock (_gate)
             {
                 _judged = true;
-                var named = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var (partition, data) in judged)
-                {
-                    named.Add(partition);
-                    var json = JsonSerializer.Serialize(data, IpcJson.Options);
-                    var held = _held.GetValueOrDefault(partition);
-                    if (held is { Status: Ready } && held.Json == json) continue;
-                    var seq = (held?.Seq ?? 0) + 1;
-                    _held[partition] = new Held(seq, Ready, data, json);
-                    pushes.Add(new SlicePush(Name, Epoch, partition, seq, Ready, data));
-                }
-
-                foreach (var (partition, held) in _held.Where(each => each.Value.Status != Gone && !named.Contains(each.Key)).ToList())
-                {
-                    _held[partition] = new Held(held.Seq + 1, Gone, null, "");
-                    pushes.Add(new SlicePush(Name, Epoch, partition, held.Seq + 1, Gone, null));
-                }
+                foreach (var (held, push) in moves) _held[push.Partition] = held;
             }
 
-            // Told outside the lock and inside the judgement's turn: no other judgement's pushes come between.
-            foreach (var push in pushes) Tell(PushType, push, $"{Name}/{push.Partition}");
+            // Told outside the lock and inside the judgement's turn: no other judgement's pushes come between. A delta carries no
+            // coalesce key: coalesced into a later push, what it carried would be lost.
+            foreach (var (_, push) in moves) Tell(PushType, push, push.BaseSeq is null ? $"{Name}/{push.Partition}" : null);
         }
         finally
         {
@@ -304,7 +314,37 @@ public sealed class StateSlice
         }
     }
 
-    private void Tell(string type, object payload, string coalesce) =>
+    /// <summary>
+    /// What a judged partition moved against <paramref name="held"/>: nothing where it is unchanged; for a keyed slice whose partition
+    /// stood ready, the keys moved and the keys gone as a delta where they are fewer than half its keys; else the partition whole.
+    /// </summary>
+    private (Held Held, SlicePush Push)? Moved(string partition, object data, Held? held)
+    {
+        var seq = (held?.Seq ?? 0) + 1;
+        if (!Keyed)
+        {
+            var json = JsonSerializer.Serialize(data, IpcJson.Options);
+            if (held is { Status: Ready } && held.Json == json) return null;
+            return (new Held(seq, Ready, data, json), new SlicePush(Name, Epoch, partition, seq, Ready, data));
+        }
+
+        var written = JsonSerializer.SerializeToNode(data, IpcJson.Options) as JsonObject
+            ?? throw new InvalidOperationException($"a keyed slice's partition `{partition}` is not written as an object of keys");
+        var keys = written.ToDictionary(each => each.Key, each => each.Value?.ToJsonString() ?? "null", StringComparer.Ordinal);
+        var next = new Held(seq, Ready, data, "", keys);
+        if (held is not { Status: Ready, Keys: { } before }) return (next, new SlicePush(Name, Epoch, partition, seq, Ready, data));
+
+        List<string> moved = [.. keys.Where(each => !before.TryGetValue(each.Key, out var was) || was != each.Value).Select(each => each.Key)];
+        List<string> removed = [.. before.Keys.Where(key => !keys.ContainsKey(key)).Order(StringComparer.Ordinal)];
+        if (moved.Count == 0 && removed.Count == 0) return null;
+        if ((moved.Count + removed.Count) * 2 >= keys.Count) return (next, new SlicePush(Name, Epoch, partition, seq, Ready, data));
+
+        var delta = new JsonObject();
+        foreach (var key in moved) delta[key] = written[key]?.DeepClone();
+        return (next, new SlicePush(Name, Epoch, partition, seq, Ready, delta, held.Seq, removed));
+    }
+
+    private void Tell(string type, object payload, string? coalesce) =>
         _bus.Emit(new EventMessage { Module = Module, Type = type, Payload = payload, CoalesceKey = coalesce });
 }
 
