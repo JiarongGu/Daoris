@@ -257,24 +257,27 @@ answer, as both paths do today.
 
 A claim is never lost silently.
 
-1. **It waits on the channel**, and the entry's mark moves through it only once a part has *taken* it (§6). A part that
-   ends with the claim untaken leaves it for the entry's next part.
+1. **It waits on the channel** until the entry acknowledges it by its id (§6), once a part has taken it or the agent read it.
+   A part that ends with the claim untaken leaves it for the entry's next part. At a turn's end, it rides a prompt the run
+   sends anyway (the person's, Daoris's or an answer's words), since that turn comes for its own reasons.
 2. **The agent can read it at its own natural point.** The knowledge connector's next answer to a session whose entry
    holds unread messages ends with one line saying how many wait and that `channel_read` reads them (the collaboration
    proposal's pull-on-tool-call). This line is said once per new message, never on `channel_read` itself, and it is not
    delivery: the agent reads when it chooses.
-3. **It expires when its ask has no quest open.** The ask's work is over, and no part will come. Its receipt for that
-   entry becomes *not reached*, which the ask's channel shows the person beside the message (§8.4).
+3. **It expires when its ask has no quest open and no part of its entry runs here.** Both are checked, since a running part
+   is still reached with no quest open (`ChannelReach.cs:84-89`). Then the ask's work is over, and no part will come. Its
+   receipt for that entry becomes *not reached*, which the ask's channel shows the person beside the message (§8.4).
 4. **The person may pass it on.** On a message not reached, or held on a turn-end door, *Send to its session* delivers it
    to the entry's newest part on this machine as the agent's claim, marked as passed on by the person. Because the person
-   pressed, it may reopen that part: the person is between.
+   pressed, it may reopen that part: the person is between. The word kept is still the agent's (§9: its author is the
+   poster, its transport the channel), so nothing reads it as the person's.
 
 ### 4.3 Expiry, by sender
 
 | Sender | Waits until |
 |---|---|
 | The person | taken, taken back, or the record can never go on; then *It ended before reading this* or `words.unreached`, as today |
-| Daoris | taken, or the fact it states no longer holds, judged at delivery: a later submission answers the reopen (`ReopenTelling`'s own rule). Then it is dropped with a coded note, and is never said late |
+| Daoris | taken, or the fact it states no longer holds, judged at delivery: a later submission answers the reopen (`ReopenTelling`'s own rule). Then it is dropped with a coded note, and is never said late. The fact is judged by the key the word carries (the quest and the reopen's machine and sequence, or the step and the submission it grew from), never by its sentence: `BringsToSource` compares the sentence's text today (`ReopenTelling.cs:206-210`) |
 | A solicited answer | taken, or its asker can never take it: the person, with the refusal's code, as `OpinionDeliveries.ToPerson` and `HelperWhy` already do |
 | An unsolicited claim | taken by a part of the entry, or its ask has no quest open (§4.2) |
 | A meeting's message | the meeting's own end (D177) |
@@ -284,23 +287,24 @@ because there is nothing to interrupt.
 
 ## 5. One delivery rule
 
-**The rule.** Every message is kept in its path's store with its level, its sender and its id before its sender is told it
-was sent (§6). Then it reaches the agent at the earliest point its level allows on the door the session has. It stops
-nothing. Where it cannot go sooner, it waits as ordinary, and says why. At a natural point, it goes into the next prompt
-where its sender may make a turn happen (§4.1). Elsewhere, it waits for a turn that comes anyway, or for the agent's own
-read.
+**The rule.** Every message is kept in its path's store with its level, its sender and its producer's id before its sender
+is told it was sent (§6). Then it reaches the agent at the earliest point its level asks for and the session's door allows
+(§3.0). It stops nothing. Where it cannot go sooner, it waits as ordinary, and says why. At a natural point, it goes into the
+next prompt where its sender may make a turn happen (§4.1). Elsewhere, it rides a prompt the run sends anyway, or waits for
+the entry's next part, or for the agent's own read. A text-only conversation is outside the rule's levels: everything goes at
+once, said so (§3.0).
 
 | Path · level | Running, its door steers | Running, its door takes words at its next step | Running, turn's end only (until STEER3) | Between turns (a conversation open) | Parked | Ended | No part here |
 |---|---|---|---|---|---|---|---|
-| Person · now | steered at once; the step cut, the turn goes on | next step, `no-interrupt` or `behind` | held for the turn's end, `no-interrupt`; the keeping stop offered | the next turn, at once | its answer (D131) | reopens (D137) | a teammate's: refused, as today |
-| Person · urgent | next step | next step | held for the turn's end, said urgent; the keeping stop offered | the next turn, at once | its answer | reopens | as above |
+| Person · now | steered at once; the step cut, the turn goes on | next step, `no-interrupt` or `behind` | held for the turn's end, `no-interrupt`; the keeping stop offered where the door has an interrupt | the next turn, at once | its answer (D131) | reopens (D137) | a teammate's: refused, as today |
+| Person · urgent | next step | next step | held for the turn's end, said urgent; the keeping stop offered where the door has an interrupt | the next turn, at once | its answer | reopens | as above |
 | Person · ordinary | held for the turn's end, then its next prompt | the same | the same | the next turn, at once | its answer | reopens | as above |
-| Daoris · urgent | next step, as Daoris's words | next step | held for the turn's end, then its next prompt | the next turn | told after the person's answer | reopens where the fact asks it to go on | told nothing (`ReopenTelling`'s rule) |
+| Daoris · urgent | next step, as Daoris's words | next step | held for the turn's end, then its next prompt | the next turn | its answer where the person's own press made the fact (a reopen, a go-on), as today; otherwise told after the person's answer | reopens where the fact asks it to go on | told nothing (`ReopenTelling`'s rule) |
 | Daoris · ordinary | held for the turn's end, then its next prompt | the same | the same | the next turn | as above | as above | as above |
 | Solicited answer · urgent | next step, marked as the answerer's claim | next step | held for the turn's end, then its next prompt (once, §2.3) | the next turn | goes on beside the person's answer | reopens once | to the person, with its code |
 | Solicited answer · ordinary (the opinion and a quest's outcome always) | held for the turn's end, then its next prompt (once) | the same | the same | the next turn (a conversation's opinion: the person, as today) | as above | reopens once | as above |
-| Unsolicited claim · urgent | next step, as Daoris's words around the claim | next step | held for the entry's next part; the person may pass it on (§3.1) | never a turn: the connector's next answer says it waits | the entry's next part | the entry's next part | the poster's machine's driver, by the same rule |
-| Unsolicited claim · ordinary | never into the turn: the connector's next answer says it waits; the entry's next part | the same | the same | the same | the same | the same | as above |
+| Unsolicited claim · urgent | next step, as Daoris's words around the claim; the race at a turn's end narrowed and named (§2.3) | next step | as ordinary, marked urgent: no earlier delivery; the person may pass it on (§3.1) | never a turn of its own: the connector's next answer says it waits | the entry's next part, or the agent's own read | the same | the poster's machine's driver, by the same rule |
+| Unsolicited claim · ordinary | never into the turn: it rides a prompt the run sends anyway at the turn's end; else the connector's next answer says it waits, and the entry's next part or the agent's own read takes it | the same | the same | the same | the same | the same | as above |
 | The person's channel message | as the person's words at their level, to the entry's running part | the same | the same | the same | to its repository: its answer | to its repository: reopens; to everyone: the next part | as above |
 | A quest | never a message: a further part alongside (D167), or D79's resume of an asker waiting on it | | | | | | |
 | A meeting's message | the protocol's barrier: the next round's packet, at whatever level; no level pierces a round | | | | | | |
@@ -316,8 +320,8 @@ unchanged.
 - A helper's urgent answer reaches its asker's next step.
 - An ordinary channel post waits for a natural point.
 - Nothing undelivered vanishes.
-- Every queue survives a restart (§6).
-- The four receipts are told apart (§7).
+- A word survives a restart, or is shown as uncertain, and is never sent twice by Daoris (§6).
+- The receipts are told apart where the door can observe them (§7).
 
 ## 6. Kept before told: the durable queue
 
@@ -327,46 +331,82 @@ own record: its `said` list, on the local host, machine-only (D47 §4).
 
 | Path | The message's store | Its queue to one session | Read back after a restart by |
 |---|---|---|---|
-| The person's words | the record's `said` | `said`, which now takes words for a **running** record too, not only for a parked or ended one | the shell, at its come-up: the driven session's inbox and the conversation's turns are filled again from `said`, in order, by id (MSG1d2) |
+| The person's words | the record's `said` | `said`, which now takes words for a **running** record too, not only for a parked or ended one | the session's one dispatcher, at the shell's come-up: a word never attempted goes in its order, and one attempted and not taken is uncertain (below; MSG1d2) |
 | Daoris's words | `said`, with `from: daoris` (FABRIC-CLOSE1c17) | `said` | the same |
 | A helper's answer | `helpers/<id>.answer.json` and `.state.json` | `said` with `helper` (built) | built: `ChatHelperWords`' come-up, the planner's go-on |
 | An opinion's findings | the opinion's store and `delivered.json` | `said` with `by` (built) | built |
-| A channel message | the `channel` table | the channel itself, past the entry's mark, which moves only once a part took the message | the mark, and the part's record events (§7), which say whether this part already took it |
+| A channel message | the `channel` table | the channel itself: what its entry has not acknowledged by the message's id | the entry's acknowledgments, kept by message id beside its mark (§9) |
 | A quest | the quest store | a part, or D79's resume | built |
 | A meeting's message | `transcript.json` and the packets | the next round's packet | built (D177's restart trap) |
 
-- **`said` is kept before the inbox holds it.** The driver keeps the word on the record first (one write to the local
-  host). Only then does it hold or send the word, and tell the page. The in-memory queues (`DrivenInbox._held`,
-  `ChatTurns._waiting`) become views of `said`.
-- **A word leaves `said` by id once it is on the wire**, through the taken door as a helper's answer does today
-  (`ChatHelperWords.TakeOffAsync`). A word sent and not yet taken is not sent again after a restart. It reads *It may
-  have read this; its answer was not kept* (`work.conversation.lost`).
+- **A word is kept once, by its producer's key.** The say door takes a `key` from whoever produces the word. The page's press
+  gives one key per press. Daoris's fact gives its own: the quest and the reopen's machine and sequence, or the step and the
+  submission it grew from. A channel message gives its id, a helper's answer its ask's id, an opinion's findings the opinion's
+  id. A word whose key the record already holds, waiting or taken, is answered as the word kept, and no second copy is made.
+  So a producer's retry is safe: `ReopenTelling` says, then marks, and a crash between the two keeps one word, not two.
+- **`said` is kept before anything holds it, and one dispatcher drains it.** The driver keeps the word on the record first,
+  appended in one statement as today, and only then tells the page. Each session has one dispatcher. It reads `said` in its
+  order, and holds, sends or steers each word by its level and the door. No caller holds or sends a word itself once its own
+  write returns: two writes that return out of order would reorder the queue. The in-memory queues (`DrivenInbox._held`,
+  `ChatTurns._waiting`) become the dispatcher's views of `said`. The ledger's exclusive take (`SessionLedger.cs:727-765`)
+  stays, so a take never rewrites the list under an append.
+- **Each attempt is marked before the wire.** The dispatcher marks the word's `attempt` on `said` in one statement, writes
+  the word to the harness, and records *sent* when the write returns. *Sent* is the write's return, never the prompt's answer:
+  `SendPromptAsync` completes only with the answer. The word leaves `said` by id once the door confirms it *taken*, or once
+  *sent* where the door cannot confirm (§7). Its take-off is awaited, in order, never fired and forgotten as a helper's answer's
+  is today (`ChatHelperWords.cs:54`).
+- **Across a restart: at most once without the person, and never silently.** The wire's write and the receipt after it are not
+  one atomic step, and no harness drops a repeated prompt by its id. So at the come-up, a word with no attempt is held and goes
+  in its order. A word with an attempt and no *taken* is **uncertain**, and Daoris never sends it again, since the harness may
+  hold it. It leaves `said` with the receipt *uncertain* and reads *It may have read this; its answer was not kept*
+  (`work.conversation.lost`). The person's own word offers *Say it again*, which keeps a new word under a new key. Daoris's
+  words and a solicited answer show the same line on the person's page, and nothing says them again unasked.
 - **A running record with words on `said` does not conclude** while the person's or Daoris's words wait (D137 §2). A
   solicited answer extends it once. Nothing else holds it.
 - **The words held while a session winds up, or while a take runs**, keep the held-words file (`SessionWords.cs:93-96`,
   HANDWORDS1), since they must not land on a record that is ending. The rest of what it holds moves to `said`.
-- **The channel's mark moves on taking**, not on holding (`ChannelReach.cs:169-178` today). The in-memory `_reached` map
-  gives way to the part's record events, which the look reads once per part. A message taken by this part is not handed
-  to it again, and a new part is handed what its entry has not taken.
+- **The channel delivers by identity, and its mark is for display.** Each entry's acknowledgments are kept by message id
+  (§9): `taking` (a part claimed it), `sent`, `taken`, `read` (the agent's own `channel_read` returned it whole) and `partly`
+  (a start's packet carried it cut, or counted it among the older ones left out). An entry is handed a message it has neither
+  taken nor read, whatever its moment, so a message mirrored late, or at the mark's very moment, is handed all the same. An
+  ordinary message waiting while a later urgent one is taken keeps its place: each has its own row, and neither is skipped. The
+  in-memory `_reached` map gives way to these rows.
+- **Every hand that moved the mark writes acknowledgments instead.** The look writes them for what a part claimed and took. A
+  part's start writes `sent` for each message its packet carried whole, then `taken` with the start's first prompt, and
+  `partly` for each it cut or left out: those are handed again to a new part, and the agent reads them whole with
+  `channel_read`. `channel_read` writes `read` for each message it returns whole. That is the agent's own call, so an answer
+  lost on its way is a failed call the agent makes again with `since`. The mark is still moved, to the oldest message the
+  entry has not acknowledged, for the page's unread counts and for a host from before.
+- **One part takes a message.** D167's amendment lets an entry hold several live parts. They are tried newest first, as the
+  look's selector picks the newest today (`ChannelReach.cs:74-92`), and the first whose door takes the message at its level
+  claims it. The claim is one statement that succeeds only where the entry holds no acknowledgment of the message, or only
+  `partly`. A second part's claim finds the row and takes nothing. An alongside part reads it with `channel_read` at its own
+  point. A part is never handed a message twice. A claim left at `taking` by a restart is handed to the entry's next part, as a
+  new conversation, never again to the same one.
 
 ## 7. Four receipts, each recorded where
 
-ADR-D's states, as Daoris can observe them. **Acted upon means answered, never obeyed**: Daoris cannot know whether an
-agent did what a message asked, and it does not claim to.
+ADR-D's states, as Daoris can observe them, and only where it can. **Acted upon means answered, never obeyed**: Daoris
+cannot know whether an agent did what a message asked, and it does not claim to. **A state is shown only where it was
+observed**: a door that cannot confirm a word taken stops at *sent* (§3.0), and the page never shows a *taken* it did not see.
 
 | State | en / zh | Means | Recorded, for a word to a session | Recorded, for a channel message |
 |---|---|---|---|---|
 | **queued** | held / 已暂存 | kept, and waiting for its point | on `said`, and the record's `user` event with `reaches` and the new `level`, shown at once (D136 §3) | the `channel` row (posted) |
-| **acknowledged** | sent / 已发出 | it left Daoris: the prompt, the steer or the resume's opening is on the wire | a receipt event under the word's id, `sent`, written when the door's send returns; the word leaves `said` | the part's receipt event, under the message's id |
-| **delivered** | taken / 已收下 | the agent took it into its conversation | the word again under its id as that turn's ask (D136 §3); for a steer, where it was answered `injected` | the same event on the part's record; the entry's mark moves through it |
-| **acted upon** | answered / 已回应 | the turn that took it ended with an answer, or a correlated reply came | a receipt event, `answered`, when the turn that took it ended `end_turn`; and the reply's id where one is correlated: a channel reply's `re`, `helper_answer`, `opinion_answer`, `quest_respond` | the reply's `re`, and the part's receipt |
+| **acknowledged** | sent / 已发出 | the write to the harness returned: the prompt, the steer, the start or the resume's opening | `sent` under the word's id, when the write returns, never when the prompt is answered | the entry's acknowledgment `sent` |
+| **delivered** | taken / 已收下 | the door confirmed the agent took it | written only on the door's word: a steer answered `injected`; a queued prompt the harness handed its turn to (STEER1's answer); a prompt to an idle session, at the first update of its turn; the native conversation, at the turn's first event after the line; the native run, at its first event. Today's *taken*, written before the wire for a prompt to an idle protocol session (`Acp.cs:1110-1119`), moves after it | the entry's acknowledgment `taken` |
+| **acted upon** | answered / 已回应 | the turn that took it ended with an answer, or a correlated reply came | a receipt event, `answered`, when the turn that took it ended `end_turn`; and the reply's id where one is correlated: a channel reply's `re`, `helper_answer`, `opinion_answer`, `quest_respond` | the reply's `re`, and the entry's acknowledgment |
 
-Two more outcomes close a word without the last state. *Not reached* (未送达) means it expired, or the record can never go
-on (§4.3). *Taken back* means the person withdrew it, the existing `work.conversation.withdrawn` (*Taken back before it
-was sent.* / 发送前已收回。).
+The channel has two more states of its own, neither of them *taken*: **read** (已读取), where the agent's own `channel_read`
+returned it whole, and **partly handed** (部分送达), where a start's packet carried it cut, or counted it among the older
+ones left out (§6).
+
+Three outcomes close a word without the last state. *Uncertain* (可能已读) means it was attempted before a restart and never
+confirmed taken (§6). *Not reached* (未送达) means it expired, or the record can never go on (§4.3). *Taken back* means the
+person withdrew it, the existing `work.conversation.withdrawn` (*Taken back before it was sent.* / 发送前已收回。).
 
 **Who sees them.** The page shows them on the conversation and on the ask's channel (§8). `channel_read` answers a poster
-the receipts of its own messages, per addressed repository: *waiting*, *taken* or *not reached*. The machine log keeps
+the receipts of its own messages, per addressed repository: *waiting*, *read*, *taken* or *not reached*. The machine log keeps
 none: these are the record's facts, not measurements.
 
 ## 8. How it shows
