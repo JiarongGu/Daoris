@@ -187,6 +187,9 @@ from git's own files, keys a file under the home's `locks/heavy/` whose open han
 behind whom and how long from the holder's record beside it). Each gate starts suspended and joins the run's kill-on-close job
 before it runs, writing to the run's own output (`HeavyStep`, `ProcessJob.Create`); a pass, a failure and a stop alike end the
 job and wait until it is empty before the slot goes, and the next holder ends a job a dead holder left. The verb holds no home lease.
+A driven session is told to use it (`HeavyTold`, HEAVYRUN1b1): where its repository marks a heavy gate and an install's
+`daoris-driver` launcher is beside the home, which its PATH starts with, its instruction says, before the close, to run focused
+checks while it works and those gates once, at its end, through `run-heavy`, never whole another way.
 
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,

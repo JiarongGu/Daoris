@@ -18,6 +18,9 @@ with the version and date at release.
   fails. A second run of the same repository, from its checkout or any tree of it, waits rather than running beside the first,
   and says whose run it waits behind and for how long. Everything a gate starts, a build's lingering workers included, is ended
   before the next run begins, whether the run passed, failed, was stopped with Ctrl+C or was killed.
+- In an installed Daoris, a session started in a repository that marks heavy gates is told to run the checks that cover its
+  change while it works, and those gates once, at its end, through `daoris-driver run-heavy`, so two sessions finishing
+  together take turns. A repository that marks none is told nothing new.
 - A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
   test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
   call the rules refused no longer reads as still running.
