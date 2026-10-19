@@ -2495,7 +2495,7 @@ function duration(ms) {
  * One command through the platform shell, as the devkit runs a declared gate, its output into `fd`.
  * The gate runners take it as a parameter, so their logic is tested without starting a process.
  */
-export function runStep(command, cwd, fd) {
+export function runStep(command, cwd, fd, { raise = null } = {}) {
   writeSync(fd, `$ ${command}\n`);
   return new Promise((done) => {
     let settled = false;
@@ -2506,6 +2506,9 @@ export function runStep(command, cwd, fd) {
       }
     };
     const child = spawn(command, { cwd, shell: true, stdio: ['ignore', fd, fd], windowsHide: true });
+    // FAMILYFAIL1b: a rehearsal's step is raised to normal at once, so what it starts inherits normal. The shell has not yet
+    // created its own child when `spawn` returns, so the race is small. `raise` says its own failure once.
+    if (raise && child.pid) raise(child.pid);
     child.on('error', (error) => {
       writeSync(fd, `could not start: ${error.message}\n`);
       finish(127);
@@ -2556,7 +2559,7 @@ function runSteps(root, gate, log, step, command = gate.run) {
       const beforeCode = await step(before, root, fd);
       writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
     }
-    const exit = await step(command, cwd, fd);
+    const exit = await step(command, cwd, fd, { raise: isRehearsalGate(gate) ? rehearsalRaise() : null });
     writeSync(fd, `\n(exited ${exit})\n`);
     return exit;
   });
@@ -3707,7 +3710,32 @@ export function startBesideRun({ setPriority = osSetPriority, env = process.env,
   const failed = lowerPriority(setPriority);
   if (failed) say(`the run could not lower its priority (${failed}); it goes on at the priority it has`);
   Object.assign(env, BESIDE_ENVIRONMENT);
+  raiser = failed ? null : raiseTo(setPriority, say);
 }
+
+/**
+ * The rehearsals' bounds are wall-clock and starved below normal (FAMILYFAIL1b, D180): a rehearsal's step is raised to
+ * normal and what it starts inherits that. A failure to raise is said once and the step goes on.
+ */
+function raiseTo(setPriority, say) {
+  let told = false;
+  return (pid) => {
+    try {
+      setPriority(pid, osConstants.priority.PRIORITY_NORMAL);
+    } catch (error) {
+      if (!told) say(`the run could not raise a rehearsal to normal priority (${error.message}); it goes on lowered`);
+      told = true;
+    }
+  };
+}
+
+let raiser = null;
+
+/** The raise a run beside hands a rehearsal's step; null in any run that did not lower itself. */
+export const rehearsalRaise = () => raiser;
+
+/** A rehearsal gate: what the Process lane names `npm run rehearse*` (the rehearse, rehearse-family and deployment gates). */
+const isRehearsalGate = (gate) => isProcessLane(gate) && gateKind(gate.run) === 'rehearsal';
 
 /**
  * A run of main's tip (`commit`; null for a run given a named commit, which is never superseded) asks, before each gate,

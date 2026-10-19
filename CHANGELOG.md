@@ -10,6 +10,11 @@ with the version and date at release.
   minutes on a fresh `npm ci`, and is told to skip it. The tree's opening names what was copied, or says why a project was
   not: its lockfile moved, pnpm or yarn installs it, the checkout has not installed it, or git does not ignore it there. A
   copy, never a link, so nothing the session installs or builds reaches your checkout.
+- A driven session asks you only what it cannot decide: a credential or a sign-in, a choice the task leaves to you, or a
+  go-ahead (for an act outside its repository or on a production system, as before, or one its repository or task names). A
+  name, or which of two sound ways, it now decides itself and says under *Readings* in its closing note, for you to change in
+  review. It asks in its last message, and goes on in the same conversation when you answer. A session that asks again after
+  your answer is announced again, and one you had already answered is not.
 - Ask Daoris can act on this machine itself, if you choose. `daoris-driver help mode full` runs it with full access from its
   next start, in its agent's own mode that asks nothing (Claude Code's `bypassPermissions`, Codex's full access). It then has a
   shell, file edits, Daoris's commands and every plugin server here, and your own denies still hold where its agent takes them.

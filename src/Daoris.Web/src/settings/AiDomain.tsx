@@ -1,9 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useStatus } from '../data/queries';
-import { useDriver, useHarnesses, useSetHelper, useSetIntake, useStarts } from '../bridge/shell';
+import {
+  helpModeOf, useDriver, useHarnesses, usePlugins, useSetHelper, useSetHelpMode, useSetIntake, useStarts,
+} from '../bridge/shell';
 import { doorLabel } from '../agents/tools';
 import { failure, type Notify } from '../design/ui';
 import { workspacesOf } from '../data/workspaces';
+import { useModeChoice } from '../help/HelpModePicker';
+import { fullAdds } from '../help/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
 import { namer } from './namer';
 
@@ -36,6 +40,15 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
   // The circles *What a start runs on* names, spelled the same way — so both cards read one answer.
   const workspaces = workspacesOf(registry.data ?? []);
   const answer = useStarts(workspaces);
+  // Ask Daoris's access (HELPMODE1b, D183 point 2), by the panel chip's rule: restricted at once, full access on its confirmation,
+  // which names the servers the plugins offer it and wait for an approval, read only while it asks.
+  const setHelpMode = useSetHelpMode();
+  const helpMode = helpModeOf(driver.data?.helpMode);
+  const choice = useModeChoice(helpMode, (mode) => setHelpMode.mutate({ mode }, {
+    onSuccess: () => notify(t(mode === 'full' ? 'settings.ai.helpMode.full' : 'settings.ai.helpMode.restricted')),
+    onError: failure(notify),
+  }));
+  const plugins = usePlugins({ enabled: choice.confirming });
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   // An agent a person can name here is a way in this machine HAS: one not installed would hold every
@@ -77,6 +90,19 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
               : t('settings.ai.helper.cleared')),
             onError: failure(notify),
           }),
+          full: driver.data.helpMode !== undefined && helpMode === 'full',
+        }
+        : undefined}
+      // Ask Daoris's access: absent on a shell older than the mode, which offers no choice.
+      access={driver.data && 'helpMode' in driver.data
+        ? {
+          mode: helpMode,
+          confirming: choice.confirming,
+          adds: plugins.isSuccess || plugins.isError ? fullAdds(null, plugins.data?.plugins) : null,
+          busy: setHelpMode.isPending,
+          onPick: choice.pick,
+          onEnable: choice.enable,
+          onCancel: choice.cancel,
         }
         : undefined}
     />

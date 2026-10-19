@@ -95,8 +95,8 @@ public sealed class LinesRoutes(DriverContext context)
 
     /// <summary>
     /// What <c>LINES</c> answers for <paramref name="lines"/>: each repository's line, and how its work lands, the language its
-    /// sessions write in, where its work is reviewed, which other agent reads it, what a helper does and how its work is committed,
-    /// each as it resolves from <paramref name="config"/> and where it was set, in arrays keyed by repository and workspace. The lines
+    /// sessions write in, where its work is reviewed, which other agent reads it, what a helper does, how its work is committed and
+    /// the access setup its sessions start under, each as it resolves from <paramref name="config"/> and where it was set, in arrays keyed by repository and workspace. The lines
     /// slice pushes each repository's rows of it (PUSH1b1, D182): one builder for both doors, so the pull and the push cannot drift.
     /// </summary>
     /// <param name="adapters">The loop's agents, the machine's plugins among them, which an opinion's <c>sameAgent</c> is judged by.</param>
@@ -163,6 +163,17 @@ public sealed class LinesRoutes(DriverContext context)
                 .ToArray(),
             Commits = lines.Select(line => (line, commits: CommitRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = CommitWire(pair.commits.Rule), pair.commits.Source })
+                .ToArray(),
+            // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184
+            // point 1): the driver's resolution, never null, `default` where nothing is set, so the page shows where each came from.
+            Access = lines.Select(line => (line, access: AccessRules.Resolve(config, line.Repository, line.Workspace)))
+                .Select(pair => new
+                {
+                    pair.line.Repository,
+                    pair.line.Workspace,
+                    pair.access.Full,
+                    Pauses = pair.access.Pauses.Select(pause => new { pause.Pause, pause.Value, pause.Source }).ToArray(),
+                })
                 .ToArray(),
         };
     }
@@ -839,6 +850,37 @@ public sealed class LinesRoutes(DriverContext context)
         _context.Change(config => CommitRules.Apply(config, edit));
         return DriverRoutes.State(_loop);
     }
+
+    /// <summary>
+    /// One change to a session access setup (AUTONOMY1a, D184 point 1), the setup page's half of <c>daoris-driver access</c> over the
+    /// same keys: <c>repository</c>, <c>workspace</c> or <c>machine: true</c>, and <c>access</c>, <c>"full"</c>, the pauses it sets
+    /// (a null value taking one back to the level above) or null to clear, judged by <see cref="AccessRules.Apply"/> before anything is
+    /// written. Full access is the person's press alone: no proposal names it (D184's rejected options). It reads nothing else, so it
+    /// waits for nothing; what each repository resolves to moves under the driver's key, so the lines slice pushes it again.
+    /// </summary>
+    [DriverRoute("SET_ACCESS")]
+    [Publishes("SET_ACCESS", Chosen)]
+    private object? SetAccess(IpcRequest request)
+    {
+        var edit = AccessRules.EditOf(request.Payload ?? default);
+        // The refusals come first, before anything is written.
+        AccessRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
+        _context.Change(config => AccessRules.Apply(config, edit));
+        return DriverRoutes.State(_loop);
+    }
+
+    /// <summary>
+    /// A level's access setup as the bridge carries it (AUTONOMY1a): whether it is full access, and the pauses it names in their order,
+    /// each with its value, as rows. None set is no pause and not full, which is what setting nothing means.
+    /// </summary>
+    internal static object AccessWire(AccessSetting? setting) => new
+    {
+        Full = setting?.Full ?? false,
+        Pauses = setting is null || setting.Full
+            ? []
+            : AccessRules.Pauses.Where(pause => setting.Pauses.ContainsKey(pause.Name))
+                .Select(pause => new { Pause = pause.Name, Value = setting.Pauses[pause.Name] }).ToArray(),
+    };
 
     /// <summary>A helpers rule as the bridge carries it (DOORS1b): its mode, and the agents in the order they are tried.</summary>
     internal static object HelperWire(HelperRule rule) => new { rule.Mode, rule.Agents };

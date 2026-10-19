@@ -548,10 +548,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// ledger is not told, and the machine log marks the session's start.
     /// </param>
     /// <param name="from">The session this one carries on, why and who asked (MIXAGENT1a-iii), for its record; null for none.</param>
+    /// <param name="access">
+    /// The access setup this start resolved (AUTONOMY1a, D184 point 1), each pause with its value, for its record, which keeps it on this
+    /// machine alone; null for none.
+    /// </param>
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? harnessVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
-        ContinuedFrom? from = null)
+        ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null)
     {
         var body = WriteJson(writer =>
         {
@@ -569,6 +573,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             // from. Observed here for the same reason as the two above: only this side has a checkout.
             if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
             WriteFrom(writer, from);
+            // The setup it starts under (AUTONOMY1a), in the pauses' order: resolved on this side, which holds the driver's file.
+            if (access is { Count: > 0 })
+            {
+                writer.WriteStartObject("access");
+                foreach (var (pause, value) in access) writer.WriteString(pause, value);
+                writer.WriteEndObject();
+            }
+
             writer.WriteEndObject();
         });
 

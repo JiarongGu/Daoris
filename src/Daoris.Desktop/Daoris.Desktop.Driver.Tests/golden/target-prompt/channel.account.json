@@ -1,5 +1,5 @@
 {
-  "chars": 5142,
+  "chars": 5353,
   "sections": [
     {
       "name": "quest",
@@ -36,14 +36,14 @@
     {
       "name": "asking",
       "source": "driver",
-      "said": "asking another repository, and stopping for the person: 940 characters, the driver's own words",
-      "chars": 940
+      "said": "asking another repository, and stopping for the person: 1,141 characters, the driver's own words",
+      "chars": 1141
     },
     {
       "name": "closing",
       "source": "driver",
-      "said": "the closing note's two lists, each item naming its source: 655 characters, the driver's own words",
-      "chars": 655
+      "said": "the closing note's two lists, each item naming its source: 665 characters, the driver's own words",
+      "chars": 665
     },
     {
       "name": "proposing",

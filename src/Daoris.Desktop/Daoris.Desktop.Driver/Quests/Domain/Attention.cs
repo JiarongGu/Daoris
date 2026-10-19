@@ -154,6 +154,17 @@ public sealed class AttentionWatch
     /// <summary>The sessions whose state is being remembered — bounded by what is active.</summary>
     public IReadOnlyList<string> Watching => _seen is null ? [] : [.. _seen.Keys.Order(StringComparer.Ordinal)];
 
+    /// <summary>What a park the person answered is seen as: no longer waiting on them, though its record is still parked.</summary>
+    private const string AnsweredPark = "answered";
+
+    /// <summary>
+    /// A session's state as this watch compares it: a park the person answered waits on nobody (ANSWER1c) until the look takes it
+    /// up (ANSWER1b), so it is seen apart from one that waits, and the same record parked again unanswered has asked a new question,
+    /// said though no look saw it working between (AUTONOMY1e, D184 point 4).
+    /// </summary>
+    private static string Seen(SessionView session) =>
+        SessionStates.IsParked(session.State) && session.Answer is not null ? AnsweredPark : session.State;
+
     /// <summary>
     /// What this tick is worth saying, in the order it was found.
     /// </summary>
@@ -169,8 +180,7 @@ public sealed class AttentionWatch
     /// </param>
     public IReadOnlyList<AttentionEvent> Observe(TickReport report, IReadOnlyList<QuestPark>? parks = null)
     {
-        var now = report.Active.ToDictionary(
-            session => session.Id, session => session.State, StringComparer.Ordinal);
+        var now = report.Active.ToDictionary(session => session.Id, Seen, StringComparer.Ordinal);
 
         var previous = _seen;
         _seen = now;
@@ -187,7 +197,7 @@ public sealed class AttentionWatch
 
         foreach (var session in report.Active)
         {
-            if (!SessionStates.IsParked(session.State)) continue;
+            if (!SessionStates.IsParked(Seen(session))) continue;
             if (previous.TryGetValue(session.Id, out var was) && SessionStates.IsParked(was)) continue;
 
             events.Add(new AttentionEvent(

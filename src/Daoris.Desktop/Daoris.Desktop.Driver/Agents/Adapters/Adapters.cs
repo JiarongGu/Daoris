@@ -456,8 +456,9 @@ public static class TargetPrompt
     /// Where a question goes, in the order a session should reach for each (WSSETUP9, D124 §6.1): to the
     /// sources first, which settle most questions; then ask and wait (D79), since what another repository
     /// knows is asked of it, never guessed, and, where the session may not read across (D107), never read
-    /// out of it; and only then to the person, for what no source holds. A session that asks or stops
-    /// commits, ends its turn and keeps the quest, and the driver starts it again here with the answer.
+    /// out of it; and only then to the person, for what it cannot decide (AUTONOMY1e, D184 point 4). A session that asks
+    /// another repository commits, ends its turn and keeps the quest, and the driver starts it again here with the answer; one
+    /// that asks the person does the same, and their answer goes on in its own conversation (ANSWER1a).
     /// Beside the look, that the person's words met second-hand are a reading (KNOWUSE1d, D135 §5); last,
     /// how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart from the
     /// readings the session took, each naming its source. Each its own section of the account (CONTEXT1): the look,
@@ -470,6 +471,8 @@ public static class TargetPrompt
     /// reviewed with the diff, so the person corrects it in review rather than being stopped by it. Those
     /// readings then reached the person in closing notes, mixed with the production yeses under one heading
     /// and resting on a ticket line none of them quoted, so the close now keeps them apart and cites each.
+    /// "A preference nothing records" still stopped sessions for what they could decide, a name or which report a page shows,
+    /// and parks waited 7 to 57 minutes on them (AUTONOMY1e): what it can reasonably decide it now decides and records.
     /// </remarks>
     /// <param name="lead">What comes before the look: the line break after the lines above it.</param>
     private static IEnumerable<Piece> AskingPieces(SessionTarget target, string lead) =>
@@ -494,11 +497,15 @@ public static class TargetPrompt
             + $"characters), commit what you have so far, then respond to `#{target.QuestId}` with `wait`\n"
             + "on that new quest's id, and end your turn. The quest stays yours, and you are started again here,\n"
             + "in this tree, with its answer.\n\n"
-            + "Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act\n"
-            + $"outside this repository or on a production system, a preference nothing records.{OnceOnTheAsk(target)} Then say exactly\n"
-            + "what and why, and what you looked at, in your last message, commit what you have, and\n"
-            + "end your turn with the quest still taken, rather than declining. The person answers, and you are\n"
-            + "started again here, in this tree, with their words.\n\n"),
+            // AUTONOMY1e: every go-ahead asked before is still asked, and one the repository or the quest names is too, since
+            // nothing loosens by itself (D184 point 5).
+            + "Decide whatever you reasonably can, such as a name or which of two sound ways: say it under\n"
+            + "**Readings** with why, and keep going. Ask the person only for what you cannot decide: a\n"
+            + "credential, an account or a sign-in; a choice the quest or the person's words leave to them; a\n"
+            + "go-ahead for an act outside this repository or on a production system, or for one this repository\n"
+            + $"or the quest says needs it.{OnceOnTheAsk(target)} Ask it in your last message, with why and what\n"
+            + "you looked at; commit what you have, and end your turn with the quest still taken, rather than\n"
+            + "declining. The person answers in this conversation, and you go on here with their words.\n\n"),
         new(HandedSections.Closing, Closing),
     ];
 
@@ -739,8 +746,9 @@ public static class TargetPrompt
     private const string Closing =
         """
         Your closing note, and your last message whenever you stop, keeps two lists apart. Under **Needs
-        you**, only what the person alone can give — a go-ahead, an agreement this repository's own documents
-        require, a sign-in, a preference nothing records — each with why, and what you looked at first.
+        you**, only what you could not decide — a go-ahead, an agreement this repository's own documents
+        require, a credential or a sign-in, a choice left to the person — each with why, and what you looked
+        at first.
         Under **Readings**, everything else you decided or took on the evidence, each said as your reading
         rather than asked as a question, and each naming what it rests on: the line of the quest or of the
         ticket it links, quoted; a document's path and line; or a code path. An item that names nothing it

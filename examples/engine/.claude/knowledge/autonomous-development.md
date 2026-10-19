@@ -56,9 +56,11 @@ why.
 - **Look before you ask.** A question the task's own material, the repository's documents, code and history, or
   a neighbouring repository's documents you may read can settle is not a question for the person: settle it,
   and keep the evidence for the hand-over. Where the evidence leans one way without settling it, take that
-  reading and state it at the checkpoint, where it is reviewed with the rest of the outcome. Only what no source
-  holds and only the person can give reaches them mid-run: a sign-in, a go-ahead for an act outside the
-  repository or on a live system, a preference nothing records.
+  reading and state it at the checkpoint, where it is reviewed with the rest of the outcome. A choice nothing
+  settles that review can still change, such as a name or which of two sound ways, is the agent's to make and
+  state the same way. Only what the agent cannot decide reaches the person mid-run: a credential or a sign-in,
+  a choice the task leaves to them, a go-ahead for an act outside the repository, on a live system, or one the
+  repository says needs it.
 - **A step that genuinely needs a human choice surfaces as a decision, not a pause.** State the
   options, the recommendation and the reason at the checkpoint. A question arriving with its
   analysis is decided in seconds; a bare "may I?" in the middle of a run is a stall that teaches

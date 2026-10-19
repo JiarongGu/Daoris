@@ -70,7 +70,7 @@ interface Proc { pid: number; exe: string; command: string }
 interface Folder { path: string; link: boolean; git: boolean; processes?: Proc[]; processError?: string }
 interface Slow { name: string; ms: number; tests: number }
 interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number; slowest?: Slow[]; trx?: string }
-type Step = (command: string, cwd: string, fd: number) => Promise<number>;
+type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null }) => Promise<number>;
 interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
 interface Verdict { gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null }
@@ -184,6 +184,8 @@ const tool = await import(
   lowerPriority: (setPriority?: (pid: number, priority: number) => void) => string | null;
   BESIDE_ENVIRONMENT: Readonly<Record<string, string>>;
   startBesideRun: (options?: { setPriority?: (pid: number, priority: number) => void; env?: Record<string, string | undefined>; say?: (line: string) => void }) => void;
+  /** FAMILYFAIL1b: the raise a run beside hands a rehearsal's step, null in a run that did not lower itself. */
+  rehearsalRaise: () => ((pid: number) => void) | null;
   watchTip: (commit: string | null, resolveTip?: () => string | null) => { check: () => boolean; superseded: { from: string; to: string } | null };
   supersededLines: (superseded: { from: string; to: string }, ran: string[], left: string[]) => string[];
   besideOutcome: (code: number, superseded: { from: string; to: string } | null) => { passed: boolean; superseded: string | null };
@@ -3243,6 +3245,68 @@ test('a gate step started after the run lowered itself runs at the lowered prior
     assert.match(readFileSync(log, 'utf8'), new RegExp(`priority=${lowered}\\b`));
   } finally {
     os.setPriority(0, before);
+    fx.cleanup();
+  }
+});
+
+// FAMILYFAIL1b: the rehearsals' bounds are wall-clock, so in a run beside they start at normal priority
+
+test('a run beside raises a rehearsal step\'s child to normal, touches no suite\'s, and says once when it cannot', async () => {
+  const fx = makeFixture('merge-branch-raise');
+  try {
+    const asked: [number, number][] = [];
+    tool.startBesideRun({ setPriority: (pid, priority) => { asked.push([pid, priority]); }, env: {}, say: () => {} });
+    const raise = tool.rehearsalRaise();
+    assert.ok(raise);
+    raise(4242);
+    assert.deepEqual(asked.slice(-1), [[4242, os.constants.priority.PRIORITY_NORMAL]]);
+
+    // runGate hands a rehearsal's step the raise and a suite's none.
+    const given: Record<string, boolean> = {};
+    const step: Step = async (command, _cwd, _fd, options) => { given[command] = Boolean(options?.raise); return 0; };
+    await tool.runGate(fx.root, planned('rf', 'npm run rehearse:family'), fx.root, { step });
+    await tool.runGate(fx.root, planned('s', 'dotnet test src/S'), fx.root, { step });
+    assert.deepEqual(given, { 'npm run rehearse:family': true, 'dotnet test src/S': false });
+
+    // A run that could not lower itself raises nothing; one whose raise fails says so once.
+    tool.startBesideRun({ setPriority: () => { throw new Error('denied'); }, env: {}, say: () => {} });
+    assert.equal(tool.rehearsalRaise(), null);
+    const said: string[] = [];
+    let lowered = false;
+    tool.startBesideRun({ setPriority: (pid) => { if (pid !== 0) throw new Error('denied'); lowered = true; }, env: {}, say: (line) => said.push(line) });
+    assert.ok(lowered);
+    const again = tool.rehearsalRaise();
+    assert.ok(again);
+    again(1);
+    again(2);
+    assert.equal(said.length, 1);
+    assert.match(said[0], /could not raise a rehearsal to normal priority \(denied\)/);
+  } finally {
+    tool.startBesideRun({ setPriority: () => { throw new Error('reset'); }, env: {}, say: () => {} });
+    fx.cleanup();
+  }
+});
+
+test('in a real spawn, a rehearsal step\'s grandchild starts at normal and a suite step\'s stays lowered', async () => {
+  const fx = makeFixture('merge-branch-raise-real');
+  const before = os.getPriority(0);
+  try {
+    assert.equal(tool.lowerPriority(), null);
+    tool.startBesideRun({ setPriority: os.setPriority, env: {}, say: () => {} });
+    const command = `node -e "require('child_process').execFileSync(process.execPath, ['-e', 'console.log(\\"grand=\\" + require(\\"os\\").getPriority())'], {stdio: 'inherit'})"`;
+    const grand = async (run: string) => {
+      const gate = planned('g', run);
+      await tool.runGate(fx.root, gate, fx.root, {
+        step: (cmd, cwd, fd, options) => tool.runStep(command, cwd, fd, options),
+      });
+      return Number(/grand=(-?\d+)/.exec(readFileSync(join(fx.root, 'g.log'), 'utf8'))?.[1]);
+    };
+    // The CI itself runs below normal, so the grandchild is compared with the constants, not the starting value.
+    assert.equal(await grand('npm run rehearse'), os.constants.priority.PRIORITY_NORMAL);
+    assert.equal(await grand('dotnet test src/S'), os.constants.priority.PRIORITY_BELOW_NORMAL);
+  } finally {
+    os.setPriority(0, before);
+    tool.startBesideRun({ setPriority: () => { throw new Error('reset'); }, env: {}, say: () => {} });
     fx.cleanup();
   }
 });

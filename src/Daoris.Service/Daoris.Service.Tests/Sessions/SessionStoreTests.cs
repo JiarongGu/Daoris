@@ -611,6 +611,26 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Equal(((string?)null, (string?)null, (string?)null), (mirrored.From, mirrored.FromWhy, mirrored.FromBy));
     }
 
+    /// <summary>
+    /// AUTONOMY1a (D184 point 1): a driven session's record keeps the access setup it started under, each pause with its value, as the
+    /// driver resolved it; a record told none keeps none. This machine's own, as the opinion is: the mirror writes none.
+    /// </summary>
+    [Fact]
+    public async Task A_record_keeps_the_access_setup_it_started_under()
+    {
+        var access = new Dictionary<string, string> { ["permissions"] = "auto", ["routing"] = "intake", ["goAheads"] = "named" };
+        var started = await _sessions.CreateAsync("q1", "Owner", "claude-code", Now, access: access);
+
+        Assert.Equal(access, started.Access);
+        Assert.Equal(access, (await _sessions.FindAsync(started.Id))!.Access);
+
+        var plain = (await _sessions.FindAsync((await Create()).Id))!;
+        Assert.Null(plain.Access);
+
+        await _sessions.MirrorAsync(started with { Id = "alice-laptop/" + started.Id, Origin = "alice-laptop" });
+        Assert.Null((await _sessions.FindAsync("alice-laptop/" + started.Id))!.Access);
+    }
+
     /// <summary>A chat is the same row with no quest in it (D49 §3).</summary>
     [Fact]
     public async Task A_chat_round_trips_with_no_quest()
@@ -694,6 +714,8 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Null(elder.Opinion);
         // …nor a session it continues (MIXAGENT1a-iii): the old reading, a session that went on from none.
         Assert.Equal(((string?)null, (string?)null, (string?)null), (elder.From, elder.FromWhy, elder.FromBy));
+        // …nor the access setup it started under (AUTONOMY1a): the old reading, a start before the setup, which ran as today's.
+        Assert.Null(elder.Access);
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);

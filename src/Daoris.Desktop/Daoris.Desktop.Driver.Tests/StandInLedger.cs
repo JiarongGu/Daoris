@@ -550,8 +550,8 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// The session an open says the new record continues, why and who asked (MIXAGENT1a-iii), kept as the service answers them on
-    /// loopback: each only where the open named it.
+    /// The session an open says the new record continues, why and who asked (MIXAGENT1a-iii), and the access setup it started under
+    /// (AUTONOMY1a), kept as the service answers them on loopback: each only where the open named it.
     /// </summary>
     internal static void Continues(JsonObject session, JsonObject open)
     {
@@ -559,6 +559,9 @@ internal sealed class StandInLedger : HttpMessageHandler
         {
             if (open[name]?.GetValue<string>() is { } value) session[name] = value;
         }
+
+        // The access setup a driven start resolved (AUTONOMY1a), kept as the service answers it on loopback.
+        if (open["access"] is JsonObject access) session["access"] = access.DeepClone();
     }
 
     /// <summary>Every record, oldest first.</summary>

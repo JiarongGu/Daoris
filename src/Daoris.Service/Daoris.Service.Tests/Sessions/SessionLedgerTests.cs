@@ -115,6 +115,27 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         static (string?, string?, string?) Link(Session session) => (session.From, session.FromWhy, session.FromBy);
     }
 
+    /// <summary>
+    /// AUTONOMY1a (D184 point 1): a driven open records the access setup its start resolved, as the driver says it. A setup that is not
+    /// a short map of words is the caller's mistake, refused before any record opens.
+    /// </summary>
+    [Fact]
+    public async Task A_driven_open_records_the_access_setup_it_started_under()
+    {
+        var quest = await Publish();
+        var access = new Dictionary<string, string> { ["permissions"] = "unrestricted", ["landing"] = "rule" };
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _ledger.OpenAsync(quest.Id, "stub", Now, access: new Dictionary<string, string> { ["permissions"] = "a word\nand a line" }));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _ledger.OpenAsync(quest.Id, "stub", Now, access: Enumerable.Range(0, 17).ToDictionary(at => $"pause{at}", _ => "on")));
+        Assert.Empty(await _sessions.ListAsync());
+
+        var opened = await _ledger.OpenAsync(quest.Id, "stub", Now, access: access);
+
+        Assert.Equal(access, (await _sessions.FindAsync(opened.Session!.Id))!.Access);
+    }
+
     [Fact]
     public async Task An_unknown_quest_is_refused()
     {

@@ -23,7 +23,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `brainstorm` | management | `cli/brainstorm.ts:5` | `service/brainstorm.ts:53` commandBrainstorm | [verb] a question put to this machine\'s agents (D176), through |
 | `remote` | management | `cli/remote.ts:5` | `service/remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
 | `agent` | management | `cli/agent.ts:6` | `agents/toolchain.ts:1622` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
-| `driver` | management | `cli/driver.ts:7` | `driver/driverconfig.ts:846` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
+| `driver` | management | `cli/driver.ts:7` | `driver/driverconfig.ts:921` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:5` | `plugins/plugins.ts:1311` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser/browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
 | `tool` | management | `cli/tool.ts:7` | `tools/toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
@@ -48,18 +48,19 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `answer` | `Program.cs:495` | `Program.cs:495` (inline) | — |
 | `sessions` | `Program.cs:506` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:186` · finish `SessionsCommand.cs:191` · decline `SessionsCommand.cs:198` · archive `SessionsCommand.cs:203` · unarchive `SessionsCommand.cs:212` · delete `SessionsCommand.cs:217` · say `SessionsCommand.cs:222` · take-back `SessionsCommand.cs:224` · reword `SessionsCommand.cs:232` · go-on-new `SessionsCommand.cs:237` · start-from `SessionsCommand.cs:242` · hand-over `SessionsCommand.cs:247` · helper `SessionsCommand.cs:254` |
 | `help` | `Program.cs:513` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:9` HelpConsole | list `HelpCommand.cs:67` · resume `HelpCommand.cs:67` · rename `HelpCommand.cs:67` · pin `HelpCommand.cs:67` · unpin `HelpCommand.cs:67` · delete `HelpCommand.cs:67` · mode `HelpConsole.cs:23` |
-| `history` | `Program.cs:521` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
-| `trees` | `Program.cs:528` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:139` · remove `TreesConsole.cs:167` · clean `TreesConsole.cs:183` · land `TreesConsole.cs:302` · hand `TreesConsole.cs:463` · state `TreesConsole.cs:527` · sync `TreesConsole.cs:245` |
-| `work state` | `Program.cs:534` | `Program.cs:534` (inline) | — |
-| `work held` | `Program.cs:540` | `Program.cs:540` (inline) | — |
-| `work recovery drop` | `Program.cs:546` | `Program.cs:546` (inline) | — |
-| `sync` | `Program.cs:552` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:56` · dismiss `SyncConsole.cs:57` · forward |
-| `plugins install` | `Program.cs:559` | `Daoris.Desktop.Driver/Plugins/PluginPackage.cs:134` PluginPackageCommand | — |
-| `update` | `Program.cs:566` | `Daoris.Desktop.Driver/Setup/UpdateCommand.cs:19` UpdateCommand | — |
-| `wiring` | `Program.cs:577` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
-| `logs` | `Program.cs:585` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
-| `plugins` | `Program.cs:592` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:559` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
-| `drive` | `Program.cs:332` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:249` DriverCommand.Read | — |
+| `access` | `Program.cs:520` | `Daoris.Desktop.Driver.Host/AccessConsole.cs:8` AccessConsole | — |
+| `history` | `Program.cs:528` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
+| `trees` | `Program.cs:535` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:139` · remove `TreesConsole.cs:167` · clean `TreesConsole.cs:183` · land `TreesConsole.cs:302` · hand `TreesConsole.cs:463` · state `TreesConsole.cs:527` · sync `TreesConsole.cs:245` |
+| `work state` | `Program.cs:541` | `Program.cs:541` (inline) | — |
+| `work held` | `Program.cs:547` | `Program.cs:547` (inline) | — |
+| `work recovery drop` | `Program.cs:553` | `Program.cs:553` (inline) | — |
+| `sync` | `Program.cs:559` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:56` · dismiss `SyncConsole.cs:57` · forward |
+| `plugins install` | `Program.cs:566` | `Daoris.Desktop.Driver/Plugins/PluginPackage.cs:134` PluginPackageCommand | — |
+| `update` | `Program.cs:573` | `Daoris.Desktop.Driver/Setup/UpdateCommand.cs:19` UpdateCommand | — |
+| `wiring` | `Program.cs:584` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
+| `logs` | `Program.cs:592` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
+| `plugins` | `Program.cs:599` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:566` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
+| `drive` | `Program.cs:332` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:254` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

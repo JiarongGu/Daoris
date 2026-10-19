@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <list type="bullet">
 /// <item><b>Reads</b>: <c>trace</c>, <c>git</c>, <c>logs</c>, <c>workflow run</c>, the lists (<c>sessions</c>, <c>history</c>,
 /// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
-/// <c>help list</c>, <c>help mode</c> naming no mode, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
+/// <c>help list</c>, <c>help mode</c> naming no mode, <c>access</c> naming no change, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
 /// the usage.</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
 /// <c>done</c>, <c>check</c> and <c>review</c>, <c>answer</c>, an ask's words, publish, close and delete, and <c>ask channel</c>.</item>
@@ -57,6 +57,8 @@ public static class VerbLeases
             "sync" => next != "status",
             // `help mode` alone says the mode; naming one writes the driver's file (HELPMODE1a1).
             "help" => next is "rename" or "pin" or "unpin" or "delete" || (next == "mode" && args.Count > 2),
+            // `access` naming no change says the setup; a change writes the driver's file (AUTONOMY1a).
+            "access" => AccessCommand.Read([.. args.Skip(1)], out _)?.Edit is not null,
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,

@@ -1003,12 +1003,20 @@ public sealed class SessionLedger(
     /// The session this one carries on from another agent's or another account's (MIXAGENT1a-iii), with <paramref name="fromWhy"/>
     /// and <paramref name="fromBy"/>; recorded as told, since the driver is the half that knows.
     /// </param>
+    /// <param name="access">
+    /// The access setup the start resolved (AUTONOMY1a, D184 point 1), each pause with its value; recorded as told, since the driver is
+    /// the half that resolves it, and judged only as a short map of words (<see cref="SessionAccess.Judged"/>).
+    /// </param>
+    /// <exception cref="ArgumentException"><paramref name="access"/> is not a short map of words; nothing is opened.</exception>
     public async Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
-        string? from = null, string? fromWhy = null, string? fromBy = null)
+        string? from = null, string? fromWhy = null, string? fromBy = null,
+        IReadOnlyDictionary<string, string>? access = null)
     {
+        // The caller's mistake is said before anything is read or held.
+        var setup = SessionAccess.Judged(access);
         var quest = await quests.FindAsync(questId.TrimStart('#'), ct).ConfigureAwait(false);
         if (quest is null)
         {
@@ -1094,7 +1102,7 @@ public sealed class SessionLedger(
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
                     harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
-                    entryOrigin: origin)
+                    entryOrigin: origin, access: setup)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(

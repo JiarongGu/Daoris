@@ -19,6 +19,11 @@ export type HelpConversationRow = {
   last: string;
   pinned: string | null;
   live: boolean;
+  /**
+   * The access mode it ran under, its record's (HELPMODE1a2, D183 point 3): `restricted` or `full`, the effective one its last
+   * start got, never the mode chosen now. Absent from a driver before it.
+   */
+  mode?: string;
   /** Whether words written to it once it ended go on in its own conversation; else a new one starts from its words. */
   resumable: boolean;
   /** The earlier conversation it started from, and what it was handed of it. */

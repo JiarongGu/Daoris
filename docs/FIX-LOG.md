@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-19 — A park answered and asking again could go unsaid, and an answered one was said (AUTONOMY1e)
+
+- **Symptom:** found reading the answer path, not seen on the install. `AttentionWatch` said a park once per move into
+  `awaiting-person`. A session the person answered and that asked again before any look saw it working raised no balloon and
+  no toast for the second question; a park the person answered before any look saw it raised one, telling them what they had
+  just done.
+- **Root cause:** an answered park stays `awaiting-person` with the words on it until the look takes it up (ANSWER1b), and waits
+  on nobody meanwhile (ANSWER1c). The watch compared states alone, so parked, answered and parked again read as one park.
+- **Fix:** the watch sees a park with an answer as its own state, `answered`, which is not a park: the move from it to an
+  unanswered park is said, and a park first seen answered is not.
+- **Verify:** `AttentionTests.An_answered_park_that_asks_again_is_said_again_though_no_look_saw_it_working` and
+  `A_park_already_answered_when_first_seen_is_not_said`, each red before the fix; the class's 36 and the other callers' fast
+  tests (`AccountLimitHoldTests`, `SignedOutWaitTests`) green after it.
+
 ## 2026-10-19 — A rehearsal's timed-out drive ran on, and one starved phase failed 22 checks (FAMILYFAIL1)
 
 - **Symptom:** the full set on 0a5c608 failed `rehearse-family` after 46 minutes (it passed on b7043d982 in 26 and on f617bc1

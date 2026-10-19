@@ -887,6 +887,44 @@ test('helpMode is read as the driver reads it, kept by every other edit, and lis
   fx.cleanup();
 });
 
+/**
+ * AUTONOMY1a (D184 points 1, 5): each repository's session access setup is the driver's `access`, `workspaceAccess` and
+ * `machineAccess`, set by `daoris-driver access` and the screen's `SET_ACCESS`. This twin reads each level as the driver's
+ * `AccessRules` does (`"full"` in any case, or the pauses it knows, a value it does not know read as today's, a null one unset, a level
+ * of another shape not read), keeps every level through every other edit as written, and writes one in the driver's shape and place.
+ */
+test('access is read as the driver reads it, kept by every other edit, and written in the driver\'s shape', () => {
+  const fx = makeFixture('driver-access');
+  const file = {
+    access: { engine: { goAheads: 'never', ' Permissions ': ' Asking ', plan: 'always' }, tools: ' Full ', odd: 'partial' },
+    workspaceAccess: { shop: 'full' },
+    machineAccess: { landing: 'sometimes', routing: null },
+  };
+  writeFileSync(at(fx), `${JSON.stringify(file, null, 2)}\n`);
+
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual(choices.access, { engine: { permissions: 'asking', goAheads: 'never' }, tools: 'full' });
+  assert.deepEqual(choices.workspaceAccess, { shop: 'full' });
+  assert.deepEqual(choices.machineAccess, { landing: 'person' });
+
+  run(['notify', 'off'], at(fx));
+  const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.deepEqual([kept.access, kept.workspaceAccess, kept.machineAccess], [file.access, file.workspaceAccess, file.machineAccess]);
+
+  // Written whole, in the driver's shape: `"full"`, or the pauses in their order; nothing where nothing is set.
+  const { source: _read, ...built } = readDriverChoices(at(fx));
+  writeDriverChoices(at(fx), {
+    ...built, access: { engine: { goAheads: 'never', permissions: 'asking' } }, workspaceAccess: {}, machineAccess: 'full',
+  });
+  const written = readFileSync(at(fx), 'utf8');
+  assert.match(written, /"access": \{\n {4}"engine": \{\n {6}"permissions": "asking",\n {6}"goAheads": "never"\n {4}\}\n {2}\},\n {2}"machineAccess": "full"/);
+  assert.equal('workspaceAccess' in JSON.parse(written), false);
+
+  writeFileSync(at(fx), '{ "access": [], "machineAccess": "partial" }\n');
+  assert.deepEqual([readDriverChoices(at(fx)).access, readDriverChoices(at(fx)).machineAccess], [{}, null]);
+  fx.cleanup();
+});
+
 test('intake needs a harness or off, and says so', () => {
   const fx = makeFixture('driver-intake-arg');
   assert.match(captureError(() => run(['intake'], at(fx))).message, /<adapter>\|off/);

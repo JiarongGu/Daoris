@@ -4,7 +4,7 @@ import { readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  landingEdited, readDriverChoices, writeDriverChoices, type DriverChoices, type HelpMode, type LandingRule,
+  landingEdited, readDriverChoices, writeDriverChoices, type AccessSetting, type DriverChoices, type HelpMode, type LandingRule,
 } from '../../src/driver/driverconfig.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -16,7 +16,7 @@ import { makeFixture } from '../_fixture.ts';
 
 type Edit = {
   op: string; repository?: string; workspace?: string; on?: boolean; rule?: LandingRule; branch?: string; adapter?: string; kind?: string;
-  mode?: HelpMode;
+  mode?: HelpMode; setting?: AccessSetting;
 };
 type Change = { from: string[]; to: string[] };
 type Row = { name: string; edit: Edit; changes: Change[]; between?: Change[]; crlf?: boolean; refused?: string; missing?: boolean };
@@ -37,6 +37,9 @@ function applied(choices: DriverChoices, edit: Edit): DriverChoices {
     case 'line': return { ...choices, lines: { ...choices.lines, [edit.repository!]: edit.branch! } };
     case 'intake': return { ...choices, intakeAdapter: edit.adapter! };
     case 'help-mode': return { ...choices, helpMode: edit.mode! };
+    // AUTONOMY1a: the level as `daoris-driver access` leaves it, which only the driver edits.
+    case 'access': return { ...choices, access: { ...choices.access, [edit.repository!]: edit.setting! } };
+    case 'machine-access': return { ...choices, machineAccess: edit.setting! };
     case 'notify': return { ...choices, notify: edit.on! };
     case 'work-cycle-clear': {
       const { [edit.kind!]: _gone, ...kinds } = choices.workCycles[edit.repository!] ?? {};
