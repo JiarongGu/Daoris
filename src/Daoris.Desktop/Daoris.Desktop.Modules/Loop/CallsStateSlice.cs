@@ -11,18 +11,17 @@ namespace Daoris.Desktop;
 /// for 8 min*, pushed as the call starts and ends rather than read again at a tick or a record's move.
 /// </summary>
 /// <remarks>
-/// <para><b>Its own slice.</b> Not the <c>sessions</c> slice, which is judged from the service's answer, and the service does not hold
-/// the call; not <c>SESSION_GROUPS</c>, which walks git and the plans. The call is a fact of this loop alone, heard from the events its
-/// sessions write (<see cref="RunningCalls"/>, WAITSAY1b), so the judge reads memory and no service: judged at once, never
-/// <c>notJudged</c> past its first judgement.</para>
+/// <para><b>Its own slice</b> (D182's WAITSAY1c1 note says why not the records'). The call is a fact of this loop alone, heard from
+/// the events its sessions write (<see cref="RunningCalls"/>, WAITSAY1b), so the judge reads memory and no service: judged at once,
+/// never <c>notJudged</c> past its first judgement.</para>
 ///
 /// <para><b>One partition, keyed by session</b> (<see cref="StateSlice.Keyed"/>): each running call under its session's id as
 /// <c>SESSION_GROUPS</c> writes a row's <c>calling</c>, its title and when it began; a call's start pushes that session alone and its
 /// end names the session among the keys gone. With nothing running the partition is judged empty and pushed so, never gone, so the
 /// page's calls empty rather than keep what they held.</para>
 ///
-/// <para><b>Its wake.</b> <see cref="RunningCalls.Changed"/>, raised only where a session's call moved: about two wakes a call, each a
-/// judgement of memory; the slice's coalescing makes a burst one judgement. No bus event wakes it.</para>
+/// <para><b>Its wake.</b> <see cref="RunningCalls.Changed"/>, raised only where a session's call moved; the slice's coalescing makes
+/// a burst one judgement. No bus event wakes it.</para>
 ///
 /// <para><b>Desktop-only.</b> A call's title is the agent's words for it and may name a file by its path, which only this machine's
 /// windows read (D47, D182 point 2).</para>

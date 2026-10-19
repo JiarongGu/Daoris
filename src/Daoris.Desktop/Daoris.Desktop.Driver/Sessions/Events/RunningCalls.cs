@@ -140,8 +140,8 @@ public sealed class RunningCalls
         {
             if (!open) return;
             _open[session] = [new Open(id, e.Title, e.At)];
-            // Bounded once its call is held (WAITSAY1c1): bounded before, its empty list read as the oldest, and the session just
-            // begun was the one forgotten.
+            // Bounded once its call is held (WAITSAY1c1), so the session just begun is weighed by its call, never by an empty list
+            // that reads as the oldest.
             Bound(session, ref forgotten);
             return;
         }

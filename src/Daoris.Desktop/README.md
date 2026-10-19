@@ -232,7 +232,7 @@ no service call, `LINES`' own answer per repository, so the pull and the push sh
 session records the third (`SessionsStateSlice`, PUSH1d2), read from the service whole and woken by the change stream's `sessions`
 family, which the watch tells the loop (`DriverLoop.HeardMove`), so a connector's write is pushed with no desktop dispatch; and
 each working session's running call the fourth (`CallsStateSlice`, WAITSAY1c1), judged from the loop's own record in memory
-(`RunningCalls`) and woken by `RunningCalls.Changed`, so a call's start and end reach the rail with no tick. A keyed
+(`RunningCalls`) and woken by `RunningCalls.Changed`, so a call's start and end are pushed as they happen. A keyed
 slice's partition (`StateSlice.Keyed`) pushes the keys a judgement moved as a delta {baseSeq, removed}, never coalesced.
 
 | Domain | What it carries |
