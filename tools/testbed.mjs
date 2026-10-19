@@ -26,6 +26,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OWN } from './desktop-publish.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const cli = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
@@ -192,7 +194,7 @@ function connector(where) {
   // --install` fills — and a machine with no home has no installed host to wire.
   const home = process.env.DAORIS_HOME?.trim();
   if (!home) return false;
-  const host = join(home, 'bin', process.platform === 'win32'
+  const host = homeEntry(home, 'bin', process.platform === 'win32'
     ? 'daoris-knowledge.exe' : 'daoris-knowledge');
   if (!existsSync(host)) return false;
 

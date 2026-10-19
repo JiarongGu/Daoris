@@ -64,6 +64,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join, posix, resolve } from 'node:path';
 import { isMain } from './fsx.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { readLogs } from './usage-report.mjs';
 
 const EDITS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
@@ -516,7 +518,7 @@ function groupsBy(sessions, field) {
  * in any case), `since` the sessions started at or after it. A session whose events file is missing has no summary.
  */
 export function readHome(home, { repository = null, since = null } = {}) {
-  const { lines, skipped } = readLogs(join(home, 'logs'), since ? { since } : {});
+  const { lines, skipped } = readLogs(homeEntry(home, 'logs'), since ? { since } : {});
   const sessions = [];
   const seen = new Set();
   const left = { setups: 0, other: 0 };
@@ -547,13 +549,13 @@ export function readHome(home, { repository = null, since = null } = {}) {
     if (!SESSION_ID.test(entry.session) || entry.session.includes('..')) continue;
     let text;
     try {
-      text = readFileSync(join(home, 'sessions', `${entry.session}.events.jsonl`), 'utf8');
+      text = readFileSync(homeEntry(home, 'sessions', `${entry.session}.events.jsonl`), 'utf8');
     } catch {
       continue;
     }
     const calls = readEvents(text);
     const tree = treeOf(calls, home);
-    kept.set(entry.session, { calls, index: tree ? declaredIndex(join(home, 'trees', ...tree)) : null });
+    kept.set(entry.session, { calls, index: tree ? declaredIndex(homeEntry(home, 'trees', ...tree)) : null });
   }
   // A tree is removed once its work has landed, so a repository's declaration is kept from whichever tree still has it.
   const declared = new Map();
@@ -591,7 +593,7 @@ function groupLine(label, group) {
 export function homeReport(read) {
   const without = read.sessions.filter((session) => !session.summary);
   const out = [
-    `orient-report: read the machine log under ${join(read.home, 'logs')}: ${plural(read.sessions.length, 'driven session')} `
+    `orient-report: read the machine log under ${homeEntry(read.home, 'logs')}: ${plural(read.sessions.length, 'driven session')} `
       + `(${plural(read.left.setups, 'set-up')} and ${plural(read.left.other, 'other session')} left out); `
       + `${read.sessions.length - without.length} with events, ${without.length} without${without.length ? ` (${without.map((s) => s.session).join(', ')})` : ''}`
       + `${read.skipped ? `; ${plural(read.skipped, 'log line')} unreadable` : ''}`,
@@ -673,7 +675,7 @@ export function main(argv, io = { out: (text) => process.stdout.write(text), err
   }
 
   if (options.home) {
-    const logs = join(options.home, 'logs');
+    const logs = homeEntry(options.home, 'logs');
     if (!existsSync(logs)) {
       io.err(`orient-report: no machine log in ${logs}: nothing has written one there, or the home is another.`);
       return 2;

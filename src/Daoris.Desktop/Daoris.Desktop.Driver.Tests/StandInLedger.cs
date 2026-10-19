@@ -158,7 +158,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private const string ChangeEpoch = "5ad1e";
 
     /// <summary>Every family the service's change stream answers, in its order (PUSH1d1).</summary>
-    private static readonly string[] ChangeFamilies = ["sessions", "quests", "asks", "channel"];
+    private static readonly string[] ChangeFamilies = ["sessions", "quests", "asks", "channel", "words"];
 
     /// <summary>
     /// A wait on the change stream, as the service answers it (the design §A4.2): a cursor it does not know answered every family

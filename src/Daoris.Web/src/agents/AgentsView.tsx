@@ -180,7 +180,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const chosenScope = useScope();
   const known = workspacesOf(registry.data ?? []);
   const inView = chosenScope.workspace ?? (known.length === 1 ? known[0]! : null);
-  const { running, runningProfile, signingInNew, busy: acting, run, added, settleAdded } = useHarnessRun();
+  const { running, runningProfile, signingInNew, busy: acting, run, added, settleAdded, refusal, retry, dismiss } = useHarnessRun();
   const onError = failure(notify);
   const door = tool.doors[0]!.harness;
   const product = tool.product ?? tool.name;
@@ -360,10 +360,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       settingsBusy={tune.isPending}
       signingIn={running === `${door}:login` ? runningProfile : null}
       signInPanel={running === `${door}:login` && runningProfile
-        ? <SignIn id={running} harness={door} profile={labelOf(runningProfile)} />
+        ? <SignIn id={running} harness={door} profile={labelOf(runningProfile)} refused={refusal} onRetry={retry} onClose={dismiss} />
         : null}
       signInNewPanel={signingInNew === door
-        ? <SignIn id={`${door}:login-new`} harness={door} action="login-new" tool={product} />
+        ? <SignIn id={`${door}:login-new`} harness={door} action="login-new" tool={product} refused={refusal} onRetry={retry} onClose={dismiss} />
         : null}
       added={answering ? { account: answering.profile, who: answering.who, key: answering.key, offered: answering.offered } : null}
       doorRunning={doorRunning}

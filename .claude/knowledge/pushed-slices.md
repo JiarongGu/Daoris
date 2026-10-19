@@ -22,7 +22,7 @@ judged from the machine's facts, a partition per repository (PUSH1b1); `linesSli
 | Mounting | The spec in `ShellSignals`' `PUSHED` | `pushedState.test.tsx`-style counts |
 | The query | `queryFn: () => readPushed(client, name, pull)`, and while `usePushedLive(name)`, no focus refetch and never stale | a tick and a focus counted at the bridge: zero reads of the slice |
 | Invalidations | Every broad invalidation of a family holding the entry passes `predicate: notPushed(client)`; the hub's scopes already do | `ShellSignals.test.tsx`, `stateHub.test.tsx` |
-| Answers | A press answering the slice's data writes it only where the slice is pulled (`writeAnswered` is the driver's) | the press's own test |
+| Answers | A press answering the slice's data writes it only where the slice is pulled (`writeAnswered` is the driver's), or where the pushes compose nothing yet (`pushedOf(client).data(name) === undefined`), so a press made before the first judgement is not lost | the press's own test; `useSweepLook` (PUSH1c4b) |
 | The records | The README's `STATE_SLICE` row names the slice and its partitions; D182 gets the row's note | `DriverModuleRoutesTests`' README check |
 
 **Two traps.** A window's views whose effects run before `ShellSignals` pull beside the snapshot, so a root mounts it first
@@ -44,12 +44,14 @@ note has the measure that chose it.
 | Its twins' test | The allow-list held against the page's type (`data/api.ts`) and the service's answer record (`ApiContracts.cs`), read from the sources | `SessionsStateSliceTests` |
 | An ordered list | A place in the list is never a field (one move would push every row after it): each row carries, pushed-only, the sort inputs the reader orders its group by, and no more, so a write the order does not read pushes nothing; the page's compose twins the reader's order, written in the decision's note | `GroupsStateSlice.OrderedBy` (PUSH1c3a) |
 | A route's own look | Where a pull's freshness is the settled bar, the judge takes the route's look once per wake (and keeps what the route kept of it), rather than a fact that may lag it; the route's builders write each record | `GroupsStateSlice.LookAsync`, `SessionsRoutes.Grouped` |
+| A route that answers one subject at a time | No pull answers the widest, so the spec feeds a key no variant uses (`keys.syncEvery`), a subject with no partition reads as the route answers it (`wired: false`), and live but not yet judged leaves the read unanswered rather than pulling a partial map | `SyncStateSlice`, `standingOf` (PUSH1a2) |
 
 ## A fact judged per repository, before its slice
 
 A slice partitioned per repository is only as cheap as the fact beneath it: one repository's `refs` wake must judge that
-repository alone (D181 points 2-3). `Driver/Help/HelpFacts.cs` holds three such topics, the lines (PUSH1b1), the work
-inventory (FACTSPLIT1a) and the sessions' trees (FACTSPLIT1b, both D181's notes), and PUSH1c's slices follow their shape.
+repository alone (D181 points 2-3). `Driver/Help/HelpFacts.cs` holds four such topics, the lines (PUSH1b1), the work
+inventory (FACTSPLIT1a), the sessions' trees (FACTSPLIT1b, both D181's notes) and the clean-up's list (`HelpFacts.Sweep`,
+PUSH1c4a), and PUSH1c's slices follow their shape.
 
 | Part | The shape | Where it is |
 |---|---|---|
@@ -60,6 +62,7 @@ inventory (FACTSPLIT1a) and the sessions' trees (FACTSPLIT1b, both D181's notes)
 | Rules | A deadline, a bound, how many parts at once, and a `Rest` where a burst of one repository's moves should be one judgement | `LinesRules`, `WorkRules`, `TreesRules` |
 | The merge | `HelpFacts.Read` merges the parts in name order, the leftover part last (the trees into the look, by path), and reads null while any part was never judged, so *not read yet* keeps its meaning | `HelpFacts.Read`, `HelpNotReadYet` |
 | Its lines | Each part's lines carry their repository as data, so a workspace's room filters them by it, never by the words | `InventoryUnread`, `HelpRoomScope.Project` |
+| A person's occasion beside a fact | Where a person's press asks what the fact must never ask on a timer (D148 point 2's pull-request asks), the fact judges from what was kept and the press's door wakes only the parts whose kept record it moved | `SweepStateSlice.Asked`, `LandedCleanups.SweepPartAsync` (PUSH1c4a) |
 | A door reading the parts | A route that reads the cheap half itself, as fresh as before, takes the git half from the parts: each part says what it asked (`HelpTrees.Asked`), so asked-and-empty and never-judged differ; what no part asked is walked by the door alone, after one wait in the facts' life for the parts' first judgement, and the facts' look is judged afresh where it is behind the door's (PUSH1c1) | `HelpFacts.WithTreesAsync`, `HelpFacts.TreesJudged` |
 
 **What `MachineFacts` does underneath.** A judge returning null drops the subject's fact (`Land`); one that throws keeps the

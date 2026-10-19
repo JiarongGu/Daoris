@@ -25,6 +25,8 @@ import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 
 /** The two hosts, each published into a folder named for its binary. */
 export const HOSTS = Object.freeze([
@@ -112,7 +114,7 @@ function main() {
       console.error('  under the user profile, so there is no default to fall back to.');
       process.exit(1);
     }
-    const bin = join(home, 'bin');
+    const bin = homeEntry(home, 'bin');
     mkdirSync(bin, { recursive: true });
     copyFileSync(join(out, 'daoris-knowledge', exe('daoris-knowledge')), join(bin, exe('daoris-knowledge')));
     // 🔴 REPLACED, not merged into. A copy over the old directory leaves every previous hashed bundle

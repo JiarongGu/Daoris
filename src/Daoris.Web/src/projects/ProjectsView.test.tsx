@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { focusManager } from '@tanstack/react-query';
 
 // Repositories in SHELL mode — the bridge mocked as present, so the controls that only a desktop with a
 // driver may render actually render, and land on the DAORIS.DRIVER and DAORIS.REGISTRY modules. Browser
@@ -30,6 +31,8 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
+import { sweepSlice } from '../bridge/lines';
+import { useStateSlices } from '../bridge/slices';
 import { useStateHub } from '../bridge/stateHub';
 import { code } from '../test/code';
 import { NEWBIE_SETUP } from './fixtures';
@@ -44,6 +47,14 @@ const TAB = 'daoris.list.projects.tab';
 /** The window's state hub, as `ShellSignals` mounts it: what a press moved is asked again here, never by the press's hook. */
 function Hub() {
   useStateHub();
+  return null;
+}
+
+const SWEEP_PUSHED = [sweepSlice];
+
+/** The clean-up's list read pushed where the host pushes it, as `ShellSignals` mounts its slices (PUSH1c4b). */
+function Pushes() {
+  useStateSlices(SWEEP_PUSHED);
   return null;
 }
 
@@ -446,7 +457,7 @@ describe("a repository's Setup on its page (UX6f)", () => {
     const access = within(repositoryMain()).getByRole('region', { name: "Sessions' access" });
     const permissions = within(access).getByText('Permission prompts', { selector: 'span' }).closest('.\\@container') as HTMLElement;
 
-    expect(permissions).toHaveTextContent('The agent runs in its asking mode: it uses what its rules allow, and any other tool call is refused');
+    expect(permissions).toHaveTextContent('The agent runs in its asking mode: it uses what its rules allow, and any other tool call waits for your answer');
     expect(permissions).toHaveTextContent('From this machine.');
     await userEvent.click(within(permissions).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(permissions).getByRole('radio', { name: 'Auto mode' }));
@@ -892,6 +903,74 @@ describe("a workspace's page (UX6g)", () => {
     expect(await within(ask).findByRole('alert')).toHaveTextContent('daoris/s-failed is checked out in a tree a session uses, so it was kept.');
     expect(within(repositoryMain()).getByRole('group', { name: 'discard daoris/s-failed' })).toBeInTheDocument();
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('so it was kept'), 'error');
+  });
+
+  /** The clean-up's list as the shell pushes it (PUSH1c4a): a partition per repository with a checkout here. */
+  const SWEEP_SNAPSHOT = {
+    slice: 'sweep', epoch: 'p1', status: 'ready',
+    partitions: [
+      { partition: 'engine', seq: 1, status: 'ready', data: { branches: [SWEEP.branches[0]], landed: [] } },
+      { partition: 'tools', seq: 1, status: 'ready', data: { branches: [SWEEP.branches[1]], landed: [] } },
+    ],
+  };
+  const plans = () => invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
+
+  /**
+   * PUSH1c4b (D182's PUSH1c4a note, D148 point 2): where the shell pushes the clean-up's list, Branches reads it from memory, so
+   * opening the tab, a change declared to move it and a focus read no `SWEEP_PLAN`, whose every read asks the pull-request plugin,
+   * and a push moves its rows. *Look again* is the person's press of it, asked once: what its asks heard reaches the rows as a push.
+   */
+  it("reads the pushed clean-up's list on Branches, and asks SWEEP_PLAN only at the person's Look again (PUSH1c4b)", async () => {
+    machine({ STATE_SLICE: SWEEP_SNAPSHOT });
+    show(<><Pushes /><Hub /><ProjectsView notify={() => {}} /></>);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+    const branches = within(repositoryMain());
+    expect(await branches.findByText('daoris/s-one')).toBeInTheDocument();
+    expect(plans()).toBe(0);
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.STATE_CHANGED')?.({ scopes: ['sessions', 'landing', 'sweep'] });
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await act(async () => {
+      eventHandlers.get('DAORIS.STATE_PUSH')?.({
+        slice: 'sweep', epoch: 'p1', partition: 'engine', seq: 2, status: 'ready',
+        data: { branches: [{ ...SWEEP.branches[0], branch: 'daoris/s-three' }], landed: [] },
+      });
+    });
+    expect(await branches.findByText('daoris/s-three')).toBeInTheDocument();
+    expect(branches.queryByText('daoris/s-one')).toBeNull();
+    expect(plans()).toBe(0);
+
+    await userEvent.click(branches.getByRole('button', { name: 'Look again' }));
+    await vi.waitFor(() => expect(plans()).toBe(1));
+    await vi.waitFor(() => expect(branches.getByRole('button', { name: 'Look again' })).toBeEnabled());
+    // Its answer is the pushed list's to bring: the rows stay as the pushes hold them.
+    expect(branches.getByText('daoris/s-three')).toBeInTheDocument();
+    expect(branches.queryByText('daoris/s-one')).toBeNull();
+    expect(plans()).toBe(1);
+  });
+
+  /** PUSH1c4b: on a host older than the push, *Look again* is still one read of the list, and the rows are its answer. */
+  it('reads the list again at Look again on a host older than the push, and shows its answer (PUSH1c4b)', async () => {
+    machine({ STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }) });
+    show(<><Pushes /><Hub /><ProjectsView notify={() => {}} /></>);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+    const branches = within(repositoryMain());
+    expect(await branches.findByText('daoris/s-one')).toBeInTheDocument();
+    const opened = plans();
+    expect(opened).toBeGreaterThan(0);
+
+    machine({
+      STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }),
+      SWEEP_PLAN: { branches: [{ ...SWEEP.branches[0], branch: 'daoris/s-three' }], landed: [] },
+    });
+    await userEvent.click(branches.getByRole('button', { name: 'Look again' }));
+    expect(await branches.findByText('daoris/s-three')).toBeInTheDocument();
+    expect(plans()).toBe(opened + 1);
   });
 
   /**

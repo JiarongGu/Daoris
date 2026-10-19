@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { homeEntry } from '../src/platform/home.ts';
 import { driverFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
@@ -291,7 +292,7 @@ const started = (time: string, session: string, repository: string, workspace: s
 /** A Daoris home as the install keeps one: the machine log, each session's events beside its rendered log, and its trees. */
 function home() {
   const fx = makeFixture('orient-report-home');
-  const engineTree = join(fx.root, 'trees', 'main', 'engine', 's-1a2b3c4d');
+  const engineTree = homeEntry(fx.root, 'trees', 'main', 'engine', 's-1a2b3c4d');
   fx.write('trees/main/engine/s-1a2b3c4d/daoris.json', JSON.stringify({ source: 'daoris@0.0.1', documents: { index: 'docs/where/README.md' } }));
   fx.write('logs/2026-10-01.desktop.jsonl', `${[
     started('2026-10-01T09:00:00.000Z', 's-native', 'engine', 'main', 'claude'),
@@ -307,7 +308,7 @@ function home() {
   fx.write('sessions/s-native.events.jsonl', nativeSession(engineTree));
   fx.write('sessions/s-native.log', 'the rendered transcript: text a person reads, never this report\'s');
   fx.write('sessions/s-setup.events.jsonl', nativeSession(engineTree));
-  fx.write('sessions/s-noedit.events.jsonl', noEditSession(join(fx.root, 'trees', 'main', 'engine', 's-5e6f7a8b')));
+  fx.write('sessions/s-noedit.events.jsonl', noEditSession(homeEntry(fx.root, 'trees', 'main', 'engine', 's-5e6f7a8b')));
   fx.write('sessions/s-acp.events.jsonl', acpSession());
   return fx;
 }

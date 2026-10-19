@@ -75,6 +75,8 @@ import { dirname, join, resolve, sep, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
+// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import {
   ACP_STUB_AGENT, OWN_BUILD_SERVERS, STUB_COMMIT, makeChecker, openTranscript, ownBuild, ownBuildRoot, ownBuilt, portRefusal, rehearsalRun,
   takePorts,
@@ -152,7 +154,7 @@ export function offerProblems(install, homes) {
   for (const id of OFFERED_PLUGINS) {
     if (!existsSync(join(install, ...PLUGIN_OFFERS, id, 'plugin.json'))) problems.push(`${PLUGIN_OFFERS.join('/')}/${id} is not carried`);
     for (const home of homes) {
-      if (existsSync(join(home, 'plugins', id))) problems.push(`${id} is installed under ${home}`);
+      if (existsSync(homeEntry(home, 'plugins', id))) problems.push(`${id} is installed under ${home}`);
     }
   }
   return problems;
@@ -461,7 +463,7 @@ const HERMETIC = {
   // `~/.daoris` in — on the developer's machine, from a gate. Pointed at scratch, it does none of it.
   DAORIS_HOME: home,
   DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
-  DAORIS_HARNESS_CONFIG: join(home, 'harnesses.json'),
+  DAORIS_HARNESS_CONFIG: homeEntry(home, 'harnesses'),
 };
 
 let shell = null;
@@ -979,13 +981,13 @@ if (!done.ok) throw new Error(done.text);
   // as a person would have added it. The family rehearsal drives the headless host's loop with it;
   // this is the only gate that drives the SHELL's, which owns the processes differently (it starts
   // them in its loop and stops them in its Stop), and is what a deployed machine actually runs.
-  copyTree(join(examplesRoot, 'plugins', 'hold-by-title'), join(home, 'plugins', 'hold-by-title'));
+  copyTree(join(examplesRoot, 'plugins', 'hold-by-title'), homeEntry(home, 'plugins', 'hold-by-title'));
 
   // A server that drives Daoris's own browser (D78 §3.5): before the deployed shell's driver hands a
   // session its servers, it has to bring up the browser the INSTALL carries. The stub never runs the
   // server; what is measured is that the browser came up, from where, and on which profile.
-  mkdirSync(join(home, 'plugins', 'drives-the-browser'), { recursive: true });
-  writeFileSync(join(home, 'plugins', 'drives-the-browser', 'plugin.json'), `${JSON.stringify({
+  mkdirSync(homeEntry(home, 'plugins', 'drives-the-browser'), { recursive: true });
+  writeFileSync(homeEntry(home, 'plugins', 'drives-the-browser', 'plugin.json'), `${JSON.stringify({
     id: 'drives-the-browser',
     apiVersion: 1,
     name: 'Drives the browser',
@@ -996,7 +998,7 @@ if (!done.ok) throw new Error(done.text);
 
   // The person's standing choices, scratch-local. Written BEFORE the shell starts: the loop begins
   // with the app, and a config arriving late makes the first ticks say "nothing is opted in".
-  writeFileSync(join(home, 'driver.json'), `${JSON.stringify({
+  writeFileSync(homeEntry(home, 'driver'),`${JSON.stringify({
     drivable: ['newcomer'],
     adapter: 'stub',
     cap: 1,
@@ -1027,9 +1029,9 @@ if (!done.ok) throw new Error(done.text);
     ...HERMETIC,
     DAORIS_SERVICE_URL: base,
     ASPNETCORE_URLS: base,
-    DAORIS_KNOWLEDGE_DB: join(home, 'knowledge.db'),
+    DAORIS_KNOWLEDGE_DB: homeEntry(home, 'knowledge'),
     DAORIS_KNOWLEDGE_ROOT: family,
-    DAORIS_DRIVER_CONFIG: join(home, 'driver.json'),
+    DAORIS_DRIVER_CONFIG: homeEntry(home, 'driver'),
     ...debugEnvironment(cdpPort),
     // The kit reads its development switch from `DOTNET_ENVIRONMENT` first, and the host the shell
     // starts inherits it. A host in development can serve a PROJECT's `wwwroot` through ASP.NET's
@@ -1051,14 +1053,14 @@ if (!done.ok) throw new Error(done.text);
   // below was only ever a check on this machine. The home is scratch now, so the gate puts an
   // installed-looking host where the locator's next candidate looks: an empty file, because the
   // ORDER is the contract, and a shell that ranked it first would try to start it and fail here.
-  const installedHome = join(home, 'bin', 'daoris-knowledge-http');
+  const installedHome = homeEntry(home, 'bin', 'daoris-knowledge-http');
   mkdirSync(installedHome, { recursive: true });
   writeFileSync(join(installedHome, HOST_EXE), '');
   // The connector's decoy, for the same reason (CONNECTOR1): an installed-looking connector where
   // `publish:service --install` lands one, the copy every session on an install was handed while the install carried
   // none. Phase 7 asserts the session was handed the install's own instead. The stub never runs a server, so an empty
   // file is enough.
-  const homeConnector = join(home, 'bin', CONNECTOR_EXE);
+  const homeConnector = homeEntry(home, 'bin', CONNECTOR_EXE);
   writeFileSync(homeConnector, '');
 
   const before = new Set(hostProcesses().map((host) => host.pid));
@@ -1209,7 +1211,7 @@ if (!done.ok) throw new Error(done.text);
 
   // The plugin was asked before the start (it allowed — the title carries no `[hold]`) and told of
   // the ending, by the shell's loop; what it kept landed beside its install, in ITS data folder.
-  const endedLog = join(home, 'plugins', '.data', 'hold-by-title', 'ended.log');
+  const endedLog = homeEntry(home, 'plugins', '.data', 'hold-by-title', 'ended.log');
   let ended = '';
   for (let attempt = 0; attempt < 15 && !ended.includes(record?.id ?? '\0'); attempt += 1) {
     await sleep(1000);
@@ -1229,7 +1231,7 @@ if (!done.ok) throw new Error(done.text);
   check('the deployed shell’s driver brought up the install’s own browser for the session',
     browsers.length === 1, browsers.length ? `pid ${browsers.join(', ')}` : 'no browser from the install’s application');
   check('…on its profile under this machine’s home',
-    browserLine.includes(join(home, 'browser', 'engine')), browserLine || '(no command line)');
+    browserLine.includes(homeEntry(home, 'browser-engine')), browserLine || '(no command line)');
   // One Chromium, the install's: the browser's pages render in the application's own executable too,
   // in engine processes whose profile is the browser's rather than the window's.
   const browserRenderers = browsers.length === 0 ? '' : powershell(
@@ -1298,7 +1300,7 @@ if (!done.ok) throw new Error(done.text);
 
   // The marker every tracked process leaves under the home (FIX-LOG, 2026-09-25): what tells a live
   // session from an orphan, and what names the harness this close has to end.
-  const chatMarker = join(home, 'sessions', `${chatId || 'no-conversation'}.pid`);
+  const chatMarker = homeEntry(home, 'session-pids', chatId || 'no-conversation');
   const marked = markedProcess(existsSync(chatMarker) ? readFileSync(chatMarker, 'utf8') : '');
   check('…with its harness running, and marked on this machine',
     isMarkedProcess(marked, startedTicks(marked?.pid)),
@@ -1364,7 +1366,7 @@ if (!done.ok) throw new Error(done.text);
     ...process.env,
     ...HERMETIC,
     ASPNETCORE_URLS: readerBase,
-    DAORIS_KNOWLEDGE_DB: join(home, 'knowledge.db'),
+    DAORIS_KNOWLEDGE_DB: homeEntry(home, 'knowledge'),
     DAORIS_KNOWLEDGE_ROOT: family,
   };
   for (const name of CLEARED) delete readerEnvironment[name];
@@ -1528,7 +1530,7 @@ await commitHere({ name: 'Deployment Rehearsal', email: 'rehearsal@example.inval
 const done = await respond('done', 'Landed by the slow stub session.');
 if (!done.ok) throw new Error(done.text);
 `);
-  writeFileSync(join(home, 'driver.json'), `${JSON.stringify({
+  writeFileSync(homeEntry(home, 'driver'),`${JSON.stringify({
     drivable: ['newcomer'],
     trees: ['newcomer'],
     adapter: 'stub',
@@ -1581,9 +1583,9 @@ if (!done.ok) throw new Error(done.text);
   };
   const journal = () => swapOutcome(existsSync(join(install, ...STAGE, SWAP_JOURNAL))
     ? readFileSync(join(install, ...STAGE, SWAP_JOURNAL), 'utf8') : '');
-  const logged = (event) => (existsSync(join(home, 'logs'))
-    ? readdirSync(join(home, 'logs')).filter((file) => file.endsWith('.desktop.jsonl'))
-      .flatMap((file) => loggedData(readFileSync(join(home, 'logs', file), 'utf8'), event))
+  const logged = (event) => (existsSync(homeEntry(home, 'logs'))
+    ? readdirSync(homeEntry(home, 'logs')).filter((file) => file.endsWith('.desktop.jsonl'))
+      .flatMap((file) => loggedData(readFileSync(homeEntry(home, 'logs', file), 'utf8'), event))
     : []);
   const windowUp = () => {
     const shown = eachApplicationAt(shellExe, '"$($_.MainWindowHandle)|$($_.MainWindowTitle)"').trim();
