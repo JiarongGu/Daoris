@@ -95,7 +95,9 @@ once three batches hold the targets (MODELROLE1).
 4. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
    which is anything a branch in flight holds. When two branches need the same lane, one waits for the
    other or the work is split.
-5. **Run at most five workers at once** (the owner, 2026-10-19: "spin up more subagents"; three before, while every merge
+5. **Run at most five workers at once, and a CI run beside never lowers that** (the owner, 2026-10-19: "spin up more
+   subagents", then, when two were held back for a full set: "we should keep going for development when doing CI runs"; the CI
+   is the guest, below normal (CIPRIO1), so it slows and development does not; three before, while every merge
    ran its suites and rehearsals in the main checkout; since D180 a merge runs only its blocking checks and the CI runs
    beside, so a worker's own gates are the load that remains). More load makes real-process tests flake, and the owner's installed window shares
    the machine: on 2026-10-15 seven workers, a full gate set and one worker's CPU-load script (briefed to "reproduce under
