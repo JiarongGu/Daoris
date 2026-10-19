@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { HelpReceipt, HelpWiredLack } from '../bridge/help';
-import type { PluginEntry } from '../bridge/plugins';
+import type { HelpReceipt, HelpWiredLack } from '../../bridge/help';
+import type { PluginEntry } from '../../bridge/plugins';
 import { chipOf, fullAdds, lackDoor } from './modes';
 
 // HELPMODE1b (D183 points 2-4; the modes design §1, §5, §6): the chip's mode, what full access would add, and the door each lack

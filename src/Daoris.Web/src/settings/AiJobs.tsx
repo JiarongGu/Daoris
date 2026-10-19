@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpMode } from '../help/wired';
+import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpMode } from '../help/access/wired';
 import { Card, Pill, Prose, SelectField, SettingRow } from '../design/ui';
-import { ConfiguredAccess } from '../help/ConfiguredAccess';
-import { FullAccessConfirm, HelpModeChip } from '../help/HelpModePicker';
+import { ConfiguredAccess } from '../help/access/ConfiguredAccess';
+import { FullAccessConfirm, HelpModeChip } from '../help/access/HelpModePicker';
 import type { StartWiring } from '../map/wiring';
 
 /** What the service says answers search and convergence (D24) — its own words, verbatim. */

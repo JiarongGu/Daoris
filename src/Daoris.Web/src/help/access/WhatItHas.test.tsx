@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { HelpReceipt, HelpWired } from '../bridge/help';
-import { clockOf } from '../locales/format';
-import i18n from '../locales/i18n';
+import type { HelpReceipt, HelpWired } from '../../bridge/help';
+import { clockOf } from '../../locales/format';
+import i18n from '../../locales/i18n';
 import { WhatItHas } from './WhatItHas';
 
 // HELPMODE1b (D183 point 4; the modes design §6): *What it has*, the newest receipt of what a start of the conversation in view
