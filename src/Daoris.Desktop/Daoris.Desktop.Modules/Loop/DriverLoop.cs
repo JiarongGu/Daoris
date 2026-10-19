@@ -104,7 +104,7 @@ public sealed class DriverLoop(
     private StateSlice? _driverSlice;
 
     /// <summary>The slices this Daoris pushes (PUSH1a): the snapshot route finds them here, and <see cref="Start"/> runs them.</summary>
-    public StateSlices Slices => LazyInitializer.EnsureInitialized(ref _slices, () => new StateSlices(DriverSlice));
+    public StateSlices Slices => LazyInitializer.EnsureInitialized(ref _slices, () => new StateSlices(DriverSlice, LinesStateSlice.Of(this, eventBus)));
 
     private StateSlices? _slices;
 

@@ -8,12 +8,14 @@ enforces: a pushed slice has one owner in .NET whose partitions are allow-listed
 
 **A slice is pushed by one owner and held by each window's query cache (D182, its PUSH1a note). The host half and the page
 half share no code, so a slice is wired in every row below in the same change.** The driver's state is the worked example:
-`Loop/DriverStateSlice.cs` on the host, `driverSlice` in `bridge/driver.ts` on the page.
+`Loop/DriverStateSlice.cs` on the host, `driverSlice` in `bridge/driver.ts` on the page. `Loop/LinesStateSlice.cs` is the one
+judged from the machine's facts, a partition per repository (PUSH1b1); `linesSlice` in `bridge/lines.ts` is its page half
+(PUSH1b2), and the one whose rows carry a flag (`notReadYet`) that the page reads before the field it qualifies.
 
 | Place | What goes there | What holds it |
 |---|---|---|
-| The owner | A `StateSlice` over a judge returning named partitions, each an allow-listed DTO; never a credential or an arbitrary payload, a machine path only in a desktop-only slice | `StateSlicesTests`; the slice's own tests: a hostile fixture field never pushed, a second snapshot judging nothing |
-| Its wakes | `WakesOn`: the bus events whose payloads move it, each only asking; and a direct `Wake()` where the loop learns of a move with no event | the slice's wake test |
+| The owner | A `StateSlice` over a judge returning named partitions, each an allow-listed DTO; never a credential or an arbitrary payload, a machine path only in a desktop-only slice. A judge reading what lands later (the machine's facts start after the slices) answers null until it has, which keeps the slice `notJudged` | `StateSlicesTests`; the slice's own tests: a hostile fixture field never pushed, a second snapshot judging nothing, `notJudged` before its truth lands |
+| Its wakes | `WakesOn`: the bus events whose payloads move it, each only asking; `Hears` where a move reaches it with no event (`LinesStateSlice.HearFacts`: the facts it reads landing, by their values' references); and a direct `Wake()` where the loop learns of a move with no event | the slice's wake test; a fact of another topic landing wakes nothing |
 | The registry | The slice added to `DriverLoop.Slices`, which `Start` runs and `STATE_SLICE` finds | the route answering its snapshot |
 | Its allow-list's twin | Where the projection is a route's own answer picked by field (as the driver's state is `STATE`'s), every field the route answers is pushed or named pull-only | `DriverStateSliceTests`' classing test, the pattern to copy |
 | The page's spec | A `SliceSpec` in the domain's bridge file: its name, the exact key it feeds, `read: () => readSlice(name)` (so `STATE_SLICE` keeps one bridge file), `compose`, and `merge` only where the owner pushes deltas | `DriverModuleRoutesTests` (the route's bridge file), `slices.test.ts` |

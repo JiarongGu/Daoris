@@ -117,6 +117,44 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 PARALLEL1b (D181 point 3): under the watch a request's packet is frozen as the <c>freeze</c> topic's judge beside the look, so
+    /// a checkout or a knowledge search slow to answer holds no start; looked at again while it freezes, it is frozen once, and its
+    /// line joins a later look's report.
+    /// </summary>
+    [Fact]
+    public async Task Under_the_watch_a_packet_is_frozen_beside_the_look_and_once()
+    {
+        var id = Files.WriteRequest("How should the daily report stop dropping its last day?", "engine", ["stub", "acp-stub"], At);
+        var reading = new TaskCompletionSource<(string? Root, string? Revision)>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var read = 0;
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            AdapterSet.Built(), _home)
+        {
+            BrainstormTurns = new Turns().RunAsync,
+            BrainstormCheckouts = (_, ct) =>
+            {
+                Interlocked.Increment(ref read);
+                return reading.Task.WaitAsync(ct);
+            },
+            Wanted = token => Task.Delay(Timeout.Infinite, token),
+        };
+        var events = new List<string>();
+
+        await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await driver.BrainstormsAsync(new Snapshot([], [], []), 0, events, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        Assert.Null(Files.ReadState(id));
+        Assert.DoesNotContain(events, line => line.Contains("frozen", StringComparison.Ordinal));
+
+        reading.TrySetResult((null, null));
+        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Equal(BrainstormStates.Frozen, Files.ReadState(id)?.State);
+        Assert.Single(driver.Running.Drain(), run => run.Line.Contains($"brainstorm `{id}` frozen", StringComparison.Ordinal));
+        Assert.Equal(1, read);
+    }
+
+    /// <summary>
     /// 🔴 A request is frozen at the look into one packet, whose digest the state names, and waits for the person's send: no turn
     /// runs on a packet nobody saw (D176 point 2).
     /// </summary>

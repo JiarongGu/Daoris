@@ -11,9 +11,15 @@ namespace Daoris.Driver;
 /// that started them: the watch owns this and hands it to each. A driver nobody hands one to keeps its
 /// own, which is what a one-look run and a gate's run-until-idle want.</para>
 ///
-/// <para><b>A run that never opened a record is its own look's to report</b>, never a later one's: a hold,
-/// a refusal and an error before the record opened are what that look says about the quest. Only a run
-/// whose record opened is kept here, since only it outlives the look.</para>
+/// <para><b>A run that never opened a record is its own look's to report</b>: a hold, a refusal and an error
+/// before the record opened are what that look says about the quest. Only a run whose record opened is kept
+/// here, since only it outlives the look; or, under the watch (PARALLEL1b), one its look let go of while it
+/// still prepared, reserved here until it opens or comes to nothing, which a later look says
+/// (<see cref="Carry"/>).</para>
+///
+/// <para><b>The work beside the looks is kept here too</b> (PARALLEL1b, D181 point 3): the remote sync's
+/// pass, the landing's, and each topic's judges, one judgement per subject and each topic bounded, so a
+/// closing loop waits for them as it waits for its sessions.</para>
 ///
 /// <para><b>Nothing here decides how a session ends.</b> Each run concludes its own record, on its exit code
 /// and its quest, as it always has (D46 §4). This keeps the runs and hands their endings on.</para>
@@ -71,16 +77,243 @@ public sealed class RunningSessions
         lock (_gate) _opinions.Remove(key);
     }
 
+    // The starts of this loop's not yet open (PARALLEL1b), each reserved by the look that began it until its record opens or it comes
+    // to nothing; and what a start came to after the look that began it let go of it, for a later look's report.
+    private readonly List<StartReservation> _reserved = [];
+    private readonly List<StartCame> _came = [];
+
+    /// <summary>The starts of this loop's reserved and not yet open (PARALLEL1b), as a look hands them to the planner.</summary>
+    internal IReadOnlyList<StartReservation> Reserved
+    {
+        get { lock (_gate) return [.. _reserved]; }
+    }
+
+    /// <summary>
+    /// Reserve a start (PARALLEL1b, D181 point 3): its quest or ask, and the tree it goes back into, held from the look that plans it
+    /// until its record opens or it comes to nothing, so a look meanwhile neither plans it again nor gives its place under the cap
+    /// (<see cref="Snapshot.Starting"/>). False where a start of this loop's already holds the quest, the ask or the tree.
+    /// </summary>
+    internal bool TryReserve(StartReservation start)
+    {
+        lock (_gate)
+        {
+            if (_reserved.Any(held => (start.Quest is not null && string.Equals(held.Quest, start.Quest, StringComparison.OrdinalIgnoreCase))
+                                      || (start.Ask is not null && string.Equals(held.Ask, start.Ask, StringComparison.OrdinalIgnoreCase))
+                                      || Planner.SameTree(held.Tree, start.Tree)))
+            {
+                return false;
+            }
+
+            _reserved.Add(start);
+            return true;
+        }
+    }
+
+    /// <summary>Let a reservation go: its record is open, so the ledger holds it, or it came to nothing. Once is enough; again is nothing.</summary>
+    internal void Release(StartReservation start)
+    {
+        lock (_gate) _reserved.Remove(start);
+    }
+
+    /// <summary>
+    /// Keep what a start a look let go of comes to (PARALLEL1b): its record open, a hold, a refusal, or a failure before its spawn, for
+    /// the next look's report, which says it as the look that began it would have. An opened one wakes a wait, as an ending does, so
+    /// its run is bound and its progress said at once; a hold waits for whatever wakes the next look, so a hold never spins the loop.
+    /// </summary>
+    internal void Carry(StartBegun started, Task<StartCame> start) =>
+        _ = start.ContinueWith(done =>
+        {
+            var came = done.IsCompletedSuccessfully
+                ? done.Result
+                : new StartCame(started, new StartRun(
+                    $"failed  {started.Where}: the start failed before its record opened, and is tried again at a later look: "
+                    + $"{done.Exception?.InnerException?.Message ?? "it was cancelled"}", Opened: false), []);
+            TaskCompletionSource moved;
+            lock (_gate)
+            {
+                _came.Add(came);
+                moved = _moved;
+                _moved = NewSignal();
+            }
+
+            moved.TrySetResult();
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+    /// <summary>What each start a look let go of came to since the last look took them (<see cref="Carry"/>), each handed on once.</summary>
+    internal IReadOnlyList<StartCame> TakeCame()
+    {
+        lock (_gate)
+        {
+            var came = _came.ToList();
+            _came.Clear();
+            return came;
+        }
+    }
+
     /// <summary>How many runs are still going: started, opened, and not yet concluded.</summary>
     public int Running
     {
         get { lock (_gate) return _running; }
     }
 
-    /// <summary>Whether nothing runs, no landing pass works beside the looks, and nothing ended that a look has not yet reported.</summary>
+    /// <summary>
+    /// Whether nothing runs, no landing pass or remote sync works beside the looks, and nothing ended that a look has not yet reported.
+    /// </summary>
     public bool Idle
     {
-        get { lock (_gate) return _running == 0 && _ended.Count == 0 && _landing is null; }
+        get
+        {
+            lock (_gate) return _running == 0 && _ended.Count == 0 && _came.Count == 0 && _landing is null && _syncing is null && _judging.Count == 0;
+        }
+    }
+
+    // The remote sync beside the looks (PARALLEL1b), while a pass works, and the pass asked for meanwhile, which runs once after it.
+    private Task? _syncing;
+    private (Func<CancellationToken, Task<IReadOnlyList<string>>> Pass, CancellationToken Ct)? _syncAgain;
+
+    /// <summary>Whether a remote sync pass works beside the looks (PARALLEL1b).</summary>
+    internal bool Syncing
+    {
+        get { lock (_gate) return _syncing is not null; }
+    }
+
+    // The judges beside the looks (PARALLEL1b; the events design §A3): each topic's places, and the subjects being judged now.
+    private readonly Dictionary<string, SemaphoreSlim> _topics = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _judging = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Judge <paramref name="subject"/> of <paramref name="topic"/> beside the looks (PARALLEL1b, D181 point 3; the events design §A3):
+    /// its work runs on its own task, a topic judging at most <paramref name="bound"/> subjects at once, and one subject never twice at
+    /// once. What it says joins the next look's report and wakes a wait, as an ending does; a judgement that says nothing wakes nothing.
+    /// </summary>
+    /// <returns>False where that subject is being judged already: nothing more is begun, and the next look asks again.</returns>
+    internal bool Judge(string topic, string subject, int bound, Func<CancellationToken, Task<IReadOnlyList<string>>> work, CancellationToken ct)
+    {
+        SemaphoreSlim places;
+        lock (_gate)
+        {
+            if (!_judging.Add($"{topic}\n{subject}")) return false;
+            if (!_topics.TryGetValue(topic, out places!)) _topics[topic] = places = new SemaphoreSlim(bound, bound);
+        }
+
+        _ = Task.Run(() => JudgeAsync(topic, subject, places, work, ct), CancellationToken.None);
+        return true;
+    }
+
+    private async Task JudgeAsync(
+        string topic, string subject, SemaphoreSlim places, Func<CancellationToken, Task<IReadOnlyList<string>>> work, CancellationToken ct)
+    {
+        IReadOnlyList<string> said;
+        try
+        {
+            await places.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                said = await work(ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                places.Release();
+            }
+        }
+        catch (Exception error)
+        {
+            // A closing loop cancels it; anything else past the work's own catches is said once, in the next report.
+            said = ct.IsCancellationRequested ? [] : [$"{topic}  `{subject}` was not judged this time, and is judged again at a later look: {error.Message}"];
+        }
+
+        TaskCompletionSource moved;
+        lock (_gate)
+        {
+            _ended.AddRange(said.Select(line => new StartRun(line, Opened: false)));
+            _judging.Remove($"{topic}\n{subject}");
+            moved = _moved;
+            _moved = NewSignal();
+        }
+
+        moved.TrySetResult();
+    }
+
+    // A pass beside the looks ended while a session of this loop's held a quest, so the next look asks where each claim stands.
+    private bool _claimsDue;
+
+    /// <summary>
+    /// Whether a remote sync pass beside the looks ended since the last look that asked, while a session of this loop's held a quest
+    /// (PARALLEL1b): the lost-claim stop rides every sync (D68 §5), so the look after it asks, as the whole look asked after its own
+    /// sync. Taken once: true for the one look that asks. A pending one wakes a wait, as an ending does.
+    /// </summary>
+    internal bool TakeClaimsDue()
+    {
+        lock (_gate)
+        {
+            var due = _claimsDue;
+            _claimsDue = false;
+            return due;
+        }
+    }
+
+    /// <summary>
+    /// Run a remote sync pass beside the looks (PARALLEL1b, D181 point 3), as a landing pass runs: a remote that does not answer holds
+    /// that pass, never a local start. One pass at a time, since the set's passes share one gate; one asked for while a pass works runs
+    /// once after it, however many were asked, so an ending's sync is never lost to the deadline's. What a pass says joins the next
+    /// look's report, and wakes a wait as an ending does; a pass that says nothing wakes nothing.
+    /// </summary>
+    /// <returns>True where the pass began now; false where one works, and this one follows it.</returns>
+    internal bool SyncBeside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            if (_syncing is not null)
+            {
+                _syncAgain = (pass, ct);
+                return false;
+            }
+
+            _syncing = Task.Run(() => KeepSyncingAsync(pass, ct), CancellationToken.None);
+            return true;
+        }
+    }
+
+    private async Task KeepSyncingAsync(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        while (true)
+        {
+            IReadOnlyList<string> said;
+            try
+            {
+                said = await pass(ct).ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                // A closing loop cancels it; anything else past the pass's own catches is said once, in the next report.
+                said = ct.IsCancellationRequested ? [] : [$"sync  the pass beside the looks failed, and the next look tries again: {error.Message}"];
+            }
+
+            TaskCompletionSource moved;
+            var again = false;
+            lock (_gate)
+            {
+                _ended.AddRange(said.Select(line => new StartRun(line, Opened: false)));
+                // The claims a pass may have moved are asked by the next look, and only where a session of this loop's holds one.
+                if (!Live.IsEmpty && !ct.IsCancellationRequested) _claimsDue = true;
+                if (_syncAgain is { } next && !next.Ct.IsCancellationRequested)
+                {
+                    (pass, ct) = next;
+                    again = true;
+                }
+                else
+                {
+                    _syncing = null;
+                }
+
+                _syncAgain = null;
+                moved = _moved;
+                _moved = NewSignal();
+            }
+
+            moved.TrySetResult();
+            if (!again) return;
+        }
     }
 
     // The landing pass beside the looks (LAND2b), while it works: one at a time, since a plugin's two minutes may outlast a look.
@@ -184,7 +417,10 @@ public sealed class RunningSessions
         }
     }
 
-    /// <summary>Completes once an ending waits to be reported — at once when one already does.</summary>
+    /// <summary>
+    /// Completes once an ending waits to be reported, or the claims a sync beside the looks may have moved wait to be asked
+    /// (PARALLEL1b) — at once when one already does.
+    /// </summary>
     public async Task EndedAsync(CancellationToken ct = default)
     {
         while (true)
@@ -192,7 +428,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_ended.Count > 0) return;
+                if (_ended.Count > 0 || _claimsDue || _came.Any(came => came.Opened)) return;
                 moved = _moved.Task;
             }
 
@@ -201,8 +437,9 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once nothing runs: every session concluded and its record written, and no landing pass works (LAND2b). Never
-    /// cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended (REV3, D104).
+    /// Completes once nothing runs: every session concluded and its record written, and no landing pass, remote sync or judge works
+    /// (LAND2b, PARALLEL1b). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended
+    /// (REV3, D104).
     /// </summary>
     public async Task SettledAsync()
     {
@@ -211,7 +448,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_running == 0 && _landing is null) return;
+                if (_running == 0 && _landing is null && _syncing is null && _judging.Count == 0) return;
                 moved = _moved.Task;
             }
 
@@ -264,4 +501,18 @@ public sealed class RunningSessions
     }
 
     private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
+
+/// <summary>What one start of a look is (DEV3): a quest's or an ask's intake, where it runs, on which adapter, and the plan's start.</summary>
+/// <param name="Start">The quest's planned start, which its run is bound by once it opens (WORKFLOW1e); null for an intake.</param>
+internal sealed record StartBegun(string? Quest, string? Ask, string Where, string? Workspace, string Adapter, Consideration? Start = null);
+
+/// <summary>
+/// What one start came to (DEV3, PARALLEL1b): null <paramref name="Came"/> for a record opened and running on, else its hold, refusal
+/// or failure; with the trust holds it met (D73), which the report's screen offers.
+/// </summary>
+internal sealed record StartCame(StartBegun Started, StartRun? Came, IReadOnlyList<TrustHold> Untrusted)
+{
+    /// <summary>Whether it opened a record: what a look counts as progress, and binds.</summary>
+    public bool Opened => Came is null || Came.Opened;
 }

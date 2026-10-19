@@ -30,13 +30,19 @@ public sealed class HelpRoutes(DriverContext context)
     // are built (PART10e).
     private string OffersFolder => _context.OffersFolder;
 
-    // Ask Daoris's conversation (HELP1a, D89): the one this machine is running, carried on — one
-    // per machine — or a new one in its room, written from the machine as the driver holds it now.
+    // Ask Daoris's conversation (HELP1a, D89): the one this machine is running in the press's workspace, carried on — one per
+    // workspace (ASKSCOPE1a) — or a new one in its room, written from the machine as the driver holds it now.
     //
     // HELPSTART1 (D89's note): answered once the conversation is placed, its record open, with `starting`; the room is read and
     // its agent spawned after, off the request, its end told as the conversation's events. On a loaded machine the room's
     // session look alone took 24.9 s, and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to
-    // the next press. Its record opens, so it declares the sessions (STATEHUB1h, D169); the history lists it once it is spoken in.
+    // the next press in its workspace. Its record opens, so it declares the sessions (STATEHUB1h, D169); the history lists it
+    // once it is spoken in.
+    //
+    // ASKSCOPE1a (D158's ASKSCOPE1 note, points 1-3): `workspace`, the one the person's window is on, is read here at the press
+    // and carried to the record, so a window that changes workspace while it starts moves nothing; every answer names it, so a
+    // late one is known for the workspace it was asked in. None is `default`'s, as before. A name this machine does not hold is
+    // refused before anything is opened.
     [DriverRoute("START_HELP")]
     [Publishes("START_HELP", StateScopes.Sessions)]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -50,37 +56,61 @@ public sealed class HelpRoutes(DriverContext context)
                 + "`daoris driver helper <agent>`. Its starters need none.");
         }
 
+        var named = WorkspaceAsked(request);
+        var circle = RemoteTarget.Workspace(named);
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
         var starting = _loop.HelpStarting;
-        await starting.Placing.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var placing = starting.PlacingIn(circle);
+        await placing.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (starting.Session is { } placed)
+            if (starting.SessionIn(circle) is { } placed)
             {
-                return new { SessionId = placed, Message = $"Ask Daoris `{placed}` is starting.", Running = false, Starting = true };
+                return new { SessionId = placed, Message = $"Ask Daoris `{placed}` is starting.", Running = false, Starting = true, Workspace = circle };
             }
 
             var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+            var spelled = HeldWorkspace(snapshot, circle);
             var held = _loop.Processes.Running;
             if (snapshot.Active.FirstOrDefault(session =>
-                    session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)) is { } running)
+                    session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)
+                    && string.Equals(session.Workspace, circle, StringComparison.OrdinalIgnoreCase)) is { } running)
             {
-                return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true };
+                return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle };
             }
 
-            var place = await chat.PlaceHelpAsync(helper, config, cancellationToken).ConfigureAwait(false);
-            if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false };
+            var place = await chat.PlaceHelpAsync(helper, config, named is null ? null : spelled, cancellationToken).ConfigureAwait(false);
+            if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false, Workspace = circle };
 
-            starting.Placed(id);
+            starting.Placed(circle, id);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = id, place.Message, Running = false, Starting = true };
+            return new { SessionId = id, place.Message, Running = false, Starting = true, Workspace = circle };
         }
         finally
         {
-            starting.Placing.Release();
+            placing.Release();
         }
+    }
+
+    /// <summary>The workspace a start's press names (ASKSCOPE1a), trimmed; null where it names none, which is <c>default</c>'s.</summary>
+    private static string? WorkspaceAsked(IpcRequest request) =>
+        PayloadHelper.GetOptionalValue<string>(request.Payload, "workspace") is { } named && !string.IsNullOrWhiteSpace(named)
+            ? named.Trim()
+            : null;
+
+    /// <summary>
+    /// The workspace as this machine spells it, or refused where it does not hold it (ASKSCOPE1a), naming those it does:
+    /// <c>default</c> and each registered repository's, as Ask Daoris's proposals judge one (BRSCOPE1b).
+    /// </summary>
+    private static string HeldWorkspace(Snapshot snapshot, string circle)
+    {
+        var held = snapshot.Repositories.Select(known => known.Workspace).Append(RemoteTarget.DefaultWorkspace)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+        return held.FirstOrDefault(name => string.Equals(name, circle, StringComparison.OrdinalIgnoreCase))
+            ?? throw new DriverException(
+                $"there is no workspace `{circle}` on this machine — one of {string.Join(", ", held.Select(name => $"`{name}`"))}.");
     }
 
     /// <summary>
@@ -1150,7 +1180,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     // A new Ask Daoris conversation from an earlier one's words (ASKHIST1): opened as START_HELP opens one, on the helper's
-    // agent, the room's running conversation set aside first, and the earlier one's transcript handed with the person's first
+    // agent, its workspace's running conversation set aside first, and the earlier one's transcript handed with the person's first
     // words. Its end reaches the page as a start's does.
     [DriverRoute("HELP_START_FROM")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
@@ -1167,25 +1197,31 @@ public sealed class HelpRoutes(DriverContext context)
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
             .ConfigureAwait(false);
         var chat = _loop.Chat ?? throw NotReady();
-        _ = _loop.Service ?? throw NotReady();
+        var service = _loop.Service ?? throw NotReady();
+
+        // ASKSCOPE1a: in the workspace its press names, as START_HELP's, whatever the earlier one's was; its running one set aside.
+        var named = WorkspaceAsked(request);
+        var circle = RemoteTarget.Workspace(named);
+        var spelled = HeldWorkspace(await service.SnapshotAsync(cancellationToken).ConfigureAwait(false), circle);
 
         // Placed as START_HELP places one (HELPSTART1b): answered once the record is open and the earlier words kept; the room is
         // read through the loop's DescribeHelp and the agent spawned after, off the request, so a slow room cannot pass the page's bound.
         var starting = _loop.HelpStarting;
-        await starting.Placing.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var placing = starting.PlacingIn(circle);
+        await placing.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var place = await chat.PlaceHelpFromAsync(id, helper, config, cancellationToken).ConfigureAwait(false);
-            if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id };
+            var place = await chat.PlaceHelpFromAsync(id, helper, config, named is null ? null : spelled, cancellationToken).ConfigureAwait(false);
+            if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id, Workspace = circle };
 
-            starting.Placed(placedId);
+            starting.Placed(circle, placedId);
             _ = Task.Run(() => RunPlacedAsync(chat, place, config));
             _loop.Nudge();
-            return new { SessionId = placedId, place.Message, From = id };
+            return new { SessionId = placedId, place.Message, From = id, Workspace = circle };
         }
         finally
         {
-            starting.Placing.Release();
+            placing.Release();
         }
     }
 

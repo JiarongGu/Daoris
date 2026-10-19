@@ -36,11 +36,11 @@ public sealed class ProcessJobTests : IDisposable
         // The measured shape: the parent is gone, and its child is still beating.
         await parent.WaitForExitAsync().WaitAsync(Poll.Patience);
         await Poll.Until(() => File.Exists(heartbeat), () => "the child never started", Poll.Patience);
-        Assert.True(await Beating(heartbeat), "the child should outlive its parent — the orphan this test is about");
+        Assert.True(await Heartbeat.Beating(heartbeat), "the child should outlive its parent — the orphan this test is about");
 
         tracked.Dispose();
 
-        Assert.False(await Beating(heartbeat), "the session's child outlived its session");
+        Assert.False(await Heartbeat.Beating(heartbeat), "the session's child outlived its session");
     }
 
     /// <summary>A parent that starts a detached child writing a heartbeat, then exits at once.</summary>
@@ -65,14 +65,5 @@ public sealed class ProcessJobTests : IDisposable
         info.ArgumentList.Add(child);
         info.ArgumentList.Add(heartbeat);
         return info;
-    }
-
-    /// <summary>Whether the heartbeat moves over most of a second.</summary>
-    private static async Task<bool> Beating(string heartbeat)
-    {
-        var before = File.Exists(heartbeat) ? File.ReadAllText(heartbeat) : null;
-        await Task.Delay(800);
-        var after = File.Exists(heartbeat) ? File.ReadAllText(heartbeat) : null;
-        return before != after;
     }
 }

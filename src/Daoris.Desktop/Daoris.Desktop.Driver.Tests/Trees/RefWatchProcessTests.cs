@@ -10,7 +10,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// no end; and what the watchers hold for the most repositories watched. A handful of git operations on one scratch repository under
 /// the repository's <c>_fixtures/</c>, never a load and never the owner's.
 /// </summary>
-/// <remarks>Real watchers, whose events arrive on the machine's own time, so a class of its own, run one at a time.</remarks>
+/// <remarks>
+/// Real watchers, whose events arrive on the machine's own time, each judged within a second, and the handles of the whole process
+/// measured, which every class beside it moves: so it runs alone, after the rest (<see cref="Alone"/>, PROCPAR1).
+/// </remarks>
+[Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
 public sealed class RefWatchProcessTests(ITestOutputHelper output) : LandedFixture
 {

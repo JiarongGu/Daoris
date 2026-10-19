@@ -30,7 +30,7 @@ public sealed class StateSlicesTests
             Failed = failed,
         };
 
-    private IReadOnlyList<SliceJudged> Judged()
+    private IReadOnlyList<SliceJudged>? Judged()
     {
         lock (_now) return [.. _now.Select(each => new SliceJudged(each.Key, each.Value))];
     }
@@ -250,6 +250,74 @@ public sealed class StateSlicesTests
 
         await stop.CancelAsync();
         await running;
+    }
+
+    /// <summary>
+    /// PUSH1b1: a slice judged from facts that have not landed (the machine's facts, which start after the slices) answers nothing
+    /// to judge from yet: it stays not judged, so a window never installs an empty slice as the truth, and pushes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_judge_with_nothing_to_judge_from_yet_leaves_the_slice_not_judged_and_pushes_nothing()
+    {
+        var landed = false;
+        var slice = new StateSlice("test", _bus, _ => Task.FromResult(landed ? Judged() : null), "e1");
+
+        await slice.JudgeAsync();
+
+        Assert.Equal((StateSlice.NotJudged, 1L), (slice.Snapshot().Status, slice.Judgements));
+        Assert.Empty(slice.Snapshot().Partitions);
+        Assert.Empty(Told());
+
+        landed = true;
+        await slice.JudgeAsync();
+        Assert.Equal("a@1:ready,b@1:ready", Versions(slice.Snapshot()));
+        Assert.Equal(StateSlice.Ready, slice.Snapshot().Status);
+
+        // Once judged, a judgement with nothing to judge from keeps what was judged: nothing is pushed gone.
+        landed = false;
+        await slice.JudgeAsync();
+        Assert.Equal(2, Pushes().Count);
+        Assert.Equal("a@1:ready,b@1:ready", Versions(slice.Snapshot()));
+    }
+
+    /// <summary>
+    /// PUSH1b1: where a move reaches the slice with no bus event (the machine's facts landing), its owner hands a hearing that wakes
+    /// it: heard while the worker runs, and no longer once it stops.
+    /// </summary>
+    [Fact]
+    public async Task A_slice_hears_what_its_owner_hands_it_while_its_worker_runs_and_not_after()
+    {
+        Action? heard = null;
+        var stopped = 0;
+        var slice = new StateSlice("test", _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judged()), "e1")
+        {
+            ManifestEvery = TimeSpan.FromHours(1),
+            Hears =
+            [
+                wake =>
+                {
+                    heard = wake;
+                    return new Stop(() => Interlocked.Increment(ref stopped));
+                },
+            ],
+        };
+        Assert.Null(heard);
+
+        using var stop = new CancellationTokenSource();
+        var running = slice.RunAsync(stop.Token);
+        await UntilAsync(() => slice.Judgements == 1);
+        Now("a", new { Count = 3 });
+        heard!();
+        await UntilAsync(() => Pushes().Any(push => push is { Partition: "a", Seq: 2 }));
+
+        await stop.CancelAsync();
+        await running;
+        Assert.Equal(1, stopped);
+    }
+
+    private sealed class Stop(Action stop) : IDisposable
+    {
+        public void Dispose() => stop();
     }
 
     [Fact]

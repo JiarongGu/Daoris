@@ -12,7 +12,8 @@ import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
 import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult } from '../work/milestone';
 import { call, lookBound, pressBound } from './call';
-import { type DriverState, useDriverChange, writeAnswered } from './driver';
+import { type DriverState, readSlice, useDriverChange, writeAnswered } from './driver';
+import { readPushed, type SliceSpec, usePushedLive } from './slices';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
 export { stoppedWaiting } from './call';
@@ -24,22 +25,55 @@ export { stoppedWaiting } from './call';
  * Every repository's line here and what said so (WSR2). Desktop-only: the guess is read off a
  * checkout, and only this machine holds one.
  */
+export type LinesAnswer = {
+  lines: RepositoryLine[]; landings?: RepositoryLanding[]; languages?: RepositoryLanguage[];
+  // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a); absent on an older shell.
+  reviews?: RepositoryReview[];
+  // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a); absent on an older shell.
+  opinions?: RepositoryOpinion[];
+  // How each one's work is committed and what a helper its agent asks for does, as the driver resolves them (DOORS1b): each
+  // never null, `default` where nothing is set; absent on an older shell, which offers neither row.
+  commits?: RepositoryCommits[];
+  helpers?: RepositoryHelpers[];
+};
+
+const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'commits'] as const;
+
+/**
+ * The lines as the shell pushes them (PUSH1b2, D182): a partition per repository, named by it, each holding that repository's rows
+ * of what `LINES` answers, composed into the one entry the pull answers, repositories in name order. A repository not judged yet
+ * is a partition whose line row says `notReadYet`; one the registry dropped is gone and leaves with its rows. Nothing judged yet
+ * composes nothing, which keeps the pull until the first push.
+ */
+export const linesSlice: SliceSpec = {
+  name: 'lines',
+  key: keys.lines,
+  read: () => readSlice('lines'),
+  compose: (partitions) => {
+    const names = [...partitions.keys()].sort();
+    const parts = names.map((name) => partitions.get(name));
+    if (parts.length === 0 || !parts.every((part) => typeof part === 'object' && part !== null && !Array.isArray(part))) return undefined;
+    const composed: Record<string, unknown[]> = {};
+    for (const field of LINES_FIELDS) {
+      composed[field] = parts.flatMap((part) => {
+        const rows = (part as Record<string, unknown>)[field];
+        return Array.isArray(rows) ? rows : [];
+      });
+    }
+    return composed as unknown as LinesAnswer;
+  },
+};
+
 export const useLines = () => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  // Pushed (PUSH1b2): read from memory, written by the pushes, so neither a tick nor a focus asks the shell again.
+  const pushed = usePushedLive(linesSlice.name);
   return useQuery({
     queryKey: keys.lines,
-    queryFn: () => call<{
-      lines: RepositoryLine[]; landings?: RepositoryLanding[]; languages?: RepositoryLanguage[];
-      // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a); absent on an older shell.
-      reviews?: RepositoryReview[];
-      // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a); absent on an older shell.
-      opinions?: RepositoryOpinion[];
-      // How each one's work is committed and what a helper its agent asks for does, as the driver resolves them (DOORS1b): each
-      // never null, `default` where nothing is set; absent on an older shell, which offers neither row.
-      commits?: RepositoryCommits[];
-      helpers?: RepositoryHelpers[];
-    }>('LINES'),
+    queryFn: () => readPushed(client, linesSlice.name, () => call<LinesAnswer>('LINES')),
     enabled: isAvailable,
+    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
   });
 };
 

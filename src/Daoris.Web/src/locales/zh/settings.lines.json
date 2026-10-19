@@ -7,6 +7,7 @@
   "settings.lines.from.repository": "`{{branch}}`，为该仓库设置。",
   "settings.lines.from.workspace": "`{{branch}}`，为工作区 {{workspace}} 设置。",
   "settings.lines.from.checkout": "`{{branch}}`，检出自己的。",
+  "settings.lines.from.notReadYet": "尚未读取：本机还没有从检出读取主线。",
   "settings.lines.from.none": "没有主线：既未设置，git 在此也未指明。",
   "settings.lines.set": "保存",
   "settings.lines.clear": "清除",

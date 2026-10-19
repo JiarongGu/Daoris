@@ -953,6 +953,28 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// This machine's session of <paramref name="repository"/> running in <paramref name="workspace"/>, if any: Ask Daoris's
+    /// one at a time, which is per workspace and not per tree (ASKSCOPE1a, D158's ASKSCOPE1 note point 3), since every
+    /// workspace's conversation runs in the one room. A team's record is never this machine's, as for the tree's lock.
+    /// </summary>
+    /// <param name="parked">Whether a parked record counts, as the tree's lock counts it for going on (<see cref="ActiveForAsync"/>).</param>
+    public Task<Session?> RunningInWorkspaceAsync(
+        string repository, string workspace, bool parked = false, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = $"""
+            SELECT * FROM sessions
+            WHERE repository = $repository AND workspace = $workspace COLLATE NOCASE AND origin IS NULL
+              AND state IN ({(parked ? ActiveStates : "'Queued', 'Starting', 'Working'")})
+            LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }, ct);
+
+    /// <summary>
     /// Sessions in one repository, or everywhere. Live work first, closed records on request —
     /// the same shape as the quest list, for the same reason.
     /// </summary>

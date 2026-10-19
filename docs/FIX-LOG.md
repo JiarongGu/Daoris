@@ -28,6 +28,31 @@ repository.
   behaviour, then all 56 green, with `AcpTests`, `AcpSteerTests`, `AcpResumeTests`, the note tests and `StructureTests`.
 - **Commit:** 062452f7b, 93f69cd20
 
+## 2026-10-19 — Three Chinese notes of Ask Daoris's room said 这台机器 where the glossary says 本机 (PARALLEL1a, HELPSTUCK1)
+
+- **Symptom:** `names.test.ts`' "say in sentences only what the audit found to be another thing's word" failed on main, listing
+  `note.help.room-as-written:zh`, `note.help.room-not-read-yet:zh` and `note.help.room-unread:zh` beside its seven known strays.
+  Found by PUSH1b2's builder running `src/locales`' tests; no merge ran them, since merges run the blocking checks alone (D180).
+- **Root cause:** the three sentences call this machine 这台机器, which the glossary names 本机. `names:check --strict` does not
+  hold a sentence's glossary words (only `--all` reports them), so the builders' quick checks passed; only the locales' test holds
+  them, and the briefs since D180 run it only for new words on the page.
+- **Fix:** the three sentences say 本机.
+- **Verify:** `names.test.ts` and `note.test.ts` green (48), `i18n:check` and `names:check --strict` clean.
+## 2026-10-19 — A job's heartbeat read threw on its child's write handle once the Process half ran eight at once (PROCPAR1)
+
+- **Symptom:** `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked` failed at its first run eight
+  classes at once (a filtered group under `process.runsettings`): `IOException`, the heartbeat file "being used by another process",
+  thrown from the test's own `Beating`.
+- **Root cause:** `Beating` read the heartbeat with `File.ReadAllText`, which opens sharing reading alone, while the detached node
+  child rewrites the file every 100 ms: a read that met the child's open write handle was refused. `PseudoConsoleTests` met the same
+  refusal under load and was fixed in its own copy (TEST4: share reading, writing and deletion, retry briefly); `ProcessJobTests`
+  kept the old copy, which one class at a time rarely reached and eight at once did at once.
+- **Fix:** one read for both, `Heartbeat` in the driver's tests (`ReadAsync` shares `ReadWrite | Delete` and retries an
+  `IOException` twenty times; `Beating` compares two reads 800 ms apart); both classes' copies removed.
+- **Verify:** `HeartbeatTests`, red first (no `Heartbeat`), then green: a heartbeat held open for writing is read, and none yet is
+  none; `ProcessJobTests` and `PseudoConsoleTests` green under `process.runsettings`, and the group that failed green on its
+  next run.
+- **Commit:** `1691ba181`
 ## 2026-10-19 — Ask Daoris's start waited on its own reading of the whole machine, bounded at 30 seconds (PARALLEL1a)
 
 - **Symptom:** the owner's Ask Daoris message sat `queued` for minutes (HELPSTUCK1); HELPSTUCK1's fix bounded the wait at

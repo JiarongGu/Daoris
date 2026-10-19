@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using static Daoris.Driver.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
@@ -74,7 +75,8 @@ public sealed class LinesRoutes(DriverContext context)
 
     // Every repository's line here and what said so (WSR2), for the screen. The checkouts are
     // the registry's, so this waits for the driver like the review does. Git is asked each checkout's line, so an ask while
-    // one runs shares it (SWEEPFLIGHT1).
+    // one runs shares it (SWEEPFLIGHT1). The lines slice pushes the same answer per repository, judged from the machine's facts
+    // (PUSH1b1, D182); this pull stays for a page that does not read the slice.
     [DriverRoute("LINES")]
     [OneFlight("LINES")]
     private async Task<object?> LinesAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -88,9 +90,21 @@ public sealed class LinesRoutes(DriverContext context)
                 .OrderBy(known => known.Repository, StringComparer.Ordinal)
                 .Select(known => (known.Repository, (string?)known.Workspace, known.Root)),
             cancellationToken).ConfigureAwait(false);
+        return Answer([.. lines.Select(line => new LineRow(line.Repository, line.Workspace, line.Branch, line.Source))], config, _loop.Harnesses.Adapters);
+    }
+
+    /// <summary>
+    /// What <c>LINES</c> answers for <paramref name="lines"/>: each repository's line, and how its work lands, the language its
+    /// sessions write in, where its work is reviewed, which other agent reads it, what a helper does and how its work is committed,
+    /// each as it resolves from <paramref name="config"/> and where it was set, in arrays keyed by repository and workspace. The lines
+    /// slice pushes each repository's rows of it (PUSH1b1, D182): one builder for both doors, so the pull and the push cannot drift.
+    /// </summary>
+    /// <param name="adapters">The loop's agents, the machine's plugins among them, which an opinion's <c>sameAgent</c> is judged by.</param>
+    internal static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, AdapterSet adapters)
+    {
         return new
         {
-            Lines = lines.Select(line => new { line.Repository, line.Workspace, line.Branch, line.Source }).ToArray(),
+            Lines = lines.ToArray(),
             // How each one's work lands (WSR1), from the same file and the same circles.
             Landings = lines.Select(line => (line, landing: LandingRules.Choose(config, line.Repository, line.Workspace)))
                 .Select(pair => new
@@ -138,7 +152,7 @@ public sealed class LinesRoutes(DriverContext context)
                 {
                     pair.line.Repository,
                     pair.line.Workspace,
-                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, config.Adapter, _loop.Harnesses.Adapters),
+                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, config.Adapter, adapters),
                     pair.opinion?.Source,
                 })
                 .ToArray(),
@@ -831,4 +845,16 @@ public sealed class LinesRoutes(DriverContext context)
 
     /// <summary>A commit rule as the bridge carries it (DOORS1b): its mode, and the person's convention, left out where none.</summary>
     internal static object CommitWire(CommitRule rule) => new { rule.Mode, rule.Convention };
+}
+
+/// <summary>
+/// One repository's line as the bridge carries it (WSR2): which, in which circle, and what said so. The lines slice adds
+/// <see cref="NotReadYet"/> where the checkout's guess was not judged yet (PUSH1b1): the branch is none and the page says the line
+/// not read yet, never what none would mean. The pull, which asks git, never answers it.
+/// </summary>
+internal sealed record LineRow(string Repository, string Workspace, string? Branch, string Source)
+{
+    /// <summary>The checkout's guess not judged yet: left out where false, so the pull's rows are as they always were.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool NotReadYet { get; init; }
 }

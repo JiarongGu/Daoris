@@ -51,7 +51,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
         try
         {
             await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
-            var synced = Passes();
+            var synced = await SyncedAsync(watch);
 
             for (var wake = 0; wake < 1000; wake++)
             {
@@ -95,7 +95,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
             try
             {
                 await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
-                var synced = Passes();
+                var synced = await SyncedAsync(watch);
 
                 _ledger.Publish("q1", "engine", from: "agent");
                 watch.Nudge(ChangeTopics.Ledger, "quests");
@@ -135,7 +135,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
         try
         {
             await Poll.Until(() => Count(reports) >= 1 && _ledger.ChangesHeld == 1, () => "no look, or no wait held", Bound);
-            var synced = Passes();
+            var synced = await SyncedAsync(watch);
 
             _ledger.Publish("q1", "engine", from: "agent");
             await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
@@ -216,14 +216,16 @@ public sealed class DriverWatchTopicsTests : IDisposable
         {
             await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
             await Poll.Until(() => Count(reports) >= 1, () => "no look", Bound);
-            var synced = Passes();
+            var synced = await SyncedAsync(watch);
 
             runs.End("q1");
             await Poll.Until(
                 () => Snapshot(reports).Any(report => report.Concluded.Any(ended => ended.Quest == "q1")),
                 () => "the ending was never reported", Bound);
 
-            Assert.Equal(synced + 1, Passes());
+            // PARALLEL1b: the sync after the ending runs beside the look that reported it, so its pass is waited for.
+            await Poll.Until(() => Passes() > synced, () => "no sync after the ending", Bound);
+            Assert.Equal(synced + 1, await SyncedAsync(watch));
         }
         finally
         {
@@ -240,6 +242,13 @@ public sealed class DriverWatchTopicsTests : IDisposable
         });
 
     private int Passes() => Volatile.Read(ref _passes);
+
+    /// <summary>The passes counted once no sync works beside the looks (PARALLEL1b): a whole look's pass runs on after it reports.</summary>
+    private async Task<int> SyncedAsync(DriverWatch watch)
+    {
+        await Poll.Until(() => !watch.Running.Syncing, () => "the sync beside the looks never ended", Bound);
+        return Passes();
+    }
 
     private static Func<TickReport, DriverConfig, Task> Into(List<TickReport> reports) => (report, _) =>
     {

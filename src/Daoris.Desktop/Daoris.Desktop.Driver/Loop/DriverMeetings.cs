@@ -62,6 +62,10 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                         files.WriteState(new MeetingState(request.Id, BrainstormStates.Ended, state?.Round ?? 1, state?.Packet, BrainstormStates.Stopped, DateTimeOffset.UtcNow));
                         events.Add($"meeting `{request.Id}` stopped by the person before round {state?.Round ?? 1} ran: nothing of it went to any agent.");
                         break;
+                    case null when _context.Beside:
+                        // PARALLEL1b (D181 point 3): under the watch, the first round's packet frozen beside the look, once.
+                        _brainstorms.Freezing(request.Id, token => FreezeAsync(request, snapshot, files, token), ct, kind: "meeting");
+                        break;
                     case null:
                         events.Add(await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false));
                         break;
