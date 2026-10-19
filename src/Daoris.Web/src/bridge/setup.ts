@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import type { SetupPressed, SetupShown } from '../projects/SetUpForAgents';
+import type { SetupPressed, SetupShown } from '../projects/setup/SetUpForAgents';
 import { call } from './call';
 
 // A repository's *Set up for agents* (LAYOUT8, D117 §6.1, §6.5; D170 point 1): the press's plan, the twin of
@@ -8,7 +8,7 @@ import { call } from './call';
 // terminal and Ask Daoris's `setup` card call too (D50).
 
 /** The shapes the routes answer live with the molecule that draws them, since a molecule may read a shape and never a bridge domain. */
-export type { SetupPressed, SetupShown } from '../projects/SetUpForAgents';
+export type { SetupPressed, SetupShown } from '../projects/setup/SetUpForAgents';
 
 /**
  * The plan reads the line with git and asks the `node` and the `daoris` a child finds for their versions, each within 15

@@ -9,9 +9,9 @@ import {
   SETUP_DEFAULTS, SETUP_OWN, SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
-import type { SetUpForAgentsProps } from './SetUpForAgents';
-import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
-import type { RepositorySetupProps } from './RepositorySetup';
+import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
+import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './git/RepositoryGit';
+import type { RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab } from './tabs';
 
 // A repository's page (FRAME1e, D118 §2) in Repositories' main area: its Details tab (adopted, driven here, held, with its

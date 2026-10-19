@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckField, Segmented, SettingRow } from '../design/ui';
 import { shellWord } from '../lib/shellWord';
-import { Inheritable } from '../projects/SetupParts';
+import { Inheritable } from '../projects/setup/SetupParts';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 
 /**

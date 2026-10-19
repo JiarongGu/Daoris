@@ -29,7 +29,7 @@ const modules = rooted(import.meta.glob([
   '/src/plugins/PluginPage.stories.tsx',
   '/src/plugins/OfferPage.stories.tsx',
   '/src/projects/ProjectPage.stories.tsx',
-  '/src/projects/StandingAnswer.stories.tsx',
+  '/src/projects/setup/StandingAnswer.stories.tsx',
   '/src/knowledge/EntryPage.stories.tsx',
   '/src/knowledge/FindingPage.stories.tsx',
   '/src/work/SessionHead.stories.tsx',

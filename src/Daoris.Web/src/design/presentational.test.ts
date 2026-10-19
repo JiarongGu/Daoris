@@ -83,10 +83,10 @@ const ORGANISMS = new Set<string>([
   './agents/AgentsView.tsx',
   // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
-  './projects/WorkspaceView.tsx',
+  './projects/workspace/WorkspaceView.tsx',
   // A repository's Branches and History parts (UX6h1, D150 §4.4), and a workspace's branch groups (UX6h2b2): they hold Git's
   // reads, each drawn only while its tab shows, so the page, the tabs, the groups and the graph below them hold none.
-  './projects/RepositoryGitView.tsx',
+  './projects/git/RepositoryGitView.tsx',
   // The views a place's activity opens, organisms since FRAME1f by standing at the sources' top above their folder's
   // molecules, named here since STRUCT5c (D166) moved each into its folder: Search's and Convergence's queries, and
   // Knowledge's view over the two.

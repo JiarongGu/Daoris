@@ -9,7 +9,7 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import { FULL } from '../workflow/fixtures';
 import { COUNTS, ENGINE, GIT_BRANCHES_ENGINE, LINE, NEWBIE, SETUP_DEFAULTS } from './fixtures';
 import { ProjectPage } from './ProjectPage';
-import { BranchesTab, HistoryTab } from './RepositoryGit';
+import { BranchesTab, HistoryTab } from './git/RepositoryGit';
 
 // CTX1 (D138, design §4): a repository's page on a right-click offers its header's acts, *Open code map* and *Manage*, as
 // its buttons press them, then its name. A molecule, so each is reached by passing it.

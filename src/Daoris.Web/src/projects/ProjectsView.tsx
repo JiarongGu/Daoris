@@ -7,10 +7,10 @@ import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
-import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './RepositoryGitView';
-import type { Driving, RepositorySetupProps } from './RepositorySetup';
+import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './git/RepositoryGitView';
+import type { Driving, RepositorySetupProps } from './setup/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
-import { WorkspaceView } from './WorkspaceView';
+import { WorkspaceView } from './workspace/WorkspaceView';
 import { useRegistry, useRepositories } from '../data/queries';
 import { useScope } from '../data/scope';
 import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/Access';
@@ -25,7 +25,7 @@ import {
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
-import type { SetUpForAgentsProps } from './SetUpForAgents';
+import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { ListMore } from '../work/ListPane';
