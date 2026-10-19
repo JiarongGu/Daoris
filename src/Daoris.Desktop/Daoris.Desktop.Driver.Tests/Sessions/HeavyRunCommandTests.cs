@@ -168,6 +168,87 @@ public sealed class HeavyRunCommandTests : IDisposable
         Assert.Null(HeavyRun.ReadMarker("not a marker"));
     }
 
+    /// <summary>
+    /// HEAVYRUN1b2a: where the repository's own file marks no heavy gate, or it has none, this machine's mapping for it is what a run
+    /// takes, every gate of it heavy by being there; where its own file marks one, its own win and the mapping is never read.
+    /// </summary>
+    [Fact]
+    public void A_repository_that_marks_none_takes_this_machine_s_mapping_and_its_own_marks_win()
+    {
+        IReadOnlyList<HeavyGate> mapped = [new("build", "dotnet build", null, true), new("web", "npm test", "web", true)];
+
+        var none = HeavyGates.Resolve(_fixture.Checkout, "engine", () => mapped);
+        Assert.True(none.Mapped);
+        Assert.Equal(["build", "web"], HeavyGates.Choose(none, null).Gates.Select(gate => gate.Name));
+        Assert.Equal(["web"], HeavyGates.Choose(none, "web").Gates.Select(gate => gate.Name));
+        var unknown = HeavyGates.Choose(none, "lint");
+        Assert.Equal((2, "this machine's heavy gates for `engine` name no gate `lint`; they are: build, web."), (unknown.Exit, unknown.Refusal));
+
+        _fixture.Gates(_fixture.Checkout, ("lint", "npm run lint", null), ("unit", "npm test", false));
+        Assert.True(HeavyGates.Resolve(_fixture.Checkout, "engine", () => mapped).Mapped);
+
+        _fixture.Gates(_fixture.Checkout, ("lint", "npm run lint", null), ("e2e", "npm run e2e", true));
+        var own = HeavyGates.Resolve(_fixture.Checkout, "engine", () => throw new InvalidOperationException("the mapping is read only where the file marks none"));
+        Assert.False(own.Mapped);
+        Assert.Equal(["e2e"], HeavyGates.Choose(own, null).Gates.Select(gate => gate.Name));
+    }
+
+    /// <summary>
+    /// With neither its own marks nor a mapping there is nothing to run, and the refusal says where each is set; a file that does not
+    /// read is refused whatever this machine sets, since "cannot tell" is never "marks none".
+    /// </summary>
+    [Fact]
+    public void With_neither_its_own_marks_nor_a_mapping_the_refusal_says_where_each_is_set()
+    {
+        var missing = Assert.Throws<DriverException>(() => HeavyGates.Resolve(_fixture.Checkout, "engine", () => null));
+        Assert.Equal(
+            $"no daoris.gates.json at {_fixture.Checkout}, and this machine sets no heavy gates for `engine`: `run-heavy` runs the gates a "
+            + "repository marks heavy there, or those `daoris-driver heavy engine <name>=<command>…` sets here.",
+            missing.Message);
+
+        _fixture.Gates(_fixture.Checkout, ("lint", "npm run lint", null));
+        var none = HeavyGates.Choose(HeavyGates.Resolve(_fixture.Checkout, "engine", () => null), null);
+        Assert.Equal(
+            (2, "daoris.gates.json marks no gate `\"heavy\": true`, and this machine sets no heavy gates for `engine`, so there is nothing for `run-heavy` to run."),
+            (none.Exit, none.Refusal));
+
+        File.WriteAllText(Path.Combine(_fixture.Checkout, "daoris.gates.json"), "{ not json");
+        Assert.Throws<DriverException>(() => HeavyGates.Resolve(_fixture.Checkout, "engine", () => [new HeavyGate("build", "x", null, true)]));
+    }
+
+    /// <summary>
+    /// A run reads the mapping from its home's driver file, under the repository its session names (the variable every driven session
+    /// is handed), else under the folder its repository's git folder is in, whichever tree it runs in.
+    /// </summary>
+    [Fact]
+    public async Task A_run_reads_the_mapping_under_its_session_s_repository_else_its_folder_s()
+    {
+        File.WriteAllText(
+            Path.Combine(_fixture.Home, "driver.json"),
+            """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"}],"shop":[{"name":"web","run":"npm test"}]}}""");
+
+        var byFolder = new SaidWriter();
+        Assert.Equal(2, await HeavyRun.RunAsync(new HeavyRunAsk("nope"), World(_fixture.Tree), byFolder, CancellationToken.None).WaitAsync(Poll.Patience));
+        Assert.Equal("run-heavy: this machine's heavy gates for `engine` name no gate `nope`; they are: build.", Assert.Single(byFolder.Lines));
+
+        var bySession = new SaidWriter();
+        var exit = await HeavyRun.RunAsync(new HeavyRunAsk("nope"), World(_fixture.Tree, (HeavyRun.RepositoryVariable, "shop")), bySession, CancellationToken.None)
+            .WaitAsync(Poll.Patience);
+        Assert.Equal(2, exit);
+        Assert.Equal("run-heavy: this machine's heavy gates for `shop` name no gate `nope`; they are: web.", Assert.Single(bySession.Lines));
+    }
+
+    /// <summary>A driver file that does not read, where the run needs its mapping, is a tool error naming why: nothing is guessed.</summary>
+    [Fact]
+    public async Task A_run_whose_driver_file_does_not_read_is_refused_where_it_needs_the_mapping()
+    {
+        File.WriteAllText(Path.Combine(_fixture.Home, "driver.json"), "{ not json");
+        var said = new SaidWriter();
+
+        Assert.Equal(2, await HeavyRun.RunAsync(new HeavyRunAsk(null), World(_fixture.Tree), said, CancellationToken.None).WaitAsync(Poll.Patience));
+        Assert.Contains("is not readable JSON", said.Text);
+    }
+
     /// <summary>The host answers the verb, its usage names it, and it holds no home lease for the minutes it runs.</summary>
     [Fact]
     public void The_host_routes_the_verb_and_its_usage_names_it()

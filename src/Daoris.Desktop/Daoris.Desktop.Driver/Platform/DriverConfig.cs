@@ -347,6 +347,19 @@ public sealed record DriverConfig(
     /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
     public DriverConfig WithAccess(AccessEdit edit) => AccessRules.Apply(this, edit);
 
+    /// <summary>
+    /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a
+    /// note), by repository, each list in the order its gates run; what <c>run-heavy</c> runs for it and its sessions are told of
+    /// (<see cref="Daoris.Driver.HeavyGates.Resolve"/>). Never an edit to the repository. Edited only through <see cref="HeavyMapping.Apply"/>; the
+    /// CLI's <c>driverconfig.ts</c> reads and keeps it the same way.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<HeavyGate>> HeavyGates { get; init; } =
+        new Dictionary<string, IReadOnlyList<HeavyGate>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A repository's heavy gates set in order, or taken away with none, through <see cref="HeavyMapping.Apply"/>.</summary>
+    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
+    public DriverConfig WithHeavyGates(string repository, IReadOnlyList<HeavyGate>? gates) => HeavyMapping.Apply(this, repository, gates);
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -942,6 +955,8 @@ public sealed record DriverConfig(
             AccessRules.WriteMap(writer, "access", Access);
             AccessRules.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
             AccessRules.WriteMachine(writer, MachineAccess);
+            // Written only when set (HEAVYRUN1b2a), as the CLI writes it: absent is the repository's own heavy gates alone.
+            HeavyMapping.WriteMap(writer, HeavyGates);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
@@ -1329,6 +1344,8 @@ public sealed record DriverConfig(
             Access = AccessRules.Map(root, "access"),
             WorkspaceAccess = AccessRules.Map(root, "workspaceAccess"),
             MachineAccess = AccessRules.Machine(root),
+            // Read as a stored shape (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
+            HeavyGates = HeavyMapping.Map(root),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),

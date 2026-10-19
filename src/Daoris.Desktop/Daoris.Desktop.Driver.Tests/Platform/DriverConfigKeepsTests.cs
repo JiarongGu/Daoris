@@ -83,6 +83,8 @@ public sealed class DriverConfigKeepsTests
             // AUTONOMY1a: the level the row names, through the access edit the route and the terminal make.
             "access" => config.WithAccess(Access(edit, new AccessEdit { Repository = Text("repository") })),
             "machine-access" => config.WithAccess(Access(edit, new AccessEdit { Machine = true })),
+            // HEAVYRUN1b2a: a repository's heavy gates on this machine, through the door the terminal's `heavy` goes through.
+            "heavy" => config.WithHeavyGates(Text("repository"), Gates(edit.GetProperty("gates"))),
             "notify" => config.WithNotify(edit.GetProperty("on").GetBoolean()),
             "work-cycle-clear" => config.WithWorkCycle(Text("repository"), Text("kind"), null),
             var op => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
@@ -97,6 +99,17 @@ public sealed class DriverConfigKeepsTests
             ? level with { Full = true }
             : level with { Set = [.. setting.EnumerateObject().Select(pause => new KeyValuePair<string, string?>(pause.Name, pause.Value.GetString()))] };
     }
+
+    /// <summary>A row's <c>gates</c>, in order; null clears them.</summary>
+    private static IReadOnlyList<HeavyGate>? Gates(JsonElement gates) => gates.ValueKind == JsonValueKind.Null
+        ? null
+        : [
+            .. gates.EnumerateArray().Select(gate => new HeavyGate(
+                gate.GetProperty("name").GetString()!,
+                gate.GetProperty("run").GetString()!,
+                gate.TryGetProperty("cwd", out var cwd) ? cwd.GetString() : null,
+                Heavy: true)),
+        ];
 
     private static LandingRule Rule(JsonElement rule)
     {

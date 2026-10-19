@@ -25,8 +25,9 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 
 /// <summary>
 /// <c>daoris-driver run-heavy [--gate &lt;name&gt;]</c> (HEAVYRUN1a, D180's HEAVYRUN1 note): run in a checkout, it runs the gates its
-/// <c>daoris.gates.json</c> marks heavy one after another (<see cref="HeavyGates"/>), holding its repository's one heavy-run slot
-/// (<see cref="HeavySlot"/>), every gate's processes in one job that is ended and emptied before the slot is let go.
+/// <c>daoris.gates.json</c> marks heavy one after another (<see cref="HeavyGates"/>), or where it marks none this machine's mapping
+/// for it (<see cref="HeavyMapping"/>, HEAVYRUN1b2a), holding its repository's one heavy-run slot (<see cref="HeavySlot"/>), every
+/// gate's processes in one job that is ended and emptied before the slot is let go.
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> Two driven sessions on one repository each ran its full build and suites at once on the installed Daoris, and
@@ -46,7 +47,8 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 /// that runs <c>run-heavy</c> again in the same repository runs inside the held slot without waiting, and one asked for a gate
 /// already running in it is refused, since it would run inside itself without end.</para>
 ///
-/// <para>Full access (D184) neither passes the slot nor changes a gate: this reads no access setting at all.</para>
+/// <para>Full access (D184) neither passes the slot nor changes a gate: this reads no access setting at all; of the driver's file it
+/// reads only the heavy gates this machine sets for a repository that marks none.</para>
 /// </remarks>
 public static class HeavyRun
 {
@@ -55,6 +57,9 @@ public static class HeavyRun
 
     /// <summary>What a run hands its gates' environment: <see cref="Marker"/>, the slot it holds and the gates running.</summary>
     public const string Variable = "DAORIS_HEAVY_RUN";
+
+    /// <summary>The repository every driven session is handed by name, which a run looks this machine's mapping up under (HEAVYRUN1b2a).</summary>
+    public const string RepositoryVariable = "DAORIS_REPOSITORY";
 
     /// <summary>The words after <c>run-heavy</c>, or null with what is wrong with them.</summary>
     public static HeavyRunAsk? Read(IReadOnlyList<string> args, out string? problem)
@@ -148,16 +153,28 @@ public static class HeavyRun
             throw new DriverException($"{world.Directory} is in no git checkout: `run-heavy` runs a checkout's own gates, from inside it.");
         }
 
-        var choice = HeavyGates.Choose(HeavyGates.Read(checkout), ask.Gate);
+        var repository = HeavySlot.RepositoryOf(checkout) ?? Path.GetFileName(checkout);
+
+        // HEAVYRUN1b2a: where its own file marks none, this machine's mapping, under the repository its session is handed, which is
+        // the name every door keys a repository's settings by; a run a person starts names it by its folder. Its home's driver file
+        // is read only then, and one that does not read is a tool error, never "none set".
+        var keyedAs = world.Variable(RepositoryVariable)?.Trim() is { Length: > 0 } handed ? handed : repository;
+        var declared = HeavyGates.Resolve(
+            checkout, keyedAs, () => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(world.Variable, world.Home)), keyedAs));
+        var choice = HeavyGates.Choose(declared, ask.Gate);
         if (choice.Refusal is { } refusal)
         {
             output.WriteLine($"run-heavy: {refusal}");
             return choice.Exit;
         }
 
+        if (declared.Mapped)
+        {
+            output.WriteLine($"run-heavy: `{keyedAs}` marks no heavy gate of its own, so this machine's run for it: {string.Join(", ", choice.Gates.Select(gate => gate.Name))}.");
+        }
+
         var key = HeavySlot.KeyOf(checkout)
                   ?? throw new DriverException($"git's files at {checkout} do not say which repository it is a checkout of, so its heavy-run slot cannot be told.");
-        var repository = HeavySlot.RepositoryOf(checkout) ?? Path.GetFileName(checkout);
 
         // A gate of a run that holds this repository's slot runs the wrapper again: it runs inside that slot, never waiting on it.
         if (ReadMarker(world.Variable(Variable)) is { } outer && outer.Slot == key)
