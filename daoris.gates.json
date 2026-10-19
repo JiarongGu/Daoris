@@ -4,6 +4,7 @@
   "gates": [
     { "name": "universal", "run": "node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify" },
+    { "name": "tool-tests", "run": "npm run tooltests" },
     { "name": "service", "run": "dotnet test src/Daoris.Service" },
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },

@@ -31,6 +31,6 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["src", "bin", "test"],
+  "include": ["src", "bin", "test", "tool-test"],
   "exclude": ["dist", "_fixtures", "canon"]
 }

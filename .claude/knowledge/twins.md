@@ -50,14 +50,15 @@ map found this first (WSP3), and every twin since was built the same way for the
   `driverTestFile` (`_csharp.ts`), the page's `driverSource`, the driver's `SourceFiles`; `driver-names.test.ts` refuses a
   fixed folder, so a module's move edits no reader.
 - **A page test that reads a driver source names that file to the merge tool.** `tools/merge-branch.mjs`'s
-  MOD9e row lists each driver file a vitest parses, so a change to it runs the web gate; `merge-branch.test.ts`'s
+  MOD9e row lists each driver file a vitest parses, so a change to it runs the web gate; `tool-test/merge-branch.test.ts`'s
   SESSDEL1c case fails a merge whose page test reads one the row lacks (MSG1g3's say twin, 2026-10-11).
 - **A shared table among the CLI's fixtures that a driver test reads names itself to the merge tool too**: its own
   REACH row beside `account-reads.json`'s, so a change to it runs the driver's gate, and a case in
-  `merge-branch.test.ts` holding that row (SWITCH1a's `rotation-use.json`). Where a page test reads it too, the row names
+  `tool-test/merge-branch.test.ts` holding that row (SWITCH1a's `rotation-use.json`; it runs in the `tool-tests` gate, which
+  `verify` does not, so run `npm run tooltests` when you add such a row, GATESLIM1). Where a page test reads it too, the row names
   `web` beside `driver`, or the SESSDEL1c case fails once the page test is tracked (SWITCH1d's `rotation-use.json` and
   `usage-curves.json`; `verify` passes before `git add` and fails after, since the case reads tracked files).
-  `merge-branch.test.ts` holding that row (SWITCH1a's `rotation-use.json`).
+  `tool-test/merge-branch.test.ts` holding that row (SWITCH1a's `rotation-use.json`).
 - **A file taken by whoever creates it first is put in place with no overwrite, on both sides.** C# moves the written file
   in with `File.Move(…, overwrite: false)`; Node's `renameSync` replaces on Windows, so the CLI links it in (`linkSync`,
   which refuses where a file is) and removes the one it wrote. `writeFileSync(…, { flag: 'wx' })` is exclusive but leaves a

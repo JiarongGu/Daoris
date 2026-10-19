@@ -55,7 +55,7 @@ const isReader = (path: string): boolean =>
  * test, which asks for a name no file has.
  */
 const SCANNERS = new Set([
-  'src/Daoris.Cli/test/driver-names.test.ts', 'src/Daoris.Cli/test/merge-branch.test.ts', 'src/Daoris.Web/src/test/driverSource.test.ts',
+  'src/Daoris.Cli/test/driver-names.test.ts', 'src/Daoris.Cli/tool-test/merge-branch.test.ts', 'src/Daoris.Web/src/test/driverSource.test.ts',
 ]);
 
 /** Each way a reader reads a desktop source by name, and the project it looks in when the call does not name one. */
