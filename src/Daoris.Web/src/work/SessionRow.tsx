@@ -9,6 +9,7 @@ import { type SessionGrouping, shownOf } from './groups';
 import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { ListRowDoor } from './ListPane';
 import { movedAt } from './rail';
+import { useNow } from './useNow';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention (design §3).
@@ -151,6 +152,8 @@ export function SessionRow({
   // WAITSAY1b: the rail holds no session's events, so the call its agent is inside is the reader's, as the driver heard it,
   // timed from its start whenever this window opened; said only while it works, never of a chat between turns.
   const calling = shown === 'working' ? grouping?.calling : null;
+  // WAITSAY1c2: a pushed call moves no tick, so its elapsed time steps by its own clock while it is said.
+  useNow(calling ? 15_000 : null);
 
   // One line of secondary facts, each absent when it has nothing to say — `MetaLine`'s rule, and
   // what keeps a rail of a dozen rows readable at 18rem. What the two absences MEAN is on the

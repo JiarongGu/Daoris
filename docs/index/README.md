@@ -53,7 +53,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 58 | 1141 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 101 | 1779 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 81 | 1533 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 124 | 2224 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 124 | 2228 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 46 | 851 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 48 | 943 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 57 | 1085 |
