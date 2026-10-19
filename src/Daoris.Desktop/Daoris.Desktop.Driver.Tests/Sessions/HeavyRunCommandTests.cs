@@ -249,11 +249,10 @@ public sealed class HeavyRunCommandTests : IDisposable
         Assert.Contains("is not readable JSON", said.Text);
     }
 
-    /// <summary>The host answers the verb, its usage names it, and it holds no home lease for the minutes it runs.</summary>
+    /// <summary>The host answers the verb, the usage census (DriverCommandTests) checks its line, and it holds no home lease for the minutes it runs.</summary>
     [Fact]
     public void The_host_routes_the_verb_and_its_usage_names_it()
     {
-        Assert.Contains("\n  run-heavy [--gate <name>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
         Assert.Equal("usage: daoris-driver run-heavy [--gate <name>]", HeavyRun.Usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));

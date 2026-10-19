@@ -91,6 +91,14 @@ const SESSIONS_SNAPSHOT = {
   ],
 };
 
+const CALL = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
+
+/** The running calls' slice (WAITSAY1c2): one partition, session id to its call. */
+const CALLS_SNAPSHOT = {
+  slice: 'calls', epoch: 'c1', status: 'ready',
+  partitions: [{ partition: 'calling', seq: 1, status: 'ready', data: { 'a-1': CALL } }],
+};
+
 /** How often the page read the sessions from the service: `/api/sessions` with any of its questions, never a record's own door. */
 const sessionReads = () => vi.mocked(fetch).mock.calls.filter(([input]) => /^\/api\/sessions(\?|$)/.test(String(input))).length;
 
@@ -126,7 +134,7 @@ function host(pushes: boolean) {
     if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE') {
       if (pushes) {
         const slice = options?.payload?.slice;
-        return slice === 'lines' ? LINES_SNAPSHOT : slice === 'sessions' ? SESSIONS_SNAPSHOT : SNAPSHOT;
+        return slice === 'lines' ? LINES_SNAPSHOT : slice === 'sessions' ? SESSIONS_SNAPSHOT : slice === 'calls' ? CALLS_SNAPSHOT : SNAPSHOT;
       }
       throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
     }
@@ -176,8 +184,8 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   it('is read once as its snapshot when the window opens, and a tick reads none of it again', async () => {
     host(true);
     const client = await open();
-    // One snapshot for each slice the window reads pushed (the driver's state, the lines, the sessions), and no pull beside any.
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(3);
+    // One snapshot for each slice the window reads pushed (the driver's state, the lines, the sessions, the calls), and no pull beside any.
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(4);
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
     expect(client.getQueryData<DriverState>(keys.driver)?.drivable).toEqual(['engine']);
@@ -201,7 +209,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     // The view that mounts the driver's state and the lines first, remembered as the opening one.
     window.localStorage.setItem('daoris.view', 'sessions');
     await open();
-    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(3);
+    expect(asked().get('DAORIS.DRIVER.STATE_SLICE')).toBe(4);
     expect(asked().get('DAORIS.DRIVER.STATE')).toBeUndefined();
     expect(asked().get('DAORIS.DRIVER.LINES')).toBeUndefined();
     expect(sessionReads()).toBe(0);
@@ -310,7 +318,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     await later(2_000);
 
     // One snapshot for each slice, and no pull.
-    expect(since(before, asked())).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 3, 'DAORIS.DRIVER.UNDER_WAY': 1 });
+    expect(since(before, asked())).toEqual({ 'DAORIS.DRIVER.STATE_SLICE': 4, 'DAORIS.DRIVER.UNDER_WAY': 1 });
     expect(sessionReads()).toBe(reads);
     expect(second.getQueryData<{ id: string }[]>(keys.sessions(null, true, null))?.map((each) => each.id)).toEqual(['a-1', 'a-2', 'g-1']);
   });
@@ -364,6 +372,38 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(running?.map((each) => each.id)).toEqual(['a-1', 'a-3']);
     expect(engine?.map((each) => each.id)).toEqual(['a-1', 'a-3']);
     expect(sessionReads()).toBe(0);
+    expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
+  });
+
+  it('holds the running calls from their snapshot, a delta or a whole push or an empty one moving them, a tick or a focus reading none (WAITSAY1c2)', async () => {
+    host(true);
+    const client = await open();
+    expect(client.getQueryData(keys.calls)).toEqual({ 'a-1': CALL });
+    const before = asked();
+    const other = { title: 'dotnet build', since: '2026-10-20T08:05:00+00:00' };
+
+    await act(async () => {
+      heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
+      heard.get('STATE_PUSH')?.({ slice: 'calls', epoch: 'c1', partition: 'calling', seq: 2, status: 'ready', baseSeq: 1, removed: [], data: { 'a-2': other } });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(client.getQueryData(keys.calls)).toEqual({ 'a-1': CALL, 'a-2': other });
+
+    // Half the keys moved: the owner pushes the partition whole, and a judged-empty partition is a whole push of {}.
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'calls', epoch: 'c1', partition: 'calling', seq: 3, status: 'ready', data: { 'a-2': other } });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(client.getQueryData(keys.calls)).toEqual({ 'a-2': other });
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({ slice: 'calls', epoch: 'c1', partition: 'calling', seq: 4, status: 'ready', data: {} });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(client.getQueryData(keys.calls)).toEqual({});
+
+    hidden(true);
+    hidden(false);
+    await later(1_000);
     expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
   });
 

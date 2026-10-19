@@ -446,7 +446,8 @@ internal static class TraceWords
         {
             said.Append($"; under the {rule.Source}'s rule, ")
                 .Append(rule.Plugin is { } named ? $"naming plugin {named}" : "naming no plugin")
-                .Append(rule.Access is { } access ? $", accepted by the access setup ({access})"
+                // The record keeps the level on a person's press under the setup too: only the setup's own acceptance is credited to it (ACCESSWORDS1c).
+                .Append(landing.AcceptedBy == AcceptedBy.Auto && rule.Access is { } access ?$", accepted by the access setup ({access})"
                     : rule.AutoAccept ? ", accepting automatically" : ", accepting at a press");
         }
 
