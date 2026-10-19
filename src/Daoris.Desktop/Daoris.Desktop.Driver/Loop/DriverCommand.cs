@@ -219,9 +219,9 @@ public static class DriverCommand
               make a plugin, or try one as the driver would.
           plugins show <id> [--json]  ·  plugins activity <id> [--since <30m|2h|3d>] [--json]
               a plugin's page and its health, or what it did, from the machine log.
-          plugins approve <id> <server> [--reads-only]  ·  plugins withdraw <id> <server>
+          plugins approve <id> <server> [--reads-only | --writes <tool,…>]  ·  plugins withdraw <id> <server>
               let Ask Daoris call the exact tools a plugin's server offers it, its writes too unless --reads-only,
-              or take that back; an update that adds or widens a tool asks again.
+              or only the writes --writes names, or take that back; an update that adds or widens a tool asks again.
 
         Only `drive` starts a loop. DAORIS_HOME names the home; DAORIS_SERVICE_URL the service, which
         `drive` and every verb that reads a record need.
