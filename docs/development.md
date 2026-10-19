@@ -109,14 +109,17 @@ node tools/merge-branch.mjs --full --beside [<commit>]
 ```
 
 The last form runs the full set on the current checkout, including the long gates. The gates that
-start no real process run beside the serial Process lane (GATELANES1), up to three at once but never
+start no real process run beside the Process lane, one Process gate at a time (GATELANES1), up to three at once but never
 two that build one .NET component (GATELANES2), and a Process half starts only
 once the heavy light gates (the CLI, .NET and web suites) have ended, so its timing tests run with no
 suite loading the CPU (GATEORDER1). A Process half runs `--no-build` when its fast half passed in the
 same run on the same tree (GATEBUILD1). The family rehearsal runs beside the git half, and every other
 Process-lane gate alone (REHLANE1); the web gate's vitests are a light gate of their own, `web-unit`, beside the
-service suite (WEBSPLIT1). Add `--one-at-a-time` on a
-loaded machine to run every gate in turn. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
+service suite (WEBSPLIT1). The driver's Process half runs eight classes at once (PROCPAR1), and its
+slowest classes print by their own times beside the half's wall. Add `--one-at-a-time` on a
+loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
+at below normal priority with build servers of its own, a second is refused while one runs, and a run of main's tip
+stops before its next gate once a newer tip exists, recorded as superseded and never as passed. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 
 A merge runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map and the

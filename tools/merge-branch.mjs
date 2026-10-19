@@ -131,6 +131,12 @@
  * - **Under load.** A full set beside merges shares the machine with their gates (GATEORDER1's lesson: a Process half's
  *   timing tests failed beside heavy gates). Nothing of FLAKE1's changes: a Process half's failures are re-run alone once
  *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start.
+ * - **A guest (CIPRIO1).** After the lock is taken and before anything is built, the run lowers its own process to below
+ *   normal (`startBesideRun`), so every gate's descendants start there. Its gates get build servers of their own
+ *   (`BESIDE_ENVIRONMENT`), and it never shuts the owner's down. A run of main's tip, not one given a commit, asks
+ *   before each gate whether main has moved (`watchTip`) and, once it has, stops before the next gate, saying which gates
+ *   ran and which were left; the record says `superseded`, never passed. A gate running is not stopped (CIPRIO1c), and
+ *   I/O priority is left out (CIPRIO1b).
  * - **Its private files, its logs (GATEWT1b, GATEWT1c).** Before its gates start, the private files a gate reads under
  *   `local/` (`privateGateFiles`: the declared `sensitive.patternsFile`, nothing outside `local/`) are copied from the main
  *   checkout into the tree on every run; a missing one is said, and the gate that reads it answers. When the run ends, pass,
@@ -205,8 +211,8 @@
  * gate also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, the web gate), GATEORDER1:
  * the 0b44c7a run started `driver-process` beside cli, service and web and two timing tests failed there. The cost is
  * the light lane's tail, about 7 to 8 minutes of a full set of an hour or more, since the Process lane is the long pole
- * either way. The git half and the serial half never overlap: the Process lane is one gate at a time, but for the family
- * rehearsal beside the git half (REHLANE1, below). `--stale` and `--rerun` run through the same `runGates`, so they follow
+ * either way. The git half and the driver's other Process half never overlap: the Process lane is one gate at a time, though
+ * each gate's classes run at once, but for the family rehearsal beside the git half (REHLANE1, below). `--stale` and `--rerun` run through the same `runGates`, so they follow
  * the same order. A Process-lane gate whose command names no project, a rehearsal, starts once the light lane has ended:
  * it builds the hosts behind its script's name, and the deployment rehearsal first shuts the build servers down. A
  * Process gate's failures are re-run alone only once the light lane has ended, and the gate beside it in its own lane,
@@ -244,7 +250,7 @@
  * ## The family rehearsal beside the git half (REHLANE1)
  *
  * After GATELANES2 a full set's wall was mostly the Process lane, one gate at a time: the git half about 45 to 50
- * minutes, the serial half 15 to 19, the family rehearsal 10 to 26 and the deployment rehearsal 13 to 15. So a rehearsal
+ * minutes, the driver's other Process half (then one class at a time, now eight at once, PROCPAR1) 15 to 19, the family rehearsal 10 to 26 and the deployment rehearsal 13 to 15. So a rehearsal
  * of `BESIDE_GIT_HALF` (`runsBesideGitHalf`) runs beside a git half (`isGitHalf`, the driver's `git.process.runsettings`
  * half, `beside` in the schedule): it goes in the lane right after the last git half, and a Process-lane gate starts once
  * every gate before it in the lane has ended but those it may run beside. Every other pair still runs one at a time, the
@@ -301,6 +307,7 @@ import { createHash } from 'node:crypto';
 import {
   closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
+import { constants as osConstants, setPriority as osSetPriority } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
@@ -1486,8 +1493,9 @@ function trxMs(duration) {
  * The slowest classes of a trx, at most `count`: each class's tests' durations summed, slowest first, by the
  * class's simple name (a nested class keeps its outer name, `Outer+Inner`). A test's class is its
  * definition's `TestMethod className`, matched to its result by `testId`; a test with no definition is
- * placed by its name. The serial Process half runs one class at a time, so its sums are its wall time; the git-only
- * half runs four classes at once (PROC1c), so its sums are each class's share, and its slowest class is its wall's floor.
+ * placed by its name. A Process half runs classes at once (the driver's eight, PROCPAR1; the git-only half's four,
+ * PROC1c), so its sums are each class's own time, not its wall, and its slowest class is its wall's floor. The wall is
+ * the run's, which `slowestLines` prints beside them (PROCPAR1b); only the modules' half runs one class at a time.
  */
 export function slowestClasses(trx, count = 10) {
   const classOf = new Map();
@@ -2609,11 +2617,15 @@ function resultLine(root, result) {
   return `  ${pad(result.verdict, 8)} ${pad(result.gate.name, 16)} ${pad(duration(result.ms), 9)} ${shown(root, result.log)}${note}`;
 }
 
-/** PROC1: the slowest classes of a Process gate's run, under its line. */
+/**
+ * PROC1: the slowest classes of a Process gate's run, under its line. PROCPAR1b: the classes run at once, so their times
+ * are their own and the wall is the run's (`result.ms`), said beside them.
+ */
 function slowestLines(root, result) {
   if (!result.slowest?.length) return [];
+  const wall = result.ms === undefined ? '' : `; the half's wall was ${duration(result.ms)} (its classes ran at once, so the times do not add up to it)`;
   return [
-    `           slowest classes of ${result.gate.name}, from ${shown(root, result.trx)}:`,
+    `           slowest classes of ${result.gate.name}, by their own times${wall}, from ${shown(root, result.trx)}:`,
     ...result.slowest.map((slow, i) => `           ${pad(`${i + 1}.`, 4)}${pad(duration(slow.ms), 10)} ${pad(count(slow.tests, 'test'), 10)} ${slow.name}`),
   ];
 }
@@ -2681,9 +2693,13 @@ function laneLines(schedule) {
  * One gate after another, in the plan's order: every run before GATELANES1, and `--one-at-a-time`. `beside` names what
  * each gate is handed (GATEBUILD1: a Process half, its fast half's pass), and `heard` hears each result.
  */
-async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {} }) {
+async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {}, halt = () => false }) {
   const results = [];
   for (let i = 0; i < gates.length; i += 1) {
+    if (halt()) {
+      for (const skipped of gates.slice(i)) print(notRunLine(skipped));
+      break;
+    }
     const result = await run(root, gates[i], dir, beside(gates[i]));
     heard(result);
     results.push(result);
@@ -2714,7 +2730,7 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  * runner compares with the tree the half starts on (`reuseBuild`). A run with no fast half (a `--rerun` or `--stale`
  * that names a Process half alone) hands none, and the half builds.
  */
-export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log } = {}) {
+export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log, halt = () => false } = {}) {
   const schedule = laneSchedule(gates, { scripts: scripts ?? rootScripts(root), width });
   const passed = new Map();
   const heard = (result) => {
@@ -2722,7 +2738,7 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
   };
   const built = (gate) => (passed.has(schedule.reuses[gate.name]) ? { built: passed.get(schedule.reuses[gate.name]) } : {});
   if (oneAtATime || !schedule.light.length || (schedule.light.length === 1 && !schedule.process.length)) {
-    return runInTurn(root, gates, dir, { keepGoing, run, print, beside: built, heard });
+    return runInTurn(root, gates, dir, { keepGoing, run, print, beside: built, heard, halt });
   }
 
   for (const line of laneLines(schedule)) print(line);
@@ -2730,6 +2746,11 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
   const ended = new Map(schedule.light.map((gate) => [gate.name, signal()]));
   const lightEnded = signal();
   let stopped = false;
+  // CIPRIO1: asked before each gate starts; true stops everything not started, as a failure does.
+  const halted = () => {
+    if (!stopped && halt()) stopped = true;
+    return stopped;
+  };
   const one = async (gate, beside) => {
     let result;
     try {
@@ -2753,7 +2774,7 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
     try {
       for (;;) {
         for (const gate of [...waiting]) {
-          if (stopped || running.size >= schedule.width) break;
+          if (halted() || running.size >= schedule.width) break;
           const builds = schedule.components[gate.name];
           if (builds.some((component) => held.has(component))) continue;
           waiting.splice(waiting.indexOf(gate), 1);
@@ -2796,7 +2817,7 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
         const beside = schedule.beside[gate.name] ?? [];
         await Promise.all(schedule.process.slice(0, i).filter((other) => !beside.includes(other.name)).map((other) => processEnded.get(other.name).promise));
         while (alone) await alone.promise;
-        if (stopped) return;
+        if (halted()) return;
         processRunning.add(gate.name);
         await one(gate, { settled: settled(gate), ...built(gate) });
       } finally {
@@ -2917,11 +2938,12 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  * The gates run in order, each verdict recorded with the tree it ran on (GATE3), as its gate ends, so a run
  * cut short keeps what it learned. `onResult` hears each result.
  */
-function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, branch = null, onResult = () => {} } = {}) {
+function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, halt = undefined } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
     keepGoing,
     oneAtATime,
+    halt,
     run: async (where, gate, logs, beside) => {
       const tree = contentTree(where);
       const started = nowIso();
@@ -3080,7 +3102,7 @@ async function rerunGates(root, options) {
 }
 
 /** `--full` on its own (GATE3): the whole plan on the checkout as it stands, merging nothing, every verdict recorded. */
-async function gateCheckout(root, options) {
+async function gateCheckout(root, options, watch = null) {
   if (mergeInProgress(root)) {
     throw new Refusal('a merge is open here: node tools/merge-branch.mjs --continue --full gates it with every gate, or git merge --abort');
   }
@@ -3095,10 +3117,16 @@ async function gateCheckout(root, options) {
   clearLogs(dir);
   const dirty = treeState(root).changed.length > 0;
   console.log(`the full set on ${head.slice(0, 7)}${dirty ? ' and its uncommitted changes' : ''}: ${plan.length} gates, fast first; nothing is merged`);
-  const results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime });
+  const results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt: watch ? watch.check : undefined });
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');
+  if (watch?.superseded) {
+    // CIPRIO1: stopped between gates, never judged as a fail or a pass; the verdicts of the gates that ran stay recorded.
+    const ran = results.map((result) => result.gate.name);
+    for (const line of supersededLines(watch.superseded, ran, plan.filter((gate) => !ran.includes(gate.name)).map((gate) => gate.name))) console.log(line);
+    return 1;
+  }
   if (failed.length || results.length < plan.length) {
     console.log(`merge-branch: the full set did NOT pass ${head.slice(0, 7)}: ${failed.map((result) => result.gate.name).join(', ')} failed${results.length < plan.length ? `; ${plan.length - results.length} not run` : ''}.`);
     // GATE6b: once the failure is fixed and committed, or at once when it flaked, the smaller command does the rest.
@@ -3646,6 +3674,70 @@ const UNDER_LOAD = 'under load: a full set beside the merges shares the machine 
   + 'loaded; its failures are still re-run alone once its lane is quiet, and a pass alone still reads FLAKE (GATEORDER1, FLAKE1)';
 
 /**
+ * A full set beside the merges is a guest on the machine (CIPRIO1, D180's budget). It lowers its own process to below
+ * normal: on Windows a process created by a below-normal one starts in that class, so every gate's shell, npm, dotnet,
+ * test host and git runs below normal with no race, and the run ends with the process, so nothing is restored. Below
+ * normal, not idle: idle starves behind a busy machine and a Process half's timing tests would flake. I/O priority is
+ * left out (Node has no API for it, and whether children inherit background mode is unsettled; CIPRIO1b measures).
+ * Returns what went wrong, or null.
+ */
+export function lowerPriority(setPriority = osSetPriority) {
+  try {
+    setPriority(0, osConstants.priority.PRIORITY_BELOW_NORMAL);
+    return null;
+  } catch (error) {
+    return error.message;
+  }
+}
+
+/**
+ * The gates beside get build servers of their own: none reused after the run (`MSBUILDDISABLENODEREUSE`), no MSBuild
+ * server and no shared compiler server, so a lowered run leaves nothing to serve the owner's normal builds and borrows
+ * none of theirs. The CI never runs `dotnet build-server shutdown`: it would stop the owner's servers too.
+ */
+export const BESIDE_ENVIRONMENT = Object.freeze({ MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
+
+/** The start of a run beside, once its lock is taken and before anything is built: lower the priority, set the environment. */
+export function startBesideRun({ setPriority = osSetPriority, env = process.env, say = console.log } = {}) {
+  const failed = lowerPriority(setPriority);
+  if (failed) say(`the run could not lower its priority (${failed}); it goes on at the priority it has`);
+  Object.assign(env, BESIDE_ENVIRONMENT);
+}
+
+/**
+ * A run of main's tip (`commit`; null for a run given a named commit, which is never superseded) asks, before each gate,
+ * whether main has moved on. `resolveTip` is the seam: main's tip now, null when it cannot be read (not a newer one).
+ * Once moved, the run is `superseded` and stays so. A gate already running is not stopped (CIPRIO1c).
+ */
+export function watchTip(commit, resolveTip = () => null) {
+  const watch = {
+    superseded: null,
+    check() {
+      if (watch.superseded) return true;
+      if (!commit) return false;
+      const tip = resolveTip();
+      if (tip && tip !== commit) watch.superseded = { from: commit, to: tip };
+      return watch.superseded !== null;
+    },
+  };
+  return watch;
+}
+
+/** What a superseded run says: that it stopped, which gates ran and which were left. */
+export function supersededLines(superseded, ran, left) {
+  return [
+    `superseded: main moved from ${superseded.from.slice(0, 7)} to ${superseded.to.slice(0, 7)}, so this run stopped before its next gate; it is not a pass`,
+    `  ran: ${ran.join(', ') || 'none'}`,
+    `  left: ${left.join(', ') || 'none'}`,
+  ];
+}
+
+/** The gate tree record's verdict on a run: a superseded run is never passed, whatever its gates said. */
+export function besideOutcome(code, superseded) {
+  return { passed: code === 0 && !superseded, superseded: superseded ? superseded.to : null };
+}
+
+/**
  * `--full --beside [<commit>]` (GATEWT1): the full set on `commit`, main's tip unless named, in the gate tree, a worktree
  * of its own, so merges land in the main checkout meanwhile. One at a time (`takeGateLock`). The tree is made or reused,
  * its dependencies installed when missing or stale, and the whole plan run there by `gateCheckout`, each verdict in the
@@ -3666,6 +3758,8 @@ async function gateBeside(root, options) {
   const { stale } = takeGateLock(home, { commit });
   try {
     if (stale) console.log(`the gate tree's lock was left by pid ${stale.pid} (on ${stale.commit.slice(0, 7)} since ${when(stale.at)}), which no longer runs: taken over`);
+    // CIPRIO1: before the tree is made or anything installed or built, so every descendant inherits the lowered class.
+    startBesideRun();
     const started = nowIso();
     writeGateRecord(home, { commit, started, ended: null, passed: null, staged: null });
     const tree = locate(prepareGateTree(home, commit));
@@ -3674,8 +3768,10 @@ async function gateBeside(root, options) {
     for (const line of rescueGateLogs(tree, home)) console.log(`  ${line}`);
     console.log(UNDER_LOAD);
     let code;
+    // Only a run of main's tip is superseded by a newer tip; one given a commit gates that commit whatever main does.
+    const watch = watchTip(options.besideCommit ? null : commit, () => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim() || null);
     try {
-      code = await gateCheckout(tree, options);
+      code = await gateCheckout(tree, options, watch);
     } finally {
       // Pass, fail or a thrown error: the tree may be pruned next, and its logs go with it.
       try {
@@ -3684,8 +3780,11 @@ async function gateBeside(root, options) {
         console.log(`  The run's logs could not be kept (${error.message}); they stay in the gate tree`);
       }
     }
-    writeGateRecord(home, { commit, started, ended: nowIso(), passed: code === 0, staged: null });
-    if (code === 0) {
+    const outcome = besideOutcome(code, watch.superseded);
+    writeGateRecord(home, { commit, started, ended: nowIso(), passed: outcome.passed, ...(outcome.superseded ? { superseded: outcome.superseded } : {}), staged: null });
+    if (watch.superseded) {
+      console.log(`  Run it again on the new tip: node tools/merge-branch.mjs --full --beside; the gate tree stays at ${sha} until then (${GATE_TREE}).`);
+    } else if (code === 0) {
       console.log(`  Stage it from the gate tree, never from the main checkout as it moves: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}`);
     } else {
       console.log(`  The gate tree stays at ${sha} (${GATE_TREE}): run that there, or --full --beside ${sha} again; --prune removes it.`);
