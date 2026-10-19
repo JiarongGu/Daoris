@@ -383,3 +383,50 @@ describe("a workspace's commits and helpers", () => {
     expect(helpers).toHaveBeenLastCalledWith({ clear: true });
   });
 });
+
+/**
+ * AUTONOMY1d (D184 point 1): the access setup a workspace gives each of its repositories that sets none of its own, the same rows
+ * one level up, each pause from the workspace, this machine or Daoris's default.
+ */
+describe("a workspace's sessions' access", () => {
+  const pauses = (routing: { value: string; source: string }) => [
+    { pause: 'permissions', value: 'asking', source: 'machine' },
+    { pause: 'routing', ...routing },
+    { pause: 'landing', value: 'person', source: 'default' },
+    { pause: 'goAheads', value: 'named', source: 'default' },
+    { pause: 'questions', value: 'claude-code', source: 'default' },
+  ];
+  const row = (label: string) => screen.getAllByText(label, { selector: 'span' })[0]!.closest('.\\@container') as HTMLElement;
+
+  it('folds after Defaults to each pause marked where it came from, and sets one for the workspace', async () => {
+    const onChange = vi.fn();
+    at({ access: { pauses: pauses({ value: 'person', source: 'default' }), aboveFull: false, onChange } });
+
+    expect(section("Sessions' access")).toHaveAttribute('aria-expanded', 'false');
+    expect(section("Sessions' access")).toHaveAccessibleDescription(
+      "every permission asked (this machine's default), you accept each route (Daoris's default), lands on your Accept… (Daoris's default), "
+      + "go-aheads before named acts (Daoris's default)");
+    expect(section('Defaults').compareDocumentPosition(section("Sessions' access")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await userEvent.click(section("Sessions' access"));
+    expect(row('Permission prompts')).toHaveTextContent('From this machine.');
+    await userEvent.click(within(row('Intake routing')).getByRole('button', { name: 'Set for this workspace' }));
+    await userEvent.click(within(row('Intake routing')).getByRole('radio', { name: 'Intake routes' }));
+    expect(onChange).toHaveBeenLastCalledWith({ access: { routing: 'intake' } });
+  });
+
+  it('opens on a pause the workspace sets, which carries Clear and its twin', async () => {
+    const onChange = vi.fn();
+    at({ access: { pauses: pauses({ value: 'intake', source: 'workspace' }), aboveFull: false, onChange } });
+
+    expect(section("Sessions' access")).toHaveAttribute('aria-expanded', 'true');
+    expect(row('Intake routing')).toHaveTextContent('An ask goes where its intake routed it; you may route it again. Set for this workspace.');
+    expect(within(row('Intake routing')).getByText(code('daoris-driver access --workspace aurora routing=person|intake'))).toBeInTheDocument();
+    await userEvent.click(within(row('Intake routing')).getByRole('button', { name: 'Clear' }));
+    expect(onChange).toHaveBeenLastCalledWith({ access: { routing: null } });
+  });
+
+  it('is absent on a shell older than it', () => {
+    at();
+    expect(screen.queryByRole('button', { name: "Sessions' access" })).toBeNull();
+  });
+});

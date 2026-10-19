@@ -660,6 +660,34 @@ describe("a workspace's page (UX6g)", () => {
   });
 
   /**
+   * AUTONOMY1d (D184 point 1): the access its repositories' sessions start under, resolved on the page from the driver's state, the
+   * workspace's over this machine's, and set as `daoris-driver access --workspace` sets it.
+   */
+  it("sets its sessions' access on Setup, each pause from the workspace or this machine, and says what changed", async () => {
+    machine({
+      STATE: {
+        ...STATE,
+        access: [],
+        workspaceAccess: [{ workspace: 'aurora', setting: { full: false, pauses: [{ pause: 'landing', value: 'rule' }] } }],
+        machineAccess: { full: false, pauses: [{ pause: 'permissions', value: 'asking' }] },
+      },
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Setup' }));
+    // A pause of its own opens the section.
+    const access = await within(repositoryMain()).findByRole('region', { name: "Sessions' access" });
+    const row = (label: string) => within(access).getByText(label, { selector: 'span' }).closest('.\\@container') as HTMLElement;
+
+    expect(row('Permission prompts')).toHaveTextContent('From this machine.');
+    expect(row('Landing')).toHaveTextContent('Set for this workspace.');
+    await userEvent.click(within(row('Landing')).getByRole('button', { name: 'Clear' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACCESS', { payload: { workspace: 'aurora', access: { landing: null } } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Landing for aurora comes from what stands above it again.'));
+  });
+
+  /**
    * The machine's wiring (D48 §5, D50): which deployment serves the workspace here. Shell-only and more strictly than the
    * rest: the service has no route onto it, so every call lands on the bridge and none on the API, and a key goes in and
    * comes back only as its audit prefix.
