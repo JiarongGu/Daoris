@@ -153,7 +153,7 @@
   "help.mode.toFull": "Restricted · full access next start",
   "help.mode.toRestricted": "Full access · restricted next start",
   "help.mode.option.restricted": "Restricted — reads and proposes",
-  "help.mode.option.full": "Full access — acts without Apply",
+  "help.mode.option.full": "Full access — acts itself",
   "help.mode.confirm.label": "Enable full access?",
   "help.mode.confirm.says": "Allow Ask Daoris to run commands, edit files and use every installed plugin server without Apply or routine permission approval? This choice is this machine’s: it affects future starts and supported continuations across workspaces.",
   "help.mode.confirm.adds": "It would also be handed these servers, which restricted mode withholds:",

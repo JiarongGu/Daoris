@@ -1577,7 +1577,7 @@ describe('Ask Daoris’s access and what it has', () => {
     show();
 
     await chip('Restricted');
-    await pick('Full access — acts without Apply');
+    await pick('Full access — acts itself');
 
     const asks = await screen.findByRole('group', { name: 'Enable full access?' });
     expect(await within(asks).findByText('tracker')).toBeInTheDocument();
@@ -1603,7 +1603,7 @@ describe('Ask Daoris’s access and what it has', () => {
 
     await waitFor(() => expect(starts()).toBe(1));
     await chip('Restricted');
-    await pick('Full access — acts without Apply');
+    await pick('Full access — acts itself');
     await userEvent.click(await screen.findByRole('button', { name: 'Enable full access' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: HELP.id } }));
@@ -1627,7 +1627,7 @@ describe('Ask Daoris’s access and what it has', () => {
     expect(onGo).toHaveBeenCalledWith({ view: 'plugins', item: 'browser' });
     // The mode's door opens the chip's menu.
     await userEvent.click(within(has).getAllByRole('button', { name: 'Choose full access' })[0]!);
-    expect(await screen.findByRole('menuitemradio', { name: 'Full access — acts without Apply' })).toBeInTheDocument();
+    expect(await screen.findByRole('menuitemradio', { name: 'Full access — acts itself' })).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
 
     await userEvent.click(within(has).getByRole('button', { name: 'Back to the conversation' }));
