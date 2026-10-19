@@ -38,6 +38,12 @@ public enum SessionOpenRefusal
     /// ask: a second would be the loop retrying a harness forever on a question it could not settle.
     /// </summary>
     AskAnswered,
+
+    /// <summary>
+    /// The workspace named is not one this machine holds (ASKSCOPE1a, D158's ASKSCOPE1 note point 1): Ask Daoris's conversation
+    /// is started in a workspace, and keeps it.
+    /// </summary>
+    WorkspaceUnknown,
 }
 
 /// <param name="Refusal"><see cref="SessionOpenRefusal.None"/> when a session was queued.</param>
@@ -343,45 +349,76 @@ public sealed class SessionLedger(
     public const string HelpRepository = "daoris:help";
 
     /// <summary>
+    /// Whether a record is Ask Daoris's (HELP1a), by its kind of place: its "repository" is <see cref="HelpRepository"/>. What
+    /// keeps it off every remote feed whatever its workspace (ASKSCOPE1a, D158's ASKSCOPE1 note point 2).
+    /// </summary>
+    public static bool IsHelp(Session session) => string.Equals(session.Repository, HelpRepository, StringComparison.Ordinal);
+
+    /// <summary>
     /// Open Ask Daoris's conversation (HELP1a, D89) — a chat about Daoris itself, in the room the
     /// driver keeps for it under its home.
     /// </summary>
     /// <remarks>
     /// <para><b>The intake's open, for a conversation.</b> It serves no quest and no ask, so nothing
-    /// plans from it, and it belongs to no workspace: it is about the whole machine.</para>
+    /// plans from it. It belongs to the workspace its window was on when it started (ASKSCOPE1a, D158's ASKSCOPE1 note point
+    /// 1), recorded here and never moved; none named is <c>default</c>, as a record from before reads.</para>
     ///
-    /// <para><b>One running per room</b>, which is one per machine: a second is refused naming the
-    /// first, and the driver hands the page the running one rather than asking for another.</para>
+    /// <para><b>One running per workspace</b> (point 3): a second in the same workspace is refused naming the first, and the
+    /// driver hands the page the running one rather than asking for another; one in another workspace runs beside it, in the
+    /// same room folder (D158's ASKSCOPE1a note, point 4, says why that is safe).</para>
+    ///
+    /// <para><b>A workspace this machine does not hold is refused</b>, naming those it does: <c>default</c> and each registered
+    /// repository's. With no registry to ask, the name is taken as told.</para>
     /// </remarks>
+    /// <param name="workspace">The workspace the person's window was on at the press; null is <c>default</c>.</param>
     public async Task<SessionOpenOutcome> OpenHelpAsync(
         string adapter, string room, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
+        string? harnessVersion = null, string? profile = null, string? workspace = null, CancellationToken ct = default)
     {
         var holding = Trees.Normalize(room)
             ?? throw new ArgumentException("Ask Daoris runs in a room — name it", nameof(room));
+        var circle = Workspaces.Normalize(workspace);
+
+        if (registry is not null)
+        {
+            var held = (await registry.RegistryAsync(ct: ct).ConfigureAwait(false))
+                .Select(row => Workspaces.Normalize(row.InWorkspace)).Append(Workspaces.Default)
+                .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+            if (!held.Any(each => Workspaces.Same(each, circle)))
+            {
+                return new SessionOpenOutcome(
+                    SessionOpenRefusal.WorkspaceUnknown,
+                    $"`{circle}` is not a workspace this machine holds — Ask Daoris's conversation is started in the workspace "
+                    + $"its window is on. Held here: {string.Join(", ", held)}.",
+                    Session: null);
+            }
+
+            // Spelled as the machine holds it, so one workspace is never two by its letters' case.
+            circle = held.First(each => Workspaces.Same(each, circle));
+        }
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var running = await sessions.RunningInTreeAsync(holding, inside).ConfigureAwait(false);
+            var running = await sessions.RunningInWorkspaceAsync(HelpRepository, circle, parked: false, inside).ConfigureAwait(false);
             if (running is not null)
             {
                 return new SessionOpenOutcome(
                     SessionOpenRefusal.RepositoryBusy,
-                    $"Ask Daoris already has a conversation running — `{running.Id}` ({Spell(running.State)}). "
-                    + "One runs at a time; carry that one on, or finish it first.",
+                    $"Ask Daoris already has a conversation running in `{running.Workspace}` — `{running.Id}` "
+                    + $"({Spell(running.State)}). One runs at a time in a workspace; carry that one on, or finish it first.",
                     Session: null);
             }
 
             // No base commit, for the intake's reason: the room is no repository.
             var session = await sessions
                 .CreateAsync(
-                    null, HelpRepository, adapter, now, workspace: null, SessionKind.Chat,
+                    null, HelpRepository, adapter, now, circle, SessionKind.Chat,
                     harnessVersion, profile, holding, baseCommit: null, inside, ownEntry: true)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
                 SessionOpenRefusal.None,
-                $"Ask Daoris `{session.Id}` opened, via {adapter}.",
+                $"Ask Daoris `{session.Id}` opened in `{session.Workspace}`, via {adapter}.",
                 session);
         }, ct).ConfigureAwait(false);
     }
@@ -1153,7 +1190,11 @@ public sealed class SessionLedger(
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal, refused, Session: null);
         }
 
-        if (await sessions.ActiveForAsync(session.Repository, session.Tree, inside).ConfigureAwait(false) is { } holder)
+        // Ask Daoris's holds its own workspace's one at a time (ASKSCOPE1a), as its start does: every workspace's runs in one room.
+        var holder = IsHelp(session)
+            ? await sessions.RunningInWorkspaceAsync(session.Repository, session.Workspace, parked: true, inside).ConfigureAwait(false)
+            : await sessions.ActiveForAsync(session.Repository, session.Tree, inside).ConfigureAwait(false);
+        if (holder is not null)
         {
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, Busy(session.Repository, holder), Session: null);
         }

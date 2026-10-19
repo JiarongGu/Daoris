@@ -1256,13 +1256,15 @@ if (mode == ServiceMode.Local)
         var outcome = await s.Ledger.OpenHelpAsync(
             // The adapter is the harness, never a model (D24). Silence takes the supported one.
             string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
-            body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, ct);
+            body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Workspace, ct);
 
         return outcome.Refusal switch
         {
             SessionOpenRefusal.None => Results.Ok(
                 new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
             SessionOpenRefusal.RepositoryBusy => Results.Conflict(new ErrorResponse(outcome.Message)),
+            // ASKSCOPE1a: a workspace this machine does not hold, as an ask in one is answered.
+            SessionOpenRefusal.WorkspaceUnknown => Results.NotFound(new ErrorResponse(outcome.Message)),
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
     });

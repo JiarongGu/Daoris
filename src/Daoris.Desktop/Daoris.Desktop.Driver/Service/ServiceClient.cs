@@ -646,10 +646,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>
     /// Ask the ledger to open Ask Daoris's conversation (HELP1a, D89), in the room this side is about to
-    /// run it in. A refusal is an answer, not an exception — usually that one is already running.
+    /// run it in. A refusal is an answer, not an exception — usually that one is already running in its workspace.
     /// </summary>
+    /// <param name="workspace">
+    /// The workspace the person's window was on at the press, which the record keeps (ASKSCOPE1a); null sends none, which the
+    /// ledger records as <c>default</c>, as it did before.
+    /// </param>
     public async Task<(string? SessionId, string Message)> OpenHelpAsync(
-        string adapter, string room, string? harnessVersion = null, string? profile = null,
+        string adapter, string room, string? harnessVersion = null, string? profile = null, string? workspace = null,
         CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
@@ -659,6 +663,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             writer.WriteString("room", room);
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
             if (profile is not null) writer.WriteString("profile", profile);
+            if (workspace is not null) writer.WriteString("workspace", workspace);
             writer.WriteEndObject();
         });
 
@@ -1695,6 +1700,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 NoteParts = NotePart.Read(session),
                 // The person's answer to its park (ENTRY1f2), read as SessionRecords reads it: a blank one is none.
                 Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
+                // Its workspace (ASKSCOPE1a), as SessionRecords reads it: none from a host from before is `default`.
+                Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
             });
         }
 

@@ -118,6 +118,32 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 ASKSCOPE1a (D158's ASKSCOPE1 note, point 2): an Ask Daoris record stays home whatever its workspace. It is skipped by
+    /// its kind, not by having no workspace (it has one now) nor by its repository never joining: a named workspace's help
+    /// record is not pushed beside the joined repository's chat of the same workspace, and the rule refuses it even where its
+    /// name were joined.
+    /// </summary>
+    [Fact]
+    public async Task A_named_workspace_s_help_record_is_never_pushed()
+    {
+        var shared = (await _service.RegistryAsync()).Single(row => row.Repository == "Shared");
+        await _service.RegisterAsync(shared with { Workspace = "alpha" }, Now);
+        var chat = await _a.CreateAsync(null, "Shared", "stub", Now, workspace: "alpha", kind: SessionKind.Chat);
+        var help = await _a.CreateAsync(null, SessionLedger.HelpRepository, "stub", Now, workspace: "alpha", kind: SessionKind.Chat);
+        var remote = Remote("a@one");
+
+        var pass = await SessionSync.RunAsync(_a, _quests[_a], _service, remote, "alpha");
+
+        Assert.Equal(1, pass.Pushed);
+        Assert.Contains(chat.Id, remote.LastFeed);
+        Assert.DoesNotContain(help.Id, remote.LastFeed);
+        Assert.DoesNotContain(SessionLedger.HelpRepository, remote.LastFeed);
+        Assert.False((await _a.FindAsync(help.Id))!.Pushed);
+        Assert.False(SessionSync.GoesUp(help, new HashSet<string>([SessionLedger.HelpRepository, "Shared"], StringComparer.OrdinalIgnoreCase)));
+        Assert.True(SessionSync.GoesUp(chat, new HashSet<string>(["Shared"], StringComparer.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
     /// 🔴 The strip, on the wire (D47 §4, D49 §4, D51): a record made with a transcript, a profile and a
     /// tree crosses with none of the three — there is no field for any of them.
     /// </summary>
