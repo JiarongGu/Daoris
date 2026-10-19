@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Several tasks no longer wait for each other to start. A task whose start is slow (its tree being made, its account being
+  chosen, a plugin taking its time to answer) holds only itself: a task published meanwhile starts beside it, and the slow one
+  is still started once, in its place under your limit of sessions at once. The sync with a remote runs on its own, so a remote
+  that is slow to answer holds no task here, and each workspace's remote is synced at once. A plugin hearing that a session
+  ended, and a brainstorm's or a meeting's packet being gathered, no longer hold what starts next. Each of Daoris's looks writes
+  in the machine log how long each of its parts took, and a part still running after five seconds is named there as it runs.
 - A start no longer asks each account's agent how much it has used before choosing one, a process and a few seconds each
   time. Daoris works it out from the account's last reading and its own sessions on it since, and asks only where that comes
   within ten points of the account's usage curve, where the account has gone thirty minutes unread, where Daoris cannot weigh
