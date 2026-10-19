@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
+  test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
+  call the rules refused no longer reads as still running.
 - Three of a repository's pauses can be turned off at a terminal, for the repository, its workspace or this machine:
 - Ask Daoris follows the window's workspace. A conversation starts in the workspace the window shows when you press send,
   and stays there if the window moves while it starts. A window that shows every workspace asks which before it starts one,
