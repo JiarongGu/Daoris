@@ -167,6 +167,39 @@ internal sealed class LandedCleanups(
             landedMayGo: true, ct).ConfigureAwait(false);
 
         var sessions = await sweeps.SweepPlanAsync(known, inUse, ct).ConfigureAwait(false);
+        return new(sessions, await LandedPlanAsync(known, sessions, asked, ct).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// The clean-up's list of one repository as the machine's facts judge it (PUSH1c4a, D182): its git half alone, every session branch
+    /// and every branch a landing made, each judged by the pull-request answers the landing record keeps. It asks no plugin: D148
+    /// point 2 keeps the asks to an occasion that may remove, and a fact judged at each ref's move and at a deadline is none. The
+    /// person's look (<see cref="CleanPlanAsync"/>) asks first and keeps what it heard, which this reads at its next judgement.
+    /// Nothing is changed.
+    /// </summary>
+    /// <param name="inUse">The trees sessions still running or waiting name, as the service's answers the facts hold say.</param>
+    internal async Task<SweepPlan> SweepPartAsync(
+        string repository, string? workspace, string root, IReadOnlySet<string> inUse, CancellationToken ct = default)
+    {
+        IReadOnlyList<(string Repository, string? Workspace, string? Root)> one = [(repository, workspace, root)];
+        // One look at the checkout's line for both halves (UIFREEZE1), as the person's look takes.
+        using var look = context.OneLook();
+        var sessions = await sweeps.SweepPlanAsync(one, inUse, ct).ConfigureAwait(false);
+        // Nothing was asked, so a row says only what holds whatever the occasion: no plugin pushed it and the rule names none.
+        return new(sessions, await LandedPlanAsync(one, sessions, [], ct).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// The landed half of the list (WSR5): every branch a landing made and recorded in these repositories, judged over its repository's
+    /// set beside the session branches that stay, each row saying why its pull request was not asked about where <paramref name="asked"/>
+    /// or the rule says so. Nothing is changed.
+    /// </summary>
+    /// <param name="sessions">The session branches the list judged: those it keeps may lean on a landed branch.</param>
+    /// <param name="asked">What the occasion asked and heard; none where nothing was asked (<see cref="SweepPartAsync"/>).</param>
+    private async Task<List<LandedItem>> LandedPlanAsync(
+        IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlyList<SweepItem> sessions,
+        IReadOnlyList<StateAnswer> asked, CancellationToken ct)
+    {
         var record = context.Recorded.All();
         var config = context.Config();
         var landed = new List<LandedItem>();
@@ -184,7 +217,7 @@ internal sealed class LandedCleanups(
             landed.AddRange(judged.Select(each => each.Item with { NotAsked = NotAskedOf(each.Item, asked, config) }));
         }
 
-        return new(sessions, landed);
+        return landed;
     }
 
     /// <summary>

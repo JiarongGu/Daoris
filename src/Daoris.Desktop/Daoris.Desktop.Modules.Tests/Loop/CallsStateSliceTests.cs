@@ -73,7 +73,8 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
 
         var partition = Written(Pushes().Single().Data);
         Assert.Equal(["s1"], partition.Select(each => each.Key));
-        Assert.Equal(["title", "since"], partition["s1"]!.AsObject().Select(each => each.Key));
+        Assert.Equal(["title", "since", "waiting"], partition["s1"]!.AsObject().Select(each => each.Key));
+        Assert.False(partition["s1"]!["waiting"]!.GetValue<bool>());
         Assert.Equal(("npm test", "2026-10-19T12:01:00+00:00"), (partition["s1"]!["title"]!.GetValue<string>(), partition["s1"]!["since"]!.GetValue<string>()));
         // The pull's twin: the same session's `SESSION_GROUPS` row writes its `calling` alike.
         var row = new SessionGrouping("s1", SessionGroup.Working, ShownState.GoingOn) { Calling = new RunningCall("npm test", T0.AddMinutes(1)) };
@@ -138,6 +139,42 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
         Assert.Equal((StateSlice.Ready, (long?)null), (emptied.Status, emptied.BaseSeq));
         Assert.Empty(Written(emptied.Data));
         Assert.Empty(Written(slice.Snapshot().Partitions.Single().Data));
+    }
+
+    /// <summary>
+    /// AUTONOMY1b3b: a tool request held for the person wakes the slice and pushes its session's call marked waiting, timed from the
+    /// hold, as <c>SESSION_GROUPS</c> writes the same row's <c>calling</c>; the answer pushes it running again. This is the page's wake
+    /// to read what is held, in place of asking every few seconds.
+    /// </summary>
+    [Fact]
+    public async Task A_held_request_pushes_its_call_waiting_and_its_answer_running_again_as_the_rows_twin()
+    {
+        var (loop, slice) = Up();
+        Running(loop, "s1", "s2", "s3");
+        await slice.JudgeAsync();
+        var woken = 0;
+        using var hearing = CallsStateSlice.HearCalls(RunningCalls.Of(loop.Events), () => woken++);
+        var registry = HeldPermissions.Of(loop.Events);
+
+        registry.For("s1").Hold("900", "c1", "Run npm test", [new("yes", "Allow", PermissionChoice.AllowOnce)]);
+        Assert.Equal(1, woken);
+        await slice.JudgeAsync();
+
+        var held = Pushes()[^1];
+        Assert.Equal(["s1"], Written(held.Data).Select(each => each.Key));
+        var since = registry.Held("s1")[0].Since;
+        Assert.Equal(("npm test", true), (Written(held.Data)["s1"]!["title"]!.GetValue<string>(), Written(held.Data)["s1"]!["waiting"]!.GetValue<bool>()));
+        var row = new SessionGrouping("s1", SessionGroup.Working, ShownState.GoingOn) { Calling = new RunningCall("npm test", since) { Waiting = true } };
+        Assert.Equal(
+            JsonSerializer.SerializeToNode(SessionsRoutes.Grouped(row), IpcJson.Options)!["calling"]!.ToJsonString(),
+            Written(held.Data)["s1"]!.ToJsonString());
+
+        registry.Answer("s1", "900", "yes");
+        Assert.Equal(2, woken);
+        await slice.JudgeAsync();
+
+        var answered = Written(Pushes()[^1].Data)["s1"]!;
+        Assert.Equal(("2026-10-19T12:00:00+00:00", false), (answered["since"]!.GetValue<string>(), answered["waiting"]!.GetValue<bool>()));
     }
 
     /// <summary>Run as the loop runs it: a call's start reaches the windows with no bus event of its own, and a disposed hearing hears no more.</summary>

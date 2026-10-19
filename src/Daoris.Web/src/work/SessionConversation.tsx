@@ -9,7 +9,7 @@ import { accountNames } from './accountNames';
 import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from './anchors';
 import { firstAnswerWait, lastWords, type RunningCall, runningCall, settle, toTurns, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
-import { type Cooling, ConversationView } from './ConversationView';
+import { type CallMark, type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from './say';
 import { useFollowTail } from './followTail';
 import type { Wait } from './waits';
@@ -67,8 +67,10 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait,
+  waits, onAnchors, onToWait, callMark,
 }: {
+  /** The call the driver's grouping says the session is in, held or not (AUTONOMY1b3e) — `ConversationView`'s. */
+  callMark?: CallMark;
   /**
    * What waits on the person in this session, and what its joins name (WAITFOOT1c, D168 point 4): the waits that stand, its
    * go-aheads, the opinion the landing's gate names. Each is anchored to the event that raised it where the join finds one.
@@ -260,6 +262,7 @@ export function SessionConversation({
         chat={chat}
         live={live}
         turnRunning={turnRunning}
+        callMark={callMark}
         loaded={loaded}
         earlier={earlier}
         onLoadEarlier={() => void loadEarlier()}

@@ -465,6 +465,50 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     expect(since(before, asked())['DAORIS.DRIVER.STATE_SLICE']).toBeUndefined();
   });
 
+  /**
+   * AUTONOMY1b3b: where the calls are pushed, the held permissions are asked as a pushed call's waiting mark moves, and never every
+   * few seconds while a session works: the mark comes with the hold and goes with its answer or release.
+   */
+  it('asks the held permissions as a pushed call is marked waiting and unmarked, and never on a clock (AUTONOMY1b3b)', async () => {
+    host(true);
+    await open();
+    const before = asked();
+    await later(20_000);
+    expect(since(before, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBeUndefined();
+
+    const held = asked();
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({
+        slice: 'calls', epoch: 'c1', partition: 'calling', seq: 2, status: 'ready', baseSeq: 1, removed: [],
+        data: { 'a-1': { title: 'git push', since: '2026-10-20T08:03:00+00:00', waiting: true } },
+      });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(since(held, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBe(1);
+
+    const answered = asked();
+    await act(async () => {
+      heard.get('STATE_PUSH')?.({
+        slice: 'calls', epoch: 'c1', partition: 'calling', seq: 3, status: 'ready', baseSeq: 2, removed: [], data: { 'a-1': CALL },
+      });
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(since(answered, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBe(1);
+    await later(20_000);
+    expect(since(answered, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBe(1);
+  });
+
+  /** A host older than the calls' push has no mark to wake the page: it keeps asking every few seconds while a session works. */
+  it('keeps asking the held permissions every few seconds on a host that pushes no calls', async () => {
+    host(false);
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (/^\/api\/sessions(\?|$)/.test(String(input))
+      ? Response.json([record('a-1', { state: 'working' })]) : respond(String(input)))));
+    await open();
+    const before = asked();
+    await later(20_000);
+    expect(since(before, asked())['DAORIS.DRIVER.PERMISSION_WAITS']).toBeGreaterThanOrEqual(4);
+  });
+
   it('holds the work milestones from their snapshot, a push changing them and a tick or a focus reading no WORK_STATE (PUSH1c2b)', async () => {
     host(true);
     const client = await open();

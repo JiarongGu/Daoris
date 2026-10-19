@@ -215,6 +215,22 @@ public sealed class UsageTurnsTests : IDisposable
     }
 
     [Fact]
+    public void A_brainstorm_pass_s_turn_is_kept_under_the_account_its_walk_chose()
+    {
+        // USAGECAP1a4: the pass's session id is brainstorm-<id>-<turn>; its start binds it as any other driven start does.
+        var events = Watched();
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home, events: events);
+        _ = driver.Said(adapters.Resolve("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "brainstorm-b1-1");
+
+        events.Append("brainstorm-b1-1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "the pass", At = Now.AddMinutes(-1) });
+        events.Append("brainstorm-b1-1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn", Tokens = Total, At = Now });
+
+        var turn = Assert.Single(UsageHistory.ReadTurns(_home).Turns);
+        Assert.Equal(("claude-code", "account-1", "brainstorm-b1-1"), (turn.Agent, turn.Account, turn.Session));
+    }
+
+    [Fact]
     public void A_turn_of_a_session_no_start_bound_is_kept_with_no_account()
     {
         var events = Watched();

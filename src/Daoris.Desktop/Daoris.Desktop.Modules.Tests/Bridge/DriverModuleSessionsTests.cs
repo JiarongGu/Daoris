@@ -671,6 +671,35 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// AUTONOMY1b3b: a working session whose tool request is held for the person says its call waits, timed from the hold, until the
+    /// person answers it; a call that runs says it does not wait.
+    /// </summary>
+    [Fact]
+    public async Task A_working_sessions_row_says_its_call_waits_on_the_person_while_its_request_is_held()
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+        var module = new DriverModule(Bus, loop);
+        var since = new DateTimeOffset(2026, 10, 19, 11, 52, 0, TimeSpan.Zero);
+        loop.Events.Append("running1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c1", Title = "npm test", Status = "pending", At = since });
+        async Task<JsonElement> CallingAsync() =>
+            (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "running1" } })).GetProperty("sessions")[0].GetProperty("calling");
+
+        Assert.False((await CallingAsync()).GetProperty("waiting").GetBoolean());
+
+        var registry = HeldPermissions.Of(loop.Events);
+        registry.For("running1").Hold("900", "c1", "Run npm test", [new("no", "Reject", PermissionChoice.RejectOnce)]);
+        var held = await CallingAsync();
+
+        Assert.Equal(("npm test", true), (held.GetProperty("title").GetString(), held.GetProperty("waiting").GetBoolean()));
+        Assert.Equal(registry.Held("running1")[0].Since, held.GetProperty("since").GetDateTimeOffset());
+
+        registry.Answer("running1", "900", null);
+        var answered = await CallingAsync();
+        Assert.Equal((since, false), (answered.GetProperty("since").GetDateTimeOffset(), answered.GetProperty("waiting").GetBoolean()));
+    }
+
+    /// <summary>
     /// LAND4: a row carries what its session's own tree offers to land, whatever group it rests in, as the reader said it: the
     /// branch, the tree's name (never its path), the commits and the uncommitted paths; and null where it offers none. The page
     /// offers Accept beside it, and <c>sessions --json</c> prints the same field.

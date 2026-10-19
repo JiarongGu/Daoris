@@ -82,8 +82,9 @@ that half runs after the other one, never beside it, and a class marked so is ru
 the other, whose filter leaves it out. A git test copies its
 repositories from a seed (`GitSeed`, PROC1h) unless it reads the first commit's id or time, and removes its scratch with
 `GitSeed.Remove`: git writes its objects read-only, which `Directory.Delete` refuses on Windows (PROCSPEED1). Rehearsals also run
-serially, use repository scratch and record transcripts there; the merge tool runs only the family rehearsal beside the
-git half, which builds the driver host into its own output (REHLANE1). Do not overlap them with another full gate run.
+serially, use repository scratch and record transcripts there; the merge tool runs the release, family and deployment
+rehearsals beside the git half, one after the other, each building what the Process halves build only into an output of
+its own (REHLANE1, REHLANE2, REHLANE2b). Do not overlap them with another full gate run.
 `npm run test:web` runs `test:web:unit` (the vitests) then `test:web:e2e`, which rebuilds the HTTP host: a running
 development instance can hold its assemblies. Identify the owner before stopping a process; do not
 stop an installed application or an unrelated host merely to unblock a build.
@@ -113,8 +114,8 @@ start no real process run beside the Process lane, one Process gate at a time (G
 two that build one .NET component (GATELANES2), and a Process half starts only
 once the heavy light gates (the CLI, .NET and web suites) have ended, so its timing tests run with no
 suite loading the CPU (GATEORDER1). A Process half runs `--no-build` when its fast half passed in the
-same run on the same tree (GATEBUILD1). The release and family rehearsals run beside the git half, one after
-the other, and every other Process-lane gate alone (REHLANE1, REHLANE2); the web gate's vitests are a light gate of their own, `web-unit`, beside the
+same run on the same tree (GATEBUILD1). The release, family and deployment rehearsals run beside the git half, one after
+the other, and every other Process-lane gate alone (REHLANE1, REHLANE2, REHLANE2b); the web gate's vitests are a light gate of their own, `web-unit`, beside the
 service suite (WEBSPLIT1). The driver's Process half runs eight classes at once (PROCPAR1), and its
 slowest classes print by their own times beside the half's wall. Add `--one-at-a-time` on a
 loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
