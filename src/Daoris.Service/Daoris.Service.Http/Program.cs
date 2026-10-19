@@ -1691,10 +1691,19 @@ app.MapPost("/api/sessions", async (
 
     // The harness version and the profile are observed by the DRIVER before it spawns (D49 §4) — the
     // service has no binaries to look at, which is exactly the D46 §7 split: records here, processes
-    // there. It records what it is told and judges none of it.
-    var outcome = await s.Ledger.OpenAsync(
-        body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
-        body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy);
+    // there. It records what it is told and judges none of it; an access setup that is no short map of words (AUTONOMY1a) is the
+    // caller's mistake.
+    SessionOpenOutcome outcome;
+    try
+    {
+        outcome = await s.Ledger.OpenAsync(
+            body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
+            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access);
+    }
+    catch (ArgumentException refused)
+    {
+        return Results.BadRequest(new ErrorResponse(refused.Message));
+    }
 
     return outcome.Refusal switch
     {
@@ -2551,7 +2560,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The line of work it belongs to (SESSONE1a): a key, no path and no account, so every caller is told. Filled by the ledger's reader.
     Entry: s.Entry,
     // The access mode an Ask Daoris record's run got (HELPMODE1a2): this machine's, like the opinion, so answered to it only.
-    HelpMode: loopback ? s.HelpMode : null);
+    HelpMode: loopback ? s.HelpMode : null,
+    // The access setup a driven session started under (AUTONOMY1a): this machine's, like the opinion, so answered to it only.
+    Access: loopback ? s.Access : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper);
