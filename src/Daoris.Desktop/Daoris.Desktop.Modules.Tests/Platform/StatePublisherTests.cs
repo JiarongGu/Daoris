@@ -494,6 +494,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_HOLD", "driver", null)]
     [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
+    [InlineData("SET_HEAVY_GATES", "driver", null)]
     [InlineData("SET_NOTIFY", "driver", null)]
     [InlineData("SET_STRIKES", "driver", null)]
     [InlineData("SET_COOLOFF", "driver", null)]

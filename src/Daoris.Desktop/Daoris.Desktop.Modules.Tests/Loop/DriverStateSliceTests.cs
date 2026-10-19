@@ -38,6 +38,8 @@ public sealed class DriverStateSliceTests : DriverModuleBridge
         var classed = DriverStateSlice.Partitions.SelectMany(each => each.Value).Concat(DriverStateSlice.PulledOnly).ToHashSet();
         Assert.All(state.EnumerateObject().Select(each => each.Name), field => Assert.Contains(field, classed));
         Assert.Equal(state.GetProperty("drivable").GetRawText(), Data(snapshot, "choices")["drivable"]!.ToJsonString());
+        // HEAVYRUN1b2b: this machine's heavy gates are a standing choice, pushed with the others.
+        Assert.Equal(state.GetProperty("heavyGates").GetRawText(), Data(snapshot, "choices")["heavyGates"]?.ToJsonString());
     }
 
     [Fact]

@@ -5,6 +5,7 @@ import { keys } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/Access';
 import type { CommitRule } from '../settings/Commits';
+import type { HeavyGate } from '../settings/HeavyGates';
 import type { HelperRule } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
@@ -161,6 +162,11 @@ export type DriverState = {
   workspaceAccess?: { workspace: string; setting: AccessLevel }[];
   /** And this machine's, for each pause neither a repository nor its workspace names: no pause and not full where none is set. */
   machineAccess?: AccessLevel;
+  /**
+   * This machine's heavy gates (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): for each repository whose own `daoris.gates.json` marks no
+   * heavy gate, the list `run-heavy` runs for it in its order — absent on a shell older than it, which offers no heavy gates section.
+   */
+  heavyGates?: { repository: string; gates: HeavyGate[] }[];
 };
 
 /**
@@ -435,3 +441,10 @@ export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: 
  * standing <repo> "…"|--clear` edits. Blank words or words past the bound are the driver's refusal, its sentence verbatim.
  */
 export const useSetStanding = () => useDriverChange<{ repository: string; says?: string }>('SET_STANDING');
+/**
+ * This machine's heavy gates for a repository (HEAVYRUN1b2b): the whole list in the order its gates run, or null to clear it — the
+ * same `heavyGates` `daoris-driver heavy <repo> <name>=<command>…|--clear` edits. A list the mapping would not read (a gate with no
+ * name or no command, a name twice, a folder not under the checkout) is the driver's refusal, its sentence verbatim, nothing written.
+ */
+export const useSetHeavyGates = () =>
+  useDriverChange<{ repository: string; gates: HeavyGate[] | null }>('SET_HEAVY_GATES');
