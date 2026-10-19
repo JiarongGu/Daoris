@@ -173,7 +173,8 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
                         quest={session.quest ? questFor.get(session.quest) : null}
                         opening={openings[session.id]}
                         taking={taking[session.id]}
-                        onDetach={(id) => openWindow.mutate(sessionWindowName(id))}
+                        // In the session's own workspace where it names one, else following this window (MAINWINDOWS3).
+                        onDetach={(id) => openWindow.mutate({ name: sessionWindowName(id), workspace: session.workspace })}
                       />
                     ))}
                   </div>

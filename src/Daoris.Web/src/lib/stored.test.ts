@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { store, stored } from './stored';
+import { store, stored, storedHere, storeHere } from './stored';
 
 describe('stored', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   it('remembers a value, and forgets it when handed null', () => {
@@ -25,6 +26,29 @@ describe('stored', () => {
 
     expect(stored('daoris.test')).toBeNull();
     expect(() => store('daoris.test', 'kept')).not.toThrow();
+  });
+
+  // MAINWINDOWS3: a window's own scope is kept where a reload of that window finds it and no other window reads.
+  it('remembers for this window alone, apart from what every window shares', () => {
+    storeHere('daoris.test', 'mine');
+    expect(storedHere('daoris.test')).toBe('mine');
+    expect(stored('daoris.test')).toBeNull();
+    expect(window.sessionStorage.getItem('daoris.test')).toBe('mine');
+
+    storeHere('daoris.test', null);
+    expect(storedHere('daoris.test')).toBeNull();
+  });
+
+  it('answers nothing and throws nothing where this window\'s storage is refused', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('refused', 'SecurityError');
+    });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+
+    expect(storedHere('daoris.test')).toBeNull();
+    expect(() => storeHere('daoris.test', 'kept')).not.toThrow();
   });
 });
 

@@ -40,9 +40,9 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider delayDuration={300}>
         {/* The workspace scope wraps the whole shell (WSP5): one scope per query, everywhere —
-            including a secondary window, which reads the same remembered choice because it is the
-            same origin. A monitor scoped to a different circle than the window that opened it
-            would be the worst kind of wrong. */}
+            including a secondary window, which follows the window that opened it (MAINWINDOWS3). A
+            monitor scoped to a different circle than the window that opened it would be the worst
+            kind of wrong. Each main window holds its own. */}
         <WorkspaceScopeProvider>
           {window_ ? <SecondaryWindowRoot window={window_} /> : <App />}
         </WorkspaceScopeProvider>

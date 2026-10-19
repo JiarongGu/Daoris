@@ -21,6 +21,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { MonitorWindow } from './MonitorWindow';
+import { WorkspaceScopeProvider } from '../data/scope';
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
@@ -57,11 +58,13 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-function show() {
+/** The monitor; `scoped`, under a scope it opens windows from, as the page's root gives it (MAINWINDOWS3). */
+function show(scoped = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const monitor = <Tooltip.Provider><MonitorWindow notify={() => {}} /></Tooltip.Provider>;
   return render(
     <QueryClientProvider client={client}>
-      <Tooltip.Provider><MonitorWindow notify={() => {}} /></Tooltip.Provider>
+      {scoped ? <WorkspaceScopeProvider initial={null}>{monitor}</WorkspaceScopeProvider> : monitor}
     </QueryClientProvider>,
   );
 }
@@ -240,6 +243,20 @@ describe('the monitor window', () => {
 
     expect(invoke).toHaveBeenCalledWith(
       'DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:b2c3d4e5' } });
+  });
+
+  // MAINWINDOWS3: a session detached from the monitor is held in its own workspace where it names one.
+  it('opens a session naming its workspace into that workspace', async () => {
+    SESSIONS = LIVE.map((row) => (row.id === 'b2c3d4e5' ? { ...row, workspace: 'studio' } : row));
+    show(true);
+
+    await screen.findByText('Expose a streaming budget on the chunk API');
+    const [detach] = screen.getAllByRole('button', { name: /own window/i });
+    await userEvent.click(detach!);
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:b2c3d4e5' } }));
+    expect(JSON.parse(window.localStorage.getItem('daoris.workspace.opened')!)['session:b2c3d4e5']).toEqual({ workspace: 'studio' });
+    window.localStorage.clear();
   });
 
   it('offers no window for a session another machine is running', async () => {
