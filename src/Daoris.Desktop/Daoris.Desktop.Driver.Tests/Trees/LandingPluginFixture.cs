@@ -30,12 +30,13 @@ public abstract class LandingPluginFixture : IDisposable
 
     public void Dispose()
     {
-        // A real plugin's process stands in its folder a moment after it is told to go (FLAKE1).
+        // A real plugin's process stands in its folder a moment after it is told to go (FLAKE1). Git's read-only objects are made
+        // writable first (PROCSPEED1): refused, every retry fails and the folder stays.
         for (var attempt = 0; Directory.Exists(Scratch); attempt++)
         {
             try
             {
-                Directory.Delete(Scratch, recursive: true);
+                GitSeed.Remove(Scratch);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
