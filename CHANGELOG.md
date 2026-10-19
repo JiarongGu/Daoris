@@ -21,6 +21,11 @@ with the version and date at release.
 - In an installed Daoris, a session started in a repository that marks heavy gates is told to run the checks that cover its
   change while it works, and those gates once, at its end, through `daoris-driver run-heavy`, so two sessions finishing
   together take turns. A repository that marks none is told nothing new.
+- A repository that marks no heavy gates of its own can be given them on this machine, never in the repository:
+  `daoris-driver heavy <repository> "build=npm run build" "test=npm test -- --maxWorkers=2"` sets them in the order they run
+  (`--cwd <folder>` after a gate runs it in a folder of the repository), `--clear` takes them away, and `heavy` alone lists
+  them. `run-heavy` then runs them for that repository, and its sessions are told to, wherever its own `daoris.gates.json`
+  marks none.
 - A working session's row in the sessions list says the tool call its agent is inside and how long it has run, *running npm
   test for 8m*, as its page's head does, timed from the call's start even where it began before the window opened. A tool
   call the rules refused no longer reads as still running.

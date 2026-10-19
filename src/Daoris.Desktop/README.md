@@ -189,7 +189,10 @@ before it runs, writing to the run's own output (`HeavyStep`, `ProcessJob.Create
 job and wait until it is empty before the slot goes, and the next holder ends a job a dead holder left. The verb holds no home lease.
 A driven session is told to use it (`HeavyTold`, HEAVYRUN1b1): where its repository marks a heavy gate and an install's
 `daoris-driver` launcher is beside the home, which its PATH starts with, its instruction says, before the close, to run focused
-checks while it works and those gates once, at its end, through `run-heavy`, never whole another way.
+checks while it works and those gates once, at its end, through `run-heavy`, never whole another way. A repository whose own file
+marks none takes this machine's heavy gates for it (`HeavyMapping`, HEAVYRUN1b2a): `heavyGates` in `driver.json`, by repository, a
+list in the order they run, set by `daoris-driver heavy` and never written into the repository; the run reads it under the
+repository its session is handed, and the start's instruction says it too.
 
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,
