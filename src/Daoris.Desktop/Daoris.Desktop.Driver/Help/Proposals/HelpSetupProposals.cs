@@ -26,6 +26,9 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["setup"];
 
+    /// <summary>ASKSCOPE1c: its target is the repository it sets up.</summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) => new([proposal.Workspace], [proposal.Target, proposal.Repository]);
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var name = proposal.Target?.Trim() ?? "";

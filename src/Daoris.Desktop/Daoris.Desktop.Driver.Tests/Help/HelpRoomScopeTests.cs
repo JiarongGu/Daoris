@@ -59,7 +59,8 @@ public sealed class HelpRoomScopeTests : IDisposable
     /// 🔴 The room's facts are its workspace's, projected before any count or limit: its repositories and their lines, the sessions
     /// waiting and the list's groups, the asks and their count, the quests parked, held and paused, the finished work, the work
     /// and its recoveries, the landings and the kinds of work. The agents and their accounts, the driver and its cap stay the
-    /// machine's, as do the checkouts it may read, which are what its spawn is granted, so the room lists what its rules allow.
+    /// machine's. Since ASKSCOPE1c the checkouts it may read are its workspace's too: they are what its spawn is granted, so the room
+    /// lists what its rules allow (<see cref="HelpCircleTests"/>).
     /// </summary>
     [Fact]
     public void A_workspace_s_room_says_its_own_facts_and_the_machine_s_alone_for_the_rest()
@@ -89,8 +90,8 @@ public sealed class HelpRoomScopeTests : IDisposable
         // The machine's: the same in every workspace's room.
         Assert.Equivalent(whole.Agents, alpha.Agents, strict: true);
         Assert.Equal((whole.Adapter, whole.Helper, whole.Cap), (alpha.Adapter, alpha.Helper, alpha.Cap));
-        Assert.Equal(["console", "engine", "tools"], alpha.Reads.Select(read => read.Name));
-        Assert.Equal(whole.Reads, alpha.Reads);
+        Assert.Equal(["engine"], alpha.Reads.Select(read => read.Name));
+        Assert.Equal(["console", "engine", "tools"], whole.Reads.Select(read => read.Name));
 
         // `default`'s room is the whole machine, as before.
         Assert.Same(whole, whole.Within("default"));

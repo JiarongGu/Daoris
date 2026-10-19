@@ -41,7 +41,8 @@ public sealed record AcrossReach(
 /// a repository whose code should stay its own, and because Ask Daoris belongs to no repository.</para>
 ///
 /// <para><b>Within one workspace</b> (D48): a session reads its own workspace's checkouts, and a declared
-/// relationship reaches only into its workspace. Ask Daoris belongs to none and reads every readable one.</para>
+/// relationship reaches only into its workspace. Ask Daoris's room for <c>default</c> is the whole machine's and reads every
+/// readable one; a workspace's room reads its own workspace's (ASKSCOPE1c, D158's note).</para>
 ///
 /// <para><b>Only the driver resolves.</b> The CLI's <c>driverconfig.ts</c> edits and lists the same keys
 /// (the file is the twin), as it does a landing rule the driver alone chooses.</para>
@@ -96,7 +97,10 @@ public static class AcrossRules
         return new(Of(reads), Of(writes), Of(unread));
     }
 
-    /// <summary>Every checkout Ask Daoris may read: each readable one here, in every workspace, sorted by name.</summary>
+    /// <summary>
+    /// The checkouts Ask Daoris may read: each readable one of <paramref name="registry"/>, sorted by name; every workspace's for
+    /// <c>default</c>'s room, one workspace's for its own (ASKSCOPE1c).
+    /// </summary>
     public static IReadOnlyList<AcrossCheckout> Readable(DriverConfig config, IEnumerable<RepoView> registry) =>
         Of(Checkouts(registry).Where(known => Reading(config, known.Repository, known.Workspace).Read));
 

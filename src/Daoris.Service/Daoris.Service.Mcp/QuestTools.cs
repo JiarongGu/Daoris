@@ -202,6 +202,7 @@ public sealed class QuestTools(
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
+        if (circle.Refused(workspace) is { } outside) return outside;
         var scope = await circle.ResolveAsync(workspace, ct).ConfigureAwait(false);
         var found = await quests.ListAsync(repository, includeClosed, scope, ct).ConfigureAwait(false);
         if (found.Count == 0)

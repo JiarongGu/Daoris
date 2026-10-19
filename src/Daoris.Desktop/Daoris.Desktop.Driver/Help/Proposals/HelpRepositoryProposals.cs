@@ -32,6 +32,10 @@ internal sealed class HelpRepositoryProposals : IHelpProposalKind
 
     public IReadOnlyList<string> Doors { get; } = ["wire"];
 
+    /// <summary>ASKSCOPE1c: its target is the repository it moves, and its value the workspace it moves it to.</summary>
+    public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
+        new([proposal.Workspace, proposal.Value], [proposal.Target, proposal.Repository]);
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why) => new(why, "", "", null);

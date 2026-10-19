@@ -14,8 +14,9 @@ namespace Daoris.Driver;
 internal sealed class HelpRoomMayDo : IHelpRoomSection
 {
     /// <summary>
-    /// The checkouts it may read: every readable one here, in every workspace, from the driver's own setting. In a workspace's room
-    /// too (ASKSCOPE1b): they are what its spawn is granted, so the room lists what its rules allow (D158's ASKSCOPE1b note).
+    /// The checkouts it may read: every readable one here, from the driver's own setting, in every workspace in <c>default</c>'s room.
+    /// A workspace's room (ASKSCOPE1c, D158's ASKSCOPE1 note point 5) reads its own workspace's alone, of those reading across already
+    /// allows (D107): they are what its spawn is granted, so the room lists what its rules allow.
     /// </summary>
     public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
     {
@@ -47,10 +48,15 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     private static HelpMachine Restricted(
         HelpMachine machine, HelpMachineSources sources, IReadOnlyList<RepoView> registry, Dictionary<string, string> workspaceOf)
     {
+        // ASKSCOPE1c: the grants intersect, its workspace's checkouts and those reading across allows; the whole registry stays the
+        // one each checkout's workspace is named from.
+        var readable = sources.Workspace is { } circle
+            ? registry.Where(known => string.Equals(RemoteTarget.Workspace(known.Workspace), circle, StringComparison.OrdinalIgnoreCase))
+            : registry;
         return machine with
         {
-            Reads = [.. AcrossRules.Readable(sources.Config, registry)
-                .Select(checkout => new HelpRead(checkout.Repository, workspaceOf[checkout.Repository], checkout.Path))],
+            Reads = [.. AcrossRules.Readable(sources.Config, readable)
+                .Select(checkout => new HelpRead(checkout.Repository, sources.Workspace ?? workspaceOf[checkout.Repository], checkout.Path))],
             // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
             PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Approved)
                 .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow) { Writes = grant.Accepted })],
