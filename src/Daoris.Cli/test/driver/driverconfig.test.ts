@@ -925,6 +925,40 @@ test('access is read as the driver reads it, kept by every other edit, and writt
   fx.cleanup();
 });
 
+/**
+ * HEAVYRUN1b2a (D180's HEAVYRUN1b2a note): this machine's heavy gates for a repository that marks none of its own are the driver's
+ * `heavyGates`, set by `daoris-driver heavy`. 🔴 A TWIN with the driver's `HeavyMapping`: both hold ONE table, the driver suite's
+ * `fixtures/heavy-gates.json`, cell for cell, and write the map in the driver's shape and place (the keeps table's `heavy` rows).
+ */
+const HEAVY_TABLE = JSON.parse(readFileSync(join(dirname(dirname(fileURLToPath(import.meta.url))), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'heavy-gates.json'), 'utf8')) as {
+  read: { name: string; heavyGates: unknown; read: Record<string, unknown[]> }[];
+};
+
+test('heavy gates are read as the driver reads them (the shared table), kept by every other edit, and written in its shape', () => {
+  const fx = makeFixture('driver-heavy');
+  assert.ok(HEAVY_TABLE.read.length > 0, 'the table holds read rows');
+  for (const row of HEAVY_TABLE.read) {
+    writeFileSync(at(fx), `${JSON.stringify({ heavyGates: row.heavyGates })}\n`, 'utf8');
+    const read = readDriverChoices(at(fx)).heavyGates;
+    assert.deepEqual(read, row.read, row.name);
+    assert.deepEqual(Object.keys(read), Object.keys(row.read), `${row.name}: in the file's order`);
+  }
+
+  const file = { heavyGates: { engine: [{ name: 'build', run: 'dotnet build', later: 'a newer build\'s field' }], odd: [] } };
+  writeFileSync(at(fx), `${JSON.stringify(file, null, 2)}\n`);
+  run(['notify', 'off'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).heavyGates, file.heavyGates);
+
+  const { source: _read, ...built } = readDriverChoices(at(fx));
+  writeDriverChoices(at(fx), { ...built, heavyGates: { shop: [{ run: 'npm test', cwd: 'web', name: 'web' }], engine: [{ name: 'build', run: 'dotnet build' }] } });
+  const written = readFileSync(at(fx), 'utf8');
+  assert.match(written, /"heavyGates": \{\n {4}"engine": \[\n {6}\{\n {8}"name": "build",\n {8}"run": "dotnet build"\n {6}\}\n {4}\],\n {4}"shop": \[\n {6}\{\n {8}"name": "web",\n {8}"run": "npm test",\n {8}"cwd": "web"\n {6}\}\n {4}\]\n {2}\}/);
+  writeDriverChoices(at(fx), { ...built, heavyGates: {} });
+  assert.equal('heavyGates' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
 test('intake needs a harness or off, and says so', () => {
   const fx = makeFixture('driver-intake-arg');
   assert.match(captureError(() => run(['intake'], at(fx))).message, /<adapter>\|off/);

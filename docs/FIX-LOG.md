@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-20 — A start's fresh tree was left at the driver's close (QUEUEDTREE1)
+
+- **Symptom:** PARALLEL1f's hand-back: a continuation that returns as the driver closes leaves the tree its start opened, and its
+  `daoris/` branch, for the sweep, though the record is already right.
+- **Root cause:** two ways. Each return after the open that starts nothing (GOONTREE1's) removed the tree on the loop's token, which
+  the close cancels, so the removal threw at its first git (the gate's wait checks the token first). And every await between the
+  open and the record's open (the go-on's record read, a carry-on's walk, the tree's head) is on the loop's token, so a close there
+  threw past every removal. The first alone is rare: a record whose own tree stands opens no fresh tree, so the second is the close's
+  usual way out.
+- **Fix:** `Loop/FreshTree.cs` holds the opened tree. Each return lets it go once on no token, as the put-back's move is; the start
+  runs through it from `ClaimedAsync`, which lets the tree go on the close until the record's open is asked (after that the ledger may
+  hold it, so a close is the sweep's), then closes on. Other failures, the untrusted hold and a replay's hold keep their tree as before.
+- **Verify:** `FreshTreeTests` (six rows) red first as a missing type, then green; `QueuedStartCloseTests` green. The start's own
+  path opens its tree with git, so its end-to-end proof is the Process half's (GOONTREE1's row in `SessionMessagesTickTests`), not run
+  on the branch.
+
+## 2026-10-20 — The CI on f290807: a read no gate reached, a sentence one test still expected, a slow glossary check (PUSH1d2, ACCESSWORDS1)
+
+- **Symptom:** the full set on `f290807` failed the tool tests' read census (`SessionsStateSliceTests` reads the service's
+  `ApiContracts.cs`, and a change to it reached no `modules` gate), `RepositorySetup.test.tsx`'s access row (it expected the
+  `landing: rule` sentence without ACCESSWORDS1's *A merge rule still waits for your Accept…*), and `names.test.ts`'s strict
+  check (20 s, under load); also timeouts in the stub turns, the CLI's plugin test and one end-to-end click, and the page's
+  structure (`help/` at 21 sources, HELPMODE1c1's).
+- **Root cause:** each builder ran its own files; PUSH1d2's twin test read across a lane, and ACCESSWORDS1 changed a sentence
+  a test in another folder held. The glossary check runs the script twice in processes of its own.
+- **Fix:** a path rule sends `ApiContracts.cs` to the service lane's gates and `modules`; the access row's expectation says the
+  sentence; the glossary check takes 90 s. `help/`'s cut is its own row (STRUCTHELP1); the timeouts are load (FLAKE1).
+- **Verify:** the read census green (48 s); `RepositorySetup.test.tsx` and `names.test.ts` green (79).
+
 ## 2026-10-20 — The CI's Process half could not pass beside the work, and a start's git ceiling missed TREEDEPS1 (FAMILYFAIL1c)
 
 - **Symptom:** the full set on `b0a786d` (beside five workers) failed 59 of the driver's Process tests; re-run one at a

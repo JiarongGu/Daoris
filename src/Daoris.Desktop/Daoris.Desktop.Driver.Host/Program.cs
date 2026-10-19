@@ -208,6 +208,11 @@ using Daoris.Driver;
 //                 under the home's locks/, which a run from any tree of it waits for, saying behind whom and how long.
 //                 Every gate's processes are in one job, ended and waited for before the slot is let go; Ctrl+C stops
 //                 the run the same way. 0 every gate passed · 1 one failed, was not heavy, or was stopped · 2 could not run.
+//   heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
+//                 this machine's heavy gates for a repository whose own daoris.gates.json marks none (HEAVYRUN1b2a, D180's
+//                 HEAVYRUN1b2a note), in the order they run: what run-heavy runs there and its sessions are told of. Kept in
+//                 the driver's file, never in the repository; a command may bound its own workers. Alone, lists each
+//                 repository's; with a repository alone, says its gates. A change holds the home's lease.
 //
 //   trace <commit|session|quest> · trace commit|session|quest <id>
 //                 one read back to the ask (TRACE1, D143): from a commit (a landing's tip, or in a session's evidence), a
@@ -534,6 +539,13 @@ try
     if (args is ["access", .. var accessArgs])
     {
         return await Daoris.Driver.Host.AccessConsole.RunAsync(accessArgs);
+    }
+
+    // This machine's heavy gates for a repository whose own daoris.gates.json marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note,
+    // D50): kept in the driver's file, never in the repository; the repository's setup page is the other door (HEAVYRUN1b2b).
+    if (args is ["heavy", .. var mappingArgs])
+    {
+        return Daoris.Driver.Host.HeavyMappingConsole.Run(mappingArgs);
     }
 
     // Finished history from a terminal (HIST1d, D153, the history-clearing design §6.2, D50): what this machine keeps of it, per

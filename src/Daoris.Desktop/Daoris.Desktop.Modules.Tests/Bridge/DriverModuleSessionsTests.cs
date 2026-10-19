@@ -590,6 +590,44 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// 🔴 PUSH1c1 (D182 points 1 and 4): the list's trees are the machine's facts', each judged by its repository's part, so a window's
+    /// tick asking the groups, and a second window's, starts no git where each walked every ended session's tree before; its rows are
+    /// the ones it answered then.
+    /// </summary>
+    [Fact]
+    public async Task The_groups_take_each_trees_judgement_from_the_facts_and_no_window_starts_git()
+    {
+        var tree = Path.Combine(new SessionTrees(Home).TreesRoot, "default", "engine", "s-done1");
+        Directory.CreateDirectory(tree);
+        // Linked as git links a worktree, so a walk of it starts git.
+        File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
+        using var ledger = Ledger(doneTree: tree);
+        ledger.Serve("/api/asks", "[]"u8.ToArray());
+        var loop = await UpAsync(ledger);
+        var module = new DriverModule(Bus, loop);
+        using (ProcessStarts.Within(_ => null)) loop.Facts.Start();
+        await UntilAsync(() => HelpFacts.Read(loop.Facts.Current, DriverConfig.Empty)?.Sessions is not null);
+        Assert.Contains(SessionGroups.Normal(tree), loop.Facts.Current.Value<HelpTrees>(HelpFacts.Trees, "engine")!.Asked);
+        var gits = 0;
+        var answers = new List<JsonElement>();
+
+        using (ProcessStarts.Within(info =>
+               {
+                   if (Path.GetFileNameWithoutExtension(info.FileName).Equals("git", StringComparison.OrdinalIgnoreCase)) Interlocked.Increment(ref gits);
+                   return null;
+               }))
+        {
+            for (var window = 0; window < 2; window++) answers.Add(await AnswerAsync(module, "SESSION_GROUPS"));
+        }
+
+        Assert.Equal(0, Volatile.Read(ref gits));
+        Assert.Equal(answers[0].GetRawText(), answers[1].GetRawText());
+        var rows = answers[0].GetProperty("sessions").EnumerateArray().ToDictionary(row => row.GetProperty("session").GetString()!);
+        Assert.Equal(["failed3", "waiting1", "running1", "done1", "failed2", "failed1"], rows.Keys);
+        Assert.Equal(("ended", "completed"), (rows["done1"].GetProperty("group").GetString(), rows["done1"].GetProperty("shown").GetString()));
+    }
+
+    /// <summary>
     /// SESSUX1g (D126 §7.1): <c>daoris-driver sessions --json</c> prints this route's answer, field for field, so the screen
     /// and the terminal cannot disagree about a session's place.
     /// </summary>
@@ -826,14 +864,15 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     /// The service's doors a look at the sessions reads, standing in over a real socket on this machine: `engine` registered
     /// and adopted; `q1` open with three failed sessions, which park it; a parked session, a running one, and a quest done.
     /// </summary>
-    private LoopbackHost Ledger()
+    /// <param name="doneTree">The tree the quest done ended in, where a test gives it one; none by default.</param>
+    private LoopbackHost Ledger(string? doneTree = null)
     {
         var ledger = new LoopbackHost();
         var root = Path.Combine(Home, "checkouts", "engine").Replace('\\', '/');
-        string Session(string id, string state, string quest, int minute) =>
-            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"}""";
+        string Session(string id, string state, string quest, int minute, string? tree = null) =>
+            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"{{(tree is null ? "" : $",\"tree\":\"{tree.Replace('\\', '/')}\"")}}}""";
         var records = $"[{Session("failed1", "failed", "q1", 0)},{Session("failed2", "failed", "q1", 10)},{Session("failed3", "failed", "q1", 20)},"
-                      + $"{Session("waiting1", "awaiting-person", "q2", 30)},{Session("running1", "working", "q3", 40)},{Session("done1", "completed", "q4", 50)}]";
+                      + $"{Session("waiting1", "awaiting-person", "q2", 30)},{Session("running1", "working", "q3", 40)},{Session("done1", "completed", "q4", 50, doneTree)}]";
         string Quest(string id, string status) =>
             $$"""{"id":"{{id}}","from":"game","to":"engine","title":"The work of #{{id}}","body":"A body.","status":"{{status}}"}""";
         var live = $"[{Quest("q1", "Open")},{Quest("q2", "Taken")},{Quest("q3", "Taken")}]";

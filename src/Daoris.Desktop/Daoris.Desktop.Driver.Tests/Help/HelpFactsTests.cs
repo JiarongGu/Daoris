@@ -485,6 +485,193 @@ public sealed class HelpFactsTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// 🔴 PUSH1c1 (D182 point 4): a door that reads the look itself, the Sessions list's, takes each tree's judgement from the part that
+    /// asked it, a tree asked and not answered holding nothing to review, and walks none; asked of some sessions, their trees alone.
+    /// </summary>
+    [Fact]
+    public async Task A_door_takes_each_tree_from_the_part_that_asked_it_and_walks_none()
+    {
+        var engineTree = Path.Combine("trees", "default", "engine", "s-1");
+        var quietTree = Path.Combine("trees", "default", "engine", "s-2");
+        var siteTree = Path.Combine("trees", "alpha", "site", "s-3");
+        var look = new SessionLook([Ended("e1", "engine", engineTree), Ended("e2", "engine", quietTree), Ended("s3", "site", siteTree)], [], []);
+        var work = TreesOf((engineTree, new TreeWork(2, 0)), (siteTree, new TreeWork(0, 1))).Trees;
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(part, _ => true, StandIn(work), ct),
+        });
+        facts.Start();
+        await TreesReadAsync(facts);
+        var walked = new List<string>();
+
+        var read = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked));
+
+        Assert.Empty(walked);
+        Assert.Equal([SessionGroups.Normal(siteTree), SessionGroups.Normal(engineTree)], read.Trees.Keys.Order(StringComparer.Ordinal));
+        var groups = SessionGroups.Read(read).ToDictionary(row => row.Session, row => row.Group);
+        Assert.Equal((SessionGroup.Review, SessionGroup.Ended, SessionGroup.Review), (groups["e1"], groups["e2"], groups["s3"]));
+        Assert.Equal(
+            [SessionGroups.Normal(engineTree), SessionGroups.Normal(quietTree)],
+            facts.Current.Value<HelpTrees>(HelpFacts.Trees, "engine")!.Asked.Order(StringComparer.Ordinal));
+
+        var some = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked), only: ["s3"]);
+
+        Assert.Equal([SessionGroups.Normal(siteTree)], some.Trees.Keys);
+        Assert.Empty(walked);
+    }
+
+    /// <summary>
+    /// 🔴 PUSH1c1: a tree no part asked yet, its session having ended after the facts' look, is walked alone, as the door walked every
+    /// tree before; and the facts' look is judged afresh, not held by its rest, so its part asks it and the next door walks none.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_no_part_asked_yet_is_walked_alone_and_the_facts_look_judged_afresh()
+    {
+        var engineTree = Path.Combine("trees", "default", "engine", "s-1");
+        var siteTree = Path.Combine("trees", "default", "site", "s-2");
+        var ended = new SessionLook([Ended("e1", "engine", engineTree), Ended("s2", "site", siteTree)], [], []);
+        var look = ended with { Records = [ended.Records[0] with { State = "working" }, ended.Records[1]] };
+        var looks = 0;
+        using var facts = new MachineFacts(new Clock().Now);
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site)) with
+        {
+            Sessions = _ =>
+            {
+                Interlocked.Increment(ref looks);
+                return Task.FromResult<SessionLook?>(Volatile.Read(ref look));
+            },
+            Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(part, _ => true, StandIn(NoTrees.Trees), ct),
+        });
+        facts.Start();
+        await TreesReadAsync(facts);
+        // The session ended: the door's look has it, the facts' not yet. The shell keeps the door's look, which the facts' next reads.
+        Volatile.Write(ref look, ended);
+        var walked = new List<string>();
+
+        var read = await HelpFacts.WithTreesAsync(facts, ended, _ => true, Walk(walked, new TreeWork(1, 0)));
+
+        Assert.Equal([engineTree], walked);
+        Assert.Equal(1, read.Trees[SessionGroups.Normal(engineTree)].Commits);
+        // The clock stands still, so the look judged again is the door's wake, never its rest's end.
+        await Poll.Until(() => HelpFacts.TreesJudged(facts.Current, [engineTree]).NotJudged.Count == 0, within: Within);
+        Assert.Equal(2, Volatile.Read(ref looks));
+
+        walked.Clear();
+        var again = await HelpFacts.WithTreesAsync(facts, ended, _ => true, Walk(walked, new TreeWork(1, 0)));
+
+        Assert.Empty(walked);
+        Assert.False(again.Trees.ContainsKey(SessionGroups.Normal(engineTree)));
+    }
+
+    /// <summary>
+    /// 🔴 PUSH1c1: a door asking before the parts' first judgement waits for it, and walks none: every window that asks then waits on
+    /// the one judgement, never a walk of its own.
+    /// </summary>
+    [Fact]
+    public async Task A_door_before_the_parts_first_judgement_waits_for_it_and_walks_none()
+    {
+        var engineTree = Path.Combine("trees", "default", "engine", "s-1");
+        var look = new SessionLook([Ended("e1", "engine", engineTree)], [], []);
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(Whole(Engine)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Trees = async (part, ct) =>
+            {
+                await answer.Task.WaitAsync(ct);
+                return await HelpFacts.ReadTreesAsync(part, _ => true, StandIn(TreesOf((engineTree, new TreeWork(2, 0))).Trees), ct);
+            },
+        });
+        facts.Start();
+        var walked = new List<string>();
+
+        var doors = Enumerable.Range(0, 2)
+            .Select(window => HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked), first: TimeSpan.FromMinutes(1))).ToList();
+        await Task.Delay(200);
+
+        Assert.All(doors, door => Assert.False(door.IsCompleted));
+        answer.SetResult();
+        var reads = await Task.WhenAll(doors).WaitAsync(Within);
+        Assert.Empty(walked);
+        Assert.All(reads, read => Assert.Equal(2, read.Trees[SessionGroups.Normal(engineTree)].Commits));
+    }
+
+    /// <summary>
+    /// 🔴 PUSH1c1: where the parts' first judgement does not come within the wait, a door walks what is still not judged, as it did
+    /// before; the wait is once, so the next door walks at once rather than wait again.
+    /// </summary>
+    [Fact]
+    public async Task A_door_whose_parts_never_answer_walks_after_its_wait_and_the_next_waits_no_more()
+    {
+        var engineTree = Path.Combine("trees", "default", "engine", "s-1");
+        var look = new SessionLook([Ended("e1", "engine", engineTree)], [], []);
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(Whole(Engine)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Trees = (_, _) => new TaskCompletionSource<HelpTrees?>().Task,
+        });
+        facts.Start();
+        var walked = new List<string>();
+
+        var first = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked, new TreeWork(2, 0)), first: TimeSpan.FromMilliseconds(200))
+            .WaitAsync(Within);
+        var next = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked, new TreeWork(2, 0)), first: TimeSpan.FromMinutes(10))
+            .WaitAsync(Within);
+
+        Assert.Equal([engineTree, engineTree], walked);
+        Assert.Equal(2, first.Trees[SessionGroups.Normal(engineTree)].Commits);
+        Assert.Equal(2, next.Trees[SessionGroups.Normal(engineTree)].Commits);
+    }
+
+    /// <summary>
+    /// 🔴 PUSH1c1 (D182 point 4, the row's proof): once the parts are judged, the door each window's tick asks starts no git, a second
+    /// window none either, where facts never started walk each tree with git as the door did before.
+    /// </summary>
+    [Fact]
+    public async Task A_door_once_the_parts_are_judged_starts_no_git_for_any_window()
+    {
+        var root = new SessionTrees(_home);
+        string Tree(string repository, string name)
+        {
+            var tree = Path.Combine(root.TreesRoot, "default", repository, name);
+            Directory.CreateDirectory(tree);
+            // Linked as git links a worktree, so a walk asks git of it.
+            File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
+            return tree;
+        }
+
+        var look = new SessionLook([Ended("e1", "engine", Tree("engine", "s-1")), Ended("s2", "site", Tree("site", "s-2"))], [], []);
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site)) with
+        {
+            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(_home, part, ct),
+        });
+        using (ProcessStarts.Within(_ => null)) facts.Start();
+        await TreesReadAsync(facts);
+        var gits = 0;
+        using var cold = new MachineFacts();
+
+        using (ProcessStarts.Within(_ =>
+               {
+                   Interlocked.Increment(ref gits);
+                   return null;
+               }))
+        {
+            for (var window = 0; window < 2; window++) await HelpFacts.WithTreesAsync(facts, look, root.Holds, root.WorkAsync);
+            Assert.Equal(0, Volatile.Read(ref gits));
+
+            await HelpFacts.WithTreesAsync(cold, look, root.Holds, root.WorkAsync);
+        }
+
+        Assert.True(Volatile.Read(ref gits) > 0);
+    }
+
     [Fact]
     public async Task A_repository_gone_from_the_registry_loses_its_line()
     {
@@ -722,6 +909,21 @@ public sealed class HelpFactsTests : IDisposable
     {
         lock (judged) return judged.GetValueOrDefault(subject);
     }
+
+    /// <summary>Until the trees are read whole: the look and every part the service's answers name judged.</summary>
+    private static Task TreesReadAsync(MachineFacts facts) =>
+        Poll.Until(() => HelpFacts.Read(facts.Current, DriverConfig.Empty)?.Sessions is not null, within: Within);
+
+    /// <summary>Git's walk of a tree, standing in: the work given for each tree, none for any other.</summary>
+    private static Func<string, CancellationToken, Task<TreeWork?>> StandIn(IReadOnlyDictionary<string, TreeWork> work) =>
+        (tree, _) => Task.FromResult(work.TryGetValue(SessionGroups.Normal(tree), out var each) ? each : null);
+
+    /// <summary>A door's own walk, standing in: each tree it was asked, and <paramref name="work"/> for every one.</summary>
+    private static Func<string, CancellationToken, Task<TreeWork?>> Walk(List<string> walked, TreeWork? work = null) => (tree, _) =>
+    {
+        lock (walked) walked.Add(tree);
+        return Task.FromResult(work);
+    };
 
     /// <summary>A part of the trees, each tree's work keyed by its path as the Sessions list keys it.</summary>
     private static HelpTrees TreesOf(params (string Tree, TreeWork Work)[] trees) =>

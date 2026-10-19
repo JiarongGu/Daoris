@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -63,6 +64,56 @@ public sealed class LookWaitTests : IDisposable
 
         var stages = Lines("watch.looked").Select(data => data.GetProperty("stages").GetString()).OfType<string>().ToList();
         Assert.Contains(stages, line => line.Split(' ').Any(entry => entry.StartsWith("start=", StringComparison.Ordinal) && entry.EndsWith("@#q1", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// 🔴 LOOKWAIT1b (D181 point 6): a start whose git waited for its place says that wait as its stage's queue, apart from its
+    /// preparation, so a look slow for want of a place is told apart from slow work. The places are a gate of the test's own, held
+    /// full as a fan-out holds git's: the shared gate cannot be held full here, and any gate's wait is said the same way.
+    /// </summary>
+    [Fact]
+    public async Task A_start_whose_git_waits_for_a_place_says_the_wait_as_its_queue()
+    {
+        _ledger.Publish("q1", "engine");
+        using var held = new ManualResetEventSlim();
+        var places = new ProcessStarts(1, info =>
+        {
+            if (info.FileName == "holder") held.Wait(Bound);
+            return null;
+        });
+        var holder = places.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false }, CancellationToken.None);
+        using (var log = new MachineLog(_home, "driver"))
+        {
+            var runs = new StandInRuns(_ledger.Client(), _ledger);
+            var watch = Watch(log, runs, async (start, opened, token) =>
+            {
+                var git = places.StartAsync(new ProcessStartInfo("git") { UseShellExecute = false }, StartClass.Background, token);
+                await Task.Delay(150, token);
+                held.Set();
+                await git;
+                return await runs.Runner(start, opened, token);
+            });
+
+            var reports = new List<TickReport>();
+            var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
+            try
+            {
+                await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
+                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Bound);
+            }
+            finally
+            {
+                held.Set();
+                await _closing.CancelAsync();
+                await Settled(watching);
+            }
+        }
+
+        await holder.WaitAsync(Bound);
+        var stages = Lines("watch.looked").Select(data => data.GetProperty("stages").GetString()).OfType<string>().ToList();
+        Assert.True(
+            stages.Any(line => line.Split(' ').Any(entry => entry.TrimStart('~').StartsWith("start.queue=", StringComparison.Ordinal))),
+            string.Join(" | ", stages));
     }
 
     /// <summary>🔴 A start that hangs is named while it hangs: its stage and its quest, before anything ends it.</summary>

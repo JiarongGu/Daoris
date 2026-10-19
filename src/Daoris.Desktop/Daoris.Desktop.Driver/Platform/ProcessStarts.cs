@@ -59,6 +59,10 @@ public sealed class ProcessStarts
     // The stand-in a test's flow makes its starts with (Within); null in production.
     private static readonly AsyncLocal<Func<ProcessStartInfo, Process?>?> s_within = new();
 
+    // Whom a wait for a place in this flow is said to (LOOKWAIT1b): the stage whose work it is, set for that work alone by
+    // QueuedToAsync; null in a flow with none, and in work begun beside a stage.
+    private static readonly AsyncLocal<Func<IDisposable>?> s_queue = new();
+
     private readonly int _bound;
     private readonly int _backgroundBound;
     private readonly Func<ProcessStartInfo, Process?> _start;
@@ -159,6 +163,8 @@ public sealed class ProcessStarts
             waiting = Queue(whose).AddLast(waiter);
         }
 
+        // LOOKWAIT1b: said to the stage whose work made this start, from here until it is handed its place or gives up its wait.
+        using (s_queue.Value?.Invoke())
         using (ct.Register(() => Abandon(whose, waiting, ct)))
         {
             await waiter.Task.ConfigureAwait(false);
@@ -231,5 +237,28 @@ public sealed class ProcessStarts
     private sealed class Ending(Func<ProcessStartInfo, Process?>? before) : IDisposable
     {
         public void Dispose() => s_within.Value = before;
+    }
+
+    /// <summary>
+    /// Run <paramref name="work"/> with each wait for a place that a start of its flow makes said to <paramref name="queue"/>
+    /// (LOOKWAIT1b, D181 point 6): called as a wait begins, and what it returns disposed as the wait ends, handed its place or given
+    /// up. A look's stage hands its span, so its line says the wait as the stage's queue, apart from its hold. Null says them to
+    /// nobody: work begun beside a stage, which the stage does not wait on, is never the stage's, until a stage of its own takes it.
+    /// </summary>
+    /// <remarks>
+    /// Set inside this method's own flow, so it reaches the work and what the work starts, and never the caller: an async method's
+    /// changes to its flow do not return to its caller. Nothing is restored, and no span ended in another flow can leave it set.
+    /// </remarks>
+    public static async Task<T> QueuedToAsync<T>(Func<IDisposable>? queue, Func<Task<T>> work)
+    {
+        s_queue.Value = queue;
+        return await work().ConfigureAwait(false);
+    }
+
+    /// <inheritdoc cref="QueuedToAsync{T}(Func{IDisposable}?, Func{Task{T}})"/>
+    public static async Task QueuedToAsync(Func<IDisposable>? queue, Func<Task> work)
+    {
+        s_queue.Value = queue;
+        await work().ConfigureAwait(false);
     }
 }

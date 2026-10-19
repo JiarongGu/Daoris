@@ -200,11 +200,20 @@ export interface DriverChoices {
   workspaceAccess: Record<string, AccessSetting>;
   /** This machine's access setup, for each pause neither a repository nor its workspace names; null sets none. */
   machineAccess: AccessSetting | null;
+  /**
+   * This machine's heavy gates for a repository whose own `daoris.gates.json` marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note), by
+   * repository, each list in the order its gates run. Only the driver edits and runs it (`HeavyMapping`, `daoris-driver heavy`); this
+   * editor reads it as the driver does and keeps it, one table holding both (`fixtures/heavy-gates.json`).
+   */
+  heavyGates: Record<string, MappedHeavyGate[]>;
   rest: Record<string, unknown>;
 }
 
 /** One level's session access setup as the driver's file keeps it (AUTONOMY1a): `full`, or the pauses it names, each with its value. */
 export type AccessSetting = 'full' | Record<string, string>;
+
+/** One of a repository's heavy gates as this machine keeps it (HEAVYRUN1b2a): its name, its command, and its folder where it has one. */
+export type MappedHeavyGate = { name: string; run: string; cwd?: string };
 
 /**
  * The pauses, each with its values and the one that is today's behaviour, in the driver's order — a deliberate copy of the driver's
@@ -302,7 +311,7 @@ const EMPTY: DriverChoices = {
   brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
   workflows: {}, workspaceWorkflows: {},
-  access: {}, workspaceAccess: {}, machineAccess: null,
+  access: {}, workspaceAccess: {}, machineAccess: null, heavyGates: {},
   rest: {},
 };
 
@@ -618,7 +627,7 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
       workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
       brainstorms: null, workspaceBrainstorms: {},
   commits: {}, workspaceCommits: {},
-      workflows: {}, workspaceWorkflows: {}, access: {}, workspaceAccess: {}, machineAccess: null, rest: {},
+      workflows: {}, workspaceWorkflows: {}, access: {}, workspaceAccess: {}, machineAccess: null, heavyGates: {}, rest: {},
     };
   }
 
@@ -626,7 +635,8 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, helpMode, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, workCycles, workspaceWorkCycles, readAcross, workspaceReadAcross, writeAcross, standing,
     languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, brainstorms,
-    workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, access, workspaceAccess, machineAccess, ...rest
+    workspaceBrainstorms, commits, workspaceCommits, workflows, workspaceWorkflows, access, workspaceAccess, machineAccess, heavyGates,
+    ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -705,8 +715,60 @@ function choicesOf(parsed: Record<string, unknown> | null): DriverChoices {
     access: accessMap(access),
     workspaceAccess: accessMap(workspaceAccess),
     machineAccess: accessOf(machineAccess),
+    // As the driver reads it (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
+    heavyGates: heavyGatesMap(heavyGates),
     rest,
   };
+}
+
+/**
+ * This machine's heavy gates as the driver's `HeavyMapping.Map` reads them (HEAVYRUN1b2a): each repository's name trimmed, a blank one
+ * and a list not read passed over, a name written twice in any case read where first readable.
+ */
+function heavyGatesMap(value: unknown): Record<string, MappedHeavyGate[]> {
+  const map: Record<string, MappedHeavyGate[]> = {};
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return map;
+  for (const [name, list] of Object.entries(value)) {
+    const named = name.trim();
+    if (named.length === 0 || findName(Object.keys(map), named) !== null) continue;
+    const gates = heavyGateList(list);
+    if (gates !== null) map[named] = gates;
+  }
+  return map;
+}
+
+/**
+ * One repository's list as the driver's `HeavyMapping.Kept` reads it: one gate or more, each an object whose `name` and `run` are text
+ * with something in them and whose `cwd` is absent, null, blank (none) or a folder under the repository's root, every value trimmed, no
+ * name twice in any case; null where any of it does not read. What a gate has no field for is passed over.
+ */
+function heavyGateList(value: unknown): MappedHeavyGate[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const gates: MappedHeavyGate[] = [];
+  for (const entry of value as unknown[]) {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return null;
+    const { name, run, cwd } = entry as Record<string, unknown>;
+    if (typeof name !== 'string' || typeof run !== 'string') return null;
+    if (cwd !== undefined && cwd !== null && typeof cwd !== 'string') return null;
+    const gate = { name: name.trim(), run: run.trim(), folder: typeof cwd === 'string' ? cwd.trim() : '' };
+    if (gate.name.length === 0 || gate.run.length === 0 || gates.some((kept) => sameName(kept.name, gate.name))) return null;
+    if (gate.folder.length > 0 && !underRoot(gate.folder)) return null;
+    gates.push({ name: gate.name, run: gate.run, ...(gate.folder.length > 0 ? { cwd: gate.folder } : {}) });
+  }
+  return gates;
+}
+
+/** A gate's folder under the repository's root, as the driver's `HeavyMapping.UnderRoot` spells it: no `:`, not rooted, no `..` part. */
+function underRoot(folder: string): boolean {
+  return !folder.includes(':') && !folder.startsWith('/') && !folder.startsWith('\\') && !folder.split(/[/\\]/).includes('..');
+}
+
+/** A map of lists, each gate as the driver writes it (`HeavyMapping.WriteMap`): its name, its command, then its folder where it has one. */
+function heavyLists(map: Record<string, MappedHeavyGate[]>): Record<string, MappedHeavyGate[]> {
+  return Object.fromEntries(Object.entries(map).map(([repository, gates]) => [
+    repository,
+    gates.map((gate) => ({ name: gate.name, run: gate.run, ...(gate.cwd !== undefined ? { cwd: gate.cwd } : {}) })),
+  ]));
 }
 
 /**
@@ -860,6 +922,8 @@ function choicesWritten(choices: DriverChoices): Record<string, unknown> {
     ...(Object.keys(choices.access).length > 0 ? { access: ordered(accessLevels(choices.access)) } : {}),
     ...(Object.keys(choices.workspaceAccess).length > 0 ? { workspaceAccess: ordered(accessLevels(choices.workspaceAccess)) } : {}),
     ...(choices.machineAccess !== null ? { machineAccess: accessWritten(choices.machineAccess) } : {}),
+    // Written only when set (HEAVYRUN1b2a), as the driver writes it: absent is a repository's own heavy gates alone.
+    ...(Object.keys(choices.heavyGates).length > 0 ? { heavyGates: ordered(heavyLists(choices.heavyGates)) } : {}),
     // Written only when set (D107): absent is reading on and no relationship.
     ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: ordered(choices.readAcross) } : {}),
     ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: ordered(choices.workspaceReadAcross) } : {}),

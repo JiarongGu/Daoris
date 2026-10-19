@@ -949,6 +949,13 @@ export const REACH = Object.freeze([
   // is compiled by the driver gate as well as by the publish. A path rule replaces its lane's, so the modules' readers stay.
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Launcher/**'], gates: [...MODULES_READERS, 'driver'], why: 'the modules lane\'s own, and the driver gate builds the launcher, which links driver files (LAUNCHGATE1)' },
   { lane: 'modules', gates: MODULES_READERS, why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
+  // PUSH1d2: the modules' SessionsStateSliceTests holds the sessions slice's fields to the service's `SessionResponse`, reading
+  // the file by its path; a path rule replaces the service lane's, so its readers stay.
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs'],
+    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
+    why: "the service lane's own, and the modules' SessionsStateSliceTests holds the sessions slice's fields to its `SessionResponse` (PUSH1d2)",
+  },
   {
     lane: 'service',
     gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment'],
