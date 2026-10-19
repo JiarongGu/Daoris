@@ -236,6 +236,77 @@ export const REOPENED: Quest = {
 /** The same step reopened before anyone took it: withdrawn, taken by nobody until the source is ready again. */
 export const WITHDRAWN: Quest = { ...REOPENED, id: 'wd0wd0', status: 'Open' };
 
+// SYNCMERGE1c2 (D178 points 2, 7 and 8): two machines' work on one step, read from where this machine (`desk`) stands. The quest
+// answer names this machine (`here`), the machine holding the step while it is taken (`holder`), and how each settled conflict ended.
+
+/** This machine's id, as a local host answers it to its own page. */
+export const HERE = 'desk';
+/** Another machine of the family. */
+export const THERE = 'b7f2c9d1';
+/** This machine's take, lost: the conflict every state below starts from. */
+const MY_TAKE = { machine: HERE, sequence: 7, attempted: 'Taken' as const, note: 'desk, on the train', at: hoursAgo(3) };
+/** The fresh take a bring-forward made, by its machine and sequence. */
+const FRESH = { machine: HERE, sequence: 9, at: hoursAgo(1) };
+
+/** This machine's take lost, and the step open again: both choices stand. */
+export const MINE_LOST: Quest = { ...STANDING, id: 'ml0ml0', here: HERE, conflicts: [MY_TAKE] };
+
+/** Another machine's take lost on a step open here: only what was true before, its dismissal. */
+export const THEIRS_LOST: Quest = {
+  ...STANDING, id: 'tl0tl0', here: HERE, conflicts: [{ ...MY_TAKE, machine: THERE, sequence: 12, note: 'machine b, offline' }],
+};
+
+/** This machine's take lost to the person's reopen of the work it grew from, and another machine's beside it. */
+export const LOST_TO_REOPEN: Quest = {
+  ...STANDING, id: 'lr0lr0', here: HERE,
+  conflicts: [{ ...MY_TAKE, lostToTheReopen: true }, { ...MY_TAKE, machine: THERE, sequence: 12, note: null, lostToTheReopen: true }],
+};
+
+/** This machine's take lost, and another machine holds the step: no bring-forward while it does. */
+export const HELD_ELSEWHERE: Quest = { ...MINE_LOST, id: 'he0he0', status: 'Taken', holder: THERE };
+
+/** This machine's take lost, and this machine holds the step again by a later take: nothing is left to bring forward. */
+export const HELD_HERE: Quest = { ...MINE_LOST, id: 'hh0hh0', status: 'Taken', holder: HERE };
+
+/** This machine's take lost on a step since closed. */
+export const LOST_CLOSED: Quest = { ...MINE_LOST, id: 'lc0lc0', status: 'Done' };
+
+/** This machine's take lost on a step its source's reopen withdrew: the bring-forward waits for the source. */
+export const LOST_WITHDRAWN: Quest = { ...WITHDRAWN, id: 'lw0lw0', here: HERE, conflicts: [MY_TAKE] };
+
+/**
+ * Brought forward and lost again: another machine's take reached the remote first, so the fresh take is a conflict of its own (a
+ * second loss) and the first stays unresolved, naming the bring-forward that lost.
+ */
+export const LOST_AGAIN: Quest = {
+  ...MINE_LOST, id: 'la0la0', status: 'Taken', holder: THERE,
+  conflicts: [{ ...MY_TAKE, forward: { ...FRESH, standing: 'lost' } }, { ...MY_TAKE, ...FRESH, note: null }],
+};
+
+/** This machine's take, dropped: settled, and nothing waits. */
+export const SETTLED_DROPPED: Quest = { ...MINE_LOST, id: 'sd0sd0', conflicts: [], settled: [{ ...MY_TAKE, ended: 'dropped' }] };
+
+/** Brought forward, and the remote confirmed the fresh take: this machine holds the step again. */
+export const BROUGHT_FORWARD: Quest = {
+  ...MINE_LOST, id: 'bf0bf0', status: 'Taken', holder: HERE, conflicts: [],
+  settled: [{ ...MY_TAKE, ended: 'brought-forward', forward: { ...FRESH, standing: 'held' } }],
+};
+
+/** Brought forward offline: the fresh take stands here unconfirmed until a sync reaches the remote, never said as settled. */
+export const BROUGHT_FORWARD_UNCONFIRMED: Quest = {
+  ...BROUGHT_FORWARD, id: 'bu0bu0',
+  settled: [{ ...MY_TAKE, ended: 'brought-forward', forward: { ...FRESH, standing: 'unconfirmed' } }],
+};
+
+/** Brought forward, but another machine's dismissal of the same conflict reached the remote first: dropped, the bring-forward lost. */
+export const DROPPED_FIRST: Quest = {
+  ...MINE_LOST, id: 'df0df0', conflicts: [{ ...MY_TAKE, ...FRESH, note: null }],
+  settled: [{ ...MY_TAKE, ended: 'dropped', forward: { ...FRESH, standing: 'lost' } }],
+};
+
+/** A step its source's reopen held after this machine's take landed: its go-on and abandon are this machine's two choices. */
+export const REOPENED_HERE: Quest = { ...REOPENED, id: 'rh0rh0', here: HERE, holder: HERE };
+
 /** A start the driver holds for the agent's trust (D73). */
 export const TRUST: TrustHold = {
   folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json', quest: OPEN.id,

@@ -1,13 +1,13 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Quest } from '../data/api';
+import { canBeAsked, type Quest, type SubmissionRef } from '../data/api';
 import { linksOf, toUpload } from '../compose/attachments';
 import { useAsksPart } from '../asks/AsksPart';
 import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import { askItem, type OpenGroup, questsItem } from '../app/opener';
 import {
-  useAcceptQuest, useContinueQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry,
+  useAcceptQuest, useContinueQuest, useDeleteQuest, useDismissConflict, useForwardConflict, usePersonDone, usePublishQuest, useQuests, useRegistry,
   useReopenQuest, useRespondQuest, useSessions,
 } from '../data/queries';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './QuestComposer';
@@ -169,6 +169,8 @@ export function useQuestsView({
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
+  // This machine's lost take brought forward (SYNCMERGE1c2, D178 point 3): the service's own door, `daoris-driver sync forward`'s twin.
+  const forward = useForwardConflict();
   const remove = useDeleteQuest();
   // The person's yes to a done's departure (DRIFT1d2): the service's accept door, `daoris-driver quest accept`'s twin.
   const accept = useAcceptQuest();
@@ -307,9 +309,23 @@ export function useQuestsView({
     });
   };
 
-  // A person's dismissal (SYNC6c): the quest itself did not move — only what it was waiting on.
-  const onDismiss = (quest: Quest, machine: string, sequence: number) =>
+  // A person's dismissal (SYNC6c): the quest itself did not move — only what it was waiting on. *Drop mine* on a bring-forward that lost
+  // again dismisses the fresh take's conflict after it (SYNCMERGE1c2), one answer after the other, each said.
+  const onDismiss = (quest: Quest, machine: string, sequence: number, also: SubmissionRef[] = []): void =>
     dismiss.mutate({ id: quest.id, machine, sequence }, {
+      onSuccess: (result) => {
+        notify(result.message);
+        setHeld(result.quest);
+        const [next, ...rest] = also;
+        if (next) onDismiss(quest, next.machine, next.sequence, rest);
+      },
+      onError: failure(notify),
+    });
+
+  // This machine's lost take brought forward (SYNCMERGE1c2): the page shows the quest as the answer left it, and a refusal or a loss
+  // again is the service's sentence, the quest read again by the hook.
+  const onForward = (quest: Quest, machine: string, sequence: number) =>
+    forward.mutate({ id: quest.id, machine, sequence }, {
       onSuccess: (result) => {
         notify(result.message);
         setHeld(result.quest);
@@ -411,6 +427,7 @@ export function useQuestsView({
         trusting={trustingFor === quest.id}
         granting={trust.isPending}
         dismissing={dismiss.isPending}
+        forwarding={forward.isPending}
         accepting={accept.isPending}
         onRespond={(action, reason, answered) => onRespond(quest, action, reason ?? null, answered)}
         // The service's own door, so a browser on this machine says yes as the desktop does (D50).
@@ -439,7 +456,8 @@ export function useQuestsView({
           }),
         } : undefined}
         onDelete={(answered) => onDelete(quest, answered)}
-        onDismiss={(machine, sequence) => onDismiss(quest, machine, sequence)}
+        onDismiss={(machine, sequence, also) => onDismiss(quest, machine, sequence, also)}
+        onForward={(machine, sequence) => onForward(quest, machine, sequence)}
         // A driver's verdicts and holds reach only a shell, so in a browser neither act is ever offered. Said as the
         // driver answered which it did (D126 §3.4), in the one sentence a session's *Try again* says too.
         onRetry={() => retry.mutate({ quest: quest.id }, {

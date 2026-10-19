@@ -29,6 +29,14 @@ with the version and date at release.
   reads it yet. It stays on this machine, holds no email, organisation, key or words, keeps 90 days and 64 MiB at most, and says
   what it pruned.
 
+- A quest whose take on this machine lost, to another machine's take or to the reopen of the work it grew from, offers two
+  choices under *Conflicts* on its page: *Drop mine* puts the conflict away and moves nothing else, and *Bring mine forward* takes
+  the step again from this machine, so its kept session goes on (`daoris-driver sync forward` at a terminal). Where it cannot be
+  brought forward (another machine holds the step, the step is closed, or its source is reopened) the page says why. A
+  bring-forward that loses again says so, one made offline reads *unconfirmed* until the remote answers, and a settled conflict
+  says how it ended. A step the reopen holds names its go-on and abandon the same way, and says that abandoning declines it for
+  every machine.
+
 - Beside the readings, Daoris keeps every turn's tokens in `usage-history/`: input, output and cache as the agent reported them,
   the account the session ran as, and the model they were spent on where the agent said it, with a helper model's share kept
   apart and a stopped turn marked. It shares the readings' 90 days and 64 MiB, stays on this machine, and holds no email,

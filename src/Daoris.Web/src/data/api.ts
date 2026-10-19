@@ -142,6 +142,14 @@ export type Quest = {
    */
   grewFrom?: SubmissionRef | null;
   sourceReopened?: SubmissionRef | null;
+  /**
+   * SYNCMERGE1b0 (D178 point 7), each absent where unset and from a host before it: the conflicts settled on it, in order, each with
+   * how it `ended`; the machine whose take holds the step while it is taken; and this machine's id, answered only to a page on a local
+   * host's own machine, which tells this machine's lost take, the one it may bring forward, from another machine's.
+   */
+  settled?: QuestConflict[];
+  holder?: string | null;
+  here?: string | null;
 };
 /** A submission by the machine and sequence that made it (FABRIC-CLOSE1a): what a reopen names it by. */
 export type SubmissionRef = { machine: string; sequence: number };
@@ -192,7 +200,21 @@ export type Lane = { id: string; title: string; summary: string; steward: boolea
  */
 export type QuestConflict = {
   machine: string; sequence: number; attempted: Quest['status']; note?: string | null; at: string;
+  /** Its take lost to the person's reopen of the work its step grew from (SYNCMERGE1b0), not to another machine's take. */
+  lostToTheReopen?: boolean;
+  /** On a settled conflict only: dropped (a plain dismissal) or brought forward (D178 point 5). */
+  ended?: 'dropped' | 'brought-forward' | (string & {});
+  /**
+   * The bring-forward that settled it, or, on one still open, this machine's latest bring-forward of it that lost again, whose fresh
+   * take is then a conflict of its own on the quest, named by this.
+   */
+  forward?: QuestForward | null;
 };
+/**
+ * A bring-forward's fresh take (SYNCMERGE1b0, D178 points 3 and 8): its machine and sequence, when it was made, and how it stands as a
+ * claim reads one: `held` once a remote numbered it, `unconfirmed` while it is only here, `lost` where it lost again.
+ */
+export type QuestForward = SubmissionRef & { at: string; standing: 'held' | 'unconfirmed' | 'lost' | (string & {}) };
 /**
  * Where a circle stands on this machine (SYNC6a), read from its own host without reaching the
  * remote. A circle with no remote here answers `wired: false` and nothing else of use.
@@ -673,6 +695,11 @@ export const api = {
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),
+  // The person bringing this machine's lost take forward (SYNCMERGE1a, D178 point 3), by the conflict's name: a fresh take of the step and
+  // the conflict's dismissal marked with it, which the kept session goes on from. A refusal, or a loss again, is a 409 in the host's words.
+  // `daoris-driver sync forward` is the terminal's twin.
+  forwardConflict: (id: string, machine: string, sequence: number) =>
+    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/forward`, { machine, sequence }),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
   refresh: () => post<RefreshReport>('/api/refresh', {}),
