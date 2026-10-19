@@ -6,9 +6,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// PARALLEL1a (D181 points 1-2): Ask Daoris's room is written from the facts the judges keep, never from a read of its own. A
 /// repository whose line was not judged yet is said *not read yet*, as are the sessions, the history and the work; a ref moved
 /// judges that repository's line again alone, and the next room has it; a room that said something not read yet is written again
-/// as the facts land.
+/// as the facts land. FACTSPLIT1a: the work is judged per repository, a part each, merged as the room reads it.
 /// </summary>
-/// <remarks>No process and no git: the judges are stand-ins.</remarks>
+/// <remarks>No process and no git, but where a test counts git's starts: the judges are stand-ins.</remarks>
 public sealed class HelpFactsTests : IDisposable
 {
     private static readonly TimeSpan Within = TimeSpan.FromSeconds(10);
@@ -106,7 +106,8 @@ public sealed class HelpFactsTests : IDisposable
             .With(HelpFacts.Lines, "engine", new JudgedFact(new HelpLineGuess("main"), At))
             .With(HelpFacts.Sessions, HelpFacts.Whole, new JudgedFact(new SessionLook([], [], []), At))
             .With(HelpFacts.History, HelpFacts.Whole, new JudgedFact(new List<HistoryReading>(), At))
-            .With(HelpFacts.Work, HelpFacts.Whole, new JudgedFact(new HelpWork([], [], []), At));
+            .With(HelpFacts.Work, "engine", new JudgedFact(new HelpWork([], [], []), At))
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At));
 
         var read = HelpFacts.Read(facts, DriverConfig.Empty)!;
         var room = HelpRoom.Render(Describe(read, DriverConfig.Empty));
@@ -115,22 +116,35 @@ public sealed class HelpFactsTests : IDisposable
         Assert.DoesNotContain("not read yet", room);
     }
 
+    /// <summary>
+    /// A ref moves its repository's line and its part of the work (FACTSPLIT1a), and the trees' sessions; a session's records moving
+    /// move every part of the work, as they moved the whole, and a part is named only once the service's answers name it.
+    /// </summary>
     [Fact]
-    public void A_ref_moved_wakes_its_repository_s_line_and_the_trees_and_a_ledger_move_the_machine()
+    public void A_ref_moved_wakes_its_repository_s_line_and_work_and_the_trees_and_a_ledger_move_the_machine()
     {
+        var facts = MachineFactsSnapshot.Empty.With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At));
+
         Assert.Equal(
-            [(HelpFacts.Lines, "site"), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.Work, HelpFacts.Whole)],
-            HelpFacts.Woken(ChangeTopics.Refs, "site"));
+            [(HelpFacts.Lines, "site"), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.Work, "site")],
+            HelpFacts.Woken(ChangeTopics.Refs, "site", facts));
         Assert.Equal(
-            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole), (HelpFacts.Work, HelpFacts.Whole)],
-            HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests"));
+            [
+                (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole),
+                (HelpFacts.Work, "engine"), (HelpFacts.Work, "site"), (HelpFacts.Work, HelpFacts.NoCheckout),
+            ],
+            HelpFacts.Woken(ChangeTopics.Ledger, "sessions,quests", facts));
+        // Before the service's answers there is no part to wake: each is judged as they land.
         Assert.Equal(
             [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole)],
-            HelpFacts.Woken(ChangeTopics.Ledger, "quests"));
-        Assert.Equal([(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole)], HelpFacts.Woken(ChangeTopics.Config, "driver.json"));
+            HelpFacts.Woken(ChangeTopics.Ledger, "sessions", MachineFactsSnapshot.Empty));
+        Assert.Equal(
+            [(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole)],
+            HelpFacts.Woken(ChangeTopics.Ledger, "quests", facts));
+        Assert.Equal([(HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole)], HelpFacts.Woken(ChangeTopics.Config, "driver.json", facts));
         // A press's words and the window's focus move none of the room's facts.
-        Assert.Empty(HelpFacts.Woken(ChangeTopics.Words, "s1"));
-        Assert.Empty(HelpFacts.Woken(ChangeTopics.Focus, "window"));
+        Assert.Empty(HelpFacts.Woken(ChangeTopics.Words, "s1", facts));
+        Assert.Empty(HelpFacts.Woken(ChangeTopics.Focus, "window", facts));
     }
 
     [Fact]
@@ -160,6 +174,71 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Contains("| `site` | not driven | `trunk` (the checkout's own) |", room);
     }
 
+    /// <summary>
+    /// 🔴 FACTSPLIT1a (D181 points 2-3): one repository's refs judge its part of the work again alone. The other repository's part
+    /// and the part of the repositories with no checkout here stand as last judged.
+    /// </summary>
+    [Fact]
+    public async Task A_refs_wake_judges_that_repository_s_work_again_alone()
+    {
+        var judged = new Dictionary<string, int>(StringComparer.Ordinal);
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
+        {
+            Work = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                lock (judged) judged[subject] = judged.GetValueOrDefault(subject) + 1;
+                return Task.FromResult<HelpWork?>(new HelpWork([], [], []));
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        // Past the rest a burst of one repository's refs is held to.
+        clock.Pass(HelpFacts.WorkRules.Rest + TimeSpan.FromSeconds(1));
+        HelpFacts.Wake(facts, ChangeTopics.Refs, "site");
+        await Poll.Until(() => Judged(judged, "site") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+
+        Assert.Equal((1, 2, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1a: the room reads the work as it read the whole, merged from the parts: by repository as the lines are, the
+    /// repositories with no checkout here last. While any part was never judged the work is not read yet, as the whole was.
+    /// </summary>
+    [Fact]
+    public void The_room_reads_the_work_merged_from_its_parts_and_none_while_a_part_is_not_judged_yet()
+    {
+        var engine = new HelpWork([Unit("u-engine", "engine")], [], [Recovery("engine")]);
+        var site = new HelpWork([Unit("u-site", "site")], [new InventoryUnread("site", "git could not list `site`'s recovery refs: fatal: bad object")], []);
+        var rest = new HelpWork([Unit("u-docs", "docs")], [new InventoryUnread("docs", "`docs` has no checkout here, so its recovery refs were not read")], []);
+        var partly = MachineFactsSnapshot.Empty
+            .With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(Site, Engine, Docs), At))
+            .With(HelpFacts.Work, "site", new JudgedFact(site, At))
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(rest, At));
+
+        var unread = HelpFacts.Read(partly, DriverConfig.Empty)!;
+        Assert.Null(unread.Work);
+        Assert.True(unread.NotReadYet.Work);
+        Assert.Contains("The milestones are not read yet", HelpRoom.Render(Describe(unread, DriverConfig.Empty)));
+
+        var read = HelpFacts.Read(partly.With(HelpFacts.Work, "engine", new JudgedFact(engine, At)), DriverConfig.Empty)!;
+
+        Assert.False(read.NotReadYet.Work);
+        Assert.Equal(["u-engine", "u-site", "u-docs"], read.Work!.Units.Select(unit => unit.Unit));
+        Assert.Equal(["site", "docs"], read.Work.Unread.Select(said => said.Repository));
+        Assert.Equal(["engine"], read.Work.Recovery.Select(recovery => recovery.Repository));
+        var room = HelpRoom.Render(Describe(read, DriverConfig.Empty));
+        Assert.Contains("- not read: git could not list `site`'s recovery refs: fatal: bad object\n", room);
+        Assert.Contains("- not read: `docs` has no checkout here, so its recovery refs were not read\n", room);
+    }
+
     [Fact]
     public async Task A_repository_gone_from_the_registry_loses_its_line()
     {
@@ -178,6 +257,178 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Null(facts.Current.Of(HelpFacts.Lines, "site"));
     }
 
+    /// <summary>🔴 FACTSPLIT1a: a repository the registry no longer names drops its part of the work; what is left is read whole.</summary>
+    [Fact]
+    public async Task A_repository_gone_from_the_registry_loses_its_part_of_the_work()
+    {
+        var whole = Whole(Engine, Site);
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(null) with
+        {
+            Machine = _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref whole)),
+            Work = (_, _) => Task.FromResult<HelpWork?>(new HelpWork([], [], [])),
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        Volatile.Write(ref whole, Whole(Engine));
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+
+        Assert.Null(facts.Current.Of(HelpFacts.Work, "site"));
+        Assert.False(HelpFacts.Read(facts.Current, DriverConfig.Empty)!.NotReadYet.Work);
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1a: the work's trees in use are the service's answers its part was made from, so a session letting its tree go
+    /// judges that repository's part again as the answers land, and no other.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_a_session_let_go_judges_its_repository_s_work_again_as_the_service_s_answers_land()
+    {
+        var holding = new SessionView("s1", "engine", "working") { Tree = "trees/default/engine/s-1" };
+        var whole = new HelpMachineWhole(new Snapshot([], [Engine, Site], [holding]), [], []);
+        var judged = new Dictionary<string, int>(StringComparer.Ordinal);
+        var inUse = new List<IReadOnlySet<string>>();
+        var clock = new Clock();
+        using var facts = new MachineFacts(clock.Now);
+        HelpFacts.Keep(facts, Judges(null) with
+        {
+            Machine = _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref whole)),
+            Work = (part, _) =>
+            {
+                var subject = part.Repository ?? HelpFacts.NoCheckout;
+                lock (judged)
+                {
+                    judged[subject] = judged.GetValueOrDefault(subject) + 1;
+                    if (subject == "engine") inUse.Add(part.InUse);
+                }
+
+                return Task.FromResult<HelpWork?>(new HelpWork([], [], []));
+            },
+        });
+        facts.Start();
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        clock.Pass(HelpFacts.WorkRules.Rest + TimeSpan.FromSeconds(1));
+        Volatile.Write(ref whole, whole with { Snapshot = whole.Snapshot with { Active = [] } });
+        await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
+        await Poll.Until(() => Judged(judged, "engine") == 2, within: Within);
+        await facts.Settled().WaitAsync(Within);
+
+        Assert.Equal((2, 1, 1), (Judged(judged, "engine"), Judged(judged, "site"), Judged(judged, HelpFacts.NoCheckout)));
+        lock (judged)
+        {
+            Assert.Equal(["trees/default/engine/s-1"], inUse[0]);
+            Assert.Empty(inUse[1]);
+        }
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1a: a repository the trees name with no checkout here keeps its line in the part of its own, read from the home as
+    /// the module reads it, and the room says it; the part of the repository with a checkout reads none of it.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_with_no_checkout_here_keeps_its_unread_line_in_the_part_of_its_own()
+    {
+        // A folder with no link to a repository: no git is asked of it.
+        Directory.CreateDirectory(Path.Combine(new SessionTrees(_home).TreesRoot, "default", "docs", "s-1"));
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(Whole(Engine, Docs)) with { Work = async (part, ct) => await HelpFacts.ReadWorkAsync(_home, part, ct) });
+        facts.Start();
+        await facts.FirstAsync(HelpFacts.Work, "engine", CancellationToken.None).WaitAsync(Within);
+        await facts.FirstAsync(HelpFacts.Work, HelpFacts.NoCheckout, CancellationToken.None).WaitAsync(Within);
+
+        var read = HelpFacts.Read(facts.Current, DriverConfig.Empty)!;
+
+        Assert.Equal([new InventoryUnread("docs", "`docs` has no checkout here, so its recovery refs were not read")], read.Work!.Unread);
+        Assert.Equal(["docs"], read.Work.Units.Select(unit => unit.Repository));
+        Assert.Contains("- not read: `docs` has no checkout here, so its recovery refs were not read\n", HelpRoom.Render(Describe(read, DriverConfig.Empty)));
+        Assert.Empty(facts.Current.Value<HelpWork>(HelpFacts.Work, "engine")!.Units);
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1a: what the inventory could not read names its repository as data, so a workspace's room keeps its own
+    /// repository's line though its words name another workspace's, and the other room never has it.
+    /// </summary>
+    [Fact]
+    public void A_workspace_s_room_keeps_its_own_repository_s_unread_line_whatever_its_words_name()
+    {
+        var engine = new RepoView("engine", Adopted: true, Root: "checkouts/engine", Workspace: "alpha");
+        var site = new RepoView("site", Adopted: true, Root: "checkouts/site", Workspace: "beta");
+        const string said = "git could not list `engine`'s recovery refs: its checkout is a worktree of `site`";
+        var facts = MachineFactsSnapshot.Empty
+            .With(HelpFacts.Machine, HelpFacts.Whole, new JudgedFact(Whole(engine, site), At))
+            .With(HelpFacts.Work, "engine", new JudgedFact(new HelpWork([Unit("u-engine", "engine")], [new InventoryUnread("engine", said)], []), At))
+            .With(HelpFacts.Work, "site", new JudgedFact(new HelpWork([Unit("u-site", "site")], [], []), At))
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At));
+
+        var machine = Describe(HelpFacts.Read(facts, DriverConfig.Empty)!, DriverConfig.Empty);
+
+        Assert.Equal([said], machine.Within("alpha").WorkUnread);
+        Assert.Empty(machine.Within("beta").WorkUnread);
+        Assert.Contains($"- not read: {said}\n", HelpRoom.Render(machine.Within("alpha")));
+    }
+
+    /// <summary>
+    /// 🔴 FACTSPLIT1a: one repository's judgement of its work starts git in its own trees, in every workspace's folder of it, and in
+    /// its own checkout alone; another repository's trees are never listed.
+    /// </summary>
+    [Fact]
+    public async Task One_repository_s_work_judgement_starts_git_in_its_own_trees_and_checkout_alone()
+    {
+        var trees = new SessionTrees(_home).TreesRoot;
+        string Tree(string workspace, string repository, string name)
+        {
+            var tree = Path.Combine(trees, workspace, repository, name);
+            Directory.CreateDirectory(tree);
+            // Linked as git links a worktree, so its branch is asked of git.
+            File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
+            return tree;
+        }
+
+        string[] engineTrees = [Tree("default", "engine", "s-1"), Tree("alpha", "engine", "s-2")];
+        Tree("default", "site", "s-3");
+        Tree("default", "docs", "s-4");
+        var engine = new RepoView("engine", Adopted: true, Root: Path.Combine(_home, "checkouts", "engine"));
+        var site = new RepoView("site", Adopted: true, Root: Path.Combine(_home, "checkouts", "site"));
+        Directory.CreateDirectory(engine.Root!);
+        Directory.CreateDirectory(site.Root!);
+        var starts = new List<string>();
+        using var facts = new MachineFacts();
+        HelpFacts.Keep(facts, Judges(Whole(engine, site, Docs)) with { Work = async (part, ct) => await HelpFacts.ReadWorkAsync(_home, part, ct) });
+        using (ProcessStarts.Within(info =>
+               {
+                   lock (starts) starts.Add(Path.GetFullPath(info.WorkingDirectory));
+                   return null;
+               }))
+        {
+            facts.Start();
+        }
+
+        foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
+        {
+            await facts.FirstAsync(HelpFacts.Work, part, CancellationToken.None).WaitAsync(Within);
+        }
+
+        await facts.Settled().WaitAsync(Within);
+        lock (starts) starts.Clear();
+
+        await facts.JudgedAsync(HelpFacts.Work, "engine", CancellationToken.None).WaitAsync(Within);
+
+        lock (starts)
+        {
+            Assert.Equal(
+                engineTrees.Append(engine.Root!).Select(Path.GetFullPath).Order(StringComparer.Ordinal),
+                starts.Order(StringComparer.Ordinal));
+        }
+    }
+
     [Fact]
     public async Task A_room_that_said_something_not_read_yet_is_written_again_as_the_facts_land()
     {
@@ -189,7 +440,8 @@ public sealed class HelpFactsTests : IDisposable
             .With(HelpFacts.Lines, "site", new JudgedFact(new HelpLineGuess("main"), At))
             .With(HelpFacts.Sessions, HelpFacts.Whole, new JudgedFact(new SessionLook([], [], []), At))
             .With(HelpFacts.History, HelpFacts.Whole, new JudgedFact(new List<HistoryReading>(), At))
-            .With(HelpFacts.Work, HelpFacts.Whole, new JudgedFact(new HelpWork([], [], []), At));
+            .With(HelpFacts.Work, "site", new JudgedFact(new HelpWork([], [], []), At))
+            .With(HelpFacts.Work, HelpFacts.NoCheckout, new JudgedFact(new HelpWork([], [], []), At));
         var described = 0;
         var catchUp = new HelpRoomCatchUp(_home, () =>
         {
@@ -208,10 +460,40 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Equal(before, Volatile.Read(ref described));
     }
 
-    /// <summary>Stand-in judges: the machine as given, every other topic read as nothing.</summary>
+    /// <summary>Stand-in judges: the machine as given, each checkout's line `main`, every other topic read as nothing.</summary>
     private static HelpFactJudges Judges(HelpMachineWhole? whole) => new(
         Machine: _ => Task.FromResult(whole),
         Sessions: _ => Task.FromResult<SessionLook?>(null),
         History: _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
-        Work: _ => Task.FromResult<HelpWork?>(null));
+        Work: (_, _) => Task.FromResult<HelpWork?>(null))
+    {
+        Guess = (_, _) => Task.FromResult<string?>("main"),
+    };
+
+    private static int Judged(Dictionary<string, int> judged, string subject)
+    {
+        lock (judged) return judged.GetValueOrDefault(subject);
+    }
+
+    /// <summary>A unit of <paramref name="repository"/> whose cleanup waits on a tree a session holds, so the room lists it.</summary>
+    private static WorkMilestone Unit(string unit, string repository) => new(
+        unit, repository, $"daoris/s-{unit}", $"s-{unit}",
+        new MilestoneEnd("ended", EndBy.Merged, "main", "a1b2c3d4e5f6", At, "every commit of it is on `main`"),
+        [new(unit, InventoryKind.Line, "main", InventoryRole.Result, InventoryDisposition.Kept, "the line holds it")],
+        new MilestoneCleanup("pending", [new(unit, InventoryKind.Tree, $"s-{unit}", InventoryRole.Temporary, InventoryDisposition.Blocked, "a session still holds this tree")], []),
+        [], []);
+
+    private static InventoryEntry Recovery(string repository) => new(
+        "", InventoryKind.MovedAside, $"trees/default/{repository}/s0-20261018", InventoryRole.Recovery, InventoryDisposition.Retained,
+        "kept until 2026-10-25 09:00 UTC") { Repository = repository };
+
+    /// <summary>The facts' time, moved on by the test alone, so a rest is passed without waiting it out.</summary>
+    private sealed class Clock
+    {
+        private long _ticks = At.UtcTicks;
+
+        public DateTimeOffset Now() => new(Interlocked.Read(ref _ticks), TimeSpan.Zero);
+
+        public void Pass(TimeSpan span) => Interlocked.Add(ref _ticks, span.Ticks);
+    }
 }

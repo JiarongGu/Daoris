@@ -34,8 +34,8 @@ internal static class HelpRoomScopeFixture
         held: [new HeldQuest("qb2", "console", "sb9")], sessions: Sessions, history: History, work: Work,
         workUnread:
         [
-            "`site` has no checkout here, so its recovery refs were not read",
-            "git could not list `console`'s recovery refs: fatal: not a git repository",
+            new InventoryUnread("site", "`site` has no checkout here, so its recovery refs were not read"),
+            new InventoryUnread("console", "git could not list `console`'s recovery refs: fatal: not a git repository"),
         ],
         workRecovery:
         [

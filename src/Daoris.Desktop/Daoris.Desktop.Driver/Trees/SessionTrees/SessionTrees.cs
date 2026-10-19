@@ -466,14 +466,23 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// registry, the same argument the credential profiles made (D49 §4). Then each folder the look moved aside
     /// (AUTOTIDY1, AUTOTIDY2c), with when, until the purge deletes it.
     /// </summary>
-    public async Task<IReadOnlyList<SessionTree>> ListAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<SessionTree>> ListAsync(CancellationToken ct = default) => ListAsync(null, ct);
+
+    /// <summary>The session trees and folders moved aside of the repositories <paramref name="only"/> holds (<see cref="ListAsync(CancellationToken)"/>).</summary>
+    /// <param name="only">
+    /// Whether a repository's folder is listed, by its name, in every workspace (FACTSPLIT1a): another's is never entered, so its
+    /// trees cost no git. Every repository's where null.
+    /// </param>
+    public async Task<IReadOnlyList<SessionTree>> ListAsync(Func<string, bool>? only, CancellationToken ct = default)
     {
         var found = new List<SessionTree>();
         if (!Directory.Exists(TreesRoot)) return found;
+        IEnumerable<string> Repositories(string workspace) =>
+            Directory.EnumerateDirectories(workspace).Where(folder => only?.Invoke(Path.GetFileName(folder)) ?? true);
 
         // The folders the look moved aside are no trees (AUTOTIDY1): git no longer knows them as such.
         foreach (var workspace in Directory.EnumerateDirectories(TreesRoot).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder))
-        foreach (var repository in Directory.EnumerateDirectories(workspace))
+        foreach (var repository in Repositories(workspace))
         foreach (var tree in Directory.EnumerateDirectories(repository))
         {
             // AUTOTIDY2c: a folder with no link to a repository is no tree, and git asked in it would answer for whatever
@@ -491,7 +500,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var aside = SetAsides.SetAsideRoot;
         if (!Directory.Exists(aside)) return found;
         foreach (var workspace in Directory.EnumerateDirectories(aside))
-        foreach (var repository in Directory.EnumerateDirectories(workspace))
+        foreach (var repository in Repositories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             found.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), SessionTree.SetAside)

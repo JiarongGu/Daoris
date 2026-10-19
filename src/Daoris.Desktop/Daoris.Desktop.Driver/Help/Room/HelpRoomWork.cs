@@ -16,7 +16,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
     internal const int RecoveriesListed = 5;
 
     public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) =>
-        machine with { Work = sources.Work, WorkUnread = sources.WorkUnread, WorkRecovery = sources.WorkRecovery };
+        machine with { Work = sources.Work, WorkUnread = [.. sources.WorkUnread.Select(unread => unread.Said)], WorkRecovery = sources.WorkRecovery };
 
     /// <summary>A unit the person has something to ask about: its cleanup waits, its owner is unknown, or a recovery is kept.</summary>
     private static bool Open(WorkMilestone unit) =>

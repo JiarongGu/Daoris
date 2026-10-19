@@ -58,7 +58,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
             async ct => new HelpMachineWhole(await client.SnapshotAsync(ct), [], []),
             _ => Task.FromResult<SessionLook?>(null),
             _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
-            _ => Task.FromResult<HelpWork?>(null))
+            (_, _) => Task.FromResult<HelpWork?>(null))
         {
             Guess = Guess,
         });

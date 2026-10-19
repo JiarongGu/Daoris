@@ -263,7 +263,7 @@ public static class HelpRoom
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
         IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
         IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
-        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<string>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
+        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<InventoryUnread>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
         HelpNotReadYet? notReadYet = null, string? workspace = null)
     {
         var sources = new HelpMachineSources(
@@ -487,8 +487,8 @@ internal sealed record HelpMachineSources(
     /// <summary>Each unit of work's milestone (FABRIC-MILESTONE1b); null where none was read.</summary>
     public IReadOnlyList<WorkMilestone>? Work { get; init; }
 
-    /// <summary>What the milestones could not read.</summary>
-    public IReadOnlyList<string> WorkUnread { get; init; } = [];
+    /// <summary>What the milestones could not read, each by its repository (FACTSPLIT1a), which a workspace's room keeps by.</summary>
+    public IReadOnlyList<InventoryUnread> WorkUnread { get; init; } = [];
 
     /// <summary>Daoris's own recoveries no unit names (RECOVERYASK1).</summary>
     public IReadOnlyList<InventoryEntry> WorkRecovery { get; init; } = [];
