@@ -17049,3 +17049,33 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HELPMODE1a4 — a resumed ACP session whose answer is not an object still sets a required posture** (driver; D183 point 3). `AcpSession.ResumeAsync` calls `SetPostureAsync` only for an object answer, so full is not enforced there. Proof: an `AcpResumeTests` case with a null load answer and a required posture fails the open.
 
 **Outcome** 2026-10-19: Built with HELPMODE1a2: `SetPostureAsync` reads a non-object answer as no modes offered, and `ResumeAsync` calls it on every answer, so a required posture fails the open on such a resume. Detail: FIX-LOG's HELPMODE1a4 entry.
+
+## BGWAIT2c — a woken turn ending as the stream does is still the run's turn, every time (2026-10-19, D83)
+
+> - [ ] **BGWAIT2c — a woken turn ending as the stream does is still the run's turn, every time** (driver; D83's BGWAIT2 note). `AcpBackgroundTests.A_woken_turn_that_ends_as_the_stream_does_ends_the_run_as_that_turn` fails one run in five alone (and failed in the CI beside on 0a5c608): `AfterBackgroundAsync` throws "the ACP agent's stream ended while the session waited for its own background work" (Acp.cs ~664) when the stream's end reaches the wait before the woken turn's end is read. A race in the order the reader hands the wake and the stream's end to the wait. Proof: the class run twenty times alone, green every time; the test's own words unchanged.
+
+**Outcome** 2026-10-19: The race was on the waiting side: `AcpBackground.EndedAsync` and `AcpWake.AfterAsync` read the work's or the turn's state, then whether the stream was over, so a stream ending between the two lost what the wire had said; both now read the stream's end first. The class ran twenty times alone, green every time; the new test failed six runs in six on the old order. On Opus: about 40 tool calls, 11 minutes (resumed after a connection error). Detail: FIX-LOG's BGWAIT2c entry.
+
+## PARALLEL1g — the opinion, helper and landing judgments beside the look (2026-10-19, D181)
+
+> - [ ] **PARALLEL1g — the opinion, helper and landing judgments beside the look** (driver; D181 point 3, its PARALLEL1b note). The look still waits for each owed opinion's, helper's and due landing's judgment one after another. Each becomes its topic's judge keeping the facts the plan reads (an opinion's sits, the passes' slots, the landing's chosen), a chain not yet judged held, never started early. Proof: a slow opinion judgment holds no start of another chain; a chain whose opinion is not yet judged does not start its next step; the landing's wakes are still spent once.
+
+**Outcome** 2026-10-19: Under the watch, owed opinions, helper asks and the landing selection are their topics' judges beside the look (`RunningSessions.Judge`, two subjects at once), and the plan reads what each last kept (`LookFacts`): a chain whose opinion is not judged yet is held, never started early; passes keep their slot in the look; the landing's wakes are spent once and handed back on a failed pass; a judgment that keeps failing says so once and spins no look. One-look and until-idle runs keep every part in the look. On Opus: about 155 tool calls, 46 minutes; the opinion and review Process classes ran at the merge (19 and 16 pass). Detail: D181's PARALLEL1g note.
+
+## PUSH1d1 — the change stream's missing families: asks, then the channel (2026-10-19, D182)
+
+> - [ ] **PUSH1d1 — the change stream's missing families: asks, then the channel** (service; D182 point 5, D173's FABRIC-EVENT3b note, the events design §A4.2; after FACTSPLIT1a, which edits `HelpFacts.Woken`). The stream moves on `sessions` and `quests` only (`ChangeStream.cs`), so an ask or a channel post a connector writes is seen at the next look. An `asks` revision kept by triggers, as `session_revision` is (an older connector's write still moves it), then `channel` (a delete per ask moves it too); each proved to move on every write that matters and on none a look makes (canary 5 holds); a rebase's rewrite in place moved or left to the deadline, recorded. Proof: `ChangeStreamTests` per family; a connector process's ask wakes the `ledger` topic.
+
+**Outcome** 2026-10-19: `ask_revision` and `channel_revision`, one-row counts kept by triggers in the database file (an older connector's write moves them too; a count, since forgetting an ask's channel deletes older messages), join the change stream's families; read marks, the sync's cursors and repeats move nothing; canary 5 holds with the channel's sync beside; the ledger wake names the new families and an ask moved wakes the history's fact; a rebase's rewrite in place already moves `quests`. On Opus: about 190 tool calls, 46 minutes. Detail: D173's PUSH1d1 note.
+
+## SYNCMERGE1b1 — the stood-down claim asked only where this machine holds the quest (2026-10-19, D178)
+
+> - [ ] **SYNCMERGE1b1 — the stood-down claim asked only where this machine holds the quest** (driver; D178 point 3, its SYNCMERGE1b note point 5). A look asks one claim per taken quest whose newest record here stood down, every look; the quest list already answers `holder` and `here`. Ask only where they agree. Proof: a `PlannerTests` snapshot case where a stood-down quest held by another machine is asked nothing.
+
+**Outcome** 2026-10-19: `ReadQuests` reads the list's `holder` and `here`, and `CarryOnClaimsAsync` asks a stood-down quest's claim only where they agree (none without a holder), still bounded. On Sonnet, with SYNCMERGE1b2: about 70 tool calls, 13 minutes; `StartInSyncTickTests` and `GoOnInSyncTests` ran at the merge. Detail: D178's SYNCMERGE1b note, its lines of this day.
+
+## SYNCMERGE1b2 — a brought-forward carry-on's prompt says the press, not a cut-off (2026-10-19, D178)
+
+> - [ ] **SYNCMERGE1b2 — a brought-forward carry-on's prompt says the press, not a cut-off** (driver; D178's SYNCMERGE1b note). `Adapters.cs`' carry-on prompt still opens "An earlier session on this quest was cut off before it closed it:" ahead of the bring-forward words, and `GoOnInSync`'s words say "new submission" for a step whose source never moved. Proof: an adapter prompt test for the brought-forward case.
+
+**Outcome** 2026-10-19: A brought-forward carry-on's prompt opens with the person's press (`SessionTarget.BroughtForward`), and its tree words say only the line was brought up to date where the source's commit is unknown or not held, never a new submission. Detail: D178's SYNCMERGE1b note.
