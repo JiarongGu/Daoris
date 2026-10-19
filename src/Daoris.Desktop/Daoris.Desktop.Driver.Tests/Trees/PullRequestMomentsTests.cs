@@ -163,6 +163,54 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
+    /// FABRIC-END6b: origin's line moving inside a pull request's minute stays a moment. Nothing is asked inside the minute, at the move
+    /// or at a wake after it; the first wake past the minute asks once, fetching nothing the person's fetch brought within it; a wake after
+    /// that asks nothing more, the move having been asked about.
+    /// </summary>
+    [Fact]
+    public async Task A_line_moved_inside_the_minute_is_asked_at_the_first_wake_past_it_and_never_twice()
+    {
+        _world.Entries.Add(Landing("engine", "feature/a"));
+        _world.Registry.Add(Repository("engine"));
+        _world.Origin["engine"] = "a1";
+        await using var moments = await Opened();
+
+        // Daoris's push: asked, its line fetched, and origin's line read as its baseline.
+        PullRequestMoments.Pushed(_home, "engine");
+        await Step(moments);
+        Assert.Equal(["feature/a"], _world.Asked);
+
+        // The person's fetch moves origin's line at +20 s: inside the minute, nothing is asked.
+        _now += TimeSpan.FromSeconds(20);
+        _world.Origin["engine"] = "a2";
+        PullRequestMoments.Moved(_home, Repository("engine"));
+        await Step(moments);
+        Assert.Single(_world.Asked);
+
+        // A ref move at +50 s that leaves origin's line where it was: still inside the minute.
+        _now += TimeSpan.FromSeconds(30);
+        PullRequestMoments.Moved(_home, Repository("engine"));
+        await Step(moments);
+        Assert.Single(_world.Asked);
+
+        // The first wake past the minute, at +65 s: the move is asked about, once, and nothing is fetched (the person's was at +20 s).
+        _now += TimeSpan.FromSeconds(15);
+        PullRequestMoments.Moved(_home, Repository("engine"));
+        await Step(moments);
+        Assert.Equal(["feature/a", "feature/a"], _world.Asked);
+        Assert.Single(_world.Fetches);
+
+        // Never twice: later wakes, inside the next minute and past it, ask nothing more for that move.
+        _now += TimeSpan.FromSeconds(10);
+        PullRequestMoments.Moved(_home, Repository("engine"));
+        await Step(moments);
+        _now += TimeSpan.FromMinutes(2);
+        PullRequestMoments.Moved(_home, Repository("engine"));
+        await Step(moments);
+        Assert.Equal(2, _world.Asked.Count);
+    }
+
+    /// <summary>
     /// Right after Daoris pushes: asked once, and the line not fetched where the landing's press just fetched it. An automatic landing
     /// fetched nothing, so its push fetches the line once, before it asks, so a completed answer's merge commit is here to confirm.
     /// </summary>
