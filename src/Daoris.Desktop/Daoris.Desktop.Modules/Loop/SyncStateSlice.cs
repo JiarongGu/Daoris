@@ -25,10 +25,10 @@ namespace Daoris.Desktop;
 /// not hold.</para>
 ///
 /// <para><b>Its wakes</b>, each only asking. The end of every pass through the loop's one set, the tick's and <i>Sync now</i>'s
-/// (<see cref="HearPasses"/>), a circle wired or unwired since being read at the pass the remotes editor nudges; the change stream's
-/// <c>quests</c> family (<see cref="HearLedger"/>), a quest written by any door, a connector's or the service's own conflict doors
-/// among them; a change declared to <c>sync</c>; and the service coming up. Never the loop's look itself, whose pass tells its own
-/// end.</para>
+/// (<see cref="HearPasses"/>), so a circle the person wires or removes is read at the pass the remotes editor's nudge brings; the
+/// change stream's <c>quests</c> family (<see cref="HearLedger"/>), a quest written by any door, a connector's or the service's own
+/// conflict doors among them; a change declared to <c>sync</c>; and the service coming up. Never the loop's look itself, whose pass
+/// tells its own end.</para>
 ///
 /// <para><b>Desktop-only.</b> The wall is the host's own sentence about this machine's remote, and the circles are this machine's
 /// wiring (D47, D182 point 2); the remote's key is read to name the circles and never written into a partition.</para>
