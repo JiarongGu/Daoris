@@ -565,6 +565,12 @@ public sealed record SessionLook(
     public IReadOnlyDictionary<string, RunningCall> Calls { get; init; } = new Dictionary<string, RunningCall>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The open conversations of this machine's between turns (ACCEPTFOOT1b, <see cref="SessionGroups.Between"/>): live, their turn
+    /// ended and nothing waiting, so their own tree offers its work to land as an ended session's does.
+    /// </summary>
+    public IReadOnlySet<string> Between { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
     /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
     /// planner's own readers, never a second copy of either rule.
     /// </summary>
@@ -734,10 +740,14 @@ public static class SessionGroups
     /// The cool-off a start on an adapter would read for an account (MSG1f3): the home's, by <see cref="CoolingOn"/>, where
     /// none is handed.
     /// </param>
+    /// <param name="turnEnded">
+    /// The word of the runner in this process on an open conversation's turns (ACCEPTFOOT1b, <see cref="ChatRunner.TurnEnded"/>):
+    /// null where it holds none, and none handed where this process runs no conversation, as the terminal's listing.
+    /// </param>
     public static async Task<SessionLook> LookAsync(
         ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, string home,
         IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, CoolingEntry?>? coolingOf = null,
-        LookTimes? times = null)
+        LookTimes? times = null, Func<string, bool?>? turnEnded = null)
     {
         // Each step timed where the caller asked (HELPROOM1); a look nobody times runs its steps as they are.
         var asked = times is not null;
@@ -755,6 +765,11 @@ public static class SessionGroups
             // What each quest's last session here, and the one its reopen names (FABRIC-CLOSE1c11), could not go on with (MSG1f2),
             // read as the planner's snapshot reads it.
             gathered = gathered with { Unable = new GoOnMarks(home).For(gathered.LastRun.Values.Concat(gathered.NamedByReopen.Values)) };
+            // ACCEPTFOOT1b: the open conversations between turns, whose trees offer their work to land.
+            gathered = gathered with
+            {
+                Between = Between(gathered.Records, turnEnded ?? (_ => null), new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions))),
+            };
             return gathered with { Kept = new SessionDeletion(home).Kept(gathered.Records) };
         });
         // MSG1f3: what holds words the planner cannot see, a chat's runner and a cool-off a fresh plan missed. The home's roster
@@ -765,6 +780,29 @@ public static class SessionGroups
             coolingOf ?? ((adapter, profile) => roster.Value(adapter, profile)), TimeZoneInfo.Local));
         if (asked) times.Trees = TreesToJudge(look, trees.Holds, only).Count;
         return await times.TimeAsync("trees", () => JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The open conversations of this machine's between turns (ACCEPTFOOT1b, D164's ACCEPTFOOT1 note): live, their last turn ended
+    /// and nothing said since. A conversation's record stays <c>working</c> between turns, so the record cannot say it.
+    /// </summary>
+    /// <remarks>
+    /// <b>The runner's word first, else its record of its turns.</b> The page's foot offers <i>Accept…</i> by the runner's word on a
+    /// conversation's turns (CONV4a), which lives in the process that runs it; the screen's look is taken in that process and reads it
+    /// (<paramref name="runner"/>). A terminal's listing, or a conversation another process runs, reads what that runner wrote as each
+    /// turn ended and each word was said (<see cref="SessionEvents.TurnEnded"/>), so every door says the same once the turn has ended.
+    /// </remarks>
+    /// <param name="runner">Whether the runner here says the conversation's turn ended with nothing waiting; null where it holds none.</param>
+    public static IReadOnlySet<string> Between(IReadOnlyList<SessionRecord> records, Func<string, bool?> runner, SessionEvents events)
+    {
+        var between = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var record in records)
+        {
+            if (record is not { Kind: "chat", State: "working", Teammate: false }) continue;
+            if (runner(record.Id) ?? events.TurnEnded(record.Id)) between.Add(record.Id);
+        }
+
+        return between;
     }
 
     /// <summary>
@@ -939,8 +977,10 @@ public static class SessionGroups
                 .GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
             var ours = look.Records.Where(record => !record.Teammate && record.Tree is not null).ToList();
+            // An open conversation between turns writes nothing into its tree until the person says more (ACCEPTFOOT1b).
             _liveTrees = new HashSet<string>(
-                ours.Where(record => record.Live).Select(record => Normal(record.Tree!)), StringComparer.OrdinalIgnoreCase);
+                ours.Where(record => record.Live && !look.Between.Contains(record.Id)).Select(record => Normal(record.Tree!)),
+                StringComparer.OrdinalIgnoreCase);
             _newestOnTree = ours
                 .GroupBy(record => Normal(record.Tree!), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(
@@ -952,19 +992,23 @@ public static class SessionGroups
         /// <summary>
         /// Where a session is listed, and what its own tree offers to land (LAND4) wherever it rests bar Working: a session that
         /// goes on, or runs, is about to write into that tree again. Where the line holds its commits by content, its discard
-        /// instead (SQUASHTIDY1b).
+        /// instead (SQUASHTIDY1b). An open conversation between turns offers its landing too, by the same judgement, and never a
+        /// discard while it is open (ACCEPTFOOT1b).
         /// </summary>
         public SessionGrouping Place(SessionRecord record)
         {
             var row = PlaceInGroup(record);
-            if (row.Group == SessionGroup.Working
+            var between = _look.Between.Contains(record.Id);
+            if ((row.Group == SessionGroup.Working && !between)
                 || LandableTree(record) is not { } tree
                 || !_look.Trees.TryGetValue(Normal(tree), out var work))
             {
                 return row;
             }
 
-            return row with { Lands = LandOffer.Of(tree, work), Discards = DiscardOffer.Of(tree, work) };
+            return between
+                ? row with { Lands = LandOffer.Of(tree, work) }
+                : row with { Lands = LandOffer.Of(tree, work), Discards = DiscardOffer.Of(tree, work) };
         }
 
         private SessionGrouping PlaceInGroup(SessionRecord record)
@@ -1067,11 +1111,12 @@ public static class SessionGroups
         /// <summary>
         /// The tree an ended session of this machine's would offer to land, were there commits in it (LAND4): its own, the newest
         /// session on it, held by nothing live. Whatever its ending, and whether or not its quest goes back into it: the person
-        /// may land what it committed before a carry-on writes more. Null for any other.
+        /// may land what it committed before a carry-on writes more. An open conversation between turns too (ACCEPTFOOT1b), as the page's
+        /// foot offers it. Null for any other.
         /// </summary>
         public string? LandableTree(SessionRecord record)
         {
-            if (record.Live || record.Teammate || record.Tree is not { } tree) return null;
+            if ((record.Live && !_look.Between.Contains(record.Id)) || record.Teammate || record.Tree is not { } tree) return null;
             var key = Normal(tree);
             return _newestOnTree.TryGetValue(key, out var newest) && newest == record.Id && !_liveTrees.Contains(key) ? tree : null;
         }

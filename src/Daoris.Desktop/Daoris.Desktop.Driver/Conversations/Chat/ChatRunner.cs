@@ -1395,6 +1395,16 @@ public sealed class ChatRunner : IDisposable
         _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
 
     /// <summary>
+    /// Whether a conversation this runner holds has ended its turn with nothing waiting or opening (ACCEPTFOOT1b), as a curve's move
+    /// reads a turn's end (<see cref="CurveMove.TurnJustEnded"/>): the word the page's foot offers its <i>Accept…</i> by, which the
+    /// session list's look in this process reads too (<see cref="SessionGroups.Between"/>). Null for one nothing here holds.
+    /// </summary>
+    public bool? TurnEnded(string sessionId) =>
+        _context.Turned.TryGetValue(sessionId, out var chat)
+            ? chat.Turns.State is { Taking: false, Opening: false, Queued.Count: 0, LastTurnEnded: not null }
+            : null;
+
+    /// <summary>
     /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn
     /// took it already, or nothing here holds the conversation.
     /// </summary>
