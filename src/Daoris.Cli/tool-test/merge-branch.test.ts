@@ -2695,10 +2695,9 @@ test('a rehearsal that runs beside the git half builds what the Process lane bui
 });
 
 /**
- * REHLANE2: the release rehearsal packs the CLI in its own folder, whose `prepack` stages the canon, the README, the LICENSE
- * and a built `dist/` there and whose `postpack` removes them, and the CLI's bin prefers that `dist/` over the sources. So it
- * runs beside the git half only while no desktop test reads the package's folder outside its `src/` and `test/`, which no
- * pack writes, nor runs its bin. Read from every tracked desktop source, and from the stager's own list.
+ * REHLANE2 (the tool's header says why): the release rehearsal runs beside the git half only while no desktop test reads the
+ * CLI package's folder outside its `src/` and `test/`, which no pack writes, nor runs its bin. Read from every tracked
+ * desktop source, and from the stager's own list.
  */
 test('the release rehearsal stages nothing a desktop test reads: they read the CLI package only under src/ and test/, which no pack writes', () => {
   const stager = readFileSync(join(repoRoot, 'tools', 'stage-package.mjs'), 'utf8');

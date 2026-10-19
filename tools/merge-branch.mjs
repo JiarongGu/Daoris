@@ -273,15 +273,15 @@
  *
  * ## The release rehearsal beside the git half too (REHLANE2)
  *
- * The release rehearsal (1 to 4 minutes in a full set) ran after the Process halves, alone, because it packs the CLI in its
- * own folder: `prepack` stages the canon, the README, the LICENSE and a built `dist/` there, which the CLI's bin prefers over
- * its sources, and `postpack` removes them. It builds no .NET project, starts no host, takes no port and runs no git of its
- * own. No desktop test reads the CLI's folder outside `src/` and `test/`, which no pack writes, nor runs its bin (a test reads
- * every desktop source for both), so a Process half cannot see the staging. It is of `BESIDE_GIT_HALF`, before the family
- * in the plan's order, and runs beside the git half, whose classes no neighbour's load can fail; the family starts once it
- * has ended, since the family runs the CLI's bin (and two Process-lane gates at once is the measured ceiling). The driver's
- * other Process half and the modules' still run beside nothing: theirs are the clock-bound classes. It still waits for the
- * whole light lane, whose cli gate runs the bin, and the deployment rehearsal, which packs the same folder, for it.
+ * The release rehearsal packs the CLI in its own folder: `prepack` stages the canon, the README, the LICENSE and a built
+ * `dist/` there, which the CLI's bin prefers over its sources, and `postpack` removes them. It builds no .NET project,
+ * starts no host, takes no port and runs no git of its own. No desktop test reads the CLI's folder outside `src/` and
+ * `test/`, which no pack writes, nor runs its bin (a test reads every desktop source for both), so no Process half sees the
+ * staging. So it is of `BESIDE_GIT_HALF`, before the family in the plan's order, and runs beside the git half, whose
+ * classes no neighbour's load can fail; the family, which runs the CLI's bin, starts once it has ended, and two
+ * Process-lane gates at once stays the ceiling. The driver's other Process half and the modules' run beside nothing: they
+ * hold the clock-bound classes. It waits for the whole light lane, whose cli gate runs the bin, and the deployment
+ * rehearsal, which packs the same folder, waits for it. D180's REHLANE2 note has what was rejected.
  *
  * ## The web gate's unit run beside service (WEBSPLIT1)
  *
@@ -386,13 +386,10 @@ export const isGitHalf = (gate) => /git\.process\.runsettings/.test(gate.run);
 /**
  * The rehearsals that may run beside a git half (REHLANE1), by the root script each runs. Each builds the desktop's projects,
  * which the Process halves build into and run from, only into an output of its own (`ownBuild` in `tools/rehearsal-kit.mjs`),
- * or builds no .NET project at all, and shuts no build server down: a test reads each one's tool for both. They run beside the
- * git half one after the other, never beside each other (REHLANE2): two Process-lane gates at once is the measured ceiling,
- * and the release rehearsal's `npm pack` stages a built `dist/` in the CLI's own folder and removes it, which the CLI's bin
- * prefers over its sources, and the family rehearsal runs that bin. No desktop test reads what a pack stages there, nor runs
- * the bin (a test reads every desktop source for it), so the release rehearsal may run beside the git half, whose classes
- * no neighbour's load can fail (`git.process.runsettings`). The deployment rehearsal is not one: it publishes every desktop
- * project into the folders the Process halves run from, and packs the CLI's folder too, so it runs alone, last.
+ * or builds no .NET project at all, and shuts no build server down: a test reads each one's tool for both. They run one
+ * after the other, never beside each other; the header's REHLANE2 section says why the release rehearsal may run here and
+ * not beside the family. The deployment rehearsal is not one: it publishes every desktop project into the folders the
+ * Process halves run from, and packs the CLI's folder too, so it runs alone, last.
  */
 export const BESIDE_GIT_HALF = Object.freeze(['rehearse', 'rehearse:family']);
 
