@@ -243,6 +243,37 @@ public sealed class SessionsRoutes(DriverContext context)
         return Task.FromResult<object?>(new { Declined = answer.Stands, answer.Why, answer.Message });
     }
 
+    // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
+    // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
+    // standing allow). A read off the driver's memory (`HeldPermissions`), which a restart empties with the agents that asked.
+    [DriverRoute("PERMISSION_WAITS")]
+    private Task<object?> PermissionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var waits = HeldPermissions.Of(_loop.Events).Now()
+            .Select(held => new
+            {
+                held.Session, held.Request, held.Call, held.Title, held.Kind,
+                Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
+                Since = Moments.Write(held.Since),
+            })
+            .ToList();
+        return Task.FromResult<object?>(new { Waits = waits });
+    }
+
+    // The person's answer to a request a session holds for them (AUTONOMY1b3a): an option the agent offered, by its id, or none to
+    // refuse it, which takes the offered one-time rejection, else none. The allow is the person's press for this call alone, and
+    // Daoris never answers one by itself (D37, D52); a standing allow is a rule's to give (D74). What cannot is `answered: false` with
+    // its code (`unheld`, `unoffered`, `standing`) and the registry's sentence, the hold left as it was. Its session hears the answer
+    // at once, off its own reader, and the hold's end is told through the registry's `Changed`; the route publishes nothing.
+    [DriverRoute("SESSION_PERMISSION_ANSWER")]
+    private Task<object?> SessionPermissionAnswerAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var held = PayloadHelper.GetRequiredValue<string>(request.Payload, "request");
+        var answer = HeldPermissions.Of(_loop.Events).Answer(session, held, Optional(request, "option"));
+        return Task.FromResult<object?>(new { answer.Answered, answer.Why, answer.Message });
+    }
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

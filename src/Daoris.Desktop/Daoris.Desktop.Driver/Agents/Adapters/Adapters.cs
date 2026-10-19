@@ -1170,8 +1170,9 @@ public interface ISessionAdapter
     /// <summary>
     /// The harness's own asking mode, in <b>its own vocabulary</b>, for a driven session whose repository's permission prompts are
     /// asking (AUTONOMY1b, D184 point 3): a <c>--permission-mode</c> on the native door, a mode on the protocol door, which the session
-    /// must set or fail (<see cref="HelpModes.Required"/>). Daoris answers every ask with a refusal (D52), so a session in it uses only
-    /// what its rules allow.
+    /// must set or fail (<see cref="HelpModes.Required"/>). On the protocol door each request is held for the person to allow once or
+    /// refuse (AUTONOMY1b3a, <see cref="HeldPermissions"/>); over the native door nothing can hold one, so a tool its rules do not allow
+    /// is refused there.
     /// </summary>
     /// <remarks>
     /// <b>Null means none is mapped</b>, and an asking start on this harness is refused naming it, never run in the harness's own,
@@ -1850,7 +1851,7 @@ public sealed class CodexAcpAdapter : ISessionAdapter
     /// <summary>
     /// <c>read-only</c>, Codex's asking mode (<i>Ask for approval</i>: approvals on request, reviewed by the user; read from codex-acp
     /// 1.12.0's bundle, docs/2026-09-22-acp3-probe-evidence.md §2), for a repository's asking permission prompts (AUTONOMY1b, D184).
-    /// Daoris refuses every ask (D52), so it acts only where that mode does not ask; an agent that no longer offers it fails the open.
+    /// Each request it sends there waits for the person (AUTONOMY1b3a); an agent that no longer offers it fails the open.
     /// </summary>
     public string? AskingPosture => "read-only";
 
@@ -2056,7 +2057,8 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 
     /// <summary>
     /// <c>--permission-mode default</c>, Claude Code's asking mode, for a repository's asking permission prompts (AUTONOMY1b, D184).
-    /// Over <c>-p</c> nothing answers an ask, so a tool its rules do not allow is refused (HELPMODE1a1's finding).
+    /// Over <c>-p</c> no client answers an ask: the harness refuses a tool its rules do not allow itself (HELPMODE1a1's finding), and
+    /// there is no wire to hold one on for the person (AUTONOMY1b3a).
     /// </summary>
     public string? AskingPosture => "default";
 
