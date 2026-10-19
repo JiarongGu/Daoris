@@ -76,18 +76,22 @@ public static class TreeStartWords
             ? $"The person must resolve this conflict: tell them what conflicted, and build nothing on `{source}`'s new work until they have."
             : $"Tell the person why, and build nothing on `{source}`'s new work until the tree holds it.");
 
-    /// <summary>The host names no commit for the new submission (FABRIC-CLOSE1c5): only the line was synced, as a carry-on's start is.</summary>
+    /// <summary>
+    /// The host names no commit for the new submission (FABRIC-CLOSE1c5): only the line was synced, as a carry-on's start is. Since
+    /// FABRIC-CLOSE1c6 the end of the session that said the <c>ready</c> posts its commit whether or not evidence was asked, so none is named
+    /// only by a host before it, or where no session's end read it (a ready no session said, or a tree git could not read then).
+    /// </summary>
     /// <param name="broughtForward">
     /// A bring-forward's carry-on (SYNCMERGE1b2): its source may never have moved, so no new submission is claimed, and the words say only
     /// the line was brought up to date (D178's rejected wording is a branch said brought up to date where only the line was).
     /// </param>
     public static string NoSubmissionCommit(string source, bool broughtForward = false) => broughtForward
         ? $"Daoris could not tell whether `{source}` moved since this tree last held its work: the service names no commit for its "
-          + "submission (a host before it, or a submission no evidence was read for), so only the line was brought up to date. Read what "
-          + $"`{source}` now holds before you build on its work."
+          + "submission (a host before it, or a submission whose commit no session's end read), so only the line was brought up to date. Read "
+          + $"what `{source}` now holds before you build on its work."
         : $"Daoris could not bring this tree up to date with `{source}`'s new submission: the service names no commit for it (a host before "
-          + $"it, or a submission no evidence was read for), so only the line was brought up to date. Read what `{source}` now holds before "
-          + "you build on its work.";
+          + $"it, or a submission whose commit no session's end read), so only the line was brought up to date. Read what `{source}` now holds "
+          + "before you build on its work.";
 
     /// <summary>The new submission's commit is not in this repository (FABRIC-CLOSE1c5): only the line was synced.</summary>
     /// <param name="broughtForward">As <see cref="NoSubmissionCommit"/>'s (SYNCMERGE1b2).</param>

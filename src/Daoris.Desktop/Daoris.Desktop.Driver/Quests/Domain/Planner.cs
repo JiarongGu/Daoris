@@ -180,8 +180,9 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 
 /// <summary>A taker's submission in a closure graph (FABRIC-CLOSE1a), as the service answers it: the operation that made it, when, and its note.</summary>
 /// <param name="Commit">
-/// The commit its evidence was read at (FABRIC-CLOSE1c5), by its full id: what a step that grew from it is brought up to date with on
-/// the person's go-on. Null where none was read, and from a host before the field.
+/// The commit its evidence was read at (FABRIC-CLOSE1c5), or, where it waits on no evidence, the one its session's end read alone
+/// (FABRIC-CLOSE1c6), by its full id: what a step that grew from it is brought up to date with on the person's go-on. Null where none was
+/// read, and from a host before the field.
 /// </param>
 /// <param name="Session">
 /// The session that said its <c>ready</c> (FABRIC-CLOSE1c4), the one a reopen of it is told to. Null where no session said it, and from
@@ -1557,6 +1558,23 @@ public static class Planner
         && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedSourceReopened.Code) == true;
 
     /// <summary>
+    /// The step before, named where a session ends stopped by the person's reopen of the work its quest grew from (what
+    /// <see cref="Observation.Conclude"/> ends as <see cref="NoteCodes.EndedSourceReopened"/>): its quest held by the reopen as it ends
+    /// (FABRIC-CLOSE1c2), or (FABRIC-CLOSE1c16) gone on with since <paramref name="started"/>, the reopen and the go-on both made while it ran,
+    /// so the step reads unheld, taken, grown from another submission than at its start, with no result of its own since. Either way the
+    /// person's go-on carries it on with its branch brought up to date with the source's new submission (<see cref="ReopenTelling.BringsToSource"/>);
+    /// read as an ordinary end, its record ended after the go-on, which neither that carry-on nor the telling reads. Null for every other end.
+    /// </summary>
+    /// <param name="started">The quest as the start that ran the session read it.</param>
+    /// <param name="after">The quest as it stands at the session's end; null where the service no longer answers it.</param>
+    internal static string? ReopenedFrom(QuestView started, QuestView? after) =>
+        after is { HeldByReopen: true, Parent: { Length: > 0 } held } ? held
+        : after is { Status: "Taken", HeldByReopen: false, Submission: null, GrewFrom: { } now, Parent: { Length: > 0 } source }
+          && !Equals(started.GrewFrom, now)
+            ? source
+            : null;
+
+    /// <summary>
     /// Whether the person went on with <paramref name="step"/> on its source's new submission after <paramref name="last"/>, its last
     /// session here, had ended normally (FABRIC-CLOSE1c13, §E5): what <see cref="ReopenTelling"/> tells that session, so the go-on with
     /// Daoris's words goes on in it. The service's fact, read from the step and the record alone: the step is taken and unheld, grew from
@@ -1567,7 +1585,7 @@ public static class Planner
     /// A session the reopen stopped is carried on instead (<see cref="StoppedByReopen"/>), and a cut-off, a stop, a stand-down, a record
     /// with words waiting and a running one read as before. <b>Once</b>, with nothing kept: the record that goes on moves after the step,
     /// and a <c>ready</c> gives the step a result again. A step whose session ran across the go-on is not read here: its record ended after
-    /// the step moved.
+    /// the step moved, as the reopen stopped it (<see cref="ReopenedFrom"/>, FABRIC-CLOSE1c16), so it is carried on instead.
     /// </remarks>
     internal static bool GoneOnSince(QuestView step, PriorSession last) =>
         step is { Status: "Taken", Awaits: null or "", HeldByReopen: false, Submission: null, Reopened: null, GrewFrom: not null, Parent: { Length: > 0 } }
@@ -1578,7 +1596,8 @@ public static class Planner
     /// <summary>
     /// The commit a step the person went on with is brought up to date with (FABRIC-CLOSE1c5, §E5): its source's current submission's,
     /// where that is the one the step grew from now. Null where the source is not read, names another submission or none, or names no
-    /// commit (a host before the field, or a submission no evidence was read for).
+    /// commit (a host before the field, or a submission whose commit no session's end read: FABRIC-CLOSE1c6 posts it at the end of the
+    /// session that said the <c>ready</c>, evidence asked or not).
     /// </summary>
     internal static string? SourceCommit(QuestView step, QuestView? source) =>
         step.GrewFrom is { } grew && source is { Submission: { Commit: { } commit } current } && source.Id == step.Parent

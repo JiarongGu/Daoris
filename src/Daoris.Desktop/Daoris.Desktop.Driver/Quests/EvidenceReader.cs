@@ -182,6 +182,16 @@ public static class EvidenceReader
         };
     }
 
+    /// <summary>
+    /// The commit <paramref name="at"/> names, else its tree's HEAD, by its full id (FABRIC-CLOSE1c6): what a submission that waits on no
+    /// evidence is posted with alone. Null where the tree is gone or not the top of its own repository (git walks up), the name is not a
+    /// commit id, or git holds no such commit; it asks git nothing more.
+    /// </summary>
+    internal static async Task<string?> HeadAsync(EvidenceAt at, WorkingTree.GitRead git, CancellationToken ct) =>
+        (at.Commit is null || WorkingTree.IsCommitId(at.Commit)) && await WorkingTree.IsTopLevelAsync(at.Tree, git, ct).ConfigureAwait(false)
+            ? await CommitAsync(at.Tree, at.Commit ?? "HEAD", git, ct).ConfigureAwait(false)
+            : null;
+
     /// <summary>A commit's full id, or null where git holds none by that name.</summary>
     private static async Task<string?> CommitAsync(string tree, string name, WorkingTree.GitRead git, CancellationToken ct)
     {
