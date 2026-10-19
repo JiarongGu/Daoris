@@ -212,7 +212,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
 
         ResumeAsk? resume = null;
-        // Whether its process started: a failure before then started no run, so the record goes back with its words (SAIDBACK1e).
+        // Whether its process started: a failure before then started no run, so the record goes back with its words (SAIDBACK1e),
+        // and so does the driver's close before then (PARALLEL1f).
         var spawned = false;
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
@@ -292,6 +293,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // 🔴 No run started (SAIDBACK1e): the record the move took up goes back with its words, never `failed` with them, and
             // they are handed on as when its conversation could not be resumed, as a failed spawn handed them on before the move.
             return await PutBackAsync(quest, park, agent, ContinueWhy.Of(ContinueWhy.Refused)).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested && !spawned && !park.Parked)
+        {
+            // 🔴 PARALLEL1f (D181's PARALLEL1de note, D137 §2.4): the driver closed before its run started, most often while its start
+            // waited for a place. No run began, so the record the move took up goes back as it ended with its words waiting, as a
+            // failed spawn's does, and the next start goes on with them; nothing is handed on, since no session opens as the driver
+            // closes. A park is closed below as the close's interrupted take (D104): back to waiting on the person the ledger would
+            // clear its words (a park asks anew), while closed they stay on it for the next start.
+            return await PutBackAsync(quest, park, agent, why: null, unsent: ClosedFirst(quest, sessionId)).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -526,8 +536,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// on. Every word taken back first (no reason): nothing is sent and nothing holds it. Where the ledger will not move it back,
     /// its refusal holds the start, and the next look reads the record as it now is.
     /// </summary>
+    /// <param name="unsent">
+    /// The look's line where nothing is handed on (no <paramref name="why"/>): every word taken back first, unless the driver closed
+    /// before its run started (PARALLEL1f, <see cref="ClosedFirst"/>), its words still waiting.
+    /// </param>
     private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> PutBackAsync(
-        QuestView quest, PriorSession park, string agent, ContinueReason? why)
+        QuestView quest, PriorSession park, string agent, ContinueReason? why, StartRun? unsent = null)
     {
         var (state, note, interrupted, limit) = Continuations.PutBack(park, why);
         try
@@ -543,7 +557,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 false, null, refused.Message), null, false);
         }
 
-        if (why is null) return (TakenBackFirst(quest, park.Session), null, false);
+        if (why is null) return (unsent ?? TakenBackFirst(quest, park.Session), null, false);
         _context.Service.AccountSaid(Took(park, agent, why));
         return (null, why, false);
     }
@@ -558,6 +572,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// <summary>The look's line where every word waiting on the record was taken back before it went on (SAIDBACK1d, SAIDBACK1e).</summary>
     internal static StartRun TakenBackFirst(QuestView quest, string session) => new(
         $"held  #{quest.Id} → {quest.To}: every word waiting on session {session} was taken back before it went on; nothing is sent.",
+        false);
+
+    /// <summary>
+    /// The look's line where the driver closed before a record's run started (PARALLEL1f): put back as it ended, its words waiting on
+    /// it for the next start, which goes on with them.
+    /// </summary>
+    internal static StartRun ClosedFirst(QuestView quest, string session) => new(
+        $"held  #{quest.Id} → {quest.To}: the driver closed before session {session}'s run started; it is put back as it ended, "
+        + "its words waiting for the next start.",
         false);
 
     /// <summary>The record as it stands now, or null where it cannot be read: the look's words are then what there is (SAIDBACK1d).</summary>
@@ -746,9 +769,21 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 return (exitCode, used);
             }
 
-            // Through the start gate (PROCSTART2), as the first run's start is.
-            var process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
-                ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+            // Through the start gate (PROCSTART2), as the first run's start is, waiting for its place on the loop's token
+            // (PARALLEL1f). A driver closing while it waits starts no run, so the words it took are said never to have reached
+            // the session, as a stop's are, and the close ends the record as it ends any run it cuts off (D104).
+            System.Diagnostics.Process? started;
+            try
+            {
+                started = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                Untaken(sessionId, held.Close().Count + words.Count, UnreachedWhy.EndedFirst);
+                throw;
+            }
+
+            var process = started ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             // As the first run's: the process, tracked so a stop reaches it, and a reaper that ends it while still tracked.
             keep.Add(process);
             keep.Add(processes.Track(sessionId, process, refusesInput, drivesBrowser));

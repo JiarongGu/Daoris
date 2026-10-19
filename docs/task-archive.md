@@ -17283,3 +17283,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SHEN4 — take Shenora 0.22.0** (desktop, web; D22's SHEN3 note; the owner, 2026-10-20: "released shenora 0.22 which fixed some issue you can update too").
 
 **Outcome** 2026-10-20: the three packages and `@shenora/react` at 0.22.0; its break (a frameless maximize is the system's, and `WindowState = Normal` un-minimizes a maximized window un-maximized) reached `MainForm.TakeBack` and `SessionNotifier.Show`, which restore with `SW_RESTORE` through `MainForm.Unminimize`; the window-command overrides stay. The app builds; the window's behaviour is the installed proof. Detail: D22's SHEN4 note.
+## PARALLEL1f — a queued start's place waits on the loop's token (2026-10-19, D181)
+
+> - [ ] **PARALLEL1f — a queued start's place waits on the loop's token** (driver; D181 point 4, its PARALLEL1de note). `HoldAsync` and `DriverContinuations`' start places wait on no token, so a stopping loop cannot end a start still queued for a place. Proof: a cancelled start's record and the person's words are put back.
+
+**Outcome** 2026-10-19: starts and go-on runs wait for their place on the loop's token. Closed before its spawn, an ended record goes back as it ended, words waiting, nothing handed on; a park stays the close's interrupted take, words kept; a go-on's taken words are said unreached. Detail: D181's PARALLEL1f note; `QueuedStartCloseTests`.
