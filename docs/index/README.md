@@ -76,7 +76,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 47 | 904 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 115 | 1850 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 60 | 1142 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 61 | 1153 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 48 | 356 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full-access.md` | 52 | 398 |
@@ -110,7 +110,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 129 | 2562 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 133 | 2309 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 131 | 2388 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 52 | 881 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 52 | 886 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 54 | 937 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 202 | 3291 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 52 | 854 |
@@ -165,7 +165,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 51 | 802 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 252 | 4330 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 88 | 1618 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 86 | 1459 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 87 | 1480 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 143 | 2375 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 63 | 745 |
